@@ -27,7 +27,27 @@ function close_popover(elem)
 	
 	return false;
 }
-	
+
+
+function resizeImp(){
+			var status = "no ok";
+			var statusinterval = setInterval( function(){
+			if($("#tblAssess td").length > 1){
+				status = "ok";
+			}
+			if(status == "ok"){
+			clearInterval(statusinterval); 
+			$("#tblAssess").colResizable({
+			disable:true
+			});
+			$("#tblAssess").colResizable({
+				liveDrag:true, 
+				gripInnerHtml:"<div class='grip'></div>", 
+				draggingClass:"dragging"});
+			}
+			},500);
+			//console.log("resizeImp");
+}
 $(function() {
 	
 	$.expr[':'].contains = function(a, i, m) {
@@ -467,6 +487,22 @@ $(function() {
                 hideColumns();
                 check_word_columns();
                 $('table#tblAssess').floatThead('reflow');
+				console.log("reflow 2");
+				var status = "no ok";
+				var statusinterval = setInterval( function(){
+				if($("#tblAssess td").length > 1){
+					status = "ok";
+				}
+				if(status == "ok"){clearInterval(statusinterval); 
+				$("#tblAssess").colResizable({
+				disable:true
+				});
+				$("#tblAssess").colResizable({
+					liveDrag:true, 
+					gripInnerHtml:"<div class='grip'></div>", 
+					draggingClass:"dragging"});
+				}
+				},500);
             },
             "oLanguage": {
                 "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -564,7 +600,21 @@ $(function() {
                             return;
                         }
          				$('table#tblAssess').floatThead('reflow');
-                       // check_word_columns();
+						var status = "no ok";
+						var statusinterval = setInterval( function(){
+						if($("#tblAssess td").length > 1){
+							status = "ok";
+						}
+						if(status == "ok"){clearInterval(statusinterval); 
+						$("#tblAssess").colResizable({
+						disable:true
+						});
+						$("#tblAssess").colResizable({
+							liveDrag:true, 
+							gripInnerHtml:"<div class='grip'></div>", 
+							draggingClass:"dragging"});
+						}
+						},500);
 
                     }
                 });
@@ -1401,23 +1451,7 @@ $(function() {
             }).done(function(data){
                 if(data.length > 0){
                     console.log('1');
-                $('table#tblAssess').floatThead('reflow');
-				console.log("reflow");
-			$("#tblAssess").colResizable({
-			disable:true
-			});
-			var onSampleResized = function(e){
-			var columns = $(e.currentTarget).find("th");
-			var msg = "columns widths: ";
-			columns.each(function(){ msg += $(this).width() + "px; "; })
-			$("#sample2Txt").html(msg);
-			};	
-			$("#tblAssess").colResizable({
-				liveDrag:true, 
-				gripInnerHtml:"<div class='grip'></div>", 
-				draggingClass:"dragging", 
-				onResize:onSampleResized});
-			console.log("resize on");
+			resizeImp();
             if($("table[id^=tblAssess]")){
 				if($("a#assess_tbl_show_case_details_compare[class^=active_link]")){
 					if($("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])")){$("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])").css("border-left", "1px solid #ccc");}
@@ -1521,7 +1555,25 @@ $(function() {
             hideColumns();
             check_word_columns();
             $('table#tblAssess').floatThead('reflow');
-            //new FixedHeader( document.getElementById('tblAssess') );
+			
+			console.log("reflow 3");
+			var status = "no ok";
+				var statusinterval = setInterval( function(){
+				if($("#tblAssess td").length > 1){
+					status = "ok";
+				}
+				if(status == "ok"){clearInterval(statusinterval); 
+				$("#tblAssess").colResizable({
+				disable:true
+				});
+				$("#tblAssess").colResizable({
+					liveDrag:true, 
+					gripInnerHtml:"<div class='grip'></div>", 
+					draggingClass:"dragging"});
+				}
+				},500);
+			
+			
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -2276,12 +2328,13 @@ var generate_url_check = GetURLParameter('generate_url_check');
 	$(document).on('click', '.update_filter_btn', function(e) {
 		$('#research_assess_update').click();
 	});
+        var options = { path: '/', expires: 30 };
         function onDenisty(){
             var tkstatus = $.cookie('tkstatus');
             if(typeof(tkstatus)!=='undefined'){
                 $.removeCookie('tkstatus');
             }
-            $.cookie('tkstatus','denisty');
+            $.cookie('tkstatus','denisty',options);
             if($('#tk-denisty').prop('checked')!==true){
                 $('#tk-frequency').prop('checked',false);
                 $('#tk-denisty').prop('checked',true);
@@ -2297,7 +2350,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
             if(typeof(tkstatus)!=='undefined'){
                 $.removeCookie('tkstatus');
             }
-            $.cookie('tkstatus','frequency');
+            $.cookie('tkstatus','frequency',options);
             if($('#tk-frequency').prop('checked')!==true){
                 $('#tk-denisty').prop('checked',false);
                 $('#tk-frequency').prop('checked',true);
@@ -2319,7 +2372,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
                 }
             }
             else{
-                $.cookie('tkstatus','denisty');
+                $.cookie('tkstatus','denisty',options);
             }
         }
         function loadSetTK(){
@@ -2330,7 +2383,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
         }
         var table_loaded=false;
         $(document).ready(function(){
-            table_loaded = setInterval(loadSetTK,2000);
+            table_loaded = setInterval(loadSetTK,10);
         });
 
     $(document).on('change', '#assessDetailsDialog_chkIncludeInReport', function() {
@@ -4953,31 +5006,13 @@ $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-
 $('#assess_tbl_show_case_recommendations').click(function() {
     console.log("RECOMENDATIONS");
 	
-	$('table#tblAssess').floatThead({
+	$('table#tblAssess').floatThead({ 
 		scrollContainer: function($table) {
 			return $('#tblAssess').closest('.wrapper');
 		}
 	});
 	$('table#tblAssess').floatThead('reflow');
-	setTimeout(function(){
-		$("#tblAssess").colResizable({
-			disable:true
-			});
-	var onSampleResized = function(e){
-			var columns = $(e.currentTarget).find("th");
-			var msg = "columns widths: ";
-			columns.each(function(){ msg += $(this).width() + "px; "; })
-			$("#sample2Txt").html(msg);
-			
-		};	
-	
-		$("#tblAssess").colResizable({
-			liveDrag:true, 
-			gripInnerHtml:"<div class='grip'></div>", 
-			draggingClass:"dragging", 
-			onResize:onSampleResized});
-		}, 500);
-		
+	resizeImp();	
 });
 $('#assess_tbl_show_case_details_compare').click(function() {
 	$('table#tblAssess').floatThead({
@@ -4988,12 +5023,9 @@ $('#assess_tbl_show_case_details_compare').click(function() {
 	$("li[class*=boxes] div[class*=ui-icon-gripsmall-diagonal-se]").css("display", "none");
 	$("li[class*=boxes] div[class*=ui-resizable-e]").css("display", "none");
 	darkHeaders($(this));
-	setTimeout(function(){
-		$("#tblAssess").colResizable({
+	$("#tblAssess").colResizable({
 			disable:true
 			});
-		}, 500);
-	
 });
 $('#assess_tbl_show_case_report').click(function() {
 	$('table#tblAssess').floatThead({
@@ -5021,33 +5053,33 @@ $('#assess_tbl_show_case_details').click(function() {
 		});}
 		
 	$('table#tblAssess').floatThead('reflow');
-	setTimeout(function(){
-		$("#tblAssess").colResizable({
-			disable:true
-			});
-	var onSampleResized = function(e){
-			var columns = $(e.currentTarget).find("th");
-			var msg = "columns widths: ";
-			columns.each(function(){ msg += $(this).width() + "px; "; })
-			$("#sample2Txt").html(msg);
-			
-		};	
-	
-		$("#tblAssess").colResizable({
-			liveDrag:true, 
-			gripInnerHtml:"<div class='grip'></div>", 
-			draggingClass:"dragging", 
-			onResize:onSampleResized});
-		}, 500);
-	
-		
-	
+	resizeImp();
 });
 
 $("#tblAssess").mouseover(function(){
-		setTimeout(function(){
-		$('table#tblAssess').floatThead('reflow');
-		}, 500);
+			if($("#assess_tbl_show_case_details_compare[class*=active_link]").length){
+				$("#tblAssess").colResizable({disable:true});
+			}
+			else{
+				var status = "no ok";
+				var statusinterval = setInterval( function(){
+				if($("#tblAssess td").length > 1){
+					status = "ok";
+				}
+				if(status == "ok"){clearInterval(statusinterval); 
+				$("#tblAssess").colResizable({
+				disable:true
+				});
+				$("#tblAssess").colResizable({
+					liveDrag:true, 
+					gripInnerHtml:"<div class='grip'></div>", 
+					draggingClass:"dragging"});
+					$('table#tblAssess').floatThead('reflow');
+				}
+				},500);
+			}
+			
+	
 });
 
 $('#research_assess_update').click(function() {
@@ -5056,26 +5088,17 @@ $('#research_assess_update').click(function() {
 $('.ui-dialog-titlebar-close').click(function() {
 	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders($(this));}
 	$('table#tblAssess').floatThead('reflow');
-	setTimeout(function(){
-		$("#tblAssess").colResizable({
-			disable:true
-			});
-	var onSampleResized = function(e){
-			var columns = $(e.currentTarget).find("th");
-			var msg = "columns widths: ";
-			columns.each(function(){ msg += $(this).width() + "px; "; })
-			$("#sample2Txt").html(msg);
-			
-		};	
-	
-		$("#tblAssess").colResizable({
-			liveDrag:true, 
-			gripInnerHtml:"<div class='grip'></div>", 
-			draggingClass:"dragging", 
-			onResize:onSampleResized});
-		}, 500);
+	resizeImp();
 });
-
+$( ".CRG" )
+  .mouseup(function() {
+   console.log("up");
+   $('table#tblAssess').floatThead('reflow');
+  })
+  .mousedown(function() {
+    console.log("down");
+	$('table#tblAssess').floatThead('reflow');
+  });
 	
 	
 	$('*[id*=mytext]:visible').each(function() {
