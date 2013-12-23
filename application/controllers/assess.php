@@ -3250,7 +3250,11 @@ class Assess extends MY_Controller {
         $c=0;
         $total_rows = count($results);
         foreach ($results as $row_key => $row) {
-             if ($c >= $display_start) {
+		
+			//we can't do this verification bc filters should be calculated for all items in the batch
+             // if ($c >= $display_start) 
+			 // {
+			 
 //            $long_description_wc = $row->long_description_wc;
 //            $short_description_wc = $row->short_description_wc;
             $success_filter_entries = array();
@@ -4440,13 +4444,16 @@ class Assess extends MY_Controller {
             if ($this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData)) {
                 $result_table[] = $result_row;
             }
-            }
-             if ($display_length > 0) {
-                    if ($c >= ($display_start + $display_length - 1)) {
-                        break;
-                    }
-                }
-                $c++;
+			//we can't do this verification bc filters should be calculated for all items in the batch
+            // }
+             // if ($display_length > 0) {
+                    // if ($c >= ($display_start + $display_length - 1)) {
+                        // break;
+                    // }
+                // }
+                // $c++;
+				
+				
 //            ++$qty;
 //            if($qty>$display_length+$display_start)break;
         }
