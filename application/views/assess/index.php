@@ -420,7 +420,7 @@
 </script>
 
 <script src="<?php echo base_url();?>js/ci_home_pages.js"></script>
-<script src="<?php echo base_url();?>js/store.js"></script>
+
 <script src="<?php echo base_url();?>js/jquery.resizableColumns.min.js"></script>
 <script>
             $(function() {
