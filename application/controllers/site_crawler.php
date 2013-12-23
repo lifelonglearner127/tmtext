@@ -204,7 +204,7 @@ class Site_Crawler extends MY_Controller {
             'total' => $total,
 			'new' => $this->crawler_list_model->countNew(false),
 			'new_urls' => $urls,
-			'pager' => $this->pagination->create_links()
+			'pager' => $this->pagination->create_links(14)
 		)));
 	}
 
