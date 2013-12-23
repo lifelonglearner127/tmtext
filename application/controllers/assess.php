@@ -4441,7 +4441,7 @@ class Assess extends MY_Controller {
             // echo "<br />";
             // echo "<br />";
 
-            if ($this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData)) {
+            if ($c < ($display_start + $display_length - 1) && $this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData)) {
                 $result_table[] = $result_row;
             }
 			//we can't do this verification bc filters should be calculated for all items in the batch
@@ -4451,7 +4451,7 @@ class Assess extends MY_Controller {
                         // break;
                     // }
                 // }
-                // $c++;
+                $c++;
 				
 				
 //            ++$qty;
