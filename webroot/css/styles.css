@@ -754,13 +754,21 @@ a.jq-assess {
 	margin: 0 10px -14px;
 }
 
-.selectable_summary_handle_with_competitor {
+.selectable_summary_handle_with_competitor:not(.dual_mode) {
 	margin: 21px 0px -60px 502px;
 	position: relative;
 	top: 21px;
 	width: 15px;
 	height: 15px;
 }
+.selectable_summary_handle_with_competitor.dual_mode, .selectable_summary_handle_with_competitor.dual_mode {
+	margin: 21px 0px -60px 252px;
+	position: relative;
+	top: 21px;
+	width: 15px;
+	height: 15px;
+}
+
 .batch_me_and_competitor  {
 	margin: -20px 0;
 }

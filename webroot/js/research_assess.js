@@ -2082,6 +2082,7 @@ var scrollYesOrNot = true;
 		var hidden_batch2_filter_items = $('.hidden_batch2_filter_items');
 		if (batch_set_toggle.is(':checked'))
 		{
+			$('.selectable_summary_handle_with_competitor').addClass('dual_mode');
 			$('.ui-selectee, .non-selectable').css({'font-size' : 'small'});
 			
 			//display percentages
@@ -2105,7 +2106,7 @@ var scrollYesOrNot = true;
 				}
 			});
 		} else {
-			
+			$('.selectable_summary_handle_with_competitor').removeClass('dual_mode');
 			$('.ui-selectee, .non-selectable').css({'font-size' : '1em'});
 			
 			//hide percentages
