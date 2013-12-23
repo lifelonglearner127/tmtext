@@ -71,10 +71,18 @@ class Assess extends MY_Controller {
 		
 		$this->load->model('user_summary_settings', 'uss');
 		if ($this->ion_auth->logged_in() && ($user_id = $this->ion_auth->get_user_id()))		
-			$user_setting = $this->uss->findByAttributes(array('user_id' => $user_id));			
+		{
+			$user_setting_filters = $this->uss->findByAttributes(array('user_id' => $user_id, 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER));			
+			$user_setting_filters_order = $this->uss->findByAttributes(array('user_id' => $user_id, 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER_ORDER));
+		}
 		else
-			$user_setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR']));		
-		$this->data['user_filters'] = $user_setting && $user_setting->setting_value ? json_decode($user_setting->setting_value) : array();
+		{			
+			$user_setting_filters = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR'], 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER));	
+			$user_setting_filters_order = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR'], 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER_ORDER));
+		}
+		
+		$this->data['user_filters'] = $user_setting_filters && $user_setting_filters->setting_value ? json_decode($user_setting_filters->setting_value) : array();
+		$this->data['user_filters_order'] = $user_setting_filters_order && $user_setting_filters_order->setting_value ? json_decode($user_setting_filters_order->setting_value) : array();
 
         $this->render();
     }
@@ -2706,11 +2714,18 @@ class Assess extends MY_Controller {
 		
 		$this->load->model('user_summary_settings', 'uss');
 		if ($this->ion_auth->logged_in() && ($user_id = $this->ion_auth->get_user_id()))		
-			$user_setting = $this->uss->findByAttributes(array('user_id' => $user_id));			
+		{
+			$user_setting_filters = $this->uss->findByAttributes(array('user_id' => $user_id, 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER));			
+			$user_setting_filters_order = $this->uss->findByAttributes(array('user_id' => $user_id, 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER_ORDER));
+		}
 		else
-			$user_setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR']));	
+		{			
+			$user_setting_filters = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR'], 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER));	
+			$user_setting_filters_order = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR'], 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER_ORDER));
+		}
 		
-		$this->data['user_filters'] = $user_setting && $user_setting->setting_value ? json_decode($user_setting->setting_value) : array();
+		$this->data['user_filters'] = $user_setting_filters && $user_setting_filters->setting_value ? json_decode($user_setting_filters->setting_value) : array();
+		$this->data['user_filters_order'] = $user_setting_filters_order && $user_setting_filters_order->setting_value ? json_decode($user_setting_filters_order->setting_value) : array();
 
         // if columns empty set default values for columns
         if (empty($columns)) {
@@ -5357,9 +5372,9 @@ class Assess extends MY_Controller {
 		$user_setting = null;
 		
 		if ($this->ion_auth->logged_in() && ($user_id = $this->ion_auth->get_user_id()))		
-			$user_setting = $this->uss->findByAttributes(array('user_id' => $user_id));			
+			$user_setting = $this->uss->findByAttributes(array('user_id' => $user_id, 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER));			
 		else
-			$user_setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR']));
+			$user_setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR'], 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER));
 				
 		die(json_encode($user_setting));
 	}

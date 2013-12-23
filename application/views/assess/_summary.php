@@ -43,6 +43,7 @@
 						'is_extended_partial' => $is_extended_partial,
 						'batch_set' => 'batch_me_',
 						'user_filters' => $user_filters,
+						'user_filters_order' => $user_filters_order,
 						'wrapper_class' => 'common_batch1_filter_items',						
 					));
 					
@@ -50,6 +51,7 @@
 						'is_extended_partial' => $is_extended_partial,
 						'batch_set' => 'batch_competitor_',
 						'user_filters' => $user_filters,
+						'user_filters_order' => $user_filters_order,
 						'wrapper_class' => 'hidden_batch2_filter_items',						
 					));
 				?>				

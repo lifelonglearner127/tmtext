@@ -17,6 +17,7 @@ var last_compare_batch_id;
 var first_click = true ;
 var summary_active_items = [];
 var arrow_css_top;
+var summary_filters_order;
 
 function close_popover(elem)
 {
@@ -1243,7 +1244,10 @@ $(function() {
 					minHeight: 200,
 					resize : function( event, ui ) {						
 						current_filter_list_wrapper_height = ui.size.height;
-					}
+					},
+					start : function( event, ui ) {
+						$(window).unbind('resize');
+					}					
 				}).find('.resizable')
 					.css({overflow:'auto',
 						width:'100%',
@@ -1271,19 +1275,27 @@ $(function() {
 		var icon_wrapper = $(event.srcElement).parent();
 		arrow_css_top = icon_wrapper.css('top');
 		icon_wrapper.css('top', '0px');
-				
+		
+		summary_filters_order = [];
 	  },
 	  stop : function( event, ui ) {
 		// fixing style bugs
 		var icon_wrapper = $(event.srcElement).parent();		
 		icon_wrapper.css('top', arrow_css_top);
+				
+		//filling summary_filters_order variable
+		$('.item_line').each(function(index, element) {
+			var elem = $(element);
+			summary_filters_order.push(elem.data('filterkey'));
+		});
+		
 		
 		//saving replacement
 		$.ajax({
 			type : 'POST',
 			url : save_summary_filters_order,
 			data : {
-				summary_items_order : [1, 2, 3]
+				summary_items_order : summary_filters_order
 			},
 			success : function(data) {
 				console.log(data);
