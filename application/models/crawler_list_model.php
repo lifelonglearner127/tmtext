@@ -186,6 +186,26 @@ class Crawler_List_model extends CI_Model {
         return $this->db->count_all_results();
     }
 
+    function countAllWithStatus($only_my=true, $search_crawl_data='', $status)
+    {
+        $CI =& get_instance();
+
+        $this->db->select('cl.id')
+            ->from($this->tables['crawler_list'].' as cl')
+            ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left');
+
+        if ($only_my) {
+            $this->db->where('user_id',  $CI->ion_auth->get_user_id());
+        }
+        if($search_crawl_data != ''){
+            $this->db->like('cl.url', $search_crawl_data)->or_like('c.name', $search_crawl_data)->or_like('cl.status', $search_crawl_data)->or_like('DATE(cl.updated)', $search_crawl_data);
+        }
+
+        $this->db->where('cl.status', $status);
+        
+        return $this->db->count_all_results();
+    }
+
     function countNew($only_my=true)
     {
     	$CI =& get_instance();
@@ -261,6 +281,18 @@ class Crawler_List_model extends CI_Model {
         return $query->result();
     }
 
+    function countByBatchWithStatus($batch_id, $status) {
+        $this->db->select('cl.id')
+            ->from($this->tables['crawler_list'].' as cl')
+            ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left')
+            ->join('research_data_to_crawler_list as rc', 'cl.id = rc.crawler_list_id' )
+            ->join('research_data as rd', 'rd.id = rc.research_data_id')
+            ->where('rd.batch_id',$batch_id);
+
+        $this->db->where('cl.status', $status);
+
+        return $this->db->count_all_results();        
+    }
 
     function countByBatch($batch_id, $failed=0)
     {

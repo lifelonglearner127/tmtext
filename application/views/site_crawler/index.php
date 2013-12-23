@@ -122,6 +122,8 @@
           <button id="queue_locked" class="btn new_btn btn-success  ml_50"><i class="icon-white icon-ok"></i>&nbsp;Queue Locks</button>
       </div>
 
+      <div style='float: left; margin-top: 10px; margin-bottom: 10px;' class='urls_statuses_bar' id='urls_statuses_bar'></div>
+
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 450px; overflow : auto;" id="Current_List">
 				<!-- <div id='current_list_tbl_holder'>&nbsp;</div> -->
@@ -226,6 +228,10 @@ function loadCurrentList(url,failed) {
     }
 
 	$.get(url, {'search_crawl_data': search_crawl_data, 'batch_id': batch_id, 'failed':failed}, function(data) {
+		console.log(data);
+		// ==== FILL OUT URLS STATUS BAR (START)
+		$("#urls_statuses_bar").html("Finished: " + data.total_finished + "&nbsp;&nbsp;Failed: " + data.total_failed + "&nbsp;&nbsp;Queued: " + data.total_queued + "&nbsp;&nbsp;Locked: " + data.total_lock);
+		// ==== FILL OUT URLS STATUS BAR (END)
 		$('#Current_List ul li').remove();
 //                console.log(data);
 		if(data.new_urls.length > 0) {

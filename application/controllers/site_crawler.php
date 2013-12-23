@@ -149,8 +149,16 @@ class Site_Crawler extends MY_Controller {
 
         if ($this->input->get('batch_id')!=0) {
         	$total = $this->crawler_list_model->countByBatch($this->input->get('batch_id'),$this->input->get('failed'));
+        	$total_finished = $this->crawler_list_model->countByBatchWithStatus($this->input->get('batch_id'), 'finished');
+        	$total_failed = $this->crawler_list_model->countByBatchWithStatus($this->input->get('batch_id'), 'failed');
+        	$total_lock = $this->crawler_list_model->countByBatchWithStatus($this->input->get('batch_id'), 'lock');
+        	$total_queued = $this->crawler_list_model->countByBatchWithStatus($this->input->get('batch_id'), 'queued');
         } else {
         	$total = $this->crawler_list_model->countAll(false, $search_crawl_data,$this->input->get('failed'));
+        	$total_finished = $this->crawler_list_model->countAllWithStatus(false, $search_crawl_data, 'finished');
+        	$total_failed = $this->crawler_list_model->countAllWithStatus(false, $search_crawl_data, 'failed');
+        	$total_lock = $this->crawler_list_model->countAllWithStatus(false, $search_crawl_data, 'lock');
+        	$total_queued = $this->crawler_list_model->countAllWithStatus(false, $search_crawl_data, 'queued');
         }
 		$config = array(
 			'base_url' => site_url('site_crawler/all_urls'),
@@ -201,7 +209,11 @@ class Site_Crawler extends MY_Controller {
 
 		$this->output->set_content_type('application/json')
 		 ->set_output( json_encode(array(
-            'total' => $total,
+      'total' => $total,
+      'total_finished' => $total_finished,
+      'total_failed' => $total_failed,
+      'total_lock' => $total_lock,
+      'total_queued' => $total_queued,
 			'new' => $this->crawler_list_model->countNew(false),
 			'new_urls' => $urls,
 			'pager' => $this->pagination->create_links(14)
