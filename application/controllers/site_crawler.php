@@ -137,6 +137,17 @@ class Site_Crawler extends MY_Controller {
 		));
 	}
 
+	function lock_to_qa() {
+		$batch_id = $this->input->post('batch_id');
+		$res_data = array(
+			'status' => false,
+			'msg' => '',
+			'd' => null,
+			'batch_id' => $batch_id
+		);
+		$this->output->set_content_type('application/json')->set_output(json_encode($res_data));
+	}
+
 	function all_urls() {
 		$this->load->model('crawler_list_model');
 		$this->load->model('webshoots_model');

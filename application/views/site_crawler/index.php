@@ -138,6 +138,7 @@
 				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
 				<button id="current_snapshot" onclick="currentSnapshot();" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
 				<button id="current_snapshot_cmd" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snap (cmd)</button>
+				<button id="lock_to_qa" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Lock to Q</button>
 				<div class="span2 mt_15" style="width: 11%;">
 					<input type="checkbox" name="cb_crawl_now" value="1" id="cb_crawl_now" style="width:20px;">
 					<label class="control-label" for="use_files" style="display: inline;">immediately</label>
@@ -188,6 +189,12 @@
 </div>
 
 <!-- MODALS (START) -->
+<div class="modal hide fade ci_hp_modals" id='loading_general_pw_modal'>
+	<div class="modal-body">
+		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Please wait...</p>
+	</div>
+</div>
+
 <div class="modal hide fade ci_hp_modals" id='loading_crawl_snap_modal'>
 	<div class="modal-body">
 		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Generating snapshots. Please wait...</p>
@@ -530,6 +537,23 @@ $.fn.setCursorToTextEnd = function() {
 	$(document).on("click", "button#queue_locked", function(){
 		$.post('<?php echo site_url('site_crawler/queue_locked');?>', function(data) {
 			loadCurrentList();
+		});
+	});
+
+	$(document).on("click", "button#lock_to_qa", function() {
+		var selected_batch = $("#batches > option:selected").val();
+		var sb = null;
+		if($.trim(selected_batch) !== "") {
+			sb = selected_batch;
+		}
+		$("#lock_to_qa").attr("disabled", true);
+		$("#lock_to_qa").addClass("disabled");
+		$("#loading_general_pw_modal").modal('show');
+		$.post('<?php echo site_url('site_crawler/lock_to_qa');?>', {batch_id: sb}, function(data) {
+			console.log(data);
+			$("#loading_general_pw_modal").modal('hide');
+			$("#lock_to_qa").removeAttr("disabled");
+			$("#lock_to_qa").removeClass("disabled");
 		});
 	});
 
