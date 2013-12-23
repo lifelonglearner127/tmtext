@@ -1391,7 +1391,7 @@ $(function() {
                     console.log('1');
                 $('table#tblAssess').floatThead('reflow');
 				console.log("reflow");
-			$("table").colResizable({
+			$("#tblAssess").colResizable({
 			disable:true
 			});
 			var onSampleResized = function(e){
@@ -5010,7 +5010,7 @@ $('#assess_tbl_show_case_details').click(function() {
 		
 	$('table#tblAssess').floatThead('reflow');
 	setTimeout(function(){
-		$("table").colResizable({
+		$("#tblAssess").colResizable({
 			disable:true
 			});
 	var onSampleResized = function(e){
@@ -5045,7 +5045,7 @@ $('.ui-dialog-titlebar-close').click(function() {
 	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders($(this));}
 	$('table#tblAssess').floatThead('reflow');
 	setTimeout(function(){
-		$("table").colResizable({
+		$("#tblAssess").colResizable({
 			disable:true
 			});
 	var onSampleResized = function(e){
