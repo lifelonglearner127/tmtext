@@ -5049,7 +5049,7 @@ $("#tblAssess").mouseover(function(){
 				$("#tblAssess").colResizable({disable:true});
 			}
 			else{
-				var status = "no ok";
+				var status = "no ok"; 
 				var statusinterval = setInterval( function(){
 				if($("#tblAssess td").length > 1){
 					status = "ok";
