@@ -65,6 +65,7 @@
 	<script src="<?php echo base_url();?>js/jquery.floatThead.min.js"></script>
 <script type="text/javascript" src="http://code.highcharts.com/stock/highstock.js"></script>
 	<script src="http://code.highcharts.com/modules/exporting.js"></script>
+	<script src="<?php echo base_url();?>js/store.js"></script>
     <!-- for compare_results page -->
     <?php  if($_SERVER["REQUEST_URI"]){
         $serv =  $_SERVER["REQUEST_URI"];
