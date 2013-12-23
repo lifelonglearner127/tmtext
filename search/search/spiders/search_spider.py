@@ -277,10 +277,12 @@ class SearchSpider(BaseSpider):
 			# hardcode target site to sony
 			#self.target_site = 'sony'
 			self.target_site = product_brand_extracted
+			print "BRAND", product_brand_extracted, "PRODUCT", product_name
 
 			# can only go on if site is supported
 			# (use dummy query)
 			if self.target_site not in self.build_search_pages("").keys():
+				print '^ not here'
 
 				product_brands_extracted = set(self.build_search_pages("").keys()).intersection(set(product_name_tokenized))
 				
