@@ -6,6 +6,7 @@ var rememberBatchValue = base_url + 'index.php/assess/remember_batches';
 var getbatchesvalue = base_url + 'index.php/assess/getbatchvalues';
 var get_summary_filters = base_url + 'index.php/assess/get_summary_filters';
 var save_summary_filters = base_url + 'index.php/assess/save_summary_filters';
+var save_summary_filters_order = base_url + 'index.php/assess/save_summary_filters_order';
 var serevr_side = true;
 var serverside_table;
 var tblAllColumns = [];
@@ -15,6 +16,7 @@ var last_batch_id;
 var last_compare_batch_id;
 var first_click = true ;
 var summary_active_items = [];
+var arrow_css_top;
 
 function close_popover(elem)
 {
@@ -1208,14 +1210,46 @@ $(function() {
 			
 		$('.question_mark:not(.question_mark[data-popover-uniqueid="' + uniqueid + '"])').popover('hide');
 	});
-	
-	
+		
+	$( ".summary_sortable_wrapper" ).sortable({
+      placeholder: "ui-state-highlight",
+	  handle: ".selectable_summary_handle, .selectable_summary_handle_with_competitor",
+	  cancel : '.summary_filter_batch_name',	 
+	  start : function( event, ui ) {
+		
+		// fixing style bugs
+		var icon_wrapper = $(event.srcElement).parent();
+		arrow_css_top = icon_wrapper.css('top');
+		icon_wrapper.css('top', '0px');
+				
+	  },
+	  stop : function( event, ui ) {
+		// fixing style bugs
+		var icon_wrapper = $(event.srcElement).parent();		
+		icon_wrapper.css('top', arrow_css_top);
+		
+		//saving replacement
+		$.ajax({
+			type : 'POST',
+			url : save_summary_filters_order,
+			data : {
+				summary_items_order : [1, 2, 3]
+			},
+			success : function(data) {
+				console.log(data);
+			}
+		});
+	  }
+    });
+		
+	$( ".selectable_summary_info" ).disableSelection();
 	
 	$('.selectable_summary_info').on('mousedown', function(e) {
 		e.metaKey = true;
 	}).selectable({
-		cancel : '.non-selectable, .question_mark, .popover_close_btn',
+		cancel : '.non-selectable, .question_mark, .popover_close_btn, .selectable_summary_handle, .selectable_summary_handle_with_competitor',
 		tolerance : 'touch',
+		filter : '.item_line',
 		selected : function(event, ui) {
 			// console.log('Selected...');
 			summaryInfoSelectedElements = [];
@@ -1254,7 +1288,12 @@ $(function() {
 			// console.log(event);
 			// console.log(ui);
 		}
-	});
+	}).find( ".item_line:not(.batch1_filter_item):not(.batch2_filter_item)" )   
+		.addClass( "ui-corner-all" )
+        .prepend( "<div class='selectable_summary_handle'><i class='icon-move'></i></div>" );
+	
+	
+	
 	// $('table#tblAssess').floatThead('reflow');
     tblAssess = $('#tblAssess').dataTable({
     	"sDom": 'Rlfrtip',
@@ -4197,7 +4236,7 @@ function prevSibilfunc(curentSibil){
 	$('.summary_filter_config_item').on('click', function() {
 	
 		var elem = $(this)
-		  , filter_elem = $('.item_line[data-filterid*="' + elem.data('realfilterid') + '"]');
+		  , filter_elem = $('.item_line[data-filterid*="' + elem.data('realfilterid') + '"], .batch_me_and_competitor[data-filterid*="' + elem.data('realfilterid') + '"]');
 		
 		summary_active_items = [];
 		

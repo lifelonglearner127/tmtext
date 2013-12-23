@@ -35,6 +35,7 @@
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 <!--	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>-->
         <script src="<?php echo base_url();?>js/jquery-ui.js"></script>
+        <script src="<?php echo base_url();?>js/jquery.multisortable.js"></script>
     <script type='text/javascript' src="<?php echo base_url();?>js/jquery.dd.js"></script>
 	<!--<script src="<?php echo base_url();?>js/bootstrap.min.js"></script>-->
 	<script src="<?php echo base_url();?>js/bootstrap.js"></script>
