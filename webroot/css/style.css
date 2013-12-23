@@ -1,3 +1,11 @@
+.assess_report_compare .boxes > h3 {
+    position: relative;
+}
+.clean_summary_search_field {
+    position: absolute;
+    top: 3px !important;
+    left: -25px;
+}
 .clean_summary_search_field .icon-remove {
    background: url("../img/gi_custom_remove_gray_v2.png") !important; 
 }

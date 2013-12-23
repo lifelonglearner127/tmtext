@@ -748,6 +748,7 @@ a.jq-assess {
 	position: relative;
 	top: 8px;
 }
+
 .selectable_summary_handle {
 	text-align: right;
 	margin: 0 10px -14px;
@@ -764,4 +765,16 @@ a.jq-assess {
 	margin: -20px 0;
 }
 
- .ui-state-highlight { height: 3em; line-height: 1.2em; margin: 10px 0; clear: both; }
+.ui-state-highlight { height: 3em; line-height: 1.2em; margin: 10px 0; clear: both; }
+
+.grip{
+	width:20px;
+	height:30px;
+	margin-top:-3px;
+	
+	margin-left:-5px;
+	position:relative;
+	z-index:88;
+	cursor:e-resize;
+}
+

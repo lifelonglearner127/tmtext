@@ -1389,7 +1389,36 @@ $(function() {
             }).done(function(data){
                 if(data.length > 0){
                     console.log('1');
-                    $('table#tblAssess').floatThead('reflow');
+                $('table#tblAssess').floatThead('reflow');
+				console.log("reflow");
+			$("table").colResizable({
+			disable:true
+			});
+			var onSampleResized = function(e){
+			var columns = $(e.currentTarget).find("th");
+			var msg = "columns widths: ";
+			columns.each(function(){ msg += $(this).width() + "px; "; })
+			$("#sample2Txt").html(msg);
+			};	
+			$("#tblAssess").colResizable({
+				liveDrag:true, 
+				gripInnerHtml:"<div class='grip'></div>", 
+				draggingClass:"dragging", 
+				onResize:onSampleResized});
+			console.log("resize on");
+            if($("table[id^=tblAssess]")){
+				if($("a#assess_tbl_show_case_details_compare[class^=active_link]")){
+					if($("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])")){$("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])").css("border-left", "1px solid #ccc");}
+					$("#tblAssess th[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
+					$("#tblAssess tr").each(function(){
+						if($(this).find("td[class*=1][style*='border-left-width: 2px']:not([class*=_1])"))
+						{$(this).find("td[class*=1]:not([class*=_1])").css("border-left", "1px solid #ccc");}
+						$(this).find("td[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
+						
+					});
+				}
+				console.log("borders on");
+			}
                     var str = '';
                     var showcount = 12;
                     if(compare_batch_id != '0' && compare_batch_id !='all'){
@@ -3155,20 +3184,7 @@ function prevSibilfunc(curentSibil){
         if(first_click){
         
         if ($("#research_assess_compare_batches_batch").val() == 'all' || $("#research_assess_compare_batches_batch_competitor").val() == 'all') {
-            console.log(1);
-            if($("table[id^=tblAssess]")){
-				if($("a#assess_tbl_show_case_details_compare[class^=active_link]")){
-					if($("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])")){$("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])").css("border-left", "1px solid #ccc");}
-					$("#tblAssess th[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
-					$("#tblAssess tr").each(function(){
-						if($(this).find("td[class*=1][style*='border-left-width: 2px']:not([class*=_1])"))
-						{$(this).find("td[class*=1]:not([class*=_1])").css("border-left", "1px solid #ccc");}
-						$(this).find("td[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
-						
-					});
-				}
-				
-			}
+            console.log(1);			
             createTable();
             serevr_side = false;
             return;
@@ -4924,12 +4940,32 @@ $( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTab
 $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix'></div>" );
 $('#assess_tbl_show_case_recommendations').click(function() {
     console.log("RECOMENDATIONS");
+	
 	$('table#tblAssess').floatThead({
 		scrollContainer: function($table) {
 			return $('#tblAssess').closest('.wrapper');
 		}
 	});
 	$('table#tblAssess').floatThead('reflow');
+	setTimeout(function(){
+		$("table").colResizable({
+			disable:true
+			});
+	var onSampleResized = function(e){
+			var columns = $(e.currentTarget).find("th");
+			var msg = "columns widths: ";
+			columns.each(function(){ msg += $(this).width() + "px; "; })
+			$("#sample2Txt").html(msg);
+			
+		};	
+	
+		$("#tblAssess").colResizable({
+			liveDrag:true, 
+			gripInnerHtml:"<div class='grip'></div>", 
+			draggingClass:"dragging", 
+			onResize:onSampleResized});
+		}, 500);
+		
 });
 $('#assess_tbl_show_case_details_compare').click(function() {
 	$('table#tblAssess').floatThead({
@@ -4940,6 +4976,7 @@ $('#assess_tbl_show_case_details_compare').click(function() {
 	$("li[class*=boxes] div[class*=ui-icon-gripsmall-diagonal-se]").css("display", "none");
 	$("li[class*=boxes] div[class*=ui-resizable-e]").css("display", "none");
 	darkHeaders($(this));
+	
 });
 $('#assess_tbl_show_case_report').click(function() {
 	$('table#tblAssess').floatThead({
@@ -4955,7 +4992,7 @@ $('#assess_tbl_show_case_details').click(function() {
 			return $('#tblAssess').closest('.wrapper');
 		}
 	});
-	$('table#tblAssess').floatThead('reflow');
+	
 	if($("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']")){
 			$("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']").css("border-left-width", "1px");
 			
@@ -4965,13 +5002,61 @@ $('#assess_tbl_show_case_details').click(function() {
 			"background": "#e6e6e6 url('/producteditor/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",
 			"background-repeat": "repeat-x"
 		});}
+		
 	$('table#tblAssess').floatThead('reflow');
+	setTimeout(function(){
+		$("table").colResizable({
+			disable:true
+			});
+	var onSampleResized = function(e){
+			var columns = $(e.currentTarget).find("th");
+			var msg = "columns widths: ";
+			columns.each(function(){ msg += $(this).width() + "px; "; })
+			$("#sample2Txt").html(msg);
+			
+		};	
+	
+		$("#tblAssess").colResizable({
+			liveDrag:true, 
+			gripInnerHtml:"<div class='grip'></div>", 
+			draggingClass:"dragging", 
+			onResize:onSampleResized});
+		}, 500);
+	
+		
+	
 });
+
+$("#tblAssess").mouseover(function(){
+		setTimeout(function(){
+		$('table#tblAssess').floatThead('reflow');
+		}, 500);
+});
+
 $('#research_assess_update').click(function() {
 	darkHeaders($(this));
 });
 $('.ui-dialog-titlebar-close').click(function() {
 	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders($(this));}
+	$('table#tblAssess').floatThead('reflow');
+	setTimeout(function(){
+		$("table").colResizable({
+			disable:true
+			});
+	var onSampleResized = function(e){
+			var columns = $(e.currentTarget).find("th");
+			var msg = "columns widths: ";
+			columns.each(function(){ msg += $(this).width() + "px; "; })
+			$("#sample2Txt").html(msg);
+			
+		};	
+	
+		$("#tblAssess").colResizable({
+			liveDrag:true, 
+			gripInnerHtml:"<div class='grip'></div>", 
+			draggingClass:"dragging", 
+			onResize:onSampleResized});
+		}, 500);
 });
 
 	
