@@ -271,25 +271,30 @@ class SearchSpider(BaseSpider):
 			product_brand_extracted = product_name_tokenized[0].lower()
 
 		# if we are in manufacturer spider, set target_site to manufacturer site
+
+		# for manufacturer spider set target_site of request to brand extracted from name for this particular product
 		if self.name == 'manufacturer':
 
 			#TODO: restore commented code; if brand not found, try to search for it on every manufacturer site (build queries fo every supported site)
 			# hardcode target site to sony
 			#self.target_site = 'sony'
-			self.target_site = product_brand_extracted
-			print "BRAND", product_brand_extracted, "PRODUCT", product_name
+			#self.target_site = product_brand_extracted
+			target_site = product_brand_extracted
+			# print 'THRESHOLD', self.threshold
+			# print "BRAND", product_brand_extracted, "PRODUCT", product_name
 
 			# can only go on if site is supported
 			# (use dummy query)
-			if self.target_site not in self.build_search_pages("").keys():
-				print '^ not here'
+			if target_site not in self.build_search_pages("").keys():
+				# print '^ not here'
 
 				product_brands_extracted = set(self.build_search_pages("").keys()).intersection(set(product_name_tokenized))
 				
 				if product_brands_extracted:
-					self.target_site = product_brands_extracted.pop()
+					product_brand_extracted = product_brands_extracted.pop()
+					target_site = product_brand_extracted
 				else:
-					self.log("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n", level=log.ERROR)
+					self.log("Manufacturer site not supported (" + target_site + ") or not able to extract brand from product name (" + product_name + ")\n", level=log.ERROR)
 					#raise CloseSpider("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n")
 					item = SearchItem()
 					item['origin_url'] = response.url
@@ -299,15 +304,21 @@ class SearchSpider(BaseSpider):
 					yield item
 					return
 
+		# for other (site specific) spiders, set target_site of request to class variable self.target_site set in class "constructor" (init_sub)
+		else:
+			target_site = self.target_site
+
 
 		# 1) Search by model number
 		if product_model:
 			query1 = self.build_search_query(product_model)
 			search_pages1 = self.build_search_pages(query1)
-			page1 = search_pages1[self.target_site]
+			#page1 = search_pages1[self.target_site]
+			page1 = search_pages1[target_site]
 			request1 = Request(page1, callback = self.parseResults, cookies=cookies)
 
 			request1.meta['query'] = query1
+			request1.meta['target_site'] = target_site
 			
 			request = request1
 
@@ -315,10 +326,12 @@ class SearchSpider(BaseSpider):
 		# 2) Search by product full name
 		query2 = self.build_search_query(product_name)
 		search_pages2 = self.build_search_pages(query2)
-		page2 = search_pages2[self.target_site]
+		#page2 = search_pages2[self.target_site]
+		page2 = search_pages2[target_site]
 		request2 = Request(page2, callback = self.parseResults, cookies=cookies)
 
 		request2.meta['query'] = query2
+		request2.meta['target_site'] = target_site
 
 		pending_requests = []
 
@@ -333,10 +346,12 @@ class SearchSpider(BaseSpider):
 		for words in ProcessText.words_combinations(product_name, fast=self.fast):
 			query3 = self.build_search_query(" ".join(words))
 			search_pages3 = self.build_search_pages(query3)
-			page3 = search_pages3[self.target_site]
+			#page3 = search_pages3[self.target_site]
+			page3 = search_pages3[target_site]
 			request3 = Request(page3, callback = self.parseResults, cookies=cookies)
 
 			request3.meta['query'] = query3
+			request3.meta['target_site'] = target_site
 
 
 			pending_requests.append(request3)
@@ -356,6 +371,8 @@ class SearchSpider(BaseSpider):
 		if self.by_id:
 			request.meta['origin_id'] = self.extract_walmart_id(response.url)
 
+		#self.target_site = product_brand_extracted
+		target_site = product_brand_extracted
 		yield request
 
 

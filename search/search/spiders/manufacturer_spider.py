@@ -25,7 +25,7 @@ class ManufacturerSpider(SearchSpider):
 	# initialize fields specific to this derived spider
 	def init_sub(self):
 		#TODO: find a better way for this
-		self.threshold = 0.8
+		#self.threshold = 0.8
 		self.fast = 0
 		#self.output = 2
 
@@ -34,9 +34,9 @@ class ManufacturerSpider(SearchSpider):
 
 	# pass to site-specific parseResults method
 	def parseResults(self, response):
-		if self.target_site in self.sites_to_parse_methods:
-			return self.sites_to_parse_methods[self.target_site](response)
-
+		target_site = response.meta['target_site']
+		if target_site in self.sites_to_parse_methods:
+			return self.sites_to_parse_methods[target_site](response)
 
 	# parse samsung results page
 	def parseResults_samsung(self, response):
@@ -66,11 +66,12 @@ class ManufacturerSpider(SearchSpider):
 			# self.threshold = 0.2
 
 		else:
-			# try to see if this is a results page then
-			results = hxs.select("//h5[@class='ws-product-title fn']")
-			for result in results:
-				product_url = result.select("parent::node()//@href").extract()[0]
-				product_urls.add(product_url)
+			# # try to see if this is a results page then
+			# results = 
+			# for result in results:
+			# 	product_url = result.select("parent::node()//@href").extract()[0]
+			# 	product_urls.add(product_url)
+			pass
 
 		if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
 			request = Request(product_urls.pop(), callback = self.parse_product_samsung, meta = response.meta)
@@ -120,13 +121,12 @@ class ManufacturerSpider(SearchSpider):
 			# self.threshold = 0.2
 
 		else:
-			# #TODO
-			# # try to see if this is a results page then
-			# results = 
-			# for result in results:
-			# 	product_url = result.select("parent::node()//@href").extract()[0]
-			# 	product_urls.add(product_url)
-			pass
+			#TODO
+			# try to see if this is a results page then
+			results = hxs.select("//h5[@class='ws-product-title fn']")
+			for result in results:
+				product_url = result.select("parent::node()//@href").extract()[0]
+				product_urls.add(product_url)
 
 		if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
 			request = Request(product_urls.pop(), callback = self.parse_product_sony, meta = response.meta)
@@ -203,7 +203,6 @@ class ManufacturerSpider(SearchSpider):
 
 	# parse product page on sony.com
 	def parse_product_sony(self, response):
-
 		hxs = HtmlXPathSelector(response)
 
 		items = response.meta['items']
@@ -229,7 +228,6 @@ class ManufacturerSpider(SearchSpider):
 			item['product_model'] = product_model.extract()[0]
 
 		item['product_images'] = len(hxs.select("//a[@class='ws-alternate-views-list-link']/img").extract())
-		#TODO: to check
 		item['product_videos'] = len(hxs.select("//li[@class='ws-video']//img").extract())
 
 		items.add(item)
