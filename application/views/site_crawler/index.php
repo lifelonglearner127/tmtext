@@ -140,7 +140,7 @@
 					<input type="checkbox" name="cb_crawl_now" value="1" id="cb_crawl_now" style="width:20px;">
 					<label class="control-label" for="use_files" style="display: inline;">immediately</label>
 				</div>
-				<p class='help-block'>* use checkboxes in table list to activate snapshot button</p>
+				<!-- <p class='help-block'>* use checkboxes in table list to activate snapshot button</p> -->
 			</div>
 			<div class="row-fluid">
 				<div id="Current_List_Pager"></div>
