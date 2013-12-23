@@ -122,8 +122,10 @@
           <button id="queue_locked" class="btn new_btn btn-success  ml_50"><i class="icon-white icon-ok"></i>&nbsp;Queue Locks</button>
       </div>
 
+      <div style='float: left; margin-top: 10px; margin-bottom: 10px;' class='urls_statuses_bar' id='urls_statuses_bar'></div>
+
 			<div class="row-fluid mt_5">
-				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 340px; overflow : auto;" id="Current_List">
+				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 450px; overflow : auto;" id="Current_List">
 				<!-- <div id='current_list_tbl_holder'>&nbsp;</div> -->
 				<ul>
 					<lh><span><input type="checkbox" style='margin-top: -6px;' value="" id="checkAll"/></span><span style='width: 40px;'>&nbsp;</span><span style='width: 60px;'>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
@@ -136,6 +138,7 @@
 				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
 				<button id="current_snapshot" onclick="currentSnapshot();" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snapshot</button>
 				<button id="current_snapshot_cmd" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Snap (cmd)</button>
+				<button id="lock_to_qa" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Lock to Q</button>
 				<div class="span2 mt_15" style="width: 11%;">
 					<input type="checkbox" name="cb_crawl_now" value="1" id="cb_crawl_now" style="width:20px;">
 					<label class="control-label" for="use_files" style="display: inline;">immediately</label>
@@ -186,6 +189,12 @@
 </div>
 
 <!-- MODALS (START) -->
+<div class="modal hide fade ci_hp_modals" id='loading_general_pw_modal'>
+	<div class="modal-body">
+		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Please wait...</p>
+	</div>
+</div>
+
 <div class="modal hide fade ci_hp_modals" id='loading_crawl_snap_modal'>
 	<div class="modal-body">
 		<p><img src="<?php echo base_url();?>img/loader_scr.gif">&nbsp;&nbsp;&nbsp;Generating snapshots. Please wait...</p>
@@ -226,6 +235,10 @@ function loadCurrentList(url,failed) {
     }
 
 	$.get(url, {'search_crawl_data': search_crawl_data, 'batch_id': batch_id, 'failed':failed}, function(data) {
+		console.log(data);
+		// ==== FILL OUT URLS STATUS BAR (START)
+		$("#urls_statuses_bar").html("Finished: " + data.total_finished + "&nbsp;&nbsp;Failed: " + data.total_failed + "&nbsp;&nbsp;Queued: " + data.total_queued + "&nbsp;&nbsp;Locked: " + data.total_lock);
+		// ==== FILL OUT URLS STATUS BAR (END)
 		$('#Current_List ul li').remove();
 //                console.log(data);
 		if(data.new_urls.length > 0) {
@@ -524,6 +537,23 @@ $.fn.setCursorToTextEnd = function() {
 	$(document).on("click", "button#queue_locked", function(){
 		$.post('<?php echo site_url('site_crawler/queue_locked');?>', function(data) {
 			loadCurrentList();
+		});
+	});
+
+	$(document).on("click", "button#lock_to_qa", function() {
+		var selected_batch = $("#batches > option:selected").val();
+		var sb = null;
+		if($.trim(selected_batch) !== "") {
+			sb = selected_batch;
+		}
+		$("#lock_to_qa").attr("disabled", true);
+		$("#lock_to_qa").addClass("disabled");
+		$("#loading_general_pw_modal").modal('show');
+		$.post('<?php echo site_url('site_crawler/lock_to_qa');?>', {batch_id: sb}, function(data) {
+			console.log(data);
+			$("#loading_general_pw_modal").modal('hide');
+			$("#lock_to_qa").removeAttr("disabled");
+			$("#lock_to_qa").removeClass("disabled");
 		});
 	});
 
