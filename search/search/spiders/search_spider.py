@@ -265,13 +265,17 @@ class SearchSpider(BaseSpider):
 		# if there is no product brand, get first word in name, assume it's the brand
 		product_brand_extracted = ""
 		#product_name_tokenized = ProcessText.normalize(product_name)
-		product_name_tokenized = product_name.split(" ")
+		product_name_tokenized = [word.lower() for word in product_name.split(" ")]
 		#TODO: maybe extract brand as word after 'by', if 'by' is somewhere in the product name
 		if len(product_name_tokenized) > 0 and re.match("[a-z]*", product_name_tokenized[0]):
 			product_brand_extracted = product_name_tokenized[0].lower()
 
 		# if we are in manufacturer spider, set target_site to manufacturer site
 		if self.name == 'manufacturer':
+
+			#TODO: restore commented code; if brand not found, try to search for it on every manufacturer site (build queries fo every supported site)
+			# hardcode target site to sony
+			#self.target_site = 'sony'
 			self.target_site = product_brand_extracted
 
 			# can only go on if site is supported
@@ -279,6 +283,7 @@ class SearchSpider(BaseSpider):
 			if self.target_site not in self.build_search_pages("").keys():
 
 				product_brands_extracted = set(self.build_search_pages("").keys()).intersection(set(product_name_tokenized))
+				
 				if product_brands_extracted:
 					self.target_site = product_brands_extracted.pop()
 				else:
