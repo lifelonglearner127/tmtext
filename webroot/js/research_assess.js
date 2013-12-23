@@ -4909,7 +4909,7 @@ $('#assess_tbl_show_case_recommendations').click(function() {
 	});
 	$('table#tblAssess').floatThead('reflow');
 	setTimeout(function(){
-		$("table").colResizable({
+		$("#tblAssess").colResizable({
 			disable:true
 			});
 	var onSampleResized = function(e){
@@ -4937,6 +4937,11 @@ $('#assess_tbl_show_case_details_compare').click(function() {
 	$("li[class*=boxes] div[class*=ui-icon-gripsmall-diagonal-se]").css("display", "none");
 	$("li[class*=boxes] div[class*=ui-resizable-e]").css("display", "none");
 	darkHeaders($(this));
+	setTimeout(function(){
+		$("#tblAssess").colResizable({
+			disable:true
+			});
+		}, 500);
 	
 });
 $('#assess_tbl_show_case_report').click(function() {
