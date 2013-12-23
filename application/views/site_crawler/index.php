@@ -123,7 +123,7 @@
       </div>
 
 			<div class="row-fluid mt_5">
-				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 340px; overflow : auto;" id="Current_List">
+				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 450px; overflow : auto;" id="Current_List">
 				<!-- <div id='current_list_tbl_holder'>&nbsp;</div> -->
 				<ul>
 					<lh><span><input type="checkbox" style='margin-top: -6px;' value="" id="checkAll"/></span><span style='width: 40px;'>&nbsp;</span><span style='width: 60px;'>ID</span><span>Status</span><span>Last Crawled</span><span>Category</span><span>URL</span></lh>
