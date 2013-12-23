@@ -1194,7 +1194,10 @@ $(function() {
 					minHeight: 200,
 					resize : function( event, ui ) {						
 						current_filter_list_wrapper_height = ui.size.height;
-					}
+					},
+					start : function( event, ui ) {
+						$(window).unbind('resize');
+					}					
 				}).find('.resizable')
 					.css({overflow:'auto',
 						width:'100%',
@@ -1233,7 +1236,7 @@ $(function() {
 		//filling summary_filters_order variable
 		$('.item_line').each(function(index, element) {
 			var elem = $(element);
-			summary_filters_order.push(elem.data('filterid'));
+			summary_filters_order.push(elem.data('filterkey'));
 		});
 		
 		

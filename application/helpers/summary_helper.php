@@ -1,7 +1,7 @@
 <?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 if ( ! function_exists('render_filter_item'))
 {
-	function render_filter_item($filter_id, $icon, $label, $batch_class_number = '', $is_extended_partial = true, array $question = array(), $display = false)
+	function render_filter_item($index, $filter_id, $icon, $label, $batch_class_number = '', $is_extended_partial = true, array $question = array(), $display = false)
 	{
 		// $icon_td_width = $batch_class_number ? '10%' : '7.5%';
 		$icon_td_width = '45px';
@@ -15,7 +15,7 @@ if ( ! function_exists('render_filter_item'))
 		</span>' : '';
 								
 		$r = '
-			<div class="' . ($display == 'none' ? '' : 'selected_by_config') . ' mt_10 ml_15 item_line ' . ($is_extended_partial ? 'ui-widget-content' : 'non-selectable') . ' ' . ($batch_class_number) . '" data-filterid="' . $filter_id . '" style="display: ' . $display . '">
+			<div class="' . ($display == 'none' ? '' : 'selected_by_config') . ' mt_10 ml_15 item_line ' . ($is_extended_partial ? 'ui-widget-content' : 'non-selectable') . ' ' . ($batch_class_number) . '" data-filterid="' . $filter_id . '" data-filterkey="' . $index . '" style="display: ' . $display . '">
 				<div class="mr_10">
 					<table width="100%">
 						<tr>
@@ -46,6 +46,25 @@ if ( ! function_exists('get_filters') )
 	function get_filters()
 	{
 		return array(
+			array(
+				'data_filter_id' => 'assess_report_total_items',
+				'icon' => 'assess_report_number.png',
+				'label' => 'Total SKUs Analyzed:',
+				'has_competitor' => true,
+				'is_default' => true,
+				'question' => array(
+					'batch1' => array(
+						'explanation' => 'The total number of SKUs in the batch that were analyzed.',
+					),
+					'batch2' => array(
+						'explanation' => 'The total number of SKUs from the batch for which we found corresponding products on the competitor’s site.'
+					)
+				),
+				'competitor' => array(
+					'data_filter_id' => 'assess_report_competitor_matches_number',
+					'label' => 'Total number of corresponding SKUs on competitor site:',
+				)
+			),			
 			array(
 				'data_filter_id' => 'assess_report_items_priced_higher_than_competitors',
 				'icon' => 'assess_report_dollar.png',

@@ -502,6 +502,7 @@
 		'display' => 'none',
 		'wrapper_class' => 'assess_report_compare',
 		'user_filters' => $user_filters,
+		'user_filters_order' => $user_filters_order,
 		'direct_access' => true
 	)) 
 ?>
