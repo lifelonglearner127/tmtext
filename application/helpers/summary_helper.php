@@ -26,14 +26,16 @@ if ( ! function_exists('render_filter_item'))
 								' . $label . '
 								<span class="' . $filter_id . ' mr_10" ></span>
 							</td>
-							<td width="' . $question_td_width . '">
+							<td width="' . $question_td_width . '" ' . (!$batch_class_number ? 'valign="bottom' : '') . '">
 								' . $question_mark . '
 							</td>
 						</tr>
 					</table>
 				</div>
-			</div>
+			</div>			
 		';
+		
+		$r .= !$batch_class_number ? '<div style="clear: both; display: ' . $display . '" class="item_line_clear"></div>' : '';
 		
 		return $r;
 	}

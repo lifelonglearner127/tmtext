@@ -30,6 +30,7 @@ class Assess extends MY_Controller {
             'getbatchvalues' => true,
 			'save_summary_filters' => true,
 			'get_summary_filters' => true,
+			'save_summary_filters_order' => true,
         ));
     }
 
@@ -5369,15 +5370,34 @@ class Assess extends MY_Controller {
 		$this->uss->user_id = null;
 		
 		if ($this->ion_auth->logged_in() && ($this->uss->user_id = $this->ion_auth->get_user_id()))		
-			$user_setting = $this->uss->findByAttributes(array('user_id' => $this->uss->user_id));								
+			$user_setting = $this->uss->findByAttributes(array('user_id' => $this->uss->user_id, 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER));								
 		else
-			$user_setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR']));
+			$user_setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR'], 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER));
 		
 		if ($user_setting)
 			$this->uss->setAttributes((array)$user_setting);
 		
 		$this->uss->setting_id = User_summary_settings::USER_SUMMARY_SETTING_FILTER;
 		$this->uss->setting_value = json_encode($this->input->post('summary_active_items'));
+		
+		die(json_encode($this->uss->save()));
+	}
+	
+	public function save_summary_filters_order()
+	{
+		$this->load->model('user_summary_settings', 'uss');					
+		$this->uss->user_id = null;
+		
+		if ($this->ion_auth->logged_in() && ($this->uss->user_id = $this->ion_auth->get_user_id()))		
+			$user_setting = $this->uss->findByAttributes(array('user_id' => $this->uss->user_id, 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER_ORDER));								
+		else
+			$user_setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR'], 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER_ORDER));
+		
+		if ($user_setting)
+			$this->uss->setAttributes((array)$user_setting);
+		
+		$this->uss->setting_id = User_summary_settings::USER_SUMMARY_SETTING_FILTER_ORDER;
+		$this->uss->setting_value = json_encode($this->input->post('summary_items_order'));
 		
 		die(json_encode($this->uss->save()));
 	}

@@ -748,3 +748,20 @@ a.jq-assess {
 	position: relative;
 	top: 8px;
 }
+.selectable_summary_handle {
+	text-align: right;
+	margin: 0 10px -14px;
+}
+
+.selectable_summary_handle_with_competitor {
+	margin: 21px 0px -60px 502px;
+	position: relative;
+	top: 21px;
+	width: 15px;
+	height: 15px;
+}
+.batch_me_and_competitor  {
+	margin: -20px 0;
+}
+
+ .ui-state-highlight { height: 3em; line-height: 1.2em; margin: 10px 0; clear: both; }
