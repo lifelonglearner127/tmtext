@@ -4906,7 +4906,7 @@ $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-
 $('#assess_tbl_show_case_recommendations').click(function() {
     console.log("RECOMENDATIONS");
 	$("#tblAssess").resizableColumns({
-				store: store
+				//store: store
 	});
 	$('table#tblAssess').floatThead({
 		scrollContainer: function($table) {
