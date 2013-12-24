@@ -222,6 +222,7 @@ function showSnap(snap, id, url) {
 function loadCurrentList(url,failed) {
 	$("#checkAll").removeAttr('checked');
 	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
+	console.log("URL : ", url);
 	failed = typeof failed !== 'undefined' ? 1 : 0;
 
     var search_crawl_data = '';
@@ -481,6 +482,18 @@ $.fn.setCursorToTextEnd = function() {
 		//$('button#current_crawl').attr('disabled', 'disabled');
 		//$.post('<?php echo site_url('site_crawler/crawl_all');?>', {id: $('#Current_List > ul > li.active').attr('id')}, function(data) {});
 
+		// === current pager state holder (start)
+		var current_active_page = 0;
+		var current_active_limit = '';
+		if($("#Current_List_Pager strong").length > 0) {
+			current_active_page = $.trim($("#Current_List_Pager strong").text());
+			if(current_active_page > 1) {
+				current_active_limit = (current_active_page - 1)*10;
+			}
+		}
+		var fetch_lnk = base_url + "index.php/site_crawler/all_urls/" + current_active_limit;
+		// === current pager state holder (end)
+
 		var ids = [];
 		$("#Current_List > ul > li input[name='ids[]']:checked").each(function () {
 			ids.push(parseInt($(this).val()));
@@ -490,7 +503,7 @@ $.fn.setCursorToTextEnd = function() {
 			$('button#current_crawl').attr('disabled', 'disabled');
 		} else {
 			$.post('<?php echo site_url('site_crawler/crawl_all');?>', {ids: ids, crawl: $('#cb_crawl_now').is(':checked') }, function(data) {
-				loadCurrentList();
+				loadCurrentList(fetch_lnk);
 			});
 		}
 	});
