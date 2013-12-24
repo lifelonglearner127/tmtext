@@ -2489,7 +2489,7 @@ class Assess extends MY_Controller {
 				
 				$res_key = array_keys($res_array[0]);
 				print_r($res_key);
-				$res_key_flip = array_flip($res_key)
+				$res_key_flip = array_flip($res_key);
 				print_r(array_keys($res_key_flip));
 				/*
 				if($key == "created"){
