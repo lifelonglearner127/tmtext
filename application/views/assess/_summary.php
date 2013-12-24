@@ -21,8 +21,9 @@
 				<a href="#" class="show_filters_configuration_popup">
 					<img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/settings@2x.png">
 				</a>
-				<button type="button" class="btn btn-primary summary_edit_btn" data-toggle="button">Edit</button>
-				<span class="assess_report_download_panel" style="float: right;width: 500px;">
+				<button type="button" class="btn btn-primary summary_edit_btn" id="edit_summary" data-toggle="button">Edit</button>
+                                <div id="div_export" style="width:100px;float:right;margin: 4px;"></div>
+                                <span class="assess_report_download_panel" style="float: right;width: 200px;">
 
 					<div style="display: none">
 						<span>Download</span>
@@ -30,8 +31,8 @@
 						<a class="assess_report_download_doc" target="_blank" data-type="doc">DOC</a>
 					</div>
 					<?php if (isset($direct_access) && $direct_access): ?>
-						<button class="update_filter_btn btn" style="float: right;margin-top: 7px;" title="Filter" >Update</button>
-					<?php else: ?>
+						<button class="update_filter_btn btn-success btn" style="float: right;margin-top: 4px;" title="Filter" >Update</button>
+                                	<?php else: ?>
 						<!--<button class="assess_report_options_dialog_button btn" style="float: right;margin-top: 7px;" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>-->
 					<?php endif ?>
 				</span>

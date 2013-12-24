@@ -134,7 +134,7 @@
                 </div>
                 <div style="float: right;">
                     <button id="research_assess_update" class="btn btn-success">Update</button>
-                    <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export</a>
+                    <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export...</a>
                 </div>
             <div style="clear:both;"></div>
             <div style="float: left;margin-top: 10px;" class="generate_url">
@@ -645,8 +645,7 @@
                  var generate_url_check = GetURLParameter('generate_url_check');
                  var generate_url_Summary = GetURLParameter('generate_url_Summary');
                   batch_name = batch_name.replace(/%20/g,' ')
-                  $('.title_result').html("<div class='logo'><img  style='width:220px; height: 50px;float:left;'src ='<?php echo base_url() ?>/img/content-analytics_page.png'></div><h3 class='h3_title'>"+batch_name+" Batch</h3><a href='<?php echo base_url();?>index.php/assess/export_assess' class='fileDownloadPromise btn' style='float:right;' id='research_assess_export' >Export</a>");
-                 
+                  $('.title_result').html("<div class='logo'><img  style='width:220px; height: 50px;float:left;'src ='<?php echo base_url() ?>/img/content-analytics_page.png'></div><h3 class='h3_title'>"+batch_name+" Batch</h3>");
                 if(generate_url_Summary == "1"){
                     
                  $('#tblAssess_wrapper').addClass('comp_res_none');
@@ -686,6 +685,8 @@
                     
                 $('select[id="research_assess_compare_batches_batch"]').val(cmp_selected).change()
                  $('#research_assess_update').click();
+//                 alert($('#edit_summary').text())
+                 $('#div_export').html('<a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export...</a>');
                 },2000)
 				
 				var scrollScore = 0; 
