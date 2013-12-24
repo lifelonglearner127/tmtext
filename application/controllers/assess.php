@@ -60,6 +60,46 @@ class Assess extends MY_Controller {
         // $this->data['rec'] = $this->webshoots_model->get_recipients_list();
         $this->render();
     }
+    public function export_unmatches(){
+        
+        $this->load->model('statistics_new_model');
+	$this->load->model('statistics_new_model');
+        $batch_id = (int) trim($_GET['batch_id']);
+        $cmp_selected = (int)trim(strtolower($_GET['cmp_selected']));
+        $batch_name = $_GET['batch_name'];
+        $sql = "select im.value, c.imported_data_id, c.similar_products_competitors 
+                from statistics_new as c 
+                left join  imported_data_parsed as im on im.imported_data_id = c.imported_data_id and im.key = 'url' 
+                where batch_id =$batch_id ";
+        $query = $this->db->query($sql);
+        $results = $query->result_array();
+        
+        foreach($results as $k => $val){
+            $similar_items = unserialize($val['similar_products_competitors']);
+
+                if (count($similar_items) > 1) {
+                    foreach ($similar_items as $key => $item) {
+                       
+                        if ($this->statistics_new_model->if_url_in_batch($item['imported_data_id'], $cmp_selected)) {
+                            unset($results[$k]);
+                            break;
+                        }
+                    }
+                }else{
+                    unset($results[$k]);
+                }
+        }
+         $res_array = array();
+         foreach($results as $k => $val){
+            $res_array[] = array($val['imported_data_id'], $val['value']);
+         }
+        
+        $res_array_keys = array('imported_data_id', 'URL');
+        array_unshift($res_array, $res_array_keys);
+        $this->load->helper('csv');
+        array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
+        
+    }
 
     public function compare_results() {
 

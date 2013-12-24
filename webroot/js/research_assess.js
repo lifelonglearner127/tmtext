@@ -4963,6 +4963,24 @@ var search_text = GetURLParameter('search_text');
     $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function() {
         $(this).modal('hide');
     });
+    $('#export_unmatches').live('click',function() {
+        var batch_id= $('select[name="research_assess_batches"]').find('option:selected').val();
+        var batch_name= $('select[name="research_assess_batches"]').find('option:selected').text()+' - '+$('#research_assess_compare_batches_batch').find('option:selected').text();
+        var cmp_selected = $('#research_assess_compare_batches_batch').find('option:selected').val();	
+       $(this).text('Exporting...');
+        var main_path=  $(this).prop('href');
+        $(this).attr('href', $(this).prop('href')+'?batch_id='+batch_id+'&cmp_selected='+cmp_selected+'&batch_name='+batch_name);
+        
+        $.fileDownload($(this).prop('href'))
+                .done(function() {
+            $('#research_assess_export').removeAttr('disabled');
+            $('#research_assess_export').attr('href', main_path);
+            $('#research_assess_export').text('Unmatched');
+        })
+                .fail(function() {
+        });
+   });
+    
    $('#research_assess_export').live('click',function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
        if(!GetURLParameter('checked_columns_results')){
