@@ -39,6 +39,21 @@ class Imported_data_parsed_archived_model extends CI_Model {
 
         return $this->db->query($query);
     }
+    function mark_queued_from_archive(){
+         $sql = "select idpa.imported_data_id as itemid from imported_data_parsed_archived as idpa
+                left join imported_data_parsed as idp on idpa.imported_data_id = idp.imported_data_id
+                inner join crawler_list as cl on idpa.imported_data_id = cl.imported_data_id
+                inner join research_data_to_crawler_list as rdcl on rdcl.crawler_list_id=cl.id
+                inner join research_data as rd on rd.id = rdcl.research_data_id
+                inner join batches as b on b.id = rd.batch_id
+                where idp.imported_data_id is null and rd.batch_id is not null
+                group by idpa.imported_data_id";
+        $query = $this->db->query($sql);
+        $results = $query->result_array();
+        foreach($results as $res ){
+            $this->db->update('crawler_list', array('status' => 'queued'), array('imported_data_id' => $res['itemid']));
+        }
+    }
 
 }
 

@@ -28,7 +28,8 @@ class Crons extends MY_Controller {
             'stop_do_stats'=>true,
             'delete_batch_items_from_statistics_new' => true,
             'fix_imported_data_parsed_models'=>true,
-            'fixmodel_length'=>true
+            'fixmodel_length'=>true,
+            'fix_revisions'=>true
         ));
         $this->load->library('helpers');
         $this->load->helper('algoritm');
@@ -2808,6 +2809,29 @@ class Crons extends MY_Controller {
                 'model'=>substr(0,8,uniqid($res->model))
             );
             $this->db->where('imported_data_id',$res->dataid);
+            $this->db->update('imported_data_parsed',$data);
+        }
+    }
+    function fix_revisions(){
+        $sql = "select idp.imported_data_id as item, idp.`value` as url
+            , idp.revision as revision, idpa.revision as old_revision
+            from imported_data_parsed as idp
+            left join (
+            select imported_data_id, max(revision) as revision 
+            from imported_data_parsed_archived 
+            group by imported_data_id )as idpa
+            on idp.imported_data_id = idpa.imported_data_id
+            where ((idpa.imported_data_id is null and idp.revision !=1) or idp.revision-idpa.revision > 1)
+            and idp.`key`='url'";
+        $query = $this->db->query($sql);
+        if($query->num_rows===0){
+            exit;
+        }
+        foreach ($query->result() as $res){
+            $data = array(
+                'revision'=>$res->old_revision!==null?$res->old_revision+1:1
+            );
+            $this->db->where('imported_data_id',$res->item);
             $this->db->update('imported_data_parsed',$data);
         }
     }
