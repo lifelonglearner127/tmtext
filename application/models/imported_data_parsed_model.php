@@ -1121,6 +1121,8 @@ class Imported_data_parsed_model extends CI_Model {
 
        foreach ($rows as $row) {
             $ids[] = $row['imported_data_id'];
+//            $this->db->where('imported_data_id',$row['imported_data_id']);
+//            $this->db->delete('statistics_new');
        }
         $ids = array_unique($ids);
        
@@ -2450,7 +2452,54 @@ echo "j  = ".$j;
             return $rows;
         }
     }
-
+    function getSimilarItems($model, $imp_id){
+        $this->db->select('value as url, imported_data_id');
+        $this->db->from('imported_data_parsed');
+        $this->db->where('key','url');
+        $value = str_replace("-", "", $model);
+//        $value1 = $this->db->escape($value . '%');
+        $value2 = $this->db->escape($value);
+        $this->db->where(" INSTR(REPLACE(`p`.`model`,'-',''), " . $value2 . ")=1 OR INSTR(" . $value2 . ", REPLACE(`p`.`model`,'-',''))=1", NULL, FALSE);
+        $query = $this->db->get();
+        $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
+        if ($query_cus->num_rows > 0) {
+            foreach ($query_cus->result() as $value) {
+                $n = parse_url($value->url);
+                $customers_list[] = $n['host'];
+            }
+        }
+        unset($query_cus);
+        $customers_list = array_unique($customers_list);
+        $res= array();
+        $selected_customer = '';
+        foreach ($query->result_array() as $key => $row) {
+            $cus_val = "";
+            foreach ($customers_list as $ki => $vi) {
+                if (strpos($row['url'], "$vi") !== false) {
+                    $cus_val = $vi;
+                    break;
+                }
+            }
+            if ($cus_val !== "")
+            $row['customer'] = $cus_val;
+            if($row['imported_data_id'] == $imp_id){
+                $selected_customer = $row['customer'];
+            }
+            $res[]=array(
+                'imported_data_id'=>$row['imported_data_id'],
+                'customer'=>$cus_val
+            );
+        }
+        if($imp_id){
+            foreach($res as $k =>$val){
+                if($val['customer']== $selected_customer && $val['imported_data_id']!= $imp_id){
+                    unset($res[$k]);
+                }
+            }
+        }
+        sort($res);
+        return $res;
+    }
     function getKeywordsBy_imported_data_id($im_data_id) {
         $query = $this->db->where('imported_data_id', $im_data_id)
                 ->order_by('word_num', 'asc')
@@ -2495,7 +2544,7 @@ echo "j  = ".$j;
                 }
                 if ($cus_val !== "")
                 $row['customer'] = $cus_val;
-                if($row['mported_data_id'] == $imp_id){
+                if($row['imported_data_id'] == $imp_id){
                     $selected_customer = $row['customer'];
                 }
 
@@ -2677,11 +2726,8 @@ echo "j  = ".$j;
         return $query->first_row('array');
     }
     function updateModelOfItem($dataid, $model, $rev, $ncid){
-        $data=array(
-            'revision'=>$rev
-            );
         $this->db->where('imported_data_id',$ncid);
-        $this->db->update('imported_data_parsed',$data);
+        $this->db->delete('statistics_new');
 
         $this->db->select('model');
         $this->db->from('imported_data_parsed');
@@ -2699,12 +2745,32 @@ echo "j  = ".$j;
             if($res->data_id===$dataid){
                 $data=array(
                     'model'=>$model,
-                    'revision'=>$res->revision+1
                     );
                 $this->db->where('imported_data_id',$res->data_id);
                 $this->db->update('imported_data_parsed',$data);
+                $this->db->where('imported_data_id',$res->data_id);
+                $this->db->delete('statistics_new');
             }
         }
     }
-
+    function addItem($item1,$item2){
+        if($item1>$item2){
+            $temp = $item1;
+            $item1 = $item2;
+            $item2 = $temp;
+        }
+        $this->db->select('id');
+        $this->db->from('similar_item');
+        $this->db->where('item1',$item1);
+        $this->db->where('item2',$item2);
+        $query = $this->db->get();
+        if($query->num_rows>0){
+            return FALSE;
+        }
+        $data = array(
+            'item1'=>$item1,
+            'item2'=>$item2
+        );
+        $this->db->insert('similart_item',$data);
+    }
 }

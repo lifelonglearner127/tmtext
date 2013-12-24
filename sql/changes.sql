@@ -850,3 +850,20 @@ CREATE TABLE IF NOT EXISTS `user_summary_settings` (
 
 #18/12 Oleg
 ALTER TABLE  `setting_values` CHANGE  `value`  `value` VARCHAR( 3000 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL;
+
+# 20/12 Fjodor
+
+ALTER TABLE  `imported_data_parsed` CHANGE  `model`  
+`model` VARCHAR( 100 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL
+
+# 24/12 Fjodor
+create table if not exists similar_item(
+id int not null auto_increment
+,item1 int(10) unsigned not null
+,item2 int(10) unsigned not null
+,same int(1) default 0
+,primary key (id)
+,unique key(item1,item2)
+,foreign key (item1) references imported_data(id) on delete cascade on update cascade
+,foreign key (item2) references imported_data(id) on delete cascade on update cascade
+)engine=InnoDB;
