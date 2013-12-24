@@ -2488,10 +2488,11 @@ class Assess extends MY_Controller {
 		if($res_array[0]){		
 				
 				$res_key = array_keys($res_array[0]);
-				print_r($res_key);
+				//print_r($res_key);
 				$res_key_flip = array_flip($res_key);
-				print_r(array_keys($res_key_flip));
-				/*
+				
+				//print_r($res_key_flip);
+				foreach($res_key_flip as $key => $value){
 				if($key == "created"){
 					$key = 'Created';
 					$res_array_keys[$value] = $key;
@@ -2700,11 +2701,12 @@ class Assess extends MY_Controller {
 				else{
 					$res_array_keys[$value] = $key;
 				}
-			*/
+			}
 		}
-		//array_unshift($res_array, $line);
-        //$this->load->helper('csv');
-        //array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
+		//print_r($res_array_keys);
+		array_unshift($res_array, $res_array_keys);
+        $this->load->helper('csv');
+        array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
     }
 
     public function products() {
