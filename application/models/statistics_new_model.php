@@ -8,6 +8,7 @@ class Statistics_new_model extends CI_Model {
         'research_data' => 'research_data',
         'crawler_list' => 'crawler_list',
         'imported_data_parsed' => 'imported_data_parsed',
+        'imported_data_parsed_archived' => 'imported_data_parsed_archived',
         'meta_kw_rank_source' => 'meta_kw_rank_source'
     );
     protected $res_array;
@@ -317,17 +318,21 @@ class Statistics_new_model extends CI_Model {
     //     return $result;
     // }
     
-    function getStatsData_min_max($params)
-    {
-        $sql="SELECT cl.updated";
-        $sql.= " FROM crawler_list cl";
-        $sql.= " JOIN research_data_to_crawler_list rdcl ON ( cl.id = rdcl.crawler_list_id )";
-        $sql.= " JOIN research_data rd ON ( rd.id = rdcl.research_data_id )";
-        $sql.= " WHERE rd.batch_id =$params AND cl.status =  'finished' GROUP BY cl.updated ORDER BY cl.updated DESC LIMIT 6";  
+    function getStatsData_min_max($imported_data_id)
+    {        
+        $sql="SELECT value";
+        $sql.= " FROM imported_data_parsed_archived";
+        $sql.= " WHERE `imported_data_id` = $imported_data_id AND `key` =  'Date' GROUP BY `revision` ORDER BY `revision` DESC LIMIT 5";  
         $query = $this->db->query($sql);
-       
         $result = $query->result();
- 
+        
+        $sql1="SELECT value";
+        $sql1.= " FROM imported_data_parsed";
+        $sql1.= " WHERE `imported_data_id` = $imported_data_id AND `key` =  'Date' GROUP BY `revision` ORDER BY `revision` DESC LIMIT 1";  
+        $query1 = $this->db->query($sql1);
+        $result1 = $query1->result();
+       
+        array_unshift($result, $result1[0]);
         return $result;
     }
     function getStatsData($params)
