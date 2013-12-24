@@ -1633,24 +1633,16 @@ function highChart(graphBuild){
         var cloneToolTip = null;
         var cloneToolTip2 = null;
         var valueupdated = [];
-        valueupdated[0] = '';
-        valueupdated[1] = '';
+        valueupdated[0] = [];
+        valueupdated[1] = [];
         if(data.length) {
-            for(var j=0;j<data.length;j++){
-                if(data[j].updated[j]){
-                    $.each(data[j].updated[j],function(i,k){
-                        if(i ==0)
-                            valueupdated[j] += "newest crawl  "+$(this)[0].updated;
-                        else
-                            valueupdated[j] += "<br>newest_"+i+" crawl "+$(this)[0].updated;
     
-                    })
-
-                }
-            }
             /***First Batch - Begin***/
             if(data[0] && data[0].product_name.length > 0){
                 valueName[0] = data[0].product_name;
+            }
+            if(data[0] && data[0].updated.length > 0){
+                valueupdated[0] = data[0].updated;
             }
             if(data[0] && data[0].url.length > 0){
                 valueUrl[0] = data[0].url;
@@ -1659,6 +1651,9 @@ function highChart(graphBuild){
             /***Second Batch - Begin***/
             if(data[1] && data[1].product_name.length > 0){
                 valueName[1] = data[1].product_name;
+            }
+             if(data[1] && data[1].updated.length > 0){
+                valueupdated[1] = data[1].updated;
             }
             if(data[1] && data[1].url.length > 0){
                 valueUrl[1] = data[1].url;
@@ -1841,7 +1836,7 @@ function highChart(graphBuild){
                         result += '<br /><span>' + valueName[j][datum.x] + '</span>';
                         result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
                         result += '<br /><span>'+graphName1+' ' + datum.y + ' '+graphName2+'</span>';
-                        result += '<span style="display:'+display_property+';" class="update_class">'+valueupdated[j]+'</span>';                       
+                        result += '<span style="display:'+display_property+';" class="update_class">'+valueupdated[j][datum.x]+'</span>';                       
                     });
                     return result;
                 }
