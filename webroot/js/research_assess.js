@@ -4973,9 +4973,9 @@ var search_text = GetURLParameter('search_text');
         
         $.fileDownload($(this).prop('href'))
                 .done(function() {
-            $('#research_assess_export').removeAttr('disabled');
-            $('#research_assess_export').attr('href', main_path);
-            $('#research_assess_export').text('Unmatched');
+            $('#export_unmatches').removeAttr('disabled');
+            $('#export_unmatches').attr('href', main_path);
+            $('#export_unmatches').text('Unmatched');
         })
                 .fail(function() {
         });
