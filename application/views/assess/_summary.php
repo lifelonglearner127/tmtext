@@ -21,6 +21,7 @@
 				<a href="#" class="show_filters_configuration_popup">
 					<img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/settings@2x.png">
 				</a>
+				<button type="button" class="btn btn-primary summary_edit_btn" data-toggle="button">Edit</button>
 				<span class="assess_report_download_panel" style="float: right;width: 500px;">
 
 					<div style="display: none">

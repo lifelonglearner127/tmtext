@@ -17,7 +17,7 @@
             <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing');?>">Pricing </a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/product_models');?>">Product models </a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('system/snapshot_queue');?>">Snapshot Queue</a></li>
-            <li class=""><a data-toggle="tab" href="<?php echo site_url('system/sync_keyword_status');?>">Sync Keyword Status</a></li>       
+            <li class=""><a data-toggle="tab" href="<?php echo site_url('system/sync_keyword_status');?>">Sync Keyword Status</a></li>
     </ul>
 	  <div class="tab-content">
 
@@ -248,7 +248,10 @@ function loadCurrentList(url,failed) {
 		}
 
 		// $("h3 small").html(data.total + ' items Total -- '+ data.new+ ' New');
-		$("h3 small").html("<span style='display: block'>Total items: " + data.total + '</span>'+ "<span style='display: block; margin-top: 5px;'>New items: " + data.new + "</span>");
+		$("h3 small").html("<span class='new_total_items_status' style='display: block'>Total items: " + data.total + '</span>'+ "<span class='new_total_items_status' style='display: block; margin-top: 5px;'>New items: " + data.new + "</span>");
+  		$('.new_total_items_status').fadeOut('fast', function() {
+  			$('.new_total_items_status').fadeIn('fast');
+  		});
   		$.each(data.new_urls, function (index, node) {
   	  		var category = '';
   	  		if (node.name != undefined) {
@@ -546,6 +549,16 @@ $.fn.setCursorToTextEnd = function() {
 		if($.trim(selected_batch) !== "") {
 			sb = selected_batch;
 		}
+		if(sb === null) {
+			if(confirm("Are sure that you want to procee for all (you don't select any batch)?")) {
+				procceedLockToQa(sb);
+			}
+		} else {
+			procceedLockToQa(sb);
+		}
+	});
+
+	function procceedLockToQa(sb) {
 		$("#lock_to_qa").attr("disabled", true);
 		$("#lock_to_qa").addClass("disabled");
 		$("#loading_general_pw_modal").modal('show');
@@ -554,8 +567,9 @@ $.fn.setCursorToTextEnd = function() {
 			$("#loading_general_pw_modal").modal('hide');
 			$("#lock_to_qa").removeAttr("disabled");
 			$("#lock_to_qa").removeClass("disabled");
+			loadCurrentList();
 		});
-	});
+	}
 
 	$(document).on("click", "#Current_List_Pager a", function(event){
 		event.preventDefault();

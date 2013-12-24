@@ -1169,6 +1169,20 @@ $(function() {
 	var filter_toggler_flag = 0
 		, current_filter_list_wrapper_height = 200;
 	
+	$('.summary_edit_btn').on('click', function() {
+		var elem = $(this);
+		if (!elem.hasClass('active'))
+		{
+			$('.icon_question_wrapper').css('vertical-align', 'bottom');
+			$('.selectable_summary_handle, .selectable_summary_handle_with_competitor').css({'visibility' : 'visible'});
+		}
+		else 
+		{
+			$('.icon_question_wrapper').css('vertical-align', 'middle');
+			$('.selectable_summary_handle, .selectable_summary_handle_with_competitor').css({'visibility' : 'hidden'});
+		}
+	});
+	
 	$('.clean_summary_search_field').on('click', function(e) {
 		e.preventDefault();
 		var search_field = $('.summary_search_field');
@@ -2082,6 +2096,7 @@ var scrollYesOrNot = true;
 		var hidden_batch2_filter_items = $('.hidden_batch2_filter_items');
 		if (batch_set_toggle.is(':checked'))
 		{
+			$('.selectable_summary_handle_with_competitor').addClass('dual_mode');
 			$('.ui-selectee, .non-selectable').css({'font-size' : 'small'});
 			
 			//display percentages
@@ -2105,7 +2120,7 @@ var scrollYesOrNot = true;
 				}
 			});
 		} else {
-			
+			$('.selectable_summary_handle_with_competitor').removeClass('dual_mode');
 			$('.ui-selectee, .non-selectable').css({'font-size' : '1em'});
 			
 			//hide percentages
