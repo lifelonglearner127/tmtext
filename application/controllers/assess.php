@@ -2698,7 +2698,7 @@ class Assess extends MY_Controller {
 			}
 		}
 		echo '<pre>';
-		print_r(array_keys($res_array[0]))
+		print_r(array_keys($res_array[0]));
 			//print_r($res_array_keys);
 			//echo '<br>';
 		echo '<br>';
