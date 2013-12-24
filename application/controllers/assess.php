@@ -2486,7 +2486,7 @@ class Assess extends MY_Controller {
                 }
             }
         }
-		/*
+		
 		if($res_array[0]){		
 			foreach ($res_array[0] as $key  => $value) {
 				if($key == "created"){
@@ -2698,11 +2698,18 @@ class Assess extends MY_Controller {
 					$res_array_keys[$value] = $key;
 				}
 			}
-		}*/
-		
-		array_unshift($res_array, $line);
-        $this->load->helper('csv');
-        array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
+		}
+		echo '<pre>';
+		print_r($res_array_keys);
+		echo '<br>';
+		foreach($res_array as $value => $key){
+			print_r($key);
+			echo '<br>';
+		}
+		echo '</pre>';
+		//array_unshift($res_array, $line);
+        //$this->load->helper('csv');
+        //array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
     }
 
     public function products() {
