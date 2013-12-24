@@ -2549,7 +2549,7 @@ class Assess extends MY_Controller {
 					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Product Name (1)"){
-					$key = 'Product Name (2)';
+					$key = 'Product Name 2';
 					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "meta_keywords"){
@@ -2698,9 +2698,13 @@ class Assess extends MY_Controller {
 			}
 		}
 		echo '<pre>';
-		print_r($res_array_keys);
+		foreach($res_array_keys as $value => $key){
+			print_r($key);
+			echo '<br>';
+		}
+		//print_r($res_array_keys);
 		echo '<br>';
-		foreach($res_array as $value => $key){
+		foreach($res_array[0] as $value => $key){
 			print_r($key);
 			echo '<br>';
 		}
