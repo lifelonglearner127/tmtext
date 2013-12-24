@@ -12,11 +12,17 @@ class Home extends MY_Controller {
 
 		$this->ion_auth->add_auth_rules(array(
   			'index' => true,
+  			'phpinfo' => true,
   		));
  	}
 
 	public function index()
 	{
 		$this->render('home');
+	}
+	
+	public function phpinfo()
+	{
+		phpinfo();
 	}
 }
