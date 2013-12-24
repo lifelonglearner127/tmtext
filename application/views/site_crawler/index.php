@@ -248,7 +248,10 @@ function loadCurrentList(url,failed) {
 		}
 
 		// $("h3 small").html(data.total + ' items Total -- '+ data.new+ ' New');
-		$("h3 small").html("<span style='display: block'>Total items: " + data.total + '</span>'+ "<span style='display: block; margin-top: 5px;'>New items: " + data.new + "</span>");
+		$("h3 small").html("<span class='new_total_items_status' style='display: block'>Total items: " + data.total + '</span>'+ "<span class='new_total_items_status' style='display: block; margin-top: 5px;'>New items: " + data.new + "</span>");
+  		$('.new_total_items_status').fadeOut('fast', function() {
+  			$('.new_total_items_status').fadeIn('fast');
+  		});
   		$.each(data.new_urls, function (index, node) {
   	  		var category = '';
   	  		if (node.name != undefined) {
