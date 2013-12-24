@@ -5006,7 +5006,7 @@ function resizeImpDown(){
 		liveDrag:true, 
 		gripInnerHtml:"<div class='grip'></div>", 
 		draggingClass:"dragging"
-		});
+});
 }
 function darkHeaders(id) {
 	if($("table[id^=tblAssess]")){
@@ -5078,7 +5078,7 @@ $('#assess_tbl_show_case_details').click(function() {
 	resizeImpDown();
 });
 
-$(window).mouseover(function(){
+$("#tblAssess").mouseover(function(){
 				var status = "no ok"; 
 				var statusinterval = setInterval( function(){
 				if($("#tblAssess td").length > 1){
