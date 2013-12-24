@@ -104,7 +104,7 @@
 			<h3 class="span3 current_list_title" style="margin-left:0;">Crawl List <br/><small nowrap></small></h3>
 
                    <div style="float:left;font-size: 18px;padding-top: 20px;">Batch: </div>
-                <select name="batch" class="span4 pull-left mt_15" style="width: 125px;" id="batches">
+                <select name="batch" class="span4 pull-left mt_15" style="width: 251px;" id="batches">
 				<?php foreach($batches_list as $ks => $vs):?>
 				<option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
 				<?php endforeach;?>
@@ -563,7 +563,7 @@ $.fn.setCursorToTextEnd = function() {
 			sb = selected_batch;
 		}
 		if(sb === null) {
-			if(confirm("Are sure that you want to procee for all (you don't select any batch)?")) {
+			if(confirm("Are sure that you want to proceed for all (you don't select any batch)?")) {
 				procceedLockToQa(sb);
 			}
 		} else {
