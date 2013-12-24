@@ -2493,204 +2493,204 @@ class Assess extends MY_Controller {
 					$key = 'Created';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "product_name"){
+				elseif($key == "product_name"){
 					$key = 'Product name';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "url"){
+				elseif($key == "url"){
 					$key = 'Url';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Short_Description"){
+				elseif($key == "Short_Description"){
 					$key = 'Product Description';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "short_description_wc"){
+				elseif($key == "short_description_wc"){
 					$key = 'Short Desc # Words';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "price_diff"){
+				elseif($key == "price_diff"){
 					$key = 'Price difference';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "column_features"){
+				elseif($key == "column_features"){
 					$key = 'Features';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "average_review"){
+				elseif($key == "average_review"){
 					$key = 'Avg Review';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "column_reviews"){
+				elseif($key == "column_reviews"){
 					$key = 'Reviews';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "title_seo_phrases"){
+				elseif($key == "title_seo_phrases"){
 					$key = 'Title keywords';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "item_id"){
+				elseif($key == "item_id"){
 					$key = 'Item ID';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "item_id"){
+				elseif($key == "item_id"){
 					$key = 'Item ID';
 					$res_array_keys[$value] = $key;
 				}
 
-				if($key == "H1_Tags0"){
+				elseif($key == "H1_Tags0"){
 					$key = 'H1 Tags';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "model"){
+				elseif($key == "model"){
 					$key = 'Model';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Model (1)"){
+				elseif($key == "Model (1)"){
 					$key = 'Model(2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Product Name (1)"){
+				elseif($key == "Product Name (1)"){
 					$key = 'Product Name (2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "meta_keywords"){
+				elseif($key == "meta_keywords"){
 					$key = 'Meta keywords(1)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "meta_description"){
+				elseif($key == "meta_description"){
 					$key = 'Meta description';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Meta_Description_Count"){
+				elseif($key == "Meta_Description_Count"){
 					$key = 'Meta Desc # Words';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Custom_Keywords_Short_Description"){
+				elseif($key == "Custom_Keywords_Short_Description"){
 					$key = 'Custom Keywords Short Description';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Custom_Keywords_Long_Description"){
+				elseif($key == "Custom_Keywords_Long_Description"){
 					$key = 'Custom Keywords Long Description';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "column_external_content"){
+				elseif($key == "column_external_content"){
 					$key = 'Third Party Content';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "column_external_content(1)"){
+				elseif($key == "column_external_content(1)"){
 					$key = 'Third Party Content';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Page_Load_Time"){
+				elseif($key == "Page_Load_Time"){
 					$key = 'Page Load Time';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "column_external_content"){
+				elseif($key == "column_external_content"){
 					$key = 'Column external content';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "H1_Tags_Count0"){
+				elseif($key == "H1_Tags_Count0"){
 					$key = 'H1 chars count(1)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "H1_Tags_Count0(1)"){
+				elseif($key == "H1_Tags_Count0(1)"){
 					$key = 'H1 chars count(2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "H2_Tags0"){
+				elseif($key == "H2_Tags0"){
 					$key = 'H2 Tags(1)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "H2_Tags_Count0"){
+				elseif($key == "H2_Tags_Count0"){
 					$key = 'H2 chars count';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "H2_Tags1"){
+				elseif($key == "H2_Tags1"){
 					$key = 'H2 Tags(2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "H2_Tags_Count1"){
+				elseif($key == "H2_Tags_Count1"){
 					$key = 'H2 chars count(1)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Gap analysis"){
+				elseif($key == "Gap analysis"){
 					$key = 'Gap analysis';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Duplicate_Content"){
+				elseif($key == "Duplicate_Content"){
 					$key = 'Duplicate Content';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Item Id (1)"){
+				elseif($key == "Item Id (1)"){
 					$key = 'Item Id (2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "average_review(1)"){
+				elseif($key == "average_review(1)"){
 					$key = 'Average review(1)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Url (1)"){
+				elseif($key == "Url (1)"){
 					$key = 'Url(2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Short Description (1)"){
+				elseif($key == "Short Description (1)"){
 					$key = 'Product Description (2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Short Desc # Words (1)"){
+				elseif($key == "Short Desc # Words (1)"){
 					$key = 'Short Desc # Words (2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Long Desc # Words (1)"){
+				elseif($key == "Long Desc # Words (1)"){
 					$key = 'Long Desc # Words (2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Meta_Keywords(1)"){
+				elseif($key == "Meta_Keywords(1)"){
 					$key = 'Meta Keywords(2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Meta_Description (1)"){
+				elseif($key == "Meta_Description (1)"){
 					$key = 'Meta Description (2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Meta Desc Words (1)"){
+				elseif($key == "Meta Desc Words (1)"){
 					$key = 'Meta Desc Words (2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "Page Load Time (1)"){
+				elseif($key == "Page Load Time (1)"){
 					$key = 'Page Load Time (2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "column_features(1)"){
+				elseif($key == "column_features(1)"){
 					$key = 'Features(2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "column_reviews(1)"){
+				elseif($key == "column_reviews(1)"){
 					$key = 'Column reviews';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "title_seo_phrases(1)"){
+				elseif($key == "title_seo_phrases(1)"){
 					$key = 'Title keywords(2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "H2_Tags0(1)"){
+				elseif($key == "H2_Tags0(1)"){
 					$key = 'H2 Tags(1)(2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($value === "H1_Tags0(1)"){
+				elseif($key === "H1_Tags0(1)"){
 					$key = 'H1 Tagss';
 					$res_array_keys[$value] = $key;
 				} 
-				if($key == "H2_Tags_Count0(1)"){
+				elseif($key == "H2_Tags_Count0(1)"){
 					$key = 'H2 chars count(2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "H2_Tags1(1)"){
+				elseif($key == "H2_Tags1(1)"){
 					$key = 'H2 Tags(2)(2)';
 					$res_array_keys[$value] = $key;
 				}
-				if($key == "H2_Tags_Count1(1)"){
+				elseif($key == "H2_Tags_Count1(1)"){
 					$key = 'H2 chars count(2)';
 					$res_array_keys[$value] = $key;
 				}
