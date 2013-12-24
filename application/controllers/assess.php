@@ -2698,16 +2698,11 @@ class Assess extends MY_Controller {
 			}
 		}
 		echo '<pre>';
-		foreach($res_array_keys as $value){
-			print_r($value);
+		
+			print_r($res_array_keys);
 			echo '<br>';
-		}
-		//print_r($res_array_keys);
 		echo '<br>';
-		foreach($res_array[0] as $value => $key){
-			print_r($key);
-			echo '<br>';
-		}
+		print_r($res_array[0]);
 		echo '</pre>';
 		//array_unshift($res_array, $line);
         //$this->load->helper('csv');
