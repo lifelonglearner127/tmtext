@@ -246,6 +246,31 @@ class Crawler_List_model extends CI_Model {
         return $query->result();
     }
 
+    function getByBatchUrls($batch_id) {
+        $this->db->select('cl.id, cl.imported_data_id, cl.url, cl.snap, cl.snap_date, c.name as name, cl.status, DATE(cl.updated) as updated')
+            ->from($this->tables['crawler_list'].' as cl')
+            ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left')
+            ->join('research_data_to_crawler_list as rc', 'cl.id = rc.crawler_list_id' )
+            ->join('research_data as rd', 'rd.id = rc.research_data_id')
+            ->where('rd.batch_id',$batch_id);
+        $query = $this->db->order_by("cl.created", "desc")->get();
+        return $query->result();
+    }
+
+    function getUrlsWithoutBatch() {
+        $this->db->select('cl.id, cl.imported_data_id, cl.url, cl.snap, cl.snap_date, c.name as name, cl.status, DATE(cl.updated) as updated')
+            ->from($this->tables['crawler_list'].' as cl')
+            ->join($this->tables['categories'].' as c', 'cl.category_id = c.id', 'left')
+            ->join('research_data_to_crawler_list as rc', 'cl.id = rc.crawler_list_id' )
+            ->join('research_data as rd', 'rd.id = rc.research_data_id');
+        $query = $this->db->order_by("cl.created", "desc")->get();
+        return $query->result();
+    }
+
+    function lockedToQue($ids) {
+        return $this->db->update($this->tables['crawler_list'], array('status' => 'queued'), array('id' => $ids));
+    }
+
     function getByBatchLimit($limit, $start, $batch_id, $failed = 0)
     {
     	$this->db->select('cl.id, cl.imported_data_id, cl.url, cl.snap, cl.snap_date, c.name as name, cl.status, DATE(cl.updated) as updated')

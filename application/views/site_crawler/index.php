@@ -546,6 +546,16 @@ $.fn.setCursorToTextEnd = function() {
 		if($.trim(selected_batch) !== "") {
 			sb = selected_batch;
 		}
+		if(sb === null) {
+			if(confirm("Are sure that you want to procee for all (you don't select any batch)?")) {
+				procceedLockToQa(sb);
+			}
+		} else {
+			procceedLockToQa(sb);
+		}
+	});
+
+	function procceedLockToQa(sb) {
 		$("#lock_to_qa").attr("disabled", true);
 		$("#lock_to_qa").addClass("disabled");
 		$("#loading_general_pw_modal").modal('show');
@@ -554,8 +564,9 @@ $.fn.setCursorToTextEnd = function() {
 			$("#loading_general_pw_modal").modal('hide');
 			$("#lock_to_qa").removeAttr("disabled");
 			$("#lock_to_qa").removeClass("disabled");
+			loadCurrentList();
 		});
-	});
+	}
 
 	$(document).on("click", "#Current_List_Pager a", function(event){
 		event.preventDefault();
