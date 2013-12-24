@@ -5078,7 +5078,7 @@ $('#assess_tbl_show_case_details').click(function() {
 	resizeImpDown();
 });
 
-$("window").mouseover(function(){
+$(window).mouseover(function(){
 				var status = "no ok"; 
 				var statusinterval = setInterval( function(){
 				if($("#tblAssess td").length > 1){
