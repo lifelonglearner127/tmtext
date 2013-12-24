@@ -786,3 +786,11 @@ a.jq-assess {
 	cursor:e-resize;
 }
 
+.summary_edit_btn {
+	float: right;
+	margin: 4px 12px;
+}
+
+.selectable_summary_handle, .selectable_summary_handle_with_competitor {
+	visibility: hidden;
+}
