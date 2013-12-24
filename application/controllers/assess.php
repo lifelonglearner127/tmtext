@@ -2486,7 +2486,7 @@ class Assess extends MY_Controller {
                 }
             }
         }
-
+		/*
 		if($res_array[0]){		
 			foreach ($res_array[0] as $key  => $value) {
 				if($key == "created"){
@@ -2698,9 +2698,9 @@ class Assess extends MY_Controller {
 					$res_array_keys[$value] = $key;
 				}
 			}
-		}
+		}*/
 		
-		array_unshift($res_array, $res_array_keys);
+		array_unshift($res_array, $line);
         $this->load->helper('csv');
         array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
     }
