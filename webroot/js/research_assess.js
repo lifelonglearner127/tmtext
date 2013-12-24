@@ -5072,7 +5072,7 @@ $('#assess_tbl_show_case_details').click(function() {
 	$('table#tblAssess').floatThead('reflow');
 	resizeImpDown();
 });
-
+/*
 $("#tblAssess").mouseover(function(){
 				var status = "no ok"; 
 				var statusinterval = setInterval( function(){
@@ -5090,7 +5090,7 @@ $("#tblAssess").mouseover(function(){
 			
 	
 });
-
+*/
 $('#research_assess_update').click(function() {
 	darkHeaders($(this));
 });
