@@ -199,6 +199,7 @@ $(function() {
         details: [
             "snap",
             "created",
+            "imp_data_id",
             "product_name",
             "item_id",
             "model",
@@ -234,6 +235,7 @@ $(function() {
         ],
          details_compare: [
             "snap",
+            "imp_data_id",
             "product_name",
             "item_id",
             "model",
@@ -259,6 +261,7 @@ $(function() {
             "average_review",
             "column_features",
             "snap1",
+            "imp_data_id1",
             "product_name1",
             "item_id1",
             "model1",
@@ -474,7 +477,7 @@ $(function() {
              }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                $(nRow).attr("add_data", aData[33]);
+                $(nRow).attr("add_data", aData[34]);
                 return nRow;
                 $('table#tblAssess').floatThead('reflow');
             },
@@ -589,7 +592,7 @@ $(function() {
                         "sLengthMenu": "_MENU_ rows"
                     },
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                        $(nRow).attr("add_data", aData[33]);
+                        $(nRow).attr("add_data", aData[34]);
                         return nRow;
                         $('table#tblAssess').floatThead('reflow');
                     },
@@ -802,6 +805,12 @@ $(function() {
             "sWidth": "3%"
         },
         {
+            "sTitle": "ID",
+            "sName": "imp_data_id",
+            "sWidth": "15%",
+            "sClass": "imp_data_id"
+        },
+        {
             "sTitle": "Product Name",
             "sName": "product_name",
             "sWidth": "15%",
@@ -1000,6 +1009,12 @@ $(function() {
             "sName": "snap1",
             "sWidth": "10%",
             "sClass": "Snapshot1"
+        },
+        {
+            "sTitle": "ID",
+            "sName": "imp_data_id1",
+            "sWidth": "10%",
+            "sClass": "imp_data_id1"
         },
         {
             "sTitle": "Product Name",
@@ -1556,7 +1571,7 @@ $(function() {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[33]);
+            $(nRow).attr("add_data", aData[34]);
             return nRow;
             $('table#tblAssess').floatThead('reflow');
         },
@@ -4217,6 +4232,7 @@ function prevSibilfunc(curentSibil){
                 var columns = {
                     snap: $("#column_snap").attr('checked') == 'checked',
                     created: $("#column_created").attr('checked') == 'checked',
+                    imp_data_id: $("#imp_data_id").attr('checked') == 'checked',
                     product_name: $("#column_product_name").attr('checked') == 'checked',
                     item_id: $("#item_id").attr('checked') == 'checked',
                     model: $("#model").attr('checked') == 'checked',

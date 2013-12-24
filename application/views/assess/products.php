@@ -220,6 +220,10 @@
                 <label for="column_editor">Date</label>
             </p>
             <p>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="imp_data_id" data-col_name="imp_data_id" name="imp_data_id" <?php echo($columns['created'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="imp_data_id">ID</label>
+            </p>
+            <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_product_name" data-col_name="product_name" name="column_product_name_name" <?php echo($columns['product_name'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_product_name">Product name</label>
             </p>

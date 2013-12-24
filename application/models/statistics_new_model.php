@@ -318,6 +318,15 @@ class Statistics_new_model extends CI_Model {
     //     return $result;
     // }
     
+    
+    //    SELECT idpa1.`imported_data_id`, idpa1.`value` as `date`, idpa2.`value` as `description`, idpa3.`value` as `long_description`
+//FROM `imported_data_parsed_archived` as idpa1
+//left join `imported_data_parsed_archived` as idpa2 on idpa1.`imported_data_id` = idpa2.`imported_data_id` and idpa1.`revision`=idpa2.`revision`
+//left join `imported_data_parsed_archived` as idpa3 on idpa1.`imported_data_id` = idpa3.`imported_data_id` and idpa1.`revision`=idpa3.`revision`
+//WHERE idpa1.`key` = 'date' and idpa2.`key`='description' and idpa3.`key`='long_description' and idpa1.`imported_data_id`=2
+//ORDER BY idpa1.`value` DESC LIMIT 5
+    
+    
     function getStatsData_min_max($imported_data_id)
     {        
         $sql="SELECT value";
@@ -348,7 +357,7 @@ class Statistics_new_model extends CI_Model {
             $txt_filter_part2 = '';
         } else {
             $txt_filter_part1 = 'select * from (';
-            $txt_filter_part2 = ')  as `data` where `data`.`product_name` like \'%'.trim($this->db->escape($params->txt_filter),"'").'%\'';
+            $txt_filter_part2 = ')  as `data` where `data`.`imported_data_id` like \'%'.trim($this->db->escape($params->txt_filter),"'").'%\'';
 
         }
         $limit=isset($params->iDisplayLength)&&$params->iDisplayLength!=0?"LIMIT $params->iDisplayStart, $params->iDisplayLength":"";

@@ -460,6 +460,7 @@ class Assess extends MY_Controller {
 
 
                                     $val->snap1 = $cmpare->snap;
+                                    $val->imp_data_id1 = $item['imported_data_id'];
                                     $val->product_name1 = $cmpare->product_name;
                                     $val->item_id1 = $parsed_attributes_unserialize_val;
                                     $val->model1 = $parsed_model_unserialize_val;
@@ -2919,6 +2920,12 @@ class Assess extends MY_Controller {
             //"sWidth" =>"3%"
             ),
             array(
+                "sTitle" => "ID",
+                "sName" => "imp_data_id",
+            //"sWidth" =>"3%"
+                "sClass" => "imp_data_id"
+            ),
+            array(
                 "sTitle" => "Product Name",
                 "sName" => "product_name",
                 //"sWidth" => "15%",
@@ -3217,6 +3224,7 @@ class Assess extends MY_Controller {
             for ($i = 1; $i <= $max_similar_item_count; $i++) {
 
                 $columns[] = array("sTitle" => "Snapshot", "sClass" => "Snapshot" . $i, "sName" => 'snap' . $i);
+                $columns[] = array("sTitle" => "ID", "sClass" => "imp_data_id" . $i, "sName" => 'imp_data_id' . $i);
                 $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
                 $columns[] = array("sTitle" => "item ID", "sClass" => "item_id" . $i, "sName" => 'item_id' . $i);
                 $columns[] = array("sTitle" => "Model", "sClass" => "model" . $i, "sName" => 'model' . $i);
@@ -3306,6 +3314,7 @@ class Assess extends MY_Controller {
             $result_row->title_pa = "None";
             $result_row->long_seo_phrases = "None";
             $result_row->price_diff = "-";
+            $result_row->imp_data_id = "";
             $result_row->column_external_content = "";
             $result_row->Custom_Keywords_Short_Description = "";
             $result_row->Custom_Keywords_Long_Description = "";
@@ -3630,6 +3639,7 @@ class Assess extends MY_Controller {
                     }
                     $result_row = (array) $result_row;
                     $result_row["snap$i"] = $sim_items[$i - 1]->snap !== false ? $sim_items[$i - 1]->snap : '-';
+                    $result_row["imp_data_id$i"] = $sim_items[$i - 1]->imported_data_id !== false ? $sim_items[$i - 1]->imported_data_id : '';
                     $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? "<span class='res_url'><a target='_blank' href='" . $sim_items[$i - 1]->url . "'>" . $sim_items[$i - 1]->url . "</a></span>" : "-";
                     $result_row['Page_Load_Time' . $i] = $parsed_loaded_in_seconds_unserialize_val;
                     $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? "<span class='tb_product_name'>" . $sim_items[$i - 1]->product_name . "</span>" : "-";
@@ -3664,6 +3674,9 @@ class Assess extends MY_Controller {
             }
             if ($row->title_seo_phrases1) {
                 $result_row->title_seo_phrases1 = $row->title_seo_phrases1;
+            }
+            if ($row->imp_data_id1) {
+                $result_row->imp_data_id1 = $row->imp_data_id1;
             }
             if ($row->images_cmp1) {
                 $result_row->images_cmp1 = $row->images_cmp1;
@@ -4835,6 +4848,7 @@ class Assess extends MY_Controller {
                     $output_row = array(
                         '<span style="cursor:pointer;">' . $snap . '</span>',
                         $row_created,
+                        $data_row->imported_data_id,
                         '<span class= "' . $tb_product_name . '">' . $data_row->product_name . "</span>",
                         $data_row->item_id,
                         $data_row->model,
@@ -4873,6 +4887,7 @@ class Assess extends MY_Controller {
                         $data_row = (array) $data_row;
                         for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++) {
                             $output_row[] = $data_row['snap' . $i] != null ? $data_row['snap' . $i] : '-';
+                            $output_row[] = $data_row['imp_data_id' . $i] != null ? $data_row['imp_data_id' . $i] : '';
                             $output_row[] = $data_row['product_name' . $i] != null ? $data_row['product_name' . $i] : '-';
                             $output_row[] = $data_row['item_id' . $i] != null ? $data_row['item_id' . $i] : '';
                             $output_row[] = $data_row['model' . $i] != null ? $data_row['model' . $i] : '';
@@ -4905,6 +4920,7 @@ class Assess extends MY_Controller {
                         $data_row = (object) $data_row;
                     } else {
                         $output_row[] = $data_row->snap1;
+                        $output_row[] = $data_row->imp_data_id1;
                         $output_row[] = $data_row->product_name1;
                         $output_row[] = $data_row->item_id1;
                         $output_row[] = $data_row->model1;
