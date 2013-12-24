@@ -2698,8 +2698,8 @@ class Assess extends MY_Controller {
 			}
 		}
 		echo '<pre>';
-		foreach($res_array_keys as $value => $key){
-			print_r($key);
+		foreach($res_array_keys as $value){
+			print_r($value);
 			echo '<br>';
 		}
 		//print_r($res_array_keys);
