@@ -1835,6 +1835,9 @@ class Research extends MY_Controller {
         $this->load->model('batches_model');
         $batch_id =  $this->batches_model->getIdByName($this->input->post('batch_name'));
         $this->batches_model->delete($batch_id);
+        
+        $this->load->model('research_data_model');
+        $this->research_data_model->deleteByBatch($batch_id);
     }
 
     public function getREProducts() {
