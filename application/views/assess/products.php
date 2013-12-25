@@ -408,10 +408,10 @@
             </div>
         </div>
 
-        <p>
+        <!-- <p>
             <label for="assessDetails_ShortSEO">Short SEO:</label>
             <input type="text" id="assessDetails_ShortSEO"/>
-        </p>
+        </p> -->
 
         <div class="parag">
             <span class="labeler">
@@ -423,10 +423,10 @@
             </div>
         </div>
 
-        <p>
+        <!-- <p>
             <label for="assessDetails_LongSEO">Long SEO:</label>
             <input type="text" id="assessDetails_LongSEO"/>
-        </p>
+        </p> -->
     </div>
     <div id="assessDetails_description_panel">
         <div class="parag">
@@ -448,7 +448,7 @@
 
     <div class='assessDetails_keys'>
         <span class="labeler" style='float: left; display: block'>
-            <label>Keywords:</label>
+            <label>Title Keywords:</label>
         </span>
         <div class='assessDetails_SEO_wrap' id="assessDetails_SEO_div">no data</div>
     </div>
@@ -486,10 +486,10 @@
             </div>
         </div>
 
-        <p>
+        <!-- <p>
             <label for="assessDetails_ShortSEO1">Short SEO:</label>
             <input type="text" id="assessDetails_ShortSEO1"/>
-        </p>
+        </p> -->
 
         <div class="parag">
             <span class="labeler">
@@ -501,10 +501,10 @@
             </div>
         </div>
 
-        <p>
+        <!-- <p>
             <label for="assessDetails_LongSEO1">Long SEO:</label>
             <input type="text" id="assessDetails_LongSEO1"/>
-        </p>
+        </p> -->
     </div>
     <div id="assessDetails_description_panel1">
         <div class="parag">
@@ -524,7 +524,7 @@
 
     <div class='assessDetails_keys'>
         <span class="labeler" style='float: left; display: block'>
-            <label>Keywords:</label>
+            <label>Title Keywords:</label>
         </span>
         <div class='assessDetails_SEO_wrap' id="assessDetails_SEO1_div">no data</div>
     </div>

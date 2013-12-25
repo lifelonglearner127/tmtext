@@ -5,6 +5,7 @@
 .assessDetails_SEO_wrap table {
     font-size: 12px !important;
     margin-top: 2px;
+    max-width: 270px;
 }
 
 .assess_report_compare .boxes > h3 {

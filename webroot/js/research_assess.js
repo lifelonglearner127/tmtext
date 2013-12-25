@@ -2663,7 +2663,6 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_Description1').val(description1);
             $('#assessDetails_DescriptionWC1').html(description_wc1);
             $('#assessDetails_SEO1').val(seo_phrases1);
-            if(typeof(add_data.title_seo_phrases1) !== 'undefined' && add_data.title_seo_phrases1 !== null && add_data.title_seo_phrases1 !== "None")$("#assessDetails_SEO1_div").html(add_data.title_seo_phrases1);
         } else {
             $('#assessDetails_short_and_long_description_panel1').show();
             $('#assessDetails_description_panel1').hide();
@@ -2675,6 +2674,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_LongDescriptionWC1').html(long_wc_total_not_01);
             $('#assessDetails_LongSEO1').val(add_data.long_seo_phrases1);
         }
+        if(typeof(add_data.title_seo_phrases1) !== 'undefined' && add_data.title_seo_phrases1 !== null && add_data.title_seo_phrases1 !== "None") $("#assessDetails_SEO1_div").html(add_data.title_seo_phrases1);
         if (short_wc_total_not_0 == 0 || long_wc_total_not_0 == 0) {
             $('#assessDetails_short_and_long_description_panel').hide();
             $('#assessDetails_description_panel').show();
@@ -2691,7 +2691,6 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_Description').val(description0);
             $('#assessDetails_DescriptionWC').html(description_wc0);
             $('#assessDetails_SEO').val(seo_phrases0);
-            if(typeof(add_data.title_seo_phrases) !== 'undefined' && add_data.title_seo_phrases !== null && add_data.title_seo_phrases !== "None") $("#assessDetails_SEO_div").html(add_data.title_seo_phrases);
         } else {
             $('#assessDetails_short_and_long_description_panel').show();
             $('#assessDetails_description_panel').hide();
@@ -2703,7 +2702,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_LongDescriptionWC').html(long_wc_total_not_0);
             $('#assessDetails_LongSEO').val(add_data.long_seo_phrases);
         }
-
+        if(typeof(add_data.title_seo_phrases) !== 'undefined' && add_data.title_seo_phrases !== null && add_data.title_seo_phrases !== "None") $("#assessDetails_SEO_div").html(add_data.title_seo_phrases);
         var chk_include_in_report = '<div id="assess_details_dialog_options" style="float: left; margin-left:30px;"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">&nbspInclude in report</label></div>';
         var btn_delete_from_batch = '<button id="assess_details_delete_from_batch" class="btn btn-danger" style="float:left;">Delete</button>';
         var assessDetailsDialog_replace_element = $('#assessDetailsDialog').parent().find('.ui-dialog-buttonpane button[id="assessDetailsDialog_btnIncludeInReport"]');
