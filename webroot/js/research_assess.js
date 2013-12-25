@@ -4234,7 +4234,7 @@ function prevSibilfunc(curentSibil){
                     created: $("#column_created").attr('checked') == 'checked',
                     imp_data_id: $("#imp_data_id").attr('checked') == 'checked',
                     product_name: $("#column_product_name").attr('checked') == 'checked',
-                    item_id: $("#item_id").attr('checked') == 'checked',
+//                    item_id: $("#item_id").attr('checked') == 'checked',
                     model: $("#model").attr('checked') == 'checked',
                     url: $("#column_url").attr('checked') == 'checked',
                     Page_Load_Time: $("#Page_Load_Time").attr('checked') == 'checked',

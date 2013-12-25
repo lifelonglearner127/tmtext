@@ -172,10 +172,10 @@
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_product_name" data-col_name="product_name" name="column_product_name_name" <?php echo($columns['product_name'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_product_name">Product name</label>
             </p>
-            <p>
+<!--            <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="item_id" data-col_name="item_id" name="item_id" <?php echo($columns['item_id'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="model">item ID</label>
-            </p>
+            </p>-->
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="model" data-col_name="model" name="model" <?php echo($columns['model'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="model">Model</label>
