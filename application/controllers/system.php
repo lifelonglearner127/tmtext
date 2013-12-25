@@ -30,7 +30,10 @@ class System extends MY_Controller {
 		$this->data['email_report_config_logo'] = $this->webshoots_model->getEmailReportConfig('logo');
 		$this->render();
 	}
-
+        public function clear_imported_data_parsed(){
+            $this->load->model('imported_data_parsed_archived_model');
+            $this->imported_data_parsed_archived_model->mark_queued_from_archive();
+        }
 	public function new_batch_nf_list_modal() {
 		$this->load->model('webshoots_model');
 		$rec_list = $this->webshoots_model->getEmailToBatchNotifyList();
