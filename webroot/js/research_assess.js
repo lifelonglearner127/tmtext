@@ -1641,6 +1641,9 @@ function highChart(graphBuild){
         var valueName = [];
         valueName[0] = [];
         valueName[1] = [];
+        var valueDate = [];
+        valueDate[0] = [];
+        valueDate[1] = [];
         var valueUrl = [];
         valueUrl[0] = [];
         valueUrl[1] = [];
@@ -1648,17 +1651,59 @@ function highChart(graphBuild){
         var graphName2 = '';
         var cloneToolTip = null;
         var cloneToolTip2 = null;
-        var valueupdated = [];
-        valueupdated[0] = [];
-        valueupdated[1] = [];
+        var updated_Features = [];
+        updated_Features[0] = [];
+        updated_Features[1] = [];
+        var updated_long_description_wc = [];
+        updated_long_description_wc[0] = [];
+        updated_long_description_wc[1] = [];
+        var updated_revision = [];
+        updated_revision[0] = [];
+        updated_revision[1] = [];
+        var updated_short_description_wc = [];
+        updated_short_description_wc[0] = [];
+        updated_short_description_wc[1] = [];
+        var updated_total_description_wc = [];
+        updated_total_description_wc[0] = [];
+        updated_total_description_wc[1] = [];
+        var updated_h1_word_counts = [];
+        updated_h1_word_counts[0] = [];
+        updated_h1_word_counts[1] = [];
+        var updated_h2_word_counts = [];
+        updated_h2_word_counts[0] = [];
+        updated_h2_word_counts[1] = [];
+        var oldest_values =[];
+        oldest_values[0] =[];
+        oldest_values[1] =[];
         if(data.length) {
     
             /***First Batch - Begin***/
             if(data[0] && data[0].product_name.length > 0){
                 valueName[0] = data[0].product_name;
             }
-            if(data[0] && data[0].updated.length > 0){
-                valueupdated[0] = data[0].updated;
+            if(data[0] && data[0].Date.length > 0){
+                valueDate[0] = data[0].Date;
+            }
+            if(data[0] && data[0].updated_Features.length > 0){
+                updated_Features[0] = data[0].updated_Features;
+            }
+            if(data[0] && data[0].updated_long_description_wc.length > 0){
+                updated_long_description_wc[0] = data[0].updated_long_description_wc;
+            }
+            if(data[0] && data[0].updated_revision.length > 0){
+                updated_revision[0] = data[0].updated_revision;
+            }
+            if(data[0] && data[0].updated_short_description_wc.length > 0){
+                updated_short_description_wc[0] = data[0].updated_short_description_wc;
+            }
+            if(data[0] && data[0].updated_total_description_wc.length > 0){
+                updated_total_description_wc[0] = data[0].updated_total_description_wc;
+            }
+            if(data[0] && data[0].updated_h1_word_counts.length > 0){
+                updated_h1_word_counts[0] = data[0].updated_h1_word_counts;
+            }
+            if(data[0] && data[0].updated_h2_word_counts.length > 0){
+                updated_h2_word_counts[0] = data[0].updated_h2_word_counts;
             }
             if(data[0] && data[0].url.length > 0){
                 valueUrl[0] = data[0].url;
@@ -1668,8 +1713,29 @@ function highChart(graphBuild){
             if(data[1] && data[1].product_name.length > 0){
                 valueName[1] = data[1].product_name;
             }
-             if(data[1] && data[1].updated.length > 0){
-                valueupdated[1] = data[1].updated;
+             if(data[1] && data[1].Date.length > 0){
+                valueDate[1] = data[1].Date;
+            }
+             if(data[1] && data[1].updated_Features.length > 0){
+                updated_Features[1] = data[1].updated_Features;
+            }
+             if(data[1] && data[1].updated_long_description_wc.length > 0){
+                updated_long_description_wc[1] = data[1].updated_long_description_wc;
+            }
+             if(data[1] && data[1].updated_revision.length > 0){
+                updated_revision[1] = data[1].updated_revision;
+            }
+             if(data[1] && data[1].updated_short_description_wc.length > 0){
+                updated_short_description_wc[1] = data[1].updated_short_description_wc;
+            }
+             if(data[1] && data[1].updated_total_description_wc.length > 0){
+                updated_total_description_wc[1] = data[1].updated_total_description_wc;
+            }
+            if(data[1] && data[1].updated_h1_word_counts.length > 0){
+                updated_h1_word_counts[1] = data[1].updated_h1_word_counts;
+            }
+            if(data[1] && data[1].updated_h2_word_counts.length > 0){
+                updated_h2_word_counts[1] = data[1].updated_h2_word_counts;
             }
             if(data[1] && data[1].url.length > 0){
                 valueUrl[1] = data[1].url;
@@ -1688,6 +1754,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'Short Description:';
                     graphName2 = 'words';
+                    oldest_values[0] = updated_short_description_wc[0];
+                    oldest_values[1] = updated_short_description_wc[1];
                 }
                   break;
                 case 'long_description_wc':{
@@ -1699,6 +1767,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'Long Description:';
                     graphName2 = 'words';
+                    oldest_values[0] = updated_long_description_wc[0];
+                    oldest_values[1] = updated_long_description_wc[1];
                 }
                   break;
                 case 'total_description_wc':{
@@ -1711,6 +1781,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'Total Description Word Count:';
                     graphName2 = 'words';
+                    oldest_values[0] = updated_total_description_wc[0];
+                    oldest_values[1] = updated_total_description_wc[1];
                 }
                   break;
                 case 'revision':{
@@ -1722,6 +1794,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'Reviews:';
                     graphName2 = '';
+                    oldest_values[0] = updated_revision[0];
+                    oldest_values[1] = updated_revision[1];
                 }
                   break;
 //                case 'own_price':{
@@ -1743,6 +1817,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'Features:';
                     graphName2 = '';
+                    oldest_values[0] = updated_Features[0];
+                    oldest_values[1] = updated_Features[1];
                 }
                   break;
                 case 'h1_word_counts':{
@@ -1754,6 +1830,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'H1 Characters:';
                     graphName2 = 'words';
+                    oldest_values[0] = updated_h1_word_counts[0];
+                    oldest_values[1] = updated_h1_word_counts[1];
                 }
                   break;
                 case 'h2_word_counts':{
@@ -1765,6 +1843,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'H2 Characters:';
                     graphName2 = 'words';
+                    oldest_values[0] = updated_h2_word_counts[0];
+                    oldest_values[1] = updated_h2_word_counts[1];
                 }
                   break;
                 default:{
@@ -1851,8 +1931,8 @@ function highChart(graphBuild){
                         result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
                         result += '<br /><span>' + valueName[j][datum.x] + '</span>';
                         result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
-                        result += '<br /><span>'+graphName1+' ' + datum.y + ' '+graphName2+'</span>';
-                        result += '<span style="display:'+display_property+';" class="update_class">'+valueupdated[j][datum.x]+'</span>';                       
+                        result += '<br /><span ">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' '+graphName2+'</span>';
+                        result += '<span style="color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span>';                       
                     });
                     return result;
                 }
