@@ -1,3 +1,12 @@
+.assessDetails_SEO_wrap {
+    float: left;
+    margin-left: 10px;
+}
+.assessDetails_SEO_wrap table {
+    font-size: 12px !important;
+    margin-top: 2px;
+}
+
 .assess_report_compare .boxes > h3 {
     position: relative;
 }
@@ -2646,4 +2655,8 @@ li.selected-url{
 .summary_search_field {
 	top: -2px;
 	position: relative;
+}
+
+#_unmatches{
+    float: right;
 }

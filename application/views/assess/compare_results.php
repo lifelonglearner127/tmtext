@@ -164,14 +164,18 @@
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_created" data-col_name="created" name="column_created_name" <?php echo($columns['created'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_editor">Date</label>
             </p>
+              <p>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="imp_data_id" data-col_name="imp_data_id" name="imp_data_id" <?php echo($columns['imp_data_id'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="imp_data_id">Imported Data ID</label>
+            </p>
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_product_name" data-col_name="product_name" name="column_product_name_name" <?php echo($columns['product_name'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_product_name">Product name</label>
             </p>
-            <p>
+<!--            <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="item_id" data-col_name="item_id" name="item_id" <?php echo($columns['item_id'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="model">item ID</label>
-            </p>
+            </p>-->
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="model" data-col_name="model" name="model" <?php echo($columns['model'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="model">Model</label>
@@ -646,13 +650,7 @@
                  var generate_url_Summary = GetURLParameter('generate_url_Summary');
                   batch_name = batch_name.replace(/%20/g,' ')
                   $('.title_result').html("<div class='logo'><img  style='width:220px; height: 50px;float:left;'src ='<?php echo base_url() ?>/img/content-analytics_page.png'></div><h3 class='h3_title'>"+batch_name+" Batch</h3>");
-                if(generate_url_Summary == "1"){
-                    
-                 $('#tblAssess_wrapper').addClass('comp_res_none');
-                 $('#research_assess_export').hide();
-//                 $('#tblAssess_processing').css({'visibility':'visible'})
-
-                }
+                
                
                     $('#research_batches_columns').addClass('research_batches_columns_res');
                       
@@ -686,9 +684,14 @@
                 $('select[id="research_assess_compare_batches_batch"]').val(cmp_selected).change()
                  $('#research_assess_update').click();
 //                 alert($('#edit_summary').text())
-                 $('#div_export').html('<a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export...</a>');
                 },2000)
-				
+		if(generate_url_Summary == "1"){
+                    
+                 $('#tblAssess_wrapper').addClass('comp_res_none');
+                 }else{
+                     
+                 $('#div_export').html('<a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export...</a>');
+                 }		
 				var scrollScore = 0; 
 				$(window).scroll(function(){ if(scrollScore < 10 && $( "table[id^=tblAsses] th" ).length > 0){
 				scrollScore++;

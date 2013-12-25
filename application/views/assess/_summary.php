@@ -21,9 +21,8 @@
 				<a href="#" class="show_filters_configuration_popup">
 					<img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/settings@2x.png">
 				</a>
-				<button type="button" class="btn btn-primary summary_edit_btn" id="edit_summary" data-toggle="button">Edit</button>
-                                <div id="div_export" style="width:100px;float:right;margin: 4px;"></div>
-                                <span class="assess_report_download_panel" style="float: right;width: 200px;">
+                                <div id="div_export" style="float:right;margin: 4px;"></div>
+                                <span class="assess_report_download_panel" style="float: right;width: 65px;">
 
 					<div style="display: none">
 						<span>Download</span>
@@ -36,6 +35,7 @@
 						<!--<button class="assess_report_options_dialog_button btn" style="float: right;margin-top: 7px;" title="Report Options"><img class="other-icon" src="<?php echo base_url();?>img/ico-gear.png" /></button>-->
 					<?php endif ?>
 				</span>
+				<button type="button" class="btn btn-primary summary_edit_btn" id="edit_summary" data-toggle="button">Edit</button>
 			</h3>
 			<div style="clear: both;"></div>												
 			<div class="boxes_content resizable" style="padding:0px; height: 200px; overflow-y: scroll">	

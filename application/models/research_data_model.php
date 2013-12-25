@@ -377,6 +377,10 @@ class Research_data_model extends CI_Model {
     {
         return $this->db->delete($this->tables['research_data'], array('id' => $id));
     }
+    
+    function deleteByBatch($batch_id){
+        return $this->db->delete($this->tables['research_data'], array('batch_id' => $batch_id));
+    }
 
     public function deleteItemUrl($batch_id, $url){
         return $this->db->delete($this->tables['research_data'], array('batch_id' => $batch_id, 'url' => $url));

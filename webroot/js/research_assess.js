@@ -201,6 +201,7 @@ $(function() {
         details: [
             "snap",
             "created",
+            "imp_data_id",
             "product_name",
             "item_id",
             "model",
@@ -236,6 +237,7 @@ $(function() {
         ],
          details_compare: [
             "snap",
+            "imp_data_id",
             "product_name",
             "item_id",
             "model",
@@ -261,6 +263,7 @@ $(function() {
             "average_review",
             "column_features",
             "snap1",
+            "imp_data_id1",
             "product_name1",
             "item_id1",
             "model1",
@@ -476,7 +479,7 @@ $(function() {
              }
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                $(nRow).attr("add_data", aData[33]);
+                $(nRow).attr("add_data", aData[34]);
                 return nRow;
                 $('table#tblAssess').floatThead('reflow');
             },
@@ -591,7 +594,7 @@ $(function() {
                         "sLengthMenu": "_MENU_ rows"
                     },
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-                        $(nRow).attr("add_data", aData[33]);
+                        $(nRow).attr("add_data", aData[34]);
                         return nRow;
                         $('table#tblAssess').floatThead('reflow');
                     },
@@ -804,6 +807,12 @@ $(function() {
             "sWidth": "3%"
         },
         {
+            "sTitle": "ID",
+            "sName": "imp_data_id",
+            "sWidth": "15%",
+            "sClass": "imp_data_id"
+        },
+        {
             "sTitle": "Product Name",
             "sName": "product_name",
             "sWidth": "15%",
@@ -1002,6 +1011,12 @@ $(function() {
             "sName": "snap1",
             "sWidth": "10%",
             "sClass": "Snapshot1"
+        },
+        {
+            "sTitle": "ID",
+            "sName": "imp_data_id1",
+            "sWidth": "10%",
+            "sClass": "imp_data_id1"
         },
         {
             "sTitle": "Product Name",
@@ -1558,7 +1573,7 @@ $(function() {
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[33]);
+            $(nRow).attr("add_data", aData[34]);
             return nRow;
             $('table#tblAssess').floatThead('reflow');
         },
@@ -2471,6 +2486,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
         curentSibil=target.parents('tr');
         
+        console.log("ADD DATA 1 : ", add_data);
        
         $('#ajaxLoadAni').fadeIn('slow');
         $('#assessDetails_ProductName').val(add_data.product_name);
@@ -2585,8 +2601,11 @@ var generate_url_check = GetURLParameter('generate_url_check');
        
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
          curentSibil=target.parents('tr');
-     
-       
+        
+       // === insert title seo data (start)
+       console.log("ADD DATA 2 : ", add_data);
+       console.log("ADD DATA 2 (KEYWORDS): ", add_data.title_seo_phrases);
+       // === insert title seo data (end)
          
         // if this product is absent product from second batch
         if (add_data.id == undefined) {
@@ -2644,6 +2663,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_Description1').val(description1);
             $('#assessDetails_DescriptionWC1').html(description_wc1);
             $('#assessDetails_SEO1').val(seo_phrases1);
+            if(typeof(add_data.title_seo_phrases1) !== 'undefined' && add_data.title_seo_phrases1 !== null && add_data.title_seo_phrases1 !== "None")$("#assessDetails_SEO1_div").html(add_data.title_seo_phrases1);
         } else {
             $('#assessDetails_short_and_long_description_panel1').show();
             $('#assessDetails_description_panel1').hide();
@@ -2671,6 +2691,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_Description').val(description0);
             $('#assessDetails_DescriptionWC').html(description_wc0);
             $('#assessDetails_SEO').val(seo_phrases0);
+            if(typeof(add_data.title_seo_phrases) !== 'undefined' && add_data.title_seo_phrases !== null && add_data.title_seo_phrases !== "None") $("#assessDetails_SEO_div").html(add_data.title_seo_phrases);
         } else {
             $('#assessDetails_short_and_long_description_panel').show();
             $('#assessDetails_description_panel').hide();
@@ -4218,8 +4239,9 @@ function prevSibilfunc(curentSibil){
                 var columns = {
                     snap: $("#column_snap").attr('checked') == 'checked',
                     created: $("#column_created").attr('checked') == 'checked',
+                    imp_data_id: $("#imp_data_id").attr('checked') == 'checked',
                     product_name: $("#column_product_name").attr('checked') == 'checked',
-                    item_id: $("#item_id").attr('checked') == 'checked',
+//                    item_id: $("#item_id").attr('checked') == 'checked',
                     model: $("#model").attr('checked') == 'checked',
                     url: $("#column_url").attr('checked') == 'checked',
                     Page_Load_Time: $("#Page_Load_Time").attr('checked') == 'checked',
@@ -4948,6 +4970,24 @@ var search_text = GetURLParameter('search_text');
     $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function() {
         $(this).modal('hide');
     });
+    $('#export_unmatches').live('click',function() {
+        var batch_id= $('select[name="research_assess_batches"]').find('option:selected').val();
+        var batch_name= $('select[name="research_assess_batches"]').find('option:selected').text()+' - '+$('#research_assess_compare_batches_batch').find('option:selected').text();
+        var cmp_selected = $('#research_assess_compare_batches_batch').find('option:selected').val();	
+       $(this).text('Exporting...');
+        var main_path=  $(this).prop('href');
+        $(this).attr('href', $(this).prop('href')+'?batch_id='+batch_id+'&cmp_selected='+cmp_selected+'&batch_name='+batch_name);
+        
+        $.fileDownload($(this).prop('href'))
+                .done(function() {
+            $('#export_unmatches').removeAttr('disabled');
+            $('#export_unmatches').attr('href', main_path);
+            $('#export_unmatches').text('Unmatched');
+        })
+                .fail(function() {
+        });
+   });
+    
    $('#research_assess_export').live('click',function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
        if(!GetURLParameter('checked_columns_results')){

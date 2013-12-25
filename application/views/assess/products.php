@@ -140,7 +140,7 @@
 					</div>
 				</div>
 			</div>
-           
+                <div id="_unmatches"><a href="<?php echo base_url();?>index.php/assess/export_unmatches" class="fileDownloadPromise btn" id="export_unmatches" >Unmatched...</a></div>
                 <div style="float: left;">
                     Compare with:
                     <select id="research_assess_compare_batches_customer"></select>
@@ -220,13 +220,17 @@
                 <label for="column_editor">Date</label>
             </p>
             <p>
+                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="imp_data_id" data-col_name="imp_data_id" name="imp_data_id" <?php echo($columns['imp_data_id'] == 'true' ? 'checked="checked"' : ''); ?> />
+                <label for="imp_data_id">Imported Data ID</label>
+            </p>
+            <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_product_name" data-col_name="product_name" name="column_product_name_name" <?php echo($columns['product_name'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="column_product_name">Product name</label>
             </p>
-            <p>
+<!--            <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="item_id" data-col_name="item_id" name="item_id" <?php echo($columns['item_id'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="model">item ID</label>
-            </p>
+            </p>-->
             <p>
                 <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="model" data-col_name="model" name="model" <?php echo($columns['model'] == 'true' ? 'checked="checked"' : ''); ?> />
                 <label for="model">Model</label>
@@ -435,10 +439,18 @@
             </div>
         </div>
 
-        <p>
-            <label for="assessDetails_SEO">SEO:</label>
-            <input type="text" id="assessDetails_SEO" />
-        </p>
+        <!-- <p>
+            <label for="assessDetails_SEO">Keywords:</label>
+            <input style='display: none;' type="text" id="assessDetails_SEO" />
+        </p> -->
+
+    </div>
+
+    <div class='assessDetails_keys'>
+        <span class="labeler" style='float: left; display: block'>
+            <label>Keywords:</label>
+        </span>
+        <div class='assessDetails_SEO_wrap' id="assessDetails_SEO_div">no data</div>
     </div>
     
     </div>  
@@ -504,12 +516,19 @@
                 <label><span id="assessDetails_DescriptionWC1">0</span> words</label>
             </div>
         </div>
-
-        <p>
-            <label for="assessDetails_SEO1">SEO:</label>
+        <!-- <p>
+            <label for="assessDetails_SEO1">Keywords:</label>
             <input type="text" id="assessDetails_SEO1" />
-        </p>
+        </p> -->
     </div>
+
+    <div class='assessDetails_keys'>
+        <span class="labeler" style='float: left; display: block'>
+            <label>Keywords:</label>
+        </span>
+        <div class='assessDetails_SEO_wrap' id="assessDetails_SEO1_div">no data</div>
+    </div>
+
     <?php if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) { ?>
         <style type="text/css">
             #assessDetailsDialog_btnReCrawl{
@@ -579,8 +598,8 @@
 <!--                </div>-->
                 <div id="comare_table"></div>
                 <div id="assess_tbl_show_case" class="assess_tbl_show_case">
-                    <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#details" class="active_link">Details</a> |
-                    <a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#compare">Compare</a> |
+                    <!-- <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#details" class="active_link">Details</a> | -->
+                    <a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" class="active_link" href="#compare">Results</a> |
                     <a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Charts</a> |
                     <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a> |
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations">Recommendations</a>
@@ -669,8 +688,7 @@
                 if(hardcode_hash === '#login_init') {
                     if($("#assess_tbl_show_case").length < 1) { // === I.L
                         $('#tblAssess_length').after('<div id="assess_tbl_show_case" class="assess_tbl_show_case">' +
-                            '<a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#details" class="active_link">Details</a>&nbsp;|&nbsp;' +
-                            '<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#compare">Compare</a>&nbsp;|&nbsp;' +
+                            '<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" class="active_link" href="#compare">Results</a>&nbsp;|&nbsp;' +
                             '<a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Charts</a>&nbsp;|&nbsp;' +
                             '<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>&nbsp;|&nbsp;' +
                             '<a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations">Recommendations</a>' +
