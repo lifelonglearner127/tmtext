@@ -70,7 +70,7 @@ $db['default']['stricton'] = FALSE;
 
 if (file_exists(APPPATH.'config/database.local.php'))
 {
-	@require APPPATH.'config/database.local.php';
+	@require_once APPPATH.'config/database.local.php';
 }
 
 /* End of file database.php */
