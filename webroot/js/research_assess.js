@@ -45,8 +45,10 @@ function resizeImp(){
 				gripInnerHtml:"<div class='grip'></div>", 
 				draggingClass:"dragging"});
 			}
+			setTimeout(function(){$('table#tblAssess').floatThead('reflow');}, 300)
+			
 			},500);
-			//console.log("resizeImp");
+			console.log("resizeImp");
 }
 $(function() {
 	
@@ -1568,9 +1570,8 @@ $(function() {
             }
             hideColumns();
             check_word_columns();
-            $('table#tblAssess').floatThead('reflow');
+            setTimeout(function(){$('table#tblAssess').floatThead('reflow');console.log("reflow 500");}, 1000);
 			
-			console.log("reflow 3");
 			var status = "no ok";
 				var statusinterval = setInterval( function(){
 				if($("#tblAssess td").length > 1){
@@ -5002,6 +5003,7 @@ function resizeImpDown(){
 		gripInnerHtml:"<div class='grip'></div>", 
 		draggingClass:"dragging"
 });
+$('table#tblAssess').floatThead('reflow');
 }
 function darkHeaders(id) {
 	if($("table[id^=tblAssess]")){
@@ -5071,6 +5073,7 @@ $('#assess_tbl_show_case_details').click(function() {
 		
 	$('table#tblAssess').floatThead('reflow');
 	resizeImpDown();
+	resizeImp();
 });
 /*
 $("#tblAssess").mouseover(function(){
@@ -5098,6 +5101,7 @@ $('.ui-dialog-titlebar-close').click(function() {
 	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders($(this));}
 	$('table#tblAssess').floatThead('reflow');
 	resizeImpDown();
+	resizeImp();
 });
 $( ".CRG" )
   .mouseup(function() {
