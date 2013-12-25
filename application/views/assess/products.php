@@ -440,10 +440,18 @@
             </div>
         </div>
 
-        <p>
-            <label for="assessDetails_SEO">SEO:</label>
-            <input type="text" id="assessDetails_SEO" />
-        </p>
+        <!-- <p>
+            <label for="assessDetails_SEO">Keywords:</label>
+            <input style='display: none;' type="text" id="assessDetails_SEO" />
+        </p> -->
+
+    </div>
+
+    <div class='assessDetails_keys'>
+        <span class="labeler" style='float: left; display: block'>
+            <label>Keywords:</label>
+        </span>
+        <div class='assessDetails_SEO_wrap' id="assessDetails_SEO_div">no data</div>
     </div>
     
     </div>  
@@ -509,12 +517,19 @@
                 <label><span id="assessDetails_DescriptionWC1">0</span> words</label>
             </div>
         </div>
-
-        <p>
-            <label for="assessDetails_SEO1">SEO:</label>
+        <!-- <p>
+            <label for="assessDetails_SEO1">Keywords:</label>
             <input type="text" id="assessDetails_SEO1" />
-        </p>
+        </p> -->
     </div>
+
+    <div class='assessDetails_keys'>
+        <span class="labeler" style='float: left; display: block'>
+            <label>Keywords:</label>
+        </span>
+        <div class='assessDetails_SEO_wrap' id="assessDetails_SEO1_div">no data</div>
+    </div>
+
     <?php if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) { ?>
         <style type="text/css">
             #assessDetailsDialog_btnReCrawl{

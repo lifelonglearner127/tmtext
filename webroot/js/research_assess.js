@@ -2485,6 +2485,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
         curentSibil=target.parents('tr');
         
+        console.log("ADD DATA 1 : ", add_data);
        
         $('#ajaxLoadAni').fadeIn('slow');
         $('#assessDetails_ProductName').val(add_data.product_name);
@@ -2599,8 +2600,11 @@ var generate_url_check = GetURLParameter('generate_url_check');
        
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
          curentSibil=target.parents('tr');
-     
-       
+        
+       // === insert title seo data (start)
+       console.log("ADD DATA 2 : ", add_data);
+       console.log("ADD DATA 2 (KEYWORDS): ", add_data.title_seo_phrases);
+       // === insert title seo data (end)
          
         // if this product is absent product from second batch
         if (add_data.id == undefined) {
@@ -2658,6 +2662,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_Description1').val(description1);
             $('#assessDetails_DescriptionWC1').html(description_wc1);
             $('#assessDetails_SEO1').val(seo_phrases1);
+            if(typeof(add_data.title_seo_phrases1) !== 'undefined' && add_data.title_seo_phrases1 !== null && add_data.title_seo_phrases1 !== "None")$("#assessDetails_SEO1_div").html(add_data.title_seo_phrases1);
         } else {
             $('#assessDetails_short_and_long_description_panel1').show();
             $('#assessDetails_description_panel1').hide();
@@ -2685,6 +2690,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_Description').val(description0);
             $('#assessDetails_DescriptionWC').html(description_wc0);
             $('#assessDetails_SEO').val(seo_phrases0);
+            if(typeof(add_data.title_seo_phrases) !== 'undefined' && add_data.title_seo_phrases !== null && add_data.title_seo_phrases !== "None") $("#assessDetails_SEO_div").html(add_data.title_seo_phrases);
         } else {
             $('#assessDetails_short_and_long_description_panel').show();
             $('#assessDetails_description_panel').hide();
