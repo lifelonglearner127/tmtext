@@ -2527,12 +2527,8 @@ class Assess extends MY_Controller {
         }
 		
 		if($res_array[0]){		
-				
 				$res_key = array_keys($res_array[0]);
-				//print_r($res_key);
 				$res_key_flip = array_flip($res_key);
-				
-				//print_r($res_key_flip);
 				foreach($res_key_flip as $key => $value){
 				if($key == "created"){
 					$key = 'Created';
@@ -2760,12 +2756,6 @@ class Assess extends MY_Controller {
 				}
 			}
 		}
-		/*
-		echo '<div style="width: 49%;height: auto;float: left;"><pre>';
-		print_r($res_key);
-		echo '</pre></div><div style="float: right;"><pre>';
-		print_r($res_array_keys);
-		echo '</pre></div>';*/
 		array_unshift($res_array, $res_array_keys);
         $this->load->helper('csv');
         array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
