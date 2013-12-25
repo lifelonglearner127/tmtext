@@ -205,144 +205,128 @@
 <div class="modal hide fade ci_hp_modals crawl_launch_panel" id='custom_batch_create_modal'></div>
 
 <!-- choise column dialog box -->
-<div id="research_assess_choiceColumnDialog" title="Select Table Columns">
+<div id="research_assess_choiceColumnDialog" title="Select Table Columns" style="height: 172px !important; width: 320px !important;">
     <div>
         <form action="" method="post">
-            <div id="horizontal" class="horizontal_vertical_icon" style="position: absolute; margin-top: -10px; margin-left: 55px; max-width: 25px;"><img src ="<?php echo base_url() ?>/img/horizontal.png" /></div>
-            <div id="vertical" class="horizontal_vertical_icon" style="position: absolute; margin-top: -10px; margin-left: 55px; max-width: 25px;  visibility: hidden;"><img src ="<?php echo base_url() ?>/img/vertical.png" /></div>
+<!--            <div id="horizontal" class="horizontal_vertical_icon" style="position: absolute; margin-top: -10px; margin-left: 55px; max-width: 25px;"><img src ="<?php // echo base_url() ?>/img/horizontal.png" /></div>
+            <div id="vertical" class="horizontal_vertical_icon" style="position: absolute; margin-top: -10px; margin-left: 55px; max-width: 25px;  visibility: hidden;"><img src ="<?php // echo base_url() ?>/img/vertical.png" /></div>-->
             <div id="columns_checking">
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_snap" data-col_name="snap" name="column_snap_name" <?php echo($columns['snap'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_snap">Snapshot</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_created" data-col_name="created" name="column_created_name" <?php echo($columns['created'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_editor">Date</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="imp_data_id" data-col_name="imp_data_id" name="imp_data_id" <?php echo($columns['imp_data_id'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="imp_data_id">Imported Data ID</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_product_name" data-col_name="product_name" name="column_product_name_name" <?php echo($columns['product_name'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_product_name">Product name</label>
-            </p>
-<!--            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="item_id" data-col_name="item_id" name="item_id" <?php echo($columns['item_id'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="model">item ID</label>
-            </p>-->
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="model" data-col_name="model" name="model" <?php echo($columns['model'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="model">Model</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_url" data-col_name="url" name="column_url_name" <?php echo($columns['url'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_url">Url</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Page_Load_Time" data-col_name="Page_Load_Time" name="Page_Load_Time" <?php echo($columns['Page_Load_Time'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="Page_Load_Time">Page Load Time</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Short_Description" data-col_name="Short_Description" name="Short_Description" <?php echo($columns['Short_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="Short_Description">Short Description</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_short_description_wc" data-col_name="short_description_wc" name="column_short_description_wc_name" <?php echo($columns['short_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_short_description_wc">Short Description - # Words</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Meta_Keywords" data-col_name="Meta_Keywords" name="Meta_Keywords" <?php echo($columns['Meta_Keywords'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="Meta_Keywords">Meta Keywords</label>
-            </p>
-            <?php /*<p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_short_seo_phrases" data-col_name="short_seo_phrases" name="column_short_seo_phrases_name" <?php echo($columns['short_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_short_seo_phrases">Found Keywords - Short Description</label>
-            </p>*/?>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_title_seo_phrases" data-col_name="title_seo_phrases" name="column_title_seo_phrases_name" <?php echo($columns['title_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_title_seo_phrases">Title Keywords</label>
-                <input id="tk-denisty" type="radio" name="title_keywords" value="density" checked /><label for="tk-denisty">Density</label>
-                <input id="tk-frequency" type="radio" name="title_keywords" value="Frequency"/><label for="tk-frequency">Frequency</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Long_Description" data-col_name="Long_Description" name="Long_Description" <?php echo($columns['Long_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="Long_Description">Long Description</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_long_description_wc" data-col_name="long_description_wc" name="column_long_description_wc_name" <?php echo($columns['long_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_long_description_wc">Long Description - # Words</label>
-            </p>
-            <?php /*<p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_long_seo_phrases" data-col_name="long_seo_phrases" name="column_long_seo_phrases_name" <?php echo($columns['long_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_long_seo_phrases">Found Keywords - Long Description</label>
-            </p>*/ ?>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Custom_Keywords_Short_Description" data-col_name="Custom_Keywords_Short_Description" name="Custom_Keywords_Short_Description" <?php echo($columns['Custom_Keywords_Short_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="Custom_Keywords_Short_Description">Custom Keywords - Short Description</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Custom_Keywords_Long_Description" data-col_name="Custom_Keywords_Long_Description" name="Custom_Keywords_Long_Description" <?php echo($columns['Custom_Keywords_Long_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="Custom_Keywords_Long_Description">Custom Keywords - Long Description</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Meta_Description" data-col_name="Meta_Description" name="Meta_Description" <?php echo($columns['Meta_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="Meta_Description">Meta Description</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="H1_Tags" data-col_name="H1_Tags" name="H1_Tags" <?php echo($columns['H1_Tags'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="H1_Tags">H1_Tags</label>
-            </p>
-
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="H2_Tags" data-col_name="H2_Tags" name="H2_Tags" <?php echo($columns['H2_Tags'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="H2_Tags">H2_Tags</label>
-            </p>
-
-            <?php /*<p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_duplicate_content" data-col_name="duplicate_content" name="column_duplicate_content_name" <?php echo($columns['duplicate_content'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_batch_name">Duplicate content</label>
-            </p>*/?>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_external_content" data-col_name="column_external_content" name="column_external_content" <?php echo($columns['column_external_content'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_external_content">Third party content</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_reviews" data-col_name="column_reviews" name="column_reviews" <?php echo($columns['column_reviews'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_reviews">Reviews</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="average_review" data-col_name="average_review" name="average_review" <?php echo($columns['average_review'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="average_review">Avg Review</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_features" data-col_name="column_features" name="column_features" <?php echo($columns['column_features'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_features">Features</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_price_diff" data-col_name="price_diff" name="column_price_diff" <?php echo($columns['price_diff'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_actions">Price difference</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="gap" data-col_name="gap" name="gap" <?php echo($columns['gap'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_actions">Gap analysis</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Duplicate_Content" data-col_name="Duplicate_Content" name="Duplicate_Content" <?php echo($columns['Duplicate_Content'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_actions">Duplicate Content</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="images_cmp" data-col_name="images_cmp" name="images_cmp" <?php echo($columns['images_cmp'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_actions">Images</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="video_count" data-col_name="video_count" name="video_count" <?php echo($columns['video_count'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_actions">Videos</label>
-            </p>
-            <p>
-                <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="title_pa" data-col_name="title_pa" name="title_pa" <?php echo($columns['title_pa'] == 'true' ? 'checked="checked"' : ''); ?> />
-                <label for="column_actions">Title</label>
-            </p>
+            <ul>
+                <li><p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_snap" data-col_name="snap" name="column_snap_name" <?php echo($columns['snap'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_snap">Snapshot</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_created" data-col_name="created" name="column_created_name" <?php echo($columns['created'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_editor">Date</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="imp_data_id" data-col_name="imp_data_id" name="imp_data_id" <?php echo($columns['imp_data_id'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="imp_data_id">Imported Data ID</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_product_name" data-col_name="product_name" name="column_product_name_name" <?php echo($columns['product_name'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_product_name">Product name</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="model" data-col_name="model" name="model" <?php echo($columns['model'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="model">Model</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_url" data-col_name="url" name="column_url_name" <?php echo($columns['url'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_url">Url</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Page_Load_Time" data-col_name="Page_Load_Time" name="Page_Load_Time" <?php echo($columns['Page_Load_Time'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="Page_Load_Time">Page Load Time</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Short_Description" data-col_name="Short_Description" name="Short_Description" <?php echo($columns['Short_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="Short_Description">Short Description</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_short_description_wc" data-col_name="short_description_wc" name="column_short_description_wc_name" <?php echo($columns['short_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_short_description_wc">Short Description - # Words</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Meta_Keywords" data-col_name="Meta_Keywords" name="Meta_Keywords" <?php echo($columns['Meta_Keywords'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="Meta_Keywords">Meta Keywords</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_title_seo_phrases" data-col_name="title_seo_phrases" name="column_title_seo_phrases_name" <?php echo($columns['title_seo_phrases'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_title_seo_phrases">Title Keywords</label>
+                    <input id="tk-denisty" type="radio" name="title_keywords" value="density" checked /><label for="tk-denisty">Density</label>
+                    <input id="tk-frequency" type="radio" name="title_keywords" value="Frequency"/><label for="tk-frequency">Frequency</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Long_Description" data-col_name="Long_Description" name="Long_Description" <?php echo($columns['Long_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="Long_Description">Long Description</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_long_description_wc" data-col_name="long_description_wc" name="column_long_description_wc_name" <?php echo($columns['long_description_wc'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_long_description_wc">Long Description - # Words</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Custom_Keywords_Short_Description" data-col_name="Custom_Keywords_Short_Description" name="Custom_Keywords_Short_Description" <?php echo($columns['Custom_Keywords_Short_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="Custom_Keywords_Short_Description">Custom Keywords - Short Description</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Custom_Keywords_Long_Description" data-col_name="Custom_Keywords_Long_Description" name="Custom_Keywords_Long_Description" <?php echo($columns['Custom_Keywords_Long_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="Custom_Keywords_Long_Description">Custom Keywords - Long Description</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Meta_Description" data-col_name="Meta_Description" name="Meta_Description" <?php echo($columns['Meta_Description'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="Meta_Description">Meta Description</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="H1_Tags" data-col_name="H1_Tags" name="H1_Tags" <?php echo($columns['H1_Tags'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="H1_Tags">H1_Tags</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="H2_Tags" data-col_name="H2_Tags" name="H2_Tags" <?php echo($columns['H2_Tags'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="H2_Tags">H2_Tags</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_external_content" data-col_name="column_external_content" name="column_external_content" <?php echo($columns['column_external_content'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_external_content">Third party content</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_reviews" data-col_name="column_reviews" name="column_reviews" <?php echo($columns['column_reviews'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_reviews">Reviews</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="average_review" data-col_name="average_review" name="average_review" <?php echo($columns['average_review'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="average_review">Avg Review</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_features" data-col_name="column_features" name="column_features" <?php echo($columns['column_features'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_features">Features</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_price_diff" data-col_name="price_diff" name="column_price_diff" <?php echo($columns['price_diff'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_actions">Price difference</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="gap" data-col_name="gap" name="gap" <?php echo($columns['gap'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_actions">Gap analysis</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="Duplicate_Content" data-col_name="Duplicate_Content" name="Duplicate_Content" <?php echo($columns['Duplicate_Content'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_actions">Duplicate Content</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="images_cmp" data-col_name="images_cmp" name="images_cmp" <?php echo($columns['images_cmp'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_actions">Images</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="video_count" data-col_name="video_count" name="video_count" <?php echo($columns['video_count'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_actions">Videos</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="title_pa" data-col_name="title_pa" name="title_pa" <?php echo($columns['title_pa'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_actions">Title</label>
+                </p></li>
+            </ul>
             </div>
 <!--            <p>
                 <input type="checkbox" id="column_snap1" data-col_name="snap" name="column_snap_name1" <?php echo($columns['snap1'] == 'true' ? 'checked="checked"' : ''); ?> />
@@ -682,6 +666,7 @@
 </style>
 <script>
             $(function() {
+                $('#columns_checking ul').sortable();
                 $('.ui-dialog-titlebar-close').html('<span style="margin-top:-5px;">x</span>');
                 $('head').find('title').text('Reports');
                 var hardcode_hash = window.location.hash;

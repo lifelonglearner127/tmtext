@@ -4288,31 +4288,31 @@ function prevSibilfunc(curentSibil){
         }
         window.open(url);
     }
-    $(".horizontal_vertical_icon").click(function(){
-        if($("#horizontal").css('visibility') === 'visible'){
-            $("#vertical").css('visibility', 'visible') ;
-            $("#horizontal").css('visibility', 'hidden') ;
-            $("#columns_checking p").css('display','block');
-            $("#columns_checking p").css('float','left');            
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css({
-                'width':'1200'                
-            });  
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
-            'left':'50%',
-             'margin-left':'-600px'                
-             });  
-        }
-        else{
-            $("#vertical").css('visibility', 'hidden') ;
-            $("#horizontal").css('visibility', 'visible') ;
-            $("#columns_checking p").css('display','block');
-            $("#columns_checking p").css('float','');
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css('width','250px');
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
-             'margin-left':'-137px'                
-             }); 
-        }
-    });
+//    $(".horizontal_vertical_icon").click(function(){
+//        if($("#horizontal").css('visibility') === 'visible'){
+//            $("#vertical").css('visibility', 'visible') ;
+//            $("#horizontal").css('visibility', 'hidden') ;
+//            $("#columns_checking p").css('display','block');
+//            $("#columns_checking p").css('float','left');            
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css({
+//                'width':'1200'                
+//            });  
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
+//            'left':'50%',
+//             'margin-left':'-600px'                
+//             });  
+//        }
+//        else{
+//            $("#vertical").css('visibility', 'hidden') ;
+//            $("#horizontal").css('visibility', 'visible') ;
+//            $("#columns_checking p").css('display','block');
+//            $("#columns_checking p").css('float','');
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css('width','250px');
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
+//             'margin-left':'-137px'                
+//             }); 
+//        }
+//    });
     $(".research_assess_choiceColumnDialog_checkbox").change(function(){
          // get columns params
                 var columns = {
