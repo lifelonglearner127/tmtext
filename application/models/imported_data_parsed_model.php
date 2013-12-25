@@ -2771,6 +2771,16 @@ echo "j  = ".$j;
             'item1'=>$item1,
             'item2'=>$item2
         );
-        $this->db->insert('similart_item',$data);
+        $this->db->insert('similar_item',$data);
+    }
+    public function get_Similar_Items($item){
+        $sql = "select if(item1=$item,item2,item1) as imported_data_id 
+            from similar_item
+            where $item in(item1,item2)";
+        $query = $this->db->query($sql);
+        if($query->num_rows===0){
+            return FALSE;
+        }
+        return $query->result_array();
     }
 }
