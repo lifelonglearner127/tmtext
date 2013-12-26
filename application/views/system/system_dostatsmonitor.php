@@ -42,8 +42,13 @@
               Stop Do Stats 
           </span>
           <?php //*/?>
+          <div id="clear_imported_data_parsed" style ="margin:10px 0px;">
+                <span id="clear_data_items" class="btn btn-success fileinput-button" style="">
+                    Clear Imported Data Parsed
+                </span>
       </div>
   </div>
+</div>
 </div>
 
 <!-- MODALS (START) -->
@@ -179,10 +184,19 @@
                 }
             });
         }
+        function run_clear_data_process(){
+            var url = '<?php echo site_url('system/clear_imported_data_parsed'); ?>';
+            $.ajax({
+                url:url
+            });
+        }
 
 	$(document).ready(function() {
             itemsToUpdate();
             //statusInfo();
+            $('#clear_data_items').click(function(){
+                run_clear_data_process();
+            });
             setInterval(statusInfo,20000);
             var status = '';
             $('#refresh_items').click(function(){

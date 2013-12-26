@@ -855,7 +855,7 @@ class Assess extends MY_Controller {
         $header = $header . '<hr color="#C31233" height="10">';
         $pdf->SetHTMLHeader($header);
 
-        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright Р’В© 2013 Content Solutions, Inc.</span>');
+        $pdf->SetHTMLFooter('<span style="font-size: 8px;">Copyright Р вЂ™Р’В© 2013 Content Solutions, Inc.</span>');
 
         $html = '';
 
@@ -2538,232 +2538,235 @@ class Assess extends MY_Controller {
         }
 		
 		if($res_array[0]){		
-				
 				$res_key = array_keys($res_array[0]);
-				//print_r($res_key);
 				$res_key_flip = array_flip($res_key);
-				
-				//print_r($res_key_flip);
 				foreach($res_key_flip as $key => $value){
 				if($key == "created"){
 					$key = 'Created';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "product_name"){
 					$key = 'Product name';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
+				}
+				elseif($key == "H1_Tags1(1)"){
+					$key = 'Product name';
+					$res_array_keys[$value] = $key;
+				}
+				elseif($key == "H1_Tags_Count1"){
+					$key = 'H1 Tags Count1';
+					$res_array_keys[$value] = $key;
+				}
+				elseif($key === "H1_Tags1"){
+					$key = 'H1 Tags(1)';
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Long_Description"){
 					$key = 'Long description';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "long_description_wc"){
 					$key = 'Long Description - # Words';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}				
 				elseif($key == "url"){
 					$key = 'Url';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Short_Description"){
 					$key = 'Product Description';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "short_description_wc"){
 					$key = 'Short Desc # Words';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "price_diff"){
 					$key = 'Price difference';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "column_features"){
 					$key = 'Features';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "average_review"){
 					$key = 'Avg Review';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
-				elseif($key == "column_reviews"){
+				elseif($key === "column_reviews"){
 					$key = 'Reviews';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "title_seo_phrases"){
 					$key = 'Title keywords';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "item_id"){
 					$key = 'Item ID';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "item_id"){
 					$key = 'Item ID';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 
 				elseif($key == "H1_Tags0"){
 					$key = 'H1 Tags';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "model"){
 					$key = 'Model';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Model (1)"){
 					$key = 'Model(2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Product Name (1)"){
-					$key = 'Product Name 2';
-					$res_array_keys[$key] = $key;
+					$key = 'Product Name (2)';
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "meta_keywords"){
-					$key = 'Meta keywords(1)';
-					$res_array_keys[$key] = $key;
+					$key = 'Meta keywords';
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "meta_description"){
 					$key = 'Meta description';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Meta_Description_Count"){
 					$key = 'Meta Desc # Words';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Custom_Keywords_Short_Description"){
 					$key = 'Custom Keywords Short Description';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Custom_Keywords_Long_Description"){
 					$key = 'Custom Keywords Long Description';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
-				elseif($key == "column_external_content"){
+				elseif($key === "column_external_content"){
 					$key = 'Third Party Content';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
-				elseif($key == "column_external_content(1)"){
+				elseif($key === "column_external_content(1)"){
 					$key = 'Third Party Content';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Page_Load_Time"){
 					$key = 'Page Load Time';
-					$res_array_keys[$key] = $key;
-				}
-				elseif($key == "column_external_content"){
-					$key = 'Column external content';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "H1_Tags_Count0"){
 					$key = 'H1 chars count(1)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "H1_Tags_Count0(1)"){
 					$key = 'H1 chars count(2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "H2_Tags0"){
 					$key = 'H2 Tags(1)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "H2_Tags_Count0"){
 					$key = 'H2 chars count';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "H2_Tags1"){
 					$key = 'H2 Tags(2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "H2_Tags_Count1"){
 					$key = 'H2 chars count(1)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Gap analysis"){
 					$key = 'Gap analysis';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Duplicate_Content"){
 					$key = 'Duplicate Content';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Item Id (1)"){
 					$key = 'Item Id (2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "average_review(1)"){
 					$key = 'Average review(1)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Url (1)"){
 					$key = 'Url(2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Short Description (1)"){
 					$key = 'Product Description (2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Short Desc # Words (1)"){
 					$key = 'Short Desc # Words (2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Long Desc # Words (1)"){
 					$key = 'Long Desc # Words (2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Meta_Keywords(1)"){
 					$key = 'Meta Keywords(2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Meta_Description (1)"){
 					$key = 'Meta Description (2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Meta Desc Words (1)"){
 					$key = 'Meta Desc Words (2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "Page Load Time (1)"){
 					$key = 'Page Load Time (2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "column_features(1)"){
 					$key = 'Features(2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "column_reviews(1)"){
 					$key = 'Column reviews';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "title_seo_phrases(1)"){
 					$key = 'Title keywords(2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "H2_Tags0(1)"){
 					$key = 'H2 Tags(1)(2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key === "H1_Tags0(1)"){
-					$key = 'H1 Tagss';
-					$res_array_keys[$key] = $key;
+					$key = 'H1 Tags(2)';
+					$res_array_keys[$value] = $key;
 				} 
 				elseif($key == "H2_Tags_Count0(1)"){
 					$key = 'H2 chars count(2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "H2_Tags1(1)"){
 					$key = 'H2 Tags(2)(2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				elseif($key == "H2_Tags_Count1(1)"){
 					$key = 'H2 chars count(2)';
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 				else{
-					$res_array_keys[$key] = $key;
+					$res_array_keys[$value] = $key;
 				}
 			}
 		}
-		//print_r($res_array_keys);
 		array_unshift($res_array, $res_array_keys);
         $this->load->helper('csv');
         array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
@@ -5243,26 +5246,54 @@ class Assess extends MY_Controller {
             }
 
             foreach ($results as $data_row) {
+                
+                $parsed_attributes_feature = unserialize($data_row->parsed_attributes);
                 $snap_data[0]['product_name'][] = (string) $data_row->product_name;
                 $snap_data[0]['url'][] = (string) $data_row->url;
                 $snap_data[0]['short_description_wc'][] = (int) $data_row->short_description_wc;
                 $snap_data[0]['long_description_wc'][] = (int) $data_row->long_description_wc;
                 $snap_data[0]['total_description_wc'][] = (int) $data_row->short_description_wc + (int) $data_row->long_description_wc;
-                $snap_data[0]['revision'][] = (int) $data_row->revision;
-                
-                $arr = $this->get_min_max($data_row->imported_data_id);
-                $str = '';
-                foreach($arr as $a){
-                    $str.=$a->value."<br>";
+                $snap_data[0]['Date'][] = (string) $data_row->Date;
+                 if ($parsed_attributes_feature['review_count']) {
+                    $snap_data[0]['revision'][] = (int) $parsed_attributes_feature['review_count'];
+                } else {
+                    $snap_data[0]['revision'][] = 0;
                 }
-                $snap_data[0]['updated'][] = (string) $str;
-//                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
-                $parsed_attributes_feature = unserialize($data_row->parsed_attributes);
                 if ($parsed_attributes_feature['feature_count']) {
                     $snap_data[0]['Features'][] = (int) $parsed_attributes_feature['feature_count'];
                 } else {
                     $snap_data[0]['Features'][] = 0;
                 }
+                $arr = $this->get_min_max($data_row->imported_data_id);
+                $updated_short_description_wc = '';
+                $updated_long_description_wc = '';
+                $updated_total_description_wc = '';
+                $updated_revision = '';
+                $updated_Features = '';
+                $updated_h1_word_counts = '';
+                $updated_h2_word_counts = '';
+                foreach($arr as $a){
+       
+                    $pars = unserialize($a->parsed_attributes);
+                    $htags_upd = unserialize($a->HTags);
+                    $updated_short_description_wc.='Short Description: '.$a->date .' - '.count(explode(' ',$a->description))."  words<br>";
+                    $updated_long_description_wc.='Long Description: '.$a->date .' - '.count(explode(' ',$a->long_description))." words <br>";
+                    $updated_total_description_wc.='Total Description Word Count: '.$a->date .' - '.(count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)))."  words<br>";
+                    $updated_revision.='Reviews: '.$a->date .' - '.$pars['review_count']."<br>";
+                    $updated_Features.='Features: '.$a->date .' - '.$pars['feature_count']."<br>";
+                    $updated_h1_word_counts.='H1 Characters: ' .$a->date .' - '.count($htags_upd['h1'])." words <br>";
+                    $updated_h2_word_counts.='H2 Characters: ' .$a->date .' - '.count($htags_upd['h2'])." words <br>";
+                }
+                $snap_data[0]['updated_short_description_wc'][] =  $updated_short_description_wc;
+                $snap_data[0]['updated_long_description_wc'][] =  $updated_long_description_wc;
+                $snap_data[0]['updated_total_description_wc'][] =  $updated_total_description_wc;
+                $snap_data[0]['updated_revision'][] =  $updated_revision;
+                $snap_data[0]['updated_Features'][] =  $updated_Features;
+                $snap_data[0]['updated_h1_word_counts'][] =  $updated_h1_word_counts;
+                $snap_data[0]['updated_h2_word_counts'][] =  $updated_h2_word_counts;
+                
+//                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
+                
                 $htags = unserialize($data_row->htags);
                 if ($htags) {
                     if (isset($htags['h1'])) {
@@ -5290,21 +5321,36 @@ class Assess extends MY_Controller {
                     $snap_data[1]['long_description_wc'][] = (int) $data_row_sim[0]->long_description_wc;
                     $snap_data[1]['total_description_wc'][] = (int) $data_row_sim[0]->short_description_wc + (int) $data_row_sim[0]->long_description_wc;
                     $snap_data[1]['revision'][] = (int) $data_row_sim[0]->review_count;
-                    
+                    $snap_data[1]['Features'][] = (int) $data_row_sim[0]->column_features;
+                    $snap_data[1]['Date'][] = (string) $data_row_sim[0]->Date;
                     
                     $arr1 = $this->get_min_max($data_row_sim[0]->imported_data_id);
-                    $str1 = '';
+                $updated_short_description_wc1 = '';
+                $updated_long_description_wc1 = '';
+                $updated_total_description_wc1 = '';
+                $updated_revision1 = '';
+                $updated_Features1 = '';
+                $updated_h1_word_counts1 = '';
+                $updated_h2_word_counts1 = '';
                     foreach($arr1 as $a1){
-                        $str1.=$a1->value."<br>";
+                    $pars1 = unserialize($a1->parsed_attributes);
+                    $htags_upd1 = unserialize($a1->HTags);
+                    $updated_short_description_wc1.='Short Description: '.$a1->date .' - '.count(explode(' ',$a1->description))."  words<br>";
+                    $updated_long_description_wc1.='Long Description: '.$a1->date .' - '.count(explode(' ',$a1->long_description))." words <br>";
+                    $updated_total_description_wc1.='Total Description Word Count: '.$a1->date .' - '.(count(explode(' ',$a1->long_description)) + count(explode(' ',$a1->description)))."  words<br>";
+                    $updated_revision1.='Reviews: '.$a1->date .' - '.$pars1['review_count']."<br>";
+                    $updated_Features1.='Features: '.$a1->date .' - '.$pars1['feature_count']."<br>";
+                    $updated_h1_word_counts1.='H1 Characters: ' .$a1->date .' - '.count($htags_upd1['h1'])." words <br>";
+                    $updated_h2_word_counts1.='H2 Characters: ' .$a1->date .' - '.count($htags_upd1['h2'])." words <br>";
                     }
-                    $snap_data[1]['updated'][] = (string) $str1;
+                $snap_data[1]['updated_short_description_wc'][] =  $updated_short_description_wc1;
+                $snap_data[1]['updated_long_description_wc'][] =  $updated_long_description_wc1;
+                $snap_data[1]['updated_total_description_wc'][] =  $updated_total_description_wc1;
+                $snap_data[1]['updated_revision'][] =  $updated_revision1;
+                $snap_data[1]['updated_Features'][] =  $updated_Features1;
+                $snap_data[1]['updated_h1_word_counts'][] =  $updated_h1_word_counts1;
+                $snap_data[1]['updated_h2_word_counts'][] =  $updated_h2_word_counts1;  
 //                      $snap_data[1]['own_price'][] = (float) $data_row_sim[0]->own_price;
-                    $parsed_attributes_feature = unserialize($data_row_sim[0]->parsed_attributes);
-                    if ($parsed_attributes_feature['feature_count']) {
-                        $snap_data[1]['Features'][] = (int) $parsed_attributes_feature['feature_count'];
-                    } else {
-                        $snap_data[1]['Features'][] = 0;
-                    }
                     $htags = unserialize($data_row_sim[0]->HTags);
                     if ($htags) {
                         if (isset($htags['h1'])) {

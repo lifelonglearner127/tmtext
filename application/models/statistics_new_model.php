@@ -274,6 +274,7 @@ class Statistics_new_model extends CI_Model {
             (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `product_name`,
             (select `value` from imported_data_parsed where `key`="parsed_attributes" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_attributes`,
             (select `value` from imported_data_parsed where `key`="parsed_meta" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_meta`,
+            (select `value` from imported_data_parsed where `key`="Date" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Date`,
             (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Short_Description`,
             (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Long_Description`,
             (select `value` from imported_data_parsed where `key`="HTags" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `HTags`,
@@ -319,29 +320,21 @@ class Statistics_new_model extends CI_Model {
     // }
     
     
-    //    SELECT idpa1.`imported_data_id`, idpa1.`value` as `date`, idpa2.`value` as `description`, idpa3.`value` as `long_description`
-//FROM `imported_data_parsed_archived` as idpa1
-//left join `imported_data_parsed_archived` as idpa2 on idpa1.`imported_data_id` = idpa2.`imported_data_id` and idpa1.`revision`=idpa2.`revision`
-//left join `imported_data_parsed_archived` as idpa3 on idpa1.`imported_data_id` = idpa3.`imported_data_id` and idpa1.`revision`=idpa3.`revision`
-//WHERE idpa1.`key` = 'date' and idpa2.`key`='description' and idpa3.`key`='long_description' and idpa1.`imported_data_id`=2
-//ORDER BY idpa1.`value` DESC LIMIT 5
+       
     
     
     function getStatsData_min_max($imported_data_id)
     {        
-        $sql="SELECT value";
-        $sql.= " FROM imported_data_parsed_archived";
-        $sql.= " WHERE `imported_data_id` = $imported_data_id AND `key` =  'Date' GROUP BY `revision` ORDER BY `revision` DESC LIMIT 5";  
+        $sql='SELECT idpa1.`imported_data_id`, idpa1.`value` as `date`,idpa5.`value` as `HTags`, idpa2.`value` as `description`, idpa3.`value` as `long_description`, idpa4.`value` as `parsed_attributes`';
+        $sql.=' FROM `imported_data_parsed_archived` as idpa1';
+        $sql.=' left join `imported_data_parsed_archived` as idpa2 on idpa1.`imported_data_id` = idpa2.`imported_data_id` and idpa1.`revision`=idpa2.`revision`';
+        $sql.=' left join `imported_data_parsed_archived` as idpa3 on idpa1.`imported_data_id` = idpa3.`imported_data_id` and idpa1.`revision`=idpa3.`revision`';
+        $sql.=' left join `imported_data_parsed_archived` as idpa4 on idpa1.`imported_data_id` = idpa4.`imported_data_id` and idpa1.`revision`=idpa4.`revision`';
+        $sql.=' left join `imported_data_parsed_archived` as idpa5 on idpa1.`imported_data_id` = idpa5.`imported_data_id` and idpa1.`revision`=idpa5.`revision`';
+        $sql.=" WHERE idpa1.`key` = 'date' and idpa2.`key`='description' and idpa3.`key`='long_description' and idpa4.`key`='parsed_attributes' and idpa5.`key`='HTags' and idpa1.`imported_data_id`=".$imported_data_id;
+        $sql.=' ORDER BY idpa1.`value` DESC LIMIT 5';
         $query = $this->db->query($sql);
         $result = $query->result();
-        
-        $sql1="SELECT value";
-        $sql1.= " FROM imported_data_parsed";
-        $sql1.= " WHERE `imported_data_id` = $imported_data_id AND `key` =  'Date' GROUP BY `revision` ORDER BY `revision` DESC LIMIT 1";  
-        $query1 = $this->db->query($sql1);
-        $result1 = $query1->result();
-       
-        array_unshift($result, $result1[0]);
         return $result;
     }
     function getStatsData($params)
@@ -428,6 +421,7 @@ class Statistics_new_model extends CI_Model {
             (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `product_name`,
             (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `short_description`,
             (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `long_description`,
+            (select `value` from imported_data_parsed where `key`="Date" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Date`,
             (select `value` from imported_data_parsed where `key`="URL" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`,
             (select `value` from imported_data_parsed where `key`="HTags" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `htags`,
             (select `value` from imported_data_parsed where `key`="parsed_attributes" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_attributes`

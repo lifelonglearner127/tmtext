@@ -45,8 +45,10 @@ function resizeImp(){
 				gripInnerHtml:"<div class='grip'></div>", 
 				draggingClass:"dragging"});
 			}
+			setTimeout(function(){$('table#tblAssess').floatThead('reflow');}, 300)
+			
 			},500);
-			//console.log("resizeImp");
+			console.log("resizeImp");
 }
 $(function() {
 	
@@ -1583,9 +1585,8 @@ $(function() {
             }
             hideColumns();
             check_word_columns();
-            $('table#tblAssess').floatThead('reflow');
+            setTimeout(function(){$('table#tblAssess').floatThead('reflow');console.log("reflow 500");}, 1000);
 			
-			console.log("reflow 3");
 			var status = "no ok";
 				var statusinterval = setInterval( function(){
 				if($("#tblAssess td").length > 1){
@@ -1640,6 +1641,9 @@ function highChart(graphBuild){
         var valueName = [];
         valueName[0] = [];
         valueName[1] = [];
+        var valueDate = [];
+        valueDate[0] = [];
+        valueDate[1] = [];
         var valueUrl = [];
         valueUrl[0] = [];
         valueUrl[1] = [];
@@ -1647,17 +1651,59 @@ function highChart(graphBuild){
         var graphName2 = '';
         var cloneToolTip = null;
         var cloneToolTip2 = null;
-        var valueupdated = [];
-        valueupdated[0] = [];
-        valueupdated[1] = [];
+        var updated_Features = [];
+        updated_Features[0] = [];
+        updated_Features[1] = [];
+        var updated_long_description_wc = [];
+        updated_long_description_wc[0] = [];
+        updated_long_description_wc[1] = [];
+        var updated_revision = [];
+        updated_revision[0] = [];
+        updated_revision[1] = [];
+        var updated_short_description_wc = [];
+        updated_short_description_wc[0] = [];
+        updated_short_description_wc[1] = [];
+        var updated_total_description_wc = [];
+        updated_total_description_wc[0] = [];
+        updated_total_description_wc[1] = [];
+        var updated_h1_word_counts = [];
+        updated_h1_word_counts[0] = [];
+        updated_h1_word_counts[1] = [];
+        var updated_h2_word_counts = [];
+        updated_h2_word_counts[0] = [];
+        updated_h2_word_counts[1] = [];
+        var oldest_values =[];
+        oldest_values[0] =[];
+        oldest_values[1] =[];
         if(data.length) {
     
             /***First Batch - Begin***/
             if(data[0] && data[0].product_name.length > 0){
                 valueName[0] = data[0].product_name;
             }
-            if(data[0] && data[0].updated.length > 0){
-                valueupdated[0] = data[0].updated;
+            if(data[0] && data[0].Date.length > 0){
+                valueDate[0] = data[0].Date;
+            }
+            if(data[0] && data[0].updated_Features.length > 0){
+                updated_Features[0] = data[0].updated_Features;
+            }
+            if(data[0] && data[0].updated_long_description_wc.length > 0){
+                updated_long_description_wc[0] = data[0].updated_long_description_wc;
+            }
+            if(data[0] && data[0].updated_revision.length > 0){
+                updated_revision[0] = data[0].updated_revision;
+            }
+            if(data[0] && data[0].updated_short_description_wc.length > 0){
+                updated_short_description_wc[0] = data[0].updated_short_description_wc;
+            }
+            if(data[0] && data[0].updated_total_description_wc.length > 0){
+                updated_total_description_wc[0] = data[0].updated_total_description_wc;
+            }
+            if(data[0] && data[0].updated_h1_word_counts.length > 0){
+                updated_h1_word_counts[0] = data[0].updated_h1_word_counts;
+            }
+            if(data[0] && data[0].updated_h2_word_counts.length > 0){
+                updated_h2_word_counts[0] = data[0].updated_h2_word_counts;
             }
             if(data[0] && data[0].url.length > 0){
                 valueUrl[0] = data[0].url;
@@ -1667,8 +1713,29 @@ function highChart(graphBuild){
             if(data[1] && data[1].product_name.length > 0){
                 valueName[1] = data[1].product_name;
             }
-             if(data[1] && data[1].updated.length > 0){
-                valueupdated[1] = data[1].updated;
+             if(data[1] && data[1].Date.length > 0){
+                valueDate[1] = data[1].Date;
+            }
+             if(data[1] && data[1].updated_Features.length > 0){
+                updated_Features[1] = data[1].updated_Features;
+            }
+             if(data[1] && data[1].updated_long_description_wc.length > 0){
+                updated_long_description_wc[1] = data[1].updated_long_description_wc;
+            }
+             if(data[1] && data[1].updated_revision.length > 0){
+                updated_revision[1] = data[1].updated_revision;
+            }
+             if(data[1] && data[1].updated_short_description_wc.length > 0){
+                updated_short_description_wc[1] = data[1].updated_short_description_wc;
+            }
+             if(data[1] && data[1].updated_total_description_wc.length > 0){
+                updated_total_description_wc[1] = data[1].updated_total_description_wc;
+            }
+            if(data[1] && data[1].updated_h1_word_counts.length > 0){
+                updated_h1_word_counts[1] = data[1].updated_h1_word_counts;
+            }
+            if(data[1] && data[1].updated_h2_word_counts.length > 0){
+                updated_h2_word_counts[1] = data[1].updated_h2_word_counts;
             }
             if(data[1] && data[1].url.length > 0){
                 valueUrl[1] = data[1].url;
@@ -1687,6 +1754,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'Short Description:';
                     graphName2 = 'words';
+                    oldest_values[0] = updated_short_description_wc[0];
+                    oldest_values[1] = updated_short_description_wc[1];
                 }
                   break;
                 case 'long_description_wc':{
@@ -1698,6 +1767,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'Long Description:';
                     graphName2 = 'words';
+                    oldest_values[0] = updated_long_description_wc[0];
+                    oldest_values[1] = updated_long_description_wc[1];
                 }
                   break;
                 case 'total_description_wc':{
@@ -1710,6 +1781,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'Total Description Word Count:';
                     graphName2 = 'words';
+                    oldest_values[0] = updated_total_description_wc[0];
+                    oldest_values[1] = updated_total_description_wc[1];
                 }
                   break;
                 case 'revision':{
@@ -1721,6 +1794,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'Reviews:';
                     graphName2 = '';
+                    oldest_values[0] = updated_revision[0];
+                    oldest_values[1] = updated_revision[1];
                 }
                   break;
 //                case 'own_price':{
@@ -1742,6 +1817,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'Features:';
                     graphName2 = '';
+                    oldest_values[0] = updated_Features[0];
+                    oldest_values[1] = updated_Features[1];
                 }
                   break;
                 case 'h1_word_counts':{
@@ -1753,6 +1830,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'H1 Characters:';
                     graphName2 = 'words';
+                    oldest_values[0] = updated_h1_word_counts[0];
+                    oldest_values[1] = updated_h1_word_counts[1];
                 }
                   break;
                 case 'h2_word_counts':{
@@ -1764,6 +1843,8 @@ function highChart(graphBuild){
                     }
                     graphName1 = 'H2 Characters:';
                     graphName2 = 'words';
+                    oldest_values[0] = updated_h2_word_counts[0];
+                    oldest_values[1] = updated_h2_word_counts[1];
                 }
                   break;
                 default:{
@@ -1850,8 +1931,8 @@ function highChart(graphBuild){
                         result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
                         result += '<br /><span>' + valueName[j][datum.x] + '</span>';
                         result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
-                        result += '<br /><span>'+graphName1+' ' + datum.y + ' '+graphName2+'</span>';
-                        result += '<span style="display:'+display_property+';" class="update_class">'+valueupdated[j][datum.x]+'</span>';                       
+                        result += '<br /><span ">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' '+graphName2+'</span>';
+                        result += '<span style="color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span>';                       
                     });
                     return result;
                 }
@@ -2485,6 +2566,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
         curentSibil=target.parents('tr');
         
+        console.log("ADD DATA 1 : ", add_data);
        
         $('#ajaxLoadAni').fadeIn('slow');
         $('#assessDetails_ProductName').val(add_data.product_name);
@@ -2599,8 +2681,11 @@ var generate_url_check = GetURLParameter('generate_url_check');
        
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
          curentSibil=target.parents('tr');
-     
-       
+        
+       // === insert title seo data (start)
+       console.log("ADD DATA 2 : ", add_data);
+       console.log("ADD DATA 2 (KEYWORDS): ", add_data.title_seo_phrases);
+       // === insert title seo data (end)
          
         // if this product is absent product from second batch
         if (add_data.id == undefined) {
@@ -2669,6 +2754,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_LongDescriptionWC1').html(long_wc_total_not_01);
             $('#assessDetails_LongSEO1').val(add_data.long_seo_phrases1);
         }
+        if(typeof(add_data.title_seo_phrases1) !== 'undefined' && add_data.title_seo_phrases1 !== null && add_data.title_seo_phrases1 !== "None") $("#assessDetails_SEO1_div").html(add_data.title_seo_phrases1);
         if (short_wc_total_not_0 == 0 || long_wc_total_not_0 == 0) {
             $('#assessDetails_short_and_long_description_panel').hide();
             $('#assessDetails_description_panel').show();
@@ -2696,7 +2782,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
             $('#assessDetails_LongDescriptionWC').html(long_wc_total_not_0);
             $('#assessDetails_LongSEO').val(add_data.long_seo_phrases);
         }
-
+        if(typeof(add_data.title_seo_phrases) !== 'undefined' && add_data.title_seo_phrases !== null && add_data.title_seo_phrases !== "None") $("#assessDetails_SEO_div").html(add_data.title_seo_phrases);
         var chk_include_in_report = '<div id="assess_details_dialog_options" style="float: left; margin-left:30px;"><label><input id="assessDetailsDialog_chkIncludeInReport" type="checkbox">&nbspInclude in report</label></div>';
         var btn_delete_from_batch = '<button id="assess_details_delete_from_batch" class="btn btn-danger" style="float:left;">Delete</button>';
         var assessDetailsDialog_replace_element = $('#assessDetailsDialog').parent().find('.ui-dialog-buttonpane button[id="assessDetailsDialog_btnIncludeInReport"]');
@@ -4202,31 +4288,31 @@ function prevSibilfunc(curentSibil){
         }
         window.open(url);
     }
-    $(".horizontal_vertical_icon").click(function(){
-        if($("#horizontal").css('visibility') === 'visible'){
-            $("#vertical").css('visibility', 'visible') ;
-            $("#horizontal").css('visibility', 'hidden') ;
-            $("#columns_checking p").css('display','block');
-            $("#columns_checking p").css('float','left');            
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css({
-                'width':'1200'                
-            });  
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
-            'left':'50%',
-             'margin-left':'-600px'                
-             });  
-        }
-        else{
-            $("#vertical").css('visibility', 'hidden') ;
-            $("#horizontal").css('visibility', 'visible') ;
-            $("#columns_checking p").css('display','block');
-            $("#columns_checking p").css('float','');
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css('width','250px');
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
-             'margin-left':'-137px'                
-             }); 
-        }
-    });
+//    $(".horizontal_vertical_icon").click(function(){
+//        if($("#horizontal").css('visibility') === 'visible'){
+//            $("#vertical").css('visibility', 'visible') ;
+//            $("#horizontal").css('visibility', 'hidden') ;
+//            $("#columns_checking p").css('display','block');
+//            $("#columns_checking p").css('float','left');            
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css({
+//                'width':'1200'                
+//            });  
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
+//            'left':'50%',
+//             'margin-left':'-600px'                
+//             });  
+//        }
+//        else{
+//            $("#vertical").css('visibility', 'hidden') ;
+//            $("#horizontal").css('visibility', 'visible') ;
+//            $("#columns_checking p").css('display','block');
+//            $("#columns_checking p").css('float','');
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css('width','250px');
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
+//             'margin-left':'-137px'                
+//             }); 
+//        }
+//    });
     $(".research_assess_choiceColumnDialog_checkbox").change(function(){
          // get columns params
                 var columns = {
@@ -4234,7 +4320,7 @@ function prevSibilfunc(curentSibil){
                     created: $("#column_created").attr('checked') == 'checked',
                     imp_data_id: $("#imp_data_id").attr('checked') == 'checked',
                     product_name: $("#column_product_name").attr('checked') == 'checked',
-                    item_id: $("#item_id").attr('checked') == 'checked',
+//                    item_id: $("#item_id").attr('checked') == 'checked',
                     model: $("#model").attr('checked') == 'checked',
                     url: $("#column_url").attr('checked') == 'checked',
                     Page_Load_Time: $("#Page_Load_Time").attr('checked') == 'checked',
@@ -5036,6 +5122,7 @@ function resizeImpDown(){
 		gripInnerHtml:"<div class='grip'></div>", 
 		draggingClass:"dragging"
 });
+$('table#tblAssess').floatThead('reflow');
 }
 function darkHeaders(id) {
 	if($("table[id^=tblAssess]")){
@@ -5105,6 +5192,7 @@ $('#assess_tbl_show_case_details').click(function() {
 		
 	$('table#tblAssess').floatThead('reflow');
 	resizeImpDown();
+	resizeImp();
 });
 /*
 $("#tblAssess").mouseover(function(){
@@ -5132,6 +5220,7 @@ $('.ui-dialog-titlebar-close').click(function() {
 	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders($(this));}
 	$('table#tblAssess').floatThead('reflow');
 	resizeImpDown();
+	resizeImp();
 });
 $( ".CRG" )
   .mouseup(function() {
