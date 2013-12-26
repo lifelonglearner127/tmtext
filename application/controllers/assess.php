@@ -3042,51 +3042,12 @@ class Assess extends MY_Controller {
         $report = array();
         $pricing_details = array();
 		
-		//getting columns
+		//getting columns		
 		$columns = AssessHelper::addCompetitorColumns(AssessHelper::columns(), $build_assess_params->max_similar_item_count);
 		
 		//extracting initial data varialbes for filters
         extract(AssessHelper::getInitialFilterData());
 		
-		
-        // if ($build_assess_params->max_similar_item_count > 0) 
-		// {
-            // $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
-
-            // for ($i = 1; $i <= $max_similar_item_count; $i++) {
-
-                // $columns[] = array("sTitle" => "Snapshot", "sClass" => "Snapshot" . $i, "sName" => 'snap' . $i);
-                // $columns[] = array("sTitle" => "ID", "sClass" => "imp_data_id" . $i, "sName" => 'imp_data_id' . $i);
-                // $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
-                // $columns[] = array("sTitle" => "item ID", "sClass" => "item_id" . $i, "sName" => 'item_id' . $i);
-                // $columns[] = array("sTitle" => "Model", "sClass" => "model" . $i, "sName" => 'model' . $i);
-                // $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
-                // $columns[] = array("sTitle" => "Page Load Time", "sClass" => "Page_Load_Time" . $i, "sName" => 'Page_Load_Time' . $i);
-                // $columns[] = array("sTitle" => "<span class='subtitle_desc_short{$i}' >Short</span> Description", "sClass" => "Short_Description" . $i, "sName" => 'Short_Description' . $i);
-                // $columns[] = array("sTitle" => "Short Desc <span class='subtitle_word_short' ># Words</span>", "sClass" => "word_short" . $i, "sName" => 'short_description_wc' . $i);
-                // $columns[] = array("sTitle" => "Meta Keywords", "sClass" => "Meta_Keywords" . $i, "sName" => 'Meta_Keywords' . $i);
-                // $columns[] = array("sTitle" => "<span class='subtitle_desc_long{$i}' >Long </span>Description", "sClass" => "Long_Description" . $i, "sName" => 'Long_Description' . $i);
-                // $columns[] = array("sTitle" => "Long Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "word_long" . $i, "sName" => 'long_description_wc' . $i);
-                // $columns[] = array("sTitle" => "Meta Description", "sClass" => "Meta_Description" . $i, "sName" => 'Meta_Description' . $i);
-                // $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "Meta_Description_Count" . $i, "sName" => 'Meta_Description_Count' . $i);
-                // $columns[] = array("sTitle" => "Third Party Content", "sClass" => "column_external_content" . $i, "sName" => 'column_external_content' . $i);
-                // $columns[] = array("sTitle" => "HTags_1", "sClass" => "HTags_1" . $i, "sName" => "H1_Tags" . $i);
-                // $columns[] = array("sTitle" => "Chars", "sClass" => "H1_Tags_Count" . $i, "sName" => "H1_Tags_Count" . $i);
-                // $columns[] = array("sTitle" => "HTags_2", "sClass" => "HTags_2" . $i, "sName" => "H2_Tags" . $i);
-                // $columns[] = array("sTitle" => "Chars", "sClass" => "H2_Tags_Count" . $i, "sName" => "H2_Tags_Count" . $i);
-                // $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
-                // $columns[] = array("sTitle" => "Reviews", "sClass" => "column_reviews" . $i, "sName" => "column_reviews" . $i);
-                // $columns[] = array("sTitle" => "Features", "sClass" => "column_features" . $i, "sName" => "column_features" . $i);
-                // $columns[] = array("sTitle" => "Title Keywords", "sClass" => "title_seo_phrases" . $i, "sName" => "title_seo_phrases" . $i);
-                // $columns[] = array("sTitle" => "Images", "sClass" => "images_cmp" . $i, "sName" => "images_cmp" . $i);
-                // $columns[] = array("sTitle" => "Video", "sClass" => "video_count" . $i, "sName" => "video_count" . $i);
-                // $columns[] = array("sTitle" => "Title", "sClass" => "title_pa" . $i, "sName" => "title_pa" . $i);
-                // if ($i == 1) {
-                    // $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
-                    // $colomns[] = array("sTitle" => "Duplicate Content", "sClass" => "Duplicate_Content" . $i, "sName" => 'Duplicate_Content');
-                // }
-            // }
-        // }
         $display_length = intval($this->input->get('iDisplayLength', TRUE));
 
         $display_start = intval($this->input->get('iDisplayStart', TRUE));
@@ -3106,19 +3067,12 @@ class Assess extends MY_Controller {
         $c=0;
         $total_rows = count($results);
         foreach ($results as $row_key => $row) {
-		
-			//we can't do this verification bc filters should be calculated for all items in the batch
-             // if ($c >= $display_start) 
-			 // {
-			 
-//            $long_description_wc = $row->long_description_wc;
-//            $short_description_wc = $row->short_description_wc;
+					
             $success_filter_entries = array();
             $f_count1 = 0;
             $r_count1 = 0;
             $result_row = new stdClass();
             $result_row->gap = '';
-//            $result_row->Duplicate_Content = '';
             $meta_key_gap = 0;
             $result_row->id = $row->id;
             $result_row->imported_data_id = $row->imported_data_id;
@@ -3135,8 +3089,6 @@ class Assess extends MY_Controller {
                 $result_row->url = $row->url;
             }
 
-//            $result_row->short_description = $row->short_description;
-//            $result_row->long_description = $row->long_description;
             $result_row->short_description_wc = intval($row->short_description_wc);
             $result_row->long_description_wc = intval($row->long_description_wc);
             $result_row->short_seo_phrases = "None";
@@ -3155,8 +3107,6 @@ class Assess extends MY_Controller {
             $result_row->item_id = "";
             $result_row->Meta_Keywords = "";
             $result_row->Page_Load_Time = "";
-//            $result_row->Short_Description = "";
-//            $result_row->Long_Description = "";
             $result_row->model = "";
             $result_row->H1_Tags = "";
             $result_row->H1_Tags_Count = "";
@@ -3169,8 +3119,7 @@ class Assess extends MY_Controller {
             $result_row->own_price = floatval($row->own_price);
             $price_diff = unserialize($row->price_diff);
             $result_row->lower_price_exist = false;
-            $result_row->snap = '';
-            //$class_for_all_case = '';
+            $result_row->snap = '';           
             $tb_product_name = '';
 
 
@@ -3237,8 +3186,7 @@ class Assess extends MY_Controller {
                     $this->filterBySummaryCriteria('skus_75_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries);
                 }
 
-                $result_row->Duplicate_Content.= $percent . ' %';
-                //var_dump($result_row->Duplicate_Content); die();
+                $result_row->Duplicate_Content.= $percent . ' %';                
             } else {
                 $result_row->Duplicate_Content.='';
             }
@@ -3246,8 +3194,7 @@ class Assess extends MY_Controller {
 
 
 
-            if ($build_assess_params->max_similar_item_count > 0) {
-                //$class_for_all_case = "class_for_all_case";
+            if ($build_assess_params->max_similar_item_count > 0) {                
                 $sim_items = $row->similar_items;
                 $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
                 $tb_product_name = 'tb_product_name';
@@ -3399,23 +3346,7 @@ class Assess extends MY_Controller {
                         else
                             $parsed_meta_unserialize_val_count = '';
                     }
-
-
-//                     if ($parsed_meta_unserialize['keywords']) {
-//
-//                    $Meta_Keywords_un = "<table class='table_keywords_long'>";
-//                    $cnt_meta_un = explode(',', $parsed_meta_unserialize['keywords']);
-//                    $cnt_meta_count_un = count($cnt_meta_un);
-//                    foreach($cnt_meta_un as $cnt_m_un){
-//                        $cnt_m_un = trim($cnt_m_un);
-//                        $_count_meta_un = $this->keywords_appearence($parsed_meta_unserialize_val, $cnt_m_un);
-//                        $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / $parsed_meta_unserialize_val_count) * 100, 2) . "%";
-//                        $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un."</td></tr>";
-//                    }
-//                    $Meta_Keywords_un .= "</table>";
-//                    $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
-//
-//                    }
+  
                     if ($parsed_meta_unserialize['keywords']) {
 
                         $Meta_Keywords_un = "<table class='table_keywords_long'>";
@@ -3435,10 +3366,7 @@ class Assess extends MY_Controller {
 
                                 $_count_meta_num_un_proc = $_count_meta_num_un . "%";
                                 $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>" . $_count_meta_num_un_proc . "</td></tr>";
-//                        }else if($sim_items[$i - 1]->Short_Description){
-//                            $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Short_Description, $cnt_m_un);
-//                            $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / $sim_items[$i - 1]->short_description_wc) * 100, 2) . "%";
-//                            $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un."</td></tr>";
+//                        
                                 if ($i == 1 && !$meta_key_gap) {
                                     $metta_prc = round(($_count_meta_un * $cnt_meta_count_un / ($row->long_description_wc + $row->short_description_wc)) * 100, 2);
                                     if ($metta_prc >= 2) {
@@ -3658,34 +3586,12 @@ class Assess extends MY_Controller {
                         $batch1_meta_percents[$row_key][$key] = $_count_meta_num;
 
                         $_count_meta_num_proc = $_count_meta_num . "%";
-                        $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td style='width: 25px;padding-right: 0px;'>" . $_count_meta_num . "%</td></tr>";
-//                        }else if($result_row->Short_Description){
-//                            $_count_meta = $this->keywords_appearence($result_row->Short_Description, $cnt_m);
-//                            $_count_meta_num = round(($_count_meta * $cnt_meta_count / $result_row->short_description_wc) * 100, 2) . "%";
-//                            $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
-//
+                        $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td style='width: 25px;padding-right: 0px;'>" . $_count_meta_num . "%</td></tr>";  
                     }
                 }
                 $Meta_Keywords .= "</table>";
                 $result_row->Meta_Keywords = $Meta_Keywords;
             }
-
-
-//            if ($pars_atr['parsed_meta']['keywords'] && $pars_atr['parsed_meta']['keywords'] != '') {
-//                $Meta_Keywords = "<table class='table_keywords_long'>";
-//                    $cnt_meta = explode(',', $pars_atr['parsed_meta']['keywords']);
-//                    $cnt_meta_count = count($cnt_meta);
-//                    foreach($cnt_meta as $cnt_m){
-//                        $cnt_m = trim($cnt_m);
-//                        $_count_meta = $this->keywords_appearence($result_row->Meta_Description, $cnt_m);
-//                        $_count_meta_num = round(($_count_meta * $cnt_meta_count / $result_row->Meta_Description_Count) * 100, 2) . "%";
-//                        $Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
-//                    }
-//                $Meta_Keywords .= "</table>";
-//                $result_row->Meta_Keywords = $Meta_Keywords;
-//            }
-
-
 
             if (isset($pars_atr['parsed_attributes']['item_id']) && $pars_atr['parsed_attributes']['item_id'] != '') {
                 $result_row->item_id = $pars_atr['parsed_attributes']['item_id'];
@@ -3834,18 +3740,7 @@ class Assess extends MY_Controller {
 
 //gap analises
             if ($build_assess_params->max_similar_item_count > 0) {
-//              var_dump($row->short_description);
-//              var_dump($row->long_description);
-//              var_dump($row->similar_items); die();
-                //$class_for_all_case = "class_for_all_case";
                 $sim_items = $row->similar_items;
-
-//                if($result_row->short_description_wc && isset($sim_items[1]) && $sim_items[1]->short_description_wc && $result_row->short_description_wc <$sim_items[1]->short_description_wc){
-//                        $result_row->gap.="Lower words count in short description<br>";
-//                }
-//                if($result_row->long_description_wc && isset($sim_items[1]) && $sim_items[1]->long_description_wc && $result_row->long_description_wc <$sim_items[1]->long_description_wc){
-//                    $result_row->gap.="Lower words count in long description<br>";
-//                }
 
                 if (isset($sim_items[$i - 1]) && ($sim_items[$i - 1]->long_description_wc || $sim_items[$i - 1]->short_description_wc) && ($sim_items[$i - 1]->short_description_wc + $sim_items[$i - 1]->long_description_wc) < 100) {
                     $totoal = $sim_items[$i - 1]->short_description_wc + $sim_items[$i - 1]->long_description_wc;
@@ -3952,15 +3847,14 @@ class Assess extends MY_Controller {
                             $result_row->lower_price_exist = true;
                             $competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
                             $competitor_site = str_replace('www.', '', $competitor_site);
-                            $price_diff_res .= "<input type='hidden'><nobr>" . $competitor_site . " - $" . $price_diff['competitor_price'][$i] . "</nobr><br />";
-//                            var_dump($price_diff['competitor_price'][$i]);
+                            $price_diff_res .= "<input type='hidden'><nobr>" . $competitor_site . " - $" . $price_diff['competitor_price'][$i] . "</nobr><br />";                            
                         }
                     }
                 }
 
                 $result_row->price_diff = $price_diff_res;
             }
-//            var_dump($result_row->price_diff); 
+
             $result_row->competitors_prices = @unserialize($row->competitors_prices);
 
             if (property_exists($row, 'include_in_assess_report') && intval($row->include_in_assess_report) > 0) {
@@ -4130,26 +4024,10 @@ class Assess extends MY_Controller {
                 }
             }
 
-            //$items_priced_higher_than_competitors = $this->statistics_model->countAllItemsHigher($batch_id);
-
             if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
                 $items_unoptimized_product_content++;
             }
 
-//            if (($result_row->short_description_wc < 20 && $build_assess_params->short_less == 20) &&
-//                ($result_row->long_description_wc < 100 && $build_assess_params->long_less==100)) {
-//                $items_short_products_content++;
-//            }
-//
-//            if (($result_row->short_description_wc <= 20 && $build_assess_params->long_less == false ) ||
-//                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == false)){
-//                $items_short_products_content++;
-//            }
-//
-//            if (($result_row->short_description_wc <= 20 && $build_assess_params->long_less == -1 ) ||
-//                ($result_row->long_description_wc <= 100 && $build_assess_params->short_less == -1)){
-//                $items_short_products_content++;
-//            }
             if (trim($result_row->column_external_content)) {
                 $skus_third_party_content++;
                 $this->filterBySummaryCriteria('skus_third_party_content', $build_assess_params->summaryFilterData, $success_filter_entries);
@@ -4256,18 +4134,6 @@ class Assess extends MY_Controller {
             }
 
             $recomend = false;
-//            if ($items_priced_higher_than_competitors > 0) {
-//                $recomend = true;
-//            }
-//            if ($items_have_more_than_20_percent_duplicate_content == 0) {
-//                $recomend = true;
-//            }
-//            if ($items_unoptimized_product_content > 0) {
-//                $recomend = true;
-//            }
-//            if ($items_short_products_content_short > 0 || $items_long_products_content_short > 0) {
-//                $recomend = true;
-//            }
             if (($result_row->short_description_wc <= $build_assess_params->short_less ||
                     $result_row->long_description_wc <= $build_assess_params->long_less) && ($build_assess_params->long_less_check || $build_assess_params->long_more_check)
             ) {
@@ -4295,43 +4161,24 @@ class Assess extends MY_Controller {
                 $this->filterBySummaryCriteria('assess_report_items_priced_higher_than_competitors', $build_assess_params->summaryFilterData, $success_filter_entries);
             }
 
-            //this verification is necessary for summary filter
-            // echo "<br />";
-//			 echo "<br />";
-//			 print_r($success_filter_entries);
-            // echo "<br />";
-            // echo "<br />";
-
+            //this verification is necessary for summary filter      
             if ($c >= $display_start && $c < ($display_start + $display_length - 1) && $this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData)) {
                 $result_table[] = $result_row;
-            }
-			//we can't do this verification bc filters should be calculated for all items in the batch
-            // }
-             // if ($display_length > 0) {
-                    // if ($c >= ($display_start + $display_length - 1)) {
-                        // break;
-                    // }
-                // }
-                $c++;
-				
-				
-//            ++$qty;
-//            if($qty>$display_length+$display_start)break;
+            }			           
+			$c++;								         
         }
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
 //            header('Mem-and-Time2-BAT01: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);        
+//            $st_time=  microtime(true);  
+      
 //Debugging problem part
         if ($this->settings['statistics_table'] == "statistics_new") {
             $own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
         } else {
             $own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
         }
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time2-BAT02: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);
+
 
 		$summary_fields = array(
 			'total_items' => array( 'value' => $own_batch_total_items, 'percentage' => array() ),
@@ -4443,32 +4290,6 @@ class Assess extends MY_Controller {
 				$report['summary'][$key . '_icon'] = $summary_field['icon_percentage']($my_percent);
 			}			
 		}		              
-		
-        // only if second batch select - get absent products, merge it with result_table
-//        if (isset($build_assess_params->compare_batch_id) && $build_assess_params->compare_batch_id > 0) {
-//            $absent_items = $this->statistics_model->batches_compare($batch_id, $build_assess_params->compare_batch_id);
-//
-//            foreach ($absent_items as $absent_item) {
-//                $result_row = new stdClass();
-//                $result_row->product_name = $absent_item['product_name'];
-//                $result_row->url = $absent_item['url'];
-//                $result_row->recommendations = $absent_item['recommendations'];
-//                $result_table[] = $result_row;
-//            }
-//
-//            $own_batch = $this->batches_model->get($batch_id);
-//            $compare_customer = $this->batches_model->getCustomerById($build_assess_params->compare_batch_id);
-//            $compare_batch = $this->batches_model->get($build_assess_params->compare_batch_id);
-//
-//            $compare_batch_total_items = $this->statistics_model->total_items_in_batch($build_assess_params->compare_batch_id);
-//            $report['summary']['own_batch_total_items'] = $own_batch_total_items;
-//            $report['summary']['compare_batch_total_items'] = $compare_batch_total_items;
-//        }
-//        $report['recommendations']['absent_items'] = $absent_items;
-//        $report['summary']['absent_items_count'] = count($absent_items);
-//        $report['summary']['own_batch_name'] = $own_batch[0]->title;
-//        $report['summary']['compare_customer_name'] = $compare_customer[0]->name;
-//        $report['summary']['compare_batch_name'] = $compare_batch[0]->title;
 
         if ($items_priced_higher_than_competitors > 0) {
             $report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on ' . $items_priced_higher_than_competitors . ' item(s)';
@@ -4499,10 +4320,7 @@ class Assess extends MY_Controller {
         $config['uri_segment'] = 3;
         $this->pagination->initialize($config);
         $report['comparison_pagination'] = $this->pagination->create_links();
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time2-BAT04: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);
+
 
         if ($build_assess_params->all_columns) {
             $s_columns = explode(',', $build_assess_params->all_columns);
@@ -4532,27 +4350,16 @@ class Assess extends MY_Controller {
                 usort($result_table, array("Assess", "assess_sort"));
             }
         }
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time2-BAT05: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);
 
-       // $total_rows = count($result_table);
-
-        $echo = intval($this->input->get('sEcho'));
 
         $output = array(
-            "sEcho" => $echo,
+            "sEcho" => intval($this->input->get('sEcho')),
             "iTotalRecords" => $total_rows,
             "iTotalDisplayRecords" => $total_rows,
             "iDisplayLength" => $display_length,
             "aaData" => array()
         );
-        //Debugging End of problem part
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time2-BAT: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);
+       
 
         if (!empty($result_table)) {
           
@@ -4628,14 +4435,6 @@ class Assess extends MY_Controller {
                             }
                         }
 
-                        /* if ($data_row->short_description_wc <= $build_assess_params->short_less ||
-                          $data_row->long_description_wc <= $build_assess_params->long_less) {
-                          $sd_diff = $build_assess_params->short_less - $data_row->short_description_wc;
-                          $ld_diff = $build_assess_params->long_less - $data_row->long_description_wc;
-                          $increase_wc = max($sd_diff, $ld_diff);
-                          $recommendations[] = '<li>Increase descriptions word count by'.$increase_wc.' words</li>';
-                          } */
-
                         if ($data_row->short_seo_phrases == 'None' && $data_row->long_seo_phrases == 'None') {
                             $recommendations[] = array(
                                 'img' => '<img class="bullet" src="' . $img_path . 'assess_report_seo.png">',
@@ -4675,7 +4474,6 @@ class Assess extends MY_Controller {
                             }
                         }
                     }
-
 
                     $output_row = array(
                         '<span style="cursor:pointer;">' . $snap . '</span>',
@@ -4781,21 +4579,9 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->Duplicate_Content;
                     }
                     $output['aaData'][] = $output_row;
-                
-
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time3-1-BAT: '.memory_get_usage().'-'.$dur.'-'.$c);
-//            $st_time=  microtime(true);
             }
         }
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time3-BAT: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);
-//       echo  "<pre>";
-//       print_r($columns);
-//       print_r($output['aaData']);exit;
+
         $output['columns'] = $columns;
         $output['ExtraData']['report'] = $report;
 
