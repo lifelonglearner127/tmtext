@@ -2908,7 +2908,8 @@ var generate_url_check = GetURLParameter('generate_url_check');
                      $.post(base_url+'index.php/site_crawler/crawl_all', {
                          recrawl: 1,
                          batch_id: $('select[name="research_assess_batches"]').find('option:selected').val(),
-                         url: $('input#assessDetails_url').val()
+                         url: $('input#assessDetails_url').val(),
+                         url_right: $('input#assessDetails_url1').val()
                      }, function(data) {
                         alert('Re-crawl proccess was successful');
                      });
