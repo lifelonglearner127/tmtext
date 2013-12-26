@@ -2722,13 +2722,15 @@ var generate_url_check = GetURLParameter('generate_url_check');
         $('#assessDetails_Model').val(add_data.model);
         $('#assessDetails_url').val(add_data.url);
         $('#assess_open_url_btn').attr('href', add_data.url);
-        $('#assessDetails_Price').val(add_data.own_price);
+        // $('#assessDetails_Price').val(add_data.own_price);
+        $('#assessDetails_Price').val( Number(add_data.own_price).toFixed(2) );
        
         $('#assessDetails_ProductName1').val(add_data.product_name1);
         $('#assessDetails_Model1').val(add_data.model1);
         $('#assessDetails_url1').val(url_compare);
         $('#assess_open_url_btn1').attr('href', url_compare);
-        $('#assessDetails_Price1').val(add_data.competitors_prices[0]);
+        // $('#assessDetails_Price1').val(add_data.competitors_prices[0]);
+        $('#assessDetails_Price1').val( Number(add_data.competitors_prices[0]).toFixed(2) );
         var short_total_not_01 = '';
         var long_total_not_01 = '';
         var long_wc_total_not_01 = 0;
