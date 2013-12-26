@@ -2704,10 +2704,10 @@ li.selected-url{
     background-color: rgba(0, 0, 0, .5);
 }
 
-#research_assess_choiceColumnDialog::-webkit-scrollbar-track { 
+/*#research_assess_choiceColumnDialog::-webkit-scrollbar-track { 
     background-color: #fff; 
     border-radius: 8px; 
-}
+}*/
 #summary_filters_configuration_wrapper::-webkit-scrollbar {
     -webkit-appearance: none;
 }
@@ -2724,9 +2724,4 @@ li.selected-url{
     border-radius: 8px;
     border: 2px solid white; /* should match background, can't be transparent */
     background-color: rgba(0, 0, 0, .5);
-}
-
-#summary_filters_configuration_wrapper::-webkit-scrollbar-track { 
-    background-color: #fff; 
-    border-radius: 8px; 
 }
