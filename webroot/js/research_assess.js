@@ -4399,7 +4399,7 @@ function prevSibilfunc(curentSibil){
 		}
 	});
 	
-	$('#summary_filters_configuration_wrapper').dialog({
+	$('#summary_filters_configuration_wrapper, #custom_batch_create_modal').dialog({
 		autoOpen : false,
 		resizable: false,
 		modal : true,
@@ -4409,6 +4409,13 @@ function prevSibilfunc(curentSibil){
 	$('.show_filters_configuration_popup').on('click', function() {
 		$('#summary_filters_configuration_wrapper').dialog('open');
 	});
+
+    $(".custom-batch-trigger").on("click", function(e) {
+        e.preventDefault();
+        $.post(base_url + 'index.php/batches/index', {}, function(data) {
+            $("#custom_batch_create_modal").html(data).dialog("open");
+        });
+    });
 	
 	$('.summary_filter_config_item').on('click', function() {
 	

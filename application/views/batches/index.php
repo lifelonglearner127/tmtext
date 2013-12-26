@@ -1,9 +1,5 @@
 <link type="text/css" rel="stylesheet" href="<?php echo base_url(); ?>css/smoothness/jquery-ui-1.8.2.custom.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo base_url(); ?>css/styles.css" />
-<div class="modal-header">
-	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-	<h3 style="background-color: #fff;">Custom Batch</h3>
-</div>
 <div class="modal-body" style="overflow: hidden !important;">
     <?php echo form_open("research/save", array("class" => "form-horizontal", "id" => "create_batch_save")); ?>
     <div id="batchesDiv">

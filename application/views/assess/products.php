@@ -4,7 +4,7 @@
         <li id="product_menu_part" class="active"><a data-toggle="tab" href="<?php echo site_url('assess/products');?>">Products</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li>
-        <li class='pull_right_navlink'><a href="javascript:void(0);" onclick="viewCustomBatches()">Custom Batch</a></li>
+        <li class='pull_right_navlink'><a href="#" class="custom-batch-trigger">Custom Batch</a></li>
     </ul>
 
 <ul class="research_table_filter">
@@ -202,7 +202,7 @@
 
 <div class="modal hide fade ci_hp_modals crawl_launch_panel" id='recipients_control_panel_modal'></div>
 <div class="modal hide fade ci_hp_modals" style='top: 20%' id='dep_rep_preview_list_modal'></div>
-<div class="modal hide fade ci_hp_modals crawl_launch_panel" id='custom_batch_create_modal'></div>
+<div id='custom_batch_create_modal' title="Custom Batch"></div>
 
 <!-- choise column dialog box -->
 <div id="research_assess_choiceColumnDialog" title="Select Table Columns">
