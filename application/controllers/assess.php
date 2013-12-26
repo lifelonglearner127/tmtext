@@ -216,83 +216,94 @@ class Assess extends MY_Controller {
 //*/
         return serialize($phrases);
     }
-
+	
+	private function buildObject(array $fields = array())
+	{
+		$r = new stdClass();
+		
+		foreach($fields as $key => $field)
+		{
+			if (is_array($field))
+			{
+				$input_field = $this->input->get($key);
+			
+				if (isset($field['callback']))
+					$input_field = $field['callback']($input_field);
+				
+				$input_field = $input_field ?: $field['default'];
+				
+				$r->{$key} = $input_field;
+			} else {
+			
+				//scalar value
+				$r->{$key} = $field;
+			}
+		}
+		
+		return $r;
+	}
+	
     public function get_assess_info() {
         //Debugging
         $st_time = microtime(TRUE);
-        $batch2_items_count = 0;
-        $txt_filter = '';
-        if ($this->input->get('search_text') != '') {
-            $txt_filter = $this->input->get('search_text');
-        }
-        if ($this->input->get('sSearch') != '') {
-            $txt_filter = $this->input->get('sSearch');
-        }
+        
         $batch_id = $this->input->get('batch_id');
-
-
-        $compare_batch_id = $this->input->get('compare_batch_id');
 
         if ($batch_id == 0) {
             $output = array(
-                "sEcho" => 1,
-                "iTotalRecords" => 0,
-                "iTotalDisplayRecords" => 0,
-                "iDisplayLength" => 10,
-                "aaData" => array()
+                'sEcho' => 1,
+                'iTotalRecords' => 0,
+                'iTotalDisplayRecords' => 0,
+                'iDisplayLength' => 10,
+                'aaData' => array()
             );
 
             $this->output->set_content_type('application/json')
-                    ->set_output(json_encode($output));
-        } else {
-            $build_assess_params = new stdClass();
-            $build_assess_params->date_from = $this->input->get('date_from') == 'undefined' ? '' : $this->input->get('date_from');
-            $build_assess_params->date_to = $this->input->get('date_to') == 'undefined' ? '' : $this->input->get('date_to');
-            $build_assess_params->price_diff = $this->input->get('price_diff') == 'undefined' ? -1 : $this->input->get('price_diff');
-            $build_assess_params->max_similar_item_count = 0;
-            $build_assess_params->short_less_check = $this->input->get('short_less_check') == 'true' ? true : false;
-            if ($this->input->get('short_less')) {
-                $build_assess_params->short_less = $this->input->get('short_less') == 'undefined' ? -1 : intval($this->input->get('short_less'));
-            } else {
-                $build_assess_params->short_less = 20;
-            }
-            $build_assess_params->short_more_check = $this->input->get('short_more_check') == 'true' ? true : false;
-            if ($this->input->get('short_more')) {
-                $build_assess_params->short_more = $this->input->get('short_more') == 'undefined' ? -1 : intval($this->input->get('short_more'));
-            } else {
-                $build_assess_params->short_more = 0;
-            }
-
-            $build_assess_params->short_seo_phrases = $this->input->get('short_seo_phrases');
-            $build_assess_params->short_duplicate_content = $this->input->get('short_duplicate_content');
-
-            $build_assess_params->long_less_check = $this->input->get('long_less_check') == 'true' ? true : false;
-            if ($this->input->get('long_less')) {
-                $build_assess_params->long_less = $this->input->get('long_less') == 'undefined' ? -1 : intval($this->input->get('long_less'));
-            } else {
-                $build_assess_params->long_less = 50;
-            }
-            $build_assess_params->long_more_check = $this->input->get('long_more_check') == 'true' ? true : false;
-            if ($this->input->get('long_more')) {
-                $build_assess_params->long_more = $this->input->get('long_more') == 'undefined' ? -1 : intval($this->input->get('long_more'));
-            } else {
-                $build_assess_params->long_more = 0;
-            }
-
-            $build_assess_params->long_seo_phrases = $this->input->get('long_seo_phrases');
-            $build_assess_params->long_duplicate_content = $this->input->get('long_duplicate_content');
-            $build_assess_params->all_columns = $this->input->get('sColumns');
-            $build_assess_params->sort_columns = $this->input->get('iSortCol_0');
-            $build_assess_params->sort_dir = $this->input->get('sSortDir_0');
-            $build_assess_params->flagged = $this->input->get('flagged') == 'true' ? true : $this->input->get('flagged');
-
-            $summaryFilterData = $this->input->get('summaryFilterData');
-            $build_assess_params->summaryFilterData = $summaryFilterData ? explode(',', $summaryFilterData) : array();
-
-            if (intval($compare_batch_id) > 0) {
-                $build_assess_params->compare_batch_id = intval($compare_batch_id);
-            }
-
+                    ->set_output(json_encode($output));			
+        } else {			 
+			$batch2_items_count = 0;
+			
+			if (!($txt_filter = $this->input->get('search_text'))) 
+				if (!($txt_filter = $this->input->get('sSearch'))) 
+					$txt_filter = '';			
+			
+           $build_assess_params = $this->buildObject(array(
+				'date_from' => array( 'default' => '' ),
+				'date_to' => array( 'default' => '' ),
+				'price_diff' => array( 'default' => -1 ),
+				'max_similar_item_count' => 0,
+				'short_less_check' => $this->input->get('short_less_check'),
+				'short_less' => array( 'default' => 20,  'callback' => function($value) {
+					return (int)$value;
+				}),
+				'short_more_check' => $this->input->get('short_more_check'),
+				'short_more' => array( 'default' => 0,  'callback' => function($value) {
+					return (int)$value;
+				}),
+				'short_seo_phrases' => $this->input->get('short_seo_phrases'),
+				'short_duplicate_content' => $this->input->get('short_duplicate_content'),
+				'long_less_check' => $this->input->get('long_less_check'),
+				'long_less' => array( 'default' => 50,  'callback' => function($value) {
+					return (int)$value;
+				}),
+				'long_more_check' => $this->input->get('long_more_check'),
+				'long_more' => array( 'default' => 0,  'callback' => function($value) {
+					return (int)$value;
+				}),
+				'long_seo_phrases' => $this->input->get('long_seo_phrases'),
+				'long_duplicate_content' => $this->input->get('long_duplicate_content'),
+				'all_columns' => $this->input->get('sColumns'),
+				'sort_columns' => $this->input->get('iSortCol_0'),
+				'sort_dir' => $this->input->get('sSortDir_0'),
+				'flagged' => $this->input->get('flagged'),
+				'summaryFilterData' => array( 'default' => array(), 'callback' => function($value) {
+					return $value ? explode(',', $value) : array();
+				}),
+				'compare_batch_id' => array( 'default' => null, 'callback' => function($value) {
+					return (int)$value;
+				}),
+			));			
+			
             $params = new stdClass();
             $params->batch_id = $batch_id;
             $params->txt_filter = $txt_filter;
@@ -303,15 +314,16 @@ class Assess extends MY_Controller {
                 $params->iDisplayLength = $this->input->get('iDisplayLength');
                 $params->iDisplayStart = $this->input->get('iDisplayStart');
             }
-
+			
             $results = $this->get_data_for_assess($params);
+			
             $cmp = array();
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
 //            header('Mem-and-Time1: '.memory_get_usage().'-'.$dur);
 //            $st_time=  microtime(true);
 
-            if ($batch2 != '' && $batch2 != 0 && $batch2 != 'all') {
+            if ($batch2 && $batch2 != 'all') {
                 $this->load->model('batches_model');
                 $build_assess_params->max_similar_item_count = 1;
 
@@ -368,42 +380,42 @@ class Assess extends MY_Controller {
                                     if (isset($HTags['h1']) && $HTags['h1'] && $HTags['h1'] != '') {
                                         $H1 = $HTags['h1'];
                                         if (is_array($H1)) {
-                                            $str_1 = "<table  class='table_keywords_long'>";
-                                            $str_1_Count = "<table  class='table_keywords_long'>";
+                                            $str_1 = '<table  class="table_keywords_long">';
+                                            $str_1_Count = '<table  class="table_keywords_long">';
                                             foreach ($H1 as $h1) {
-                                                $str_1.= "<tr><td>" . $h1 . "</td></tr>";
-                                                $str_1_Count.="<tr><td>" . strlen($h1) . "</td></tr>";
+                                                $str_1.= '<tr><td>' . $h1 . '</td></tr>';
+                                                $str_1_Count.='<tr><td>' . strlen($h1) . '</td></tr>';
                                             }
-                                            $str_1 .="</table>";
-                                            $str_1_Count .="</table>";
+                                            $str_1 .= '</table>';
+                                            $str_1_Count .= '</table>';
                                             $parsed_H1_Tags_unserialize_val = $str_1;
                                             $parsed_H1_Tags_unserialize_val_count = $str_1_Count;
                                         } else {
                                             $H1_Count = strlen($HTags['h1']);
-                                            $parsed_H1_Tags_unserialize_val = "<table  class='table_keywords_long'><tr><td>" . $H1 . "</td></tr></table>";
+                                            $parsed_H1_Tags_unserialize_val = '<table  class="table_keywords_long"><tr><td>' . $H1 . '</td></tr></table>';
                                             ;
-                                            $parsed_H1_Tags_unserialize_val_count = "<table  class='table_keywords_long'><tr><td>" . $H1_Count . "</td></tr></table>";
+                                            $parsed_H1_Tags_unserialize_val_count = '<table  class="table_keywords_long"><tr><td>' . $H1_Count . '</td></tr></table>';
                                             ;
                                         }
                                     }
                                     if (isset($HTags['h2']) && $HTags['h2'] && $HTags['h2'] != '') {
                                         $H2 = $HTags['h2'];
                                         if (is_array($H2)) {
-                                            $str_2 = "<table  class='table_keywords_long'>";
-                                            $str_2_Count = "<table  class='table_keywords_long'>";
+                                            $str_2 = '<table  class="table_keywords_long">';
+                                            $str_2_Count = '<table  class="table_keywords_long">';
                                             foreach ($H2 as $h2) {
-                                                $str_2.= "<tr><td>" . $h2 . "</td></tr>";
-                                                $str_2_Count.="<tr><td>" . strlen($h2) . "</td></tr>";
+                                                $str_2.= '<tr><td>' . $h2 . '</td></tr>';
+                                                $str_2_Count.='<tr><td>' . strlen($h2) . '</td></tr>';
                                             }
-                                            $str_2 .="</table>";
-                                            $str_2_Count .="</table>";
+                                            $str_2 .= '</table>';
+                                            $str_2_Count .='</table>';
                                             $parsed_H2_Tags_unserialize_val = $str_2;
                                             $parsed_H2_Tags_unserialize_val_count = $str_2_Count;
                                         } else {
                                             $H1_Count = strlen($HTags['h2']);
-                                            $parsed_H2_Tags_unserialize_val = "<table  class='table_keywords_long'><tr><td>" . $H2 . "</td></tr></table>";
+                                            $parsed_H2_Tags_unserialize_val = '<table  class="table_keywords_long"><tr><td>' . $H2 . '</td></tr></table>';
                                             ;
-                                            $parsed_H2_Tags_unserialize_val_count = "<table  class='table_keywords_long'><tr><td>" . $H2_Count . "</td></tr></table>";
+                                            $parsed_H2_Tags_unserialize_val_count = '<table  class="table_keywords_long"><tr><td>' . $H2_Count . '</td></tr></table>';
                                             ;
                                         }
                                     }
@@ -467,7 +479,7 @@ class Assess extends MY_Controller {
 //                                   }
 
                                     if (isset($parsed_meta_unserialize['keywords'])) {
-                                        $Meta_Keywords_un = "<table class='table_keywords_long'>";
+                                        $Meta_Keywords_un = '<table class="table_keywords_long">';
                                         $cnt_meta = explode(',', $parsed_meta_unserialize['keywords']);
                                         $cnt_meta_count = count($cnt_meta);
                                         $_count_meta = 0;
@@ -478,8 +490,8 @@ class Assess extends MY_Controller {
                                             }
                                             if ($cmpare->Short_Description || $cmpare->Long_Description) {
                                                 $_count_meta = $this->keywords_appearence($cmpare->Long_Description . $cmpare->Short_Description, $cnt_m);
-                                                $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . "%";
-                                                $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td style='width: 25px;padding-right: 0px;>" . $_count_meta_num . "</td></tr>";
+                                                $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . '%';
+                                                $Meta_Keywords_un .= '<tr><td>' . $cnt_m . '</td><td style="width: 25px;padding-right: 0px;">' . $_count_meta_num . '</td></tr>';
                                             }
 //                                                else if($cmpare->Short_Description){
 //                                                    $_count_meta = $this->keywords_appearence($cmpare->Short_Description, $cnt_m);
@@ -492,7 +504,7 @@ class Assess extends MY_Controller {
 //                                                        $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
 //                                                    }
                                         }
-                                        $Meta_Keywords_un .= "</table>";
+                                        $Meta_Keywords_un .= '</table>';
                                         $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
                                     }
 
@@ -626,11 +638,10 @@ class Assess extends MY_Controller {
         $results = $this->statistics_new_model->getStatsData_min_max($imported_data_id);
             return $results;
         }
-    private function get_data_for_assess($params) {
-        $this->load->model('settings_model');
+    private function get_data_for_assess($params) {        
         $this->load->model('statistics_model');
         $this->load->model('statistics_new_model');
-
+		
         if ($this->settings['statistics_table'] == "statistics_new") {
             $results = $this->statistics_new_model->getStatsData($params);
         } else {

@@ -4241,14 +4241,14 @@ function prevSibilfunc(curentSibil){
                     Short_Description: $("#Short_Description").attr('checked') == 'checked',
                     short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
                     Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
-                    short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
+                    short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked' ? 1 : 0,
                     title_seo_phrases: $("#column_title_seo_phrases").attr('checked') == 'checked',
                     images_cmp: $("#column_images_cmp").attr('checked') == 'checked',
                     video_count: $("#column_video_count").attr('checked') == 'checked',
                     title_pa: $("#column_title_pa").attr('checked') == 'checked',
                     Long_Description: $("#Long_Description").attr('checked') == 'checked',
                     long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
-                    long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
+                    long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked' ? 1 : 0,
                     Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").attr('checked') == 'checked',
                     Custom_Keywords_Long_Description : $("#Custom_Keywords_Long_Description").attr('checked') == 'checked',
                     Meta_Description : $("#Meta_Description").attr('checked') == 'checked',
@@ -4817,30 +4817,30 @@ function prevSibilfunc(curentSibil){
         }
 
         if ($('#research_assess_short_check').is(':checked')) {
-            assessRequestParams.short_less_check = $('#research_assess_short_less_check').is(':checked');
+            assessRequestParams.short_less_check = $('#research_assess_short_less_check').is(':checked') + 0;
             assessRequestParams.short_less = $('#research_assess_short_less').val();
-            assessRequestParams.short_more_check = $('#research_assess_short_more_check').is(':checked')
+            assessRequestParams.short_more_check = $('#research_assess_short_more_check').is(':checked') + 0;
             assessRequestParams.short_more = $('#research_assess_short_more').val();
 
             if ($('#research_assess_short_seo_phrases').is(':checked')) {
-                assessRequestParams.short_seo_phrases = true;
+                assessRequestParams.short_seo_phrases = 1;
             }
             if ($('#research_assess_short_duplicate_content').is(':checked')) {
-                assessRequestParams.short_duplicate_content = true;
+                assessRequestParams.short_duplicate_content = 1;
             }
         }
 
         if ($('#research_assess_long_check').is(':checked')) {
-            assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked');
+            assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked') + 0;
             assessRequestParams.long_less = $('#research_assess_long_less').val();
-            assessRequestParams.long_more_check = ($('#research_assess_long_more_check').is(':checked'));
+            assessRequestParams.long_more_check = $('#research_assess_long_more_check').is(':checked') + 0;
             assessRequestParams.long_more = $('#research_assess_long_more').val();
 
             if ($('#research_assess_long_seo_phrases').is(':checked')) {
-                assessRequestParams.long_seo_phrases = true;
+                assessRequestParams.long_seo_phrases = 1;
             }
             if ($('#research_assess_long_duplicate_content').is(':checked')) {
-                assessRequestParams.long_duplicate_content = true;
+                assessRequestParams.long_duplicate_content = 1;
             }
         }
 
@@ -4902,7 +4902,7 @@ var search_text = GetURLParameter('search_text');
             assessRequestParams.short_more = $('#research_assess_short_more').val();
 
             if ($('#research_assess_short_seo_phrases').is(':checked')) {
-                assessRequestParams.short_seo_phrases = true;
+                assessRequestParams.short_seo_phrases = 1;
             }
             if ($('#research_assess_title_seo_phrases').is(':checked')) {
                 assessRequestParams.title_seo_phrases = true;
@@ -4917,21 +4917,21 @@ var search_text = GetURLParameter('search_text');
                 assessRequestParams.title_pa = true;
             }
             if ($('#research_assess_short_duplicate_content').is(':checked')) {
-                assessRequestParams.short_duplicate_content = true;
+                assessRequestParams.short_duplicate_content = 1;
             }
         }
 
         if ($('#research_assess_long_check').is(':checked')) {
-            assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked');
+            assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked') + 0;
             assessRequestParams.long_less = $('#research_assess_long_less').val();
-            assessRequestParams.long_more_check = ($('#research_assess_long_more_check').is(':checked'));
+            assessRequestParams.long_more_check = $('#research_assess_long_more_check').is(':checked') + 0;
             assessRequestParams.long_more = $('#research_assess_long_more').val();
 
             if ($('#research_assess_long_seo_phrases').is(':checked')) {
-                assessRequestParams.long_seo_phrases = true;
+                assessRequestParams.long_seo_phrases = 1;
             }
             if ($('#research_assess_long_duplicate_content').is(':checked')) {
-                assessRequestParams.long_duplicate_content = true;
+                assessRequestParams.long_duplicate_content = 1;
             }
         }
 
