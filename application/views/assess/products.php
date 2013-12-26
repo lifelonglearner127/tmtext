@@ -434,7 +434,7 @@
         <span class="labeler" style='float: left; display: block'>
             <label>Title Keywords:</label>
         </span>
-        <div class='assessDetails_SEO_wrap' id="assessDetails_SEO_div">no data</div>
+        <div class='assessDetails_SEO_wrap' id="assessDetails_SEO_div">None</div>
     </div>
     
     </div>  
@@ -510,7 +510,7 @@
         <span class="labeler" style='float: left; display: block'>
             <label>Title Keywords:</label>
         </span>
-        <div class='assessDetails_SEO_wrap' id="assessDetails_SEO1_div">no data</div>
+        <div class='assessDetails_SEO_wrap' id="assessDetails_SEO1_div">None</div>
     </div>
 
     <?php if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) { ?>
