@@ -39,7 +39,26 @@ class Imported_data_parsed_model extends CI_Model {
     function __construct() {
         parent::__construct();
     }
-
+    public function delete_repeated_data(){
+        error_reporting(E_ALL);
+        $sql = "select `value`, count(id) as cnt, max(imported_data_id) as max_data_id, min(imported_data_id) as min_data_id
+                , max(revision) as max_revision, min(revision) as min_revision
+                from imported_data_parsed
+                where `key`='url'
+                group by `value`
+                having cnt>1 
+                and (max_data_id !=min_data_id
+                or max_revision != min_revision)";
+        $query = $this->db->query($sql);
+        $results = $query->result_array();
+       
+        foreach($results as $k => $res){
+//                            
+                $this->db->where('imported_data_id',$res['min_data_id']);
+                $this->db->delete('imported_data_parsed');
+        }
+            
+   }
     function model_info($imported_data_id, $model, $revision) {
 
         $update_object = array(

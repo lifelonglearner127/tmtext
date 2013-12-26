@@ -2527,6 +2527,30 @@ var generate_url_check = GetURLParameter('generate_url_check');
      var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
       var checked_columns_results = GetURLParameter('checked_columns_results');
     
+     // ==== figure out position of clicked 'tr'(start)
+     var click_object = $(event.target).parent();
+     if(click_object[0].localName == 'tr') { // <tr>
+        var click_object = $(event.target).parent();
+        var click_object_index = click_object[0]._DT_RowIndex;
+     } else { // <td>
+        var click_object = $(event.target).parent().parent();
+        var click_object_index = click_object[0]._DT_RowIndex;
+     }
+     console.log("CLICKED TR INDEX: ", click_object_index);
+     var click_object_real_index = 0;
+     if(click_object_index == 0) {
+        click_object_real_index = 1;
+     } else {
+        click_object_real_index = click_object_index + 1;
+     }
+     console.log("REAL CLICKED TR INDEX: ", click_object_real_index);
+     if(click_object_real_index == 1) {
+        $("#assessDetailsDialog_btnPrev").attr('disabled', true); 
+     } else if(click_object_real_index == 9) {
+        $("#assessDetailsDialog_btnNext").attr('disabled', true); 
+     }
+     // ==== figure out position of clicked 'tr'(end)
+
      if((table_case != "details_compare") && (checked_columns_results == undefined)){
 
         $('.details_left').addClass('details_width');  
@@ -2698,13 +2722,15 @@ var generate_url_check = GetURLParameter('generate_url_check');
         $('#assessDetails_Model').val(add_data.model);
         $('#assessDetails_url').val(add_data.url);
         $('#assess_open_url_btn').attr('href', add_data.url);
-        $('#assessDetails_Price').val(add_data.own_price);
+        // $('#assessDetails_Price').val(add_data.own_price);
+        $('#assessDetails_Price').val( Number(add_data.own_price).toFixed(2) );
        
         $('#assessDetails_ProductName1').val(add_data.product_name1);
         $('#assessDetails_Model1').val(add_data.model1);
         $('#assessDetails_url1').val(url_compare);
         $('#assess_open_url_btn1').attr('href', url_compare);
-        $('#assessDetails_Price1').val(add_data.competitors_prices[0]);
+        // $('#assessDetails_Price1').val(add_data.competitors_prices[0]);
+        $('#assessDetails_Price1').val( Number(add_data.competitors_prices[0]).toFixed(2) );
         var short_total_not_01 = '';
         var long_total_not_01 = '';
         var long_wc_total_not_01 = 0;
@@ -2807,6 +2833,16 @@ var generate_url_check = GetURLParameter('generate_url_check');
                     }
                     assessDetailsDialog_chkIncludeInReport.attr('research_data_id', add_data.research_data_id);
                    $('#assessDetailsDialog').dialog('open');
+                   // ==== restore prev / next buttons to init state (start)
+                   $("#assessDetailsDialog_btnPrev, #assessDetailsDialog_btnNext").removeAttr('disabled');
+                   // ==== restore prev / next buttons to init state (end) 
+                   // ==== figure prev / next buttons availability states (start)
+                   if(click_object_real_index == 1) {
+                       $("#assessDetailsDialog_btnPrev").attr('disabled', true); 
+                   } else if(click_object_real_index == 9) {
+                       $("#assessDetailsDialog_btnNext").attr('disabled', true); 
+                   }
+                   // ==== figure prev / next buttons availability states (end)
                 }
         );
 
@@ -2874,7 +2910,8 @@ var generate_url_check = GetURLParameter('generate_url_check');
                      $.post(base_url+'index.php/site_crawler/crawl_all', {
                          recrawl: 1,
                          batch_id: $('select[name="research_assess_batches"]').find('option:selected').val(),
-                         url: $('input#assessDetails_url').val()
+                         url: $('input#assessDetails_url').val(),
+                         url_right: $('input#assessDetails_url1').val()
                      }, function(data) {
                         alert('Re-crawl proccess was successful');
                      });
@@ -4288,31 +4325,31 @@ function prevSibilfunc(curentSibil){
         }
         window.open(url);
     }
-    $(".horizontal_vertical_icon").click(function(){
-        if($("#horizontal").css('visibility') === 'visible'){
-            $("#vertical").css('visibility', 'visible') ;
-            $("#horizontal").css('visibility', 'hidden') ;
-            $("#columns_checking p").css('display','block');
-            $("#columns_checking p").css('float','left');            
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css({
-                'width':'1200'                
-            });  
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
-            'left':'50%',
-             'margin-left':'-600px'                
-             });  
-        }
-        else{
-            $("#vertical").css('visibility', 'hidden') ;
-            $("#horizontal").css('visibility', 'visible') ;
-            $("#columns_checking p").css('display','block');
-            $("#columns_checking p").css('float','');
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css('width','250px');
-            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
-             'margin-left':'-137px'                
-             }); 
-        }
-    });
+//    $(".horizontal_vertical_icon").click(function(){
+//        if($("#horizontal").css('visibility') === 'visible'){
+//            $("#vertical").css('visibility', 'visible') ;
+//            $("#horizontal").css('visibility', 'hidden') ;
+//            $("#columns_checking p").css('display','block');
+//            $("#columns_checking p").css('float','left');            
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css({
+//                'width':'1200'                
+//            });  
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
+//            'left':'50%',
+//             'margin-left':'-600px'                
+//             });  
+//        }
+//        else{
+//            $("#vertical").css('visibility', 'hidden') ;
+//            $("#horizontal").css('visibility', 'visible') ;
+//            $("#columns_checking p").css('display','block');
+//            $("#columns_checking p").css('float','');
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css('width','250px');
+//            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
+//             'margin-left':'-137px'                
+//             }); 
+//        }
+//    });
     $(".research_assess_choiceColumnDialog_checkbox").change(function(){
          // get columns params
                 var columns = {
@@ -4327,14 +4364,14 @@ function prevSibilfunc(curentSibil){
                     Short_Description: $("#Short_Description").attr('checked') == 'checked',
                     short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
                     Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
-                    short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
+                    short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked' ? 1 : 0,
                     title_seo_phrases: $("#column_title_seo_phrases").attr('checked') == 'checked',
                     images_cmp: $("#column_images_cmp").attr('checked') == 'checked',
                     video_count: $("#column_video_count").attr('checked') == 'checked',
                     title_pa: $("#column_title_pa").attr('checked') == 'checked',
                     Long_Description: $("#Long_Description").attr('checked') == 'checked',
                     long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
-                    long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
+                    long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked' ? 1 : 0,
                     Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").attr('checked') == 'checked',
                     Custom_Keywords_Long_Description : $("#Custom_Keywords_Long_Description").attr('checked') == 'checked',
                     Meta_Description : $("#Meta_Description").attr('checked') == 'checked',
@@ -4910,30 +4947,30 @@ function prevSibilfunc(curentSibil){
         }
 
         if ($('#research_assess_short_check').is(':checked')) {
-            assessRequestParams.short_less_check = $('#research_assess_short_less_check').is(':checked');
+            assessRequestParams.short_less_check = $('#research_assess_short_less_check').is(':checked') + 0;
             assessRequestParams.short_less = $('#research_assess_short_less').val();
-            assessRequestParams.short_more_check = $('#research_assess_short_more_check').is(':checked')
+            assessRequestParams.short_more_check = $('#research_assess_short_more_check').is(':checked') + 0;
             assessRequestParams.short_more = $('#research_assess_short_more').val();
 
             if ($('#research_assess_short_seo_phrases').is(':checked')) {
-                assessRequestParams.short_seo_phrases = true;
+                assessRequestParams.short_seo_phrases = 1;
             }
             if ($('#research_assess_short_duplicate_content').is(':checked')) {
-                assessRequestParams.short_duplicate_content = true;
+                assessRequestParams.short_duplicate_content = 1;
             }
         }
 
         if ($('#research_assess_long_check').is(':checked')) {
-            assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked');
+            assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked') + 0;
             assessRequestParams.long_less = $('#research_assess_long_less').val();
-            assessRequestParams.long_more_check = ($('#research_assess_long_more_check').is(':checked'));
+            assessRequestParams.long_more_check = $('#research_assess_long_more_check').is(':checked') + 0;
             assessRequestParams.long_more = $('#research_assess_long_more').val();
 
             if ($('#research_assess_long_seo_phrases').is(':checked')) {
-                assessRequestParams.long_seo_phrases = true;
+                assessRequestParams.long_seo_phrases = 1;
             }
             if ($('#research_assess_long_duplicate_content').is(':checked')) {
-                assessRequestParams.long_duplicate_content = true;
+                assessRequestParams.long_duplicate_content = 1;
             }
         }
 
@@ -4995,7 +5032,7 @@ var search_text = GetURLParameter('search_text');
             assessRequestParams.short_more = $('#research_assess_short_more').val();
 
             if ($('#research_assess_short_seo_phrases').is(':checked')) {
-                assessRequestParams.short_seo_phrases = true;
+                assessRequestParams.short_seo_phrases = 1;
             }
             if ($('#research_assess_title_seo_phrases').is(':checked')) {
                 assessRequestParams.title_seo_phrases = true;
@@ -5010,21 +5047,21 @@ var search_text = GetURLParameter('search_text');
                 assessRequestParams.title_pa = true;
             }
             if ($('#research_assess_short_duplicate_content').is(':checked')) {
-                assessRequestParams.short_duplicate_content = true;
+                assessRequestParams.short_duplicate_content = 1;
             }
         }
 
         if ($('#research_assess_long_check').is(':checked')) {
-            assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked');
+            assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked') + 0;
             assessRequestParams.long_less = $('#research_assess_long_less').val();
-            assessRequestParams.long_more_check = ($('#research_assess_long_more_check').is(':checked'));
+            assessRequestParams.long_more_check = $('#research_assess_long_more_check').is(':checked') + 0;
             assessRequestParams.long_more = $('#research_assess_long_more').val();
 
             if ($('#research_assess_long_seo_phrases').is(':checked')) {
-                assessRequestParams.long_seo_phrases = true;
+                assessRequestParams.long_seo_phrases = 1;
             }
             if ($('#research_assess_long_duplicate_content').is(':checked')) {
-                assessRequestParams.long_duplicate_content = true;
+                assessRequestParams.long_duplicate_content = 1;
             }
         }
 

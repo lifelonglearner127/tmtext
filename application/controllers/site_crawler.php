@@ -453,6 +453,16 @@ class Site_Crawler extends MY_Controller {
 			}
 		}
 
+		// === add right hand side to queue (start)
+		$url_right = $this->input->post('url_right');
+		if(isset($url_right) && trim($url_right) !== "") {
+			$id_r = $this->crawler_list_model->getByUrl($url_right);
+    	$rows_r = $this->crawler_list_model->getIds($id_r);
+    	foreach($rows_r as $data_r) {
+    		$this->crawler_list_model->updateStatus($data_r->id, 'queued');
+    	}
+		}
+		// === add right hand side to queue (end)
 
 	}
 

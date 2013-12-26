@@ -17,15 +17,19 @@ $menu = array(
     //array('controller' => 'validate', 'name' => 'Validate'),
 );
 $info = $this->ion_auth->get_user_data();
-$sub_menu = array(
-    array('controller' => 'customer', 'name' => 'Settings'),
-    array('controller' => 'system', 'name' => 'System'),
-    array('controller' => 'admin_customer', 'name' => 'Accounts'),
-    /*array('controller' => 'admin_editor', 'name' => 'Editors'),*/
-    array('controller' => 'admin_tag_editor', 'name' => 'Tag Editor'),
-    /*array('controller' => 'site_crawler', 'name' => 'Site Crawler'),*/
-    //array('controller' => 'job_board', 'name' => 'Job Board'),
-);
+$is_admin = $this->ion_auth->is_admin($this->ion_auth->get_user_id());
+if($is_admin) {
+    $sub_menu = array(
+        array('controller' => 'customer', 'name' => 'Settings'),
+        array('controller' => 'system', 'name' => 'System'),
+        array('controller' => 'admin_customer', 'name' => 'Accounts'),
+        array('controller' => 'admin_tag_editor', 'name' => 'Tag Editor')
+    );
+} else {
+    $sub_menu = array(
+        array('controller' => 'customer', 'name' => 'Settings')
+    );
+}
 ?>
 <?php if (!empty($menu)) {?>
 <ul class="left_nav_content menu ">
@@ -48,10 +52,10 @@ $sub_menu = array(
                              
                                 <li<?php echo ($this->router->class==$sub_item['controller']) ? " class=\"active\"":"";?>><a href="<?php echo site_url($sub_item['controller']);?>"><span><?php echo $sub_item['name'];?></span></a></li>
                            <?php }} ?>
-                                <?php if ($this->ion_auth->is_admin($this->ion_auth->get_user_id())) { ?>
-                                    <li<?php echo ($this->router->class=='job_board') ? " class=\"active\"":"";?>><a href="<?php echo site_url('job_board');?>"><span>Job Board</span></a></li>
-                                <?php }?>    
-                            <li><a href="<?php echo site_url('auth/logout');?>">LOG OUT</a></li>
+                        <?php if ($is_admin) { ?>
+                            <li<?php echo ($this->router->class=='job_board') ? " class=\"active\"":"";?>><a href="<?php echo site_url('job_board');?>"><span>Job Board</span></a></li>
+                        <?php }?>    
+                        <li><a href="<?php echo site_url('auth/logout');?>">LOG OUT</a></li>
                         </ul>
                    <?php } ?>
                 </li>

@@ -44,7 +44,7 @@
           <?php //*/?>
           <div id="clear_imported_data_parsed" style ="margin:10px 0px;">
                 <span id="clear_data_items" class="btn btn-success fileinput-button" style="">
-                    Clear Imported Data Parsed
+                    Clean Imported Data Parsed
                 </span>
       </div>
   </div>

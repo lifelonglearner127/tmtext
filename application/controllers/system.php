@@ -32,7 +32,10 @@ class System extends MY_Controller {
 	}
         public function clear_imported_data_parsed(){
             $this->load->model('imported_data_parsed_archived_model');
+            $this->load->model('imported_data_parsed_model');
             $this->imported_data_parsed_archived_model->mark_queued_from_archive();
+            $this->imported_data_parsed_model->delete_repeated_data();
+            echo "end";
         }
 	public function new_batch_nf_list_modal() {
 		$this->load->model('webshoots_model');

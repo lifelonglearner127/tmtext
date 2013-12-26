@@ -1,3 +1,27 @@
+.ui-dialog-titlebar-close {
+    background: transparent !important;
+    border: none !important;
+    font-size: 20px !important;
+    font-weight: bold !important;
+    line-height: 20px !important;
+    color: #000000 !important;
+    text-shadow: 0 1px 0 #ffffff;
+    opacity: 0.4;
+    filter: alpha(opacity=40);
+    margin-top: -5px !important;
+}
+.ui-dialog-titlebar-close > span {
+    /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;*/
+    font-family: Arial;
+}
+.ui-dialog-titlebar-close:hover {
+  color: #000000;
+  text-decoration: none;
+  cursor: pointer;
+  opacity: 0.8;
+  filter: alpha(opacity=80);
+}
+
 .assessDetails_SEO_wrap {
     float: left;
     margin-left: 10px;
@@ -2660,4 +2684,49 @@ li.selected-url{
 
 #_unmatches{
     float: right;
+}
+
+#research_assess_choiceColumnDialog::-webkit-scrollbar {
+    -webkit-appearance: none;
+}
+
+#research_assess_choiceColumnDialog::-webkit-scrollbar:vertical {
+    width: 11px;
+}
+
+#research_assess_choiceColumnDialog::-webkit-scrollbar:horizontal {
+    height: 11px;
+}
+
+#research_assess_choiceColumnDialog::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    border: 2px solid white; /* should match background, can't be transparent */
+    background-color: rgba(0, 0, 0, .5);
+}
+
+#research_assess_choiceColumnDialog::-webkit-scrollbar-track { 
+    background-color: #fff; 
+    border-radius: 8px; 
+}
+#summary_filters_configuration_wrapper::-webkit-scrollbar {
+    -webkit-appearance: none;
+}
+
+#summary_filters_configuration_wrapper::-webkit-scrollbar:vertical {
+    width: 11px;
+}
+
+#summary_filters_configuration_wrapper::-webkit-scrollbar:horizontal {
+    height: 11px;
+}
+
+#summary_filters_configuration_wrapper::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    border: 2px solid white; /* should match background, can't be transparent */
+    background-color: rgba(0, 0, 0, .5);
+}
+
+#summary_filters_configuration_wrapper::-webkit-scrollbar-track { 
+    background-color: #fff; 
+    border-radius: 8px; 
 }
