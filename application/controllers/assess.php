@@ -2961,214 +2961,7 @@ class Assess extends MY_Controller {
         $this->statistics_new_model->delete_by_research_data_id($batch_id, $research_data_id);
     }
 
-    function columns() {
-        $columns = array(
-            array(
-                "sTitle" => "Snapshot",
-                "sName" => "snap",
-                "sClass" => "Snapshot"
-            ),
-            array(
-                "sTitle" => "Date",
-                "sName" => "created",
-            //"sWidth" =>"3%"
-            ),
-            array(
-                "sTitle" => "ID",
-                "sName" => "imp_data_id",
-            //"sWidth" =>"3%"
-                "sClass" => "imp_data_id"
-            ),
-            array(
-                "sTitle" => "Product Name",
-                "sName" => "product_name",
-                //"sWidth" => "15%",
-                "sClass" => "product_name_text"
-            ),
-            array(
-                "sTitle" => "item ID",
-                "sName" => "item_id",
-                "sClass" => "item_id"
-            ),
-            array(
-                "sTitle" => "Model",
-                "sName" => "model",
-                "sClass" => "model"
-            ),
-            array(
-                "sTitle" => "URL",
-                "sName" => "url",
-                //"sWidth" =>"15%",
-                "sClass" => "url_text"
-            ),
-            array(
-                "sTitle" => "Page Load Time",
-                "sName" => "Page_Load_Time",
-                //"sWidth" =>"15%",
-                "sClass" => "Page_Load_Time"
-            ),
-            array(
-                "sTitle" => "<span class='subtitle_desc_short' >Short</span> Description",
-                "sName" => "Short_Description",
-                "sWidth" => "25%",
-                "sClass" => "Short_Description"
-            ),
-            array(
-                "sTitle" => "Short Desc <span class='subtitle_word_short' ># Words</span>",
-                "sName" => "short_description_wc",
-                // "sWidth" => "1%",
-                "sClass" => "word_short"
-            ),
-            array(
-                "sTitle" => "Meta Keywords",
-                "sName" => "Meta_Keywords",
-                "sClass" => "Meta_Keywords"
-            ),
-            array(
-                "sTitle" => "Keywords <span class='subtitle_keyword_short'>Short</span>",
-                "sName" => "short_seo_phrases",
-                //"sWidth" => "2%",
-                "sClass" => "keyword_short"
-            ),
-            array(
-                "sTitle" => "Title Keywords", //<span class='subtitle_keyword_short'>Short</span>",
-                "sName" => "title_seo_phrases",
-                //"sWidth" => "2%",
-                "sClass" => "title_seo_phrases"
-            ),
-            array(
-                "sTitle" => "Images", //<span class='subtitle_keyword_short'>Short</span>",
-                "sName" => "images_cmp",
-                //"sWidth" => "2%",
-                "sClass" => "images_cmp"
-            ),
-            array(
-                "sTitle" => "Video", //<span class='subtitle_keyword_short'>Short</span>",
-                "sName" => "video_count",
-                //"sWidth" => "2%",
-                "sClass" => "video_count"
-            ),
-            array(
-                "sTitle" => "Title", //<span class='subtitle_keyword_short'>Short</span>",
-                "sName" => "title_pa",
-                //"sWidth" => "2%",
-                "sClass" => "title_pa"
-            ),
-            array(
-                "sTitle" => "<span class='subtitle_desc_long' >Long </span>Description",
-                "sName" => "Long_Description",
-                //"sWidth" => "2%",
-                "sClass" => "Long_Description"
-            ),
-            array(
-                "sTitle" => "Long Desc <span class='subtitle_word_long' ># Words</span>",
-                "sName" => "long_description_wc",
-                "sWidth" => "1%",
-                "sClass" => "word_long"
-            ),
-            array(
-                "sTitle" => "Keywords <span class='subtitle_keyword_long'>Long</span>",
-                "sName" => "long_seo_phrases",
-                //"sWidth" => "2%",
-                "sClass" => "keyword_long"
-            ),
-            array(
-                "sTitle" => "Custom Keywords Short Description",
-                "sName" => "Custom_Keywords_Short_Description",
-                "sWidth" => "4%",
-                "sClass" => "Custom_Keywords_Short_Description"
-            ),
-            array(
-                "sTitle" => "Custom Keywords Long Description",
-                "sName" => "Custom_Keywords_Long_Description",
-                "sWidth" => "4%",
-                "sClass" => "Custom_Keywords_Long_Description"
-            ),
-            array(
-                "sTitle" => "Meta Description",
-                "sName" => "Meta_Description",
-                "sWidth" => "4%",
-                "sClass" => "Meta_Description"
-            ),
-            array(
-                "sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>",
-                "sName" => "Meta_Description_Count",
-                "sWidth" => "4%",
-                "sClass" => "Meta_Description_Count"
-            ),
-            array(
-                "sTitle" => "H1 Tags",
-                "sName" => "H1_Tags",
-                "sWidth" => "1%",
-                "sClass" => "HTags_1"
-            ),
-            array(
-                "sTitle" => "Chars",
-                "sName" => "H1_Tags_Count",
-                "sWidth" => "1%",
-                "sClass" => "HTags"
-            ),
-            array(
-                "sTitle" => "H2 Tags",
-                "sName" => "H2_Tags",
-                "sWidth" => "1%",
-                "sClass" => "HTags_2"
-            ),
-            array(
-                "sTitle" => "Chars",
-                "sName" => "H2_Tags_Count",
-                "sWidth" => "1%",
-                "sClass" => "HTags"
-            ),
-            array(
-                "sTitle" => "Duplicate Content",
-                "sName" => "duplicate_content",
-            //"sWidth" =>"1%"
-            ),
-            array(
-                "sTitle" => "Third Party Content",
-                "sName" => "column_external_content",
-                "sClass" => "column_external_content"
-            //"sWidth" =>"2%"
-            ),
-            array(
-                "sTitle" => "Reviews",
-                "sName" => "column_reviews",
-                //"sWidth" =>"3%"
-                "sClass" => "column_reviews"
-            ),
-            array(
-                "sTitle" => "Avg Review",
-                "sName" => "average_review",
-                //"sWidth" =>"3%"
-                "sClass" => "average_review"
-            ),
-            array(
-                "sTitle" => "Features",
-                "sName" => "column_features",
-                //"sWidth" => "4%"
-                "sClass" => "column_features"
-            ),
-            array(
-                "sTitle" => "Price",
-                "sName" => "price_diff",
-                //"sWidth" =>"2%",
-                "sClass" => "price_text"
-            ),
-            array(
-                "sTitle" => "Recommendations",
-                "sName" => "recommendations",
-                // "sWidth" =>"15%",
-                "bVisible" => false,
-                "bSortable" => false
-            ),
-            array(
-                "sName" => "add_data",
-                "bVisible" => false
-            )
-        );
-        return $columns;
-    }
+   
 
     private function compare_str($str1, $str2) {
         $str1 = trim(strtolower($str1));
@@ -3185,18 +2978,18 @@ class Assess extends MY_Controller {
         return strpos($str1, $str2) !== FALSE;
     }
 
-    private function build_asses_table($results, $build_assess_params, $batch_id = '') {
+    private function build_asses_table($results, $build_assess_params, $batch_id = '') 
+	{
 //        error_reporting(E_ALL);
         //Debugging
         $st_time = microtime(true);
-        $success_filter_entries = array();
-        $columns = $this->columns();
-        $duplicate_content_range = 25;
         $this->load->model('batches_model');
-
         $this->load->model('statistics_model');
         $this->load->model('statistics_duplicate_content_model');
 
+        
+        $duplicate_content_range = 25;
+        $success_filter_entries = array();
         $customer_name = $this->batches_model->getCustomerById($batch_id);
         $customer_url = parse_url($customer_name[0]->url);
         $result_table = array();
@@ -3204,111 +2997,52 @@ class Assess extends MY_Controller {
         $batch2_meta_percents = array();
         $report = array();
         $pricing_details = array();
-        $skus_third_party_content = 0;
-        $skus_third_party_content_competitor = 0;
-        $skus_features = 0;
-        $skus_features_competitor = 0;
-
-        $skus_zero_reviews = 0;
-        $skus_one_four_reviews = 0;
-        $skus_more_than_five_reviews = 0;
-        $skus_more_than_hundred_reviews = 0;
-
-        $skus_zero_reviews_competitor = 0;
-        $skus_one_four_reviews_competitor = 0;
-        $skus_more_than_five_reviews_competitor = 0;
-        $skus_more_than_hundred_reviews_competitor = 0;
-
-        $skus_pdfs = 0;
-        $skus_videos = 0;
-        $skus_videos_competitor = 0;
-        $skus_pdfs_competitor = 0;
-        $items_priced_higher_than_competitors = 0;
-        $items_have_more_than_20_percent_duplicate_content = 0;
-        $skus_25_duplicate_content = 0;
-        $skus_50_duplicate_content = 0;
-        $skus_75_duplicate_content = 0;
-        $skus_fewer_50_product_content = 0;
-        $skus_fewer_100_product_content = 0;
-        $skus_fewer_150_product_content = 0;
-        $items_unoptimized_product_content = 0;
-        $short_wc_total_not_0 = 0;
-        $long_wc_total_not_0 = 0;
-        $items_short_products_content_short = 0;
-        $items_long_products_content_short = 0;
-        $skus_shorter_than_competitor_product_content = 0;
-        $skus_longer_than_competitor_product_content = 0;
-        $skus_same_competitor_product_content = 0;
-        $detail_comparisons_total = 0;
-        $skus_fewer_features_than_competitor = 0;
-        $skus_fewer_reviews_than_competitor = 0;
-        $skus_fewer_competitor_optimized_keywords = 0;
-		$skus_title_less_than_70_chars = 0;
-		$skus_title_more_than_70_chars = 0;
-		$skus_title_less_than_70_chars_competitor = 0;
-		$skus_title_more_than_70_chars_competitor = 0;
 		
-        $skus_zero_optimized_keywords = 0;
-        $skus_one_optimized_keywords = 0;
-        $skus_two_optimized_keywords = 0;
-        $skus_three_optimized_keywords = 0;
+		//getting columns
+		$columns = AssessHelper::addCompetitorColumns(AssessHelper::columns(), $build_assess_params->max_similar_item_count);
 		
-		$skus_zero_optimized_keywords_competitor = 0;
-        $skus_one_optimized_keywords_competitor = 0;
-        $skus_two_optimized_keywords_competitor = 0;
-        $skus_three_optimized_keywords_competitor = 0;
+		//extracting initial data varialbes for filters
+        extract(AssessHelper::getInitialFilterData());
 		
-        $skus_fewer_50_product_content_competitor = 0;
-        $skus_fewer_100_product_content_competitor = 0;
-        $skus_fewer_150_product_content_competitor = 0;
 		
-		$skus_with_no_product_images = 0;
-		$skus_with_one_product_image = 0;
-		$skus_with_more_than_one_product_image = 0;
-		
-		$skus_with_no_product_images_competitor = 0;
-		$skus_with_one_product_image_competitor = 0;
-		$skus_with_more_than_one_product_image_competitor = 0;
+        // if ($build_assess_params->max_similar_item_count > 0) 
+		// {
+            // $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
 
-        if ($build_assess_params->max_similar_item_count > 0) {
+            // for ($i = 1; $i <= $max_similar_item_count; $i++) {
 
-
-            $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
-
-            for ($i = 1; $i <= $max_similar_item_count; $i++) {
-
-                $columns[] = array("sTitle" => "Snapshot", "sClass" => "Snapshot" . $i, "sName" => 'snap' . $i);
-                $columns[] = array("sTitle" => "ID", "sClass" => "imp_data_id" . $i, "sName" => 'imp_data_id' . $i);
-                $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
-                $columns[] = array("sTitle" => "item ID", "sClass" => "item_id" . $i, "sName" => 'item_id' . $i);
-                $columns[] = array("sTitle" => "Model", "sClass" => "model" . $i, "sName" => 'model' . $i);
-                $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
-                $columns[] = array("sTitle" => "Page Load Time", "sClass" => "Page_Load_Time" . $i, "sName" => 'Page_Load_Time' . $i);
-                $columns[] = array("sTitle" => "<span class='subtitle_desc_short{$i}' >Short</span> Description", "sClass" => "Short_Description" . $i, "sName" => 'Short_Description' . $i);
-                $columns[] = array("sTitle" => "Short Desc <span class='subtitle_word_short' ># Words</span>", "sClass" => "word_short" . $i, "sName" => 'short_description_wc' . $i);
-                $columns[] = array("sTitle" => "Meta Keywords", "sClass" => "Meta_Keywords" . $i, "sName" => 'Meta_Keywords' . $i);
-                $columns[] = array("sTitle" => "<span class='subtitle_desc_long{$i}' >Long </span>Description", "sClass" => "Long_Description" . $i, "sName" => 'Long_Description' . $i);
-                $columns[] = array("sTitle" => "Long Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "word_long" . $i, "sName" => 'long_description_wc' . $i);
-                $columns[] = array("sTitle" => "Meta Description", "sClass" => "Meta_Description" . $i, "sName" => 'Meta_Description' . $i);
-                $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "Meta_Description_Count" . $i, "sName" => 'Meta_Description_Count' . $i);
-                $columns[] = array("sTitle" => "Third Party Content", "sClass" => "column_external_content" . $i, "sName" => 'column_external_content' . $i);
-                $columns[] = array("sTitle" => "HTags_1", "sClass" => "HTags_1" . $i, "sName" => "H1_Tags" . $i);
-                $columns[] = array("sTitle" => "Chars", "sClass" => "H1_Tags_Count" . $i, "sName" => "H1_Tags_Count" . $i);
-                $columns[] = array("sTitle" => "HTags_2", "sClass" => "HTags_2" . $i, "sName" => "H2_Tags" . $i);
-                $columns[] = array("sTitle" => "Chars", "sClass" => "H2_Tags_Count" . $i, "sName" => "H2_Tags_Count" . $i);
-                $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
-                $columns[] = array("sTitle" => "Reviews", "sClass" => "column_reviews" . $i, "sName" => "column_reviews" . $i);
-                $columns[] = array("sTitle" => "Features", "sClass" => "column_features" . $i, "sName" => "column_features" . $i);
-                $columns[] = array("sTitle" => "Title Keywords", "sClass" => "title_seo_phrases" . $i, "sName" => "title_seo_phrases" . $i);
-                $columns[] = array("sTitle" => "Images", "sClass" => "images_cmp" . $i, "sName" => "images_cmp" . $i);
-                $columns[] = array("sTitle" => "Video", "sClass" => "video_count" . $i, "sName" => "video_count" . $i);
-                $columns[] = array("sTitle" => "Title", "sClass" => "title_pa" . $i, "sName" => "title_pa" . $i);
-                if ($i == 1) {
-                    $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
-                    $colomns[] = array("sTitle" => "Duplicate Content", "sClass" => "Duplicate_Content" . $i, "sName" => 'Duplicate_Content');
-                }
-            }
-        }
+                // $columns[] = array("sTitle" => "Snapshot", "sClass" => "Snapshot" . $i, "sName" => 'snap' . $i);
+                // $columns[] = array("sTitle" => "ID", "sClass" => "imp_data_id" . $i, "sName" => 'imp_data_id' . $i);
+                // $columns[] = array("sTitle" => "Product Name", "sName" => 'product_name' . $i);
+                // $columns[] = array("sTitle" => "item ID", "sClass" => "item_id" . $i, "sName" => 'item_id' . $i);
+                // $columns[] = array("sTitle" => "Model", "sClass" => "model" . $i, "sName" => 'model' . $i);
+                // $columns[] = array("sTitle" => "URL", "sName" => 'url' . $i);
+                // $columns[] = array("sTitle" => "Page Load Time", "sClass" => "Page_Load_Time" . $i, "sName" => 'Page_Load_Time' . $i);
+                // $columns[] = array("sTitle" => "<span class='subtitle_desc_short{$i}' >Short</span> Description", "sClass" => "Short_Description" . $i, "sName" => 'Short_Description' . $i);
+                // $columns[] = array("sTitle" => "Short Desc <span class='subtitle_word_short' ># Words</span>", "sClass" => "word_short" . $i, "sName" => 'short_description_wc' . $i);
+                // $columns[] = array("sTitle" => "Meta Keywords", "sClass" => "Meta_Keywords" . $i, "sName" => 'Meta_Keywords' . $i);
+                // $columns[] = array("sTitle" => "<span class='subtitle_desc_long{$i}' >Long </span>Description", "sClass" => "Long_Description" . $i, "sName" => 'Long_Description' . $i);
+                // $columns[] = array("sTitle" => "Long Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "word_long" . $i, "sName" => 'long_description_wc' . $i);
+                // $columns[] = array("sTitle" => "Meta Description", "sClass" => "Meta_Description" . $i, "sName" => 'Meta_Description' . $i);
+                // $columns[] = array("sTitle" => "Meta Desc <span class='subtitle_word_long' ># Words</span>", "sClass" => "Meta_Description_Count" . $i, "sName" => 'Meta_Description_Count' . $i);
+                // $columns[] = array("sTitle" => "Third Party Content", "sClass" => "column_external_content" . $i, "sName" => 'column_external_content' . $i);
+                // $columns[] = array("sTitle" => "HTags_1", "sClass" => "HTags_1" . $i, "sName" => "H1_Tags" . $i);
+                // $columns[] = array("sTitle" => "Chars", "sClass" => "H1_Tags_Count" . $i, "sName" => "H1_Tags_Count" . $i);
+                // $columns[] = array("sTitle" => "HTags_2", "sClass" => "HTags_2" . $i, "sName" => "H2_Tags" . $i);
+                // $columns[] = array("sTitle" => "Chars", "sClass" => "H2_Tags_Count" . $i, "sName" => "H2_Tags_Count" . $i);
+                // $columns[] = array("sTitle" => "Avg Review", "sClass" => "average_review" . $i, "sName" => 'average_review' . $i);
+                // $columns[] = array("sTitle" => "Reviews", "sClass" => "column_reviews" . $i, "sName" => "column_reviews" . $i);
+                // $columns[] = array("sTitle" => "Features", "sClass" => "column_features" . $i, "sName" => "column_features" . $i);
+                // $columns[] = array("sTitle" => "Title Keywords", "sClass" => "title_seo_phrases" . $i, "sName" => "title_seo_phrases" . $i);
+                // $columns[] = array("sTitle" => "Images", "sClass" => "images_cmp" . $i, "sName" => "images_cmp" . $i);
+                // $columns[] = array("sTitle" => "Video", "sClass" => "video_count" . $i, "sName" => "video_count" . $i);
+                // $columns[] = array("sTitle" => "Title", "sClass" => "title_pa" . $i, "sName" => "title_pa" . $i);
+                // if ($i == 1) {
+                    // $columns[] = array("sTitle" => "Gap Analysis", "sClass" => "gap" . $i, "sName" => 'gap');
+                    // $colomns[] = array("sTitle" => "Duplicate Content", "sClass" => "Duplicate_Content" . $i, "sName" => 'Duplicate_Content');
+                // }
+            // }
+        // }
         $display_length = intval($this->input->get('iDisplayLength', TRUE));
 
         $display_start = intval($this->input->get('iDisplayStart', TRUE));
