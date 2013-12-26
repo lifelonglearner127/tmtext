@@ -1067,17 +1067,18 @@ class Assess extends MY_Controller {
         $cmp_selected = trim(strtolower($_GET['cmp_selected']));
         $selected_columns = $_GET['checked_columns'];
         $selected_columns = explode(',', trim($selected_columns));
-		//print_r($selected_columns);
+		
         $batch_name = $_GET['batch_name'];
 
         $summaryFilterData = $this->input->get('summaryFilterData');
         $summaryFilterData = $summaryFilterData ? explode(',', $summaryFilterData) : array();
 
-
+		//print_r($selected_columns);
+		//print_r($summaryFilterData);
         if (($key = array_search('snap', $selected_columns)) !== false) {
             unset($selected_columns[$key]);
         }
-        $line = array('created' => 'Date', 'product_name' => 'Product Name', 'url' => 'Url', 'Short_Description' => 'Short Description', 'short_description_wc' => 'Short Desc # Words', 'Long_Description' => 'Long Description', 'long_description_wc' => 'Long Desc # Words', 'short_seo_phrases' => ' Short Desc - Found SEO Keywords', 'long_seo_phrases' => ' Short Desc - Found SEO Keywords', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews', 'average_review' => 'Avg Review', 'title_seo_phrases' => 'Title Keywords');
+        $line = array('created' => 'Date', 'imp_data_id' => 'Item ID', 'product_name' => 'Product Name', 'url' => 'Url', 'Short_Description' => 'Short Description', 'short_description_wc' => 'Short Desc # Words', 'Long_Description' => 'Long Description', 'long_description_wc' => 'Long Desc # Words', 'short_seo_phrases' => ' Short Desc - Found SEO Keywords', 'long_seo_phrases' => ' Short Desc - Found SEO Keywords', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews', 'average_review' => 'Avg Review', 'title_seo_phrases' => 'Title Keywords');
 
 
         foreach ($line as $key => $val) {
@@ -1100,7 +1101,7 @@ class Assess extends MY_Controller {
         $params = new stdClass();
         $params->batch_id = $batch_id;
         $results = $this->get_data_for_assess($params);
-
+		
         $cmp = array();
         if ($cmp_selected != '' && $cmp_selected != 0 && $cmp_selected != 'all') {
 
@@ -1136,8 +1137,8 @@ class Assess extends MY_Controller {
 
                                 if (isset($parsed_attributes_unserialize['feature_count']))
                                     $parsed_attributes_column_features_unserialize_val = $parsed_attributes_unserialize['feature_count'];
-                                if (isset($parsed_attributes_unserialize['item_id']))
-                                    $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
+                                //if (isset($parsed_attributes_unserialize['item_id']))
+                                //    $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
                                 if (isset($parsed_attributes_unserialize['model']))
                                     $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
                                 if (isset($parsed_attributes_unserialize['loaded_in_seconds']))
@@ -1198,7 +1199,7 @@ class Assess extends MY_Controller {
                                 }
 
 
-                                $cmpare->item_id = $parsed_attributes_unserialize_val;
+                                //$cmpare->item_id = $parsed_attributes_unserialize_val;
                                 $cmpare->model = $parsed_model_unserialize_val;
                                 $cmpare->den_for_gap = $den_for_gap;
                                 $cmpare->Page_Load_Time = $parsed_loaded_in_seconds_unserialize_val;
@@ -1340,7 +1341,7 @@ class Assess extends MY_Controller {
 //            }
 
         $arr = array();
-
+			//print_r($results);
         foreach ($results as $key => $row) {
             $sim = $row->similar_items;
             $pars = unserialize($row->parsed_attributes);
@@ -1609,10 +1610,14 @@ class Assess extends MY_Controller {
                 $row = (object) $row;
                 
                 $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                
+                //print_r($pars_atr);die;
                 //item_id
-                if(in_array('item_id', $selected_columns)){
-                    $res_array[$key]['item_id'] = $pars_atr['parsed_attributes']['item_id']?$pars_atr['parsed_attributes']['item_id']:' ';
+                //if(in_array('item_id', $selected_columns)){
+                //    $res_array[$key]['item_id'] = $pars_atr['parsed_attributes']['item_id']?$pars_atr['parsed_attributes']['item_id']:' ';
+                //}
+				if(in_array('imp_data_id', $selected_columns)){
+                    $res_array[$key]['imp_data_id'] = $pars_atr['parsed_attributes']['item_id']?$pars_atr['parsed_attributes']['item_id']:' ';
+					
                 }
                 //model
                 if(in_array('model', $selected_columns)){
@@ -1864,8 +1869,11 @@ class Assess extends MY_Controller {
             $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
 
             //item_id
-            if (in_array('item_id', $selected_columns)) {
-                $res_array[$key]['item_id'] = $pars_atr['parsed_attributes']['item_id'] ? $pars_atr['parsed_attributes']['item_id'] : ' ';
+            //if (in_array('item_id', $selected_columns)) {
+            //    $res_array[$key]['item_id'] = $pars_atr['parsed_attributes']['item_id'] ? $pars_atr['parsed_attributes']['item_id'] : ' ';
+            //}
+			if (in_array('imp_data_id', $selected_columns)) {
+                $res_array[$key]['imp_data_id'] = $pars_atr['parsed_attributes']['item_id'] ? $pars_atr['parsed_attributes']['item_id'] : ' ';
             }
             //model
             if (in_array('model', $selected_columns)) {
@@ -1934,8 +1942,10 @@ class Assess extends MY_Controller {
             if (in_array('average_review', $selected_columns)) {
                 $res_array[$key]['average_review'] = $pars_atr['parsed_attributes']['average_review'] !== false ? $pars_atr['parsed_attributes']['average_review'] : '-';
             }
+				//print_r($pars_atr);die;
             //export title keywords 
             $title_seo_prases = array();
+
             if ($row->title_keywords != '' && $row->title_keywords != 'None') {
                     $title_seo_prases = unserialize($row->title_keywords);
             }
@@ -1946,6 +1956,10 @@ class Assess extends MY_Controller {
                 }
             }
             if (in_array('title_seo_phrases', $selected_columns)) {
+                $res_array[$key]['title_seo_phrases'] = $str_title_long_seo;
+            }
+			
+			if (in_array('title_seo_phrases_f', $selected_columns)) {
                 $res_array[$key]['title_seo_phrases'] = $str_title_long_seo;
             }
             if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
@@ -2142,8 +2156,18 @@ class Assess extends MY_Controller {
 
 
 
-                if (in_array('item_id', $selected_columns)) {
-                    $res_array[$key]['Item Id (' . $i . ")"] = $sim_items[$i - 1]->item_id ? $sim_items[$i - 1]->item_id : ' - ';
+                //if (in_array('item_id', $selected_columns)) {
+                 //   $res_array[$key]['Item Id (' . $i . ")"] = $sim_items[$i - 1]->item_id ? $sim_items[$i - 1]->item_id : ' - ';
+                //}
+				if (in_array('imp_data_id', $selected_columns)) {
+					if($i = 1){
+					$res_array[$key]['imp_data_id'] = $sim_items[$i - 1]->imported_data_id ? $sim_items[$i - 1]->imported_data_id : ' - ';
+					}
+					else{
+					$res_array[$key]['imp_data_id' . $i] = $sim_items[$i - 1]->imported_data_id ? $sim_items[$i - 1]->imported_data_id : ' - ';
+					}
+                    //$res_array[$key]['imp_data_id' . $i] = $sim_items[$i - 1]->imported_data_id ? $sim_items[$i - 1]->imported_data_id : ' - ';
+					//echo '<pre>';print_r($res_array[$key]);echo '</pre>';die;
                 }
                 if (in_array('model', $selected_columns)) {
                     $res_array[$key]['Model (' . $i . ")"] = $sim_items[$i - 1]->model ? $sim_items[$i - 1]->model : '';
@@ -2194,8 +2218,10 @@ class Assess extends MY_Controller {
                 }
                 if (in_array('title_seo_phrases', $selected_columns)) {
                     $res_array[$key]['title_seo_phrases(' . $i . ")"] = $sim_items[$i - 1]->title_seo_phrases ? $sim_items[$i - 1]->title_seo_phrases : ' - ';
+                }	
+				if (in_array('title_seo_phrases_f', $selected_columns)) {
+                    $res_array[$key]['title_seo_phrases_f(' . $i . ")"] = $sim_items[$i - 1]->title_seo_phrases ? $sim_items[$i - 1]->title_seo_phrases : ' - ';
                 }
-
 // HTags for similar
                 $HTags_for_similar = unserialize($sim_items[$i - 1]->HTags);
 //                        echo '<pre>';
@@ -2279,7 +2305,10 @@ class Assess extends MY_Controller {
         if (in_array('model', $selected_columns)) {
             array_unshift($line, 'Model');
         }
-        if (in_array('item_id', $selected_columns)) {
+        //if (in_array('item_id', $selected_columns)) {
+        //    array_unshift($line, 'Item ID');
+        //}
+		if (in_array('imp_data_id', $selected_columns)) {
             array_unshift($line, 'Item ID');
         }
         if (in_array('Meta_Keywords', $selected_columns)) {
@@ -2337,7 +2366,10 @@ class Assess extends MY_Controller {
             if (in_array('Duplicate_Content', $selected_columns)) {
                 $line[] = 'Duplicate Content';
             }
-            if (in_array('item_id', $selected_columns)) {
+            //if (in_array('item_id', $selected_columns)) {
+            //    $line[] = "Item Id(" . ($i + 1) . ")";
+            //}
+			if (in_array('imp_data_id', $selected_columns)) {
                 $line[] = "Item Id(" . ($i + 1) . ")";
             }
             if (in_array('model', $selected_columns)) {
@@ -2385,6 +2417,9 @@ class Assess extends MY_Controller {
                 $line[] = "Avg Review(" . ($i + 1) . ")";
             }
             if (in_array('title_seo_phrases', $selected_columns)) {
+                $line[] = "Title Keywords(" . ($i + 1) . ")";
+            }
+			if (in_array('title_seo_phrases_f', $selected_columns)) {
                 $line[] = "Title Keywords(" . ($i + 1) . ")";
             }
             if (in_array('H1_Tags', $selected_columns)) {
@@ -2601,11 +2636,11 @@ class Assess extends MY_Controller {
 					$key = 'Title keywords';
 					$res_array_keys[$value] = $key;
 				}
-				elseif($key == "item_id"){
-					$key = 'Item ID';
-					$res_array_keys[$value] = $key;
-				}
-				elseif($key == "item_id"){
+				//elseif($key == "item_id"){
+					//$key = 'Item ID';
+				//	$res_array_keys[$value] = $key;
+				//}
+				elseif($key == "imp_data_id"){
 					$key = 'Item ID';
 					$res_array_keys[$value] = $key;
 				}
@@ -2690,7 +2725,7 @@ class Assess extends MY_Controller {
 					$key = 'Duplicate Content';
 					$res_array_keys[$value] = $key;
 				}
-				elseif($key == "Item Id (1)"){
+				elseif($key == "imp_data_id2"){
 					$key = 'Item Id (2)';
 					$res_array_keys[$value] = $key;
 				}
@@ -2767,10 +2802,19 @@ class Assess extends MY_Controller {
 				}
 			}
 		}
+		/*
+		echo '<div style="width:50%;height:auto;float:left;"><pre>';
+		print_r($selected_columns);
+		print_r($res_array_keys);
+		echo '</pre></div><div style="width:50%;height:auto;float:right;"><pre>';
+		print_r($res_array);
+		echo '</pre></div>';
+		*/
 		array_unshift($res_array, $res_array_keys);
         $this->load->helper('csv');
         array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
-    }
+		
+	}
 
     public function products() {
         $this->data['customer_list'] = $this->getCustomersByUserId();

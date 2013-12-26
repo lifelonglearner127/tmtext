@@ -2545,17 +2545,17 @@ var generate_url_check = GetURLParameter('generate_url_check');
      }
      console.log("REAL CLICKED TR INDEX: ", click_object_real_index);
      if(click_object_real_index == 1) {
-        $("#assessDetailsDialog_btnPrev").attr('disabled', true); 
+        $("#assessDetailsDialog_btnPrev").attr('disabled', true);
      } else if(click_object_real_index == 9) {
-        $("#assessDetailsDialog_btnNext").attr('disabled', true); 
+        $("#assessDetailsDialog_btnNext").attr('disabled', true);
      }
      // ==== figure out position of clicked 'tr'(end)
 
      if((table_case != "details_compare") && (checked_columns_results == undefined)){
 
-        $('.details_left').addClass('details_width');  
-        $('.details_right').hide();  
-         
+        $('.details_left').addClass('details_width');
+        $('.details_right').hide();
+
         if ($(event.target).is('a')) {
             return;
         }
@@ -2585,13 +2585,13 @@ var generate_url_check = GetURLParameter('generate_url_check');
         var target = $(event.target);
         if (target.parents('table').attr('class') == 'url_table')
             target = target.parents('table');
-       
-       
+
+
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
         curentSibil=target.parents('tr');
-        
+
         console.log("ADD DATA 1 : ", add_data);
-       
+
         $('#ajaxLoadAni').fadeIn('slow');
         $('#assessDetails_ProductName').val(add_data.product_name);
         $('#assessDetails_Model').val(add_data.model);
@@ -2662,7 +2662,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
 
         $('#ajaxLoadAni').fadeOut('slow');
     }else{
-        $('.details_left').removeClass('details_width');  
+        $('.details_left').removeClass('details_width');
         $('.details_right').show();
          if ($(event.target).is('a')) {
             return;
@@ -2702,21 +2702,21 @@ var generate_url_check = GetURLParameter('generate_url_check');
         var target = $(event.target);
         if (target.parents('table').attr('class') == 'url_table')
             target = target.parents('table');
-       
+
         var add_data = JSON.parse(target.parents('tr').attr('add_data'));
          curentSibil=target.parents('tr');
-        
+
        // === insert title seo data (start)
        console.log("ADD DATA 2 : ", add_data);
        console.log("ADD DATA 2 (KEYWORDS): ", add_data.title_seo_phrases);
        // === insert title seo data (end)
-         
+
         // if this product is absent product from second batch
         if (add_data.id == undefined) {
             return;
         }
         var url_compare =$(add_data.url1).find('a').attr('href');
-       
+
         $('#ajaxLoadAni').fadeIn('slow');
         $('#assessDetails_ProductName').val(add_data.product_name);
         $('#assessDetails_Model').val(add_data.model);
@@ -2724,7 +2724,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
         $('#assess_open_url_btn').attr('href', add_data.url);
         // $('#assessDetails_Price').val(add_data.own_price);
         $('#assessDetails_Price').val( Number(add_data.own_price).toFixed(2) );
-       
+
         $('#assessDetails_ProductName1').val(add_data.product_name1);
         $('#assessDetails_Model1').val(add_data.model1);
         $('#assessDetails_url1').val(url_compare);
@@ -2739,17 +2739,17 @@ var generate_url_check = GetURLParameter('generate_url_check');
         var long_total_not_0 = '';
         var long_wc_total_not_0 = 0;
         var short_wc_total_not_0 = 0;
-        
+
          short_total_not_01 = add_data.Short_Description1;
          long_total_not_01 = add_data.Long_Description1;
          long_wc_total_not_01 = parseInt(add_data.long_description_wc1);
          short_wc_total_not_01 = parseInt(add_data.short_description_wc1);
-         
+
          short_total_not_0 = add_data.short_description;
          long_total_not_0 = add_data.long_description;
          long_wc_total_not_0 = add_data.long_description_wc;
          short_wc_total_not_0 = add_data.short_description_wc;
-         
+
          short_wc_total_not_01 = short_wc_total_not_01 ? short_wc_total_not_01 : 0;
          long_wc_total_not_01 = long_wc_total_not_01 ? long_wc_total_not_01 : 0;
 
@@ -2820,7 +2820,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
             research_data_id: add_data.research_data_id
         };
         var checked = false;
-                    
+
         $.get(
                 base_url + 'index.php/assess/include_in_assess_report_check',
                 data,
@@ -2835,21 +2835,21 @@ var generate_url_check = GetURLParameter('generate_url_check');
                    $('#assessDetailsDialog').dialog('open');
                    // ==== restore prev / next buttons to init state (start)
                    $("#assessDetailsDialog_btnPrev, #assessDetailsDialog_btnNext").removeAttr('disabled');
-                   // ==== restore prev / next buttons to init state (end) 
+                   // ==== restore prev / next buttons to init state (end)
                    // ==== figure prev / next buttons availability states (start)
                    if(click_object_real_index == 1) {
-                       $("#assessDetailsDialog_btnPrev").attr('disabled', true); 
+                       $("#assessDetailsDialog_btnPrev").attr('disabled', true);
                    } else if(click_object_real_index == 9) {
-                       $("#assessDetailsDialog_btnNext").attr('disabled', true); 
+                       $("#assessDetailsDialog_btnNext").attr('disabled', true);
                    }
                    // ==== figure prev / next buttons availability states (end)
                 }
         );
 
         $('#ajaxLoadAni').fadeOut('slow');
-        
-        
-        
+
+
+
     }
     });
 
@@ -2901,7 +2901,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
                     copyToClipboard(textToCopy);
                 }
             },
-            
+
             'Re-Crawl"': {
                 text: 'Re-Crawl',
                 id: 'assessDetailsDialog_btnReCrawl',
@@ -2923,7 +2923,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
         },
         width: '850px'
     });
-function nextSibilfunc(curentSibil){ 
+function nextSibilfunc(curentSibil){
     $('.btn_prev_dialog').removeAttr('disabled');
             if(curentSibil.next().length == 0){
                 if($('#tblAssess_next').hasClass('ui-state-disabled')){
@@ -2945,7 +2945,7 @@ function nextSibilfunc(curentSibil){
                },15000);
            }
 }
-function prevSibilfunc(curentSibil){ 
+function prevSibilfunc(curentSibil){
     $('.btn_next_dialog').removeAttr('disabled');
         if(curentSibil.prev().length == 0){
                if($('#tblAssess_previous').hasClass('ui-state-disabled')){
@@ -2965,12 +2965,12 @@ function prevSibilfunc(curentSibil){
                    if($('select[name="tblAssess_length"]').find('option:selected').val() == 25){
                        $('#tblAssess tbody tr.odd:last td:first').trigger('click');
                    }else{
-                       $('#tblAssess tbody tr.even:last td:first').trigger('click');                     
+                       $('#tblAssess tbody tr.even:last td:first').trigger('click');
                    }
                    $('#assessDetailsDialog_btnPrev').text('< Prev');
                    $('#assessDetailsDialog_btnPrev').removeClass('prev_page');
                },15000);
-       }  
+       }
 }
     $('#assessDetailsDialog input[type="text"], textarea').bind({
         focus: function() {
@@ -3049,7 +3049,7 @@ function prevSibilfunc(curentSibil){
         fill_lists_batches_compare(own_customer, 0);
         check_word_columns();
     });
-	
+
 	$('select[name="research_assess_customers_competitor"]').on("change", function(res) {
         var research_assess_batches_competitor = $("select[name='research_assess_batches_competitor']");
         $.post(base_url + 'index.php/assess/filterBatchByCustomerName', {
@@ -3085,7 +3085,7 @@ function prevSibilfunc(curentSibil){
 			batch_batch : '#research_assess_compare_batches_batch_competitor',
 			batch_assess_batch : 'research_assess_batches_competitor'
 		}];
-		
+
         var research_assess_compare_batches_customer = $(sets[set_number]['batch_customer']);
         var research_assess_compare_batches_batch = $(sets[set_number]['batch_batch']);
         research_assess_compare_batches_customer.empty();
@@ -3161,15 +3161,15 @@ function prevSibilfunc(curentSibil){
     });
 
     $('#research_assess_compare_batches_batch').change(function() {
-        
+
         $.ajax({
             type: "POST",
             url: rememberBatchValue,
             data: {compare_batch_id: $('select[id="research_assess_compare_batches_batch"]').find('option:selected').val()}
-           
+
         });
-        
-        
+
+
         var selectedBatch = $(this).find("option:selected").text();
         $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
             'batch': selectedBatch
@@ -3184,8 +3184,8 @@ function prevSibilfunc(curentSibil){
                 research_assess_compare_batches_customer.val('select customer').prop('selected', true);
         });
     });
-	
-	$('#batch_set_toggle').on('change', function() {	
+
+	$('#batch_set_toggle').on('change', function() {
 		var second_batch_set = $('.research_table_filter_competitor');
 		var batch_set_depend_options = $('.batch_set_depend_options');
 		if ($(this).is(':checked'))
@@ -3199,18 +3199,18 @@ function prevSibilfunc(curentSibil){
 			$('.result_batch_items')[0].click(); //activating first batch set by default
 			second_batch_set.slideUp();
 			batch_set_depend_options.hide();
-			
+
 			$('#research_assess_update').click(); // clicking on Update btn
 		}
 	});
-	
-    $('#research_assess_compare_batches_reset').click(function() {       
+
+    $('#research_assess_compare_batches_reset').click(function() {
 		$('#research_assess_compare_batches_customer').val('select customer').prop('selected', true);
         $('#research_assess_compare_batches_batch').val('select batch').prop('selected', true);
-				
+
 		$('#research_assess_compare_batches_customer_competitor').val('select customer').prop('selected', true);
         $('#research_assess_compare_batches_batch_competitor').val('select batch').prop('selected', true);
-		
+
         $('#research_assess_update').click();
     });
 
@@ -3219,15 +3219,15 @@ function prevSibilfunc(curentSibil){
         var selectedBatchId = $(this).find("option:selected").val();
         $('.assess_report_download_panel').hide();
 //        alert('sdhfbh');
-        
+
         $.ajax({
             type: "POST",
             url: rememberBatchValue,
             data: {batch_id: $('select[name="research_assess_batches"]').find('option:selected').val()},
-           
+
         });
-        
-        
+
+
         if (selectedBatchId == '') {
             var data = {
                 ExtraData: {
@@ -3260,8 +3260,8 @@ function prevSibilfunc(curentSibil){
             fill_lists_batches_compare(own_customer, 0);
             var batch_id_result = GetURLParameter('batch_id_result');
             if(!batch_id_result)
-            {              
-                $('#research_assess_update').click();         
+            {
+                $('#research_assess_update').click();
             }
         });
         if (typeof data != 'undefined') {
@@ -3282,18 +3282,18 @@ function prevSibilfunc(curentSibil){
             }
         }
     });
-	
+
 	$('select[name="research_assess_batches_competitor"]').on("change", function() {
         var selectedBatch = $(this).find("option:selected").text();
         var selectedBatchId = $(this).find("option:selected").val();
         $('.assess_report_download_panel').hide();
-        
+
         $.ajax({
             type: "POST",
             url: rememberBatchValue,
-            data: {batch_id: selectedBatchId},           
-        });        
-        
+            data: {batch_id: selectedBatchId},
+        });
+
         if (selectedBatchId == '') {
             var data = {
                 ExtraData: {
@@ -3326,8 +3326,8 @@ function prevSibilfunc(curentSibil){
             fill_lists_batches_compare(own_customer, 1);
             var batch_id_result = GetURLParameter('batch_id_result');
             if(!batch_id_result)
-            {              
-                $('#research_assess_update').click();         
+            {
+                $('#research_assess_update').click();
             }
         });
         if (typeof data != 'undefined') {
@@ -3395,9 +3395,9 @@ function prevSibilfunc(curentSibil){
 
     $('#research_assess_update').on('click', function() {
         if(first_click){
-        
+
         if ($("#research_assess_compare_batches_batch").val() == 'all' || $("#research_assess_compare_batches_batch_competitor").val() == 'all') {
-            console.log(1);			
+            console.log(1);
             createTable();
             serevr_side = false;
             return;
@@ -3455,7 +3455,7 @@ function prevSibilfunc(curentSibil){
 //        if ($(this).text()!='') {
 //            num += 1;
 //        }
-//     }); 
+//     });
 //     $.each(tblAllColumns, function(index, value) {
 ////          if(name == exception){
 //          if((value === name && num == 0)){
@@ -3464,13 +3464,13 @@ function prevSibilfunc(curentSibil){
 //            }
 ////          }
 //      })
-//      
+//
 //     var num1=0;
 //     $("td."+name.concat("1")+"").each(function() {
 //        if ($(this).text()!='') {
 //            num1 += 1;
 //        }
-//     }); 
+//     });
 //     var name1 = name.concat("1");
 //     $.each(tblAllColumns, function(index, value) {
 //          if(name1 == exception){
@@ -3479,7 +3479,7 @@ function prevSibilfunc(curentSibil){
 //                tblAssess.fnSetColumnVis(index+1, false, false);
 //            }
 //          }
-//      })  
+//      })
 //}
    function check_word_columns() {
 //       columns_name('short_description_wc',4)
@@ -3638,95 +3638,95 @@ function prevSibilfunc(curentSibil){
             }
         });
         $('td.Custom_Keywords_Long_Description').each(function() {
-            
+
             if ($(this).text()!='') {
                 Custom_Keywords_Long_Description += 1;
             }
         });
         $('td.HTags_1').each(function() {
-            
+
             if ($(this).text()!='') {
                 HTags_1 += 1;
             }
         });
         $('td.HTags_2').each(function() {
-            
+
             if ($(this).text()!='') {
                 HTags_2 += 1;
             }
         });
         $('td.HTags_11').each(function() {
-            
+
             if ($(this).text()!='') {
                 HTags_11 += 1;
             }
         });
         $('td.HTags_21').each(function() {
-            
+
             if ($(this).text()!='') {
                 HTags_21 += 1;
             }
         });
         $('td.Meta_Description').each(function() {
-            
+
             if ($(this).text()!='') {
                 Meta_Description += 1;
             }
         });
         $('td.Meta_Description1').each(function() {
-            
+
             if ($(this).text()!='') {
                 Meta_Description1 += 1;
             }
         });
         $('td.Meta_Description2').each(function() {
-            
+
             if ($(this).text()!='') {
                 Meta_Description2 += 1;
             }
         });
         $('td.Meta_Description3').each(function() {
-            
+
             if ($(this).text()!='') {
                 Meta_Description3 += 1;
             }
         });
         $('td.Meta_Description4').each(function() {
-            
+
             if ($(this).text()!='') {
                 Meta_Description4 += 1;
             }
         });
         $('td.item_id').each(function() {
-            
+
            var txt = parseInt($(this).text());
             if (txt > 0) {
                 item_id += 1;
             }
         });
         $('td.item_id1').each(function() {
-            
+
            var txt = parseInt($(this).text());
             if (txt > 0) {
                 item_id1 += 1;
             }
         });
         $('td.item_id2').each(function() {
-            
+
            var txt = parseInt($(this).text());
             if (txt > 0) {
                 item_id2 += 1;
             }
         });
         $('td.item_id3').each(function() {
-            
+
            var txt = parseInt($(this).text());
             if (txt > 0) {
                 item_id3 += 1;
             }
         });
         $('td.item_id4').each(function() {
-            
+
            var txt = parseInt($(this).text());
             if (txt > 0) {
                 item_id4 += 1;
@@ -3842,7 +3842,7 @@ function prevSibilfunc(curentSibil){
                 average_review4 += 1;
             }
         });
-//        $('td.column_reviews').each(function() {             
+//        $('td.column_reviews').each(function() {
 //            var txt = parseInt($(this).text());
 //            if (txt > 0) {
 //                column_reviews += 1;
@@ -3987,7 +3987,7 @@ function prevSibilfunc(curentSibil){
                 title_pa1 += 1;
             }
         });
-     
+
         $.each(tblAllColumns, function(index, value) {
             if ((value == 'short_description_wc' && word_short_num == 0) || (value == 'long_description_wc' && word_long_num == 0)) {
                 tblAssess.fnSetColumnVis(index, false, false);
@@ -4122,131 +4122,131 @@ function prevSibilfunc(curentSibil){
             }
             if((value == 'Page_Load_Time' && Page_Load_Time == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
             if((value == 'Page_Load_Time1' && Page_Load_Time1 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
             if((value == 'Page_Load_Time2' && Page_Load_Time2 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
             if((value == 'Page_Load_Time3' && Page_Load_Time3 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
             if((value == 'Page_Load_Time4' && Page_Load_Time4 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
             if((value == 'average_review' && average_review == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
             if((value == 'average_review1' && average_review1 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
             if((value == 'average_review2' && average_review2 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
             if((value == 'average_review3' && average_review3 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
             if((value == 'average_review4' && average_review4 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
 //            if((value == 'column_reviews' && column_reviews == 0)){
 //                tblAssess.fnSetColumnVis(index, false, false);
-//               
+//
 //            }
 //            if((value == 'column_reviews1' && column_reviews1 == 0)){
 //                tblAssess.fnSetColumnVis(index, false, false);
-//               
+//
 //            }
 //            if((value == 'column_reviews2' && column_reviews2 == 0)){
 //                tblAssess.fnSetColumnVis(index, false, false);
-//               
+//
 //            }
 //            if((value == 'column_reviews3' && column_reviews3 == 0)){
 //                tblAssess.fnSetColumnVis(index, false, false);
-//               
+//
 //            }
 //            if((value == 'column_reviews4' && column_reviews4 == 0)){
 //                tblAssess.fnSetColumnVis(index, false, false);
-//               
+//
 //            }
             if((value == 'Short_Description' && Short_Description == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'Short_Description1' && Short_Description1 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
             if((value == 'Short_Description2' && Short_Description2 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'Short_Description3' && Short_Description3 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-               
+
             }
             if((value == 'Short_Description4' && Short_Description4 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'Long_Description' && Long_Description == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'Long_Description1' && Long_Description1 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'Long_Description2' && Long_Description2 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'Long_Description3' && Long_Description3 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'Long_Description4' && Long_Description4 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'column_external_content' && column_external_content == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'column_external_content1' && column_external_content1 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'column_external_content2' && column_external_content2 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'column_external_content3' && column_external_content3 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
             if((value == 'column_external_content4' && column_external_content4 == 0)){
                 tblAssess.fnSetColumnVis(index, false, false);
-                
+
             }
-           
+
         });
 //        $('.subtitle_word_long').show();
 //        $('.subtitle_word_short').show();
 //        $('.subtitle_keyword_short').show();
 //        $('.subtitle_keyword_long').show();
-        
+
         if(Long_Description == 0 && Short_Description !=0){
             $('.subtitle_desc_short').text('Product ')
         }else if(Short_Description == 0 && Long_Description != 0){
@@ -4287,8 +4287,8 @@ function prevSibilfunc(curentSibil){
             $('.subtitle_desc_long4').text('Long ')
             $('.subtitle_desc_short4').text('Short ')
         }
-        
-        
+
+
 //        if (word_short_num == 0 && word_long_num != 0) {
 //            $('.subtitle_word_long').hide();
 //            $('.subtitle_keyword_long').hide();
@@ -4296,7 +4296,7 @@ function prevSibilfunc(curentSibil){
 //            $('.subtitle_word_short').hide();
 //            $('.subtitle_keyword_short').hide();
 //        }
-        
+
     }
 
     $('.assess_report_download_panel > a').click(function() {
@@ -4305,7 +4305,7 @@ function prevSibilfunc(curentSibil){
     });
 
     function assess_report_download(type_doc) {
-		var batch_set = $('.result_batch_items:checked').val() || 'me';	
+		var batch_set = $('.result_batch_items:checked').val() || 'me';
         var batch_name = $("select[name='" + batch_sets[batch_set]['batch_batch'] + "']").find("option:selected").text();
         //var batch_id = $("select[name='research_assess_batches']").find("option:selected").val();
         var compare_batch_id = $(batch_sets[batch_set]['batch_compare']).val();
@@ -4330,14 +4330,14 @@ function prevSibilfunc(curentSibil){
 //            $("#vertical").css('visibility', 'visible') ;
 //            $("#horizontal").css('visibility', 'hidden') ;
 //            $("#columns_checking p").css('display','block');
-//            $("#columns_checking p").css('float','left');            
+//            $("#columns_checking p").css('float','left');
 //            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css({
-//                'width':'1200'                
-//            });  
+//                'width':'1200'
+//            });
 //            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
 //            'left':'50%',
-//             'margin-left':'-600px'                
-//             });  
+//             'margin-left':'-600px'
+//             });
 //        }
 //        else{
 //            $("#vertical").css('visibility', 'hidden') ;
@@ -4346,8 +4346,8 @@ function prevSibilfunc(curentSibil){
 //            $("#columns_checking p").css('float','');
 //            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').css('width','250px');
 //            $('#research_assess_choiceColumnDialog, #summary_filters_configuration_wrapper').parent().css({
-//             'margin-left':'-137px'                
-//             }); 
+//             'margin-left':'-137px'
+//             });
 //        }
 //    });
     $(".research_assess_choiceColumnDialog_checkbox").change(function(){
@@ -4366,6 +4366,7 @@ function prevSibilfunc(curentSibil){
                     Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked' ? 1 : 0,
                     title_seo_phrases: $("#column_title_seo_phrases").attr('checked') == 'checked',
+					title_seo_phrases_f: $("#column_title_seo_phrases_f").attr('checked') == 'checked',
                     images_cmp: $("#column_images_cmp").attr('checked') == 'checked',
                     video_count: $("#column_video_count").attr('checked') == 'checked',
                     title_pa: $("#column_title_pa").attr('checked') == 'checked',
@@ -4411,19 +4412,19 @@ function prevSibilfunc(curentSibil){
                 });
 
     });
-	
+
 	function fill_summary_config_filters(setting_values)
 	{
 		$('.summary_filter_config_item').each(function(index, element) {
 			$(this).removeAttr('checked');
 		});
-		
+
 		for (var it = 0; it < setting_values.length; it++)
 		{
 			$('.summary_filter_config_item[data-realfilterid="' + setting_values[it] + '"]').attr('checked', 'checked');
 		}
 	}
-	
+
 	$.ajax({
 		url : get_summary_filters,
 		type : 'GET',
@@ -4431,49 +4432,50 @@ function prevSibilfunc(curentSibil){
 		success : function(data) {
 			if (data && data.setting_value)
 			{
-				fill_summary_config_filters(JSON.parse(data.setting_value));				
+				fill_summary_config_filters(JSON.parse(data.setting_value));
 			}
 		}
 	});
-	
+
 	$('#summary_filters_configuration_wrapper, #custom_batch_create_modal').dialog({
 		autoOpen : false,
 		resizable: false,
 		modal : true,
 		width : 'auto'
 	});
-	
+
 	$('.show_filters_configuration_popup').on('click', function() {
 		$('#summary_filters_configuration_wrapper').dialog('open');
 	});
 
     $(".custom-batch-trigger").on("click", function(e) {
         e.preventDefault();
+        getCustomerDropdown();
         $.post(base_url + 'index.php/batches/index', {}, function(data) {
             $("#custom_batch_create_modal").html(data).dialog("open");
         });
     });
-	
+
 	$('.summary_filter_config_item').on('click', function() {
-	
+
 		var elem = $(this)
 		  , filter_elem = $('.item_line[data-filterid*="' + elem.data('realfilterid') + '"], .batch_me_and_competitor[data-filterid*="' + elem.data('realfilterid') + '"]');
-		
+
 		summary_active_items = [];
-		
-		if (elem.is(':checked'))	
+
+		if (elem.is(':checked'))
 		{
 			filter_elem.show();
-			
+
 			if (!filter_elem.hasClass('selected_by_config'))
 				filter_elem.addClass('selected_by_config');
 		} else {
-			filter_elem.hide();		
-			
+			filter_elem.hide();
+
 			if (filter_elem.hasClass('selected_by_config'))
 				filter_elem.removeClass('selected_by_config');
 		}
-		
+
 		$('.summary_filter_config_item').each(function(index, element) {
 			var config_item = $(this);
 			if (config_item.is(':checked'))
@@ -4481,7 +4483,7 @@ function prevSibilfunc(curentSibil){
 				summary_active_items.push(config_item.data('realfilterid'));
 			}
 		});
-		
+
 		$.ajax({
 			url : save_summary_filters,
 			data : {
@@ -4492,13 +4494,13 @@ function prevSibilfunc(curentSibil){
 			success : function(data) {
 				console.log(data);
 			}
-		});		
+		});
 	});
-	
+
     $('#research_assess_choiceColumnDialog').dialog({
         autoOpen: false,
         resizable: false,
-        modal: true,		
+        modal: true,
 //        buttons: {
 //            'Save': function() {
 //                // get columns params
@@ -4556,7 +4558,7 @@ function prevSibilfunc(curentSibil){
                 });
 
     $('.assess_report_options_dialog_button').on('click', function() {
-		var batch_set = $('.result_batch_items:checked').val() || 'me';		
+		var batch_set = $('.result_batch_items:checked').val() || 'me';
         var selected_batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"] option:selected').val();
         var data = {
             'batch_id': selected_batch_id
@@ -4633,7 +4635,7 @@ function prevSibilfunc(curentSibil){
     tblAllColumns = tblAssess.fnGetAllSColumnNames();
 
     function hideColumns() {
-		var batch_set = $('.result_batch_items:checked').val() || 'me';	
+		var batch_set = $('.result_batch_items:checked').val() || 'me';
         var table_case = 'details_compare';
         var checked_columns_results = GetURLParameter('checked_columns_results');
     if(checked_columns_results){
@@ -4643,7 +4645,7 @@ function prevSibilfunc(curentSibil){
                  table_case = 'graph';
              }
         }else{
-        
+
         table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
     }
         var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
@@ -4651,7 +4653,7 @@ function prevSibilfunc(curentSibil){
         $.each(columns_checkboxes, function(index, value) {
             columns_checkboxes_checked.push($(value).data('col_name'));
         });
-		
+
 		//turn off related blocks here
 		toggleRelatedBlocks('details_compare', false);
 
@@ -4684,7 +4686,7 @@ function prevSibilfunc(curentSibil){
             $.each(tblAllColumns, function(index, value) {
                 if ($.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
-                    
+
                 }else if(value==='H1_Tags_Count' || value==='H2_Tags_Count' || value ==='Meta_Description_Count'){
                     if ($.inArray(tblAllColumns[index-1], columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
@@ -4695,7 +4697,7 @@ function prevSibilfunc(curentSibil){
                 }
                 else {
                     tblAssess.fnSetColumnVis(index, false, false);
-                    
+
                 }
                 //tblAssess.fnSetColumnVis(, false, false);
             });
@@ -4703,12 +4705,12 @@ function prevSibilfunc(curentSibil){
             check_word_columns();
         }
         else if (table_case == 'details_compare') {
-			 
+
 			/**
-			 * using one place to turn on/off different blocks			 			 	
-			 */				 
+			 * using one place to turn on/off different blocks
+			 */
 			toggleRelatedBlocks('details_compare', true);
-			
+
             $('#graphDropDown').remove();
             $('#show_over_time').remove();
             $('#show_over_time_span').remove();
@@ -4718,11 +4720,11 @@ function prevSibilfunc(curentSibil){
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
                 value = value.replace(/[0-9]$/, "");
-              
+
                 if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
-              
-                
+
+
                 }
                 else if(value==='H1_Tags_Count' || value==='H2_Tags_Count' || value ==='Meta_Description_Count' ){
                     if ($.inArray("Meta_Description", columns_checkboxes_checked) > -1) {
@@ -4744,7 +4746,7 @@ function prevSibilfunc(curentSibil){
             });
             addColumn_url_class();
             check_word_columns();
-        
+
         }else if (table_case == 'details_compare_result') {
             toggleRelatedBlocks('details_compare_result', true);
             $('#graphDropDown').remove();
@@ -4756,12 +4758,12 @@ function prevSibilfunc(curentSibil){
             reportPanel(false);
 
             $.each(tblAllColumns, function(index, value) {
-           
+
                 value = value.replace(/[0-9]$/, "");
                 if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
-              
-                
+
+
                 }
                 else if(value==='H1_Tags_Count' || value==='H2_Tags_Count' || value ==='Meta_Description_Count' ){
                     if ($.inArray("Meta_Description", columns_checkboxes_checked) > -1) {
@@ -4783,7 +4785,7 @@ function prevSibilfunc(curentSibil){
             });
             addColumn_url_class();
             check_word_columns();
-        } 
+        }
         else if (table_case == 'report') {
             $('#graphDropDown').remove();
             $('#show_over_time').remove();
@@ -4859,7 +4861,7 @@ function prevSibilfunc(curentSibil){
                 dropDownString += '<option value="revision" >Reviews</option>';
                 dropDownString += '<option value="Features" >Features</option>';
 //                dropDownString += '<option value="own_price" >Prices</option>';
-            dropDownString += '</select><input id="show_over_time" style="width: 30px;" type="checkbox"><span id="show_over_time_span">Show changes over time</span>';    
+            dropDownString += '</select><input id="show_over_time" style="width: 30px;" type="checkbox"><span id="show_over_time_span">Show changes over time</span>';
             $('#tblAssess_info').after(dropDownString);
             $('#tblAssess_paginate').hide();
             $('.board_view').hide();
@@ -4870,13 +4872,13 @@ function prevSibilfunc(curentSibil){
             $('#assess_graph').show();
         }
     }
-	
-	/*	
+
+	/*
 	* toggleRelatedBlocks('details_compare', true);
 	* @author Oleg Meleshko
-	*/	
+	*/
 	function toggleRelatedBlocks(tabName, isDisplayed)
-	{	
+	{
 		if (tabsRelatedBlocks[tabName])
 			tabsRelatedBlocks[tabName].call(null, isDisplayed);
 	}
@@ -4892,8 +4894,8 @@ function prevSibilfunc(curentSibil){
             $('.assess_report').hide();
             $('#assess_view').hide();
         }
-    }	
-	
+    }
+
     function buildTableParams(existingParams) {
 
         var assessRequestParams = collectionParams();
@@ -4919,8 +4921,8 @@ function prevSibilfunc(curentSibil){
         return existingParams;
     }
     function collectionParams1() {
-		var batch_set = $('.result_batch_items:checked').val() || 'me';	
-		
+		var batch_set = $('.result_batch_items:checked').val() || 'me';
+
         var assessRequestParams = {};
 
         assessRequestParams.search_text = $('#assess_filter_text').val();
@@ -4981,12 +4983,12 @@ function prevSibilfunc(curentSibil){
 
         return assessRequestParams;
     }
-    
+
     function collectionParams() {
-		var batch_set = $('.result_batch_items:checked').val() || 'me';		
-		
+		var batch_set = $('.result_batch_items:checked').val() || 'me';
+
         var assessRequestParams = {};
-       
+
 var batch_id_result = GetURLParameter('batch_id_result');
 var cmp_selected = GetURLParameter('cmp_selected');
 var search_text = GetURLParameter('search_text');
@@ -4995,12 +4997,12 @@ var search_text = GetURLParameter('search_text');
             assessRequestParams.search_text = search_text;
         }else{
             assessRequestParams.search_text = $('#assess_filter_text').val();
-            
+
         }
         if(batch_id_result){
-            assessRequestParams.batch_id = batch_id_result;            
+            assessRequestParams.batch_id = batch_id_result;
         }else{
-            assessRequestParams.batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();            
+            assessRequestParams.batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
         }
 
         var assess_filter_datefrom = $('#assess_filter_datefrom').val();
@@ -5011,7 +5013,7 @@ var search_text = GetURLParameter('search_text');
         }
 
         if(cmp_selected){
-                    assessRequestParams.batch2 = cmp_selected;   
+                    assessRequestParams.batch2 = cmp_selected;
         }else if($("select[name='" + batch_sets[batch_set]['batch_batch'] + "'").val() != 0 && $(batch_sets[batch_set]['batch_compare']).val() != 0 && $(batch_sets[batch_set]['batch_compare']).val() != null) {
             assessRequestParams.batch2 = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
 
@@ -5131,8 +5133,15 @@ var search_text = GetURLParameter('search_text');
         var columns_check = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
             var columns_checked = [];
             $.each(columns_check, function(index, value) {
-                columns_checked.push($(value).data('col_name'));
+				if($(value).attr('id') == "column_title_seo_phrases_f" && $("#tk-frequency").is(':checked') ){
+					columns_checked.push("title_seo_phrases_f");
+				}
+				else{
+				columns_checked.push($(value).data('col_name'));
+				}
+                
             });
+            console.log(columns_checked);
             
            var summaryFilterData = summaryInfoSelectedElements.join(',')
           
@@ -5275,11 +5284,30 @@ $( ".CRG" )
     console.log("down");
 	$('table#tblAssess').floatThead('reflow');
   });
-	
-	
-	$('*[id*=mytext]:visible').each(function() {
-    $(this).doStuff();
-	});
+  
+	  $('#tk-frequency').click(function() {
+	    var $target = $('input#column_title_seo_phrases');
+		newData = "column_title_seo_phrases_f";
+		
+		$target.removeAttr('id').attr({ 'id': newData });
+		$target.removeAttr('name').attr({ 'name': newData });
+		$target.removeAttr('data-col_name').attr({ 'data-col_name': 'title_seo_phrases_f' });
+		$target.click();
+		$target.click();
+		});
+		$('#tk-denisty').click(function() {
+		var $target = $('input#column_title_seo_phrases_f');
+		newData = "column_title_seo_phrases";
+		$target.removeAttr('id').attr({ 'id': newData });
+		$target.removeAttr('name').attr({ 'name': newData });
+		$target.removeAttr('data-col_name').attr({ 'data-col_name': 'title_seo_phrases' });
+		$target.click();
+		$target.click();
+		});
+		
+		$('*[id*=mytext]:visible').each(function() {
+		$(this).doStuff();
+		});
   $('#generate_url').toggle(function() {
 	   var batch_set = $('.result_batch_items:checked').val() || 'me';
        var first = $("select[name='" + batch_sets[batch_set]['batch_batch'] + "']").find('option:selected').val();
