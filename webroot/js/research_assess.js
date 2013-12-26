@@ -4329,6 +4329,7 @@ function prevSibilfunc(curentSibil){
                     Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
                     short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked' ? 1 : 0,
                     title_seo_phrases: $("#column_title_seo_phrases").attr('checked') == 'checked',
+					title_seo_phrases_f: $("#column_title_seo_phrases_f").attr('checked') == 'checked',
                     images_cmp: $("#column_images_cmp").attr('checked') == 'checked',
                     video_count: $("#column_video_count").attr('checked') == 'checked',
                     title_pa: $("#column_title_pa").attr('checked') == 'checked',
@@ -5087,8 +5088,15 @@ var search_text = GetURLParameter('search_text');
         var columns_check = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
             var columns_checked = [];
             $.each(columns_check, function(index, value) {
-                columns_checked.push($(value).data('col_name'));
+				if($(value).attr('id') == "column_title_seo_phrases_f" && $("#tk-frequency").is(':checked') ){
+					columns_checked.push("title_seo_phrases_f");
+				}
+				else{
+				columns_checked.push($(value).data('col_name'));
+				}
+                
             });
+            console.log(columns_checked);
             
            var summaryFilterData = summaryInfoSelectedElements.join(',')
           
@@ -5231,11 +5239,30 @@ $( ".CRG" )
     console.log("down");
 	$('table#tblAssess').floatThead('reflow');
   });
-	
-	
-	$('*[id*=mytext]:visible').each(function() {
-    $(this).doStuff();
-	});
+  
+	  $('#tk-frequency').click(function() {
+	    var $target = $('input#column_title_seo_phrases');
+		newData = "column_title_seo_phrases_f";
+		
+		$target.removeAttr('id').attr({ 'id': newData });
+		$target.removeAttr('name').attr({ 'name': newData });
+		$target.removeAttr('data-col_name').attr({ 'data-col_name': 'title_seo_phrases_f' });
+		$target.click();
+		$target.click();
+		});
+		$('#tk-denisty').click(function() {
+		var $target = $('input#column_title_seo_phrases_f');
+		newData = "column_title_seo_phrases";
+		$target.removeAttr('id').attr({ 'id': newData });
+		$target.removeAttr('name').attr({ 'name': newData });
+		$target.removeAttr('data-col_name').attr({ 'data-col_name': 'title_seo_phrases' });
+		$target.click();
+		$target.click();
+		});
+		
+		$('*[id*=mytext]:visible').each(function() {
+		$(this).doStuff();
+		});
   $('#generate_url').toggle(function() {
 	   var batch_set = $('.result_batch_items:checked').val() || 'me';
        var first = $("select[name='" + batch_sets[batch_set]['batch_batch'] + "']").find('option:selected').val();
