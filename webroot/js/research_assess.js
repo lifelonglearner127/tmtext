@@ -2527,6 +2527,25 @@ var generate_url_check = GetURLParameter('generate_url_check');
      var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
       var checked_columns_results = GetURLParameter('checked_columns_results');
     
+     // ==== figure out position of clicked 'tr'(start)
+     var click_object = $(event.target).parent();
+     if(click_object[0].localName == 'tr') { // <tr>
+        var click_object = $(event.target).parent();
+        var click_object_index = click_object[0]._DT_RowIndex;
+     } else { // <td>
+        var click_object = $(event.target).parent().parent();
+        var click_object_index = click_object[0]._DT_RowIndex;
+     }
+     console.log("CLICKED TR INDEX: ", click_object_index);
+     var click_object_real_index = 0;
+     if(click_object_index == 0) {
+        click_object_real_index = 1;
+     } else {
+        click_object_real_index = click_object_index + 1;
+     }
+     console.log("REAL CLICKED TR INDEX: ", click_object_real_index);
+     // ==== figure out position of clicked 'tr'(end)
+
      if((table_case != "details_compare") && (checked_columns_results == undefined)){
 
         $('.details_left').addClass('details_width');  
@@ -2807,6 +2826,16 @@ var generate_url_check = GetURLParameter('generate_url_check');
                     }
                     assessDetailsDialog_chkIncludeInReport.attr('research_data_id', add_data.research_data_id);
                    $('#assessDetailsDialog').dialog('open');
+                   // ==== restore prev / next buttons to init state (start)
+                   $("#assessDetailsDialog_btnPrev, #assessDetailsDialog_btnNext").removeAttr('disabled');
+                   // ==== restore prev / next buttons to init state (end) 
+                   // ==== figure prev / next buttons availability states (start)
+                   if(click_object_real_index == 1) {
+                       $("#assessDetailsDialog_btnPrev").attr('disabled', true); 
+                   } else if(click_object_real_index == 9) {
+                       $("#assessDetailsDialog_btnNext").attr('disabled', true); 
+                   }
+                   // ==== figure prev / next buttons availability states (end)
                 }
         );
 
