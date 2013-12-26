@@ -2544,6 +2544,11 @@ var generate_url_check = GetURLParameter('generate_url_check');
         click_object_real_index = click_object_index + 1;
      }
      console.log("REAL CLICKED TR INDEX: ", click_object_real_index);
+     if(click_object_real_index == 1) {
+        $("#assessDetailsDialog_btnPrev").attr('disabled', true); 
+     } else if(click_object_real_index == 9) {
+        $("#assessDetailsDialog_btnNext").attr('disabled', true); 
+     }
      // ==== figure out position of clicked 'tr'(end)
 
      if((table_case != "details_compare") && (checked_columns_results == undefined)){
