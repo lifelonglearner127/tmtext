@@ -31,6 +31,7 @@ class Assess extends MY_Controller {
 			'save_summary_filters' => true,
 			'get_summary_filters' => true,
 			'save_summary_filters_order' => true,
+            'deleteSecondaryMatch' => true,
         ));
     }
 
@@ -5159,5 +5160,17 @@ class Assess extends MY_Controller {
 		
 		die(json_encode($this->uss->save()));
 	}
-//}
+        
+        public function deleteSecondaryMatch(){
+            if(isset($_POST['impdataid'])){
+                $data = array(
+                                'similar_products_competitors' => null,
+                             );
+                $this->load->model('statistics_new_model');
+                $this->db->where('imported_data_id', $_POST['impdataid']);
+                $this->db->update('statistics_new', $data); 
+                return true;
+}
+            return false;
+        }
 }

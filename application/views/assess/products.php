@@ -375,6 +375,9 @@
         <input type="text" id="assessDetails_url" />
         <a id="assess_open_url_btn" class="icon-hand-right" target="_blank"></a>
     </p>
+    
+        <input type="hidden" id="impdataid" val="" />
+    
 
     <p>
         <label for="assessDetails_Price">Price:</label>

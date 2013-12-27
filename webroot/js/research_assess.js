@@ -93,7 +93,7 @@ $(function() {
         return o;
     };
 
-    var textToCopy;
+//    var textToCopy;
     var zeroTableDraw = true;
 
     var short_wc_total_not_0 = 0;
@@ -2592,8 +2592,8 @@ var generate_url_check = GetURLParameter('generate_url_check');
         curentSibil=target.parents('tr');
 
         console.log("ADD DATA 1 : ", add_data);
-
         $('#ajaxLoadAni').fadeIn('slow');
+        $('#impdataid').attr('val',add_data.imported_data_id);
         $('#assessDetails_ProductName').val(add_data.product_name);
         $('#assessDetails_Model').val(add_data.model);
         $('#assessDetails_url').val(add_data.url);
@@ -2641,7 +2641,6 @@ var generate_url_check = GetURLParameter('generate_url_check');
         if (assessDetailsDialog_replace_element.length > 0) {
             assessDetailsDialog_replace_element.replaceWith(btn_delete_from_batch + chk_include_in_report);
         }
-
         var data = {
             research_data_id: add_data.research_data_id
         };
@@ -2717,8 +2716,8 @@ var generate_url_check = GetURLParameter('generate_url_check');
             return;
         }
         var url_compare =$(add_data.url1).find('a').attr('href');
-
         $('#ajaxLoadAni').fadeIn('slow');
+        $('#impdataid').attr('val',add_data.imported_data_id);
         $('#assessDetails_ProductName').val(add_data.product_name);
         $('#assessDetails_Model').val(add_data.model);
         $('#assessDetails_url').val(add_data.url);
@@ -2912,12 +2911,34 @@ var generate_url_check = GetURLParameter('generate_url_check');
                     prevSibilfunc(curentSibil)
                 }
             },
-            'Copy': {
-                text: 'Copy',
-                id: 'assessDetailsDialog_btnCopy',
+//            'Copy': {
+//                text: 'Copy',
+//                id: 'assessDetailsDialog_btnCopy',
+//                style: 'margin-right:125px',
+//                click: function() {
+//                    copyToClipboard(textToCopy);
+//                }
+//            },
+            'Not a match': {
+                text: 'Not a match',
+                id: 'assessDetailsDialog_btnNotAMatch',
                 style: 'margin-right:125px',
                 click: function() {
-                    copyToClipboard(textToCopy);
+                    var impdata_id = $('#impdataid').attr('val');
+//                    alert(impdata_id);
+                    $.ajax({
+                        url: base_url + 'index.php/assess/deleteSecondaryMatch',
+                        dataType: 'json',
+                        type: 'post',
+                        data: {
+                            impdataid: impdata_id
+                }
+                    }).done(function(){
+//                        alert('sdfgsdg');
+                        $('#assessDetailsDialog').dialog('close');
+                        $('#research_assess_update').click();
+                        
+                    });
                 }
             },
 
@@ -2991,16 +3012,16 @@ function prevSibilfunc(curentSibil){
                },15000);
        }
 }
-    $('#assessDetailsDialog input[type="text"], textarea').bind({
-        focus: function() {
-            this.select();
-            textToCopy = this.value;
-        },
-        mouseup: function() {
-            textToCopy = this.value;
-            return false;
-        }
-    });
+//    $('#assessDetailsDialog input[type="text"], textarea').bind({
+//        focus: function() {
+//            this.select();
+//            textToCopy = this.value;
+//        },
+//        mouseup: function() {
+//            textToCopy = this.value;
+//            return false;
+//        }
+//    });
 
     function saveData(){
         var data = {
@@ -3026,9 +3047,9 @@ function prevSibilfunc(curentSibil){
         );
     }
 
-    function copyToClipboard(text) {
-        window.prompt("Copy to clipboard: Ctrl+C, Enter (or Esc)", text);
-    }
+//    function copyToClipboard(text) {
+//        window.prompt("Copy to clipboard: Ctrl+C, Enter (or Esc)", text);
+//    }
 
     $(document).on('click', '#assess_details_delete_from_batch', function() {
         if (confirm('Are you sure you want to delete this item?')) {
