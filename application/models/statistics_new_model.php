@@ -9,13 +9,47 @@ class Statistics_new_model extends CI_Model {
         'crawler_list' => 'crawler_list',
         'imported_data_parsed' => 'imported_data_parsed',
         'imported_data_parsed_archived' => 'imported_data_parsed_archived',
-        'meta_kw_rank_source' => 'meta_kw_rank_source'
+        'meta_kw_rank_source' => 'meta_kw_rank_source',
+        'crawler_list_prices' => 'crawler_list_prices'
     );
     protected $res_array;
 
     function __construct()
     {
         parent::__construct();
+    }
+
+    function get_crawler_price_by_url_model($url) {
+        $res_object = array(
+            'status' => false,
+            'msg' => '',
+            'data' => null
+        );
+        $check_obj_cl = array(
+            'url' => $url
+        );
+        $query_cl = $this->db->where($check_obj_cl)->limit(1)->get($this->tables['crawler_list']);
+        $query_cl_res = $query_cl->result();
+        if(count($query_cl_res) > 0) {
+            $cl_object = $query_cl_res[0];
+            $crawler_list_id = $cl_object->id;
+            $check_obj_clp = array(
+                'crawler_list_id' => $crawler_list_id
+            );
+            $query_clp = $this->db->where($check_obj_clp)->limit(1)->get($this->tables['crawler_list_prices']);
+            $query_clp_res = $query_clp->result();
+            if(count($query_clp_res) > 0) {
+                $clp_object = $query_clp_res[0];
+                $res_object['status'] = true;
+                $res_object['msg'] = 'OK';
+                $res_object['data'] = $clp_object;
+            } else {
+                $res_object['msg'] = 'Crawler List Prices Object Not Found';
+            }
+        } else {
+            $res_object['msg'] = 'Crawler List Object Not Found';
+        }
+        return $res_object;
     }
 
     // === META KEYWORDS RANKING STUFFS (START)

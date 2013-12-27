@@ -3005,7 +3005,12 @@ class Assess extends MY_Controller {
         $this->statistics_new_model->delete_by_research_data_id($batch_id, $research_data_id);
     }
 
-   
+    public function get_crawler_price_by_url() {
+        $this->load->model('statistics_new_model');
+        $url = $this->input->post('url');
+        $res = $this->statistics_new_model->get_crawler_price_by_url_model($url);
+        $this->output->set_content_type('application/json')->set_output(json_encode($res));
+    }
 
     private function compare_str($str1, $str2) {
         $str1 = trim(strtolower($str1));

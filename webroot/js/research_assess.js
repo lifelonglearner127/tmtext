@@ -2729,8 +2729,26 @@ var generate_url_check = GetURLParameter('generate_url_check');
         $('#assessDetails_Model1').val(add_data.model1);
         $('#assessDetails_url1').val(url_compare);
         $('#assess_open_url_btn1').attr('href', url_compare);
-        // $('#assessDetails_Price1').val(add_data.competitors_prices[0]);
-        $('#assessDetails_Price1').val( Number(add_data.competitors_prices[0]).toFixed(2) );
+        // $('#assessDetails_Price1').val(add_data.competitors_prices[0]); // old stuff
+        // ==== new stuff (I.L) (start)
+        if(typeof(url_compare) !== 'undefined' && $.trim(url_compare) !== "") {
+            console.log('start altering right side price field : OLD (DEFAULT) PRICE : ', Number(add_data.competitors_prices[0]).toFixed(2));
+            var send_data = {
+                url: url_compare
+            };
+            $.post(base_url + 'index.php/assess/get_crawler_price_by_url', send_data, function(d) {
+                console.log(d.data);
+                if(typeof(d.data) !== 'undefined' && d.data !== null) {
+                    $('#assessDetails_Price1').val( Number(d.data.price).toFixed(2) );
+                } else {
+                    $('#assessDetails_Price1').val( Number(add_data.competitors_prices[0]).toFixed(2) );
+                }
+            });
+        } else {
+            console.log('RIGHT SIDE URL NOT SPECIFIED');
+            $('#assessDetails_Price1').val( Number(add_data.competitors_prices[0]).toFixed(2) );
+        }
+        // ==== new stuff (I.L) (end)
         var short_total_not_01 = '';
         var long_total_not_01 = '';
         var long_wc_total_not_01 = 0;
