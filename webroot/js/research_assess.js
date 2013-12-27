@@ -30,7 +30,7 @@ function close_popover(elem)
 
 function resizeImpDown(){
 	var tblAssessTable = $("#tblAssess");
-	// tblAssessTable.colResizable({ disable : true });
+	tblAssessTable.colResizable({ disable : true });
 	tblAssessTable.colResizable({
 		liveDrag:true, 
 		gripInnerHtml:"<div class='grip'></div>", 
