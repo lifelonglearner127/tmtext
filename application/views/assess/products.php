@@ -600,12 +600,7 @@
                     <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>
                 </div> -->
                 <a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>
-                <?php 
-					$this->load->view('assess/_summary', array(
-						'display' => 'block',
-						'wrapper_class' => 'assess_report',
-					))
-				?>
+              
 
                 <div id="assess_view">
                     <!--<p>No images available for this batch</p>-->
@@ -617,6 +612,7 @@
              
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.json-2.4.min.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/jquery.fileDownload.js"></script>
+				<script type="text/javascript" src="<?php echo base_url();?>js/initdata.js"></script>
                 <script type="text/javascript" src="<?php echo base_url();?>js/research_assess.js"></script>
                 <script type="text/javascript" src="<?php echo base_url(); ?>js/measure_department.js"></script>
                 <script type='text/javascript' src="<?php echo base_url();?>js/ci_home_pages.js"></script>

@@ -75,7 +75,9 @@
         $b = strstr($serv,"compare_results");
         if($b !=''){
      ?>
+			
             <script type="text/javascript" src="<?php echo base_url();?>js/research_assess.js"></script>
+            <script type="text/javascript" src="<?php echo base_url();?>js/initdata.js"></script>
      <?php 
         }
     };?>

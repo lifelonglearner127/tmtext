@@ -521,15 +521,7 @@
                     <a id="assess_tbl_show_case_graph" data-case="graph" title="Graph">Graph</a> 
                     <!--<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>-->
                 </div>
-                <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>
-                <?php 
-					$this->load->view('assess/_summary', array(
-						'display' => 'block',
-						'wrapper_class' => 'assess_report',
-						'direct_access' => true
-					))
-				?>
-
+                <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>           
                 <div id="assess_view">
                     <p>No images available for this batch</p>
                 </div>

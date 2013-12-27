@@ -28,28 +28,20 @@ function close_popover(elem)
 	return false;
 }
 
-
-function resizeImp(){
-			var status = "no ok";
-			var statusinterval = setInterval( function(){
-			if($("#tblAssess td").length > 1){
-				status = "ok";
-			}
-			if(status == "ok"){
-			clearInterval(statusinterval); 
-			$("#tblAssess").colResizable({
-			disable:true
-			});
-			$("#tblAssess").colResizable({
-				liveDrag:true, 
-				gripInnerHtml:"<div class='grip'></div>", 
-				draggingClass:"dragging"});
-			}
-			setTimeout(function(){$('table#tblAssess').floatThead('reflow');}, 300)
-			
-			},500);
-			console.log("resizeImp");
+function resizeImpDown(){
+	var tblAssessTable = $("#tblAssess");
+	// tblAssessTable.colResizable({ disable : true });
+	tblAssessTable.colResizable({
+		liveDrag:true, 
+		gripInnerHtml:"<div class='grip'></div>", 
+		draggingClass:"dragging",
+		onResize : function(event) {			
+			tblAssessTable.floatThead('reflow');
+		}
+	});
+	tblAssessTable.floatThead('reflow');
 }
+
 $(function() {
 	
 	$.expr[':'].contains = function(a, i, m) {
@@ -121,183 +113,7 @@ $(function() {
 		graph : toggleDetailsCompareBlocks
 	};
 	
-	var summaryFieldNames = [
-		'assess_report_competitor_matches_number',
-		'skus_shorter_than_competitor_product_content',
-		'skus_longer_than_competitor_product_content',
-		'skus_same_competitor_product_content',
-		'skus_fewer_features_than_competitor',
-		'skus_fewer_reviews_than_competitor',
-		'skus_fewer_competitor_optimized_keywords',
-		
-		'skus_zero_optimized_keywords',
-		'skus_one_optimized_keywords',
-		'skus_two_optimized_keywords',
-		'skus_three_optimized_keywords',
-		
-		'skus_zero_optimized_keywords_competitor',
-		'skus_one_optimized_keywords_competitor',
-		'skus_two_optimized_keywords_competitor',
-		'skus_three_optimized_keywords_competitor',
-		
-		'skus_title_less_than_70_chars',
-		'skus_title_more_than_70_chars',
-		'skus_title_less_than_70_chars_competitor',
-		'skus_title_more_than_70_chars_competitor',		
-		'skus_75_duplicate_content',
-		'skus_25_duplicate_content',
-		'skus_50_duplicate_content',
-		'total_items_selected_by_filter',
-		'skus_third_party_content',
-		'skus_third_party_content_competitor',
-		'skus_fewer_50_product_content',
-		'skus_fewer_100_product_content',
-		'skus_fewer_150_product_content',
-		'skus_fewer_50_product_content_competitor',
-		'skus_fewer_100_product_content_competitor',
-		'skus_fewer_150_product_content_competitor',
-		'skus_features',
-		'skus_features_competitor',
-		
-		'skus_zero_reviews',
-		'skus_one_four_reviews',
-		'skus_more_than_five_reviews',
-		'skus_more_than_hundred_reviews',
-		
-		'skus_zero_reviews_competitor',
-        'skus_one_four_reviews_competitor',
-        'skus_more_than_five_reviews_competitor',
-        'skus_more_than_hundred_reviews_competitor',
-		
-		'skus_pdfs',
-		'skus_videos',
-		'skus_videos_competitor',
-		'skus_pdfs_competitor',
-		
-		'skus_with_no_product_images',
-		'skus_with_one_product_image',
-		'skus_with_more_than_one_product_image',
-		'skus_with_no_product_images_competitor',
-		'skus_with_one_product_image_competitor',
-
-		'skus_with_more_than_one_product_image_competitor',
-		'assess_report_items_priced_higher_than_competitors'
-	];
 	
-	var batch_sets = {
-		me : {
-			batch_batch : 'research_assess_batches',
-			batch_compare : '#research_assess_compare_batches_batch',
-			batch_items_prefix : 'batch_me_',
-		},
-		competitor : {
-			batch_batch : 'research_assess_batches_competitor',
-			batch_compare : '#research_assess_compare_batches_batch_competitor',
-			batch_items_prefix : 'batch_competitor_'
-		}
-	};
-	
-    var tableCase = {
-        details: [
-            "snap",
-            "created",
-            "imp_data_id",
-            "product_name",
-            "item_id",
-            "model",
-            "url",
-            "Page_Load_Time",
-            "Short_Description",
-            "short_description_wc",
-            "Meta_Keywords",
-            "short_seo_phrases",
-            "title_seo_phrases",
-            "images_cmp",
-            "video_count",
-            "title_pa",
-            "Long_Description",
-            "long_description_wc",
-            "long_seo_phrases",
-            "duplicate_content",
-            "Custom_Keywords_Short_Description",
-            "Custom_Keywords_Long_Description",
-            "Meta_Description",
-            "Meta_Description_Count",
-            "H1_Tags",
-            "H1_Tags_Count",
-            "H2_Tags",
-            "H2_Tags_Count",
-            "column_external_content",
-            "column_reviews",
-            "average_review",
-            "column_features",
-            "price_diff",
-            "product_selection"
-
-        ],
-         details_compare: [
-            "snap",
-            "imp_data_id",
-            "product_name",
-            "item_id",
-            "model",
-            "url",
-            "Page_Load_Time",
-            "Short_Description",
-            "short_description_wc",
-            "Meta_Keywords",
-            "title_seo_phrases",
-            "images_cmp",
-            "video_count",
-            "title_pa",
-            "Long_Description",
-            "long_description_wc",
-            "Meta_Description",
-            "Meta_Description_Count",
-            "column_external_content",
-            "H1_Tags",
-            "H1_Tags_Count",
-            "H2_Tags",
-            "H2_Tags_Count",
-            "column_reviews",
-            "average_review",
-            "column_features",
-            "snap1",
-            "imp_data_id1",
-            "product_name1",
-            "item_id1",
-            "model1",
-            "url1",
-            "Page_Load_Time1",
-            "Short_Description1",
-            "short_description_wc1",
-            "Meta_Keywords1",
-            "Long_Description1",
-            "long_description_wc1",
-            "Meta_Description1",
-            "Meta_Description_Count1",
-            "column_external_content1",
-            "H1_Tags1",
-            "H1_Tags_Count1",
-            "H2_Tags1",
-            "H2_Tags_Count1",
-            "column_reviews1",
-            "average_review1",
-            "column_features1",
-            "title_seo_phrases1",
-            "images_cmp1",
-            "video_count1",
-            "title_pa1",
-            "gap",
-            "Duplicate_Content"
-            
-        ],
-        recommendations: [
-            "product_name",
-            "url",
-            "recommendations"
-        ]
-    }
 
     function createTableByServerSide() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';		
@@ -307,7 +123,7 @@ $(function() {
             th += '<th with = "100px"></th>';
         }
         var newTable = '<table id="tblAssess" class="tblDataTable"><thead>'+th+'</thead><tbody></tbody></table>';
-        // $('table#tblAssess').floatThead('reflow');
+        
         $('#dt_tbl').prepend(newTable); 
               
         			
@@ -352,12 +168,8 @@ $(function() {
                             //                                $('#research_assess_filter_short_descriptions_panel').show();
                             //                                $('#research_assess_filter_long_descriptions_panel').show();
                             $('.assess_report_items_1_descriptions_pnl').hide();
-                            $('.assess_report_items_2_descriptions_pnl').hide();
-                            // $('table#tblAssess').floatThead('reflow');
-                        }
-                        
-                        
-                        // $('table#tblAssess').floatThead('reflow');
+                            $('.assess_report_items_2_descriptions_pnl').hide();                           
+                        }                                                                     
                     }
 //                    if (json.aaData.length > 0) {
 //                        var str = '';
@@ -480,10 +292,10 @@ $(function() {
             },
             "fnRowCallback": function(nRow, aData, iDisplayIndex) {
                 $(nRow).attr("add_data", aData[34]);
-                return nRow;
-                $('table#tblAssess').floatThead('reflow');
+                return nRow;                
             },
             "fnDrawCallback": function(oSettings) {
+				console.log(487);
                 tblAssess_postRenderProcessing();
                 if (zeroTableDraw) {
                     zeroTableDraw = false;
@@ -491,23 +303,7 @@ $(function() {
                 }
                 hideColumns();
                 check_word_columns();
-                $('table#tblAssess').floatThead('reflow');
-				console.log("reflow 2");
-				var status = "no ok";
-				var statusinterval = setInterval( function(){
-				if($("#tblAssess td").length > 1){
-					status = "ok";
-				}
-				if(status == "ok"){clearInterval(statusinterval); 
-				$("#tblAssess").colResizable({
-				disable:true
-				});
-				$("#tblAssess").colResizable({
-					liveDrag:true, 
-					gripInnerHtml:"<div class='grip'></div>", 
-					draggingClass:"dragging"});
-				}
-				},500);
+                resizeImpDown();
             },
             "oLanguage": {
                 "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -518,9 +314,7 @@ $(function() {
             },
             "aoColumns": columns
 
-        });
-		 //new FixedHeader( tblAssess, { "bottom": true } );
-		
+        });		 		
 			
         $('#tblAssess_length').after('<div id="assess_tbl_show_case" class="assess_tbl_show_case">' +
                 '<a id="assess_tbl_show_case_recommendations" data-case="recommendations" class="active_link" title="Recommendations" href="#" >Recommendations</a> |' +
@@ -530,21 +324,21 @@ $(function() {
                 '<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#">Board View</a>' +
                 '</div>');
         
-        $('.dataTables_filter').append('<a id="research_batches_columns" class="ml_5 float_r" title="Customize..." style="display: none;"><img style="width:32px; heihgt: 32px;" src="http://tmeditor.dev//img/settings@2x.png"></a>');
-                $('#research_batches_columns').on('click', function() {
-                    $('#research_assess_choiceColumnDialog').dialog('open');
-                    $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
-                });
-        // $('table#tblAssess').floatThead('reflow');
-        $('#assess_tbl_show_case a').on('click', function(event) {
-            event.preventDefault();
-            if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
-                $('#research_batches_columns').show();
-            } else {
-                $('#research_batches_columns').hide();
-            }
-            assess_tbl_show_case(this);
-        });
+        // $('.dataTables_filter').append('<a id="research_batches_columns" class="ml_5 float_r" title="Customize..." style="display: none;"><img style="width:32px; heihgt: 32px;" src="http://tmeditor.dev//img/settings@2x.png"></a>');
+		// $('#research_batches_columns').on('click', function() {
+			// $('#research_assess_choiceColumnDialog').dialog('open');
+			// $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
+		// });
+        
+        // $('#assess_tbl_show_case a').on('click', function(event) {
+            // event.preventDefault();
+            // if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
+                // $('#research_batches_columns').show();
+            // } else {
+                // $('#research_batches_columns').hide();
+            // }
+            // assess_tbl_show_case(this);
+        // });
 		
     }
 
@@ -552,8 +346,7 @@ $(function() {
         var oSettings = $("#tblAssess").dataTable().fnSettings();
         var aoDataa = buildTableParams(oSettings.aoData);
         var newObject = jQuery.extend(true, {}, aoDataa);
-        var batch_set = $('.result_batch_items:checked').val() || 'me';		
-		// $('table#tblAssess').floatThead('reflow');
+        var batch_set = $('.result_batch_items:checked').val() || 'me';				
         $.getJSON(readAssessUrl, aoDataa, function(json) {
             tblAllColumns = [];
             for(p in json.columns){
@@ -574,12 +367,7 @@ $(function() {
             setTimeout(function() {
                 tblAssess = $('#tblAssess').dataTable({
                 	"sDom": 'Rlfrtip',
-                    "bJQueryUI": true,
-//                    "bDestroy": true,
-//                    "sScrollX": "100%",
-//                "bAutoWidth": false,
-//                    "bScrollCollapse": true,
-//                        "bServerSide": true,
+                    "bJQueryUI": true,                 
                     "sPaginationType": "full_numbers",
                     "bProcessing": true,
                     "aaSorting": [[5, "desc"]],
@@ -595,31 +383,16 @@ $(function() {
                     },
                     "fnRowCallback": function(nRow, aData, iDisplayIndex) {
                         $(nRow).attr("add_data", aData[34]);
-                        return nRow;
-                        $('table#tblAssess').floatThead('reflow');
+                        return nRow;                        
                     },
                     "fnDrawCallback": function(oSettings) {
+						console.log(608);
                         tblAssess_postRenderProcessing();
                         if (zeroTableDraw) {
                             zeroTableDraw = false;
                             return;
                         }
-         				$('table#tblAssess').floatThead('reflow');
-						var status = "no ok";
-						var statusinterval = setInterval( function(){
-						if($("#tblAssess td").length > 1){
-							status = "ok";
-						}
-						if(status == "ok"){clearInterval(statusinterval); 
-						$("#tblAssess").colResizable({
-						disable:true
-						});
-						$("#tblAssess").colResizable({
-							liveDrag:true, 
-							gripInnerHtml:"<div class='grip'></div>", 
-							draggingClass:"dragging"});
-						}
-						},500);
+         				resizeImpDown();
 
                     }
                 });
@@ -665,20 +438,20 @@ $(function() {
                         '<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#">Board View</a>' +
                         '</div>');
 //        $('#research_batches_columns').appendTo('div.dataTables_filter');
-                $('.dataTables_filter').append('<a id="research_batches_columns" class="ml_5 float_r" title="Customize..." style="display: none;"><img style="width:32px; heihgt: 32px;" src="http://tmeditor.dev//img/settings@2x.png"></a>');
-                $('#research_batches_columns').on('click', function() {
-                    $('#research_assess_choiceColumnDialog').dialog('open');
-                    $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
-                });
-                $('#assess_tbl_show_case a').on('click', function(event) {
-                    event.preventDefault();
-                    if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
-                        $('#research_batches_columns').show();
-                    } else {
-                        $('#research_batches_columns').hide();
-                    }
-                    assess_tbl_show_case(this);
-                });
+                // $('.dataTables_filter').append('<a id="research_batches_columns" class="ml_5 float_r" title="Customize..." style="display: none;"><img style="width:32px; heihgt: 32px;" src="http://tmeditor.dev//img/settings@2x.png"></a>');
+                // $('#research_batches_columns').on('click', function() {
+                    // $('#research_assess_choiceColumnDialog').dialog('open');
+                    // $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
+                // });
+                // $('#assess_tbl_show_case a').on('click', function(event) {
+                    // event.preventDefault();
+                    // if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
+                        // $('#research_batches_columns').show();
+                    // } else {
+                        // $('#research_batches_columns').hide();
+                    // }
+                    // assess_tbl_show_case(this);
+                // });
                hideColumns();
             }, 1000);
         });
@@ -765,11 +538,9 @@ $(function() {
                 $('#assess_view .board_item img').on('click', function(){
                     var info = $(this).parent().find('div.prod_description').html();
                     showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 600px; margin-right: 10px">'+info);
-                });
-                $('table#tblAssess').floatThead('reflow');
+                });                
              }
-        });
-       // $('table#tblAssess').floatThead('reflow');
+        });       
     }
     $.fn.dataTableExt.oApi.fnGetAllSColumnNames = function(oSettings) {
         allColumns = [];
@@ -794,390 +565,7 @@ $(function() {
         }
         this.oApi._fnProcessingDisplay(oSettings, onoff);
     };
-    var columns = [
-        {
-            "sTitle": "Snapshot",
-            "sName": "snap",
-            "sWidth": "10%",
-            "sClass": "Snapshot"
-        },
-        {
-            "sTitle": "Date",
-            "sName": "created",
-            "sWidth": "3%"
-        },
-        {
-            "sTitle": "ID",
-            "sName": "imp_data_id",
-            "sWidth": "15%",
-            "sClass": "imp_data_id"
-        },
-        {
-            "sTitle": "Product Name",
-            "sName": "product_name",
-            "sWidth": "15%",
-            "sClass": "product_name_text"
-        },
-        {
-            "sTitle": "item ID",
-            "sName": "item_id",
-            "sWidth": "15%",
-            "sClass": "item_id"
-        },
-        {
-            "sTitle": "Model",
-            "sName": "model",
-            "sWidth": "15%",
-            "sClass": "model"
-        },
-        {
-            "sTitle": "URL",
-            "sName": "url",
-            "sWidth": "15%",
-            "sClass": "url_text"
-        },
-        {
-            "sTitle": "Page Load Time",
-            "sName": "Page_Load_Time",
-            "sWidth": "15%",
-            "sClass": "Page_Load_Time"
-        },
-        {
-            "sTitle": "<span class='subtitle_desc_short' >Short</span> Description",
-            "sName": "Short_Description",
-            "sWidth": "25%",
-            "sClass": "Short_Description"
-        },
-        {
-            "sTitle": "Short Desc <span class='subtitle_word_short' ># Words</span>",
-            "sName": "short_description_wc",
-            "sWidth": "1%",
-            "sClass": "word_short"
-        },
-        {
-            "sTitle": "Meta Keywords",
-            "sName": "Meta_Keywords",
-            "sWidth": "1%",
-            "sClass": "Meta_Keywords"
-        },
-        {
-            "sTitle": "Keywords <span class='subtitle_keyword_short'>Short</span>",
-            "sName": "short_seo_phrases",
-            "sWidth": "2%",
-            "sClass": "keyword_short"
-        },
-        {
-            "sTitle": "Title Keywords",
-            "sName": "title_seo_phrases",
-            "sWidth": "2%",
-            "sClass": "title_seo_phrases"
-        },
-        {
-            "sTitle": "Images",
-            "sName": "images_cmp",
-            "sWidth": "2%",
-            "sClass": "images_cmp"
-        },
-        {
-            "sTitle": "Videos",
-            "sName": "video_count",
-            "sWidth": "2%",
-            "sClass": "video_count"
-        },/*max*/
-        {
-            "sTitle": "Title",
-            "sName": "title_pa",
-            "sWidth": "2%",
-            "sClass": "title_pa"
-        },
-        {
-            "sTitle": "<span class='subtitle_desc_long' >Long </span>Description",
-            "sName": "Long_Description",
-            "sWidth": "2%",
-            "sClass": "Long_Description"
-        },
-        {
-            "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
-            "sName": "long_description_wc",
-            "sWidth": "1%",
-            "sClass": "word_long"
-        },
-        {
-            "sTitle": "Keywords <span class='subtitle_keyword_long'>Long</span>",
-            "sName": "long_seo_phrases",
-            "sWidth": "2%",
-            "sClass": "keyword_long"
-        },
-        {
-            "sTitle" : "Custom Keywords Short Description",
-            "sName" : "Custom_Keywords_Short_Description", 
-            "sWidth" :  "4%",
-            "sClass" : "Custom_Keywords_Short_Description"
-            
-        },
-        {
-            "sTitle" : "Custom Keywords Long Description",
-            "sName" : "Custom_Keywords_Long_Description", 
-            "sWidth" : "4%",
-            "sClass" : "Custom_Keywords_Long_Description"
-            
-        },
-        {
-            "sTitle" : "Meta Description",
-            "sName" : "Meta_Description", 
-            "sWidth" : "4%",
-            "sClass" : "Meta_Description"
-            
-        },
-        {
-            "sTitle" : "Meta Desc <span class='subtitle_word_long' ># Words</span>",
-            "sName" : "Meta_Description_Count", 
-            "sWidth" : "4%",
-            "sClass" : "Meta_Description_Count"
-            
-        },
-        
-         {
-            "sTitle" : "H1 Tags", 
-            "sName":"H1_Tags", 
-            "sWidth": "1%",
-            "sClass" :  "HTags_1"
-        },
-        {
-            "sTitle" : "Chars", 
-            "sName":"H1_Tags_Count", 
-            "sWidth": "1%",
-            "sClass" :  "HTags"
-        },
-        {
-            "sTitle" : "H2 Tags", 
-            "sName":"H2_Tags", 
-            "sWidth": "1%",
-            "sClass" :  "HTags_2"
-        },
-        {
-            "sTitle" : "Chars", 
-            "sName":"H2_Tags_Count", 
-            "sWidth": "1%",
-            "sClass" :  "HTags"
-        },
-        {
-            "sTitle": "Duplicate Content",
-            "sName": "duplicate_content",
-            "sWidth": "1%"
-        },
-        {
-            "sTitle": "Third Party Content",
-            "sName": "column_external_content",
-            "sWidth": "2%",
-            "sClass" :  "column_external_content"
-        },
-        {
-            "sTitle": "Reviews",
-            "sName": "column_reviews",
-            "sWidth": "3%",
-            "sClass" :  "column_reviews"
-        },
-        {
-            "sTitle": "Avg Review",
-            "sName": "average_review",
-            "sWidth": "3%",
-            "sClass" :  "average_review"
-        },
-        {
-            "sTitle": "Features",
-            "sName": "column_features",
-            "sWidth": "4%"
-        },
-        {
-            "sTitle": "Price",
-            "sName": "price_diff",
-            "sWidth": "2%",
-            "sClass": "price_text"
-        },
-        {
-            "sTitle": "Recommendations",
-            "sName": "recommendations",
-            "sWidth": "15%",
-            "bVisible": false,
-            "bSortable": false
-        },
-        {
-            "sName": "add_data",
-            "bVisible": false
-        },
-        {
-            "sTitle": "Snapshot",
-            "sName": "snap1",
-            "sWidth": "10%",
-            "sClass": "Snapshot1"
-        },
-        {
-            "sTitle": "ID",
-            "sName": "imp_data_id1",
-            "sWidth": "10%",
-            "sClass": "imp_data_id1"
-        },
-        {
-            "sTitle": "Product Name",
-            "sName": "product_name1",
-            "sWidth": "15%",
-			"sClass": "product_name1"
-        },
-        {
-            "sTitle": "item ID",
-            "sName": "item_id1",
-            "sWidth": "15%",
-            "sClass": "item_id1"
-        },
-        {
-            "sTitle": "Model",
-            "sName": "model1",
-            "sWidth": "15%",
-            "sClass": "model1"
-        },
-        {
-            "sTitle": "URL",
-            "sName": "url1",
-            "sWidth": "15%",
-            "sClass": "url1"
-        },
-        {
-            "sTitle": "Page Load Time",
-            "sName": "Page_Load_Time1",
-            "sWidth": "15%",
-            "sClass": "Page_Load_Time1"
-        },
-        {
-            "sTitle": "<span class='subtitle_desc_short1' >Short </span> Description",
-            "sName": "Short_Description1",
-            "sWidth": "15%",
-            "sClass": "Short_Description1"
-        },
-        {
-            "sTitle": "Short Desc <span class='subtitle_word_short' ># Words</span>",
-            "sName": "short_description_wc1",
-            "sWidth": "1%",
-            "sClass": "word_short1"
-        },
-        {
-            "sTitle": "Meta Keywords",
-            "sName": "Meta_Keywords1",
-            "sWidth": "1%",
-            "sClass": "Meta_Keywords1"
-        },
-        {
-            "sTitle": "<span class='subtitle_desc_long1' >Long </span>Description",
-            "sName": "Long_Description1",
-            "sWidth": "2%",
-            "sClass": "Long_Description1"
-        },
-        {
-            "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
-            "sName": "long_description_wc1",
-            "sWidth": "1%",
-            "sClass": "word_long1"
-        },
-        {
-            "sTitle" : "Meta Description",
-            "sName" : "Meta_Description1", 
-            "sWidth" : "4%",
-            "sClass" : "Meta_Description1"
-            
-        },
-        {
-            "sTitle" : "Meta Desc <span class='subtitle_word_long' ># Words</span>",
-            "sName" : "Meta_Description_Count1", 
-            "sWidth" : "4%",
-            "sClass" : "Meta_Description_Count1"
-            
-        },
-         {
-            "sTitle": "Third Party Content",
-            "sName": "column_external_content1",
-            "sWidth": "2%",
-            "sClass" :  "column_external_content1"
-        },
-        {
-            "sTitle" : "H1 Tags", 
-            "sName":"H1_Tags1", 
-            "sWidth": "1%",
-            "sClass" :  "HTags_11"
-        },
-        {
-            "sTitle" : "Chars", 
-            "sName":"H1_Tags_Count1", 
-            "sWidth": "1%",
-            "sClass" :  "HTags1"
-        },
-        {
-            "sTitle" : "H2 Tags", 
-            "sName":"H2_Tags1", 
-            "sWidth": "1%",
-            "sClass" :  "HTags_21"
-        },
-        {
-            "sTitle" : "Chars", 
-            "sName":"H2_Tags_Count1", 
-            "sWidth": "1%",
-            "sClass" :  "HTags1 CharsHTags1"
-        },
-        {
-            "sTitle": "Reviews",
-            "sName": "column_reviews1",
-            "sWidth": "3%",
-            "sClass": "column_reviews1"
-        },
-        {
-            "sTitle": "Avg Review",
-            "sName": "average_review1",
-            "sWidth": "3%",
-            "sClass" :  "average_review1"
-        },
-        {
-            "sTitle": "Features",
-            "sName": "column_features1",
-            "sWidth": "4%",
-            "sClass" :  "column_features1"
-        },
-        {
-            "sTitle": "Title Keywords",
-            "sName": "title_seo_phrases1",
-            "sWidth": "1%",
-            "sClass": "title_seo_phrases1"
-        },
-        {
-            "sTitle": "Images",
-            "sName": "images_cmp1",
-            "sWidth": "1%",
-            "sClass": "images_cmp1"
-        },
-        {
-            "sTitle": "Videos",
-            "sName": "video_count1",
-            "sWidth": "1%",
-            "sClass": "video_count1"
-        },
-        {
-            "sTitle": "Title",
-            "sName": "title_pa1",
-            "sWidth": "1%",
-            "sClass": "title_pa1"
-        },
-        {
-            "sTitle": "Gap Analysis",
-            "sName": "gap",
-            "sWidth": "3%",
-            "sClass" :  ""
-        },
-        {
-            "sTitle": "Duplicate Content",
-            "sName": "Duplicate_Content",
-            "sWidth": "3%",
-            "sClass" :  ""
-        },
-
-    ];
+    
 	
 	var filter_expand_btn_imgs = [
 		'filter_expand_btn.jpg',
@@ -1262,8 +650,7 @@ $(function() {
 		
 		return false;
 	});
-	
-	$('table#tblAssess').floatThead('reflow');
+		
 	$('.resizable').wrap('<div/>')
         .css({'overflow':'hidden'})
           .parent()
@@ -1360,34 +747,11 @@ $(function() {
 				if (filterid)
 					summaryInfoSelectedElements.push(filterid);
 			});			
-		},
-		selecting : function( event, ui ) {
-			// console.log('Selecting...');
-			// console.log(event);
-			// console.log(ui);
-		},
-		unselecting : function( event, ui ) {
-			// console.log('UNSelecting...');
-			// console.log(event);
-			// console.log(ui);
-		},
-		start : function( event, ui ) {
-			// console.log('Starting...');
-			// console.log(event);
-			// console.log(ui);
-		},
-		stop : function( event, ui ) {
-			// console.log('Stopping...');
-			// console.log(event);
-			// console.log(ui);
-		}
+		},	
 	}).find( ".item_line:not(.batch1_filter_item):not(.batch2_filter_item)" )   
 		.addClass( "ui-corner-all" )
         .prepend( "<div class='selectable_summary_handle'><i class='icon-move'></i></div>" );
-	
-	
-	
-	// $('table#tblAssess').floatThead('reflow');
+		
     tblAssess = $('#tblAssess').dataTable({
     	"sDom": 'Rlfrtip',
         "bJQueryUI": true,
@@ -1413,58 +777,39 @@ $(function() {
             aoData = buildTableParams1(aoData);						
 			
             first_aaData = aoData;
-			console.log(sSource);
+			
             $.getJSON(sSource, aoData, function(json) {
-                if(json) {
-                
-                if (json.ExtraData != undefined) {
-					console.log('dataTable callback: fnServerData');
-                    buildReport(json);
-                    if($("table[id^=tblAssess]")){
-						if($("a#assess_tbl_show_case_details_compare[class^=active_link]")){
-							if($("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])")){$("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])").css("border-left", "1px solid #ccc");}
-							$("#tblAssess th[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
-							$("#tblAssess tr").each(function(){
-								if($(this).find("td[class*=1][style*='border-left-width: 2px']:not([class*=_1])"))
-								{$(this).find("td[class*=1]:not([class*=_1])").css("border-left", "1px solid #ccc");}
-								$(this).find("td[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
-								
-							});
-						}
-						
-					}
+                if(!json)
+					return;
+					
+                fnCallback(json);
+				
+                if (json.ExtraData != undefined) 
+				{					
+                    buildReport(json);                    				
+					resizeImpDown();				
+					$("#tblAssess th[class*=1]:not(th[class*=_1]):first").css('border-left', '2px solid #ccc');					
+					$("#tblAssess tr").each(function() {
+						var elem = $(this);						
+						elem.find("td[class*=1]:not(td[class*=_1]):first").css('border-left', '2px solid #ccc');								
+					});																										
                 }
-				
-				
+								
 				if (summaryInfoSelectedElements.length)
 					total_items_selected_by_filter_wrapper.show();
-				
-                fnCallback(json);
-                setTimeout(function() {
-                    tblAssess.fnProcessingIndicator(false);
-                }, 100);
 					
 				
-                if ($('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val() == "0") {
-                    $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_total_items').html("");
-                    $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_items_priced_higher_than_competitors').html("");
-                    $('.assess_report_items_have_more_than_20_percent_duplicate_content').html("");
-                    $('.assess_report_items_unoptimized_product_content').html("");
-                    $('.assess_report_items_have_product_short_descriptions_that_are_too_short').html("");
-                    $('.assess_report_items_have_product_long_descriptions_that_are_too_short').html("");
-                }
                 if (json.iTotalRecords == 0) {
                     $('.assess_report_compare_panel').hide();
                     $('.assess_report_numeric_difference').hide();
                     if ($('select[name="' + batch_sets[batch_set]['batch_batch']  + '"]').find('option:selected').val() != "") {
-                        $('#summary_message').html(" - Processing data. Check back soon.");
-                        //                                $('#research_assess_filter_short_descriptions_panel').show();
-                        //                                $('#research_assess_filter_long_descriptions_panel').show();
+                        $('#summary_message').html(" - Processing data. Check back soon.");                   
                         $('.assess_report_items_1_descriptions_pnl').hide();
                         $('.assess_report_items_2_descriptions_pnl').hide();
                     }
                 }
-                }
+				
+                tblAssess.fnProcessingIndicator(false);				
             });
              if($("#tableScrollWrapper").length === 0){  
                 $('#tblAssess').after('<div id="tableScrollWrapper" style="overflow-x:scroll"></div>');
@@ -1482,27 +827,14 @@ $(function() {
             }).done(function(data){
                 if(data.length > 0){
                     console.log('1');
-			resizeImp();
-            if($("table[id^=tblAssess]")){
-				if($("a#assess_tbl_show_case_details_compare[class^=active_link]")){
-					if($("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])")){$("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])").css("border-left", "1px solid #ccc");}
-					$("#tblAssess th[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
-					$("#tblAssess tr").each(function(){
-						if($(this).find("td[class*=1][style*='border-left-width: 2px']:not([class*=_1])"))
-						{$(this).find("td[class*=1]:not([class*=_1])").css("border-left", "1px solid #ccc");}
-						$(this).find("td[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
-						
-					});
-				}
-				console.log("borders on");
-			}
+								          
                     var str = '';
                     var showcount = 12;
                     if(compare_batch_id != '0' && compare_batch_id !='all'){
                         showcount = 6 ;
                     }
                     for(var i=0; i<data.length; i++){
-//                            var obj = jQuery.parseJSON(data[i][2]);
+//                            
                         if(i < showcount){
 
                             if(data[i]['product_name'] != null && data[i]['product_name'] != '' && data[i]['snap']!=''){
@@ -1574,10 +906,10 @@ $(function() {
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
             $(nRow).attr("add_data", aData[34]);
-            return nRow;
-            $('table#tblAssess').floatThead('reflow');
+            return nRow;            
         },
         "fnDrawCallback": function(oSettings) {
+			console.log(1586);
             tblAssess_postRenderProcessing();
             if (zeroTableDraw) {
                 zeroTableDraw = false;
@@ -1585,25 +917,8 @@ $(function() {
             }
             hideColumns();
             check_word_columns();
-            setTimeout(function(){$('table#tblAssess').floatThead('reflow');console.log("reflow 500");}, 1000);
-			
-			var status = "no ok";
-				var statusinterval = setInterval( function(){
-				if($("#tblAssess td").length > 1){
-					status = "ok";
-				}
-				if(status == "ok"){clearInterval(statusinterval); 
-				$("#tblAssess").colResizable({
-				disable:true
-				});
-				$("#tblAssess").colResizable({
-					liveDrag:true, 
-					gripInnerHtml:"<div class='grip'></div>", 
-					draggingClass:"dragging"});
-				}
-				},500);
-			
-			
+           
+			resizeImpDown();
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -2012,6 +1327,7 @@ var scrollYesOrNot = true;
             setTimeout(function(){
                 $('#assess_view .board_item').each(function(){
                     if($(this).css('display') == 'none'){
+						// o_O !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WTF?!
                         $(this).css('display', 'block');
                         $(this).next().css('display', 'block');
                         $(this).next().next().css('display', 'block');
@@ -2041,8 +1357,7 @@ var scrollYesOrNot = true;
     $('#research_batches_columns').appendTo('div.dataTables_filter');
     $('#tblAssess_length').after($('#assess_tbl_show_case'));
     $('#assess_tbl_show_case a').on('click', function(event) {
-//        event.preventDefault();
-        if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
+        if ($(this).text() == 'Results' || $(this).text() == 'Compare') {
             $('#research_batches_columns').show();
         } else {
             $('#research_batches_columns').hide();
@@ -2286,10 +1601,7 @@ var scrollYesOrNot = true;
         }
 		
         var report = data.ExtraData.report;
-		var batch_set = $('.result_batch_items:checked').val() || 'me';					
-		
-        $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_total_items').html(numberWithCommas(report.summary.total_items));
-        $('.' + batch_sets[batch_set]['batch_items_prefix'] + 'assess_report_items_priced_higher_than_competitors').html(report.summary.items_priced_higher_than_competitors);
+		var batch_set = $('.result_batch_items:checked').val() || 'me';							      
 		
 		fillReportSummary(report.summary, batch_sets[batch_set]['batch_items_prefix']);
 				
@@ -3434,33 +2746,33 @@ function prevSibilfunc(curentSibil){
     });
 
     $('#research_assess_update').on('click', function() {
-        if(first_click){
+        if(first_click)
+		{			
+			if ($("#research_assess_compare_batches_batch").val() == 'all') {
+				console.log(1);
+				createTable();
+				serevr_side = false;
+				return;
+			} else {
+				if (!serevr_side) {
+					console.log(21);
+					//$("#tblAssess").dataTable().fnClearTable();
+					//$('#tblAssess_wrapper').remove();
+					createTableByServerSide();
+					tblAllColumns = tblAssess.fnGetAllSColumnNames();
+					serevr_side = true;
 
-        if ($("#research_assess_compare_batches_batch").val() == 'all' || $("#research_assess_compare_batches_batch_competitor").val() == 'all') {
-            console.log(1);
-            createTable();
-            serevr_side = false;
-            return;
-        } else {
-            if (!serevr_side) {
-				console.log(21);
-                //$("#tblAssess").dataTable().fnClearTable();
-                //$('#tblAssess_wrapper').remove();
-                createTableByServerSide();
-                tblAllColumns = tblAssess.fnGetAllSColumnNames();
-                serevr_side = true;
+				} else {
+					console.log(22);
+					serevr_side = true;
+					readAssessData();
 
-            } else {
-				console.log(22);
-                serevr_side = true;
-                readAssessData();
-
-            }
-        }
+				}
+			}
 
 
-        addColumn_url_class();
-        check_word_columns();
+			addColumn_url_class();
+			check_word_columns();
         }
     });
 
@@ -4447,6 +3759,7 @@ function prevSibilfunc(curentSibil){
                             hideColumns();
                             addColumn_url_class();
                             check_word_columns();
+							resizeImpDown();
                         }
                     }
                 });
@@ -4698,6 +4011,12 @@ function prevSibilfunc(curentSibil){
 		toggleRelatedBlocks('details_compare', false);
 
         if (table_case == 'recommendations') {
+			
+			/**
+			 * using one place to turn on/off different blocks
+			 */
+			toggleRelatedBlocks('recommendations', true);
+			
             $('#graphDropDown').remove();
             $('#show_over_time').remove();
             $('#show_over_time_span').remove();
@@ -4715,35 +4034,7 @@ function prevSibilfunc(curentSibil){
             });
             addColumn_url_class();
             check_word_columns();
-        } else if (table_case == 'details') {
-            $('#graphDropDown').remove();
-            $('#show_over_time').remove();
-            $('#show_over_time_span').remove();
-            $('#assess_graph').hide();
-            $('#tblAssess_info').show();
-            $('#tblAssess_paginate').show();
-            reportPanel(false);
-            $.each(tblAllColumns, function(index, value) {
-                if ($.inArray(value, columns_checkboxes_checked) > -1) {
-                    tblAssess.fnSetColumnVis(index, true, false);
-
-                }else if(value==='H1_Tags_Count' || value==='H2_Tags_Count' || value ==='Meta_Description_Count'){
-                    if ($.inArray(tblAllColumns[index-1], columns_checkboxes_checked) > -1) {
-                    tblAssess.fnSetColumnVis(index, true, false);
-                    }
-                    else{
-                        tblAssess.fnSetColumnVis(index, false, false);
-                    }
-                }
-                else {
-                    tblAssess.fnSetColumnVis(index, false, false);
-
-                }
-                //tblAssess.fnSetColumnVis(, false, false);
-            });
-            addColumn_url_class();
-            check_word_columns();
-        }
+       } 
         else if (table_case == 'details_compare') {
 
 			/**
@@ -4785,59 +4076,11 @@ function prevSibilfunc(curentSibil){
                 }
             });
             addColumn_url_class();
-            check_word_columns();
-
-        }else if (table_case == 'details_compare_result') {
-            toggleRelatedBlocks('details_compare_result', true);
-            $('#graphDropDown').remove();
-            $('#show_over_time').remove();
-            $('#show_over_time_span').remove();
-            $('#assess_graph').hide();
-            $('#tblAssess_info').show();
-            $('#tblAssess_paginate').show();
-            reportPanel(false);
-
-            $.each(tblAllColumns, function(index, value) {
-
-                value = value.replace(/[0-9]$/, "");
-                if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {
-                    tblAssess.fnSetColumnVis(index, true, false);
-
-
-                }
-                else if(value==='H1_Tags_Count' || value==='H2_Tags_Count' || value ==='Meta_Description_Count' ){
-                    if ($.inArray("Meta_Description", columns_checkboxes_checked) > -1) {
-                    tblAssess.fnSetColumnVis(index, true, false);
-                    }
-                    else if($.inArray("H1_Tags", columns_checkboxes_checked) > -1){
-                        tblAssess.fnSetColumnVis(index, true, false);
-                    }
-                    else if($.inArray("H2_Tags", columns_checkboxes_checked) > -1){
-                        tblAssess.fnSetColumnVis(index, true, false);
-                    }
-                    else{
-                        tblAssess.fnSetColumnVis(index, false, false);
-                    }
-                }
-                else {
-                    tblAssess.fnSetColumnVis(index, false, false);
-                }
-            });
-            addColumn_url_class();
-            check_word_columns();
-        }
-        else if (table_case == 'report') {
-            $('#graphDropDown').remove();
-            $('#show_over_time').remove();
-            $('#show_over_time_span').remove();
-            $('#tblAssess_info').show();
-            $('#tblAssess_paginate').show();
-            $('#assess_graph').hide();
-            reportPanel(true);
-            var batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
-            //$('.assess_report_download_pdf').attr('href', base_url + 'index.php/research/assess_download_pdf?batch_name=' + batch_name);
+            check_word_columns();       
         } else if (table_case == 'view') {
+		
             toggleRelatedBlocks('view', true);
+			
             $('#graphDropDown').remove();
             $('#show_over_time').remove();
             $('#show_over_time_span').remove();
@@ -4886,7 +4129,9 @@ function prevSibilfunc(curentSibil){
                 }
             });
         } else if (table_case == 'graph') {
+		
 			toggleRelatedBlocks('graph', true);
+			
             $('#graphDropDown').remove();
             $('#show_over_time').remove();
             $('#show_over_time_span').remove();
@@ -5189,7 +4434,7 @@ var search_text = GetURLParameter('search_text');
         $(this).text('Exporting...');
         var main_path=  $(this).prop('href');
         $(this).attr('href', $(this).prop('href')+'?batch_id='+batch_id+'&cmp_selected='+cmp_selected+'&checked_columns='+columns_checked+'&batch_name='+batch_name+'&summaryFilterData='+summaryFilterData);
-		console.log();
+	
         $.fileDownload($(this).prop('href'))
                 .done(function() {
             $('#research_assess_export').removeAttr('disabled');
@@ -5200,130 +4445,10 @@ var search_text = GetURLParameter('search_text');
         });
         
     });
-	
-$('table#tblAssess').floatThead({
-	scrollContainer: function($table) {
-		return $('#tblAssess').closest('.wrapper');
-	}
-});
-function resizeImpDown(){
-	$("#tblAssess").colResizable({
-			disable:true
-			});
-	$("#tblAssess").colResizable({
-		liveDrag:true, 
-		gripInnerHtml:"<div class='grip'></div>", 
-		draggingClass:"dragging"
-});
-$('table#tblAssess').floatThead('reflow');
-}
-function darkHeaders(id) {
-	if($("table[id^=tblAssess]")){
-		if($("a#assess_tbl_show_case_details_compare[class^=active_link]")){
-			if($("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])")){$("#tblAssess th[class*=1][style*='border-left-width: 2px']:not([class*=_1])").css("border-left", "1px solid #ccc");}
-			$("#tblAssess th[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
-			$("#tblAssess tr").each(function(){
-				if($(this).find("td[class*=1][style*='border-left-width: 2px']:not([class*=_1])"))
-				{$(this).find("td[class*=1]:not([class*=_1])").css("border-left", "1px solid #ccc");}
-				$(this).find("td[class*=1]:not([class*=_1]):first").css("border-left", "2px solid #ccc");
-				
-			});
-		}
-		
-	}
-	$('table#tblAssess').floatThead('reflow');
-}
+
 $('#tableScrollWrapper').css("overflow-y", "hidden");
 $( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
 $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix'></div>" );
-$('#assess_tbl_show_case_recommendations').click(function() {
-    console.log("RECOMENDATIONS");
-	
-	$('table#tblAssess').floatThead({ 
-		scrollContainer: function($table) {
-			return $('#tblAssess').closest('.wrapper');
-		}
-	});
-	$('table#tblAssess').floatThead('reflow');
-	resizeImp();	
-});
-$('#assess_tbl_show_case_details_compare').click(function() {
-	$('table#tblAssess').floatThead({
-		scrollContainer: function($table) {
-			return $('#tblAssess').closest('.wrapper');
-		}
-	});
-	$("li[class*=boxes] div[class*=ui-icon-gripsmall-diagonal-se]").css("display", "none");
-	$("li[class*=boxes] div[class*=ui-resizable-e]").css("display", "none");
-	darkHeaders($(this));
-	resizeImp();
-});
-$('#assess_tbl_show_case_report').click(function() {
-	$('table#tblAssess').floatThead({
-		scrollContainer: function($table) {
-			return $('#tblAssess').closest('.wrapper');
-		}
-	});
-	$('table#tblAssess').floatThead('reflow');
-});
-$('#assess_tbl_show_case_details').click(function() {
-	$('table#tblAssess').floatThead({
-		scrollContainer: function($table) {
-			return $('#tblAssess').closest('.wrapper');
-		}
-	});
-	
-	if($("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']")){
-			$("table[id^=tblAssess] th[style*='border-left-width: 2px;'], td[style*='border-left-width: 2px;']").css("border-left-width", "1px");
-			
-		}
-	if($("table[id^=tblAssess] th[style*='repeat']")) {
-			$("table[id^=tblAssess] th[style*='repeat']").css({
-			"background": "#e6e6e6 url('/producteditor/css/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png') 50% 50%",
-			"background-repeat": "repeat-x"
-		});}
-		
-	$('table#tblAssess').floatThead('reflow');
-	resizeImpDown();
-	resizeImp();
-});
-/*
-$("#tblAssess").mouseover(function(){
-				var status = "no ok"; 
-				var statusinterval = setInterval( function(){
-				if($("#tblAssess td").length > 1){
-					status = "ok";
-				}
-				if(status == "ok"){clearInterval(statusinterval); 
-					$('table#tblAssess').floatThead('reflow');
-					status = "finish"
-				}
-				},700);
-				if(status == "finish"){
-					resizeImpDown();
-				}
-			
-	
-});
-*/
-$('#research_assess_update').click(function() {
-	darkHeaders($(this));
-});
-$('.ui-dialog-titlebar-close').click(function() {
-	if($("div[id=assess_tbl_show_case] a[class=active_link]")){darkHeaders($(this));}
-	$('table#tblAssess').floatThead('reflow');
-	resizeImpDown();
-	resizeImp();
-});
-$( ".CRG" )
-  .mouseup(function() {
-   console.log("up");
-   $('table#tblAssess').floatThead('reflow');
-  })
-  .mousedown(function() {
-    console.log("down");
-	$('table#tblAssess').floatThead('reflow');
-  });
   
 	  $('#tk-frequency').click(function() {
 	    var $target = $('input#column_title_seo_phrases');
