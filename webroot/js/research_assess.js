@@ -1633,7 +1633,8 @@ function highChart(graphBuild){
         url: readGraphDataUrl,
         data: {
             batch_id: batch1Value,
-            batch_compare_id: batch2Value
+            batch_compare_id: batch2Value,
+            graphBuild: graphBuild
         }
     }).done(function(data){					
         var value1 = [];

@@ -631,11 +631,11 @@ class Assess extends MY_Controller {
                 ->set_output(json_encode(strtolower($customer_name)));
     }
 
-    private function get_min_max($imported_data_id) {
+    private function get_min_max($imported_data_id,$graphBuild) {
         $this->load->model('settings_model');
         $this->load->model('statistics_model');
         $this->load->model('statistics_new_model');
-        $results = $this->statistics_new_model->getStatsData_min_max($imported_data_id);
+        $results = $this->statistics_new_model->getStatsData_min_max($imported_data_id,$graphBuild);
             return $results;
         }
     private function get_data_for_assess($params) {        
@@ -4747,12 +4747,15 @@ class Assess extends MY_Controller {
 
     public function get_graph_batch_data() {
 
-        if (isset($_POST['batch_id']) && isset($_POST['batch_compare_id'])) {
+        if (isset($_POST['batch_id']) && isset($_POST['batch_compare_id']) && isset($_POST['graphBuild'])) {
             if (trim($_POST['batch_id']) == '')
                 $batch_id = -1;
             else
                 $batch_id = $_POST['batch_id'];
-
+            if (trim($_POST['graphBuild']) == '')
+                $graphBuild = -1;
+            else
+                $graphBuild = $_POST['graphBuild'];
             if (trim($_POST['batch_compare_id']) == '' || $_POST['batch_compare_id'] == 'all')
                 $batch_compare_id = -1;
             else {
@@ -4815,7 +4818,6 @@ class Assess extends MY_Controller {
             }
 
             foreach ($results as $data_row) {
-                
                 $parsed_attributes_feature = unserialize($data_row->parsed_attributes);
                 $snap_data[0]['product_name'][] = (string) $data_row->product_name;
                 $snap_data[0]['url'][] = (string) $data_row->url;
@@ -4833,7 +4835,7 @@ class Assess extends MY_Controller {
                 } else {
                     $snap_data[0]['Features'][] = 0;
                 }
-                $arr = $this->get_min_max($data_row->imported_data_id);
+                $arr = $this->get_min_max($data_row->imported_data_id,$graphBuild); 
                 $updated_short_description_wc = '';
                 $updated_long_description_wc = '';
                 $updated_total_description_wc = '';
@@ -4841,8 +4843,20 @@ class Assess extends MY_Controller {
                 $updated_Features = '';
                 $updated_h1_word_counts = '';
                 $updated_h2_word_counts = '';
+                if($graphBuild == "total_description_wc"){
                 foreach($arr as $a){
+                        if($a->date !=''){
+                          $long_des = count(explode(' ',$a->long_description));
+                          $des = count(explode(' ',$a->description));
+                          if($des == 1 && $long_des == 1)
+                            $updated_total_description_wc.='Total Description Word Count: '.$a->date .' - null  words<br>';  
+                          else
+                            $updated_total_description_wc.='Total Description Word Count: '.$a->date .' - '.(count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)))."  words<br>";  
+                        }
        
+                    }
+                 }else{
+                    foreach($arr as $a){
                     $pars = unserialize($a->parsed_attributes);
                     $htags_upd = unserialize($a->HTags);
                     $updated_short_description_wc.='Short Description: '.$a->date .' - '.count(explode(' ',$a->description))."  words<br>";
@@ -4853,6 +4867,7 @@ class Assess extends MY_Controller {
                     $updated_h1_word_counts.='H1 Characters: ' .$a->date .' - '.count($htags_upd['h1'])." words <br>";
                     $updated_h2_word_counts.='H2 Characters: ' .$a->date .' - '.count($htags_upd['h2'])." words <br>";
                 }
+                 }
                 $snap_data[0]['updated_short_description_wc'][] =  $updated_short_description_wc;
                 $snap_data[0]['updated_long_description_wc'][] =  $updated_long_description_wc;
                 $snap_data[0]['updated_total_description_wc'][] =  $updated_total_description_wc;
@@ -4860,7 +4875,6 @@ class Assess extends MY_Controller {
                 $snap_data[0]['updated_Features'][] =  $updated_Features;
                 $snap_data[0]['updated_h1_word_counts'][] =  $updated_h1_word_counts;
                 $snap_data[0]['updated_h2_word_counts'][] =  $updated_h2_word_counts;
-                
 //                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
                 
                 $htags = unserialize($data_row->htags);
@@ -4893,7 +4907,7 @@ class Assess extends MY_Controller {
                     $snap_data[1]['Features'][] = (int) $data_row_sim[0]->column_features;
                     $snap_data[1]['Date'][] = (string) $data_row_sim[0]->Date;
                     
-                    $arr1 = $this->get_min_max($data_row_sim[0]->imported_data_id);
+                $arr1 = $this->get_min_max($data_row_sim[0]->imported_data_id,$graphBuild);
                 $updated_short_description_wc1 = '';
                 $updated_long_description_wc1 = '';
                 $updated_total_description_wc1 = '';
@@ -4901,6 +4915,19 @@ class Assess extends MY_Controller {
                 $updated_Features1 = '';
                 $updated_h1_word_counts1 = '';
                 $updated_h2_word_counts1 = '';
+                 if($graphBuild == "total_description_wc"){
+                    foreach($arr1 as $a1){
+                      if($a1->date !=''){
+                          $long_des1 = count(explode(' ',$a1->long_description));
+                          $des1 = count(explode(' ',$a1->description));
+                          if($des1 == 1 && $long_des1 == 1)
+                            $updated_total_description_wc1.='Total Description Word Count: '.$a1->date .' - null  words<br>';  
+                          else    
+                            $updated_total_description_wc1.='Total Description Word Count: '.$a1->date .' - '.($long_des1 + $des1)."  words<br>";  
+                      }
+                    
+                    }
+                 }else{
                     foreach($arr1 as $a1){
                     $pars1 = unserialize($a1->parsed_attributes);
                     $htags_upd1 = unserialize($a1->HTags);
@@ -4912,6 +4939,7 @@ class Assess extends MY_Controller {
                     $updated_h1_word_counts1.='H1 Characters: ' .$a1->date .' - '.count($htags_upd1['h1'])." words <br>";
                     $updated_h2_word_counts1.='H2 Characters: ' .$a1->date .' - '.count($htags_upd1['h2'])." words <br>";
                     }
+                 }   
                 $snap_data[1]['updated_short_description_wc'][] =  $updated_short_description_wc1;
                 $snap_data[1]['updated_long_description_wc'][] =  $updated_long_description_wc1;
                 $snap_data[1]['updated_total_description_wc'][] =  $updated_total_description_wc1;
