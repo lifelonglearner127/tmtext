@@ -600,6 +600,8 @@ class Assess extends MY_Controller {
             $this->output->set_content_type('application/json')
                     ->set_output(json_encode($output));
         }
+		if (function_exists('fastcgi_finish_request '))
+			fastcgi_finish_request();
     }
 
     public function filterBatchByCustomerName() {
