@@ -2,9 +2,12 @@
 <div class="tabbable">
 
     <ul class="nav nav-tabs jq-measure-tabs">
-        <li class=""><a data-toggle="tab" href="<?php echo site_url('assess/products');?>">Products</a></li>
+    		<li class=""><a data-toggle="tab" class='assess_product_link' href="<?php echo site_url('assess/products');?>">Products</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
-          <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li>
+        <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li>
+        <!-- <li class=""><a data-toggle="tab" class='assess_product_link' href="<?php echo site_url('assess/products');?>">Products</a></li>
+        <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
+        <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li> -->
     </ul>
     <div class="tab-content">
     	<div class="row-fluid home_pages">
@@ -423,5 +426,10 @@
 <script>
             $(function() {
                 $('head').find('title').text('Reports');
+                var hardcode_hash = window.location.hash;
+                if(hardcode_hash === '#login_init') {
+                	$(".assess_product_link").trigger("click");
+                	window.location.hash = "";
+              	}
             });
  </script>

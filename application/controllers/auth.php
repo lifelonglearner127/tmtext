@@ -240,8 +240,9 @@ class Auth extends MY_Controller {
                     }
                 }
                 if($url!=''){
-                  redirect($url.'/index', 'refresh'); // I.L
+                  // redirect($url.'/index', 'refresh'); // I.L
                 	// redirect($url.'/products#login_init', 'refresh'); // I.L
+                	redirect($url.'/index#login_init', 'refresh'); // I.L
                 } else{
                     foreach($checked as $key => $value){
                         redirect($key.'/index', 'refresh');
