@@ -421,7 +421,7 @@ class Statistics_new_model extends CI_Model {
             foreach($result_key as $res_k){
                 foreach($result as $k){
                     if($k->date == $res_k->date){
-                        $res[] = ['date'=>$res_k->date,'long_description'=>$k->long_description,'description'=>$res_k->description];break;
+                        $res[] = array('date'=>$res_k->date,'long_description'=>$k->long_description,'description'=>$res_k->description);break;
                     }
                 }
             }
