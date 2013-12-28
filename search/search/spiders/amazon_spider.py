@@ -1,4 +1,4 @@
-from scrapy.spider import BaseSpider
+Pfrom scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
 from scrapy.http import TextResponse
@@ -128,6 +128,20 @@ class AmazonSpider(SearchSpider):
 			else:
 				pass
 				#sys.stderr.write("Didn't find product brand: " + response.url + "\n")
+
+			# extract price
+			price_holder = hxs.select("//span[@id='priceblock_ourprice']/text()").extract()
+			if price_holder:
+				item['product_target_price'] = price_holder[0]
+				m = re.match("\$([0-9]+\.[0-9]+)", item['product_target_price'])
+				if m:
+					item['product_target_price'] = float(m.group(1))
+				else:
+					sys.stderr.write("Didn't match product price: " + response.url + "\n")
+
+			else:
+				sys.stderr.write("Didn't find product price: " + response.url + "\n")
+
 
 			# add result to items
 			items.add(item)

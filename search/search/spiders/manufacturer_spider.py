@@ -14,6 +14,7 @@ from search.matching_utils import ProcessText
 import re
 import sys
 
+THRESHOLD_LOW = 0.2
 
 class ManufacturerSpider(SearchSpider):
 
@@ -21,6 +22,8 @@ class ManufacturerSpider(SearchSpider):
 
 	# arbitrary start url
 	start_urls = ['http://www.sony.com']
+
+	threshold = 0.8
 
 	# initialize fields specific to this derived spider
 	def init_sub(self):
@@ -117,8 +120,8 @@ class ManufacturerSpider(SearchSpider):
 			product_urls.add(response.url)
 			# it also means it's an exact match, so stop search here
 			response.meta['pending_requests'] = []
-			# # also temporarily lower threshold
-			# self.threshold = 0.2
+			# also set threshold to lower value
+			response.meta['threshold'] = THRESHOLD_LOW
 
 		else:
 			#TODO

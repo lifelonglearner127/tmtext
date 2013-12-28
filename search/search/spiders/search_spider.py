@@ -432,6 +432,8 @@ class SearchSpider(BaseSpider):
 				request.meta['origin_name'] = response.meta['origin_name']
 				request.meta['origin_model'] = response.meta['origin_model']
 				request.meta['origin_brand_extracted'] = response.meta['origin_brand_extracted']
+				if 'threshold' in response.meta:
+					request.meta['threshold'] = response.meta['threshold']
 
 				if 'origin_id' in response.meta:
 					request.meta['origin_id'] = response.meta['origin_id']
@@ -454,7 +456,12 @@ class SearchSpider(BaseSpider):
 				if items:
 
 					# from all results, select the product whose name is most similar with the original product's name
-					best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], items, self.threshold)
+					# if there was a specific threshold set in request, use that, otherwise, use the class variable
+					if 'threshold' in response.meta:
+						threshold = response.meta['threshold']
+					else:
+						threshold = self.threshold
+					best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], items, threshold)
 
 					# #self.log( "ALL MATCHES: ", level=log.WARNING)					
 					# for item in items:
