@@ -55,13 +55,13 @@ var columns = [
         {
             "sTitle": "Short Desc <span class='subtitle_word_short' ># Words</span>",
             "sName": "short_description_wc",
-            "sWidth": "1%",
+            "sWidth": "5%",
             "sClass": "word_short"
         },
         {
             "sTitle": "Meta Keywords",
             "sName": "Meta_Keywords",
-            "sWidth": "1%",
+            "sWidth": "3%",
             "sClass": "Meta_Keywords"
         },
         {
@@ -103,7 +103,7 @@ var columns = [
         {
             "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
             "sName": "long_description_wc",
-            "sWidth": "1%",
+            "sWidth": "3%",
             "sClass": "word_long"
         },
         {
@@ -139,36 +139,35 @@ var columns = [
             "sWidth" : "4%",
             "sClass" : "Meta_Description_Count"
             
-        },
-        
-         {
+        },        
+        {
             "sTitle" : "H1 Tags", 
             "sName":"H1_Tags", 
-            "sWidth": "1%",
+            "sWidth": "5%",
             "sClass" :  "HTags_1"
         },
         {
             "sTitle" : "Chars", 
             "sName":"H1_Tags_Count", 
-            "sWidth": "1%",
+            "sWidth": "5%",
             "sClass" :  "HTags"
         },
         {
             "sTitle" : "H2 Tags", 
             "sName":"H2_Tags", 
-            "sWidth": "1%",
+            "sWidth": "3%",
             "sClass" :  "HTags_2"
         },
         {
             "sTitle" : "Chars", 
             "sName":"H2_Tags_Count", 
-            "sWidth": "1%",
+            "sWidth": "3%",
             "sClass" :  "HTags"
         },
         {
             "sTitle": "Duplicate Content",
             "sName": "duplicate_content",
-            "sWidth": "1%"
+            "sWidth": "3%"
         },
         {
             "sTitle": "Third Party Content",
@@ -261,13 +260,13 @@ var columns = [
         {
             "sTitle": "Short Desc <span class='subtitle_word_short' ># Words</span>",
             "sName": "short_description_wc1",
-            "sWidth": "1%",
+            "sWidth": "5%",
             "sClass": "word_short1"
         },
         {
             "sTitle": "Meta Keywords",
             "sName": "Meta_Keywords1",
-            "sWidth": "1%",
+            "sWidth": "3%",
             "sClass": "Meta_Keywords1"
         },
         {
@@ -279,7 +278,7 @@ var columns = [
         {
             "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
             "sName": "long_description_wc1",
-            "sWidth": "1%",
+            "sWidth": "3%",
             "sClass": "word_long1"
         },
         {
@@ -296,7 +295,7 @@ var columns = [
             "sClass" : "Meta_Description_Count1"
             
         },
-         {
+        {
             "sTitle": "Third Party Content",
             "sName": "column_external_content1",
             "sWidth": "2%",
@@ -305,25 +304,25 @@ var columns = [
         {
             "sTitle" : "H1 Tags", 
             "sName":"H1_Tags1", 
-            "sWidth": "1%",
+            "sWidth": "5%",
             "sClass" :  "HTags_11"
         },
         {
             "sTitle" : "Chars", 
             "sName":"H1_Tags_Count1", 
-            "sWidth": "1%",
+            "sWidth": "5%",
             "sClass" :  "HTags1"
         },
         {
             "sTitle" : "H2 Tags", 
             "sName":"H2_Tags1", 
-            "sWidth": "1%",
+            "sWidth": "5%",
             "sClass" :  "HTags_21"
         },
         {
             "sTitle" : "Chars", 
             "sName":"H2_Tags_Count1", 
-            "sWidth": "1%",
+            "sWidth": "5%",
             "sClass" :  "HTags1 CharsHTags1"
         },
         {
@@ -347,25 +346,25 @@ var columns = [
         {
             "sTitle": "Title Keywords",
             "sName": "title_seo_phrases1",
-            "sWidth": "1%",
+            "sWidth": "3%",
             "sClass": "title_seo_phrases1"
         },
         {
             "sTitle": "Images",
             "sName": "images_cmp1",
-            "sWidth": "1%",
+            "sWidth": "3%",
             "sClass": "images_cmp1"
         },
         {
             "sTitle": "Videos",
             "sName": "video_count1",
-            "sWidth": "1%",
+            "sWidth": "3%",
             "sClass": "video_count1"
         },
         {
             "sTitle": "Title",
             "sName": "title_pa1",
-            "sWidth": "1%",
+            "sWidth": "3%",
             "sClass": "title_pa1"
         },
         {
