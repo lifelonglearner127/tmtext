@@ -55,7 +55,7 @@ var columns = [
         {
             "sTitle": "Short Desc <span class='subtitle_word_short' ># Words</span>",
             "sName": "short_description_wc",
-            "sWidth": "5%",
+            "sWidth": "7%",
             "sClass": "word_short"
         },
         {
@@ -143,13 +143,13 @@ var columns = [
         {
             "sTitle" : "H1 Tags", 
             "sName":"H1_Tags", 
-            "sWidth": "5%",
+            "sWidth": "7%",
             "sClass" :  "HTags_1"
         },
         {
             "sTitle" : "Chars", 
             "sName":"H1_Tags_Count", 
-            "sWidth": "5%",
+            "sWidth": "7%",
             "sClass" :  "HTags"
         },
         {
@@ -161,7 +161,7 @@ var columns = [
         {
             "sTitle" : "Chars", 
             "sName":"H2_Tags_Count", 
-            "sWidth": "3%",
+            "sWidth": "7%",
             "sClass" :  "HTags"
         },
         {
@@ -291,7 +291,7 @@ var columns = [
         {
             "sTitle" : "Meta Desc <span class='subtitle_word_long' ># Words</span>",
             "sName" : "Meta_Description_Count1", 
-            "sWidth" : "4%",
+            "sWidth" : "7%",
             "sClass" : "Meta_Description_Count1"
             
         },
@@ -304,13 +304,13 @@ var columns = [
         {
             "sTitle" : "H1 Tags", 
             "sName":"H1_Tags1", 
-            "sWidth": "5%",
+            "sWidth": "7%",
             "sClass" :  "HTags_11"
         },
         {
             "sTitle" : "Chars", 
             "sName":"H1_Tags_Count1", 
-            "sWidth": "5%",
+            "sWidth": "7%",
             "sClass" :  "HTags1"
         },
         {
@@ -383,6 +383,7 @@ var columns = [
     ];
 	
 var summaryFieldNames = [
+		'assess_report_total_items',
 		'assess_report_competitor_matches_number',
 		'skus_shorter_than_competitor_product_content',
 		'skus_longer_than_competitor_product_content',

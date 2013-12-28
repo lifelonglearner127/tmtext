@@ -4189,7 +4189,7 @@ class Assess extends MY_Controller {
 
 
 		$summary_fields = array(
-			'total_items' => array( 'value' => $own_batch_total_items, 'percentage' => array() ),
+			'assess_report_total_items' => array( 'value' => $own_batch_total_items, 'percentage' => array() ),
 			'items_priced_higher_than_competitors' => array( 'value' => $items_priced_higher_than_competitors, 'percentage' => array('batch1')),
 			'items_have_more_than_20_percent_duplicate_content' => array( 'value' => $items_have_more_than_20_percent_duplicate_content, 'percentage' => array()),
 			'skus_25_duplicate_content' => array( 'value' => $skus_25_duplicate_content, 'percentage' => array('batch1')),
