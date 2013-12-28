@@ -1,24 +1,3 @@
-var readAssessUrl = base_url + 'index.php/assess/get_assess_info';
-var readBoardSnapUrl = base_url + 'index.php/assess/get_board_view_snap';
-var readGraphDataUrl = base_url + 'index.php/assess/get_graph_batch_data';
-var readAssessUrlCompare = base_url + 'index.php/assess/compare';
-var rememberBatchValue = base_url + 'index.php/assess/remember_batches';
-var getbatchesvalue = base_url + 'index.php/assess/getbatchvalues';
-var get_summary_filters = base_url + 'index.php/assess/get_summary_filters';
-var save_summary_filters = base_url + 'index.php/assess/save_summary_filters';
-var save_summary_filters_order = base_url + 'index.php/assess/save_summary_filters_order';
-var serevr_side = true;
-var serverside_table;
-var tblAllColumns = [];
-var summaryInfoSelectedElements = [];
-var tblAssess;
-var last_batch_id;
-var last_compare_batch_id;
-var first_click = true ;
-var summary_active_items = [];
-var arrow_css_top;
-var summary_filters_order;
-
 function close_popover(elem)
 {
 	var element = $(elem);
@@ -28,9 +7,10 @@ function close_popover(elem)
 	return false;
 }
 
-function resizeImpDown(){
+function resizeImpDown(status){
 	
-	var onResize = function(event) {			
+	var status = status || true	
+	  , onResize = function(event) {			
 		tblAssessTable.floatThead({
 			scrollContainer: function($table){
 				return $table.closest('.wrapper');
@@ -40,8 +20,8 @@ function resizeImpDown(){
 	};
 	
 	var tblAssessTable = $("#tblAssess");
-	tblAssessTable.colResizable({ disable : true });
-	tblAssessTable.colResizable({
+	tblAssessTable.colResizable({ disable : true });	
+	status && tblAssessTable.colResizable({
 		liveDrag:true, 
 		gripInnerHtml:"<div class='grip'></div>", 
 		draggingClass:"dragging",
@@ -67,15 +47,14 @@ $(function() {
            last_compare_batch_id = data.compare_batch_id;
            
                 first_click = false;
-          $('select[name="research_assess_batches"]').val(last_batch_id).change()
-                setTimeout(function(){
-                first_click = true;
+          $('select[name="research_assess_batches"]').val(last_batch_id).change();
+			setTimeout(function(){
+			first_click = true;
 
-                $('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change()
-                 $('#research_assess_update').click();
-                },1500);
-                
-               
+			$('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change()
+			 $('#research_assess_update').click();
+			},1500);
+                               
         });
         
     $.fn.serializeObject = function() {
@@ -92,6 +71,30 @@ $(function() {
             }
         });
         return o;
+    };
+	
+	$.fn.dataTableExt.oApi.fnGetAllSColumnNames = function(oSettings) {
+        allColumns = [];
+        for (var i = 0; i < oSettings.aoColumns.length; i++) {
+            allColumns.push($.trim(oSettings.aoColumns[i].sName));
+        }
+        return allColumns;
+    }
+
+    $.fn.dataTableExt.oApi.fnGetSColumnIndexByName = function(oSettings, colname) {
+        for (var i = 0; i < oSettings.aoColumns.length; i++) {
+            if (oSettings.aoColumns[i].sName == $.trim(colname)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    $.fn.dataTableExt.oApi.fnProcessingIndicator = function(oSettings, onoff) {
+        if (typeof(onoff) == 'undefined') {
+            onoff = true;
+        }
+        this.oApi._fnProcessingDisplay(oSettings, onoff);
     };
 
 //    var textToCopy;
@@ -116,10 +119,22 @@ $(function() {
 	
 	// Use this variable to define "togglers" for each tab
 	var tabsRelatedBlocks = {
-		details_compare : toggleDetailsCompareBlocks,
-		view : toggleDetailsCompareBlocks,
-		details_compare_result : toggleDetailsCompareBlocks,
-		graph : toggleDetailsCompareBlocks
+		details_compare : function(isDisplayed) {			
+			//code here...
+			toggleDetailsCompareBlocks(isDisplayed);
+		},
+		view : function(isDisplayed) {			
+			//code here...
+			toggleDetailsCompareBlocks(isDisplayed);
+		},
+		details_compare_result : function(isDisplayed) {			
+			//code here...
+			toggleDetailsCompareBlocks(isDisplayed);
+		},
+		graph : function(isDisplayed) {			
+			//code here...
+			toggleDetailsCompareBlocks(isDisplayed);
+		},
 	};
 	
 	
@@ -160,44 +175,16 @@ $(function() {
                     fnCallback(json);
                    
                     tblAssess.fnProcessingIndicator(false);
-                    
-                
+                                    
                     if (json.iTotalRecords == 0) {
                         $('.assess_report_compare_panel').hide();
                         $('.assess_report_numeric_difference').hide();
                         if ($('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val() != "") {
-                            $('#summary_message').html(" - Processing data. Check back soon.");
-                            //                                $('#research_assess_filter_short_descriptions_panel').show();
-                            //                                $('#research_assess_filter_long_descriptions_panel').show();
+                            $('#summary_message').html(" - Processing data. Check back soon.");                         
                             $('.assess_report_items_1_descriptions_pnl').hide();
                             $('.assess_report_items_2_descriptions_pnl').hide();                           
                         }                                                                     
-                    }
-//                    if (json.aaData.length > 0) {
-//                        var str = '';
-//                        for (var i = 0; i < json.aaData.length; i++) {
-//                            var obj = jQuery.parseJSON(json.aaData[i][14]);
-//                            if (json.aaData[i][2] != null && json.aaData[i][2] != '' && json.aaData[i][0] != '') {
-//                                if (json.aaData[i][2].length > 93)
-//                                    str += '<div class="board_item"><span class="span_img">' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
-//                                            '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name +
-//                                            '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
-//                                else
-//                                    str += '<div class="board_item"><span>' + json.aaData[i][2] + '</span><br />' + json.aaData[i][0] +
-//                                            '<div class="prod_description"><b>URL:</b><br/>' + obj.url + '<br /><br /><b>Product name:</b><br/>' + obj.product_name
-//                                            + '<br /><br/><b>Price:</b><br/>' + obj.own_price + '</div></div>';
-//                            }
-//                        }
-//                        if (str == '') {
-//                            str = '<p>No images available for this batch</p>';
-//                        }
-//                        $('#assess_view').html(str);
-//                        $('#assess_view .board_item img').on('click', function() {
-//                            var info = $(this).parent().find('div.prod_description').html();
-//                            showSnap('<img src="' + $(this).attr('src') + '" style="float:left; max-width: 600px; margin-right: 10px">' + info);
-//                        });
-//                    }
-
+                    }                   
                 });
                 highChart('total_description_wc');
                 var compare_batch_id = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
@@ -304,8 +291,7 @@ $(function() {
                     return;
                 }
                 hideColumns();
-                check_word_columns();
-                resizeImpDown();
+                check_word_columns();                
             },
             "oLanguage": {
                 "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -324,24 +310,7 @@ $(function() {
                 '<a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#">Details</a> |' +
                 '<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" href="#">Compare</a> |' +
                 '<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#">Board View</a>' +
-                '</div>');
-        
-        // $('.dataTables_filter').append('<a id="research_batches_columns" class="ml_5 float_r" title="Customize..." style="display: none;"><img style="width:32px; heihgt: 32px;" src="http://tmeditor.dev//img/settings@2x.png"></a>');
-		// $('#research_batches_columns').on('click', function() {
-			// $('#research_assess_choiceColumnDialog').dialog('open');
-			// $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
-		// });
-        
-        // $('#assess_tbl_show_case a').on('click', function(event) {
-            // event.preventDefault();
-            // if ($(this).text() == 'Details' || $(this).text() == 'Compare') {
-                // $('#research_batches_columns').show();
-            // } else {
-                // $('#research_batches_columns').hide();
-            // }
-            // assess_tbl_show_case(this);
-        // });
-		
+                '</div>');        		
     }
 
     function createTable() {
@@ -393,9 +362,7 @@ $(function() {
                         if (zeroTableDraw) {
                             zeroTableDraw = false;
                             return;
-                        }
-         				resizeImpDown();
-
+                        }         				
                     }
                 });
 
@@ -536,38 +503,8 @@ $(function() {
              }
         });       
     }
-    $.fn.dataTableExt.oApi.fnGetAllSColumnNames = function(oSettings) {
-        allColumns = [];
-        for (var i = 0; i < oSettings.aoColumns.length; i++) {
-            allColumns.push($.trim(oSettings.aoColumns[i].sName));
-        }
-        return allColumns;
-    }
 
-    $.fn.dataTableExt.oApi.fnGetSColumnIndexByName = function(oSettings, colname) {
-        for (var i = 0; i < oSettings.aoColumns.length; i++) {
-            if (oSettings.aoColumns[i].sName == $.trim(colname)) {
-                return i;
-            }
-        }
-        return -1;
-    }
 
-    $.fn.dataTableExt.oApi.fnProcessingIndicator = function(oSettings, onoff) {
-        if (typeof(onoff) == 'undefined') {
-            onoff = true;
-        }
-        this.oApi._fnProcessingDisplay(oSettings, onoff);
-    };
-    
-	
-	var filter_expand_btn_imgs = [
-		'filter_expand_btn.jpg',
-		'filter_unexpand_btn.jpg',
-	];
-	var filter_toggler_flag = 0
-		, current_filter_list_wrapper_height = 200;
-	
 	$('.summary_edit_btn').on('click', function() {
 		var elem = $(this);
 		if (!elem.hasClass('active'))
@@ -791,8 +728,7 @@ $(function() {
 								
 				if (summaryInfoSelectedElements.length)
 					total_items_selected_by_filter_wrapper.show();
-					
-				
+									
                 if (json.iTotalRecords == 0) {
                     $('.assess_report_compare_panel').hide();
                     $('.assess_report_numeric_difference').hide();
@@ -817,85 +753,90 @@ $(function() {
                 data: {
                         batch_id: $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val(),
                         compare_batch_id: $(batch_sets[batch_set]['batch_compare']).find('option:selected').val()
-                    }
-            }).done(function(data){
-                if(data.length > 0){
-                    console.log('1');
-								          
-                    var str = '';
-                    var showcount = 12;
-                    if(compare_batch_id != '0' && compare_batch_id !='all'){
-                        showcount = 6 ;
-                    }
-                    for(var i=0; i<data.length; i++){
+                },
+				success : function(data){
+					if(!data.length) return false;
+					
+					console.log('1');
+										  
+					var str = '';
+					var showcount = 12;
+					if(compare_batch_id != '0' && compare_batch_id !='all'){
+						showcount = 6 ;
+					}
+					for(var i=0; i<data.length; i++)
+					{
 //                            
-                        if(i < showcount){
+						if(i < showcount)
+						{
 
-                            if(data[i]['product_name'] != null && data[i]['product_name'] != '' && data[i]['snap']!=''){
-                                if(data[i]['product_name'].length > 93)
-                                  str += '<div id="snap'+i+'" class="board_item"><span class="span_img">'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
-                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
-                            else
-                                  str += '<div id="snap'+i+'" class="board_item"><span>'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
-                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
-                        }
-                            else{
-                                str += '<div id="snap'+i+'" class="board_item"></div>'
-                    }                   
-                            if(compare_batch_id != '0' && compare_batch_id !='all'){
-                                if(data[i]['product_name1'] != null && data[i]['product_name1'] != '' && data[i]['snap1']!=''){
+							if(data[i]['product_name'] != null && data[i]['product_name'] != '' && data[i]['snap']!=''){
+								if(data[i]['product_name'].length > 93)
+								  str += '<div id="snap'+i+'" class="board_item"><span class="span_img">'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+									  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+								else
+									  str += '<div id="snap'+i+'" class="board_item"><span>'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+										  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+							}
+							else{
+								str += '<div id="snap'+i+'" class="board_item"></div>'
+							}      
+							
+							if(compare_batch_id != '0' && compare_batch_id !='all'){
+								if(data[i]['product_name1'] != null && data[i]['product_name1'] != '' && data[i]['snap1']!=''){
 
-        //                            console.log(data.length);
-                                    if(data[i]['product_name1'].length > 93)
-                                      str += '<div id="compare_snap'+i+'" class="board_item"><span class="span_img">'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
-                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
-                                    else
-                                      str += '<div id="compare_snap'+i+'" class="board_item"><span>'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
-                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
-                                }
-                                else{
-                                    str += '<div id="compare_snap'+i+'" class="board_item"></div>'
-                                }
-                            }
-                        }
-                        else{
-                            if(data[i]['product_name'] != null && data[i]['product_name'] != '' && data[i]['snap']!=''){
-                                if(data[i]['product_name'].length > 93)
-                                  str += '<div id="snap'+i+'" class="board_item" style="display: none;"><span class="span_img">'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
-                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
-                                else
-                                  str += '<div id="snap'+i+'" class="board_item" style="display: none;"><span>'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
-                                      '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
-                            }
-                            else{
-                                str += '<div id="snap'+i+'" class="board_item" style="display: none;"></div>'
-                            }
-                            if(compare_batch_id != '0' && compare_batch_id !='all'){
-                                if(data[i]['product_name1'] != null && data[i]['product_name1'] != '' && data[i]['snap1']!=''){
+		//                            console.log(data.length);
+									if(data[i]['product_name1'].length > 93)
+									  str += '<div id="compare_snap'+i+'" class="board_item"><span class="span_img">'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+										  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+									else
+									  str += '<div id="compare_snap'+i+'" class="board_item"><span>'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+										  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+								}
+								else{
+									str += '<div id="compare_snap'+i+'" class="board_item"></div>'
+								}
+							}
+						}
+						else {
+							if(data[i]['product_name'] != null && data[i]['product_name'] != '' && data[i]['snap']!=''){
+								if(data[i]['product_name'].length > 93)
+								  str += '<div id="snap'+i+'" class="board_item" style="display: none;"><span class="span_img">'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+									  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+								else
+								  str += '<div id="snap'+i+'" class="board_item" style="display: none;"><span>'+data[i]['product_name']+'</span><br />'+data[i]['snap']+
+									  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name']+'</div></div>';
+							}
+							else{
+								str += '<div id="snap'+i+'" class="board_item" style="display: none;"></div>'
+							}
+							if(compare_batch_id != '0' && compare_batch_id !='all'){
+								if(data[i]['product_name1'] != null && data[i]['product_name1'] != '' && data[i]['snap1']!=''){
 
-        //                            console.log(data.length);
-                                    if(data[i]['product_name1'].length > 93)
-                                      str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"><span class="span_img">'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
-                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
-                                    else
-                                      str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"><span>'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
-                                          '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
-                                }
-                                else{
-                                    str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"></div>'
-                                }
-                            }
-                        }
-                    }
-                    if(str == ''){
-                        str = '<p>No images available for this batch</p>';
-                    }
-                    $('#assess_view').html(str);
-                    $('#assess_view .board_item img').on('click', function(){
-                        var info = $(this).parent().find('div.prod_description').html();
-                        showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 495px; margin-right: 10px"><div style="float:right; width:315px">'+info+'</div>');
-                    });
-                 }
+		//                            console.log(data.length);
+									if(data[i]['product_name1'].length > 93)
+									  str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"><span class="span_img">'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+										  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+									else
+									  str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"><span>'+data[i]['product_name1']+'</span><br />'+data[i]['snap1']+
+										  '<div class="prod_description"><b>URL:</b><br/>'+data[i]['url1']+'<br /><br /><b>Product name:</b><br/>'+data[i]['product_name1']+'</div></div>';
+								}
+								else{
+									str += '<div id="compare_snap'+i+'" class="board_item" style="display: none;"></div>'
+								}
+							}
+						}
+					}
+					if(str == ''){
+						str = '<p>No images available for this batch</p>';
+					}
+					$('#assess_view').html(str);
+					$('#assess_view .board_item img').on('click', function(){
+						var info = $(this).parent().find('div.prod_description').html();
+						showSnap('<img src="'+$(this).attr('src')+'" style="float:left; max-width: 495px; margin-right: 10px"><div style="float:right; width:315px">'+info+'</div>');
+					});
+					
+				}
             });
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
@@ -910,9 +851,7 @@ $(function() {
                 return;
             }
             hideColumns();
-            check_word_columns();
-           
-			resizeImpDown();
+            check_word_columns();           			
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -921,7 +860,7 @@ $(function() {
             "sSearch": "Filter:",
             "sLengthMenu": "_MENU_ rows"
         },
-          "aoColumns":columns
+        "aoColumns":columns
     });
 
 function highChart(graphBuild){
@@ -1307,7 +1246,7 @@ $('#graphDropDown').live('change',function(){
     var graphDropDownValue = $(this).children('option:selected').val();
     highChart(graphDropDownValue);
 });
-var scrollYesOrNot = true;
+	
     $(document).scroll(function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';		
     if($('#assess_view').children('div')) {
@@ -1359,7 +1298,7 @@ var scrollYesOrNot = true;
         assess_tbl_show_case(this);
     });
 
- function GetURLParameter(sParam) {
+	function GetURLParameter(sParam) {
         var sPageURL = window.location.search.substring(1);
         var sURLVariables = sPageURL.split('&');
         for (var i = 0; i < sURLVariables.length; i++) 
@@ -3693,65 +3632,65 @@ function prevSibilfunc(curentSibil){
 //    });
     $(".research_assess_choiceColumnDialog_checkbox").change(function(){
          // get columns params
-                var columns = {
-                    snap: $("#column_snap").attr('checked') == 'checked',
-                    created: $("#column_created").attr('checked') == 'checked',
-                    imp_data_id: $("#imp_data_id").attr('checked') == 'checked',
-                    product_name: $("#column_product_name").attr('checked') == 'checked',
-//                    item_id: $("#item_id").attr('checked') == 'checked',
-                    model: $("#model").attr('checked') == 'checked',
-                    url: $("#column_url").attr('checked') == 'checked',
-                    Page_Load_Time: $("#Page_Load_Time").attr('checked') == 'checked',
-                    Short_Description: $("#Short_Description").attr('checked') == 'checked',
-                    short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
-                    Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
-                    short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked' ? 1 : 0,
-                    title_seo_phrases: $("#column_title_seo_phrases").attr('checked') == 'checked',
-					title_seo_phrases_f: $("#column_title_seo_phrases_f").attr('checked') == 'checked',
-                    images_cmp: $("#column_images_cmp").attr('checked') == 'checked',
-                    video_count: $("#column_video_count").attr('checked') == 'checked',
-                    title_pa: $("#column_title_pa").attr('checked') == 'checked',
-                    Long_Description: $("#Long_Description").attr('checked') == 'checked',
-                    long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
-                    long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked' ? 1 : 0,
-                    Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").attr('checked') == 'checked',
-                    Custom_Keywords_Long_Description : $("#Custom_Keywords_Long_Description").attr('checked') == 'checked',
-                    Meta_Description : $("#Meta_Description").attr('checked') == 'checked',
-                    Meta_Description_Count : $("#Meta_Description_Count").attr('checked') == 'checked',
-                    H1_Tags : $("#H1_Tags").attr('checked') == 'checked',
-                    H1_Tags_Count : $("#H1_Tags_Count").attr('checked') == 'checked',
-                    H2_Tags : $("#H2_Tags").attr('checked') == 'checked',
-                    H2_Tags_Count : $("#H2_Tags_Count").attr('checked') == 'checked',
-                    duplicate_content: $("#column_duplicate_content").attr('checked') == 'checked',
-                    column_external_content: $("#column_external_content").attr('checked') == 'checked',
-                    column_reviews: $("#column_reviews").attr('checked') == 'checked',
-                    average_review: $("#average_review").attr('checked') == 'checked',
-                    column_features: $("#column_features").attr('checked') == 'checked',
-                    price_diff: $("#column_price_diff").attr('checked') == 'checked',
-                    gap: $("#gap").attr('checked') == 'checked',
-                    Duplicate_Content: $("#Duplicate_Content").attr('checked') == 'checked',
-                    images_cmp: $("#images_cmp").attr('checked') == 'checked',
-                    title_pa: $("#title_pa").attr('checked') == 'checked',
-                    video_count: $("#video_count").attr('checked') == 'checked'
-                };
+		var columns = {
+			snap: $("#column_snap").is(':checked'),
+			created: $("#column_created").attr('checked') == 'checked',
+			imp_data_id: $("#imp_data_id").attr('checked') == 'checked',
+			product_name: $("#column_product_name").attr('checked') == 'checked',
+			// item_id: $("#item_id").attr('checked') == 'checked',
+			model: $("#model").attr('checked') == 'checked',
+			url: $("#column_url").attr('checked') == 'checked',
+			Page_Load_Time: $("#Page_Load_Time").attr('checked') == 'checked',
+			Short_Description: $("#Short_Description").attr('checked') == 'checked',
+			short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
+			Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
+			short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked' ? 1 : 0,
+			title_seo_phrases: $("#column_title_seo_phrases").attr('checked') == 'checked',
+			title_seo_phrases_f: $("#column_title_seo_phrases_f").attr('checked') == 'checked',
+			images_cmp: $("#column_images_cmp").attr('checked') == 'checked',
+			video_count: $("#column_video_count").attr('checked') == 'checked',
+			title_pa: $("#column_title_pa").attr('checked') == 'checked',
+			Long_Description: $("#Long_Description").attr('checked') == 'checked',
+			long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
+			long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked' ? 1 : 0,
+			Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").attr('checked') == 'checked',
+			Custom_Keywords_Long_Description : $("#Custom_Keywords_Long_Description").attr('checked') == 'checked',
+			Meta_Description : $("#Meta_Description").attr('checked') == 'checked',
+			Meta_Description_Count : $("#Meta_Description_Count").attr('checked') == 'checked',
+			H1_Tags : $("#H1_Tags").attr('checked') == 'checked',
+			H1_Tags_Count : $("#H1_Tags_Count").attr('checked') == 'checked',
+			H2_Tags : $("#H2_Tags").attr('checked') == 'checked',
+			H2_Tags_Count : $("#H2_Tags_Count").attr('checked') == 'checked',
+			duplicate_content: $("#column_duplicate_content").attr('checked') == 'checked',
+			column_external_content: $("#column_external_content").attr('checked') == 'checked',
+			column_reviews: $("#column_reviews").attr('checked') == 'checked',
+			average_review: $("#average_review").attr('checked') == 'checked',
+			column_features: $("#column_features").attr('checked') == 'checked',
+			price_diff: $("#column_price_diff").attr('checked') == 'checked',
+			gap: $("#gap").attr('checked') == 'checked',
+			Duplicate_Content: $("#Duplicate_Content").attr('checked') == 'checked',
+			images_cmp: $("#images_cmp").attr('checked') == 'checked',
+			title_pa: $("#title_pa").attr('checked') == 'checked',
+			video_count: $("#video_count").attr('checked') == 'checked'
+		};
 
-                // save params to DB
-                $.ajax({
-                    url: base_url + 'index.php/assess/assess_save_columns_state',
-                    dataType: 'json',
-                    type: 'post',
-                    data: {
-                        value: columns
-                    },
-                    success: function(data) {
-                        if (data == true) {
-                            hideColumns();
-                            addColumn_url_class();
-                            check_word_columns();
-							resizeImpDown();
-                        }
-                    }
-                });
+		// save params to DB
+		$.ajax({
+			url: base_url + 'index.php/assess/assess_save_columns_state',
+			dataType: 'json',
+			type: 'post',
+			data: {
+				value: columns
+			},
+			success: function(data) {
+				if (data == true) {
+					hideColumns();
+					addColumn_url_class();
+					check_word_columns();
+					resizeImpDown();
+				}
+			}
+		});
 
     });
 
@@ -3842,62 +3781,9 @@ function prevSibilfunc(curentSibil){
     $('#research_assess_choiceColumnDialog').dialog({
         autoOpen: false,
         resizable: false,
-        modal: true,
-//        buttons: {
-//            'Save': function() {
-//                // get columns params
-//                var columns = {
-//                    snap: $("#column_snap").attr('checked') == 'checked',
-//                    created: $("#column_created").attr('checked') == 'checked',
-//                    product_name: $("#column_product_name").attr('checked') == 'checked',
-//                    item_id: $("#item_id").attr('checked') == 'checked',
-//                    model: $("#model").attr('checked') == 'checked',
-//                    url: $("#column_url").attr('checked') == 'checked',
-//                    short_description_wc: $("#column_short_description_wc").attr('checked') == 'checked',
-//                    Meta_Keywords: $("#Meta_Keywords").attr('checked') == 'checked',
-//                    short_seo_phrases: $("#column_short_seo_phrases").attr('checked') == 'checked',
-//                    long_description_wc: $("#column_long_description_wc").attr('checked') == 'checked',
-//                    long_seo_phrases: $("#column_long_seo_phrases").attr('checked') == 'checked',
-//                    Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").attr('checked') == 'checked',
-//                    Custom_Keywords_Long_Description : $("#Custom_Keywords_Long_Description").attr('checked') == 'checked',
-//                    Meta_Description : $("#Meta_Description").attr('checked') == 'checked',
-//                    Meta_Description_Count : $("#Meta_Description_Count").attr('checked') == 'checked',
-//                    H1_Tags : $("#H1_Tags").attr('checked') == 'checked',
-//                    H1_Tags_Count : $("#H1_Tags_Count").attr('checked') == 'checked',
-//                    H2_Tags : $("#H2_Tags").attr('checked') == 'checked',
-//                    H2_Tags_Count : $("#H2_Tags_Count").attr('checked') == 'checked',
-//                    duplicate_content: $("#column_duplicate_content").attr('checked') == 'checked',
-//                    column_external_content: $("#column_external_content").attr('checked') == 'checked',
-//                    column_reviews: $("#column_reviews").attr('checked') == 'checked',
-//                    column_features: $("#column_features").attr('checked') == 'checked',
-//                    price_diff: $("#column_price_diff").attr('checked') == 'checked'
-//                };
-//
-//                // save params to DB
-//                $.ajax({
-//                    url: base_url + 'index.php/assess/assess_save_columns_state',
-//                    dataType: 'json',
-//                    type: 'post',
-//                    data: {
-//                        value: columns
-//                    },
-//                    success: function(data) {
-//                        if (data == true) {
-//                            hideColumns();
-//                            addColumn_url_class();
-//                            check_word_columns();
-//                        }
-//                    }
-//                });
-//
-//                $(this).dialog('close');
-//            },
-//            'Cancel': function() {
-//                $(this).dialog('close');
-//            }
-//        },
+        modal: true,      
         width: 'auto'
-                });
+    });
 
     $('.assess_report_options_dialog_button').on('click', function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
@@ -3980,16 +3866,9 @@ function prevSibilfunc(curentSibil){
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
         var table_case = 'details_compare';
         var checked_columns_results = GetURLParameter('checked_columns_results');
-    if(checked_columns_results){
-             if($('#assess_tbl_show_case a[class=active_link]').data('case') == 'details_compare_result'){
-         table_case = 'details_compare_result';
-    }else{
-                 table_case = 'graph';
-             }
-        }else{
-
-        table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
-    }
+				
+		table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
+				
         var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
         var columns_checkboxes_checked = [];
         $.each(columns_checkboxes, function(index, value) {
@@ -4023,7 +3902,7 @@ function prevSibilfunc(curentSibil){
             });
             addColumn_url_class();
             check_word_columns();
-       } 
+		} 
         else if (table_case == 'details_compare') {
 
 			/**
@@ -4043,8 +3922,6 @@ function prevSibilfunc(curentSibil){
 
                 if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {
                     tblAssess.fnSetColumnVis(index, true, false);
-
-
                 }
                 else if(value==='H1_Tags_Count' || value==='H2_Tags_Count' || value ==='Meta_Description_Count' ){
                     if ($.inArray("Meta_Description", columns_checkboxes_checked) > -1) {
@@ -4144,7 +4021,7 @@ function prevSibilfunc(curentSibil){
             $('.assess_report').hide();
             $('#assess_view').hide();
             $('#assess_graph').show();
-        }
+        }		
     }
 
 	/*
@@ -4152,7 +4029,7 @@ function prevSibilfunc(curentSibil){
 	* @author Oleg Meleshko
 	*/
 	function toggleRelatedBlocks(tabName, isDisplayed)
-	{
+	{		
 		if (tabsRelatedBlocks[tabName])
 			tabsRelatedBlocks[tabName].call(null, isDisplayed);
 	}
