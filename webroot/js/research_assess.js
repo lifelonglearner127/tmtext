@@ -29,17 +29,26 @@ function close_popover(elem)
 }
 
 function resizeImpDown(){
+	
+	var onResize = function(event) {			
+		tblAssessTable.floatThead({
+			scrollContainer: function($table){
+				return $table.closest('.wrapper');
+			}
+		});
+		tblAssessTable.floatThead('reflow');
+	};
+	
 	var tblAssessTable = $("#tblAssess");
 	tblAssessTable.colResizable({ disable : true });
 	tblAssessTable.colResizable({
 		liveDrag:true, 
 		gripInnerHtml:"<div class='grip'></div>", 
 		draggingClass:"dragging",
-		onResize : function(event) {			
-			tblAssessTable.floatThead('reflow');
-		}
-	});
-	tblAssessTable.floatThead('reflow');
+		onResize : onResize
+	});	
+	
+	onResize(null);
 }
 
 $(function() {
