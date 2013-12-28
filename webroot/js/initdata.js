@@ -8,7 +8,7 @@ var columns = [
         {
             "sTitle": "Date",
             "sName": "created",
-            "sWidth": "3%"
+            "sWidth": "5%"
         },
         {
             "sTitle": "ID",
@@ -61,55 +61,55 @@ var columns = [
         {
             "sTitle": "Meta Keywords",
             "sName": "Meta_Keywords",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass": "Meta_Keywords"
         },
         {
             "sTitle": "Keywords <span class='subtitle_keyword_short'>Short</span>",
             "sName": "short_seo_phrases",
-            "sWidth": "2%",
+            "sWidth": "5%",
             "sClass": "keyword_short"
         },
         {
             "sTitle": "Title Keywords",
             "sName": "title_seo_phrases",
-            "sWidth": "2%",
+            "sWidth": "5%",
             "sClass": "title_seo_phrases"
         },
         {
             "sTitle": "Images",
             "sName": "images_cmp",
-            "sWidth": "2%",
+            "sWidth": "5%",
             "sClass": "images_cmp"
         },
         {
             "sTitle": "Videos",
             "sName": "video_count",
-            "sWidth": "2%",
+            "sWidth": "5%",
             "sClass": "video_count"
         },/*max*/
         {
             "sTitle": "Title",
             "sName": "title_pa",
-            "sWidth": "2%",
+            "sWidth": "5%",
             "sClass": "title_pa"
         },
         {
             "sTitle": "<span class='subtitle_desc_long' >Long </span>Description",
             "sName": "Long_Description",
-            "sWidth": "2%",
+            "sWidth": "5%",
             "sClass": "Long_Description"
         },
         {
             "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
             "sName": "long_description_wc",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass": "word_long"
         },
         {
             "sTitle": "Keywords <span class='subtitle_keyword_long'>Long</span>",
             "sName": "long_seo_phrases",
-            "sWidth": "2%",
+            "sWidth": "5%",
             "sClass": "keyword_long"
         },
         {
@@ -155,7 +155,7 @@ var columns = [
         {
             "sTitle" : "H2 Tags", 
             "sName":"H2_Tags", 
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass" :  "HTags_2"
         },
         {
@@ -167,24 +167,24 @@ var columns = [
         {
             "sTitle": "Duplicate Content",
             "sName": "duplicate_content",
-            "sWidth": "3%"
+            "sWidth": "5%"
         },
         {
             "sTitle": "Third Party Content",
             "sName": "column_external_content",
-            "sWidth": "2%",
+            "sWidth": "5%",
             "sClass" :  "column_external_content"
         },
         {
             "sTitle": "Reviews",
             "sName": "column_reviews",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass" :  "column_reviews"
         },
         {
             "sTitle": "Avg Review",
             "sName": "average_review",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass" :  "average_review"
         },
         {
@@ -195,7 +195,7 @@ var columns = [
         {
             "sTitle": "Price",
             "sName": "price_diff",
-            "sWidth": "2%",
+            "sWidth": "5%",
             "sClass": "price_text"
         },
         {
@@ -266,19 +266,19 @@ var columns = [
         {
             "sTitle": "Meta Keywords",
             "sName": "Meta_Keywords1",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass": "Meta_Keywords1"
         },
         {
             "sTitle": "<span class='subtitle_desc_long1' >Long </span>Description",
             "sName": "Long_Description1",
-            "sWidth": "2%",
+            "sWidth": "5%",
             "sClass": "Long_Description1"
         },
         {
             "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
             "sName": "long_description_wc1",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass": "word_long1"
         },
         {
@@ -298,7 +298,7 @@ var columns = [
         {
             "sTitle": "Third Party Content",
             "sName": "column_external_content1",
-            "sWidth": "2%",
+            "sWidth": "5%",
             "sClass" :  "column_external_content1"
         },
         {
@@ -328,13 +328,13 @@ var columns = [
         {
             "sTitle": "Reviews",
             "sName": "column_reviews1",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass": "column_reviews1"
         },
         {
             "sTitle": "Avg Review",
             "sName": "average_review1",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass" :  "average_review1"
         },
         {
@@ -346,37 +346,37 @@ var columns = [
         {
             "sTitle": "Title Keywords",
             "sName": "title_seo_phrases1",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass": "title_seo_phrases1"
         },
         {
             "sTitle": "Images",
             "sName": "images_cmp1",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass": "images_cmp1"
         },
         {
             "sTitle": "Videos",
             "sName": "video_count1",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass": "video_count1"
         },
         {
             "sTitle": "Title",
             "sName": "title_pa1",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass": "title_pa1"
         },
         {
             "sTitle": "Gap Analysis",
             "sName": "gap",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass" :  ""
         },
         {
             "sTitle": "Duplicate Content",
             "sName": "Duplicate_Content",
-            "sWidth": "3%",
+            "sWidth": "5%",
             "sClass" :  ""
         },
 
