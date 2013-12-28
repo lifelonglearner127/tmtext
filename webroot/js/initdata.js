@@ -2,206 +2,206 @@ var columns = [
         {
             "sTitle": "Snapshot",
             "sName": "snap",
-            "sWidth": "10%",
+            // "sWidth": "10%",
             "sClass": "Snapshot"
         },
         {
             "sTitle": "Date",
             "sName": "created",
-            "sWidth": "5%"
+            // "sWidth": "7%"
         },
         {
             "sTitle": "ID",
             "sName": "imp_data_id",
-            "sWidth": "15%",
+            // "sWidth": "10%",
             "sClass": "imp_data_id"
         },
         {
             "sTitle": "Product Name",
             "sName": "product_name",
-            "sWidth": "15%",
+            // "sWidth": "10%",
             "sClass": "product_name_text"
         },
         {
             "sTitle": "item ID",
             "sName": "item_id",
-            "sWidth": "15%",
+            // "sWidth": "10%",
             "sClass": "item_id"
         },
         {
             "sTitle": "Model",
             "sName": "model",
-            "sWidth": "15%",
+            // "sWidth": "10%",
             "sClass": "model"
         },
         {
             "sTitle": "URL",
             "sName": "url",
-            "sWidth": "15%",
+            // "sWidth": "10%",
             "sClass": "url_text"
         },
         {
             "sTitle": "Page Load Time",
             "sName": "Page_Load_Time",
-            "sWidth": "15%",
+            // "sWidth": "10%",
             "sClass": "Page_Load_Time"
         },
         {
             "sTitle": "<span class='subtitle_desc_short' >Short</span> Description",
             "sName": "Short_Description",
-            "sWidth": "25%",
+            // "sWidth": "10%",
             "sClass": "Short_Description"
         },
         {
             "sTitle": "Short Desc <span class='subtitle_word_short' ># Words</span>",
             "sName": "short_description_wc",
-            "sWidth": "7%",
+            // "sWidth": "7%",
             "sClass": "word_short"
         },
         {
             "sTitle": "Meta Keywords",
             "sName": "Meta_Keywords",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "Meta_Keywords"
         },
         {
             "sTitle": "Keywords <span class='subtitle_keyword_short'>Short</span>",
             "sName": "short_seo_phrases",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "keyword_short"
         },
         {
             "sTitle": "Title Keywords",
             "sName": "title_seo_phrases",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "title_seo_phrases"
         },
         {
             "sTitle": "Images",
             "sName": "images_cmp",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "images_cmp"
         },
         {
             "sTitle": "Videos",
             "sName": "video_count",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "video_count"
         },/*max*/
         {
             "sTitle": "Title",
             "sName": "title_pa",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "title_pa"
         },
         {
             "sTitle": "<span class='subtitle_desc_long' >Long </span>Description",
             "sName": "Long_Description",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "Long_Description"
         },
         {
             "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
             "sName": "long_description_wc",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "word_long"
         },
         {
             "sTitle": "Keywords <span class='subtitle_keyword_long'>Long</span>",
             "sName": "long_seo_phrases",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "keyword_long"
         },
         {
             "sTitle" : "Custom Keywords Short Description",
             "sName" : "Custom_Keywords_Short_Description", 
-            "sWidth" :  "4%",
+            // "sWidth" :  "7%",
             "sClass" : "Custom_Keywords_Short_Description"
             
         },
         {
             "sTitle" : "Custom Keywords Long Description",
             "sName" : "Custom_Keywords_Long_Description", 
-            "sWidth" : "4%",
+            // "sWidth" : "7%",
             "sClass" : "Custom_Keywords_Long_Description"
             
         },
         {
             "sTitle" : "Meta Description",
             "sName" : "Meta_Description", 
-            "sWidth" : "4%",
+            // "sWidth" : "7%",
             "sClass" : "Meta_Description"
             
         },
         {
             "sTitle" : "Meta Desc <span class='subtitle_word_long' ># Words</span>",
             "sName" : "Meta_Description_Count", 
-            "sWidth" : "4%",
+            // "sWidth" : "7%",
             "sClass" : "Meta_Description_Count"
             
         },        
         {
             "sTitle" : "H1 Tags", 
             "sName":"H1_Tags", 
-            "sWidth": "7%",
+            // "sWidth": "7%",
             "sClass" :  "HTags_1"
         },
         {
             "sTitle" : "Chars", 
             "sName":"H1_Tags_Count", 
-            "sWidth": "7%",
+            // "sWidth": "7%",
             "sClass" :  "HTags"
         },
         {
             "sTitle" : "H2 Tags", 
             "sName":"H2_Tags", 
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass" :  "HTags_2"
         },
         {
             "sTitle" : "Chars", 
             "sName":"H2_Tags_Count", 
-            "sWidth": "7%",
+            // "sWidth": "7%",
             "sClass" :  "HTags"
         },
         {
             "sTitle": "Duplicate Content",
             "sName": "duplicate_content",
-            "sWidth": "5%"
+            // "sWidth": "7%"
         },
         {
             "sTitle": "Third Party Content",
             "sName": "column_external_content",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass" :  "column_external_content"
         },
         {
             "sTitle": "Reviews",
             "sName": "column_reviews",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass" :  "column_reviews"
         },
         {
             "sTitle": "Avg Review",
             "sName": "average_review",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass" :  "average_review"
         },
         {
             "sTitle": "Features",
             "sName": "column_features",
-            "sWidth": "4%"
+            // "sWidth": "7%"
         },
         {
             "sTitle": "Price",
             "sName": "price_diff",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "price_text"
         },
         {
             "sTitle": "Recommendations",
             "sName": "recommendations",
-            "sWidth": "15%",
+            // "sWidth": "17%",
             "bVisible": false,
             "bSortable": false
         },
@@ -212,171 +212,171 @@ var columns = [
         {
             "sTitle": "Snapshot",
             "sName": "snap1",
-            "sWidth": "10%",
+            // "sWidth": "10%",
             "sClass": "Snapshot1"
         },
         {
             "sTitle": "ID",
             "sName": "imp_data_id1",
-            "sWidth": "10%",
+            // "sWidth": "10%",
             "sClass": "imp_data_id1"
         },
         {
             "sTitle": "Product Name",
             "sName": "product_name1",
-            "sWidth": "15%",
+            // "sWidth": "10%",
 			"sClass": "product_name1"
         },
         {
             "sTitle": "item ID",
             "sName": "item_id1",
-            "sWidth": "15%",
+            // "sWidth": "10%",
             "sClass": "item_id1"
         },
         {
             "sTitle": "Model",
             "sName": "model1",
-            "sWidth": "15%",
+            // "sWidth": "10%",
             "sClass": "model1"
         },
         {
             "sTitle": "URL",
             "sName": "url1",
-            "sWidth": "15%",
+            // "sWidth": "10%",
             "sClass": "url1"
         },
         {
             "sTitle": "Page Load Time",
             "sName": "Page_Load_Time1",
-            "sWidth": "15%",
+            // "sWidth": "10%",
             "sClass": "Page_Load_Time1"
         },
         {
             "sTitle": "<span class='subtitle_desc_short1' >Short </span> Description",
             "sName": "Short_Description1",
-            "sWidth": "15%",
+            // "sWidth": "10%",
             "sClass": "Short_Description1"
         },
         {
             "sTitle": "Short Desc <span class='subtitle_word_short' ># Words</span>",
             "sName": "short_description_wc1",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "word_short1"
         },
         {
             "sTitle": "Meta Keywords",
             "sName": "Meta_Keywords1",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "Meta_Keywords1"
         },
         {
             "sTitle": "<span class='subtitle_desc_long1' >Long </span>Description",
             "sName": "Long_Description1",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "Long_Description1"
         },
         {
             "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
             "sName": "long_description_wc1",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "word_long1"
         },
         {
             "sTitle" : "Meta Description",
             "sName" : "Meta_Description1", 
-            "sWidth" : "4%",
+            // "sWidth" : "7%",
             "sClass" : "Meta_Description1"
             
         },
         {
             "sTitle" : "Meta Desc <span class='subtitle_word_long' ># Words</span>",
             "sName" : "Meta_Description_Count1", 
-            "sWidth" : "7%",
+            // "sWidth" : "7%",
             "sClass" : "Meta_Description_Count1"
             
         },
         {
             "sTitle": "Third Party Content",
             "sName": "column_external_content1",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass" :  "column_external_content1"
         },
         {
             "sTitle" : "H1 Tags", 
             "sName":"H1_Tags1", 
-            "sWidth": "7%",
+            // "sWidth": "7%",
             "sClass" :  "HTags_11"
         },
         {
             "sTitle" : "Chars", 
             "sName":"H1_Tags_Count1", 
-            "sWidth": "7%",
+            // "sWidth": "7%",
             "sClass" :  "HTags1"
         },
         {
             "sTitle" : "H2 Tags", 
             "sName":"H2_Tags1", 
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass" :  "HTags_21"
         },
         {
             "sTitle" : "Chars", 
             "sName":"H2_Tags_Count1", 
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass" :  "HTags1 CharsHTags1"
         },
         {
             "sTitle": "Reviews",
             "sName": "column_reviews1",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "column_reviews1"
         },
         {
             "sTitle": "Avg Review",
             "sName": "average_review1",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass" :  "average_review1"
         },
         {
             "sTitle": "Features",
             "sName": "column_features1",
-            "sWidth": "4%",
+            // "sWidth": "7%",
             "sClass" :  "column_features1"
         },
         {
             "sTitle": "Title Keywords",
             "sName": "title_seo_phrases1",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "title_seo_phrases1"
         },
         {
             "sTitle": "Images",
             "sName": "images_cmp1",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "images_cmp1"
         },
         {
             "sTitle": "Videos",
             "sName": "video_count1",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "video_count1"
         },
         {
             "sTitle": "Title",
             "sName": "title_pa1",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass": "title_pa1"
         },
         {
             "sTitle": "Gap Analysis",
             "sName": "gap",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass" :  ""
         },
         {
             "sTitle": "Duplicate Content",
             "sName": "Duplicate_Content",
-            "sWidth": "5%",
+            // "sWidth": "7%",
             "sClass" :  ""
         },
 
