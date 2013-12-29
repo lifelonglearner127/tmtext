@@ -603,6 +603,8 @@
               
 
                 <div id="assess_view">
+					<button class="btn btn-success get_board_view_snap">Get board view snap</button>
+					<div class="assess_view_content"></div>
                     <!--<p>No images available for this batch</p>-->
                 </div>
                 <img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />

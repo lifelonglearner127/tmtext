@@ -523,6 +523,8 @@
                 </div>
                 <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>           
                 <div id="assess_view">
+					<button class="btn btn-success get_board_view_snap">Get board view snap</button>
+					<div class="assess_view_content"></div>
                     <p>No images available for this batch</p>
                 </div>
                 <img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />

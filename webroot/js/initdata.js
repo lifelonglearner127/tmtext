@@ -19,6 +19,13 @@ var summary_active_items = [];
 var arrow_css_top;
 var summary_filters_order;
 var scrollYesOrNot = true;
+var zeroTableDraw = true;
+
+var short_wc_total_not_0 = 0;
+var long_wc_total_not_0 = 0;
+
+var items_short_products_content_short = 0;
+var items_long_products_content_short = 0;
 var columns = [
         {
             "sTitle": "Snapshot",
