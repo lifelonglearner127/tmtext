@@ -270,7 +270,12 @@
                 <p>
                     <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="title_pa" data-col_name="title_pa" name="title_pa" <?php echo($columns['title_pa'] == 'true' ? 'checked="checked"' : ''); ?> />
                     <label for="column_actions">Title</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="links_count" data-col_name="links_count" name="links_count" <?php echo($columns['links_count'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_actions">Links</label>
                 </p></li>
+                
             </ul>
             </div>
 <!--            <p>

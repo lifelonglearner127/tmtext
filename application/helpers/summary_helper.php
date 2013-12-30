@@ -430,7 +430,35 @@ if ( ! function_exists('get_filters') )
 						'explanation' => 'Competitor SKUs that have videos'
 					)
 				)
-			)		
+			),
+			array(
+				'data_filter_id' => 'skus_with_zero_product_description_links',
+				'icon' => 'assess_report_seo_red.png',
+				'label' => 'SKUs with 0 Product Description links:',	
+				'has_competitor' => true,
+				'question' => array(				
+					'batch1' => array(
+						
+					),
+					'batch2' => array(
+					
+					)
+				)
+			),
+			array(
+				'data_filter_id' => 'skus_with_more_than_one_product_description_links',
+				'icon' => 'assess_report_seo_red.png',
+				'label' => 'SKUs with > 0 Product Description links:',	
+				'has_competitor' => true,
+				'question' => array(				
+					'batch1' => array(
+						
+					),
+					'batch2' => array(
+						
+					)
+				)
+			),				
 		);
 	}
 }

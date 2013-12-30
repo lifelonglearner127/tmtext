@@ -112,6 +112,11 @@ var columns = [
             "sClass": "title_pa"
         },
         {
+            "sTitle": "Links",
+            "sName": "links_count",            
+            "sClass": "links_count"
+        },
+        {
             "sTitle": "<span class='subtitle_desc_long' >Long </span>Description",
             "sName": "Long_Description",            
             "sClass": "Long_Description"
@@ -275,6 +280,11 @@ var columns = [
             "sClass": "title_pa1"
         },
         {
+            "sTitle": "Links",
+            "sName": "links_count1",            
+            "sClass": "links_count1"
+        },
+        {
             "sTitle": "<span class='subtitle_desc_long1' >Long </span>Description",
             "sName": "Long_Description1",            
             "sClass": "Long_Description1"
@@ -408,8 +418,13 @@ var summaryFieldNames = [
 		'skus_with_more_than_one_product_image',
 		'skus_with_no_product_images_competitor',
 		'skus_with_one_product_image_competitor',
-
 		'skus_with_more_than_one_product_image_competitor',
+		
+		'skus_with_zero_product_description_links',
+		'skus_with_zero_product_description_links_competitor',
+		'skus_with_more_than_one_product_description_links',
+		'skus_with_more_than_one_product_description_links_competitor',
+		
 		'assess_report_items_priced_higher_than_competitors'
 	];
 	
@@ -462,7 +477,8 @@ var summaryFieldNames = [
             "average_review",
             "column_features",
             "price_diff",
-            "product_selection"
+            "product_selection",
+            "links_count"
 
         ],
          details_compare: [
@@ -519,7 +535,8 @@ var summaryFieldNames = [
             "video_count1",
             "title_pa1",
             "gap",
-            "Duplicate_Content"
+            "Duplicate_Content",
+            "links_count"
             
         ],
         recommendations: [

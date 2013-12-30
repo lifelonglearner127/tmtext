@@ -342,6 +342,7 @@ class Assess extends MY_Controller {
 
                                 if (!empty($customer_name) && !empty($item['customer']) && $this->statistics_new_model->if_url_in_batch($item['imported_data_id'], $batch2)) {
                                     $parsed_attributes_unserialize_val = '';
+                                    $parsed_anchors_unserialize_val = '';
                                     $parsed_meta_unserialize_val = '';
                                     $parsed_meta_unserialize_val_c = '';
                                     $parsed_model_unserialize_val = '';
@@ -358,10 +359,13 @@ class Assess extends MY_Controller {
                                     $images_cmp = 'none';
                                     $video_count = 'none';
                                     $title_pa = 'none';
+                                    $links_count = 'none';
                                     $parsed_column_features_unserialize_val_count = 0;
                                     $column_external_content = '';
                                     $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
-
+									
+									
+									$parsed_anchors_unserialize = unserialize($cmpare->Anchors);
                                     $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
 
                                     if ($cmpare->title_keywords != '' && $cmpare->title_keywords != 'None') {
@@ -446,6 +450,9 @@ class Assess extends MY_Controller {
                                         $video_count = $parsed_attributes_unserialize['video_count'];
                                     if (isset($parsed_attributes_unserialize['title']))
                                         $title_pa = $parsed_attributes_unserialize['title'];
+                                    
+                                    if (isset($parsed_anchors_unserialize['quantity']))
+                                        $links_count = $parsed_anchors_unserialize['quantity'];
 
                                     $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
 
@@ -538,6 +545,7 @@ class Assess extends MY_Controller {
                                     $val->images_cmp1 = $images_cmp;
                                     $val->video_count1 = $video_count;
                                     $val->title_pa1 = $title_pa;
+                                    $val->links_count1 = $title_pa;
                                     $cmpare->imported_data_id = $item['imported_data_id'];
                                     $batch2_items_count++;
 
@@ -2856,7 +2864,8 @@ class Assess extends MY_Controller {
                 'column_reviews' => 'true',				          
                 'images_cmp' => 'true',
                 'video_count' => 'true', 
-                'title_pa' => 'true',               
+                'title_pa' => 'true',
+                'links_count' => 'true',               
             );
         }
         $this->data['columns'] = $columns;
@@ -3053,6 +3062,7 @@ class Assess extends MY_Controller {
 		//getting columns		
 		$columns = AssessHelper::addCompetitorColumns(AssessHelper::columns(), $build_assess_params->max_similar_item_count);
 		// echo var_dump($columns);
+		
 		//extracting initial data varialbes for filters
         extract(AssessHelper::getInitialFilterData());
 		
@@ -3074,7 +3084,8 @@ class Assess extends MY_Controller {
         $qty = 1;
         $c=0;
         $total_rows = count($results);
-        foreach ($results as $row_key => $row) {		
+        foreach ($results as $row_key => $row) {
+					
             $success_filter_entries = array();
             $f_count1 = 0;
             $r_count1 = 0;
@@ -3103,6 +3114,7 @@ class Assess extends MY_Controller {
             $result_row->images_cmp = "None";
             $result_row->video_count = "None";
             $result_row->title_pa = "None";
+            $result_row->links_count = "None";
             $result_row->long_seo_phrases = "None";
             $result_row->price_diff = "-";
             $result_row->imp_data_id = "";
@@ -3210,6 +3222,7 @@ class Assess extends MY_Controller {
                 for ($i = 1; $i <= $max_similar_item_count; $i++) {
 
                     $parsed_attributes_unserialize_val = '';
+                    $parsed_anchors_unserialize_val = '';
                     $parsed_meta_unserialize_val = '';
                     $parsed_meta_unserialize_val_c = '';
                     $parsed_meta_unserialize_val_count = '';
@@ -3229,6 +3242,8 @@ class Assess extends MY_Controller {
                     $title_pa = '';
 
                     $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
+                    $parsed_anchors_unserialize = unserialize($sim_items[$i - 1]->Anchors);
+                    
 
                     if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
                         $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'], $parsed_attributes_unserialize['webcollage']);
@@ -3296,6 +3311,8 @@ class Assess extends MY_Controller {
                         $video_count = $parsed_attributes_unserialize['video_count'];
                     if (isset($parsed_attributes_unserialize['title']))
                         $title_pa = $parsed_attributes_unserialize['title'];
+                    if (isset($parsed_anchors_unserialize['quantity']))
+                        $links_count = $parsed_anchors_unserialize['quantity'];
                    
                     $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
 
@@ -3326,6 +3343,17 @@ class Assess extends MY_Controller {
 							$this->filterBySummaryCriteria('skus_with_more_than_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
 						}
 					}
+					
+					if (!$parsed_anchors_unserialize['quantity']) {
+							$skus_with_zero_product_description_links_competitor++;
+							$this->filterBySummaryCriteria('skus_with_zero_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
+					}
+					
+					if($parsed_anchors_unserialize['quantity'] > 0) {
+								$skus_with_more_than_one_product_description_links_competitor++;
+								$this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
+					}
+					
 					
 					if (isset($parsed_attributes_unserialize['title']) && $parsed_attributes_unserialize['title'] && strlen($parsed_attributes_unserialize['title']) < 70) {
                         $skus_title_less_than_70_chars_competitor++;
@@ -3431,6 +3459,7 @@ class Assess extends MY_Controller {
                     $result_row['images_cmp' . $i] = $images_cmp ? $images_cmp : 'None';
                     $result_row['video_count' . $i] = $video_count ? $video_count : 'None';
                     $result_row['title_pa' . $i] = $title_pa ? $title_pa : 'None';
+                    $result_row['links_count' . $i] = $links_count ? $links_count : 'None';
                 }
 
                 $result_row = (object) $result_row;
@@ -3453,6 +3482,9 @@ class Assess extends MY_Controller {
             }
             if ($row->title_pa1) {
                 $result_row->title_pa1 = $row->title_pa1;
+            }
+            if ($row->links_count1) {
+                $result_row->links_count1 = $row->links_count1;
             }
             if ($row->product_name1) {
                 $result_row->product_name1 = $row->product_name1;
@@ -3546,6 +3578,15 @@ class Assess extends MY_Controller {
 				}
 			}
 			
+			if (!$pars_atr['Anchors']['quantity']) {
+					$skus_with_zero_product_description_links++;
+					$this->filterBySummaryCriteria('skus_with_zero_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
+			if($pars_atr['Anchors']['quantity'] > 0) {
+					$skus_with_more_than_one_product_description_links++;
+					$this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries);
+			}
+			
 			if (isset($pars_atr['parsed_attributes']['title']) && $pars_atr['parsed_attributes']['title'] && $pars_atr['parsed_attributes']['title'] < 70) {
                 $skus_title_less_than_70_chars++;
                 $this->filterBySummaryCriteria('skus_title_less_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries);
@@ -3622,6 +3663,9 @@ class Assess extends MY_Controller {
             }
             if (isset($pars_atr['parsed_attributes']['title'])) {
                 $result_row->title_pa = $pars_atr['parsed_attributes']['title'];
+            }
+            if (isset($pars_atr['Anchors']['quantity'])) {
+                $result_row->links_count = $pars_atr['Anchors']['quantity'];
             }
 
 
@@ -4282,6 +4326,12 @@ class Assess extends MY_Controller {
 			'skus_with_no_product_images_competitor' => array( 'value' => $skus_with_no_product_images_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_no_product_images)),
 			'skus_with_one_product_image_competitor' => array( 'value' => $skus_with_one_product_image_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_one_product_image)),
 			'skus_with_more_than_one_product_image_competitor' => array( 'value' => $skus_with_more_than_one_product_image_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_more_than_one_product_image)),
+			
+			'skus_with_zero_product_description_links' => array( 'value' => $skus_with_zero_product_description_links, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
+			'skus_with_more_than_one_product_description_links' => array( 'value' => $skus_with_more_than_one_product_description_links, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
+
+			'skus_with_zero_product_description_links_competitor' => array( 'value' => $skus_with_zero_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links)),
+			'skus_with_more_than_one_product_description_links_competitor' => array( 'value' => $skus_with_more_than_one_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
 		);		
 				
 		foreach ($summary_fields as $key => $summary_field)
@@ -4499,6 +4549,7 @@ class Assess extends MY_Controller {
                         $data_row->images_cmp,
                         $data_row->video_count,
                         $data_row->title_pa,
+                        $data_row->links_count,
                         $data_row->long_description,
                         $data_row->long_description_wc,
                         $data_row->long_seo_phrases,
@@ -4549,6 +4600,7 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['images_cmp' . $i] != null ? $data_row['images_cmp' . $i] : 'none';
                             $output_row[] = $data_row['video_count' . $i] != null ? $data_row['video_count' . $i] : 'none';
                             $output_row[] = $data_row['title_pa' . $i] != null ? $data_row['title_pa' . $i] : '';
+                            $output_row[] = $data_row['links_count' . $i] != null ? $data_row['links_count' . $i] : '';
                         }
 
                         $output_row[] = $data_row['gap'];
@@ -4582,6 +4634,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->images_cmp1;
                         $output_row[] = $data_row->video_count1;
                         $output_row[] = $data_row->title_pa1;
+                        $output_row[] = $data_row->links_count1;
                         $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->Duplicate_Content;
                     }

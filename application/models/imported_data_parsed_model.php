@@ -879,6 +879,9 @@ class Imported_data_parsed_model extends CI_Model {
             if ($result->key === 'parsed_attributes') {
                 $data['parsed_attributes'] = unserialize($result->value);
             }
+            if ($result->key === 'Anchors') {
+                $data['Anchors'] = unserialize($result->value);
+            }
             if ($result->key === 'parsed_meta') {
                 $data['parsed_meta'] = unserialize($result->value);
             }

@@ -2436,7 +2436,8 @@ function prevSibilfunc(curentSibil){
 			Duplicate_Content: $("#Duplicate_Content").is(':checked'),
 			images_cmp: $("#images_cmp").is(':checked'),
 			title_pa: $("#title_pa").is(':checked'),
-			video_count: $("#video_count").is(':checked')
+			video_count: $("#video_count").is(':checked'),
+			links_count: $("#links_count").is(':checked')
 		};
 
 		// save params to DB

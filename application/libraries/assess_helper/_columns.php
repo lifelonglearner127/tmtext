@@ -145,7 +145,12 @@ return array(
 			'sTitle' => 'Title', 
 			'sName' => 'title_pa',               
 			'sClass' => 'title_pa'
-		),		
+		),
+		array(
+			'sTitle' => 'Links', 
+			'sName' => 'links_count',               
+			'sClass' => 'links_count'
+		),	
 		array(
 			'sTitle' => 'Gap Analysis',
 			'sClass' => 'gap',
