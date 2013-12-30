@@ -2547,6 +2547,12 @@ function prevSibilfunc(curentSibil){
         modal: true,      
         width: 'auto'
     });
+   $('#research_assess_choiceColumnDialog_export').dialog({
+        autoOpen: false,
+        resizable: false,
+        modal: true,      
+        width: 'auto'
+    });
 
     $('.assess_report_options_dialog_button').on('click', function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
@@ -2622,7 +2628,11 @@ function prevSibilfunc(curentSibil){
         $('#research_assess_choiceColumnDialog').dialog('open');
         $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
     });
-
+	
+    $('#research_batches_columns_export').on('click', function() {
+        $('#research_assess_choiceColumnDialog_export').dialog('open');
+        $('#research_assess_choiceColumnDialog_export').parent().find('button:first-child').addClass("popupGreen");
+    });
     tblAllColumns = tblAssess.fnGetAllSColumnNames();
 
     function hideColumns() {
@@ -3023,7 +3033,7 @@ var search_text = GetURLParameter('search_text');
             var cmp_selected = GetURLParameter('cmp_selected');
          
        }  
-        var columns_check = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
+        var columns_check = $('#research_assess_choiceColumnDialog_export').find('input[type=checkbox]:checked');
             var columns_checked = [];
             $.each(columns_check, function(index, value) {
 				if($(value).attr('id') == "column_title_seo_phrases_f" && $("#tk-frequency").is(':checked') ){

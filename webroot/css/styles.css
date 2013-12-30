@@ -795,3 +795,6 @@ a.jq-assess {
 .selectable_summary_handle, .selectable_summary_handle_with_competitor {
 	visibility: hidden;
 }
+#research_assess_choiceColumnDialog_export input, label {
+	display: inline;
+}
