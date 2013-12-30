@@ -1397,6 +1397,9 @@ var generate_url_check = GetURLParameter('generate_url_check');
     
 
     $('#tblAssess tbody').live('click',function(event) {
+     // === disable / change some buttons (start) (I.L.)
+     $("#assessDetailsDialog_btnSave").css('visibility', 'hidden');
+     // === disable / change some buttons (end) (I.L.)
      var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
       var checked_columns_results = GetURLParameter('checked_columns_results');
     
@@ -1751,8 +1754,14 @@ var generate_url_check = GetURLParameter('generate_url_check');
         modal: true,
         resizable: false,
         buttons: {
+            // 'Close': {
+            //     text: 'Cancel',
+            //     click: function() {
+            //         $(this).dialog('close');
+            //     }
+            // },
             'Close': {
-                text: 'Cancel',
+                text: 'Close',
                 click: function() {
                     $(this).dialog('close');
                 }
@@ -1783,21 +1792,12 @@ var generate_url_check = GetURLParameter('generate_url_check');
                     prevSibilfunc(curentSibil)
                 }
             },
-//            'Copy': {
-//                text: 'Copy',
-//                id: 'assessDetailsDialog_btnCopy',
-//                style: 'margin-right:125px',
-//                click: function() {
-//                    copyToClipboard(textToCopy);
-//                }
-//            },
             'Not a match': {
                 text: 'Not a match',
                 id: 'assessDetailsDialog_btnNotAMatch',
                 style: 'margin-right:125px',
                 click: function() {
                     var impdata_id = $('#impdataid').attr('val');
-//                    alert(impdata_id);
                     $.ajax({
                         url: base_url + 'index.php/assess/deleteSecondaryMatch',
                         dataType: 'json',
@@ -1806,7 +1806,6 @@ var generate_url_check = GetURLParameter('generate_url_check');
                             impdataid: impdata_id
                 }
                     }).done(function(){
-//                        alert('sdfgsdg');
                         $('#assessDetailsDialog').dialog('close');
                         $('#research_assess_update').click();
                         
