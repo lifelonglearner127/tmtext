@@ -6,7 +6,22 @@ function close_popover(elem)
 	
 	return false;
 }
-
+function topScroll(){
+	$( "#tableScrollWrapper.red" ).remove();
+	$( "#tableScrollWrapper" ).addClass("xw");
+	$( "#tableScrollWrapper" ).clone().insertBefore( "#tableScrollWrapper" ).addClass("red");
+	$( "#tableScrollWrapper.red tr" ).css("display", "none");
+	$(function(){
+    $(".red").scroll(function(){
+        $(".xw")
+            .scrollLeft($(".red").scrollLeft());
+    });
+    $(".xw").scroll(function(){
+        $(".red")
+            .scrollLeft($(".xw").scrollLeft());
+    });
+});
+}
 function resizeImpDown(status){
 	
 	var status = status || true	
@@ -16,7 +31,9 @@ function resizeImpDown(status){
 				return $table.closest('.wrapper');
 			}
 		});
+		topScroll();
 		tblAssessTable.floatThead('reflow');
+		
 	};
 	
 	var tblAssessTable = $("#tblAssess");
@@ -3066,6 +3083,7 @@ var search_text = GetURLParameter('search_text');
     });
 
 $('#tableScrollWrapper').css("overflow-y", "hidden");
+$('.ui-dialog-titlebar-close').click(function(){topScroll();});
 $( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
 $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix'></div>" );
   
