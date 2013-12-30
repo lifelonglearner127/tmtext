@@ -27,6 +27,11 @@ var long_wc_total_not_0 = 0;
 var items_short_products_content_short = 0;
 var items_long_products_content_short = 0;
 var columns = [
+        // { // I.L.
+        //     "sTitle": "Own Price",
+        //     "sName": "price",            
+        //     "sClass": "own_price_text"
+        // },
         {
             "sTitle": "Snapshot",
             "sName": "snap",            
@@ -422,6 +427,7 @@ var summaryFieldNames = [
 	
     var tableCase = {
         details: [
+            // "price", // I.L.
             "snap",
             "created",
             "imp_data_id",

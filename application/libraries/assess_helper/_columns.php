@@ -1,6 +1,11 @@
 <?php
 
 return array(
+		array( // --- I.L.
+			'sTitle' => 'Own Price',
+			'sName' => 'price',               
+			'sClass' => 'own_price_text'
+		),
 		array(
 			'sTitle' => 'Snapshot',
 			'sName' => 'snap',

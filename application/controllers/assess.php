@@ -3074,8 +3074,7 @@ class Assess extends MY_Controller {
         $qty = 1;
         $c=0;
         $total_rows = count($results);
-        foreach ($results as $row_key => $row) {
-					
+        foreach ($results as $row_key => $row) {		
             $success_filter_entries = array();
             $f_count1 = 0;
             $r_count1 = 0;
