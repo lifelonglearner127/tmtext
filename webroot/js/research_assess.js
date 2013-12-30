@@ -1397,9 +1397,6 @@ var generate_url_check = GetURLParameter('generate_url_check');
     
 
     $('#tblAssess tbody').live('click',function(event) {
-     // === disable / change some buttons (start) (I.L.)
-     $("#assessDetailsDialog_btnSave").css('visibility', 'hidden');
-     // === disable / change some buttons (end) (I.L.)
      var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
       var checked_columns_results = GetURLParameter('checked_columns_results');
     
@@ -1754,14 +1751,8 @@ var generate_url_check = GetURLParameter('generate_url_check');
         modal: true,
         resizable: false,
         buttons: {
-            // 'Close': {
-            //     text: 'Cancel',
-            //     click: function() {
-            //         $(this).dialog('close');
-            //     }
-            // },
             'Close': {
-                text: 'Close',
+                text: 'Cancel',
                 click: function() {
                     $(this).dialog('close');
                 }
@@ -1792,12 +1783,21 @@ var generate_url_check = GetURLParameter('generate_url_check');
                     prevSibilfunc(curentSibil)
                 }
             },
+//            'Copy': {
+//                text: 'Copy',
+//                id: 'assessDetailsDialog_btnCopy',
+//                style: 'margin-right:125px',
+//                click: function() {
+//                    copyToClipboard(textToCopy);
+//                }
+//            },
             'Not a match': {
                 text: 'Not a match',
                 id: 'assessDetailsDialog_btnNotAMatch',
                 style: 'margin-right:125px',
                 click: function() {
                     var impdata_id = $('#impdataid').attr('val');
+//                    alert(impdata_id);
                     $.ajax({
                         url: base_url + 'index.php/assess/deleteSecondaryMatch',
                         dataType: 'json',
@@ -1806,6 +1806,7 @@ var generate_url_check = GetURLParameter('generate_url_check');
                             impdataid: impdata_id
                 }
                     }).done(function(){
+//                        alert('sdfgsdg');
                         $('#assessDetailsDialog').dialog('close');
                         $('#research_assess_update').click();
                         
@@ -2397,7 +2398,6 @@ function prevSibilfunc(curentSibil){
     $(".research_assess_choiceColumnDialog_checkbox").change(function(){
          // get columns params
 		var columns = {
-			price: $("#column_price").is(':checked'),
 			snap: $("#column_snap").is(':checked'),
 			created: $("#column_created").is(':checked'),
 			imp_data_id: $("#imp_data_id").is(':checked'),
@@ -2436,7 +2436,8 @@ function prevSibilfunc(curentSibil){
 			Duplicate_Content: $("#Duplicate_Content").is(':checked'),
 			images_cmp: $("#images_cmp").is(':checked'),
 			title_pa: $("#title_pa").is(':checked'),
-			video_count: $("#video_count").is(':checked')
+			video_count: $("#video_count").is(':checked'),
+			links_count: $("#links_count").is(':checked')
 		};
 
 		// save params to DB
@@ -2547,12 +2548,6 @@ function prevSibilfunc(curentSibil){
         modal: true,      
         width: 'auto'
     });
-   $('#research_assess_choiceColumnDialog_export').dialog({
-        autoOpen: false,
-        resizable: false,
-        modal: true,      
-        width: 'auto'
-    });
 
     $('.assess_report_options_dialog_button').on('click', function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
@@ -2628,11 +2623,7 @@ function prevSibilfunc(curentSibil){
         $('#research_assess_choiceColumnDialog').dialog('open');
         $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
     });
-	
-    $('#research_batches_columns_export').on('click', function() {
-        $('#research_assess_choiceColumnDialog_export').dialog('open');
-        $('#research_assess_choiceColumnDialog_export').parent().find('button:first-child').addClass("popupGreen");
-    });
+
     tblAllColumns = tblAssess.fnGetAllSColumnNames();
 
     function hideColumns() {
@@ -3033,7 +3024,7 @@ var search_text = GetURLParameter('search_text');
             var cmp_selected = GetURLParameter('cmp_selected');
          
        }  
-        var columns_check = $('#research_assess_choiceColumnDialog_export').find('input[type=checkbox]:checked');
+        var columns_check = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
             var columns_checked = [];
             $.each(columns_check, function(index, value) {
 				if($(value).attr('id') == "column_title_seo_phrases_f" && $("#tk-frequency").is(':checked') ){
