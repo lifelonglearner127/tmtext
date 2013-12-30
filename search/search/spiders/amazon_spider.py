@@ -1,4 +1,4 @@
-Pfrom scrapy.spider import BaseSpider
+from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
 from scrapy.http import TextResponse

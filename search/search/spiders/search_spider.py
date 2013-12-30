@@ -137,12 +137,13 @@ class SearchSpider(BaseSpider):
 		for product_url in product_urls:
 			# extract site domain
 			
-			m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
-			origin_site = ""
-			if m:
-				origin_site = m.group(1)
-			else:
-				sys.stderr.write('Can\'t extract domain from URL.\n')
+			# m = re.match("http://www1?\.([^\.]+)\.com.*", product_url)
+			# origin_site = ""
+			# if m:
+			# 	origin_site = m.group(1)
+			# else:
+			# 	sys.stderr.write('Can\'t extract domain from URL.\n')
+			origin_site = Utils.extract_domain(product_url)
 			
 			request = Request(product_url, callback = self.parseURL)
 			request.meta['origin_site'] = origin_site
@@ -185,6 +186,7 @@ class SearchSpider(BaseSpider):
 		product_model = ""
 
 		product_brand = ""
+		product_price = ""
 
 		if site == 'staples':
 
@@ -205,6 +207,30 @@ class SearchSpider(BaseSpider):
 			product_name_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
 			if product_name_holder:
 				product_name = product_name_holder[0].strip()
+
+				# get integer part of product price
+				product_price_big = hxs.select("//span[@class='bigPriceText1']/text()").extract()
+				# if there is a range of prices take their average
+				if len(product_price_big) > 1:
+
+					# remove $ and .
+					product_price_min = re.sub("[\$\.]", "", product_price_big[0])
+					product_price_max = re.sub("[\$\.]", "", product_price_big[-1])
+
+					#TODO: check if they're ints?
+					product_price_big = (int(product_price_min) + int(product_price_max))/2.0
+
+				elif product_price_big:
+					product_price_big = int(re.sub("[\$\.]", "", product_price_big[0]))
+
+				# get fractional part of price
+				#TODO - not that important
+
+				if product_price_big:
+					product_price = product_price_big
+
+
+
 			else:
 				sys.stderr.write("Broken product page link (can't find item title): " + response.url + "\n")
 				# return the item as a non-matched item
@@ -368,6 +394,8 @@ class SearchSpider(BaseSpider):
 
 		request.meta['origin_name'] = product_name
 		request.meta['origin_model'] = product_model
+		if product_price:
+			request.meta['origin_price'] = product_price
 
 		# origin product brand as extracted from name (basically the first word in the name)
 		request.meta['origin_brand_extracted'] = product_brand_extracted
