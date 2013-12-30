@@ -312,7 +312,6 @@ class Statistics_new_model extends CI_Model {
             (select `value` from imported_data_parsed where `key`="Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Short_Description`,
             (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Long_Description`,
             (select `value` from imported_data_parsed where `key`="HTags" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `HTags`,
-            (select `value` from imported_data_parsed where `key`="Anchors" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Anchors`,
             
             (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
             ')
@@ -523,8 +522,7 @@ class Statistics_new_model extends CI_Model {
             (select `value` from imported_data_parsed where `key`="Date" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Date`,
             (select `value` from imported_data_parsed where `key`="URL" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`,
             (select `value` from imported_data_parsed where `key`="HTags" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `htags`,
-            (select `value` from imported_data_parsed where `key`="parsed_attributes" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_attributes`,
-            (select `value` from imported_data_parsed where `key`="Anchors" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Anchors`
+            (select `value` from imported_data_parsed where `key`="parsed_attributes" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_attributes`
             
             from '.$this->tables['statistics_new'].' as `s` left join '.$this->tables['crawler_list'].' as `cl` on `cl`.`imported_data_id` = `s`.`imported_data_id` where `s`.`batch_id`='.$batch_id.$txt_filter_part2;
 //            $this->db->cache_delete_all();
