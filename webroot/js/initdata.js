@@ -254,6 +254,26 @@ var columns = [
             "sName": "Meta_Keywords1",            
             "sClass": "Meta_Keywords1"
         },
+		{
+            "sTitle": "Title Keywords",
+            "sName": "title_seo_phrases1",            
+            "sClass": "title_seo_phrases1"
+        },
+		 {
+            "sTitle": "Images",
+            "sName": "images_cmp1",            
+            "sClass": "images_cmp1"
+        },
+        {
+            "sTitle": "Videos",
+            "sName": "video_count1",            
+            "sClass": "video_count1"
+        },
+        {
+            "sTitle": "Title",
+            "sName": "title_pa1",            
+            "sClass": "title_pa1"
+        },
         {
             "sTitle": "<span class='subtitle_desc_long1' >Long </span>Description",
             "sName": "Long_Description1",            
@@ -275,11 +295,7 @@ var columns = [
             "sName" : "Meta_Description_Count1",             
             "sClass" : "Meta_Description_Count1"            
         },
-        {
-            "sTitle": "Third Party Content",
-            "sName": "column_external_content1",            
-            "sClass" :  "column_external_content1"
-        },
+        
         {
             "sTitle" : "H1 Tags", 
             "sName":"H1_Tags1",             
@@ -299,6 +315,11 @@ var columns = [
             "sTitle" : "Chars", 
             "sName":"H2_Tags_Count1",             
             "sClass" :  "HTags1 CharsHTags1"
+        }, 
+		{
+            "sTitle": "Third Party Content",
+            "sName": "column_external_content1",            
+            "sClass" :  "column_external_content1"
         },
         {
             "sTitle": "Reviews",
@@ -316,34 +337,14 @@ var columns = [
             "sClass" :  "column_features1"
         },
         {
-            "sTitle": "Title Keywords",
-            "sName": "title_seo_phrases1",            
-            "sClass": "title_seo_phrases1"
-        },
-        {
-            "sTitle": "Images",
-            "sName": "images_cmp1",            
-            "sClass": "images_cmp1"
-        },
-        {
-            "sTitle": "Videos",
-            "sName": "video_count1",            
-            "sClass": "video_count1"
-        },
-        {
-            "sTitle": "Title",
-            "sName": "title_pa1",            
-            "sClass": "title_pa1"
-        },
-        {
             "sTitle": "Gap Analysis",
             "sName": "gap",            
-            "sClass" :  ""
+            "sClass" :  "gap"
         },
         {
             "sTitle": "Duplicate Content",
             "sName": "Duplicate_Content",            
-            "sClass" :  ""
+            "sClass" :  "Duplicate_Content"
         },
 
     ];
