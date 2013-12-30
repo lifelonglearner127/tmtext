@@ -400,7 +400,8 @@ $(function() {
                 zeroTableDraw = false;
                 return;
             }
-            hideColumns();                       		
+            hideColumns();
+            topScroll();                       		
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
