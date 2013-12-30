@@ -3052,7 +3052,7 @@ class Assess extends MY_Controller {
 		
 		//getting columns		
 		$columns = AssessHelper::addCompetitorColumns(AssessHelper::columns(), $build_assess_params->max_similar_item_count);
-		
+		// echo var_dump($columns);
 		//extracting initial data varialbes for filters
         extract(AssessHelper::getInitialFilterData());
 		
