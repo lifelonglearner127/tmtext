@@ -459,6 +459,7 @@ class SearchSpider(BaseSpider):
 				request.meta['origin_url'] = response.meta['origin_url']
 				request.meta['origin_name'] = response.meta['origin_name']
 				request.meta['origin_model'] = response.meta['origin_model']
+				request.meta['origin_price'] = response.meta['origin_price']
 				request.meta['origin_brand_extracted'] = response.meta['origin_brand_extracted']
 				if 'threshold' in response.meta:
 					request.meta['threshold'] = response.meta['threshold']
@@ -489,7 +490,14 @@ class SearchSpider(BaseSpider):
 						threshold = response.meta['threshold']
 					else:
 						threshold = self.threshold
-					best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], items, threshold)
+
+					if 'origin_price' in response.meta:
+						product_price = response.meta['origin_price']
+						print "PRICE:", product_price
+					else:
+						product_price = None
+						print "NO PRICE"
+					best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], product_price, items, threshold)
 
 					# #self.log( "ALL MATCHES: ", level=log.WARNING)					
 					# for item in items:
