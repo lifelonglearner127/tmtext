@@ -212,6 +212,12 @@
             <div id="vertical" class="horizontal_vertical_icon" style="position: absolute; margin-top: -10px; margin-left: 55px; max-width: 25px;  visibility: hidden;"><img src ="<?php // echo base_url() ?>/img/vertical.png" /></div>-->
             <div id="columns_checking">
             <ul>
+                <li>
+                    <p>
+                        <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_price" data-col_name="price" name="column_price" <?php echo($columns['price'] == 'true' ? 'checked="checked"' : ''); ?> />
+                        <label for="column_price">Price</label>
+                    </p>
+                </li>
                 <li><p>
                     <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_snap" data-col_name="snap" name="column_snap_name" <?php echo($columns['snap'] == 'true' ? 'checked="checked"' : ''); ?> />
                     <label for="column_snap">Snapshot</label>

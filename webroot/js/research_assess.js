@@ -2397,6 +2397,7 @@ function prevSibilfunc(curentSibil){
     $(".research_assess_choiceColumnDialog_checkbox").change(function(){
          // get columns params
 		var columns = {
+			price: $("#column_price").is(':checked'),
 			snap: $("#column_snap").is(':checked'),
 			created: $("#column_created").is(':checked'),
 			imp_data_id: $("#imp_data_id").is(':checked'),
