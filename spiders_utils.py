@@ -1,4 +1,5 @@
 import re
+import sys
 
 from nltk.util import ngrams
 from nltk.corpus import stopwords
@@ -37,7 +38,7 @@ class Utils():
         if m:
             site = m.group(4)
         else:
-            sys.stderr.write('Can\'t extract domain from URL.\n')
+            sys.stderr.write('Can\'t extract domain from URL: ' + url + '\n')
             site = None
         return site
 
