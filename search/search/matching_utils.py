@@ -160,7 +160,7 @@ class ProcessText():
 					# (price_score*3)^2 (grows quadratically with price difference)
 					price_score_penalization = (price_score * 3) ** 2
 
-					print "PRICE SCORE:", price_score, product1_price, product2_price
+					print "PRICE SCORE:", price_score_penalization, price_score, product1_price, product2_price
 
 
 			# check if product models match (either from a "Model" field or extracted from their name)

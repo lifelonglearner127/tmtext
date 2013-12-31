@@ -130,7 +130,7 @@ class AmazonSpider(SearchSpider):
 				#sys.stderr.write("Didn't find product brand: " + response.url + "\n")
 
 			# extract price
-			price_holder = hxs.select("//span[@id='priceblock_ourprice']/text()").extract()
+			price_holder = hxs.select("//span[contains(@id,'priceblock')]/text() | //span[@class='a-color-price']/text()").extract()
 			if price_holder:
 				item['product_target_price'] = price_holder[0]
 				m = re.match("\$([0-9]+\.[0-9]+)", item['product_target_price'])
