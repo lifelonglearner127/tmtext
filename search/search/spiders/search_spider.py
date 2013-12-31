@@ -497,10 +497,10 @@ class SearchSpider(BaseSpider):
 
 					if 'origin_price' in response.meta:
 						product_price = response.meta['origin_price']
-						print "PRICE:", product_price
+						#print "PRICE:", product_price
 					else:
 						product_price = None
-						print "NO PRICE"
+						#print "NO PRICE"
 					best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], product_price, items, threshold)
 
 					# #self.log( "ALL MATCHES: ", level=log.WARNING)					
