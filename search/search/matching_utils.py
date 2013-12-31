@@ -161,7 +161,7 @@ class ProcessText():
 					if price_score > 0.5:
 						price_score_penalization = (price_score * 3) ** 2
 
-					print "PRICE SCORE:", price_score_penalization, price_score, product_price, product2_price
+					#print "PRICE SCORE:", price_score_penalization, price_score, product_price, product2_price
 
 
 			# check if product models match (either from a "Model" field or extracted from their name)
@@ -193,10 +193,20 @@ class ProcessText():
 					# if alternate models matched
 					elif (model_matched == 2):
 						score += ProcessText.ALT_MODEL_MATCH_WEIGHT
+
+
+
+			#### LOGGING
+			if 'product_target_price' in product2:
+				product2_price = product2['product_target_price']
+			else:
+				product2_price = ""
 			
 			log.msg("\nPRODUCT: " + unicode(product_name) + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
-				"\nPRODUCT2: " + unicode(product2['product_name']) + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + " PRICE2: " + unicode(product2['product_target_price']) + \
+				"\nPRODUCT2: " + unicode(product2['product_name']) + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + " PRICE2: " + unicode(product2_price) + \
 				"\nSCORE: " + str(score) + " PRICE_PENLZ: " + unicode(price_score_penalization) + " THRESHOLD: " + str(threshold) + "\n", level=log.WARNING)
+
+			###################
 
 			if score >= threshold:
 				# append product along with score and a third variable:
