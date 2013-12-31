@@ -139,6 +139,24 @@ class ProcessText():
 			else:
 				product2_brand = None
 
+
+			# compute a score indicating how different product price is on each site (range 0-1)
+			#default value is at half the distance: 0.5
+			price_score = 0.5
+
+			# find (absolute) difference between product prices on each site
+			if 'product_price' in product2:
+				product2_price = float(product2['product_price'])
+
+				if product_price:
+					product_price_difference = math.fabs(product1_price - product2_price)
+
+					large_price = max(product1_price, product2_price)
+					price_score = float(product_price_difference)/large_price
+
+					print "PRICE SCORE:", price_score, product1_price, product2_price
+
+
 			# check if product models match (either from a "Model" field or extracted from their name)
 			(model_matched, words1_copy, words2_copy) = ProcessText.models_match(words1, words2, product_model, product2_model)
 
@@ -153,6 +171,9 @@ class ProcessText():
 
 			if brand_matched:
 				score += ProcessText.BRAND_MATCH_WEIGHT
+
+			# add price score
+			score += (1-price_score) * 2
 			
 			# add model matching score
 			if model_matched:

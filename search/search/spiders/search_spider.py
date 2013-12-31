@@ -51,7 +51,7 @@ class SearchSpider(BaseSpider):
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter for selecting results (the lower the value the more permissive the selection)
 	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
-		output = 1, threshold = 1.0, outfile = "search_results.txt", outfile2 = "not_matched.txt", fast = 0, use_proxy = False, by_id = False):
+		output = 1, threshold = 1.2, outfile = "search_results.txt", outfile2 = "not_matched.txt", fast = 0, use_proxy = False, by_id = False):
 
 		# call specific init for each derived class
 		self.init_sub()
@@ -459,7 +459,8 @@ class SearchSpider(BaseSpider):
 				request.meta['origin_url'] = response.meta['origin_url']
 				request.meta['origin_name'] = response.meta['origin_name']
 				request.meta['origin_model'] = response.meta['origin_model']
-				request.meta['origin_price'] = response.meta['origin_price']
+				if 'origin_price' in response.meta:
+					request.meta['origin_price'] = response.meta['origin_price']
 				request.meta['origin_brand_extracted'] = response.meta['origin_brand_extracted']
 				if 'threshold' in response.meta:
 					request.meta['threshold'] = response.meta['threshold']
