@@ -394,7 +394,8 @@ $(function() {
             });                                  
         },
         "fnRowCallback": function(nRow, aData, iDisplayIndex) {
-            $(nRow).attr("add_data", aData[34]);
+            // $(nRow).attr("add_data", aData[34]);
+            $(nRow).attr("add_data", aData[35]); // === I.L.
             return nRow;            
         },
         "fnDrawCallback": function(oSettings) {

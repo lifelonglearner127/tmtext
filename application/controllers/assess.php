@@ -4547,7 +4547,7 @@ class Assess extends MY_Controller {
                         $data_row->images_cmp,
                         $data_row->video_count,
                         $data_row->title_pa,
-                        // $data_row->links_count,
+                        $data_row->links_count,
                         $data_row->long_description,
                         $data_row->long_description_wc,
                         $data_row->long_seo_phrases,
@@ -4598,7 +4598,7 @@ class Assess extends MY_Controller {
                             $output_row[] = $data_row['images_cmp' . $i] != null ? $data_row['images_cmp' . $i] : 'none';
                             $output_row[] = $data_row['video_count' . $i] != null ? $data_row['video_count' . $i] : 'none';
                             $output_row[] = $data_row['title_pa' . $i] != null ? $data_row['title_pa' . $i] : '';
-                            // $output_row[] = $data_row['links_count' . $i] != null ? $data_row['links_count' . $i] : '';
+                            $output_row[] = $data_row['links_count' . $i] != null ? $data_row['links_count' . $i] : '';
                         }
 
                         $output_row[] = $data_row['gap'];
@@ -4632,7 +4632,7 @@ class Assess extends MY_Controller {
                         $output_row[] = $data_row->images_cmp1;
                         $output_row[] = $data_row->video_count1;
                         $output_row[] = $data_row->title_pa1;
-                        // $output_row[] = $data_row->links_count1;
+                        $output_row[] = $data_row->links_count1;
                         $output_row[] = $data_row->gap;
                         $output_row[] = $data_row->Duplicate_Content;
                     }
@@ -4642,7 +4642,7 @@ class Assess extends MY_Controller {
 
         $output['columns'] = $columns;
         $output['ExtraData']['report'] = $report;
-
+        // die(var_dump($output));
         return $output;
     }
 
