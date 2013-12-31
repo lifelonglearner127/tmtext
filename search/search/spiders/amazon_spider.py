@@ -130,7 +130,14 @@ class AmazonSpider(SearchSpider):
 				#sys.stderr.write("Didn't find product brand: " + response.url + "\n")
 
 			# extract price
-			price_holder = hxs.select("//span[contains(@id,'priceblock')]/text() | //span[@class='a-color-price']/text()").extract()
+			#! extracting list price and not discount price when discounts available?
+			price_holder = hxs.select("//span[contains(@id,'priceblock')]/text() | //span[@class='a-color-price']/text() " + \
+				"| //span[@class='listprice']/text() | //span[@id='actualPriceValue']/text() | //b[@class='priceLarge']/text() | //span[@class='price']/text()").extract()
+
+			# if we can't find it like above try other things:
+			if not price_holder:
+				# prefer new prices to used ones
+				price_holder = hxs.select("//span[contains(@class, 'olp-new')]//text()[contains(.,'$')]").extract()
 			if price_holder:
 				product_target_price = price_holder[0].strip()
 				# remove commas separating orders of magnitude (ex 2,000)
