@@ -151,11 +151,15 @@ $(function() {
 		var elem = $(this);
 		if (!elem.hasClass('active'))
 		{
+			$(elem).text('Done');
+			$(elem).blur();
 			$('.icon_question_wrapper').css('vertical-align', 'bottom');
 			$('.selectable_summary_handle, .selectable_summary_handle_with_competitor').css({'visibility' : 'visible'});
 		}
 		else 
 		{
+			$(elem).text('Edit');
+			$(elem).blur();
 			$('.icon_question_wrapper').css('vertical-align', 'middle');
 			$('.selectable_summary_handle, .selectable_summary_handle_with_competitor').css({'visibility' : 'hidden'});
 		}
