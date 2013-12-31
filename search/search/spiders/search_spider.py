@@ -224,7 +224,7 @@ class SearchSpider(BaseSpider):
 					product_price_big = (int(product_price_min) + int(product_price_max))/2.0
 
 				elif product_price_big:
-					product_price_big = int(re.sub("[\$\.]", "", product_price_big[0]))
+					product_price_big = int(re.sub("[\$\.,]", "", product_price_big[0]))
 
 				# get fractional part of price
 				#TODO - not that important
