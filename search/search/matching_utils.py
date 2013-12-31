@@ -145,8 +145,8 @@ class ProcessText():
 			price_score_penalization = 0
 
 			# find (absolute) difference between product prices on each site
-			if 'product_price' in product2:
-				product2_price = float(product2['product_price'])
+			if 'product_target_price' in product2:
+				product2_price = float(product2['product_target_price'])
 
 				if product_price:
 					product_price_difference = math.fabs(product1_price - product2_price)
