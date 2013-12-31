@@ -132,12 +132,14 @@ class AmazonSpider(SearchSpider):
 			# extract price
 			price_holder = hxs.select("//span[contains(@id,'priceblock')]/text() | //span[@class='a-color-price']/text()").extract()
 			if price_holder:
-				item['product_target_price'] = price_holder[0]
-				m = re.match("\$([0-9]+\.[0-9]+)", item['product_target_price'])
+				product_target_price = price_holder[0].strip()
+				# remove commas separating orders of magnitude (ex 2,000)
+				product_target_price = re.sub(",","",product_target_price)
+				m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
 				if m:
 					item['product_target_price'] = float(m.group(1))
 				else:
-					sys.stderr.write("Didn't match product price: " + response.url + "\n")
+					sys.stderr.write("Didn't match product price: " + product_target_price + " " + response.url + "\n")
 
 			else:
 				sys.stderr.write("Didn't find product price: " + response.url + "\n")
