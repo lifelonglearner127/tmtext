@@ -217,8 +217,8 @@ class SearchSpider(BaseSpider):
 				if len(product_price_big) > 1:
 
 					# remove $ and .
-					product_price_min = re.sub("[\$\.]", "", product_price_big[0])
-					product_price_max = re.sub("[\$\.]", "", product_price_big[-1])
+					product_price_min = re.sub("[\$\.,]", "", product_price_big[0])
+					product_price_max = re.sub("[\$\.,]", "", product_price_big[-1])
 
 					#TODO: check if they're ints?
 					product_price_big = (int(product_price_min) + int(product_price_max))/2.0
