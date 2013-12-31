@@ -149,9 +149,9 @@ class ProcessText():
 				product2_price = float(product2['product_target_price'])
 
 				if product_price:
-					product_price_difference = math.fabs(product1_price - product2_price)
+					product_price_difference = math.fabs(product_price - product2_price)
 
-					large_price = max(product1_price, product2_price)
+					large_price = max(product_price, product2_price)
 
 					# compute a score indicating how different product price is on each site (range 0-1)
 					price_score = float(product_price_difference)/large_price
@@ -160,7 +160,7 @@ class ProcessText():
 					# (price_score*3)^2 (grows quadratically with price difference)
 					price_score_penalization = (price_score * 3) ** 2
 
-					print "PRICE SCORE:", price_score_penalization, price_score, product1_price, product2_price
+					print "PRICE SCORE:", price_score_penalization, price_score, product_price, product2_price
 
 
 			# check if product models match (either from a "Model" field or extracted from their name)
