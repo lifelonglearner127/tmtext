@@ -140,9 +140,9 @@ class ProcessText():
 				product2_brand = None
 
 
-			# compute a score indicating how different product price is on each site (range 0-1)
-			#default value is at half the distance: 0.5
-			price_score = 0.5
+			# compute a term to penilize score woth for large price differences (above 100% of small price)
+			# default is 0
+			price_score_penalization = 0
 
 			# find (absolute) difference between product prices on each site
 			if 'product_price' in product2:
@@ -152,7 +152,13 @@ class ProcessText():
 					product_price_difference = math.fabs(product1_price - product2_price)
 
 					large_price = max(product1_price, product2_price)
+
+					# compute a score indicating how different product price is on each site (range 0-1)
 					price_score = float(product_price_difference)/large_price
+
+					# price penalization active for price_score>0.5, calculated by formula:
+					# (price_score*3)^2 (grows quadratically with price difference)
+					price_score_penalization = (price_score * 3) ** 2
 
 					print "PRICE SCORE:", price_score, product1_price, product2_price
 
@@ -167,14 +173,15 @@ class ProcessText():
 			# use copies of brands names with model number replaced with a placeholder
 			score = ProcessText.similar_names(words1_copy, words2_copy)
 
+			# add price difference penalization
+			score -= price_score_penalization
+
+
 			threshold = param*(math.log(float(len(words1) + len(words2))/2, 10))*10
 
 			if brand_matched:
 				score += ProcessText.BRAND_MATCH_WEIGHT
 
-			# add price score
-			score += (1-price_score) * 2
-			
 			# add model matching score
 			if model_matched:
 				# only add to score if they have more than a word in common - otherwise assume it's a conincidence model match
