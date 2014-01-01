@@ -30,7 +30,8 @@
                 <button id="research_assess_update" class="btn btn-success">Update</button>
                 <a href="<?php echo base_url();?>index.php/assess/export_assess" class="fileDownloadPromise btn" id="research_assess_export" >Export...</a>
 				<a href="#" class="show_filters_configuration_popup2" id="research_batches_columns_export">
-					<img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/settings@2x.png">
+					<!-- <img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/settings@2x.png"> -->
+                    <img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/gear_32_32.png">
 				</a>
             </div>
 <!--            <label class="research_assess_flagged"><input type="checkbox" id="research_assess_flagged" > Only show flagged items</label>-->
@@ -742,7 +743,8 @@
                     <a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Graph</a> |
                     <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>
                 </div> -->
-                <a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>
+                <!-- <a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a> -->
+                <a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/gear_32_32.png"></a>
 
                 <div id="assess_view">
 					<button class="btn btn-success get_board_view_snap">Get board view snap</button>
@@ -806,7 +808,9 @@
 
  border: 0px solid #fff !important;
 }
-</style><a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>
+</style>
+<!-- <a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a> -->
+<a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/gear_32_32.png"></a>
 <script>
             $(function() {
                 // === add expander for assess results bar (start)
