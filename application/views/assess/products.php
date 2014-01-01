@@ -810,7 +810,7 @@
 }
 </style>
 <!-- <a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a> -->
-<a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/gear_32_32.png"></a>
+<!-- <a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/gear_32_32.png"></a> -->
 <script>
             $(function() {
                 // === add expander for assess results bar (start)
@@ -818,9 +818,9 @@
                 $("#tblAssess_wrapper > .fg-toolbar:first").prepend("<a class='ml_10 research_arrow research_arrow_assess_tbl_res' onclick='return false;'><img src='" + base_url + "img/arrow.png'></a>");
                 $(".research_arrow_assess_tbl_res").bind('click', function(e) {
                     if($("#tblAssess").is(":visible")) {
-                        $("#tblAssess").slideUp('fast');
+                        $(".table_scroll_wrapper").hide();
                     } else {
-                        $("#tblAssess").slideDown('fast');
+                        $(".table_scroll_wrapper").show();
                     }
                 });
                 // === add expander for assess results bar (end)

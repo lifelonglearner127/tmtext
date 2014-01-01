@@ -386,7 +386,7 @@ $(function() {
                 }
 				
 				if($("#tableScrollWrapper").length === 0){  
-					$('#tblAssess').after('<div id="tableScrollWrapper" style="overflow-x:scroll"></div>');
+					$('#tblAssess').after('<div id="tableScrollWrapper" class="table_scroll_wrapper" style="overflow-x:scroll"></div>');
 					$('#tblAssess').appendTo('#tableScrollWrapper');
 				 }  
 				 
@@ -399,7 +399,7 @@ $(function() {
             return nRow;            
         },
         "fnDrawCallback": function(oSettings) {
-			console.log(1586);
+						console.log(1586);
             tblAssess_postRenderProcessing();
             if (zeroTableDraw) {
                 zeroTableDraw = false;
