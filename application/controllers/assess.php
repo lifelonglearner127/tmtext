@@ -32,6 +32,7 @@ class Assess extends MY_Controller {
 			'get_summary_filters' => true,
 			'save_summary_filters_order' => true,
             'deleteSecondaryMatch' => true,
+            'getColumns' => true,
         ));
     }
 
@@ -3062,7 +3063,7 @@ class Assess extends MY_Controller {
 		
 		//getting columns		
 		$columns = AssessHelper::addCompetitorColumns(AssessHelper::columns(), $build_assess_params->max_similar_item_count);
-		// echo var_dump($columns);
+		
 		//extracting initial data varialbes for filters
         extract(AssessHelper::getInitialFilterData());
 		
@@ -4531,121 +4532,125 @@ class Assess extends MY_Controller {
                     }
 
                     $output_row = array(
-                        '<span style="cursor:pointer;">' . $snap . '</span>',
-                        $row_created,
-                        $data_row->imported_data_id,
-                        '<span class= "' . $tb_product_name . '">' . $data_row->product_name . "</span>",
-                        $data_row->item_id,
-                        $data_row->model,
-                        $row_url,
-                        $data_row->Page_Load_Time,
-                        $data_row->short_description,
-                        $data_row->short_description_wc,
-                        $data_row->Meta_Keywords,
-                        $data_row->short_seo_phrases,
-                        $data_row->title_seo_phrases,
-                        $data_row->images_cmp,
-                        $data_row->video_count,
-                        $data_row->title_pa,
-                        $data_row->links_count,
-                        $data_row->long_description,
-                        $data_row->long_description_wc,
-                        $data_row->long_seo_phrases,
-                        $data_row->Custom_Keywords_Short_Description,
-                        $data_row->Custom_Keywords_Long_Description,
-                        $data_row->Meta_Description,
-                        $data_row->Meta_Description_Count,
-                        $data_row->H1_Tags,
-                        $data_row->H1_Tags_Count,
-                        $data_row->H2_Tags,
-                        $data_row->H2_Tags_Count,
-                        $data_row->duplicate_content,
-                        $data_row->column_external_content,
-                        $data_row->column_reviews,
-                        $data_row->average_review,
-                        $data_row->column_features,
-                        $data_row->price_diff,
-                        $recommendations_html,
-                        json_encode($data_row)
+                        'snap' => '<span style="cursor:pointer;">' . $snap . '</span>',
+                        'created' => $row_created,
+                        'imp_data_id' => $data_row->imported_data_id,
+                        'product_name' => '<span class= "' . $tb_product_name . '">' . $data_row->product_name . "</span>",
+                        'item_id' => $data_row->item_id,
+                        'model' => $data_row->model,
+                        'url' => $row_url,
+                        'Page_Load_Time' => $data_row->Page_Load_Time,
+                        'Short_Description' => $data_row->short_description,
+                        'short_description_wc' => $data_row->short_description_wc,
+                        'Meta_Keywords' => $data_row->Meta_Keywords,
+                        'short_seo_phrases' => $data_row->short_seo_phrases,
+                        'title_seo_phrases' => $data_row->title_seo_phrases,
+                        'images_cmp' => $data_row->images_cmp,
+                        'video_count' => $data_row->video_count,
+                        'title_pa' => $data_row->title_pa,
+                        'links_count' => $data_row->links_count,
+                        'long_description' => $data_row->long_description,
+                        'long_description_wc' => $data_row->long_description_wc,
+                        'long_seo_phrases' => $data_row->long_seo_phrases,
+                        'Custom_Keywords_Short_Description' => $data_row->Custom_Keywords_Short_Description,
+                        'Custom_Keywords_Long_Description' => $data_row->Custom_Keywords_Long_Description,
+                        'Meta_Description' => $data_row->Meta_Description,
+                        'Meta_Description_Count' => $data_row->Meta_Description_Count,
+                        'H1_Tags' => $data_row->H1_Tags,
+                        'H1_Tags_Count' => $data_row->H1_Tags_Count,
+                        'H2_Tags' => $data_row->H2_Tags,
+                        'H2_Tags_Count' => $data_row->H2_Tags_Count,
+                        'duplicate_content' => $data_row->duplicate_content,
+                        'column_external_content' => $data_row->column_external_content,
+                        'column_reviews' => $data_row->column_reviews,
+                        'average_review' => $data_row->average_review,
+                        'column_features' => $data_row->column_features,
+                        'price_diff' => $data_row->price_diff,
+                        'recommendations' => $recommendations_html,
+                        'json_encoded_data' => json_encode($data_row)
                     );
 
                     if ($build_assess_params->max_similar_item_count > 0) {
                         $data_row = (array) $data_row;
                         for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++) {
-                            $output_row[] = $data_row['snap' . $i] != null ? $data_row['snap' . $i] : '-';
-                            $output_row[] = $data_row['imp_data_id' . $i] != null ? $data_row['imp_data_id' . $i] : '';
-                            $output_row[] = $data_row['product_name' . $i] != null ? $data_row['product_name' . $i] : '-';
-                            $output_row[] = $data_row['item_id' . $i] != null ? $data_row['item_id' . $i] : '';
-                            $output_row[] = $data_row['model' . $i] != null ? $data_row['model' . $i] : '';
-                            $output_row[] = $data_row['url' . $i] != null ? $data_row['url' . $i] : '-';
-                            $output_row[] = $data_row['Page_Load_Time' . $i] != null ? $data_row['Page_Load_Time' . $i] : '';
-                            $output_row[] = $data_row['Short_Description' . $i] != null ? $data_row['Short_Description' . $i] : '';
-                            $output_row[] = $data_row['short_description_wc' . $i] != null ? $data_row['short_description_wc' . $i] : '';
-                            $output_row[] = $data_row['Meta_Keywords' . $i] != null ? $data_row['Meta_Keywords' . $i] : '';
-                            $output_row[] = $data_row['Long_Description' . $i] != null ? $data_row['Long_Description' . $i] : '';
-                            $output_row[] = $data_row['long_description_wc' . $i] != null ? $data_row['long_description_wc' . $i] : '';
-                            $output_row[] = $data_row['Meta_Description' . $i] != null ? $data_row['Meta_Description' . $i] : '';
-                            $output_row[] = $data_row['Meta_Description_Count' . $i] != null ? $data_row['Meta_Description_Count' . $i] : '';
+                            $output_row['snap' . $i] = $data_row['snap' . $i] != null ? $data_row['snap' . $i] : '-';
+                            $output_row['imp_data_id' . $i] = $data_row['imp_data_id' . $i] != null ? $data_row['imp_data_id' . $i] : '';
+                            $output_row['product_name' . $i] = $data_row['product_name' . $i] != null ? $data_row['product_name' . $i] : '-';
+                            $output_row['item_id' . $i] = $data_row['item_id' . $i] != null ? $data_row['item_id' . $i] : '';
+                            $output_row['model' . $i] = $data_row['model' . $i] != null ? $data_row['model' . $i] : '';
+                            $output_row['url' . $i] = $data_row['url' . $i] != null ? $data_row['url' . $i] : '-';
+                            $output_row['Page_Load_Time' . $i] = $data_row['Page_Load_Time' . $i] != null ? $data_row['Page_Load_Time' . $i] : '';
+                            $output_row['Short_Description' . $i] = $data_row['Short_Description' . $i] != null ? $data_row['Short_Description' . $i] : '';
+                            $output_row['short_description_wc' . $i] = $data_row['short_description_wc' . $i] != null ? $data_row['short_description_wc' . $i] : '';
+                            $output_row['Meta_Keywords' . $i] = $data_row['Meta_Keywords' . $i] != null ? $data_row['Meta_Keywords' . $i] : '';
+                            $output_row['Long_Description' . $i] = $data_row['Long_Description' . $i] != null ? $data_row['Long_Description' . $i] : '';
+                            $output_row['long_description_wc' . $i] = $data_row['long_description_wc' . $i] != null ? $data_row['long_description_wc' . $i] : '';
+                            $output_row['Meta_Description' . $i] = $data_row['Meta_Description' . $i] != null ? $data_row['Meta_Description' . $i] : '';
+                            $output_row['Meta_Description_Count' . $i] = $data_row['Meta_Description_Count' . $i] != null ? $data_row['Meta_Description_Count' . $i] : '';
                             $output_row[] = $data_row['column_external_content' . $i] != null ? $data_row['column_external_content' . $i] : '';
-                            $output_row[] = $data_row['H1_Tags' . $i] != null ? $data_row['H1_Tags' . $i] : '';
-                            $output_row[] = $data_row['H1_Tags_Count' . $i] != null ? $data_row['H1_Tags_Count' . $i] : '';
-                            $output_row[] = $data_row['H2_Tags' . $i] != null ? $data_row['H2_Tags' . $i] : '';
-                            $output_row[] = $data_row['H2_Tags_Count' . $i] != null ? $data_row['H2_Tags_Count' . $i] : '';
-                            $output_row[] = $data_row['column_reviews' . $i] != null ? $data_row['column_reviews' . $i] : 0;
-                            $output_row[] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
-                            $output_row[] = $data_row['column_features' . $i] != null ? $data_row['column_features' . $i] : '';
-                            $output_row[] = $data_row['title_seo_phrases' . $i] != null ? $data_row['title_seo_phrases' . $i] : '';
-                            $output_row[] = $data_row['images_cmp' . $i] != null ? $data_row['images_cmp' . $i] : 'none';
-                            $output_row[] = $data_row['video_count' . $i] != null ? $data_row['video_count' . $i] : 'none';
-                            $output_row[] = $data_row['title_pa' . $i] != null ? $data_row['title_pa' . $i] : '';
-                            $output_row[] = $data_row['links_count' . $i] != null ? $data_row['links_count' . $i] : '';
+                            $output_row['H1_Tags' . $i] = $data_row['H1_Tags' . $i] != null ? $data_row['H1_Tags' . $i] : '';
+                            $output_row['H1_Tags_Count' . $i] = $data_row['H1_Tags_Count' . $i] != null ? $data_row['H1_Tags_Count' . $i] : '';
+                            $output_row['H2_Tags' . $i] = $data_row['H2_Tags' . $i] != null ? $data_row['H2_Tags' . $i] : '';
+                            $output_row['H2_Tags_Count' . $i] = $data_row['H2_Tags_Count' . $i] != null ? $data_row['H2_Tags_Count' . $i] : '';
+                            $output_row['column_reviews' . $i] = $data_row['column_reviews' . $i] != null ? $data_row['column_reviews' . $i] : 0;
+                            $output_row['average_review' . $i] = $data_row['average_review' . $i] != null ? $data_row['average_review' . $i] : '';
+                            $output_row['column_features' . $i] = $data_row['column_features' . $i] != null ? $data_row['column_features' . $i] : '';
+                            $output_row['title_seo_phrases' . $i] = $data_row['title_seo_phrases' . $i] != null ? $data_row['title_seo_phrases' . $i] : '';
+                            $output_row['images_cmp' . $i] = $data_row['images_cmp' . $i] != null ? $data_row['images_cmp' . $i] : 'none';
+                            $output_row['video_count' . $i] = $data_row['video_count' . $i] != null ? $data_row['video_count' . $i] : 'none';
+                            $output_row['title_pa' . $i] = $data_row['title_pa' . $i] != null ? $data_row['title_pa' . $i] : '';
+                            $output_row['links_count' . $i] = $data_row['links_count' . $i] != null ? $data_row['links_count' . $i] : '';
                         }
 
-                        $output_row[] = $data_row['gap'];
-                        $output_row[] = $data_row['Duplicate_Content'];
-
-                        $data_row = (object) $data_row;
+                        $output_row['gap'] = $data_row['gap'];
+                        $output_row['Duplicate_Content'] = $data_row['Duplicate_Content'];                      
                     } else {
-                        $output_row[] = $data_row->snap1;
-                        $output_row[] = $data_row->imp_data_id1;
-                        $output_row[] = $data_row->product_name1;
-                        $output_row[] = $data_row->item_id1;
-                        $output_row[] = $data_row->model1;
-                        $output_row[] = $data_row->url1;
-                        $output_row[] = $data_row->Page_Load_Time1;
-                        $output_row[] = $data_row->Short_Description1;
-                        $output_row[] = $data_row->short_description_wc1;
-                        $output_row[] = $data_row->Meta_Keywords1;
-                        $output_row[] = $data_row->Long_Description1;
-                        $output_row[] = $data_row->long_description_wc1;
-                        $output_row[] = $data_row->Meta_Description1;
-                        $output_row[] = $data_row->Meta_Description_Count1;
-                        $output_row[] = $data_row->column_external_content1;
-                        $output_row[] = $data_row->H1_Tags1;
-                        $output_row[] = $data_row->H1_Tags_Count1;
-                        $output_row[] = $data_row->H2_Tags1;
-                        $output_row[] = $data_row->H2_Tags_Count1;
-                        $output_row[] = $data_row->column_reviews1;
-                        $output_row[] = $data_row->average_review1;
-                        $output_row[] = $data_row->column_features1;
-                        $output_row[] = $data_row->title_seo_phrases1;
-                        $output_row[] = $data_row->images_cmp1;
-                        $output_row[] = $data_row->video_count1;
-                        $output_row[] = $data_row->title_pa1;
-                        $output_row[] = $data_row->links_count1;
-                        $output_row[] = $data_row->gap;
-                        $output_row[] = $data_row->Duplicate_Content;
+                        $output_row['snap1'] = $data_row->snap1;
+                        $output_row['imp_data_id1'] = $data_row->imp_data_id1;
+                        $output_row['product_name1'] = $data_row->product_name1;
+                        $output_row['item_id1'] = $data_row->item_id1;
+                        $output_row['model1'] = $data_row->model1;
+                        $output_row['url1'] = $data_row->url1;
+                        $output_row['Page_Load_Time1'] = $data_row->Page_Load_Time1;
+                        $output_row['Short_Description1'] = $data_row->Short_Description1;
+                        $output_row['short_description_wc1'] = $data_row->short_description_wc1;
+                        $output_row['Meta_Keywords1'] = $data_row->Meta_Keywords1;
+                        $output_row['Long_Description1'] = $data_row->Long_Description1;
+                        $output_row['long_description_wc1'] = $data_row->long_description_wc1;
+                        $output_row['Meta_Description1'] = $data_row->Meta_Description1;
+                        $output_row['Meta_Description_Count1'] = $data_row->Meta_Description_Count1;
+                        $output_row['column_external_content1'] = $data_row->column_external_content1;
+                        $output_row['H1_Tags1'] = $data_row->H1_Tags1;
+                        $output_row['H1_Tags_Count1'] = $data_row->H1_Tags_Count1;
+                        $output_row['H2_Tags1'] = $data_row->H2_Tags1;
+                        $output_row['H2_Tags_Count1'] = $data_row->H2_Tags_Count1;
+                        $output_row['column_reviews1'] = $data_row->column_reviews1;
+                        $output_row['average_review1'] = $data_row->average_review1;
+                        $output_row['column_features1'] = $data_row->column_features1;
+                        $output_row['title_seo_phrases1'] = $data_row->title_seo_phrases1;
+                        $output_row['images_cmp1'] = $data_row->images_cmp1;
+                        $output_row['video_count1'] = $data_row->video_count1;
+                        $output_row['title_pa1'] = $data_row->title_pa1;
+                        $output_row['links_count1'] = $data_row->links_count1;
+                        $output_row['gap'] = $data_row->gap;
+                        $output_row['Duplicate_Content'] = $data_row->Duplicate_Content;
                     }
-                    $output['aaData'][] = $output_row;
+                    
+                    $output['aaData'][] = AssessHelper::setTableData($columns, $output_row);
             }
         }
-
-        $output['columns'] = $columns;
-        $output['ExtraData']['report'] = $report;
-        // die(var_dump($output));
+						
+        $output['aoColumns'] = $columns;
+        $output['ExtraData']['report'] = $report;        
         return $output;
     }
-
+	
+	public function getColumns()
+	{								
+		$this->output->set_content_type('application/json')
+                    ->set_output(json_encode(AssessHelper::addCompetitorColumns(AssessHelper::columns())));
+	}
+	
     private function calculatePercentage(array $summary_items_counts, $summary_field, &$my_percent) {
         $wrapper_begin = '<span class="filter_item_percentage">';
         $wrapper_end = '</span>';
