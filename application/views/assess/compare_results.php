@@ -21,7 +21,7 @@
                         <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
                     <?php endforeach;?>
                 </select>
-                <select name="research_assess_batches" class="mt_10 mr_10 ml_20" style="width: 175px;">
+                <select name="research_assess_batches" class="research_assess_batches_select mt_10 mr_10 ml_20" style="width: 175px;">
                     <?php foreach($batches_list as $ks => $vs):?>
                         <option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
                     <?php endforeach;?>

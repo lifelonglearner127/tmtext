@@ -18,8 +18,14 @@ var first_click = true ;
 var summary_active_items = [];
 var arrow_css_top;
 var summary_filters_order;
+var tblAssess_need_to_be_reinit = false;
 var scrollYesOrNot = true;
 var zeroTableDraw = true;
+var options = { path: '/', expires: 30 };
+var table_loaded=false;
+var curentSibil = 0;
+var isFromLocalStorage = false;
+var testIsFromLocalStorage = 0;
 
 var short_wc_total_not_0 = 0;
 var long_wc_total_not_0 = 0;

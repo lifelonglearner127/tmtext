@@ -61,7 +61,8 @@
     <script type='text/javascript' src="<?php echo base_url();?>js/jquery.highlight-3.js"></script>
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery-templ.js"></script>
     <script type="text/javascript" src="<?php echo base_url();?>js/jquery.validate.min.js"></script>
-    <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>
+    <!--<script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.min.js"></script>-->
+    <script type="text/javascript" src="<?php echo base_url();?>js/jquery.dataTables.js"></script>
 	<script type="text/javascript" src="<?php echo base_url();?>js/ColReorder.js"></script>	
 	<!--<script type="text/javascript" src="<?php // echo base_url();?>js/ColReorderWithResize.js"></script>-->	
 	<script src="<?php echo base_url();?>js/jquery.floatThead.min.js"></script>

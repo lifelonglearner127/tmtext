@@ -4171,6 +4171,7 @@ class Assess extends MY_Controller {
 
             //this verification is necessary for summary filter      
             if ($c >= $display_start && $c < ($display_start + $display_length - 1) && $this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData)) {
+            // if ($this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData)) {
                 $result_table[] = $result_row;
             }			           
 			$c++;								         
