@@ -10,17 +10,20 @@ function topScroll(){
 	$( "#tableScrollWrapper.red" ).remove();
 	$( "#tableScrollWrapper" ).addClass("xw");
 	$( "#tableScrollWrapper" ).clone().insertBefore( "#tableScrollWrapper" ).addClass("red");
-	$( "#tableScrollWrapper.red tr" ).css("display", "none");
+	//$( "#tableScrollWrapper.red td" ).css("display", "none");
+	$( "div#tableScrollWrapper.red" ).css("height", "16px").css("width", "101.6%");
 	$(function(){
     $(".red").scroll(function(){
         $(".xw")
             .scrollLeft($(".red").scrollLeft());
-    });
-    $(".xw").scroll(function(){
+		});
+		$(".xw").scroll(function(){
         $(".red")
             .scrollLeft($(".xw").scrollLeft());
-    });
-});
+		});
+		console.log("topScroll");
+		$("#tblAssess").floatThead('reflow');
+	});
 }
 function resizeImpDown(status){
 	
@@ -32,6 +35,8 @@ function resizeImpDown(status){
 			}
 		});
 		topScroll();
+		
+		//WTF??
 		tblAssessTable.floatThead('reflow');
 		
 	};
@@ -406,7 +411,9 @@ $(function() {
                 return;
             }
             hideColumns();
-            topScroll();                       		
+            topScroll();
+			$("#tblAssess").floatThead('reflow');
+			
         },
         "oLanguage": {
             "sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
@@ -3089,7 +3096,7 @@ var search_text = GetURLParameter('search_text');
     });
 
 $('#tableScrollWrapper').css("overflow-y", "hidden");
-$('.ui-dialog-titlebar-close').click(function(){topScroll();});
+$('.ui-dialog-titlebar-close').click(function(){topScroll();$("#tblAssess").floatThead('reflow');});
 $( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
 $( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix'></div>" );
   
