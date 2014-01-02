@@ -7,6 +7,7 @@ var getbatchesvalue = base_url + 'index.php/assess/getbatchvalues';
 var get_summary_filters = base_url + 'index.php/assess/get_summary_filters';
 var save_summary_filters = base_url + 'index.php/assess/save_summary_filters';
 var save_summary_filters_order = base_url + 'index.php/assess/save_summary_filters_order';
+var get_columns = base_url + 'index.php/assess/getColumns';
 var serevr_side = true;
 var serverside_table;
 var tblAllColumns = [];
