@@ -270,7 +270,12 @@
                 <p>
                     <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="title_pa" data-col_name="title_pa" name="title_pa" <?php echo($columns['title_pa'] == 'true' ? 'checked="checked"' : ''); ?> />
                     <label for="column_actions">Title</label>
+                </p></li><li>
+                <p>
+                    <input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="links_count" data-col_name="links_count" name="links_count" <?php echo($columns['links_count'] == 'true' ? 'checked="checked"' : ''); ?> />
+                    <label for="column_actions">Links</label>
                 </p></li>
+                
             </ul>
             </div>
 <!--            <p>
@@ -521,7 +526,8 @@
                     <a id="assess_tbl_show_case_graph" data-case="graph" title="Graph">Graph</a> 
                     <!--<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>-->
                 </div>
-                <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>           
+                <!-- <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a>  -->
+                <a id="research_batches_columns" class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/gear_32_32.png"></a>           
                 <div id="assess_view">
 					<button class="btn btn-success get_board_view_snap">Get board view snap</button>
 					<div class="assess_view_content"></div>

@@ -37,4 +37,17 @@ class AssessHelper
 	{
         return require_once(APPPATH . 'libraries/assess_helper/_columns.php');        
     }
+	
+	public static function setTableData($columns, $data)
+	{
+		$r = array();
+		foreach ($columns as $column)
+		{
+			$r[] = isset($data[$column['sName']])  ? $data[$column['sName']] : '';		
+			// if (!isset($data[$column['sName']]))
+				// var_dump($column['sName']);
+		}
+		
+		return $r;
+	}
 }

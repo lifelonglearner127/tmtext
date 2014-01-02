@@ -1,3 +1,6 @@
+#research_assess_export {
+    margin-right: 15px;
+}
 .ui-dialog-titlebar-close {
     background: transparent !important;
     border: none !important;
@@ -1668,7 +1671,14 @@ label.dd-selected-text, label.dd-option-text{
 
 .research_arrow{
     float: right;
-    margin: 10px 6px 0 0;
+    /*margin: 10px 6px 0 0;*/
+    margin: 10px 0px 0 0;
+}
+.research_arrow_assess_tbl_res {
+    margin-right: -6px;
+}
+#research_batches_columns {
+    margin-right: -10px;
 }
 
 .research_batches input{
@@ -2672,6 +2682,7 @@ li.selected-url{
 .show_filters_configuration_popup {
 	float: right;
 	margin: 4px -9px 0 0;
+    /*margin: 4px -15px 0 0;*/
 }
 .clean_summary_search_field {
 	top: 4px;

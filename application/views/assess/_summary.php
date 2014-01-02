@@ -19,7 +19,8 @@
 					<img src="<?php echo base_url();?>img/arrow.png">
 				</a>
 				<a href="#" class="show_filters_configuration_popup">
-					<img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/settings@2x.png">
+					<!-- <img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/settings@2x.png"> -->
+					<img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/gear_32_32.png">
 				</a>
                                 <div id="div_export" style="float:right;margin: 4px;"></div>
                                 <span class="assess_report_download_panel" style="float: right;width: 65px;">

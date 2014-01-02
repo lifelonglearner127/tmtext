@@ -1,6 +1,11 @@
 <?php
 
 return array(
+		// array( // --- I.L.
+		// 	'sTitle' => 'Price',
+		// 	'sName' => 'price',               
+		// 	'sClass' => 'own_price_text'
+		// ),
 		array(
 			'sTitle' => 'Snapshot',
 			'sName' => 'snap',
@@ -140,7 +145,12 @@ return array(
 			'sTitle' => 'Title', 
 			'sName' => 'title_pa',               
 			'sClass' => 'title_pa'
-		),		
+		),
+		array(
+			'sTitle' => 'Links', 
+			'sName' => 'links_count',               
+			'sClass' => 'links_count'
+		),	
 		array(
 			'sTitle' => 'Gap Analysis',
 			'sClass' => 'gap',

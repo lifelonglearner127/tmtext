@@ -10,7 +10,24 @@ function close_popover(elem)
 	
 	return false;
 }
-
+function topScroll(){
+	$( "#tableScrollWrapper.red" ).remove();
+	$( "#tableScrollWrapper" ).clone().insertBefore( "#tableScrollWrapper" ).addClass("red");
+	$( "#tableScrollWrapper:not(.red)" ).addClass("xw");
+	//$( "#tableScrollWrapper.red td" ).css("display", "none");
+	$( "div#tableScrollWrapper.red" ).css("height", "16px").css("width", "101.6%");
+	$(function(){
+    $(".red").scroll(function(){
+        $(".xw:not(.red)").scrollLeft($(".red").scrollLeft());
+		});
+	$(".xw:not(.red)").scroll(function(){
+        $(".red").scrollLeft($(".xw:not(.red)").scrollLeft());
+		});
+		//console.log("topScroll");
+		
+	});
+	$("#tblAssess").floatThead('reflow');
+}
 function resizeImpDown(status){
 	
 	var status = status || true	
@@ -20,7 +37,11 @@ function resizeImpDown(status){
 				return $table.closest('.wrapper');
 			}
 		});
+		topScroll();
+		
+		//WTF??
 		tblAssessTable.floatThead('reflow');
+		
 	};
 	
 	var tblAssessTable = $("#tblAssess");
@@ -147,11 +168,15 @@ $(function() {
 		var elem = $(this);
 		if (!elem.hasClass('active'))
 		{
+			$(elem).text('Done');
+			$(elem).blur();
 			$('.icon_question_wrapper').css('vertical-align', 'bottom');
 			$('.selectable_summary_handle, .selectable_summary_handle_with_competitor').css({'visibility' : 'visible'});
 		}
 		else 
 		{
+			$(elem).text('Edit');
+			$(elem).blur();
 			$('.icon_question_wrapper').css('vertical-align', 'middle');
 			$('.selectable_summary_handle, .selectable_summary_handle_with_competitor').css({'visibility' : 'hidden'});
 		}
@@ -437,7 +462,7 @@ $(function() {
 				});                                  
 			},
 			"fnRowCallback": function(nRow, aData, iDisplayIndex) {
-				$(nRow).attr("add_data", aData[34]);
+				$(nRow).attr("add_data", aData[35]); // === I.L.
 				return nRow;            
 			},
 			"fnDrawCallback": function(oSettings) {
@@ -445,8 +470,14 @@ $(function() {
 			},
 			"fnInitComplete": function(oSettings, json) {
 				tblAssess_postRenderProcessing();
-				hideColumns();  	
+				hideColumns();  
+				topScroll();
 				
+				if($("#tableScrollWrapper").length === 0){  
+					$('#tblAssess').after('<div id="tableScrollWrapper" class="table_scroll_wrapper" style="overflow-x:scroll"></div>');
+					$('#tblAssess').appendTo('#tableScrollWrapper');
+				 }  
+				 
 				$('#research_batches_columns').appendTo('div.dataTables_filter');
 					$('#tblAssess_length').after($('#assess_tbl_show_case'));
 			},
@@ -460,10 +491,10 @@ $(function() {
 			"aoColumns":columns
 		});			
 	}
-	
+
     tblAssess = initializeTblAssess();
 	tblAllColumns = tblAssess.fnGetAllSColumnNames();
-	console.log(tblAllColumns);
+	
 	$('.get_board_view_snap').on('click', function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';		
 		var compare_batch_id = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val() ;
@@ -1320,6 +1351,9 @@ $('#graphDropDown').live('change',function(){
     
 
     $('#tblAssess tbody').live('click',function(event) {
+     // === disable / change some buttons (start) (I.L.)
+     $("#assessDetailsDialog_btnSave").css('visibility', 'hidden');
+     // === disable / change some buttons (end) (I.L.)
      var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case');
       var checked_columns_results = GetURLParameter('checked_columns_results');
     
@@ -1674,8 +1708,14 @@ $('#graphDropDown').live('change',function(){
         modal: true,
         resizable: false,
         buttons: {
+            // 'Close': {
+            //     text: 'Cancel',
+            //     click: function() {
+            //         $(this).dialog('close');
+            //     }
+            // },
             'Close': {
-                text: 'Cancel',
+                text: 'Close',
                 click: function() {
                     $(this).dialog('close');
                 }
@@ -1706,21 +1746,12 @@ $('#graphDropDown').live('change',function(){
                     prevSibilfunc(curentSibil)
                 }
             },
-//            'Copy': {
-//                text: 'Copy',
-//                id: 'assessDetailsDialog_btnCopy',
-//                style: 'margin-right:125px',
-//                click: function() {
-//                    copyToClipboard(textToCopy);
-//                }
-//            },
             'Not a match': {
                 text: 'Not a match',
                 id: 'assessDetailsDialog_btnNotAMatch',
                 style: 'margin-right:125px',
                 click: function() {
                     var impdata_id = $('#impdataid').attr('val');
-//                    alert(impdata_id);
                     $.ajax({
                         url: base_url + 'index.php/assess/deleteSecondaryMatch',
                         dataType: 'json',
@@ -1729,7 +1760,6 @@ $('#graphDropDown').live('change',function(){
                             impdataid: impdata_id
                 }
                     }).done(function(){
-//                        alert('sdfgsdg');
                         $('#assessDetailsDialog').dialog('close');
                         $('#research_assess_update').click();
                         
@@ -2264,6 +2294,7 @@ function prevSibilfunc(curentSibil){
     $(".research_assess_choiceColumnDialog_checkbox").change(function(){
          // get columns params
 		var columns = {
+			price: $("#column_price").is(':checked'),
 			snap: $("#column_snap").is(':checked'),
 			created: $("#column_created").is(':checked'),
 			imp_data_id: $("#imp_data_id").is(':checked'),
@@ -2302,7 +2333,8 @@ function prevSibilfunc(curentSibil){
 			Duplicate_Content: $("#Duplicate_Content").is(':checked'),
 			images_cmp: $("#images_cmp").is(':checked'),
 			title_pa: $("#title_pa").is(':checked'),
-			video_count: $("#video_count").is(':checked')
+			video_count: $("#video_count").is(':checked'),
+			links_count: $("#links_count").is(':checked')
 		};
 
 		// save params to DB
@@ -2413,6 +2445,12 @@ function prevSibilfunc(curentSibil){
         modal: true,      
         width: 'auto'
     });
+   $('#research_assess_choiceColumnDialog_export').dialog({
+        autoOpen: false,
+        resizable: false,
+        modal: true,      
+        width: 'auto'
+    });
 
     $('.assess_report_options_dialog_button').on('click', function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
@@ -2488,8 +2526,6 @@ function prevSibilfunc(curentSibil){
         $('#research_assess_choiceColumnDialog').dialog('open');
         $('#research_assess_choiceColumnDialog').parent().find('button:first-child').addClass("popupGreen");
     });
-
-    
 
     function hideColumns() {
 		var tableSettings = tblAssess.fnSettings();
@@ -2877,7 +2913,7 @@ function prevSibilfunc(curentSibil){
             var cmp_selected = GetURLParameter('cmp_selected');
          
        }  
-        var columns_check = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
+        var columns_check = $('#research_assess_choiceColumnDialog_export').find('input[type=checkbox]:checked');
             var columns_checked = [];
             $.each(columns_check, function(index, value) {
 				if($(value).attr('id') == "column_title_seo_phrases_f" && $("#tk-frequency").is(':checked') ){
@@ -2907,11 +2943,12 @@ function prevSibilfunc(curentSibil){
         });
         
     });
-	
+
 	function wrapResultsTable() {
 		$( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
 		$( "#tblAssess_info, #tblAssess_paginate" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix'></div>" );
 	}	
+
   
 	  $('#tk-frequency').click(function() {
 	    var $target = $('input#column_title_seo_phrases');
