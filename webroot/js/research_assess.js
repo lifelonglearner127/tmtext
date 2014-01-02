@@ -8,22 +8,21 @@ function close_popover(elem)
 }
 function topScroll(){
 	$( "#tableScrollWrapper.red" ).remove();
-	$( "#tableScrollWrapper" ).addClass("xw");
 	$( "#tableScrollWrapper" ).clone().insertBefore( "#tableScrollWrapper" ).addClass("red");
+	$( "#tableScrollWrapper:not(.red)" ).addClass("xw");
 	//$( "#tableScrollWrapper.red td" ).css("display", "none");
 	$( "div#tableScrollWrapper.red" ).css("height", "16px").css("width", "101.6%");
 	$(function(){
     $(".red").scroll(function(){
-        $(".xw")
-            .scrollLeft($(".red").scrollLeft());
+        $(".xw:not(.red)").scrollLeft($(".red").scrollLeft());
 		});
-		$(".xw").scroll(function(){
-        $(".red")
-            .scrollLeft($(".xw").scrollLeft());
+	$(".xw:not(.red)").scroll(function(){
+        $(".red").scrollLeft($(".xw:not(.red)").scrollLeft());
 		});
-		console.log("topScroll");
-		$("#tblAssess").floatThead('reflow');
+		//console.log("topScroll");
+		
 	});
+	$("#tblAssess").floatThead('reflow');
 }
 function resizeImpDown(status){
 	

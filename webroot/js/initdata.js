@@ -209,6 +209,7 @@ var columns = [
             "sName": "add_data",
             "bVisible": false
         },
+		//batch2
         {
             "sTitle": "Snapshot",
             "sName": "snap1",            
