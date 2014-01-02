@@ -737,7 +737,7 @@ span.highlight{
 div.assess_report_compare li.boxes div.ui-resizable-e, div.ui-icon-gripsmall-diagonal-se {
 	display:none !important;
 }
-th.product_name1, th.Snapshot1, th.url1, th.column_reviews1, th.column_features1, th.item_id1, th.model1, th.Page_Load_Time1, th.Short_Description1, th.word_short1, th.Meta_Keywords1, th.Long_Description1, th.word_long1, th.Meta_Description1, th.Meta_Description_Count1, th.column_external_content1, th.HTags_11, th.HTags1, th.CharsHTags1, th.average_review1, th.title_seo_phrases1, th.images_cmp1, th.video_count1, th.title_pa1, th.HTags_21 ,th.imp_data_id1   {
+th.product_name1, th.links_count1, th.Snapshot1, th.url1, th.column_reviews1, th.column_features1, th.item_id1, th.model1, th.Page_Load_Time1, th.Short_Description1, th.word_short1, th.Meta_Keywords1, th.Long_Description1, th.word_long1, th.Meta_Description1, th.Meta_Description_Count1, th.column_external_content1, th.HTags_11, th.HTags1, th.CharsHTags1, th.average_review1, th.title_seo_phrases1, th.images_cmp1, th.video_count1, th.title_pa1, th.HTags_21 ,th.imp_data_id1   {
 	background: #dadada url('/producteditor/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50% repeat-x !important;
 }
 .summary_filter_batch_name {
