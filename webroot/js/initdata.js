@@ -28,7 +28,7 @@ var items_short_products_content_short = 0;
 var items_long_products_content_short = 0;
 var columns = [
         // { // I.L.
-        //     "sTitle": "Own Price",
+        //     "sTitle": "Price",
         //     "sName": "price",            
         //     "sClass": "own_price_text"
         // },
@@ -482,6 +482,7 @@ var summaryFieldNames = [
 
         ],
          details_compare: [
+            // "price", // I.L.
             "snap",
             "imp_data_id",
             "product_name",

@@ -2,7 +2,7 @@
 
 return array(
 		// array( // --- I.L.
-		// 	'sTitle' => 'Own Price',
+		// 	'sTitle' => 'Price',
 		// 	'sName' => 'price',               
 		// 	'sClass' => 'own_price_text'
 		// ),
