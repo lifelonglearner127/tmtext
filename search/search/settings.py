@@ -20,7 +20,7 @@ LOG_LEVEL=scrapy.log.WARNING
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
 HTTPCACHE_STORAGE = 'scrapy.contrib.downloadermiddleware.httpcache.FilesystemCacheStorage'
-#HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
+HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
 HTTPCACHE_DIR = '/home/ana/.scrapy_cache'
 #HTTPCACHE_STORAGE = 'scrapy.contrib.httpcache.DbmCacheStorage'
 #HTTPCACHE_ENABLED = True
