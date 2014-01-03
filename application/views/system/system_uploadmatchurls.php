@@ -27,9 +27,16 @@
               <i class="icon-plus icon-white"></i>
               <input type="file" multiple="" name="files[]" id="upload_urls">
           </span>
+          <span class="btn btn-danger pull-left" id="stop_matches">Stop</span>
           <input type="hidden" name="choosen_file" />
           <script>
               $(function () {
+                  var match_ajax = "";
+                  $('#stop_matches').on('click', function(){
+                      if(match_ajax != ""){
+                        match_ajax.abort();
+                      }
+                  })
                   var url = '<?php echo site_url('system/upload_match_urls'); ?>';
                   $('#upload_urls').fileupload({
                       url: url,
@@ -39,7 +46,7 @@
                           $('input[name="choosen_file"]').val(data.result.files[0].name);
 
                           var url = base_url+'index.php/system/check_urls';
-                          $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val()//,
+                          match_ajax = $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val()//,
                               //'site_id':  $("#sites .btn_caret_sign").attr('id'),
                               //'site_name':  $("#sites .btn_caret_sign").text()
                           }, function(data) {
