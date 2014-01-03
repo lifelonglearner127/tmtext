@@ -31,8 +31,10 @@ class URLsPipeline(object):
 			if int(spider.output) == 2:
 				titles.append("Original_URL")
 			titles.append("Match_URL")
-			titles.append("Product_images")
-			titles.append("Product_videos")
+
+			if (spider.name == 'manufacturer'):
+				titles.append("Product_images")
+				titles.append("Product_videos")
 			self.file.write(",".join(titles) + "\n")
 
 
