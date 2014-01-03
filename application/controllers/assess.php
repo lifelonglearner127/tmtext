@@ -3062,7 +3062,8 @@ class Assess extends MY_Controller {
         $pricing_details = array();
 		
 		//getting columns		
-		$columns = AssessHelper::addCompetitorColumns(AssessHelper::columns(), $build_assess_params->max_similar_item_count);
+		// 2nd param $build_assess_params->max_similar_item_count is 1 for now, hardcoded similar items count
+		$columns = AssessHelper::addCompetitorColumns(AssessHelper::columns(), 1);
 		
 		//extracting initial data varialbes for filters
         extract(AssessHelper::getInitialFilterData());
@@ -4554,8 +4555,7 @@ class Assess extends MY_Controller {
                         'average_review' => $data_row->average_review,
                         'column_features' => $data_row->column_features,
                         'price_diff' => $data_row->price_diff,
-                        'recommendations' => $recommendations_html,
-                        'json_encoded_data' => json_encode($data_row)
+                        'recommendations' => $recommendations_html,                       
                     );
 
                     if ($build_assess_params->max_similar_item_count > 0) {
@@ -4575,7 +4575,7 @@ class Assess extends MY_Controller {
                             $output_row['long_description_wc' . $i] = $data_row['long_description_wc' . $i] != null ? $data_row['long_description_wc' . $i] : '';
                             $output_row['Meta_Description' . $i] = $data_row['Meta_Description' . $i] != null ? $data_row['Meta_Description' . $i] : '';
                             $output_row['Meta_Description_Count' . $i] = $data_row['Meta_Description_Count' . $i] != null ? $data_row['Meta_Description_Count' . $i] : '';
-                            $output_row[] = $data_row['column_external_content' . $i] != null ? $data_row['column_external_content' . $i] : '';
+                            $output_row['column_external_content' . $i] = $data_row['column_external_content' . $i] != null ? $data_row['column_external_content' . $i] : '';
                             $output_row['H1_Tags' . $i] = $data_row['H1_Tags' . $i] != null ? $data_row['H1_Tags' . $i] : '';
                             $output_row['H1_Tags_Count' . $i] = $data_row['H1_Tags_Count' . $i] != null ? $data_row['H1_Tags_Count' . $i] : '';
                             $output_row['H2_Tags' . $i] = $data_row['H2_Tags' . $i] != null ? $data_row['H2_Tags' . $i] : '';
@@ -4625,11 +4625,13 @@ class Assess extends MY_Controller {
                     }
                     
                     $output['aaData'][] = AssessHelper::setTableData($columns, $output_row);
+					$output['ExtraData']['json_encoded_data'][] = json_encode($data_row); 
             }
         }
-						
+				
         $output['aoColumns'] = $columns;
         $output['ExtraData']['report'] = $report;        
+         		
         return $output;
     }
 	

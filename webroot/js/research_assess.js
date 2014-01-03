@@ -37,11 +37,7 @@ function resizeImpDown(status){
 				return $table.closest('.wrapper');
 			}
 		});
-		topScroll();
-		
-		//WTF??
-		tblAssessTable.floatThead('reflow');
-		
+		topScroll();		
 	};
 	
 	var tblAssessTable = $("#tblAssess");
@@ -344,7 +340,15 @@ $(function() {
 		},	
 	}).find( ".item_line:not(.batch1_filter_item):not(.batch2_filter_item)" )   
 		.addClass( "ui-corner-all" )
-        .prepend( "<div class='selectable_summary_handle'><i class='icon-move'></i></div>" );
+        .prepend( "<div class='selectable_summary_handle'><i class='icon-move'></i></div>" );			
+	
+	$(document).on('click', '.research_arrow_assess_tbl_res', function(e) {
+		if($("#tblAssess").is(":visible")) {
+			$(".table_scroll_wrapper").hide();
+		} else {
+			$(".table_scroll_wrapper").show();
+		}
+	});
 		
 	function readAssessData() {
 		var research_batch = $('.research_assess_batches_select')
@@ -373,35 +377,37 @@ $(function() {
 				aaSorting : [[5, "desc"]],
 				bAutoWidth : false,
 				bProcessing : true,
-				bDeferRender : true,
+				bDeferRender : true,			
 				fnInitComplete : function(oSettings, json) {
-					console.log(json_data);
-					resizeImpDown();
-					
-					setBorderSeparator();																									
-					
-										
-					if (summaryInfoSelectedElements.length)
-						total_items_selected_by_filter_wrapper.show();
-					
-					tblAssess_postRenderProcessing();
-					loadSetTK();
-					
-					$('#research_batches_columns').appendTo('div.dataTables_filter');
-					$('#tblAssess_length').after($('#assess_tbl_show_case'));
-										   
+					console.log('local init complete');	
 					hideColumns(); 
+					buildReport(json_data);
 					wrapResultsTable();
+					setBorderSeparator();					
+					loadSetTK();
+																				 
+					resizeImpDown();					
+					// $('#tblAssess_length').after($('#assess_tbl_show_case').clone(true, true));
+					// $('#research_batches_columns').appendTo('div.dataTables_filter');					
 				},
-				fnRowCallback : function(nRow, aData, iDisplayIndex) {
-					$(nRow).attr("add_data", aData[34]);
-					return nRow;            
+				fnRowCallback : function(nRow, aData, iDisplayIndex) {					
+					$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
+					tblAssess_postRenderProcessing(nRow);
 				},
 				fnDrawCallback : function(oSettings) {
-					
-					           				
-					
+					console.log('local draw callback');					           								
 				},
+				fnPreDrawCallback : function( oSettings ) {
+					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data;
+				},
+				oLanguage : {
+					sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
+					sInfoEmpty : "Showing 0 to 0 of 0 records",
+					sInfoFiltered : "",
+					sSearch : "Filter:",
+					sLengthMenu : "_MENU_ rows"
+				},
+				aoColumns : columns
 			}, json_data));			
 		}			
     }	
@@ -409,23 +415,24 @@ $(function() {
 	function initializeTblAssess()
 	{
 		return $('#tblAssess').dataTable({
-			"sDom": 'Rlfrtip',
-			"bJQueryUI": true,
-			"bDestroy": true,
-			"sPaginationType": "full_numbers",
-			"bProcessing": true,
-			"aaSorting": [[5, "desc"]],
-			"bAutoWidth": false,
-			"bDeferRender": true,
-			"bServerSide": true,        
-			"sAjaxSource": readAssessUrl,
-			"fnServerData": function(sSource, aoData, fnCallback) {
+			sDom : 'Rlfrtip',
+			bJQueryUI : true,
+			bDestroy : true,
+			sPaginationType : "full_numbers",
+			bProcessing : true,
+			aaSorting : [[5, "desc"]],
+			bAutoWidth : false,
+			bDeferRender : true,
+			bServerSide : true,        
+			sAjaxSource : readAssessUrl,
+			fnServerData : function(sSource, aoData, fnCallback) {
 				
 				//Toggling total items selected count by filter
 				var total_items_selected_by_filter_wrapper = $('.total_items_selected_by_filter_wrapper')				
 				  , research_batch = $('.research_assess_batches_select')
 				  , research_batch_competitor = $('#research_assess_compare_batches_batch')
-				  , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)
+				  , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				   
+				  , settings = tblAssess ? tblAssess.fnSettings() : null
 				  , json_data = localStorage[storage_key] ? JSON.parse(localStorage[storage_key]) : null;	
 				  
 				total_items_selected_by_filter_wrapper.hide();
@@ -442,15 +449,15 @@ $(function() {
 					{					
 						buildReport(json);                    				
 						resizeImpDown();
-						
-						setBorderSeparator();																									
+						setBorderSeparator();							
+						settings.json_encoded_data = json.ExtraData.json_encoded_data;	
+						if (summaryInfoSelectedElements.length)
+							total_items_selected_by_filter_wrapper.show();									              													
+									
+						tblAssess && tblAssess.fnProcessingIndicator(false);	
+						loadSetTK();									
 					}
 										
-					if (summaryInfoSelectedElements.length)
-						total_items_selected_by_filter_wrapper.show();									              													
-									
-					tblAssess && tblAssess.fnProcessingIndicator(false);	
-					loadSetTK();
 					fnCallback(json);
 				}
 												
@@ -461,34 +468,31 @@ $(function() {
 					build(json);	
 				});                                  
 			},
-			"fnRowCallback": function(nRow, aData, iDisplayIndex) {
-				$(nRow).attr("add_data", aData[35]); // === I.L.
-				return nRow;            
+			fnRowCallback : function(nRow, aData, iDisplayIndex) {				
+				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 
+				tblAssess_postRenderProcessing(nRow);
 			},
-			"fnDrawCallback": function(oSettings) {
-				console.log(1586);									
+			fnDrawCallback : function(oSettings) {
+				console.log('draw callback');					           																
 			},
-			"fnInitComplete": function(oSettings, json) {
-				tblAssess_postRenderProcessing();
+			fnInitComplete : function(oSettings, json) {				
 				hideColumns();  
-				topScroll();
-				
-				if($("#tableScrollWrapper").length === 0){  
-					$('#tblAssess').after('<div id="tableScrollWrapper" class="table_scroll_wrapper" style="overflow-x:scroll"></div>');
-					$('#tblAssess').appendTo('#tableScrollWrapper');
-				 }  
+				topScroll();							
 				 
 				$('#research_batches_columns').appendTo('div.dataTables_filter');
-					$('#tblAssess_length').after($('#assess_tbl_show_case'));
+				$('#tblAssess_length').after($('#assess_tbl_show_case').clone(true, true));
 			},
-			"oLanguage": {
-				"sInfo": "Showing _START_ to _END_ of _TOTAL_ records",
-				"sInfoEmpty": "Showing 0 to 0 of 0 records",
-				"sInfoFiltered": "",
-				"sSearch": "Filter:",
-				"sLengthMenu": "_MENU_ rows"
+			fnPreDrawCallback : function( oSettings ) {
+				
 			},
-			"aoColumns":columns
+			oLanguage : {
+				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
+				sInfoEmpty : "Showing 0 to 0 of 0 records",
+				sInfoFiltered : "",
+				sSearch : "Filter:",
+				sLengthMenu : "_MENU_ rows"
+			},
+			aoColumns : columns
 		});			
 	}
 
@@ -1119,21 +1123,18 @@ $('#graphDropDown').live('change',function(){
             } else {
                 $(".research_assess_flagged").css('display', 'inline');
             }
-            hideColumns();
-            tblAssess_postRenderProcessing();            
+            hideColumns();                   
         }
     }
 
-    function tblAssess_postRenderProcessing() {
-        $('#tblAssess td input:hidden').each(function() {
-            $(this).parent().addClass('highlightPrices');
-        });
-        $('#tblAssess tbody tr').each(function() {
-            var row_height = $(this).height();
-            if (row_height > 5) {
-                $(this).find('table.url_table').height('auto');
-            }
-        });
+    function tblAssess_postRenderProcessing(tr) {
+       		
+		var jTr = $(tr)
+		  , row_height = jTr.height();
+		
+		if (row_height > 5) {
+			jTr.find('table.url_table').height('auto');
+		}       
     }
 	
 
@@ -2529,7 +2530,7 @@ function prevSibilfunc(curentSibil){
 
     function hideColumns() {
 		var tableSettings = tblAssess.fnSettings();
-		console.log(tableSettings);
+		
 		var batch_set = $('.result_batch_items:checked').val() || 'me';                
 		var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case') || 'details_compare';
 				
@@ -2538,8 +2539,7 @@ function prevSibilfunc(curentSibil){
         $.each(columns_checkboxes, function(index, value) {
             columns_checkboxes_checked.push($(value).data('col_name'));
         });
-		console.log(table_case);
-		console.log(tblAllColumns);
+		
 		//turn off related blocks here
 		toggleRelatedBlocks('details_compare', false);
 

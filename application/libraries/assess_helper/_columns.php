@@ -154,12 +154,14 @@ return array(
 		array(
 			'sTitle' => 'Gap Analysis',
 			'sClass' => 'gap',
-			'sName' => 'gap'
+			'sName' => 'gap',
+			'nonCompared' => true
 		),
 		array(
 			'sTitle' => "Duplicate Content",
 			'sName' => 'duplicate_content',
 			'sClass' => 'Duplicate_Content',			
+			'nonCompared' => true
 		),    
 		array(
 			'sTitle' => "Keywords <span class='subtitle_keyword_short'>Short</span>",
