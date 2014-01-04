@@ -7,6 +7,7 @@ var getbatchesvalue = base_url + 'index.php/assess/getbatchvalues';
 var get_summary_filters = base_url + 'index.php/assess/get_summary_filters';
 var save_summary_filters = base_url + 'index.php/assess/save_summary_filters';
 var save_summary_filters_order = base_url + 'index.php/assess/save_summary_filters_order';
+var get_columns = base_url + 'index.php/assess/getColumns';
 var serevr_side = true;
 var serverside_table;
 var tblAllColumns = [];
@@ -18,11 +19,19 @@ var first_click = true ;
 var summary_active_items = [];
 var arrow_css_top;
 var summary_filters_order;
+var tblAssess_need_to_be_reinit = false;
 var scrollYesOrNot = true;
 var zeroTableDraw = true;
+var options = { path: '/', expires: 30 };
+var table_loaded=false;
+var curentSibil = 0;
+var isFromLocalStorage = false;
+var testIsFromLocalStorage = 0;
 
 var short_wc_total_not_0 = 0;
 var long_wc_total_not_0 = 0;
+
+var customLocalStorage = {};
 
 var items_short_products_content_short = 0;
 var items_long_products_content_short = 0;
@@ -209,6 +218,7 @@ var columns = [
             "sName": "add_data",
             "bVisible": false
         },
+		//batch2
         {
             "sTitle": "Snapshot",
             "sName": "snap1",            

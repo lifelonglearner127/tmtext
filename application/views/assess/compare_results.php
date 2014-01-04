@@ -21,7 +21,7 @@
                         <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
                     <?php endforeach;?>
                 </select>
-                <select name="research_assess_batches" class="mt_10 mr_10 ml_20" style="width: 175px;">
+                <select name="research_assess_batches" class="research_assess_batches_select mt_10 mr_10 ml_20" style="width: 175px;">
                     <?php foreach($batches_list as $ks => $vs):?>
                         <option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
                     <?php endforeach;?>
@@ -509,14 +509,19 @@
 <div class="row-fluid">	
     <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">		
         <div id="records_wrapper" class="dataTables_wrapper block_data_table">			
-            <div class="span12" id="dt_tbl">
-<!--                <div id ="tableScrollWrapper">-->					
+            <div class="span12" id="dt_tbl">	
+					<div id="assess_tbl_show_case" class="assess_tbl_show_case">                    
+						<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" class="active_link" href="#compare">Results</a> |
+						<a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Charts</a> |
+						<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a> |
+						<a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations">Recommendations</a>
+					</div>
+					<a class='research_arrow research_arrow_assess_tbl_res' onclick='return false;'><img src='<?php echo base_url() ?>img/arrow.png'></a>
                     <table id="tblAssess" class="tblDataTable" >
                         <thead>
                         </thead>
                         <tbody></tbody>
                     </table>
-<!--                </div>-->
                 <div id="comare_table"></div>
                 <div id="assess_tbl_show_case" class="assess_tbl_show_case">
 <!--                    <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations"  class="active_link">Recommendations</a> |

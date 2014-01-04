@@ -1135,3 +1135,27 @@
 			}
 		}       	
     }
+	
+	function comparison_details_load(url) {
+		var batch_set = $('.result_batch_items:checked').val() || 'me';		
+        var batch_id = $("select[name='" + batch_sets[batch_set]['batch_batch'] + "']").find("option:selected").val();
+        var data = {
+            batch_id: batch_id
+        };
+        if (url == undefined) {
+            url = base_url + 'index.php/assess/comparison_detail';
+        }
+        $.post(
+                url,
+                data,
+                function(data) {
+                    $('#comparison_detail').html(data.comparison_detail);
+                    $('#comparison_pagination').html(data.comparison_pagination);
+                }
+        );
+    }
+	
+	 $(document).on('click', '#comparison_pagination a', function(event) {
+        event.preventDefault();
+        comparison_details_load($(this).attr('href'));
+    });

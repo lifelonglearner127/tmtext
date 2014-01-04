@@ -1674,12 +1674,7 @@ label.dd-selected-text, label.dd-option-text{
     /*margin: 10px 6px 0 0;*/
     margin: 10px 0px 0 0;
 }
-.research_arrow_assess_tbl_res {
-    margin-right: -6px;
-}
-#research_batches_columns {
-    margin-right: -10px;
-}
+
 
 .research_batches input{
     width: 120px;
@@ -2439,9 +2434,12 @@ span.dep_left_part{
 #research_batches_columns{
     background-color: transparent;
     background-image: none;
+	margin-right: -10px;
     margin-top: 3px;
     cursor:pointer;
     display: none;
+	float: left;
+	margin: 2px -16px 0 14px;
 }
 .snap_img{
     max-width: 400px;

@@ -204,11 +204,12 @@ input[type=text] {
 }
 .dataTables_filter{
     width: 200px;
+	margin: -4px 50px 0 -34px;
 }
 #tblAssess_length{
     position: relative;
-    left: 575px;
-    top: 5px;
+    left: 290px;
+    /* top: 5px; */
 }
 #tblAssess_filter label{
     float: left;
@@ -420,11 +421,10 @@ ul.research_table_filter_competitor h3 {
 }
 
 .assess_tbl_show_case {
-    margin-top: 9px;
+   margin: 13px 0 0 10px;
     float: left;
     text-align: left;
-    width: 450px;
-    margin-left: -100px;
+    width: 315px;    
 }
 #tblAssess tr th{
     font-weight: bold;
@@ -737,7 +737,9 @@ span.highlight{
 div.assess_report_compare li.boxes div.ui-resizable-e, div.ui-icon-gripsmall-diagonal-se {
 	display:none !important;
 }
-th.product_name1, th.Snapshot1, th.url1, th.column_reviews1, th.column_features1, th.item_id1, th.model1, th.Page_Load_Time1, th.Short_Description1, th.word_short1, th.Meta_Keywords1, th.Long_Description1, th.word_long1, th.Meta_Description1, th.Meta_Description_Count1, th.column_external_content1, th.HTags_11, th.HTags1, th.CharsHTags1, th.average_review1, th.title_seo_phrases1, th.images_cmp1, th.video_count1, th.title_pa1, th.HTags_21 ,th.imp_data_id1   {
+
+th.product_name1, th.links_count1, th.Snapshot1, th.url1, th.column_reviews1, th.column_features1, th.item_id1, th.model1, th.Page_Load_Time1, th.Short_Description1, th.word_short1, th.Meta_Keywords1, th.Long_Description1, th.word_long1, th.Meta_Description1, th.Meta_Description_Count1, th.column_external_content1, th.HTags_11, th.HTags1, th.CharsHTags1, th.average_review1, th.title_seo_phrases1, th.images_cmp1, th.video_count1, th.title_pa1, th.HTags_21 ,th.imp_data_id1   {
+
 	background: #dadada url('/producteditor/css/smoothness/images/ui-bg_glass_75_dadada_1x400.png') 50% 50% repeat-x !important;
 }
 .summary_filter_batch_name {
@@ -797,4 +799,11 @@ a.jq-assess {
 }
 #research_assess_choiceColumnDialog_export input, label {
 	display: inline;
+}
+.research_arrow_assess_tbl_res {
+	margin: 8px 0 0 16px;
+}
+.tbl_arrows_and_gear_wrapper {
+	position: absolute;
+	margin: -29px 0 0 932px;
 }

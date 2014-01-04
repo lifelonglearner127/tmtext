@@ -17,7 +17,7 @@
                         <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
                     <?php endforeach;?>
                 </select>
-                <select name="research_assess_batches" class="mt_10 mr_10 ml_20" style="width: 175px;">
+                <select name="research_assess_batches" class="research_assess_batches_select mt_10 mr_10 ml_20" style="width: 175px;">
                     <?php foreach($batches_list as $ks => $vs):?>
                         <option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
                     <?php endforeach;?>
@@ -720,21 +720,29 @@
     <div id="read" class="ui-tabs-panel ui-widget-content ui-corner-bottom">		
         <div id="records_wrapper" class="dataTables_wrapper block_data_table">			
             <div class="span12" id="dt_tbl">
-<!--                <div id ="tableScrollWrapper">-->					
+				<div>
+					<div class="tbl_panel_wrapper">
+						<div id="assess_tbl_show_case" class="assess_tbl_show_case">                    
+							<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" class="active_link" href="#compare">Results</a> |
+							<a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Charts</a> |
+							<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a> |
+							<a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations">Recommendations</a>	
+							
+							<div class="tbl_arrows_and_gear_wrapper">
+								<a id="research_batches_columns" style='display: inline' class="" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/gear_32_32.png"></a>
+								<a class='research_arrow research_arrow_assess_tbl_res' onclick='return false;'><img src='<?php echo base_url() ?>img/arrow.png'></a>
+							</div>
+						</div>
+						
+					</div>
                     <table id="tblAssess" class="tblDataTable" >
                         <thead>
                         </thead>
                         <tbody></tbody>
                     </table>
-<!--                </div>-->
-                <div id="comare_table"></div>
-                <div id="assess_tbl_show_case" class="assess_tbl_show_case">
-                    <!-- <a id="assess_tbl_show_case_details" data-case="details" title="Details" href="#details" class="active_link">Details</a> | -->
-                    <a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" class="active_link" href="#compare">Results</a> |
-                    <a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Charts</a> |
-                    <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a> |
-                    <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations">Recommendations</a>
                 </div>
+                <div id="comare_table"></div>
+               
                 <!-- <div id="assess_tbl_show_case" class="assess_tbl_show_case">
                     <a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations"  class="active_link">Recommendations</a> |
                     <a id="assess_tbl_show_case_report" data-case="report" title="Report" href="#summary">Summary</a> |
@@ -744,7 +752,7 @@
                     <a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>
                 </div> -->
                 <!-- <a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a> -->
-                <a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/gear_32_32.png"></a>
+                
 
                 <div id="assess_view">
 					<button class="btn btn-success get_board_view_snap">Get board view snap</button>
@@ -812,32 +820,26 @@
 <!-- <a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/settings@2x.png"></a> -->
 <!-- <a id="research_batches_columns" style='display: inline' class="ml_5 float_r" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/gear_32_32.png"></a> -->
 <script>
-            $(function() {
-                // === add expander for assess results bar (start)
-                if($(".research_arrow_assess_tbl_res").length > 0) $(".research_arrow_assess_tbl_res").unbind('click');
-                $("#tblAssess_wrapper > .fg-toolbar:first").prepend("<a class='ml_10 research_arrow research_arrow_assess_tbl_res' onclick='return false;'><img src='" + base_url + "img/arrow.png'></a>");
-                $(".research_arrow_assess_tbl_res").bind('click', function(e) {
-                    if($("#tblAssess").is(":visible")) {
-                        $(".table_scroll_wrapper").hide();
-                    } else {
-                        $(".table_scroll_wrapper").show();
-                    }
-                });
-                // === add expander for assess results bar (end)
+	
+	$(function() {
+			// === add expander for assess results bar (start)
+			
+			// === add expander for assess results bar (end)
 
-                $('#columns_checking ul').sortable();
-                $('.ui-dialog-titlebar-close').html('<span style="margin-top:-5px;">x</span>');
-                $('head').find('title').text('Reports');
-                // var hardcode_hash = window.location.hash;
-                // if(hardcode_hash === '#login_init') {
-                //     if($("#assess_tbl_show_case").length < 1) { // === I.L
-                //         $('#tblAssess_length').after('<div id="assess_tbl_show_case" class="assess_tbl_show_case">' +
-                //             '<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" class="active_link" href="#compare">Results</a>&nbsp;|&nbsp;' +
-                //             '<a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Charts</a>&nbsp;|&nbsp;' +
-                //             '<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>&nbsp;|&nbsp;' +
-                //             '<a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations">Recommendations</a>' +
-                //             '</div>');
-                //     }
-                // }
-            });
+			$('#columns_checking ul').sortable();
+			$('.ui-dialog-titlebar-close').html('<span style="margin-top:-5px;">x</span>');
+			$('head').find('title').text('Reports');
+			// var hardcode_hash = window.location.hash;
+			// if(hardcode_hash === '#login_init') {
+			//     if($("#assess_tbl_show_case").length < 1) { // === I.L
+			//         $('#tblAssess_length').after('<div id="assess_tbl_show_case" class="assess_tbl_show_case">' +
+			//             '<a id="assess_tbl_show_case_details_compare" data-case="details_compare" title="Details_compare" class="active_link" href="#compare">Results</a>&nbsp;|&nbsp;' +
+			//             '<a id="assess_tbl_show_case_graph" data-case="graph" title="Graph" href="#graph">Charts</a>&nbsp;|&nbsp;' +
+			//             '<a id="assess_tbl_show_case_view" data-case="view" title="Board View" href="#board_view">Board View</a>&nbsp;|&nbsp;' +
+			//             '<a id="assess_tbl_show_case_recommendations" data-case="recommendations" title="Recommendations" href="#recommendations">Recommendations</a>' +
+			//             '</div>');
+			//     }
+			// }
+	});
+	          
  </script>
