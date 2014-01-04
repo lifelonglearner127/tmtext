@@ -30,13 +30,11 @@
           <span class="btn btn-danger pull-left" id="stop_matches">Stop</span>
           <input type="hidden" name="choosen_file" />
           <script>
+              var match_ajax = "";
+              var flag_stop_match = false;
               $(function () {
-                  var match_ajax = "";
-                  $('#stop_matches').on('click', function(){
-                      if(match_ajax != ""){
-                        match_ajax.abort();
-                      }
-                  })
+
+
                   var url = '<?php echo site_url('system/upload_match_urls'); ?>';
                   $('#upload_urls').fileupload({
                       url: url,
@@ -76,6 +74,7 @@
 <!-- MODALS (END) -->
 
 <script type='text/javascript'>
+    var matching_checking_int = 0;
 
 	function saveStateHandlerExt() {
 		if(empty_check_validation_ext()) {
@@ -102,6 +101,9 @@
 	}
         var old_data=false;
         function check_matching_status(){
+            if(flag_stop_match){
+                return clearInterval(matching_checking_int)
+            }
             if($("#matching").length==0)return false;
             var url = base_url+'index.php/system/get_matching_urls';
             $.ajax({
@@ -122,7 +124,13 @@
         }
 
 	$(document).ready(function() {
-            var matching_checking_int = setInterval(check_matching_status,5000);
+            $('#stop_matches').on('click', function(){
+                flag_stop_match = true;
+                if(match_ajax != ""){
+                    match_ajax.abort();
+                }
+            })
+            matching_checking_int = setInterval(check_matching_status,5000);
             $("#download_not_founds").click(function(){
                 alert('works.');
                 $.ajax({
