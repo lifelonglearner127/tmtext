@@ -2937,10 +2937,10 @@ class System extends MY_Controller {
         $notFoundUrls = 0;
         $notFoundUrlsArr = array();
         $process = time();
+        $this->temp_data_model->createMatchUrlsTable();
         foreach ($fcont as $line){
             ++$linesTotal;
             //*for big files
-            $this->temp_data_model->createMatchUrlsTable();
             $res = '';
             $urls = explode(',', trim(trim($line),','));
             if(count($urls)==2){
