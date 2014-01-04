@@ -204,11 +204,12 @@ input[type=text] {
 }
 .dataTables_filter{
     width: 200px;
+	margin: -4px 50px 0 -34px;
 }
 #tblAssess_length{
     position: relative;
-    left: 575px;
-    top: 5px;
+    left: 290px;
+    /* top: 5px; */
 }
 #tblAssess_filter label{
     float: left;
@@ -420,11 +421,10 @@ ul.research_table_filter_competitor h3 {
 }
 
 .assess_tbl_show_case {
-    margin-top: 9px;
+   margin: 13px 0 0 10px;
     float: left;
     text-align: left;
-    width: 450px;
-    margin-left: -100px;
+    width: 315px;    
 }
 #tblAssess tr th{
     font-weight: bold;
@@ -799,4 +799,11 @@ a.jq-assess {
 }
 #research_assess_choiceColumnDialog_export input, label {
 	display: inline;
+}
+.research_arrow_assess_tbl_res {
+	margin: 8px 0 0 16px;
+}
+.tbl_arrows_and_gear_wrapper {
+	position: absolute;
+	margin: -29px 0 0 932px;
 }

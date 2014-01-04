@@ -353,8 +353,8 @@ $(function() {
 	function readAssessData() {
 		var research_batch = $('.research_assess_batches_select')
 		  , research_batch_competitor = $('#research_assess_compare_batches_batch')
-          , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)		
-		  , json_data = localStorage[storage_key] ? JSON.parse(localStorage[storage_key]) : null;	
+          , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				  
+		  , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null;	
 		  
 		$('.assess_report_download_panel').hide();
         $("#tblAssess tbody tr").remove();
@@ -373,6 +373,7 @@ $(function() {
 			tblAssess = $('#tblAssess').dataTable(_.extend({
 				bDestroy : true,
 				bJQeuryUI : true,				
+				bJUI : true,				
 				sPaginationType : 'full_numbers',
 				aaSorting : [[5, "desc"]],
 				bAutoWidth : false,
@@ -380,25 +381,27 @@ $(function() {
 				bDeferRender : true,			
 				fnInitComplete : function(oSettings, json) {
 					console.log('local init complete');	
-					hideColumns(); 
-					buildReport(json_data);
-					wrapResultsTable();
+					hideColumns(); 									
 					setBorderSeparator();					
 					loadSetTK();
 																				 
 					resizeImpDown();					
 					// $('#tblAssess_length').after($('#assess_tbl_show_case').clone(true, true));
-					// $('#research_batches_columns').appendTo('div.dataTables_filter');					
+					// $('#research_batches_columns').appendTo('div.dataTables_filter');
+
 				},
 				fnRowCallback : function(nRow, aData, iDisplayIndex) {					
 					$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
-					tblAssess_postRenderProcessing(nRow);
+					tblAssess_postRenderProcessing(nRow);					
 				},
 				fnDrawCallback : function(oSettings) {
 					console.log('local draw callback');					           								
 				},
-				fnPreDrawCallback : function( oSettings ) {
-					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data;
+				fnPreDrawCallback : function( oSettings ) {					
+					// wrapResultsTable();
+					buildReport(json_data);
+					
+					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data;					
 				},
 				oLanguage : {
 					sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
@@ -413,9 +416,9 @@ $(function() {
     }	
 	
 	function initializeTblAssess()
-	{
+	{		
 		return $('#tblAssess').dataTable({
-			sDom : 'Rlfrtip',
+			// sDom : 'Rlfrtip',
 			bJQueryUI : true,
 			bDestroy : true,
 			sPaginationType : "full_numbers",
@@ -432,8 +435,8 @@ $(function() {
 				  , research_batch = $('.research_assess_batches_select')
 				  , research_batch_competitor = $('#research_assess_compare_batches_batch')
 				  , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				   
-				  , settings = tblAssess ? tblAssess.fnSettings() : null
-				  , json_data = localStorage[storage_key] ? JSON.parse(localStorage[storage_key]) : null;	
+				  , settings = tblAssess ? tblAssess.fnSettings() : null				  
+				  , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null;	
 				  
 				total_items_selected_by_filter_wrapper.hide();
 				
@@ -463,8 +466,11 @@ $(function() {
 												
 				$.getJSON(sSource, aoData, function(json) {
 					if(!json)
-						return;					
-					localStorage[storage_key] = JSON.stringify(json);									
+						return;	
+																			
+					customLocalStorage[storage_key] = JSON.stringify(json);		
+					
+					json.aaData = json.aaData.slice(0, 10);		
 					build(json);	
 				});                                  
 			},
@@ -478,12 +484,14 @@ $(function() {
 			fnInitComplete : function(oSettings, json) {				
 				hideColumns();  
 				topScroll();							
-				 
-				$('#research_batches_columns').appendTo('div.dataTables_filter');
-				$('#tblAssess_length').after($('#assess_tbl_show_case').clone(true, true));
+				
+			
+				// $('#research_batches_columns').appendTo('div.dataTables_filter');
+				// $('#tblAssess_length').after($('#assess_tbl_show_case').clone(true, true));
 			},
 			fnPreDrawCallback : function( oSettings ) {
 				
+				// console.log(oSettings.oClasses.sSortJUIWrapper);
 			},
 			oLanguage : {
 				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
@@ -495,8 +503,14 @@ $(function() {
 			aoColumns : columns
 		});			
 	}
-
-    tblAssess = initializeTblAssess();
+	
+	// setting global static variables
+	// tblAssess.DataTable.defaults.bJQueryUI = true;	
+	$.fn.dataTable.defaults.bJQueryUI = true;
+	// $.fn.dataTable.defaults.bJUI = true;
+	
+    tblAssess = initializeTblAssess();	
+	
 	tblAllColumns = tblAssess.fnGetAllSColumnNames();
 	
 	$('.get_board_view_snap').on('click', function() {
@@ -1020,11 +1034,11 @@ $('#graphDropDown').live('change',function(){
     });
     
     $('#assess_tbl_show_case a').on('click', function(event) {
-        if ($(this).text() == 'Results' || $(this).text() == 'Compare') {
-            $('#research_batches_columns').show();
-        } else {
-            $('#research_batches_columns').hide();
-        }
+        // if ($(this).text() == 'Results' || $(this).text() == 'Compare') {
+            // $('#research_batches_columns').show();
+        // } else {
+            // $('#research_batches_columns').hide();
+        // }
         assess_tbl_show_case(this);
     });
 
@@ -1118,11 +1132,7 @@ $('#graphDropDown').live('change',function(){
         if (obj) {
             $(obj).parent().find('a').removeClass('active_link');
             $(obj).addClass('active_link');
-            if ($(obj).text() == 'Report') {
-                $(".research_assess_flagged").css('display', 'none');
-            } else {
-                $(".research_assess_flagged").css('display', 'inline');
-            }
+      
             hideColumns();                   
         }
     }
@@ -2566,10 +2576,7 @@ function prevSibilfunc(curentSibil){
                 }
             });                       
 		} 
-        else if (table_case == 'details_compare') {
-			// if (testIsFromLocalStorage > 0)
-				// return;
-				
+        else if (table_case == 'details_compare') {							
 			/**
 			 * using one place to turn on/off different blocks
 			 */
@@ -2594,8 +2601,7 @@ function prevSibilfunc(curentSibil){
 						tblAssess.fnSetColumnVis(index, false, false);						
 					}
 				}
-            });     
-			// testIsFromLocalStorage++;
+            });     			;
         } else if (table_case == 'view') {
 		
             toggleRelatedBlocks('view', true);
@@ -3006,11 +3012,6 @@ function prevSibilfunc(curentSibil){
        
    })
     );    
-	
-	/*
-	 * Necessary callbacks calls here:
-	 */
-	wrapResultsTable();
-	
+		
 	$('.assess_report_download_panel').hide();
 });

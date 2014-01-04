@@ -4191,7 +4191,8 @@ class Assess extends MY_Controller {
 			$are_records_on_the_page = $c >= $display_start && $c < ($display_start + $display_length);
 			$are_records_filtered = $this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData);
             
-			if (!$build_assess_params->summaryFilterData && $are_records_on_the_page) {
+			// if (!$build_assess_params->summaryFilterData && $are_records_on_the_page) {
+			if (!$build_assess_params->summaryFilterData) {
                 $result_table[] = $result_row;				
             } else if ($are_records_filtered) {
 				
@@ -4199,8 +4200,7 @@ class Assess extends MY_Controller {
 				{					
 					$result_table[] = $result_row;	
 				}
-				$filtered_count++;
-				
+				$filtered_count++;				
 			}
 		
 			$c++;							         
