@@ -380,24 +380,30 @@ class Crons extends MY_Controller {
         $status = $this->imported_data_parsed_model->getDoStatsStatus();
         echo $status?$status->description:'';
     }
-    public function get_update_status(){
+
+    public function get_update_status() {
         $this->load->model('settings_model');
         $this->load->model('imported_data_parsed_model');
+		
         $lud = $this->settings_model->getLastUpdate();
         $dss = $this->settings_model->getDoStatsStatus();
         $res_arr = array();
-        if($dss){
+		
+        if ($dss) {
             $res_arr['status']=$dss->description;
             $res_arr['started']=$dss->created;
             $res_arr['remain'] = $this->settings_model->countItemsForReset();
         }
-        if($lud){
+		
+        if ($lud) {
             $res_arr['total'] = $lud['description'];
             $res_arr['updated'] = $lud['modified'];
         }
+		
         $res = json_encode($res_arr);
         echo $res;
     }
+
     function different_revissions(){
         $sql_cmd = "select imported_data_id, max(revision) as max_revision
                     from (

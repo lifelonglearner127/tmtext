@@ -66,9 +66,16 @@ $(function() {
         }).done(function(data){
            last_batch_id  = data.batch_id;
            last_compare_batch_id = data.compare_batch_id;
-           			
-			$('select[name="research_assess_batches"]').val(last_batch_id).change();			
-			$('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change();			                               
+           
+                first_click = false;
+          $('select[name="research_assess_batches"]').val(last_batch_id).change();
+			setTimeout(function(){
+			first_click = true;
+
+			$('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change()
+			 $('#research_assess_update').click();
+			},1500);
+                               
         });
         
     $.fn.serializeObject = function() {
@@ -363,56 +370,55 @@ $(function() {
 		else
 		{				
 			tblAssess_need_to_be_reinit = true;
-			console.log(json_data);
-			tblAssess = reInitializeTblAssess(json_data); 		
+			tblAssess = $('#tblAssess').dataTable(_.extend({
+				bDestroy : true,
+				bJQeuryUI : true,				
+				bJUI : true,				
+				sPaginationType : 'full_numbers',
+				aaSorting : [[5, "desc"]],
+				bAutoWidth : false,
+				bProcessing : true,
+				bDeferRender : true,			
+				fnInitComplete : function(oSettings, json) {
+					console.log('local init complete');	
+					hideColumns(); 									
+					setBorderSeparator();					
+					loadSetTK();
+																				 
+					resizeImpDown();					
+					// $('#tblAssess_length').after($('#assess_tbl_show_case').clone(true, true));
+					// $('#research_batches_columns').appendTo('div.dataTables_filter');
+
+				},
+				fnRowCallback : function(nRow, aData, iDisplayIndex) {					
+					$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
+					tblAssess_postRenderProcessing(nRow);					
+				},
+				fnDrawCallback : function(oSettings) {
+					console.log('local draw callback');					           								
+				},
+				fnPreDrawCallback : function( oSettings ) {					
+					// wrapResultsTable();
+					buildReport(json_data);
+					
+					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data;					
+				},
+				oLanguage : {
+					sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
+					sInfoEmpty : "Showing 0 to 0 of 0 records",
+					sInfoFiltered : "",
+					sSearch : "Filter:",
+					sLengthMenu : "_MENU_ rows"
+				},
+				aoColumns : columns
+			}, json_data));			
 		}			
     }	
 	
-	function reInitializeTblAssess(json_data)
-	{
-		return $('#tblAssess').dataTable(_.extend({
-			bDestroy : true,
-			bJQeuryUI : true,				
-			bJUI : true,				
-			sPaginationType : 'full_numbers',
-			aaSorting : [[5, "desc"]],
-			bAutoWidth : false,
-			bProcessing : true,
-			bDeferRender : true,			
-			fnInitComplete : function(oSettings, json) {
-				console.log('local init complete');	
-				hideColumns(); 									
-				setBorderSeparator();					
-				loadSetTK();
-																			 
-				resizeImpDown();										
-			},
-			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
-				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
-				tblAssess_postRenderProcessing(nRow);					
-			},
-			fnDrawCallback : function(oSettings) {
-				console.log('local draw callback');					           								
-			},
-			fnPreDrawCallback : function( oSettings ) {										
-				buildReport(json_data);
-				
-				oSettings.json_encoded_data = json_data.ExtraData && json_data.ExtraData.json_encoded_data ? json_data.ExtraData.json_encoded_data : '';					
-			},
-			oLanguage : {
-				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
-				sInfoEmpty : "Showing 0 to 0 of 0 records",
-				sInfoFiltered : "",
-				sSearch : "Filter:",
-				sLengthMenu : "_MENU_ rows"
-			},
-			aoColumns : columns
-		}, json_data));	
-	}
-	
 	function initializeTblAssess()
 	{		
-		return $('#tblAssess').dataTable({			
+		return $('#tblAssess').dataTable({
+			// sDom : 'Rlfrtip',
 			bJQueryUI : true,
 			bDestroy : true,
 			sPaginationType : "full_numbers",
@@ -480,10 +486,15 @@ $(function() {
 			},
 			fnInitComplete : function(oSettings, json) {				
 				hideColumns();  
-				topScroll();																
+				topScroll();							
+				
+			
+				// $('#research_batches_columns').appendTo('div.dataTables_filter');
+				// $('#tblAssess_length').after($('#assess_tbl_show_case').clone(true, true));
 			},
 			fnPreDrawCallback : function( oSettings ) {
-								
+				
+				// console.log(oSettings.oClasses.sSortJUIWrapper);
 			},
 			oLanguage : {
 				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
@@ -496,9 +507,11 @@ $(function() {
 		});			
 	}
 	
-	// setting global static variables	
-	$.fn.dataTable.defaults.bJQueryUI = true;	
-	
+	// setting global static variables
+	// tblAssess.DataTable.defaults.bJQueryUI = true;	
+	$.fn.dataTable.defaults.bJQueryUI = true;
+	// $.fn.dataTable.defaults.bJUI = true;
+
     tblAssess = initializeTblAssess();	
 	
 	tblAllColumns = tblAssess.fnGetAllSColumnNames();
@@ -1263,7 +1276,11 @@ $('#graphDropDown').live('change',function(){
 		var batch_set = $('.result_batch_items:checked').val() || 'me';							      
 		
 		fillReportSummary(report.summary, batch_sets[batch_set]['batch_items_prefix']);				                                     
-    }   	   	
+    }   
+	   	
+	$(document).on('click', '.update_filter_btn', function(e) {
+		$('#research_assess_update').click();
+	});
 		
 	function onDenisty(){
 		var tkstatus = $.cookie('tkstatus');
@@ -1758,7 +1775,7 @@ $('#graphDropDown').live('change',function(){
                 }
                     }).done(function(){
                         $('#assessDetailsDialog').dialog('close');
-                        
+                        $('#research_assess_update').click();
                         
                     });
                 }
@@ -1905,7 +1922,7 @@ function prevSibilfunc(curentSibil){
             } else if (data.length == 0 && res.target.value != "select customer") {
                 research_assess_batches.empty();
             }
-            
+            $('#research_assess_update').click();
         });
         var own_customer = $(this).val();
         fill_lists_batches_compare(own_customer, 0);        
@@ -1923,12 +1940,17 @@ function prevSibilfunc(curentSibil){
                 }
             } else if (data.length == 0 && res.target.value != "select customer") {
                 research_assess_batches_competitor.empty();
-            }            
+            }
+            $('#research_assess_update').click();
         });
         var own_customer = $(this).val();
         fill_lists_batches_compare(own_customer, 1);        
     });
-   
+
+    $('#research_assess_flagged').live('click', function() {
+        $('#research_assess_update').click();
+    });
+
     function fill_lists_batches_compare(own_customer, set_number) {
 		var set_number = set_number || 0;
 		var sets = [{
@@ -2053,7 +2075,9 @@ function prevSibilfunc(curentSibil){
 		{
 			$('.result_batch_items')[0].click(); //activating first batch set by default
 			second_batch_set.slideUp();
-			batch_set_depend_options.hide();		
+			batch_set_depend_options.hide();
+
+			$('#research_assess_update').click(); // clicking on Update btn
 		}
 	});
 
@@ -2063,7 +2087,8 @@ function prevSibilfunc(curentSibil){
 
 		$('#research_assess_compare_batches_customer_competitor').val('select customer').prop('selected', true);
         $('#research_assess_compare_batches_batch_competitor').val('select batch').prop('selected', true);
-        
+
+        $('#research_assess_update').click();
     });
 
     $('select[name="research_assess_batches"]').on("change", function() {
@@ -2111,7 +2136,10 @@ function prevSibilfunc(curentSibil){
             var own_customer = research_assess_customers.val();
             fill_lists_batches_compare(own_customer, 0);
             var batch_id_result = GetURLParameter('batch_id_result');
-            
+            if(!batch_id_result)
+            {
+                $('#research_assess_update').click();
+            }
         });
         if (typeof data != 'undefined') {
             if (data.length > 0) {
@@ -2173,7 +2201,11 @@ function prevSibilfunc(curentSibil){
                 research_assess_customers_competitor.val('select customer').prop('selected', true);
             var own_customer = research_assess_customers_competitor.val();
             fill_lists_batches_compare(own_customer, 1);
-            var batch_id_result = GetURLParameter('batch_id_result');          
+            var batch_id_result = GetURLParameter('batch_id_result');
+            if(!batch_id_result)
+            {
+                $('#research_assess_update').click();
+            }
         });
         if (typeof data != 'undefined') {
             if (data.length > 0) {
@@ -2238,8 +2270,11 @@ function prevSibilfunc(curentSibil){
         $('#assess_filter_dateto').val('');
     });
 
-    $('#research_assess_update').on('click', function() {        
-		readAssessData();							        
+    $('#research_assess_update').on('click', function() {
+        if(first_click)
+		{						
+			readAssessData();							
+        }
     });
 
   

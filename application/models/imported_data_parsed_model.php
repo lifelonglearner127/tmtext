@@ -1107,15 +1107,16 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->query($sql_cmd);
     }
 
-    function do_stats_newupdated($truncate=0) {
-      $min_model_lenght = $this->config->item('min_model_lenght');
+	function do_stats_newupdated($truncate=0) {
+		$min_model_lenght = $this->config->item('min_model_lenght');
 
-      $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
+      	$q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
         $res = $q->get()->row_array();
+        
         if (count($res) > 0) {
-            $start = $res['description'];
+        	$start = $res['description'];
         } else {
-            $d = array(
+        	$d = array(
                 'key' => 'cron_job_offset',
                 'description' => '0',
             );
@@ -1124,36 +1125,29 @@ class Imported_data_parsed_model extends CI_Model {
 
             $start = 0;
         }
-     if (($truncate == 1) && ($start == 0)) {
-            $this->truncate_stats_new();
+		
+     	if (($truncate == 1) && ($start == 0)) {
+        	$this->truncate_stats_new();
         }
-        $query = $this->db->query("SELECT p.imported_data_id, p.revision
-       FROM `imported_data_parsed` AS `p`
-
-       LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
-       WHERE (`p`.`key`= 'URL')
-        AND
-       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)
-	GROUP BY imported_data_id
-       LIMIT 50");
+		
+        $query = $this->db->query("
+        	SELECT p.imported_data_id, p.revision
+       		FROM `imported_data_parsed` AS `p`
+       		LEFT JOIN `statistics_new` AS sn ON `p`.`imported_data_id` = sn.`imported_data_id`
+       		WHERE (`p`.`key`= 'URL') AND (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)
+			GROUP BY imported_data_id
+       		LIMIT 50");
 //       `p`.`revision` = (SELECT  MAX(idp.revision) AS revision FROM imported_data_parsed AS idp WHERE `p`.`imported_data_id`= idp.`imported_data_id`) AND
 //       (`p`.`revision` != sn.`revision` OR `sn`.`revision` IS NULL)  LIMIT 50");
         $rows = $query->result_array();
-        $ids = array();
+        //$ids = array();
 
-       foreach ($rows as $row) {
-            $ids[] = $row['imported_data_id'];
-//            $this->db->where('imported_data_id',$row['imported_data_id']);
-//            $this->db->delete('statistics_new');
-       }
-        $ids = array_unique($ids);
-       
         $data = array();
-        foreach ($ids as $id) {
-
+		
+       	foreach ($rows as $row) {
             $this->db->select('p.imported_data_id, p.key, p.value, p.revision, p.model')
                     ->from($this->tables['imported_data_parsed'] . ' as p')
-                    ->where('p.imported_data_id', $id)
+                    ->where('p.imported_data_id', $row['imported_data_id'])
 //                    ->where("p.revision = (SELECT  MAX(revision) as revision
 //                      FROM imported_data_parsed WHERE `imported_data_id`= $id
 //                      )", NULL, FALSE)
@@ -1206,7 +1200,7 @@ class Imported_data_parsed_model extends CI_Model {
                     $features = $val->value;
                 }//*/
             }
-            array_push($data, (object) array('imported_data_id' => $id,
+            array_push($data, (object) array('imported_data_id' => $row['imported_data_id'],
                         'description' => $description,
                 'long_description' => $long_description,
                 'url' => $url, 'product_name' => $product_name,
