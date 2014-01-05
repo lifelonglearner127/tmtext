@@ -363,55 +363,56 @@ $(function() {
 		else
 		{				
 			tblAssess_need_to_be_reinit = true;
-			tblAssess = $('#tblAssess').dataTable(_.extend({
-				bDestroy : true,
-				bJQeuryUI : true,				
-				bJUI : true,				
-				sPaginationType : 'full_numbers',
-				aaSorting : [[5, "desc"]],
-				bAutoWidth : false,
-				bProcessing : true,
-				bDeferRender : true,			
-				fnInitComplete : function(oSettings, json) {
-					console.log('local init complete');	
-					hideColumns(); 									
-					setBorderSeparator();					
-					loadSetTK();
-																				 
-					resizeImpDown();					
-					// $('#tblAssess_length').after($('#assess_tbl_show_case').clone(true, true));
-					// $('#research_batches_columns').appendTo('div.dataTables_filter');
-
-				},
-				fnRowCallback : function(nRow, aData, iDisplayIndex) {					
-					$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
-					tblAssess_postRenderProcessing(nRow);					
-				},
-				fnDrawCallback : function(oSettings) {
-					console.log('local draw callback');					           								
-				},
-				fnPreDrawCallback : function( oSettings ) {					
-					// wrapResultsTable();
-					buildReport(json_data);
-					
-					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data;					
-				},
-				oLanguage : {
-					sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
-					sInfoEmpty : "Showing 0 to 0 of 0 records",
-					sInfoFiltered : "",
-					sSearch : "Filter:",
-					sLengthMenu : "_MENU_ rows"
-				},
-				aoColumns : columns
-			}, json_data));			
+			console.log(json_data);
+			tblAssess = reInitializeTblAssess(json_data); 		
 		}			
     }	
 	
+	function reInitializeTblAssess(json_data)
+	{
+		return $('#tblAssess').dataTable(_.extend({
+			bDestroy : true,
+			bJQeuryUI : true,				
+			bJUI : true,				
+			sPaginationType : 'full_numbers',
+			aaSorting : [[5, "desc"]],
+			bAutoWidth : false,
+			bProcessing : true,
+			bDeferRender : true,			
+			fnInitComplete : function(oSettings, json) {
+				console.log('local init complete');	
+				hideColumns(); 									
+				setBorderSeparator();					
+				loadSetTK();
+																			 
+				resizeImpDown();										
+			},
+			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
+				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
+				tblAssess_postRenderProcessing(nRow);					
+			},
+			fnDrawCallback : function(oSettings) {
+				console.log('local draw callback');					           								
+			},
+			fnPreDrawCallback : function( oSettings ) {										
+				buildReport(json_data);
+				
+				oSettings.json_encoded_data = json_data.ExtraData && json_data.ExtraData.json_encoded_data ? json_data.ExtraData.json_encoded_data : '';					
+			},
+			oLanguage : {
+				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
+				sInfoEmpty : "Showing 0 to 0 of 0 records",
+				sInfoFiltered : "",
+				sSearch : "Filter:",
+				sLengthMenu : "_MENU_ rows"
+			},
+			aoColumns : columns
+		}, json_data));	
+	}
+	
 	function initializeTblAssess()
 	{		
-		return $('#tblAssess').dataTable({
-			// sDom : 'Rlfrtip',
+		return $('#tblAssess').dataTable({			
 			bJQueryUI : true,
 			bDestroy : true,
 			sPaginationType : "full_numbers",
@@ -463,8 +464,9 @@ $(function() {
 																			
 					customLocalStorage[storage_key] = JSON.stringify(json);		
 					
-					json.aaData = json.aaData.slice(0, 10);		
-					build(json);	
+					json.aaData = json.aaData.slice(0, 10);
+					
+					build(json);						
 				});                                  
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex) {				
@@ -476,15 +478,10 @@ $(function() {
 			},
 			fnInitComplete : function(oSettings, json) {				
 				hideColumns();  
-				topScroll();							
-				
-			
-				// $('#research_batches_columns').appendTo('div.dataTables_filter');
-				// $('#tblAssess_length').after($('#assess_tbl_show_case').clone(true, true));
+				topScroll();																
 			},
 			fnPreDrawCallback : function( oSettings ) {
-				
-				// console.log(oSettings.oClasses.sSortJUIWrapper);
+								
 			},
 			oLanguage : {
 				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
@@ -497,10 +494,8 @@ $(function() {
 		});			
 	}
 	
-	// setting global static variables
-	// tblAssess.DataTable.defaults.bJQueryUI = true;	
-	$.fn.dataTable.defaults.bJQueryUI = true;
-	// $.fn.dataTable.defaults.bJUI = true;
+	// setting global static variables	
+	$.fn.dataTable.defaults.bJQueryUI = true;	
 	
     tblAssess = initializeTblAssess();	
 	
