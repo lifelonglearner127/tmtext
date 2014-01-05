@@ -15,7 +15,6 @@ var summaryInfoSelectedElements = [];
 var tblAssess;
 var last_batch_id;
 var last_compare_batch_id;
-var first_click = true ;
 var summary_active_items = [];
 var arrow_css_top;
 var summary_filters_order;
