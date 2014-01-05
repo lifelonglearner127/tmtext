@@ -393,6 +393,7 @@ $(function() {
 				loadSetTK();
 																			 
 				resizeImpDown();										
+
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
 				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
@@ -416,7 +417,6 @@ $(function() {
 		}, json_data));	
 	}	
 
-	
 	// setting global static variables	
 	$.fn.dataTable.defaults.bJQueryUI = true;	
 	
@@ -430,6 +430,7 @@ $(function() {
 			displayInitColumns(oSettings);					
 		},
 	});
+
 	
 	tblAllColumns = tblAssess.fnGetAllSColumnNames();
 	
@@ -2619,7 +2620,7 @@ function prevSibilfunc(curentSibil){
             $('#tblAssess_info').after(dropDownString);
             $('#tblAssess_paginate').hide();
             $('.board_view').hide();
-            $('#tblAssess').hide();
+            $('.tblDataTable').hide(); // Castro #1119: change #tblAssess selector with .tblDataTable to avoid that table assess bar appears over graph dropdown
             $('#tblAssess').parent().find('div.ui-corner-bl').hide();
             $('.assess_report').hide();
             $('#assess_view').hide();
@@ -2642,10 +2643,12 @@ function prevSibilfunc(curentSibil){
 		var tblAssess = $('#tblAssess');
         if (visible) {
             tblAssess.hide();
+			$('.tblDataTable').hide(); // Castro #1119: table assess header fix
             tblAssess.parent().find('div.ui-corner-bl').hide();
             $('.assess_report').show();
         } else {
             tblAssess.show();
+			$('.tblDataTable').show(); // Castro #1119: table assess header fix
 			tblAssess.parent().find('div.ui-corner-bl').show();
             $('.assess_report').hide();
             $('#assess_view').hide();
