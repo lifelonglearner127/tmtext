@@ -15,6 +15,7 @@ var summaryInfoSelectedElements = [];
 var tblAssess;
 var last_batch_id;
 var last_compare_batch_id;
+var first_click = true ;
 var summary_active_items = [];
 var arrow_css_top;
 var summary_filters_order;
@@ -159,62 +160,17 @@ var summaryFieldNames = [
         ],
          details_compare: [
             // "price", // I.L.
-            "snap",
-            "imp_data_id",
+           
             "product_name",
-            "item_id",
-            "model",
+          
             "url",
-            "Page_Load_Time",
-            "Short_Description",
+           
             "short_description_wc",
-            "Meta_Keywords",
+           
             "title_seo_phrases",
-            "images_cmp",
-            "video_count",
-            "title_pa",
-            "Long_Description",
+          
             "long_description_wc",
-            "Meta_Description",
-            "Meta_Description_Count",
-            "column_external_content",
-            "H1_Tags",
-            "H1_Tags_Count",
-            "H2_Tags",
-            "H2_Tags_Count",
-            "column_reviews",
-            "average_review",
-            "column_features",
-            "snap1",
-            "imp_data_id1",
-            "product_name1",
-            "item_id1",
-            "model1",
-            "url1",
-            "Page_Load_Time1",
-            "Short_Description1",
-            "short_description_wc1",
-            "Meta_Keywords1",
-            "Long_Description1",
-            "long_description_wc1",
-            "Meta_Description1",
-            "Meta_Description_Count1",
-            "column_external_content1",
-            "H1_Tags1",
-            "H1_Tags_Count1",
-            "H2_Tags1",
-            "H2_Tags_Count1",
-            "column_reviews1",
-            "average_review1",
-            "column_features1",
-            "title_seo_phrases1",
-            "images_cmp1",
-            "video_count1",
-            "title_pa1",
-            "gap",
-            "Duplicate_Content",
-            "links_count"
-            
+			
         ],
         recommendations: [
             "product_name",
@@ -240,11 +196,7 @@ var filter_toggler_flag = 0
             "sTitle": "Snapshot",
             "sName": "snap",            
             "sClass": "Snapshot"
-        },
-        {
-            "sTitle": "Date",
-            "sName": "created",            
-        },
+        },       
         {
             "sTitle": "ID",
             "sName": "imp_data_id",            

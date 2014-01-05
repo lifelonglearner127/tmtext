@@ -37,7 +37,7 @@ function resizeImpDown(status){
 				return $table.closest('.wrapper');
 			}
 		});
-		topScroll();		
+		topScroll();				
 	};
 	
 	var tblAssessTable = $("#tblAssess");
@@ -66,9 +66,16 @@ $(function() {
         }).done(function(data){
            last_batch_id  = data.batch_id;
            last_compare_batch_id = data.compare_batch_id;
-           			
-			$('select[name="research_assess_batches"]').val(last_batch_id).change();			
-			$('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change();			                               
+           
+                first_click = false;
+          $('select[name="research_assess_batches"]').val(last_batch_id).change();
+			setTimeout(function(){
+			first_click = true;
+
+			$('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change()
+			 $('#research_assess_update').click();
+			},1500);
+                               
         });
         
     $.fn.serializeObject = function() {
@@ -361,15 +368,12 @@ $(function() {
 					return;	
 																			
 				customLocalStorage[storage_key] = JSON.stringify(json);		
-					
-				// json.aaData = json.aaData.slice(0, 10);
+									
 				tblAssess = reInitializeTblAssess(json);				
 			});       							
 		}
-		else
-		{								
-			tblAssess = reInitializeTblAssess(json_data); 		
-		}			
+		else									
+			tblAssess = reInitializeTblAssess(json_data); 					
     }	
 	
 	function reInitializeTblAssess(json_data) {
@@ -411,6 +415,7 @@ $(function() {
 			}			
 		}, json_data));	
 	}	
+
 	
 	// setting global static variables	
 	$.fn.dataTable.defaults.bJQueryUI = true;	
@@ -418,10 +423,39 @@ $(function() {
     // tblAssess = initializeTblAssess();	    
     tblAssess = $('#tblAssess').dataTable({
 		aoColumns : columns,
-		bDestroy : true,		
+		bDestroy : true,
+		bAutoWidth : false,
+		fnInitComplete : function( oSettings,json ) {										
+			
+			displayInitColumns(oSettings);					
+		},
 	});
 	
 	tblAllColumns = tblAssess.fnGetAllSColumnNames();
+	
+	function displayInitColumns(oSettings)
+	{		
+		
+		var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
+		var columns_checkboxes_checked = []
+		  , localTblAssess = oSettings.oInstance;
+		  
+        $.each(columns_checkboxes, function(index, value) {
+            columns_checkboxes_checked.push($(value).data('col_name'));
+        });		
+		$.each(oSettings.oInstance.fnGetAllSColumnNames(), function(index, value) {
+				
+			value = value.replace(/[0-9]$/, '');				
+			if (oSettings.aoColumns[index])
+			{										
+				if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {						
+					localTblAssess.fnSetColumnVis(index, true, false);
+				} else {
+					localTblAssess.fnSetColumnVis(index, false, false);						
+				}
+			}
+		}); 
+	}
 	
 	$('.get_board_view_snap').on('click', function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';		
@@ -1183,7 +1217,11 @@ $('#graphDropDown').live('change',function(){
 		var batch_set = $('.result_batch_items:checked').val() || 'me';							      
 		
 		fillReportSummary(report.summary, batch_sets[batch_set]['batch_items_prefix']);				                                     
-    }   	   	
+    }   
+	   	
+	$(document).on('click', '.update_filter_btn', function(e) {
+		$('#research_assess_update').click();
+	});
 		
 	function onDenisty(){
 		var tkstatus = $.cookie('tkstatus');
@@ -1678,7 +1716,7 @@ $('#graphDropDown').live('change',function(){
                 }
                     }).done(function(){
                         $('#assessDetailsDialog').dialog('close');
-                        
+                        $('#research_assess_update').click();
                         
                     });
                 }
@@ -1825,7 +1863,7 @@ function prevSibilfunc(curentSibil){
             } else if (data.length == 0 && res.target.value != "select customer") {
                 research_assess_batches.empty();
             }
-            
+            $('#research_assess_update').click();
         });
         var own_customer = $(this).val();
         fill_lists_batches_compare(own_customer, 0);        
@@ -1843,12 +1881,17 @@ function prevSibilfunc(curentSibil){
                 }
             } else if (data.length == 0 && res.target.value != "select customer") {
                 research_assess_batches_competitor.empty();
-            }            
+            }
+            $('#research_assess_update').click();
         });
         var own_customer = $(this).val();
         fill_lists_batches_compare(own_customer, 1);        
     });
-   
+
+    $('#research_assess_flagged').live('click', function() {
+        $('#research_assess_update').click();
+    });
+
     function fill_lists_batches_compare(own_customer, set_number) {
 		var set_number = set_number || 0;
 		var sets = [{
@@ -1973,7 +2016,9 @@ function prevSibilfunc(curentSibil){
 		{
 			$('.result_batch_items')[0].click(); //activating first batch set by default
 			second_batch_set.slideUp();
-			batch_set_depend_options.hide();		
+			batch_set_depend_options.hide();
+
+			$('#research_assess_update').click(); // clicking on Update btn
 		}
 	});
 
@@ -1983,7 +2028,8 @@ function prevSibilfunc(curentSibil){
 
 		$('#research_assess_compare_batches_customer_competitor').val('select customer').prop('selected', true);
         $('#research_assess_compare_batches_batch_competitor').val('select batch').prop('selected', true);
-        
+
+        $('#research_assess_update').click();
     });
 
     $('select[name="research_assess_batches"]').on("change", function() {
@@ -2031,7 +2077,10 @@ function prevSibilfunc(curentSibil){
             var own_customer = research_assess_customers.val();
             fill_lists_batches_compare(own_customer, 0);
             var batch_id_result = GetURLParameter('batch_id_result');
-            
+            if(!batch_id_result)
+            {
+                $('#research_assess_update').click();
+            }
         });
         if (typeof data != 'undefined') {
             if (data.length > 0) {
@@ -2093,7 +2142,11 @@ function prevSibilfunc(curentSibil){
                 research_assess_customers_competitor.val('select customer').prop('selected', true);
             var own_customer = research_assess_customers_competitor.val();
             fill_lists_batches_compare(own_customer, 1);
-            var batch_id_result = GetURLParameter('batch_id_result');          
+            var batch_id_result = GetURLParameter('batch_id_result');
+            if(!batch_id_result)
+            {
+                $('#research_assess_update').click();
+            }
         });
         if (typeof data != 'undefined') {
             if (data.length > 0) {
@@ -2158,8 +2211,11 @@ function prevSibilfunc(curentSibil){
         $('#assess_filter_dateto').val('');
     });
 
-    $('#research_assess_update').on('click', function() {        
-		readAssessData();							        
+    $('#research_assess_update').on('click', function() {
+        if(first_click)
+		{						
+			readAssessData();							
+        }
     });
 
   
@@ -2427,8 +2483,7 @@ function prevSibilfunc(curentSibil){
     });
 
     function hideColumns() {
-		var tableSettings = tblAssess.fnSettings();
-		
+		var tableSettings = tblAssess.fnSettings();		
 		var batch_set = $('.result_batch_items:checked').val() || 'me';                
 		var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case') || 'details_compare';
 				
@@ -2480,13 +2535,14 @@ function prevSibilfunc(curentSibil){
 			reportPanel(false);
 			
             $.each(tblAllColumns, function(index, value) {
-                value = value.replace(/[0-9]$/, "");				
+				
+                value = value.replace(/[0-9]$/, '');				
 				if (tableSettings.aoColumns[index])
 				{										
 					if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {						
-						tblAssess.fnSetColumnVis(index, true, false);
+						tblAssess.fnSetColumnVis(index, true);
 					} else {
-						tblAssess.fnSetColumnVis(index, false, false);						
+						tblAssess.fnSetColumnVis(index, false);						
 					}
 				}
             });     			;

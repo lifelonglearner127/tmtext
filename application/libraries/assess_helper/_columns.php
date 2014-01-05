@@ -9,7 +9,7 @@ return array(
 		array(
 			'sTitle' => 'Snapshot',
 			'sName' => 'snap',
-			'sClass' => 'Snapshot'
+			'sClass' => 'Snapshot',			
 		),
 		array(
 			'sTitle' => 'Date',
@@ -24,7 +24,8 @@ return array(
 		array(
 			'sTitle' => "Product Name",
 			'sName' => 'product_name',                
-			'sClass' => 'product_name_text'
+			'sClass' => 'product_name_text',
+			'bVisible' => true
 		),
 		array(
 			'sTitle' => "item ID",
@@ -39,7 +40,8 @@ return array(
 		array(
 			'sTitle' => 'URL',
 			'sName' => 'url',                
-			'sClass' => 'url_text'
+			'sClass' => 'url_text',
+			'bVisible' => true
 		),
 		array(
 			'sTitle' => "Page Load Time",
@@ -57,6 +59,7 @@ return array(
 			'sName' => 'short_description_wc',                
 			'sClass' => 'word_short',
 			'newTitle' => 'Short Desc <span class="subtitle_word_short?" ># Words</span>',
+			'bVisible' => true
 		),
 		array(
 			'sTitle' => "Meta Keywords",
@@ -73,7 +76,8 @@ return array(
 			'sTitle' => 'Long Desc <span class="subtitle_word_long" ># Words</span>',
 			'sName' => 'long_description_wc',                
 			'sClass' => 'word_long',
-			'newTitle' => 'Long Desc <span class="subtitle_word_long?" ># Words</span>'
+			'newTitle' => 'Long Desc <span class="subtitle_word_long?" ># Words</span>',
+			'bVisible' => true
 		),
 		array(
 			'sTitle' => "Meta Description",
@@ -129,7 +133,8 @@ return array(
 		array(
 			'sTitle' => "Title Keywords", 
 			'sName' => 'title_seo_phrases',                
-			'sClass' => 'title_seo_phrases'
+			'sClass' => 'title_seo_phrases',
+			'bVisible' => true
 		),
 		array(
 			'sTitle' => 'Images',

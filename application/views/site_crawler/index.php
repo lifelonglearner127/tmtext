@@ -503,6 +503,7 @@ $.fn.setCursorToTextEnd = function() {
 			$('button#current_crawl').attr('disabled', 'disabled');
 		} else {
 			$.post('<?php echo site_url('site_crawler/crawl_all');?>', {ids: ids, crawl: $('#cb_crawl_now').is(':checked') }, function(data) {
+				console.log(data);
 				loadCurrentList(fetch_lnk);
 			});
 		}
