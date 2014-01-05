@@ -246,11 +246,10 @@ class Assess extends MY_Controller {
 	}
 	
     public function get_assess_info() {
-        //Debugging
-        $st_time = microtime(TRUE);
         
+        $st_time = microtime(TRUE);      
+		
         $batch_id = $this->input->get('batch_id');
-
         if ($batch_id == 0) {
             $output = array(
                 'sEcho' => 1,
@@ -264,7 +263,7 @@ class Assess extends MY_Controller {
                     ->set_output(json_encode($output));			
         } else {			 
 			$batch2_items_count = 0;
-			
+			$columns = AssessHelper::columns();
 			if (!($txt_filter = $this->input->get('search_text'))) 
 				if (!($txt_filter = $this->input->get('sSearch'))) 
 					$txt_filter = '';			
@@ -294,9 +293,9 @@ class Assess extends MY_Controller {
 				}),
 				'long_seo_phrases' => $this->input->get('long_seo_phrases'),
 				'long_duplicate_content' => $this->input->get('long_duplicate_content'),
-				'all_columns' => $this->input->get('sColumns'),
-				'sort_columns' => $this->input->get('iSortCol_0'),
-				'sort_dir' => $this->input->get('sSortDir_0'),
+				'all_columns' => AssessHelper::getStringColumnNames($columns),				
+				'sort_columns' => array( 'default' => 5 ),
+				'sort_dir' => array( 'default' => 'desc' ),
 				'flagged' => $this->input->get('flagged'),
 				'summaryFilterData' => array( 'default' => array(), 'callback' => function($value) {
 					return $value ? explode(',', $value) : array();
@@ -319,11 +318,7 @@ class Assess extends MY_Controller {
 			
             $results = $this->get_data_for_assess($params);
 			
-            $cmp = array();
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time1: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);
+            $cmp = array();  
 
             if ($batch2 && $batch2 != 'all') {
                 $this->load->model('batches_model');
@@ -566,10 +561,6 @@ class Assess extends MY_Controller {
                 }
                 $results = $cmp;
             }
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time2: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);
 
             if ($batch2 == 'all') {
                 $max_similar_item_count = 1;
@@ -601,7 +592,7 @@ class Assess extends MY_Controller {
             }
 
             $build_assess_params->batch2_items_count = $batch2_items_count;
-            $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
+            $output = $this->build_asses_table($results, $build_assess_params, $batch_id, $columns);
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
 //            header('Mem-and-Time4: '.memory_get_usage().'-'.$dur);
@@ -610,7 +601,7 @@ class Assess extends MY_Controller {
             $this->output->set_content_type('application/json')
                     ->set_output(json_encode($output));
         }
-		if (function_exists('fastcgi_finish_request '))
+		if (function_exists('fastcgi_finish_request'))
 			fastcgi_finish_request();
     }
 
@@ -3041,7 +3032,7 @@ class Assess extends MY_Controller {
         return strpos($str1, $str2) !== FALSE;
     }
 
-    private function build_asses_table($results, $build_assess_params, $batch_id = '') 
+    private function build_asses_table($results, $build_assess_params, $batch_id = '', $columns = array()) 
 	{
 //        error_reporting(E_ALL);
         //Debugging
@@ -3061,9 +3052,8 @@ class Assess extends MY_Controller {
         $report = array();
         $pricing_details = array();
 		
-		//getting columns		
-		// 2nd param $build_assess_params->max_similar_item_count is 1 for now, hardcoded similar items count
-		$columns = AssessHelper::addCompetitorColumns(AssessHelper::columns(), 1);
+		//getting columns				
+		$columns = AssessHelper::addCompetitorColumns($columns);
 		
 		//extracting initial data varialbes for filters
         extract(AssessHelper::getInitialFilterData());
@@ -3170,7 +3160,7 @@ class Assess extends MY_Controller {
                     continue;
                 }
             }
-
+			
             if ($row->short_description) {
                 $result_row->short_description = $row->short_description;
             } else {
@@ -4190,8 +4180,7 @@ class Assess extends MY_Controller {
 		
 			$are_records_on_the_page = $c >= $display_start && $c < ($display_start + $display_length);
 			$are_records_filtered = $this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData);
-            
-			// if (!$build_assess_params->summaryFilterData && $are_records_on_the_page) {
+            			
 			if (!$build_assess_params->summaryFilterData) {
                 $result_table[] = $result_row;				
             } else if ($are_records_filtered) {
@@ -4206,12 +4195,7 @@ class Assess extends MY_Controller {
 			$c++;							         
         }
 
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time2-BAT01: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);  
-      
-//Debugging problem part
+
         if ($this->settings['statistics_table'] == "statistics_new") {
             $own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
         } else {
@@ -4398,7 +4382,8 @@ class Assess extends MY_Controller {
 
 
         $output = array(
-            "sEcho" => intval($this->input->get('sEcho')),
+            // "sEcho" => intval($this->input->get('sEcho')),
+            "sEcho" => ($filtered_count ?: $total_rows) / $display_length,
             "iTotalRecords" => $filtered_count ?: $total_rows,
             "iTotalDisplayRecords" => $filtered_count ?: $total_rows,
             "iDisplayLength" => $display_length,

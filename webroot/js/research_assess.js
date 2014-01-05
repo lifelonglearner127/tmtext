@@ -351,25 +351,28 @@ $(function() {
 		  
 		$('.assess_report_download_panel').hide();
         $("#tblAssess tbody tr").remove();
-				
+		
 		if (!json_data)
-		{	
-			if (tblAssess_need_to_be_reinit) {				
-				tblAssess_need_to_be_reinit = false;				
-				tblAssess = initializeTblAssess();
-			} else 			
-				tblAssess.fnDraw();						
+		{																
+			var aoData = buildTableParams([]);	
+				
+			$.getJSON(readAssessUrl, aoData, function(json) {
+				if(!json)
+					return;	
+																			
+				customLocalStorage[storage_key] = JSON.stringify(json);		
+					
+				// json.aaData = json.aaData.slice(0, 10);
+				tblAssess = reInitializeTblAssess(json);				
+			});       							
 		}
 		else
-		{				
-			tblAssess_need_to_be_reinit = true;
-			console.log(json_data);
+		{								
 			tblAssess = reInitializeTblAssess(json_data); 		
 		}			
     }	
 	
-	function reInitializeTblAssess(json_data)
-	{
+	function reInitializeTblAssess(json_data) {
 		return $('#tblAssess').dataTable(_.extend({
 			bDestroy : true,
 			bJQeuryUI : true,				
@@ -405,99 +408,18 @@ $(function() {
 				sInfoFiltered : "",
 				sSearch : "Filter:",
 				sLengthMenu : "_MENU_ rows"
-			},
-			aoColumns : columns
+			}			
 		}, json_data));	
-	}
-	
-	function initializeTblAssess()
-	{		
-		return $('#tblAssess').dataTable({			
-			bJQueryUI : true,
-			bDestroy : true,
-			sPaginationType : "full_numbers",
-			bProcessing : true,
-			aaSorting : [[5, "desc"]],
-			bAutoWidth : false,
-			bDeferRender : true,
-			bServerSide : true,        
-			sAjaxSource : readAssessUrl,
-			fnServerData : function(sSource, aoData, fnCallback) {
-				
-				//Toggling total items selected count by filter
-				var total_items_selected_by_filter_wrapper = $('.total_items_selected_by_filter_wrapper')				
-				  , research_batch = $('.research_assess_batches_select')
-				  , research_batch_competitor = $('#research_assess_compare_batches_batch')
-				  , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				   
-				  , settings = tblAssess ? tblAssess.fnSettings() : null				  
-				  , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null;	
-				  
-				total_items_selected_by_filter_wrapper.hide();
-				
-				aoData.push({
-					'name': 'summaryFilterData',
-					'value': summaryInfoSelectedElements.join(',')
-				});
-											
-				aoData = buildTableParams1(aoData);									           
-				
-				function build(json) {													
-					if (json.ExtraData != undefined) 
-					{					
-						buildReport(json);                    				
-						resizeImpDown();
-						setBorderSeparator();							
-						settings.json_encoded_data = json.ExtraData.json_encoded_data;	
-						if (summaryInfoSelectedElements.length)
-							total_items_selected_by_filter_wrapper.show();									              													
-									
-						tblAssess && tblAssess.fnProcessingIndicator(false);	
-						loadSetTK();									
-					}
-										
-					fnCallback(json);
-				}
-												
-				$.getJSON(sSource, aoData, function(json) {
-					if(!json)
-						return;	
-																			
-					customLocalStorage[storage_key] = JSON.stringify(json);		
-					
-					json.aaData = json.aaData.slice(0, 10);
-					
-					build(json);						
-				});                                  
-			},
-			fnRowCallback : function(nRow, aData, iDisplayIndex) {				
-				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 
-				tblAssess_postRenderProcessing(nRow);
-			},
-			fnDrawCallback : function(oSettings) {
-				console.log('draw callback');					           																
-			},
-			fnInitComplete : function(oSettings, json) {				
-				hideColumns();  
-				topScroll();																
-			},
-			fnPreDrawCallback : function( oSettings ) {
-								
-			},
-			oLanguage : {
-				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
-				sInfoEmpty : "Showing 0 to 0 of 0 records",
-				sInfoFiltered : "",
-				sSearch : "Filter:",
-				sLengthMenu : "_MENU_ rows"
-			},
-			aoColumns : columns
-		});			
-	}
+	}	
 	
 	// setting global static variables	
 	$.fn.dataTable.defaults.bJQueryUI = true;	
 	
-    tblAssess = initializeTblAssess();	
+    // tblAssess = initializeTblAssess();	    
+    tblAssess = $('#tblAssess').dataTable({
+		aoColumns : columns,
+		bDestroy : true,		
+	});
 	
 	tblAllColumns = tblAssess.fnGetAllSColumnNames();
 	
@@ -2675,9 +2597,9 @@ function prevSibilfunc(curentSibil){
     }
 
    
-	function buildTableParams1(existingParams) {
+	function buildTableParams(existingParams) {
 
-        var assessRequestParams = collectionParams1();
+        var assessRequestParams = collectionParams();
         for (var p in assessRequestParams) {
             existingParams.push({
                 "name": p,
@@ -2687,7 +2609,7 @@ function prevSibilfunc(curentSibil){
         }
         return existingParams;
     }
-    function collectionParams1() {
+    function collectionParams() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
 
         var assessRequestParams = {};
@@ -2747,105 +2669,18 @@ function prevSibilfunc(curentSibil){
         if (research_assess_compare_batches_batch > 0) {
             assessRequestParams.compare_batch_id = research_assess_compare_batches_batch;
         }
-
+		
+		assessRequestParams.summaryFilterData = summaryInfoSelectedElements.join(',');
+		assessRequestParams.sort_columns = 5;
+		assessRequestParams.sort_dir = 'desc';
+		assessRequestParams.sSearch = '';
+		assessRequestParams.bRegex = false;
+		assessRequestParams.iDisplayLength = 10;
+		assessRequestParams.iDisplayStart = 0;
+				
         return assessRequestParams;
     }
 
-    function collectionParams() {
-		var batch_set = $('.result_batch_items:checked').val() || 'me';
-
-        var assessRequestParams = {};
-
-		var batch_id_result = GetURLParameter('batch_id_result');
-		var cmp_selected = GetURLParameter('cmp_selected');
-		var search_text = GetURLParameter('search_text');
-
-        if(search_text){
-            assessRequestParams.search_text = search_text;
-        }else{
-            assessRequestParams.search_text = $('#assess_filter_text').val();
-
-        }
-        if(batch_id_result){
-            assessRequestParams.batch_id = batch_id_result;
-        }else{
-            assessRequestParams.batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
-        }
-
-        var assess_filter_datefrom = $('#assess_filter_datefrom').val();
-        var assess_filter_dateto = $('#assess_filter_dateto').val();
-        if (assess_filter_datefrom && assess_filter_dateto) {
-            assessRequestParams.date_from = assess_filter_datefrom,
-                    assessRequestParams.date_to = assess_filter_dateto
-        }
-
-        if(cmp_selected){
-                    assessRequestParams.batch2 = cmp_selected;
-        }else if($("select[name='" + batch_sets[batch_set]['batch_batch'] + "'").val() != 0 && $(batch_sets[batch_set]['batch_compare']).val() != 0 && $(batch_sets[batch_set]['batch_compare']).val() != null) {
-            assessRequestParams.batch2 = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
-
-        }
-
-        if ($('#research_assess_flagged').is(':checked')) {
-            assessRequestParams.flagged = true;
-        }
-
-        if ($('#research_assess_price_diff').is(':checked')) {
-            assessRequestParams.price_diff = true;
-        }
-
-        if ($('#research_assess_short_check').is(':checked')) {
-            assessRequestParams.short_less_check = $('#research_assess_short_less_check').is(':checked');
-            assessRequestParams.short_less = $('#research_assess_short_less').val();
-            assessRequestParams.short_more_check = $('#research_assess_short_more_check').is(':checked')
-            assessRequestParams.short_more = $('#research_assess_short_more').val();
-
-            if ($('#research_assess_short_seo_phrases').is(':checked')) {
-                assessRequestParams.short_seo_phrases = 1;
-            }
-            if ($('#research_assess_title_seo_phrases').is(':checked')) {
-                assessRequestParams.title_seo_phrases = true;
-            }
-            if ($('#research_assess_images_cmp').is(':checked')) {
-                assessRequestParams.images_cmp = true;
-            }
-            if ($('#research_assess_video_count').is(':checked')) {
-                assessRequestParams.video_count = true;
-            }
-            if ($('#research_assess_title_pa').is(':checked')) {
-                assessRequestParams.title_pa = true;
-            }
-            if ($('#research_assess_short_duplicate_content').is(':checked')) {
-                assessRequestParams.short_duplicate_content = 1;
-            }
-        }
-
-        if ($('#research_assess_long_check').is(':checked')) {
-            assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked') + 0;
-            assessRequestParams.long_less = $('#research_assess_long_less').val();
-            assessRequestParams.long_more_check = $('#research_assess_long_more_check').is(':checked') + 0;
-            assessRequestParams.long_more = $('#research_assess_long_more').val();
-
-            if ($('#research_assess_long_seo_phrases').is(':checked')) {
-                assessRequestParams.long_seo_phrases = 1;
-            }
-            if ($('#research_assess_long_duplicate_content').is(':checked')) {
-                assessRequestParams.long_duplicate_content = 1;
-            }
-        }
-
-        var research_assess_compare_batches_batch = $(batch_sets[batch_set]['batch_compare']).val();
-       
-        if(cmp_selected){
-            assessRequestParams.compare_batch_id = cmp_selected;
-                       
-        }else if (research_assess_compare_batches_batch > 0) {
-            assessRequestParams.compare_batch_id = research_assess_compare_batches_batch;
-        }
-        return assessRequestParams;
-    }
-    
-    
 
     $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function() {
         $(this).modal('hide');
