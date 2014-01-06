@@ -2506,6 +2506,13 @@ class System extends MY_Controller {
 		$this -> render();
 	}
 
+	public function upload_match_urls_manu() {
+		ini_set('post_max_size', '100M');
+		$this -> load -> library('UploadHandler');
+		$this -> output -> set_content_type('application/json');
+		// $this -> uploadhandler -> upload(array('script_url' => site_url('system/upload_match_urls'), 'upload_dir' => $this -> config -> item('csv_upload_dir'), 'param_name' => 'files', 'delete_type' => 'POST', 'accept_file_types' => '/.+\.(txt|jl|csv)$/i', ));
+	}
+
 	public function upload_match_urls() {
 		ini_set('post_max_size', '100M');
 		$this -> load -> library('UploadHandler');
