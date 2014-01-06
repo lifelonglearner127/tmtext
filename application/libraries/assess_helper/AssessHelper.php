@@ -25,7 +25,8 @@ class AssessHelper
 					'sTitle' => isset($column['newTitle']) ? str_replace('?', $i, $column['newTitle']) : $column['sTitle'],
 					'sName' => $column['sName'] . $i,
 					'sClass' => $column['sClass'] . $i,
-					'bVisible' => isset($column['bVisible']) ? $column['bVisible'] : true
+					'bVisible' => isset($column['bVisible']) ? $column['bVisible'] : true,
+					'batch_number' => $i
 				);
 			}			
 		}

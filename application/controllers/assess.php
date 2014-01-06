@@ -295,6 +295,7 @@ class Assess extends MY_Controller {
 				'long_duplicate_content' => $this->input->get('long_duplicate_content'),
 				'all_columns' => AssessHelper::getStringColumnNames($columns),				
 				'sort_columns' => array( 'default' => 5 ),
+				'display_competitor_columns' => false,
 				'sort_dir' => array( 'default' => 'desc' ),
 				'flagged' => $this->input->get('flagged'),
 				'summaryFilterData' => array( 'default' => array(), 'callback' => function($value) {
@@ -323,6 +324,7 @@ class Assess extends MY_Controller {
             if ($batch2 && $batch2 != 'all') {
                 $this->load->model('batches_model');
                 $build_assess_params->max_similar_item_count = 1;
+                $build_assess_params->display_competitor_columns = true;
 
                 $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
 
@@ -4381,7 +4383,7 @@ class Assess extends MY_Controller {
             // "sEcho" => intval($this->input->get('sEcho')),
             "sEcho" => ($filtered_count ?: $total_rows) / $display_length,
             "iTotalRecords" => $filtered_count ?: $total_rows,
-            "iTotalDisplayRecords" => $filtered_count ?: $total_rows,
+            "iTotalDisplayRecords" => $filtered_count ?: $total_rows,            
             "iDisplayLength" => $display_length,
             "aaData" => array()
         );
@@ -4612,6 +4614,7 @@ class Assess extends MY_Controller {
 				
         $output['aoColumns'] = $columns;
         $output['ExtraData']['report'] = $report;        
+        $output['ExtraData']['display_competitor_columns'] = $build_assess_params->display_competitor_columns;
          		
         return $output;
     }

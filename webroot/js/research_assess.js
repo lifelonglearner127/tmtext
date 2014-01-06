@@ -68,7 +68,7 @@ $(function() {
            last_compare_batch_id = data.compare_batch_id;
                      
 			$('select[name="research_assess_batches"]').val(last_batch_id).change();				
-			$('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change()
+			$('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change();
 			 			                              
         });
         
@@ -405,7 +405,11 @@ $(function() {
 				tblAssess = oSettings.oInstance;
 				tblAllColumns = tblAssess.fnGetAllSColumnNames();
 				
-				oSettings.json_encoded_data = json_data.ExtraData && json_data.ExtraData.json_encoded_data ? json_data.ExtraData.json_encoded_data : '';					
+				if (json_data.ExtraData)
+				{
+					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data ? json_data.ExtraData.json_encoded_data : '';					
+					oSettings.display_competitor_columns = json_data.ExtraData.display_competitor_columns;					
+				}
 			},
 			oLanguage : {
 				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
@@ -2468,7 +2472,8 @@ function prevSibilfunc(curentSibil){
     });
 
     function hideColumns() {
-		var tableSettings = tblAssess.fnSettings();		
+		var tableSettings = tblAssess.fnSettings();	
+		console.log(tableSettings);
 		var batch_set = $('.result_batch_items:checked').val() || 'me';                
 		var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case') || 'details_compare';				       
 		
@@ -2518,15 +2523,22 @@ function prevSibilfunc(curentSibil){
 			$.each(columns_checkboxes, function(index, value) {
 				columns_checkboxes_checked.push($(value).data('col_name'));
 			});
-			console.log(tblAllColumns);
-			console.log(columns_checkboxes_checked);
+			
             $.each(tblAllColumns, function(index, value) {
 				
-                value = value.replace(/[0-9]$/, '');				
+                value = value.replace(/[0-9]$/, '');	
+				
 				if (tableSettings.aoColumns[index])
 				{							
-					if ($.inArray(value, columns_checkboxes_checked) > -1) {						
-						tblAssess.fnSetColumnVis(index, true);											
+					if ($.inArray(value, columns_checkboxes_checked) > -1) {
+							
+						if (tableSettings.display_competitor_columns)
+							tblAssess.fnSetColumnVis(index, true);
+						else if (!tableSettings.display_competitor_columns && !tableSettings.aoColumns[index]['batch_number'])
+							tblAssess.fnSetColumnVis(index, true);
+						else
+							tblAssess.fnSetColumnVis(index, false);		
+							
 					} else {											
 						tblAssess.fnSetColumnVis(index, false);						
 					}
