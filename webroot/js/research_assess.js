@@ -474,8 +474,6 @@ $(function() {
 					
 					build(json);						
 				}); 
-				
-				highChart('total_description_wc'); // Castro #1119: show high chart after get assess data  
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex) {				
 				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 
@@ -993,7 +991,10 @@ function highChart(graphBuild) {
 }
 $('#graphDropDown').live('change',function(){
     var graphDropDownValue = $(this).children('option:selected').val();
-    highChart(graphDropDownValue);
+    if(graphDropDownValue != "") // Castro #1119: create chart when a valid option is selected
+    {
+      highChart(graphDropDownValue);
+    }
 });
 	
     $(document).scroll(function() {
@@ -2666,6 +2667,7 @@ function prevSibilfunc(curentSibil){
             $('#tblAssess_info').hide();
             var dropDownString;
             dropDownString = '<select id="graphDropDown" style="width: 235px" >';
+            dropDownString += '<option value="" >----Select----</option>';  // Castro #1119: add select option, chart will be created when this is changed
             dropDownString += '<option value="total_description_wc" >Total Description Word Counts</option>';
                 dropDownString += '<option value="short_description_wc" >Short Description Word Counts</option>';
                 dropDownString += '<option value="long_description_wc" >Long Description Word Counts</option>';
@@ -2676,10 +2678,11 @@ function prevSibilfunc(curentSibil){
 //                dropDownString += '<option value="own_price" >Prices</option>';
             dropDownString += '</select><input id="show_over_time" style="width: 30px;" type="checkbox"><span id="show_over_time_span">Show changes over time</span>';
             $('#tblAssess_info').after(dropDownString);
+            $('#tblAssess_info').parent().show(); // Castro #1119: unhide graphs dropdown container
             $('#tblAssess_paginate').hide();
             $('.board_view').hide();
             $('.tblDataTable').hide(); // Castro #1119: change #tblAssess selector with .tblDataTable to avoid that table assess bar appears over graph dropdown
-            $('#tblAssess').parent().find('div.ui-corner-bl').hide();
+            //$('#tblAssess').parent().find('div.ui-corner-bl').hide();
             $('.assess_report').hide();
             $('#assess_view').hide();
             $('#assess_graph').show();
