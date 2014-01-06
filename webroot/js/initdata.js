@@ -207,6 +207,11 @@ var filter_toggler_flag = 0
             "sName": "product_name",            
             "sClass": "product_name_text"
         },
+		{
+            "sTitle": "Title",
+            "sName": "title_pa",            
+            "sClass": "title_pa"
+        },
         {
             "sTitle": "item ID",
             "sName": "item_id",            
@@ -216,6 +221,11 @@ var filter_toggler_flag = 0
             "sTitle": "Model",
             "sName": "model",            
             "sClass": "model"
+        },
+		{
+            "sTitle": "Price",
+            "sName": "price_diff",            
+            "sClass": "price_text"
         },
         {
             "sTitle": "URL",
@@ -263,16 +273,6 @@ var filter_toggler_flag = 0
             "sClass": "video_count"
         },/*max*/
         {
-            "sTitle": "Title",
-            "sName": "title_pa",            
-            "sClass": "title_pa"
-        },
-        {
-            "sTitle": "Links",
-            "sName": "links_count",            
-            "sClass": "links_count"
-        },
-        {
             "sTitle": "<span class='subtitle_desc_long' >Long </span>Description",
             "sName": "Long_Description",            
             "sClass": "Long_Description"
@@ -281,6 +281,11 @@ var filter_toggler_flag = 0
             "sTitle": "Long Desc <span class='subtitle_word_long' ># Words</span>",
             "sName": "long_description_wc",            
             "sClass": "word_long"
+        },
+		{
+            "sTitle": "Links",
+            "sName": "links_count",            
+            "sClass": "links_count"
         },
         {
             "sTitle": "Keywords <span class='subtitle_keyword_long'>Long</span>",
@@ -349,11 +354,6 @@ var filter_toggler_flag = 0
         {
             "sTitle": "Features",
             "sName": "column_features",            
-        },
-        {
-            "sTitle": "Price",
-            "sName": "price_diff",            
-            "sClass": "price_text"
         },
         {
             "sTitle": "Recommendations",
