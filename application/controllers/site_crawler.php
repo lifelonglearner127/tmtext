@@ -363,11 +363,15 @@ class Site_Crawler extends MY_Controller {
 			$rows = $this -> crawler_list_model -> getAll(1000, false);
 		}
 		
+		$ids = array();
 		foreach ($rows as $data) {
+			$ids[] = $data->id;
+		}
+		
+		if ($this -> input -> post('crawl') && ($this -> input -> post('crawl') == 'true')) {
+			$this -> crawler_list_model -> updateStatusEx($ids, 'lock');
 
-			if ($this -> input -> post('crawl') && ($this -> input -> post('crawl') == 'true')) {
-				$this -> crawler_list_model -> updateStatus($data -> id, 'lock');
-
+			foreach ($rows as $data) {
 				if ($page_data = $this -> pageprocessor -> get_data($data -> url)) {
 					$page_data['URL'] = $data -> url;
 					// save data
@@ -417,10 +421,10 @@ class Site_Crawler extends MY_Controller {
 				} else {
 					$this -> crawler_list_model -> updateStatus($data -> id, 'failed');
 				}
-			} else {
-				// Don't crawl only mark 'queued'
-				$this -> crawler_list_model -> updateStatus($data -> id, 'queued');
 			}
+		} else {
+			// Don't crawl only mark 'queued'
+			$this -> crawler_list_model -> updateStatusEx($ids, 'queued');
 		}
 
 		// === add right hand side to queue (start)

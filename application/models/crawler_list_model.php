@@ -48,6 +48,11 @@ class Crawler_List_model extends CI_Model {
 	function updateStatus($id, $status) {
 		return $this -> db -> update($this -> tables['crawler_list'], array('status' => $status), array('id' => $id));
 	}
+	
+	function updateStatusEx($ids, $status) {
+		$this -> db -> where_in('id', $ids);
+		return $this -> db -> update($this -> tables['crawler_list'], array('status' => $status));
+	}
 
 	function updated($id) {
 		//return $this->db->update($this->tables['crawler_list'], array('updated' => date('Y-m-d h:i:s')), array('id' => $id));

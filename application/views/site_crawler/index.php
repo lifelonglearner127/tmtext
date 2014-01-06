@@ -546,7 +546,9 @@ $.fn.setCursorToTextEnd = function() {
 	});
 
 	$(document).on("click", "button#re_crawl_batch", function(){
+		console.log('re_crawl_batch');
 		$.post('<?php echo site_url('site_crawler/crawl_all');?>', {recrawl: 1, batch_id: $('#batches option:selected').val(), crawl: $('#cb_crawl_now').is(':checked') }, function(data) {
+			console.log(data);
 			loadCurrentList();
 		});
 	});
