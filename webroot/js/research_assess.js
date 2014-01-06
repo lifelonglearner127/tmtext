@@ -2488,11 +2488,7 @@ function prevSibilfunc(curentSibil){
 		var batch_set = $('.result_batch_items:checked').val() || 'me';                
 		var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case') || 'details_compare';
 				
-        var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
-        var columns_checkboxes_checked = [];
-        $.each(columns_checkboxes, function(index, value) {
-            columns_checkboxes_checked.push($(value).data('col_name'));
-        });
+        
 		
 		//turn off related blocks here
 		toggleRelatedBlocks('details_compare', false);
@@ -2535,15 +2531,21 @@ function prevSibilfunc(curentSibil){
             
 			reportPanel(false);
 			
+			var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
+			var columns_checkboxes_checked = [];
+			$.each(columns_checkboxes, function(index, value) {
+				columns_checkboxes_checked.push($(value).data('col_name'));
+			});
+		
             $.each(tblAllColumns, function(index, value) {
 				
                 value = value.replace(/[0-9]$/, '');				
 				if (tableSettings.aoColumns[index])
 				{										
-					if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {						
-						tblAssess.fnSetColumnVis(index, true);
+					if ($.inArray(value, tableCase.details_compare) > -1 || $.inArray(value, columns_checkboxes_checked) > -1) {						
+						tblAssess.fnSetColumnVis(index, true, false);
 					} else {
-						tblAssess.fnSetColumnVis(index, false);						
+						tblAssess.fnSetColumnVis(index, false, false);						
 					}
 				}
             });     			;
