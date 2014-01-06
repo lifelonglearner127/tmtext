@@ -25,7 +25,7 @@ class AssessHelper
 					'sTitle' => isset($column['newTitle']) ? str_replace('?', $i, $column['newTitle']) : $column['sTitle'],
 					'sName' => $column['sName'] . $i,
 					'sClass' => $column['sClass'] . $i,
-					'bVisible' => isset($column['bVisible']) ? $column['bVisible'] : false
+					'bVisible' => isset($column['bVisible']) ? $column['bVisible'] : true
 				);
 			}			
 		}
@@ -57,6 +57,17 @@ class AssessHelper
 			// if (!isset($data[$column['sName']]))
 				// var_dump($column['sName']);
 		}
+		
+		return $r;
+	}
+	
+	public static function getSelectableColumns($columns)
+	{
+		$r = array();
+		
+		foreach ($columns as $column)		
+			if (isset($column['nonSelected']) && $column['nonSelected'] !== true  || !isset($column['nonSelected']))
+				$r[] = $column;		
 		
 		return $r;
 	}

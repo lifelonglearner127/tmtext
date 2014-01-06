@@ -2852,17 +2852,11 @@ class Assess extends MY_Controller {
                 'product_name' => 'true',                               
                 'url' => 'true',                                
                 'short_description_wc' => 'true',			               
-                'title_seo_phrases' => 'true',                                       
-                'H1_Tags' => 'true',                              
-                'column_reviews' => 'true',				          
-                'images_cmp' => 'true',
-                'video_count' => 'true', 
-                'title_pa' => 'true',
-                'links_count' => 'true'
+                'title_seo_phrases' => 'true',                                                       
             );
         }
         $this->data['columns'] = $columns;
-
+		
         $this->render();
     }
 

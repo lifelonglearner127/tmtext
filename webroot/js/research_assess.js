@@ -371,6 +371,7 @@ $(function() {
     }	
 	
 	function reInitializeTblAssess(json_data) {
+		
 		return $('#tblAssess').dataTable(_.extend({
 			bDestroy : true,
 			bJQeuryUI : true,				
@@ -394,10 +395,15 @@ $(function() {
 				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
-				console.log('local draw callback');					           								
+				console.log('local draw callback');	
+				tblAssess.fnAdjustColumnSizing(false);				
 			},
 			fnPreDrawCallback : function( oSettings ) {										
 				buildReport(json_data);
+				
+				//setting main tblAssess instance
+				tblAssess = oSettings.oInstance;
+				tblAllColumns = tblAssess.fnGetAllSColumnNames();
 				
 				oSettings.json_encoded_data = json_data.ExtraData && json_data.ExtraData.json_encoded_data ? json_data.ExtraData.json_encoded_data : '';					
 			},
@@ -407,50 +413,51 @@ $(function() {
 				sInfoFiltered : "",
 				sSearch : "Filter:",
 				sLengthMenu : "_MENU_ rows"
-			}			
+			},
+			aoColumns : json_data.aoColumns
 		}, json_data));	
 	}	
 
 	// setting global static variables	
 	$.fn.dataTable.defaults.bJQueryUI = true;	
 	
-    // tblAssess = initializeTblAssess();	    
-    tblAssess = $('#tblAssess').dataTable({
-		aoColumns : columns,
-		bDestroy : true,
-		bAutoWidth : false,
-		fnInitComplete : function( oSettings,json ) {										
+    
+    // tblAssess = $('#tblAssess').dataTable({
+		// aoColumns : columns,
+		// bDestroy : true,
+		// bAutoWidth : false,
+		// fnInitComplete : function( oSettings,json ) {										
 			
-			displayInitColumns(oSettings);					
-		},
-	});
+			// displayInitColumns(oSettings);					
+		// },
+	// });
 
 	
-	tblAllColumns = tblAssess.fnGetAllSColumnNames();
+	// tblAllColumns = tblAssess.fnGetAllSColumnNames();
 	
-	function displayInitColumns(oSettings)
-	{		
+	// function displayInitColumns(oSettings)
+	// {		
 		
-		var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
-		var columns_checkboxes_checked = []
-		  , localTblAssess = oSettings.oInstance;
+		// var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
+		// var columns_checkboxes_checked = []
+		  // , localTblAssess = oSettings.oInstance;
 		  
-        $.each(columns_checkboxes, function(index, value) {
-            columns_checkboxes_checked.push($(value).data('col_name'));
-        });		
-		$.each(oSettings.oInstance.fnGetAllSColumnNames(), function(index, value) {
+        // $.each(columns_checkboxes, function(index, value) {
+            // columns_checkboxes_checked.push($(value).data('col_name'));
+        // });		
+		// $.each(oSettings.oInstance.fnGetAllSColumnNames(), function(index, value) {
 				
-			value = value.replace(/[0-9]$/, '');				
-			if (oSettings.aoColumns[index])
-			{										
-				if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {						
-					localTblAssess.fnSetColumnVis(index, true, false);
-				} else {
-					localTblAssess.fnSetColumnVis(index, false, false);						
-				}
-			}
-		}); 
-	}
+			// value = value.replace(/[0-9]$/, '');				
+			// if (oSettings.aoColumns[index])
+			// {										
+				// if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {						
+					// localTblAssess.fnSetColumnVis(index, true, false);
+				// } else {
+					// localTblAssess.fnSetColumnVis(index, false, false);						
+				// }
+			// }
+		// }); 
+	// }
 	
 	$('.get_board_view_snap').on('click', function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';		
@@ -2281,7 +2288,7 @@ function prevSibilfunc(curentSibil){
 			success: function(data) {
 				if (data == true) {
 					hideColumns();										
-					resizeImpDown();
+					resizeImpDown();					
 				}
 			}
 		});
@@ -2463,13 +2470,11 @@ function prevSibilfunc(curentSibil){
     function hideColumns() {
 		var tableSettings = tblAssess.fnSettings();		
 		var batch_set = $('.result_batch_items:checked').val() || 'me';                
-		var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case') || 'details_compare';
-				
-        
+		var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case') || 'details_compare';				       
 		
 		//turn off related blocks here
 		toggleRelatedBlocks('details_compare', false);
-
+		
         if (table_case == 'recommendations') {
 			
 			/**
@@ -2513,19 +2518,20 @@ function prevSibilfunc(curentSibil){
 			$.each(columns_checkboxes, function(index, value) {
 				columns_checkboxes_checked.push($(value).data('col_name'));
 			});
-		
+			
             $.each(tblAllColumns, function(index, value) {
 				
                 value = value.replace(/[0-9]$/, '');				
 				if (tableSettings.aoColumns[index])
 				{										
-					if ($.inArray(value, tableCase.details_compare) > -1 || $.inArray(value, columns_checkboxes_checked) > -1) {						
-						tblAssess.fnSetColumnVis(index, true, false);
-					} else {
-						tblAssess.fnSetColumnVis(index, false, false);						
+					if ($.inArray(value, columns_checkboxes_checked) > 1) {
+						tblAssess.fnSetColumnVis(index, true);											
+					} else {											
+						tblAssess.fnSetColumnVis(index, false);						
 					}
 				}
-            });     			;
+            }); 
+			
         } else if (table_case == 'view') {
 		
             toggleRelatedBlocks('view', true);
