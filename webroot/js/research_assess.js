@@ -2518,13 +2518,14 @@ function prevSibilfunc(curentSibil){
 			$.each(columns_checkboxes, function(index, value) {
 				columns_checkboxes_checked.push($(value).data('col_name'));
 			});
-			
+			console.log(tblAllColumns);
+			console.log(columns_checkboxes_checked);
             $.each(tblAllColumns, function(index, value) {
 				
                 value = value.replace(/[0-9]$/, '');				
 				if (tableSettings.aoColumns[index])
-				{										
-					if ($.inArray(value, columns_checkboxes_checked) > 1) {
+				{							
+					if ($.inArray(value, columns_checkboxes_checked) > -1) {						
 						tblAssess.fnSetColumnVis(index, true);											
 					} else {											
 						tblAssess.fnSetColumnVis(index, false);						

@@ -24,7 +24,7 @@ return array(
 		array(
 			'sTitle' => "Product Name",
 			'sName' => 'product_name',                
-			'sClass' => 'product_name_text'
+			'sClass' => 'product_name'
 		),
 		array(
 			'sTitle' => 'Title', 
@@ -50,7 +50,7 @@ return array(
 		array(
 			'sTitle' => 'URL',
 			'sName' => 'url',                
-			'sClass' => 'url_text'
+			'sClass' => 'url'
 		),
 		array(
 			'sTitle' => "Page Load Time",

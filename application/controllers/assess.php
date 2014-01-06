@@ -2847,7 +2847,9 @@ class Assess extends MY_Controller {
 		$this->data['user_filters_order'] = $user_setting_filters_order && $user_setting_filters_order->setting_value ? json_decode($user_setting_filters_order->setting_value) : array();
 
         // if columns empty set default values for columns
-        if (empty($columns)) {
+        if (empty($columns) || !array_filter($columns, function($value) {
+			return $value == 'true';
+		})) {
             $columns = array(
                 'product_name' => 'true',                               
                 'url' => 'true',                                
