@@ -38,21 +38,24 @@ class Sites_model extends CI_Model {
         }
         return '';
     }
-    function get_name_by_url($url){
-        
+    function get_name_by_url($url)
+    {
+	$all = array();  
+	$name='';
         $query1 = $this->db->get($this->tables['sites']);
-        $all=$query1->result_array();
-        $name='';
-        foreach($all as $val){
-                        
-            $n = parse_url($val['url']);
-                
-            if( $n['host']==$url){
-                $name=$val['name'];
-              
-            }
-        }
-       
+	if ($query1->num_rows() > 0)
+	{
+		$all = $query1->result_array();
+		foreach($all as $val)
+		{
+		    $n = parse_url($val['url']);
+		    if( $n['host'] == $url)
+		    {
+			$name = $val['name'];
+		    }
+		}
+	}
+	$query1->free_result();
         return $name;
     }
     function insertSiteByName($name)
