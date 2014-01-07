@@ -1852,7 +1852,7 @@ class Imported_data_parsed_model extends CI_Model {
         $this->db->select('model')
                 ->from($this->tables['imported_data_parsed'])
                 ->where('imported_data_id', $imported_data_id)
-                ->where('key', 'Product Name')->where('model IS NOT NULL', null, false);
+                ->where('key', 'URL')->where('model IS NOT NULL', null, false);
         $query = $this->db->get();
         if ($query->num_rows() > 0) {
             $res = $query->row_array();

@@ -390,12 +390,16 @@ class Site_Crawler extends MY_Controller {
 					} else if ($data -> imported_data_id !== null) {
 						$imported_id = $data -> imported_data_id;
 						$revision = $this -> imported_data_parsed_model -> getMaxRevision($imported_id);
+                                                
 						$revision++;
 					}
 
 					$model = null;
+                                        if($m = $this -> imported_data_parsed_model -> get_model($imported_id) && strlen($m)>3){
+                                           $model = $m; 
+                                        }
 					if (($attributes = $this -> pageprocessor -> attributes()) !== false) {
-						if (isset($attributes['model'])) {
+						if (!is_null($model) && isset($attributes['model']) && strlen($attributes['model'])>3) {
 							$model = $attributes['model'];
 						}
 						$this -> imported_data_parsed_model -> insert($imported_id, 'parsed_attributes', serialize($attributes), $revision, $model);
