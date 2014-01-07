@@ -323,19 +323,19 @@ class SearchSpider(BaseSpider):
 					product_brand_extracted = product_brands_extracted.pop()
 					target_site = product_brand_extracted
 				else:
-					# # give up and return item without match
-					# self.log("Manufacturer site not supported (" + target_site + ") or not able to extract brand from product name (" + product_name + ")\n", level=log.ERROR)
-					# #raise CloseSpider("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n")
-					# item = SearchItem()
-					# item['origin_url'] = response.url
-					# item['product_name'] = product_name
-					# if product_model:
-					# 	item['product_model'] = product_model
-					# yield item
-					# return
+					# give up and return item without match
+					self.log("Manufacturer site not supported (" + target_site + ") or not able to extract brand from product name (" + product_name + ")\n", level=log.ERROR)
+					#raise CloseSpider("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n")
+					item = SearchItem()
+					item['origin_url'] = response.url
+					item['product_name'] = product_name
+					if product_model:
+						item['product_model'] = product_model
+					yield item
+					return
 
-					# try to match it without specific site (manufacturer spider will try to search on all manufacturer sites)
-					target_site = None
+					# # try to match it without specific site (manufacturer spider will try to search on all manufacturer sites)
+					# target_site = None
 
 		# for other (site specific) spiders, set target_site of request to class variable self.target_site set in class "constructor" (init_sub)
 		else:
