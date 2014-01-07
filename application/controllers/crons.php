@@ -556,8 +556,7 @@ class Crons extends MY_Controller
     }
 
 
-    public function get_update_status()
-    {
+    public function get_update_status() {
 
         $this->load->model('settings_model');
         $this->load->model('imported_data_parsed_model');
@@ -587,7 +586,6 @@ class Crons extends MY_Controller
     {
         $batch_id = intval($this->uri->segment(3));
         $sql_cmd = "select rdc.research_data_id, rd.batch_id
-
         , idp.imported_data_id
         from crawler_list as cl
         join research_data_to_crawler_list as rdc on cl.id = rdc.crawler_list_id
