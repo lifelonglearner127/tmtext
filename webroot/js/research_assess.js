@@ -133,6 +133,22 @@ $(function() {
 		}
 	}
 	
+	// show or hide graphs blocks
+	function toggleGraphBlocks(isDisplayed)
+	{
+		if (isDisplayed)
+		{
+			$("#assess_graph_dropdown").show();
+			$("#assess_graph").show();
+			$("#tblAssess_info").parent().hide();
+			$(".tblDataTable").hide();
+		} else {
+			$("#assess_graph_dropdown").hide();
+			$("#assess_graph").hide();
+			$("#tblAssess_info").parent().show();
+		}
+	}
+	
 	function setBorderSeparator()
 	{
 		$("#tblAssess th[class*=1]:not(th[class*=_1]):first").css('border-left', '2px solid #ccc');					
@@ -147,18 +163,22 @@ $(function() {
 		details_compare : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleGraphBlocks( ! isDisplayed);
 		},
 		view : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleGraphBlocks( ! isDisplayed);
 		},
 		details_compare_result : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleGraphBlocks( ! isDisplayed);
 		},
 		graph : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleGraphBlocks(isDisplayed);
 		},
 	};
 	
@@ -783,7 +803,7 @@ function highChart(graphBuild) {
                         value2 = data[1].h1_word_counts;
                     }
                     graphName1 = 'H1 Characters:';
-                    graphName2 = 'words';
+                    graphName2 = 'characters';
                     oldest_values[0] = updated_h1_word_counts[0];
                     oldest_values[1] = updated_h1_word_counts[1];
                 }
@@ -796,7 +816,7 @@ function highChart(graphBuild) {
                         value2 = data[1].h2_word_counts;
                     }
                     graphName1 = 'H2 Characters:';
-                    graphName2 = 'words';
+                    graphName2 = 'charactes';
                     oldest_values[0] = updated_h2_word_counts[0];
                     oldest_values[1] = updated_h2_word_counts[1];
                 }
@@ -830,6 +850,35 @@ function highChart(graphBuild) {
                             }
                         ];
         }
+        
+        // Castro #1119: if checkbox is checked add lines of trendlines
+        if($("#show_over_time").is(":checked"))
+		{
+			var series_index = seriesObj.length;
+
+			var trendlines_data = data[0].updated_trendlines_data;
+			var trendline_series = new Array([], [], [], [], [], []);
+			var total_trendlines = 6;
+			var trendline_colors = ['#555555', '#666666', '#777777', '#888888', '#999999', '#AAAAAA'];
+
+			for(i = 0; i < trendlines_data.length; i++)
+			{
+				for(j = 0; j < total_trendlines; j++)
+				{
+					trendline_series[j][i] = trendlines_data[i][j];
+				}
+			}
+
+			for(j = 0; j < total_trendlines; j++)
+			{
+				seriesObj[series_index + j] = {
+					name: batch1Name,
+					data: trendline_series[j],
+					color: trendline_colors[j]
+				}
+			}
+		}
+        
         $('#highChartContainer').empty();
 
         var chart1 = new Highcharts.Chart({
@@ -2459,10 +2508,6 @@ function prevSibilfunc(curentSibil){
 			 */
 			toggleRelatedBlocks('recommendations', true);
 			
-            $('#graphDropDown').remove();
-            $('#show_over_time').remove();
-            $('#show_over_time_span').remove();
-            $('#assess_graph').hide();
             $('#tblAssess_info').show();
             $('#tblAssess_paginate').show();
             reportPanel(false);
@@ -2481,10 +2526,6 @@ function prevSibilfunc(curentSibil){
 			 */
 			toggleRelatedBlocks('details_compare', true);
 
-            $('#graphDropDown').remove();
-            $('#show_over_time').remove();
-            $('#show_over_time_span').remove();
-            $('#assess_graph').hide();
             $('#tblAssess_info').show();
             $('#tblAssess_paginate').show();
             
@@ -2521,12 +2562,8 @@ function prevSibilfunc(curentSibil){
 		
             toggleRelatedBlocks('view', true);
 			
-            $('#graphDropDown').remove();
-            $('#show_over_time').remove();
-            $('#show_over_time_span').remove();
             $('#tblAssess_info').hide();
             $('#tblAssess_paginate').hide();
-            $('#assess_graph').hide();
             $('#tblAssess').hide();
             $('#tblAssess').parent().find('div.ui-corner-bl').hide();
             $('#assess_view').show();
@@ -2572,31 +2609,13 @@ function prevSibilfunc(curentSibil){
 		
 			toggleRelatedBlocks('graph', true);
 			
-            $('#graphDropDown').remove();
-            $('#show_over_time').remove();
-            $('#show_over_time_span').remove();
-            $('#tblAssess_info').hide();
-            var dropDownString;
-            dropDownString = '<select id="graphDropDown" style="width: 235px" >';
-            dropDownString += '<option value="" >----Select----</option>';  // Castro #1119: add select option, chart will be created when this is changed
-            dropDownString += '<option value="total_description_wc" >Total Description Word Counts</option>';
-                dropDownString += '<option value="short_description_wc" >Short Description Word Counts</option>';
-                dropDownString += '<option value="long_description_wc" >Long Description Word Counts</option>';
-                dropDownString += '<option value="h1_word_counts" >H1 Character Counts</option>';
-                dropDownString += '<option value="h2_word_counts" >H2 Character Counts</option>';
-                dropDownString += '<option value="revision" >Reviews</option>';
-                dropDownString += '<option value="Features" >Features</option>';
-//                dropDownString += '<option value="own_price" >Prices</option>';
-            dropDownString += '</select><input id="show_over_time" style="width: 30px;" type="checkbox"><span id="show_over_time_span">Show changes over time</span>';
-            $('#tblAssess_info').after(dropDownString);
-            $('#tblAssess_info').parent().show(); // Castro #1119: unhide graphs dropdown container
+           $('#tblAssess_info').hide();
             $('#tblAssess_paginate').hide();
             $('.board_view').hide();
             $('.tblDataTable').hide(); // Castro #1119: change #tblAssess selector with .tblDataTable to avoid that table assess bar appears over graph dropdown
             //$('#tblAssess').parent().find('div.ui-corner-bl').hide();
             $('.assess_report').hide();
             $('#assess_view').hide();
-            $('#assess_graph').show();
         }		
     }
 

@@ -624,6 +624,22 @@
                     <!--<p>No images available for this batch</p>-->
                 </div>
                 <img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />
+<!-- 			Castro #1119: convert dropdown to static -->
+				<div id="assess_graph_dropdown" class="fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix">
+					<select id="graphDropDown" style="width: 235px">
+						<option value="">----Select----</option>
+						<option value="total_description_wc">Total Description Word Counts</option>
+						<option value="short_description_wc">Short Description Word Counts</option>
+						<option value="long_description_wc">Long Description Word Counts</option>
+						<option value="h1_word_counts">H1 Character Counts</option>
+						<option value="h2_word_counts">H2 Character Counts</option>
+						<option value="revision">Reviews</option>
+						<option value="Features">Features</option>
+					</select>
+					<input id="show_over_time" style="width: 30px;" type="checkbox">
+					<span id="show_over_time_span">Show changes over time</span>
+				</div>
+<!-- 			Castro #1119: convert dropdown to static end -->
                 <div id="assess_graph">
                     <div id="highChartContainer" style="width: 980px; height: 370px; margin: 20 auto"></div>
                 </div>

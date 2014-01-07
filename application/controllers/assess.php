@@ -4898,49 +4898,105 @@ class Assess extends MY_Controller {
                 $updated_Features = '';
                 $updated_h1_word_counts = '';
                 $updated_h2_word_counts = '';
-                if($graphBuild == "total_description_wc"){
-                foreach($arr as $a){
-                        if($a->date !=''){
-                          $long_des = count(explode(' ',$a->long_description));
-                          $des = count(explode(' ',$a->description));
-                          if($des == 1 && $long_des == 1)
-                            $updated_total_description_wc.='Total Description Word Count: '.$a->date .' - null  words<br>';  
-                          else
-                            $updated_total_description_wc.='Total Description Word Count: '.$a->date .' - '.(count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)))."  words<br>";  
-                        }
-       
+				$updated_trendlines_data = array(null, null, null, null, null, null); // Castro #1119, var that going to store trendlines data
+				$trendline_index = 0;
+
+                if($graphBuild == "total_description_wc")
+				{
+					foreach($arr as $a)
+					{
+						if($a->date !='')
+						{
+							$long_des = count(explode(' ',$a->long_description));
+							$des = count(explode(' ',$a->description));
+							if($des == 1 && $long_des == 1)
+							{
+								$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - null  words<br>';  
+								$updated_trendlines_data[$trendline_index] = 0;
+							}
+							else
+							{
+								$updated_total_description_wc_int = (count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)));
+
+								$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words<br>"; 
+
+								$updated_trendlines_data[$trendline_index] = $updated_total_description_wc_int;
+								$trendline_index++;
+							}
+						}
                     }
-                 }else{
-                    foreach($arr as $a){
-                    $pars = unserialize($a->parsed_attributes);
-                    $htags_upd = unserialize($a->HTags);
-                    $updated_short_description_wc.='Short Description: '.$a->date .' - '.count(explode(' ',$a->description))."  words<br>";
-                    $updated_long_description_wc.='Long Description: '.$a->date .' - '.count(explode(' ',$a->long_description))." words <br>";
-                    $updated_total_description_wc.='Total Description Word Count: '.$a->date .' - '.(count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)))."  words<br>";
-                    $updated_revision.='Reviews: '.$a->date .' - '.$pars['review_count']."<br>";
-                    $updated_Features.='Features: '.$a->date .' - '.$pars['feature_count']."<br>";
-                    $updated_h1_word_counts.='H1 Characters: ' .$a->date .' - '.count($htags_upd['h1'])." words <br>";
-                    $updated_h2_word_counts.='H2 Characters: ' .$a->date .' - '.count($htags_upd['h2'])." words <br>";
-                }
-                 }
-                $snap_data[0]['updated_short_description_wc'][] =  $updated_short_description_wc;
-                $snap_data[0]['updated_long_description_wc'][] =  $updated_long_description_wc;
-                $snap_data[0]['updated_total_description_wc'][] =  $updated_total_description_wc;
-                $snap_data[0]['updated_revision'][] =  $updated_revision;
-                $snap_data[0]['updated_Features'][] =  $updated_Features;
-                $snap_data[0]['updated_h1_word_counts'][] =  $updated_h1_word_counts;
-                $snap_data[0]['updated_h2_word_counts'][] =  $updated_h2_word_counts;
+				}
+				else
+				{
+					foreach($arr as $a)
+					{
+						$pars = unserialize($a->parsed_attributes);
+						$htags_upd = unserialize($a->HTags);
+
+						$updated_short_description_wc_int = count(explode(' ',$a->description));
+						$updated_long_description_wc_int = count(explode(' ',$a->long_description));
+						$updated_total_description_wc_int = (count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)));
+						$updated_revision_int = $pars['review_count'];
+						$updated_Features_int = $pars['feature_count'];
+						$updated_h1_word_counts_int = strlen(implode("", $htags_upd['h1']));
+						$updated_h2_word_counts_int = strlen(implode("", $htags_upd['h2']));
+
+						$updated_short_description_wc.='Short Description: '.$a->date .' - ' . $updated_short_description_wc_int . "  words<br>";
+						$updated_long_description_wc.='Long Description: '.$a->date .' - ' . $updated_long_description_wc_int . " words <br>";
+						$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words<br>";
+						$updated_revision.='Reviews: '.$a->date .' - ' . $updated_revision_int . "<br>";
+						$updated_Features.='Features: '.$a->date .' - ' . $updated_Features_int . "<br>";
+						$updated_h1_word_counts.='H1 Characters: ' .$a->date .' - ' . $updated_h1_word_counts_int . " characters<br>";
+						$updated_h2_word_counts.='H2 Characters: ' .$a->date .' - ' . $updated_h2_word_counts_int . " characters<br>";
+
+						if($graphBuild == "short_description_wc")
+						{
+							$trendline_value = $updated_short_description_wc_int;
+						}
+						else if($graphBuild == "long_description_wc")
+						{
+							$trendline_value = $updated_long_description_wc_int;
+						}
+						else if($graphBuild == "h1_word_counts")
+						{
+							$trendline_value = $updated_h1_word_counts_int;
+						}
+						else if($graphBuild == "h2_word_counts")
+						{
+							$trendline_value = $updated_h2_word_counts_int;
+						}
+						else if($graphBuild == "revision")
+						{
+							$trendline_value = $updated_revision_int;
+						}
+						else if($graphBuild == "Features")
+						{
+							$trendline_value = $updated_Features_int;
+						}
+
+						$updated_trendlines_data[$trendline_index] = $trendline_value;
+						$trendline_index++;
+					}
+				}
+				$snap_data[0]['updated_short_description_wc'][] =  $updated_short_description_wc;
+				$snap_data[0]['updated_long_description_wc'][] =  $updated_long_description_wc;
+				$snap_data[0]['updated_total_description_wc'][] =  $updated_total_description_wc;
+				$snap_data[0]['updated_revision'][] =  $updated_revision;
+				$snap_data[0]['updated_Features'][] =  $updated_Features;
+				$snap_data[0]['updated_h1_word_counts'][] =  $updated_h1_word_counts;
+				$snap_data[0]['updated_h2_word_counts'][] =  $updated_h2_word_counts;
+				$snap_data[0]['updated_trendlines_data'][] =  $updated_trendlines_data;
 //                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
                 
                 $htags = unserialize($data_row->htags);
                 if ($htags) {
                     if (isset($htags['h1'])) {
-                        $snap_data[0]['h1_word_counts'][] = count($htags['h1']);
+                        $snap_data[0]['h1_word_counts'][] = strlen(implode("", $htags['h1']));
                     } else {
                         $snap_data[0]['h1_word_counts'][] = 0;
                     }
                     if (isset($htags['h2'])) {
-                        $snap_data[0]['h2_word_counts'][] = count($htags['h2']);
+                        $snap_data[0]['h2_word_counts'][] = strlen(implode("", $htags['h2']));
                     } else {
                         $snap_data[0]['h2_word_counts'][] = 0;
                     }
@@ -4991,8 +5047,8 @@ class Assess extends MY_Controller {
                     $updated_total_description_wc1.='Total Description Word Count: '.$a1->date .' - '.(count(explode(' ',$a1->long_description)) + count(explode(' ',$a1->description)))."  words<br>";
                     $updated_revision1.='Reviews: '.$a1->date .' - '.$pars1['review_count']."<br>";
                     $updated_Features1.='Features: '.$a1->date .' - '.$pars1['feature_count']."<br>";
-                    $updated_h1_word_counts1.='H1 Characters: ' .$a1->date .' - '.count($htags_upd1['h1'])." words <br>";
-                    $updated_h2_word_counts1.='H2 Characters: ' .$a1->date .' - '.count($htags_upd1['h2'])." words <br>";
+                    $updated_h1_word_counts1.='H1 Characters: ' .$a1->date .' - '.strlen(implode("", $htags_upd1['h1']))." characters <br>";
+                    $updated_h2_word_counts1.='H2 Characters: ' .$a1->date .' - '.strlen(implode("", $htags_upd1['h2']))." characters <br>";
                     }
                  }   
                 $snap_data[1]['updated_short_description_wc'][] =  $updated_short_description_wc1;
@@ -5006,12 +5062,12 @@ class Assess extends MY_Controller {
                     $htags = unserialize($data_row_sim[0]->HTags);
                     if ($htags) {
                         if (isset($htags['h1'])) {
-                            $snap_data[1]['h1_word_counts'][] = count($htags['h1']);
+                            $snap_data[1]['h1_word_counts'][] = strlen(implode("", $htags['h1']));
                         } else {
                             $snap_data[1]['h1_word_counts'][] = 0;
                         }
                         if (isset($htags['h2'])) {
-                            $snap_data[1]['h2_word_counts'][] = count($htags['h2']);
+                            $snap_data[1]['h2_word_counts'][] = strlen(implode("", $htags['h2']));
                         } else {
                             $snap_data[1]['h2_word_counts'][] = 0;
                         }
