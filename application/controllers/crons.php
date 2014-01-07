@@ -750,13 +750,13 @@ class Crons extends MY_Controller
 					$own_site = str_replace("www1.", "", str_replace("www.", "", $own_site));
 
 					$data_import = (array) $obj;
-					$short_descrition = '';
-					$long_descrition = '';
+					$short_description = '';
+					$long_description = '';
 					echo "<br>" . "im+daat+id= " . $data_import['imported_data_id'] . "</br>";
 					//Prepare description field
 					if (($data_import['description'] !== null || $data_import['description'] !== 'null') && trim($data_import['description']) !== "")
 					{
-						$short_descrition = $data_import['description'];
+						$short_description = $data_import['description'];
 						//replace all tags and big spaces to single space
 						$data_import['description'] = preg_replace('#<[^>]+>#', ' ', $data_import['description']);
 						$data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
@@ -769,7 +769,7 @@ class Crons extends MY_Controller
 					//Prepare long description field
 					if (($data_import['long_description'] !== null || $data_import['long_description'] !== 'null') && trim($data_import['long_description']) !== "")
 					{
-						$long_descrition = $data_import['long_description'];
+						$long_description = $data_import['long_description'];
 						//replace all tags and big spaces to single space
 						$data_import['long_description'] = preg_replace('#<[^>]+>#', ' ', $data_import['long_description']);
 						$data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
@@ -783,7 +783,7 @@ class Crons extends MY_Controller
 
 					// Generate Title Keywords
 					$time_start = microtime(true);
-					$title_keywords = $this->title_keywords($data_import['product_name'], $short_descrition, $long_descrition);
+					$title_keywords = $this->title_keywords($data_import['product_name'], $short_description, $long_description);
 					$time = microtime(true) - $time_start;
 					echo "Title Keywords - $time seconds\n";
 
