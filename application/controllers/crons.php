@@ -728,7 +728,7 @@ class Crons extends MY_Controller
 					}
 				}
 				//end of list creating script
-				//Start update each item
+				//Start analize each item
 				foreach ($data_arr as $obj)
 				{
 					$foreach_start = time();
@@ -1019,12 +1019,12 @@ class Crons extends MY_Controller
 		$stats_status = $this->settings_model->getDoStatsStatus(); //get status of do_stats
 		$total_items = $this->settings_model->getLastUpdate(); //get count of all items in time of starting
 		//If queque has items and status is started and count of all items bigger than count of scanned items , start script again
-		if (count($data_arr) > 0 && $stats_status->description === 'started' && ($cjo - 1) * 50 < $total_items['description'])
+		if (count($data_arr) > 0 && $stats_status->description === 'started' && ($cjo - 1) * 50 < intval($total_items['description']))
 		{ 
 			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
 			echo $utd->td;
 			//make asynchronous web request to do_stats_forupdated page
-			shell_exec("wget -S -O- ".site_url('/crons/do_stats_forupdated/').$trnc." > /dev/null 2>/dev/null &");
+			shell_exec("wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &");
 		} else
 		{
 			//Or send report about success
