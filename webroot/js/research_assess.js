@@ -37,7 +37,7 @@ function resizeImpDown(status){
 				return $table.closest('.wrapper');
 			}
 		});
-		topScroll();		
+		topScroll();				
 	};
 	
 	var tblAssessTable = $("#tblAssess");
@@ -58,7 +58,15 @@ $(function() {
 	  return $(a).text().toUpperCase()
 		  .indexOf(m[3].toUpperCase()) >= 0;
 	};
-
+	
+	$( '#research_assess_update' ).ajaxStart(function() {
+		$( this ).text( "Updating..." ).attr('disabled', 'disabled');
+	});
+	
+	$( '#research_assess_update' ).ajaxStop(function() {
+		$( this ).text( "Update" ).removeAttr('disabled');
+	});
+	
     $.ajax({
             url: getbatchesvalue,
             dataType: 'json',
@@ -66,16 +74,10 @@ $(function() {
         }).done(function(data){
            last_batch_id  = data.batch_id;
            last_compare_batch_id = data.compare_batch_id;
-           
-                first_click = false;
-          $('select[name="research_assess_batches"]').val(last_batch_id).change();
-			setTimeout(function(){
-			first_click = true;
-
-			$('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change()
-			 $('#research_assess_update').click();
-			},1500);
-                               
+                     
+			$('select[name="research_assess_batches"]').val(last_batch_id).change();				
+			$('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change();
+			 			                              
         });
         
     $.fn.serializeObject = function() {
@@ -131,6 +133,24 @@ $(function() {
 		}
 	}
 	
+	// show or hide graphs blocks
+	function toggleGraphBlocks(isDisplayed)
+	{
+		if (isDisplayed)
+		{
+			$("#assess_graph_dropdown").show();
+			$("#assess_graph").show();
+			$("#tblAssess_info").parent().hide();
+			$(".tblDataTable").hide();
+			$("#tblAssess_wrapper .CRC").hide();
+		} else {
+			$("#assess_graph_dropdown").hide();
+			$("#assess_graph").hide();
+			$("#tblAssess_info").parent().show();
+			$("#tblAssess_wrapper .CRC").show();
+		}
+	}
+	
 	function setBorderSeparator()
 	{
 		$("#tblAssess th[class*=1]:not(th[class*=_1]):first").css('border-left', '2px solid #ccc');					
@@ -145,18 +165,22 @@ $(function() {
 		details_compare : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleGraphBlocks( ! isDisplayed);
 		},
 		view : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleGraphBlocks( ! isDisplayed);
 		},
 		details_compare_result : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleGraphBlocks( ! isDisplayed);
 		},
 		graph : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleGraphBlocks(isDisplayed);
 		},
 	};
 	
@@ -358,140 +382,65 @@ $(function() {
 		  
 		$('.assess_report_download_panel').hide();
         $("#tblAssess tbody tr").remove();
-				
+		
 		if (!json_data)
-		{	
-			if (tblAssess_need_to_be_reinit) {				
-				tblAssess_need_to_be_reinit = false;				
-				tblAssess = initializeTblAssess();
-			} else 			
-				tblAssess.fnDraw();						
+		{																
+			var aoData = buildTableParams([]);	
+				
+			$.getJSON(readAssessUrl, aoData, function(json) {
+				if(!json)
+					return;	
+																			
+				customLocalStorage[storage_key] = JSON.stringify(json);		
+									
+				tblAssess = reInitializeTblAssess(json);				
+			});       							
 		}
-		else
-		{				
-			tblAssess_need_to_be_reinit = true;
-			tblAssess = $('#tblAssess').dataTable(_.extend({
-				bDestroy : true,
-				bJQeuryUI : true,				
-				bJUI : true,				
-				sPaginationType : 'full_numbers',
-				aaSorting : [[5, "desc"]],
-				bAutoWidth : false,
-				bProcessing : true,
-				bDeferRender : true,			
-				fnInitComplete : function(oSettings, json) {
-					console.log('local init complete');	
-					hideColumns(); 									
-					setBorderSeparator();					
-					loadSetTK();
-																				 
-					resizeImpDown();					
-					// $('#tblAssess_length').after($('#assess_tbl_show_case').clone(true, true));
-					// $('#research_batches_columns').appendTo('div.dataTables_filter');
-
-				},
-				fnRowCallback : function(nRow, aData, iDisplayIndex) {					
-					$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
-					tblAssess_postRenderProcessing(nRow);					
-				},
-				fnDrawCallback : function(oSettings) {
-					console.log('local draw callback');					           								
-				},
-				fnPreDrawCallback : function( oSettings ) {					
-					// wrapResultsTable();
-					buildReport(json_data);
-					
-					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data;					
-				},
-				oLanguage : {
-					sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
-					sInfoEmpty : "Showing 0 to 0 of 0 records",
-					sInfoFiltered : "",
-					sSearch : "Filter:",
-					sLengthMenu : "_MENU_ rows"
-				},
-				aoColumns : columns
-			}, json_data));			
-		}			
+		else									
+			tblAssess = reInitializeTblAssess(json_data); 					
     }	
 	
-	function initializeTblAssess()
-	{		
-		return $('#tblAssess').dataTable({
-			// sDom : 'Rlfrtip',
-			bJQueryUI : true,
+	function reInitializeTblAssess(json_data) {
+		
+		return $('#tblAssess').dataTable(_.extend({
 			bDestroy : true,
-			sPaginationType : "full_numbers",
-			bProcessing : true,
+			bJQeuryUI : true,				
+			bJUI : true,				
+			sPaginationType : 'full_numbers',
 			aaSorting : [[5, "desc"]],
 			bAutoWidth : false,
-			bDeferRender : true,
-			bServerSide : true,        
-			sAjaxSource : readAssessUrl,
-			fnServerData : function(sSource, aoData, fnCallback) {
-				
-				//Toggling total items selected count by filter
-				var total_items_selected_by_filter_wrapper = $('.total_items_selected_by_filter_wrapper')				
-				  , research_batch = $('.research_assess_batches_select')
-				  , research_batch_competitor = $('#research_assess_compare_batches_batch')
-				  , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				   
-				  , settings = tblAssess ? tblAssess.fnSettings() : null				  
-				  , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null;	
-				  
-				total_items_selected_by_filter_wrapper.hide();
-				
-				aoData.push({
-					'name': 'summaryFilterData',
-					'value': summaryInfoSelectedElements.join(',')
-				});
-											
-				aoData = buildTableParams1(aoData);									           
-				
-				function build(json) {													
-					if (json.ExtraData != undefined) 
-					{					
-						buildReport(json);                    				
-						resizeImpDown();
-						setBorderSeparator();							
-						settings.json_encoded_data = json.ExtraData.json_encoded_data;	
-						if (summaryInfoSelectedElements.length)
-							total_items_selected_by_filter_wrapper.show();									              													
-									
-						tblAssess && tblAssess.fnProcessingIndicator(false);	
-						loadSetTK();									
-					}
-										
-					fnCallback(json);
-				}
-												
-				$.getJSON(sSource, aoData, function(json) {
-					if(!json)
-						return;	
-																			
-					customLocalStorage[storage_key] = JSON.stringify(json);		
-					
-					json.aaData = json.aaData.slice(0, 10);		
-					build(json);	
-				});                                  
+			bProcessing : true,
+			bDeferRender : true,								
+			aLengthMenu : [ 5, 10, 25, 50, 100 ],								
+			fnInitComplete : function(oSettings, json) {
+				console.log('local init complete');	
+				hideColumns(); 									
+				setBorderSeparator();					
+				loadSetTK();
+																			 
+				resizeImpDown();										
 			},
-			fnRowCallback : function(nRow, aData, iDisplayIndex) {				
-				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 
-				tblAssess_postRenderProcessing(nRow);
+			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
+				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
+				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
-				console.log('draw callback');					           																
+				console.log('local draw callback');					
+				tblAssess.fnAdjustColumnSizing(false);				
 			},
-			fnInitComplete : function(oSettings, json) {				
-				hideColumns();  
-				topScroll();							
+			fnPreDrawCallback : function( oSettings ) {										
+				buildReport(json_data);
 				
-			
-				// $('#research_batches_columns').appendTo('div.dataTables_filter');
-				// $('#tblAssess_length').after($('#assess_tbl_show_case').clone(true, true));
-			},
-			fnPreDrawCallback : function( oSettings ) {
+				//setting main tblAssess instance
+				tblAssess = oSettings.oInstance;
+				tblAllColumns = tblAssess.fnGetAllSColumnNames();
 				
-				// console.log(oSettings.oClasses.sSortJUIWrapper);
+				if (json_data.ExtraData)
+				{
+					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data ? json_data.ExtraData.json_encoded_data : '';					
+					oSettings.display_competitor_columns = json_data.ExtraData.display_competitor_columns;					
+					oSettings.getSelectableColumns = json_data.ExtraData.getSelectableColumns;					
+				}
 			},
 			oLanguage : {
 				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
@@ -500,18 +449,50 @@ $(function() {
 				sSearch : "Filter:",
 				sLengthMenu : "_MENU_ rows"
 			},
-			aoColumns : columns
-		});			
-	}
+			aoColumns : json_data.aoColumns
+		}, json_data));	
+	}	
+
+	// setting global static variables	
+	$.fn.dataTable.defaults.bJQueryUI = true;	
 	
-	// setting global static variables
-	// tblAssess.DataTable.defaults.bJQueryUI = true;	
-	$.fn.dataTable.defaults.bJQueryUI = true;
-	// $.fn.dataTable.defaults.bJUI = true;
+    
+    // tblAssess = $('#tblAssess').dataTable({
+		// aoColumns : columns,
+		// bDestroy : true,
+		// bAutoWidth : false,
+		// fnInitComplete : function( oSettings,json ) {										
+			
+			// displayInitColumns(oSettings);					
+		// },
+	// });
+
 	
-    tblAssess = initializeTblAssess();	
+	// tblAllColumns = tblAssess.fnGetAllSColumnNames();
 	
-	tblAllColumns = tblAssess.fnGetAllSColumnNames();
+	// function displayInitColumns(oSettings)
+	// {		
+		
+		// var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
+		// var columns_checkboxes_checked = []
+		  // , localTblAssess = oSettings.oInstance;
+		  
+        // $.each(columns_checkboxes, function(index, value) {
+            // columns_checkboxes_checked.push($(value).data('col_name'));
+        // });		
+		// $.each(oSettings.oInstance.fnGetAllSColumnNames(), function(index, value) {
+				
+			// value = value.replace(/[0-9]$/, '');				
+			// if (oSettings.aoColumns[index])
+			// {										
+				// if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {						
+					// localTblAssess.fnSetColumnVis(index, true, false);
+				// } else {
+					// localTblAssess.fnSetColumnVis(index, false, false);						
+				// }
+			// }
+		// }); 
+	// }
 	
 	$('.get_board_view_snap').on('click', function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';		
@@ -824,7 +805,7 @@ function highChart(graphBuild) {
                         value2 = data[1].h1_word_counts;
                     }
                     graphName1 = 'H1 Characters:';
-                    graphName2 = 'words';
+                    graphName2 = 'characters';
                     oldest_values[0] = updated_h1_word_counts[0];
                     oldest_values[1] = updated_h1_word_counts[1];
                 }
@@ -837,7 +818,7 @@ function highChart(graphBuild) {
                         value2 = data[1].h2_word_counts;
                     }
                     graphName1 = 'H2 Characters:';
-                    graphName2 = 'words';
+                    graphName2 = 'charactes';
                     oldest_values[0] = updated_h2_word_counts[0];
                     oldest_values[1] = updated_h2_word_counts[1];
                 }
@@ -871,6 +852,35 @@ function highChart(graphBuild) {
                             }
                         ];
         }
+        
+        // Castro #1119: if checkbox is checked add lines of trendlines
+        if($("#show_over_time").is(":checked"))
+		{
+			var series_index = seriesObj.length;
+
+			var trendlines_data = data[0].updated_trendlines_data;
+			var trendline_series = new Array([], [], [], [], [], []);
+			var total_trendlines = 6;
+			var trendline_colors = ['#555555', '#666666', '#777777', '#888888', '#999999', '#AAAAAA'];
+
+			for(i = 0; i < trendlines_data.length; i++)
+			{
+				for(j = 0; j < total_trendlines; j++)
+				{
+					trendline_series[j][i] = trendlines_data[i][j];
+				}
+			}
+
+			for(j = 0; j < total_trendlines; j++)
+			{
+				seriesObj[series_index + j] = {
+					name: batch1Name,
+					data: trendline_series[j],
+					color: trendline_colors[j]
+				}
+			}
+		}
+        
         $('#highChartContainer').empty();
 
         var chart1 = new Highcharts.Chart({
@@ -990,7 +1000,10 @@ function highChart(graphBuild) {
 }
 $('#graphDropDown').live('change',function(){
     var graphDropDownValue = $(this).children('option:selected').val();
-    highChart(graphDropDownValue);
+    if(graphDropDownValue != "") // Castro #1119: create chart when a valid option is selected
+    {
+      highChart(graphDropDownValue);
+    }
 });
 	
     $(document).scroll(function() {
@@ -1273,11 +1286,7 @@ $('#graphDropDown').live('change',function(){
 		var batch_set = $('.result_batch_items:checked').val() || 'me';							      
 		
 		fillReportSummary(report.summary, batch_sets[batch_set]['batch_items_prefix']);				                                     
-    }   
-	   	
-	$(document).on('click', '.update_filter_btn', function(e) {
-		$('#research_assess_update').click();
-	});
+    }   	   	
 		
 	function onDenisty(){
 		var tkstatus = $.cookie('tkstatus');
@@ -1771,8 +1780,7 @@ $('#graphDropDown').live('change',function(){
                             impdataid: impdata_id
                 }
                     }).done(function(){
-                        $('#assessDetailsDialog').dialog('close');
-                        $('#research_assess_update').click();
+                        $('#assessDetailsDialog').dialog('close');                        
                         
                     });
                 }
@@ -1918,8 +1926,7 @@ function prevSibilfunc(curentSibil){
                 }
             } else if (data.length == 0 && res.target.value != "select customer") {
                 research_assess_batches.empty();
-            }
-            $('#research_assess_update').click();
+            }            
         });
         var own_customer = $(this).val();
         fill_lists_batches_compare(own_customer, 0);        
@@ -1937,15 +1944,10 @@ function prevSibilfunc(curentSibil){
                 }
             } else if (data.length == 0 && res.target.value != "select customer") {
                 research_assess_batches_competitor.empty();
-            }
-            $('#research_assess_update').click();
+            }            
         });
         var own_customer = $(this).val();
         fill_lists_batches_compare(own_customer, 1);        
-    });
-
-    $('#research_assess_flagged').live('click', function() {
-        $('#research_assess_update').click();
     });
 
     function fill_lists_batches_compare(own_customer, set_number) {
@@ -2073,8 +2075,7 @@ function prevSibilfunc(curentSibil){
 			$('.result_batch_items')[0].click(); //activating first batch set by default
 			second_batch_set.slideUp();
 			batch_set_depend_options.hide();
-
-			$('#research_assess_update').click(); // clicking on Update btn
+			
 		}
 	});
 
@@ -2084,8 +2085,7 @@ function prevSibilfunc(curentSibil){
 
 		$('#research_assess_compare_batches_customer_competitor').val('select customer').prop('selected', true);
         $('#research_assess_compare_batches_batch_competitor').val('select batch').prop('selected', true);
-
-        $('#research_assess_update').click();
+        
     });
 
     $('select[name="research_assess_batches"]').on("change", function() {
@@ -2133,10 +2133,7 @@ function prevSibilfunc(curentSibil){
             var own_customer = research_assess_customers.val();
             fill_lists_batches_compare(own_customer, 0);
             var batch_id_result = GetURLParameter('batch_id_result');
-            if(!batch_id_result)
-            {
-                $('#research_assess_update').click();
-            }
+            
         });
         if (typeof data != 'undefined') {
             if (data.length > 0) {
@@ -2199,10 +2196,7 @@ function prevSibilfunc(curentSibil){
             var own_customer = research_assess_customers_competitor.val();
             fill_lists_batches_compare(own_customer, 1);
             var batch_id_result = GetURLParameter('batch_id_result');
-            if(!batch_id_result)
-            {
-                $('#research_assess_update').click();
-            }
+            
         });
         if (typeof data != 'undefined') {
             if (data.length > 0) {
@@ -2268,10 +2262,9 @@ function prevSibilfunc(curentSibil){
     });
 
     $('#research_assess_update').on('click', function() {
-        if(first_click)
-		{						
-			readAssessData();							
-        }
+       						
+		readAssessData();							
+        
     });
 
   
@@ -2303,63 +2296,26 @@ function prevSibilfunc(curentSibil){
     }
 
     $(".research_assess_choiceColumnDialog_checkbox").change(function(){
-         // get columns params
-		var columns = {
-			price: $("#column_price").is(':checked'),
-			snap: $("#column_snap").is(':checked'),
-			created: $("#column_created").is(':checked'),
-			imp_data_id: $("#imp_data_id").is(':checked'),
-			product_name: $("#column_product_name").is(':checked'),
-			// item_id: $("#item_id").is(':checked'),
-			model: $("#model").is(':checked'),
-			url: $("#column_url").is(':checked'),
-			Page_Load_Time: $("#Page_Load_Time").is(':checked'),
-			Short_Description: $("#Short_Description").is(':checked'),
-			short_description_wc: $("#column_short_description_wc").is(':checked'),
-			Meta_Keywords: $("#Meta_Keywords").is(':checked'),
-			short_seo_phrases: $("#column_short_seo_phrases").is(':checked') ? 1 : 0,
-			title_seo_phrases: $("#column_title_seo_phrases").is(':checked'),
-			title_seo_phrases_f: $("#column_title_seo_phrases_f").is(':checked'),
-			images_cmp: $("#column_images_cmp").is(':checked'),
-			video_count: $("#column_video_count").is(':checked'),
-			title_pa: $("#column_title_pa").is(':checked'),
-			Long_Description: $("#Long_Description").is(':checked'),
-			long_description_wc: $("#column_long_description_wc").is(':checked'),
-			long_seo_phrases: $("#column_long_seo_phrases").is(':checked') ? 1 : 0,
-			Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").is(':checked'),
-			Custom_Keywords_Long_Description : $("#Custom_Keywords_Long_Description").is(':checked'),
-			Meta_Description : $("#Meta_Description").is(':checked'),
-			Meta_Description_Count : $("#Meta_Description_Count").is(':checked'),
-			H1_Tags : $("#H1_Tags").is(':checked'),
-			H1_Tags_Count : $("#H1_Tags_Count").is(':checked'),
-			H2_Tags : $("#H2_Tags").is(':checked'),
-			H2_Tags_Count : $("#H2_Tags_Count").is(':checked'),
-			duplicate_content: $("#column_duplicate_content").is(':checked'),
-			column_external_content: $("#column_external_content").is(':checked'),
-			column_reviews: $("#column_reviews").is(':checked'),
-			average_review: $("#average_review").is(':checked'),
-			column_features: $("#column_features").is(':checked'),
-			price_diff: $("#column_price_diff").is(':checked'),
-			gap: $("#gap").is(':checked'),
-			Duplicate_Content: $("#Duplicate_Content").is(':checked'),
-			images_cmp: $("#images_cmp").is(':checked'),
-			title_pa: $("#title_pa").is(':checked'),
-			video_count: $("#video_count").is(':checked'),
-			links_count: $("#links_count").is(':checked')
-		};
-
-		// save params to DB
+        		
+		var columns_checkboxes = {};
+		var settings = tblAssess.fnSettings();
+		for (var it in settings.getSelectableColumns)
+			columns_checkboxes[settings.getSelectableColumns[it]['sName']] = $('#column_' + settings.getSelectableColumns[it]['sName']).is(':checked');
+		
 		$.ajax({
 			url: base_url + 'index.php/assess/assess_save_columns_state',
 			dataType: 'json',
 			type: 'post',
 			data: {
-				value: columns
+				value: columns_checkboxes
 			},
 			success: function(data) {
 				if (data == true) {
 					hideColumns();										
 					resizeImpDown();
+					
+					// bad hack, need to be rewrited, Nikita, please check
+					$('#tblAssess thead th').css('width', '100%');
 				}
 			}
 		});
@@ -2539,20 +2495,14 @@ function prevSibilfunc(curentSibil){
     });
 
     function hideColumns() {
-		var tableSettings = tblAssess.fnSettings();
-		
+		var tableSettings = tblAssess.fnSettings();	
+		console.log(tableSettings);
 		var batch_set = $('.result_batch_items:checked').val() || 'me';                
-		var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case') || 'details_compare';
-				
-        var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
-        var columns_checkboxes_checked = [];
-        $.each(columns_checkboxes, function(index, value) {
-            columns_checkboxes_checked.push($(value).data('col_name'));
-        });
+		var table_case = $('#assess_tbl_show_case a[class=active_link]').data('case') || 'details_compare';				       
 		
 		//turn off related blocks here
 		toggleRelatedBlocks('details_compare', false);
-
+		
         if (table_case == 'recommendations') {
 			
 			/**
@@ -2560,10 +2510,6 @@ function prevSibilfunc(curentSibil){
 			 */
 			toggleRelatedBlocks('recommendations', true);
 			
-            $('#graphDropDown').remove();
-            $('#show_over_time').remove();
-            $('#show_over_time_span').remove();
-            $('#assess_graph').hide();
             $('#tblAssess_info').show();
             $('#tblAssess_paginate').show();
             reportPanel(false);
@@ -2582,36 +2528,44 @@ function prevSibilfunc(curentSibil){
 			 */
 			toggleRelatedBlocks('details_compare', true);
 
-            $('#graphDropDown').remove();
-            $('#show_over_time').remove();
-            $('#show_over_time_span').remove();
-            $('#assess_graph').hide();
             $('#tblAssess_info').show();
             $('#tblAssess_paginate').show();
             
 			reportPanel(false);
 			
+			var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
+			var columns_checkboxes_checked = [];
+			$.each(columns_checkboxes, function(index, value) {
+				columns_checkboxes_checked.push($(value).data('col_name'));
+			});
+			
             $.each(tblAllColumns, function(index, value) {
-                value = value.replace(/[0-9]$/, "");				
+				
+                value = value.replace(/[0-9]$/, '');	
+				
 				if (tableSettings.aoColumns[index])
-				{										
-					if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {						
-						tblAssess.fnSetColumnVis(index, true, false);
-					} else {
-						tblAssess.fnSetColumnVis(index, false, false);						
+				{							
+					if ($.inArray(value, columns_checkboxes_checked) > -1) {
+							
+						if (tableSettings.display_competitor_columns)
+							tblAssess.fnSetColumnVis(index, true);
+						else if (!tableSettings.display_competitor_columns && !tableSettings.aoColumns[index]['batch_number'])
+							tblAssess.fnSetColumnVis(index, true);
+						else
+							tblAssess.fnSetColumnVis(index, false);		
+							
+					} else {											
+						tblAssess.fnSetColumnVis(index, false);						
 					}
 				}
-            });     			;
+            }); 
+			
         } else if (table_case == 'view') {
 		
             toggleRelatedBlocks('view', true);
 			
-            $('#graphDropDown').remove();
-            $('#show_over_time').remove();
-            $('#show_over_time_span').remove();
             $('#tblAssess_info').hide();
             $('#tblAssess_paginate').hide();
-            $('#assess_graph').hide();
             $('#tblAssess').hide();
             $('#tblAssess').parent().find('div.ui-corner-bl').hide();
             $('#assess_view').show();
@@ -2657,29 +2611,13 @@ function prevSibilfunc(curentSibil){
 		
 			toggleRelatedBlocks('graph', true);
 			
-            $('#graphDropDown').remove();
-            $('#show_over_time').remove();
-            $('#show_over_time_span').remove();
-            $('#tblAssess_info').hide();
-            var dropDownString;
-            dropDownString = '<select id="graphDropDown" style="width: 235px" >';
-            dropDownString += '<option value="total_description_wc" >Total Description Word Counts</option>';
-                dropDownString += '<option value="short_description_wc" >Short Description Word Counts</option>';
-                dropDownString += '<option value="long_description_wc" >Long Description Word Counts</option>';
-                dropDownString += '<option value="h1_word_counts" >H1 Character Counts</option>';
-                dropDownString += '<option value="h2_word_counts" >H2 Character Counts</option>';
-                dropDownString += '<option value="revision" >Reviews</option>';
-                dropDownString += '<option value="Features" >Features</option>';
-//                dropDownString += '<option value="own_price" >Prices</option>';
-            dropDownString += '</select><input id="show_over_time" style="width: 30px;" type="checkbox"><span id="show_over_time_span">Show changes over time</span>';
-            $('#tblAssess_info').after(dropDownString);
+           $('#tblAssess_info').hide();
             $('#tblAssess_paginate').hide();
             $('.board_view').hide();
-            $('#tblAssess').hide();
-            $('#tblAssess').parent().find('div.ui-corner-bl').hide();
+            $('.tblDataTable').hide(); // Castro #1119: change #tblAssess selector with .tblDataTable to avoid that table assess bar appears over graph dropdown
+            //$('#tblAssess').parent().find('div.ui-corner-bl').hide();
             $('.assess_report').hide();
             $('#assess_view').hide();
-            $('#assess_graph').show();
         }		
     }
 
@@ -2698,10 +2636,12 @@ function prevSibilfunc(curentSibil){
 		var tblAssess = $('#tblAssess');
         if (visible) {
             tblAssess.hide();
+			$('.tblDataTable').hide(); // Castro #1119: table assess header fix
             tblAssess.parent().find('div.ui-corner-bl').hide();
             $('.assess_report').show();
         } else {
             tblAssess.show();
+			$('.tblDataTable').show(); // Castro #1119: table assess header fix
 			tblAssess.parent().find('div.ui-corner-bl').show();
             $('.assess_report').hide();
             $('#assess_view').hide();
@@ -2709,9 +2649,9 @@ function prevSibilfunc(curentSibil){
     }
 
    
-	function buildTableParams1(existingParams) {
+	function buildTableParams(existingParams) {
 
-        var assessRequestParams = collectionParams1();
+        var assessRequestParams = collectionParams();
         for (var p in assessRequestParams) {
             existingParams.push({
                 "name": p,
@@ -2721,7 +2661,7 @@ function prevSibilfunc(curentSibil){
         }
         return existingParams;
     }
-    function collectionParams1() {
+    function collectionParams() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
 
         var assessRequestParams = {};
@@ -2781,105 +2721,18 @@ function prevSibilfunc(curentSibil){
         if (research_assess_compare_batches_batch > 0) {
             assessRequestParams.compare_batch_id = research_assess_compare_batches_batch;
         }
-
+		
+		assessRequestParams.summaryFilterData = summaryInfoSelectedElements.join(',');
+		assessRequestParams.sort_columns = 5;
+		assessRequestParams.sort_dir = 'desc';
+		assessRequestParams.sSearch = '';
+		assessRequestParams.bRegex = false;
+		assessRequestParams.iDisplayLength = 10;
+		assessRequestParams.iDisplayStart = 0;
+				
         return assessRequestParams;
     }
 
-    function collectionParams() {
-		var batch_set = $('.result_batch_items:checked').val() || 'me';
-
-        var assessRequestParams = {};
-
-		var batch_id_result = GetURLParameter('batch_id_result');
-		var cmp_selected = GetURLParameter('cmp_selected');
-		var search_text = GetURLParameter('search_text');
-
-        if(search_text){
-            assessRequestParams.search_text = search_text;
-        }else{
-            assessRequestParams.search_text = $('#assess_filter_text').val();
-
-        }
-        if(batch_id_result){
-            assessRequestParams.batch_id = batch_id_result;
-        }else{
-            assessRequestParams.batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
-        }
-
-        var assess_filter_datefrom = $('#assess_filter_datefrom').val();
-        var assess_filter_dateto = $('#assess_filter_dateto').val();
-        if (assess_filter_datefrom && assess_filter_dateto) {
-            assessRequestParams.date_from = assess_filter_datefrom,
-                    assessRequestParams.date_to = assess_filter_dateto
-        }
-
-        if(cmp_selected){
-                    assessRequestParams.batch2 = cmp_selected;
-        }else if($("select[name='" + batch_sets[batch_set]['batch_batch'] + "'").val() != 0 && $(batch_sets[batch_set]['batch_compare']).val() != 0 && $(batch_sets[batch_set]['batch_compare']).val() != null) {
-            assessRequestParams.batch2 = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
-
-        }
-
-        if ($('#research_assess_flagged').is(':checked')) {
-            assessRequestParams.flagged = true;
-        }
-
-        if ($('#research_assess_price_diff').is(':checked')) {
-            assessRequestParams.price_diff = true;
-        }
-
-        if ($('#research_assess_short_check').is(':checked')) {
-            assessRequestParams.short_less_check = $('#research_assess_short_less_check').is(':checked');
-            assessRequestParams.short_less = $('#research_assess_short_less').val();
-            assessRequestParams.short_more_check = $('#research_assess_short_more_check').is(':checked')
-            assessRequestParams.short_more = $('#research_assess_short_more').val();
-
-            if ($('#research_assess_short_seo_phrases').is(':checked')) {
-                assessRequestParams.short_seo_phrases = 1;
-            }
-            if ($('#research_assess_title_seo_phrases').is(':checked')) {
-                assessRequestParams.title_seo_phrases = true;
-            }
-            if ($('#research_assess_images_cmp').is(':checked')) {
-                assessRequestParams.images_cmp = true;
-            }
-            if ($('#research_assess_video_count').is(':checked')) {
-                assessRequestParams.video_count = true;
-            }
-            if ($('#research_assess_title_pa').is(':checked')) {
-                assessRequestParams.title_pa = true;
-            }
-            if ($('#research_assess_short_duplicate_content').is(':checked')) {
-                assessRequestParams.short_duplicate_content = 1;
-            }
-        }
-
-        if ($('#research_assess_long_check').is(':checked')) {
-            assessRequestParams.long_less_check = $('#research_assess_long_less_check').is(':checked') + 0;
-            assessRequestParams.long_less = $('#research_assess_long_less').val();
-            assessRequestParams.long_more_check = $('#research_assess_long_more_check').is(':checked') + 0;
-            assessRequestParams.long_more = $('#research_assess_long_more').val();
-
-            if ($('#research_assess_long_seo_phrases').is(':checked')) {
-                assessRequestParams.long_seo_phrases = 1;
-            }
-            if ($('#research_assess_long_duplicate_content').is(':checked')) {
-                assessRequestParams.long_duplicate_content = 1;
-            }
-        }
-
-        var research_assess_compare_batches_batch = $(batch_sets[batch_set]['batch_compare']).val();
-       
-        if(cmp_selected){
-            assessRequestParams.compare_batch_id = cmp_selected;
-                       
-        }else if (research_assess_compare_batches_batch > 0) {
-            assessRequestParams.compare_batch_id = research_assess_compare_batches_batch;
-        }
-        return assessRequestParams;
-    }
-    
-    
 
     $(document).on('mouseleave', '#assess_preview_crawl_snap_modal', function() {
         $(this).modal('hide');

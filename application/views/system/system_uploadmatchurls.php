@@ -27,7 +27,7 @@
               <i class="icon-plus icon-white"></i>
               <input type="file" multiple="" name="files[]" id="upload_urls">
           </span>
-          <span class="btn btn-danger pull-left" id="stop_matches">Stop</span>
+          <span class="btn btn-danger pull-left" id="stop_matches" style='margin-left: 10px;'>Stop</span>
           <input type="hidden" name="choosen_file" />
           <script>
               var match_ajax = "";
@@ -54,6 +54,33 @@
                           });
                       });
           </script>
+          <div style='float: left; width: 100%; clear: both; margin-top: 10px;'>
+          	<span class="btn btn-success fileinput-button pull-left" style="">
+	              Upload manufacturer
+	              <i class="icon-plus icon-white"></i>
+	              <input type="file" multiple="" name="files[]" id="upload_urls_manu">
+	          </span>
+	          <span class="btn btn-danger pull-left" id="stop_matches_manu" style='margin-left: 10px;'>Stop</span>
+		      	<input type="hidden" name="choosen_file_manu" />
+		      	<script>
+	              var match_ajax_manu = "";
+	              var flag_stop_match_manu = false;
+	              $(function () {
+	                  var url = '<?php echo site_url('system/upload_match_urls_manu'); ?>';
+	                  $('#upload_urls_manu').fileupload({
+	                      url: url,
+	                      dataType: 'json',
+	                      done: function (e, data) {
+	                          $('input[name="choosen_file_manu"]').val(data.result.files[0].name);
+	                          var url = base_url+'index.php/system/check_urls';
+	                          match_ajax_manu = $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val()}, function(data) {
+                                	
+                                }, 'json');
+                              }
+	                          });
+	                      });
+	          </script>
+		      </div>
       </div>
   </div>
 </div>

@@ -24,7 +24,12 @@ return array(
 		array(
 			'sTitle' => "Product Name",
 			'sName' => 'product_name',                
-			'sClass' => 'product_name_text'
+			'sClass' => 'product_name'
+		),
+		array(
+			'sTitle' => 'Title', 
+			'sName' => 'title_pa',               
+			'sClass' => 'title_pa'
 		),
 		array(
 			'sTitle' => "item ID",
@@ -37,9 +42,15 @@ return array(
 			'sClass' => 'model'
 		),
 		array(
+			'sTitle' => 'Price',
+			'sName' => 'price_diff',               
+			'sClass' => 'price_text',
+			'nonCompared' => true
+		),
+		array(
 			'sTitle' => 'URL',
 			'sName' => 'url',                
-			'sClass' => 'url_text'
+			'sClass' => 'url'
 		),
 		array(
 			'sTitle' => "Page Load Time",
@@ -64,72 +75,17 @@ return array(
 			'sClass' => 'Meta_Keywords'
 		),
 		array(
-			'sTitle' => '<span class="subtitle_desc_long" >Long </span>Description',
-			'sName' => 'Long_Description',                
-			'sClass' => 'Long_Description',
-			'newTitle' => '<span class="subtitle_desc_long?" >Long </span>Description'
-		),
-		array(
-			'sTitle' => 'Long Desc <span class="subtitle_word_long" ># Words</span>',
-			'sName' => 'long_description_wc',                
-			'sClass' => 'word_long',
-			'newTitle' => 'Long Desc <span class="subtitle_word_long?" ># Words</span>'
-		),
-		array(
-			'sTitle' => "Meta Description",
-			'sName' => 'Meta_Description',               
-			'sClass' => 'Meta_Description'
-		),
-		array(
-			'sTitle' => 'Meta Desc <span class="subtitle_word_long" ># Words</span>',
-			'sName' => 'Meta_Description_Count',                
-			'sClass' => 'Meta_Description_Count',
-			'newTitle' => 'Meta Desc <span class="subtitle_word_long?" ># Words</span>'
-		),
-		array(
-			'sTitle' => "Third Party Content",
-			'sName' => 'column_external_content',
-			'sClass' => 'column_external_content'            
-		),
-		array(
-			'sTitle' => "H1 Tags",
-			'sName' => 'H1_Tags',                
-			'sClass' => 'HTags_1'
-		),
-		array(
-			'sTitle' => 'Chars',
-			'sName' => 'H1_Tags_Count',                
-			'sClass' => 'HTags'
-		),
-		array(
-			'sTitle' => "H2 Tags",
-			'sName' => 'H2_Tags',                
-			'sClass' => 'HTags_2'
-		),
-		array(
-			'sTitle' => 'Chars',
-			'sName' => 'H2_Tags_Count',                
-			'sClass' => 'HTags'
-		),
-		array(
-			'sTitle' => "Avg Review",
-			'sName' => 'average_review',               
-			'sClass' => 'average_review'
-		),
-		array(
-			'sTitle' => 'Reviews',
-			'sName' => 'column_reviews',                
-			'sClass' => 'column_reviews'
-		),            
-		array(
-			'sTitle' => 'Features',
-			'sName' => 'column_features',               
-			'sClass' => 'column_features'
+			'sTitle' => "Keywords <span class='subtitle_keyword_short'>Short</span>",
+			'sName' => 'short_seo_phrases',                
+			'sClass' => 'keyword_short',
+			'nonCompared' => true
 		),
 		array(
 			'sTitle' => "Title Keywords", 
 			'sName' => 'title_seo_phrases',                
-			'sClass' => 'title_seo_phrases'
+			'sClass' => 'title_seo_phrases',
+			'moreHtml' => '<input id="tk-denisty" type="radio" name="title_keywords" value="density" checked /><label for="tk-denisty">Density</label>
+								<input id="tk-frequency" type="radio" name="title_keywords" value="Frequency"/><label for="tk-frequency">Frequency</label>'
 		),
 		array(
 			'sTitle' => 'Images',
@@ -142,33 +98,22 @@ return array(
 			'sClass' => 'video_count'
 		),
 		array(
-			'sTitle' => 'Title', 
-			'sName' => 'title_pa',               
-			'sClass' => 'title_pa'
+			'sTitle' => '<span class="subtitle_desc_long" >Long </span>Description',
+			'sName' => 'Long_Description',                
+			'sClass' => 'Long_Description',
+			'newTitle' => '<span class="subtitle_desc_long?" >Long </span>Description'
+		),
+		array(
+			'sTitle' => 'Long Desc <span class="subtitle_word_long" ># Words</span>',
+			'sName' => 'long_description_wc',                
+			'sClass' => 'word_long',
+			'newTitle' => 'Long Desc <span class="subtitle_word_long?" ># Words</span>'
 		),
 		array(
 			'sTitle' => 'Links', 
 			'sName' => 'links_count',               
 			'sClass' => 'links_count'
-		),	
-		array(
-			'sTitle' => 'Gap Analysis',
-			'sClass' => 'gap',
-			'sName' => 'gap',
-			'nonCompared' => true
 		),
-		array(
-			'sTitle' => "Duplicate Content",
-			'sName' => 'duplicate_content',
-			'sClass' => 'Duplicate_Content',			
-			'nonCompared' => true
-		),    
-		array(
-			'sTitle' => "Keywords <span class='subtitle_keyword_short'>Short</span>",
-			'sName' => 'short_seo_phrases',                
-			'sClass' => 'keyword_short',
-			'nonCompared' => true
-		),                                            
 		array(
 			'sTitle' => "Keywords <span class='subtitle_keyword_long'>Long</span>",
 			'sName' => 'long_seo_phrases',               
@@ -186,23 +131,83 @@ return array(
 			'sName' => 'Custom_Keywords_Long_Description',      
 			'sClass' => 'Custom_Keywords_Long_Description',
 			'nonCompared' => true
-		),  			                 
+		),
 		array(
-			'sTitle' => 'Price',
-			'sName' => 'price_diff',               
-			'sClass' => 'price_text',
+			'sTitle' => "Meta Description",
+			'sName' => 'Meta_Description',               
+			'sClass' => 'Meta_Description'
+		),
+		array(
+			'sTitle' => 'Meta Desc <span class="subtitle_word_long" ># Words</span>',
+			'sName' => 'Meta_Description_Count',                
+			'sClass' => 'Meta_Description_Count',
+			'newTitle' => 'Meta Desc <span class="subtitle_word_long?" ># Words</span>'
+		),
+		array(
+			'sTitle' => "H1 Tags",
+			'sName' => 'H1_Tags',                
+			'sClass' => 'HTags_1'
+		),
+		array(
+			'sTitle' => 'Chars',
+			'sName' => 'H1_Tags_Count',                
+			'sClass' => 'HTags'
+		),
+		array(
+			'sTitle' => "H2 Tags",
+			'sName' => 'H2_Tags',                
+			'sClass' => 'HTags_2'
+		),
+		
+		array(
+			'sTitle' => 'Chars',
+			'sName' => 'H2_Tags_Count',                
+			'sClass' => 'HTags'
+		),
+		array(
+			'sTitle' => "Duplicate Content",
+			'sName' => 'duplicate_content',
+			'sClass' => 'Duplicate_Content',			
 			'nonCompared' => true
+		),
+		array(
+			'sTitle' => "Third Party Content",
+			'sName' => 'column_external_content',
+			'sClass' => 'column_external_content'            
+		),
+		array(
+			'sTitle' => 'Reviews',
+			'sName' => 'column_reviews',                
+			'sClass' => 'column_reviews'
+		), 
+		array(
+			'sTitle' => "Avg Review",
+			'sName' => 'average_review',               
+			'sClass' => 'average_review'
+		),
+		array(
+			'sTitle' => 'Features',
+			'sName' => 'column_features',               
+			'sClass' => 'column_features'
 		),
 		array(
 			'sTitle' => 'Recommendations',
 			'sName' => 'recommendations',               
 			'bVisible' => false,
 			'bSortable' => false,
-			'nonCompared' => true
+			'nonCompared' => true,
+			'nonSelected' => true
 		),
 		array(
 			'sName' => 'add_data',
 			'bVisible' => false,
+			'nonCompared' => true,
+			'nonSelected' => true
+		),
+		array(
+			'sTitle' => 'Gap Analysis',
+			'sClass' => 'gap',
+			'sName' => 'gap',
 			'nonCompared' => true
 		)
-	);
+	);	

@@ -10,30 +10,30 @@ class Crons extends MY_Controller
     {
         parent::__construct();
         $this->load->library('ion_auth');
-            $this->ion_auth->add_auth_rules(array(
-                'index' => true,
-                'screenscron' => true,
-                'do_stats' => true,
-                'duplicate_content' => true,
-                'do_stats_new' => true,
-                'similar_groups' => true,
-                'do_stats_forupdated' => true,
-                'do_duplicate_content' => true,
-                'ranking_api_exp' => true,
-                'archive_imported_data_parsed' => true,
-                'get_all_rows' => TRUE,
-                'get_update_status' => true,
-                'save_departments_categories' => TRUE,
-                'match_urls' => TRUE,
-                'match_urls_thread' => TRUE,
-                'stop_do_stats' => true,
-                'get_stats_status' => true,
-                'stop_do_stats' => true,
-                'delete_batch_items_from_statistics_new' => true,
-                'fix_imported_data_parsed_models' => true,
-                'fixmodel_length' => true,
-                'fix_revisions' => true
-            ));
+        $this->ion_auth->add_auth_rules(array(
+            'index' => true,
+            'screenscron' => true,
+            'do_stats' => true,
+            'duplicate_content' => true,
+            'do_stats_new' => true,
+            'similar_groups' => true,
+            'do_stats_forupdated' => true,
+            'do_duplicate_content' => true,
+            'ranking_api_exp' => true,
+            'archive_imported_data_parsed' => true,
+            'get_all_rows' => TRUE,
+            'get_update_status' => true,
+            'save_departments_categories' => TRUE,
+            'match_urls' => TRUE,
+            'match_urls_thread' => TRUE,
+            'stop_do_stats' => true,
+            'get_stats_status' => true,
+            'stop_do_stats' => true,
+            'delete_batch_items_from_statistics_new' => true,
+            'fix_imported_data_parsed_models' => true,
+            'fixmodel_length' => true,
+            'fix_revisions' => true
+        ));
         $this->load->library('helpers');
         $this->load->helper('algoritm');
     }
@@ -555,38 +555,47 @@ class Crons extends MY_Controller
         echo $status ? $status->description : '';
     }
 
+
     public function get_update_status()
     {
+
         $this->load->model('settings_model');
         $this->load->model('imported_data_parsed_model');
+
         $lud = $this->settings_model->getLastUpdate();
         $dss = $this->settings_model->getDoStatsStatus();
         $res_arr = array();
+
         if ($dss) {
             $res_arr['status'] = $dss->description;
             $res_arr['started'] = $dss->created;
             $res_arr['remain'] = $this->settings_model->countItemsForReset();
         }
+
+
         if ($lud) {
             $res_arr['total'] = $lud['description'];
             $res_arr['updated'] = $lud['modified'];
         }
+
         $res = json_encode($res_arr);
         echo $res;
     }
+
 
     public function delete_batch_items_from_statistics_new()
     {
         $batch_id = intval($this->uri->segment(3));
         $sql_cmd = "select rdc.research_data_id, rd.batch_id
+
         , idp.imported_data_id
         from crawler_list as cl
         join research_data_to_crawler_list as rdc on cl.id = rdc.crawler_list_id
         join research_data as rd on rdc.research_data_id = rd.id
         join batches as b on b.id = rd.batch_id
         join imported_data_parsed as idp on cl.imported_data_id=idp.imported_data_id
-        where rd.batch_id = $batch_id 
-        and idp.`key`='url' 
+        where rd.batch_id = $batch_id
+        and idp.`key`='url'
         group by idp.imported_data_id";
         $q = $this->db->query($sql_cmd);
         $results = $q->result();

@@ -1159,3 +1159,92 @@
         event.preventDefault();
         comparison_details_load($(this).attr('href'));
     });
+	
+
+	
+	
+	
+	function initializeTblAssess() {		
+		return $('#tblAssess').dataTable({			
+			bJQueryUI : true,
+			bDestroy : true,
+			sPaginationType : "full_numbers",
+			bProcessing : true,
+			aaSorting : [[5, "desc"]],
+			bAutoWidth : false,
+			bDeferRender : true,
+			bServerSide : true,        
+			sAjaxSource : readAssessUrl,
+			fnServerData : function(sSource, aoData, fnCallback) {					
+				console.log('fnServerData');
+				
+				//Toggling total items selected count by filter
+				var total_items_selected_by_filter_wrapper = $('.total_items_selected_by_filter_wrapper')				
+				  , research_batch = $('.research_assess_batches_select')
+				  , research_batch_competitor = $('#research_assess_compare_batches_batch')
+				  , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				   
+				  , settings = tblAssess ? tblAssess.fnSettings() : null				  
+				  , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null;	
+				  
+				total_items_selected_by_filter_wrapper.hide();						
+											
+				aoData = buildTableParams(aoData);									           
+				
+				function build(json) {													
+					if (json.ExtraData != undefined) 
+					{					
+						buildReport(json);                    				
+						resizeImpDown();
+						setBorderSeparator();							
+						settings.json_encoded_data = json.ExtraData.json_encoded_data;	
+						if (summaryInfoSelectedElements.length)
+							total_items_selected_by_filter_wrapper.show();									              													
+									
+						tblAssess && tblAssess.fnProcessingIndicator(false);	
+						loadSetTK();									
+					}
+										
+					fnCallback(json);
+				}
+												
+				$.getJSON(sSource, aoData, function(json) {
+					if(!json)
+						return;	
+																			
+					customLocalStorage[storage_key] = JSON.stringify(json);		
+					
+					json.aaData = json.aaData.slice(0, 10);
+					
+					build(json);						
+				});                                  
+			},
+			fnRowCallback : function(nRow, aData, iDisplayIndex) {		
+				console.log('fnRowCallback');
+				return;	
+				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 
+				tblAssess_postRenderProcessing(nRow);
+			},
+			fnDrawCallback : function(oSettings) {
+				console.log('fnDrawCallback');
+				return;					
+			},
+			fnInitComplete : function(oSettings, json) {		
+				console.log('fnInitComplete');
+				return;	
+				hideColumns();  
+				topScroll();																
+			},
+			fnPreDrawCallback : function( oSettings ) {
+				console.log('fnPreDrawCallback');
+				return;	
+			},
+			oLanguage : {
+				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
+				sInfoEmpty : "Showing 0 to 0 of 0 records",
+				sInfoFiltered : "",
+				sSearch : "Filter:",
+				sLengthMenu : "_MENU_ rows"
+			},
+			aoColumns : columns
+		});			
+	}

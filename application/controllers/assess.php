@@ -246,11 +246,10 @@ class Assess extends MY_Controller {
 	}
 	
     public function get_assess_info() {
-        //Debugging
-        $st_time = microtime(TRUE);
         
+        $st_time = microtime(TRUE);      
+		
         $batch_id = $this->input->get('batch_id');
-
         if ($batch_id == 0) {
             $output = array(
                 'sEcho' => 1,
@@ -264,7 +263,7 @@ class Assess extends MY_Controller {
                     ->set_output(json_encode($output));			
         } else {			 
 			$batch2_items_count = 0;
-			
+			$columns = AssessHelper::columns();
 			if (!($txt_filter = $this->input->get('search_text'))) 
 				if (!($txt_filter = $this->input->get('sSearch'))) 
 					$txt_filter = '';			
@@ -294,9 +293,10 @@ class Assess extends MY_Controller {
 				}),
 				'long_seo_phrases' => $this->input->get('long_seo_phrases'),
 				'long_duplicate_content' => $this->input->get('long_duplicate_content'),
-				'all_columns' => $this->input->get('sColumns'),
-				'sort_columns' => $this->input->get('iSortCol_0'),
-				'sort_dir' => $this->input->get('sSortDir_0'),
+				'all_columns' => AssessHelper::getStringColumnNames($columns),				
+				'sort_columns' => array( 'default' => 5 ),
+				'display_competitor_columns' => false,
+				'sort_dir' => array( 'default' => 'desc' ),
 				'flagged' => $this->input->get('flagged'),
 				'summaryFilterData' => array( 'default' => array(), 'callback' => function($value) {
 					return $value ? explode(',', $value) : array();
@@ -319,15 +319,12 @@ class Assess extends MY_Controller {
 			
             $results = $this->get_data_for_assess($params);
 			
-            $cmp = array();
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time1: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);
+            $cmp = array();  
 
             if ($batch2 && $batch2 != 'all') {
                 $this->load->model('batches_model');
                 $build_assess_params->max_similar_item_count = 1;
+                $build_assess_params->display_competitor_columns = true;
 
                 $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
 
@@ -566,10 +563,6 @@ class Assess extends MY_Controller {
                 }
                 $results = $cmp;
             }
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time2: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);
 
             if ($batch2 == 'all') {
                 $max_similar_item_count = 1;
@@ -601,7 +594,7 @@ class Assess extends MY_Controller {
             }
 
             $build_assess_params->batch2_items_count = $batch2_items_count;
-            $output = $this->build_asses_table($results, $build_assess_params, $batch_id);
+            $output = $this->build_asses_table($results, $build_assess_params, $batch_id, $columns);
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
 //            header('Mem-and-Time4: '.memory_get_usage().'-'.$dur);
@@ -610,8 +603,8 @@ class Assess extends MY_Controller {
             $this->output->set_content_type('application/json')
                     ->set_output(json_encode($output));
         }
-		if (function_exists('fastcgi_finish_request '))
-			fastcgi_finish_request();
+		// if (function_exists('fastcgi_finish_request'))
+			// fastcgi_finish_request();
     }
 
     public function filterBatchByCustomerName() {
@@ -1022,13 +1015,26 @@ class Assess extends MY_Controller {
     }
 
     public function assess_save_columns_state() {
-        $this->load->model('settings_model');
+        $this->load->model('user_summary_settings', 'uss');        
         $user_id = $this->ion_auth->get_user_id();
-        $key = 'research_assess';
-        $value = $this->input->post('value');
-        $description = 'Page settings -> columns state';
-        $res = $this->settings_model->replace($user_id, $key, $value, $description);
-        echo json_encode($res);
+		$value = $this->input->post('value');
+		
+		if ($setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR'], 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_SELECTED_COLUMNS)))
+		{
+			// echo 'insert';
+			$setting->setting_value = json_encode($value);
+			$this->uss->setAttributes($setting);			
+		} else {
+			// echo 'update';
+			$this->uss->setAttributes(array(
+				'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_SELECTED_COLUMNS,
+				'setting_value' => json_encode($value),
+				'user_id' => $user_id,
+			));					
+		}
+		$this->uss->save();
+		
+        echo json_encode(true);
     }
 
     public function assess_save_urls() {
@@ -2830,17 +2836,24 @@ class Assess extends MY_Controller {
 	}
 
     public function products() {
+		
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
         if (!empty($this->data['customer_list'])) {
             $this->data['batches_list'] = $this->batches_list();
         }
-
-        $user_id = $this->ion_auth->get_user_id();
-        $key = 'research_assess';
-        $columns = $this->settings_model->get_value($user_id, $key);
 		
 		$this->load->model('user_summary_settings', 'uss');
+        $user_id = $this->ion_auth->get_user_id();
+        
+		$result = $this->uss->findByAttributes(array(
+			'user_id' => $user_id,
+			'user_ip' => $_SERVER['REMOTE_ADDR'],
+			'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_SELECTED_COLUMNS
+		));
+		
+        $columns = (array)json_decode($result->setting_value);			
+		
 		if ($this->ion_auth->logged_in() && ($user_id = $this->ion_auth->get_user_id()))		
 		{
 			$user_setting_filters = $this->uss->findByAttributes(array('user_id' => $user_id, 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER));			
@@ -2856,22 +2869,18 @@ class Assess extends MY_Controller {
 		$this->data['user_filters_order'] = $user_setting_filters_order && $user_setting_filters_order->setting_value ? json_decode($user_setting_filters_order->setting_value) : array();
 
         // if columns empty set default values for columns
-        if (empty($columns)) {
+        if (empty($columns) || !array_filter($columns, function($value) {
+			return $value == 'true';
+		})) {
             $columns = array(
                 'product_name' => 'true',                               
                 'url' => 'true',                                
                 'short_description_wc' => 'true',			               
-                'title_seo_phrases' => 'true',                                       
-                'H1_Tags' => 'true',                              
-                'column_reviews' => 'true',				          
-                'images_cmp' => 'true',
-                'video_count' => 'true', 
-                'title_pa' => 'true',
-                'links_count' => 'true'
+                'title_seo_phrases' => 'true',                                                       
             );
         }
         $this->data['columns'] = $columns;
-
+		
         $this->render();
     }
 
@@ -3041,7 +3050,7 @@ class Assess extends MY_Controller {
         return strpos($str1, $str2) !== FALSE;
     }
 
-    private function build_asses_table($results, $build_assess_params, $batch_id = '') 
+    private function build_asses_table($results, $build_assess_params, $batch_id = '', $columns = array()) 
 	{
 //        error_reporting(E_ALL);
         //Debugging
@@ -3061,9 +3070,9 @@ class Assess extends MY_Controller {
         $report = array();
         $pricing_details = array();
 		
-		//getting columns		
-		// 2nd param $build_assess_params->max_similar_item_count is 1 for now, hardcoded similar items count
-		$columns = AssessHelper::addCompetitorColumns(AssessHelper::columns(), 1);
+		//getting columns				
+		$raw_columns = $columns;
+		$columns = AssessHelper::addCompetitorColumns($columns);
 		
 		//extracting initial data varialbes for filters
         extract(AssessHelper::getInitialFilterData());
@@ -3170,7 +3179,7 @@ class Assess extends MY_Controller {
                     continue;
                 }
             }
-
+			
             if ($row->short_description) {
                 $result_row->short_description = $row->short_description;
             } else {
@@ -4190,8 +4199,7 @@ class Assess extends MY_Controller {
 		
 			$are_records_on_the_page = $c >= $display_start && $c < ($display_start + $display_length);
 			$are_records_filtered = $this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData);
-            
-			// if (!$build_assess_params->summaryFilterData && $are_records_on_the_page) {
+            			
 			if (!$build_assess_params->summaryFilterData) {
                 $result_table[] = $result_row;				
             } else if ($are_records_filtered) {
@@ -4206,12 +4214,7 @@ class Assess extends MY_Controller {
 			$c++;							         
         }
 
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time2-BAT01: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);  
-      
-//Debugging problem part
+
         if ($this->settings['statistics_table'] == "statistics_new") {
             $own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
         } else {
@@ -4398,9 +4401,10 @@ class Assess extends MY_Controller {
 
 
         $output = array(
-            "sEcho" => intval($this->input->get('sEcho')),
+            // "sEcho" => intval($this->input->get('sEcho')),
+            "sEcho" => ($filtered_count ?: $total_rows) / $display_length,
             "iTotalRecords" => $filtered_count ?: $total_rows,
-            "iTotalDisplayRecords" => $filtered_count ?: $total_rows,
+            "iTotalDisplayRecords" => $filtered_count ?: $total_rows,            
             "iDisplayLength" => $display_length,
             "aaData" => array()
         );
@@ -4631,6 +4635,8 @@ class Assess extends MY_Controller {
 				
         $output['aoColumns'] = $columns;
         $output['ExtraData']['report'] = $report;        
+        $output['ExtraData']['display_competitor_columns'] = $build_assess_params->display_competitor_columns;
+        $output['ExtraData']['getSelectableColumns'] = AssessHelper::getSelectableColumns($raw_columns);
          		
         return $output;
     }
@@ -4892,49 +4898,105 @@ class Assess extends MY_Controller {
                 $updated_Features = '';
                 $updated_h1_word_counts = '';
                 $updated_h2_word_counts = '';
-                if($graphBuild == "total_description_wc"){
-                foreach($arr as $a){
-                        if($a->date !=''){
-                          $long_des = count(explode(' ',$a->long_description));
-                          $des = count(explode(' ',$a->description));
-                          if($des == 1 && $long_des == 1)
-                            $updated_total_description_wc.='Total Description Word Count: '.$a->date .' - null  words<br>';  
-                          else
-                            $updated_total_description_wc.='Total Description Word Count: '.$a->date .' - '.(count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)))."  words<br>";  
-                        }
-       
+				$updated_trendlines_data = array(null, null, null, null, null, null); // Castro #1119, var that going to store trendlines data
+				$trendline_index = 0;
+
+                if($graphBuild == "total_description_wc")
+				{
+					foreach($arr as $a)
+					{
+						if($a->date !='')
+						{
+							$long_des = count(explode(' ',$a->long_description));
+							$des = count(explode(' ',$a->description));
+							if($des == 1 && $long_des == 1)
+							{
+								$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - null  words<br>';  
+								$updated_trendlines_data[$trendline_index] = 0;
+							}
+							else
+							{
+								$updated_total_description_wc_int = (count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)));
+
+								$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words<br>"; 
+
+								$updated_trendlines_data[$trendline_index] = $updated_total_description_wc_int;
+								$trendline_index++;
+							}
+						}
                     }
-                 }else{
-                    foreach($arr as $a){
-                    $pars = unserialize($a->parsed_attributes);
-                    $htags_upd = unserialize($a->HTags);
-                    $updated_short_description_wc.='Short Description: '.$a->date .' - '.count(explode(' ',$a->description))."  words<br>";
-                    $updated_long_description_wc.='Long Description: '.$a->date .' - '.count(explode(' ',$a->long_description))." words <br>";
-                    $updated_total_description_wc.='Total Description Word Count: '.$a->date .' - '.(count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)))."  words<br>";
-                    $updated_revision.='Reviews: '.$a->date .' - '.$pars['review_count']."<br>";
-                    $updated_Features.='Features: '.$a->date .' - '.$pars['feature_count']."<br>";
-                    $updated_h1_word_counts.='H1 Characters: ' .$a->date .' - '.count($htags_upd['h1'])." words <br>";
-                    $updated_h2_word_counts.='H2 Characters: ' .$a->date .' - '.count($htags_upd['h2'])." words <br>";
-                }
-                 }
-                $snap_data[0]['updated_short_description_wc'][] =  $updated_short_description_wc;
-                $snap_data[0]['updated_long_description_wc'][] =  $updated_long_description_wc;
-                $snap_data[0]['updated_total_description_wc'][] =  $updated_total_description_wc;
-                $snap_data[0]['updated_revision'][] =  $updated_revision;
-                $snap_data[0]['updated_Features'][] =  $updated_Features;
-                $snap_data[0]['updated_h1_word_counts'][] =  $updated_h1_word_counts;
-                $snap_data[0]['updated_h2_word_counts'][] =  $updated_h2_word_counts;
+				}
+				else
+				{
+					foreach($arr as $a)
+					{
+						$pars = unserialize($a->parsed_attributes);
+						$htags_upd = unserialize($a->HTags);
+
+						$updated_short_description_wc_int = count(explode(' ',$a->description));
+						$updated_long_description_wc_int = count(explode(' ',$a->long_description));
+						$updated_total_description_wc_int = (count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)));
+						$updated_revision_int = $pars['review_count'];
+						$updated_Features_int = $pars['feature_count'];
+						$updated_h1_word_counts_int = strlen(implode("", $htags_upd['h1']));
+						$updated_h2_word_counts_int = strlen(implode("", $htags_upd['h2']));
+
+						$updated_short_description_wc.='Short Description: '.$a->date .' - ' . $updated_short_description_wc_int . "  words<br>";
+						$updated_long_description_wc.='Long Description: '.$a->date .' - ' . $updated_long_description_wc_int . " words <br>";
+						$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words<br>";
+						$updated_revision.='Reviews: '.$a->date .' - ' . $updated_revision_int . "<br>";
+						$updated_Features.='Features: '.$a->date .' - ' . $updated_Features_int . "<br>";
+						$updated_h1_word_counts.='H1 Characters: ' .$a->date .' - ' . $updated_h1_word_counts_int . " characters<br>";
+						$updated_h2_word_counts.='H2 Characters: ' .$a->date .' - ' . $updated_h2_word_counts_int . " characters<br>";
+
+						if($graphBuild == "short_description_wc")
+						{
+							$trendline_value = $updated_short_description_wc_int;
+						}
+						else if($graphBuild == "long_description_wc")
+						{
+							$trendline_value = $updated_long_description_wc_int;
+						}
+						else if($graphBuild == "h1_word_counts")
+						{
+							$trendline_value = $updated_h1_word_counts_int;
+						}
+						else if($graphBuild == "h2_word_counts")
+						{
+							$trendline_value = $updated_h2_word_counts_int;
+						}
+						else if($graphBuild == "revision")
+						{
+							$trendline_value = $updated_revision_int;
+						}
+						else if($graphBuild == "Features")
+						{
+							$trendline_value = $updated_Features_int;
+						}
+
+						$updated_trendlines_data[$trendline_index] = $trendline_value;
+						$trendline_index++;
+					}
+				}
+				$snap_data[0]['updated_short_description_wc'][] =  $updated_short_description_wc;
+				$snap_data[0]['updated_long_description_wc'][] =  $updated_long_description_wc;
+				$snap_data[0]['updated_total_description_wc'][] =  $updated_total_description_wc;
+				$snap_data[0]['updated_revision'][] =  $updated_revision;
+				$snap_data[0]['updated_Features'][] =  $updated_Features;
+				$snap_data[0]['updated_h1_word_counts'][] =  $updated_h1_word_counts;
+				$snap_data[0]['updated_h2_word_counts'][] =  $updated_h2_word_counts;
+				$snap_data[0]['updated_trendlines_data'][] =  $updated_trendlines_data;
 //                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
                 
                 $htags = unserialize($data_row->htags);
                 if ($htags) {
                     if (isset($htags['h1'])) {
-                        $snap_data[0]['h1_word_counts'][] = count($htags['h1']);
+                        $snap_data[0]['h1_word_counts'][] = strlen(implode("", $htags['h1']));
                     } else {
                         $snap_data[0]['h1_word_counts'][] = 0;
                     }
                     if (isset($htags['h2'])) {
-                        $snap_data[0]['h2_word_counts'][] = count($htags['h2']);
+                        $snap_data[0]['h2_word_counts'][] = strlen(implode("", $htags['h2']));
                     } else {
                         $snap_data[0]['h2_word_counts'][] = 0;
                     }
@@ -4985,8 +5047,8 @@ class Assess extends MY_Controller {
                     $updated_total_description_wc1.='Total Description Word Count: '.$a1->date .' - '.(count(explode(' ',$a1->long_description)) + count(explode(' ',$a1->description)))."  words<br>";
                     $updated_revision1.='Reviews: '.$a1->date .' - '.$pars1['review_count']."<br>";
                     $updated_Features1.='Features: '.$a1->date .' - '.$pars1['feature_count']."<br>";
-                    $updated_h1_word_counts1.='H1 Characters: ' .$a1->date .' - '.count($htags_upd1['h1'])." words <br>";
-                    $updated_h2_word_counts1.='H2 Characters: ' .$a1->date .' - '.count($htags_upd1['h2'])." words <br>";
+                    $updated_h1_word_counts1.='H1 Characters: ' .$a1->date .' - '.strlen(implode("", $htags_upd1['h1']))." characters <br>";
+                    $updated_h2_word_counts1.='H2 Characters: ' .$a1->date .' - '.strlen(implode("", $htags_upd1['h2']))." characters <br>";
                     }
                  }   
                 $snap_data[1]['updated_short_description_wc'][] =  $updated_short_description_wc1;
@@ -5000,12 +5062,12 @@ class Assess extends MY_Controller {
                     $htags = unserialize($data_row_sim[0]->HTags);
                     if ($htags) {
                         if (isset($htags['h1'])) {
-                            $snap_data[1]['h1_word_counts'][] = count($htags['h1']);
+                            $snap_data[1]['h1_word_counts'][] = strlen(implode("", $htags['h1']));
                         } else {
                             $snap_data[1]['h1_word_counts'][] = 0;
                         }
                         if (isset($htags['h2'])) {
-                            $snap_data[1]['h2_word_counts'][] = count($htags['h2']);
+                            $snap_data[1]['h2_word_counts'][] = strlen(implode("", $htags['h2']));
                         } else {
                             $snap_data[1]['h2_word_counts'][] = 0;
                         }
