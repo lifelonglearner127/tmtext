@@ -12,3 +12,4 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php/$1 [L]
 
 php_value upload_max_filesize 30M
+php_value max_execution_time 259200

@@ -3,43 +3,48 @@
 if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
-class Crons extends MY_Controller {
+class Crons extends MY_Controller
+{
 
-    function __construct() {
+    function __construct()
+    {
         parent::__construct();
         $this->load->library('ion_auth');
-        $this->ion_auth->add_auth_rules(array(
-            'index' => true,
-            'screenscron' => true,
-            'do_stats' => true,
-            'duplicate_content' => true,
-            'do_stats_new' => true,
-            'similar_groups' => true,
-            'do_stats_forupdated' => true,
-            'do_duplicate_content' => true,
-            'ranking_api_exp' => true,
-            'archive_imported_data_parsed' =>true,
-            'get_all_rows'=>TRUE,
-            'get_update_status'=>true,
-            'save_departments_categories'=>TRUE,
-            'match_urls'=>TRUE,
-            'stop_do_stats'=>true,
-            'get_stats_status'=>true,
-            'stop_do_stats'=>true,
-            'delete_batch_items_from_statistics_new' => true,
-            'fix_imported_data_parsed_models'=>true,
-            'fixmodel_length'=>true,
-            'fix_revisions'=>true
-        ));
+            $this->ion_auth->add_auth_rules(array(
+                'index' => true,
+                'screenscron' => true,
+                'do_stats' => true,
+                'duplicate_content' => true,
+                'do_stats_new' => true,
+                'similar_groups' => true,
+                'do_stats_forupdated' => true,
+                'do_duplicate_content' => true,
+                'ranking_api_exp' => true,
+                'archive_imported_data_parsed' => true,
+                'get_all_rows' => TRUE,
+                'get_update_status' => true,
+                'save_departments_categories' => TRUE,
+                'match_urls' => TRUE,
+                'match_urls_thread' => TRUE,
+                'stop_do_stats' => true,
+                'get_stats_status' => true,
+                'stop_do_stats' => true,
+                'delete_batch_items_from_statistics_new' => true,
+                'fix_imported_data_parsed_models' => true,
+                'fixmodel_length' => true,
+                'fix_revisions' => true
+            ));
         $this->load->library('helpers');
         $this->load->helper('algoritm');
     }
 
-    public function index() {
+    public function index()
+    {
 
     }
 
-    public function similar_groups() {
+    public function similar_groups()
+    {
 
         $this->load->model('imported_data_parsed_model');
 
@@ -59,93 +64,8 @@ class Crons extends MY_Controller {
         }
     }
 
-    private function urlExists($url) {
-        if ($url === null || trim($url) === "")
-            return false;
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $data = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        if ($httpcode >= 200 && $httpcode <= 302) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private function urlExistsCode($url) {
-        if ($url === null || trim($url) === "")
-            return false;
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $data = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        return $httpcode;
-    }
-
-    private function webthumb_call($url) {
-        $webthumb_user_id = $this->config->item('webthumb_user_id');
-        $api_key = $this->config->item('webthumb_api_key');
-        $url = "http://$url";
-        $c_date = gmdate('Ymd', time());
-        $hash = md5($c_date . $url . $api_key);
-        $e_url = urlencode(trim($url));
-        return $res = array(
-            "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2",
-            'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large"
-        );
-    }
-
-    private function customers_list() {
-        $this->load->model('customers_model');
-        $output = array();
-        $customers_init_list = $this->customers_model->getAll();
-        if (count($customers_init_list) > 0) {
-            foreach ($customers_init_list as $key => $value) {
-                $c_url = preg_replace('#^https?://#', '', $value->url);
-                $c_url = preg_replace('#^www.#', '', $c_url);
-                $mid = array(
-                    'id' => $value->id,
-                    'desc' => $value->description,
-                    'image_url' => $value->image_url,
-                    'name' => $value->name,
-                    'name_val' => strtolower($value->name),
-                    'c_url' => $c_url
-                );
-                $output[] = $mid;
-            }
-        }
-        return $output;
-    }
-
-    private function upload_record_webshoot($ext_url, $url_name) {
-        $file = file_get_contents($ext_url);
-        $type = 'png';
-        $dir = realpath(BASEPATH . "../webroot/webshoots");
-        if (!file_exists($dir)) {
-            mkdir($dir);
-            chmod($dir, 0777);
-        }
-        // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (START)
-        $url_name = $url_name . "-" . date('Y-m-d-H-i-s', time());
-        // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (END)
-        $t = file_put_contents($dir . "/$url_name.$type", $file);
-        $path = base_url() . "webshoots/$url_name.$type";
-        $res = array(
-            'path' => $path,
-            'dir' => $dir . "/$url_name.$type",
-            'shot_name' => $url_name . "." . $type
-        );
-        return $res;
-    }
-
-    public function site_crawler_screens() {
+    public function site_crawler_screens()
+    {
         $this->load->model('webshoots_model');
         $this->load->library('email');
         $ids_debug = $_GET['ids'];
@@ -179,10 +99,25 @@ class Crons extends MY_Controller {
         }
     }
 
+    private function urlExistsCode($url)
+    {
+        if ($url === null || trim($url) === "")
+            return false;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $data = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return $httpcode;
+    }
+
     /**
      * Cron Job for CI home tab screenshots generating
      */
-    public function screenscron() {
+    public function screenscron()
+    {
         $customers = $this->customers_list();
         $this->load->model('webshoots_model');
         $week = date("W", time());
@@ -230,10 +165,74 @@ class Crons extends MY_Controller {
         echo "Cron Job Finished";
     }
 
+    private function customers_list()
+    {
+        $this->load->model('customers_model');
+        $output = array();
+        $customers_init_list = $this->customers_model->getAll();
+        if (count($customers_init_list) > 0) {
+            foreach ($customers_init_list as $key => $value) {
+                $c_url = preg_replace('#^https?://#', '', $value->url);
+                $c_url = preg_replace('#^www.#', '', $c_url);
+                $mid = array(
+                    'id' => $value->id,
+                    'desc' => $value->description,
+                    'image_url' => $value->image_url,
+                    'name' => $value->name,
+                    'name_val' => strtolower($value->name),
+                    'c_url' => $c_url
+                );
+                $output[] = $mid;
+            }
+        }
+        return $output;
+    }
+
+    private function urlExists($url)
+    {
+        if ($url === null || trim($url) === "")
+            return false;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $data = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($httpcode >= 200 && $httpcode <= 302) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private function upload_record_webshoot($ext_url, $url_name)
+    {
+        $file = file_get_contents($ext_url);
+        $type = 'png';
+        $dir = realpath(BASEPATH . "../webroot/webshoots");
+        if (!file_exists($dir)) {
+            mkdir($dir);
+            chmod($dir, 0777);
+        }
+        // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (START)
+        $url_name = $url_name . "-" . date('Y-m-d-H-i-s', time());
+        // --- NEW STUFF (TIMESTAMP BASED IMAGES NAMES) (END)
+        $t = file_put_contents($dir . "/$url_name.$type", $file);
+        $path = base_url() . "webshoots/$url_name.$type";
+        $res = array(
+            'path' => $path,
+            'dir' => $dir . "/$url_name.$type",
+            'shot_name' => $url_name . "." . $type
+        );
+        return $res;
+    }
+
     /**
      * Cron Job for CI home tab screenshots reports mailer
      */
-    public function emailreports() {
+    public function emailreports()
+    {
         $this->load->model('webshoots_model');
         $this->load->model('settings_model');
         $current_day = lcfirst(date('l', time()));
@@ -302,17 +301,8 @@ class Crons extends MY_Controller {
         echo "Cron Job Finished";
     }
 
-    function send_email_report($subject, $message) {
-        $this->load->library('email');
-        $this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
-        $this->email->to('bayclimber@gmail.com');
-        $this->email->cc('max.kavelin@gmail.com');
-        $this->email->subject($subject);
-        $this->email->message($message);
-        $this->email->send();
-    }
-
-    public function do_duplicate_content() {
+    public function do_duplicate_content()
+    {
         $this->load->model('imported_data_parsed_model');
         $this->load->model('research_data_model');
         $this->load->model('statistics_model');
@@ -331,7 +321,7 @@ class Crons extends MY_Controller {
 
         foreach ($ids as $val) {
             $query = $this->db->where('imported_data_id', $val->imported_data_id)
-                    ->get('duplicate_content_new');
+                ->get('duplicate_content_new');
             if ($query->num_rows() == 0) {
                 $this->duplicate_content_new($val->imported_data_id);
             }
@@ -367,54 +357,228 @@ class Crons extends MY_Controller {
         }
     }
 
-    public function get_all_rows(){
+    function duplicate_content_new($imported_data_id)
+    {
+
+        try {
+
+            $res_data = $this->check_duplicate_content($imported_data_id);
+
+            $time_end = microtime(true);
+            $time = $time_end - $time_start;
+            echo "block with check_duplicate_content - $time seconds\n";
+            $time_start = $time_end;
+            foreach ($res_data as $val) {
+                $this->statistics_duplicate_content_model->insert_new($val['imported_data_id'], $val['long_original'], $val['short_original'], '1');
+            }
+            $time_end = microtime(true);
+            $time = $time_end - $time_start;
+            echo "foreach insert - $time seconds\n";
+        } catch (Exception $e) {
+            echo 'Error', $e->getMessage(), "\n";
+        }
+    }
+
+    private function check_duplicate_content($imported_data_id)
+    {
+        $this->load->model('imported_data_parsed_model');
+        $this->load->model('similar_product_groups_model');
+        $this->load->model('similar_data_model');
+        $data_import = $this->imported_data_parsed_model->getByImId($imported_data_id);
+
+        if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
+            $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
+            $data['s_product_short_desc_count'] = count(explode(" ", $data_import['description']));
+        }
+        if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
+            $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
+            $data['s_product_long_desc_count'] = count(explode(" ", $data_import['long_description']));
+        }
+        $data['s_product'] = $data_import;
+        $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($imported_data_id);
+
+        if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
+            $strict = $this->input->post('strict');
+            $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
+        }
+
+//        if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
+//            $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
+//        }
+        if (empty($same_pr) && !isset($data_import['parsed_attributes']['model'])) {
+            $data['mismatch_button'] = true;
+            if (!$this->similar_product_groups_model->checkIfgroupExists($imported_data_id)) {
+
+                if (!isset($data_import['parsed_attributes'])) {
+
+                    $same_pr = $this->imported_data_parsed_model->getByProductName($imported_data_id, $data_import['product_name'], '', $strict);
+                }
+                if (isset($data_import['parsed_attributes'])) {
+                    $same_pr = $this->imported_data_parsed_model->getByProductName($imported_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
+                }
+            } else {
+                $this->load->model('similar_imported_data_model');
+                $customers_list = array();
+                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
+                $query_cus_res = $query_cus->result();
+                if (count($query_cus_res) > 0) {
+                    foreach ($query_cus_res as $key => $value) {
+                        $n = parse_url($value->url);
+                        $customers_list[] = $n['host'];
+                    }
+                }
+                $customers_list = array_unique($customers_list);
+                $rows = $this->similar_data_model->getByGroupId($imported_data_id);
+                $data_similar = array();
+
+                foreach ($rows as $key => $row) {
+                    $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+                    $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
+
+                    $cus_val = "";
+                    foreach ($customers_list as $ki => $vi) {
+                        if (strpos($data_similar[$key]['url'], "$vi") !== false) {
+                            $cus_val = $vi;
+                        }
+                    }
+                    if ($cus_val !== "")
+                        $data_similar[$key]['customer'] = $cus_val;
+                }
+
+                if (!empty($data_similar)) {
+                    $same_pr = $data_similar;
+                }
+            }
+        }
+        if (count($same_pr) != 1) {
+            foreach ($same_pr as $ks => $vs) {
+                $maxshort = 0;
+                $maxlong = 0;
+                $k_sh = 0;
+                $k_lng = 0;
+                foreach ($same_pr as $ks1 => $vs1) {
+                    if ($ks != $ks1) {
+                        if ($vs['description'] != '') {
+                            if ($vs1['description'] != '') {
+                                $k_sh++;
+                                $percent = $this->compare_text($vs['description'], $vs1['description']);
+                                if ($percent > $maxshort) {
+                                    $maxshort = $percent;
+                                }
+                            }
+
+                            if ($vs1['long_description'] != '') {
+                                $k_sh++;
+                                $percent = $this->compare_text($vs['description'], $vs1['long_description']);
+                                if ($percent > $maxshort) {
+                                    $maxshort = $percent;
+                                }
+                            }
+                        }
+
+                        if ($vs['long_description'] != '') {
+
+                            if ($vs1['description'] != '') {
+                                $k_lng++;
+                                $percent = $this->compare_text($vs['long_description'], $vs1['description']);
+                                if ($percent > $maxlong) {
+                                    $maxlong = $percent;
+                                }
+                            }
+
+                            if ($vs1['long_description'] != '') {
+                                $k_lng++;
+                                $percent = $this->compare_text($vs['long_description'], $vs1['long_description']);
+                                if ($percent > $maxlong) {
+                                    $maxlong = $percent;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                $vs['short_original'] = ceil($maxshort);
+                $vs['long_original'] = ceil($maxlong);
+
+                if ($k_lng == 0) {
+                    $vs['long_original'] = 0;
+                }
+                if ($k_sh == 0) {
+                    $vs['short_original'] = 0;
+                }
+
+                $same_pr[$ks] = $vs;
+            }
+        } else {
+            $same_pr[0]['long_original'] = 0;
+            $same_pr[0]['short_original'] = 0;
+        }
+        return $same_pr;
+    }
+
+    private function compare_text($first_text, $second_text)
+    {
+        $first_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $first_text);
+        $first_text = preg_replace('/[a-zA-Z]-/', ' ', $first_text);
+        $second_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $second_text);
+        $second_text = preg_replace('/[a-zA-Z]-/', ' ', $second_text);
+
+        if ($first_text === $second_text) {
+            return 100;
+        } else {
+            $a = explode(' ', strtolower($first_text));
+
+            $b = explode(' ', strtolower($second_text));
+            $arr = array_intersect($a, $b);
+            $count = count($arr);
+            $prc = $count / count($a) * 100;
+            return $prc;
+        }
+    }
+
+    public function get_all_rows()
+    {
         $this->load->model('settings_model');
         echo $this->settings_model->countItemsForReset();
     }
-    public function stop_do_stats(){
+
+    public function stop_do_stats()
+    {
         $this->load->model('settings_model');
         $this->settings_model->stopDoStats();
     }
-    public function get_stats_status(){
+
+    public function get_stats_status()
+    {
         $this->load->model('imported_data_parsed_model');
         $status = $this->imported_data_parsed_model->getDoStatsStatus();
-        echo $status?$status->description:'';
+        echo $status ? $status->description : '';
     }
-    public function get_update_status(){
+
+    public function get_update_status()
+    {
         $this->load->model('settings_model');
         $this->load->model('imported_data_parsed_model');
         $lud = $this->settings_model->getLastUpdate();
         $dss = $this->settings_model->getDoStatsStatus();
         $res_arr = array();
-        if($dss){
-            $res_arr['status']=$dss->description;
-            $res_arr['started']=$dss->created;
+        if ($dss) {
+            $res_arr['status'] = $dss->description;
+            $res_arr['started'] = $dss->created;
             $res_arr['remain'] = $this->settings_model->countItemsForReset();
         }
-        if($lud){
+        if ($lud) {
             $res_arr['total'] = $lud['description'];
             $res_arr['updated'] = $lud['modified'];
         }
         $res = json_encode($res_arr);
         echo $res;
     }
-    function different_revissions(){
-        $sql_cmd = "select imported_data_id, max(revision) as max_revision
-                    from (
-                    select imported_data_id, revision from imported_data_parsed
-                    group by imported_data_id, revision) as res
-                    group by imported_data_id
-                    having count(revision)>1";
-      $results  = $this->db->query($sql_cmd)->result_array;
-      foreach( $results as $res){
-          $this->db->update('imported_data_parsed', array('revision' => $res['max_revision']), array('imported_data_id' => $res['imported_data_id']));
-      }
-      
-    }
-    
-    public function delete_batch_items_from_statistics_new(){
-       $batch_id = intval($this->uri->segment(3));
-       $sql_cmd = "select rdc.research_data_id, rd.batch_id 
+
+    public function delete_batch_items_from_statistics_new()
+    {
+        $batch_id = intval($this->uri->segment(3));
+        $sql_cmd = "select rdc.research_data_id, rd.batch_id
         , idp.imported_data_id
         from crawler_list as cl
         join research_data_to_crawler_list as rdc on cl.id = rdc.crawler_list_id
@@ -425,13 +589,15 @@ class Crons extends MY_Controller {
         and idp.`key`='url' 
         group by idp.imported_data_id";
         $q = $this->db->query($sql_cmd);
-      $results =$q->result();
-      foreach( $results as $res){
-          $this->db->delete('statistics_new', array('imported_data_id' => $res->imported_data_id));
-      }
-      echo "batch_id = $batch_id <br> end";
+        $results = $q->result();
+        foreach ($results as $res) {
+            $this->db->delete('statistics_new', array('imported_data_id' => $res->imported_data_id));
+        }
+        echo "batch_id = $batch_id <br> end";
     }
-    public function do_stats_forupdated() {
+
+    public function do_stats_forupdated()
+    {
         echo "Script start working";
         //error_reporting(E_ALL);
         $tmp_dir = sys_get_temp_dir() . '/';
@@ -439,10 +605,10 @@ class Crons extends MY_Controller {
         if (file_exists($tmp_dir . ".locked")) {
             exit;
         }
-        $first_sart= time();
+        $first_sart = time();
         touch($tmp_dir . ".locked");
-         $cjo = 0;
-       try {
+        $cjo = 0;
+        try {
             $this->load->model('imported_data_parsed_model');
             $this->load->model('research_data_model');
             $this->load->model('statistics_model');
@@ -458,27 +624,26 @@ class Crons extends MY_Controller {
             //$this->statistics_new_model->truncate();
 
             $trnc = $this->uri->segment(3);
-            $trnc = $trnc===FALSE?0:1;
+            $trnc = $trnc === FALSE ? 0 : 1;
             //var_dump($trnc);
             //if ($trnc !== false) {$trnc = 1;}
             $this->different_revissions();
             $timesart = time();
             $dss = $this->imported_data_parsed_model->getDoStatsStatus();
-            if(!$dss){
+            if (!$dss) {
                 $this->imported_data_parsed_model->setDoStatsStatus();
                 $this->settings_model->setLastUpdate(1);
-            }
-            else{
-                if($dss->description==='stopped'){
+            } else {
+                if ($dss->description === 'stopped') {
                     $this->imported_data_parsed_model->updDoStatsStatus(1);
                 }
                 $this->settings_model->setLastUpdate();
             }
 //            $this->imported_data_parsed_model->setUpdateStatus();
             $data_arr = $this->imported_data_parsed_model->do_stats_newupdated($trnc);
-            $timeend= time(true);
-            $time=  $timesart - $timeend;
-            echo "get_data=----".$time;
+            $timeend = time(true);
+            $time = $timesart - $timeend;
+            echo "get_data=----" . $time;
             if (count($data_arr) > 0) {
 
                 $sites_list = array();
@@ -492,7 +657,7 @@ class Crons extends MY_Controller {
                 }
 
                 foreach ($data_arr as $obj) {
-                    
+
                     $foreach_start = time();
                     $own_price = 0;
                     $competitors_prices = array();
@@ -515,26 +680,26 @@ class Crons extends MY_Controller {
                         $own_site = "own site";
                     $own_site = str_replace("www.", "", $own_site);
 
-                    $data_import = (array) $obj;
+                    $data_import = (array)$obj;
                     $im_data_id = $data_import['imported_data_id'];
                     $short_descrition = '';
                     $long_descrition = '';
-                    echo "<br>"."im+daat+id= ".$im_data_id."</br>";
-                    if (($data_import['description'] !== null||$data_import['description'] !== 'null') && trim($data_import['description']) !== "") {
+                    echo "<br>" . "im+daat+id= " . $im_data_id . "</br>";
+                    if (($data_import['description'] !== null || $data_import['description'] !== 'null') && trim($data_import['description']) !== "") {
                         $short_descrition = $data_import['description'];
                         $data_import['description'] = preg_replace('#<[^>]+>#', ' ', $data_import['description']);
                         $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
                         $short_description_wc = count(explode(" ", $data_import['description']));
                     } else {
                         $short_description_wc = 0;
-                        
+
                     }
-                    if (($data_import['long_description'] !== null||$data_import['long_description'] !== 'null') && trim($data_import['long_description']) !== "") {
+                    if (($data_import['long_description'] !== null || $data_import['long_description'] !== 'null') && trim($data_import['long_description']) !== "") {
                         $long_descrition = $data_import['long_description'];
                         $data_import['long_description'] = preg_replace('#<[^>]+>#', ' ', $data_import['long_description']);
                         $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
                         $long_description_wc = count(explode(" ", $data_import['long_description']));
-                        
+
                     } else {
                         $long_description_wc = 0;
                     }
@@ -547,14 +712,14 @@ class Crons extends MY_Controller {
                     $time = $time_end - $time_start;
                     echo "Title Keywords - $time seconds\n";
 
-                    
+
                     $time_start = microtime(true);
-                    $m= '';
-                    if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model']) && strlen($data_import['parsed_attributes']['model'])>3) {
-                        if($data_import['model'] && strlen($data_import['model'])>3){
+                    $m = '';
+                    if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model']) && strlen($data_import['parsed_attributes']['model']) > 3) {
+                        if ($data_import['model'] && strlen($data_import['model']) > 3) {
                             $m = $data_import['model'];
-                        }else{
-                             $m = $data_import['parsed_attributes']['model'];
+                        } else {
+                            $m = $data_import['parsed_attributes']['model'];
                         }
                         try {
                             $own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
@@ -572,11 +737,11 @@ class Crons extends MY_Controller {
                             $price_diff_exists['own_price'] = floatval($own_price);
 
                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $data_import['imported_data_id']);
                             } catch (Exception $e) {
                                 echo 'Error', $e->getMessage(), "\n";
 
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $data_import['imported_data_id']);
                             }
 
                             if (!empty($similar_items)) {
@@ -631,11 +796,11 @@ class Crons extends MY_Controller {
                             }
                         } else {
                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m,  0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $data_import['imported_data_id']);
                             } catch (Exception $e) {
                                 echo 'Error', $e->getMessage(), "\n";
 
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $data_import['imported_data_id']);
                             }
 
                             if (!empty($similar_items)) {
@@ -685,16 +850,16 @@ class Crons extends MY_Controller {
 //                            'customer' => $customer
 //                        );
 
-                    $time_end = microtime(true);
+                        $time_end = microtime(true);
 
-                    $time= $time_end- $time_start;
-                    echo "model exists_and some actions--".$time;
+                        $time = $time_end - $time_start;
+                        echo "model exists_and some actions--" . $time;
 
                     } else {
 
                         $im_data_id = $data_import['imported_data_id'];
 
-                        echo "im+daat+id= ".$im_data_id;
+                        echo "im+daat+id= " . $im_data_id;
 //                        if (!$this->similar_product_groups_model->checkIfgroupExists($data_import['imported_data_id'])) {
 //
 //                            if (!isset($data_import['parsed_attributes'])) {
@@ -707,22 +872,22 @@ class Crons extends MY_Controller {
 //                            }
 
 
-                        $time_start= microtime(true);
+                        $time_start = microtime(true);
                         if ($model = $this->imported_data_parsed_model->check_if_exists_custom_model($im_data_id)) {
                             echo "exists custom model";
                             //$same_pr = $this->imported_data_parsed_model->get_by_custom_model($model, $im_data_id);
-                             $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($model, 0,$im_data_id );
+                            $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($model, 0, $im_data_id);
                         } else {
                             echo "geting custom model";
-                            $same_pr= array();
-                            echo "product name  = <br>".$data_import['product_name'].'<br>';
+                            $same_pr = array();
+                            echo "product name  = <br>" . $data_import['product_name'] . '<br>';
                             $same_pr = $this->imported_data_parsed_model->getByProductNameNew($im_data_id, $data_import['product_name'], '', 0);
                             echo "custom model is ready";
                         }
                         $time_end = microtime(true);
                         $time = $time_end - $time_start;
-                        echo $time."__important";
-                        
+                        echo $time . "__important";
+
                         foreach ($same_pr as $key => $val) {
                             $customer = "";
                             foreach ($sites_list as $ki => $vi) {
@@ -742,25 +907,24 @@ class Crons extends MY_Controller {
                     // WC Short
 
 
-
                     $time_start = microtime(true);
 
 //                    $query_c_id = 0;
 //                    $query_batch_id = 0;
-                    $research_and_batch_ids =array(array(
-                                                    'research_data_id' => 0,
-                                                    'batch_id' => 0
-                                                  ));
+                    $research_and_batch_ids = array(array(
+                        'research_data_id' => 0,
+                        'batch_id' => 0
+                    ));
                     if ($research_and_batch_ids = $this->statistics_new_model->getResearchDataAndBatchIds($obj->imported_data_id)) {
                     } else {
                         $research_and_batch_ids = array(array(
-                                'research_data_id' => 0,
-                                'batch_id' => 0
+                            'research_data_id' => 0,
+                            'batch_id' => 0
                         ));
                     }
                     $time_end = microtime(true);
                     $time = $time_end - $time_start;
-                    echo "research_data--".$time ;
+                    echo "research_data--" . $time;
                     try {
                         $insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids
                         );
@@ -769,7 +933,7 @@ class Crons extends MY_Controller {
                         $this->statistics_model->db->close();
                         $this->statistics_model->db->initialize();
 
-                        $insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc,$title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids
+                        $insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids
                         );
                     }
 
@@ -779,9 +943,9 @@ class Crons extends MY_Controller {
                     echo '.';
 
 
-                    $foreach_end= time();
+                    $foreach_end = time();
                     $time = $foreach_end - $foreach_start;
-                    echo "<br>foreach_----".$time."<br>";
+                    echo "<br>foreach_----" . $time . "<br>";
                 }
 
                 $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
@@ -800,9 +964,9 @@ class Crons extends MY_Controller {
             echo 'Error', $e->getMessage(), "\n";
             unlink($tmp_dir . ".locked");
         }
-         $end_time= time();
-         $time= $end_time -$first_sart;
-         echo "<br>alll--".$time."<br>";
+        $end_time = time();
+        $time = $end_time - $first_sart;
+        echo "<br>alll--" . $time . "<br>";
         unlink($tmp_dir . ".locked");
         $data_arr = $this->imported_data_parsed_model->do_stats_newupdated();
         $q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
@@ -810,21 +974,22 @@ class Crons extends MY_Controller {
         $start = $res['description'];
         $stats_status = $this->settings_model->getDoStatsStatus();
         $total_items = $this->settings_model->getLastUpdate();
-        if (count($data_arr) > 0 && $stats_status->description==='started' 
-                && ($cjo-1)*50<$total_items['description']) {//(0){//
+        if (count($data_arr) > 0 && $stats_status->description === 'started'
+            && ($cjo - 1) * 50 < $total_items['description']
+        ) { //(0){//
             $utd = $this->imported_data_parsed_model->getLUTimeDiff();
-            
+
             echo $utd->td;
 //            shell_exec("wget -S -O- ".base_url()."crons/do_stats_forupdated > /dev/null 2>/dev/null &");
-            
-              shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
+
+            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_forupdated/$trnc > /dev/null 2>/dev/null &");
         } else {
             $this->settings_model->setLastUpdate();
             $mtd = $this->imported_data_parsed_model->getTimeDif();
             echo $mtd->td;
 //            $this->imported_data_parsed_model->updateLastUpdated();
 //            $this->imported_data_parsed_model->delUpdateStatus();
-            if($stats_status->description==='started'){
+            if ($stats_status->description === 'started') {
                 $this->imported_data_parsed_model->delDoStatsStatus();
             }
             $data = array(
@@ -841,13 +1006,182 @@ class Crons extends MY_Controller {
             $this->email->to('bayclimber@gmail.com');
             $this->email->cc('max.kavelin@gmail.com,ruslan.samulyak@gmail.com');
             $this->email->subject('Cron job report');
-            $this->email->message('Cron job for do_statistics_new is done.<br> Timing = '.$mtd->td);//.'<br> Total items updated: '.$qty['description']
-            $this->email->send();//*/
+            $this->email->message('Cron job for do_statistics_new is done.<br> Timing = ' . $mtd->td); //.'<br> Total items updated: '.$qty['description']
+            $this->email->send(); //*/
         }
         unlink($tmp_dir . ".locked");
     }
 
-    public function do_stats_new() {
+    function different_revissions()
+    {
+        $sql_cmd = "select imported_data_id, max(revision) as max_revision
+                    from (
+                    select imported_data_id, revision from imported_data_parsed
+                    group by imported_data_id, revision) as res
+                    group by imported_data_id
+                    having count(revision)>1";
+        $results = $this->db->query($sql_cmd)->result_array;
+        foreach ($results as $res) {
+            $this->db->update('imported_data_parsed', array('revision' => $res['max_revision']), array('imported_data_id' => $res['imported_data_id']));
+        }
+
+    }
+
+    function title_keywords($product_name, $short_description, $long_description)
+    {
+        $short_sp = $this->get_keywords($product_name, $short_description);
+        $long_sp = $this->get_keywords($product_name, $long_description);
+        $title_seo_prases = array();
+        if ($short_sp) {
+
+            foreach ($short_sp as $pr) {
+                //if($pr['prc']>2)
+                {
+                    $title_seo_prases[] = $pr;
+                }
+            }
+        }
+        if ($long_sp) {
+
+            foreach ($long_sp as $pr) {
+                //if($pr['prc']>2)
+                {
+                    $title_seo_prases[] = $pr;
+                }
+            }
+        }
+        $sub_title_prases_keys = array();
+        if (!empty($title_seo_prases)) {
+            foreach ($title_seo_prases as $ar_key => $seo_pr) {
+                foreach ($title_seo_prases as $ar_key1 => $seo_pr1) {
+
+//                    if($ar_key!=$ar_key1 && substr_count($seo_pr1['ph'],$seo_pr['ph'])){
+//                        //$sub_title_prases_keys[]=$ar_key;
+//                    }
+                    if ($ar_key != $ar_key1 && $seo_pr['ph'] == $seo_pr1['ph'] && $seo_pr['frq'] >= $seo_pr1['frq']) {
+                        unset($title_seo_prases[$ar_key1]);
+                    }
+                }
+            }
+//            foreach( $sub_title_prases_keys  as $k){
+//                if(key_exists($k, $title_seo_prases)){
+//                    unset($title_seo_prases[$k]);
+//                }
+//            }
+            return serialize($title_seo_prases);
+        }
+        return 'None';
+    }
+
+    private function get_keywords($title, $string)
+    {
+        if (trim($title) == '' || $title == NULL || $string == '') {
+            return array();
+        }
+        $black_list = array('and', 'the', 'in', 'on', 'at', 'for');
+        $title = trim(preg_replace('/\(.*\)/', '', $title));
+        $title = trim(str_replace(',', ' ', $title));
+        $title = trim(preg_replace('/\s+/', ' ', $title));
+        $string = trim(preg_replace('/\(.*\)/', '', $string));
+        $string = trim(str_replace(',', ' ', $string));
+        $string = trim(preg_replace('/\s+/', ' ', $string));
+        $string = $this->str_cleaner($black_list, $string);
+        $title_w = explode(' ', $title);
+        $title_wc = count($title_w);
+        $string_w = explode(' ', $string);
+        $string_wc = count($string_w);
+        $phrases = array();
+        $i = 0;
+        while ($title_wc - $i > 1) {
+            for ($j = 0; $j < $i + 1; ++$j) {
+                $needl = '';
+                for ($k = $j; $k < $title_wc - $i + $j; ++$k) {
+                    $needl .= $title_w[$k] . ' ';
+                }
+                $needl = trim($needl);
+                $frc = substr_count(strtolower($string), strtolower($this->str_cleaner($black_list, $needl)));
+                $prc = ($frc * ($title_wc - $i)) / $string_wc * 100;
+                if ($frc > 0 && $prc > 2) { //
+                    $phrases[] = array(
+                        'frq' => $frc,
+                        'prc' => round($prc, 2),
+                        'ph' => $needl
+                    );
+                }
+            }
+//            if(!empty($phrases)){
+//                break;
+//            }
+            ++$i;
+        }
+        //*
+        foreach ($black_list as $w) {
+            foreach ($phrases as $key => $val) {
+                $val['ph'] = substr($val['ph'], 0, strlen($w)) === $w ? substr($val['ph'], strlen($w)) : $val['ph'];
+                $val['ph'] = substr($val['ph'], (-1) * strlen($w)) === $w ? substr($val['ph'], 0, strlen($val['ph']) - strlen($w)) : $val['ph'];
+                $val['ph'] = trim($val['ph']);
+                $pw = explode(' ', $val['ph']);
+                if (count($pw) < 2) {
+                    unset($phrases[$key]);
+                }
+            }
+        }
+        foreach ($phrases as $ar_key => $seo_pr) {
+            foreach ($phrases as $ar_key1 => $seo_pr1) {
+                if ($ar_key != $ar_key1 && $this->compare_str($seo_pr['ph'], $seo_pr1['ph'])
+                    && $seo_pr['frq'] >= $seo_pr1['frq']
+                ) {
+                    unset($phrases[$ar_key1]);
+                }
+            }
+        }
+        foreach ($phrases as $ar_key => $seo_pr) {
+            foreach ($phrases as $ar_key1 => $seo_pr1) {
+                if ($ar_key != $ar_key1 && $this->compare_str($seo_pr['ph'], $seo_pr1['ph'])) {
+                    if ($seo_pr['frq'] >= $seo_pr1['frq']) {
+                        unset($phrases[$ar_key1]);
+                    } else {
+                        $phrases[$ar_key1]['frq'] -= $seo_pr['frq'];
+                        $akw = explode(' ', $seo_pr1['ph']);
+                        $phrases[$ar_key1]['prc'] = round($phrases[$ar_key1]['frq'] * count($akw) / $string_wc * 100, 2);
+                    }
+                }
+            }
+        }
+//*/
+        return $phrases;
+    }
+
+    private function str_cleaner($bl, $string)
+    {
+        $str_arr = explode(' ', $string);
+        foreach ($str_arr as $key => $val) {
+            if (in_array($val, $bl)) {
+                unset($str_arr[$key]);
+            }
+        }
+        $string = trim(preg_replace('/\s+/', ' ', implode(' ', $str_arr)));
+        return $string;
+    }
+
+    private function compare_str($str1, $str2)
+    {
+        $str1 = trim(strtolower($str1));
+        $str2 = trim(strtolower($str2));
+        $black_list = array('and', 'the', 'on', 'in', 'at', 'is', 'for');
+        foreach ($black_list as $word) {
+            $str1 = (substr($str1, 0, strlen($word)) === $word) ? substr($str1, strlen($word)) : $str1;
+            $str1 = (substr($str1, (-1) * strlen($word)) === $word) ? substr($str1, 0, strlen($str1) - strlen($word)) : $str1;
+            $str1 = trim($str1);
+            $str2 = (substr($str2, 0, strlen($word)) === $word) ? substr($str2, strlen($word)) : $str2;
+            $str2 = (substr($str2, (-1) * strlen($word)) === $word) ? substr($str2, 0, strlen($str2) - strlen($word)) : $str2;
+            $str2 = trim($str2);
+        }
+        return strpos($str1, $str2) !== FALSE;
+    }
+
+    public function do_stats_new()
+    {
         echo "Script start working";
         $tmp_dir = sys_get_temp_dir() . '/';
         unlink($tmp_dir . ".locked");
@@ -891,7 +1225,7 @@ class Crons extends MY_Controller {
                 }
 
                 foreach ($data_arr as $obj) {
-                    echo $obj->imported_data_id."<br>";
+                    echo $obj->imported_data_id . "<br>";
                     $own_price = 0;
                     $competitors_prices = array();
                     $price_diff = '';
@@ -913,7 +1247,7 @@ class Crons extends MY_Controller {
                         $own_site = "own site";
                     $own_site = str_replace("www.", "", $own_site);
 
-                    $data_import = (array) $obj;
+                    $data_import = (array)$obj;
                     if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
 
                         $data_import['description'] = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $data_import['description']);
@@ -932,8 +1266,6 @@ class Crons extends MY_Controller {
                     } else {
                         $long_description_wc = 0;
                     }
-
-
 
 
                     // SEO Short phrases
@@ -1006,11 +1338,11 @@ class Crons extends MY_Controller {
                             $price_diff_exists['own_price'] = floatval($own_price);
 
                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0, $data_import['imported_data_id']);
                             } catch (Exception $e) {
                                 echo 'Error', $e->getMessage(), "\n";
 
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0, $data_import['imported_data_id']);
                             }
 
                             if (!empty($similar_items)) {
@@ -1065,11 +1397,11 @@ class Crons extends MY_Controller {
                             }
                         } else {
                             try {
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0, $data_import['imported_data_id']);
                             } catch (Exception $e) {
                                 echo 'Error', $e->getMessage(), "\n";
 
-                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0,$data_import['imported_data_id'] );
+                                $similar_items = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], 0, $data_import['imported_data_id']);
                             }
 
                             if (!empty($similar_items)) {
@@ -1181,7 +1513,6 @@ class Crons extends MY_Controller {
                     // WC Short
 
 
-
                     $time_start = microtime(true);
 
                     $query_research_data_id = 0;
@@ -1249,7 +1580,8 @@ class Crons extends MY_Controller {
         }
     }
 
-    public function do_stats_test() {
+    public function do_stats_test()
+    {
         exit('');
         echo "Script start working";
         $tmp_dir = sys_get_temp_dir() . '/';
@@ -1476,7 +1808,8 @@ class Crons extends MY_Controller {
         unlink($tmp_dir . ".locked");
     }
 
-    public function do_stats($clear = false) {
+    public function do_stats($clear = false)
+    {
         exit();
         echo "Script start working";
         $tmp_dir = sys_get_temp_dir() . '/';
@@ -1822,28 +2155,62 @@ class Crons extends MY_Controller {
         unlink($tmp_dir . ".locked");
     }
 
-    function duplicate_content_new($imported_data_id) {
-
-        try {
-
-            $res_data = $this->check_duplicate_content($imported_data_id);
-
-            $time_end = microtime(true);
-            $time = $time_end - $time_start;
-            echo "block with check_duplicate_content - $time seconds\n";
-            $time_start = $time_end;
-            foreach ($res_data as $val) {
-                $this->statistics_duplicate_content_model->insert_new($val['imported_data_id'], $val['long_original'], $val['short_original'], '1');
-            }
-            $time_end = microtime(true);
-            $time = $time_end - $time_start;
-            echo "foreach insert - $time seconds\n";
-        } catch (Exception $e) {
-            echo 'Error', $e->getMessage(), "\n";
-        }
+    function send_email_report($subject, $message)
+    {
+        $this->load->library('email');
+        $this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
+        $this->email->to('bayclimber@gmail.com');
+        $this->email->cc('max.kavelin@gmail.com');
+        $this->email->subject($subject);
+        $this->email->message($message);
+        $this->email->send();
     }
 
-    public function duplicate_content() {
+    private function prepare_extract_phrases_cmd($text)
+    {
+        $text = str_replace("'", "\'", $text);
+        $text = str_replace("`", "\`", $text);
+        $text = str_replace('"', '\"', $text);
+        $text = "\"" . $text . "\"";
+        $cmd = str_replace($this->config->item('cmd_mask'), $text, $this->config->item('extract_phrases'));
+        $cmd = $cmd . " 2>&1";
+        return $cmd;
+    }
+
+    //*
+
+    private function prepare_seo_phrases($seo_lines)
+    {
+        if (empty($seo_lines)) {
+            return "None";
+        }
+        $seo_phrases = array();
+        $result_phrases = array();
+        foreach ($seo_lines as $line) {
+            $line_array = explode(",", $line);
+            $number_repetitions = intval(str_replace("\"", "", $line_array[1]));
+            if ($number_repetitions < 2) {
+                continue;
+            }
+            $phrase = str_replace("\"", "", $line_array[0]);
+            $seo_phrases[] = array($number_repetitions, $phrase);
+        }
+        if (empty($seo_phrases)) {
+            return "None";
+        }
+        $lines_count = 0;
+        foreach ($seo_phrases as $seo_phrase) {
+            if ($lines_count > 2) {
+                break;
+            }
+            $result_phrases[] = $seo_phrase[1] . " (" . $seo_phrase[0] . ")";
+            $lines_count++;
+        }
+        return implode(" ", $result_phrases);
+    }
+
+    public function duplicate_content()
+    {
         error_reporting(E_ALL);
         ini_set('display_errors', '1');
         set_time_limit(0);
@@ -1881,7 +2248,8 @@ class Crons extends MY_Controller {
                         $time_end = microtime(true);
                         $time = $time_end - $time_start;
                         echo "foreach insert - $time seconds\n";
-                    };
+                    }
+                    ;
                 }
             }
             echo "Cron Job Finished";
@@ -1892,215 +2260,23 @@ class Crons extends MY_Controller {
         unlink($tmp_dir . ".locked");
     }
 
-    private function prepare_extract_phrases_cmd($text) {
-        $text = str_replace("'", "\'", $text);
-        $text = str_replace("`", "\`", $text);
-        $text = str_replace('"', '\"', $text);
-        $text = "\"" . $text . "\"";
-        $cmd = str_replace($this->config->item('cmd_mask'), $text, $this->config->item('extract_phrases'));
-        $cmd = $cmd . " 2>&1";
-        return $cmd;
-    }
-
-    private function prepare_seo_phrases($seo_lines) {
-        if (empty($seo_lines)) {
-            return "None";
-        }
-        $seo_phrases = array();
-        $result_phrases = array();
-        foreach ($seo_lines as $line) {
-            $line_array = explode(",", $line);
-            $number_repetitions = intval(str_replace("\"", "", $line_array[1]));
-            if ($number_repetitions < 2) {
-                continue;
-            }
-            $phrase = str_replace("\"", "", $line_array[0]);
-            $seo_phrases[] = array($number_repetitions, $phrase);
-        }
-        if (empty($seo_phrases)) {
-            return "None";
-        }
-        $lines_count = 0;
-        foreach ($seo_phrases as $seo_phrase) {
-            if ($lines_count > 2) {
-                break;
-            }
-            $result_phrases[] = $seo_phrase[1] . " (" . $seo_phrase[0] . ")";
-            $lines_count++;
-        }
-        return implode(" ", $result_phrases);
-    }
-
-    private function check_duplicate_content($imported_data_id) {
+    public function archive_imported_data_parsed()
+    {
         $this->load->model('imported_data_parsed_model');
-        $this->load->model('similar_product_groups_model');
-        $this->load->model('similar_data_model');
-        $data_import = $this->imported_data_parsed_model->getByImId($imported_data_id);
+        $this->load->model('imported_data_parsed_archived_model');
 
-        if ($data_import['description'] !== null && trim($data_import['description']) !== "") {
-            $data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
-            $data['s_product_short_desc_count'] = count(explode(" ", $data_import['description']));
-        }
-        if ($data_import['long_description'] !== null && trim($data_import['long_description']) !== "") {
-            $data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
-            $data['s_product_long_desc_count'] = count(explode(" ", $data_import['long_description']));
-        }
-        $data['s_product'] = $data_import;
-        $same_pr = $this->imported_data_parsed_model->getSameProductsHuman($imported_data_id);
-
-        if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model'])) {
-            $strict = $this->input->post('strict');
-            $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['model'], $strict);
-        }
-
-//        if (empty($same_pr) && isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['UPC/EAN/ISBN'])) {
-//            $same_pr = $this->imported_data_parsed_model->getByParsedAttributes($data_import['parsed_attributes']['UPC/EAN/ISBN']);
-//        }
-        if (empty($same_pr) && !isset($data_import['parsed_attributes']['model'])) {
-            $data['mismatch_button'] = true;
-            if (!$this->similar_product_groups_model->checkIfgroupExists($imported_data_id)) {
-
-                if (!isset($data_import['parsed_attributes'])) {
-
-                    $same_pr = $this->imported_data_parsed_model->getByProductName($imported_data_id, $data_import['product_name'], '', $strict);
-                }
-                if (isset($data_import['parsed_attributes'])) {
-                    $same_pr = $this->imported_data_parsed_model->getByProductName($imported_data_id, $data_import['product_name'], $data_import['parsed_attributes']['manufacturer'], $strict);
-                }
-            } else {
-                $this->load->model('similar_imported_data_model');
-                $customers_list = array();
-                $query_cus = $this->similar_imported_data_model->db->order_by('name', 'asc')->get('customers');
-                $query_cus_res = $query_cus->result();
-                if (count($query_cus_res) > 0) {
-                    foreach ($query_cus_res as $key => $value) {
-                        $n = parse_url($value->url);
-                        $customers_list[] = $n['host'];
-                    }
-                }
-                $customers_list = array_unique($customers_list);
-                $rows = $this->similar_data_model->getByGroupId($imported_data_id);
-                $data_similar = array();
-
-                foreach ($rows as $key => $row) {
-                    $data_similar[$key] = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                    $data_similar[$key]['imported_data_id'] = $row->imported_data_id;
-
-                    $cus_val = "";
-                    foreach ($customers_list as $ki => $vi) {
-                        if (strpos($data_similar[$key]['url'], "$vi") !== false) {
-                            $cus_val = $vi;
-                        }
-                    }
-                    if ($cus_val !== "")
-                        $data_similar[$key]['customer'] = $cus_val;
-                }
-
-                if (!empty($data_similar)) {
-                    $same_pr = $data_similar;
-                }
+        $processed = 0;
+        foreach ($this->imported_data_parsed_model->getAllIds() as $row) {
+            if ($this->imported_data_parsed_archived_model->saveToArchive($row['imported_data_id'], $row['max_revision'])) {
+                $this->imported_data_parsed_model->deleteRows($row['imported_data_id'], $row['max_revision']);
+                $processed++;
             }
         }
-        if (count($same_pr) != 1) {
-            foreach ($same_pr as $ks => $vs) {
-                $maxshort = 0;
-                $maxlong = 0;
-                $k_sh = 0;
-                $k_lng = 0;
-                foreach ($same_pr as $ks1 => $vs1) {
-                    if ($ks != $ks1) {
-                        if ($vs['description'] != '') {
-                            if ($vs1['description'] != '') {
-                                $k_sh++;
-                                $percent = $this->compare_text($vs['description'], $vs1['description']);
-                                if ($percent > $maxshort) {
-                                    $maxshort = $percent;
-                                }
-                            }
-
-                            if ($vs1['long_description'] != '') {
-                                $k_sh++;
-                                $percent = $this->compare_text($vs['description'], $vs1['long_description']);
-                                if ($percent > $maxshort) {
-                                    $maxshort = $percent;
-                                }
-                            }
-                        }
-
-                        if ($vs['long_description'] != '') {
-
-                            if ($vs1['description'] != '') {
-                                $k_lng++;
-                                $percent = $this->compare_text($vs['long_description'], $vs1['description']);
-                                if ($percent > $maxlong) {
-                                    $maxlong = $percent;
-                                }
-                            }
-
-                            if ($vs1['long_description'] != '') {
-                                $k_lng++;
-                                $percent = $this->compare_text($vs['long_description'], $vs1['long_description']);
-                                if ($percent > $maxlong) {
-                                    $maxlong = $percent;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                $vs['short_original'] = ceil($maxshort);
-                $vs['long_original'] = ceil($maxlong);
-
-                if ($k_lng == 0) {
-                    $vs['long_original'] = 0;
-                }
-                if ($k_sh == 0) {
-                    $vs['short_original'] = 0;
-                }
-
-                $same_pr[$ks] = $vs;
-            }
-        } else {
-            $same_pr[0]['long_original'] = 0;
-            $same_pr[0]['short_original'] = 0;
-        }
-        return $same_pr;
+        echo "Reviewed/archived " . $processed . " items.\n";
     }
 
-    private function compare_text($first_text, $second_text) {
-        $first_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $first_text);
-        $first_text = preg_replace('/[a-zA-Z]-/', ' ', $first_text);
-        $second_text = preg_replace('/[^a-zA-Z0-9_ %\[\]\.\(\)%&-]/s', '', $second_text);
-        $second_text = preg_replace('/[a-zA-Z]-/', ' ', $second_text);
-
-        if ($first_text === $second_text) {
-            return 100;
-        } else {
-            $a = explode(' ', strtolower($first_text));
-
-            $b = explode(' ', strtolower($second_text));
-            $arr = array_intersect($a, $b);
-            $count = count($arr);
-            $prc = $count / count($a) * 100;
-            return $prc;
-        }
-    }
-
-    public function archive_imported_data_parsed(){
-		$this->load->model('imported_data_parsed_model');
-		$this->load->model('imported_data_parsed_archived_model');
-
-		$processed = 0;
-		foreach ($this->imported_data_parsed_model->getAllIds() as $row) {
-			if($this->imported_data_parsed_archived_model->saveToArchive($row['imported_data_id'],$row['max_revision'])) {
-				$this->imported_data_parsed_model->deleteRows($row['imported_data_id'],$row['max_revision']);
-				$processed++;
-			}
-		}
-		echo "Reviewed/archived ".$processed." items.\n";
-    }
-    //*
-    public function save_departments_categories() {
+    public function save_departments_categories()
+    {
         $this->load->helper('file');
         $this->load->model('department_model');
         $this->load->model('department_members_model');
@@ -2110,25 +2286,23 @@ class Crons extends MY_Controller {
         if (!file_exists($filespath)) {
             mkdir($filespath);
         }
-        if ($this->uri->segment(3)&&$this->uri->segment(4)&&$this->uri->segment(5)) {//
-            $_POST['site_id']=$this->uri->segment(3);
-            $_POST['site_name']=$this->uri->segment(4).'.'.$this->uri->segment(5);
-        }
-        else{
-            $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+        if ($this->uri->segment(3) && $this->uri->segment(4) && $this->uri->segment(5)) { //
+            $_POST['site_id'] = $this->uri->segment(3);
+            $_POST['site_name'] = $this->uri->segment(4) . '.' . $this->uri->segment(5);
+        } else {
+            $file = $this->config->item('csv_upload_dir') . $this->input->post('choosen_file');
             $fcont = file($file);
             $i = 1;
             $fnum = 0;
-            $fobj='';
-            foreach($fcont as $line){
-                if(!file_exists($filespath.'/temp_imp_jl_'.$fnum.'.jl')){
-                    file_put_contents($filespath.'/temp_imp_jl_'.$fnum.'.jl', $line);
-                    $fobj = fopen($filespath.'/temp_imp_jl_'.$fnum.'.jl', 'a');
-                }
-                else fwrite($fobj, $line);
-                if($i==500){
+            $fobj = '';
+            foreach ($fcont as $line) {
+                if (!file_exists($filespath . '/temp_imp_jl_' . $fnum . '.jl')) {
+                    file_put_contents($filespath . '/temp_imp_jl_' . $fnum . '.jl', $line);
+                    $fobj = fopen($filespath . '/temp_imp_jl_' . $fnum . '.jl', 'a');
+                } else fwrite($fobj, $line);
+                if ($i == 500) {
                     ++$fnum;
-                    $i=0;
+                    $i = 0;
                     fclose($fobj);
                 }
                 ++$i;
@@ -2138,12 +2312,12 @@ class Crons extends MY_Controller {
         $site_name = explode(".", strtolower($this->input->post('site_name')));
         //$file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
         $flist = get_filenames($filespath);
-        if(empty($flist)){
+        if (empty($flist)) {
             //unset($_SESSION['mpost']);
             return;
         }
         //exit;
-        $file = $filespath.'/'.$flist[0];
+        $file = $filespath . '/' . $flist[0];
         $_rows = array();
 //        $handle = fopen($file, "rb");
 //        $contents = fread($handle, filesize($file));
@@ -2154,207 +2328,206 @@ class Crons extends MY_Controller {
         //$json_obj = json_decode($data);
 
         $debug_stack = array(
-        	'department_members' => array(),
-        	'site_categories' => array()
+            'department_members' => array(),
+            'site_categories' => array()
         );
 
-                                    // new change 1 line
-                                    set_time_limit(1000);
-				foreach($cfile as $line) {
-                                    $line = rtrim(trim($line),',');
-                                    $row = json_decode($line);
-					// === DB table decision (start)
-					$level = '';
-					$work_table = "";
-          if(isset($row->level) && $row->level!==NULL && $row->level !== ''){
-	          $level = $row->level;
-	          if($level >= 1) {
-	          	$work_table = 'department_members';
-	          } else {
-	          	$work_table = 'site_categories';
-	          }
-          }
-					// === DB table decision (end)
-
-					// === all possible values and default values (start)
-					$special = 0;
-          $department_text = "";
-      		$url = "";
-      		$text = "";
-      		$department_url = "";
-      		$description_title = "";
-      		$keyword_count = "";
-      		$description_wc  = 0;
-      		$description_text = "";
-      		$keyword_density = "";
-      		$nr_products = 0;
-      		$parent_url = "";
-      		$parent_text = "";
-
-      		if(isset($row->special) && $row->special != '' && !is_null($row->special)) {
-            $special = $row->special;
-          }
-          if(isset($row->department_text) && is_array($row->department_text)) {
-            $department_text = $row->department_text[0];
-          } else if(isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text != '') {
-            $department_text = $row->department_text;
-          }
-          if(isset($row->url) && is_array($row->url)) {
-            $url = addslashes($row->url[0]);
-          } else if(isset($row->url) && !is_array($row->url) && !is_null($row->url)) {
-            $url = addslashes($row->url);
-          }
-          if(isset($row->text) && is_array($row->text)) {
-            $text = $row->text[0];
-          } else if(isset($row->text) && !is_array($row->text) && !is_null($row->text)) {
-            $text = $row->text;
-          }
-          if(isset($row->department_url) && !is_null($row->department_url) && $row->department_url != '') {
-            $department_url = addslashes($row->department_url);
-          }
-          if(isset($row->description_title) && is_array($row->description_title)) {
-						$description_title = $row->description_title[0];
-          } else if(isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title != '') {
-            $description_title = $row->description_title;
-          }
-          if(isset($row->keyword_count) && is_array($row->keyword_count)){
-            $keyword_count = $row->keyword_count[0];
-          } else if(isset($row->keyword_count) && !is_array($row->keyword_count) && !is_null($row->keyword_count) && $row->keyword_count != '') {
-            $keyword_count = json_encode($row->keyword_count);
-          }
-          if(isset($row->description_wc) && is_array($row->description_wc)) {
-            $description_wc = $row->description_wc[0];
-          } else if(isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc != '') {
-            $description_wc = $row->description_wc;
-          }
-          if(isset($row->description_text) && is_array($row->description_text)) {
-            $description_text = $row->description_text[0];
-          } else if(isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text != '') {
-            $description_text = $row->description_text;
-          }
-          if(isset($row->keyword_density) && is_array($row->keyword_density)) {
-            $keyword_density = $row->keyword_density[0];
-          } else if(isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density != '') {
-            $keyword_density = json_encode($row->keyword_density);
-          }
-          if(isset($row->nr_products) && is_array($row->nr_products)) {
-            $nr_products = $row->nr_products[0];
-          } else if(isset($row->nr_products) && !is_array($row->nr_products) && !is_null($row->nr_products) && $row->nr_products != '') {
-            $nr_products = $row->nr_products;
-          }
-          if(isset($row->parent_url) && is_array($row->parent_url)) {
-            $parent_url = addslashes($row->parent_url[0]);
-          } else if(isset($row->parent_url) && !is_array($row->parent_url) && !is_null($row->parent_url) && $row->parent_url != '') {
-            $parent_url = addslashes($row->parent_url);
-          }
-          if(isset($row->parent_text) && is_array($row->parent_text)) {
-            $parent_text = $row->parent_text[0];
-          } else if(isset($row->parent_text) && !is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text!='') {
-            $parent_text = $row->parent_text;
-          }
-					// === all possible values and default values (end)
-
-          if($work_table != "") { // === work table define, ok, otherwise !!! DO NOTHING !!!
-          	// ==== 'department_members' DB table actions stuffs (start)
-          	if($work_table == 'department_members') {
-          		// === debuging stack (start)
-              $debug_stack_mid = array(
-              	'status' => 'department_members',
-          			'department_text' => $department_text,
-          			'url' => $url,
-          			'text' => $text,
-          			'department_url' => $department_url,
-          			'description_title' => $description_title,
-          			'keyword_count' => $keyword_count,
-          			'description_wc' => $description_wc,
-          			'description_text' => $description_text,
-          			'keyword_density' => $keyword_density,
-          			'department_id' => null,
-          			'check_id' => null,
-          			'department_members_model_insert_id' => null,
-          			'department_members_model_up_flag' => null,
-          			'department_members_model_update' => null
-          		);
-              // === debuging stack (end)
-
-          		// === insert / update decisions stuffs (start)
-              try {
-              	$check_department_id = $this->department_model->checkExist($department_text);
-              } catch(Exception $e) {
-              	echo 'Error: ', $e->getMessage(), "\n";
-              	$this->statistics_model->db->close();
-                $this->statistics_model->db->initialize();
-                $check_department_id = $this->department_model->checkExist($department_text);
-              }
-              if($check_department_id == false) {
-              	try {
-              		$department_id = $this->department_model->insert($department_text, $department_text);
-              	} catch(Exception $e) {
-              		$this->department_model->db->close();
-                	$this->department_model->db->initialize();
-                	$department_id = $this->department_model->insert($department_text, $department_text);
-              	}
-              } else {
-                $department_id = $check_department_id;
-              }
-              $debug_stack_mid['department_id'] = $department_id; 
-              $parent_id = 0;
-              try {
-              	$check_id = $this->department_members_model->checkExist($site_id, $department_text, $url);
-              } catch(Exception $e) {
-              	$this->department_members_model->db->close();
-                $this->department_members_model->db->initialize();
-              	$check_id = $this->department_members_model->checkExist($site_id, $department_text, $url);
-              }
-              $debug_stack_mid['check_id'] = $check_id; 
-              if($check_id == false) {
-              	try {
-              		$department_members_model_insert_id = $this->department_members_model->insert($parent_id, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
-              	} catch(Exception $e) {
-              		$this->department_members_model->db->close();
-                	$this->department_members_model->db->initialize();
-              		$department_members_model_insert_id = $this->department_members_model->insert($parent_id, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
-              	}
-              	$debug_stack_mid['department_members_model_insert_id'] = $department_members_model_insert_id;
-              } else {
-              	try {
-              		$department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
-              	} catch(Exception $e) {
-              		$this->department_members_model->db->close();
-                	$this->department_members_model->db->initialize();
-              		$department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
-              	}
-                $debug_stack_mid['department_members_model_up_flag'] = $department_members_model_up_flag;
-                try {
-                	$department_members_model_update = $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
-                } catch(Exception $e) {
-                	$this->department_members_model->db->close();
-                	$this->department_members_model->db->initialize();
-                	$department_members_model_update = $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+        // new change 1 line
+        set_time_limit(1000);
+        foreach ($cfile as $line) {
+            $line = rtrim(trim($line), ',');
+            $row = json_decode($line);
+            // === DB table decision (start)
+            $level = '';
+            $work_table = "";
+            if (isset($row->level) && $row->level !== NULL && $row->level !== '') {
+                $level = $row->level;
+                if ($level >= 1) {
+                    $work_table = 'department_members';
+                } else {
+                    $work_table = 'site_categories';
                 }
-                $debug_stack_mid['department_members_model_update'] = $department_members_model_update;
-              }
-          		// === insert / update decisions stuffs (end)
-          		$debug_stack['department_members'][] = $debug_stack_mid;
-          	}
-          	// ==== 'department_members' DB table actions stuffs (end)
+            }
+            // === DB table decision (end)
 
-          	// ==== 'site_categories' DB table actions stuffs (start)
-          	if($work_table == 'site_categories') {
-              $department_members_id = 0;
-              if($department_text != '') {
-              		try {
-              			$check_id = $this->department_members_model->checkExist($site_id, $department_text);
-              		} catch(Exception $e) {
-              			$this->department_members_model->db->close();
-                		$this->department_members_model->db->initialize();
-              			$check_id = $this->department_members_model->checkExist($site_id, $department_text);
-              		}
-                  if($check_id) {
-                      $department_members_id = $check_id;
-                  }
-                  else {
-                      $department_id = 0;
+            // === all possible values and default values (start)
+            $special = 0;
+            $department_text = "";
+            $url = "";
+            $text = "";
+            $department_url = "";
+            $description_title = "";
+            $keyword_count = "";
+            $description_wc = 0;
+            $description_text = "";
+            $keyword_density = "";
+            $nr_products = 0;
+            $parent_url = "";
+            $parent_text = "";
+
+            if (isset($row->special) && $row->special != '' && !is_null($row->special)) {
+                $special = $row->special;
+            }
+            if (isset($row->department_text) && is_array($row->department_text)) {
+                $department_text = $row->department_text[0];
+            } else if (isset($row->department_text) && !is_array($row->department_text) && !is_null($row->department_text) && $row->department_text != '') {
+                $department_text = $row->department_text;
+            }
+            if (isset($row->url) && is_array($row->url)) {
+                $url = addslashes($row->url[0]);
+            } else if (isset($row->url) && !is_array($row->url) && !is_null($row->url)) {
+                $url = addslashes($row->url);
+            }
+            if (isset($row->text) && is_array($row->text)) {
+                $text = $row->text[0];
+            } else if (isset($row->text) && !is_array($row->text) && !is_null($row->text)) {
+                $text = $row->text;
+            }
+            if (isset($row->department_url) && !is_null($row->department_url) && $row->department_url != '') {
+                $department_url = addslashes($row->department_url);
+            }
+            if (isset($row->description_title) && is_array($row->description_title)) {
+                $description_title = $row->description_title[0];
+            } else if (isset($row->description_title) && !is_array($row->description_title) && !is_null($row->description_title) && $row->description_title != '') {
+                $description_title = $row->description_title;
+            }
+            if (isset($row->keyword_count) && is_array($row->keyword_count)) {
+                $keyword_count = $row->keyword_count[0];
+            } else if (isset($row->keyword_count) && !is_array($row->keyword_count) && !is_null($row->keyword_count) && $row->keyword_count != '') {
+                $keyword_count = json_encode($row->keyword_count);
+            }
+            if (isset($row->description_wc) && is_array($row->description_wc)) {
+                $description_wc = $row->description_wc[0];
+            } else if (isset($row->description_wc) && !is_array($row->description_wc) && !is_null($row->description_wc) && $row->description_wc != '') {
+                $description_wc = $row->description_wc;
+            }
+            if (isset($row->description_text) && is_array($row->description_text)) {
+                $description_text = $row->description_text[0];
+            } else if (isset($row->description_text) && !is_array($row->description_text) && !is_null($row->description_text) && $row->description_text != '') {
+                $description_text = $row->description_text;
+            }
+            if (isset($row->keyword_density) && is_array($row->keyword_density)) {
+                $keyword_density = $row->keyword_density[0];
+            } else if (isset($row->keyword_density) && !is_array($row->keyword_density) && !is_null($row->keyword_density) && $row->keyword_density != '') {
+                $keyword_density = json_encode($row->keyword_density);
+            }
+            if (isset($row->nr_products) && is_array($row->nr_products)) {
+                $nr_products = $row->nr_products[0];
+            } else if (isset($row->nr_products) && !is_array($row->nr_products) && !is_null($row->nr_products) && $row->nr_products != '') {
+                $nr_products = $row->nr_products;
+            }
+            if (isset($row->parent_url) && is_array($row->parent_url)) {
+                $parent_url = addslashes($row->parent_url[0]);
+            } else if (isset($row->parent_url) && !is_array($row->parent_url) && !is_null($row->parent_url) && $row->parent_url != '') {
+                $parent_url = addslashes($row->parent_url);
+            }
+            if (isset($row->parent_text) && is_array($row->parent_text)) {
+                $parent_text = $row->parent_text[0];
+            } else if (isset($row->parent_text) && !is_array($row->parent_text) && !is_null($row->parent_text) && $row->parent_text != '') {
+                $parent_text = $row->parent_text;
+            }
+            // === all possible values and default values (end)
+
+            if ($work_table != "") { // === work table define, ok, otherwise !!! DO NOTHING !!!
+                // ==== 'department_members' DB table actions stuffs (start)
+                if ($work_table == 'department_members') {
+                    // === debuging stack (start)
+                    $debug_stack_mid = array(
+                        'status' => 'department_members',
+                        'department_text' => $department_text,
+                        'url' => $url,
+                        'text' => $text,
+                        'department_url' => $department_url,
+                        'description_title' => $description_title,
+                        'keyword_count' => $keyword_count,
+                        'description_wc' => $description_wc,
+                        'description_text' => $description_text,
+                        'keyword_density' => $keyword_density,
+                        'department_id' => null,
+                        'check_id' => null,
+                        'department_members_model_insert_id' => null,
+                        'department_members_model_up_flag' => null,
+                        'department_members_model_update' => null
+                    );
+                    // === debuging stack (end)
+
+                    // === insert / update decisions stuffs (start)
+                    try {
+                        $check_department_id = $this->department_model->checkExist($department_text);
+                    } catch (Exception $e) {
+                        echo 'Error: ', $e->getMessage(), "\n";
+                        $this->statistics_model->db->close();
+                        $this->statistics_model->db->initialize();
+                        $check_department_id = $this->department_model->checkExist($department_text);
+                    }
+                    if ($check_department_id == false) {
+                        try {
+                            $department_id = $this->department_model->insert($department_text, $department_text);
+                        } catch (Exception $e) {
+                            $this->department_model->db->close();
+                            $this->department_model->db->initialize();
+                            $department_id = $this->department_model->insert($department_text, $department_text);
+                        }
+                    } else {
+                        $department_id = $check_department_id;
+                    }
+                    $debug_stack_mid['department_id'] = $department_id;
+                    $parent_id = 0;
+                    try {
+                        $check_id = $this->department_members_model->checkExist($site_id, $department_text, $url);
+                    } catch (Exception $e) {
+                        $this->department_members_model->db->close();
+                        $this->department_members_model->db->initialize();
+                        $check_id = $this->department_members_model->checkExist($site_id, $department_text, $url);
+                    }
+                    $debug_stack_mid['check_id'] = $check_id;
+                    if ($check_id == false) {
+                        try {
+                            $department_members_model_insert_id = $this->department_members_model->insert($parent_id, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+                        } catch (Exception $e) {
+                            $this->department_members_model->db->close();
+                            $this->department_members_model->db->initialize();
+                            $department_members_model_insert_id = $this->department_members_model->insert($parent_id, $site_id, $department_id, $department_text, $url, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+                        }
+                        $debug_stack_mid['department_members_model_insert_id'] = $department_members_model_insert_id;
+                    } else {
+                        try {
+                            $department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+                        } catch (Exception $e) {
+                            $this->department_members_model->db->close();
+                            $this->department_members_model->db->initialize();
+                            $department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+                        }
+                        $debug_stack_mid['department_members_model_up_flag'] = $department_members_model_up_flag;
+                        try {
+                            $department_members_model_update = $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+                        } catch (Exception $e) {
+                            $this->department_members_model->db->close();
+                            $this->department_members_model->db->initialize();
+                            $department_members_model_update = $this->department_members_model->update($check_id, $department_id, $description_wc, $description_text, $keyword_count, $keyword_density, $description_title, $level);
+                        }
+                        $debug_stack_mid['department_members_model_update'] = $department_members_model_update;
+                    }
+                    // === insert / update decisions stuffs (end)
+                    $debug_stack['department_members'][] = $debug_stack_mid;
+                }
+                // ==== 'department_members' DB table actions stuffs (end)
+
+                // ==== 'site_categories' DB table actions stuffs (start)
+                if ($work_table == 'site_categories') {
+                    $department_members_id = 0;
+                    if ($department_text != '') {
+                        try {
+                            $check_id = $this->department_members_model->checkExist($site_id, $department_text);
+                        } catch (Exception $e) {
+                            $this->department_members_model->db->close();
+                            $this->department_members_model->db->initialize();
+                            $check_id = $this->department_members_model->checkExist($site_id, $department_text);
+                        }
+                        if ($check_id) {
+                            $department_members_id = $check_id;
+                        } else {
+                            $department_id = 0;
                             try {
                                 $check_department_id = $this->department_model->checkExist($department_text);
                             } catch (Exception $e) {
@@ -2384,31 +2557,31 @@ class Crons extends MY_Controller {
                         }
                     }
                     // === debuging stack (start)
-              $debug_stack_mid = array(
-              	'status' => 'site_categories',
-          			'nr_products' => $nr_products,
-          			'url' => $url,
-          			'text' => $text,
-          			'department_url' => $department_url,
-          			'description_wc' => $description_wc,
-          			'parent_url' => $parent_url,
-          			'parent_text' => $parent_text,
-          			'department_text' => $department_text,
-          			'parent_id' => 0,
-          			'site_categories_model_update_flag_one' => null,
-          			'department_members_id' => $department_members_id,
-          			'check_site' => null,
-          			'site_categories_model_insert' => null,
-          			'site_categories_model_update_flag_two' => null,
-          			'description_text' => $description_text,
-          			'keyword_count' => $keyword_count,
-          			'keyword_density' => $keyword_density,
-          			'description_title' => $description_title
-          		);
-              // === debuging stack (end)
+                    $debug_stack_mid = array(
+                        'status' => 'site_categories',
+                        'nr_products' => $nr_products,
+                        'url' => $url,
+                        'text' => $text,
+                        'department_url' => $department_url,
+                        'description_wc' => $description_wc,
+                        'parent_url' => $parent_url,
+                        'parent_text' => $parent_text,
+                        'department_text' => $department_text,
+                        'parent_id' => 0,
+                        'site_categories_model_update_flag_one' => null,
+                        'department_members_id' => $department_members_id,
+                        'check_site' => null,
+                        'site_categories_model_insert' => null,
+                        'site_categories_model_update_flag_two' => null,
+                        'description_text' => $description_text,
+                        'keyword_count' => $keyword_count,
+                        'keyword_density' => $keyword_density,
+                        'description_title' => $description_title
+                    );
+                    // === debuging stack (end)
 
-              // === insert / update decisions stuffs (start) 
-              $parent_id = 0;
+                    // === insert / update decisions stuffs (start)
+                    $parent_id = 0;
                     if ($parent_text != '') {
                         try {
                             $parent_id = $this->site_categories_model->checkExist($site_id, $parent_text);
@@ -2476,26 +2649,30 @@ class Crons extends MY_Controller {
                     // === insert / update decisions stuffs (end)
                     $debug_stack['site_categories'][] = $debug_stack_mid;
                 }
-                // ==== 'site_categories' DB table actions stuffs (end)	
+                // ==== 'site_categories' DB table actions stuffs (end)
             }
         }
         unlink($file);
         if (count($flist) > 0) {
             $sited = implode('/', $site_name);
-              $call_link = base_url()."crons/save_departments_categories/$site_id/$sited";// > /dev/null 2>/dev/null &";
-              //echo $call_link;
-              echo $call_link;
-              $this->site_categories_model->curl_async($call_link);
-          //$srec = shell_exec("wget -S -O- ".$call_link);
-          //echo $srec;
+            $call_link = base_url() . "crons/save_departments_categories/$site_id/$sited"; // > /dev/null 2>/dev/null &";
+            //echo $call_link;
+            echo $call_link;
+            $this->site_categories_model->curl_async($call_link);
+            //$srec = shell_exec("wget -S -O- ".$call_link);
+            //echo $srec;
 //          shell_exec("wget -S -O- ".  base_url()."system/save_department_categories > /dev/null 2>/dev/null &");
-          }
-  //        else{
-              //unset($_SESSION['mpost']);
+        }
+        //        else{
+        //unset($_SESSION['mpost']);
         $this->output->set_content_type('application/json')->set_output(json_encode($debug_stack));
 //          }
-    }//*/
-    public function match_urls(){
+    }
+
+    //*/
+
+    public function match_urls()
+    {
         $this->load->model('temp_data_model');
         $this->load->model('site_categories_model');
         $this->load->model('settings_model');
@@ -2521,323 +2698,326 @@ class Crons extends MY_Controller {
             if ($url1 === FALSE) {
                 ++$nfurls;
                 $this->temp_data_model->addUrlToNonFound($urls['url1'], $process);
-                $atuc -=1;
+                $atuc -= 1;
                 //$notFoundUrlsArr[]=$urls[0];
             } else {
                 $tm = false;
                 if ($url1['ph_attr']) {
                     $tm = unserialize($url1['ph_attr']);
                 }
-                $model1 = $tm['model']&& strlen($tm['model'])>3 ? $tm['model'] : FALSE;
+                $model1 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : FALSE;
             }
             if ($url2 === FALSE) {
                 ++$nfurls;
                 $this->temp_data_model->addUrlToNonFound($urls['url2'], $process);
-                $atuc -=1;
+                $atuc -= 1;
                 //$notFoundUrlsArr[]=$urls[1];
             } else {
                 $tm = false;
                 if ($url2['ph_attr']) {
                     $tm = unserialize($url2['ph_attr']);
                 }
-                $model2 = $tm['model']&& strlen($tm['model'])>3 ? $tm['model'] : false;
+                $model2 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : false;
             }
             if ($nfurls > 0) {
-                $notFoundUrls+=$nfurls;
-            }
-            else{
-                $this->imported_data_parsed_model->addItem($url1['data_id'],$url2['data_id']);
+                $notFoundUrls += $nfurls;
+            } else {
+                $this->imported_data_parsed_model->addItem($url1['data_id'], $url2['data_id']);
                 if ($model1) {
                     if ($model2 && $model1 != $model2) {
-                        if (!($url2['model']&&strlen($url2['model'])>3)|| ($url2['model'] != $model1)) {
-                            $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
-                            $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev']+1, $url1['data_id']);
+                        if (!($url2['model'] && strlen($url2['model']) > 3) || ($url2['model'] != $model1)) {
+                            $this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model1);
+                            $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
                             ++$itemsUpdated;
-                            $atuc -=1;
+                            $atuc -= 1;
                         }
-                    } elseif (!$model2 && (!($url2['model']&&strlen($url2['model'])>3) 
-                            || $model1 != $url2['model'])) {
-                        $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model1);
-                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev']+1, $url1['data_id']);
+                    } elseif (!$model2 && (!($url2['model'] && strlen($url2['model']) > 3)
+                        || $model1 != $url2['model'])
+                    ) {
+                        $this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model1);
+                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
                         ++$itemsUpdated;
-                        $atuc -=1;
+                        $atuc -= 1;
                     }
                 } elseif ($model2) {
-                    if (!($url1['model']&&strlen($url1['model'])>3) || $model2 != $url1['model']) {
-                        $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $model2);
-                        $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2, $url2['rev']+1, $url2['data_id']);
+                    if (!($url1['model'] && strlen($url1['model']) > 3) || $model2 != $url1['model']) {
+                        $this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $model2);
+                        $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2, $url2['rev'] + 1, $url2['data_id']);
                         ++$itemsUpdated;
-                        $atuc -=1;
+                        $atuc -= 1;
                     }
-                } elseif (($url1['model']&&strlen($url1['model'])>3)) {
-                    if (!($url2['model']&&strlen($url2['model'])>3) || ($url1['model'] != $url2['model'])) {
-                        $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $url1['model']);
-                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev']+1, $url1['data_id']);
+                } elseif (($url1['model'] && strlen($url1['model']) > 3)) {
+                    if (!($url2['model'] && strlen($url2['model']) > 3) || ($url1['model'] != $url2['model'])) {
+                        $this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $url1['model']);
+                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
                         ++$itemsUpdated;
-                        $atuc -=1;
+                        $atuc -= 1;
                     }
-                } elseif (($url2['model']&&strlen($url2['model'])>3)) {
-                    $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $url2['model']);
-                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev']+1, $url2['data_id']);
+                } elseif (($url2['model'] && strlen($url2['model']) > 3)) {
+                    $this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $url2['model']);
+                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
                     ++$itemsUpdated;
-                    $atuc -=1;
+                    $atuc -= 1;
                 } else {
                     $model = time();
-                    $this->temp_data_model->addUpdData($url1['data_id'],$url1['model'], $model);
-                    $this->temp_data_model->addUpdData($url2['data_id'],$url2['model'], $model);
-                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model, $url2['rev']+1, $url2['data_id']);
-                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model, $url1['rev']+1, $url1['data_id']);
-                    $itemsUpdated+=2;
-                    $atuc -=1;
+                    $this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $model);
+                    $this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model);
+                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
+                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
+                    $itemsUpdated += 2;
+                    $atuc -= 1;
                 }
             }
-            if($atuc<0){exit('incrorrect ATUC');}
-            $itemsUnchanged +=$atuc;
+            if ($atuc < 0) {
+                exit('incrorrect ATUC');
+            }
+            $itemsUnchanged += $atuc;
             $timing = microtime(true) - $start;
-        }//*/
+        }
+        //*/
         if ($timing < 200) {
             $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
             $this->settings_model->updateMatchingUrls($process, $val);
         } else {
             $lts = $this->temp_data_model->getTableSize('urlstomatch');
-            $this->settings_model->procUpdMatchingUrls($process,$lts,$itemsUnchanged);
-            if(strtoupper(substr(PHP_OS, 0, 3))==='WIN'){
-            $call_link = base_url() . "crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged";
+            $this->settings_model->procUpdMatchingUrls($process, $lts, $itemsUnchanged);
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                $call_link = base_url() . "crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged";
 //            exit($call_link);
-            $this->site_categories_model->curl_async($call_link);
-            }
-            else{
-                shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged > /dev/null 2>/dev/null &");
+                $this->site_categories_model->curl_async($call_link);
+            } else {
+                shell_exec("wget -S -O- http://tmeditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged > /dev/null 2>/dev/null &");
             }
         }
     }
-    function fixawm_am($wmb,$amb){
+
+    function match_urls_thread(){
+        ini_set('mysql.connect_timeout', 120);
+        $this->load->model('temp_data_model');
+        $this->load->model('site_categories_model');
+        $this->load->model('settings_model');
+        $this->load->model('thread_model');
+        $this->load->model('imported_data_parsed_model');
+        $process = $this->uri->segment(3);
+        $this->thread_model->updateStatus($process, 'process');
+        $process_fields = $this->thread_model->get_process_fields($process);
+        $linesScaned = $process_fields['lines_scaned'];
+        $notFoundUrls = $process_fields['not_found_urls'];
+        $itemsUpdated = $process_fields['items_updated'];
+        $itemsUnchanged = $process_fields['items_unchanged'];
+        $limitStart = $process_fields['start_limit'];
+        $limitEnd = $process_fields['end_limit'];
+        $start = microtime(true);
+        $data = $this->temp_data_model->getLineFromTableLimit('urlstomatch', $limitStart, $limitEnd);
+        $size_data = sizeof($data);
+
+        foreach($data as $key=>$urls){
+            $atuc = 2;
+            $nfurls = 0;
+            ++$linesScaned;
+            $url1 = $this->imported_data_parsed_model->getModelByUrl($urls['url1']);
+            $url2 = $this->imported_data_parsed_model->getModelByUrl($urls['url2']);
+            $model1 = '';
+            $model2 = '';
+            if ($url1 === FALSE) {
+                ++$nfurls;
+                $this->temp_data_model->addUrlToNonFound($urls['url1'], $process);
+                $atuc -= 1;
+                //$notFoundUrlsArr[]=$urls[0];
+            } else {
+                $tm = false;
+                if ($url1['ph_attr']) {
+                    $tm = unserialize($url1['ph_attr']);
+                }
+                $model1 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : FALSE;
+            }
+            if ($url2 === FALSE) {
+                ++$nfurls;
+                $this->temp_data_model->addUrlToNonFound($urls['url2'], $process);
+                $atuc -= 1;
+                //$notFoundUrlsArr[]=$urls[1];
+            } else {
+                $tm = false;
+                if ($url2['ph_attr']) {
+                    $tm = unserialize($url2['ph_attr']);
+                }
+                $model2 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : false;
+            }
+            if ($nfurls > 0) {
+                $notFoundUrls += $nfurls;
+            } else {
+                $this->imported_data_parsed_model->addItem($url1['data_id'], $url2['data_id']);
+                if ($model1) {
+                    if ($model2 && $model1 != $model2) {
+                        if (!($url2['model'] && strlen($url2['model']) > 3) || ($url2['model'] != $model1)) {
+                            $this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model1);
+                            $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
+                            ++$itemsUpdated;
+                            $atuc -= 1;
+                        }
+                    } elseif (!$model2 && (!($url2['model'] && strlen($url2['model']) > 3)
+                        || $model1 != $url2['model'])
+                    ) {
+                        $this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model1);
+                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
+                        ++$itemsUpdated;
+                        $atuc -= 1;
+                    }
+                } elseif ($model2) {
+                    if (!($url1['model'] && strlen($url1['model']) > 3) || $model2 != $url1['model']) {
+                        $this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $model2);
+                        $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2, $url2['rev'] + 1, $url2['data_id']);
+                        ++$itemsUpdated;
+                        $atuc -= 1;
+                    }
+                } elseif (($url1['model'] && strlen($url1['model']) > 3)) {
+                    if (!($url2['model'] && strlen($url2['model']) > 3) || ($url1['model'] != $url2['model'])) {
+                        $this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $url1['model']);
+                        $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
+                        ++$itemsUpdated;
+                        $atuc -= 1;
+                    }
+                } elseif (($url2['model'] && strlen($url2['model']) > 3)) {
+                    $this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $url2['model']);
+                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
+                    ++$itemsUpdated;
+                    $atuc -= 1;
+                } else {
+                    $model = time();
+                    $this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $model);
+                    $this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model);
+                    $this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
+                    $this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
+                    $itemsUpdated += 2;
+                    $atuc -= 1;
+                }
+            }
+            if ($atuc < 0) {
+                exit('incrorrect ATUC');
+            }
+            $itemsUnchanged += $atuc;
+            $timing = microtime(true) - $start;
+
+            if($timing < 60) {
+
+            }else{
+                $this->thread_model->updateStatus($process, 'process', array('lines_scaned'=>$linesScaned, 'items_updated'=>$itemsUpdated, 'not_found_urls'=>$notFoundUrls, 'items_unchanged'=>$itemsUnchanged));
+                $start = microtime(true);
+                die();
+            }
+
+            if($size_data == $linesScaned){
+                $this->thread_model->updateStatus($process, 'end', array('lines_scaned'=>$linesScaned, 'items_updated'=>$itemsUpdated, 'not_found_urls'=>$notFoundUrls, 'items_unchanged'=>$itemsUnchanged));
+                $uid = $this->session->userdata('user_id');
+                if($this->thread_model->current_all_process($uid) == $this->thread_model->current_end_process($uid)){
+                    $this->thread_model->clear($uid);
+                }
+            }
+        }
+    }
+
+
+
+    function fixawm_am($wmb, $amb)
+    {
         $this->load->model('statistics_new_model');
         $this->statistics_new_model->emptyItemByBatchId($wmb);
         $this->statistics_new_model->addAmToWal($amb);
     }
-    
-    function title_keywords($product_name, $short_description, $long_description){
-        $short_sp = $this->get_keywords($product_name, $short_description);
-        $long_sp = $this->get_keywords($product_name, $long_description);
-        $title_seo_prases = array();
-        if($short_sp){
-            
-            foreach ($short_sp as $pr){
-                //if($pr['prc']>2)
-                {
-                    $title_seo_prases[]=$pr;
-                }
-            }
-        }
-        if($long_sp){
-            
-            foreach ($long_sp as $pr){
-                //if($pr['prc']>2)
-                    {
-                    $title_seo_prases[]=$pr;
-                }
-            }
-        }
-        $sub_title_prases_keys = array();
-        if (!empty($title_seo_prases)) {
-            foreach($title_seo_prases as $ar_key => $seo_pr){
-                foreach($title_seo_prases as $ar_key1=>$seo_pr1){
-                    
-//                    if($ar_key!=$ar_key1 && substr_count($seo_pr1['ph'],$seo_pr['ph'])){
-//                        //$sub_title_prases_keys[]=$ar_key;
-//                    }
-                    if($ar_key!=$ar_key1 && $seo_pr['ph']==$seo_pr1['ph'] && $seo_pr['frq']>=$seo_pr1['frq']){
-                        unset($title_seo_prases[$ar_key1]);
-                    }
-                }
-            }
-//            foreach( $sub_title_prases_keys  as $k){
-//                if(key_exists($k, $title_seo_prases)){
-//                    unset($title_seo_prases[$k]);
-//                }
-//            }
-           return serialize($title_seo_prases);
-        }
-        return 'None';
-    }
-    private function get_keywords($title, $string){
-        if(trim($title)== '' ||  $title == NULL || $string == ''){
-            return array();
-        }
-        $black_list = array('and','the','in','on','at','for');
-        $title = trim(preg_replace('/\(.*\)/','', $title));
-        $title = trim(str_replace(',',' ', $title));
-        $title = trim(preg_replace('/\s+/', ' ', $title));
-        $string = trim(preg_replace('/\(.*\)/','', $string));
-        $string = trim(str_replace(',',' ', $string));
-        $string = trim(preg_replace('/\s+/', ' ', $string));
-        $string = $this->str_cleaner($black_list, $string);
-        $title_w = explode(' ', $title);
-        $title_wc = count($title_w);
-        $string_w = explode(' ', $string);
-        $string_wc = count($string_w);
-        $phrases = array();
-        $i = 0;
-        while($title_wc-$i>1){
-            for($j=0;$j<$i+1;++$j){
-                $needl = '';
-                for($k=$j;$k<$title_wc-$i+$j;++$k){
-                    $needl .=$title_w[$k].' ';
-                }
-                $needl = trim($needl);
-                $frc = substr_count(strtolower($string), strtolower($this->str_cleaner($black_list, $needl)));
-                $prc = ($frc*($title_wc-$i))/$string_wc*100;
-                if($frc>0&&$prc>2){//
-                    $phrases[]=array(
-                        'frq'=>$frc,
-                        'prc'=>round($prc,2),
-                        'ph'=>$needl
-                    );
-                }
-            }
-//            if(!empty($phrases)){
-//                break;
-//            }
-            ++$i;
-        }
-        //*
-        foreach($black_list as $w){
-            foreach ($phrases as $key=>$val){
-                $val['ph']=substr($val['ph'],0,strlen($w))===$w?substr($val['ph'],strlen($w)):$val['ph'];
-                $val['ph']=substr($val['ph'],(-1)*strlen($w))===$w?substr($val['ph'],0,strlen($val['ph'])-strlen($w)):$val['ph'];
-                $val['ph']=trim($val['ph']);
-                $pw = explode(' ', $val['ph']);
-                if(count($pw)<2){
-                    unset($phrases[$key]);
-                }
-            }
-        }
-        foreach($phrases as $ar_key => $seo_pr){
-            foreach($phrases as $ar_key1=>$seo_pr1){
-                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])
-                        &&$seo_pr['frq']>= $seo_pr1['frq']){
-                    unset($phrases[$ar_key1]);
-                }
-            }
-        }
-        foreach($phrases as $ar_key => $seo_pr){
-            foreach($phrases as $ar_key1=>$seo_pr1){
-                if($ar_key!=$ar_key1 && $this->compare_str($seo_pr['ph'],$seo_pr1['ph'])){
-                    if($seo_pr['frq']>=$seo_pr1['frq']){
-                        unset($phrases[$ar_key1]);
-                    }
-                    else{
-                        $phrases[$ar_key1]['frq']-=$seo_pr['frq'];
-                        $akw = explode(' ', $seo_pr1['ph']);
-                        $phrases[$ar_key1]['prc'] = round($phrases[$ar_key1]['frq']*count($akw)/$string_wc*100,2);
-                    }
-                }
-            }
-        }
-//*/
-        return $phrases;
-    }
-     private function compare_str($str1, $str2){
-        $str1 = trim(strtolower($str1));
-        $str2 = trim(strtolower($str2));
-        $black_list = array('and','the','on','in','at','is','for');
-        foreach ($black_list as $word){
-            $str1 = (substr($str1,0,strlen($word)) === $word)?substr($str1,strlen($word)):$str1;
-            $str1 = (substr($str1,(-1)*strlen($word))===$word)?substr($str1,0,strlen($str1)-strlen($word)):$str1;
-            $str1=trim($str1);
-            $str2 = (substr($str2,0,strlen($word)) === $word)?substr($str2,strlen($word)):$str2;
-            $str2=(substr($str2,(-1)*strlen($word))===$word)?substr($str2,0,strlen($str2)-strlen($word)):$str2;
-            $str2=trim($str2);
-        }
-        return strpos($str1, $str2)!==FALSE;
-    }
-    
-    private function str_cleaner($bl,$string){
-        $str_arr = explode(' ', $string);
-        foreach ($str_arr as $key=>$val){
-            if(in_array($val, $bl)){
-                unset($str_arr[$key]);
-            }
-        }
-        $string = trim(preg_replace('/\s+/',' ',implode(' ', $str_arr)));
-        return $string;
-    }
-    function fix_imported_data_parsed_models(){
+
+    function fix_imported_data_parsed_models()
+    {
         $this->load->model('site_categories_model');
-        $sql = "select imported_data_id as item, `value` as parsed_attributes 
-            from imported_data_parsed 
+        $sql = "select imported_data_id as item, `value` as parsed_attributes
+            from imported_data_parsed
             where `key`='parsed_attributes' and `value` like '%\"model\"%' and model is null";
         $query = $this->db->query($sql);
-        if($query->num_rows===0){
+        if ($query->num_rows === 0) {
             exit;
         }
         $i = 0;
         $start = microtime(true);
-        foreach($query->result() as $res){
+        foreach ($query->result() as $res) {
             $pa = unserialize($res->parsed_attributes);
-            if(isset($pa['model'])&& strlen($pa['model'])>3){
-                $data=array(
-                    'model'=>$pa['model'],
+            if (isset($pa['model']) && strlen($pa['model']) > 3) {
+                $data = array(
+                    'model' => $pa['model'],
                 );
-                $this->db->where('imported_data_id',$res->item);
-                $this->db->update('imported_data_parsed',$data);
+                $this->db->where('imported_data_id', $res->item);
+                $this->db->update('imported_data_parsed', $data);
                 ++$i;
             }
-            if(microtime(TRUE)-$start>200){
+            if (microtime(TRUE) - $start > 200) {
                 break;
             }
         }
-        if(microtime()-$start<200||$i==0){
+        if (microtime() - $start < 200 || $i == 0) {
             exit;
         }
-        if(strtoupper(substr(PHP_OS, 0, 3))==='WIN'){
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             $call_link = base_url() . "fix_imported_data_parsed_models";
             $this->site_categories_model->curl_async($call_link);
-        }
-        else{
+        } else {
             shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/fix_imported_data_parsed_models > /dev/null 2>/dev/null &");
         }
     }
-    function fixmodel_length(){
+
+    function fixmodel_length()
+    {
         $sql = "SELECT imported_data_id as dataid, model
-            FROM  `imported_data_parsed` 
+            FROM  `imported_data_parsed`
             WHERE CHAR_LENGTH(  `model` ) <4
             AND  `key` =  'url'";
         $query = $this->db->query($sql);
-        if($query->num_rows===0){
+        if ($query->num_rows === 0) {
             exit;
         }
-        foreach($query->result() as $res){
-            $data=array(
-                'model'=>substr(0,8,uniqid($res->model))
+        foreach ($query->result() as $res) {
+            $data = array(
+                'model' => substr(0, 8, uniqid($res->model))
             );
-            $this->db->where('imported_data_id',$res->dataid);
-            $this->db->update('imported_data_parsed',$data);
+            $this->db->where('imported_data_id', $res->dataid);
+            $this->db->update('imported_data_parsed', $data);
         }
     }
-    function fix_revisions(){
+
+    function fix_revisions()
+    {
         $sql = "select idp.imported_data_id as item, idp.`value` as url
             , idp.revision as revision, idpa.revision as old_revision
             from imported_data_parsed as idp
             left join (
-            select imported_data_id, max(revision) as revision 
-            from imported_data_parsed_archived 
+            select imported_data_id, max(revision) as revision
+            from imported_data_parsed_archived
             group by imported_data_id )as idpa
             on idp.imported_data_id = idpa.imported_data_id
             where ((idpa.imported_data_id is null and idp.revision !=1) or idp.revision-idpa.revision > 1)
             and idp.`key`='url'";
         $query = $this->db->query($sql);
-        if($query->num_rows===0){
+        if ($query->num_rows === 0) {
             exit;
         }
-        foreach ($query->result() as $res){
+        foreach ($query->result() as $res) {
             $data = array(
-                'revision'=>$res->old_revision!==null?$res->old_revision+1:1
+                'revision' => $res->old_revision !== null ? $res->old_revision + 1 : 1
             );
-            $this->db->where('imported_data_id',$res->item);
-            $this->db->update('imported_data_parsed',$data);
+            $this->db->where('imported_data_id', $res->item);
+            $this->db->update('imported_data_parsed', $data);
         }
+    }
+
+    private function webthumb_call($url)
+    {
+        $webthumb_user_id = $this->config->item('webthumb_user_id');
+        $api_key = $this->config->item('webthumb_api_key');
+        $url = "http://$url";
+        $c_date = gmdate('Ymd', time());
+        $hash = md5($c_date . $url . $api_key);
+        $e_url = urlencode(trim($url));
+        return $res = array(
+            "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2",
+            'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large"
+        );
     }
 
 }

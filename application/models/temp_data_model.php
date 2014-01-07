@@ -47,6 +47,14 @@ class Temp_data_model extends CI_Model {
         $this->db->delete($table);
         return $row;
     }
+
+    public function getLineFromTableLimit($table, $limit_start, $limit_end){
+        $this->db->select('url1, url2, id');
+        $this->db->from($table);
+        $this->db->limit($limit_end, $limit_start);
+        return $query = $this->db->get()->result_array();
+    }
+
     public function createNonFoundTable(){
         $sql = "CREATE TABLE IF NOT EXISTS `notfoundurls`(
             id INT NOT NULL AUTO_INCREMENT
