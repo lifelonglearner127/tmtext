@@ -140,14 +140,28 @@ $(function() {
 		{
 			$("#assess_graph_dropdown").show();
 			$("#assess_graph").show();
-			$("#tblAssess_info").parent().hide();
-			$(".tblDataTable").hide();
-			$("#tblAssess_wrapper .CRC").hide();
 		} else {
 			$("#assess_graph_dropdown").hide();
 			$("#assess_graph").hide();
-			$("#tblAssess_info").parent().show();
+		}
+	}
+	
+	// show or hide results blocks
+	function toggleResultsBlocks(isDisplayed)
+	{
+		if (isDisplayed)
+		{
+			$('#tblAssess_info').show();
+			$('#tblAssess_paginate').show();
+			$(".tblDataTable").show();
 			$("#tblAssess_wrapper .CRC").show();
+			$("#tblAssess_info").parent().show();
+		} else {
+			$('#tblAssess_info').hide();
+			$('#tblAssess_paginate').hide();
+			$(".tblDataTable").hide();
+			$("#tblAssess_wrapper .CRC").hide();
+			$("#tblAssess_info").parent().hide();
 		}
 	}
 	
@@ -165,21 +179,25 @@ $(function() {
 		details_compare : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleResultsBlocks(isDisplayed);
 			toggleGraphBlocks( ! isDisplayed);
 		},
 		view : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleResultsBlocks( ! isDisplayed);
 			toggleGraphBlocks( ! isDisplayed);
 		},
 		details_compare_result : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleResultsBlocks( ! isDisplayed);
 			toggleGraphBlocks( ! isDisplayed);
 		},
 		graph : function(isDisplayed) {			
 			//code here...
 			toggleDetailsCompareBlocks(isDisplayed);
+			toggleResultsBlocks( ! isDisplayed);
 			toggleGraphBlocks(isDisplayed);
 		},
 	};
@@ -417,7 +435,10 @@ $(function() {
 				hideColumns(); 									
 				setBorderSeparator();					
 				loadSetTK();
-																			 
+				
+				// bad hack, Nikita, please check
+				$('#tblAssess thead th').css('width', '100%');	
+				
 				resizeImpDown();										
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
@@ -426,7 +447,7 @@ $(function() {
 			},
 			fnDrawCallback : function(oSettings) {
 				console.log('local draw callback');					
-				tblAssess.fnAdjustColumnSizing(false);				
+				tblAssess.fnAdjustColumnSizing(false);						
 			},
 			fnPreDrawCallback : function( oSettings ) {										
 				buildReport(json_data);
@@ -591,6 +612,12 @@ $(function() {
 	});
 
 function highChart(graphBuild) {
+	
+	// Castro #1119: disable charts dropdown and show over time checkbox and empty chart container
+	$('#graphDropDown').attr("disabled", true);
+	$('#show_over_time').attr("disabled", true);
+	$('#highChartContainer').empty().addClass("loading");
+	
 	var batch_set = $('.result_batch_items:checked').val() || 'me';	
     var batch1Value = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
     var batch2Value = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
@@ -880,8 +907,6 @@ function highChart(graphBuild) {
 				}
 			}
 		}
-        
-        $('#highChartContainer').empty();
 
         var chart1 = new Highcharts.Chart({
             title: {
@@ -926,19 +951,33 @@ function highChart(graphBuild) {
                             var display_property = "none";
 
                         }
-                    $.each(this.points, function(i, datum) {
-                        if(i > 0)
-                            result += '<hr style="border-top: 1px solid #2f7ed8;margin:0;" />';
+                    $.each(this.points, function(i, datum) 
+					{
+						// Castro #1119: add line to tooltip only when show overtime is not checked
+                        if(i > 0  && ! $("#show_over_time").is(":checked"))
+						{
+							result += '<hr style="border-top: 1px solid #2f7ed8;margin:0;" />';
+						}
+						
                         if(datum.series.color == '#2f7ed8')
+						{
                             j = 0;
+						}
                         else
+						{
                             j = 1;
-                        result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
-                        result += '<br /><span>' + valueName[j][datum.x] + '</span>';
-                        result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
-                        result += '<br /><span ">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' '+graphName2+'</span>';
-                        result += '<span style="color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span>';                       
-                    });
+						}
+						
+						// Castro #1119: add data to tooltip only when show overtime is not checked or is the first point
+						if((i > 0 && ! $("#show_over_time").is(":checked")) || i == 0)
+						{
+							result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
+							result += '<br /><span>' + valueName[j][datum.x] + '</span>';
+							result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
+							result += '<br /><span ">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' '+graphName2+'</span>';
+							result += '<span style="color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span>';
+						}
+					});
                     return result;
                 }
             },
@@ -965,6 +1004,7 @@ function highChart(graphBuild) {
                             
                             cloneToolTip2 = $('.highcharts-tooltip').clone(); 
                             $(chart1.container).append(cloneToolTip2);
+
                             $('.highcharts-tooltip').first().css('visibility','hidden');
                             $('div .highcharts-tooltip span').first().css('visibility','hidden');
                         }
@@ -991,6 +1031,12 @@ function highChart(graphBuild) {
 
             series: seriesObj
         });
+		
+		// Castro #1119: enable drodown and checkbox again remove loading image
+		$('#graphDropDown').removeAttr("disabled");
+		$('#show_over_time').removeAttr("disabled");
+		$("#highChartContainer").removeClass("loading");
+		
         $('.highcharts-button').each(function(i){
             if(i > 0)
                 $(this).remove();
@@ -998,13 +1044,23 @@ function highChart(graphBuild) {
     });
     
 }
-$('#graphDropDown').live('change',function(){
-    var graphDropDownValue = $(this).children('option:selected').val();
-    if(graphDropDownValue != "") // Castro #1119: create chart when a valid option is selected
-    {
-      highChart(graphDropDownValue);
-    }
-});
+	$('#graphDropDown').live('change',function(){
+		showHighChart();
+	});
+	
+	$('#show_over_time').live('click',function(){
+		showHighChart();
+	});
+
+	// Castro #1119: function called by two events, show_over_time click and graphDropDown change
+	function showHighChart()
+	{
+		var graphDropDownValue = $('#graphDropDown').children('option:selected').val();
+		if(graphDropDownValue != "") // Castro #1119: create chart when a valid option is selected
+		{
+			highChart(graphDropDownValue);
+		}
+	}
 	
     $(document).scroll(function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';		
@@ -2510,8 +2566,6 @@ function prevSibilfunc(curentSibil){
 			 */
 			toggleRelatedBlocks('recommendations', true);
 			
-            $('#tblAssess_info').show();
-            $('#tblAssess_paginate').show();
             reportPanel(false);
             $.each(tblAllColumns, function(index, value) {
                 if ($.inArray(value, tableCase.recommendations) > -1) {
@@ -2527,9 +2581,6 @@ function prevSibilfunc(curentSibil){
 			 * using one place to turn on/off different blocks
 			 */
 			toggleRelatedBlocks('details_compare', true);
-
-            $('#tblAssess_info').show();
-            $('#tblAssess_paginate').show();
             
 			reportPanel(false);
 			
@@ -2564,8 +2615,6 @@ function prevSibilfunc(curentSibil){
 		
             toggleRelatedBlocks('view', true);
 			
-            $('#tblAssess_info').hide();
-            $('#tblAssess_paginate').hide();
             $('#tblAssess').hide();
             $('#tblAssess').parent().find('div.ui-corner-bl').hide();
             $('#assess_view').show();
@@ -2611,8 +2660,6 @@ function prevSibilfunc(curentSibil){
 		
 			toggleRelatedBlocks('graph', true);
 			
-           $('#tblAssess_info').hide();
-            $('#tblAssess_paginate').hide();
             $('.board_view').hide();
             $('.tblDataTable').hide(); // Castro #1119: change #tblAssess selector with .tblDataTable to avoid that table assess bar appears over graph dropdown
             //$('#tblAssess').parent().find('div.ui-corner-bl').hide();

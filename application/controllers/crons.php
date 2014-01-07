@@ -695,29 +695,27 @@ class Crons extends MY_Controller
 			$trnc = $trnc === FALSE ? 0 : 1;
 			$this->different_revissions();
 			$timesart = time();
-			//Checking if DoStatsStatus runned already
-			$dss = $this->imported_data_parsed_model->getDoStatsStatus();
-			if (!$dss)
+			$dss = $this->imported_data_parsed_model->getDoStatsStatus(); //getting status of do_stats process
+			if (!$dss) //if status info does not exists
 			{
 				//Set status for prevent duplicate
 				$this->imported_data_parsed_model->setDoStatsStatus();
-				$this->settings_model->setLastUpdate(1);
+				$this->settings_model->setLastUpdate(1); //adding last update info
 			} else
 			{
-				if ($dss->description === 'stopped')
+				if ($dss->description === 'stopped') //if status info exists, and description is 'stopped'
 				{
-					$this->imported_data_parsed_model->updDoStatsStatus(1);
+					$this->imported_data_parsed_model->updDoStatsStatus(1); //update status info
 				}
-				$this->settings_model->setLastUpdate();
+				$this->settings_model->setLastUpdate(); //update status info
 			}
-			//Get items for update 
+			//Get items for scanning
 			$data_arr = $this->imported_data_parsed_model->do_stats_newupdated($trnc);
 			$timeend = time(true);
 			$time = $timesart - $timeend;
 			echo "get_data=----" . $time;
-			if (count($data_arr) > 0)
+			if (count($data_arr) > 0) //run analyze if array does not empty
 			{
-
 				$sites_list = array();
 				//Get all existing sites, generate site list
 				$query_cus_res = $this->sites_model->getAll();
@@ -729,6 +727,7 @@ class Crons extends MY_Controller
 						$sites_list[] = $n['host'];
 					}
 				}
+				//end of list creating script
 				//Start update each item
 				foreach ($data_arr as $obj)
 				{
@@ -754,23 +753,27 @@ class Crons extends MY_Controller
 					$short_descrition = '';
 					$long_descrition = '';
 					echo "<br>" . "im+daat+id= " . $data_import['imported_data_id'] . "</br>";
-					//Prepare description field, replace all tags and big spaces to single space
+					//Prepare description field
 					if (($data_import['description'] !== null || $data_import['description'] !== 'null') && trim($data_import['description']) !== "")
 					{
 						$short_descrition = $data_import['description'];
+						//replace all tags and big spaces to single space
 						$data_import['description'] = preg_replace('#<[^>]+>#', ' ', $data_import['description']);
 						$data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
+						//getting count of words in short description
 						$short_description_wc = count(explode(" ", $data_import['description']));
 					} else
 					{
 						$short_description_wc = 0;
 					}
-					//Prepare long description field, replace all tags and big spaces to single space
+					//Prepare long description field
 					if (($data_import['long_description'] !== null || $data_import['long_description'] !== 'null') && trim($data_import['long_description']) !== "")
 					{
 						$long_descrition = $data_import['long_description'];
+						//replace all tags and big spaces to single space
 						$data_import['long_description'] = preg_replace('#<[^>]+>#', ' ', $data_import['long_description']);
 						$data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
+						//getting count of words in short description
 						$long_description_wc = count(explode(" ", $data_import['long_description']));
 					} else
 					{
@@ -781,16 +784,16 @@ class Crons extends MY_Controller
 					// Generate Title Keywords
 					$time_start = microtime(true);
 					$title_keywords = $this->title_keywords($data_import['product_name'], $short_descrition, $long_descrition);
-					$time_end = microtime(true);
-					$time = $time_end - $time_start;
+					$time = microtime(true) - $time_start;
 					echo "Title Keywords - $time seconds\n";
 
 
 					$time_start = microtime(true);
 					$m = '';
-					//If parsed attributes are exist, start to work with them
+					//If parsed attributes are exist, finding similar items and price diff
 					if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model']) && strlen($data_import['parsed_attributes']['model']) > 3)
 					{
+						//getting model of item
 						if ($data_import['model'] && strlen($data_import['model']) > 3)
 						{
 							$m = $data_import['model'];
@@ -798,6 +801,7 @@ class Crons extends MY_Controller
 						{
 							$m = $data_import['parsed_attributes']['model'];
 						}
+						//getting model of item
 						try
 						{
 							//Get last existing prices
@@ -807,7 +811,7 @@ class Crons extends MY_Controller
 							echo 'Error', $e->getMessage(), "\n";
 							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
 						}
-						//If own last prices are exist, then looking for differences
+						//if own_prices is not empty make price difference data
 						if (!empty($own_prices))
 						{
 							$own_price = floatval($own_prices[0]->price);
@@ -816,7 +820,7 @@ class Crons extends MY_Controller
 							$price_diff_exists['id'] = $own_prices[0]->id;
 							$price_diff_exists['own_site'] = $own_site;
 							$price_diff_exists['own_price'] = floatval($own_price);
-							//Checking for similar items
+							// getting list of similar items
 							try
 							{
 								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $data_import['imported_data_id']);
@@ -832,6 +836,7 @@ class Crons extends MY_Controller
 								foreach ($similar_items as $ks => $vs)
 								{
 									$customer = "";
+									//find customer of similar item
 									foreach ($sites_list as $ki => $vi)
 									{
 										if (strpos($vs['url'], "$vi") !== false)
@@ -845,7 +850,7 @@ class Crons extends MY_Controller
 									    'imported_data_id' => $vs['imported_data_id'],
 									    'customer' => $customer
 									);
-									//Get a three last prices
+									//Getting a three last prices for each item
 									try
 									{
 										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id']);
@@ -882,7 +887,7 @@ class Crons extends MY_Controller
 							}
 						} else
 						{
-							//Own prices are not exist, looking for similar items
+							//own priece does not exists, looking for similar items
 							try
 							{
 								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $data_import['imported_data_id']);
@@ -924,11 +929,12 @@ class Crons extends MY_Controller
 						if(isset($data_import['imported_data_id']))
 						{
 							echo "<br>im+daat+id= " . $data_import['imported_data_id'];
+							//checking for custom model
 							if ($model = $this->imported_data_parsed_model->check_if_exists_custom_model($data_import['imported_data_id']))
 							{
 								echo "<br>exists custom model";
 								$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($model, 0, $data_import['imported_data_id']);
-							} else
+							} else //geterate custom model if it does not exists
 							{
 								echo "geting custom model";
 								$same_pr = array();
@@ -940,7 +946,7 @@ class Crons extends MY_Controller
 						$time_end = microtime(true);
 						$time = $time_end - $time_start;
 						echo $time . "__important";
-						//Looking for similar competitors
+						//looking for similar competitors
 						foreach ($same_pr as $key => $val)
 						{
 							$customer = "";
@@ -973,7 +979,7 @@ class Crons extends MY_Controller
 					$time_end = microtime(true);
 					$time = $time_end - $time_start;
 					echo "<br>research_data--" . $time;
-					//Insert/Update compared data
+					//insert new statistics data to statistics_new table if it not exists in table and update if exists
 					try
 					{
 						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
@@ -1008,28 +1014,29 @@ class Crons extends MY_Controller
 		$time = $end_time - $first_sart;
 		echo "<br>alll--" . $time . "<br>";
 		unlink($tmp_dir . ".locked");
-		$data_arr = $this->imported_data_parsed_model->do_stats_newupdated();
+		$data_arr = $this->imported_data_parsed_model->do_stats_newupdated(); //get next 50 items to scan
 		$start = $this->settings_model->getDescription();
-		$stats_status = $this->settings_model->getDoStatsStatus();
-		$total_items = $this->settings_model->getLastUpdate();
-		//If queue has items, start script again
+		$stats_status = $this->settings_model->getDoStatsStatus(); //get status of do_stats
+		$total_items = $this->settings_model->getLastUpdate(); //get count of all items in time of starting
+		//If queque has items and status is started and count of all items bigger than count of scanned items , start script again
 		if (count($data_arr) > 0 && $stats_status->description === 'started' && ($cjo - 1) * 50 < $total_items['description'])
 		{ 
 			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
 			echo $utd->td;
+			//make asynchronous web request to do_stats_forupdated page
 			shell_exec("wget -S -O- ".site_url('/crons/do_stats_forupdated/').$trnc." > /dev/null 2>/dev/null &");
 		} else
 		{
 			//Or send report about success
-			$this->settings_model->setLastUpdate();
-			$mtd = $this->imported_data_parsed_model->getTimeDif();
+			$this->settings_model->setLastUpdate(); //set last update time
+			$mtd = $this->imported_data_parsed_model->getTimeDif(); // timing of process
 			echo $mtd->td;
 			//Remove status about started state
-			if ($stats_status->description === 'started')
+			if ($stats_status->description === 'started') //if status is started
 			{
-				$this->imported_data_parsed_model->delDoStatsStatus();
+				$this->imported_data_parsed_model->delDoStatsStatus(); //remove status info
 			}
-			$this->settings_model->updateDescription(0);
+			$this->settings_model->updateDescription(0);  //reset cron_job_offset 0
 
 			
 			$this->load->library('email');
