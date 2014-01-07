@@ -58,7 +58,15 @@ $(function() {
 	  return $(a).text().toUpperCase()
 		  .indexOf(m[3].toUpperCase()) >= 0;
 	};
-
+	
+	$( '#research_assess_update' ).ajaxStart(function() {
+		$( this ).text( "Updating..." );
+	});
+	
+	$( '#research_assess_update' ).ajaxStop(function() {
+		$( this ).text( "Update" );
+	});
+	
     $.ajax({
             url: getbatchesvalue,
             dataType: 'json',
@@ -380,7 +388,7 @@ $(function() {
 			aaSorting : [[5, "desc"]],
 			bAutoWidth : false,
 			bProcessing : true,
-			bDeferRender : true,			
+			bDeferRender : true,								
 			fnInitComplete : function(oSettings, json) {
 				console.log('local init complete');	
 				hideColumns(); 									
@@ -388,14 +396,13 @@ $(function() {
 				loadSetTK();
 																			 
 				resizeImpDown();										
-
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
 				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
 				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
-				console.log('local draw callback');	
+				console.log('local draw callback');					
 				tblAssess.fnAdjustColumnSizing(false);				
 			},
 			fnPreDrawCallback : function( oSettings ) {										
@@ -409,6 +416,7 @@ $(function() {
 				{
 					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data ? json_data.ExtraData.json_encoded_data : '';					
 					oSettings.display_competitor_columns = json_data.ExtraData.display_competitor_columns;					
+					oSettings.getSelectableColumns = json_data.ExtraData.getSelectableColumns;					
 				}
 			},
 			oLanguage : {
@@ -2236,63 +2244,26 @@ function prevSibilfunc(curentSibil){
     }
 
     $(".research_assess_choiceColumnDialog_checkbox").change(function(){
-         // get columns params
-		var columns = {
-			price: $("#column_price").is(':checked'),
-			snap: $("#column_snap").is(':checked'),
-			created: $("#column_created").is(':checked'),
-			imp_data_id: $("#imp_data_id").is(':checked'),
-			product_name: $("#column_product_name").is(':checked'),
-			// item_id: $("#item_id").is(':checked'),
-			model: $("#model").is(':checked'),
-			url: $("#column_url").is(':checked'),
-			Page_Load_Time: $("#Page_Load_Time").is(':checked'),
-			Short_Description: $("#Short_Description").is(':checked'),
-			short_description_wc: $("#column_short_description_wc").is(':checked'),
-			Meta_Keywords: $("#Meta_Keywords").is(':checked'),
-			short_seo_phrases: $("#column_short_seo_phrases").is(':checked') ? 1 : 0,
-			title_seo_phrases: $("#column_title_seo_phrases").is(':checked'),
-			title_seo_phrases_f: $("#column_title_seo_phrases_f").is(':checked'),
-			images_cmp: $("#column_images_cmp").is(':checked'),
-			video_count: $("#column_video_count").is(':checked'),
-			title_pa: $("#column_title_pa").is(':checked'),
-			Long_Description: $("#Long_Description").is(':checked'),
-			long_description_wc: $("#column_long_description_wc").is(':checked'),
-			long_seo_phrases: $("#column_long_seo_phrases").is(':checked') ? 1 : 0,
-			Custom_Keywords_Short_Description : $("#Custom_Keywords_Short_Description").is(':checked'),
-			Custom_Keywords_Long_Description : $("#Custom_Keywords_Long_Description").is(':checked'),
-			Meta_Description : $("#Meta_Description").is(':checked'),
-			Meta_Description_Count : $("#Meta_Description_Count").is(':checked'),
-			H1_Tags : $("#H1_Tags").is(':checked'),
-			H1_Tags_Count : $("#H1_Tags_Count").is(':checked'),
-			H2_Tags : $("#H2_Tags").is(':checked'),
-			H2_Tags_Count : $("#H2_Tags_Count").is(':checked'),
-			duplicate_content: $("#column_duplicate_content").is(':checked'),
-			column_external_content: $("#column_external_content").is(':checked'),
-			column_reviews: $("#column_reviews").is(':checked'),
-			average_review: $("#average_review").is(':checked'),
-			column_features: $("#column_features").is(':checked'),
-			price_diff: $("#column_price_diff").is(':checked'),
-			gap: $("#gap").is(':checked'),
-			Duplicate_Content: $("#Duplicate_Content").is(':checked'),
-			images_cmp: $("#images_cmp").is(':checked'),
-			title_pa: $("#title_pa").is(':checked'),
-			video_count: $("#video_count").is(':checked'),
-			links_count: $("#links_count").is(':checked')
-		};
-
-		// save params to DB
+        		
+		var columns_checkboxes = {};
+		var settings = tblAssess.fnSettings();
+		for (var it in settings.getSelectableColumns)
+			columns_checkboxes[settings.getSelectableColumns[it]['sName']] = $('#column_' + settings.getSelectableColumns[it]['sName']).is(':checked');
+		
 		$.ajax({
 			url: base_url + 'index.php/assess/assess_save_columns_state',
 			dataType: 'json',
 			type: 'post',
 			data: {
-				value: columns
+				value: columns_checkboxes
 			},
 			success: function(data) {
 				if (data == true) {
 					hideColumns();										
-					resizeImpDown();					
+					resizeImpDown();
+					
+					// bad hack, need to be rewrited, Nikita, please check
+					$('#tblAssess thead th').css('width', '100%');
 				}
 			}
 		});

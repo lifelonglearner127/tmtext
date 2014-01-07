@@ -26,7 +26,8 @@ class AssessHelper
 					'sName' => $column['sName'] . $i,
 					'sClass' => $column['sClass'] . $i,
 					'bVisible' => isset($column['bVisible']) ? $column['bVisible'] : true,
-					'batch_number' => $i
+					'batch_number' => $i,
+					'sWidth' => $column['sWidth'],
 				);
 			}			
 		}

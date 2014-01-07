@@ -4,6 +4,7 @@ class User_summary_settings extends Base_model
 {
 	const USER_SUMMARY_SETTING_FILTER = 1;
 	const USER_SUMMARY_SETTING_FILTER_ORDER = 2;
+	const USER_SUMMARY_SETTING_SELECTED_COLUMNS = 3;
 	
 	public $id;
 	public $setting_id;
@@ -15,7 +16,8 @@ class User_summary_settings extends Base_model
 	
 	public $settings = array(
 		self::USER_SUMMARY_SETTING_FILTER => 'Summary filter items',
-		self::USER_SUMMARY_SETTING_FILTER_ORDER => 'Summary filter items order'
+		self::USER_SUMMARY_SETTING_FILTER_ORDER => 'Summary filter items order',
+		self::USER_SUMMARY_SETTING_SELECTED_COLUMNS => 'Summary filter items order',
 	);
 	
 	public function __construct()

@@ -1015,13 +1015,26 @@ class Assess extends MY_Controller {
     }
 
     public function assess_save_columns_state() {
-        $this->load->model('settings_model');
+        $this->load->model('user_summary_settings', 'uss');        
         $user_id = $this->ion_auth->get_user_id();
-        $key = 'research_assess';
-        $value = $this->input->post('value');
-        $description = 'Page settings -> columns state';
-        $res = $this->settings_model->replace($user_id, $key, $value, $description);
-        echo json_encode($res);
+		$value = $this->input->post('value');
+		
+		if ($setting = $this->uss->findByAttributes(array('user_ip' => $_SERVER['REMOTE_ADDR'], 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_SELECTED_COLUMNS)))
+		{
+			// echo 'insert';
+			$setting->setting_value = json_encode($value);
+			$this->uss->setAttributes($setting);			
+		} else {
+			// echo 'update';
+			$this->uss->setAttributes(array(
+				'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_SELECTED_COLUMNS,
+				'setting_value' => json_encode($value),
+				'user_id' => $user_id,
+			));					
+		}
+		$this->uss->save();
+		
+        echo json_encode(true);
     }
 
     public function assess_save_urls() {
@@ -2823,17 +2836,24 @@ class Assess extends MY_Controller {
 	}
 
     public function products() {
+		
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
         if (!empty($this->data['customer_list'])) {
             $this->data['batches_list'] = $this->batches_list();
         }
-
-        $user_id = $this->ion_auth->get_user_id();
-        $key = 'research_assess';
-        $columns = $this->settings_model->get_value($user_id, $key);
 		
 		$this->load->model('user_summary_settings', 'uss');
+        $user_id = $this->ion_auth->get_user_id();
+        
+		$result = $this->uss->findByAttributes(array(
+			'user_id' => $user_id,
+			'user_ip' => $_SERVER['REMOTE_ADDR'],
+			'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_SELECTED_COLUMNS
+		));
+		
+        $columns = (array)json_decode($result->setting_value);			
+		
 		if ($this->ion_auth->logged_in() && ($user_id = $this->ion_auth->get_user_id()))		
 		{
 			$user_setting_filters = $this->uss->findByAttributes(array('user_id' => $user_id, 'setting_id' => User_summary_settings::USER_SUMMARY_SETTING_FILTER));			
@@ -3051,6 +3071,7 @@ class Assess extends MY_Controller {
         $pricing_details = array();
 		
 		//getting columns				
+		$raw_columns = $columns;
 		$columns = AssessHelper::addCompetitorColumns($columns);
 		
 		//extracting initial data varialbes for filters
@@ -4615,6 +4636,7 @@ class Assess extends MY_Controller {
         $output['aoColumns'] = $columns;
         $output['ExtraData']['report'] = $report;        
         $output['ExtraData']['display_competitor_columns'] = $build_assess_params->display_competitor_columns;
+        $output['ExtraData']['getSelectableColumns'] = AssessHelper::getSelectableColumns($raw_columns);
          		
         return $output;
     }
