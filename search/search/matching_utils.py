@@ -136,11 +136,18 @@ class ProcessText():
 			# normalize brand name
 			if 'product_brand' in product2:
 				product2_brand = " ".join(ProcessText.normalize(product2['product_brand']))
+
+				########LOG
+				if product2_brand:
+					print "BRAND EXTRACTED: ", product2_brand, "FROM URL ", product2['product_url'] 
+				###########
+
+
 			else:
 				product2_brand = None
 
 
-			# compute a term to penilize score woth for large price differences (above 100% of small price)
+			# compute a term to penalize score woth for large price differences (above 100% of small price)
 			# default is 0
 			price_score_penalization = 0
 
@@ -202,8 +209,8 @@ class ProcessText():
 			else:
 				product2_price = ""
 			
-			log.msg("\nPRODUCT: " + unicode(product_name) + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
-				"\nPRODUCT2: " + unicode(product2['product_name']) + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + " PRICE2: " + unicode(product2_price) + \
+			log.msg("\nPRODUCT: " + unicode(product_name) + " URL: " + product2['origin_url'] + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
+				"\nPRODUCT2: " + unicode(product2['product_name']) + " URL2: " + product2['product_url'] + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + " PRICE2: " + unicode(product2_price) + \
 				"\nSCORE: " + str(score) + " PRICE_PENLZ: " + unicode(price_score_penalization) + " THRESHOLD: " + str(threshold) + "\n", level=log.WARNING)
 
 			###################
