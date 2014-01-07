@@ -60,11 +60,11 @@ $(function() {
 	};
 	
 	$( '#research_assess_update' ).ajaxStart(function() {
-		$( this ).text( "Updating..." );
+		$( this ).text( "Updating..." ).attr('disabled', 'disabled');
 	});
 	
 	$( '#research_assess_update' ).ajaxStop(function() {
-		$( this ).text( "Update" );
+		$( this ).text( "Update" ).removeAttr('disabled');
 	});
 	
     $.ajax({
@@ -389,6 +389,7 @@ $(function() {
 			bAutoWidth : false,
 			bProcessing : true,
 			bDeferRender : true,								
+			aLengthMenu : [ 5, 10, 25, 50, 100 ],								
 			fnInitComplete : function(oSettings, json) {
 				console.log('local init complete');	
 				hideColumns(); 									
