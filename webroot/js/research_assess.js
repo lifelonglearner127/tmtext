@@ -435,7 +435,10 @@ $(function() {
 				hideColumns(); 									
 				setBorderSeparator();					
 				loadSetTK();
-																			 
+				
+				// bad hack, Nikita, please check
+				$('#tblAssess thead th').css('width', '100%');	
+				
 				resizeImpDown();										
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
@@ -444,7 +447,7 @@ $(function() {
 			},
 			fnDrawCallback : function(oSettings) {
 				console.log('local draw callback');					
-				tblAssess.fnAdjustColumnSizing(false);				
+				tblAssess.fnAdjustColumnSizing(false);						
 			},
 			fnPreDrawCallback : function( oSettings ) {										
 				buildReport(json_data);
