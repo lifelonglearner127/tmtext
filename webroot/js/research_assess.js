@@ -142,10 +142,12 @@ $(function() {
 			$("#assess_graph").show();
 			$("#tblAssess_info").parent().hide();
 			$(".tblDataTable").hide();
+			$("#tblAssess_wrapper .CRC").hide();
 		} else {
 			$("#assess_graph_dropdown").hide();
 			$("#assess_graph").hide();
 			$("#tblAssess_info").parent().show();
+			$("#tblAssess_wrapper .CRC").show();
 		}
 	}
 	

@@ -625,7 +625,7 @@
                 </div>
                 <img id="imgLoader" style="display: none;margin-top: -16px;margin-left: 81px;" src="<?php echo base_url();?>img/img-loader.gif" />
 <!-- 			Castro #1119: convert dropdown to static -->
-				<div id="assess_graph_dropdown" class="fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix">
+				<div id="assess_graph_dropdown" class="fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix" style="display:none;">
 					<select id="graphDropDown" style="width: 235px">
 						<option value="">----Select----</option>
 						<option value="total_description_wc">Total Description Word Counts</option>
