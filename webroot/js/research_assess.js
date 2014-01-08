@@ -385,7 +385,7 @@ $(function() {
 		
 		if (!json_data)
 		{																
-			var aoData = buildTableParams([]);	
+			var aoData = buildTableParams([{ name : 'displayCount',	value : 200 }]);	
 				
 			$.getJSON(readAssessUrl, aoData, function(json) {
 				if(!json)
@@ -399,6 +399,22 @@ $(function() {
 		else									
 			tblAssess = reInitializeTblAssess(json_data); 					
     }	
+	
+	function pullRestItems()
+	{	
+		var research_batch = $('.research_assess_batches_select')
+		  , research_batch_competitor = $('#research_assess_compare_batches_batch')
+          , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				  
+          , aoData = buildTableParams([]);		  
+			
+		$.getJSON(readAssessUrl, aoData, function(json) {
+			if(!json)
+				return;	
+																		
+			customLocalStorage[storage_key] = JSON.stringify(json);
+			tblAssess = reInitializeTblAssess(json);
+		});       
+	}
 	
 	function reInitializeTblAssess(json_data) {
 		
@@ -421,14 +437,20 @@ $(function() {
 				// bad hack, Nikita, please check
 				$('#tblAssess thead th').css('width', '100%');	
 				
-				resizeImpDown();										
+				resizeImpDown();
+
+				if (!oSettings.isCompleted)
+					pullRestItems();
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
 				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
 				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
-				console.log('local draw callback');					
+				console.log('local draw callback');
+				
+				console.log(oSettings);
+				
 				tblAssess.fnAdjustColumnSizing(false);						
 			},
 			fnPreDrawCallback : function( oSettings ) {										
@@ -443,6 +465,7 @@ $(function() {
 					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data ? json_data.ExtraData.json_encoded_data : '';					
 					oSettings.display_competitor_columns = json_data.ExtraData.display_competitor_columns;					
 					oSettings.getSelectableColumns = json_data.ExtraData.getSelectableColumns;					
+					oSettings.isCompleted = json_data.ExtraData.isCompleted;					
 				}
 			},
 			oLanguage : {
@@ -2731,7 +2754,7 @@ function prevSibilfunc(curentSibil){
 		assessRequestParams.sSearch = '';
 		assessRequestParams.bRegex = false;
 		assessRequestParams.iDisplayLength = 10;
-		assessRequestParams.iDisplayStart = 0;
+		assessRequestParams.iDisplayStart = 0;		
 				
         return assessRequestParams;
     }

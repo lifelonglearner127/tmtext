@@ -3052,7 +3052,6 @@ class Assess extends MY_Controller {
 
     private function build_asses_table($results, $build_assess_params, $batch_id = '', $columns = array()) 
 	{
-//        error_reporting(E_ALL);
         //Debugging
         $st_time = microtime(true);
         $this->load->model('batches_model');
@@ -3077,26 +3076,20 @@ class Assess extends MY_Controller {
 		//extracting initial data varialbes for filters
         extract(AssessHelper::getInitialFilterData());
 		
-        $display_length = intval($this->input->get('iDisplayLength', TRUE));
-
-        $display_start = intval($this->input->get('iDisplayStart', TRUE));
+        $display_length = intval($this->input->get('iDisplayLength', true));
+        $displayCount = $this->input->get('displayCount', false);
+        $display_start = intval($this->input->get('iDisplayStart', true));
         if (empty($display_start)) {
             $display_start = 0;
         }
-
-        if (empty($display_length)) {
-            $display_length = $total_rows - $display_start;
-        }
-//            //Debugging
-//            $dur = microtime(true)-$st_time;
-//            header('Mem-and-Time1-BAT: '.memory_get_usage().'-'.$dur);
-//            $st_time=  microtime(true);
-
-        $qty = 1;
-        $c=0;
+             
         $total_rows = count($results);
-        foreach ($results as $row_key => $row) {	
-									
+        $iterator_limit = $displayCount ? $display_start + $displayCount : $total_rows;
+		
+        for ($row_iterator = $display_start; $row_iterator < $iterator_limit && $row_iterator < $total_rows; $row_iterator++) {	
+			$row_key = $row_iterator;
+			$row = $results[$row_iterator];
+								
             $success_filter_entries = array();
             $f_count1 = 0;
             $r_count1 = 0;
@@ -3918,30 +3911,7 @@ class Assess extends MY_Controller {
 
             if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
                 $items_unoptimized_product_content++;
-            }    
-
-			// $recomend = false;
-            // if (($result_row->short_description_wc <= $build_assess_params->short_less ||
-                    // $result_row->long_description_wc <= $build_assess_params->long_less) && ($build_assess_params->long_less_check || $build_assess_params->long_more_check)
-            // ) {
-                // $recomend = true;
-            // }
-            // if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
-                // $recomend = true;
-            // }
-            // if ($result_row->lower_price_exist == true && !empty($result_row->competitors_prices)) {
-                // if (min($result_row->competitors_prices) < $result_row->own_price) {
-                    // $recomend = true;
-                // }
-            // }
-
-            // if ($build_assess_params->flagged == true && $recomend == false) {
-                // continue;
-            // }
-            // if ($build_assess_params->price_diff == true && $result_row->lower_price_exist == false) {
-                // continue;
-            // }
-			
+            }    	
 			
 			$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
             if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count']) {
@@ -4195,9 +4165,7 @@ class Assess extends MY_Controller {
 				$skus_three_optimized_keywords_competitor++;			
 				$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
 			}
-	
-		
-			$are_records_on_the_page = $c >= $display_start && $c < ($display_start + $display_length);
+						
 			$are_records_filtered = $this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData);
             			
 			if (!$build_assess_params->summaryFilterData) {
@@ -4209,9 +4177,7 @@ class Assess extends MY_Controller {
 					$result_table[] = $result_row;	
 				}
 				$filtered_count++;				
-			}
-		
-			$c++;							         
+			}											       
         }
 
 
@@ -4637,6 +4603,7 @@ class Assess extends MY_Controller {
         $output['ExtraData']['report'] = $report;        
         $output['ExtraData']['display_competitor_columns'] = $build_assess_params->display_competitor_columns;
         $output['ExtraData']['getSelectableColumns'] = AssessHelper::getSelectableColumns($raw_columns);
+        $output['ExtraData']['isCompleted'] = $iterator_limit >= $total_rows;
          		
         return $output;
     }
