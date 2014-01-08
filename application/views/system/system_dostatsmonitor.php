@@ -10,7 +10,7 @@
 			<a data-toggle="tab" href="<?php echo site_url('site_crawler'); ?>">Site Crawler</a>
 		</li>
 		<li class="">
-			<a data-toggle="tab" href="<?php echo site_url('site_crawler/instances_list'); ?>">Crawler Instances</a>
+			<a data-toggle="tab" href="<?php echo site_url('site_crawler/instances_list'); ?>">Crawler Instances <?php $this->load->helper("crawler_instances_helper"); echo crawler_instances_number();?></a>
 		</li>
 		<li class="">
 			<a data-toggle="tab" href="<?php echo site_url('system/system_uploadmatchurls'); ?>">Upload Match URLs</a>

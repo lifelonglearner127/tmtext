@@ -3,7 +3,7 @@
            <li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('system/sites_view');?>">Sites</a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
-            <li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler/instances_list');?>">Crawler Instances</a></li>
+            <li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler/instances_list');?>">Crawler Instances <?php $this->load->helper("crawler_instances_helper"); echo crawler_instances_number();?></a></li>
             <li class="active"><a data-toggle="tab" href="<?php echo site_url('system/system_uploadmatchurls');?>">Upload Match URLs</a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_dostatsmonitor');?>">Do_stats Monitor</a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('brand/import');?>">Brands</a></li>
@@ -30,7 +30,7 @@
           <span class="btn btn-danger pull-left" id="stop_matches" style='margin-left: 10px;'>Stop</span>
           <input type="hidden" name="choosen_file" />
           <script>
-            var match_ajax = "";
+			var match_ajax = "";
             var flag_stop_match = false;
             $(function () {
                 var url = '<?php echo site_url('system/upload_match_urls'); ?>';
@@ -50,7 +50,7 @@
             });
           </script>
           <div style='float: left; width: 100%; clear: both; margin-top: 10px;'>
-          	<input type='checkbox' name='manu_upload_urls_check' id='manu_upload_urls_check'>
+-          	<input type='checkbox' name='manu_upload_urls_check' id='manu_upload_urls_check'>
           	<label for='manu_upload_urls_check'>manufacturer match file</label>
           	<!-- <span class="btn btn-success fileinput-button pull-left" style="">
 	              Upload manufacturer
