@@ -23,7 +23,7 @@ class ManufacturerSpider(SearchSpider):
 	# arbitrary start url
 	start_urls = ['http://www.sony.com']
 
-	threshold = 0.8
+	#threshold = 0.8
 
 	# initialize fields specific to this derived spider
 	def init_sub(self):
