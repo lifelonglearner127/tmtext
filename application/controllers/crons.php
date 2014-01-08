@@ -3118,9 +3118,10 @@ class Crons extends MY_Controller
 			$lts = $this->temp_data_model->getTableSize('urlstomatch');
 			$this->settings_model->procUpdMatchingUrls($process, $lts, $itemsUnchanged);
 			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
-			{
-				// $call_link = base_url() . "crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged";
-				$call_link = "http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged";
+			{//This part of script added for local testing and works on windows os
+				$call_link = base_url() . "crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged";
+                                //Link below works on dev server and it not useful for local testing.
+				//$call_link = "http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged";
 //            exit($call_link);
 				$this->site_categories_model->curl_async($call_link);
 			} else
