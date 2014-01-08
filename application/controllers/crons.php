@@ -680,7 +680,7 @@ class Crons extends MY_Controller
 		{
 			exit;
 		}
-		$first_sart = time();
+		$first_start = time();
 		touch($tmp_dir . ".locked");
 		$cjo = 0;
 		try
@@ -695,7 +695,6 @@ class Crons extends MY_Controller
 			$trnc = $this->uri->segment(3);
 			$trnc = $trnc === FALSE ? 0 : 1;
 			$this->different_revissions();
-			$timesart = time();
 			$dss = $this->imported_data_parsed_model->getDoStatsStatus(); //getting status of do_stats process
 			if (!$dss) //if status info does not exists
 			{
@@ -711,10 +710,9 @@ class Crons extends MY_Controller
 				$this->settings_model->setLastUpdate(); //update status info
 			}
 			//Get items for scanning
+			$time_start = microtime(true);
 			$data_arr = $this->imported_data_parsed_model->do_stats_newupdated($trnc);
-			$timeend = time(true);
-			$time = $timesart - $timeend;
-			echo "get_data=----" . $time;
+			echo "<br>get_data ---- " . (microtime(true) - $time_start);
 			if (count($data_arr) > 0) //run analyze if array does not empty
 			{
 				$sites_list = array();
@@ -728,11 +726,13 @@ class Crons extends MY_Controller
 						$sites_list[] = $n['host'];
 					}
 				}
+				$this->load->model('customers_model');
+				$customersList = $this->customers_model->getCustomersList();
 				//end of list creating script
 				//Start analize each item
 				foreach ($data_arr as $obj)
 				{
-					$foreach_start = time();
+					$foreach_start = microtime(true);
 					$own_price = 0;
 					$competitors_prices = array();
 					$price_diff = '';
@@ -750,86 +750,79 @@ class Crons extends MY_Controller
 					}
 					$own_site = str_replace("www1.", "", str_replace("www.", "", $own_site));
 
-					$data_import = (array) $obj;
 					$short_description = '';
 					$long_description = '';
-					echo "<br>" . "im+daat+id= " . $data_import['imported_data_id'] . "</br>";
+					echo "<br>" . "im+daat+id= " . $obj->imported_data_id . "</br>";
 					//Prepare description field
-					if (($data_import['description'] !== null || $data_import['description'] !== 'null') && trim($data_import['description']) !== "")
+					$short_description_wc = 0;
+					if (($obj->description !== null || $obj->description !== 'null') && trim($obj->description) !== "")
 					{
-						$short_description = $data_import['description'];
+						$short_description = $obj->description;
 						//replace all tags and big spaces to single space
-						$data_import['description'] = preg_replace('#<[^>]+>#', ' ', $data_import['description']);
-						$data_import['description'] = preg_replace('/\s+/', ' ', $data_import['description']);
+						$obj->description = preg_replace('#<[^>]+>#',' ', $obj->description);
+						$obj->description = preg_replace('/\s+/',' ', $obj->description);
 						//getting count of words in short description
-						$short_description_wc = count(explode(" ", $data_import['description']));
-					} else
-					{
-						$short_description_wc = 0;
+						$short_description_wc = count(explode(" ", $obj->description));
 					}
 					//Prepare long description field
-					if (($data_import['long_description'] !== null || $data_import['long_description'] !== 'null') && trim($data_import['long_description']) !== "")
+					$long_description_wc = 0;
+					if (($obj->long_description !== null || $obj->long_description !== 'null') && trim($obj->long_description) !== "")
 					{
-						$long_description = $data_import['long_description'];
+						$long_description = $obj->long_description;
 						//replace all tags and big spaces to single space
-						$data_import['long_description'] = preg_replace('#<[^>]+>#', ' ', $data_import['long_description']);
-						$data_import['long_description'] = preg_replace('/\s+/', ' ', $data_import['long_description']);
+						$obj->long_description = preg_replace('#<[^>]+>#', ' ', $obj->long_description);
+						$obj->long_description = preg_replace('/\s+/', ' ', $obj->long_description);
 						//getting count of words in short description
-						$long_description_wc = count(explode(" ", $data_import['long_description']));
-					} else
-					{
-						$long_description_wc = 0;
+						$long_description_wc = count(explode(" ", $obj->long_description));
 					}
 
 
 					// Generate Title Keywords
 					$time_start = microtime(true);
-					$title_keywords = $this->title_keywords($data_import['product_name'], $short_description, $long_description);
-					$time = microtime(true) - $time_start;
-					echo "Title Keywords - $time seconds\n";
+					$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
+					echo "Title Keywords -------------------- <b>".(microtime(true) - $time_start)." seconds</b>\n";
 
 
 					$time_start = microtime(true);
 					$m = '';
 					//If parsed attributes are exist, finding similar items and price diff
-					if (isset($data_import['parsed_attributes']) && isset($data_import['parsed_attributes']['model']) && strlen($data_import['parsed_attributes']['model']) > 3)
+					if (isset($obj->parsed_attributes) && isset($obj->parsed_attributes['model']) && strlen($obj->parsed_attributes['model']) > 3)
 					{
 						//getting model of item
-						if ($data_import['model'] && strlen($data_import['model']) > 3)
+						if ($obj->model && (strlen($obj->model) > 3))
 						{
-							$m = $data_import['model'];
+							$m = $obj->model;
 						} else
 						{
-							$m = $data_import['parsed_attributes']['model'];
+							$m = $obj->parsed_attributes['model'];
 						}
 						//getting model of item
 						try
 						{
-							//Get last existing prices
-							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
+							//Get last existing price
+							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id,1);
 						} catch (Exception $e)
 						{
 							echo 'Error', $e->getMessage(), "\n";
-							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id);
+							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id,1);
 						}
 						//if own_prices is not empty make price difference data
 						if (!empty($own_prices))
 						{
-							$own_price = floatval($own_prices[0]->price);
+							$own_price = floatval($own_prices->price);
 							$obj->own_price = $own_price;
 							$price_diff_exists = array();
-							$price_diff_exists['id'] = $own_prices[0]->id;
+							$price_diff_exists['id'] = $own_prices->id;
 							$price_diff_exists['own_site'] = $own_site;
-							$price_diff_exists['own_price'] = floatval($own_price);
+							$price_diff_exists['own_price'] = $own_price;
 							// getting list of similar items
 							try
 							{
-								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $data_import['imported_data_id']);
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
 							} catch (Exception $e)
 							{
 								echo 'Error', $e->getMessage(), "\n";
-
-								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $data_import['imported_data_id']);
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
 							}
 							//If similar items was found, start comparing
 							if (!empty($similar_items))
@@ -891,11 +884,11 @@ class Crons extends MY_Controller
 							//own priece does not exists, looking for similar items
 							try
 							{
-								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $data_import['imported_data_id']);
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
 							} catch (Exception $e)
 							{
 								echo 'Error', $e->getMessage(), "\n";
-								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $data_import['imported_data_id']);
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
 							}
 							//If similar items were found, add imported_data_id and customer to similar product competitors
 							if (!empty($similar_items))
@@ -922,31 +915,30 @@ class Crons extends MY_Controller
 						$time_end = microtime(true);
 
 						$time = $time_end - $time_start;
-						echo "<br>model exists_and some actions--" . $time;
+						echo "<br>model exists_and some actions - " . $time . 'seconds';
 					} else
 					{
 						//if parsed attributes were not found, create custom model
 						$time_start = microtime(true);
-						if(isset($data_import['imported_data_id']))
+						if(isset($obj->imported_data_id))
 						{
-							echo "<br>im+daat+id= " . $data_import['imported_data_id'];
+							echo "<br>im+daat+id= " . $obj->imported_data_id;
 							//checking for custom model
-							if ($model = $this->imported_data_parsed_model->check_if_exists_custom_model($data_import['imported_data_id']))
+							if ($model = $this->imported_data_parsed_model->check_if_exists_custom_model($obj->imported_data_id))
 							{
-								echo "<br>exists custom model";
-								$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($model, 0, $data_import['imported_data_id']);
+								echo "<br>exists custom model ------------- ";
+								$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($model, 0, $obj->imported_data_id,$customersList);
 							} else //geterate custom model if it does not exists
 							{
-								echo "geting custom model";
+								echo "<br>geting custom model - ";
 								$same_pr = array();
-								echo "product name  = <br>" . $data_import['product_name'] . '<br>';
-								$same_pr = $this->imported_data_parsed_model->getByProductNameNew($data_import['imported_data_id'], $data_import['product_name'], '', 0);
-								echo "custom model is ready";
+								echo "product name  = " . $obj->product_name;
+								$same_pr = $this->imported_data_parsed_model->getByProductNameNew($obj->imported_data_id, $obj->product_name, '', 0);
+								echo "<br>custom model is ready ------------ ";
 							}
 						}
-						$time_end = microtime(true);
-						$time = $time_end - $time_start;
-						echo $time . "__important";
+						$time = microtime(true) - $time_start;
+						echo $time . " seconds (important)";
 						//looking for similar competitors
 						foreach ($same_pr as $key => $val)
 						{
@@ -963,8 +955,7 @@ class Crons extends MY_Controller
 						}
 					}
 
-					$time_end = microtime(true);
-					$time = $time_end - $time_start;
+					$time = microtime(true) - $time_start;
 					//WC Short
 					$time_start = microtime(true);
 					//Get research_data_id and batch_id
@@ -977,9 +968,8 @@ class Crons extends MY_Controller
 							'batch_id' => 0
 						));
 					}
-					$time_end = microtime(true);
-					$time = $time_end - $time_start;
-					echo "<br>research_data--" . $time;
+					$time = microtime(true) - $time_start;
+					echo "<br>research_data ---------------------- " . $time . " seconds";
 					//insert new statistics data to statistics_new table if it not exists in table and update if exists
 					try
 					{
@@ -994,12 +984,7 @@ class Crons extends MY_Controller
 						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
 					}
 
-					$time_end = microtime(true);
-					$time = $time_end - $time_start;
-					echo '.';
-					$foreach_end = time();
-					$time = $foreach_end - $foreach_start;
-					echo "<br>foreach_----" . $time . "<br>";
+					echo "<br>global foreach --------------------- " . (microtime(true) - $foreach_start) . " seconds<br>";
 				} //end foreach
 				
 				$cjo = $this->settings_model->getDescription();
@@ -1011,9 +996,8 @@ class Crons extends MY_Controller
 			echo 'Error', $e->getMessage(), "\n";
 			unlink($tmp_dir . ".locked");
 		}
-		$end_time = time();
-		$time = $end_time - $first_sart;
-		echo "<br>alll--" . $time . "<br>";
+		$time = time() - $first_start;
+		echo "<br>all -- " . $time . "<br>";
 		unlink($tmp_dir . ".locked");
 		$data_arr = $this->imported_data_parsed_model->do_stats_newupdated(); //get next 50 items to scan
 		$start = $this->settings_model->getDescription();
@@ -1023,7 +1007,7 @@ class Crons extends MY_Controller
 		if (count($data_arr) > 0 && $stats_status->description === 'started' && ($cjo - 1) * 50 < intval($total_items['description']))
 		{ 
 			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
-			echo $utd->td;
+			echo $utd->td;  //exit;
 			//make asynchronous web request to do_stats_forupdated page
 			shell_exec("wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &");
 		} else
