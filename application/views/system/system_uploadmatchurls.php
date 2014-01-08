@@ -30,56 +30,35 @@
           <span class="btn btn-danger pull-left" id="stop_matches" style='margin-left: 10px;'>Stop</span>
           <input type="hidden" name="choosen_file" />
           <script>
-              var match_ajax = "";
-              var flag_stop_match = false;
-              $(function () {
-
-
-                  var url = '<?php echo site_url('system/upload_match_urls'); ?>';
-                  $('#upload_urls').fileupload({
-                      url: url,
-                      dataType: 'json',
-                      done: function (e, data) {
-                          //alert(data.result.files[0].name);
-                          $('input[name="choosen_file"]').val(data.result.files[0].name);
-
-                          var url = base_url+'index.php/system/check_urls';
-                          match_ajax = $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val()//,
-                              //'site_id':  $("#sites .btn_caret_sign").attr('id'),
-                              //'site_name':  $("#sites .btn_caret_sign").text()
-                          }, function(data) {
-                              //alert(data);
-                                  }, 'json');
-                              }
-                          });
-                      });
+			var match_ajax = "";
+            var flag_stop_match = false;
+            $(function () {
+                var url = '<?php echo site_url('system/upload_match_urls'); ?>';
+                $('#upload_urls').fileupload({
+                  url: url,
+                  dataType: 'json',
+                  done: function (e, data) {
+                    $('input[name="choosen_file"]').val(data.result.files[0].name);
+                    var url = base_url+'index.php/system/check_urls';
+                    var manu_file_upload_opts = $("#manu_upload_urls_check").is(":checked");
+                    console.log("manu_file_upload_opts status: ", manu_file_upload_opts);
+                    match_ajax = $.post(url, {'choosen_file': $('input[name="choosen_file"]').val(), 'manu_file_upload_opts': manu_file_upload_opts}, function(data) {
+                  		console.log(data);
+                    }, 'json');
+                  }
+                });
+            });
           </script>
           <div style='float: left; width: 100%; clear: both; margin-top: 10px;'>
-          	<span class="btn btn-success fileinput-button pull-left" style="">
+-          	<input type='checkbox' name='manu_upload_urls_check' id='manu_upload_urls_check'>
+          	<label for='manu_upload_urls_check'>manufacturer match file</label>
+          	<!-- <span class="btn btn-success fileinput-button pull-left" style="">
 	              Upload manufacturer
 	              <i class="icon-plus icon-white"></i>
 	              <input type="file" multiple="" name="files[]" id="upload_urls_manu">
 	          </span>
 	          <span class="btn btn-danger pull-left" id="stop_matches_manu" style='margin-left: 10px;'>Stop</span>
-		      	<input type="hidden" name="choosen_file_manu" />
-		      	<script>
-	              var match_ajax_manu = "";
-	              var flag_stop_match_manu = false;
-	              $(function () {
-	                  var url = '<?php echo site_url('system/upload_match_urls_manu'); ?>';
-	                  $('#upload_urls_manu').fileupload({
-	                      url: url,
-	                      dataType: 'json',
-	                      done: function (e, data) {
-	                          $('input[name="choosen_file_manu"]').val(data.result.files[0].name);
-	                          var url = base_url+'index.php/system/check_urls';
-	                          match_ajax_manu = $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val()}, function(data) {
-                                	
-                                }, 'json');
-                              }
-	                          });
-	                      });
-	          </script>
+		      	<input type="hidden" name="choosen_file_manu" /> -->
 		      </div>
       </div>
   </div>
