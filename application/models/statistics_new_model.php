@@ -280,13 +280,14 @@ class Statistics_new_model extends CI_Model {
     }
 
     function getResearchDataAndBatchIds($imported_data_id) {
+	    $result = array();
 		//  SELECT research_data_id, batch_id FROM `crawler_list` as cl
 		//	JOIN `research_data_to_crawler_list` as rdc ON (cl.id = rdc.crawler_list_id)
 		//	JOIN `research_data` as rd ON (rdc.research_data_id = rd.id)
 		//	JOIN `batches` as b ON (b.id = rd.batch_id)
 		//	WHERE cl.imported_data_id = 20
                
-            $query = $this->db
+        $query = $this->db
             ->select('research_data_id, batch_id')
             ->from('crawler_list as cl')
             ->join('research_data_to_crawler_list as rdc', 'cl.id = rdc.crawler_list_id')
@@ -295,8 +296,11 @@ class Statistics_new_model extends CI_Model {
             ->where('cl.imported_data_id', $imported_data_id)
            // ->limit(1)
             ->get();
-
-        $result =  $query->result_array();
+	if ($query->num_rows() > 0)
+	{    
+		 $result = $query->result_array();
+	}
+	$query->free_result();
         return $result;
 
     }

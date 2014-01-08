@@ -354,5 +354,24 @@ return $Hash;
         $row = $query->first_row();
         return $row->cnt;
     }
+    function getDescription()
+    {
+	    $result = 0;
+	    $this->db->select('description');
+            $this->db->where('key', 'cron_job_offset');
+	    $query = $this->db->get($this->tables['settings']);
+	    if ($query->num_rows() > 0)
+	    {
+		$result = $query->row_array();
+		$result = $result['description'];
+	    }
+	    $query->free_result();
+	    return $result;
+    }
+    function updateDescription($value = 0)
+    {
+	    $this->db->where('key', 'cron_job_offset');
+	    $this->db->update($this->tables['settings'], array('description'=>$value));
+    }
 
 }
