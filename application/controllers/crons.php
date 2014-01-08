@@ -1025,7 +1025,7 @@ class Crons extends MY_Controller
 			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
 			echo $utd->td;
 			//make asynchronous web request to do_stats_forupdated page
-			//shell_exec("wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &");
+			shell_exec("wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &");
 		} else
 		{
 			//Or send report about success
