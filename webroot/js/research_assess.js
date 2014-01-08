@@ -633,13 +633,28 @@ $(function() {
 			}
 		});
 	});
+	
+	// Castro function that enables or disables chart dropown and show over time checkbox
+	function toggleGraphFields(is_disabled)
+	{
+		if(is_disabled)
+		{
+			$('#graphDropDown').attr("disabled", true);
+			$('#show_over_time').attr("disabled", true);
+			$('#highChartContainer').empty().addClass("loading");
+		}
+		else
+		{
+			$('#graphDropDown').removeAttr("disabled");
+			$('#show_over_time').removeAttr("disabled");
+			$("#highChartContainer").removeClass("loading");
+		}
+	}
 
 function highChart(graphBuild) {
 	
 	// Castro #1119: disable charts dropdown and show over time checkbox and empty chart container
-	$('#graphDropDown').attr("disabled", true);
-	$('#show_over_time').attr("disabled", true);
-	$('#highChartContainer').empty().addClass("loading");
+	toggleGraphFields(true);
 	
 	var batch_set = $('.result_batch_items:checked').val() || 'me';	
     var batch1Value = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
@@ -660,7 +675,12 @@ function highChart(graphBuild) {
             batch_id: batch1Value,
             batch_compare_id: batch2Value,
             graphBuild: graphBuild
-        }
+        },
+		error: function()
+		{
+			toggleGraphFields(false);
+			alert("There was an error retrieving chart data");
+		}
     }).done(function(data){					
         var value1 = [];
         var value2 = [];
@@ -909,22 +929,38 @@ function highChart(graphBuild) {
 			var series_index = seriesObj.length;
 
 			var trendlines_data = data[0].updated_trendlines_data;
-			var trendline_series = new Array([], [], [], [], [], []);
-			var total_trendlines = 6;
+			var trendline_series = new Array();
 			var trendline_colors = ['#555555', '#666666', '#777777', '#888888', '#999999', '#AAAAAA'];
+			var first_trendline = trendlines_data[0];
+			var trendlines_graph_keys = new Array();
+			
+			for(key in first_trendline)
+			{
+				trendlines_graph_keys.push(key);
+				trendline_series.push(new Array());
+			}
+			
+			var total_trendlines = trendlines_graph_keys.length;
+			
 
 			for(i = 0; i < trendlines_data.length; i++)
 			{
-				for(j = 0; j < total_trendlines; j++)
+				var current_trendline = trendlines_data[i];
+				
+				var j = 0;
+				
+				for(item in current_trendline)
 				{
-					trendline_series[j][i] = trendlines_data[i][j];
+					console.log(item);
+					trendline_series[j][i] = current_trendline[item];
+					j++;
 				}
 			}
 
 			for(j = 0; j < total_trendlines; j++)
 			{
 				seriesObj[series_index + j] = {
-					name: batch1Name,
+					name: trendlines_graph_keys[j],
 					data: trendline_series[j],
 					color: trendline_colors[j]
 				}
@@ -968,14 +1004,17 @@ function highChart(graphBuild) {
                 formatter: function() {
                     var result = '<small>'+this.x+'</small> <div class="highcharts-tooltip-close" onclick=\'$(".highcharts-tooltip").css("visibility","hidden"); $("div .highcharts-tooltip span").css("visibility","hidden");\' style="float:right;">X</div><br />';
                     var j;
-                     if($('#show_over_time').prop('checked')){
-                            var display_property = "block";
-                        }else{      
-                            var display_property = "none";
+					
+					if($('#show_over_time').prop('checked')){
+						var display_property = "block";
+					}else{      
+						var display_property = "none";
 
-                        }
+					}
+					
                     $.each(this.points, function(i, datum) 
 					{
+						console.log(datum);
 						// Castro #1119: add line to tooltip only when show overtime is not checked
                         if(i > 0  && ! $("#show_over_time").is(":checked"))
 						{
@@ -992,7 +1031,7 @@ function highChart(graphBuild) {
 						}
 						
 						// Castro #1119: add data to tooltip only when show overtime is not checked or is the first point
-						if((i > 0 && ! $("#show_over_time").is(":checked")) || i == 0)
+						if((i > 0 && ! $("#show_over_time").is(":checked")) || (i == 0 && datum.series.color == '#2f7ed8'))
 						{
 							result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
 							result += '<br /><span>' + valueName[j][datum.x] + '</span>';
@@ -1056,9 +1095,7 @@ function highChart(graphBuild) {
         });
 		
 		// Castro #1119: enable drodown and checkbox again remove loading image
-		$('#graphDropDown').removeAttr("disabled");
-		$('#show_over_time').removeAttr("disabled");
-		$("#highChartContainer").removeClass("loading");
+		toggleGraphFields(false);
 		
         $('.highcharts-button').each(function(i){
             if(i > 0)

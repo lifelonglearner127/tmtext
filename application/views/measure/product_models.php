@@ -22,16 +22,17 @@
     <div class="tab-content">
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
+        <script type="text/javascript" src="<?php echo base_url();?>js/change_model.js"></script>
         <div class="row-fluid">
             <div id="ajaxLoadAni">
                 <span>Loading...</span>
             </div>
 
-            <div id="tabs" class="mt_10">
+<!--            <div id="tabs" class="mt_10">
 
                 <ul>
                     <li><a href="#read">Review</a></li>
-                    <!--li><a href="#create"></a></li-->
+                    li><a href="#create"></a></li
                 </ul>
 
                 <div id="read">
@@ -51,7 +52,7 @@
                 <div id="create">
                 </div>
 
-            </div> <!-- end tabs -->
+            </div>  end tabs -->
 
             <!-- update form in dialog box -->
             <div id="updateDialog1" title="Update">
@@ -76,19 +77,30 @@
 
             <!-- message dialog box -->
             <div id="msgDialog"><p></p></div>
- 
-            <script type="text/template" id="readTemplate1">
-                 <tr id="${imported_data_id}">
+            
+            
+            <table id="tblModels" class="tblDataTable" >
+                 <thead>
+                 </thead>
+                 <tbody>
+                 </tbody>
+             </table>
+
+            
+            
+            
+<!--            <script type="text/template" id="readTemplate1">
+                    <tr id="${imported_data_id}">
                     <td class="name-width"><span>${product_name}</span></td>
-                    <td class="url-width"><span>${url}</span></td>
+                    
                     <td class="modle-width"><span>${model}</span></td>
-                 <td nowrap><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
-                        <a class="deleteBtn icon-remove ml_5" href="${deleteLink}"></a>
+                    <td nowrap><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
+                            <a class="deleteBtn icon-remove ml_5" href="${deleteLink}"></a>
                     </td>
                 </tr>
-            </script>
+            </script>-->
 
-            <script type="text/javascript" src="<?php echo base_url();?>js/change_model.js"></script>
+            
         </div>
     </div>
 </div>

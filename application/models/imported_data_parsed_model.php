@@ -2568,9 +2568,11 @@ echo "j  = ".$j;
     function get_custom_models() {
         $this->db->select('p.imported_data_id, p.key, p.value, p.model')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
-                ->where('p.key', 'Product Name')
-                ->or_where('p.key', 'parsed_attributes')
-                ->or_where('p.key', 'URL')
+                ->where('p.key', 'URL')
+                ->or_where('p.key', 'Product Name')
+                
+                ->Limit(5);
+                
 //                ->where('p.revision = (SELECT  MAX(revision) as revision
 //                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
 //                      GROUP BY imported_data_id)', NULL, FALSE)
@@ -2584,6 +2586,7 @@ echo "j  = ".$j;
         foreach ($results as $result) {
             if ($result->key === 'URL') {
                 $data[$result->imported_data_id]['url'] = $result->value;
+                $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
             }
             if ($result->key === 'Product Name') {
                 $data[$result->imported_data_id]['product_name'] = $result->value;
@@ -2598,9 +2601,9 @@ echo "j  = ".$j;
         $have_not_model = array();
 
         foreach ($data as $val) {
-            if (!isset($val['parsed_attributes']['model']) && isset($val['product_name'])) {
+            //if (isset($val['parsed_attributes']['model']) && isset($val['product_name'])) {
                 $have_not_model[] = $val;
-            }
+          //  }
         }
         return $have_not_model;
     }
@@ -2690,5 +2693,15 @@ echo "j  = ".$j;
             return FALSE;
         }
         return $query->result_array();
+    }
+    public  function get_items_that_havenot_batch(){
+        $sql =  "SELECT  `imported_data_id`, `revision` 
+                FROM  `statistics_new` 
+                WHERE  `batch_id` =0
+                GROUP BY  `imported_data_id`";
+        $query = $this->db->query($sql);
+        $results = $query->result_array();
+        return $results;
+       
     }
 }
