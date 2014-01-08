@@ -2575,7 +2575,8 @@ class System extends MY_Controller {
 
         foreach($thread_name as $key=>$value){
             sleep(1);
-            var_dump(exec('curl http://tmeditor/index.php/crons/match_urls_thread/'.$key.' >/dev/null &'));
+            // var_dump(exec('curl http://tmeditor/index.php/crons/match_urls_thread/'.$key.' >/dev/null &'));
+            exec('curl http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls_thread/'.$key.' >/dev/null &');
         }
         echo "Total lines: " . $linesTotal . "<br/>";
         echo "Lines scaned" . $linesScaned . "<br/>";
@@ -2584,6 +2585,156 @@ class System extends MY_Controller {
         echo "Items updated: " . $itemsUpdated . "<br>";
         echo "Manufacturer option status: " . $manu_file_upload_opts;
     }
+
+	// 	public function check_urls() {
+	// 	$this -> load -> model('site_categories_model');
+	// 	$this -> load -> model('settings_model');
+	// 	//var_dump($_POST);
+	// 	$this -> load -> model('imported_data_parsed_model');
+	// 	$this -> load -> model('temp_data_model');
+	// 	$file = $this -> config -> item('csv_upload_dir') . $this -> input -> post('choosen_file');
+	// 	$f_name = end(explode('/', $file));
+	// 	//exit($f_name);
+	// 	//echo file_exists($file)?"exists":"not exists!"."<br>";
+	// 	$this -> temp_data_model -> emptyTable('notfoundurls');
+	// 	$this -> temp_data_model -> emptyTable('urlstomatch');
+	// 	$this -> temp_data_model -> emptyTable('updated_items');
+	// 	$this -> settings_model -> deledtMatching();
+	// 	$fcont = file($file);
+	// 	$linesTotal = 0;
+	// 	$itemsUpdated = 0;
+	// 	$itemsUnchanged = 0;
+	// 	$linesAdded = 0;
+	// 	$linesScaned = 0;
+	// 	$notFoundUrls = 0;
+	// 	$notFoundUrlsArr = array();
+	// 	$process = time();
+	// 	foreach ($fcont as $line) {
+	// 		++$linesTotal;
+	// 		//*for big files
+	// 		$this -> temp_data_model -> createMatchUrlsTable();
+	// 		$res = '';
+	// 		$urls = explode(',', trim(trim($line), ','));
+	// 		if (count($urls) == 2) {
+	// 			++$linesAdded;
+	// 			$this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
+	// 		}//*/
+	// 	}
+	// 	$this -> temp_data_model -> createNonFoundTable();
+	// 	$this -> temp_data_model -> cUpdDataTable();
+	// 	$this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);
+	// 	$start = microtime(true);
+	// 	$timing = 0;
+	// 	while ($timing < 20 && $urls = $this -> temp_data_model -> getLineFromTable('urlstomatch')) {
+	// 		$atuc = 2;
+	// 		$nfurls = 0;
+	// 		++$linesScaned;
+	// 		//$ms = microtime(TRUE);
+	// 		$url1 = $this -> imported_data_parsed_model -> getModelByUrl($urls['url1']);
+	// 		$url2 = $this -> imported_data_parsed_model -> getModelByUrl($urls['url2']);
+	// 		//$dur = microtime(true)-$ms;
+	// 		//exit("select data from db ".$dur);
+	// 		$model1 = '';
+	// 		$model2 = '';
+	// 		if ($url1 === FALSE) {
+	// 			++$nfurls;
+	// 			$this -> temp_data_model -> addUrlToNonFound($urls['url1'], $process);
+	// 			$atuc -= 1;
+	// 			//$notFoundUrlsArr[]=$urls[0];
+	// 		} else {
+	// 			$tm = false;
+	// 			if ($url1['ph_attr']) {
+	// 				$tm = unserialize($url1['ph_attr']);
+	// 			}
+	// 			$model1 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : FALSE;
+	// 		}
+	// 		if ($url2 === FALSE) {
+	// 			++$nfurls;
+	// 			$this -> temp_data_model -> addUrlToNonFound($urls['url2'], $process);
+	// 			$atuc -= 1;
+	// 			//$notFoundUrlsArr[]=$urls[1];
+	// 		} else {
+	// 			$tm = false;
+	// 			if ($url2['ph_attr']) {
+	// 				$tm = unserialize($url2['ph_attr']);
+	// 			}
+	// 			$model2 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : false;
+	// 		}
+	// 		if ($nfurls > 0) {
+	// 			$notFoundUrls += $nfurls;
+	// 		} else {
+	// 			$this -> imported_data_parsed_model -> addItem($url1['data_id'], $url2['data_id']);
+	// 			if ($model1) {
+	// 				if ($model2 && $model1 != $model2) {
+	// 					if (!($url2['model'] && strlen($url2['model']) > 3) || ($url2['model'] != $model1)) {
+	// 						$this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model1);
+	// 						$this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
+	// 						++$itemsUpdated;
+	// 						$atuc -= 1;
+	// 					}
+	// 				} elseif (!$model2 && (!($url2['model'] && strlen($url2['model']) > 3) || $model1 != $url2['model'])) {
+	// 					$this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model1);
+	// 					$this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
+	// 					++$itemsUpdated;
+	// 					$atuc -= 1;
+	// 				}
+	// 			} elseif ($model2) {
+	// 				if (!($url1['model'] && strlen($url1['model']) > 3) || $model2 != $url1['model']) {
+	// 					$this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model2);
+	// 					$this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model2, $url2['rev'] + 1, $url2['data_id']);
+	// 					++$itemsUpdated;
+	// 					$atuc -= 1;
+	// 				}
+	// 			} elseif (($url1['model'] && strlen($url1['model']) > 3)) {
+	// 				if (!($url2['model'] && strlen($url2['model']) > 3) || ($url1['model'] != $url2['model'])) {
+	// 					$this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $url1['model']);
+	// 					$this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
+	// 					++$itemsUpdated;
+	// 					$atuc -= 1;
+	// 				}
+	// 			} elseif (($url2['model'] && strlen($url2['model']) > 3)) {
+	// 				$this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $url2['model']);
+	// 				$this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
+	// 				++$itemsUpdated;
+	// 				$atuc -= 1;
+	// 			} else {
+	// 				$model = time();
+	// 				$this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model);
+	// 				$this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model);
+	// 				$this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
+	// 				$this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
+	// 				$itemsUpdated += 2;
+	// 				$atuc -= 1;
+	// 			}
+	// 		}
+	// 		if ($atuc < 0) {exit('incrorrect ATUC');
+	// 		}
+	// 		$itemsUnchanged += $atuc;
+	// 		$timing = microtime(true) - $start;
+	// 	}//*/
+	// 	if ($timing < 20) {
+	// 		$val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
+	// 		$this -> settings_model -> updateMatchingUrls($process, $val);
+	// 	} else {
+	// 		$lts = $this -> temp_data_model -> getTableSize('urlstomatch');
+	// 		$this -> settings_model -> procUpdMatchingUrls($process, $lts, $itemsUnchanged);
+	// 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+	// 			$call_link = base_url() . "crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged";
+	// 			//            exit($call_link);
+	// 			$this -> site_categories_model -> curl_async($call_link);
+	// 		} else {
+	// 			shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged > /dev/null 2>/dev/null &");
+	// 		}
+	// 	}
+	// 	echo "Total lines: " . $linesTotal . "<br/>";
+	// 	echo "Lines scaned" . $linesScaned . "<br/>";
+	// 	echo "Added lines: " . $linesAdded . "<br/>";
+	// 	echo "Non existing urls found: " . $notFoundUrls . "<br>";
+	// 	echo "Items updated: " . $itemsUpdated . "<br>";
+	// }
+
+
+
 
 	function get_matching_urls() {
 		$this -> load -> model('settings_model');
