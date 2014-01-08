@@ -48,6 +48,7 @@ class Assess extends MY_Controller {
 //    }
 
     public function index() {
+        phpinfo(); exit();
 
         $this->load->model('webshoots_model');
         $this->data['customers_list'] = $this->customers_list_new();
