@@ -31,8 +31,17 @@ class System extends MY_Controller {
 	public function clear_imported_data_parsed() {
 		$this -> load -> model('imported_data_parsed_archived_model');
 		$this -> load -> model('imported_data_parsed_model');
-		$this -> imported_data_parsed_archived_model -> mark_queued_from_archive();
-		$this -> imported_data_parsed_model -> delete_repeated_data();
+                $this -> load -> model('statistics_new_model');
+//		$this -> imported_data_parsed_archived_model -> mark_queued_from_archive();
+//		$this -> imported_data_parsed_model -> delete_repeated_data();
+                $results= $this -> imported_data_parsed_model ->get_items_that_havenot_batch();
+                
+                foreach($results as $result){
+                    if ($this -> imported_data_parsed_archived_model -> saveToArchive($result['imported_data_id'])) {
+                        $this -> imported_data_parsed_model -> deleteRows($result['imported_data_id']);
+                        $this -> statistics_new_model -> delete($result['imported_data_id']);
+                    }
+                }
 		echo "end";
 	}
 
