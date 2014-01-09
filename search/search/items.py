@@ -10,6 +10,7 @@ class SearchItem(Item):
     product_brand = Field() # product brand as extracted from special element in product page
     origin_url = Field() # original product url
     origin_id = Field() # original (source) product id (for walmart products)
+    origin_name = Field() # product name on origin site
     origin_model = Field() # original (source) product model
     origin_brand = Field() # original (source) product brand
     origin_brand_extracted = Field() # source product brand - as extracted from product name: not guaranteed to be correct

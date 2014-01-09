@@ -328,9 +328,9 @@ class SearchSpider(BaseSpider):
 					#raise CloseSpider("Manufacturer site not supported (" + self.target_site + ") or not able to extract brand from product name (" + product_name + ")\n")
 					item = SearchItem()
 					item['origin_url'] = response.url
-					item['product_name'] = product_name
+					item['origin_name'] = product_name
 					if product_model:
-						item['product_model'] = product_model
+						item['origin_model'] = product_model
 					yield item
 					return
 
@@ -521,6 +521,7 @@ class SearchSpider(BaseSpider):
 					#item['origin_site'] = site
 					
 					item['origin_url'] = response.meta['origin_url']
+					item['origin_name'] = response.meta['origin_name']
 
 					if 'origin_id' in response.meta:
 						item['origin_id'] = response.meta['origin_id']
@@ -538,6 +539,7 @@ class SearchSpider(BaseSpider):
 			#item['origin_site'] = site
 			
 			item['origin_url'] = response.meta['origin_url']
+			item['origin_name'] = response.meta['origin_name']
 
 			if 'origin_id' in response.meta:
 				item['origin_id'] = response.meta['origin_id']
