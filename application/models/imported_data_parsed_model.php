@@ -1778,7 +1778,7 @@ class Imported_data_parsed_model extends CI_Model {
                $j++;
                
             $t=time();    
-            $this->db->update($this->tables['imported_data_parsed'], array('model' =>  $t.$j), array('imported_data_id' => $val->imported_data_id));
+            $this->db->update($this->tables['imported_data_parsed'], array('model' =>  null), array('imported_data_id' => $val->imported_data_id));
             $this->db->delete('statistics_new', array('imported_data_id' => $val->imported_data_id));
             $this->db->like('similar_products_competitors', $val->imported_data_id);
             $this->db->delete('statistics_new'); 
