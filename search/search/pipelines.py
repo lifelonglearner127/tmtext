@@ -73,28 +73,14 @@ class URLsPipeline(object):
 				# else:
 				line = item['origin_url'] + "\n"
 				self.file2.write(line)
-		# for option 2, output in one file source product URL (or id) and matched product URL (if found), separated by a comma
+		# for option 2 and 3, output in one file source product URL (or id) and matched product URL (if found), separated by a comma
 		else:
-			# if 'product_url' in item:
-			# 	if spider.by_id:
-			# 		line = ",".join([item['origin_id'], item['product_url']]) + "\n"
-			# 	else:
-			# 	line = ",".join([item['origin_url'], item['product_url']]) + "\n"
-			# else:
-			# 	if spider.by_id:
-			# 		line = item['origin_id'] + "\n"
-			# 	else:
-			# 	line = item['origin_url'] + "\n"
 			fields = [item['origin_url']]
 
 			# if output type is 3, add additional fields
 			if option == 3:
 				fields.append(item['origin_name'])
-				if 'origin_model' in item:
-					fields.append(item['origin_model'])
-				else:
-					# add empty field (corresponding to the origin_model header column)
-					fields.append("")
+				fields.append(item['origin_model'] if 'origin_model' in item else "")
 
 			# if a match was found add it to the fields to be output
 			if 'product_url' in item:
@@ -106,11 +92,7 @@ class URLsPipeline(object):
 			# if output type is 3, add additional fields
 			if option == 3:
 				fields.append(item['product_name'])
-				if 'product_model' in item:
-					fields.append(item['product_model'])
-				else:
-					# add empty field (corresponding to the product_model header column)
-					fields.append("")
+				fields.append(item['product_model'] if 'product_model' in item else "")
 
 				fields.append(item['confidence'])
 
