@@ -32,7 +32,8 @@ class Crons extends MY_Controller
 		    'delete_batch_items_from_statistics_new' => true,
 		    'fix_imported_data_parsed_models' => true,
 		    'fixmodel_length' => true,
-		    'fix_revisions' => true
+		    'fix_revisions' => true,
+		    'checkUploadedFiles' =>true 
 		));
 		$this->load->library('helpers');
 		$this->load->helper('algoritm');
@@ -3758,5 +3759,27 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 //		}
 //		unlink($tmp_dir . ".locked");
 //	}
+	
+	function checkUploadedFiles()
+	{
+		$path = dirname(__FILE__);
+		echo 'Path to script: '.$path;
+		$uploadFolder = $path."/../../webroot/uploads";
+		if(is_dir($uploadFolder))
+		{
+			$list = scandir($uploadFolder);
+			if(is_array($list) && count($list) > 2)
+			{
+				unset($list[0]);
+				unset($list[1]);
+				echo '<table border=1 cellpadding=5><tr><th>Filename</th><th>Changed</th>';
+				foreach($list as $l)
+				{
+					echo '<tr><td>'.$l.'</td><td>  '.date('Y-m-d H:i:s',filemtime($uploadFolder.'/'.$l)).'</td><tr>';
+				}
+				echo '</tr></table>';
+			}
+		}	
+	}
 
 }
