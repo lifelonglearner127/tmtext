@@ -3,7 +3,7 @@
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/sites_view');?>">Sites</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('site_crawler');?>">Site Crawler</a></li>
-        <li class="active"><a data-toggle="tab" href="<?php echo site_url('site_crawler/instances_list');?>">Crawler Instances</a></li>
+        <li class="active"><a data-toggle="tab" id="ttl" href="<?php echo site_url('site_crawler/instances_list');?>">Crawler Instances <?php $this->load->helper("crawler_instances_helper"); echo crawler_instances_number();?></a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_uploadmatchurls');?>">Upload Match URLs</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('system/system_dostatsmonitor');?>">Do_stats Monitor</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('brand/import');?>">Brands</a></li>
@@ -55,10 +55,11 @@ function loadCurrentList(wait, ids) {
 
 	$.get(url, function(data) {
 		$('#Current_List ul li').remove();
-//                console.log(data);
+//                console.log(data.instances.length);
 		$.each(data.instances, function (index, node) {
 			$('#Current_List ul').append("<li id=\"id_"+node.id+"\"><span><input data-instance_id=\""+node.instance_id+"\" data-id=\""+node.id+"\" type=\"checkbox\" name=\"ids[]\" value=\""+node.id+"\"/></span><span style='width: 80px;'>"+node.instance_id+"</span><span>"+node.instance_type+"</span><span>"+node.state_name+"</span><span class=\"url ellipsis\">"+node.public_dns_name+"</span></li>");
 		});
+		$("#ttl").html("Crawler Instances " + (data.instances.length && data.instances.length > 0 ? "(" + data.instances.length + ")" : ""));
 
 		if (wait !== 'undefined' && wait) {
 			$.post('<?php echo site_url('site_crawler/wait_start_instances');?>', { ids: ids }, function(data) {
@@ -91,6 +92,11 @@ $(function () {
 	jQuery(document).ready(function($) {
 		loadCurrentList();
 	});
-});
 
+	$(document).on('click', 'input#checkAll', function(){
+		$("#Current_List > ul > li input[type='checkbox']").each(function(index, value) {
+			$(this).attr('checked', $('input#checkAll').is(':checked'));
+    	});
+	});
+});
 </script>

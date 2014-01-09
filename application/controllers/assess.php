@@ -246,7 +246,7 @@ class Assess extends MY_Controller {
 	}
 	
     public function get_assess_info() {
-        
+       
         $st_time = microtime(TRUE);      
 		
         $batch_id = $this->input->get('batch_id');
@@ -2836,7 +2836,7 @@ class Assess extends MY_Controller {
 	}
 
     public function products() {
-		
+
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
         if (!empty($this->data['customer_list'])) {
@@ -4786,17 +4786,18 @@ class Assess extends MY_Controller {
                 $customer_name = $this->batches_model->getCustomerUrlByBatch($batch_compare_id);
             }
 
-            $batch_arr = array($batch_id, $batch_compare_id);
-            $snap_data = array();
-            $min_max = array();
+			$batch_arr = array($batch_id, $batch_compare_id);
+			$snap_data = array();
+			$min_max = array();
 
-            $params = new stdClass();
-            $params->batch_id = $batch_id;
-            $params->txt_filter = '';
-            $params->date_from = '';
-            $params->date_to = '';
-            $results = $this->get_data_for_assess($params);
-
+			$params = new stdClass();
+			$params->batch_id = $batch_id;
+			$params->txt_filter = '';
+			$params->date_from = '';
+			$params->date_to = '';
+			$results = $this->get_data_for_assess($params);
+			$include_trendlines = TRUE; // Castro: include trendlines? YES OR NO
+			$trendline_dates = array(); // Castro var that stores all the available trendline dates
 
             if ($batch_compare_id != -1) {
                 foreach ($results as $val) {
@@ -4865,8 +4866,24 @@ class Assess extends MY_Controller {
                 $updated_Features = '';
                 $updated_h1_word_counts = '';
                 $updated_h2_word_counts = '';
-				$updated_trendlines_data = array(null, null, null, null, null, null); // Castro #1119, var that going to store trendlines data
-				$trendline_index = 0;
+				$updated_trendlines_data = array(); // Castro #1119, var that going to store trendlines data
+
+				// Castro : store all the available dates in trendline_dates array
+				if($include_trendlines)
+				{
+					foreach($arr as $a)
+					{
+						if(isset($a->date))
+						{
+							$a->trendline_date = date('Y-m-d', strtotime($a->date));
+
+							if( ! in_array($a->trendline_date, $trendline_dates))
+							{
+								$trendline_dates[] = $a->trendline_date;
+							}
+						}
+					}
+				}
 
                 if($graphBuild == "total_description_wc")
 				{
@@ -4879,7 +4896,7 @@ class Assess extends MY_Controller {
 							if($des == 1 && $long_des == 1)
 							{
 								$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - null  words<br>';  
-								$updated_trendlines_data[$trendline_index] = 0;
+								$updated_trendlines_data[$a->trendline_date] = 0;
 							}
 							else
 							{
@@ -4887,8 +4904,7 @@ class Assess extends MY_Controller {
 
 								$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words<br>"; 
 
-								$updated_trendlines_data[$trendline_index] = $updated_total_description_wc_int;
-								$trendline_index++;
+								$updated_trendlines_data[$a->trendline_date] = $updated_total_description_wc_int;
 							}
 						}
                     }
@@ -4916,6 +4932,7 @@ class Assess extends MY_Controller {
 						$updated_h1_word_counts.='H1 Characters: ' .$a->date .' - ' . $updated_h1_word_counts_int . " characters<br>";
 						$updated_h2_word_counts.='H2 Characters: ' .$a->date .' - ' . $updated_h2_word_counts_int . " characters<br>";
 
+						// Castro: display the proper value in trendlines
 						if($graphBuild == "short_description_wc")
 						{
 							$trendline_value = $updated_short_description_wc_int;
@@ -4941,8 +4958,7 @@ class Assess extends MY_Controller {
 							$trendline_value = $updated_Features_int;
 						}
 
-						$updated_trendlines_data[$trendline_index] = $trendline_value;
-						$trendline_index++;
+						$updated_trendlines_data[$a->trendline_date] = $trendline_value;
 					}
 				}
 				$snap_data[0]['updated_short_description_wc'][] =  $updated_short_description_wc;
@@ -5044,6 +5060,42 @@ class Assess extends MY_Controller {
                     }
                 }
             }
+
+			// Castro prepare and order all trendline data, set missing dates values to null
+			if($include_trendlines)
+			{
+				$maximum_trendlines = 6; // set the maximum number of trendlines to show
+
+				sort($trendline_dates);
+				$ordered_trendline_dates = array_reverse($trendline_dates);
+
+				// limit total trendlines
+				if($ordered_trendline_dates > $maximum_trendlines)
+				{
+					$ordered_trendline_dates = array_slice($ordered_trendline_dates, 0, 6);
+				}
+
+				for($i = 0; $i < count($snap_data[0]['updated_trendlines_data']); $i++)
+				{
+					$current_trendline_data = $snap_data[0]['updated_trendlines_data'][$i];
+					$ordered_trendline_data = array();
+
+					foreach($ordered_trendline_dates as $ordered_trendline_date)
+					{
+						if(isset($current_trendline_data[$ordered_trendline_date]))
+						{
+							$ordered_trendline_data[$ordered_trendline_date] = $current_trendline_data[$ordered_trendline_date];
+						}
+						else
+						{
+							$ordered_trendline_data[$ordered_trendline_date] = NULL;
+						}
+					}
+
+					$snap_data[0]['updated_trendlines_data'][$i] = $ordered_trendline_data;
+				}
+			}
+
 //            echo '<pre>';
 //            print_r($snap_data); die();
             $this->output->set_content_type('application/json')->set_output(json_encode($snap_data));

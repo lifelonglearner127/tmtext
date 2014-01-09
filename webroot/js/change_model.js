@@ -5,9 +5,23 @@ var readUrl   = base_url + 'index.php/system/get_custom_models',
     updateHref,
     updateId,
     delId;
-
-
-$( function() {
+    var  tblAssess;
+    var columns = [
+        {
+            "sTitle": "Product_name",
+            "sName": "product_name",
+        },
+        {
+            "sTitle": "Model",
+            "sName": "model",
+           
+        },
+    {
+            "sTitle": "Actions",
+            "sName": "actions"
+           
+        }];
+$(document).ready( function() {
 
     $( '#tabs' ).tabs({
         fx: { height: 'toggle', opacity: 'toggle' }
@@ -30,7 +44,7 @@ $( function() {
             'Update': function() {
              var aaa = $.post(updateUrl, {model: $( '#updateDialog1 input[name=title]' ).val(), imported_data_id: $( '#updateDialog1 input[name=id]' ).val()}, 'json').done(function(data) {
              delId=$( '#updateDialog1 input[name=id]' ).val();
-             $( 'tr#'+delId+' td:nth-child(3)' ).text($( '#updateDialog1 input[name=title]' ).val());
+             $( 'tr#'+delId+' td:nth-child(2)' ).text($( '#updateDialog1 input[name=title]' ).val());
             
         });
          $( this ).dialog( 'close' );
@@ -59,7 +73,7 @@ $( function() {
 //                $( '#ajaxLoadAni' ).fadeIn( 'slow' );
                
                 var aaa = $.post(delUrl, {imported_data_id: $('#delConfDialog1 input[name=del_im_id]').val()}, 'json').done(function(data) {
-                 $( 'tr#'+delId+' td:nth-child(3)' ).text('');
+                 $( 'tr#'+delId+' td:nth-child(2)' ).text('');
         });
         $( this ).dialog( 'close' );
 
@@ -69,7 +83,7 @@ $( function() {
 
     }); //end dialog
 
-    $( '#records' ).delegate( 'a.updateBtn', 'click', function() {
+    $( '#tblModels' ).delegate( 'a.updateBtn', 'click', function() {
         updateHref = $( this ).attr( 'href' );
         updateId = $( this ).parents( 'tr' ).attr( "id" );
         
@@ -82,7 +96,7 @@ $( function() {
         return false;
     }); //end update delegate
 
-    $( '#records' ).delegate( 'a.deleteBtn', 'click', function() {
+    $( '#tblModels' ).delegate( 'a.deleteBtn', 'click', function() {
         delHref = $( this ).attr( 'href' );
         delId = $( this ).parents( 'tr' ).attr( "id" );
         
@@ -101,30 +115,79 @@ function read_models() {
     //display ajax loader animation
     $( '#ajaxLoadAni' ).fadeIn( 'slow' );
 
-    $.ajax({
-        url: readUrl,
-        dataType: 'json',
-        data:{},
-        success: function( response ) {
-           
+    tblAssess = $('#tblModels').dataTable({
+            "bJQueryUI": true,
+            "bDestroy": true,
+            "sPaginationType": "full_numbers",
+            "bProcessing": true,
+            "aaSorting": [[5, "desc"]],
+            "bAutoWidth": false,
+            "bServerSide": true,
+            "aoColumns": columns,
+            "sAjaxSource": readUrl,
+            "fnServerData": function(sSource, aoData, fnCallback) {
+               
+            $.getJSON(sSource, aoData, function(response) {
+//                    console.log("response = ");
+//                    console.log(response);
             for( var i in response ) {
-                response[ i ].updateLink = updateUrl + '/' + response[ i ].imported_data_id;
-                response[ i ].deleteLink = delUrl + '/' + response[ i ].imported_data_id;
+                updateLink = updateUrl + '/' + response[ i ].imported_data_id;
+                deleteLink = delUrl + '/' + response[ i ].imported_data_id;
+                response[ i ].actions = '<a class="updateBtn icon-edit" style="float:left;" href="'+updateLink+'"></a>'+
+                            '<a class="deleteBtn icon-remove ml_5" href="'+deleteLink+'"></a>';
             }
-
-            //clear old rows
-            $( '#records > tbody' ).html( '' );
-
-            //append new rows
-            $( '#readTemplate1' ).render( response ).appendTo( "#records > tbody" );
-
-            //apply dataTable to #records table and save its object in dataTable variable
-            //if( typeof dataTable == 'undefined' )
-               dataTable = $( '#records' ).dataTable({"bJQueryUI": true,"bPaginate": true, "aaSorting": [[ 10, "desc" ]], 'bRetrieve':true});
-
-            //hide ajax loader animation here...
-            $( '#ajaxLoadAni' ).fadeOut( 'slow' );
-        }
+            console.log(response); 
+           // fnCallback(response)
+                 
+                });
+            }
+            
     });
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+//    $.ajax({
+//        url: readUrl,
+//        dataType: 'json',
+//        data:{},
+//        success: function( response ) {
+//           
+//            for( var i in response ) {
+//                response[ i ].updateLink = updateUrl + '/' + response[ i ].imported_data_id;
+//                response[ i ].deleteLink = delUrl + '/' + response[ i ].imported_data_id;
+//            }
+//
+//            //clear old rows
+//            $( '#records > tbody' ).html( '' );
+//
+//            //append new rows
+//            $( '#readTemplate1' ).render( response ).appendTo( "#records > tbody" );
+//
+//            //apply dataTable to #records table and save its object in dataTable variable
+//            //if( typeof dataTable == 'undefined' )
+//               dataTable = $( '#records' ).dataTable({"bJQueryUI": true,"bPaginate": true, "aaSorting": [[ 10, "desc" ]], 'bRetrieve':true});
+//
+//            //hide ajax loader animation here...
+//            $( '#ajaxLoadAni' ).fadeOut( 'slow' );
+//        }
+//    });
 }
 

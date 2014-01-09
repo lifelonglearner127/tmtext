@@ -18,7 +18,12 @@ class Statistics_new_model extends CI_Model {
     {
         parent::__construct();
     }
-
+    
+    function delete($im_id)
+    {
+        return $this->db->delete($this->tables['statistics_new'], array('imported_data_id' => $im_id));
+    
+    }
     function get_crawler_price_by_url_model($url) {
         $res_object = array(
             'status' => false,

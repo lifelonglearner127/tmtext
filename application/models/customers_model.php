@@ -75,4 +75,22 @@ class Customers_model extends CI_Model {
     function delete($id){
 		$this->db->delete($this->tables['customers'], array('id' => $id)); 
 	}
+
+    function getCustomersList()
+    {
+	    $customers_list = array();
+            $query_cus = $this->db->select('url')->order_by('name', 'asc')->get($this->tables['customers']);
+	    if ($query_cus->num_rows() > 0)
+	    {
+		$query_cus_res = $query_cus->result();
+		foreach ($query_cus_res as $key => $value) 
+		{
+                    $n = parse_url($value->url);
+                    $customers_list[] = $n['host'];
+                }
+		$customers_list = array_unique($customers_list);
+	    }
+	    $query_cus->free_result();
+	    return $customers_list;
+    }	
 }

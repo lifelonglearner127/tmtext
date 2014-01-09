@@ -10,7 +10,7 @@
 			<a data-toggle="tab" href="<?php echo site_url('site_crawler'); ?>">Site Crawler</a>
 		</li>
 		<li class="">
-			<a data-toggle="tab" href="<?php echo site_url('site_crawler/instances_list'); ?>">Crawler Instances</a>
+			<a data-toggle="tab" href="<?php echo site_url('site_crawler/instances_list'); ?>">Crawler Instances <?php $this->load->helper("crawler_instances_helper"); echo crawler_instances_number();?></a>
 		</li>
 		<li class="">
 			<a data-toggle="tab" href="<?php echo site_url('system/system_uploadmatchurls'); ?>">Upload Match URLs</a>
@@ -172,12 +172,7 @@
     
     function stopDoStats(){
         var url = '<?php echo site_url('crons/stop_do_stats'); ?>';
-        var status = getStatus();
-        if(status){
-            alert('Process does not started.');
-            return;
-        }
-        
+        $('#current_status span').text('Stopping...'); 
         $.ajax({
             url:url
         });
@@ -185,18 +180,31 @@
     
     function startDoStats(){
             var url = '<?php echo site_url('crons/do_stats_forupdated'); ?>';
-            var status = getStatus();
-            //alert('in do stats'+status);return false;
-            if(!status){
-                alert('Process already started!');
-                return false;
-            }
+	    $('#current_status span').text('Starting...');    
             $.ajax({
                url:url 
             });
     }
     
+    function activeStatBtn(type)
+    {
+	    if(typeof(type) == 'undefined')
+	    {
+		type = 'start';	
+	    } 
+	    if(type == 'start')
+	    {	    
+	      $('#start_do_stats').removeClass('disabled');
+	      $('#stop_do_stats').addClass('disabled');
+	    } else if(type == 'stop')
+	    {
+	      $('#start_do_stats').addClass('disabled');
+	      $('#stop_do_stats').removeClass('disabled');    
+	    }    
+    }
+    
     function statusInfo() {
+	activeStatBtn('start');    
         if ($('#current_status').html()===null) return;
         
         var url = '<?php echo site_url('crons/get_update_status'); ?>';
@@ -205,17 +213,22 @@
             url:url,
             success:function(data){
                 console.log(data);
-                //var obj = JSON.parse(data);
+                var obj = JSON.parse(data);
                 if(data==='[]'){
                     $('#current_status').html('Not scanned yet.');
                 }
                 else{
                     var obj = JSON.parse(data);
                     if(obj.status){
-                        $('#current_status').html('<p>Process started at: '+obj.started
-                                +' Status is '+obj.status+'</p>'
+                        $('#current_status').html('<p>Current server time: '+obj.currentTime+'</p>'
+				+'<p>Process started at: '+obj.started+'</p>'
+                                +'<p>Status is <span>'+obj.status+'</span></p>'
                                 +'<p>Total items was '+obj.total+'</p>'
                                 +'<p>Remain items '+obj.remain+'</p>');
+			if(obj.status == 'started') 
+			{
+				activeStatBtn('stop');
+			} 	
                     }
                     else{
                         $('#current_status').html('<p>Last scan completed at '+obj.updated+'</p>'
@@ -250,11 +263,17 @@
         });
         
         $('#start_do_stats').click(function(){
-            startDoStats();
+	   if(!$(this).hasClass('disabled'))
+           {		   
+               startDoStats();
+	   }    
         });
         
         $('#stop_do_stats').click(function(){
-            stopDoStats();
+            if(!$(this).hasClass('disabled'))
+            {		   
+               stopDoStats();
+	    }   
         });
 		// ---- UI tooltips (start)
 		$("#pm_tab_newrow_btn").tooltip({

@@ -1390,7 +1390,7 @@ class Imported_data_parsed_model extends CI_Model {
 
     function getData($value, $website = '', $category_id = '', $limit = '', $key = 'Product Name', $strict = false) {
 
-        $this->db->select('p.imported_data_id, p.key, p.value, p.revision')
+        $this->db->select('p.imported_data_id, p.key, p.value, p.model, p.revision')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
                 ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
                 ->where('p.key', $key)
@@ -1423,98 +1423,37 @@ class Imported_data_parsed_model extends CI_Model {
         if ($limit) {
             $this->db->limit((int) $limit);
         }
-
+	$data = array();
         $query = $this->db->get();
-
-        $results = $query->result();
-
-        $data = array();
-        $ids = array();
-         foreach ($results as $result) {
-            $ids[] =  $result->imported_data_id;
-         }
-         $ids = array_unique($ids);
-//        print_r((int) ceil(memory_get_usage()/1000000).'MB used<br>');
-
-        foreach ($ids as $id) {
-
-            $query = $this->db->where('imported_data_id', $id)
-//                    ->where("revision = (SELECT  MAX(revision) as revision
-//                      FROM imported_data_parsed WHERE `imported_data_id`= $result->imported_data_id
-//                      GROUP BY imported_data_id)", NULL, FALSE)
-                    ->get($this->tables['imported_data_parsed']);
-            $res = $query->result_array();
-            $description = '';
-            $long_description = '';
-            $url = '';
-            $features = '';
-            $model = '';
-            $parsed_attributes = array();
-            foreach ($res as $val) {
-//                switch($val['key']){
-//                    case 'URL'
-//                }
-                if ($val['key'] == 'URL') {
-                    $url = $val['value'];
-                }
-                if ($val['key'] == 'Description') {
-                    $description = $val['value'];
-                }
-                if ($val['key'] == 'Long_Description') {
-                    $long_description = $val['value'];
-                }
-
-                if ($val['key'] == 'Product Name') {
-                    $product_name = $val['value'];
-                    $model = $val['model'];
-                }
-
-                if ($val['key'] == 'parsed_attributes') {
-                    $parsed_attributes = unserialize($val['value']);
-                }
-                if ($val['key'] == 'Features') {
-                    $features = $val['value'];
-                }
-
-            }
-            array_push($data, array('imported_data_id' => $id, 'product_name' => $product_name,
-                'description' => $description, 'long_description' => $long_description, 'url' => $url, 'parsed_attributes' => $parsed_attributes, 'product_name' => $product_name, "model" => $model, 'features' => $features));
-        }
-
+	if ($query->num_rows() > 0)
+	{
+		$results = $query->result_array();
+			foreach ($results as $val) 
+			{
+				$key = $val['imported_data_id'];
+				$data[$key]['imported_data_id'] = $val['imported_data_id'];
+				$data[$key]['model'] = $val['model'];
+				if(!isset($data[$key]['url'])) $data[$key]['url'] = '';
+				if(!isset($data[$key]['description'])) $data[$key]['description'] = '';
+				if(!isset($data[$key]['long_description'])) $data[$key]['long_description'] = '';
+				if(!isset($data[$key]['product_name'])) $data[$key]['product_name'] = '';
+				if(!isset($data[$key]['parsed_attributes'])) $data[$key]['parsed_attributes'] = '';
+				if(!isset($data[$key]['features'])) $data[$key]['features'] = ''; 
+				switch($val['key'])
+				{
+					case 'URL': $data[$key]['url'] = $val['value']; break;
+					case 'Description': $data[$key]['description'] = $val['value']; break;
+					case 'Long_Description': $data[$key]['long_description'] = $val['value']; break;
+					case 'Product Name': $data[$key]['product_name'] = $val['value'];  break;
+					case 'parsed_attributes': $data[$key]['parsed_attributes'] = unserialize($val['value']); break;
+					case 'Features': $data[$key]['features'] = $val['value']; break;
+					default: break;
+				}
+			}
+	}
+	$query->free_result();
 
         return $data;
-
-
-        $customers_list = array();
-        $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
-        $query_cus_res = $query_cus->result();
-        if (count($query_cus_res) > 0) {
-            foreach ($query_cus_res as $key => $value) {
-                $n = parse_url($value->url);
-                $customers_list[] = $n['host'];
-            }
-        }
-        $customers_list = array_unique($customers_list);
-
-
-        foreach ($rows as $key => $row) {
-            $cus_val = "";
-            foreach ($customers_list as $ki => $vi) {
-                if (strpos($rows[$key]['url'], "$vi") !== false) {
-                    $cus_val = $vi;
-                }
-            }
-            if ($cus_val !== "")
-                $rows[$key]['customer'] = $cus_val;
-            foreach ($rows as $key1 => $row1) {
-                if ($key1 != $key && $this->get_base_url($row['url']) == $this->get_base_url($row1['url'])) {
-                    unset($rows[$key]);
-                }
-            }
-        }
-        sort($rows);
-
-        return $rows;
     }
 
     function getDataWithPaging($value, $website = '', $category_id = '', $key = 'Product Name') {
@@ -2473,35 +2412,21 @@ echo "j  = ".$j;
                 ->get('keywords');
         return $query->result();
     }
-
-    function getByParsedAttributes($search, $strict = false,$imp_id = false) {
-
-        $start_time = microtime(true);
-        if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) {
-
-            $end_time = microtime(true);
-            //echo "Get data ".($end_time - $start_time).'<br>';
-
-            $customers_list = array();
-            $query_cus = $this->db->order_by('name', 'asc')->get($this->tables['customers']);
-            $query_cus_res = $query_cus->result();
-            if (count($query_cus_res) > 0) {
-                foreach ($query_cus_res as $key => $value) {
-                    $n = parse_url($value->url);
-                    $customers_list[] = $n['host'];
-                }
-            }
-            $customers_list = array_unique($customers_list);
-
+    
+    function getByParsedAttributes($search, $strict = false,$imp_id = false,$customers_list = array()) {
+        if ($rows = $this->getData($search, null, null, null, 'parsed_attributes', $strict)) 
+	{
+            if(count($customers_list) == 0)
+	    {
+		$this->load->model('customer_model');    
+		$customers_list = $this->customer_model->getCustomers();
+	    }
             $urls= array();
             $res= array();
             $selected_customer = '';
-            foreach ($rows as $key => $row) {
-                
-            //if(!in_array($this->get_base_url($row['url']), $urls))
-                {
+            foreach ($rows as $key => $row) 
+	    {
                 $urls[]=$this->get_base_url($row['url']);
-
                 $cus_val = "";
                 foreach ($customers_list as $ki => $vi) {
                     if (strpos($row['url'], "$vi") !== false) {
@@ -2510,18 +2435,22 @@ echo "j  = ".$j;
                     }
                 }
                 if ($cus_val !== "")
-                $row['customer'] = $cus_val;
-                if($row['imported_data_id'] == $imp_id){
+		{	
+		    $row['customer'] = $cus_val;
+		}
+                if($row['imported_data_id'] == $imp_id)
+		{
                     $selected_customer = $row['customer'];
                 }
 
                 $res[]=$row;
             }
-
-            }
-            if($imp_id){
-                foreach($res as $k =>$val){
-                    if($val['customer']== $selected_customer && $val['imported_data_id']!= $imp_id){
+            if($imp_id)
+            {
+                foreach($res as $k =>$val)
+		{
+                    if(($val['customer']== $selected_customer) && ($val['imported_data_id']!= $imp_id))
+		    {
                         unset($res[$k]);
                     }
                 }
@@ -2540,13 +2469,19 @@ echo "j  = ".$j;
                 ->where('idp.key = "Product Name"')
                 ->where('idp.imported_data_id = ' . $imported_data_id)
                 ->order_by('created', 'desc');
-        if ($prices_count > 0) {
+        if ($prices_count > 1) {
             $this->db->limit($prices_count);
         }
         $query = $this->db->get($this->tables['crawler_list_prices'] . ' as clp');
 	if ($query->num_rows() > 0)
 	{
-		$result = $query->result();
+		if ($prices_count > 1) 
+		{
+			$result = $query->result();
+		} else
+		{
+			$result = $query->row();
+		}
 	}
 	$query->free_result();
 	return $result;
@@ -2633,9 +2568,11 @@ echo "j  = ".$j;
     function get_custom_models() {
         $this->db->select('p.imported_data_id, p.key, p.value, p.model')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
-                ->where('p.key', 'Product Name')
-                ->or_where('p.key', 'parsed_attributes')
-                ->or_where('p.key', 'URL')
+                ->where('p.key', 'URL')
+                ->or_where('p.key', 'Product Name')
+                
+                ->Limit(5);
+                
 //                ->where('p.revision = (SELECT  MAX(revision) as revision
 //                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
 //                      GROUP BY imported_data_id)', NULL, FALSE)
@@ -2649,6 +2586,7 @@ echo "j  = ".$j;
         foreach ($results as $result) {
             if ($result->key === 'URL') {
                 $data[$result->imported_data_id]['url'] = $result->value;
+                $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
             }
             if ($result->key === 'Product Name') {
                 $data[$result->imported_data_id]['product_name'] = $result->value;
@@ -2663,9 +2601,9 @@ echo "j  = ".$j;
         $have_not_model = array();
 
         foreach ($data as $val) {
-            if (!isset($val['parsed_attributes']['model']) && isset($val['product_name'])) {
+            //if (isset($val['parsed_attributes']['model']) && isset($val['product_name'])) {
                 $have_not_model[] = $val;
-            }
+          //  }
         }
         return $have_not_model;
     }
@@ -2755,5 +2693,15 @@ echo "j  = ".$j;
             return FALSE;
         }
         return $query->result_array();
+    }
+    public  function get_items_that_havenot_batch(){
+        $sql =  "SELECT  `imported_data_id`, `revision` 
+                FROM  `statistics_new` 
+                WHERE  `batch_id` =0
+                GROUP BY  `imported_data_id`";
+        $query = $this->db->query($sql);
+        $results = $query->result_array();
+        return $results;
+       
     }
 }
