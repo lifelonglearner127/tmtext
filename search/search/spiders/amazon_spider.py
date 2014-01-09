@@ -125,6 +125,12 @@ class AmazonSpider(SearchSpider):
 			model_number_holder = hxs.select("//tr[@class='item-model-number']/td[@class='value']/text() | //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text()").extract()
 			if model_number_holder:
 				item['product_model'] = model_number_holder[0].strip()
+			# if no product model explicitly on the page, try to extract it from name
+			else:
+				product_model_extracted = ProcessText.extract_model_from_name(item['product_name'])
+				if product_model_extracted:
+					item['product_model'] = product_model_extracted
+
 
 			brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
 			if brand_holder:
