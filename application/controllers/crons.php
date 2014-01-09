@@ -33,7 +33,8 @@ class Crons extends MY_Controller
 		    'fix_imported_data_parsed_models' => true,
 		    'fixmodel_length' => true,
 		    'fix_revisions' => true,
-		    'checkUploadedFiles' =>true 
+		    'checkUploadedFiles' =>true, 
+		    'renameExistingFiles' =>true 
 		));
 		$this->load->library('helpers');
 		$this->load->helper('algoritm');
@@ -3781,6 +3782,35 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 				echo '</tr></table>';
 			}
 		}	
+	}
+	
+	function renameExistingFiles($suffix = '')
+	{
+		if(empty($suffix) || preg_match('#^[0-9]+$#',$suffix))
+		{	
+			$uploadFolder = $this -> config -> item('csv_upload_dir');
+			if(is_dir($uploadFolder))
+			{
+				$list = scandir($uploadFolder);
+				if(is_array($list) && count($list) > 2)
+				{
+					unset($list[0]);
+					unset($list[1]);
+					foreach($list as $l)
+					{	
+						$ext = end(explode('.',$l));
+						$name = preg_replace('#_[0-9]+.'.$ext.'#','',$l);
+						$name = str_replace('.'.$ext,'',$name);
+						if(preg_match('#^[0-9]+$#',$suffix))
+						{
+							$suffix = '_'.$suffix;
+						}	
+						rename($uploadFolder.'/'.$l,$uploadFolder.'/'.$name.$suffix.'.'.$ext);
+					}
+				}
+			}
+		}
+		$this->checkUploadedFiles();
 	}
 
 }
