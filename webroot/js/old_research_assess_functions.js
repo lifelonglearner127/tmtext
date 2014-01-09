@@ -1248,3 +1248,41 @@
 			aoColumns : columns
 		});			
 	}
+	
+	
+	 tblAssess = $('#tblAssess').dataTable({
+		aoColumns : columns,
+		bDestroy : true,
+		bAutoWidth : false,
+		fnInitComplete : function( oSettings,json ) {										
+			
+			displayInitColumns(oSettings);					
+		},
+	});
+
+	
+	tblAllColumns = tblAssess.fnGetAllSColumnNames();
+	
+	function displayInitColumns(oSettings)
+	{		
+		
+		var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
+		var columns_checkboxes_checked = []
+		  , localTblAssess = oSettings.oInstance;
+		  
+        $.each(columns_checkboxes, function(index, value) {
+            columns_checkboxes_checked.push($(value).data('col_name'));
+        });		
+		$.each(oSettings.oInstance.fnGetAllSColumnNames(), function(index, value) {
+				
+			value = value.replace(/[0-9]$/, '');				
+			if (oSettings.aoColumns[index])
+			{										
+				if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {						
+					localTblAssess.fnSetColumnVis(index, true, false);
+				} else {
+					localTblAssess.fnSetColumnVis(index, false, false);						
+				}
+			}
+		}); 
+	}

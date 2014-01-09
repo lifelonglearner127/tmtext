@@ -4172,7 +4172,7 @@ class Assess extends MY_Controller {
                 $result_table[] = $result_row;				
             } else if ($are_records_filtered) {
 				
-				if ($filtered_count >= $display_start && $filtered_count < ($display_start + $display_length))
+				if ($filtered_count >= $display_start)
 				{					
 					$result_table[] = $result_row;	
 				}
