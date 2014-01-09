@@ -83,15 +83,16 @@ class URLsPipeline(object):
 				fields.append(item['origin_model'] if 'origin_model' in item else "")
 
 			# if a match was found add it to the fields to be output
-			if 'product_url' in item:
-				fields.append(item['product_url'])
-			else:
-				# add empty field (corresponding to the product_url header column)
-				fields.append("")
+			fields.append(item['product_url'] if 'product_url' in item else "")
 			
 			# if output type is 3, add additional fields
 			if option == 3:
-				fields.append(item['product_name'])
+
+				# if there was a match (there is a 'product_url', there should also be a 'product_name')
+				if 'product_url' in item:
+					assert 'product_name' in item
+					
+				fields.append(item['product_name'] if 'product_name' in item else "")
 				fields.append(item['product_model'] if 'product_model' in item else "")
 
 				fields.append(str(item['confidence']))
