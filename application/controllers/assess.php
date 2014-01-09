@@ -246,7 +246,7 @@ class Assess extends MY_Controller {
 	}
 	
     public function get_assess_info() {
-       
+
         $st_time = microtime(TRUE);      
 		
         $batch_id = $this->input->get('batch_id');
@@ -4795,6 +4795,13 @@ class Assess extends MY_Controller {
 			$params->txt_filter = '';
 			$params->date_from = '';
 			$params->date_to = '';
+
+			// Castro: check if I have to get half of the results
+			if($this->input->post('halfResults') !== FALSE)
+			{
+				$params->halfResults = $this->input->post('halfResults');
+			}
+
 			$results = $this->get_data_for_assess($params);
 			$include_trendlines = TRUE; // Castro: include trendlines? YES OR NO
 			$trendline_dates = array(); // Castro var that stores all the available trendline dates
