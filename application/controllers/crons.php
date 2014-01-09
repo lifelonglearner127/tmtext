@@ -847,14 +847,14 @@ class Crons extends MY_Controller
 									//Getting a three last prices for each item
 									try
 									{
-										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id']);
+										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id'],1);
 									} catch (Exception $e)
 									{
 										echo 'Error', $e->getMessage(), "\n";
-										$this->load->model('statistics_model');
-										$this->statistics_model->db->close();
-										$this->statistics_model->db->initialize();
-										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id']);
+										//$this->load->model('statistics_model');
+										//$this->statistics_model->db->close();
+										//$this->statistics_model->db->initialize();
+										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id'],1);
 									}
 									//If last three prices are exist, define range of prices and start comparing
 									if (!empty($three_last_prices))
@@ -862,7 +862,7 @@ class Crons extends MY_Controller
 										$price_scatter = $own_price * 0.03;
 										$price_upper_range = $own_price + $price_scatter;
 										$price_lower_range = $own_price - $price_scatter;
-										$competitor_price = floatval($three_last_prices[0]->price);
+										$competitor_price = floatval($three_last_prices->price);
 										//If own price greater than competitor price, flag will be set,
 										//or if competitor price not in the defined range, then price should be updated 
 										if ($competitor_price < $own_price)
@@ -911,10 +911,7 @@ class Crons extends MY_Controller
 								}
 							}
 						}
-
-						$time_end = microtime(true);
-
-						$time = $time_end - $time_start;
+						$time = microtime(true) - $time_start;
 						echo "<br>model exists_and some actions - " . $time . 'seconds';
 					} else
 					{
@@ -933,7 +930,7 @@ class Crons extends MY_Controller
 								echo "<br>geting custom model - ";
 								$same_pr = array();
 								echo "product name  = " . $obj->product_name;
-								$same_pr = $this->imported_data_parsed_model->getByProductNameNew($obj->imported_data_id, $obj->product_name, '', 0);
+								$same_pr = $this->imported_data_parsed_model->getByProductNameNew($obj->imported_data_id, $obj->product_name, '', 0, $sites_list);
 								echo "<br>custom model is ready ------------ ";
 							}
 						}
@@ -970,6 +967,7 @@ class Crons extends MY_Controller
 					}
 					$time = microtime(true) - $time_start;
 					echo "<br>research_data ---------------------- " . $time . " seconds";
+					$insertStart = microtime(true);
 					//insert new statistics data to statistics_new table if it not exists in table and update if exists
 					try
 					{
@@ -977,14 +975,15 @@ class Crons extends MY_Controller
 					} catch (Exception $e)
 					{
 						echo 'Error', $e->getMessage(), "\n";
-						$this->load->model('statistics_model');
-						$this->statistics_model->db->close();
-						$this->statistics_model->db->initialize();
+						//$this->load->model('statistics_model');
+						//$this->statistics_model->db->close();
+						//$this->statistics_model->db->initialize();
 
 						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
 					}
-
-					echo "<br>global foreach --------------------- " . (microtime(true) - $foreach_start) . " seconds<br>";
+					$endTime = microtime(true);
+					echo "<br>insert/update ---------------------- " . ($endTime - $insertStart) . " seconds<br>";
+					echo "<br>global foreach --------------------- " . ($endTime - $foreach_start) . " seconds<br>";
 				} //end foreach
 				
 				$cjo = $this->settings_model->getDescription();

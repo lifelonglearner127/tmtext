@@ -2093,7 +2093,7 @@ echo "j  = ".$j;
         return $rows;
     }
     
-    public function getByProductNameNew($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false) {
+    public function getByProductNameNew($im_data_id, $selected_product_name = '', $manufacturer = '', $strict = false, $customers_list = array()) {
          $model = time();
          $this->insert_custom_model($im_data_id, $model);
         
@@ -2154,28 +2154,29 @@ echo "j  = ".$j;
 
         if ($data1) {
             $rows = $data1;
-            $customers_list = array();
-            $query_cus = $this->db->order_by('name', 'asc')->get('sites');
-            $query_cus_res = $query_cus->result();
-	    $query_cus->free_result();
-            if (count($query_cus_res) > 0) {
-                foreach ($query_cus_res as $key => $value) {
-                    $n = parse_url($value->url);
-                    $customers_list[] = $n['host'];
-                }
-            }
+	    if(empty($customers_list))
+	    {    
+		$customers_list = array();
+		$query_cus = $this->db->order_by('name', 'asc')->get('sites');
+		$query_cus_res = $query_cus->result();
+		$query_cus->free_result();
+		if (count($query_cus_res) > 0) {
+		    foreach ($query_cus_res as $key => $value) {
+			$n = parse_url($value->url);
+			$customers_list[] = $n['host'];
+		    }
+		}
+	    }    
             $customers_list = array_unique($customers_list);
 
 
             foreach ($rows as $key => $row) {
-                $cus_val = "";
                 foreach ($customers_list as $ki => $vi) {
                     if (strpos($rows[$key]['url'], "$vi") !== false) {
-                        $cus_val = $vi;
+                        $rows[$key]['customer'] = $vi;
+			break;
                     }
                 }
-                if ($cus_val !== "")
-                    $rows[$key]['customer'] = $cus_val;
             }
         }
        return $rows;
