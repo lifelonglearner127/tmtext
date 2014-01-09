@@ -778,17 +778,18 @@ class Crons extends MY_Controller
 
 
 					// Generate Title Keywords
-					$time_start = microtime(true);
+					$keywords_start = microtime(true);
 					$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
-					echo "Title Keywords -------------------- <b>".(microtime(true) - $time_start)." seconds</b>\n";
+					echo "Title Keywords -------------------- <b>".(microtime(true) - $keywords_start)." seconds</b>\n";
 
 
-					$time_start = microtime(true);
+					$modelStart = microtime(true);
 					$m = '';
 					//If parsed attributes are exist, finding similar items and price diff
 					if (isset($obj->parsed_attributes) && isset($obj->parsed_attributes['model']) && strlen($obj->parsed_attributes['model']) > 3)
 					{
 						//getting model of item
+$modelGet = microtime(true);
 						if ($obj->model && (strlen($obj->model) > 3))
 						{
 							$m = $obj->model;
@@ -806,9 +807,11 @@ class Crons extends MY_Controller
 							echo 'Error', $e->getMessage(), "\n";
 							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id,1);
 						}
+echo '<br> - model get -- '.(microtime(true) - $modelGet);
 						//if own_prices is not empty make price difference data
 						if (!empty($own_prices))
 						{
+$getSimilar = microtime(true);
 							$own_price = floatval($own_prices->price);
 							$obj->own_price = $own_price;
 							$price_diff_exists = array();
@@ -824,9 +827,11 @@ class Crons extends MY_Controller
 								echo 'Error', $e->getMessage(), "\n";
 								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
 							}
+echo '<br> - similar get -- '.(microtime(true) - $getSimilar);
 							//If similar items was found, start comparing
 							if (!empty($similar_items))
 							{
+$checkSimilar = microtime(true);								
 								foreach ($similar_items as $ks => $vs)
 								{
 									$customer = "";
@@ -844,6 +849,7 @@ class Crons extends MY_Controller
 									    'imported_data_id' => $vs['imported_data_id'],
 									    'customer' => $customer
 									);
+$getPrices = microtime(true);								
 									//Getting a three last prices for each item
 									try
 									{
@@ -856,6 +862,7 @@ class Crons extends MY_Controller
 										//$this->statistics_model->db->initialize();
 										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id'],1);
 									}
+echo '<br> -- get last prices -- '.(microtime(true) - $getPrices);									
 									//If last three prices are exist, define range of prices and start comparing
 									if (!empty($three_last_prices))
 									{
@@ -877,10 +884,12 @@ class Crons extends MY_Controller
 											$competitors_prices[] = $competitor_price;
 										}
 									}
+echo '<br> - similar check -- '.(microtime(true) - $checkSimilar);									
 								}
 							}
 						} else
 						{
+$getSimilar2 = 	microtime(true);						
 							//own priece does not exists, looking for similar items
 							try
 							{
@@ -890,9 +899,11 @@ class Crons extends MY_Controller
 								echo 'Error', $e->getMessage(), "\n";
 								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
 							}
+echo '<br> - similar get 2 -- '.(microtime(true) - $getSimilar2);							
 							//If similar items were found, add imported_data_id and customer to similar product competitors
 							if (!empty($similar_items))
 							{
+$checkSimilar2 = microtime(true);								
 								foreach ($similar_items as $ks => $vs)
 								{
 									$customer = "";
@@ -909,9 +920,10 @@ class Crons extends MY_Controller
 									    'customer' => $customer
 									);
 								}
+echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);								
 							}
 						}
-						$time = microtime(true) - $time_start;
+						$time = microtime(true) - $modelStart;
 						echo "<br>model exists_and some actions - " . $time . 'seconds';
 					} else
 					{
@@ -967,7 +979,7 @@ class Crons extends MY_Controller
 					}
 					$time = microtime(true) - $time_start;
 					echo "<br>research_data ---------------------- " . $time . " seconds";
-					$insertStart = microtime(true);
+					//$insertStart = microtime(true);
 					//insert new statistics data to statistics_new table if it not exists in table and update if exists
 					try
 					{
@@ -982,7 +994,7 @@ class Crons extends MY_Controller
 						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
 					}
 					$endTime = microtime(true);
-					echo "<br>insert/update ---------------------- " . ($endTime - $insertStart) . " seconds<br>";
+					//echo "<br>insert/update ----------------------- " . ($endTime - $insertStart) . " seconds<br>";
 					echo "<br>global foreach --------------------- " . ($endTime - $foreach_start) . " seconds<br>";
 				} //end foreach
 				
@@ -1006,7 +1018,7 @@ class Crons extends MY_Controller
 		if (count($data_arr) > 0 && $stats_status->description === 'started' && ($cjo - 1) * 50 < intval($total_items['description']))
 		{ 
 			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
-			echo $utd->td;  //exit;
+			echo $utd->td;  exit;
 			//make asynchronous web request to do_stats_forupdated page
 			shell_exec("wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &");
 		} else

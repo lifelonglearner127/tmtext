@@ -1401,9 +1401,9 @@ class Imported_data_parsed_model extends CI_Model {
 
         if ($key == 'parsed_attributes') {
             $value = str_replace("-", "", $value);
-            $value1 = $this->db->escape($value . '%');
+            //$value1 = $this->db->escape($value . '%');
             $value2 = $this->db->escape($value);
-            $this->db->where(" INSTR(REPLACE(`p`.`model`,'-',''), " . $value2 . ")=1 OR INSTR(" . $value2 . ", REPLACE(`p`.`model`,'-',''))=1", NULL, FALSE);
+            $this->db->where("(INSTR(REPLACE(`p`.`model`,'-',''), " . $value2 . ")=1 OR INSTR(" . $value2 . ", REPLACE(`p`.`model`,'-',''))=1)", NULL, FALSE);
         } else {
             if ($strict) {
                 $this->db->like('p.value', '"' . $value . '"');
@@ -1425,6 +1425,7 @@ class Imported_data_parsed_model extends CI_Model {
         }
 	$data = array();
         $query = $this->db->get();
+	//echo $this->db->last_query(); exit;
 	if ($query->num_rows() > 0)
 	{
 		$results = $query->result_array();
@@ -1452,7 +1453,6 @@ class Imported_data_parsed_model extends CI_Model {
 			}
 	}
 	$query->free_result();
-
         return $data;
     }
 
@@ -2460,6 +2460,7 @@ echo "j  = ".$j;
 
             return $res;
         }
+	return FALSE;
     }
 
     function getLastPrices($imported_data_id, $prices_count = 3) {
