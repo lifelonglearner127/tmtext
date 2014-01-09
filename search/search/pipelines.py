@@ -79,6 +79,7 @@ class URLsPipeline(object):
 
 			# if output type is 3, add additional fields
 			if option == 3:
+				assert 'origin_name' in item
 				fields.append(item['origin_name'])
 				fields.append(item['origin_model'] if 'origin_model' in item else "")
 
@@ -91,7 +92,7 @@ class URLsPipeline(object):
 				# if there was a match (there is a 'product_url', there should also be a 'product_name')
 				if 'product_url' in item:
 					assert 'product_name' in item
-					
+
 				fields.append(item['product_name'] if 'product_name' in item else "")
 				fields.append(item['product_model'] if 'product_model' in item else "")
 
