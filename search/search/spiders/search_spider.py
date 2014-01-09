@@ -549,7 +549,7 @@ class SearchSpider(BaseSpider):
 
 			#TODO: uncomment below - it should not have been in if/else branch!
 
-				#return [item]
+			return [item]
 
 	def extract_walmart_id(self, url):
 		m = re.match(".*/ip/([0-9]+)", url)
