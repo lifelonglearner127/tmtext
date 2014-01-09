@@ -7,7 +7,10 @@
 # Output type 2: output all matches to one file, 2 columns (original and matched URL). For manufacturer spider add product_images and product_videos column
 # Output type 3: like output type 2, except with additional columns: confidence score, product name, model (for both sites)
 
+# Can't use csv module for now because it doesn't support unicode
+
 import json
+import re
 
 class SearchPipeline(object):
 	def __init__(self):
@@ -68,9 +71,7 @@ class URLsPipeline(object):
 				line = item['product_url'] + "\n"
 				self.file.write(line)
 			else:
-				# if spider.by_id:
-				# 	line = item['origin_id'] + "\n"
-				# else:
+				
 				line = item['origin_url'] + "\n"
 				self.file2.write(line)
 		# for option 2 and 3, output in one file source product URL (or id) and matched product URL (if found), separated by a comma
@@ -80,7 +81,9 @@ class URLsPipeline(object):
 			# if output type is 3, add additional fields
 			if option == 3:
 				assert 'origin_name' in item
-				fields.append(item['origin_name'])
+				# in product name: escape double quotes and enclose in double quotes - use json.dumps for this
+				#TODO: should I also escape single quotes?
+				fields.append(json.dumps(item['origin_name']))
 				fields.append(item['origin_model'] if 'origin_model' in item else "")
 
 			# if a match was found add it to the fields to be output
@@ -94,13 +97,15 @@ class URLsPipeline(object):
 					assert 'product_name' in item
 					assert 'confidence' in item
 
-				fields.append(item['product_name'] if 'product_name' in item else "")
+				# in product name: escape double quotes and enclose in double quotes
+				fields.append(json.dumps(item['product_name']) if 'product_name' in item else "")
 				fields.append(item['product_model'] if 'product_model' in item else "")
 
-				fields.append(str(item['confidence']) if 'confidence' in item else "")
+				# format confidence score on a total of 5 characters and 2 decimal points 
+				fields.append(str("%5.2f" % item['confidence']) if 'confidence' in item else "")
 
 			# construct line from fields list
-			line = ",".join(fields) + "\n"
+			line = ",".join(map(lambda x: x.encode("utf-8"), fields)) + "\n"
 
 			self.file.write(line)
 		return item
