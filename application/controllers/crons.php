@@ -32,7 +32,9 @@ class Crons extends MY_Controller
 		    'delete_batch_items_from_statistics_new' => true,
 		    'fix_imported_data_parsed_models' => true,
 		    'fixmodel_length' => true,
-		    'fix_revisions' => true
+		    'fix_revisions' => true,
+		    'checkUploadedFiles' =>true, 
+		    'renameExistingFiles' =>true 
 		));
 		$this->load->library('helpers');
 		$this->load->helper('algoritm');
@@ -3758,5 +3760,57 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 //		}
 //		unlink($tmp_dir . ".locked");
 //	}
+	
+	function checkUploadedFiles()
+	{
+		$path = dirname(__FILE__);
+		echo 'Path to script: '.$path;
+		$uploadFolder = $this -> config -> item('csv_upload_dir');
+		echo '<br>Path to upload folder: '.$uploadFolder;
+		if(is_dir($uploadFolder))
+		{
+			$list = scandir($uploadFolder);
+			if(is_array($list) && count($list) > 2)
+			{
+				unset($list[0]);
+				unset($list[1]);
+				echo '<table border=1 cellpadding=5><tr><th>Filename</th><th>Changed</th>';
+				foreach($list as $l)
+				{
+					echo '<tr><td>'.$l.'</td><td>  '.date('Y-m-d H:i:s',filemtime($uploadFolder.'/'.$l)).'</td><tr>';
+				}
+				echo '</tr></table>';
+			}
+		}	
+	}
+	
+	function renameExistingFiles($suffix = '')
+	{
+		if(empty($suffix) || preg_match('#^[0-9]+$#',$suffix))
+		{	
+			$uploadFolder = $this -> config -> item('csv_upload_dir');
+			if(is_dir($uploadFolder))
+			{
+				$list = scandir($uploadFolder);
+				if(is_array($list) && count($list) > 2)
+				{
+					unset($list[0]);
+					unset($list[1]);
+					foreach($list as $l)
+					{	
+						$ext = end(explode('.',$l));
+						$name = preg_replace('#_[0-9]+.'.$ext.'#','',$l);
+						$name = str_replace('.'.$ext,'',$name);
+						if(preg_match('#^[0-9]+$#',$suffix))
+						{
+							$suffix = '_'.$suffix;
+						}	
+						rename($uploadFolder.'/'.$l,$uploadFolder.'/'.$name.$suffix.'.'.$ext);
+					}
+				}
+			}
+		}
+		$this->checkUploadedFiles();
+	}
 
 }
