@@ -358,8 +358,8 @@ $config['rewrite_short_tags'] = FALSE;
 $config['proxy_ips'] = '';
 
 $config['cmd_mask'] = '{1}';
-$config['cmd_path'] = '/ebs/sites/client38/web49/web/producteditor';//'/opt/trillionmonkeys.com/tm';
-$config['attr_path'] = $config['cmd_path'].'/webroot'; // .'/date';
+$config['cmd_path'] = '/opt/trillionmonkeys.com/tm';
+$config['attr_path'] = $config['cmd_path'].'/date'; 
 
 $config['java_cmd'] = 'java -cp dist/NLG.jar com.swta.ChartGenerator data/tiger/all.rules data/tiger/desc/'.$config['cmd_mask'].'/attributes.dat data/tiger/desc/'.$config['cmd_mask'].'/blacklist.dat';
 $config['python_cmd'] = "python ML_script.py search\('".$config['cmd_mask']."'\)";

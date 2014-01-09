@@ -3764,7 +3764,8 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 	{
 		$path = dirname(__FILE__);
 		echo 'Path to script: '.$path;
-		$uploadFolder = $path."/../../webroot/uploads";
+		$uploadFolder = $this -> config -> item('csv_upload_dir');
+		echo '<br>Path to upload folder: '.$uploadFolder;
 		if(is_dir($uploadFolder))
 		{
 			$list = scandir($uploadFolder);
