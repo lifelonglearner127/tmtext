@@ -97,6 +97,9 @@ class AmazonSpider(SearchSpider):
 		item['origin_url'] = origin_url
 		item['origin_name'] = response.meta['origin_name']
 
+		if 'origin_model' in response.meta:
+			item['origin_model'] = response.meta['origin_model']
+
 		# if 'origin_id' in response.meta:
 		# 	item['origin_id'] = response.meta['origin_id']
 		# 	assert self.by_id
@@ -119,9 +122,9 @@ class AmazonSpider(SearchSpider):
 			item['product_name'] = product_name[0].strip()
 
 			# extract product model number
-			model_number_holder = hxs.select("//tr[@class='item-model-number']/td[@class='value']/text()").extract()
+			model_number_holder = hxs.select("//tr[@class='item-model-number']/td[@class='value']/text() | //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text()").extract()
 			if model_number_holder:
-				item['product_model'] = model_number_holder[0]
+				item['product_model'] = model_number_holder[0].strip()
 
 			brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
 			if brand_holder:

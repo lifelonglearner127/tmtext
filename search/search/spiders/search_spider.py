@@ -268,11 +268,6 @@ class SearchSpider(BaseSpider):
 			if product_model_holder:
 				product_model = product_model_holder[0]
 
-			# # if product model was not found in special field in page, try to extract it from name
-			# else:
-			# 	product_index = ProcessText.extract_model_nr_index(product_name)
-			# 	if product_index >= 0:
-			# 		product_model = product_nam
 
 		else:
 			raise CloseSpider("Unsupported site: " + site)
@@ -293,9 +288,15 @@ class SearchSpider(BaseSpider):
 
 		# if there is no product model, try to extract it
 		if not product_model:
-			product_model_index = ProcessText.extract_model_nr_index(product_name)
-			if product_model_index >= 0:
-				product_model = product_name[product_model_index]
+			product_model = ProcessText.extract_model_from_name(product_name)
+
+			# for logging purposes, set this back to the empty string if it wasn't found (so was None)
+			if not product_model:
+				product_model = ""
+			# product_model_index = ProcessText.extract_model_nr_index(product_name)
+			# if product_model_index >= 0:
+			# 	product_model = product_name[product_model_index]
+			print "MODEL EXTRACTED: ", product_model
 
 		# if there is no product brand, get first word in name, assume it's the brand
 		product_brand_extracted = ""
@@ -350,6 +351,8 @@ class SearchSpider(BaseSpider):
 
 		# 1) Search by model number
 		if product_model:
+
+			#TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
 			query1 = self.build_search_query(product_model)
 			search_pages1 = self.build_search_pages(query1)
 			#page1 = search_pages1[self.target_site]
@@ -528,6 +531,8 @@ class SearchSpider(BaseSpider):
 					
 					item['origin_url'] = response.meta['origin_url']
 					item['origin_name'] = response.meta['origin_name']
+					if 'origin_model' in response.meta:
+						item['origin_model'] = response.meta['origin_model']
 
 					# if 'origin_id' in response.meta:
 					# 	item['origin_id'] = response.meta['origin_id']
