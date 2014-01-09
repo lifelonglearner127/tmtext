@@ -28,7 +28,7 @@ class Temp_data_model extends CI_Model {
     //     $this->db->query($sql);
     // }
 
-    public function createMatchUrlsTable($manu_file_upload_opts) {
+    public function createMatchUrlsTable($manu_file_upload_opts = false) {
         $sql = "CREATE TABLE IF NOT EXISTS `urlstomatch` (
             id INT NOT NULL AUTO_INCREMENT,
             url1 VARCHAR(5000),
