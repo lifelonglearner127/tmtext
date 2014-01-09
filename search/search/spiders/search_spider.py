@@ -293,10 +293,12 @@ class SearchSpider(BaseSpider):
 			# for logging purposes, set this back to the empty string if it wasn't found (so was None)
 			if not product_model:
 				product_model = ""
+
 			# product_model_index = ProcessText.extract_model_nr_index(product_name)
 			# if product_model_index >= 0:
 			# 	product_model = product_name[product_model_index]
-			print "MODEL EXTRACTED: ", product_model
+				
+			print "MODEL EXTRACTED: ", product_model, " FROM NAME ", product_name
 
 		# if there is no product brand, get first word in name, assume it's the brand
 		product_brand_extracted = ""
