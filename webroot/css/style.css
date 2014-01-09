@@ -2565,6 +2565,9 @@ body.login_block{
 .subtitle_word_short, .subtitle_word_long, .subtitle_keyword_short, .subtitle_keyword_long{
     font-size: 10px!important;
 }
+.word_short {
+	text-align: center;
+}
 .products_tb tr, .products_tb td{
     border: 1px solid rgb(182, 173, 173);
     padding: 5px;
