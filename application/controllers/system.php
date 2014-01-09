@@ -2595,6 +2595,7 @@ class System extends MY_Controller {
 //    }
 
     public function check_urls() {
+    				$manu_file_upload_opts = $this -> input -> post('manu_file_upload_opts');
             $this -> load -> model('site_categories_model');
             $this -> load -> model('settings_model');
             //var_dump($_POST);
@@ -2618,15 +2619,28 @@ class System extends MY_Controller {
             $notFoundUrlsArr = array();
             $process = time();
             foreach ($fcont as $line) {
-                    ++$linesTotal;
-                    //*for big files
-                    $this -> temp_data_model -> createMatchUrlsTable();
-                    $res = '';
-                    $urls = explode(',', trim(trim($line), ','));
-                    if (count($urls) == 2) {
-                            ++$linesAdded;
-                            $this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
-                    }//*/
+                ++$linesTotal;
+                // === new I.L (start)
+                $urls = explode(',', trim(trim($line), ','));
+                $this -> temp_data_model -> createMatchUrlsTable($manu_file_upload_opts);
+                $res = '';
+                if (count($urls) == 2) {
+                  ++$linesAdded;
+                  $this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
+                } else if($manu_file_upload_opts && count($urls) >= 2) {
+                	++$linesAdded;
+                	$this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
+                }
+                // === new I.L (end)
+                // ===== previous before I.L (start)
+                // $this -> temp_data_model -> createMatchUrlsTable();
+                // $res = '';
+                // $urls = explode(',', trim(trim($line), ','));
+                // if (count($urls) == 2) {
+                //   ++$linesAdded;
+                //   $this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
+                // }
+                // ===== previous before I.L (end)
             }
             $this -> temp_data_model -> createNonFoundTable();
             $this -> temp_data_model -> cUpdDataTable();
