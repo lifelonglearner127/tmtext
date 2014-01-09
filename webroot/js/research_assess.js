@@ -465,9 +465,7 @@ $(function() {
 				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
-				console.log('local draw callback');
-				
-				console.log(oSettings);
+				console.log('local draw callback');							
 				
 				tblAssess.fnAdjustColumnSizing(false);						
 			},
@@ -493,7 +491,7 @@ $(function() {
 				sSearch : "Filter:",
 				sLengthMenu : "_MENU_ rows"
 			},
-			aoColumns : json_data.aoColumns
+			aoColumns : json_data.aoColumns,			
 		}, json_data));	
 	}	
 
@@ -2797,7 +2795,7 @@ function prevSibilfunc(curentSibil){
 		assessRequestParams.sort_dir = 'desc';
 		assessRequestParams.sSearch = '';
 		assessRequestParams.bRegex = false;
-		assessRequestParams.iDisplayLength = 10;
+		assessRequestParams.iDisplayLength = 5;
 		assessRequestParams.iDisplayStart = 0;		
 				
         return assessRequestParams;
