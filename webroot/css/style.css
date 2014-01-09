@@ -2627,7 +2627,7 @@ input[name="search_crawl_data"] {
 .tb_product_name{
     display: block;
     overflow: hidden;
-    width: 200px !important;
+    /* width: 200px !important; */
 
 }
 
