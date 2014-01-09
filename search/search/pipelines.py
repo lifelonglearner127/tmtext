@@ -92,11 +92,12 @@ class URLsPipeline(object):
 				# if there was a match (there is a 'product_url', there should also be a 'product_name')
 				if 'product_url' in item:
 					assert 'product_name' in item
+					assert 'confidence' in item
 
 				fields.append(item['product_name'] if 'product_name' in item else "")
 				fields.append(item['product_model'] if 'product_model' in item else "")
 
-				fields.append(str(item['confidence']))
+				fields.append(str(item['confidence']) if 'confidence' in item else "")
 
 			# construct line from fields list
 			line = ",".join(fields) + "\n"
