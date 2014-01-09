@@ -94,7 +94,7 @@ class URLsPipeline(object):
 				fields.append(item['product_name'])
 				fields.append(item['product_model'] if 'product_model' in item else "")
 
-				fields.append(item['confidence'])
+				fields.append(str(item['confidence']))
 
 			# construct line from fields list
 			line = ",".join(fields) + "\n"
