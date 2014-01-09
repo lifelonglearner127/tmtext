@@ -51,7 +51,7 @@ class SearchSpider(BaseSpider):
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter for selecting results (the lower the value the more permissive the selection)
 	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
-		output = 1, threshold = 0.8, outfile = "search_results.txt", outfile2 = "not_matched.txt", fast = 0, use_proxy = False, by_id = False):
+		output = 1, threshold = 0.8, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False):#, by_id = False):
 
 		# call specific init for each derived class
 		self.init_sub()
@@ -66,7 +66,7 @@ class SearchSpider(BaseSpider):
 		self.outfile2 = outfile2
 		self.fast = fast
 		self.use_proxy = use_proxy
-		self.by_id = by_id
+		#self.by_id = by_id
 
 	def build_search_pages(self, search_query):
 		# build list of urls = search pages for each site
@@ -244,7 +244,7 @@ class SearchSpider(BaseSpider):
 				m = re.match("(.*)\?enlargedSearch.*", item['origin_url'])
 				if m:
 					item['origin_url'] = m.group(1)
-				item['origin_id'] = self.extract_walmart_id(item['origin_url'])
+				#item['origin_id'] = self.extract_walmart_id(item['origin_url'])
 				yield item
 				return
 
@@ -403,8 +403,8 @@ class SearchSpider(BaseSpider):
 		# origin product brand as extracted from name (basically the first word in the name)
 		request.meta['origin_brand_extracted'] = product_brand_extracted
 
-		if self.by_id:
-			request.meta['origin_id'] = self.extract_walmart_id(response.url)
+		# if self.by_id:
+		# 	request.meta['origin_id'] = self.extract_walmart_id(response.url)
 
 		#self.target_site = product_brand_extracted
 		target_site = product_brand_extracted
@@ -468,11 +468,11 @@ class SearchSpider(BaseSpider):
 				if 'threshold' in response.meta:
 					request.meta['threshold'] = response.meta['threshold']
 
-				if 'origin_id' in response.meta:
-					request.meta['origin_id'] = response.meta['origin_id']
-					assert self.by_id
-				else:
-					assert not self.by_id
+				# if 'origin_id' in response.meta:
+				# 	request.meta['origin_id'] = response.meta['origin_id']
+				# 	assert self.by_id
+				# else:
+				# 	assert not self.by_id
 
 				# used for result product URLs
 				if 'search_results' in response.meta:
@@ -523,11 +523,11 @@ class SearchSpider(BaseSpider):
 					item['origin_url'] = response.meta['origin_url']
 					item['origin_name'] = response.meta['origin_name']
 
-					if 'origin_id' in response.meta:
-						item['origin_id'] = response.meta['origin_id']
-						assert self.by_id
-					else:
-						assert not self.by_id
+					# if 'origin_id' in response.meta:
+					# 	item['origin_id'] = response.meta['origin_id']
+					# 	assert self.by_id
+					# else:
+					# 	assert not self.by_id
 					return [item]
 
 				return best_match
@@ -541,13 +541,15 @@ class SearchSpider(BaseSpider):
 			item['origin_url'] = response.meta['origin_url']
 			item['origin_name'] = response.meta['origin_name']
 
-			if 'origin_id' in response.meta:
-				item['origin_id'] = response.meta['origin_id']
-				assert self.by_id
-			else:
-				assert not self.by_id
+			# if 'origin_id' in response.meta:
+			# 	item['origin_id'] = response.meta['origin_id']
+			# 	assert self.by_id
+			# else:
+			# 	assert not self.by_id
 
-				return [item]
+			#TODO: uncomment below - it should not have been in if/else branch!
+
+				#return [item]
 
 	def extract_walmart_id(self, url):
 		m = re.match(".*/ip/([0-9]+)", url)
