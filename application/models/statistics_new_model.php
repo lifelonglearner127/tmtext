@@ -463,6 +463,20 @@ class Statistics_new_model extends CI_Model {
         } else if(isset($params->snap_count)) {
             $txt_filter_part2 = ' AND `cl`.`snap` != "" LIMIT 0,'.$params->snap_count.' ';
         }
+		else if(isset($params->halfResults)) // Castro: check if I have to show only half of results created for get_graph_data
+		{
+			$halfResults_int = 300;
+
+			if($params->halfResults == 0) 
+			{
+				$txt_filter_part2 = ' LIMIT 0, '.$halfResults_int; // returns first 300 results, 300 fits in chart
+			}
+			else
+			{
+				$txt_filter_part2 = ' LIMIT '.$halfResults_int .', 18446744073709551615' ; // returns the rest
+			}
+		}
+
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
 //            header('Mem-and-Time4-BAT01: '.memory_get_usage().'-'.$dur.'-'.time());
@@ -533,6 +547,7 @@ class Statistics_new_model extends CI_Model {
             
             from '.$this->tables['statistics_new'].' as `s` left join '.$this->tables['crawler_list'].' as `cl` on `cl`.`imported_data_id` = `s`.`imported_data_id` where `s`.`batch_id`='.$batch_id.$txt_filter_part2;
 //            $this->db->cache_delete_all();
+// exit($sql);
             $query = $this->db->query($sql);
 //            //Debugging
 //            $dur = microtime(true)-$st_time;

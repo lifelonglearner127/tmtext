@@ -600,90 +600,148 @@ $(function() {
 	{
 		if(is_disabled)
 		{
+			if(chart1 != null)
+			{
+				chart1.destroy();
+				chart1 = null;
+			}
 			$('#graphDropDown').attr("disabled", true);
 			$('#show_over_time').attr("disabled", true);
-			$('#highChartContainer').empty().addClass("loading");
+			$('#highChartContainer').addClass("loading");
 		}
 		else
 		{
 			$('#graphDropDown').removeAttr("disabled");
 			$('#show_over_time').removeAttr("disabled");
 			$("#highChartContainer").removeClass("loading");
+			
+			$('.highcharts-button').each(function(i){
+				if(i > 0)
+				{
+					$(this).remove();
+				}
+			});
 		}
 	}
 
-function highChart(graphBuild) {
-	
-	// Castro #1119: disable charts dropdown and show over time checkbox and empty chart container
-	toggleGraphFields(true);
-	
-	var batch_set = $('.result_batch_items:checked').val() || 'me';	
-    var batch1Value = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
-    var batch2Value = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
-    var batch1Name = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
-    var batch2Name = $(batch_sets[batch_set]['batch_compare']).find('option:selected').text();
-    
-    if(batch1Value == false || batch1Value == 0 || typeof batch1Value == 'undefined'){
-        batch1Value = -1;
-    }
-    if(batch2Value == false || batch2Value == 0 || typeof batch2Value == 'undefined'){
-        batch2Value = -1;
-    }
-    $.ajax({
-        type: "POST",
-        url: readGraphDataUrl,
-        data: {
-            batch_id: batch1Value,
-            batch_compare_id: batch2Value,
-            graphBuild: graphBuild
-        },
-		error: function()
-		{
-			toggleGraphFields(false);
-			alert("There was an error retrieving chart data");
+	function highChart(graphBuild) 
+	{
+		// Castro #1119: disable charts dropdown and show over time checkbox and empty chart container
+		toggleGraphFields(true);
+		
+		var batch_set = $('.result_batch_items:checked').val() || 'me';	
+		var batch1Value = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
+		var batch2Value = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
+		var batch1Name = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
+		var batch2Name = $(batch_sets[batch_set]['batch_compare']).find('option:selected').text();
+		
+		if(batch1Value == false || batch1Value == 0 || typeof batch1Value == 'undefined'){
+			batch1Value = -1;
 		}
-    }).done(function(data){					
-        var value1 = [];
-        var value2 = [];
-        var valueName = [];
-        valueName[0] = [];
-        valueName[1] = [];
-        var valueDate = [];
-        valueDate[0] = [];
-        valueDate[1] = [];
-        var valueUrl = [];
-        valueUrl[0] = [];
-        valueUrl[1] = [];
-        var graphName1 = '';
-        var graphName2 = '';
-        var cloneToolTip = null;
-        var cloneToolTip2 = null;
-        var updated_Features = [];
-        updated_Features[0] = [];
-        updated_Features[1] = [];
-        var updated_long_description_wc = [];
-        updated_long_description_wc[0] = [];
-        updated_long_description_wc[1] = [];
-        var updated_revision = [];
-        updated_revision[0] = [];
-        updated_revision[1] = [];
-        var updated_short_description_wc = [];
-        updated_short_description_wc[0] = [];
-        updated_short_description_wc[1] = [];
-        var updated_total_description_wc = [];
-        updated_total_description_wc[0] = [];
-        updated_total_description_wc[1] = [];
-        var updated_h1_word_counts = [];
-        updated_h1_word_counts[0] = [];
-        updated_h1_word_counts[1] = [];
-        var updated_h2_word_counts = [];
-        updated_h2_word_counts[0] = [];
-        updated_h2_word_counts[1] = [];
-        var oldest_values =[];
-        oldest_values[0] =[];
-        oldest_values[1] =[];
-        if(data.length) {
-    
+		if(batch2Value == false || batch2Value == 0 || typeof batch2Value == 'undefined'){
+			batch2Value = -1;
+		}
+		$.ajax({
+			type: "POST",
+			url: readGraphDataUrl,
+			data: {
+				batch_id: batch1Value,
+				batch_compare_id: batch2Value,
+				graphBuild: graphBuild,
+				halfResults:0
+			},
+			error: function()
+			{
+				toggleGraphFields(false);
+				alert("There was an error retrieving chart data");
+			}
+		}).done(function(data){					
+
+			var first_half_data = data;
+			
+			createHighChart(first_half_data, graphBuild, batch1Value, batch1Name, batch2Value, batch2Name);
+			
+			$.ajax({
+				type: "POST",
+				url: readGraphDataUrl,
+				data: {
+					batch_id: batch1Value,
+					batch_compare_id: batch2Value,
+					graphBuild: graphBuild,
+					halfResults:1
+				},
+				error: function()
+				{
+					toggleGraphFields(false);
+					alert("There was an error retrieving chart data");
+				}
+			}).done(function(data){					
+
+				chart1.destroy(); // Castro #1270: destroy first chart to prevent memory leaks
+				
+				// Castro #1270: merge first json object with second json object
+				for(key in data[0])
+				{
+					var array_to_merge = data[0][key];
+					
+					for(var i = 0; i < array_to_merge.length; i++)
+					{
+						first_half_data[0][key].push(array_to_merge[i]);
+					}
+				}
+				
+				createHighChart(first_half_data, graphBuild, batch1Value, batch1Name, batch2Value, batch2Name);
+				
+				// Castro #1119: enable drodown and checkbox again remove loading image
+				toggleGraphFields(false);
+			});
+		});
+		
+	}
+
+	function createHighChart(data, graphBuild, batch1Value, batch1Name, batch2Value, batch2Name)
+	{
+		var value1 = [];
+		var value2 = [];
+		var valueName = [];
+		valueName[0] = [];
+		valueName[1] = [];
+		var valueDate = [];
+		valueDate[0] = [];
+		valueDate[1] = [];
+		var valueUrl = [];
+		valueUrl[0] = [];
+		valueUrl[1] = [];
+		var graphName1 = '';
+		var graphName2 = '';
+		var cloneToolTip = null;
+		var cloneToolTip2 = null;
+		var updated_Features = [];
+		updated_Features[0] = [];
+		updated_Features[1] = [];
+		var updated_long_description_wc = [];
+		updated_long_description_wc[0] = [];
+		updated_long_description_wc[1] = [];
+		var updated_revision = [];
+		updated_revision[0] = [];
+		updated_revision[1] = [];
+		var updated_short_description_wc = [];
+		updated_short_description_wc[0] = [];
+		updated_short_description_wc[1] = [];
+		var updated_total_description_wc = [];
+		updated_total_description_wc[0] = [];
+		updated_total_description_wc[1] = [];
+		var updated_h1_word_counts = [];
+		updated_h1_word_counts[0] = [];
+		updated_h1_word_counts[1] = [];
+		var updated_h2_word_counts = [];
+		updated_h2_word_counts[0] = [];
+		updated_h2_word_counts[1] = [];
+		var oldest_values =[];
+		oldest_values[0] =[];
+		oldest_values[1] =[];
+		if(data.length) 
+		{
             /***First Batch - Begin***/
             if(data[0] && data[0].product_name.length > 0){
                 valueName[0] = data[0].product_name;
@@ -912,7 +970,6 @@ function highChart(graphBuild) {
 				
 				for(item in current_trendline)
 				{
-					console.log(item);
 					trendline_series[j][i] = current_trendline[item];
 					j++;
 				}
@@ -927,44 +984,45 @@ function highChart(graphBuild) {
 				}
 			}
 		}
-
-        var chart1 = new Highcharts.Chart({
-            title: {
-                text: ''
-            },
-            chart: {
-                renderTo: 'highChartContainer',
-                zoomType: 'x',
-                spacingRight: 20,
-            },
-            xAxis: {
-                min: 0,
-                max: 300,
-                categories: [],
-                labels: {
-                  enabled: false
-                }
-            },
-            yAxis: {
-                minPadding: 0.1,
-                maxPadding: 2,
-                min:0
-            },
-            tooltip: {
-                shared: true,
-                useHTML: true,
-//                positioner: function (boxWidth, boxHeight, point) {
-//                    if(point.plotX < bigdatalength*2.3)
-//                        return { x: point.plotX +100, y: 0 };
-//                    else
-//                        return { x: point.plotX -300, y: 0 };
-//                },
-                positioner: function () {
-                        return { x: 85, y: 0 };
-                },
-                formatter: function() {
-                    var result = '<small>'+this.x+'</small> <div class="highcharts-tooltip-close" onclick=\'$(".highcharts-tooltip").css("visibility","hidden"); $("div .highcharts-tooltip span").css("visibility","hidden");\' style="float:right;">X</div><br />';
-                    var j;
+		
+		chart1 = new Highcharts.Chart(
+		{
+			title: {
+				text: ''
+			},
+			chart: {
+				renderTo: 'highChartContainer',
+				zoomType: 'x',
+				spacingRight: 20,
+			},
+			xAxis: {
+				min: 0,
+				max: 300,
+				categories: [],
+				labels: {
+				enabled: false
+				}
+			},
+			yAxis: {
+				minPadding: 0.1,
+				maxPadding: 2,
+				min:0
+			},
+			tooltip: {
+				shared: true,
+				useHTML: true,
+			//positioner: function (boxWidth, boxHeight, point) {
+			//    if(point.plotX < bigdatalength*2.3)
+			//        return { x: point.plotX +100, y: 0 };
+			//    else
+			//        return { x: point.plotX -300, y: 0 };
+			//},
+				positioner: function () {
+						return { x: 85, y: 0 };
+				},
+				formatter: function() {
+					var result = '<small>'+this.x+'</small> <div class="highcharts-tooltip-close" onclick=\'$(".highcharts-tooltip").css("visibility","hidden"); $("div .highcharts-tooltip span").css("visibility","hidden");\' style="float:right;">X</div><br />';
+					var j;
 					
 					if($('#show_over_time').prop('checked')){
 						var display_property = "block";
@@ -973,22 +1031,21 @@ function highChart(graphBuild) {
 
 					}
 					
-                    $.each(this.points, function(i, datum) 
+					$.each(this.points, function(i, datum) 
 					{
-						console.log(datum);
 						// Castro #1119: add line to tooltip only when show overtime is not checked
-                        if(i > 0  && ! $("#show_over_time").is(":checked"))
+						if(i > 0  && ! $("#show_over_time").is(":checked"))
 						{
 							result += '<hr style="border-top: 1px solid #2f7ed8;margin:0;" />';
 						}
 						
-                        if(datum.series.color == '#2f7ed8')
+						if(datum.series.color == '#2f7ed8')
 						{
-                            j = 0;
+							j = 0;
 						}
-                        else
+						else
 						{
-                            j = 1;
+							j = 1;
 						}
 						
 						// Castro #1119: add data to tooltip only when show overtime is not checked or is the first point
@@ -1001,70 +1058,57 @@ function highChart(graphBuild) {
 							result += '<span style="color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span>';
 						}
 					});
-                    return result;
-                }
-            },
+					return result;
+				}
+			},
+			plotOptions: {
+				series: {
+					cursor: 'pointer',
+					point: {
+						events: {
+							click: function() { 
+								$('.highcharts-tooltip').first().css('visibility','visible');
+								$('div .highcharts-tooltip span').first().css('visibility','visible');
+								if (cloneToolTip)
+								{
+									chart1.container.firstChild.removeChild(cloneToolTip);
+								}
+								if (cloneToolTip2)
+								{
+									cloneToolTip2.remove();
+								}
+								cloneToolTip = this.series.chart.tooltip.label.element.cloneNode(true);
+								chart1.container.firstChild.appendChild(cloneToolTip);
+								
+								cloneToolTip2 = $('.highcharts-tooltip').clone(); 
+								$(chart1.container).append(cloneToolTip2);
 
-            
-        plotOptions: {
-            series: {
-                cursor: 'pointer',
-                point: {
-                    events: {
-                        click: function() { 
-                            $('.highcharts-tooltip').first().css('visibility','visible');
-                            $('div .highcharts-tooltip span').first().css('visibility','visible');
-                            if (cloneToolTip)
-                            {
-                                chart1.container.firstChild.removeChild(cloneToolTip);
-                            }
-                            if (cloneToolTip2)
-                            {
-                                cloneToolTip2.remove();
-                            }
-                            cloneToolTip = this.series.chart.tooltip.label.element.cloneNode(true);
-                            chart1.container.firstChild.appendChild(cloneToolTip);
-                            
-                            cloneToolTip2 = $('.highcharts-tooltip').clone(); 
-                            $(chart1.container).append(cloneToolTip2);
-
-                            $('.highcharts-tooltip').first().css('visibility','hidden');
-                            $('div .highcharts-tooltip span').first().css('visibility','hidden');
-                        }
-                    }
-                }
-            }
-        },
-
-        scrollbar: {
-            enabled:true,
-			barBackgroundColor: 'gray',
-			barBorderRadius: 7,
-			barBorderWidth: 0,
-			buttonBackgroundColor: 'gray',
-			buttonBorderWidth: 0,
-			buttonArrowColor: 'yellow',
-			buttonBorderRadius: 7,
-			rifleColor: 'yellow',
-			trackBackgroundColor: 'white',
-			trackBorderWidth: 1,
-			trackBorderColor: 'silver',
-			trackBorderRadius: 7
-	    },
-
-            series: seriesObj
+								$('.highcharts-tooltip').first().css('visibility','hidden');
+								$('div .highcharts-tooltip span').first().css('visibility','hidden');
+							}
+						}
+					}
+				}
+			},
+			scrollbar: {
+				enabled:true,
+				barBackgroundColor: 'gray',
+				barBorderRadius: 7,
+				barBorderWidth: 0,
+				buttonBackgroundColor: 'gray',
+				buttonBorderWidth: 0,
+				buttonArrowColor: 'yellow',
+				buttonBorderRadius: 7,
+				rifleColor: 'yellow',
+				trackBackgroundColor: 'white',
+				trackBorderWidth: 1,
+				trackBorderColor: 'silver',
+				trackBorderRadius: 7
+			},
+			series: seriesObj
         });
-		
-		// Castro #1119: enable drodown and checkbox again remove loading image
-		toggleGraphFields(false);
-		
-        $('.highcharts-button').each(function(i){
-            if(i > 0)
-                $(this).remove();
-        });
-    });
-    
-}
+	}
+
 	$('#graphDropDown').live('change',function(){
 		showHighChart();
 	});

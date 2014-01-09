@@ -514,3 +514,6 @@ var filter_toggler_flag = 0
         },
 
     ];
+
+var chart1 = null;
+	
