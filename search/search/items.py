@@ -20,6 +20,8 @@ class SearchItem(Item):
     product_images = Field() # for manufacturer spider: nr of product images on target (manufacturer) site
     product_videos = Field() # for manufacturer spider: nr of product videos on target (manufacturer) site
 
+    confidence = Field() # score in percent indicating confidence in match
+
 # items used in walmart_fullurls spider to match walmart ids to their product pages full URLs
 class WalmartItem(Item):
 	walmart_id = Field()

@@ -184,9 +184,7 @@ class ProcessText():
 			# add price difference penalization
 			score -= price_score_penalization
 
-
-			threshold = param*(math.log(float(len(words1) + len(words2))/2, 10))*10
-
+			# add score for matched brand
 			if brand_matched:
 				score += ProcessText.BRAND_MATCH_WEIGHT
 
@@ -203,6 +201,27 @@ class ProcessText():
 
 
 
+			# compute threshold for accepting/discarding a match: log(average of name lengths)*10 * parameter
+			threshold = param*(math.log(float(len(words1) + len(words2))/2, 10))*10
+
+			# compute confidence of result (using 'threshold' as a landmark - score equal to threshold means 50% confidence)
+			# make sure it doesn't exceed 100%
+			confidence = 100 * min(1.0, score/(2.0 * threshold))
+
+			product2['confidence'] = confidence
+
+
+			if score >= threshold:
+				# append product along with score and a third variable:
+				# variable used for settling ties - aggregating product_matched and brand_matched
+				tie_break_score = 0
+				if model_matched:
+					tie_break_score += 2
+				if brand_matched:
+					tie_break_score += 1
+				products_found.append((product2, score, tie_break_score, threshold))
+
+
 			#### LOGGING
 			if 'product_target_price' in product2:
 				product2_price = product2['product_target_price']
@@ -215,15 +234,6 @@ class ProcessText():
 
 			###################
 
-			if score >= threshold:
-				# append product along with score and a third variable:
-				# variable used for settling ties - aggregating product_matched and brand_matched
-				tie_break_score = 0
-				if model_matched:
-					tie_break_score += 2
-				if brand_matched:
-					tie_break_score += 1
-				products_found.append((product2, score, tie_break_score, threshold))
 
 
 		# if score is the same, sort by tie_break_score (indicating if models and/or brands matched),
