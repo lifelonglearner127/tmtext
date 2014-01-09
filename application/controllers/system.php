@@ -2622,12 +2622,15 @@ class System extends MY_Controller {
                     //*for big files
                     $this -> temp_data_model -> createMatchUrlsTable();
                     $res = '';
+                    echo $line.'<br>';
                     $urls = explode(',', trim(trim($line), ','));
+                    var_dump($urls);exit;
                     if (count($urls) == 2) {
                             ++$linesAdded;
                             $this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
                     }//*/
             }
+            exit;
             $this -> temp_data_model -> createNonFoundTable();
             $this -> temp_data_model -> cUpdDataTable();
             $this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);
