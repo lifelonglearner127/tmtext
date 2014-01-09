@@ -28,7 +28,7 @@ class ProcessText():
 	# normalize text to list of lowercase words (no punctuation except for inches sign (") or /)
 	@staticmethod
 
-	def normalize(orig_text, stem=True, exclude_stopwords=True):
+	def normalize(orig_text, stem=True, exclude_stopwords=True, lowercase=True):
 		text = orig_text
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		#						Feet = '
@@ -82,7 +82,10 @@ class ProcessText():
 		tokens = text.split()
 
 		#TODO: remove the len constraint? eg: kellogs k protein
-		clean = [token.lower() for token in tokens]
+		if lowercase:
+			clean = [token.lower() for token in tokens]
+		else:
+			clean = tokens
 
 		if exclude_stopwords:
 			# don't exclude these
@@ -411,6 +414,8 @@ class ProcessText():
 		alt_product2_models = ProcessText.alt_modelnrs(model2)
 
 		# get product models extracted from product name, if found
+		# Obs: product models are also extracted from name inside search spider if explicit product model is not found on page,
+		# so this case would be covered, but keep it here as well in case model extraced from page is not the same with model extracted from name (and one of them matches)
 		model_index1 = ProcessText.extract_model_nr_index(name1)
 		if model_index1 >= 0:
 			product_model_fromname = name1[model_index1]
@@ -547,6 +552,17 @@ class ProcessText():
 			if ProcessText.is_model_number(words[i]):
 				return i
 		return -1
+
+	# extract model number from name given as one string in original form (not preprocessed)
+	@staticmethod
+	def extract_model_from_name(product_name):
+		name_tokenized = ProcessText.normalize(product_name, stem=False, exclude_stopwords=False, lowercase=False)
+		model_index = ProcessText.extract_model_nr_index(name_tokenized)
+		if model_index >= 0:
+			return name_tokenized[model_index]
+		else:
+			return None
+
 
 	# compute weight to be used for a word for measuring similarity between two texts
 	# assign lower weight to alternative product numbers (if they are, it's indicated by the boolean parameter altModels)

@@ -268,6 +268,12 @@ class SearchSpider(BaseSpider):
 			if product_model_holder:
 				product_model = product_model_holder[0]
 
+			# # if product model was not found in special field in page, try to extract it from name
+			# else:
+			# 	product_index = ProcessText.extract_model_nr_index(product_name)
+			# 	if product_index >= 0:
+			# 		product_model = product_nam
+
 		else:
 			raise CloseSpider("Unsupported site: " + site)
 
