@@ -2602,7 +2602,7 @@ class System extends MY_Controller {
             $this -> load -> model('imported_data_parsed_model');
             $this -> load -> model('temp_data_model');
             $file = $this -> config -> item('csv_upload_dir') . $this -> input -> post('choosen_file');
-	    echo $file;
+	    echo $file; exit;
             $f_name = end(explode('/', $file));
             //exit($f_name);
             //echo file_exists($file)?"exists":"not exists!"."<br>";
