@@ -1478,7 +1478,9 @@ class Imported_data_parsed_model extends CI_Model {
             left join imported_data_parsed as p4 on p4.imported_data_id=p.imported_data_id and p4.`key`='parsed_attributes'
             left join imported_data_parsed as p5 on p5.imported_data_id=p.imported_data_id and p5.`key`='Features'
             where (INSTR(REPLACE(`p`.`model`,'-',''), $value2)=1 OR INSTR($value2, REPLACE(`p`.`model`,'-',''))=1)
-                and p.`key`='url'";
+                and p.`key`='url'
+                group by p.imported_data_id
+                limit 20";
 	$data = array();
         $query = $this->db->query($sql);
 	if ($query->num_rows() > 0) {
