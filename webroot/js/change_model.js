@@ -114,7 +114,8 @@ function read_models() {
 
     tblModels = $('#tblModels').dataTable({
         "bJQueryUI": true,
-        "bDestroy": true,
+//        "bDestroy": true,
+        "bRetrieve":true,
         "sPaginationType": "full_numbers",
         "bProcessing": true,
        // "aaSorting": [[5, "desc"]],
@@ -122,19 +123,26 @@ function read_models() {
         "bServerSide": true,
         "aoColumns": columns,
         "sAjaxSource": readUrl,
-        "fnServerData": function(sSource, aoData, fnCallback) {
-            console.log('response');
-            $.getJSON(sSource, aoData, function(response) {
-                console.log(response);
-                fnCallback(response);
-                 $('#ajaxLoadAni').fadeOut('slow');
-            });
-          
-        },
-        "fnDrawCallback": function () {
-            
-              
-        }
+//        "fnServerData": function(sSource, aoData, fnCallback) {
+//            console.log('response');
+//            $.getJSON(sSource, aoData, function(response) {
+//                console.log(response);
+//                fnCallback(response);
+//                 $('#ajaxLoadAni').fadeOut('slow');
+//// 
+//
+//            });
+//          
+//        },
+        "fnRowCallback": function(nRow, aData, iDisplayIndex) {
+                //                 $('#ajaxLoadAni').fadeOut('slow');
+
+                return nRow;
+                
+            },
+            "fnDrawCallback": function(oSettings) {
+                                 $('#ajaxLoadAni').fadeOut('slow');
+                            },
 
     });
 

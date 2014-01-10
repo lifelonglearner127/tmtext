@@ -2627,7 +2627,7 @@ echo "j  = ".$j;
         $result = $query->row_array();
         return $result['cnt'];
     }
-    function get_custom_models($search, $iDisplayStart , $iDisplayLength) {
+     function get_custom_models($search, $iDisplayStart , $iDisplayLength,$sEcho) {
         
         $this->db->select('p.imported_data_id, p.key, p.value, p.model')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
@@ -2636,7 +2636,7 @@ echo "j  = ".$j;
                     $this->db->like('value',$search)
                     ->or_like('model',$search);;   
                 }
-                $this->db->Limit(10,$iDisplayStart);
+                $this->db->Limit($iDisplayLength,$iDisplayStart);
         $query = $this->db->get();
         $results = $query->result();
         $time_end = microtime(true);
@@ -2645,7 +2645,7 @@ echo "j  = ".$j;
         foreach ($results as $result) {
             if ($result->key === 'URL') {
                 $data[$result->imported_data_id][] = $result->value;
-                $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
+//                $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
                 $data[$result->imported_data_id][] = $result->model;
             }
 //            if ($result->key === 'Product Name') {
@@ -2665,15 +2665,17 @@ echo "j  = ".$j;
             $deleteLink = $delUrl . '/' . $val['imported_data_id'];
             $val[]= '<div id="'.$val['imported_data_id'].'"><a class="updateBtn icon-edit" data-value="'.$val['imported_data_id'].'" style="float:left;" href="' . $updateLink . '"></a>' .
                     '<a class="deleteBtn  icon-remove ml_5" data-value="'.$val['imported_data_id'].'"href="' . $deleteLink . '"></a></div>';
+
             //if (isset($val['parsed_attributes']['model']) && isset($val['product_name'])) {
                 $have_not_model[] = $val;
           //  }
         }
         $items_count = $this->items_count();
+//        $sEcho = ceil($items_count/$iDisplayLength);
         $result = array(
-            "sEcho" => 1,
-            "iTotalRecords" =>  $items_count ,
-            "iTotalDisplayRecords" =>  $items_count,
+            "sEcho" => (int)$sEcho,
+            "iTotalRecords" =>  (int)$items_count ,
+            "iTotalDisplayRecords" =>  (int)$items_count,
             "aaData" => $have_not_model
         );
         return $result;

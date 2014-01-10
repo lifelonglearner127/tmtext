@@ -2477,11 +2477,10 @@ class System extends MY_Controller {
             if ( $_GET['sSearch'] != "" ){
                 $search = $_GET['sSearch'];
             }
+                $sEcho = $_GET['sEcho'];
         
-            $results = $this -> imported_data_parsed_model -> get_custom_models($search, $iDisplayStart , $iDisplayLength);
-//                echo '<pre>';
-//                print_r($results);die;
-		$this -> output -> set_content_type('application/json') -> set_output(json_encode($results));
+            $results = $this -> imported_data_parsed_model -> get_custom_models($search, $iDisplayStart , $iDisplayLength,$sEcho);
+            echo json_encode($results);
 
 	}
 
