@@ -15,7 +15,7 @@ class System extends MY_Controller {
 		$this -> load -> model('imported_data_parsed_model');
 		$this -> load -> library('form_validation');
 
-		$this -> ion_auth -> add_auth_rules(array('urls_snapshot' => true, 'check_urls_threading' => true));
+		$this -> ion_auth -> add_auth_rules(array('urls_snapshot' => true, 'check_urls_threading' => true, 'stopChecking'=>true));
 
 	}
 
@@ -2766,6 +2766,18 @@ class System extends MY_Controller {
             echo "Non existing urls found: " . $notFoundUrls . "<br>";
             echo "Items updated: " . $itemsUpdated . "<br>";
         }
+	
+	
+	public function stopChecking()
+	{
+	     $this->load->model('settings_model');
+             $this->load->model('temp_data_model');
+	     $this->temp_data_model->emptyTable('notfoundurls');
+             $this->temp_data_model->emptyTable('urlstomatch');
+             $this->temp_data_model->emptyTable('updated_items');
+             $this->settings_model->deledtMatching();
+	     echo 'ok';
+	}
 
         public function check_urls_threading($choosen_file = null) {
             if(!$choosen_file)

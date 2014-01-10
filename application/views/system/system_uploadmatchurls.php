@@ -186,7 +186,10 @@
                 if(match_ajax != ""){
                     match_ajax.abort();
                 }
-                activeBtns('unactive');
+		$.get(base_url+"index.php/system/stopChecking",function(d){ 
+			console.log(d);
+			activeBtns('unactive');
+		});
             })
             matching_checking_int = setInterval(check_matching_status,5000);
             $("#download_not_founds").click(function(){
