@@ -1136,7 +1136,6 @@ class Imported_data_parsed_model extends CI_Model {
 	$this->db->group_by('imported_data_id');
 	$this->db->limit(50);
 	$query = $this->db->get();
-        echo $this->db->last_query();
         if ($query->num_rows() > 0)
 	{
 		 $rows = $query->result_array();
