@@ -2646,9 +2646,9 @@ echo "j  = ".$j;
         
         foreach ($results as $result) {
             if ($result->key === 'URL') {
-                $data[$result->imported_data_id][] = $result->value;
+                $data[$result->imported_data_id]['url'] = $result->value;
 //                $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
-                $data[$result->imported_data_id][] = $result->model;
+                $data[$result->imported_data_id]['model'] = $result->model;
             }
 //            if ($result->key === 'Product Name') {
 //                $data[$result->imported_data_id][] = $result->value;
@@ -2661,15 +2661,18 @@ echo "j  = ".$j;
         $have_not_model = array();
         $this->load->helper('url');
         $updateUrl = base_url('/index.php/system/update_custom_model');
-        $delUrl = base_url ('index.php/system/delete_custom_model');  
+        $delUrl = base_url ('index.php/system/delete_custom_model');
+        $arr = array();
         foreach ($data as $key => $val) {
             $updateLink = $updateUrl . '/' . $val['imported_data_id'];
             $deleteLink = $delUrl . '/' . $val['imported_data_id'];
-            $val[]= '<div id="'.$val['imported_data_id'].'"><a class="updateBtn icon-edit" data-value="'.$val['imported_data_id'].'" style="float:left;" href="' . $updateLink . '"></a>' .
+            $arr[]= $val['url'];
+            $arr[]= $val['model'];
+            $arr[]= '<div id="'.$val['imported_data_id'].'"><a class="updateBtn icon-edit" data-value="'.$val['imported_data_id'].'" style="float:left;" href="' . $updateLink . '"></a>' .
                     '<a class="deleteBtn  icon-remove ml_5" data-value="'.$val['imported_data_id'].'"href="' . $deleteLink . '"></a></div>';
 
             //if (isset($val['parsed_attributes']['model']) && isset($val['product_name'])) {
-                $have_not_model[] = $val;
+                $have_not_model[] = $arr;
           //  }
         }
         $items_count = $this->items_count();
