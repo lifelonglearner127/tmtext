@@ -190,6 +190,38 @@ class Site_Crawler extends MY_Controller {
 		} else {
 			$urls = $this -> crawler_list_model -> getAllLimit($config["per_page"], $page, false, $search_crawl_data, $this -> input -> get('status_radio'));
 		}
+                
+                if($search_crawl_data != '' && $this -> input -> get('batch_id') != 0){
+                    
+                    $check = 0;
+                    foreach ($urls as $key => $value) {
+                        if($value->url != $search_crawl_data){
+                            unset($urls[$key]);
+                        }
+                        else{
+                            $check = 1; 
+                        }
+                        if($check == 1){
+                            $total = $this -> crawler_list_model -> countAll(false, $search_crawl_data, $this -> input -> get('failed'));
+                            $total_finished = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'finished');
+                            $total_failed = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'failed');
+                            $total_lock = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'lock');
+                            $total_queued = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'queued');
+                            $total_new = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'new');
+                        }
+                        else{
+                            $total = 0;
+                            $total_finished = 0;
+                            $total_failed = 0;
+                            $total_lock = 0;
+                            $total_queued = 0;
+                            $total_new = 0;
+                        }
+                        $config = array('base_url' => site_url('site_crawler/all_urls'), 'total_rows' => $total, 'per_page' => 10, 'uri_segment' => 3);
+                        $this -> pagination -> initialize($config);
+                        $page = ($this -> uri -> segment(3)) ? $this -> uri -> segment(3) : 0;               
+                    }
+                }
 
 		// === screenshots alive scanner (start)
 		$re_query_data = false;
