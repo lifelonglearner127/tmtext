@@ -2738,6 +2738,6 @@ li.selected-url{
     background-color: rgba(0, 0, 0, .5);
 }
 /* add loading image when getting graph data */
-div#assess_graph div#highChartContainer.loading{
- background:url(../img/img-loader.gif) no-repeat center 20px !important;
+div#assess_graph.loading{
+ background:url(../img/img-loader.gif) no-repeat center top !important;
 }

@@ -644,6 +644,40 @@ class Assess extends MY_Controller {
         $results = $this->statistics_new_model->getStatsData_min_max($imported_data_id,$graphBuild);
             return $results;
         }
+
+	/**
+	 * get the last 6 crawl dates
+	 *
+	 * @access	private
+	 * @return	array
+	 */
+	private function get_trendline_dates() 
+	{
+		$this->load->model('settings_model');
+		$this->load->model('statistics_model');
+		$this->load->model('statistics_new_model');
+		$results = $this->statistics_new_model->get_trendline_dates();
+		return $results;
+	}
+
+	/**
+	 * get the value of the items crawled in every date
+	 *
+	 * @access	private
+	 * @param	int
+	 * @param	string
+	 * @param	array
+	 * @return	array
+	 */
+    private function get_trendline_data($imported_data_id, $graphBuild, $dates) 
+	{
+		$this->load->model('settings_model');
+		$this->load->model('statistics_model');
+		$this->load->model('statistics_new_model');
+		$results = $this->statistics_new_model->getStatsData_trendlines($imported_data_id, $graphBuild, $dates);
+		return $results;
+	}
+
     private function get_data_for_assess($params) {        
         $this->load->model('statistics_model');
         $this->load->model('statistics_new_model');
@@ -4803,8 +4837,18 @@ class Assess extends MY_Controller {
 			}
 
 			$results = $this->get_data_for_assess($params);
-			$include_trendlines = TRUE; // Castro: include trendlines? YES OR NO
-			$trendline_dates = array(); // Castro var that stores all the available trendline dates
+
+			$trendline_dates = array();
+			
+			if($this->input->post('includeTrendlines') == "true")
+			{
+				$include_trendlines = TRUE; // Castro: include trendlines? YES OR NO
+				$trendline_dates = $this->get_trendline_dates(); // Castro var that stores all the available trendline dates
+			}
+			else
+			{
+				$include_trendlines = FALSE; // Castro: include trendlines? YES OR NO
+			}
 
             if ($batch_compare_id != -1) {
                 foreach ($results as $val) {
@@ -4865,7 +4909,7 @@ class Assess extends MY_Controller {
                 } else {
                     $snap_data[0]['Features'][] = 0;
                 }
-                $arr = $this->get_min_max($data_row->imported_data_id,$graphBuild); 
+                $arr = $this->get_trendline_data($data_row->imported_data_id, $graphBuild, $trendline_dates); 
                 $updated_short_description_wc = '';
                 $updated_long_description_wc = '';
                 $updated_total_description_wc = '';
@@ -4883,17 +4927,13 @@ class Assess extends MY_Controller {
 						if(isset($a->date))
 						{
 							$a->trendline_date = date('Y-m-d', strtotime($a->date));
-
-							if( ! in_array($a->trendline_date, $trendline_dates))
-							{
-								$trendline_dates[] = $a->trendline_date;
-							}
 						}
 					}
 				}
 
                 if($graphBuild == "total_description_wc")
 				{
+
 					foreach($arr as $a)
 					{
 						if($a->date !='')
@@ -5008,7 +5048,7 @@ class Assess extends MY_Controller {
                     $snap_data[1]['Features'][] = (int) $data_row_sim[0]->column_features;
                     $snap_data[1]['Date'][] = (string) $data_row_sim[0]->Date;
                     
-                $arr1 = $this->get_min_max($data_row_sim[0]->imported_data_id,$graphBuild);
+                $arr1 = $this->get_trendline_data($data_row_sim[0]->imported_data_id,$graphBuild, $trendline_dates);
                 $updated_short_description_wc1 = '';
                 $updated_long_description_wc1 = '';
                 $updated_total_description_wc1 = '';
@@ -5071,23 +5111,12 @@ class Assess extends MY_Controller {
 			// Castro prepare and order all trendline data, set missing dates values to null
 			if($include_trendlines)
 			{
-				$maximum_trendlines = 6; // set the maximum number of trendlines to show
-
-				sort($trendline_dates);
-				$ordered_trendline_dates = array_reverse($trendline_dates);
-
-				// limit total trendlines
-				if($ordered_trendline_dates > $maximum_trendlines)
-				{
-					$ordered_trendline_dates = array_slice($ordered_trendline_dates, 0, 6);
-				}
-
 				for($i = 0; $i < count($snap_data[0]['updated_trendlines_data']); $i++)
 				{
 					$current_trendline_data = $snap_data[0]['updated_trendlines_data'][$i];
 					$ordered_trendline_data = array();
 
-					foreach($ordered_trendline_dates as $ordered_trendline_date)
+					foreach($trendline_dates as $ordered_trendline_date)
 					{
 						if(isset($current_trendline_data[$ordered_trendline_date]))
 						{

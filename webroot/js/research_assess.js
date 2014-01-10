@@ -607,13 +607,13 @@ $(function() {
 			}
 			$('#graphDropDown').attr("disabled", true);
 			$('#show_over_time').attr("disabled", true);
-			$('#highChartContainer').addClass("loading");
+			$('#assess_graph').addClass("loading");
 		}
 		else
 		{
 			$('#graphDropDown').removeAttr("disabled");
 			$('#show_over_time').removeAttr("disabled");
-			$("#highChartContainer").removeClass("loading");
+			$("#assess_graph").removeClass("loading");
 			
 			$('.highcharts-button').each(function(i){
 				if(i > 0)
@@ -641,6 +641,9 @@ $(function() {
 		if(batch2Value == false || batch2Value == 0 || typeof batch2Value == 'undefined'){
 			batch2Value = -1;
 		}
+		
+		var show_trendlines = $("#show_over_time").is(":checked");
+		
 		$.ajax({
 			type: "POST",
 			url: readGraphDataUrl,
@@ -648,7 +651,8 @@ $(function() {
 				batch_id: batch1Value,
 				batch_compare_id: batch2Value,
 				graphBuild: graphBuild,
-				halfResults:0
+				halfResults:0,
+				includeTrendlines : show_trendlines
 			},
 			error: function()
 			{
@@ -668,7 +672,8 @@ $(function() {
 					batch_id: batch1Value,
 					batch_compare_id: batch2Value,
 					graphBuild: graphBuild,
-					halfResults:1
+					halfResults:1,
+					includeTrendlines : show_trendlines
 				},
 				error: function()
 				{
@@ -1055,7 +1060,8 @@ $(function() {
 							result += '<br /><span>' + valueName[j][datum.x] + '</span>';
 							result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
 							result += '<br /><span ">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' '+graphName2+'</span>';
-							result += '<span style="color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span>';
+
+							result += '<span style="float:left;" class="mini_chart_container"></span><span class="trendlines_details" style="float:left;color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span>';
 						}
 					});
 					return result;
