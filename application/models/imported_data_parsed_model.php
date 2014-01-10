@@ -2662,8 +2662,8 @@ echo "j  = ".$j;
         $this->load->helper('url');
         $updateUrl = base_url('/index.php/system/update_custom_model');
         $delUrl = base_url ('index.php/system/delete_custom_model');
-        $arr = array();
         foreach ($data as $key => $val) {
+            $arr = array();
             $updateLink = $updateUrl . '/' . $val['imported_data_id'];
             $deleteLink = $delUrl . '/' . $val['imported_data_id'];
             $arr[]= $val['url'];
