@@ -2480,8 +2480,7 @@ class System extends MY_Controller {
                 $sEcho = $_GET['sEcho'];
         
             $results = $this -> imported_data_parsed_model -> get_custom_models($search, $iDisplayStart , $iDisplayLength,$sEcho);
-            echo json_encode($results);
-
+            $this -> output -> set_content_type('application/json') -> set_output(json_encode($results));
 	}
 
 	public function update_custom_model() {
