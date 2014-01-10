@@ -1023,7 +1023,10 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
 			echo $utd->td;  //exit;
 			//make asynchronous web request to do_stats_forupdated page
-			shell_exec("wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &");
+                        $url_link ="wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &"; 
+                    //Debugging
+                    echo '<br>Url '.$url_link;
+			shell_exec($url_link);
 		} else
 		{
                     //Debugging
