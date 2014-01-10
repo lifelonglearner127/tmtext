@@ -149,20 +149,35 @@
                                 $("#matching").html(data.response);
                                 if(data.active)
                                 {
-                                    $('#upload_urls').attr('disabled',true);
-                                    $('#mathchurls .btn-success').addClass('disabled');
-                                    $('#mathchurls #stop_matches').removeClass('disabled');
+                                    activeBtns('active');
                                 } else
                                 {
-                                    $('#upload_urls').removeAttr('disabled');
-                                    $('#mathchurls .btn-success').removeClass('disabled');
-                                    $('#mathchurls #stop_matches').addClass('disabled');
+                                    activeBtns('unactive');
                                 }
                             }
                         });
                     }
                 }
             });
+        }
+        
+        function activeBtns(type)
+        {
+            if(typeof(type) == 'undefined')
+            {
+                type = 'unactive';
+            }
+            if(type == 'active')
+            {
+                $('#upload_urls').attr('disabled',true);
+                $('#mathchurls .btn-success:first').addClass('disabled');
+                $('#mathchurls #stop_matches').removeClass('disabled');
+            } else if(type == 'unactive')
+             {
+                 $('#upload_urls').removeAttr('disabled');
+                 $('#mathchurls .btn-success:first').removeClass('disabled');
+                 $('#mathchurls #stop_matches').addClass('disabled');
+             }   
         }
 
 	$(document).ready(function() {
@@ -171,6 +186,7 @@
                 if(match_ajax != ""){
                     match_ajax.abort();
                 }
+                activeBtns('unactive');
             })
             matching_checking_int = setInterval(check_matching_status,5000);
             $("#download_not_founds").click(function(){
