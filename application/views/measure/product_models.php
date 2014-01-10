@@ -28,32 +28,6 @@
                 <span>Loading...</span>
             </div>
 
-<!--            <div id="tabs" class="mt_10">
-
-                <ul>
-                    <li><a href="#read">Review</a></li>
-                    li><a href="#create"></a></li
-                </ul>
-
-                <div id="read">
-                    <table id="records">
-                        <thead>
-                        <tr>
-                            <th>Product name</th>
-                            <th>URL</th>
-                            <th>Model</th>
-                                                      
-                            <th><div class="draggable">Actions</div></th>
-                        </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-                <div id="create">
-                </div>
-
-            </div>  end tabs -->
-
             <!-- update form in dialog box -->
             <div id="updateDialog1" title="Update">
                 <div>
@@ -85,28 +59,6 @@
                  <tbody>
                  </tbody>
              </table>
-
-            
-            
-            
-<!--            <script type="text/template" id="readTemplate1">
-                    <tr id="${imported_data_id}">
-                    <td class="name-width"><span>${product_name}</span></td>
-                    
-                    <td class="modle-width"><span>${model}</span></td>
-                    <td nowrap><a class="updateBtn icon-edit" style="float:left;" href="${updateLink}"></a>
-                            <a class="deleteBtn icon-remove ml_5" href="${deleteLink}"></a>
-                    </td>
-                </tr>
-            </script>-->
-
-            
         </div>
     </div>
 </div>
-<style>
-     /*#records  td{
-        width: 100px !important;
-        word-wrap: break-word;
-    } */
-</style>

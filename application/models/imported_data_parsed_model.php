@@ -2612,49 +2612,71 @@ echo "j  = ".$j;
         }
         return false;
     }
+    function items_count(){
+        $sql = "SELECT COUNT( * ) AS cnt
+                FROM (
 
-    function get_custom_models() {
+                SELECT imported_data_id
+                FROM imported_data_parsed
+                WHERE  `key` =  'url'
+                GROUP BY imported_data_id
+                ) AS tbl";
+        $query = $this->db->query($sql);
+        $result = $query->row_array();
+        return $result['cnt'];
+    }
+    function get_custom_models($search, $iDisplayStart , $iDisplayLength) {
+        
         $this->db->select('p.imported_data_id, p.key, p.value, p.model')
                 ->from($this->tables['imported_data_parsed'] . ' as p')
-                ->where('p.key', 'URL')
-                ->or_where('p.key', 'Product Name')
-                
-                ->Limit(5);
-                
-//                ->where('p.revision = (SELECT  MAX(revision) as revision
-//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-//                      GROUP BY imported_data_id)', NULL, FALSE)
-                ;
-
+                ->where('p.key', 'URL');
+                if($search){
+                    $this->db->like('value',$search)
+                    ->or_like('model',$search);;   
+                }
+                $this->db->Limit(10,$iDisplayStart);
         $query = $this->db->get();
         $results = $query->result();
         $time_end = microtime(true);
         $data = array();
-
+        
         foreach ($results as $result) {
             if ($result->key === 'URL') {
-                $data[$result->imported_data_id]['url'] = $result->value;
+                $data[$result->imported_data_id][] = $result->value;
                 $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
+                $data[$result->imported_data_id][] = $result->model;
             }
-            if ($result->key === 'Product Name') {
-                $data[$result->imported_data_id]['product_name'] = $result->value;
-                $data[$result->imported_data_id]['model'] = $result->model;
-                $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
-            }
+//            if ($result->key === 'Product Name') {
+//                $data[$result->imported_data_id][] = $result->value;
+//                $data[$result->imported_data_id][] = $result->model;
+//                $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
+//            }
 
-            if ($result->key === 'parsed_attributes') {
-                $data[$result->imported_data_id]['parsed_attributes'] = unserialize($result->value);
-            }
+            
         }
         $have_not_model = array();
-
-        foreach ($data as $val) {
+        $this->load->helper('url');
+        $updateUrl = base_url('/index.php/system/update_custom_model');
+        $delUrl = base_url ('index.php/system/delete_custom_model');  
+        foreach ($data as $key => $val) {
+            $updateLink = $updateUrl . '/' . $val['imported_data_id'];
+            $deleteLink = $delUrl . '/' . $val['imported_data_id'];
+            $val[]= '<div id="'.$val['imported_data_id'].'"><a class="updateBtn icon-edit" data-value="'.$val['imported_data_id'].'" style="float:left;" href="' . $updateLink . '"></a>' .
+                    '<a class="deleteBtn  icon-remove ml_5" data-value="'.$val['imported_data_id'].'"href="' . $deleteLink . '"></a></div>';
             //if (isset($val['parsed_attributes']['model']) && isset($val['product_name'])) {
                 $have_not_model[] = $val;
           //  }
         }
-        return $have_not_model;
+        $items_count = $this->items_count();
+        $result = array(
+            "sEcho" => 1,
+            "iTotalRecords" =>  $items_count ,
+            "iTotalDisplayRecords" =>  $items_count,
+            "aaData" => $have_not_model
+        );
+        return $result;
     }
+
 
     function deleteRows($imported_data_id, $without=null) {
     	$query = "delete from `".$this->tables['imported_data_parsed']."` where imported_data_id = ".$imported_data_id;
