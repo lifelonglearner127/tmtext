@@ -2465,8 +2465,22 @@ class System extends MY_Controller {
 	}
 
 	public function get_custom_models() {
-
-		$results = $this -> imported_data_parsed_model -> get_custom_models();
+            $search = NULL;
+            $iDisplayStart = 1;
+            $iDisplayLength = null;
+            if ( isset( $_GET['iDisplayStart'] ) && $_GET['iDisplayLength'] != '-1' )
+            {
+                $iDisplayStart = $_GET['iDisplayStart'];
+                $iDisplayLength = $_GET['iDisplayLength'];
+                
+            }
+            if ( $_GET['sSearch'] != "" ){
+                $search = $_GET['sSearch'];
+            }
+        
+            $results = $this -> imported_data_parsed_model -> get_custom_models($search, $iDisplayStart , $iDisplayLength);
+//                echo '<pre>';
+//                print_r($results);die;
 		$this -> output -> set_content_type('application/json') -> set_output(json_encode($results));
 
 	}
