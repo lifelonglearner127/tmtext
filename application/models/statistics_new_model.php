@@ -659,10 +659,10 @@ class Statistics_new_model extends CI_Model {
 // 				$txt_filter_part2 = ' LIMIT '.$halfResults_int .', '.$halfResults_int ;
 			}
 		}
-		else/* if($_SERVER["HTTP_HOST"] == "tmeditor")*/
-		{
-			$txt_filter_part2 = " LIMIT 20";
-		}
+		// else/* if($_SERVER["HTTP_HOST"] == "tmeditor")*/
+		// {
+			// $txt_filter_part2 = " LIMIT 20";
+		// }
 
 //            //Debugging
 //            $dur = microtime(true)-$st_time;

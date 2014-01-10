@@ -491,7 +491,8 @@ $(function() {
 				sSearch : "Filter:",
 				sLengthMenu : "_MENU_ rows"
 			},
-			aoColumns : json_data.aoColumns,			
+			aoColumns : json_data.aoColumns,
+			iPage : 2
 		}, json_data));	
 	}	
 
