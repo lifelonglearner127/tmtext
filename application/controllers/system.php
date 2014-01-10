@@ -2762,11 +2762,12 @@ class System extends MY_Controller {
 		$this -> load -> model('settings_model');
 		$this -> load -> model('temp_data_model');
 		$lines = $this -> settings_model -> getMatching();
-		$response = "";
+		$json['response'] = "";
+                $json['active'] = FALSE;
 		if ($lines == FALSE) {
-			$response = "There is no process.";
+			$json['response'] = "There is no process.";
 		} else {
-			$response .= "<div>";
+			$json['response'] .= "<div>";
 			foreach ($lines->result() as $row) {
 				header("Last-Change: " . strtotime($row -> modified));
 				$line = "<p>";
@@ -2782,6 +2783,7 @@ class System extends MY_Controller {
 					$line .= '<br>Uploaded filename: ' . $ar[0];
 					$line .= '<br># Matches Updated: ' . $updated;
 					$line .= '<br># Matches Unchanged: ' . $ar[3];
+                                        $json['active'] = TRUE;
 				} else {
 					$ar = explode('|', $row -> description);
 					//                    $line .= 'Created-'.strtotime($row->created).'; Modified-'.strtotime($row->modified)
@@ -2802,11 +2804,11 @@ class System extends MY_Controller {
 				}
 				$line .= "</p>";
 			}
-			$response .= $line
+			$json['response'] .= $line
 			// . $table
 			."</div>";
 		}
-		echo $response;
+		echo json_encode($json);
 	}
 
 	public function get_url_list() {

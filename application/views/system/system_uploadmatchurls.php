@@ -109,7 +109,7 @@
         function check_matching_status(){
             if(flag_stop_match){
                 return clearInterval(matching_checking_int)
-            }
+            }    
             if($("#matching").length==0)return false;
             var url = base_url+'index.php/system/get_matching_urls';
             $.ajax({
@@ -120,8 +120,20 @@
                         old_data=xhr.getResponseHeader('Last-Change');
                         $.ajax({
                             url:url,
+                            dataType:'json',
                             success:function(data){
-                                $("#matching").html(data);
+                                $("#matching").html(data.response);
+                                if(data.active)
+                                {
+                                    $('#upload_urls').attr('disabled',true);
+                                    $('#mathchurls .btn-success').addClass('disabled');
+                                    $('#mathchurls #stop_matches').removeClass('disabled');
+                                } else
+                                {
+                                    $('#upload_urls').removeAttr('disabled');
+                                    $('#mathchurls .btn-success').removeClass('disabled');
+                                    $('#mathchurls #stop_matches').addClass('disabled');
+                                }
                             }
                         });
                     }
