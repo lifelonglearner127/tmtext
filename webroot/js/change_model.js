@@ -9,8 +9,8 @@ row_id;
 var tblModels;
 var columns = [
     {
-        "sTitle": "Product_name",
-        "sName": "product_name"
+        "sTitle": "Url",
+        "sName": "url"
     },
     {
         "sTitle": "Model",
