@@ -714,7 +714,7 @@ class Crons extends MY_Controller
 			}
 			//Get items for scanning
 			$time_start = microtime(true);
-			$data_arr = $this->imported_data_parsed_model->do_stats_newupdated($trnc);
+			$data_arr = $this->imported_data_parsed_model->do_stats_newupdated();
 			echo "<br>get_data ---- " . (microtime(true) - $time_start);
 			if (count($data_arr) > 0) //run analyze if array does not empty
 			{
