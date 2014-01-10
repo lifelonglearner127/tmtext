@@ -1026,6 +1026,10 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			shell_exec("wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &");
 		} else
 		{
+                    //Debugging
+                    echo '<br>Count '.count($data_arr);
+                    echo '<br>Desc'.$stats_status->description;
+                    echo '<br>Totaltime'.$total_items['description'];
 			//Or send report about success
 			$this->settings_model->setLastUpdate(); //set last update time
 			$mtd = $this->imported_data_parsed_model->getTimeDif(); // timing of process
