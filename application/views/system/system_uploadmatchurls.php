@@ -187,8 +187,8 @@
                     match_ajax.abort();
                 }
 		$.get(base_url+"index.php/system/stopChecking",function(d){ 
-			console.log(d);
 			activeBtns('unactive');
+			$("#matching").html("Process has been stopped.");
 		});
             })
             matching_checking_int = setInterval(check_matching_status,5000);
