@@ -4638,6 +4638,7 @@ class Assess extends MY_Controller {
         $output['ExtraData']['display_competitor_columns'] = $build_assess_params->display_competitor_columns;
         $output['ExtraData']['getSelectableColumns'] = AssessHelper::getSelectableColumns($raw_columns);
         $output['ExtraData']['isCompleted'] = $iterator_limit >= $total_rows;
+        $output['ExtraData']['fixedTotalRows'] = $total_rows;
          		
         return $output;
     }
