@@ -27,6 +27,11 @@
               <i class="icon-plus icon-white"></i>
               <input type="file" multiple="" name="files[]" id="upload_urls">
           </span>
+          <span class="btn btn-success fileinput-button pull-left" style="margin-left: 10px;">
+              New Upload
+              <i class="icon-plus icon-white"></i>
+              <input type="file" multiple="" name="files[]" id="upload_urls_new">
+          </span>
           <span class="btn btn-danger pull-left" id="stop_matches" style='margin-left: 10px;'>Stop</span>
           <input type="hidden" name="choosen_file" />
           <script>
@@ -48,6 +53,25 @@
                   }
                 });
             });
+            
+            // New loader
+            $(function () {
+                var url = '<?php echo site_url('system/upload_match_urls'); ?>';
+                $('#upload_urls_new').fileupload({
+                  url: url,
+                  dataType: 'json',
+                  done: function (e, data) {
+                    $('input[name="choosen_file"]').val(data.result.files[0].name);
+                    var url = base_url+'index.php/system/check_urls_threading';
+                    var manu_file_upload_opts = $("#manu_upload_urls_check").is(":checked");
+                    console.log("manu_file_upload_opts status: ", manu_file_upload_opts);
+                    match_ajax = $.post(url, {'choosen_file': $('input[name="choosen_file"]').val(), 'manu_file_upload_opts': manu_file_upload_opts}, function(data) {
+                  		console.log(data);
+                    }, 'json');
+                  }
+                });
+            });
+            
           </script>
           <div style='float: left; width: 100%; clear: both; margin-top: 10px;'>
 -          	<input type='checkbox' name='manu_upload_urls_check' id='manu_upload_urls_check'>
