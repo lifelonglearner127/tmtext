@@ -1024,15 +1024,9 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			echo $utd->td;  //exit;
 			//make asynchronous web request to do_stats_forupdated page
                         $url_link ="wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &"; 
-                    //Debugging
-                    echo '<br>Url '.$url_link;
 			shell_exec($url_link);
 		} else
 		{
-                    //Debugging
-                    echo '<br>Count '.count($data_arr);
-                    echo '<br>Desc'.$stats_status->description;
-                    echo '<br>Totaltime'.$total_items['description'];
 			//Or send report about success
 			$this->settings_model->setLastUpdate(); //set last update time
 			$mtd = $this->imported_data_parsed_model->getTimeDif(); // timing of process

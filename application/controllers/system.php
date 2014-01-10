@@ -33,7 +33,7 @@ class System extends MY_Controller {
 		$this -> load -> model('imported_data_parsed_model');
                 $this -> load -> model('statistics_new_model');
 //		$this -> imported_data_parsed_archived_model -> mark_queued_from_archive();
-//		$this -> imported_data_parsed_model -> delete_repeated_data();
+		$this -> imported_data_parsed_model -> delete_repeated_data();
                 $results= $this -> imported_data_parsed_model ->get_items_that_havenot_batch();
                 
                 foreach($results as $result){

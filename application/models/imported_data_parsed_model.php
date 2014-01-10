@@ -56,6 +56,8 @@ class Imported_data_parsed_model extends CI_Model {
 //                            
                 $this->db->where('imported_data_id',$res['min_data_id']);
                 $this->db->delete('imported_data_parsed');
+                $this->db->where('similar_products_competitors like \'%"'.$res['min_data_id'].'"%\'');
+                $this->db->delete('statistics_new');
         }
             
    }
