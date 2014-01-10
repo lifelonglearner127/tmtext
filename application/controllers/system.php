@@ -15,7 +15,7 @@ class System extends MY_Controller {
 		$this -> load -> model('imported_data_parsed_model');
 		$this -> load -> library('form_validation');
 
-		$this -> ion_auth -> add_auth_rules(array('urls_snapshot' => true));
+		$this -> ion_auth -> add_auth_rules(array('urls_snapshot' => true, 'check_urls_threading' => true));
 
 	}
 
@@ -2595,7 +2595,9 @@ class System extends MY_Controller {
 //    }
 
     public function check_urls() {
-    				$manu_file_upload_opts = $this -> input -> post('manu_file_upload_opts');
+            $manu_file_upload_opts = $this -> input -> post('manu_file_upload_opts');
+        $start_run = microtime(true);        
+        log_message('ERROR', 'Start ' .  $this -> input -> post('choosen_file'));                                
             $this -> load -> model('site_categories_model');
             $this -> load -> model('settings_model');
             //var_dump($_POST);
@@ -2647,7 +2649,11 @@ class System extends MY_Controller {
             $this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);
             $start = microtime(true);
             $timing = 0;
-            while ($timing < 20 && $urls = $this -> temp_data_model -> getLineFromTable('urlstomatch')) {
+    $start_run1 = microtime(true);        
+    $exec_time = $start_run1 - $start_run;
+    log_message('ERROR', "{$exec_time}sec - {$linesAdded} lines Phase 1");            
+    log_message('ERROR', "Start while");            
+            while ( /*$timing < 20 &&*/ $urls = $this -> temp_data_model -> getLineFromTable('urlstomatch')) {
                     $atuc = 2;
                     $nfurls = 0;
                     ++$linesScaned;
@@ -2680,7 +2686,7 @@ class System extends MY_Controller {
                             if ($url2['ph_attr']) {
                                     $tm = unserialize($url2['ph_attr']);
                             }
-                            $model2 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : false;
+                            $model2 = isset($tm['model']) && strlen($tm['model']) > 3 ? $tm['model'] : false;
                     }
                     if ($nfurls > 0) {
                             $notFoundUrls += $nfurls;
@@ -2748,15 +2754,35 @@ class System extends MY_Controller {
                             shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged > /dev/null 2>/dev/null &");
                     }
             }
+                    
+    $start_run2 = microtime(true);        
+    $exec_time = $start_run2 - $start_run1;
+    log_message('ERROR', "{$exec_time}sec - {$linesAdded} lines Phase 2");  
+    log_message('ERROR', 'End all sec: ' . ($start_run2 - $start_run));
+    log_message('ERROR', 'memory usage (peak) : (' . memory_get_peak_usage(). ')' . memory_get_usage()) ;
             echo "Total lines: " . $linesTotal . "<br/>";
             echo "Lines scaned" . $linesScaned . "<br/>";
             echo "Added lines: " . $linesAdded . "<br/>";
             echo "Non existing urls found: " . $notFoundUrls . "<br>";
             echo "Items updated: " . $itemsUpdated . "<br>";
-     }
+        }
 
-
-
+        public function check_urls_threading($choosen_file = null) {
+            if(!$choosen_file)
+            {
+                if(defined('CMD') && CMD )
+                {
+                    log_message('ERROR', __METHOD__ .' : File not defined ' );                
+                    return;
+                }
+                $choosen_file = $this -> input -> post('choosen_file');
+            }
+            
+            $command = 'cd ' . FCPATH . ' 
+php cli.php crons match_urls_thread "' . $choosen_file . '" &';
+            echo shell_exec($command), PHP_EOL;
+        }
+        
 
 	function get_matching_urls() {
 		$this -> load -> model('settings_model');
@@ -2851,5 +2877,5 @@ class System extends MY_Controller {
 		$items = file_get_contents($file);
 		echo 'Remaining ' . $items . ' items.';
 	}
-
+        
 }
