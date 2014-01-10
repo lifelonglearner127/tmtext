@@ -123,6 +123,13 @@
       </div>
 
       <div style='float: left; margin-top: 10px; margin-bottom: 10px;' class='urls_statuses_bar' id='urls_statuses_bar'></div>
+      	<div style='float: left; margin-left: 50px; margin-top: 10px; margin-bottom: 10px;' class='' id='url_status_radio'>
+      			Show:
+      			<input style="width: 20px;" type="radio" name="status" id="status_all" value="all" checked> <label for="status_all">all</label>
+                <input style="width: 20px;" type="radio" name="status" id="status_queued" value="queued"> <label for="status_queued">queued</label>
+                <input style="width: 20px;" type="radio" name="status" id="status_locked" value="lock"> <label for="status_locked">locked</label>
+                <input style="width: 20px;" type="radio" name="status" id="status_failed" value="failed"> <label for="status_failed">failed</label>
+		</div>
 
 			<div class="row-fluid mt_5">
 				<div class="search_area uneditable-input span10" style="cursor: text; width: 765px; height: 450px; overflow : auto;" id="Current_List">
@@ -132,7 +139,7 @@
 				</ul>
 				</div>
 				<button id="current_list_delete" class="btn new_btn btn-danger mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
-				<button id="list_failed" class="btn new_btn btn-danger mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Show Failed</button>
+				<button id="list_failed" class="btn new_btn btn-danger mt_10 ml_15" style="display:none;"><i class="icon-white icon-ok"></i>&nbsp;Show Failed</button>
 				<button id="crawl_new" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl New</button>
 				<button id="crawl_all" class="btn new_btn btn-success mt_10 ml_15"><i class="icon-white icon-ok"></i>&nbsp;Crawl All</button>
 				<button id="current_crawl" class="btn new_btn btn-success mt_10 ml_15" disabled><i class="icon-white icon-ok"></i>&nbsp;Crawl</button>
@@ -222,7 +229,7 @@ function showSnap(snap, id, url) {
 function loadCurrentList(url,failed) {
 	$("#checkAll").removeAttr('checked');
 	url = typeof url !== 'undefined' ? url: '<?php echo site_url('site_crawler/all_urls');?>';
-	console.log("URL : ", url);
+	//console.log("URL : ", url);
 	failed = typeof failed !== 'undefined' ? 1 : 0;
 
     var search_crawl_data = '';
@@ -235,8 +242,8 @@ function loadCurrentList(url,failed) {
     	batch_id = $('select[name="batch"]').val();
     }
 
-	$.get(url, {'search_crawl_data': search_crawl_data, 'batch_id': batch_id, 'failed':failed}, function(data) {
-		console.log(data);
+	$.get(url, {'search_crawl_data': search_crawl_data, 'batch_id': batch_id, 'failed':failed, 'status_radio':$('#url_status_radio > input:radio:checked').val()}, function(data) {
+		//console.log(data);
 		// ==== FILL OUT URLS STATUS BAR (START)
 		$("#urls_statuses_bar").html("Finished: " + data.total_finished + "&nbsp;&nbsp;Failed: " + data.total_failed + "&nbsp;&nbsp;Queued: " + data.total_queued + "&nbsp;&nbsp;Locked: " + data.total_lock);
 		// ==== FILL OUT URLS STATUS BAR (END)
@@ -630,6 +637,11 @@ $.fn.setCursorToTextEnd = function() {
 	$(document).on('change', 'select#batches', function(){
 		loadCurrentList();
 	});
+
+	$(document).on('change', '#url_status_radio > input[type=radio]', function(){
+		loadCurrentList();
+	});
+
         }
 });
 

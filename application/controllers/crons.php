@@ -34,6 +34,7 @@ class Crons extends MY_Controller
 		    'fixmodel_length' => true,
 		    'fix_revisions' => true,
 		    'checkUploadedFiles' =>true, 
+		    'do_stats_bybatch' =>true, 
 		    'renameExistingFiles' =>true 
 		));
 		$this->load->library('helpers');
@@ -1025,6 +1026,10 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			shell_exec("wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &");
 		} else
 		{
+                    //Debugging
+                    echo '<br>Count '.count($data_arr);
+                    echo '<br>Desc'.$stats_status->description;
+                    echo '<br>Totaltime'.$total_items['description'];
 			//Or send report about success
 			$this->settings_model->setLastUpdate(); //set last update time
 			$mtd = $this->imported_data_parsed_model->getTimeDif(); // timing of process
@@ -3391,375 +3396,390 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		    'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large"
 		);
 	}
-//	public function do_stats_bybatch()
-//	{
-//		echo "Script start working";
-//		$tmp_dir = sys_get_temp_dir() . '/';
-//		unlink($tmp_dir . ".locked");
-//		if (file_exists($tmp_dir . ".locked"))
-//		{
-//			exit;
-//		}
-//		$first_start = time();
-//		touch($tmp_dir . ".locked");
-//		$cjo = 0;
-//		try
-//		{
-//			$this->load->model('imported_data_parsed_model');
-//			$this->load->model('sites_model');
-//			$this->load->model('batches_model');
-//			$this->load->model('statistics_new_model');
-//			
-//			//$this->statistics_new_model->truncate();
-//			
-//			//Checking the third segment of URI for truncate flag 
-//			$batch_id = $this->uri->segment(3);
-//                        if($batch_id){
-//                            $batch = $this->batches_model->get($batch_id);
-//                            if($batch->num_rows==0){
-//                                exit('incorrect batch.');
-//                            }
-//                        }
-//			$this->different_revissions();
-//			$dss = $this->imported_data_parsed_model->getDoStatsStatus(); //getting status of do_stats process
-//			if (!$dss) //if status info does not exists
-//			{
-//				//Set status for prevent duplicate
-//				$this->imported_data_parsed_model->setDoStatsStatus();
-//				$this->settings_model->setLastUpdate(1); //adding last update info
-//			} else
-//			{
-//				if ($dss->description === 'stopped') //if status info exists, and description is 'stopped'
-//				{
-//					$this->imported_data_parsed_model->updDoStatsStatus(1); //update status info
-//				}
-//				$this->settings_model->setLastUpdate(); //update status info
-//			}
-//			//Get items for scanning
-//			$time_start = microtime(true);
-//			$data_arr = $this->imported_data_parsed_model->do_stats_newupdated($batch_id);
-//			echo "<br>get_data ---- " . (microtime(true) - $time_start);
-//			if (count($data_arr) > 0) //run analyze if array does not empty
-//			{
-//				$sites_list = array();
-//				//Get all existing sites, generate site list
-//				$query_cus_res = $this->sites_model->getAll();
-//				if (count($query_cus_res) > 0)
-//				{
-//					foreach ($query_cus_res as $key => $value)
-//					{
-//						$n = parse_url($value->url);
-//						$sites_list[] = $n['host'];
-//					}
-//				}
-//				$this->load->model('customers_model');
-//				$customersList = $this->customers_model->getCustomersList();
-//				//end of list creating script
-//				//Start analize each item
-//				foreach ($data_arr as $obj)
-//				{
-//					$foreach_start = microtime(true);
-//					$own_price = 0;
-//					$competitors_prices = array();
-//					$price_diff = '';
-//					$items_priced_higher_than_competitors = 0;
-//					$short_description_wc = 0;
-//					$long_description_wc = 0;
-//					$short_seo_phrases = '?';
-//					$long_seo_phrases = '?';
-//					$similar_products_competitors = array();
-//					// Price difference
-//					$own_site = parse_url($obj->url, PHP_URL_HOST);
-//					if (!$own_site)
-//					{	
-//						$own_site = "own site";
-//					}
-//					$own_site = str_replace("www1.", "", str_replace("www.", "", $own_site));
-//
-//					$short_description = '';
-//					$long_description = '';
-//					echo "<br>" . "im+daat+id= " . $obj->imported_data_id . "</br>";
-//					//Prepare description field
-//					$short_description_wc = 0;
-//					if (($obj->description !== null || $obj->description !== 'null') && trim($obj->description) !== "")
-//					{
-//						$short_description = $obj->description;
-//						//replace all tags and big spaces to single space
-//						$obj->description = preg_replace('#<[^>]+>#',' ', $obj->description);
-//						$obj->description = preg_replace('/\s+/',' ', $obj->description);
-//						//getting count of words in short description
-//						$short_description_wc = count(explode(" ", $obj->description));
-//					}
-//					//Prepare long description field
-//					$long_description_wc = 0;
-//					if (($obj->long_description !== null || $obj->long_description !== 'null') && trim($obj->long_description) !== "")
-//					{
-//						$long_description = $obj->long_description;
-//						//replace all tags and big spaces to single space
-//						$obj->long_description = preg_replace('#<[^>]+>#', ' ', $obj->long_description);
-//						$obj->long_description = preg_replace('/\s+/', ' ', $obj->long_description);
-//						//getting count of words in short description
-//						$long_description_wc = count(explode(" ", $obj->long_description));
-//					}
-//
-//
-//					// Generate Title Keywords
-//					$time_start = microtime(true);
-//					$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
-//					echo "Title Keywords -------------------- <b>".(microtime(true) - $time_start)." seconds</b>\n";
-//
-//
-//					$time_start = microtime(true);
-//					$m = '';
-//					//If parsed attributes are exist, finding similar items and price diff
-//					if (isset($obj->parsed_attributes) && isset($obj->parsed_attributes['model']) && strlen($obj->parsed_attributes['model']) > 3)
-//					{
-//						//getting model of item
-//						if ($obj->model && (strlen($obj->model) > 3))
-//						{
-//							$m = $obj->model;
-//						} else
-//						{
-//							$m = $obj->parsed_attributes['model'];
-//						}
-//						//getting model of item
-//						try
-//						{
-//							//Get last existing price
-//							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id,1);
-//						} catch (Exception $e)
-//						{
-//							echo 'Error', $e->getMessage(), "\n";
-//							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id,1);
-//						}
-//						//if own_prices is not empty make price difference data
-//						if (!empty($own_prices))
-//						{
-//							$own_price = floatval($own_prices->price);
-//							$obj->own_price = $own_price;
-//							$price_diff_exists = array();
-//							$price_diff_exists['id'] = $own_prices->id;
-//							$price_diff_exists['own_site'] = $own_site;
-//							$price_diff_exists['own_price'] = $own_price;
-//							// getting list of similar items
-//							try
-//							{
-//								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
-//							} catch (Exception $e)
-//							{
-//								echo 'Error', $e->getMessage(), "\n";
-//								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
-//							}
-//							//If similar items was found, start comparing
-//							if (!empty($similar_items))
-//							{
-//								foreach ($similar_items as $ks => $vs)
-//								{
-//									$customer = "";
-//									//find customer of similar item
-//									foreach ($sites_list as $ki => $vi)
-//									{
-//										if (strpos($vs['url'], "$vi") !== false)
-//										{
-//											$customer = strtolower($this->sites_model->get_name_by_url($vi));
-//											break;
-//										}
-//									}
-//									
-//									$similar_products_competitors[] = array(
-//									    'imported_data_id' => $vs['imported_data_id'],
-//									    'customer' => $customer
-//									);
-//									//Getting a three last prices for each item
-//									try
-//									{
-//										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id']);
-//									} catch (Exception $e)
-//									{
-//										echo 'Error', $e->getMessage(), "\n";
-//										$this->load->model('statistics_model');
-//										$this->statistics_model->db->close();
-//										$this->statistics_model->db->initialize();
-//										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id']);
-//									}
-//									//If last three prices are exist, define range of prices and start comparing
-//									if (!empty($three_last_prices))
-//									{
-//										$price_scatter = $own_price * 0.03;
-//										$price_upper_range = $own_price + $price_scatter;
-//										$price_lower_range = $own_price - $price_scatter;
-//										$competitor_price = floatval($three_last_prices[0]->price);
-//										//If own price greater than competitor price, flag will be set,
-//										//or if competitor price not in the defined range, then price should be updated 
-//										if ($competitor_price < $own_price)
-//										{
-//											$items_priced_higher_than_competitors = 1;
-//										}
-//										if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range)
-//										{
-//											$price_diff_exists['competitor_customer'][] = $similar_items[$ks]['customer'];
-//											$price_diff_exists['competitor_price'][] = $competitor_price;
-//											$price_diff = $price_diff_exists;
-//											$competitors_prices[] = $competitor_price;
-//										}
-//									}
-//								}
-//							}
-//						} else
-//						{
-//							//own priece does not exists, looking for similar items
-//							try
-//							{
-//								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
-//							} catch (Exception $e)
-//							{
-//								echo 'Error', $e->getMessage(), "\n";
-//								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
-//							}
-//							//If similar items were found, add imported_data_id and customer to similar product competitors
-//							if (!empty($similar_items))
-//							{
-//								foreach ($similar_items as $ks => $vs)
-//								{
-//									$customer = "";
-//									foreach ($sites_list as $ki => $vi)
-//									{
-//										if (strpos($vs['url'], "$vi") !== false)
-//										{
-//											$customer = strtolower($this->sites_model->get_name_by_url($vi));
-//											break;
-//										}
-//									}
-//									$similar_products_competitors[] = array(
-//									    'imported_data_id' => $vs['imported_data_id'],
-//									    'customer' => $customer
-//									);
-//								}
-//							}
-//						}
-//
-//						$time_end = microtime(true);
-//
-//						$time = $time_end - $time_start;
-//						echo "<br>model exists_and some actions - " . $time . 'seconds';
-//					} else
-//					{
-//						//if parsed attributes were not found, create custom model
-//						$time_start = microtime(true);
-//						if(isset($obj->imported_data_id))
-//						{
-//							echo "<br>im+daat+id= " . $obj->imported_data_id;
-//							//checking for custom model
-//							if ($model = $this->imported_data_parsed_model->check_if_exists_custom_model($obj->imported_data_id))
-//							{
-//								echo "<br>exists custom model ------------- ";
-//								$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($model, 0, $obj->imported_data_id,$customersList);
-//							} else //geterate custom model if it does not exists
-//							{
-//								echo "<br>geting custom model - ";
-//								$same_pr = array();
-//								echo "product name  = " . $obj->product_name;
-//								$same_pr = $this->imported_data_parsed_model->getByProductNameNew($obj->imported_data_id, $obj->product_name, '', 0);
-//								echo "<br>custom model is ready ------------ ";
-//							}
-//						}
-//						$time = microtime(true) - $time_start;
-//						echo $time . " seconds (important)";
-//						//looking for similar competitors
-//						foreach ($same_pr as $key => $val)
-//						{
-//							$customer = "";
-//							foreach ($sites_list as $ki => $vi)
-//							{
-//								if (strpos($val['url'], "$vi") !== false)
-//								{
-//									$customer = strtolower($this->sites_model->get_name_by_url($vi));
-//									break;
-//								}
-//							}
-//							$similar_products_competitors[] = array('imported_data_id' => $val['imported_data_id'], 'customer' => $customer);
-//						}
-//					}
-//
-//					$time = microtime(true) - $time_start;
-//					//WC Short
-//					$time_start = microtime(true);
-//					//Get research_data_id and batch_id
-//					$research_and_batch_ids = $this->statistics_new_model->getResearchDataAndBatchIds($obj->imported_data_id);
-//					if (!$research_and_batch_ids)
-//					{
-//						//If research_data_id and batch_id were not found, define them by default
-//						$research_and_batch_ids = array(array(
-//							'research_data_id' => 0,
-//							'batch_id' => 0
-//						));
-//					}
-//					$time = microtime(true) - $time_start;
-//					echo "<br>research_data ---------------------- " . $time . " seconds";
-//					//insert new statistics data to statistics_new table if it not exists in table and update if exists
-//					try
-//					{
-//						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
-//					} catch (Exception $e)
-//					{
-//						echo 'Error', $e->getMessage(), "\n";
-//						$this->load->model('statistics_model');
-//						$this->statistics_model->db->close();
-//						$this->statistics_model->db->initialize();
-//
-//						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
-//					}
-//
-//					echo "<br>global foreach --------------------- " . (microtime(true) - $foreach_start) . " seconds<br>";
-//				} //end foreach
-//				
-//				$cjo = $this->settings_model->getDescription();
-//				$cjo++;
-//				$this->settings_model->updateDescription($cjo);
-//			}
-//		} catch (Exception $e)
-//		{
-//			echo 'Error', $e->getMessage(), "\n";
-//			unlink($tmp_dir . ".locked");
-//		}
-//		$time = time() - $first_start;
-//		echo "<br>all -- " . $time . "<br>";
-//		unlink($tmp_dir . ".locked");
-//		$data_arr = $this->imported_data_parsed_model->do_stats_newupdated(); //get next 50 items to scan
-//		$start = $this->settings_model->getDescription();
-//		$stats_status = $this->settings_model->getDoStatsStatus(); //get status of do_stats
-//		$total_items = $this->settings_model->getLastUpdate(); //get count of all items in time of starting
-//		//If queque has items and status is started and count of all items bigger than count of scanned items , start script again
-//		if (count($data_arr) > 0 && $stats_status->description === 'started' && ($cjo - 1) * 50 < intval($total_items['description']))
-//		{ 
-//			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
-//			echo $utd->td;  //exit;
-//			//make asynchronous web request to do_stats_forupdated page
-//			shell_exec("wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &");
-//		} else
-//		{
-//			//Or send report about success
-//			$this->settings_model->setLastUpdate(); //set last update time
-//			$mtd = $this->imported_data_parsed_model->getTimeDif(); // timing of process
-//			echo $mtd->td;
-//			//Remove status about started state
-//			if ($stats_status->description === 'started') //if status is started
-//			{
-//				$this->imported_data_parsed_model->delDoStatsStatus(); //remove status info
-//			}
-//			$this->settings_model->updateDescription(0);  //reset cron_job_offset 0
-//
-//			
-//			$this->load->library('email');
-//			$this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
-//			$this->email->to('bayclimber@gmail.com');
-//			$this->email->cc('igor.g.work@gmail.com');
-//			$this->email->subject('Cron job report');
-//			$this->email->message('Cron job for do_statistics_new is done.<br> Timing = ' . $mtd->td); //.'<br> Total items updated: '.$qty['description']
-//			$this->email->send(); 
-//		}
-//		unlink($tmp_dir . ".locked");
-//	}
+	public function do_stats_bybatch()
+	{
+		echo "Script start working";
+		$tmp_dir = sys_get_temp_dir() . '/';
+		unlink($tmp_dir . ".locked");
+		if (file_exists($tmp_dir . ".locked"))
+		{
+			exit;
+		}
+		$first_start = time();
+		touch($tmp_dir . ".locked");
+		$cjo = 0;
+		try
+		{
+			$this->load->model('imported_data_parsed_model');
+			$this->load->model('sites_model');
+			$this->load->model('batches_model');
+			$this->load->model('statistics_new_model');
+			
+			//$this->statistics_new_model->truncate();
+			
+			//Checking the third segment of URI for truncate flag 
+			$batch_id = $this->uri->segment(3);
+                        if($batch_id){
+//                            echo '<br>'.$batch_id.'<br>';
+                            $batch = $this->batches_model->get($batch_id);
+//                            var_dump($batch);
+                            if(empty($batch)){
+                                exit('incorrect batch.');
+                            }
+                        }
+//                        echo'<br>batch id is '.($batch_id?$batch_id:'false');exit;
+			$this->different_revissions();
+			$dss = $this->imported_data_parsed_model->getDoStatsStatus(); //getting status of do_stats process
+			if (!$dss) //if status info does not exists
+			{
+				//Set status for prevent duplicate
+				$this->imported_data_parsed_model->setDoStatsStatus();
+				$this->settings_model->setLastUpdate(1); //adding last update info
+			} else
+			{
+				if ($dss->description === 'stopped') //if status info exists, and description is 'stopped'
+				{
+					$this->imported_data_parsed_model->updDoStatsStatus(1); //update status info
+				}
+				$this->settings_model->setLastUpdate(); //update status info
+			}
+			//Get items for scanning
+			$time_start = microtime(true);
+			$data_arr = $this->imported_data_parsed_model->do_stats_newupdated($batch_id);
+//                        var_dump($data_arr);exit;
+			echo "<br>get_data ---- " . (microtime(true) - $time_start);
+			if (count($data_arr) > 0) //run analyze if array does not empty
+			{
+				$sites_list = array();
+				//Get all existing sites, generate site list
+				$query_cus_res = $this->sites_model->getAll();
+				if (count($query_cus_res) > 0)
+				{
+					foreach ($query_cus_res as $key => $value)
+					{
+						$n = parse_url($value->url);
+						$sites_list[] = $n['host'];
+					}
+				}
+				$this->load->model('customers_model');
+				$customersList = $this->customers_model->getCustomersList();
+				//end of list creating script
+				//Start analize each item
+				foreach ($data_arr as $obj)
+				{
+					$foreach_start = microtime(true);
+					$own_price = 0;
+					$competitors_prices = array();
+					$price_diff = '';
+					$items_priced_higher_than_competitors = 0;
+					$short_description_wc = 0;
+					$long_description_wc = 0;
+					$short_seo_phrases = '?';
+					$long_seo_phrases = '?';
+					$similar_products_competitors = array();
+					// Price difference
+					$own_site = parse_url($obj->url, PHP_URL_HOST);
+					if (!$own_site)
+					{	
+						$own_site = "own site";
+					}
+					$own_site = str_replace("www1.", "", str_replace("www.", "", $own_site));
+
+					$short_description = '';
+					$long_description = '';
+					echo "<br>" . "im+daat+id= " . $obj->imported_data_id . "</br>";
+					//Prepare description field
+					$short_description_wc = 0;
+					if (($obj->description !== null || $obj->description !== 'null') && trim($obj->description) !== "")
+					{
+						$short_description = $obj->description;
+						//replace all tags and big spaces to single space
+						$obj->description = preg_replace('#<[^>]+>#',' ', $obj->description);
+						$obj->description = preg_replace('/\s+/',' ', $obj->description);
+						//getting count of words in short description
+						$short_description_wc = count(explode(" ", $obj->description));
+					}
+					//Prepare long description field
+					$long_description_wc = 0;
+					if (($obj->long_description !== null || $obj->long_description !== 'null') && trim($obj->long_description) !== "")
+					{
+						$long_description = $obj->long_description;
+						//replace all tags and big spaces to single space
+						$obj->long_description = preg_replace('#<[^>]+>#', ' ', $obj->long_description);
+						$obj->long_description = preg_replace('/\s+/', ' ', $obj->long_description);
+						//getting count of words in short description
+						$long_description_wc = count(explode(" ", $obj->long_description));
+					}
+
+
+					// Generate Title Keywords
+					$keywords_start = microtime(true);
+					$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
+					echo "Title Keywords -------------------- <b>".(microtime(true) - $keywords_start)." seconds</b>\n";
+
+
+					$modelStart = microtime(true);
+					$m = '';
+					//If parsed attributes are exist, finding similar items and price diff
+					if (isset($obj->parsed_attributes) && isset($obj->parsed_attributes['model']) && strlen($obj->parsed_attributes['model']) > 3)
+					{
+						//getting model of item
+$modelGet = microtime(true);
+						if ($obj->model && (strlen($obj->model) > 3))
+						{
+							$m = $obj->model;
+						} else
+						{
+							$m = $obj->parsed_attributes['model'];
+						}
+						//getting model of item
+						try
+						{
+							//Get last existing price
+							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id,1);
+						} catch (Exception $e)
+						{
+							echo 'Error', $e->getMessage(), "\n";
+							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id,1);
+						}
+echo '<br> - model get -- '.(microtime(true) - $modelGet);
+						//if own_prices is not empty make price difference data
+						if (!empty($own_prices))
+						{
+$getSimilar = microtime(true);
+							$own_price = floatval($own_prices->price);
+							$obj->own_price = $own_price;
+							$price_diff_exists = array();
+							$price_diff_exists['id'] = $own_prices->id;
+							$price_diff_exists['own_site'] = $own_site;
+							$price_diff_exists['own_price'] = $own_price;
+							// getting list of similar items
+							try
+							{
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
+							} catch (Exception $e)
+							{
+								echo 'Error', $e->getMessage(), "\n";
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
+							}
+echo '<br> - similar get -- '.(microtime(true) - $getSimilar);
+							//If similar items was found, start comparing
+							if (!empty($similar_items))
+							{
+$checkSimilar = microtime(true);								
+								foreach ($similar_items as $ks => $vs)
+								{
+									$customer = "";
+									//find customer of similar item
+									foreach ($sites_list as $ki => $vi)
+									{
+										if (strpos($vs['url'], "$vi") !== false)
+										{
+											$customer = strtolower($this->sites_model->get_name_by_url($vi));
+											break;
+										}
+									}
+									
+									$similar_products_competitors[] = array(
+									    'imported_data_id' => $vs['imported_data_id'],
+									    'customer' => $customer
+									);
+$getPrices = microtime(true);								
+									//Getting a three last prices for each item
+									try
+									{
+										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id'],1);
+									} catch (Exception $e)
+									{
+										echo 'Error', $e->getMessage(), "\n";
+										//$this->load->model('statistics_model');
+										//$this->statistics_model->db->close();
+										//$this->statistics_model->db->initialize();
+										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id'],1);
+									}
+echo '<br> -- get last prices -- '.(microtime(true) - $getPrices);									
+									//If last three prices are exist, define range of prices and start comparing
+									if (!empty($three_last_prices))
+									{
+										$price_scatter = $own_price * 0.03;
+										$price_upper_range = $own_price + $price_scatter;
+										$price_lower_range = $own_price - $price_scatter;
+										$competitor_price = floatval($three_last_prices->price);
+										//If own price greater than competitor price, flag will be set,
+										//or if competitor price not in the defined range, then price should be updated 
+										if ($competitor_price < $own_price)
+										{
+											$items_priced_higher_than_competitors = 1;
+										}
+										if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range)
+										{
+											$price_diff_exists['competitor_customer'][] = $similar_items[$ks]['customer'];
+											$price_diff_exists['competitor_price'][] = $competitor_price;
+											$price_diff = $price_diff_exists;
+											$competitors_prices[] = $competitor_price;
+										}
+									}
+echo '<br> - similar check -- '.(microtime(true) - $checkSimilar);									
+								}
+							}
+						} else
+						{
+$getSimilar2 = 	microtime(true);						
+							//own priece does not exists, looking for similar items
+							try
+							{
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
+							} catch (Exception $e)
+							{
+								echo 'Error', $e->getMessage(), "\n";
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
+							}
+echo '<br> - similar get 2 -- '.(microtime(true) - $getSimilar2);							
+							//If similar items were found, add imported_data_id and customer to similar product competitors
+							if (!empty($similar_items))
+							{
+$checkSimilar2 = microtime(true);								
+								foreach ($similar_items as $ks => $vs)
+								{
+									$customer = "";
+									foreach ($sites_list as $ki => $vi)
+									{
+										if (strpos($vs['url'], "$vi") !== false)
+										{
+											$customer = strtolower($this->sites_model->get_name_by_url($vi));
+											break;
+										}
+									}
+									$similar_products_competitors[] = array(
+									    'imported_data_id' => $vs['imported_data_id'],
+									    'customer' => $customer
+									);
+								}
+echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);								
+							}
+						}
+						$time = microtime(true) - $modelStart;
+						echo "<br>model exists_and some actions - " . $time . 'seconds';
+					} else
+					{
+						//if parsed attributes were not found, create custom model
+						$time_start = microtime(true);
+						if(isset($obj->imported_data_id))
+						{
+							echo "<br>im+daat+id= " . $obj->imported_data_id;
+							//checking for custom model
+							if ($model = $this->imported_data_parsed_model->check_if_exists_custom_model($obj->imported_data_id))
+							{
+								echo "<br>exists custom model ------------- ";
+								$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($model, 0, $obj->imported_data_id,$customersList);
+							} else //geterate custom model if it does not exists
+							{
+								echo "<br>geting custom model - ";
+								$same_pr = array();
+								echo "product name  = " . $obj->product_name;
+								$same_pr = $this->imported_data_parsed_model->getByProductNameNew($obj->imported_data_id, $obj->product_name, '', 0, $sites_list);
+								echo "<br>custom model is ready ------------ ";
+							}
+						}
+						$time = microtime(true) - $time_start;
+						echo $time . " seconds (important)";
+						//looking for similar competitors
+						foreach ($same_pr as $key => $val)
+						{
+							$customer = "";
+							foreach ($sites_list as $ki => $vi)
+							{
+								if (strpos($val['url'], "$vi") !== false)
+								{
+									$customer = strtolower($this->sites_model->get_name_by_url($vi));
+									break;
+								}
+							}
+							$similar_products_competitors[] = array('imported_data_id' => $val['imported_data_id'], 'customer' => $customer);
+						}
+					}
+
+					$time = microtime(true) - $time_start;
+					//WC Short
+					$time_start = microtime(true);
+					//Get research_data_id and batch_id
+					$research_and_batch_ids = $this->statistics_new_model->getResearchDataAndBatchIds($obj->imported_data_id);
+					if (!$research_and_batch_ids)
+					{
+						//If research_data_id and batch_id were not found, define them by default
+						$research_and_batch_ids = array(array(
+							'research_data_id' => 0,
+							'batch_id' => 0
+						));
+					}
+					$time = microtime(true) - $time_start;
+					echo "<br>research_data ---------------------- " . $time . " seconds";
+					//$insertStart = microtime(true);
+					//insert new statistics data to statistics_new table if it not exists in table and update if exists
+					try
+					{
+						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
+					} catch (Exception $e)
+					{
+						echo 'Error', $e->getMessage(), "\n";
+						//$this->load->model('statistics_model');
+						//$this->statistics_model->db->close();
+						//$this->statistics_model->db->initialize();
+
+						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
+					}
+					$endTime = microtime(true);
+					//echo "<br>insert/update ----------------------- " . ($endTime - $insertStart) . " seconds<br>";
+					echo "<br>global foreach --------------------- " . ($endTime - $foreach_start) . " seconds<br>";
+				} //end foreach
+				
+				$cjo = $this->settings_model->getDescription();
+				$cjo++;
+				$this->settings_model->updateDescription($cjo);
+			}
+		} catch (Exception $e)
+		{
+			echo 'Error', $e->getMessage(), "\n";
+			unlink($tmp_dir . ".locked");
+		}
+		$time = time() - $first_start;
+		echo "<br>all -- " . $time . "<br>";
+		unlink($tmp_dir . ".locked");
+		$data_arr = $this->imported_data_parsed_model->do_stats_newupdated(); //get next 50 items to scan
+		$start = $this->settings_model->getDescription();
+		$stats_status = $this->settings_model->getDoStatsStatus(); //get status of do_stats
+		$total_items = $this->settings_model->getLastUpdate(); //get count of all items in time of starting
+		//If queque has items and status is started and count of all items bigger than count of scanned items , start script again
+		if (count($data_arr) > 0 && $stats_status->description === 'started' && ($cjo - 1) * 50 < intval($total_items['description']))
+		{ 
+			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
+			echo $utd->td;  //exit;
+			//make asynchronous web request to do_stats_forupdated page
+			shell_exec("wget -S -O - ".site_url('/crons/do_stats_bybatch/'.$batch_id)." > /dev/null 2>/dev/null &");
+		} else
+		{
+			//Or send report about success
+			$this->settings_model->setLastUpdate(); //set last update time
+			$mtd = $this->imported_data_parsed_model->getTimeDif(); // timing of process
+			echo $mtd->td;
+			//Remove status about started state
+			if ($stats_status->description === 'started') //if status is started
+			{
+				$this->imported_data_parsed_model->delDoStatsStatus(); //remove status info
+			}
+			$this->settings_model->updateDescription(0);  //reset cron_job_offset 0
+
+			/*
+			$this->load->library('email');
+			$this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
+			$this->email->to('bayclimber@gmail.com');
+			$this->email->cc('igor.g.work@gmail.com');
+			$this->email->subject('Cron job report');
+			$this->email->message('Cron job for do_statistics_new (do_stats_bybatch) is done for batch'.$batch_id.'<br> Timing = ' . $mtd->td); //.'<br> Total items updated: '.$qty['description']
+			$this->email->send(); //*/
+		}
+		unlink($tmp_dir . ".locked");
+	}
 	
 	function checkUploadedFiles()
 	{

@@ -1107,7 +1107,7 @@ class Imported_data_parsed_model extends CI_Model {
         return $this->db->query($sql_cmd);
     }
 
-    function do_stats_newupdated($truncate=0) {
+    function do_stats_newupdated($batch_id=FALSE) {
 	$min_model_lenght = $this->config->item('min_model_lenght');
       	$q = $this->db->select('key,description')->from('settings')->where('key', 'cron_job_offset');
         $res = $q->get()->row_array();
@@ -1121,14 +1121,17 @@ class Imported_data_parsed_model extends CI_Model {
             $this->db->insert('settings', $d);
             $start = 0;
         }
-     	if (($truncate == 1) && ($start == 0)) {
-        	$this->truncate_stats_new();
-        }
 	
 	$rows = array();
 	$this->db->select('p.imported_data_id, p.revision');
 	$this->db->from($this->tables['imported_data_parsed'] . ' as p');
 	$this->db->join('statistics_new as sn','p.imported_data_id = sn.imported_data_id','LEFT');
+        if($batch_id){
+            $this->db->join('crawler_list as cl','cl.imported_data_id = p.imported_data_id');
+            $this->db->join('research_data_to_crawler_list as rdcl','cl.id = rdcl.crawler_list_id');
+            $this->db->join('research_data as rd','rd.id = rdcl.research_data_id');
+            $this->db->where('rd.batch_id',$batch_id);
+        }
 	$this->db->where("(p.key = 'URL') AND (p.revision != sn.revision OR sn.revision IS NULL)",NULL,FALSE);
 	$this->db->group_by('imported_data_id');
 	$this->db->limit(50);
@@ -1388,71 +1391,114 @@ class Imported_data_parsed_model extends CI_Model {
         }
     }
 
+//    function getData($value, $website = '', $category_id = '', $limit = '', $key = 'Product Name', $strict = false) {
+//
+//        $this->db->select('p.imported_data_id, p.key, p.value, p.model, p.revision')
+//                ->from($this->tables['imported_data_parsed'] . ' as p')
+//                ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
+//                ->where('p.key', $key)
+////                ->where('`p`.`revision` = (SELECT  MAX(revision) as revision
+////                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
+////                      GROUP BY imported_data_id)', NULL, FALSE)
+//                ;
+//
+//        if ($key == 'parsed_attributes') {
+//            $value = str_replace("-", "", $value);
+//            //$value1 = $this->db->escape($value . '%');
+//            $value2 = $this->db->escape($value);
+//            $this->db->where("(INSTR(REPLACE(`p`.`model`,'-',''), " . $value2 . ")=1 OR INSTR(" . $value2 . ", REPLACE(`p`.`model`,'-',''))=1)", NULL, FALSE);
+//        } else {
+//            if ($strict) {
+//                $this->db->like('p.value', '"' . $value . '"');
+//            } else {
+//                $this->db->like('p.value', $value);
+//            }
+//        }
+//
+//        if ($category_id > 0 && $category_id != 2) {
+//            $this->db->where('i.category_id', $category_id);
+//        }
+//
+//        if ($website != '' && $website != 'All sites') {
+//            $this->db->like('i.data', $website);
+//        }
+//
+//        if ($limit) {
+//            $this->db->limit((int) $limit);
+//        }
+//	$data = array();
+//        $query = $this->db->get();
+//	//echo $this->db->last_query(); exit;
+//	if ($query->num_rows() > 0)
+//	{
+//		$results = $query->result_array();
+//			foreach ($results as $val) 
+//			{
+//				$key = $val['imported_data_id'];
+//				$data[$key]['imported_data_id'] = $val['imported_data_id'];
+//				$data[$key]['model'] = $val['model'];
+//				if(!isset($data[$key]['url'])) $data[$key]['url'] = '';
+//				if(!isset($data[$key]['description'])) $data[$key]['description'] = '';
+//				if(!isset($data[$key]['long_description'])) $data[$key]['long_description'] = '';
+//				if(!isset($data[$key]['product_name'])) $data[$key]['product_name'] = '';
+//				if(!isset($data[$key]['parsed_attributes'])) $data[$key]['parsed_attributes'] = '';
+//				if(!isset($data[$key]['features'])) $data[$key]['features'] = ''; 
+//				switch($val['key'])
+//				{
+//					case 'URL': $data[$key]['url'] = $val['value']; break;
+//					case 'Description': $data[$key]['description'] = $val['value']; break;
+//					case 'Long_Description': $data[$key]['long_description'] = $val['value']; break;
+//					case 'Product Name': $data[$key]['product_name'] = $val['value'];  break;
+//					case 'parsed_attributes': $data[$key]['parsed_attributes'] = unserialize($val['value']); break;
+//					case 'Features': $data[$key]['features'] = $val['value']; break;
+//					default: break;
+//				}
+//			}
+//	}
+//	$query->free_result();
+//        return $data;
+//    }
     function getData($value, $website = '', $category_id = '', $limit = '', $key = 'Product Name', $strict = false) {
 
-        $this->db->select('p.imported_data_id, p.key, p.value, p.model, p.revision')
-                ->from($this->tables['imported_data_parsed'] . ' as p')
-                ->join($this->tables['imported_data'] . ' as i', 'i.id = p.imported_data_id', 'left')
-                ->where('p.key', $key)
-//                ->where('`p`.`revision` = (SELECT  MAX(revision) as revision
-//                      FROM imported_data_parsed WHERE `p`.`imported_data_id`= `imported_data_id`
-//                      GROUP BY imported_data_id)', NULL, FALSE)
-                ;
-
-        if ($key == 'parsed_attributes') {
-            $value = str_replace("-", "", $value);
-            //$value1 = $this->db->escape($value . '%');
-            $value2 = $this->db->escape($value);
-            $this->db->where("(INSTR(REPLACE(`p`.`model`,'-',''), " . $value2 . ")=1 OR INSTR(" . $value2 . ", REPLACE(`p`.`model`,'-',''))=1)", NULL, FALSE);
-        } else {
-            if ($strict) {
-                $this->db->like('p.value', '"' . $value . '"');
-            } else {
-                $this->db->like('p.value', $value);
+        $value = str_replace("-", "", $value);
+        $value2 = $this->db->escape($value);
+        $sql = "select p.imported_data_id as imported_data_id
+            , p.`value` as `url`
+            , p.model as model
+            , p.revision as revision
+            , p1.`value` as `description`
+            , p2.`value` as `long_description`
+            , p3.`value` as `product_name`
+            , p4.`value` as `parsed_attributes`
+            , p5.`value` as `features`
+            from imported_data_parsed as p
+            left join imported_data_parsed as p1 on p1.imported_data_id=p.imported_data_id and p1.`key`='description'
+            left join imported_data_parsed as p2 on p2.imported_data_id=p.imported_data_id and p2.`key`='long_description'
+            left join imported_data_parsed as p3 on p3.imported_data_id=p.imported_data_id and p3.`key`='Product Name'
+            left join imported_data_parsed as p4 on p4.imported_data_id=p.imported_data_id and p4.`key`='parsed_attributes'
+            left join imported_data_parsed as p5 on p5.imported_data_id=p.imported_data_id and p5.`key`='Features'
+            where (INSTR(REPLACE(`p`.`model`,'-',''), $value2)=1 OR INSTR($value2, REPLACE(`p`.`model`,'-',''))=1)
+                and p.`key`='url'";
+	$data = array();
+        $query = $this->db->query($sql);
+	if ($query->num_rows() > 0) {
+            $results = $query->result_array();
+            foreach ($results as $key => $val) {
+                $td = array(
+                    'imported_data_id' => $val['imported_data_id'],
+                    'url' => $val['url'],
+                    'model' => $val['model'],
+                    'revision' => $val['revision'],
+                    'description' => ($val['description'] !== null && $val['description']) ? $val['description'] : '',
+                    'long_description' => ($val['long_description'] !== null && $val['long_description']) ? $val['long_description'] : '',
+                    'product_name' => ($val['product_name'] !== null && $val['product_name']) ? $val['product_name'] : '',
+                    'parsed_attributes' => ($val['parsed_attributes'] !== null && $val['parsed_attributes']) ? unserialize($val['parsed_attributes']) : '',
+                    'features' => ($val['features'] !== null && $val['features']) ? $val['features'] : ''
+                );
+                $data[] = $td;
             }
         }
-
-        if ($category_id > 0 && $category_id != 2) {
-            $this->db->where('i.category_id', $category_id);
-        }
-
-        if ($website != '' && $website != 'All sites') {
-            $this->db->like('i.data', $website);
-        }
-
-        if ($limit) {
-            $this->db->limit((int) $limit);
-        }
-	$data = array();
-        $query = $this->db->get();
-	//echo $this->db->last_query(); exit;
-	if ($query->num_rows() > 0)
-	{
-		$results = $query->result_array();
-			foreach ($results as $val) 
-			{
-				$key = $val['imported_data_id'];
-				$data[$key]['imported_data_id'] = $val['imported_data_id'];
-				$data[$key]['model'] = $val['model'];
-				if(!isset($data[$key]['url'])) $data[$key]['url'] = '';
-				if(!isset($data[$key]['description'])) $data[$key]['description'] = '';
-				if(!isset($data[$key]['long_description'])) $data[$key]['long_description'] = '';
-				if(!isset($data[$key]['product_name'])) $data[$key]['product_name'] = '';
-				if(!isset($data[$key]['parsed_attributes'])) $data[$key]['parsed_attributes'] = '';
-				if(!isset($data[$key]['features'])) $data[$key]['features'] = ''; 
-				switch($val['key'])
-				{
-					case 'URL': $data[$key]['url'] = $val['value']; break;
-					case 'Description': $data[$key]['description'] = $val['value']; break;
-					case 'Long_Description': $data[$key]['long_description'] = $val['value']; break;
-					case 'Product Name': $data[$key]['product_name'] = $val['value'];  break;
-					case 'parsed_attributes': $data[$key]['parsed_attributes'] = unserialize($val['value']); break;
-					case 'Features': $data[$key]['features'] = $val['value']; break;
-					default: break;
-				}
-			}
-	}
-	$query->free_result();
+        $query->free_result();
         return $data;
     }
 
