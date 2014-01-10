@@ -1029,6 +1029,11 @@ class PageProcessor {
 	}
 
 	public function process_amazon(){
+		// [] fatal error fix on urls like http://www.amazon.com/LG-Electronics-47GA7900-47-Inch-LED-LCD/dp/B00BBAFWMO
+		// also fix for JS code in descriptions
+		$clean = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', "", $this->html);
+		$this->nokogiri = new nokogiri($clean);
+
 		foreach($this->nokogiri->get('h1.parseasinTitle span') as $item) {
 			$title = $item['#text'][0];
 		}
@@ -1220,6 +1225,9 @@ class PageProcessor {
 			}
 		}
 
+		// [] fatal error fix on urls like http://www.amazon.com/LG-Electronics-47GA7900-47-Inch-LED-LCD/dp/B00BBAFWMO
+		// also fix for JS code in descriptions
+		$this->nokogiri = new nokogiri($this->html);
 
 		$result = array(
 			'Product Name' => $title,
