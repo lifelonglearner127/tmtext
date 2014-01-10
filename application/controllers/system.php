@@ -2595,7 +2595,9 @@ class System extends MY_Controller {
 //    }
 
     public function check_urls() {
-    				$manu_file_upload_opts = $this -> input -> post('manu_file_upload_opts');
+            $manu_file_upload_opts = $this -> input -> post('manu_file_upload_opts');
+        $start_run = microtime(true);        
+        log_message('ERROR', 'Start ' .  $this -> input -> post('choosen_file'));                                
             $this -> load -> model('site_categories_model');
             $this -> load -> model('settings_model');
             //var_dump($_POST);
