@@ -50,8 +50,11 @@
                     match_ajax = $.post(url, {'choosen_file': $('input[name="choosen_file"]').val(), 'manu_file_upload_opts': manu_file_upload_opts}, function(data) {
                   		console.log(data);
                     }, 'json');
-		    matching_checking_int = setInterval(check_matching_status,5000);
-		    flag_stop_match = false;
+		    if(flag_stop_match)
+		    {	    
+			matching_checking_int = setInterval(check_matching_status,5000);
+			flag_stop_match = false;
+		    }
                   }
                 });
             });
@@ -183,6 +186,7 @@
                  $('#upload_urls').removeAttr('disabled');
                  $('#mathchurls .btn-success:first').removeClass('disabled');
                  $('#mathchurls #stop_matches').addClass('disabled');
+		 old_data=false;
              }   
         }
 
