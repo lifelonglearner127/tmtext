@@ -209,5 +209,23 @@ return array(
 			'sClass' => 'gap',
 			'sName' => 'gap',
 			'nonCompared' => true
+		),
+		array(
+			'sTitle' => 'Manufacturer Page',
+			'sClass' => 'murl',
+			'sName' => 'murl',
+			'nonCompared' => true
+		),
+		array(
+			'sTitle' => 'Manufacturer Images',
+			'sClass' => 'mimg',
+			'sName' => 'mimg',
+			'nonCompared' => true
+		),
+		array(
+			'sTitle' => 'Manufacturer Videos',
+			'sClass' => 'mvid',
+			'sName' => 'mvid',
+			'nonCompared' => true
 		)
 	);	

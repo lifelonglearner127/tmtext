@@ -653,7 +653,7 @@ class Statistics_new_model extends CI_Model {
         if(isset($params->id)){
             $txt_filter_part2 = ' AND  '.(int)$params->id.' < `s`.`id` AND `s`.`id` < '.((int)$params->id+4).' AND `cl`.`snap` != "" ';
         } else if(isset($params->snap_count)) {
-            $txt_filter_part2 = ' AND `cl`.`snap` != "" LIMIT 0,'.$params->snap_count.' ';
+            $txt_filter_part2 = ' AND `cl`.`snap` != "" AND LIMIT 0,'.$params->snap_count.' ';
         }
 		else if(isset($params->halfResults)) // Castro: check if I have to show only half of results created for get_graph_data
 		{

@@ -3180,6 +3180,9 @@ class Assess extends MY_Controller {
             $result_row->lower_price_exist = false;
             $result_row->snap = '';           
             $tb_product_name = '';
+	    $result_row->murl = '';
+	    $result_row->mimg = '';
+	    $result_row->mvid = '';
 
 									
             if ($row->short_description) {
@@ -3504,7 +3507,6 @@ class Assess extends MY_Controller {
 
                 $result_row = (object) $result_row;
             }
-
             if ($row->snap1 && $row->snap1 != '') {
                 $result_row->snap1 = "<span style='cursor:pointer;'><img src='" . base_url() . "webshoots/" . $row->snap1 . "' /></snap>";
             }
@@ -3869,6 +3871,13 @@ class Assess extends MY_Controller {
                     }
                     $result_row->title_seo_phrases = $str_title_long_seo . '</table>';
                 }
+		if(!empty($row->manufacturer_info))
+		{
+			$mi = unserialize($row->manufacturer_info);
+			$result_row->murl = $mi['url'];
+			$result_row->mimg = $mi['images'];
+			$result_row->mvid = $mi['videos'];
+		}
             } else {
                 $result_row->short_seo_phrases = $row->short_seo_phrases;
                 $result_row->long_seo_phrases = $row->long_seo_phrases;
@@ -4544,7 +4553,10 @@ class Assess extends MY_Controller {
                         'average_review' => $data_row->average_review,
                         'column_features' => $data_row->column_features,
                         'price_diff' => $data_row->price_diff,
-                        'recommendations' => $recommendations_html,                       
+                        'recommendations' => $recommendations_html,      
+			'murl' => $data_row->murl,
+			'mimg' =>  $data_row->mimg,
+			'mvid' => $data_row->mvid
                     );
 
                     if ($build_assess_params->max_similar_item_count > 0) {
