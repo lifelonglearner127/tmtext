@@ -26,6 +26,7 @@ var table_loaded=false;
 var curentSibil = 0;
 var isFromLocalStorage = false;
 var testIsFromLocalStorage = 0;
+var dataTableLastPageNumber = 0;
 
 var short_wc_total_not_0 = 0;
 var long_wc_total_not_0 = 0;

@@ -59,12 +59,12 @@ $(function() {
 		  .indexOf(m[3].toUpperCase()) >= 0;
 	};
 	
-	$( '#research_assess_update' ).ajaxStart(function() {
-		$( this ).text( "Updating..." ).attr('disabled', 'disabled');
+	$( document ).ajaxStart(function() {
+		$( '#research_assess_update' ).text( "Updating..." ).attr('disabled', 'disabled');
 	});
 	
-	$( '#research_assess_update' ).ajaxStop(function() {
-		$( this ).text( "Update" ).removeAttr('disabled');
+	$( document ).ajaxStop(function() {
+		$( '#research_assess_update' ).text( "Update" ).removeAttr('disabled');
 	});
 	
     $.ajax({
@@ -434,9 +434,11 @@ $(function() {
 		});       
 	}
 	
-	function reInitializeTblAssess(json_data) {
-		
-		return $('#tblAssess').dataTable(_.extend({
+	function reInitializeTblAssess(json_data, isReloaded) {
+				
+		var _dataTableLastPageNumber = dataTableLastPageNumber ? dataTableLastPageNumber : 0;
+			
+		var r = $('#tblAssess').dataTable(_.extend({
 			bDestroy : true,
 			bJQeuryUI : true,				
 			bJUI : true,				
@@ -465,15 +467,20 @@ $(function() {
 				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
-				console.log('local draw callback');							
+				console.log('local draw callback');		
 				
+				dataTableLastPageNumber = oSettings._iDisplayStart / oSettings._iDisplayLength;
+
 				tblAssess.fnAdjustColumnSizing(false);						
 			},
-			fnPreDrawCallback : function( oSettings ) {										
+			fnPreDrawCallback : function( oSettings ) {		
+				console.log('PRE local draw callback');		
+				
 				buildReport(json_data);
 				
 				//setting main tblAssess instance
-				tblAssess = oSettings.oInstance;
+				tblAssess = oSettings.oInstance;			
+				
 				tblAllColumns = tblAssess.fnGetAllSColumnNames();
 				
 				if (json_data.ExtraData)
@@ -491,9 +498,12 @@ $(function() {
 				sSearch : "Filter:",
 				sLengthMenu : "_MENU_ rows"
 			},
-			aoColumns : json_data.aoColumns,
-			iPage : 2
+			aoColumns : json_data.aoColumns,			
 		}, json_data));	
+		
+		r.fnPageChange(_dataTableLastPageNumber);
+		
+		return r;
 	}	
 
 	// setting global static variables	
@@ -2928,7 +2938,7 @@ function prevSibilfunc(curentSibil){
 	}	
 
   
-	  $('#tk-frequency').click(function() {
+	  $('#tk-frequency').on('click', function() {
 	    var $target = $('input#column_title_seo_phrases');
 		newData = "column_title_seo_phrases_f";
 		
@@ -2938,7 +2948,7 @@ function prevSibilfunc(curentSibil){
 		$target.click();
 		$target.click();
 		});
-		$('#tk-denisty').click(function() {
+		$('#tk-denisty').on('click', function() {
 		var $target = $('input#column_title_seo_phrases_f');
 		newData = "column_title_seo_phrases";
 		$target.removeAttr('id').attr({ 'id': newData });
