@@ -4920,11 +4920,14 @@ class Assess extends MY_Controller {
 				// Castro : store all the available dates in trendline_dates array
 				if($include_trendlines)
 				{
+					$last_crawl_date = date('Y-m-d', strtotime($data_row->Date));
+
 					foreach($arr as $a)
 					{
 						if(isset($a->date))
 						{
 							$a->trendline_date = date('Y-m-d', strtotime($a->date));
+							$a->days_from_last_crawl = (strtotime($last_crawl_date) - strtotime($a->trendline_date)) / (3600 * 24);
 						}
 					}
 				}
@@ -4934,7 +4937,7 @@ class Assess extends MY_Controller {
 
 					foreach($arr as $a)
 					{
-						if($a->date !='')
+						if($a->date !='' && $a->days_from_last_crawl > 0)
 						{
 							$long_des = count(explode(' ',$a->long_description));
 							$des = count(explode(' ',$a->description));
@@ -4947,7 +4950,7 @@ class Assess extends MY_Controller {
 							{
 								$updated_total_description_wc_int = (count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)));
 
-								$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words<br>"; 
+								$updated_total_description_wc.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_total_description_wc_int . '">Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words</span><br>"; 
 
 								$updated_trendlines_data[$a->trendline_date] = $updated_total_description_wc_int;
 							}
@@ -4958,52 +4961,56 @@ class Assess extends MY_Controller {
 				{
 					foreach($arr as $a)
 					{
-						$pars = unserialize($a->parsed_attributes);
-						$htags_upd = unserialize($a->HTags);
+						if($a->date !='' && $a->days_from_last_crawl > 0)
+						{
+							$pars = unserialize($a->parsed_attributes);
+							$htags_upd = unserialize($a->HTags);
 
-						$updated_short_description_wc_int = count(explode(' ',$a->description));
-						$updated_long_description_wc_int = count(explode(' ',$a->long_description));
-						$updated_total_description_wc_int = (count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)));
-						$updated_revision_int = $pars['review_count'];
-						$updated_Features_int = $pars['feature_count'];
-						$updated_h1_word_counts_int = strlen(implode("", $htags_upd['h1']));
-						$updated_h2_word_counts_int = strlen(implode("", $htags_upd['h2']));
+							$updated_short_description_wc_int = count(explode(' ',$a->description));
+							$updated_long_description_wc_int = count(explode(' ',$a->long_description));
+							$updated_total_description_wc_int = (count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)));
+							$updated_revision_int = $pars['review_count'];
+							$updated_Features_int = $pars['feature_count'];
+							$updated_h1_word_counts_int = strlen(implode("", $htags_upd['h1']));
+							$updated_h2_word_counts_int = strlen(implode("", $htags_upd['h2']));
 
-						$updated_short_description_wc.='Short Description: '.$a->date .' - ' . $updated_short_description_wc_int . "  words<br>";
-						$updated_long_description_wc.='Long Description: '.$a->date .' - ' . $updated_long_description_wc_int . " words <br>";
-						$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words<br>";
-						$updated_revision.='Reviews: '.$a->date .' - ' . $updated_revision_int . "<br>";
-						$updated_Features.='Features: '.$a->date .' - ' . $updated_Features_int . "<br>";
-						$updated_h1_word_counts.='H1 Characters: ' .$a->date .' - ' . $updated_h1_word_counts_int . " characters<br>";
-						$updated_h2_word_counts.='H2 Characters: ' .$a->date .' - ' . $updated_h2_word_counts_int . " characters<br>";
+							// Castro: data-date and data-value contains data for the mini chart
+							$updated_short_description_wc.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_short_description_wc_int . '">Short Description: '.$a->date .' - ' . $updated_short_description_wc_int . "  words</span><br>";
+							$updated_long_description_wc.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_long_description_wc_int . '">Long Description: '.$a->date .' - ' . $updated_long_description_wc_int . " words </span><br>";
+							$updated_total_description_wc.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_total_description_wc_int . '">Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words</span><br>";
+							$updated_revision.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_revision_int . '">Reviews: '.$a->date .' - ' . $updated_revision_int . "<br>";
+							$updated_Features.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_Features_int . '">Features: '.$a->date .' - ' . $updated_Features_int . "</span><br>";
+							$updated_h1_word_counts.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_h1_word_counts_int . '">H1 Characters: ' .$a->date .' - ' . $updated_h1_word_counts_int . " characters</span><br>";
+							$updated_h2_word_counts.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_h2_word_counts_int . '">H2 Characters: ' .$a->date .' - ' . $updated_h2_word_counts_int . " characters</span><br>";
 
-						// Castro: display the proper value in trendlines
-						if($graphBuild == "short_description_wc")
-						{
-							$trendline_value = $updated_short_description_wc_int;
-						}
-						else if($graphBuild == "long_description_wc")
-						{
-							$trendline_value = $updated_long_description_wc_int;
-						}
-						else if($graphBuild == "h1_word_counts")
-						{
-							$trendline_value = $updated_h1_word_counts_int;
-						}
-						else if($graphBuild == "h2_word_counts")
-						{
-							$trendline_value = $updated_h2_word_counts_int;
-						}
-						else if($graphBuild == "revision")
-						{
-							$trendline_value = $updated_revision_int;
-						}
-						else if($graphBuild == "Features")
-						{
-							$trendline_value = $updated_Features_int;
-						}
+							// Castro: display the proper value in trendlines
+							if($graphBuild == "short_description_wc")
+							{
+								$trendline_value = $updated_short_description_wc_int;
+							}
+							else if($graphBuild == "long_description_wc")
+							{
+								$trendline_value = $updated_long_description_wc_int;
+							}
+							else if($graphBuild == "h1_word_counts")
+							{
+								$trendline_value = $updated_h1_word_counts_int;
+							}
+							else if($graphBuild == "h2_word_counts")
+							{
+								$trendline_value = $updated_h2_word_counts_int;
+							}
+							else if($graphBuild == "revision")
+							{
+								$trendline_value = $updated_revision_int;
+							}
+							else if($graphBuild == "Features")
+							{
+								$trendline_value = $updated_Features_int;
+							}
 
-						$updated_trendlines_data[$a->trendline_date] = $trendline_value;
+							$updated_trendlines_data[$a->trendline_date] = $trendline_value;
+						}
 					}
 				}
 				$snap_data[0]['updated_short_description_wc'][] =  $updated_short_description_wc;

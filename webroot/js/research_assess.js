@@ -1074,9 +1074,9 @@ $(function() {
 							result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
 							result += '<br /><span>' + valueName[j][datum.x] + '</span>';
 							result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
-							result += '<br /><span ">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' '+graphName2+'</span>';
+							result += '<br /><span class="dot_data" data-date="0" data-value="' + datum.y + '">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' '+graphName2+'</span>';
 
-							result += '<span style="float:left;" class="mini_chart_container"></span><span class="trendlines_details" style="float:left;color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span>';
+							result += '<span class="trendlines_container"><span style="float:left;" class="mini_chart_container"></span><span class="trendlines_details" style="float:left;color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span></span>';
 						}
 					});
 					return result;
@@ -1084,6 +1084,7 @@ $(function() {
 			},
 			plotOptions: {
 				series: {
+					turboThreshold : 3000,
 					cursor: 'pointer',
 					point: {
 						events: {
@@ -1101,8 +1102,54 @@ $(function() {
 								cloneToolTip = this.series.chart.tooltip.label.element.cloneNode(true);
 								chart1.container.firstChild.appendChild(cloneToolTip);
 								
-								cloneToolTip2 = $('.highcharts-tooltip').clone(); 
+								cloneToolTip2 = $('.highcharts-tooltip').clone().addClass("mini_chart_popup"); 
 								$(chart1.container).append(cloneToolTip2);
+								
+								// Castro: check if there is more than one point and show_over_time is checked to insert mini chart in popup
+								if($("#show_over_time").is(":checked") && $(".mini_chart_popup .dot_data").length > 1)
+								{
+									var highest_value = 0;
+									
+									// get dot highest value
+									$(".mini_chart_popup .dot_data").each(function()
+									{
+										if(parseInt($(this).attr("data-value")) > highest_value)
+										{
+											highest_value = parseInt($(this).attr("data-value"));
+										}
+									});
+									
+									// calculate scale ratio for time axis
+									var days_from_latest_crawl = parseInt($(".mini_chart_popup .dot_data:last").attr("data-date"));
+									
+									var time_scale_ratio = (100 / days_from_latest_crawl) * -1;
+									
+									// need to calculate ratio, charts maximum allowed value is 100
+									var scale_ratio = 80 / highest_value;
+									
+									var google_chart = "https://chart.googleapis.com/chart?cht=lxy&chxt=y&chs=200x125&chxr=0,0," + parseInt(highest_value * 1.25) + "&chm=s,000000,0,-1,5&chd=t:";
+									
+									var y_axis_values = "";
+									var x_axis_values = "";
+									
+									// get dot values from chart popup
+									for(var i = ($(".mini_chart_popup .dot_data").length - 1); i >=0; i--)
+									{
+										y_axis_values += parseInt($(".mini_chart_popup .dot_data").eq(i).attr("data-value") * scale_ratio);
+										x_axis_values += parseInt(parseInt(($(".mini_chart_popup .dot_data").eq(i).attr("data-date")) - days_from_latest_crawl) * time_scale_ratio);
+										
+										if(i != 0)
+										{
+											y_axis_values += ",";
+											x_axis_values += ",";
+										}
+									}
+									
+									google_chart += x_axis_values + "|" + y_axis_values;
+									
+									// insert mini chart image
+									$(".mini_chart_popup .mini_chart_container").css("width", "210px").append('<img src="' + google_chart + '" />');
+								}
 
 								$('.highcharts-tooltip').first().css('visibility','hidden');
 								$('div .highcharts-tooltip span').first().css('visibility','hidden');

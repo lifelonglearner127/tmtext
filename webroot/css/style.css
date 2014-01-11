@@ -2741,3 +2741,12 @@ li.selected-url{
 div#assess_graph.loading{
  background:url(../img/img-loader.gif) no-repeat center top !important;
 }
+.mini_chart_container{
+	float:left;
+	width:0px;
+	height:125px;
+}
+.trendlines_container{
+	float:left;
+	width:650px;
+}
