@@ -4181,18 +4181,20 @@ class Assess extends MY_Controller {
 				}
 												
             }
-			$are_records_filtered = $this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData);
+			// $are_records_filtered = $this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData);
 			
-			if (!$build_assess_params->summaryFilterData) {
-                $result_table[] = $result_row;				
-            } else if ($are_records_filtered) {
+			// if (!$build_assess_params->summaryFilterData) {
+                // $result_table[] = $result_row;				
+            // } else if ($are_records_filtered) {
 				
-				if ($filtered_count >= $display_start)
-				{					
-					$result_table[] = $result_row;	
-				}
-				$filtered_count++;				
-			}											       
+				// if ($filtered_count >= $display_start)
+				// {					
+					// $result_table[] = $result_row;	
+				// }
+				// $filtered_count++;				
+			// }
+
+			$result_table[] = $result_row;	
         }
 
 

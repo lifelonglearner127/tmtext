@@ -401,7 +401,7 @@ $(function() {
 		$('.assess_report_download_panel').hide();
         $("#tblAssess tbody tr").remove();
 		
-		if (!json_data || summaryInfoSelectedElements.length)
+		if (!json_data)
 		{																
 			var aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);	
 				
@@ -415,7 +415,7 @@ $(function() {
 			});       							
 		}
 		else									
-			tblAssess = reInitializeTblAssess(json_data); 					
+			tblAssess = reInitializeTblAssess(json_data, false); 					
     }	
 	
 	function pullRestItems()
