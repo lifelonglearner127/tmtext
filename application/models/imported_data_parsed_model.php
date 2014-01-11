@@ -2650,7 +2650,7 @@ echo "j  = ".$j;
         foreach ($results as $result) {
             if ($result->key === 'URL') {
                 $data[$result->imported_data_id]['url'] = $result->value;
-//                $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
+                $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
                 $data[$result->imported_data_id]['model'] = $result->model;
             }
 //            if ($result->key === 'Product Name') {
