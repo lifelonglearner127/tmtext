@@ -59,12 +59,12 @@ $(function() {
 		  .indexOf(m[3].toUpperCase()) >= 0;
 	};
 	
-	$( '#research_assess_update' ).ajaxStart(function() {
-		$( this ).text( "Updating..." ).attr('disabled', 'disabled');
+	$( document ).ajaxStart(function() {
+		$( '#research_assess_update' ).text( "Updating..." ).attr('disabled', 'disabled');
 	});
 	
-	$( '#research_assess_update' ).ajaxStop(function() {
-		$( this ).text( "Update" ).removeAttr('disabled');
+	$( document ).ajaxStop(function() {
+		$( '#research_assess_update' ).text( "Update" ).removeAttr('disabled');
 	});
 	
     $.ajax({
@@ -434,9 +434,11 @@ $(function() {
 		});       
 	}
 	
-	function reInitializeTblAssess(json_data) {
-		
-		return $('#tblAssess').dataTable(_.extend({
+	function reInitializeTblAssess(json_data, isReloaded) {
+				
+		var _dataTableLastPageNumber = dataTableLastPageNumber ? dataTableLastPageNumber : 0;
+			
+		var r = $('#tblAssess').dataTable(_.extend({
 			bDestroy : true,
 			bJQeuryUI : true,				
 			bJUI : true,				
@@ -465,15 +467,20 @@ $(function() {
 				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
-				console.log('local draw callback');							
+				console.log('local draw callback');		
 				
+				dataTableLastPageNumber = oSettings._iDisplayStart / oSettings._iDisplayLength;
+
 				tblAssess.fnAdjustColumnSizing(false);						
 			},
-			fnPreDrawCallback : function( oSettings ) {										
+			fnPreDrawCallback : function( oSettings ) {		
+				console.log('PRE local draw callback');		
+				
 				buildReport(json_data);
 				
 				//setting main tblAssess instance
-				tblAssess = oSettings.oInstance;
+				tblAssess = oSettings.oInstance;			
+				
 				tblAllColumns = tblAssess.fnGetAllSColumnNames();
 				
 				if (json_data.ExtraData)
@@ -485,7 +492,7 @@ $(function() {
 				}
 			},
 			oLanguage : {
-				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
+				sInfo : "Showing _START_ to _END_ of " + json_data.ExtraData.fixedTotalRows + " records",
 				sInfoEmpty : "Showing 0 to 0 of 0 records",
 				sInfoFiltered : "",
 				sSearch : "Filter:",
@@ -493,6 +500,10 @@ $(function() {
 			},
 			aoColumns : json_data.aoColumns,			
 		}, json_data));	
+		
+		r.fnPageChange(_dataTableLastPageNumber);
+		
+		return r;
 	}	
 
 	// setting global static variables	
@@ -607,13 +618,13 @@ $(function() {
 			}
 			$('#graphDropDown').attr("disabled", true);
 			$('#show_over_time').attr("disabled", true);
-			$('#highChartContainer').addClass("loading");
+			$('#assess_graph').addClass("loading");
 		}
 		else
 		{
 			$('#graphDropDown').removeAttr("disabled");
 			$('#show_over_time').removeAttr("disabled");
-			$("#highChartContainer").removeClass("loading");
+			$("#assess_graph").removeClass("loading");
 			
 			$('.highcharts-button').each(function(i){
 				if(i > 0)
@@ -641,6 +652,9 @@ $(function() {
 		if(batch2Value == false || batch2Value == 0 || typeof batch2Value == 'undefined'){
 			batch2Value = -1;
 		}
+		
+		var show_trendlines = $("#show_over_time").is(":checked");
+		
 		$.ajax({
 			type: "POST",
 			url: readGraphDataUrl,
@@ -648,7 +662,8 @@ $(function() {
 				batch_id: batch1Value,
 				batch_compare_id: batch2Value,
 				graphBuild: graphBuild,
-				halfResults:0
+				halfResults:0,
+				includeTrendlines : show_trendlines
 			},
 			error: function()
 			{
@@ -668,7 +683,8 @@ $(function() {
 					batch_id: batch1Value,
 					batch_compare_id: batch2Value,
 					graphBuild: graphBuild,
-					halfResults:1
+					halfResults:1,
+					includeTrendlines : show_trendlines
 				},
 				error: function()
 				{
@@ -1055,7 +1071,8 @@ $(function() {
 							result += '<br /><span>' + valueName[j][datum.x] + '</span>';
 							result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
 							result += '<br /><span ">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' '+graphName2+'</span>';
-							result += '<span style="color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span>';
+
+							result += '<span style="float:left;" class="mini_chart_container"></span><span class="trendlines_details" style="float:left;color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span>';
 						}
 					});
 					return result;
@@ -2921,7 +2938,7 @@ function prevSibilfunc(curentSibil){
 	}	
 
   
-	  $('#tk-frequency').click(function() {
+	  $('#tk-frequency').on('click', function() {
 	    var $target = $('input#column_title_seo_phrases');
 		newData = "column_title_seo_phrases_f";
 		
@@ -2931,7 +2948,7 @@ function prevSibilfunc(curentSibil){
 		$target.click();
 		$target.click();
 		});
-		$('#tk-denisty').click(function() {
+		$('#tk-denisty').on('click', function() {
 		var $target = $('input#column_title_seo_phrases_f');
 		newData = "column_title_seo_phrases";
 		$target.removeAttr('id').attr({ 'id': newData });

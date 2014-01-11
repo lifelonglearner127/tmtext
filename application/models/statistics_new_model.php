@@ -360,8 +360,190 @@ class Statistics_new_model extends CI_Model {
     //     return $result;
     // }
     
-    
-       
+	/**
+	 * Check imported_data_parsed and imported_data_parsed_archived tables, get how many records were inserted in many dates, calculates the average of records inserted and returns the first 6 dates above the average
+	 *
+	 * @access	public
+	 * @return	array
+	 */
+	function get_trendline_dates()
+	{
+		$imported_data_dates = $this->db->query("SELECT DATE(created) AS trendline_date, COUNT(*) AS crawled_items FROM `imported_data_parsed` , imported_data WHERE imported_data.id = imported_data_parsed.imported_data_id GROUP BY DATE(created) ORDER BY created DESC LIMIT 1, 20")->result_array();
+
+		$imported_data_archived_dates = $this->db->query("SELECT DATE(created) AS trendline_date, COUNT(*) AS crawled_items FROM `imported_data_parsed_archived` , imported_data WHERE imported_data.id = imported_data_parsed_archived.imported_data_id GROUP BY DATE(created) ORDER BY created DESC")->result_array();
+
+		$all_dates = array();
+
+		foreach($imported_data_dates as $imported_data_date)
+		{
+			$all_dates[$imported_data_date["trendline_date"]] = $imported_data_date;
+		}
+
+		foreach($imported_data_archived_dates as $imported_data_archived_date)
+		{
+			$all_dates[$imported_data_date["trendline_date"]] = $imported_data_archived_date;
+		}
+
+		$highest_value = 0;
+		$sum = 0;
+
+		foreach($all_dates as $date)
+		{
+			if($date["crawled_items"] > $highest_value)
+			{
+				$highest_value = $date["crawled_items"];
+			}
+
+			$sum += $date["crawled_items"];
+		}
+
+		$average_value = $sum / count($all_dates);
+
+		$return_dates = array();
+
+		foreach($all_dates as $date)
+		{
+			if($date["crawled_items"] > $average_value && count($return_dates) < 6)
+			{
+				$return_dates[] = $date["trendline_date"];
+			}
+		}
+
+		return $return_dates;
+	}
+
+	/**
+	 * get the value of the items crawled in every date
+	 *
+	 * @access	private
+	 * @param	int
+	 * @param	string
+	 * @param	array
+	 * @return	array
+	 */
+	function getStatsData_trendlines($imported_data_id, $graphBuild, $dates)
+	{   
+		switch ($graphBuild) {
+			case 'short_description_wc':
+			$key = 'description';
+			break;
+	
+			case 'long_description_wc':
+			$key = 'long_description';
+			break;
+			
+			case 'total_description_wc':
+			$key = 'long_description';
+			$key1 = 'description';
+			break;
+			
+			case 'revision':
+			$key = 'parsed_attributes';
+			break;
+		
+			case 'Features':
+			$key = 'parsed_attributes';
+			break;
+		
+			case 'h1_word_counts':
+			$key = 'HTags';
+			break;
+		
+			case 'h2_word_counts':
+			$key = 'HTags';
+			break;
+			
+		}
+
+		if(count($dates))
+		{
+			$dates_sql = $initial_dates_sql = " AND (";
+
+			foreach($dates as $date)
+			{
+				if($dates_sql != $initial_dates_sql)
+				{
+					$dates_sql .= " OR ";
+				}
+
+				$dates_sql .= ' DATE(idpa.`value`) = "' . $date . '"';
+			}
+
+			$dates_sql .= ")";
+		}
+		else
+		{
+			$dates_sql = "";
+		}
+		
+		// Castro: search crawled_items in imported_data_parsed as imported_data_parsed_archived
+
+		$tables_to_search = array('imported_data_parsed', 'imported_data_parsed_archived');
+
+		$result = $result_key = array();
+		
+		foreach($tables_to_search as $table_to_search)
+		{
+			$sql='SELECT ';
+			$sql.=" idpa1.`value` as '".$key."',idpa.`value` as `date`";
+			$sql.=' FROM `' . $table_to_search . '` as idpa';
+			$sql.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key` = '".$key."'";
+			$sql.=" WHERE idpa1.`key` = '".$key."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
+			$sql.= $dates_sql;
+			$sql.=' GROUP BY DATE(`date`) ORDER BY DATE(`date`) DESC LIMIT 6';
+
+			$query = $this->db->query($sql);
+			$temp_result = $query->result();
+
+			foreach($temp_result as $this_result)
+			{
+				$result[] = $this_result;
+			}
+			
+			if($key1 !=''){
+				$sql_key='SELECT ';
+				$sql_key.=" idpa1.`value` as '".$key1."',idpa.`value` as `date`";
+				$sql_key.=' FROM `' . $table_to_search . '` as idpa';
+				$sql_key.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key` = '".$key1."'";
+				$sql_key.=" WHERE idpa1.`key` = '".$key1."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
+				$sql_key.= $dates_sql;
+				$sql_key.=' GROUP BY DATE(`date`) ORDER BY DATE(`date`) DESC LIMIT 6';
+				
+				$query_key = $this->db->query($sql_key);
+				$temp_result_key = $query_key->result();
+
+				foreach($temp_result_key as $this_result_key)
+				{
+					$result_key[] = $this_result_key;
+				}
+			}
+		}
+
+		if((count($result) !=0) && (count($result_key) !=0))
+		{
+			$res = array();
+			foreach($result_key as $res_k)
+			{
+				foreach($result as $k)
+				{
+					if($k->date == $res_k->date)
+					{
+						$res[] = array('date'=>$res_k->date,'long_description'=>$k->long_description,'description'=>$res_k->description);break;
+					}
+				}
+			}
+			
+			return (object) $res;
+		}
+		elseif((count($result_key) !=0) && (count($result) == 0))
+		{
+			return $result_key;
+		}
+		else
+		{
+			return $result;
+		}
+	}
     
     function getStatsData_min_max($imported_data_id,$graphBuild)
     {   
@@ -404,7 +586,7 @@ class Statistics_new_model extends CI_Model {
         $sql.=" left join `imported_data_parsed_archived` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key` = '".$key."'";
         $sql.=" WHERE idpa1.`key` = '".$key."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
         $sql.=' ORDER BY idpa.`revision` DESC LIMIT 5';
-        
+
         $query = $this->db->query($sql);
         $result = $query->result();
         
@@ -475,8 +657,13 @@ class Statistics_new_model extends CI_Model {
 			else
 			{
 				$txt_filter_part2 = ' LIMIT '.$halfResults_int .', 18446744073709551615' ; // returns the rest
+// 				$txt_filter_part2 = ' LIMIT '.$halfResults_int .', '.$halfResults_int ;
 			}
 		}
+		// else/* if($_SERVER["HTTP_HOST"] == "tmeditor")*/
+		// {
+			// $txt_filter_part2 = " LIMIT 20";
+		// }
 
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
