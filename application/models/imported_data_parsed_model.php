@@ -2809,6 +2809,7 @@ echo "j  = ".$j;
 		    if($query->num_rows > 0)
 		    {
 			$result = $query->row_array();
+			$upd['revision'] = $result['revision']+1;
 			if(!$result['url'])
 			{
 				$ins['imported_data_id'] = $result['imported_data_id'];
@@ -2826,7 +2827,6 @@ echo "j  = ".$j;
 				$updated = TRUE;
 			} else
 			{
-				$upd['revision'] = $result['revision']+1;
 				if($mURL != $result['url'])
 				{	
 					$this->db->where('imported_data_id',$result['imported_data_id']);
@@ -2852,6 +2852,12 @@ echo "j  = ".$j;
 					$updated = TRUE;
 				}
 			}
+			if($updated)
+			{
+				$this->db->where('imported_data_id',$result['imported_data_id']);
+				$this->db->where('key','url');
+				$this->db->update($this->tables['imported_data_parsed'],$upd);
+			}	
 		    }
 	    }
 	    return $updated;
