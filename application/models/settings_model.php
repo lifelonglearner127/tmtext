@@ -285,6 +285,16 @@ return $Hash;
 //        $this->db->where('description',$pr);
         $this->db->update('settings',$data);
     }
+    function createManufacturerMatching($str = '')
+    {
+	$data = array(
+            'key'=>'matching_urls',
+            'description'=>$str,
+            'created'=>date('Y-m-d H:i:s',time()),
+            'modified'=>date('Y-m-d H:i:s',time()+1)
+        );
+        $this->db->insert('settings',$data);    
+    }
     function getMatching(){
         $this->db->select('*');
         $this->db->from('settings');

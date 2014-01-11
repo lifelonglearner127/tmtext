@@ -149,6 +149,10 @@
                             dataType:'json',
                             success:function(data){
                                 $("#matching").html(data.response);
+				if(typeof(data.manufacturer) !== 'undefined')
+				{
+					$('#manu_upload_urls_check').attr('checked',true);
+				}	
                                 if(data.active)
                                 {
                                     activeBtns('active');

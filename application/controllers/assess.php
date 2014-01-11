@@ -319,7 +319,7 @@ class Assess extends MY_Controller {
             }
 			
             $results = $this->get_data_for_assess($params);
-			
+	
             $cmp = array();  
 
             if ($batch2 && $batch2 != 'all') {
@@ -680,12 +680,11 @@ class Assess extends MY_Controller {
 	}
 
     private function get_data_for_assess($params) {        
-        $this->load->model('statistics_model');
-        $this->load->model('statistics_new_model');
-		
         if ($this->settings['statistics_table'] == "statistics_new") {
+	    $this->load->model('statistics_new_model');
             $results = $this->statistics_new_model->getStatsData($params);
         } else {
+	    $this->load->model('statistics_model');
             $results = $this->statistics_model->getStatsData($params);
         }
         //$results = $this->statistics_model->getStatsData($params);

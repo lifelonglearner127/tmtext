@@ -2609,13 +2609,18 @@ class System extends MY_Controller {
     public function check_urls() {
             $manu_file_upload_opts = $this -> input -> post('manu_file_upload_opts');
         $start_run = microtime(true);        
-        log_message('ERROR', 'Start ' .  $this -> input -> post('choosen_file'));                                
+        log_message('ERROR', 'Start ' .  $this -> input -> post('choosen_file'));    
+	    $file = $this -> config -> item('csv_upload_dir') . $this -> input -> post('choosen_file');
+	    if($manu_file_upload_opts)
+	    {
+		    $this->importManufacturerStatistic($file);
+		    return;
+	    }			
             $this -> load -> model('site_categories_model');
             $this -> load -> model('settings_model');
             //var_dump($_POST);
             $this -> load -> model('imported_data_parsed_model');
             $this -> load -> model('temp_data_model');
-            $file = $this -> config -> item('csv_upload_dir') . $this -> input -> post('choosen_file');
             $f_name = end(explode('/', $file));
             //exit($f_name);
             //echo file_exists($file)?"exists":"not exists!"."<br>";
@@ -2779,6 +2784,39 @@ class System extends MY_Controller {
             echo "Items updated: " . $itemsUpdated . "<br>";
         }
 	
+	private function importManufacturerStatistic($file = '')
+	{
+		if(strlen($file) > 0)
+		{
+			$handle = fopen($file, 'rt');
+			if (!$handle)
+			{
+			    echo('File not opened!');
+			    return FALSE;
+			}
+			$this->load->model('settings_model');
+			$this->settings_model->deledtMatching();
+			$this->load->model('imported_data_parsed_model');
+			$all = 0;
+			$changed = 0;
+			$unchanged = 0;
+			while (($d = fgetcsv($handle, 0, ',')) !== FALSE)
+			{
+				$all++;
+				if(isset($d[3]) && $all > 1)
+				{
+					$c = $this->imported_data_parsed_model->updateManufacturerInfoByURL($d[0],$d[1],$d[2],$d[3]);
+					if($c) $changed++; else $unchanged++;
+				}
+			}
+			$all = $all -1;
+			$time = time();
+			$name = end(explode('/', $file));
+			$notFoundUrls = $all - ($changed + $unchanged);
+                        $this->settings_model->createManufacturerMatching("$name|$time|$all|$notFoundUrls|$changed|$unchanged|1");
+		}
+	}
+	
 	
 	public function stopChecking()
 	{
@@ -2834,8 +2872,14 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" &';
 					$line .= '<br># Matches Updated: ' . $updated;
 					$line .= '<br># Matches Unchanged: ' . $ar[3];
                                         $json['active'] = TRUE;
+				} elseif(isset($ar[5])){
+					$line .= 'Total matching URLs imported: ' . $ar[2] . '</p>';
+					$line .= '<p>'.'Uploaded filename: ' . $ar[0];
+					$line .= '<br>URLs not found in imported_data_parsed: ' . $ar[3];
+					$line .= '<br># Matches Updated: ' . $updated;
+					$line .= '<br># Matches Unchanged: ' . $ar[5];
+					$json['manufacturer'] = TRUE;
 				} else {
-					$ar = explode('|', $row -> description);
 					//                    $line .= 'Created-'.strtotime($row->created).'; Modified-'.strtotime($row->modified)
 					//                            .'; Count of ar-'.count($ar);
 					$line .= 'Total matching URLs imported: ' . $ar[2] . '</p><p>' . 'Uploaded filename: ' . $ar[0] . '<br>URLs not found in imported_data_parsed: ' . $ar[3] . '  ' . (intval($ar[3]) > 0 ? '<a id="download_not_founds"
