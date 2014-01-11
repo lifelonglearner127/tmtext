@@ -2623,14 +2623,12 @@ class System extends MY_Controller {
         $start_run = microtime(true);        
         log_message('ERROR', 'Start ' .  $this -> input -> post('choosen_file'));    
 	    $file = $this -> config -> item('csv_upload_dir') . $this -> input -> post('choosen_file');
-            // This part always working if uploading finished successfully
-            // If you need this script, please, write more specific checking
-            // Currently I need url import without this part 
-//	    if($manu_file_upload_opts)
-//	    {
-//		    $this->importManufacturerStatistic($file);
-//		    return;
-//	    }			
+            // If "manufacturer match file" checkbox os checked, start manufacturer info import
+	    if($manu_file_upload_opts)
+	    {
+		    $this->importManufacturerStatistic($file);
+		    return;
+	    }			
             $this -> load -> model('site_categories_model');
             $this -> load -> model('settings_model');
             $this -> load -> model('imported_data_parsed_model');
@@ -2905,7 +2903,7 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" &';
 					$line .= '<br># Matches Updated: ' . $updated;
 					$line .= '<br># Matches Unchanged: ' . $ar[3];
                                         $json['active'] = TRUE;
-				} elseif(isset($ar[5])){
+				} elseif(isset($ar[5]) && ($row->modifie == '0000-00-00 00:00:00')){
 					$line .= 'Total matching URLs imported: ' . $ar[2] . '</p>';
 					$line .= '<p>'.'Uploaded filename: ' . $ar[0];
 					$line .= '<br>URLs not found in imported_data_parsed: ' . $ar[3];
