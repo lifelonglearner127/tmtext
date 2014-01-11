@@ -24,6 +24,13 @@ class Statistics_new_model extends CI_Model {
         return $this->db->delete($this->tables['statistics_new'], array('imported_data_id' => $im_id));
     
     }
+    function get_size_of_batch($batch_id){
+        $this->db->select('count(*) as cnt');
+        $this->db->from('statistics_new');
+        $this->db->where('batch_id',$batch_id);
+        $size = $this->db->get()->first_row();
+        return $size->cnt;
+    }
     function get_crawler_price_by_url_model($url) {
         $res_object = array(
             'status' => false,

@@ -2571,9 +2571,13 @@ echo "j  = ".$j;
     }
 
     function give_model($im_id, $model) {
+        $model = trim($model);
         $update_object = array(
             'model' => $model,
         );
+        $this->db->delete('statistics_new', array('imported_data_id' => $im_id));
+        $this->db->like('similar_products_competitors', $im_id);
+        $this->db->delete('statistics_new'); 
         $this->db->where('imported_data_id', $im_id);
         $this->db->update($this->tables['imported_data_parsed'], $update_object);
     }
@@ -2584,6 +2588,9 @@ echo "j  = ".$j;
         $update_object = array(
             'model' => NULL,
         );
+        $this->db->delete('statistics_new', array('imported_data_id' => $im_id));
+        $this->db->like('similar_products_competitors', $im_id);
+        $this->db->delete('statistics_new');
         $this->db->where('imported_data_id', $im_id);
         $this->db->update($this->tables['imported_data_parsed'], $update_object);
     }
@@ -2650,7 +2657,7 @@ echo "j  = ".$j;
         foreach ($results as $result) {
             if ($result->key === 'URL') {
                 $data[$result->imported_data_id]['url'] = $result->value;
-//                $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
+                $data[$result->imported_data_id]['imported_data_id'] = $result->imported_data_id;
                 $data[$result->imported_data_id]['model'] = $result->model;
             }
 //            if ($result->key === 'Product Name') {
