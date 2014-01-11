@@ -2713,11 +2713,11 @@ echo "j  = ".$j;
     }
     function getModelByUrl($url){
         $this->db->select("purl.imported_data_id as data_id, purl.`model` as model,
-            purl.revision as rev, pid.`value` as ph_attr");
+            purl.revision as rev");//, pid.`value` as ph_attr
         $this->db->from("imported_data_parsed as purl");
-        $this->db->join("(select `value`, imported_data_id from imported_data_parsed
-            where `key`='parsed_attributes') as pid",
-                'purl.imported_data_id = pid.imported_data_id',"LEFT");
+//        $this->db->join("(select `value`, imported_data_id from imported_data_parsed
+//            where `key`='parsed_attributes') as pid",
+//                'purl.imported_data_id = pid.imported_data_id',"LEFT");
         $this->db->where('purl.key','url');
         $this->db->where('purl.value',$url);
         //$this->db->where("pid.key",'parsed_attributes');
