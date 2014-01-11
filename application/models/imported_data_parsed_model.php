@@ -2813,7 +2813,7 @@ echo "j  = ".$j;
 			{
 				$ins['imported_data_id'] = $result['imported_data_id'];
 				$ins['model'] = $result['model'];
-				$ins['revision'] = 1;
+				$ins['revision'] = $result['revision']+1;
 				$ins['key'] = 'manufacturer_url';
 				$ins['value'] = $mURL;
 				$this->db->insert($this->tables['imported_data_parsed'],$ins);

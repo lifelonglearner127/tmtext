@@ -2840,34 +2840,36 @@ class System extends MY_Controller {
 	
 	private function importManufacturerStatistic($file = '')
 	{
-		if(strlen($file) > 0)
+		//checking if file exists
+		if(strlen($file) > 0 && file_exists($file))
 		{
-			$handle = fopen($file, 'rt');
+			$handle = fopen($file, 'rt'); //file opening
 			if (!$handle)
 			{
 			    echo('File not opened!');
 			    return FALSE;
 			}
 			$this->load->model('settings_model');
-			$this->settings_model->deledtMatching();
-			$this->load->model('imported_data_parsed_model');
-			$all = 0;
-			$changed = 0;
-			$unchanged = 0;
-			while (($d = fgetcsv($handle, 0, ',')) !== FALSE)
+			$this->settings_model->deledtMatching(); //removing statistic of previous file
+			$this->load->model('imported_data_parsed_model'); 
+			$all = 0; //all checked items
+			$changed = 0; //inserted or updated items
+			$unchanged = 0; //items that already exists
+			while (($d = fgetcsv($handle, 0, ',')) !== FALSE) //checking for each line of file
 			{
-				$all++;
+				$all++; //count each item
 				if(isset($d[3]) && $all > 1)
 				{
+					//checking for each value of line
 					$c = $this->imported_data_parsed_model->updateManufacturerInfoByURL($d[0],$d[1],$d[2],$d[3]);
-					if($c) $changed++; else $unchanged++;
+					if($c) $changed++; else $unchanged++; //count changed and unchanged items
 				}
 			}
-			$all = $all -1;
+			$all = $all -1; //first line is header, we counted only lines with data
 			$time = time();
-			$name = end(explode('/', $file));
-			$notFoundUrls = $all - ($changed + $unchanged);
-                        $this->settings_model->createManufacturerMatching("$name|$time|$all|$notFoundUrls|$changed|$unchanged|1");
+			$name = end(explode('/', $file)); //get name of file
+			$notFoundUrls = $all - ($changed + $unchanged); //calculating of urls that were not found
+                        $this->settings_model->createManufacturerMatching($name."|".$time."|".$all."|".$notFoundUrls."|".$changed."|".$unchanged."|1"); //adding statistic about current file
 		}
 	}
 	
