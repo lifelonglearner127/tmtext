@@ -2624,7 +2624,7 @@ class System extends MY_Controller {
         log_message('ERROR', 'Start ' .  $this -> input -> post('choosen_file'));    
 	    $file = $this -> config -> item('csv_upload_dir') . $this -> input -> post('choosen_file');
             // If "manufacturer match file" checkbox os checked, start manufacturer info import
-	    if($manu_file_upload_opts)
+	    if($manu_file_upload_opts == 'true')
 	    {
 		    $this->importManufacturerStatistic($file);
 		    return;
@@ -2903,7 +2903,7 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" &';
 					$line .= '<br># Matches Updated: ' . $updated;
 					$line .= '<br># Matches Unchanged: ' . $ar[3];
                                         $json['active'] = TRUE;
-				} elseif(isset($ar[5]) && ($row->modifie == '0000-00-00 00:00:00')){
+				} elseif(isset($ar[5]) && ($row->modified == '0000-00-00 00:00:01')){
 					$line .= 'Total matching URLs imported: ' . $ar[2] . '</p>';
 					$line .= '<p>'.'Uploaded filename: ' . $ar[0];
 					$line .= '<br>URLs not found in imported_data_parsed: ' . $ar[3];

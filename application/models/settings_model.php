@@ -291,7 +291,7 @@ return $Hash;
             'key'=>'matching_urls',
             'description'=>$str,
             'created'=>date('Y-m-d H:i:s',time()),
-            'modified'=>'0000-00-00 00:00:00'
+            'modified'=>'0000-00-00 00:00:01'
         );
         $this->db->insert('settings',$data);    
     }
