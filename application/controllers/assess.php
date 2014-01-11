@@ -312,6 +312,7 @@ class Assess extends MY_Controller {
             $params->date_from = $build_assess_params->date_from;
             $params->date_to = $build_assess_params->date_to;
             $batch2 = $this->input->get('batch2') && $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
+			$params->displayCount = $this->input->get('displayCount', false);
             if ($batch2 === '') {
                 $params->iDisplayLength = $this->input->get('iDisplayLength');
                 $params->iDisplayStart = $this->input->get('iDisplayStart');
@@ -3179,34 +3180,7 @@ class Assess extends MY_Controller {
             $result_row->snap = '';           
             $tb_product_name = '';
 
-			
-			
-			// if ($build_assess_params->short_less_check && $build_assess_params->short_more_check) {
-                // if ($result_row->short_description_wc > $build_assess_params->short_less && $result_row->short_description_wc < $build_assess_params->short_more) {
-                    // continue;
-                // }
-            // } else {
-                // if ($build_assess_params->short_less_check && $result_row->short_description_wc > $build_assess_params->short_less) {
-                    // continue;
-                // }
-                // if ($build_assess_params->short_more_check && $result_row->short_description_wc < $build_assess_params->short_more) {
-                    // continue;
-                // }
-            // }
-
-            // if ($build_assess_params->long_less_check && $build_assess_params->long_more_check) {
-                // if ($result_row->long_description_wc > $build_assess_params->long_less && $result_row->long_description_wc < $build_assess_params->long_more) {
-                    // continue;
-                // }
-            // } else {
-                // if ($build_assess_params->long_less_check && $result_row->long_description_wc > $build_assess_params->long_less) {
-                    // continue;
-                // }
-                // if ($build_assess_params->long_more_check && $result_row->long_description_wc < $build_assess_params->long_more) {
-                    // continue;
-                // }
-            // }
-			
+									
             if ($row->short_description) {
                 $result_row->short_description = $row->short_description;
             } else {

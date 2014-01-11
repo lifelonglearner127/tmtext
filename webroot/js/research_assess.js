@@ -443,7 +443,7 @@ $(function() {
 			bJQeuryUI : true,				
 			bJUI : true,				
 			sPaginationType : 'full_numbers',
-			aaSorting : [[5, "desc"]],
+			aaSorting : [],			
 			bAutoWidth : false,
 			bProcessing : true,
 			bDeferRender : true,								
