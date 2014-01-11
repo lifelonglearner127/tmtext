@@ -27,6 +27,10 @@ var curentSibil = 0;
 var isFromLocalStorage = false;
 var testIsFromLocalStorage = 0;
 var dataTableLastPageNumber = 0;
+var isReloaded = false;
+
+var FIRST_DISPLAY_LIMIT_COUNT = 200;
+var NEXT_DISPLAY_LIMIT_COUNT = 1000;
 
 var short_wc_total_not_0 = 0;
 var long_wc_total_not_0 = 0;
