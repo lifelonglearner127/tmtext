@@ -2524,8 +2524,20 @@ class System extends MY_Controller {
 	}
 
 	public function system_dostatsmonitor() {
+            $this -> load -> model('batches_model');
+            $this->data['batches'] = $this -> batches_model -> getAll();
 		$this -> render();
 	}
+        public function get_size_of_batch(){
+            $this -> load -> model('statistics_new_model');
+            $batch = $this -> input -> post('batch_id');
+            if($batch){
+                echo $this -> statistics_new_model -> get_size_of_batch($batch);
+            }
+            else{
+                redirect('system');
+            }
+        }
 
 	public function upload_match_urls() {
 		ini_set('post_max_size', '100M');
@@ -2611,24 +2623,24 @@ class System extends MY_Controller {
         $start_run = microtime(true);        
         log_message('ERROR', 'Start ' .  $this -> input -> post('choosen_file'));    
 	    $file = $this -> config -> item('csv_upload_dir') . $this -> input -> post('choosen_file');
-	    if($manu_file_upload_opts)
-	    {
-		    $this->importManufacturerStatistic($file);
-		    return;
-	    }			
+            // This part always working if uploading finished successfully
+            // If you need this script, please, write more specific checking
+            // Currently I need url import without this part 
+//	    if($manu_file_upload_opts)
+//	    {
+//		    $this->importManufacturerStatistic($file);
+//		    return;
+//	    }			
             $this -> load -> model('site_categories_model');
             $this -> load -> model('settings_model');
-            //var_dump($_POST);
             $this -> load -> model('imported_data_parsed_model');
             $this -> load -> model('temp_data_model');
-            $f_name = end(explode('/', $file));
-            //exit($f_name);
-            //echo file_exists($file)?"exists":"not exists!"."<br>";
-            $this -> temp_data_model -> emptyTable('notfoundurls');
-            $this -> temp_data_model -> emptyTable('urlstomatch');
-            $this -> temp_data_model -> emptyTable('updated_items');
-            $this -> settings_model -> deledtMatching();
-            $fcont = file($file);
+            $f_name = end(explode('/', $file));//getting name of file
+            $this -> temp_data_model -> emptyTable('notfoundurls');//remove data from 'notfoundurls' table
+            $this -> temp_data_model -> emptyTable('urlstomatch');//remove data from 'urlstomatch' table
+            $this -> temp_data_model -> emptyTable('updated_items');//remove data from 'updated_items' table
+            $this -> settings_model -> deledtMatching();//Delete data of previous matching
+            $fcont = file($file);//getting content of file
             $linesTotal = 0;
             $itemsUpdated = 0;
             $itemsUnchanged = 0;
@@ -2637,40 +2649,61 @@ class System extends MY_Controller {
             $notFoundUrls = 0;
             $notFoundUrlsArr = array();
             $process = time();
-            foreach ($fcont as $line) {
+            //Restored script===================================
+            $this->temp_data_model->createMatchUrlsTable();//Creates the table for keeping twins of URLs
+            //All tables are created only if they not exists in database
+            foreach ($fcont as $line) {//reading file line by line
                 ++$linesTotal;
-                // === new I.L (start)
-                $urls = explode(',', trim(trim($line), ','));
-                $this -> temp_data_model -> createMatchUrlsTable($manu_file_upload_opts);
+                //*for big files
                 $res = '';
-                if (count($urls) == 2) {
-                  ++$linesAdded;
-                  $this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
-                } else if($manu_file_upload_opts && count($urls) >= 2) {
-                	++$linesAdded;
-                	$this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
+                $urls = explode(',', trim(trim($line), ','));//Getting URLs from line
+                if (count($urls) == 2) {//If second url is missing line will be ignored
+                    ++$linesAdded;
+                    $this->temp_data_model->addUrlToMatch($urls[0], $urls[1]);//Add urls to table
                 }
-                // === new I.L (end)
-                // ===== previous before I.L (start)
-                // $this -> temp_data_model -> createMatchUrlsTable();
-                // $res = '';
-                // $urls = explode(',', trim(trim($line), ','));
-                // if (count($urls) == 2) {
-                //   ++$linesAdded;
-                //   $this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
-                // }
-                // ===== previous before I.L (end)
+                //*/
             }
-            $this -> temp_data_model -> createNonFoundTable();
-            $this -> temp_data_model -> cUpdDataTable();
-            $this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);
+            //You can Restore this part of script, if it will necessary, 
+            //but please check is it working for all cases
+//            foreach ($fcont as $line) {
+//                ++$linesTotal;
+//                // === new I.L (start)
+//                $urls = explode(',', trim(trim($line), ','));
+//                $this -> temp_data_model -> createMatchUrlsTable($manu_file_upload_opts);
+//                $res = '';
+//                if (count($urls) == 2) {
+//                  ++$linesAdded;
+//                  $this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
+//                } else if($manu_file_upload_opts && count($urls) >= 2) {
+//                	++$linesAdded;
+//                	$this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
+//                }
+//                // === new I.L (end)
+//                // ===== previous before I.L (start)
+//                // $this -> temp_data_model -> createMatchUrlsTable();
+//                // $res = '';
+//                // $urls = explode(',', trim(trim($line), ','));
+//                // if (count($urls) == 2) {
+//                //   ++$linesAdded;
+//                //   $this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
+//                // }
+//                // ===== previous before I.L (end)
+//            }
+            $this -> temp_data_model -> createNonFoundTable();//Creating table for non found urls
+            $this -> temp_data_model -> cUpdDataTable();//Create table for updated items
+            $this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);//Add matching info to settings table
             $start = microtime(true);
             $timing = 0;
-    $start_run1 = microtime(true);        
-    $exec_time = $start_run1 - $start_run;
+    $exec_time = microtime(true) - $start_run;
     log_message('ERROR', "{$exec_time}sec - {$linesAdded} lines Phase 1");            
     log_message('ERROR', "Start while");            
-            while ( /*$timing < 20 &&*/ $urls = $this -> temp_data_model -> getLineFromTable('urlstomatch')) {
+    //Process of importing URLs can take long time, and makes problem with script executing time limit
+    //That's why I had to add dependance from timing for importing process.
+    //The following part can be written only in Crons controller, but Crons works in background 
+    //and it hard for testing therefore I still keep it here with small time limit
+            while ( $timing < 20 && 
+                    $urls = $this -> temp_data_model -> getLineFromTable('urlstomatch')
+                    ) {
                     $atuc = 2;
                     $nfurls = 0;
                     ++$linesScaned;
