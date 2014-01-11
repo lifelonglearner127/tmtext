@@ -229,7 +229,7 @@ class Statistics_new_model extends CI_Model {
                          $short_description_wc, $long_description_wc,
                          $title_keywords,
                          $own_price, $price_diff, $competitors_prices, $items_priced_higher_than_competitors, $similar_products_competitors,
-                         $research_and_batch_ids){
+                         $research_and_batch_ids,$manufacturerInfo){
 
         $idata['revision'] = $revision;
         $idata['short_description_wc'] = (string)$short_description_wc;
@@ -241,6 +241,7 @@ class Statistics_new_model extends CI_Model {
         $idata['competitors_prices'] = (string)$competitors_prices;
         $idata['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
         $idata['similar_products_competitors'] = $similar_products_competitors;
+        //$idata['manufacturer_info'] = $manufacturerInfo;
        
         foreach($research_and_batch_ids as $research_and_batch_id){
 		$idata['batch_id'] = $research_and_batch_id['batch_id'];

@@ -1184,6 +1184,9 @@ class Imported_data_parsed_model extends CI_Model {
                     case 'Features': $data[$key]->features = $val->value; break;
                     case 'parsed_meta': $data[$key]->parsed_meta = $val->value; break;
                     case 'HTags': $data[$key]->htags = $val->value; break;
+                    case 'manufacturer_url': $data[$key]->manufacturer_url = $val->value; break;
+                    case 'manufacturer_images': $data[$key]->manufacturer_images = $val->value; break;
+                    case 'manufacturer_videos': $data[$key]->manufacturer_videos = $val->value; break;
                 }
             }
         }
@@ -2782,5 +2785,66 @@ echo "j  = ".$j;
         $results = $query->result_array();
         return $results;
        
+    }
+    function updateManufacturerInfoByURL($oURL = '', $mURL = '', $images = 0, $videos = 0)
+    {
+	    $updated = FALSE;
+	    if(strlen($oURL) > 0 && (strlen($mURL) > 0))
+	    {
+		    $this->db->select('i.imported_data_id,i.model,url.value as url,img.value as img,vid.value as vid');
+		    $this->db->from($this->tables['imported_data_parsed'].' as i');
+		    $this->db->where('i.key','url');
+		    $this->db->where('i.value',$oURL);
+		    $this->db->join($this->tables['imported_data_parsed'].' as url',"url.imported_data_id = i.imported_data_id AND url.key = 'manufacturer_url'",'left');
+		    $this->db->join($this->tables['imported_data_parsed'].' as img',"img.imported_data_id = i.imported_data_id AND img.key = 'manufacturer_images'",'left');
+		    $this->db->join($this->tables['imported_data_parsed'].' as vid',"vid.imported_data_id = i.imported_data_id AND vid.key = 'manufacturer_videos'",'left');
+		    $query = $this->db->get();
+		    if($query->num_rows > 0)
+		    {
+			$result = $query->row_array();
+			if(!$result['url'])
+			{
+				$ins['imported_data_id'] = $result['imported_data_id'];
+				$ins['model'] = $result['model'];
+				$ins['key'] = 'manufacturer_url';
+				$ins['value'] = $mURL;
+				$this->db->insert($this->tables['imported_data_parsed'],$ins);
+				$ins['key'] = 'manufacturer_images';
+				$ins['value'] = $images;
+				$this->db->insert($this->tables['imported_data_parsed'],$ins);
+				$ins['key'] = 'manufacturer_videos';
+				$ins['value'] = $videos;
+				$this->db->insert($this->tables['imported_data_parsed'],$ins);
+				$updated = TRUE;
+			} else
+			{
+				if($mURL != $result['url'])
+				{	
+					$this->db->where('imported_data_id',$result['imported_data_id']);
+					$this->db->where('key','manufacturer_url');
+					$upd['value'] = $mURL;
+					$this->db->update($this->tables['imported_data_parsed'],$upd);
+					$updated = TRUE;
+				}
+				if($images != $result['img'])
+				{	
+					$this->db->where('imported_data_id',$result['imported_data_id']);
+					$this->db->where('key','manufacturer_images');
+					$upd['value'] = $images;
+					$this->db->update($this->tables['imported_data_parsed'],$upd);
+					$updated = TRUE;
+				}
+				if($videos != $result['vid'])
+				{	
+					$this->db->where('imported_data_id',$result['imported_data_id']);
+					$this->db->where('key','manufacturer_videos');
+					$upd['value'] = $videos;
+					$this->db->update($this->tables['imported_data_parsed'],$upd);
+					$updated = TRUE;
+				}
+			}
+		    }
+	    }
+	    return $updated;
     }
 }
