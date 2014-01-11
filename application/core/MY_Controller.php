@@ -24,6 +24,11 @@ class MY_Controller extends CI_Controller {
 
     public function __construct() {
         parent::__construct();
+	$this->load->library('migration');
+	if (!$this->migration->current())
+	{
+		show_error($this->migration->error_string());
+	}
         $this->load->library(array('session','ion_auth'));
 
         $this->load->helper(array('HTML','form','url'));

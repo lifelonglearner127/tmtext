@@ -248,7 +248,7 @@ class Statistics_new_model extends CI_Model {
         $idata['competitors_prices'] = (string)$competitors_prices;
         $idata['items_priced_higher_than_competitors'] = $items_priced_higher_than_competitors;
         $idata['similar_products_competitors'] = $similar_products_competitors;
-        //$idata['manufacturer_info'] = $manufacturerInfo;
+        $idata['manufacturer_info'] = $manufacturerInfo;
        
         foreach($research_and_batch_ids as $research_and_batch_id){
 		$idata['batch_id'] = $research_and_batch_id['batch_id'];

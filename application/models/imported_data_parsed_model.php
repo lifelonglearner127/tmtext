@@ -2798,7 +2798,7 @@ echo "j  = ".$j;
 	    $updated = FALSE;
 	    if(strlen($oURL) > 0 && (strlen($mURL) > 0))
 	    {
-		    $this->db->select('i.imported_data_id,i.model,url.value as url,img.value as img,vid.value as vid');
+		    $this->db->select('i.imported_data_id,i.model,i.revision,url.value as url,img.value as img,vid.value as vid');
 		    $this->db->from($this->tables['imported_data_parsed'].' as i');
 		    $this->db->where('i.key','url');
 		    $this->db->where('i.value',$oURL);
@@ -2813,6 +2813,7 @@ echo "j  = ".$j;
 			{
 				$ins['imported_data_id'] = $result['imported_data_id'];
 				$ins['model'] = $result['model'];
+				$ins['revision'] = 1;
 				$ins['key'] = 'manufacturer_url';
 				$ins['value'] = $mURL;
 				$this->db->insert($this->tables['imported_data_parsed'],$ins);
@@ -2825,6 +2826,7 @@ echo "j  = ".$j;
 				$updated = TRUE;
 			} else
 			{
+				$upd['revision'] = $result['revision']+1;
 				if($mURL != $result['url'])
 				{	
 					$this->db->where('imported_data_id',$result['imported_data_id']);
