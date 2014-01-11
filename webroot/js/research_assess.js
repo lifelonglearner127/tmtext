@@ -401,9 +401,9 @@ $(function() {
 		$('.assess_report_download_panel').hide();
         $("#tblAssess tbody tr").remove();
 		
-		if (!json_data || summaryInfoSelectedElements.length)
+		if (!json_data)
 		{																
-			var aoData = buildTableParams([{ name : 'displayCount',	value : 200 }]);	
+			var aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);	
 				
 			$.getJSON(readAssessUrl, aoData, function(json) {
 				if(!json)
@@ -415,7 +415,7 @@ $(function() {
 			});       							
 		}
 		else									
-			tblAssess = reInitializeTblAssess(json_data); 					
+			tblAssess = reInitializeTblAssess(json_data, false); 					
     }	
 	
 	function pullRestItems()
@@ -423,27 +423,29 @@ $(function() {
 		var research_batch = $('.research_assess_batches_select')
 		  , research_batch_competitor = $('#research_assess_compare_batches_batch')
           , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				  
-          , aoData = buildTableParams([]);		  
+          , aoData = buildTableParams([])
+		  , needToBeReloaded = false;		  
 			
 		$.getJSON(readAssessUrl, aoData, function(json) {
 			if(!json)
 				return;	
-																		
+											
 			customLocalStorage[storage_key] = JSON.stringify(json);
-			tblAssess = reInitializeTblAssess(json);
+			tblAssess = reInitializeTblAssess(json, needToBeReloaded);
 		});       
 	}
 	
-	function reInitializeTblAssess(json_data, isReloaded) {
+	function reInitializeTblAssess(json_data, needToBeReloaded) {
 				
-		var _dataTableLastPageNumber = dataTableLastPageNumber ? dataTableLastPageNumber : 0;
+		var _dataTableLastPageNumber = dataTableLastPageNumber ? dataTableLastPageNumber : 0
+		  , needToBeReloaded = needToBeReloaded == undefined ? true : needToBeReloaded;
 			
 		var r = $('#tblAssess').dataTable(_.extend({
 			bDestroy : true,
 			bJQeuryUI : true,				
 			bJUI : true,				
 			sPaginationType : 'full_numbers',
-			aaSorting : [[5, "desc"]],
+			aaSorting : [],			
 			bAutoWidth : false,
 			bProcessing : true,
 			bDeferRender : true,								
@@ -458,26 +460,28 @@ $(function() {
 				$('#tblAssess thead th').css('width', '100%');	
 				
 				resizeImpDown();
-
-				if (!oSettings.isCompleted)
+				
+				console.log('Building report... ' + needToBeReloaded);
+				if (needToBeReloaded)
+				{
+					buildReport(json_data);							
 					pullRestItems();
+				}
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
 				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
 				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
-				console.log('local draw callback');		
+				// console.log('local draw callback');		
 				
 				dataTableLastPageNumber = oSettings._iDisplayStart / oSettings._iDisplayLength;
 
 				tblAssess.fnAdjustColumnSizing(false);						
 			},
 			fnPreDrawCallback : function( oSettings ) {		
-				console.log('PRE local draw callback');		
-				
-				buildReport(json_data);
-				
+				// console.log('PRE local draw callback');		
+								
 				//setting main tblAssess instance
 				tblAssess = oSettings.oInstance;			
 				
