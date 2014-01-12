@@ -2434,12 +2434,10 @@ span.dep_left_part{
 #research_batches_columns{
     background-color: transparent;
     background-image: none;
-	margin-right: -10px;
-    margin-top: 3px;
     cursor:pointer;
     display: none;
 	float: left;
-	margin: 2px -16px 0 14px;
+	margin: 2px -16px 0 16px;
 }
 .snap_img{
     max-width: 400px;

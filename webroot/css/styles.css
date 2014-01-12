@@ -814,3 +814,7 @@ a.jq-assess {
 	margin-right: 30px;
 	-webkit-margin-end: 28px;
 }
+.tbl_arrows_and_gear_wrapper #research_batches_columns{
+	opacity:0;
+	cursor:default;
+}

@@ -406,6 +406,7 @@ $(function() {
 			var aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);	
 				
 			$.getJSON(readAssessUrl, aoData, function(json) {
+				$('.tbl_arrows_and_gear_wrapper #research_batches_columns').css({opacity:1,cursor:'pointer'});
 				if(!json)
 					return;	
 																			
