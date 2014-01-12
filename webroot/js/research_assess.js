@@ -391,6 +391,30 @@ $(function() {
 			$(".table_scroll_wrapper").show();
 		}
 	});
+	
+	function filterItems(json) {
+		var stored_filter_items = json.ExtraData.report.stored_filter_items
+		  , r = [];		  
+		
+		outputedFilterIndexes = [];
+		
+		for (var selected_filter_it = 0; selected_filter_it < summaryInfoSelectedElements.length; selected_filter_it++) {
+			
+			var pure_filter_id = summaryInfoSelectedElements[selected_filter_it].replace(/(batch_me_|batch_competitor_)/, '');
+			
+			for (var stored_filter_item_it = 0; stored_filter_item_it < stored_filter_items[ pure_filter_id ].length; stored_filter_item_it++) {
+				
+				var stored_item_index = stored_filter_items[ pure_filter_id ][stored_filter_item_it];
+												
+				if (!~outputedFilterIndexes.indexOf(stored_item_index))
+					r.push(json.aaData[ stored_item_index ]);
+					
+				outputedFilterIndexes.push(stored_item_index);
+			}
+		}
+					
+		json.aaData = r;		
+	}
 		
 	function readAssessData() {
 		var research_batch = $('.research_assess_batches_select')
@@ -400,7 +424,7 @@ $(function() {
 		  
 		$('.assess_report_download_panel').hide();
         $("#tblAssess tbody tr").remove();
-		
+					
 		if (!json_data)
 		{																
 			var aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);	
@@ -415,8 +439,15 @@ $(function() {
 				tblAssess = reInitializeTblAssess(json);				
 			});       							
 		}
-		else									
-			tblAssess = reInitializeTblAssess(json_data, false); 					
+		else {
+			
+			//rebuilding dataTable results according to the selected filters
+			if (summaryInfoSelectedElements.length) {				
+				filterItems(json_data);				
+			}
+			
+			tblAssess = reInitializeTblAssess(json_data, false); 								
+		}
     }	
 	
 	function pullRestItems()
@@ -425,13 +456,18 @@ $(function() {
 		  , research_batch_competitor = $('#research_assess_compare_batches_batch')
           , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				  
           , aoData = buildTableParams([])
+          , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null
 		  , needToBeReloaded = false;		  
 			
 		$.getJSON(readAssessUrl, aoData, function(json) {
 			if(!json)
 				return;	
-											
+
+			//saving report information to the custom local storage
+			json.ExtraData.report = json_data.ExtraData.report;
+			
 			customLocalStorage[storage_key] = JSON.stringify(json);
+			
 			tblAssess = reInitializeTblAssess(json, needToBeReloaded);
 		});       
 	}
