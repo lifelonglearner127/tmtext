@@ -818,3 +818,17 @@ a.jq-assess {
 	opacity:0;
 	cursor:default;
 }
+#research_assess_compare_batches_customer{
+	margin-left: 11px;
+}
+#research_assess_compare_batches_batch{
+	margin: 0 20px 10px;
+	width: 175px;
+}
+#generate_url_link{
+	margin-left: 6px;
+	width: 220px;
+}
+.summary_search_field{
+	width: 220px;
+}
