@@ -3182,8 +3182,9 @@ class Assess extends MY_Controller {
             $result_row->snap = '';           
             $tb_product_name = '';
 	    $result_row->murl = '';
-	    $result_row->mimg = '';
-	    $result_row->mvid = '';
+	    $result_row->mimg = 0;
+	    $result_row->mvid = 0;
+	    $result_row->total_description_wc = $result_row->short_description_wc+$result_row->long_description_wc;
 
 									
             if ($row->short_description) {
@@ -4557,7 +4558,8 @@ class Assess extends MY_Controller {
                         'recommendations' => $recommendations_html,      
 			'murl' => $data_row->murl,
 			'mimg' =>  $data_row->mimg,
-			'mvid' => $data_row->mvid
+			'mvid' => $data_row->mvid,
+			'total_description_wc' => $data_row->total_description_wc
                     );
 
                     if ($build_assess_params->max_similar_item_count > 0) {

@@ -110,6 +110,12 @@ return array(
 			'newTitle' => 'Long Desc <span class="subtitle_word_long?" ># Words</span>'
 		),
 		array(
+			'sTitle' => 'Prod Desc <span class="subtitle_word_long" ># Words</span>',
+			'sName' => 'total_description_wc',                
+			'sClass' => 'word_prod',
+			'newTitle' => 'Prod Desc <span class="subtitle_word_long" ># Words</span>'
+		),
+		array(
 			'sTitle' => 'Links', 
 			'sName' => 'links_count',               
 			'sClass' => 'links_count'
