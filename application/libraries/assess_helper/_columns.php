@@ -70,6 +70,12 @@ return array(
 			'newTitle' => 'Short Desc <span class="subtitle_word_short?" ># Words</span>',
 		),
 		array(
+			'sTitle' => 'Prod Desc <span class="subtitle_word_long" ># Words</span>',
+			'sName' => 'total_description_wc',                
+			'sClass' => 'word_prod',
+			'newTitle' => 'Prod Desc <span class="subtitle_word_long" ># Words</span>'
+		),
+		array(
 			'sTitle' => "Meta Keywords",
 			'sName' => 'Meta_Keywords',
 			'sClass' => 'Meta_Keywords'
@@ -108,12 +114,6 @@ return array(
 			'sName' => 'long_description_wc',                
 			'sClass' => 'word_long',
 			'newTitle' => 'Long Desc <span class="subtitle_word_long?" ># Words</span>'
-		),
-		array(
-			'sTitle' => 'Prod Desc <span class="subtitle_word_long" ># Words</span>',
-			'sName' => 'total_description_wc',                
-			'sClass' => 'word_prod',
-			'newTitle' => 'Prod Desc <span class="subtitle_word_long" ># Words</span>'
 		),
 		array(
 			'sTitle' => 'Links', 
