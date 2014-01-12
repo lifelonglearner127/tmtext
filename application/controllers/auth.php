@@ -242,7 +242,7 @@ class Auth extends MY_Controller {
                 if($url!=''){
                   // redirect($url.'/index', 'refresh'); // I.L
                 	// redirect($url.'/products#login_init', 'refresh'); // I.L
-			$this->session->set_userdata('login_init', '1');
+			$this->session->set_flashdata('login_init', '1');
                 	redirect($url.'/index/#login_init', 'refresh'); // I.L
                 } else{
                     foreach($checked as $key => $value){

@@ -59,8 +59,7 @@ class Assess extends MY_Controller {
         $this->data['c_year'] = $c_year;
         $this->data['img_av'] = $this->webshoots_model->getWeekAvailableScreens($c_week, $c_year);
         $this->data['webshoots_model'] = $this->webshoots_model;
-	$this->data['login'] = $this->session->userdata('login_init');
-	$this->session->unset_userdata('login_init');
+	$this->data['login'] = $this->session->flashdata('login_init');
         // $this->data['rec'] = $this->webshoots_model->get_recipients_list();
         $this->render();
     }
