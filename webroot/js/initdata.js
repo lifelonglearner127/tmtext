@@ -28,6 +28,7 @@ var isFromLocalStorage = false;
 var testIsFromLocalStorage = 0;
 var dataTableLastPageNumber = 0;
 var isReloaded = false;
+var outputedFilterIndexes = [];
 
 var FIRST_DISPLAY_LIMIT_COUNT = 200;
 var NEXT_DISPLAY_LIMIT_COUNT = 1000;
