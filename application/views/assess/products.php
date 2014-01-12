@@ -727,9 +727,11 @@
 			if($('#tblAssess_wrapper').is(":visible"))
 			{
 			      $('#tblAssess_wrapper').hide();  
+			      $('#research_batches_columns').css({opacity:0,cursor:'default'});
 			} else
 			{
 			      $('#tblAssess_wrapper').show(); 
+			      $('#research_batches_columns').css({opacity:1,cursor:'pointer'});
 			}	    
 		});
 	});          
