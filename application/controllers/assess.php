@@ -2911,7 +2911,7 @@ class Assess extends MY_Controller {
             $columns = array(
                 'product_name' => 'true',                               
                 'url' => 'true',                                
-                'short_description_wc' => 'true',			               
+                'total_description_wc' => 'true',                                
                 'title_seo_phrases' => 'true',                                                       
             );
         }
