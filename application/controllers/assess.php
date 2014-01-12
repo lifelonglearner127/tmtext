@@ -3505,6 +3505,7 @@ class Assess extends MY_Controller {
                     $result_row['video_count' . $i] = $video_count ? $video_count : 'None';
                     $result_row['title_pa' . $i] = $title_pa ? $title_pa : 'None';
                     $result_row['links_count' . $i] = $links_count ? $links_count : 'None';
+                    $result_row['total_description_wc' . $i] = $links_count ? $links_count : 'None';
                 }
 
                 $result_row = (object) $result_row;
@@ -4626,6 +4627,7 @@ class Assess extends MY_Controller {
                         $output_row['links_count1'] = $data_row->links_count1;
                         $output_row['gap'] = $data_row->gap;
                         $output_row['Duplicate_Content'] = $data_row->Duplicate_Content;
+                        $output_row['total_description_wc'] = $data_row->total_description_wc;
                     }
                     
                     $output['aaData'][] = AssessHelper::setTableData($columns, $output_row);

@@ -785,13 +785,16 @@ class Crons extends MY_Controller
 						$manufacturerInfo = serialize(array('url'=>$obj->manufacturer_url,
 						'images'=>$obj->manufacturer_images,'videos'=>$obj->manufacturer_videos));
 					}	
-
-					// Generate Title Keywords
-					$keywords_start = microtime(true);
-					$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
-					echo "Title Keywords -------------------- <b>".(microtime(true) - $keywords_start)." seconds</b>\n";
-
-
+					$hash_start = microtime(true);
+					$title_keywords = $this->imported_data_parsed_model->checkHash($obj->imported_data_id, $obj->product_name, $short_description, $long_description);
+					echo 'Check hash '.(microtime(true) - $hash_start);
+					if(!$title_keywords)
+					{	
+						// Generate Title Keywords
+						$keywords_start = microtime(true);
+						$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
+						echo "Title Keywords -------------------- <b>".(microtime(true) - $keywords_start)." seconds</b>\n";
+					}
 					$modelStart = microtime(true);
 					$m = '';
 					//If parsed attributes are exist, finding similar items and price diff
@@ -1027,7 +1030,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		if (count($data_arr) > 0 && $stats_status->description === 'started' && ($cjo - 1) * 50 < intval($total_items['description']))
 		{ 
 			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
-			echo $utd->td;  //exit;
+			echo $utd->td;  exit;
 			//make asynchronous web request to do_stats_forupdated page
                         $url_link ="wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &"; 
 			shell_exec($url_link);
@@ -3705,7 +3708,6 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 						//getting count of words in short description
 						$long_description_wc = count(explode(" ", $obj->long_description));
 					}
-
 
 					// Generate Title Keywords
 					$keywords_start = microtime(true);

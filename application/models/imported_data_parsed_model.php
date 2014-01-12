@@ -33,7 +33,8 @@ class Imported_data_parsed_model extends CI_Model {
         'product_match_collections' => 'product_match_collections',
         'crawler_list_prices' => 'crawler_list_prices',
         'crawler_list' => 'crawler_list',
-        'settings'=>'settings'
+        'settings'=>'settings',
+        'statistics_new'=>'statistics_new'
     );
 
     function __construct() {
@@ -2859,7 +2860,48 @@ echo "j  = ".$j;
 				$this->db->update($this->tables['imported_data_parsed'],$upd);
 			}	
 		    }
+		    $query->free_result();
 	    }
 	    return $updated;
+    }
+    function checkHash($imported_data_id = 0, $product_name = '', $short_description = '', $long_description = '')
+    {
+	   $result = FALSE;
+	   if(empty($product_name) && empty($short_description) && empty($long_description))
+	   {
+		   return $result;
+	   }
+	   $hash = md5($product_name.$short_description.$long_description);
+	   $this->db->select('s.title_keywords,i.value as hash,i.model,i.revision');
+	   $this->db->from($this->tables['imported_data_parsed'].' as i');
+	   $this->db->join($this->tables['statistics_new'].' as s','s.imported_data_id = i.imported_data_id');
+	   $this->db->where('i.imported_data_id',$imported_data_id);
+	   $this->db->where('i.key','hash');
+	   $query = $this->db->get();
+	   if($query->num_rows > 0)
+	   {
+		$row = $query->row_array();
+		if($row['hash'] == $hash)
+		{	
+			$result = $row['title_keywords'];
+		} else
+		{
+			$this->db->where('imported_data_id',$imported_data_id);
+			$this->db->where('key','hash');
+			$upd['revision'] = $row['revision']+1;
+			$upd['model'] = $row['model'];
+			$upd['value'] = $hash;
+			$this->db->update($this->tables['imported_data_parsed'],$upd);
+		}
+	   } else
+	   {
+		$ins['imported_data_id'] = $imported_data_id;
+		$ins['revision'] = 1;
+		$ins['key'] = 'hash';
+		$ins['value'] = $hash;
+		$this->db->insert($this->tables['imported_data_parsed'],$ins);
+	   }
+	   $query->free_result();
+	   return $result;
     }
 }
