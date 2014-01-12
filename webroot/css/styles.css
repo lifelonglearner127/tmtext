@@ -391,7 +391,7 @@ ul.research_table_filter h3 {
     font-size: 14px;
     background: none repeat scroll 0 0 #CCCCCC;
     margin: 0;
-    padding-left: 5px;
+    padding-left: 10px;
 }
 
 ul.research_table_filter_competitor {
@@ -806,4 +806,11 @@ a.jq-assess {
 .tbl_arrows_and_gear_wrapper {
 	position: absolute;
 	margin: -29px 0 0 932px;
+}
+.batch-label{
+	font-size:20px;
+	top: 3px;
+	position: relative;
+	margin-right: 30px;
+	-webkit-margin-end: 28px;
 }

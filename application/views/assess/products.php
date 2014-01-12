@@ -11,7 +11,7 @@
     <li class="boxes hideBox">
         <h3>
             <span class=''>
-                Batch:
+                <span class="batch-label">Batch:</span>
                 <select name="research_assess_customers" class="mt_10">
                     <?php foreach($customer_list as $customer):?>
                         <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
