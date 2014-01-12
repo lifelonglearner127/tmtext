@@ -721,5 +721,16 @@
 			//     }
 			// }
 	});
-	          
+	$(document).ready(function(){
+		 $('.tbl_arrows_and_gear_wrapper .research_arrow').click(function(e){
+			e.preventDefault();
+			if($('#tblAssess_wrapper').is(":visible"))
+			{
+			      $('#tblAssess_wrapper').hide();  
+			} else
+			{
+			      $('#tblAssess_wrapper').show(); 
+			}	    
+		});
+	});          
  </script>

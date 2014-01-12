@@ -403,7 +403,6 @@
     		}
     	}
     });
-
     // var drop_selection_scan = $.post(base_url + 'index.php/measure/dropselectionscan', send_data, function(data) {
     // 	for(var i=0; i < data.length; i++) {
     // 		if(data[i]['cell'] !== false) {
