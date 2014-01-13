@@ -655,12 +655,12 @@ class Assess extends MY_Controller {
 	 * @access	private
 	 * @return	array
 	 */
-	private function get_trendline_dates() 
+	private function get_trendline_dates($batch_id) 
 	{
 		$this->load->model('settings_model');
 		$this->load->model('statistics_model');
 		$this->load->model('statistics_new_model');
-		$results = $this->statistics_new_model->get_trendline_dates();
+		$results = $this->statistics_new_model->get_trendline_dates($batch_id);
 		return $results;
 	}
 
@@ -673,12 +673,12 @@ class Assess extends MY_Controller {
 	 * @param	array
 	 * @return	array
 	 */
-    private function get_trendline_data($imported_data_id, $graphBuild, $dates) 
+    private function get_trendline_data($imported_data_id, $graphBuild) 
 	{
 		$this->load->model('settings_model');
 		$this->load->model('statistics_model');
 		$this->load->model('statistics_new_model');
-		$results = $this->statistics_new_model->getStatsData_trendlines($imported_data_id, $graphBuild, $dates);
+		$results = $this->statistics_new_model->getStatsData_trendlines($imported_data_id, $graphBuild);
 		return $results;
 	}
 
@@ -4840,11 +4840,11 @@ class Assess extends MY_Controller {
 			$results = $this->get_data_for_assess($params);
 
 			$trendline_dates = array();
+			$trendline_dates_items = array(); // Castro: stores the number of items that every date has
 			
 			if($this->input->post('includeTrendlines') == "true")
 			{
 				$include_trendlines = TRUE; // Castro: include trendlines? YES OR NO
-				$trendline_dates = $this->get_trendline_dates(); // Castro var that stores all the available trendline dates
 			}
 			else
 			{
@@ -4910,14 +4910,14 @@ class Assess extends MY_Controller {
                 } else {
                     $snap_data[0]['Features'][] = 0;
                 }
-                $arr = $this->get_trendline_data($data_row->imported_data_id, $graphBuild, $trendline_dates); 
-                $updated_short_description_wc = '';
-                $updated_long_description_wc = '';
-                $updated_total_description_wc = '';
-                $updated_revision = '';
-                $updated_Features = '';
-                $updated_h1_word_counts = '';
-                $updated_h2_word_counts = '';
+                $arr = $this->get_trendline_data($data_row->imported_data_id, $graphBuild); 
+                $updated_short_description_wc = array();
+                $updated_long_description_wc = array();
+                $updated_total_description_wc = array();
+                $updated_revision = array();
+                $updated_Features = array();
+                $updated_h1_word_counts = array();
+                $updated_h2_word_counts = array();
 				$updated_trendlines_data = array(); // Castro #1119, var that going to store trendlines data
 
 				// Castro : store all the available dates in trendline_dates array
@@ -4931,13 +4931,20 @@ class Assess extends MY_Controller {
 						{
 							$a->trendline_date = date('Y-m-d', strtotime($a->date));
 							$a->days_from_last_crawl = (strtotime($last_crawl_date) - strtotime($a->trendline_date)) / (3600 * 24);
+
+							if( ! in_array($a->trendline_date, $trendline_dates))
+							{
+								$trendline_dates[] = $a->trendline_date;
+								$trendline_dates_items[$a->trendline_date] = 0;
+							}
+
+							$trendline_dates_items[$a->trendline_date] += 1;
 						}
 					}
 				}
 
                 if($graphBuild == "total_description_wc")
 				{
-
 					foreach($arr as $a)
 					{
 						if($a->date !='' && $a->days_from_last_crawl > 0)
@@ -4946,14 +4953,14 @@ class Assess extends MY_Controller {
 							$des = count(explode(' ',$a->description));
 							if($des == 1 && $long_des == 1)
 							{
-								$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - null  words<br>';  
+								$updated_total_description_wc[$a->trendline_date] ='Total Description Word Count: '.$a->date .' - null  words<br>';  
 								$updated_trendlines_data[$a->trendline_date] = 0;
 							}
 							else
 							{
 								$updated_total_description_wc_int = (count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)));
 
-								$updated_total_description_wc.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_total_description_wc_int . '">Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words</span><br>"; 
+								$updated_total_description_wc[$a->trendline_date] ='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_total_description_wc_int . '">Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words</span><br>"; 
 
 								$updated_trendlines_data[$a->trendline_date] = $updated_total_description_wc_int;
 							}
@@ -4978,13 +4985,13 @@ class Assess extends MY_Controller {
 							$updated_h2_word_counts_int = strlen(implode("", $htags_upd['h2']));
 
 							// Castro: data-date and data-value contains data for the mini chart
-							$updated_short_description_wc.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_short_description_wc_int . '">Short Description: '.$a->date .' - ' . $updated_short_description_wc_int . "  words</span><br>";
-							$updated_long_description_wc.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_long_description_wc_int . '">Long Description: '.$a->date .' - ' . $updated_long_description_wc_int . " words </span><br>";
-							$updated_total_description_wc.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_total_description_wc_int . '">Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words</span><br>";
-							$updated_revision.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_revision_int . '">Reviews: '.$a->date .' - ' . $updated_revision_int . "<br>";
-							$updated_Features.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_Features_int . '">Features: '.$a->date .' - ' . $updated_Features_int . "</span><br>";
-							$updated_h1_word_counts.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_h1_word_counts_int . '">H1 Characters: ' .$a->date .' - ' . $updated_h1_word_counts_int . " characters</span><br>";
-							$updated_h2_word_counts.='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_h2_word_counts_int . '">H2 Characters: ' .$a->date .' - ' . $updated_h2_word_counts_int . " characters</span><br>";
+							$updated_short_description_wc[$a->trendline_date] ='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_short_description_wc_int . '">Short Description: '.$a->date .' - ' . $updated_short_description_wc_int . "  words</span><br>";
+							$updated_long_description_wc[$a->trendline_date] ='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_long_description_wc_int . '">Long Description: '.$a->date .' - ' . $updated_long_description_wc_int . " words </span><br>";
+							$updated_total_description_wc[$a->trendline_date] ='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_total_description_wc_int . '">Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words</span><br>";
+							$updated_revision[$a->trendline_date] ='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_revision_int . '">Reviews: '.$a->date .' - ' . $updated_revision_int . "<br>";
+							$updated_Features[$a->trendline_date] ='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_Features_int . '">Features: '.$a->date .' - ' . $updated_Features_int . "</span><br>";
+							$updated_h1_word_counts[$a->trendline_date] ='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_h1_word_counts_int . '">H1 Characters: ' .$a->date .' - ' . $updated_h1_word_counts_int . " characters</span><br>";
+							$updated_h2_word_counts[$a->trendline_date] ='<span class="dot_data" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_h2_word_counts_int . '">H2 Characters: ' .$a->date .' - ' . $updated_h2_word_counts_int . " characters</span><br>";
 
 							// Castro: display the proper value in trendlines
 							if($graphBuild == "short_description_wc")
@@ -5056,7 +5063,7 @@ class Assess extends MY_Controller {
                     $snap_data[1]['Features'][] = (int) $data_row_sim[0]->column_features;
                     $snap_data[1]['Date'][] = (string) $data_row_sim[0]->Date;
                     
-                $arr1 = $this->get_trendline_data($data_row_sim[0]->imported_data_id,$graphBuild, $trendline_dates);
+                $arr1 = $this->get_trendline_data($data_row_sim[0]->imported_data_id,$graphBuild);
                 $updated_short_description_wc1 = '';
                 $updated_long_description_wc1 = '';
                 $updated_total_description_wc1 = '';
@@ -5119,12 +5126,37 @@ class Assess extends MY_Controller {
 			// Castro prepare and order all trendline data, set missing dates values to null
 			if($include_trendlines)
 			{
+				$maximum_trendlines = 6; // set the maximum number of trendlines to show
+
+				asort($trendline_dates_items);
+
+				$final_trendline_dates = array();
+				$trendline_dates_to_remove = array();
+
+				$total_trendlines = 0;
+				foreach($trendline_dates_items as $trendline_date_with_more_items => $total_items)
+				{
+					$total_trendlines++;
+					if($total_trendlines < 6)
+					{
+						$final_trendline_dates[] = $trendline_date_with_more_items;
+					}
+					else
+					{
+						$trendline_dates_to_remove[] = $trendline_date_with_more_items;
+					}
+				}
+
+				sort($final_trendline_dates);
+				$ordered_trendline_dates = array_reverse($final_trendline_dates);
+
+
 				for($i = 0; $i < count($snap_data[0]['updated_trendlines_data']); $i++)
 				{
 					$current_trendline_data = $snap_data[0]['updated_trendlines_data'][$i];
 					$ordered_trendline_data = array();
 
-					foreach($trendline_dates as $ordered_trendline_date)
+					foreach($ordered_trendline_dates as $ordered_trendline_date)
 					{
 						if(isset($current_trendline_data[$ordered_trendline_date]))
 						{
@@ -5137,6 +5169,23 @@ class Assess extends MY_Controller {
 					}
 
 					$snap_data[0]['updated_trendlines_data'][$i] = $ordered_trendline_data;
+				}
+
+				// Castro : remove all unwanted dates from results
+
+				$fields_with_unwanted_dates = array('updated_short_description_wc', 'updated_long_description_wc', 'updated_total_description_wc', 'updated_revision', 'updated_Features', 'updated_h1_word_counts', 'updated_h2_word_counts');
+
+				foreach($fields_with_unwanted_dates as $fields_with_unwanted_date)
+				{
+					for($i = 0; $i < count($snap_data[0][$fields_with_unwanted_date]); $i++)
+					{
+						foreach($trendline_dates_to_remove as $trendline_date_to_remove)
+						{
+							unset($snap_data[0][$fields_with_unwanted_date][$i][$trendline_date_to_remove]);
+						}
+
+						$snap_data[0][$fields_with_unwanted_date][$i] = implode(" ", $snap_data[0][$fields_with_unwanted_date][$i]);
+					}
 				}
 			}
 
