@@ -407,12 +407,14 @@ $(function() {
 				var stored_item_index = stored_filter_items[ pure_filter_id ][stored_filter_item_it];
 												
 				if (!~outputedFilterIndexes.indexOf(stored_item_index))
+				{
 					r.push(json.aaData[ stored_item_index ]);
-					
-				outputedFilterIndexes.push(stored_item_index);
+					outputedFilterIndexes.push(stored_item_index);
+				}								
 			}
 		}
-					
+		
+		json.ExtraData.fixedTotalRows = outputedFilterIndexes.length;			
 		json.aaData = r;		
 	}
 		

@@ -4665,9 +4665,14 @@ class Assess extends MY_Controller {
     }
 
     private function filterBySummaryCriteria($current_criteria, $filterCriterias, &$success_filter_entries, &$stored_filter_items, $index) {
-        $success_filter_entries[] = in_array('batch_me_' . $current_criteria, $filterCriterias) || in_array('batch_competitor_' . $current_criteria, $filterCriterias);
+        $is_batch = in_array('batch_me_' . $current_criteria, $filterCriterias);
+        $is_competitor = in_array('batch_competitor_' . $current_criteria, $filterCriterias);
 		
-		$stored_filter_items[$current_criteria][] = $index;		
+		$success_filter_entries[] = $is_batch || $is_competitor;
+		
+		$prefix = $is_batch ? 'batch_me_' : $is_competitor ? 'batch_competitor_' : '';
+		
+		$stored_filter_items[$prefix . $current_criteria][] = $index;		
     }
 
     private function checkSuccessFilterEntries($success_filter_entries, $filterCriterias) {
