@@ -40,6 +40,21 @@ class Imported_data_parsed_model extends CI_Model {
     function __construct() {
         parent::__construct();
     }
+    function delete_duplicate_revisions(){
+       $sql = "select `imported_data_id`,`key`, `revision`, count(`id`) as cnt, min(id) as min_id
+                From imported_data_parsed
+                Group By `imported_data_id` ,`key`, `revision`
+                having cnt > 1" ;
+       $query = $this->db->query($sql);
+       $results = $query->result_array();
+       
+       foreach($results as $k => $res){
+           
+              $this->db->where('id', $res['min_id']);
+              $this->db->delete($this->tables['imported_data_parsed']);
+        }
+       
+    }
     public function delete_repeated_data(){
         error_reporting(E_ALL);
         $sql = "select `value`, count(id) as cnt, max(imported_data_id) as max_data_id, min(imported_data_id) as min_data_id
