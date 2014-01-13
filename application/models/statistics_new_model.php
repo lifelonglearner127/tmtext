@@ -373,11 +373,16 @@ class Statistics_new_model extends CI_Model {
 	 * @access	public
 	 * @return	array
 	 */
-	function get_trendline_dates()
+	function get_trendline_dates($batch_id)
 	{
-		$imported_data_dates = $this->db->query("SELECT DATE(created) AS trendline_date, COUNT(*) AS crawled_items FROM `imported_data_parsed` , imported_data WHERE imported_data.id = imported_data_parsed.imported_data_id GROUP BY DATE(created) ORDER BY created DESC LIMIT 1, 20")->result_array();
+		if( ! is_numeric($batch_id))
+		{
+			return FALSE;
+		}
 
-		$imported_data_archived_dates = $this->db->query("SELECT DATE(created) AS trendline_date, COUNT(*) AS crawled_items FROM `imported_data_parsed_archived` , imported_data WHERE imported_data.id = imported_data_parsed_archived.imported_data_id GROUP BY DATE(created) ORDER BY created DESC")->result_array();
+		$imported_data_dates = $this->db->query("SELECT `imported_data_parsed`.`key`, SUBSTRING(`imported_data_parsed`.`value`, 1, 10) AS trendline_date, COUNT(*) AS crawled_items FROM statistics_new, `imported_data_parsed` , imported_data WHERE imported_data.id = imported_data_parsed.imported_data_id AND imported_data.id = statistics_new.imported_data_id AND `imported_data_parsed`.`key` = 'Date' AND batch_id = $batch_id GROUP BY trendline_date ORDER BY trendline_date DESC")->result_array();
+
+		$imported_data_archived_dates = $this->db->query("SELECT `imported_data_parsed_archived`.`key`, SUBSTRING(`imported_data_parsed_archived`.`value`, 1, 10) AS trendline_date, COUNT(*) AS crawled_items FROM statistics_new, `imported_data_parsed_archived` , imported_data WHERE imported_data.id = imported_data_parsed_archived.imported_data_id AND imported_data.id = statistics_new.imported_data_id AND `imported_data_parsed_archived`.`key` = 'Date' AND batch_id = 123 GROUP BY trendline_date ORDER BY trendline_date DESC LIMIT 0, 20")->result_array();
 
 		$all_dates = array();
 
@@ -410,7 +415,7 @@ class Statistics_new_model extends CI_Model {
 
 		foreach($all_dates as $date)
 		{
-			if($date["crawled_items"] > $average_value && count($return_dates) < 6)
+			if(($date["crawled_items"] > $average_value && count($return_dates) < 6) || count($all_dates) < 6)
 			{
 				$return_dates[] = $date["trendline_date"];
 			}
@@ -428,7 +433,7 @@ class Statistics_new_model extends CI_Model {
 	 * @param	array
 	 * @return	array
 	 */
-	function getStatsData_trendlines($imported_data_id, $graphBuild, $dates)
+	function getStatsData_trendlines($imported_data_id, $graphBuild)
 	{   
 		switch ($graphBuild) {
 			case 'short_description_wc':
@@ -461,27 +466,6 @@ class Statistics_new_model extends CI_Model {
 			break;
 			
 		}
-
-		if(count($dates))
-		{
-			$dates_sql = $initial_dates_sql = " AND (";
-
-			foreach($dates as $date)
-			{
-				if($dates_sql != $initial_dates_sql)
-				{
-					$dates_sql .= " OR ";
-				}
-
-				$dates_sql .= ' DATE(idpa.`value`) = "' . $date . '"';
-			}
-
-			$dates_sql .= ")";
-		}
-		else
-		{
-			$dates_sql = "";
-		}
 		
 		// Castro: search crawled_items in imported_data_parsed as imported_data_parsed_archived
 
@@ -496,8 +480,7 @@ class Statistics_new_model extends CI_Model {
 			$sql.=' FROM `' . $table_to_search . '` as idpa';
 			$sql.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key` = '".$key."'";
 			$sql.=" WHERE idpa1.`key` = '".$key."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
-			$sql.= $dates_sql;
-			$sql.=' GROUP BY DATE(`date`) ORDER BY DATE(`date`) DESC LIMIT 6';
+			$sql.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 10) DESC LIMIT 10';
 
 			$query = $this->db->query($sql);
 			$temp_result = $query->result();
@@ -513,8 +496,7 @@ class Statistics_new_model extends CI_Model {
 				$sql_key.=' FROM `' . $table_to_search . '` as idpa';
 				$sql_key.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key` = '".$key1."'";
 				$sql_key.=" WHERE idpa1.`key` = '".$key1."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
-				$sql_key.= $dates_sql;
-				$sql_key.=' GROUP BY DATE(`date`) ORDER BY DATE(`date`) DESC LIMIT 6';
+				$sql_key.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 10) DESC LIMIT 10';
 				
 				$query_key = $this->db->query($sql_key);
 				$temp_result_key = $query_key->result();
