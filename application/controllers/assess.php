@@ -3125,7 +3125,8 @@ class Assess extends MY_Controller {
         $total_rows = count($results);
         $iterator_limit = $displayCount ? $display_start + $displayCount : $total_rows;
 		
-        for ($row_iterator = $display_start; $row_iterator < $iterator_limit && $row_iterator < $total_rows; $row_iterator++) {	
+        // for ($row_iterator = $display_start; $row_iterator < $iterator_limit && $row_iterator < $total_rows; $row_iterator++) {	
+        for ($row_iterator = $display_start; $row_iterator < $total_rows; $row_iterator++) {	
 			$row_key = $row_iterator;
 			$row = $results[$row_iterator];
 								
@@ -4190,11 +4191,9 @@ class Assess extends MY_Controller {
 				}
 												
             }
-			
-			// checking and saving (to the response) successfully filtered item
-			// $this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData);				
-
-			$result_table[$row_iterator] = $result_row;	
+					
+			if ($row_iterator < $iterator_limit)
+				$result_table[$row_iterator] = $result_row;	
         }
 
 
