@@ -77,6 +77,19 @@
 				<span id="clear_data_items" class="btn btn-success fileinput-button" style=""> Clean Imported Data Parsed </span>
 			</div>
 			<input type="checkbox" id="force_keywords" name="force_keywords" />&nbsp;<label>Force keywords re-generation</label>
+                        <div id="delelte_selected_batch" >
+                            <select id="batch_select" name="batch_select" style="margin: auto;">
+                                <option value="0">Select Batch For Delete</option>
+                                <?php if(isset($batches)&&!empty($batches)&&  is_array($batches)):?>
+                                <?php foreach($batches as $batch):?>
+                                <option value="<?php echo $batch->id;?>"><?php echo $batch->title;?></option>
+                                <?php endforeach;?>
+                                <?php endif; ?>
+                            </select>
+                            <span id="size_of_batch"></span>
+                            <span id="delete_batch" class="btn btn-success fileinput-button" style=""> Delete Batch </span>
+                            <span id="do_stats_batch" class="btn btn-success fileinput-button" style=""> Do Stats For Batch </span>
+                        </div>
 		</div>
 	</div>
 </div>
@@ -247,6 +260,55 @@
             url:url
         });
     }
+    function getBatchData(batch){
+        var url = '<?php echo site_url('system/get_size_of_batch'); ?>';
+        $.ajax({
+            url:url,
+            type: 'POST',
+            data:{batch_id:batch},
+            success:function(info){
+                $('#size_of_batch').text(info+' items ');
+            }
+        });
+    }
+    function delete_selected_batch(batch){
+        var url = '<?php echo site_url('crons/delete_batch_items_from_statistics_new/'); ?>'+'/'+batch;
+        $.ajax({
+            url:url,
+            success:function(){
+               getBatchData(batch);
+            }
+        });
+    }
+    function startDoStatsBatch(batch){
+            var url = '<?php echo site_url('crons/do_stats_bybatch'); ?>'+'/'+batch;
+	    $('#current_status span').text('Starting...');    
+            $.ajax({
+               url:url 
+            });
+    }
+    $('#delete_batch').on('click',function(){
+        var batch = $('#delelte_selected_batch').find('option:selected').val();
+        if(batch==0||batch=='undefined'){
+            alert('Select existing batch.');
+        }
+        else{
+            delete_selected_batch(batch);
+        }
+    });
+    $('#delelte_selected_batch').change(function(event){
+        //alert($(this).find('option:selected').val());
+        getBatchData($(this).find('option:selected').val());
+    });
+    $('#do_stats_batch').click(function(){
+        var batch = $('#delelte_selected_batch').find('option:selected').val();
+        if(batch==0||batch=='undefined'){
+            alert('Select existing batch.');
+        }
+        else{
+            startDoStatsBatch(batch);
+        }
+    });
 
 	$(document).ready(function() {
         itemsToUpdate();
