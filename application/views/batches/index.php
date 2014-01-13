@@ -12,11 +12,7 @@
             </div>
         </div>
 
-        <div id ="tcrawl" class="row-fluid mt_20" style="display:none;">
-            Items will be added to a batch if you choose an existing batch.
-            <div class="span11 batch_info mt_10">
-            </div>
-        </div>
+
 
         <div class="row-fluid mt_10">
             <div class="admin_system_content" style='height: 40px;'>
@@ -128,7 +124,12 @@
                 <button class="btn btn-danger" type="button" style="margin-left: 20px;float: left;font-size:14px;" onclick="doconfirm()">Delete</button>
                 <button class="btn ml_10" id="rename_batch" style="font-size:14px;" ><i class="icon-white icon-ok"></i>&nbsp;Rename ...</button>
         </div>
-        <div style='margin-top: 5px;' class="info"></div>
+        <div style='margin-top: 5px;' class="info">
+			<div id ="tcrawl" class="row-fluid mt_20" >
+				Items will be added to a batch if you choose an existing batch.
+				<div class="span11 batch_info mt_10"></div>
+			</div>
+		</div>
         <div class="row-fluid mt_20">
             <!--textarea id="urls" class="span10" style="min-height: 111px"></textarea-->
             <div class="search_area uneditable-input span9" onClick="this.contentEditable='true';" style="cursor: text; width:536px; min-height: 111px; overflow : auto; float: left;" id="urls"></div>
@@ -193,7 +194,6 @@
                 
             });
         </script>
-
         <div id="rename_batch_dialog" title="Rename batch">
             <div>
                 <p>
