@@ -674,7 +674,7 @@ class Crons extends MY_Controller
 		echo "batch_id = $batch_id <br> end";
 	}
 
-	public function do_stats_forupdated()
+	public function do_stats_forupdated($forceKeywords = FALSE)
 	{
 		echo "Script start working";
 		$tmp_dir = sys_get_temp_dir() . '/';
@@ -784,10 +784,14 @@ class Crons extends MY_Controller
 					{
 						$manufacturerInfo = serialize(array('url'=>$obj->manufacturer_url,
 						'images'=>$obj->manufacturer_images,'videos'=>$obj->manufacturer_videos));
-					}	
-					$hash_start = microtime(true);
-					$title_keywords = $this->imported_data_parsed_model->checkHash($obj->imported_data_id, $obj->product_name, $short_description, $long_description);
-					echo 'Check hash '.(microtime(true) - $hash_start);
+					}
+					$title_keywords = FALSE;
+					if(!$forceKeywords)
+					{
+						$hash_start = microtime(true);	
+						$title_keywords = $this->imported_data_parsed_model->checkHash($obj->imported_data_id, $obj->product_name, $short_description, $long_description);
+						echo 'Check hash '.(microtime(true) - $hash_start);
+					}
 					if(!$title_keywords)
 					{	
 						// Generate Title Keywords

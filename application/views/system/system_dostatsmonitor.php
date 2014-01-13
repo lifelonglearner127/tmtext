@@ -76,6 +76,7 @@
 			<div id="clear_imported_data_parsed" style ="margin:10px 0px;">
 				<span id="clear_data_items" class="btn btn-success fileinput-button" style=""> Clean Imported Data Parsed </span>
 			</div>
+			<input type="checkbox" id="force_keywords" name="force_keywords" />&nbsp;<label>Force keywords re-generation</label>
 		</div>
 	</div>
 </div>
@@ -178,8 +179,9 @@
         });
     }
     
-    function startDoStats(){
+    function startDoStats(force){
             var url = '<?php echo site_url('crons/do_stats_forupdated'); ?>';
+	    if(typeof(force) !== 'undefined') url += '/'+force;
 	    $('#current_status span').text('Starting...');    
             $.ajax({
                url:url 
@@ -264,8 +266,11 @@
         
         $('#start_do_stats').click(function(){
 	   if(!$(this).hasClass('disabled'))
-           {		   
-               startDoStats();
+           {		
+	       if($('#force_keywords').is(':checked')) 
+	       startDoStats(1);
+	       else
+	       startDoStats();	       
 	   }    
         });
         
