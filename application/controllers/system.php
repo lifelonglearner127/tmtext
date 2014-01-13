@@ -2860,11 +2860,11 @@ class System extends MY_Controller {
 			while (($d = fgetcsv($handle, 0, ',')) !== FALSE) //checking for each line of file
 			{
 				$all++; //count each item
-				if(isset($d[3]) && $all > 1)
+				if(isset($d[1]) && $all > 1)
 				{
 					//checking for each value of line
-					$c = $this->imported_data_parsed_model->updateManufacturerInfoByURL($d[0],$d[1],$d[2],$d[3]);
-					if($c) $changed++; else $unchanged++; //count changed and unchanged items
+					$c = $this->imported_data_parsed_model->updateManufacturerInfoByURL($d);
+					if($c === TRUE) $changed++; else $unchanged++; //count changed and unchanged items
 				}
 			}
 			$all = $all -1; //first line is header, we counted only lines with data

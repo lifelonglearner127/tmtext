@@ -2809,8 +2809,14 @@ echo "j  = ".$j;
         return $results;
        
     }
-    function updateManufacturerInfoByURL($oURL = '', $mURL = '', $images = 0, $videos = 0)
+    function updateManufacturerInfoByURL($data = array())
     {
+	    $oURL = $data[0]; 
+	    $mURL = $data[1]; 
+	    $images = 0; 
+	    $videos = 0;
+	    if(isset($data[2])) $images = $data[2]; 
+	    if(isset($data[3])) $videos = $data[3]; 
 	    $updated = FALSE;
 	    if(strlen($oURL) > 0 && (strlen($mURL) > 0))
 	    {
