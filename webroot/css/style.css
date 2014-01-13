@@ -2749,20 +2749,20 @@ div#assess_graph.loading{
 	width:650px;
 }
 #tooltip_popup{
-	width:860px;
-	height:200px;
+	width:900px;
 	background:white;
 	position:absolute;
 	border:solid 1px #2f7ed8;
 	padding:5px;
 	border-radius:5px;
 	z-index:1001;
-	margin-left:40px;
+	margin-left:65px;
 	display:none;
+	padding-bottom:25px;
 }
 #mini_chart_popup{
 	width:560px;
-	height:300px;
+	height:350px;
 	background:white;
 	position:absolute;
 	border:solid 1px #2f7ed8;
@@ -2774,13 +2774,12 @@ div#assess_graph.loading{
 }
 #mini_chart_container{
 	width:500px;
-	height:280px;
+	height:330px;
 	margin: 0 30px;
 }
-#tooltip_popup_container{
-	width:800px;
-	height:180px;
-	margin: 0 30px;
+#tooltip_popup_container {
+width: 900px;
+line-height: 14px;
 }
 a#remove_mini_chart, a#remove_tooltip_popup{
 	color:black;

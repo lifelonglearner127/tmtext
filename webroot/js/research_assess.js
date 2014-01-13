@@ -980,6 +980,26 @@ $(function() {
             }
             /***Switch - End***/
         }
+        
+        var legendEnabled = true;
+        
+        // if show over time is checked graph key should be date
+        if($("#show_over_time").is(":checked"))
+		{
+			var first_date = valueDate[0][0];
+			
+			var batch1GraphKey = first_date.substring(0, 10);
+		}
+		else
+		{
+			if(batch2Value == -1)
+			{
+				legendEnabled = false;
+			}
+			
+			var batch1GraphKey = batch1Name;
+		}
+        
         var seriesObj;
         if(batch1Value != -1 && batch2Value != -1){
             seriesObj = [
@@ -997,7 +1017,7 @@ $(function() {
         } else if(batch2Value == -1){
             seriesObj = [
                             {
-                                name: batch1Name,
+                                name: batch1GraphKey,
                                 data: value1,
                                 color: '#2f7ed8'
                             }
@@ -1070,6 +1090,9 @@ $(function() {
 				maxPadding: 2,
 				min:0
 			},
+			legend : {
+				enabled : true
+			},
 			tooltip: {
 				shared: true,
 				useHTML: true,
@@ -1113,8 +1136,14 @@ $(function() {
 						// Castro #1119: add data to tooltip only when show overtime is not checked or is the first point
 						if((i > 0 && ! $("#show_over_time").is(":checked")) || (i == 0 && datum.series.color == '#2f7ed8'))
 						{
-							result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
-							result += '<br /><span class="item_name">' + valueName[j][datum.x] + '</span>';
+							
+							if(batch2Value != -1)
+							{
+								result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b><br />';
+							}
+							
+							result += '<span class="item_name">' + valueName[j][datum.x] + '</span>';
+							
 							result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
 							
 							var crawl_date = new Date(valueDate[j][datum.x]);
@@ -1124,7 +1153,15 @@ $(function() {
 							result += '<span class="trendlines_container"><span class="trendlines_details" style="float:left;color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span></span>';
 						}
 					});
-					return result;
+					
+					if($("#mini_chart_popup").is(":visible") || $("#tooltip_popup").is(":visible"))
+					{
+						return false;
+					}
+					else
+					{
+						return result;
+					}
 				}
 			},
 			plotOptions: {
@@ -1134,6 +1171,10 @@ $(function() {
 					point: {
 						events: {
 							click: function() { 
+								
+								$("div.highcharts-tooltip").css("left", "-5000px"); // hide tooltip
+								$("g.highcharts-tooltip").attr("visibility", "hidden"); // hide tooltip
+								
 								// Castro: check if there is more than one point and show_over_time is checked to insert mini chart in popup
 								if($("#show_over_time").is(":checked"))
 								{
@@ -1158,7 +1199,7 @@ $(function() {
 											type: 'line'
 										},
 										title: {
-											text: "# " + chart_item_number + "  " + chart_item_name
+											text: chart_item_name
 										},
 										subtitle: {
 											text: $("#graphDropDown option:selected").text()
@@ -1166,9 +1207,12 @@ $(function() {
 										xAxis: {
 											type: 'datetime',
 											dateTimeLabelFormats: { // don't display the dummy year
-												month: '%e. %b',
-												year: '%b'
-											}
+												month: '%b %e',
+												year: '%b %e',
+											    day: '%b %e',
+											    week: '%b %e'
+											},
+											startOnTick : true
 										},
 										yAxis: {
 											title: {
@@ -1178,11 +1222,12 @@ $(function() {
 										},
 										tooltip: {
 											formatter: function() {
-													return '<b>'+ this.series.name +'</b><br/>'+
-													Highcharts.dateFormat('%Y-%m-%d', this.x) +': '+ this.y + chart_unit_name;
+													return Highcharts.dateFormat('%b %e', this.x) +': '+ this.y + " " + chart_unit_name;
 											}
 										},
-            
+										legend : {
+											enabled : false
+										},
 										series: [{ name : "Data", data : minichart_series}]
 									});
 								}
