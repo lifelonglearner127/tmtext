@@ -3838,7 +3838,6 @@ class Assess extends MY_Controller {
 			$result_row->murl = $mi['url'];
 			$result_row->mimg = $mi['images'];
 			$result_row->mvid = $mi['videos'];
-			$skus_with_manufacturer_videos += intval($mi['videos']);
 		}
             } else {
                 $result_row->short_seo_phrases = $row->short_seo_phrases;
@@ -4335,9 +4334,9 @@ class Assess extends MY_Controller {
 
 				'skus_with_zero_product_description_links_competitor' => array( 'value' => $skus_with_zero_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links)),
 				'skus_with_more_than_one_product_description_links_competitor' => array( 'value' => $skus_with_more_than_one_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
-				'skus_with_manufacturer_videos_available' => array( 'value' => $skus_with_manufacturer_videos, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_videos)),
-				'skus_with_manufacturer_images_available' => array( 'value' => $skus_with_manufacturer_images, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_images)),
-				'skus_with_manufacturer_pages' => array( 'value' => $skus_with_manufacturer_pages, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_pages)),
+				'skus_with_manufacturer_videos_available' => array( 'value' => (isset($skus_with_manufacturer_videos)) ? $skus_with_manufacturer_videos : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_videos)),
+				'skus_with_manufacturer_images_available' => array( 'value' => (isset($skus_with_manufacturer_images)) ? $skus_with_manufacturer_images : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_images)),
+				'skus_with_manufacturer_pages' => array( 'value' => (isset($skus_with_manufacturer_pages)) ? $skus_with_manufacturer_pages : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_pages)),
 
 			);		
 					
