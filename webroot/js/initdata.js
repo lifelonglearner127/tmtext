@@ -107,7 +107,8 @@ var summaryFieldNames = [
 		'skus_with_more_than_one_product_description_links',
 		'skus_with_more_than_one_product_description_links_competitor',
 		
-		'assess_report_items_priced_higher_than_competitors'
+		'assess_report_items_priced_higher_than_competitors',
+		'skus_with_manufacturer_videos_available'
 	];
 	
 	var batch_sets = {

@@ -3354,6 +3354,18 @@ class Assess extends MY_Controller {
 							$skus_title_more_than_70_chars_competitor++;
 							$this->filterBySummaryCriteria('skus_title_more_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						}
+						if (isset($result_row->mvid)) {
+							$skus_with_manufacturer_videos++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_videos_available', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						}
+						if (isset($result_row->mimg)) {
+							$skus_with_manufacturer_images++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_images_available', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						}
+						if (isset($result_row->murl)) {
+							$skus_with_manufacturer_pages++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						}
 					}
 
                     if ($parsed_meta_unserialize['description']) {
@@ -3826,6 +3838,7 @@ class Assess extends MY_Controller {
 			$result_row->murl = $mi['url'];
 			$result_row->mimg = $mi['images'];
 			$result_row->mvid = $mi['videos'];
+			$skus_with_manufacturer_videos += intval($mi['videos']);
 		}
             } else {
                 $result_row->short_seo_phrases = $row->short_seo_phrases;
@@ -4305,6 +4318,9 @@ class Assess extends MY_Controller {
 
 				'skus_with_zero_product_description_links_competitor' => array( 'value' => $skus_with_zero_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links)),
 				'skus_with_more_than_one_product_description_links_competitor' => array( 'value' => $skus_with_more_than_one_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
+				'skus_with_manufacturer_videos_available' => array( 'value' => $skus_with_manufacturer_videos, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_videos)),
+				'skus_with_manufacturer_images_available' => array( 'value' => $skus_with_manufacturer_images, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_images)),
+				'skus_with_manufacturer_pages' => array( 'value' => $skus_with_manufacturer_pages, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_pages)),
 
 			);		
 					
