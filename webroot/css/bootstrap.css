@@ -236,6 +236,10 @@ a:hover {
   width: 940px;
 }
 
+.span121 {
+/*  width: 840px;*/
+}
+
 .span11 {
   width: 860px;
 }
@@ -926,7 +930,7 @@ pre code {
 }
 
 form {
-  margin: 0 0 20px;
+/*  margin: 0 0 20px;*/
 }
 
 fieldset {
@@ -1265,6 +1269,7 @@ textarea.span9,
 .uneditable-input.span9 {
   width: 686px;
 }
+
 
 input.span8,
 textarea.span8,
