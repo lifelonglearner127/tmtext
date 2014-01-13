@@ -33,7 +33,129 @@
                 <!-- <div class="info ml_10 "></div> -->
                 <script>
                     $(function () {
-                        var url = '<?php echo site_url('research/upload_csv'); ?>';
+
+           var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
+                if($('.customer_dropdown')){
+					if($('.customer_dropdown').length > 0){
+					var jsn = $('.customer_dropdown').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");}
+				 }
+//                if (typeof selected_customer_for_review != 'undefined'){
+//                    $("#research_customers").msDropdown().data("dd").setIndexByValue(selected_customer_for_review);
+//                    delete selected_customer_for_review;
+//                }
+                if(jsn != undefined){
+                    jsn.on("change", function(res) {
+                        if($('.customer_dropdown').attr('id') == 'research_customers'){
+                            $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
+                                if(data.length>0){
+                                    $("select[name='research_batches']").empty();
+                                    for(var i=0; i<data.length; i++){
+                                        $("select[name='research_batches']").append('<option>'+data[i]+'</option>');
+                                    }
+                                } else if(data.length==0 && res.target.value !="All customers"){
+                                    $("select[name='research_batches']").empty();
+                                }
+                            });
+                            readResearchData();
+                            dataTable.fnFilter( $('select[name="research_batches"]').find('option:selected').text(), 7);
+                        } else if ($('.customer_dropdown').attr('id') == 'product_customers') {
+                            $.post(base_url + 'index.php/research/filterBatchByCustomer', { 'customer_name': res.target.value}, function(data){
+                                if(data.length>0){
+                                    //Max
+                                    $("select[name='product_batches']").empty();
+                                    $("select[name='product_batches']").append('<option value="0">Choose Batch</option>');
+                                    for(var i=0; i<data.length; i++){
+										select_batch = '';
+										if(i==0) select_batch = "selected='selected'";
+
+                                        $("select[name='product_batches']").append('<option '+select_batch+' value="'+data[i]+'">'+data[i]+'</option>');
+                                       //$("select[name='product_batches']").append('<option value="'+data[i]+'">'+data[i]+'</option>');
+                                    }
+
+                                    //If user chooses a customer that only has one batch, automatically select that batch. Denis
+                                    show_from_butches();
+
+                                    $.post(base_url + 'index.php/research/countAllItemsInBatch', {'batch': $("#batchess").val()}, function(data) {
+										$("span.product_batches_items").html(data + ' items');
+										$.removeCookie('product_batch_items', {path: '/'}); // destroy
+										$.cookie('product_batch_items', data+ ' items', {expires: 7, path: '/'}); // re-create
+									});
+
+									if ($("#batchess").val() !== '0') {
+
+										//alert($("#batchess").val());
+										show_from_butches();
+										$('#products li:eq(0)').css({'background': '#CAEAFF'});
+										$('#products li:eq(0)').attr('data-status', 'selected');
+										$('.products_an_search').addClass('active');
+										setTimeout(function() {
+											$('#products li:eq(0)').trigger('click');
+
+										}, 500);
+
+									} else {
+										$("#measure_product_ind_wrap").html('');
+										$("#compet_area_grid").html('');
+										$("#an_sort_search_box").html('');
+										$(".grid_switcher").hide();
+										$(".keywords_metrics_bl_res").hide();
+										$('li.keywords_metrics_bl_res, li.keywords_metrics_bl_res ~ li, ul.less_b_margin').hide();
+									}
+									//----End automatically select that batch ---------------------------------------------------
+
+                                } else if(data.length==0 && res.target.value !="All customers"){
+                                    $("select[name='product_batches']").empty();
+                                    $("select[name='product_batches']").append('<option value="0">Choose Batch</option>');
+                                }
+                                //Max
+                            });
+                        } else if ($('.customer_dropdown').attr('id') == 'customers' || $('.customer_dropdown').attr('id') == 'customer_dr') {
+                            // get customer name here
+                            var oDropdown = $("#customers").msDropdown().data("dd");
+                            if(oDropdown==undefined){
+                                oDropdown = $("#customer_dr").msDropdown().data("dd");
+                            }
+                            var customer_name = oDropdown.getData().data.value;
+                            // post data to server and fetch styel guide
+                            $.post(base_url + 'index.php/research/filterStyleByCustomer',
+                                { 'customer_name': customer_name },
+                                function(data){
+                                    $('li#styleguide').find('.boxes_content').empty();
+                                    $('li#styleguide').find('.boxes_content').text(data);
+                                }
+                            );
+                            // populate batches dropdown
+                            $.post(
+                                base_url + 'index.php/research/filterBatchByCustomerName',
+                                { 'customer_name': customer_name},
+                                function(data){
+                                   if(data.length>0){
+                                        $("select[name='batches']").empty();
+                                        for(var i=0; i<data.length; i++){
+                                            $("select[name='batches']").append('<option value="'+data[i]['id']+'">'+data[i]['title']+'</option>');
+                                        }
+                                       $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': data[0]['id']}, function(data){
+                                           if(data.created != undefined){
+                                               $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
+                                                   '<li> Items: '+data.count_items+' </li></ul>');
+                                           }else{
+                                               $('.batch_info').html('');
+                                           }
+
+                                       });
+                                   } else if(data.length==0 && $("select[name='customers']").find("option:selected").text()!="All customers"){
+                                       $("select[name='batches']").empty();
+                                   }
+
+                                }
+							);
+                        }
+                    });
+                }
+            }, 'json');
+					
+					
+					var url = '<?php echo site_url('research/upload_csv'); ?>';
                         $('#fileupload').fileupload({
                             url: url,
                             dataType: 'json',
@@ -149,7 +271,6 @@
         <script>
             $(function() {
                 // $('head').find('title').text('Batches');
-                
                 $("button#rename_batch").click(function(){
                     var renameBatchValue;
                     var renameBatchId;
