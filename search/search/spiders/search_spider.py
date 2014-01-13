@@ -51,7 +51,7 @@ class SearchSpider(BaseSpider):
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter for selecting results (the lower the value the more permissive the selection)
 	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
-		output = 1, threshold = 0.8, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False):#, by_id = False):
+		output = 1, threshold = 0.8, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None):#, by_id = False):
 
 		# call specific init for each derived class
 		self.init_sub()
@@ -66,6 +66,7 @@ class SearchSpider(BaseSpider):
 		self.outfile2 = outfile2
 		self.fast = fast
 		self.use_proxy = use_proxy
+		self.manufacturer_site = manufacturer_site
 		#self.by_id = by_id
 
 	def build_search_pages(self, search_query):
@@ -166,7 +167,7 @@ class SearchSpider(BaseSpider):
 					walmart_ids.append(id_string)
 			f.close()		
 
-			self.by_id = True	
+			self.by_id = True
 
 			for walmart_id in walmart_ids:
 				# create Walmart URLs based on these IDs
@@ -317,6 +318,7 @@ class SearchSpider(BaseSpider):
 			# hardcode target site to sony
 			#self.target_site = 'sony'
 			#self.target_site = product_brand_extracted
+
 			target_site = product_brand_extracted
 			# print 'THRESHOLD', self.threshold
 			# print "BRAND", product_brand_extracted, "PRODUCT", product_name
