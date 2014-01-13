@@ -30,7 +30,7 @@ var dataTableLastPageNumber = 0;
 var isReloaded = false;
 var outputedFilterIndexes = [];
 
-var FIRST_DISPLAY_LIMIT_COUNT = 200;
+var FIRST_DISPLAY_LIMIT_COUNT = 100;
 var NEXT_DISPLAY_LIMIT_COUNT = 1000;
 
 var short_wc_total_not_0 = 0;

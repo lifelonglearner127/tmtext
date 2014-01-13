@@ -3622,14 +3622,11 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			//Checking the third segment of URI for truncate flag 
 			$batch_id = $this->uri->segment(3);
                         if($batch_id){
-//                            echo '<br>'.$batch_id.'<br>';
                             $batch = $this->batches_model->get($batch_id);
-//                            var_dump($batch);
                             if(empty($batch)){
                                 exit('incorrect batch.');
                             }
                         }
-//                        echo'<br>batch id is '.($batch_id?$batch_id:'false');exit;
 			$this->different_revissions();
 			$dss = $this->imported_data_parsed_model->getDoStatsStatus(); //getting status of do_stats process
 			if (!$dss) //if status info does not exists
@@ -3648,7 +3645,6 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			//Get items for scanning
 			$time_start = microtime(true);
 			$data_arr = $this->imported_data_parsed_model->do_stats_newupdated($batch_id);
-//                        var_dump($data_arr);exit;
 			echo "<br>get_data ---- " . (microtime(true) - $time_start);
 			if (count($data_arr) > 0) //run analyze if array does not empty
 			{
@@ -3679,6 +3675,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 					$short_seo_phrases = '?';
 					$long_seo_phrases = '?';
 					$similar_products_competitors = array();
+					$manufacturerInfo = '';
 					// Price difference
 					$own_site = parse_url($obj->url, PHP_URL_HOST);
 					if (!$own_site)
@@ -3712,13 +3709,23 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 						//getting count of words in short description
 						$long_description_wc = count(explode(" ", $obj->long_description));
 					}
-
-					// Generate Title Keywords
-					$keywords_start = microtime(true);
-					$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
-					echo "Title Keywords -------------------- <b>".(microtime(true) - $keywords_start)." seconds</b>\n";
-
-
+					//Prepare manufacturer info
+					if(!empty($obj->manufacturer_url))
+					{
+						$manufacturerInfo = serialize(array('url'=>$obj->manufacturer_url,
+						'images'=>$obj->manufacturer_images,'videos'=>$obj->manufacturer_videos));
+					}	
+					$hash_start = microtime(true);
+                                        //Prepare Title keywords
+					$title_keywords = $this->imported_data_parsed_model->checkHash($obj->imported_data_id, $obj->product_name, $short_description, $long_description);
+					echo 'Check hash '.(microtime(true) - $hash_start);
+					if(!$title_keywords)
+					{	
+						// Generate Title Keywords
+						$keywords_start = microtime(true);
+						$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
+						echo "Title Keywords -------------------- <b>".(microtime(true) - $keywords_start)." seconds</b>\n";
+					}
 					$modelStart = microtime(true);
 					$m = '';
 					//If parsed attributes are exist, finding similar items and price diff
@@ -3919,7 +3926,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 					//insert new statistics data to statistics_new table if it not exists in table and update if exists
 					try
 					{
-						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
+						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids, $manufacturerInfo);
 					} catch (Exception $e)
 					{
 						echo 'Error', $e->getMessage(), "\n";
@@ -3927,7 +3934,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 						//$this->statistics_model->db->close();
 						//$this->statistics_model->db->initialize();
 
-						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
+						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids, $manufacturerInfo);
 					}
 					$endTime = microtime(true);
 					//echo "<br>insert/update ----------------------- " . ($endTime - $insertStart) . " seconds<br>";
@@ -3946,7 +3953,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		$time = time() - $first_start;
 		echo "<br>all -- " . $time . "<br>";
 		unlink($tmp_dir . ".locked");
-		$data_arr = $this->imported_data_parsed_model->do_stats_newupdated(); //get next 50 items to scan
+		$data_arr = $this->imported_data_parsed_model->do_stats_newupdated($batch_id); //get next 50 items to scan
 		$start = $this->settings_model->getDescription();
 		$stats_status = $this->settings_model->getDoStatsStatus(); //get status of do_stats
 		$total_items = $this->settings_model->getLastUpdate(); //get count of all items in time of starting
@@ -3956,7 +3963,8 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
 			echo $utd->td;  //exit;
 			//make asynchronous web request to do_stats_forupdated page
-			shell_exec("wget -S -O - ".site_url('/crons/do_stats_bybatch/'.$batch_id)." > /dev/null 2>/dev/null &");
+                        $url_link ="wget -S -O - ".site_url('/crons/do_stats_bybatch/'.$batch_id)." > /dev/null 2>/dev/null &"; 
+			shell_exec($url_link);
 		} else
 		{
 			//Or send report about success
@@ -3970,14 +3978,13 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			}
 			$this->settings_model->updateDescription(0);  //reset cron_job_offset 0
 
-			/*
+			
 			$this->load->library('email');
 			$this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
 			$this->email->to('bayclimber@gmail.com');
-			$this->email->cc('igor.g.work@gmail.com');
 			$this->email->subject('Cron job report');
-			$this->email->message('Cron job for do_statistics_new (do_stats_bybatch) is done for batch'.$batch_id.'<br> Timing = ' . $mtd->td); //.'<br> Total items updated: '.$qty['description']
-			$this->email->send(); //*/
+			$this->email->message('Cron job for do_statistics_new is done.<br> Timing = ' . $mtd->td); //.'<br> Total items updated: '.$qty['description']
+			$this->email->send(); 
 		}
 		unlink($tmp_dir . ".locked");
 	}
