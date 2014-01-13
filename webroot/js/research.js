@@ -742,7 +742,7 @@ $(document).ready(function () {
 
 //            console.log(data);
             if(data.length > 0){
-                var str = '<ul>';
+                var str = '<ul style="cursor:default">';
                 for(var i=0; i<data.length; i++){
                     str += '<li>'+data[i].url+'\n</li>';
                 }
