@@ -34,7 +34,7 @@
                 <script>
                     $(function () {
 
-           var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
+				var customers_list_ci = $.post(base_url + 'index.php/measure/getcustomerslist_new', { }, function(c_data) {
                 if($('.customer_dropdown')){
 					if($('.customer_dropdown').length > 0){
 					var jsn = $('.customer_dropdown').msDropDown({byJson:{data:c_data, name:'customers_list'}}).data("dd");}
@@ -215,7 +215,7 @@
                             $.post(base_url + 'index.php/research/delete_batch', {
                                 'batch_name': batch_name
                             }, function(data) {
-                                oDropdown.setIndexByValue('All customers');
+                                oDropdown.setIndexByValue('All Customers');
                                 $('select[name="batches"] option').each(function(){
                                     if($(this).text() == batch_name){
                                         $(this).remove();

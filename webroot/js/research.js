@@ -488,17 +488,19 @@ $(document).ready(function () {
     $(document).on("change", "select[name='batches']", function(){
         $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch_id': $("select[name='batches']").find("option:selected").text()}, function(data){
 //            console.log(data);
+			$("select[name='customers_list'] option:first-child").prop('selected', true);
             if(data != null){
                 $("select[name='customers'] option").each(function(){
                     if(data==$(this).text()){
                         $(this).prop('selected',true);
                     }
                 });
-            } else {
+            }
+/*			else {
                 $("select[name='customers'] option").each(function(){
                     $(this).removeAttr('selected');
                 });
-            }
+            }*/
         });
         $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': $("select[name='batches']").find("option:selected").val()}, function(data){
 //            console.log('2');
@@ -651,8 +653,8 @@ $(document).ready(function () {
                 if(cat_exist == 0){
                     $('select[name="batches"]').append('<option value="'+data.batch_id+'" selected="selected">'+
                         $('input[name="new_batch"]').val()+'</option>');
-                    return true;
                 }
+				$('input[name="new_batch"]').val("");
                 return true;
             });
         }
