@@ -3881,42 +3881,42 @@ class Assess extends MY_Controller {
                 $items_unoptimized_product_content++;
             }    	
 			
-			if ($needFilters)
-			{
-				//Dublicate Content      
-				if (!$row->Short_Description2 || !$row->Long_Description2) {
+			//Dublicate Content      
+			if (!$row->Short_Description2 || !$row->Long_Description2) {
 
-					if ($row->short_description) {
-						$short_desc_1 = $row->short_description;
-					} else {
-						$short_desc_1 = '';
-					}
-					if ($row->long_description) {
-						$long_desc_1 = $row->long_description;
-					} else {
-						$long_desc_1 = '';
-					}
-					$desc_1 = $short_desc_1 . ' ' . $long_desc_1;
+				if ($row->short_description) {
+					$short_desc_1 = $row->short_description;
+				} else {
+					$short_desc_1 = '';
+				}
+				if ($row->long_description) {
+					$long_desc_1 = $row->long_description;
+				} else {
+					$long_desc_1 = '';
+				}
+				$desc_1 = $short_desc_1 . ' ' . $long_desc_1;
 
-					if ($row->Short_Description1) {
-						$short_desc_2 = $row->Short_Description1;
-					} else {
-						$short_desc_2 = '';
-					}
-					if ($row->Long_Description1) {
-						$long_desc_2 = $row->Long_Description1;
-					} else {
-						$long_desc_2 = '';
-					}
-					$desc_2 = $short_desc_2 . ' ' . $long_desc_2;
+				if ($row->Short_Description1) {
+					$short_desc_2 = $row->Short_Description1;
+				} else {
+					$short_desc_2 = '';
+				}
+				if ($row->Long_Description1) {
+					$long_desc_2 = $row->Long_Description1;
+				} else {
+					$long_desc_2 = '';
+				}
+				$desc_2 = $short_desc_2 . ' ' . $long_desc_2;
 
-					if (strcasecmp($desc_1, $desc_2) <= 0)
-						similar_text($desc_1, $desc_2, $percent);
-					else
-						similar_text($desc_2, $desc_1, $percent);
+				if (strcasecmp($desc_1, $desc_2) <= 0)
+					similar_text($desc_1, $desc_2, $percent);
+				else
+					similar_text($desc_2, $desc_1, $percent);
 
-					$percent = number_format($percent, 2);
-
+				$percent = number_format($percent, 2);
+				
+				if ($needFilters)
+				{
 					if ($percent >= 25) {
 						$skus_25_duplicate_content++;
 						$this->filterBySummaryCriteria('skus_25_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
@@ -3931,13 +3931,15 @@ class Assess extends MY_Controller {
 						$skus_75_duplicate_content++;
 						$this->filterBySummaryCriteria('skus_75_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 					}
-
-					$result_row->Duplicate_Content.= $percent . ' %';                
-				} else {
-					$result_row->Duplicate_Content.='';
 				}
+
+				$result_row->Duplicate_Content.= $percent . ' %';                
+			} else {
+				$result_row->Duplicate_Content.='';
+			}
 			
-				
+			if ($needFilters)
+			{									
 				if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count']) {
 					$skus_pdfs++;
 					$this->filterBySummaryCriteria('skus_pdfs', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
@@ -4540,8 +4542,7 @@ class Assess extends MY_Controller {
                         'H1_Tags' => $data_row->H1_Tags,
                         'H1_Tags_Count' => $data_row->H1_Tags_Count,
                         'H2_Tags' => $data_row->H2_Tags,
-                        'H2_Tags_Count' => $data_row->H2_Tags_Count,
-                        'duplicate_content' => $data_row->duplicate_content,
+                        'H2_Tags_Count' => $data_row->H2_Tags_Count,                                               
                         'column_external_content' => $data_row->column_external_content,
                         'column_reviews' => $data_row->column_reviews,
                         'average_review' => $data_row->average_review,
@@ -4588,7 +4589,7 @@ class Assess extends MY_Controller {
                         }
 			
                         $output_row['gap'] = $data_row['gap'];
-                        $output_row['Duplicate_Content'] = $data_row['Duplicate_Content'];                      
+                        $output_row['duplicate_content'] = $data_row['Duplicate_Content'];                      
                     } else {
                         $output_row['snap1'] = $data_row->snap1;
                         $output_row['imp_data_id1'] = $data_row->imp_data_id1;
@@ -4618,7 +4619,7 @@ class Assess extends MY_Controller {
                         $output_row['title_pa1'] = $data_row->title_pa1;
                         $output_row['links_count1'] = $data_row->links_count1;
                         $output_row['gap'] = $data_row->gap;
-                        $output_row['Duplicate_Content'] = $data_row->Duplicate_Content;
+                        $output_row['duplicate_content'] = $data_row->Duplicate_Content;
                         $output_row['total_description_wc1'] = $output_row['short_description_wc1']+$output_row['long_description_wc1'];
                     }
                     
