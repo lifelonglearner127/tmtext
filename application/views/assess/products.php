@@ -641,6 +641,7 @@
 				</div>
 <!-- 			Castro #1119: convert dropdown to static end -->
                 <div id="assess_graph">
+					<div id="mini_chart_popup"><a href="javascript:void(0);" id="remove_mini_chart">X</a><div id="mini_chart_container"></div></div>
                     <div id="highChartContainer" style="width: 980px; height: 370px; margin: 20 auto"></div>
                 </div>
              

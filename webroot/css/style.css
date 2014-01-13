@@ -2748,3 +2748,24 @@ div#assess_graph.loading{
 	float:left;
 	width:650px;
 }
+#mini_chart_popup{
+	width:560px;
+	height:300px;
+	background:white;
+	position:absolute;
+	border:solid 1px #2f7ed8;
+	padding:5px;
+	border-radius:5px;
+	z-index:1000;
+	margin-left:200px;
+	display:none;
+}
+#mini_chart_container{
+	width:500px;
+	height:280px;
+	margin: 0 30px;
+}
+a#remove_mini_chart{
+	color:black;
+	float:right;
+}
