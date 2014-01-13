@@ -3183,12 +3183,13 @@ class Assess extends MY_Controller {
             $result_row->lower_price_exist = false;
             $result_row->snap = '';           
             $tb_product_name = '';
-	    $result_row->murl = '';
-	    $result_row->mimg = 0;
-	    $result_row->mvid = 0;
-	    $result_row->total_description_wc = $result_row->short_description_wc+$result_row->long_description_wc;
+			$result_row->murl = '';
+			$result_row->mimg = 0;
+			$result_row->mvid = 0;
+			$result_row->total_description_wc = $result_row->short_description_wc+$result_row->long_description_wc;
 
-									
+			$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);	
+			
             if ($row->short_description) {
                 $result_row->short_description = $row->short_description;
             } else {
@@ -3935,7 +3936,7 @@ class Assess extends MY_Controller {
 					$result_row->Duplicate_Content.='';
 				}
 			
-				$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+				
 				if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count']) {
 					$skus_pdfs++;
 					$this->filterBySummaryCriteria('skus_pdfs', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
