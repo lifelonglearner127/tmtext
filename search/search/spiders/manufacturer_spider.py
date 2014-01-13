@@ -8,9 +8,12 @@ from search.items import SearchItem
 from search.spiders.search_spider import SearchSpider
 from scrapy import log
 
+from selenium import webdriver
+from scrapy.http import TextResponse
+
 from spiders_utils import Utils
 from search.matching_utils import ProcessText
-
+import time
 import re
 import sys
 
@@ -58,23 +61,35 @@ class ManufacturerSpider(SearchSpider):
 
 
 		#TODO: implement support for multiple results pages?
+
+		
+		# if we find any results to this it means we are already on a product page
 		results = hxs.select("//ul[@class='product-info']")
 
-		# if we find any results to this it means we are already on a product page
 		if results:
 			product_urls.add(response.url)
 			# it also means it's an exact match, so stop search here
 			response.meta['pending_requests'] = []
+			response.meta['threshold'] = 0.2
 			# # also temporarily lower threshold
 			# self.threshold = 0.2
 
 		else:
-			# # try to see if this is a results page then
-			# results = 
-			# for result in results:
-			# 	product_url = result.select("parent::node()//@href").extract()[0]
-			# 	product_urls.add(product_url)
-			pass
+
+			# try to see if this is a results page then
+
+			# Content seems to be generated with javascript - open page with selenium, extract its content then return it back here
+			page_source = self.get_samsung_results(response.url)
+			hxs = HtmlXPathSelector(page_source)
+			#print "PAGE_SOURCE: ", page_source
+			results = hxs.select("//input[contains(@id,'detailpageurl')]/@value")
+			print 'RESULTS: ', results
+			
+			for result in results:
+				product_url = Utils.add_domain(result.extract().strip(), "http://www.samsung.com")
+				print "PRODUCT_URL: ", product_url, result.extract()
+				product_urls.add(product_url)
+			
 
 		if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
 			request = Request(product_urls.pop(), callback = self.parse_product_samsung, meta = response.meta)
@@ -93,6 +108,36 @@ class ManufacturerSpider(SearchSpider):
 			# only send the response we have as an argument, no need to make a new request
 			return self.reduceResults(response)
 
+
+	# use selenium to extract samsung results from results page - they are loaded dynamically in a frame, can't be done with scrapy alone
+	def get_samsung_results(self, url):
+		driver = webdriver.Firefox()
+		driver.get(url)
+
+		#time.sleep(5)
+
+		# check if this is a page with a results frame
+		if driver.find_elements_by_id("searchResult"):
+			# switch to results frame
+			driver.switch_to_frame("searchResult")
+
+		# # click on first <h4>
+		# results = driver.find_elements_by_xpath("//h4/a")
+		# print "THE RESULTS ARE: ", results
+		# results[0].click()
+
+		# convert html to "nice format"
+		text_html = driver.page_source.encode('utf-8')
+		#print "URL: ", url, " TEXT_HTML: ", text_html
+		html_str = str(text_html)
+
+		# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
+		resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
+
+		driver.close()
+		#driver.stop()
+
+		return resp_for_scrapy
 		
 
 	# parse sony results page, extract info for all products returned by search (keep them in "meta")
@@ -163,26 +208,27 @@ class ManufacturerSpider(SearchSpider):
 		item = SearchItem()
 		item['product_url'] = response.url
 		item['origin_url'] = origin_url
+		item['origin_name'] = response.meta['origin_name']
 		# hardcode brand to sony
 		item['product_brand'] = 'samsung'
 
 		# extract product name, brand, model, etc; add to items
 		product_info = hxs.select("//ul[@class='product-info']")
-		product_name = product_info.select("/meta[@itemprop='name']/@content")
+		product_name = product_info.select("meta[@itemprop='name']/@content")
 		if not product_name:
 			self.log("Error: No product name: " + str(response.url), level=log.INFO)
 		else:
 			item['product_name'] = product_name.extract()[0]
-		product_model = product_info.select("/meta[@itemprop='model']/@content")
-		if product_model:
-			item['product_model'] = product_model.extract()[0]
+			product_model = product_info.select("meta[@itemprop='model']/@content")
+			if product_model:
+				item['product_model'] = product_model.extract()[0]
 
-		#TODO
-		# item['product_images'] = 
-		# #TODO: to check
-		# item['product_videos'] = l
+			#TODO
+			# item['product_images'] = 
+			# #TODO: to check
+			# item['product_videos'] = l
 
-		items.add(item)
+			items.add(item)
 
 
 		# if there are any more results to be parsed, send a request back to this method with the next product to be parsed

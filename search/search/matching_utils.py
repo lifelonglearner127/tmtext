@@ -74,21 +74,26 @@ class ProcessText():
 		# replace - . / if not part of a number - either a number is not before it or is not after it (special case for '-')
 		# replace ' if there's not a number before it
 		text = re.sub("[\./](?![0-9])", " ", text)
-		# replace - with space only if not part of a model number - that is not followed by a number followed by letters or space or the end of the name
-		# fixes cases like "1-1.2" (will be split into "1 1.2"
+		# replace - with space only if not part of a model number
+		# fixes cases like "1-1.2" (will be split into "1 1.2")
+
+		# replace - with space if it's not followed by a number followed by letters or space or the end of the name
 		text = re.sub("[\-](?![0-9]+( |$|[a-zA-Z]))", " ", text)
+		# replace - with space if it's not preceded by a number (and not followed by a number because of the above)
 		text = re.sub("(?<![0-9])[\.\-/\']", " ", text)
 		
 		tokens = text.split()
 
 		#TODO: remove the len constraint? eg: kellogs k protein
+
+		# only lowercase if flag is set, default is True
 		if lowercase:
 			clean = [token.lower() for token in tokens]
 		else:
 			clean = tokens
 
 		if exclude_stopwords:
-			# don't exclude these
+			## don't exclude these
 			#exceptions = ["t"]
 			#stopset = set(stopwords.words('english')).difference(set(exceptions))#["and", "the", "&", "for", "of", "on", "as", "to", "in"]
 			stopset = ProcessText.stopwords
