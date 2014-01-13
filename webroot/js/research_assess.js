@@ -2647,7 +2647,7 @@ function prevSibilfunc(curentSibil){
 
     $(".custom-batch-trigger").on("click", function(e) {
         e.preventDefault();
-        getCustomerDropdown();
+        //getCustomerDropdown();
         $.post(base_url + 'index.php/batches/index', {}, function(data) {
             $("#custom_batch_create_modal").html(data).dialog("open");
         });
