@@ -3354,18 +3354,18 @@ class Assess extends MY_Controller {
 							$skus_title_more_than_70_chars_competitor++;
 							$this->filterBySummaryCriteria('skus_title_more_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						}
-						//if (isset($result_row->mvid)) {
+						if (isset($result_row->mvid)) {
 							$skus_with_manufacturer_videos++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_videos_available', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
-						//}
-						//if (isset($result_row->mimg)) {
+						}
+						if (isset($result_row->mimg)) {
 							$skus_with_manufacturer_images++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_images_available', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
-						//} 
-						//if (isset($result_row->murl)) { 
+						} 
+						if (isset($result_row->murl)) { 
 							$skus_with_manufacturer_pages++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
-						//}
+						}
 					}
 
                     if ($parsed_meta_unserialize['description']) {
@@ -4204,18 +4204,18 @@ class Assess extends MY_Controller {
 					$skus_three_optimized_keywords_competitor++;			
 					$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 				}
-				if (isset($data_row->mvid)) {
+				//if (isset($data_row->mvid)) {
 							$skus_with_manufacturer_videos++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_videos_available', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
-				}
-			        if (isset($data_row->mimg)) {
+				//}
+			        //if (isset($data_row->mimg)) {
 							$skus_with_manufacturer_images++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_images_available', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
-				} 
-				if (isset($data_row->murl)) { 
+				//} 
+				//if (isset($data_row->murl)) { 
 							$skus_with_manufacturer_pages++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
-				}				
+				//}				
             }
 					
 			if ($row_iterator < $iterator_limit)
