@@ -79,7 +79,7 @@
 			<input type="checkbox" id="force_keywords" name="force_keywords" />&nbsp;<label>Force keywords re-generation</label>
                         <div id="delelte_selected_batch" >
                             <select id="batch_select" name="batch_select" style="margin: auto;">
-                                <option value="0">Select Batch For Delete</option>
+                                <option value="0">Select Batch</option>
                                 <?php if(isset($batches)&&!empty($batches)&&  is_array($batches)):?>
                                 <?php foreach($batches as $batch):?>
                                 <option value="<?php echo $batch->id;?>"><?php echo $batch->title;?></option>
