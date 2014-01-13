@@ -56,7 +56,7 @@ class Crons extends MY_Controller
 		if ($result)
 		{
 			echo 'call by wget';
-			shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/similar_groups > /dev/null 2>/dev/null &");
+			shell_exec("wget -S -O- ".site_url('/crons/similar_groups')." > /dev/null 2>/dev/null &");
 			echo 'call by wget AFTER';
 		} else
 		{
@@ -369,7 +369,7 @@ class Crons extends MY_Controller
 		$data_arr = $this->imported_data_parsed_model->do_stats_ids();
 		if (count($data_arr) > 1)
 		{
-			shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_duplicate_content/$trnc > /dev/null 2>/dev/null &");
+			shell_exec("wget -S -O- ".site_url('/crons/do_duplicate_content/'.$trnc)." > /dev/null 2>/dev/null &");
 		} else
 		{
 			$data = array(
@@ -1689,7 +1689,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		$start = $res['description'];
 		if (count($data_arr) > 1)
 		{
-			shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_new/$trnc > /dev/null 2>/dev/null &");
+			shell_exec("wget -S -O- ".site_url('/crons/do_stats_new/'.$trnc)." > /dev/null 2>/dev/null &");
 		} else
 		{
 			$data = array(
@@ -3143,7 +3143,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			} else
 			{
 				// shell_exec("wget -S -O- http://tmeditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged > /dev/null 2>/dev/null &");
-				shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged > /dev/null 2>/dev/null &");
+				shell_exec("wget -S -O- ".site_url('/crons/match_urls/'.$process.'/'.$linesScaned.'/'.$itemsUpdated.'/'.$notFoundUrls.'/'.$itemsUnchanged)." > /dev/null 2>/dev/null &");
 			}
 		}
 	}
@@ -3533,7 +3533,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			$this->site_categories_model->curl_async($call_link);
 		} else
 		{
-			shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/fix_imported_data_parsed_models > /dev/null 2>/dev/null &");
+			shell_exec("wget -S -O- ".site_url('/crons/fix_imported_data_parsed_models')." > /dev/null 2>/dev/null &");
 		}
 	}
 

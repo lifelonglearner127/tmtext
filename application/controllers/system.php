@@ -2822,7 +2822,7 @@ class System extends MY_Controller {
                             //            exit($call_link);
                             $this -> site_categories_model -> curl_async($call_link);
                     } else {
-                            shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged > /dev/null 2>/dev/null &");
+                            shell_exec("wget -S -O- ".site_url('/crons/match_urls/'.$process.'/'.$linesScaned.'/'.$itemsUpdated.'/'.$notFoundUrls.'/'.$itemsUnchanged)." > /dev/null 2>/dev/null &");
                     }
             }
                     
