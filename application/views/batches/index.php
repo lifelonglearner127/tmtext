@@ -42,11 +42,11 @@
                             },
                             done: function (e, data) {
                                 $('input[name="choosen_file"]').val(data.result.files[0].name);
-//                                $.each(data.result.files, function (index, file) {
-//                                    /*if (file.error == undefined) {
-//                                     $('<p/>').text(file.name).appendTo('#files');
-//                                     }*/
-//                                });
+                                $.each(data.result.files, function (index, file) {
+                                    /*if (file.error == undefined) {
+                                     $('<p/>').text(file.name).appendTo('#files');
+                                     }*/
+                                });
                                 $('#csv_import_create_batch').trigger('click');
                                 setTimeout(function(){
                                     //$('#progress .bar').css({'width':'0%'});
@@ -60,9 +60,9 @@
                                 'width',
                                 progress + '%'
                             );
-//                                if (progress == 100) {
-//
-//                                }
+                                if (progress == 100) {
+
+                                }
                             }
                         });
                     });
@@ -133,7 +133,7 @@
         <div class="row-fluid mt_20">
             <!--textarea id="urls" class="span10" style="min-height: 111px"></textarea-->
             <div class="search_area uneditable-input span9" onClick="this.contentEditable='true';" style="cursor: text; width:536px; min-height: 111px; overflow : auto; float: left;" id="urls"></div>
-            <div class='span3' style='width: 150px;'>
+            <div class='span3' style='width: 150px; margin-left:0px'>
                 <button class="btn ml_10" id="add_to_batch"  style="font-size:14px;"><i class="icon-white icon-ok"></i>&nbsp;Add to batch</button>
                 <button class="btn btn-danger ml_10 mt_10" id="delete_from_batch" style="font-size:14px;"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
             </div>
