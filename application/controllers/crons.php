@@ -1030,7 +1030,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		if (count($data_arr) > 0 && $stats_status->description === 'started' && ($cjo - 1) * 50 < intval($total_items['description']))
 		{ 
 			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
-			echo $utd->td;  exit;
+			echo $utd->td;  //exit;
 			//make asynchronous web request to do_stats_forupdated page
                         $url_link ="wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &"; 
 			shell_exec($url_link);
