@@ -548,6 +548,7 @@ class Assess extends MY_Controller {
                                     $val->video_count1 = $video_count;
                                     $val->title_pa1 = $title_pa;
                                     $val->links_count1 = $title_pa;
+				    $val->total_description_wc1 = $val->short_description_wc1+$val->long_description_wc1;
                                     $cmpare->imported_data_id = $item['imported_data_id'];
                                     $batch2_items_count++;
 
@@ -3448,6 +3449,7 @@ class Assess extends MY_Controller {
                     $result_row['video_count' . $i] = $video_count ? $video_count : 'None';
                     $result_row['title_pa' . $i] = $title_pa ? $title_pa : 'None';
                     $result_row['links_count' . $i] = $links_count ? $links_count : 'None';
+                    $result_row['total_description_wc' . $i] = $result_row['short_description_wc' . $i]+$result_row['long_description_wc' . $i];
                 }
 
                 $result_row = (object) $result_row;
@@ -4582,8 +4584,9 @@ class Assess extends MY_Controller {
                             $output_row['video_count' . $i] = $data_row['video_count' . $i] != null ? $data_row['video_count' . $i] : 'none';
                             $output_row['title_pa' . $i] = $data_row['title_pa' . $i] != null ? $data_row['title_pa' . $i] : '';
                             $output_row['links_count' . $i] = $data_row['links_count' . $i] != null ? $data_row['links_count' . $i] : '';
+			    $output_row['total_description_wc' . $i] = $output_row['short_description_wc' . $i]+$output_row['long_description_wc' . $i];
                         }
-
+			
                         $output_row['gap'] = $data_row['gap'];
                         $output_row['Duplicate_Content'] = $data_row['Duplicate_Content'];                      
                     } else {
@@ -4616,6 +4619,7 @@ class Assess extends MY_Controller {
                         $output_row['links_count1'] = $data_row->links_count1;
                         $output_row['gap'] = $data_row->gap;
                         $output_row['Duplicate_Content'] = $data_row->Duplicate_Content;
+                        $output_row['total_description_wc1'] = $output_row['short_description_wc1']+$output_row['long_description_wc1'];
                     }
                     
                     $output['aaData'][] = AssessHelper::setTableData($columns, $output_row);

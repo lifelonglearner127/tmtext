@@ -785,13 +785,16 @@ class Crons extends MY_Controller
 						$manufacturerInfo = serialize(array('url'=>$obj->manufacturer_url,
 						'images'=>$obj->manufacturer_images,'videos'=>$obj->manufacturer_videos));
 					}	
-
-					// Generate Title Keywords
-					$keywords_start = microtime(true);
-					$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
-					echo "Title Keywords -------------------- <b>".(microtime(true) - $keywords_start)." seconds</b>\n";
-
-
+					$hash_start = microtime(true);
+					$title_keywords = $this->imported_data_parsed_model->checkHash($obj->imported_data_id, $obj->product_name, $short_description, $long_description);
+					echo 'Check hash '.(microtime(true) - $hash_start);
+					if(!$title_keywords)
+					{	
+						// Generate Title Keywords
+						$keywords_start = microtime(true);
+						$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
+						echo "Title Keywords -------------------- <b>".(microtime(true) - $keywords_start)." seconds</b>\n";
+					}
 					$modelStart = microtime(true);
 					$m = '';
 					//If parsed attributes are exist, finding similar items and price diff
@@ -3705,7 +3708,6 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 						//getting count of words in short description
 						$long_description_wc = count(explode(" ", $obj->long_description));
 					}
-
 
 					// Generate Title Keywords
 					$keywords_start = microtime(true);
