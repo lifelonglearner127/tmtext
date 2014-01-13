@@ -703,7 +703,7 @@ span.highlight{
     z-index: 100000 !important;
 }
 #batchesDiv {
-    padding: 25px;
+/*    padding: 25px;*/
 }
 .forgot_pass{
     float: left!important;

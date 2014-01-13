@@ -661,12 +661,15 @@ $(function() {
 			}
 			$('#graphDropDown').attr("disabled", true);
 			$('#show_over_time').attr("disabled", true);
+			$('#show_over_time_span').css("color", "#999");
 			$('#assess_graph').addClass("loading");
+			removeMiniChart();
 		}
 		else
 		{
 			$('#graphDropDown').removeAttr("disabled");
 			$('#show_over_time').removeAttr("disabled");
+			$('#show_over_time_span').css("color", "#222");
 			$("#assess_graph").removeClass("loading");
 			
 			$('.highcharts-button').each(function(i){
@@ -1111,11 +1114,14 @@ $(function() {
 						if((i > 0 && ! $("#show_over_time").is(":checked")) || (i == 0 && datum.series.color == '#2f7ed8'))
 						{
 							result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
-							result += '<br /><span>' + valueName[j][datum.x] + '</span>';
+							result += '<br /><span class="item_name">' + valueName[j][datum.x] + '</span>';
 							result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
-							result += '<br /><span class="dot_data" data-date="0" data-value="' + datum.y + '">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' '+graphName2+'</span>';
+							
+							var crawl_date = new Date(valueDate[j][datum.x]);
+							
+							result += '<br /><span class="dot_data" data-year="' + crawl_date.getFullYear() +  '" data-month="' + crawl_date.getMonth() +  '" data-day="' + crawl_date.getDate() +  '" data-date="0" data-value="' + datum.y + '">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' <span class="units_name">'+graphName2+'</span></span>';
 
-							result += '<span class="trendlines_container"><span style="float:left;" class="mini_chart_container"></span><span class="trendlines_details" style="float:left;color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span></span>';
+							result += '<span class="trendlines_container"><span class="trendlines_details" style="float:left;color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span></span>';
 						}
 					});
 					return result;
@@ -1128,70 +1134,65 @@ $(function() {
 					point: {
 						events: {
 							click: function() { 
-								$('.highcharts-tooltip').first().css('visibility','visible');
-								$('div .highcharts-tooltip span').first().css('visibility','visible');
-								if (cloneToolTip)
-								{
-									chart1.container.firstChild.removeChild(cloneToolTip);
-								}
-								if (cloneToolTip2)
-								{
-									cloneToolTip2.remove();
-								}
-								cloneToolTip = this.series.chart.tooltip.label.element.cloneNode(true);
-								chart1.container.firstChild.appendChild(cloneToolTip);
-								
-								cloneToolTip2 = $('.highcharts-tooltip').clone().addClass("mini_chart_popup"); 
-								$(chart1.container).append(cloneToolTip2);
-								
 								// Castro: check if there is more than one point and show_over_time is checked to insert mini chart in popup
-								if($("#show_over_time").is(":checked") && $(".mini_chart_popup .dot_data").length > 1)
+								if($("#show_over_time").is(":checked"))
 								{
-									var highest_value = 0;
+									var minichart_series = new Array();
 									
-									// get dot highest value
-									$(".mini_chart_popup .dot_data").each(function()
+									// get data for mini chart
+									for(var i = ($("div.highcharts-tooltip .dot_data").length - 1); i >=0; i--)
 									{
-										if(parseInt($(this).attr("data-value")) > highest_value)
-										{
-											highest_value = parseInt($(this).attr("data-value"));
-										}
-									});
-									
-									// calculate scale ratio for time axis
-									var days_from_latest_crawl = parseInt($(".mini_chart_popup .dot_data:last").attr("data-date"));
-									
-									var time_scale_ratio = (100 / days_from_latest_crawl) * -1;
-									
-									// need to calculate ratio, charts maximum allowed value is 100
-									var scale_ratio = 80 / highest_value;
-									
-									var google_chart = "https://chart.googleapis.com/chart?cht=lxy&chxt=y&chs=200x125&chxr=0,0," + parseInt(highest_value * 1.25) + "&chm=s,000000,0,-1,5&chd=t:";
-									
-									var y_axis_values = "";
-									var x_axis_values = "";
-									
-									// get dot values from chart popup
-									for(var i = ($(".mini_chart_popup .dot_data").length - 1); i >=0; i--)
-									{
-										y_axis_values += parseInt($(".mini_chart_popup .dot_data").eq(i).attr("data-value") * scale_ratio);
-										x_axis_values += parseInt(parseInt(($(".mini_chart_popup .dot_data").eq(i).attr("data-date")) - days_from_latest_crawl) * time_scale_ratio);
-										
-										if(i != 0)
-										{
-											y_axis_values += ",";
-											x_axis_values += ",";
-										}
+										var selected_dot_data = $("div.highcharts-tooltip .dot_data").eq(i);
+										minichart_series.push([
+											Date.UTC(parseInt(selected_dot_data.attr("data-year")),  parseInt(selected_dot_data.attr("data-month")), parseInt(selected_dot_data.attr("data-day"))), parseInt(selected_dot_data.attr("data-value"))
+										]);
 									}
 									
-									google_chart += x_axis_values + "|" + y_axis_values;
-									
-									// insert mini chart image
-									$(".mini_chart_popup .mini_chart_container").css("width", "210px").append('<img src="' + google_chart + '" />');
-								}
+									var chart_item_number = $("div.highcharts-tooltip small").eq(0).text();
+									var chart_item_name = $("div.highcharts-tooltip .item_name").eq(0).text();
+									var chart_unit_name = $("div.highcharts-tooltip .dot_data .units_name").text();
 
-								$('.highcharts-tooltip').first().css('visibility','hidden');
-								$('div .highcharts-tooltip span').first().css('visibility','hidden');
+									$("#mini_chart_popup").show();
+									$("#mini_chart_container").highcharts({
+										chart: {
+											type: 'line'
+										},
+										title: {
+											text: "# " + chart_item_number + "  " + chart_item_name
+										},
+										subtitle: {
+											text: $("#graphDropDown option:selected").text()
+										},
+										xAxis: {
+											type: 'datetime',
+											dateTimeLabelFormats: { // don't display the dummy year
+												month: '%e. %b',
+												year: '%b'
+											}
+										},
+										yAxis: {
+											title: {
+												text: 'Values'
+											},
+											min: 0
+										},
+										tooltip: {
+											formatter: function() {
+													return '<b>'+ this.series.name +'</b><br/>'+
+													Highcharts.dateFormat('%Y-%m-%d', this.x) +': '+ this.y + chart_unit_name;
+											}
+										},
+            
+										series: [{ name : "Data", data : minichart_series}]
+									});
+								}
+								else
+								{
+									$("#tooltip_popup_container").html($("div.highcharts-tooltip").html());
+									$("#tooltip_popup_container .highcharts-tooltip-close").remove();
+									$("#tooltip_popup_container span:first").css("position", "relative");
+									$("#tooltip_popup").show();
+								}
 							}
 						}
 					}
@@ -1223,6 +1224,20 @@ $(function() {
 	$('#show_over_time').live('click',function(){
 		showHighChart();
 	});
+	
+	$('#remove_mini_chart').live('click',function(){
+		removeMiniChart();
+	});
+	$('#remove_tooltip_popup').live('click',function(){
+		removeMiniChart();
+	});
+	
+	// Castro function to remove minichart
+	function removeMiniChart()
+	{
+		$("#mini_chart_popup").hide();
+		$("#tooltip_popup").hide();
+	}
 
 	// Castro #1119: function called by two events, show_over_time click and graphDropDown change
 	function showHighChart()

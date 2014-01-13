@@ -1908,7 +1908,7 @@ label.dd-selected-text, label.dd-option-text{
 }*/
 
 #create_batch_save{
-    min-height: 400px;
+/*    min-height: 400px;*/
 }
 
 #create_batch_save #files p{
@@ -2042,7 +2042,7 @@ select#sites option{
 
 .batch_info ul li{
     display: inline;
-    padding-left: 100px;
+    padding-left: 50px;
 }
 .heading_text{
     margin:0px;
@@ -2747,4 +2747,42 @@ div#assess_graph.loading{
 .trendlines_container{
 	float:left;
 	width:650px;
+}
+#tooltip_popup{
+	width:860px;
+	height:200px;
+	background:white;
+	position:absolute;
+	border:solid 1px #2f7ed8;
+	padding:5px;
+	border-radius:5px;
+	z-index:1001;
+	margin-left:40px;
+	display:none;
+}
+#mini_chart_popup{
+	width:560px;
+	height:300px;
+	background:white;
+	position:absolute;
+	border:solid 1px #2f7ed8;
+	padding:5px;
+	border-radius:5px;
+	z-index:1000;
+	margin-left:200px;
+	display:none;
+}
+#mini_chart_container{
+	width:500px;
+	height:280px;
+	margin: 0 30px;
+}
+#tooltip_popup_container{
+	width:800px;
+	height:180px;
+	margin: 0 30px;
+}
+a#remove_mini_chart, a#remove_tooltip_popup{
+	color:black;
+	float:right;
 }

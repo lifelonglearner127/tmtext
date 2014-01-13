@@ -3,20 +3,16 @@
 <div class="modal-body" style="overflow: hidden !important;">
     <?php echo form_open("research/save", array("class" => "form-horizontal", "id" => "create_batch_save")); ?>
     <div id="batchesDiv">
-        <div class="span12 mb_10">
-            <div class="span11" style="width:100%;">
-                <div id="customer_dr" style="float: left;" class="customer_dropdown"></div>
+        <div class="span121 mb_10" style="margin-left:0px">
+            <div class="span11" style="width:100%;margin-left:0px">
+                <div id="customer_dr" style="float: left; font-size:14px;" class="customer_dropdown"></div>
                 <span  style="float: left;margin-top: 5px; font-size: 18px; margin-left: 60px;">New batch:</span> 
-                <input type="text"  style="width:270px;float: left;margin-left: 10px;" name="new_batch">
-                <button id="new_batch" class="btn" type="button" style="margin-left:5px;float: left;">Create</button>
+                <input type="text"  style="width:270px;float: left;margin-left: 10px;font-size:14px;" name="new_batch">
+                <button id="new_batch" class="btn" type="button" style="margin-left:5px;float: left;font-size:14px;">Create</button>
             </div>
         </div>
 
-        <div id ="tcrawl" class="row-fluid mt_20" style="display:none;">
-            Items will be added to a batch if you choose an existing batch.
-            <div class="span11 batch_info mt_10">
-            </div>
-        </div>
+
 
         <div class="row-fluid mt_10">
             <div class="admin_system_content" style='height: 40px;'>
@@ -46,11 +42,11 @@
                             },
                             done: function (e, data) {
                                 $('input[name="choosen_file"]').val(data.result.files[0].name);
-                                $.each(data.result.files, function (index, file) {
+//                                $.each(data.result.files, function (index, file) {
                                     /*if (file.error == undefined) {
                                      $('<p/>').text(file.name).appendTo('#files');
                                      }*/
-                                });
+//                                });
                                 $('#csv_import_create_batch').trigger('click');
                                 setTimeout(function(){
                                     //$('#progress .bar').css({'width':'0%'});
@@ -64,9 +60,9 @@
                                 'width',
                                 progress + '%'
                             );
-                                if (progress == 100) {
-
-                                }
+//                                if (progress == 100) {
+//
+//                                }
                             }
                         });
                     });
@@ -78,10 +74,10 @@
             <p style='padding-left: 310px;'>Text file containing one URL per line</p>
         </div>
         <div class='row-fluid'>
-            <span style="float: left; margin-top: 5px;margin-right: 5px;">Batch:</span>
+            <span style="float: left; margin-top: 5px;margin-right: 5px;font-size:14px;">Batch:</span>
                 <!-- <div id="customer_dr" style="float: left;" class="customer_dropdown"></div> -->
                 <?php if(strlen($batches_list[0]) == 0) $batches_list[0]="Select Batch"; ?>
-                <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:60px;float: left;"'); ?>
+                <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:60px;float: left;font-size:14px;"'); ?>
 
                 <script>
                     
@@ -125,16 +121,21 @@
                         return false;
                     }
                 </script>
-                <button class="btn btn-danger" type="button" style="margin-left: 20px;float: left;" onclick="doconfirm()">Delete</button>
-                <button class="btn ml_10" id="rename_batch" ><i class="icon-white icon-ok"></i>&nbsp;Rename ...</button>
+                <button class="btn btn-danger" type="button" style="margin-left: 20px;float: left;font-size:14px;" onclick="doconfirm()">Delete</button>
+                <button class="btn ml_10" id="rename_batch" style="font-size:14px;" ><i class="icon-white icon-ok"></i>&nbsp;Rename ...</button>
         </div>
-        <div style='margin-top: 5px;' class="info"></div>
+        <div style='margin-top: 5px;' class="info">
+			<div id ="tcrawl" class="row-fluid mt_20" >
+				Items will be added to a batch if you choose an existing batch.
+				<div class="span11 batch_info mt_10"></div>
+			</div>
+		</div>
         <div class="row-fluid mt_20">
             <!--textarea id="urls" class="span10" style="min-height: 111px"></textarea-->
-            <div class="search_area uneditable-input span9" onClick="this.contentEditable='true';" style="cursor: text; min-height: 111px; overflow : auto; float: left;" id="urls"></div>
-            <div class='span3' style='width: 150px;'>
-                <button class="btn ml_10" id="add_to_batch" ><i class="icon-white icon-ok"></i>&nbsp;Add to batch</button>
-                <button class="btn btn-danger ml_10 mt_10" id="delete_from_batch"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
+            <div class="search_area uneditable-input span9" onClick="this.contentEditable='true';" style="cursor: text; width:536px; min-height: 111px; overflow : auto; float: left;" id="urls"></div>
+            <div class='span3' style='width: 150px; margin-left:0px'>
+                <button class="btn ml_10" id="add_to_batch"  style="font-size:14px;"><i class="icon-white icon-ok"></i>&nbsp;Add to batch</button>
+                <button class="btn btn-danger ml_10 mt_10" id="delete_from_batch" style="font-size:14px;"><i class="icon-white icon-ok"></i>&nbsp;Delete</button>
             </div>
         </div>
         <div style='display: none' class="row-fluid mt_20">
@@ -193,7 +194,6 @@
                 
             });
         </script>
-
         <div id="rename_batch_dialog" title="Rename batch">
             <div>
                 <p>
