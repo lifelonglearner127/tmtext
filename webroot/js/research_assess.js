@@ -1188,26 +1188,10 @@ $(function() {
 								}
 								else
 								{
-									$('.highcharts-tooltip').first().css('visibility','visible');
-									$('div .highcharts-tooltip span').first().css('visibility','visible');
-									
-									if (cloneToolTip)
-									{
-										chart1.container.firstChild.removeChild(cloneToolTip);
-									}
-									if (cloneToolTip2)
-									{
-										cloneToolTip2.remove();
-									}
-									
-									cloneToolTip = this.series.chart.tooltip.label.element.cloneNode(true);
-									chart1.container.firstChild.appendChild(cloneToolTip);
-									
-									cloneToolTip2 = $('.highcharts-tooltip').clone(); 
-									$(chart1.container).append(cloneToolTip2);
-
-									$('.highcharts-tooltip').first().css('visibility','hidden');
-									$('div .highcharts-tooltip span').first().css('visibility','hidden');
+									$("#tooltip_popup_container").html($("div.highcharts-tooltip").html());
+									$("#tooltip_popup_container .highcharts-tooltip-close").remove();
+									$("#tooltip_popup_container span:first").css("position", "relative");
+									$("#tooltip_popup").show();
 								}
 							}
 						}
@@ -1244,11 +1228,15 @@ $(function() {
 	$('#remove_mini_chart').live('click',function(){
 		removeMiniChart();
 	});
+	$('#remove_tooltip_popup').live('click',function(){
+		removeMiniChart();
+	});
 	
 	// Castro function to remove minichart
 	function removeMiniChart()
 	{
 		$("#mini_chart_popup").hide();
+		$("#tooltip_popup").hide();
 	}
 
 	// Castro #1119: function called by two events, show_over_time click and graphDropDown change
