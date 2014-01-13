@@ -42,11 +42,11 @@
                             },
                             done: function (e, data) {
                                 $('input[name="choosen_file"]').val(data.result.files[0].name);
-                                $.each(data.result.files, function (index, file) {
-                                    /*if (file.error == undefined) {
-                                     $('<p/>').text(file.name).appendTo('#files');
-                                     }*/
-                                });
+//                                $.each(data.result.files, function (index, file) {
+//                                    /*if (file.error == undefined) {
+//                                     $('<p/>').text(file.name).appendTo('#files');
+//                                     }*/
+//                                });
                                 $('#csv_import_create_batch').trigger('click');
                                 setTimeout(function(){
                                     //$('#progress .bar').css({'width':'0%'});
@@ -60,9 +60,9 @@
                                 'width',
                                 progress + '%'
                             );
-                                if (progress == 100) {
-
-                                }
+//                                if (progress == 100) {
+//
+//                                }
                             }
                         });
                     });

@@ -953,8 +953,12 @@ jQuery(document).ready(function($) {
     $(document).on("click", ".jq-measure-tabs li a", function(e){
         e.preventDefault();
         var url = $(this).attr('href');
+//        console.log('url');
+//        console.log(url);
         var posting = $.post(url+"?ajax=true", function(data) {
             var response_data = $.parseJSON( data );
+//            console.log(response_data);
+//            console.log(response_data.ajax_data);
             $('.main_content_other').html(response_data.ajax_data);
             if($('.customer_dropdown').length > 0){
                 getCustomerDropdown();
