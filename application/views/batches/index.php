@@ -77,7 +77,7 @@
             <span style="float: left; margin-top: 5px;margin-right: 5px;font-size:14px;">Batch:</span>
                 <!-- <div id="customer_dr" style="float: left;" class="customer_dropdown"></div> -->
                 <?php if(strlen($batches_list[0]) == 0) $batches_list[0]="Select Batch"; ?>
-                <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:60px;float: left;font-size:14px;"'); ?>
+                <?php echo form_dropdown('batches', $batches_list, array(), ' style="width: 145px;margin-left:10px;float: left;font-size:14px;"'); ?>
 
                 <script>
                     
