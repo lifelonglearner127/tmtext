@@ -1189,6 +1189,7 @@ $(function() {
 										]);
 									}
 									
+									var chart_item_url = $("div.highcharts-tooltip a").eq(0).attr("href");
 									var chart_item_number = $("div.highcharts-tooltip small").eq(0).text();
 									var chart_item_name = $("div.highcharts-tooltip .item_name").eq(0).text();
 									var chart_unit_name = $("div.highcharts-tooltip .dot_data .units_name").text();
@@ -1199,7 +1200,8 @@ $(function() {
 											type: 'line'
 										},
 										title: {
-											text: chart_item_name
+											text: '<a target="_blank" href="' + chart_item_url + '" >' + chart_item_name + '</a>',
+											useHTML : true
 										},
 										subtitle: {
 											text: $("#graphDropDown option:selected").text()
