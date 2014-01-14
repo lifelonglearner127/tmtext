@@ -3354,15 +3354,15 @@ class Assess extends MY_Controller {
 							$skus_title_more_than_70_chars_competitor++;
 							$this->filterBySummaryCriteria('skus_title_more_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						}
-						if (isset($result_row->mvid)) {
+						if (isset($result_row->mvid) && $result_row->mvid > 0) {
 							$skus_with_manufacturer_videos++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						}
-						if (isset($result_row->mimg)) {
+						if (isset($result_row->mimg) && $result_row->mimg > 0) {
 							$skus_with_manufacturer_images++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						} 
-						if (isset($result_row->murl)) { 
+						if (isset($result_row->murl) && strlen($result_row->murl) > 0) { 
 							$skus_with_manufacturer_pages++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						}
@@ -3841,7 +3841,7 @@ class Assess extends MY_Controller {
 			if(strlen($mi['url']) > 0)
 			{	
 				$skus_with_manufacturer_pages++;
-				$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 			}
 			if($mi['images'] > 0)
 			{	
@@ -3851,7 +3851,7 @@ class Assess extends MY_Controller {
 			if($mi['videos'] > 0)
 			{	
 				$skus_with_manufacturer_videos++;
-				$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 			}	
 		}
             } else {
