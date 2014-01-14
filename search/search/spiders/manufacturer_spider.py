@@ -38,9 +38,19 @@ class ManufacturerSpider(SearchSpider):
 		self.sites_to_parse_methods = {"sony" : self.parseResults_sony, \
 										"samsung" : self.parseResults_samsung}
 
+		#TODO: close driver on spider close if set
+		self.driver = None
+
+
 	# pass to site-specific parseResults method
 	def parseResults(self, response):
 		target_site = response.meta['target_site']
+
+		# redo request but don't cache it
+		# if target_site == 'samsung':
+		# 	response.meta['_dont_cache'] = True
+#			return Request(response.url, callback=self.parseResults_samsung, meta=response.meta)
+
 		if target_site in self.sites_to_parse_methods:
 			return self.sites_to_parse_methods[target_site](response)
 
@@ -79,15 +89,30 @@ class ManufacturerSpider(SearchSpider):
 			# try to see if this is a results page then
 
 			# Content seems to be generated with javascript - open page with selenium, extract its content then return it back here
-			page_source = self.get_samsung_results(response.url)
-			hxs = HtmlXPathSelector(page_source)
-			#print "PAGE_SOURCE: ", page_source
+			# try to see if the page contains what we need, or we need to try it with selenium
 			results = hxs.select("//input[contains(@id,'detailpageurl')]/@value")
-			print 'RESULTS: ', results
+			if not results:
+				print 'NO RESULTS: ', response.url
+
+				#results = []
+
+				# COMMENTED FOR TESTING
+				# use selenium
+				request = self.get_samsung_results(response.url)
+				# get body of request
+				request_body = request.body
+				resp_for_scrapy = TextResponse('none',200,{},request_body,[],None)
+
+				hxs = HtmlXPathSelector(resp_for_scrapy)
+				#print "PAGE_SOURCE: ", page_source
+				results = hxs.select("//input[contains(@id,'detailpageurl')]/@value")
+			else:
+				print 'WE ALREADY HAD RESULTS! '
+				print 'RESULTS: ', results
+
 			
 			for result in results:
 				product_url = Utils.add_domain(result.extract().strip(), "http://www.samsung.com")
-				print "PRODUCT_URL: ", product_url, result.extract()
 				product_urls.add(product_url)
 			
 
@@ -102,6 +127,11 @@ class ManufacturerSpider(SearchSpider):
 
 		# if there were no results, the request will never get back to reduceResults
 		else:
+
+			# # we are finished and should close the driver
+			# if self.driver:
+			# 	self.driver.close()
+
 			response.meta['items'] = items
 			response.meta['parsed'] = True
 			response.meta['search_results'] = product_urls
@@ -111,15 +141,22 @@ class ManufacturerSpider(SearchSpider):
 
 	# use selenium to extract samsung results from results page - they are loaded dynamically in a frame, can't be done with scrapy alone
 	def get_samsung_results(self, url):
-		driver = webdriver.Firefox()
-		driver.get(url)
+
+		print 'USED SELENIUM FOR ', url
+
+		# initialize driver if it was not initialized
+		if not self.driver:
+			self.driver = webdriver.Firefox()
+
+		# use class variable driver, don't open a new one with each request
+		self.driver.get(url)
 
 		#time.sleep(5)
 
 		# check if this is a page with a results frame
-		if driver.find_elements_by_id("searchResult"):
+		if self.driver.find_elements_by_id("searchResult"):
 			# switch to results frame
-			driver.switch_to_frame("searchResult")
+			self.driver.switch_to_frame("searchResult")
 
 		# # click on first <h4>
 		# results = driver.find_elements_by_xpath("//h4/a")
@@ -127,17 +164,18 @@ class ManufacturerSpider(SearchSpider):
 		# results[0].click()
 
 		# convert html to "nice format"
-		text_html = driver.page_source.encode('utf-8')
+		text_html = self.driver.page_source.encode('utf-8')
 		#print "URL: ", url, " TEXT_HTML: ", text_html
 		html_str = str(text_html)
 
 		# this is a hack that initiates a "TextResponse" object (taken from the Scrapy module)
 		resp_for_scrapy = TextResponse('none',200,{},html_str,[],None)
 
-		driver.close()
-		#driver.stop()
-
-		return resp_for_scrapy
+		#self.driver.close()
+	
+		#return resp_for_scrapy
+		# try to return a request with the received url and the extracted page source in the hope it will get cached
+		return Request(url = url, body = html_str, callback = self.parseResults_samsung)
 		
 
 	# parse sony results page, extract info for all products returned by search (keep them in "meta")
@@ -214,6 +252,7 @@ class ManufacturerSpider(SearchSpider):
 
 		# extract product name, brand, model, etc; add to items
 		product_info = hxs.select("//ul[@class='product-info']")
+		#TODO: for some products name is not extracted correctly
 		product_name = product_info.select("meta[@itemprop='name']/@content")
 		if not product_name:
 			self.log("Error: No product name: " + str(response.url), level=log.INFO)
@@ -243,6 +282,10 @@ class ManufacturerSpider(SearchSpider):
 			return request
 		else:
 			# otherwise, we are done, send a the response back to reduceResults (no need to make a new request)
+
+			# # we are finished so we should also close the driver
+			# if self.driver:
+			# 	self.driver.close()
 
 			response.meta['parsed'] = True
 			response.meta['items'] = items

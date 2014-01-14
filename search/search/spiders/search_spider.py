@@ -420,7 +420,9 @@ class SearchSpider(BaseSpider):
 		# 	request.meta['origin_id'] = self.extract_walmart_id(response.url)
 
 		#self.target_site = product_brand_extracted
+		#TODO: should this be here??
 		target_site = product_brand_extracted
+
 		yield request
 
 
