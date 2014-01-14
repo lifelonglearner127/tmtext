@@ -2934,7 +2934,7 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" &';
 					$line .= 'Total matching URLs imported: ' . $ar[2] . '</p>';
 					$line .= '<p>'.'Uploaded filename: ' . $ar[0];
 					$line .= '<br>URLs not found in imported_data_parsed: ' . $ar[3];
-					$line .= '<br># Matches Updated: ' . $updated;
+					$line .= '<br># Matches Updated: ' . $ar[4];
 					$line .= '<br># Matches Unchanged: ' . $ar[5];
 					$json['manufacturer'] = TRUE;
 				} else {
