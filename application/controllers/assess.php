@@ -3838,7 +3838,18 @@ class Assess extends MY_Controller {
 			$result_row->murl = $mi['url'];
 			$result_row->mimg = $mi['images'];
 			$result_row->mvid = $mi['videos'];
-			$skus_with_manufacturer_videos++;
+			if(strlen($mi['url']) > 0)
+			{	
+				$skus_with_manufacturer_videos++;
+			}
+			if($mi['images'] > 0)
+			{	
+				$skus_with_manufacturer_images++;
+			}
+			if($mi['videos'] > 0)
+			{	
+				$skus_with_manufacturer_pages++;
+			}	
 		}
             } else {
                 $result_row->short_seo_phrases = $row->short_seo_phrases;
