@@ -37,6 +37,7 @@
 					<?php endif ?>
 				</span>
 				<button type="button" class="btn btn-primary summary_edit_btn" id="edit_summary" data-toggle="button">Edit</button>
+				<button id="research_assess_update2" class="btn btn-success">Update</button>
 			</h3>
 			<div style="clear: both;"></div>												
 			<div class="boxes_content resizable" style="padding:0px; height: 200px; overflow-y: scroll">	

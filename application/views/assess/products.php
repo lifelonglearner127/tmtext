@@ -741,5 +741,8 @@
 		},function(){
 			$('img',this).attr('src','<?= base_url('img/arrownew.png') ?>');
 		});
+		$('#research_assess_update2').click(function(){
+			$('#research_assess_update').click();
+		});
 	});          
  </script>

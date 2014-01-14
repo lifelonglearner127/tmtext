@@ -60,11 +60,11 @@ $(function() {
 	};
 	
 	$( document ).ajaxStart(function() {
-		$( '#research_assess_update' ).text( "Updating..." ).attr('disabled', 'disabled');
+		$( '#research_assess_update,#research_assess_update2' ).text( "Updating..." ).attr('disabled', 'disabled');
 	});
 	
 	$( document ).ajaxStop(function() {
-		$( '#research_assess_update' ).text( "Update" ).removeAttr('disabled');
+		$( '#research_assess_update,#research_assess_update2' ).text( "Update" ).removeAttr('disabled');
 	});
 	
     $.ajax({
@@ -702,6 +702,9 @@ $(function() {
 		
 		var show_trendlines = $("#show_over_time").is(":checked");
 		
+		var d = new Date();
+		var request_time = d.getTime(); 
+		
 		$.ajax({
 			type: "POST",
 			url: readGraphDataUrl,
@@ -710,7 +713,8 @@ $(function() {
 				batch_compare_id: batch2Value,
 				graphBuild: graphBuild,
 				halfResults:0,
-				includeTrendlines : show_trendlines
+				includeTrendlines : show_trendlines,
+				requestTime : request_time
 			},
 			error: function()
 			{
@@ -731,7 +735,8 @@ $(function() {
 					batch_compare_id: batch2Value,
 					graphBuild: graphBuild,
 					halfResults:1,
-					includeTrendlines : show_trendlines
+					includeTrendlines : show_trendlines,
+					requestTime : request_time
 				},
 				error: function()
 				{

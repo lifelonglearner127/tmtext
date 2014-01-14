@@ -3226,7 +3226,14 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             $this -> temp_data_model -> createNonFoundTable();
             $this -> temp_data_model -> cUpdDataTable();
             $this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);
-//            $this -> settings_model -> update_value($this->current_user->id, 'thread_pid', $new_child_pid);
+            if($this -> settings_model -> get_value(-1, 'thread_pid'))
+            {
+                $this -> settings_model -> update_value(-1, 'thread_pid', $new_child_pid);
+            }
+            else
+            {
+                $this -> settings_model -> create(-1,'thread_pid', $new_child_pid, $description = 'PID by upload match ');
+            }
             while ($line = fgets($fileHandler)) {
                     ++$linesTotal;
                     $res = '';
@@ -3269,6 +3276,11 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                     }
             }
             fclose($fileHandler);
+            while(!$this->_is_all_processes_stopped())
+            {
+                // worker is working - we waiting
+                sleep(1);
+            }
             $start_run2 = microtime(true);        
             $exec_time = $start_run2 - $start_run;
             log_message('ERROR', "{$exec_time} sec - {$linesAdded} lines Phase 2");  
@@ -3279,7 +3291,8 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             $notFoundUrls = $this->temp_data_model->getTableSize('notfoundurls');
             $itemsUpdated = $this->temp_data_model->getTableSize('updated_items');
             $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
-            $this->settings_model->updateMatchingUrls($process, $val);
+            $this -> settings_model -> updateMatchingUrls($process, $val);
+            $this -> settings_model -> update_value(-1, 'thread_pid', 0);
         }
 
         function match_urls_thread_worker( $process, $urls_in_1, $urls_in_2 ) 
@@ -3365,7 +3378,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
         
         function _run_in_background($Command)
         {
-            $PID = shell_exec("$Command > /dev/null 2> /dev/null & echo $!");
+            $PID = shell_exec("nohup $Command > /dev/null 2> /dev/null & echo $!");
             return($PID);
         }
        
@@ -3382,6 +3395,17 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                 if(!isset($this->threads[$i]) || (isset($this->threads[$i]) && !$this->_is_process_running($this->threads[$i])))
                 {
 //                    $this->threads[$i] = 0;
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        function _is_all_processes_stopped()
+        {
+            for($i=0; $i<$this->maxthreads;$i++) {
+                if(isset($this->threads[$i]) && $this->_is_process_running($this->threads[$i]))
+                {
                     return false;
                 }
             }
