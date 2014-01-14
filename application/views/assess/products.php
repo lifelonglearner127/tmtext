@@ -159,11 +159,13 @@
                 </div>
 
             <div style="clear:both;"></div>
-            <div style="float: left;margin-top: 10px;" class="generate_url">
+            <div title="Share Link" style="display:none;" class="generate_url" id="share_link_wrapper">
                 <button id="generate_url">Share Link</button>
                 <input id="generate_url_link" style="margin-bottom:0;" type="text" >
+		<br>
                 <input type="checkbox" style="margin: 10px;" id="generate_url_check" checked="checked">Make results columns configurable
-                <input type="checkbox" style="margin: 10px;" id="generate_url_Summary">Only share summary data
+                <br>
+		<input type="checkbox" style="margin: 10px;" id="generate_url_Summary">Only share summary data
             </div>
         </div>
     </li>
@@ -743,6 +745,11 @@
 		});
 		$('#research_assess_update2').click(function(){
 			$('#research_assess_update').click();
+		});
+		$('#research_batches_columns_export').click(function(e) {
+			e.preventDefault();
+			$('#share_link_wrapper').dialog({width:350,resizable: false,modal : true});
+			$('.ui-dialog-titlebar-close').html('<span style="margin-top:-5px;">x</span>');
 		});
 	});          
  </script>

@@ -104,7 +104,7 @@ return array(
 			'sName' => 'title_seo_phrases',                
 			'sClass' => 'title_seo_phrases',
 			'moreHtml' => '<input id="tk-denisty" type="radio" name="title_keywords" value="density" /><label for="tk-denisty">Density</label>
-								<input id="tk-frequency" type="radio" name="title_keywords" value="Frequency" checked /><label for="tk-frequency">Frequency</label>'
+								<input id="tk-frequency" type="radio" name="title_keywords" value="Frequency" checked="checked" /><label for="tk-frequency">Frequency</label>'
 		),
 		array(
 			'sTitle' => 'Images',

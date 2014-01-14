@@ -5232,7 +5232,7 @@ class Assess extends MY_Controller {
 					{
 						if(isset($current_trendline_data[$ordered_trendline_date]))
 						{
-							$ordered_trendline_data[$ordered_trendline_date] = $current_trendline_data[$ordered_trendline_date];
+							$ordered_trendline_data[$ordered_trendline_date] = (int) $current_trendline_data[$ordered_trendline_date];
 						}
 						else
 						{
