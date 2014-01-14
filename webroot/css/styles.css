@@ -832,10 +832,22 @@ a.jq-assess {
 .summary_search_field{
 	width: 220px;
 }
-a.show_filters_configuration_popup:hover,#research_batches_columns_export:hover{
-	background:#aaa;
+a.show_filters_configuration_popup,#research_batches_columns{
 	border-radius:4px;
 	margin-top:0;
-	padding:4px;
-	height:35px
+	padding:0;
+	height:33px;
+	position: relative;
+	top: 3px;
+}
+a#research_batches_columns_export{
+	height: 32px;
+	border-radius: 4px;
+	font-size: 32px;
+	position: relative;
+	top: 3px;
+	padding: 0px 0px 2px 0;	
+}
+a#research_batches_columns_export:hover,a.show_filters_configuration_popup:hover,#research_batches_columns:hover{
+	background: #aaa;
 }
