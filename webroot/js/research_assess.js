@@ -61,12 +61,17 @@ $(function() {
 	
 	$( document ).ajaxStart(function() {
 		$( '#research_assess_update,#research_assess_update2' ).text( "Updating..." ).attr('disabled', 'disabled');
-		$('.item_line').addClass('disabled_filter');
+		
+		$('.item_line').removeClass('ui-selected');
+		summaryInfoSelectedElements = [];
+		
+		$('.selectable_summary_info').selectable('disable');
 	});
 	
 	$( document ).ajaxStop(function() {
 		$( '#research_assess_update,#research_assess_update2' ).text( "Update" ).removeAttr('disabled');
-		$('.item_line').removeClass('disabled_filter');
+		
+		$('.selectable_summary_info').selectable('enable');			
 	});
 	
     $.ajax({
@@ -433,14 +438,18 @@ $(function() {
 		  , research_batch_competitor = $('#research_assess_compare_batches_batch')
           , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				  
 		  , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null;	
-		  
+		
+		//cleaning filters between local storage batches (look below)
+		lastest_comparison_id = current_comparison_id;
+		current_comparison_id = storage_key;			
+		
 		$('.assess_report_download_panel').hide();
-        $("#tblAssess tbody tr").remove();
-					
+        $("#tblAssess tbody tr").remove();			
+		
 		if (!json_data)
 		{																
-			var aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);	
-				
+			var aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);						
+			
 			$.getJSON(readAssessUrl, aoData, function(json) {
 				$('.tbl_arrows_and_gear_wrapper #research_batches_columns').css({opacity:1,cursor:'pointer'});
 				if(!json)
@@ -456,6 +465,13 @@ $(function() {
 			//rebuilding dataTable results according to the selected filters
 			if (summaryInfoSelectedElements.length) {				
 				filterItems(json_data);				
+			}
+			
+			//cleaning filters between local storage batches
+			if (current_comparison_id != lastest_comparison_id)
+			{
+				$('.item_line').removeClass('ui-selected');
+				summaryInfoSelectedElements = [];
 			}
 			
 			tblAssess = reInitializeTblAssess(json_data, false, true); 								
@@ -516,7 +532,7 @@ $(function() {
 					buildReport(json_data);							
 				
 				if (needToBeReloaded)				
-					pullRestItems();				
+					pullRestItems();			
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
 				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
