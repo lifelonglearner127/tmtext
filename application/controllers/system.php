@@ -2912,7 +2912,7 @@ class System extends MY_Controller {
             
             $command = 'cd ' . FCPATH . ' 
 nohup php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/null &';
-            shell_exec($command);
+            echo shell_exec($command);
         }
         
 
