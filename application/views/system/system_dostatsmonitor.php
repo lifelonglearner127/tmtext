@@ -194,6 +194,8 @@
     
     function startDoStats(force){
             var url = '<?php echo site_url('crons/do_stats_forupdated'); ?>';
+            $('#start_do_stats').addClass('disabled');
+            $('#do_stats_batch').addClass('disabled');
 	    if(typeof(force) !== 'undefined') url += '/'+force;
 	    $('#current_status span').text('Starting...');    
             $.ajax({
@@ -210,10 +212,12 @@
 	    if(type == 'start')
 	    {	    
 	      $('#start_do_stats').removeClass('disabled');
+	      $('#do_stats_batch').removeClass('disabled');
 	      $('#stop_do_stats').addClass('disabled');
 	    } else if(type == 'stop')
 	    {
 	      $('#start_do_stats').addClass('disabled');
+	      $('#do_stats_batch').addClass('disabled');
 	      $('#stop_do_stats').removeClass('disabled');    
 	    }    
     }
@@ -262,14 +266,19 @@
     }
     function getBatchData(batch){
         var url = '<?php echo site_url('system/get_size_of_batch'); ?>';
-        $.ajax({
-            url:url,
-            type: 'POST',
-            data:{batch_id:batch},
-            success:function(info){
-                $('#size_of_batch').text(info+' items ');
-            }
-        });
+        if(batch==0){
+            $('#size_of_batch').text(' There is no selected batches. ');
+        }
+        else{
+            $.ajax({
+                url:url,
+                type: 'POST',
+                data:{batch_id:batch},
+                success:function(info){
+                    $('#size_of_batch').text(info+' items ');
+                }
+            });
+        }
     }
     function delete_selected_batch(batch){
         var url = '<?php echo site_url('crons/delete_batch_items_from_statistics_new/'); ?>'+'/'+batch;
@@ -302,6 +311,8 @@
     });
     $('#do_stats_batch').click(function(){
         var batch = $('#delelte_selected_batch').find('option:selected').val();
+            $('#start_do_stats').addClass('disabled');
+            $('#do_stats_batch').addClass('disabled');
         if(batch==0||batch=='undefined'){
             alert('Select existing batch.');
         }

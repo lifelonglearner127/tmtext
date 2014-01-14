@@ -5,7 +5,22 @@ if (!defined('BASEPATH'))
 
 class Crons extends MY_Controller
 {
-
+    /**
+     * Max count by maxthreads
+     *
+     * @var int
+     * @access private
+     */
+    private $maxthreads;
+    
+    /**
+     * Array hreads
+     *
+     * @var array
+     * @access private
+     */
+    private $threads = array();
+        
 	function __construct()
 	{
 		parent::__construct();
@@ -26,6 +41,7 @@ class Crons extends MY_Controller
 		    'save_departments_categories' => TRUE,
 		    'match_urls' => TRUE,
 		    'match_urls_thread' => TRUE,
+		    'match_urls_thread_worker' => TRUE,
 		    'stop_do_stats' => true,
 		    'get_stats_status' => true,
 		    'stop_do_stats' => true,
@@ -3154,16 +3170,15 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             $child_pid = pcntl_fork();
             if ($child_pid) {
                 // Parent process
-                log_message('ERROR', 'Parent PID = ' . $child_pid);            
                 exit();
             }
             // Set basic for child child process
             $new_child_pid = posix_setsid();
-            // @TODO $new_child_pid - will need to stop the process by clicking "Stop"
-            log_message('ERROR', 'Child PID = ' . $new_child_pid);            
-            
+
+            $this->maxthreads = 10;
+            $parent_sleep = 0;
             $start_run = microtime(true);        
-            log_message('ERROR', 'New Start ' .  $choosen_file);
+            log_message('ERROR', 'New Start ' .  $choosen_file . ' with threads=' . $this->maxthreads);
             if(!$choosen_file)
             {
                 if(defined('CMD') && CMD )
@@ -3183,7 +3198,6 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             // reopen DB in child process
             $this->db->close();
             $this->db->initialize(); 
-            log_message('ERROR', 'Reopen DB ' .  $choosen_file);
                     
             $this -> temp_data_model -> emptyTable('notfoundurls');
             $this -> temp_data_model -> emptyTable('urlstomatch');
@@ -3212,23 +3226,80 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             $this -> temp_data_model -> createNonFoundTable();
             $this -> temp_data_model -> cUpdDataTable();
             $this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);
+//            $this -> settings_model -> update_value($this->current_user->id, 'thread_pid', $new_child_pid);
             while ($line = fgets($fileHandler)) {
                     ++$linesTotal;
                     $res = '';
                     $urls = explode(',', trim(trim($line), ','));
                     if (count($urls) == 2) {
-                            ++$linesAdded;
+                        ++$linesAdded;
+                        ++$linesScaned;
+
+                        
+                        for($i=0; $i<$this->maxthreads;$i++) {
+                            if(!isset($this->threads[$i]) || (isset($this->threads[$i]) && !$this->_is_process_running($this->threads[$i])))
+                            {
+                                // start new worker
+                                $this->threads[$i] = $this->_run_in_background("php cli.php crons match_urls_thread_worker \"$process\" " . urlencode($urls[0]) ." " . urlencode($urls[1]) . " ");
+                                break;
+                            }
+                        }
+                        while($this->_is_all_processes_running())
+                        {
+                            // all worker is working - we waiting
+                            ++$parent_sleep;
+                            sleep(1);
+                        }
+
+                    $atuc = 0;  // normal processed - not return from workers
+//                    if ($atuc < 0) {
+//                        log_message('ERROR','incorrect ATUC');
+//                        exit();
+//                    }
+                    $itemsUnchanged += $atuc;
+                    $timing = microtime(true) - $start;
                             
-                            // add to queue @TODO
-//                            $this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
-                    $urls['url1']=$urls[0];
-                    $urls['url2']=$urls[1];
+                    if ($timing - $old_timing > 5 ) // set the update interval information for frontend
+                    {
+                            $lts = $linesScaned;
+                            $itemsUpdated = $this->temp_data_model->getTableSize('updated_items');
+                            $this->settings_model->procUpdMatchingUrls($process, $lts, $itemsUnchanged);
+                            $old_timing = $timing;
+                    }                            
+                    }
+            }
+            fclose($fileHandler);
+            $start_run2 = microtime(true);        
+            $exec_time = $start_run2 - $start_run;
+            log_message('ERROR', "{$exec_time} sec - {$linesAdded} lines Phase 2");  
+            log_message('ERROR', 'End all sec: ' . ($start_run2 - $start_run));
+            log_message('ERROR', 'memory usage (peak) : (' . memory_get_peak_usage(). ')' . memory_get_usage()) ;
+            log_message('ERROR', ' threads='. count($this->threads));
+            log_message('ERROR', ' parent waited='. $parent_sleep);
+            $notFoundUrls = $this->temp_data_model->getTableSize('notfoundurls');
+            $itemsUpdated = $this->temp_data_model->getTableSize('updated_items');
+            $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
+            $this->settings_model->updateMatchingUrls($process, $val);
+        }
 
-                    // ===== not changed logic
-
+        function match_urls_thread_worker( $process, $urls_in_1, $urls_in_2 ) 
+        {
+            
+            $urls['url1'] = urldecode($urls_in_1);
+            $urls['url2'] = urldecode($urls_in_2);
+            $notFoundUrls = 0;
+            $itemsUpdated = 0;
+//            $this -> load -> model('settings_model');
+            $this -> load -> model('imported_data_parsed_model');
+            $this -> load -> model('temp_data_model');
+            // reopen DB in child process
+            $this->db->close();
+            $this->db->initialize(); 
+            
+            // ===== not changed logic
+            
                     $atuc = 2;
                     $nfurls = 0;
-                    ++$linesScaned;
                     //$ms = microtime(TRUE);
                     $url1 = $this -> imported_data_parsed_model -> getModelByUrl($urls['url1']);
                     $url2 = $this -> imported_data_parsed_model -> getModelByUrl($urls['url2']);
@@ -3241,100 +3312,80 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                             $this -> temp_data_model -> addUrlToNonFound($urls['url1'], $process);
                             $atuc -= 1;
                             //$notFoundUrlsArr[]=$urls[0];
-                    } else {
+                    }/* else {
                             $tm = false;
                             if ($url1['ph_attr']) {
                                     $tm = unserialize($url1['ph_attr']);
                             }
-                            $model1 = isset($tm['model']) && strlen($tm['model']) > 3 ? $tm['model'] : FALSE;
-                    }
+                            $model1 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : FALSE;
+                    }//*/
                     if ($url2 === FALSE) {
                             ++$nfurls;
                             $this -> temp_data_model -> addUrlToNonFound($urls['url2'], $process);
                             $atuc -= 1;
                             //$notFoundUrlsArr[]=$urls[1];
-                    } else {
+                    } /*else {
                             $tm = false;
                             if ($url2['ph_attr']) {
                                     $tm = unserialize($url2['ph_attr']);
-                                    
                             }
                             $model2 = isset($tm['model']) && strlen($tm['model']) > 3 ? $tm['model'] : false;
-                    }
+                    }//*/
                     if ($nfurls > 0) {
                             $notFoundUrls += $nfurls;
                     } else {
                             $this -> imported_data_parsed_model -> addItem($url1['data_id'], $url2['data_id']);
-                            if ($model1) {
-                                    if ($model2 && $model1 != $model2) {
-                                            if (!($url2['model'] && strlen($url2['model']) > 3) || ($url2['model'] != $model1)) {
-                                                    $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model1);
-                                                    $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
-                                                    ++$itemsUpdated;
-                                                    $atuc -= 1;
-                                            }
-                                    } elseif (!$model2 && (!($url2['model'] && strlen($url2['model']) > 3) || $model1 != $url2['model'])) {
-                                            $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model1);
-                                            $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
-                                            ++$itemsUpdated;
-                                            $atuc -= 1;
-                                    }
-                            } elseif ($model2) {
-                                    if (!($url1['model'] && strlen($url1['model']) > 3) || $model2 != $url1['model']) {
-                                            $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model2);
-                                            $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model2, $url2['rev'] + 1, $url2['data_id']);
-                                            ++$itemsUpdated;
-                                            $atuc -= 1;
-                                    }
-                            } elseif (($url1['model'] && strlen($url1['model']) > 3)) {
-                                    if (!($url2['model'] && strlen($url2['model']) > 3) || ($url1['model'] != $url2['model'])) {
-                                            $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $url1['model']);
-                                            $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
-                                            ++$itemsUpdated;
-                                            $atuc -= 1;
-                                    }
-                            } elseif (($url2['model'] && strlen($url2['model']) > 3)) {
-                                    $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $url2['model']);
-                                    $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
-                                    ++$itemsUpdated;
-                                    $atuc -= 1;
-                            } else {
-                                    $model = time();
-                                    $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model);
-                                    $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model);
-                                    $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
-                                    $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
-                                    $itemsUpdated += 2;
-                                    $atuc -= 1;
+                            if(($url1['model'] && strlen($url1['model']) > 3)
+                                    && $url1['model'] !== $url2['model']){
+                                $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $url1['model']);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
+                                ++$itemsUpdated;
+                                $atuc -= 1;
+                            }
+                            elseif(($url2['model'] && strlen($url2['model']) > 3)
+                                    && $url2['model'] !== $url1['model']){
+                                $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $url2['model']);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
+                                ++$itemsUpdated;
+                                $atuc -= 1;
+                            }
+                            else{
+                                $model = time();
+                                $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model);
+                                $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
+                                $itemsUpdated += 2;
+                                $atuc -= 1;
                             }
                     }
-                    if ($atuc < 0) {exit('incrorrect ATUC');
-                    }
-                    $itemsUnchanged += $atuc;
-                    $timing = microtime(true) - $start;
-                            
-                    // ===== not changed logic 
-                    if ($timing - $old_timing > 5 ) // set the update interval information
-                    {
-                            $lts = $this->temp_data_model->getTableSize('urlstomatch');
-                            $this->settings_model->procUpdMatchingUrls($process, $lts, $itemsUnchanged);
-                            $old_timing = $timing;
-                    }                            
-                    }
+                // ===== not changed logic
+//            return $atuc;
+        }
+        
+        function _run_in_background($Command)
+        {
+            $PID = shell_exec("$Command > /dev/null 2> /dev/null & echo $!");
+            return($PID);
+        }
+       
+        function _is_process_running($PID)
+        {
+            $ProcessState = '';
+            exec("ps $PID", $ProcessState);
+            return(count($ProcessState) >= 2);
+        }
+        
+        function _is_all_processes_running()
+        {
+            for($i=0; $i<$this->maxthreads;$i++) {
+                if(!isset($this->threads[$i]) || (isset($this->threads[$i]) && !$this->_is_process_running($this->threads[$i])))
+                {
+//                    $this->threads[$i] = 0;
+                    return false;
+                }
             }
-            fclose($fileHandler);
-            $start_run2 = microtime(true);        
-            $exec_time = $start_run2 - $start_run;
-            log_message('ERROR', "{$exec_time} sec - {$linesAdded} lines Phase 2");  
-            log_message('ERROR', 'End all sec: ' . ($start_run2 - $start_run));
-            log_message('ERROR', 'memory usage (peak) : (' . memory_get_peak_usage(). ')' . memory_get_usage()) ;
-            $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
-            $this->settings_model->updateMatchingUrls($process, $val);
-            echo "Total lines: " . $linesTotal . "<br/>";
-            echo "Lines scaned" . $linesScaned . "<br/>";
-            echo "Added lines: " . $linesAdded . "<br/>";
-            echo "Non existing urls found: " . $notFoundUrls . "<br>";
-            echo "Items updated: " . $itemsUpdated . "<br>";            
+            return true;
         }
         
 //	function match_urls_thread()

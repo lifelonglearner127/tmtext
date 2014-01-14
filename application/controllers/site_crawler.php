@@ -190,16 +190,16 @@ class Site_Crawler extends MY_Controller {
 		} else {
 			$urls = $this -> crawler_list_model -> getAllLimit($config["per_page"], $page, false, $search_crawl_data, $this -> input -> get('status_radio'));
 		}
-                
+
                 if($search_crawl_data != '' && $this -> input -> get('batch_id') != 0){
-                    
+
                     $check = 0;
                     foreach ($urls as $key => $value) {
                         if($value->url != $search_crawl_data){
                             unset($urls[$key]);
                         }
                         else{
-                            $check = 1; 
+                            $check = 1;
                         }
                         if($check == 1){
                             $total = $this -> crawler_list_model -> countAll(false, $search_crawl_data, $this -> input -> get('failed'));
@@ -219,7 +219,7 @@ class Site_Crawler extends MY_Controller {
                         }
                         $config = array('base_url' => site_url('site_crawler/all_urls'), 'total_rows' => $total, 'per_page' => 10, 'uri_segment' => 3);
                         $this -> pagination -> initialize($config);
-                        $page = ($this -> uri -> segment(3)) ? $this -> uri -> segment(3) : 0;               
+                        $page = ($this -> uri -> segment(3)) ? $this -> uri -> segment(3) : 0;
                     }
                 }
 
@@ -406,6 +406,19 @@ class Site_Crawler extends MY_Controller {
 			foreach ($rows as $data) {
 				if ($page_data = $this -> pageprocessor -> get_data($data -> url)) {
 					$page_data['URL'] = $data -> url;
+
+					// find if page not found or other messages
+					$next_row = false;
+					foreach ($page_data as $k => $v) {
+						if (($k == 'HTags') && preg_match('/.*product\snot\sfound.*/i', $v)) {
+							$this -> crawler_list_model -> updateStatus($data -> id, 'not_found');
+							$next_row = true;
+						}
+					}
+					if ($next_row) {
+						continue;
+					}
+
 					// save data
 					$page_data_without_price = $page_data;
 					if (isset($page_data_without_price['Price'])) {

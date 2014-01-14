@@ -1587,6 +1587,7 @@ $(function() {
     }   	   	
 		
 	function onDenisty(){
+	
 		var tkstatus = $.cookie('tkstatus');
 		if(typeof(tkstatus)!=='undefined'){
 			$.removeCookie('tkstatus');
@@ -1598,10 +1599,9 @@ $(function() {
 		}
 		 $('.phr-frequency').hide();
 		 $('.phr-density').show();
+		 
 	}
-	$(document).on('click','#tk-denisty',function(){
-		onDenisty();
-	 });
+	
 	function onFrequency(){
 		var tkstatus = $.cookie('tkstatus');
 		if(typeof(tkstatus)!=='undefined'){
@@ -1615,9 +1615,15 @@ $(function() {
 		$('.phr-density').hide();
 		$('.phr-frequency').show();
 	}
+	
+	$(document).on('click','#tk-denisty',function(){
+		onDenisty();
+	});	
+	
 	$(document).on('click','#tk-frequency',function(){
 		onFrequency();
 	});
+	
 	function setStatusFromCookie(){
 		var tkstatus = $.cookie('tkstatus');		
 		if(typeof(tkstatus)!=='undefined'){
@@ -3098,8 +3104,8 @@ function prevSibilfunc(curentSibil){
 	}	
 
   
-	  $('#tk-frequency').on('click', function() {
-	    var $target = $('input#column_title_seo_phrases');
+	$('#tk-frequency').on('click', function() {
+		var $target = $('input#column_title_seo_phrases');
 		newData = "column_title_seo_phrases_f";
 		
 		$target.removeAttr('id').attr({ 'id': newData });
@@ -3107,16 +3113,17 @@ function prevSibilfunc(curentSibil){
 		$target.removeAttr('data-col_name').attr({ 'data-col_name': 'title_seo_phrases_f' });
 		$target.click();
 		$target.click();
-		});
-		$('#tk-denisty').on('click', function() {
+	});
+	$('#tk-denisty').on('click', function() {
 		var $target = $('input#column_title_seo_phrases_f');
 		newData = "column_title_seo_phrases";
+		
 		$target.removeAttr('id').attr({ 'id': newData });
 		$target.removeAttr('name').attr({ 'name': newData });
 		$target.removeAttr('data-col_name').attr({ 'data-col_name': 'title_seo_phrases' });
 		$target.click();
 		$target.click();
-		});
+	});
 		
 		$('*[id*=mytext]:visible').each(function() {
 		$(this).doStuff();
