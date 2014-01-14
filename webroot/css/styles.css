@@ -792,7 +792,8 @@ a.jq-assess {
 
 .summary_edit_btn {
 	float: right;
-	margin: 4px 12px;
+	margin: 4px 12px 0 4px;
+	width: 83px;
 }
 
 .selectable_summary_handle, .selectable_summary_handle_with_competitor {
@@ -887,4 +888,8 @@ ul.research_table_filter .hideShow{
 a#research_batches_columns_export:hover,a.show_filters_configuration_popup:hover,
 #research_batches_columns:hover{
 	background: #aaa;
+}
+#research_assess_update2{
+	float:right;
+	margin-top:4px;
 }

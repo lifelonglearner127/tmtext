@@ -60,11 +60,11 @@ $(function() {
 	};
 	
 	$( document ).ajaxStart(function() {
-		$( '#research_assess_update' ).text( "Updating..." ).attr('disabled', 'disabled');
+		$( '#research_assess_update,#research_assess_update2' ).text( "Updating..." ).attr('disabled', 'disabled');
 	});
 	
 	$( document ).ajaxStop(function() {
-		$( '#research_assess_update' ).text( "Update" ).removeAttr('disabled');
+		$( '#research_assess_update,#research_assess_update2' ).text( "Update" ).removeAttr('disabled');
 	});
 	
     $.ajax({
