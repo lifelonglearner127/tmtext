@@ -480,7 +480,7 @@ class Statistics_new_model extends CI_Model {
 			$sql.=' FROM `' . $table_to_search . '` as idpa';
 			$sql.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key` = '".$key."'";
 			$sql.=" WHERE idpa1.`key` = '".$key."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
-			$sql.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 10) DESC LIMIT 10';
+			$sql.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 10) DESC LIMIT 15';
 
 			$query = $this->db->query($sql);
 			$temp_result = $query->result();
@@ -496,7 +496,7 @@ class Statistics_new_model extends CI_Model {
 				$sql_key.=' FROM `' . $table_to_search . '` as idpa';
 				$sql_key.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key` = '".$key1."'";
 				$sql_key.=" WHERE idpa1.`key` = '".$key1."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
-				$sql_key.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 10) DESC LIMIT 10';
+				$sql_key.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 15) DESC LIMIT 10';
 				
 				$query_key = $this->db->query($sql_key);
 				$temp_result_key = $query_key->result();
