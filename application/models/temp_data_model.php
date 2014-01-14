@@ -7,7 +7,28 @@ class Temp_data_model extends CI_Model {
     {
         parent::__construct();
     }
-    public function createMatchUrlsTable(){
+    // public function createManufacturerMatchUrlsTable(){
+    //     $sql = "CREATE TABLE IF NOT EXISTS `urlstomatch` (
+    //         id INT NOT NULL AUTO_INCREMENT,
+    //         url1 VARCHAR(5000),
+    //         url2 VARCHAR(5000),
+    //         images VARCHAR(5000),
+    //         videos VARCHAR(5000),
+    //         PRIMARY KEY (id)
+    //         )";
+    //     $this->db->query($sql);
+    // }
+    // public function createMatchUrlsTable(){
+    //     $sql = "CREATE TABLE IF NOT EXISTS `urlstomatch` (
+    //         id INT NOT NULL AUTO_INCREMENT,
+    //         url1 VARCHAR(5000),
+    //         url2 VARCHAR(5000),
+    //         PRIMARY KEY (id)
+    //         )";
+    //     $this->db->query($sql);
+    // }
+
+    public function createMatchUrlsTable($manu_file_upload_opts = false) {
         $sql = "CREATE TABLE IF NOT EXISTS `urlstomatch` (
             id INT NOT NULL AUTO_INCREMENT,
             url1 VARCHAR(5000),
@@ -16,6 +37,7 @@ class Temp_data_model extends CI_Model {
             )";
         $this->db->query($sql);
     }
+
     public function dropTable($table){
         $sql = "DROP TABLE IF EXISTS `$table`";
         $this->db->query($sql);

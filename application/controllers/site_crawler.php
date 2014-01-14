@@ -166,14 +166,14 @@ class Site_Crawler extends MY_Controller {
 		}
 
 		if ($this -> input -> get('batch_id') != 0) {
-			$total = $this -> crawler_list_model -> countByBatch($this -> input -> get('batch_id'), $this -> input -> get('failed'));
+			$total = $this -> crawler_list_model -> countByBatch($this -> input -> get('batch_id'), $this -> input -> get('status_radio'));
 			$total_finished = $this -> crawler_list_model -> countByBatchWithStatus($this -> input -> get('batch_id'), 'finished');
 			$total_failed = $this -> crawler_list_model -> countByBatchWithStatus($this -> input -> get('batch_id'), 'failed');
 			$total_lock = $this -> crawler_list_model -> countByBatchWithStatus($this -> input -> get('batch_id'), 'lock');
 			$total_queued = $this -> crawler_list_model -> countByBatchWithStatus($this -> input -> get('batch_id'), 'queued');
 			$total_new = $this -> crawler_list_model -> countByBatchWithStatus($this -> input -> get('batch_id'), 'new');
 		} else {
-			$total = $this -> crawler_list_model -> countAll(false, $search_crawl_data, $this -> input -> get('failed'));
+			$total = $this -> crawler_list_model -> countAll(false, $search_crawl_data, $this -> input -> get('status_radio'));
 			$total_finished = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'finished');
 			$total_failed = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'failed');
 			$total_lock = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'lock');
@@ -186,10 +186,42 @@ class Site_Crawler extends MY_Controller {
 		$page = ($this -> uri -> segment(3)) ? $this -> uri -> segment(3) : 0;
 
 		if ($this -> input -> get('batch_id') != 0) {
-			$urls = $this -> crawler_list_model -> getByBatchLimit($config["per_page"], $page, $this -> input -> get('batch_id'), $this -> input -> get('failed'));
+			$urls = $this -> crawler_list_model -> getByBatchLimit($config["per_page"], $page, $this -> input -> get('batch_id'), $this -> input -> get('status_radio'));
 		} else {
-			$urls = $this -> crawler_list_model -> getAllLimit($config["per_page"], $page, false, $search_crawl_data, $this -> input -> get('failed'));
+			$urls = $this -> crawler_list_model -> getAllLimit($config["per_page"], $page, false, $search_crawl_data, $this -> input -> get('status_radio'));
 		}
+
+                if($search_crawl_data != '' && $this -> input -> get('batch_id') != 0){
+
+                    $check = 0;
+                    foreach ($urls as $key => $value) {
+                        if($value->url != $search_crawl_data){
+                            unset($urls[$key]);
+                        }
+                        else{
+                            $check = 1;
+                        }
+                        if($check == 1){
+                            $total = $this -> crawler_list_model -> countAll(false, $search_crawl_data, $this -> input -> get('failed'));
+                            $total_finished = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'finished');
+                            $total_failed = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'failed');
+                            $total_lock = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'lock');
+                            $total_queued = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'queued');
+                            $total_new = $this -> crawler_list_model -> countAllWithStatus(false, $search_crawl_data, 'new');
+                        }
+                        else{
+                            $total = 0;
+                            $total_finished = 0;
+                            $total_failed = 0;
+                            $total_lock = 0;
+                            $total_queued = 0;
+                            $total_new = 0;
+                        }
+                        $config = array('base_url' => site_url('site_crawler/all_urls'), 'total_rows' => $total, 'per_page' => 10, 'uri_segment' => 3);
+                        $this -> pagination -> initialize($config);
+                        $page = ($this -> uri -> segment(3)) ? $this -> uri -> segment(3) : 0;
+                    }
+                }
 
 		// === screenshots alive scanner (start)
 		$re_query_data = false;
@@ -216,9 +248,9 @@ class Site_Crawler extends MY_Controller {
 		}
 		if ($re_query_data) {
 			if ($this -> input -> get('batch_id') != 0) {
-				$urls = $this -> crawler_list_model -> getByBatchLimit($config["per_page"], $page, $this -> input -> get('batch_id'), $this -> input -> get('failed'));
+				$urls = $this -> crawler_list_model -> getByBatchLimit($config["per_page"], $page, $this -> input -> get('batch_id'), $this -> input -> get('status_radio'));
 			} else {
-				$urls = $this -> crawler_list_model -> getAllLimit($config["per_page"], $page, false, $search_crawl_data, $this -> input -> get('failed'));
+				$urls = $this -> crawler_list_model -> getAllLimit($config["per_page"], $page, false, $search_crawl_data, $this -> input -> get('status_radio'));
 			}
 		}
 		// === screenshots alive scanner (end)
@@ -362,18 +394,31 @@ class Site_Crawler extends MY_Controller {
 		} else {
 			$rows = $this -> crawler_list_model -> getAll(1000, false);
 		}
-		
+
 		$ids = array();
 		foreach ($rows as $data) {
 			$ids[] = $data->id;
 		}
-		
+
 		if ($this -> input -> post('crawl') && ($this -> input -> post('crawl') == 'true')) {
 			$this -> crawler_list_model -> updateStatusEx($ids, 'lock');
 
 			foreach ($rows as $data) {
 				if ($page_data = $this -> pageprocessor -> get_data($data -> url)) {
 					$page_data['URL'] = $data -> url;
+
+					// find if page not found or other messages
+					$next_row = false;
+					foreach ($page_data as $k => $v) {
+						if (($k == 'HTags') && preg_match('/.*product\snot\sfound.*/i', $v)) {
+							$this -> crawler_list_model -> updateStatus($data -> id, 'not_found');
+							$next_row = true;
+						}
+					}
+					if ($next_row) {
+						continue;
+					}
+
 					// save data
 					$page_data_without_price = $page_data;
 					if (isset($page_data_without_price['Price'])) {
@@ -390,13 +435,13 @@ class Site_Crawler extends MY_Controller {
 					} else if ($data -> imported_data_id !== null) {
 						$imported_id = $data -> imported_data_id;
 						$revision = $this -> imported_data_parsed_model -> getMaxRevision($imported_id);
-                                                
+
 						$revision++;
 					}
 
 					$model = null;
                                         if($m = $this -> imported_data_parsed_model -> get_model($imported_id) && strlen($m)>3){
-                                           $model = $m; 
+                                           $model = $m;
                                         }
 					if (($attributes = $this -> pageprocessor -> attributes()) !== false) {
 						if (!is_null($model) && isset($attributes['model']) && strlen($attributes['model'])>3) {
@@ -419,7 +464,7 @@ class Site_Crawler extends MY_Controller {
 							$this -> imported_data_parsed_model -> deleteRows($imported_id, $revision);
 						}
 					}
-					
+
 					$this -> crawler_list_model -> updateStatus($data -> id, 'finished');
 					$this -> crawler_list_model -> updated($data -> id);
 				} else {

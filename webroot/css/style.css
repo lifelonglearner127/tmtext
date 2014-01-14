@@ -1908,7 +1908,7 @@ label.dd-selected-text, label.dd-option-text{
 }*/
 
 #create_batch_save{
-    min-height: 400px;
+/*    min-height: 400px;*/
 }
 
 #create_batch_save #files p{
@@ -2042,7 +2042,7 @@ select#sites option{
 
 .batch_info ul li{
     display: inline;
-    padding-left: 100px;
+    padding-left: 50px;
 }
 .heading_text{
     margin:0px;
@@ -2434,12 +2434,10 @@ span.dep_left_part{
 #research_batches_columns{
     background-color: transparent;
     background-image: none;
-	margin-right: -10px;
-    margin-top: 3px;
     cursor:pointer;
     display: none;
 	float: left;
-	margin: 2px -16px 0 14px;
+	margin: 2px -16px 0 16px;
 }
 .snap_img{
     max-width: 400px;
@@ -2565,6 +2563,9 @@ body.login_block{
 .subtitle_word_short, .subtitle_word_long, .subtitle_keyword_short, .subtitle_keyword_long{
     font-size: 10px!important;
 }
+.word_short, .word_short1 {
+	text-align: center;
+}
 .products_tb tr, .products_tb td{
     border: 1px solid rgb(182, 173, 173);
     padding: 5px;
@@ -2627,7 +2628,7 @@ input[name="search_crawl_data"] {
 .tb_product_name{
     display: block;
     overflow: hidden;
-    width: 200px !important;
+    /* width: 200px !important; */
 
 }
 
@@ -2735,6 +2736,52 @@ li.selected-url{
     background-color: rgba(0, 0, 0, .5);
 }
 /* add loading image when getting graph data */
-div#assess_graph div#highChartContainer.loading{
- background:url(../img/img-loader.gif) no-repeat center 20px !important;
+div#assess_graph.loading{
+ background:url(../img/img-loader.gif) no-repeat center top !important;
+}
+.mini_chart_container{
+	float:left;
+	width:0px;
+	height:125px;
+}
+.trendlines_container{
+	float:left;
+	width:650px;
+}
+#tooltip_popup{
+	width:900px;
+	background:white;
+	position:absolute;
+	border:solid 1px #2f7ed8;
+	padding:5px;
+	border-radius:5px;
+	z-index:1001;
+	margin-left:65px;
+	display:none;
+	padding-bottom:25px;
+}
+#mini_chart_popup{
+	width:560px;
+	height:350px;
+	background:white;
+	position:absolute;
+	border:solid 1px #2f7ed8;
+	padding:5px;
+	border-radius:5px;
+	z-index:1000;
+	margin-left:200px;
+	display:none;
+}
+#mini_chart_container{
+	width:500px;
+	height:330px;
+	margin: 0 30px;
+}
+#tooltip_popup_container {
+width: 900px;
+line-height: 14px;
+}
+a#remove_mini_chart, a#remove_tooltip_popup{
+	color:black;
+	float:right;
 }

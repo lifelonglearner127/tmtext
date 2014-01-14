@@ -26,6 +26,12 @@ var table_loaded=false;
 var curentSibil = 0;
 var isFromLocalStorage = false;
 var testIsFromLocalStorage = 0;
+var dataTableLastPageNumber = 0;
+var isReloaded = false;
+var outputedFilterIndexes = [];
+
+var FIRST_DISPLAY_LIMIT_COUNT = 100;
+var NEXT_DISPLAY_LIMIT_COUNT = 1000;
 
 var short_wc_total_not_0 = 0;
 var long_wc_total_not_0 = 0;
@@ -101,7 +107,10 @@ var summaryFieldNames = [
 		'skus_with_more_than_one_product_description_links',
 		'skus_with_more_than_one_product_description_links_competitor',
 		
-		'assess_report_items_priced_higher_than_competitors'
+		'assess_report_items_priced_higher_than_competitors',
+		'skus_with_manufacturer_videos',
+		'skus_with_manufacturer_images',
+		'skus_with_manufacturer_pages'
 	];
 	
 	var batch_sets = {
@@ -512,5 +521,37 @@ var filter_toggler_flag = 0
             "sName": "Duplicate_Content",            
             "sClass" :  "Duplicate_Content"
         },
-
+        {
+            "sTitle": "Manufacturer Pages",
+            "sName": "Duplicate_Content",            
+            "sClass" :  "Duplicate_Content"
+        },
+        {
+            "sTitle": "Duplicate Content",
+            "sName": "Duplicate_Content",            
+            "sClass" :  "Duplicate_Content"
+        },
+        {
+            "sTitle": "Duplicate Content",
+            "sName": "Duplicate_Content",            
+            "sClass" :  "Duplicate_Content"
+        },
+	{
+		'sTitle':'Manufacturer Page',
+		'sClass' : 'murl',
+		'sName' : 'murl'
+	},
+	{
+		'sTitle' : 'Manufacturer Images',
+		'sClass' : 'mimg',
+		'sName' : 'mimg'
+	},
+	{
+		'sTitle' : 'Manufacturer Videos',
+		'sClass' : 'mvid',
+		'sName' : 'mvid'
+	}
     ];
+
+var chart1 = null;
+	

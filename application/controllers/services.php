@@ -99,6 +99,20 @@ class Services extends REST_Controller {
 
 		if ($page_data = $this->pageprocessor->process()) {
 			$page_data['URL'] = $url;
+
+			// find if page not found or other messages
+			$dontsave= false;
+			foreach ($page_data as $k => $v) {
+				if (($k == 'HTags') && preg_match('/.*product\snot\sfound.*/i', $v)) {
+					$this -> crawler_list_model -> updateStatus($id, 'not_found');
+					$dontsave = true;
+				}
+			}
+			if ($dontsave) {
+				$this->response(false);
+				exit;
+			}
+
 			// save data
 			$page_data_without_price = $page_data;
 			if (isset($page_data_without_price['Price'])) {

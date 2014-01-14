@@ -484,22 +484,28 @@ $(document).ready(function () {
      });
      return false;
      });*/
-
+/*
     $(document).on("change", "select[name='batches']", function(){
         $.post(base_url + 'index.php/research/filterCustomerByBatch', { 'batch_id': $("select[name='batches']").find("option:selected").text()}, function(data){
+//            console.log(data);
             if(data != null){
-                $("select[name='customers'] option").each(function(){
-                    if(data==$(this).text()){
-                        $(this).prop('selected',true);
-                    }
-                });
-            } else {
+				$("select[name='customers'] option").each(function(){
+					if(data==$(this).text()){
+						$(this).prop('selected',true);
+					}
+				});
+            }
+/*			else {
                 $("select[name='customers'] option").each(function(){
                     $(this).removeAttr('selected');
                 });
             }
         });
         $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': $("select[name='batches']").find("option:selected").val()}, function(data){
+//            console.log('2');
+//            console.log(data);
+//            console.log('data.created');
+//            console.log(data.created);
             if(data.created != undefined){
                 $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
                     '<li> Items: '+data.count_items+' </li></ul>');
@@ -508,7 +514,7 @@ $(document).ready(function () {
             }
 
         });
-    });
+    });*/
 
     $(document).on("click", "button#add_to_batch", function(){
         $.post(base_url + 'index.php/research/addToBatch', {
@@ -632,25 +638,25 @@ $(document).ready(function () {
         if(oDropdown==undefined){
             var oDropdown = $("#customer_dr").msDropdown().data("dd");
         }
-        $.post(base_url + 'index.php/research/new_batch', {
-            'batch': $('input[name="new_batch"]').val(),
-            'customer_name': oDropdown.getData().data.value
-        }).done(function(data) {
-                if($('input[name="new_batch"]').val() !='' ){
-                    var cat_exist = 0;
-                    $('select[name="batches"] option').each(function(){
-                        if($(this).text() == $('input[name="new_batch"]').val()){
-                            cat_exist = 1;
-                        }
-                    });
-                    if(cat_exist == 0){
-                        $('select[name="batches"]').append('<option value="'+data.batch_id+'" selected="selected">'+
-                            $('input[name="new_batch"]').val()+'</option>');
-                        return false;
+        if($('input[name="new_batch"]').val() != '' ){
+            $.post(base_url + 'index.php/research/new_batch', {
+                'batch': $('input[name="new_batch"]').val(),
+                'customer_name': oDropdown.getData().data.value
+            }).done(function(data) {
+                var cat_exist = 0;
+                $('select[name="batches"] option').each(function(){
+                    if($(this).text() == $('input[name="new_batch"]').val()){
+                        cat_exist = 1;
                     }
+                });
+                if(cat_exist == 0){
+                    $('select[name="batches"]').append('<option value="'+data.batch_id+'" selected="selected">'+
+                        $('input[name="new_batch"]').val()+'</option>');
                 }
-                return false;
+				$('input[name="new_batch"]').val("");
+                return true;
             });
+        }
         $('.batch_info').html('');
         $('#files').html('');
     });
@@ -658,6 +664,7 @@ $(document).ready(function () {
     $(document).on("click", "button#csv_import_create_batch", function(event){
         event.preventDefault();
         var url = $(this).parents().find('form').attr( 'action' ).replace('save', 'csv_import');
+//        alert(url);
         var oDropdown = $("#customer_dr").msDropdown().data("dd");
         $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val(),
             'customer_name': oDropdown.getData().data.value,
@@ -713,6 +720,7 @@ $(document).ready(function () {
     });
 
     $(document).on("change", 'select[name="batches"]', function() {
+//        alert();
         var selectedBatch = $(this).find("option:selected").text();
         var selectedBatchId = $(this).find("option:selected").val();
         $.post(base_url + 'index.php/research/filterCustomerByBatch', {
@@ -723,7 +731,7 @@ $(document).ready(function () {
                 oDropdown.setIndexByValue(data);
 
             } else {
-                oDropdown.setIndexByValue('All customers');
+                oDropdown.setIndexByValue('All Customers');
             }
             if (selectedBatch.length == 0)
                 oDropdown.setIndexByValue('All Customers');
@@ -732,9 +740,10 @@ $(document).ready(function () {
         $.post(base_url + 'index.php/research/get_urls_from_batch', {
             'batch': selectedBatchId
         }, function(data){
-            console.log(data);
+
+//            console.log(data);
             if(data.length > 0){
-                var str = '<ul>';
+                var str = '<ul style="cursor:default">';
                 for(var i=0; i<data.length; i++){
                     str += '<li>'+data[i].url+'\n</li>';
                 }

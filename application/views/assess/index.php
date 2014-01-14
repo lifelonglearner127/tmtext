@@ -1,8 +1,9 @@
 <div class="main_content_other"></div>
-<div class="tabbable">
+<?= ($login) ? 'Loading...' : ''; ?>
+<div class="tabbable" <?= ($login) ? 'style="display:none;"' : ''; ?>>
 
     <ul class="nav nav-tabs jq-measure-tabs">
-    		<li class=""><a data-toggle="tab" class='assess_product_link' href="<?php echo site_url('assess/products');?>">Products</a></li>
+    	<li class=""><a data-toggle="tab" class='assess_product_link' href="<?php echo site_url('assess/products');?>">Products</a></li>
         <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_departments');?>">Categories</a></li>
         <li class="active"><a data-toggle="tab" href="<?php echo site_url('assess');?>">Home Pages</a></li>
         <!-- <li class=""><a data-toggle="tab" class='assess_product_link' href="<?php echo site_url('assess/products');?>">Products</a></li>
@@ -402,7 +403,6 @@
     		}
     	}
     });
-
     // var drop_selection_scan = $.post(base_url + 'index.php/measure/dropselectionscan', send_data, function(data) {
     // 	for(var i=0; i < data.length; i++) {
     // 		if(data[i]['cell'] !== false) {

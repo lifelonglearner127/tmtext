@@ -954,14 +954,19 @@ jQuery(document).ready(function($) {
         e.preventDefault();
         var url = $(this).attr('href');
         var posting = $.post(url+"?ajax=true", function(data) {
-            var response_data = $.parseJSON( data );
-            $('.main_content_other').html(response_data.ajax_data);
-            if($('.customer_dropdown').length > 0){
-                getCustomerDropdown();
-            }
-            if($('.website_dropdown').length > 0){
-                getWebsiteDropdown();
-            }
+			var response_data = '';
+			try {
+				response_data = $.parseJSON( data );
+				$('.main_content_other').html(response_data.ajax_data);
+				if($('.customer_dropdown').length > 0){
+					getCustomerDropdown();
+				}
+				if($('.website_dropdown').length > 0){
+					getWebsiteDropdown();
+				}
+			} catch (e) {
+				return;
+			}
         });
     });
 

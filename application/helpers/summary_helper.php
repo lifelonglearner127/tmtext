@@ -458,7 +458,34 @@ if ( ! function_exists('get_filters') )
 						
 					)
 				)
-			),				
+			),	
+		        array(
+				'data_filter_id' => 'skus_with_manufacturer_videos',
+				'icon' => 'assess_report_seo_red.png',
+				'label' => 'SKUs with manufacturer videos available:',
+				'is_default' => true,
+				'question' => array(				
+					'explanation' => 'The number of your SKUs that have manufacturer videos.',
+				)
+			),
+		        array(
+				'data_filter_id' => 'skus_with_manufacturer_images',
+				'icon' => 'assess_report_seo_red.png',
+				'label' => 'SKUs with manufacturer images available:',
+				'is_default' => true,
+				'question' => array(				
+					'explanation' => 'The number of your SKUs that have manufacturer images.',
+				)
+			),
+		        array(
+				'data_filter_id' => 'skus_with_manufacturer_pages',
+				'icon' => 'assess_report_seo_red.png',
+				'label' => 'SKUs with manufacturer pages:',
+				'is_default' => true,
+				'question' => array(				
+					'explanation' => 'The number of your SKUs that have manufacturer pages.',
+				)
+			),
 		);
 	}
 }

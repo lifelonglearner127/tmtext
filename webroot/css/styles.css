@@ -391,7 +391,7 @@ ul.research_table_filter h3 {
     font-size: 14px;
     background: none repeat scroll 0 0 #CCCCCC;
     margin: 0;
-    padding-left: 5px;
+    padding-left: 10px;
 }
 
 ul.research_table_filter_competitor {
@@ -703,7 +703,7 @@ span.highlight{
     z-index: 100000 !important;
 }
 #batchesDiv {
-    padding: 25px;
+/*    padding: 25px;*/
 }
 .forgot_pass{
     float: left!important;
@@ -806,4 +806,65 @@ a.jq-assess {
 .tbl_arrows_and_gear_wrapper {
 	position: absolute;
 	margin: -29px 0 0 932px;
+}
+.batch-label{
+	font-size:20px;
+	top: 3px;
+	position: relative;
+	margin-right: 34px;
+	-webkit-margin-end: 35px;
+}
+.tbl_arrows_and_gear_wrapper #research_batches_columns{
+	opacity:0;
+	cursor:default;
+}
+#research_assess_compare_batches_customer{
+	margin-left: 11px;
+}
+#research_assess_compare_batches_batch{
+	margin: 0 21px 10px;
+	width: 175px;
+}
+#generate_url_link{
+	margin-left: 6px;
+	width: 220px;
+}
+.summary_search_field{
+	width: 220px;
+	border-radius:4px;
+	height:30px;
+	vertical-align: middle;
+	transition: border linear 0.2s, box-shadow linear 0.2s;
+	-webkit-transition: border linear 0.2s, box-shadow linear 0.2s;
+	border: 1px solid #cccccc;
+}
+a.show_filters_configuration_popup,#research_batches_columns{
+	border-radius:4px;
+	margin-top:0;
+	padding:0;
+	height:33px;
+	position: relative;
+	top: 3px;
+}
+a#research_batches_columns_export{
+	height: 32px;
+	border-radius: 4px;
+	font-size: 32px;
+	position: relative;
+	top: 3px;
+	padding: 0px 0px 2px 0;	
+}
+a#research_batches_columns_export:hover,a.show_filters_configuration_popup:hover,#research_batches_columns:hover{
+	background: #aaa;
+}
+.assess_tbl_show_case a:hover{
+	text-decoration: underline !important;
+}
+.dataTables_filter label{
+	position:relative;
+	right:-15px;
+}
+#batch_set_toggle{
+	top:4px;
+	position:relative;
 }

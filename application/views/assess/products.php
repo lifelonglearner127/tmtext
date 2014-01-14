@@ -11,7 +11,7 @@
     <li class="boxes hideBox">
         <h3>
             <span class=''>
-                Batch:
+                <span class="batch-label">Batch</span>
                 <select name="research_assess_customers" class="mt_10">
                     <?php foreach($customer_list as $customer):?>
                         <option value="<?php echo strtolower($customer); ?>"><?php echo $customer; ?></option>
@@ -636,11 +636,13 @@
 						<option value="revision">Reviews</option>
 						<option value="Features">Features</option>
 					</select>
-					<input id="show_over_time" style="width: 30px;" type="checkbox">
+					<input id="show_over_time" style="width: auto;margin-left:10px;margin-right:4px;" type="checkbox">
 					<span id="show_over_time_span"><label for="show_over_time" style="font-weight:bold;font-size:1em;">Show changes over time</label></span>
 				</div>
 <!-- 			Castro #1119: convert dropdown to static end -->
                 <div id="assess_graph">
+					<div id="tooltip_popup"><a href="javascript:void(0);" id="remove_tooltip_popup">X</a><div id="tooltip_popup_container"></div></div>
+					<div id="mini_chart_popup"><a href="javascript:void(0);" id="remove_mini_chart">X</a><div id="mini_chart_container"></div></div>
                     <div id="highChartContainer" style="width: 980px; height: 370px; margin: 20 auto"></div>
                 </div>
              
@@ -721,5 +723,18 @@
 			//     }
 			// }
 	});
-	          
+	$(document).ready(function(){
+		 $('.tbl_arrows_and_gear_wrapper .research_arrow').click(function(e){
+			e.preventDefault();
+			if($('#tblAssess_wrapper').is(":visible"))
+			{
+			      $('#tblAssess_wrapper').hide();  
+			      $('#research_batches_columns').css({opacity:0,cursor:'default'});
+			} else
+			{
+			      $('#tblAssess_wrapper').show(); 
+			      $('#research_batches_columns').css({opacity:1,cursor:'pointer'});
+			}	    
+		});
+	});          
  </script>

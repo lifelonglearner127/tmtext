@@ -27,6 +27,11 @@
               <i class="icon-plus icon-white"></i>
               <input type="file" multiple="" name="files[]" id="upload_urls">
           </span>
+          <span class="btn btn-success fileinput-button pull-left" style="margin-left: 10px;">
+              New Upload
+              <i class="icon-plus icon-white"></i>
+              <input type="file" multiple="" name="files[]" id="upload_urls_new">
+          </span>
           <span class="btn btn-danger pull-left" id="stop_matches" style='margin-left: 10px;'>Stop</span>
           <input type="hidden" name="choosen_file" />
           <script>
@@ -45,9 +50,33 @@
                     match_ajax = $.post(url, {'choosen_file': $('input[name="choosen_file"]').val(), 'manu_file_upload_opts': manu_file_upload_opts}, function(data) {
                   		console.log(data);
                     }, 'json');
+		    if(flag_stop_match)
+		    {	    
+			matching_checking_int = setInterval(check_matching_status,5000);
+			flag_stop_match = false;
+		    }
                   }
                 });
             });
+            
+            // New loader
+            $(function () {
+                var url = '<?php echo site_url('system/upload_match_urls'); ?>';
+                $('#upload_urls_new').fileupload({
+                  url: url,
+                  dataType: 'json',
+                  done: function (e, data) {
+                    $('input[name="choosen_file"]').val(data.result.files[0].name);
+                    var url = base_url+'index.php/system/check_urls_threading';
+                    var manu_file_upload_opts = $("#manu_upload_urls_check").is(":checked");
+                    console.log("manu_file_upload_opts status: ", manu_file_upload_opts);
+                    match_ajax = $.post(url, {'choosen_file': $('input[name="choosen_file"]').val(), 'manu_file_upload_opts': manu_file_upload_opts}, function(data) {
+                  		console.log(data);
+                    }, 'json');
+                  }
+                });
+            });
+            
           </script>
           <div style='float: left; width: 100%; clear: both; margin-top: 10px;'>
 -          	<input type='checkbox' name='manu_upload_urls_check' id='manu_upload_urls_check'>
@@ -109,7 +138,7 @@
         function check_matching_status(){
             if(flag_stop_match){
                 return clearInterval(matching_checking_int)
-            }
+            }    
             if($("#matching").length==0)return false;
             var url = base_url+'index.php/system/get_matching_urls';
             $.ajax({
@@ -120,13 +149,45 @@
                         old_data=xhr.getResponseHeader('Last-Change');
                         $.ajax({
                             url:url,
+                            dataType:'json',
                             success:function(data){
-                                $("#matching").html(data);
+                                $("#matching").html(data.response);
+				if(typeof(data.manufacturer) !== 'undefined')
+				{
+					$('#manu_upload_urls_check').attr('checked',true);
+				}	
+                                if(data.active)
+                                {
+                                    activeBtns('active');
+                                } else
+                                {
+                                    activeBtns('unactive');
+                                }
                             }
                         });
                     }
                 }
             });
+        }
+        
+        function activeBtns(type)
+        {
+            if(typeof(type) == 'undefined')
+            {
+                type = 'unactive';
+            }
+            if(type == 'active')
+            {
+                $('#upload_urls').attr('disabled',true);
+                $('#mathchurls .btn-success:first').addClass('disabled');
+                $('#mathchurls #stop_matches').removeClass('disabled');
+            } else if(type == 'unactive')
+             {
+                 $('#upload_urls').removeAttr('disabled');
+                 $('#mathchurls .btn-success:first').removeClass('disabled');
+                 $('#mathchurls #stop_matches').addClass('disabled');
+		 old_data=false;
+             }   
         }
 
 	$(document).ready(function() {
@@ -135,6 +196,10 @@
                 if(match_ajax != ""){
                     match_ajax.abort();
                 }
+		$.get(base_url+"index.php/system/stopChecking",function(d){ 
+			activeBtns('unactive');
+			$("#matching").html("Process has been stopped.");
+		});
             })
             matching_checking_int = setInterval(check_matching_status,5000);
             $("#download_not_founds").click(function(){

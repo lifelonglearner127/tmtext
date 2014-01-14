@@ -32,7 +32,10 @@ class Crons extends MY_Controller
 		    'delete_batch_items_from_statistics_new' => true,
 		    'fix_imported_data_parsed_models' => true,
 		    'fixmodel_length' => true,
-		    'fix_revisions' => true
+		    'fix_revisions' => true,
+		    'checkUploadedFiles' =>true, 
+		    'do_stats_bybatch' =>true, 
+		    'renameExistingFiles' =>true 
 		));
 		$this->load->library('helpers');
 		$this->load->helper('algoritm');
@@ -53,7 +56,7 @@ class Crons extends MY_Controller
 		if ($result)
 		{
 			echo 'call by wget';
-			shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/similar_groups > /dev/null 2>/dev/null &");
+			shell_exec("wget -S -O- ".site_url('/crons/similar_groups')." > /dev/null 2>/dev/null &");
 			echo 'call by wget AFTER';
 		} else
 		{
@@ -366,7 +369,7 @@ class Crons extends MY_Controller
 		$data_arr = $this->imported_data_parsed_model->do_stats_ids();
 		if (count($data_arr) > 1)
 		{
-			shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_duplicate_content/$trnc > /dev/null 2>/dev/null &");
+			shell_exec("wget -S -O- ".site_url('/crons/do_duplicate_content/'.$trnc)." > /dev/null 2>/dev/null &");
 		} else
 		{
 			$data = array(
@@ -671,7 +674,7 @@ class Crons extends MY_Controller
 		echo "batch_id = $batch_id <br> end";
 	}
 
-	public function do_stats_forupdated()
+	public function do_stats_forupdated($forceKeywords = FALSE)
 	{
 		echo "Script start working";
 		$tmp_dir = sys_get_temp_dir() . '/';
@@ -711,7 +714,7 @@ class Crons extends MY_Controller
 			}
 			//Get items for scanning
 			$time_start = microtime(true);
-			$data_arr = $this->imported_data_parsed_model->do_stats_newupdated($trnc);
+			$data_arr = $this->imported_data_parsed_model->do_stats_newupdated();
 			echo "<br>get_data ---- " . (microtime(true) - $time_start);
 			if (count($data_arr) > 0) //run analyze if array does not empty
 			{
@@ -742,6 +745,7 @@ class Crons extends MY_Controller
 					$short_seo_phrases = '?';
 					$long_seo_phrases = '?';
 					$similar_products_competitors = array();
+					$manufacturerInfo = '';
 					// Price difference
 					$own_site = parse_url($obj->url, PHP_URL_HOST);
 					if (!$own_site)
@@ -775,20 +779,33 @@ class Crons extends MY_Controller
 						//getting count of words in short description
 						$long_description_wc = count(explode(" ", $obj->long_description));
 					}
-
-
-					// Generate Title Keywords
-					$time_start = microtime(true);
-					$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
-					echo "Title Keywords -------------------- <b>".(microtime(true) - $time_start)." seconds</b>\n";
-
-
-					$time_start = microtime(true);
+					//Prepare manufacturer info
+					if(!empty($obj->manufacturer_url))
+					{
+						$manufacturerInfo = serialize(array('url'=>$obj->manufacturer_url,
+						'images'=>$obj->manufacturer_images,'videos'=>$obj->manufacturer_videos));
+					}
+					$title_keywords = FALSE;
+					if(!$forceKeywords)
+					{
+						$hash_start = microtime(true);	
+						$title_keywords = $this->imported_data_parsed_model->checkHash($obj->imported_data_id, $obj->product_name, $short_description, $long_description);
+						echo 'Check hash '.(microtime(true) - $hash_start);
+					}
+					if(!$title_keywords)
+					{	
+						// Generate Title Keywords
+						$keywords_start = microtime(true);
+						$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
+						echo "Title Keywords -------------------- <b>".(microtime(true) - $keywords_start)." seconds</b>\n";
+					}
+					$modelStart = microtime(true);
 					$m = '';
 					//If parsed attributes are exist, finding similar items and price diff
 					if (isset($obj->parsed_attributes) && isset($obj->parsed_attributes['model']) && strlen($obj->parsed_attributes['model']) > 3)
 					{
 						//getting model of item
+$modelGet = microtime(true);
 						if ($obj->model && (strlen($obj->model) > 3))
 						{
 							$m = $obj->model;
@@ -806,9 +823,11 @@ class Crons extends MY_Controller
 							echo 'Error', $e->getMessage(), "\n";
 							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id,1);
 						}
+echo '<br> - model get -- '.(microtime(true) - $modelGet);
 						//if own_prices is not empty make price difference data
 						if (!empty($own_prices))
 						{
+$getSimilar = microtime(true);
 							$own_price = floatval($own_prices->price);
 							$obj->own_price = $own_price;
 							$price_diff_exists = array();
@@ -824,9 +843,11 @@ class Crons extends MY_Controller
 								echo 'Error', $e->getMessage(), "\n";
 								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
 							}
+echo '<br> - similar get -- '.(microtime(true) - $getSimilar);
 							//If similar items was found, start comparing
 							if (!empty($similar_items))
 							{
+$checkSimilar = microtime(true);								
 								foreach ($similar_items as $ks => $vs)
 								{
 									$customer = "";
@@ -844,25 +865,27 @@ class Crons extends MY_Controller
 									    'imported_data_id' => $vs['imported_data_id'],
 									    'customer' => $customer
 									);
+$getPrices = microtime(true);								
 									//Getting a three last prices for each item
 									try
 									{
-										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id']);
+										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id'],1);
 									} catch (Exception $e)
 									{
 										echo 'Error', $e->getMessage(), "\n";
-										$this->load->model('statistics_model');
-										$this->statistics_model->db->close();
-										$this->statistics_model->db->initialize();
-										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id']);
+										//$this->load->model('statistics_model');
+										//$this->statistics_model->db->close();
+										//$this->statistics_model->db->initialize();
+										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id'],1);
 									}
+echo '<br> -- get last prices -- '.(microtime(true) - $getPrices);									
 									//If last three prices are exist, define range of prices and start comparing
 									if (!empty($three_last_prices))
 									{
 										$price_scatter = $own_price * 0.03;
 										$price_upper_range = $own_price + $price_scatter;
 										$price_lower_range = $own_price - $price_scatter;
-										$competitor_price = floatval($three_last_prices[0]->price);
+										$competitor_price = floatval($three_last_prices->price);
 										//If own price greater than competitor price, flag will be set,
 										//or if competitor price not in the defined range, then price should be updated 
 										if ($competitor_price < $own_price)
@@ -877,10 +900,12 @@ class Crons extends MY_Controller
 											$competitors_prices[] = $competitor_price;
 										}
 									}
+echo '<br> - similar check -- '.(microtime(true) - $checkSimilar);									
 								}
 							}
 						} else
 						{
+$getSimilar2 = 	microtime(true);						
 							//own priece does not exists, looking for similar items
 							try
 							{
@@ -890,9 +915,11 @@ class Crons extends MY_Controller
 								echo 'Error', $e->getMessage(), "\n";
 								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
 							}
+echo '<br> - similar get 2 -- '.(microtime(true) - $getSimilar2);							
 							//If similar items were found, add imported_data_id and customer to similar product competitors
 							if (!empty($similar_items))
 							{
+$checkSimilar2 = microtime(true);								
 								foreach ($similar_items as $ks => $vs)
 								{
 									$customer = "";
@@ -909,12 +936,10 @@ class Crons extends MY_Controller
 									    'customer' => $customer
 									);
 								}
+echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);								
 							}
 						}
-
-						$time_end = microtime(true);
-
-						$time = $time_end - $time_start;
+						$time = microtime(true) - $modelStart;
 						echo "<br>model exists_and some actions - " . $time . 'seconds';
 					} else
 					{
@@ -933,7 +958,7 @@ class Crons extends MY_Controller
 								echo "<br>geting custom model - ";
 								$same_pr = array();
 								echo "product name  = " . $obj->product_name;
-								$same_pr = $this->imported_data_parsed_model->getByProductNameNew($obj->imported_data_id, $obj->product_name, '', 0);
+								$same_pr = $this->imported_data_parsed_model->getByProductNameNew($obj->imported_data_id, $obj->product_name, '', 0, $sites_list);
 								echo "<br>custom model is ready ------------ ";
 							}
 						}
@@ -970,21 +995,23 @@ class Crons extends MY_Controller
 					}
 					$time = microtime(true) - $time_start;
 					echo "<br>research_data ---------------------- " . $time . " seconds";
+					//$insertStart = microtime(true);
 					//insert new statistics data to statistics_new table if it not exists in table and update if exists
 					try
 					{
-						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
+						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids, $manufacturerInfo);
 					} catch (Exception $e)
 					{
 						echo 'Error', $e->getMessage(), "\n";
-						$this->load->model('statistics_model');
-						$this->statistics_model->db->close();
-						$this->statistics_model->db->initialize();
+						//$this->load->model('statistics_model');
+						//$this->statistics_model->db->close();
+						//$this->statistics_model->db->initialize();
 
-						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids);
+						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids, $manufacturerInfo);
 					}
-
-					echo "<br>global foreach --------------------- " . (microtime(true) - $foreach_start) . " seconds<br>";
+					$endTime = microtime(true);
+					//echo "<br>insert/update ----------------------- " . ($endTime - $insertStart) . " seconds<br>";
+					echo "<br>global foreach --------------------- " . ($endTime - $foreach_start) . " seconds<br>";
 				} //end foreach
 				
 				$cjo = $this->settings_model->getDescription();
@@ -1009,7 +1036,8 @@ class Crons extends MY_Controller
 			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
 			echo $utd->td;  //exit;
 			//make asynchronous web request to do_stats_forupdated page
-			shell_exec("wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &");
+                        $url_link ="wget -S -O - ".site_url('/crons/do_stats_forupdated/'.$trnc)." > /dev/null 2>/dev/null &"; 
+			shell_exec($url_link);
 		} else
 		{
 			//Or send report about success
@@ -1027,7 +1055,6 @@ class Crons extends MY_Controller
 			$this->load->library('email');
 			$this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
 			$this->email->to('bayclimber@gmail.com');
-			$this->email->cc('igor.g.work@gmail.com');
 			$this->email->subject('Cron job report');
 			$this->email->message('Cron job for do_statistics_new is done.<br> Timing = ' . $mtd->td); //.'<br> Total items updated: '.$qty['description']
 			$this->email->send(); 
@@ -1662,7 +1689,7 @@ class Crons extends MY_Controller
 		$start = $res['description'];
 		if (count($data_arr) > 1)
 		{
-			shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/do_stats_new/$trnc > /dev/null 2>/dev/null &");
+			shell_exec("wget -S -O- ".site_url('/crons/do_stats_new/'.$trnc)." > /dev/null 2>/dev/null &");
 		} else
 		{
 			$data = array(
@@ -2996,102 +3023,106 @@ class Crons extends MY_Controller
 			//exit("select data from db ".$dur);
 			$model1 = '';
 			$model2 = '';
-			if ($url1 === FALSE)
-			{
-				++$nfurls;
-				$this->temp_data_model->addUrlToNonFound($urls['url1'], $process);
-				$atuc -= 1;
-				//$notFoundUrlsArr[]=$urls[0];
-			} else
-			{
-				$tm = false;
-				if ($url1['ph_attr'])
-				{
-					$tm = unserialize($url1['ph_attr']);
-				}
-				$model1 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : FALSE;
-			}
-			if ($url2 === FALSE)
-			{
-				++$nfurls;
-				$this->temp_data_model->addUrlToNonFound($urls['url2'], $process);
-				$atuc -= 1;
-				//$notFoundUrlsArr[]=$urls[1];
-			} else
-			{
-				$tm = false;
-				if ($url2['ph_attr'])
-				{
-					$tm = unserialize($url2['ph_attr']);
-				}
-				$model2 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : false;
-			}
-			if ($nfurls > 0)
-			{
-				$notFoundUrls += $nfurls;
-			} else
-			{
-				$this->imported_data_parsed_model->addItem($url1['data_id'], $url2['data_id']);
-				if ($model1)
-				{
-					if ($model2 && $model1 != $model2)
-					{
-						if (!($url2['model'] && strlen($url2['model']) > 3) || ($url2['model'] != $model1))
-						{
-							$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model1);
-							$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
-							++$itemsUpdated;
-							$atuc -= 1;
-						}
-					} elseif (!$model2 && (!($url2['model'] && strlen($url2['model']) > 3) || $model1 != $url2['model'])
-					)
-					{
-						$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model1);
-						$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
-						++$itemsUpdated;
-						$atuc -= 1;
-					}
-				} elseif ($model2)
-				{
-					if (!($url1['model'] && strlen($url1['model']) > 3) || $model2 != $url1['model'])
-					{
-						$this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $model2);
-						$this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2, $url2['rev'] + 1, $url2['data_id']);
-						++$itemsUpdated;
-						$atuc -= 1;
-					}
-				} elseif (($url1['model'] && strlen($url1['model']) > 3))
-				{
-					if (!($url2['model'] && strlen($url2['model']) > 3) || ($url1['model'] != $url2['model']))
-					{
-						$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $url1['model']);
-						$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
-						++$itemsUpdated;
-						$atuc -= 1;
-					}
-				} elseif (($url2['model'] && strlen($url2['model']) > 3))
-				{
-					$this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $url2['model']);
-					$this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
-					++$itemsUpdated;
-					$atuc -= 1;
-				} else
-				{
-					$model = time();
-					$this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $model);
-					$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model);
-					$this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
-					$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
-					$itemsUpdated += 2;
-					$atuc -= 1;
-				}
-			}
+                    if ($url1 === FALSE) {
+                            ++$nfurls;
+                            $this -> temp_data_model -> addUrlToNonFound($urls['url1'], $process);
+                            $atuc -= 1;
+                            //$notFoundUrlsArr[]=$urls[0];
+                    }/* else {
+                            $tm = false;
+                            if ($url1['ph_attr']) {
+                                    $tm = unserialize($url1['ph_attr']);
+                            }
+                            $model1 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : FALSE;
+                    }//*/
+                    if ($url2 === FALSE) {
+                            ++$nfurls;
+                            $this -> temp_data_model -> addUrlToNonFound($urls['url2'], $process);
+                            $atuc -= 1;
+                            //$notFoundUrlsArr[]=$urls[1];
+                    } /*else {
+                            $tm = false;
+                            if ($url2['ph_attr']) {
+                                    $tm = unserialize($url2['ph_attr']);
+                            }
+                            $model2 = isset($tm['model']) && strlen($tm['model']) > 3 ? $tm['model'] : false;
+                    }//*/
+                    if ($nfurls > 0) {
+                            $notFoundUrls += $nfurls;
+                    } else {
+                            $this -> imported_data_parsed_model -> addItem($url1['data_id'], $url2['data_id']);
+                            if(($url1['model'] && strlen($url1['model']) > 3)
+                                    && $url1['model'] !== $url2['model']){
+                                $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $url1['model']);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
+                                ++$itemsUpdated;
+                                $atuc -= 1;
+                            }
+                            elseif(($url2['model'] && strlen($url2['model']) > 3)
+                                    && $url2['model'] !== $url1['model']){
+                                $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $url2['model']);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
+                                ++$itemsUpdated;
+                                $atuc -= 1;
+                            }
+                            else{
+                                $model = time();
+                                $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model);
+                                $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
+                                $itemsUpdated += 2;
+                                $atuc -= 1;
+                            }
+//                            if ($model1) {
+//                                    if ($model2 && $model1 != $model2) {
+//                                            if (!($url2['model'] && strlen($url2['model']) > 3) || ($url2['model'] != $model1)) {
+//                                                    $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model1);
+//                                                    $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
+//                                                    ++$itemsUpdated;
+//                                                    $atuc -= 1;
+//                                            }
+//                                    } elseif (!$model2 && (!($url2['model'] && strlen($url2['model']) > 3) || $model1 != $url2['model'])) {
+//                                            $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model1);
+//                                            $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
+//                                            ++$itemsUpdated;
+//                                            $atuc -= 1;
+//                                    }
+//                            } elseif ($model2) {
+//                                    if (!($url1['model'] && strlen($url1['model']) > 3) || $model2 != $url1['model']) {
+//                                            $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model2);
+//                                            $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model2, $url2['rev'] + 1, $url2['data_id']);
+//                                            ++$itemsUpdated;
+//                                            $atuc -= 1;
+//                                    }
+//                            } elseif (($url1['model'] && strlen($url1['model']) > 3)) {
+//                                    if (!($url2['model'] && strlen($url2['model']) > 3) || ($url1['model'] != $url2['model'])) {
+//                                            $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $url1['model']);
+//                                            $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
+//                                            ++$itemsUpdated;
+//                                            $atuc -= 1;
+//                                    }
+//                            } elseif (($url2['model'] && strlen($url2['model']) > 3)) {
+//                                    $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $url2['model']);
+//                                    $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
+//                                    ++$itemsUpdated;
+//                                    $atuc -= 1;
+//                            } else {
+//                                    $model = time();
+//                                    $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model);
+//                                    $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model);
+//                                    $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
+//                                    $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
+//                                    $itemsUpdated += 2;
+//                                    $atuc -= 1;
+//                            }
+                    }
 			if ($atuc < 0)
 			{
 				exit('incrorrect ATUC');
-			}
-			$itemsUnchanged += $atuc;
-			$timing = microtime(true) - $start;
+                    }
+                    $itemsUnchanged += $atuc;
+                    $timing = microtime(true) - $start;
 		}
 		//*/
 		if ($timing < 200)
@@ -3112,159 +3143,348 @@ class Crons extends MY_Controller
 			} else
 			{
 				// shell_exec("wget -S -O- http://tmeditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged > /dev/null 2>/dev/null &");
-				shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/match_urls/$process/$linesScaned/$itemsUpdated/$notFoundUrls/$itemsUnchanged > /dev/null 2>/dev/null &");
+				shell_exec("wget -S -O- ".site_url('/crons/match_urls/'.$process.'/'.$linesScaned.'/'.$itemsUpdated.'/'.$notFoundUrls.'/'.$itemsUnchanged)." > /dev/null 2>/dev/null &");
 			}
 		}
 	}
 
-	function match_urls_thread()
+	function match_urls_thread($choosen_file = null)
 	{
-		ini_set('mysql.connect_timeout', 120);
-		$this->load->model('temp_data_model');
-		$this->load->model('site_categories_model');
-		$this->load->model('settings_model');
-		$this->load->model('thread_model');
-		$this->load->model('imported_data_parsed_model');
-		$process = $this->uri->segment(3);
-		$this->thread_model->updateStatus($process, 'process');
-		$process_fields = $this->thread_model->get_process_fields($process);
-		$linesScaned = $process_fields['lines_scaned'];
-		$notFoundUrls = $process_fields['not_found_urls'];
-		$itemsUpdated = $process_fields['items_updated'];
-		$itemsUnchanged = $process_fields['items_unchanged'];
-		$limitStart = $process_fields['start_limit'];
-		$limitEnd = $process_fields['end_limit'];
-		$start = microtime(true);
-		$data = $this->temp_data_model->getLineFromTableLimit('urlstomatch', $limitStart, $limitEnd);
-		$size_data = sizeof($data);
+            
+            $child_pid = pcntl_fork();
+            if ($child_pid) {
+                // Parent process
+                log_message('ERROR', 'Parent PID = ' . $child_pid);            
+                exit();
+            }
+            // Set basic for child child process
+            $new_child_pid = posix_setsid();
+            // @TODO $new_child_pid - will need to stop the process by clicking "Stop"
+            log_message('ERROR', 'Child PID = ' . $new_child_pid);            
+            
+            $start_run = microtime(true);        
+            log_message('ERROR', 'New Start ' .  $choosen_file);
+            if(!$choosen_file)
+            {
+                if(defined('CMD') && CMD )
+                {
+                    log_message('ERROR', 'File not defined ' );                
+                    return;
+                }
+                $choosen_file = $this -> input -> post('choosen_file');
+            }
+            
+            $this -> load -> model('site_categories_model');
+            $this -> load -> model('settings_model');
+            $this -> load -> model('imported_data_parsed_model');
+            $this -> load -> model('temp_data_model');
+            $file = $this -> config -> item('csv_upload_dir') . $choosen_file;
+            $f_name = end(explode('/', $file));
+            // reopen DB in child process
+            $this->db->close();
+            $this->db->initialize(); 
+            log_message('ERROR', 'Reopen DB ' .  $choosen_file);
+                    
+            $this -> temp_data_model -> emptyTable('notfoundurls');
+            $this -> temp_data_model -> emptyTable('urlstomatch');
+            $this -> temp_data_model -> emptyTable('updated_items');
+            $this -> settings_model -> deledtMatching();
+            $linesTotal = 0;
+            $itemsUpdated = 0;
+            $itemsUnchanged = 0;
+            $linesAdded = 0;
+            $linesScaned = 0;
+            $notFoundUrls = 0;
+            $notFoundUrlsArr = array();
+            $fileHandler = fopen($file,'r');
+            if(!$fileHandler)
+            {
+                log_message('ERROR', 'File not open ' .  $file);                
+                return;
+            }
 
-		foreach ($data as $key => $urls)
-		{
-			$atuc = 2;
-			$nfurls = 0;
-			++$linesScaned;
-			$url1 = $this->imported_data_parsed_model->getModelByUrl($urls['url1']);
-			$url2 = $this->imported_data_parsed_model->getModelByUrl($urls['url2']);
-			$model1 = '';
-			$model2 = '';
-			if ($url1 === FALSE)
-			{
-				++$nfurls;
-				$this->temp_data_model->addUrlToNonFound($urls['url1'], $process);
-				$atuc -= 1;
-				//$notFoundUrlsArr[]=$urls[0];
-			} else
-			{
-				$tm = false;
-				if ($url1['ph_attr'])
-				{
-					$tm = unserialize($url1['ph_attr']);
-				}
-				$model1 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : FALSE;
-			}
-			if ($url2 === FALSE)
-			{
-				++$nfurls;
-				$this->temp_data_model->addUrlToNonFound($urls['url2'], $process);
-				$atuc -= 1;
-				//$notFoundUrlsArr[]=$urls[1];
-			} else
-			{
-				$tm = false;
-				if ($url2['ph_attr'])
-				{
-					$tm = unserialize($url2['ph_attr']);
-				}
-				$model2 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : false;
-			}
-			if ($nfurls > 0)
-			{
-				$notFoundUrls += $nfurls;
-			} else
-			{
-				$this->imported_data_parsed_model->addItem($url1['data_id'], $url2['data_id']);
-				if ($model1)
-				{
-					if ($model2 && $model1 != $model2)
-					{
-						if (!($url2['model'] && strlen($url2['model']) > 3) || ($url2['model'] != $model1))
-						{
-							$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model1);
-							$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
-							++$itemsUpdated;
-							$atuc -= 1;
-						}
-					} elseif (!$model2 && (!($url2['model'] && strlen($url2['model']) > 3) || $model1 != $url2['model'])
-					)
-					{
-						$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model1);
-						$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
-						++$itemsUpdated;
-						$atuc -= 1;
-					}
-				} elseif ($model2)
-				{
-					if (!($url1['model'] && strlen($url1['model']) > 3) || $model2 != $url1['model'])
-					{
-						$this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $model2);
-						$this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2, $url2['rev'] + 1, $url2['data_id']);
-						++$itemsUpdated;
-						$atuc -= 1;
-					}
-				} elseif (($url1['model'] && strlen($url1['model']) > 3))
-				{
-					if (!($url2['model'] && strlen($url2['model']) > 3) || ($url1['model'] != $url2['model']))
-					{
-						$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $url1['model']);
-						$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
-						++$itemsUpdated;
-						$atuc -= 1;
-					}
-				} elseif (($url2['model'] && strlen($url2['model']) > 3))
-				{
-					$this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $url2['model']);
-					$this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
-					++$itemsUpdated;
-					$atuc -= 1;
-				} else
-				{
-					$model = time();
-					$this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $model);
-					$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model);
-					$this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
-					$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
-					$itemsUpdated += 2;
-					$atuc -= 1;
-				}
-			}
-			if ($atuc < 0)
-			{
-				exit('incrorrect ATUC');
-			}
-			$itemsUnchanged += $atuc;
-			$timing = microtime(true) - $start;
 
-			if ($timing < 60)
-			{
-				
-			} else
-			{
-				$this->thread_model->updateStatus($process, 'process', array('lines_scaned' => $linesScaned, 'items_updated' => $itemsUpdated, 'not_found_urls' => $notFoundUrls, 'items_unchanged' => $itemsUnchanged));
-				$start = microtime(true);
-				die();
-			}
+            $start = microtime(true);
+            $timing = 0;
+            $old_timing =0;
+            $process = time();
+            $this -> temp_data_model -> createMatchUrlsTable();
+            $this -> temp_data_model -> createNonFoundTable();
+            $this -> temp_data_model -> cUpdDataTable();
+            $this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);
+            while ($line = fgets($fileHandler)) {
+                    ++$linesTotal;
+                    $res = '';
+                    $urls = explode(',', trim(trim($line), ','));
+                    if (count($urls) == 2) {
+                            ++$linesAdded;
+                            
+                            // add to queue @TODO
+//                            $this -> temp_data_model -> addUrlToMatch($urls[0], $urls[1]);
+                    $urls['url1']=$urls[0];
+                    $urls['url2']=$urls[1];
 
-			if ($size_data == $linesScaned)
-			{
-				$this->thread_model->updateStatus($process, 'end', array('lines_scaned' => $linesScaned, 'items_updated' => $itemsUpdated, 'not_found_urls' => $notFoundUrls, 'items_unchanged' => $itemsUnchanged));
-				$uid = $this->session->userdata('user_id');
-				if ($this->thread_model->current_all_process($uid) == $this->thread_model->current_end_process($uid))
-				{
-					$this->thread_model->clear($uid);
-				}
-			}
-		}
-	}
+                    // ===== not changed logic
+
+                    $atuc = 2;
+                    $nfurls = 0;
+                    ++$linesScaned;
+                    //$ms = microtime(TRUE);
+                    $url1 = $this -> imported_data_parsed_model -> getModelByUrl($urls['url1']);
+                    $url2 = $this -> imported_data_parsed_model -> getModelByUrl($urls['url2']);
+                    //$dur = microtime(true)-$ms;
+                    //exit("select data from db ".$dur);
+                    $model1 = '';
+                    $model2 = '';
+                    if ($url1 === FALSE) {
+                            ++$nfurls;
+                            $this -> temp_data_model -> addUrlToNonFound($urls['url1'], $process);
+                            $atuc -= 1;
+                            //$notFoundUrlsArr[]=$urls[0];
+                    } else {
+                            $tm = false;
+                            if ($url1['ph_attr']) {
+                                    $tm = unserialize($url1['ph_attr']);
+                            }
+                            $model1 = isset($tm['model']) && strlen($tm['model']) > 3 ? $tm['model'] : FALSE;
+                    }
+                    if ($url2 === FALSE) {
+                            ++$nfurls;
+                            $this -> temp_data_model -> addUrlToNonFound($urls['url2'], $process);
+                            $atuc -= 1;
+                            //$notFoundUrlsArr[]=$urls[1];
+                    } else {
+                            $tm = false;
+                            if ($url2['ph_attr']) {
+                                    $tm = unserialize($url2['ph_attr']);
+                                    
+                            }
+                            $model2 = isset($tm['model']) && strlen($tm['model']) > 3 ? $tm['model'] : false;
+                    }
+                    if ($nfurls > 0) {
+                            $notFoundUrls += $nfurls;
+                    } else {
+                            $this -> imported_data_parsed_model -> addItem($url1['data_id'], $url2['data_id']);
+                            if ($model1) {
+                                    if ($model2 && $model1 != $model2) {
+                                            if (!($url2['model'] && strlen($url2['model']) > 3) || ($url2['model'] != $model1)) {
+                                                    $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model1);
+                                                    $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
+                                                    ++$itemsUpdated;
+                                                    $atuc -= 1;
+                                            }
+                                    } elseif (!$model2 && (!($url2['model'] && strlen($url2['model']) > 3) || $model1 != $url2['model'])) {
+                                            $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model1);
+                                            $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
+                                            ++$itemsUpdated;
+                                            $atuc -= 1;
+                                    }
+                            } elseif ($model2) {
+                                    if (!($url1['model'] && strlen($url1['model']) > 3) || $model2 != $url1['model']) {
+                                            $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model2);
+                                            $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model2, $url2['rev'] + 1, $url2['data_id']);
+                                            ++$itemsUpdated;
+                                            $atuc -= 1;
+                                    }
+                            } elseif (($url1['model'] && strlen($url1['model']) > 3)) {
+                                    if (!($url2['model'] && strlen($url2['model']) > 3) || ($url1['model'] != $url2['model'])) {
+                                            $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $url1['model']);
+                                            $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
+                                            ++$itemsUpdated;
+                                            $atuc -= 1;
+                                    }
+                            } elseif (($url2['model'] && strlen($url2['model']) > 3)) {
+                                    $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $url2['model']);
+                                    $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
+                                    ++$itemsUpdated;
+                                    $atuc -= 1;
+                            } else {
+                                    $model = time();
+                                    $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model);
+                                    $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model);
+                                    $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
+                                    $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
+                                    $itemsUpdated += 2;
+                                    $atuc -= 1;
+                            }
+                    }
+                    if ($atuc < 0) {exit('incrorrect ATUC');
+                    }
+                    $itemsUnchanged += $atuc;
+                    $timing = microtime(true) - $start;
+                            
+                    // ===== not changed logic 
+                    if ($timing - $old_timing > 5 ) // set the update interval information
+                    {
+                            $lts = $this->temp_data_model->getTableSize('urlstomatch');
+                            $this->settings_model->procUpdMatchingUrls($process, $lts, $itemsUnchanged);
+                            $old_timing = $timing;
+                    }                            
+                    }
+            }
+            fclose($fileHandler);
+            $start_run2 = microtime(true);        
+            $exec_time = $start_run2 - $start_run;
+            log_message('ERROR', "{$exec_time} sec - {$linesAdded} lines Phase 2");  
+            log_message('ERROR', 'End all sec: ' . ($start_run2 - $start_run));
+            log_message('ERROR', 'memory usage (peak) : (' . memory_get_peak_usage(). ')' . memory_get_usage()) ;
+            $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
+            $this->settings_model->updateMatchingUrls($process, $val);
+            echo "Total lines: " . $linesTotal . "<br/>";
+            echo "Lines scaned" . $linesScaned . "<br/>";
+            echo "Added lines: " . $linesAdded . "<br/>";
+            echo "Non existing urls found: " . $notFoundUrls . "<br>";
+            echo "Items updated: " . $itemsUpdated . "<br>";            
+        }
+        
+//	function match_urls_thread()
+//	{
+//		ini_set('mysql.connect_timeout', 120);
+//		$this->load->model('temp_data_model');
+//		$this->load->model('site_categories_model');
+//		$this->load->model('settings_model');
+//		$this->load->model('thread_model');
+//		$this->load->model('imported_data_parsed_model');
+//		$process = $this->uri->segment(3);
+//		$this->thread_model->updateStatus($process, 'process');
+//		$process_fields = $this->thread_model->get_process_fields($process);
+//		$linesScaned = $process_fields['lines_scaned'];
+//		$notFoundUrls = $process_fields['not_found_urls'];
+//		$itemsUpdated = $process_fields['items_updated'];
+//		$itemsUnchanged = $process_fields['items_unchanged'];
+//		$limitStart = $process_fields['start_limit'];
+//		$limitEnd = $process_fields['end_limit'];
+//		$start = microtime(true);
+//		$data = $this->temp_data_model->getLineFromTableLimit('urlstomatch', $limitStart, $limitEnd);
+//		$size_data = sizeof($data);
+//
+//		foreach ($data as $key => $urls)
+//		{
+//			$atuc = 2;
+//			$nfurls = 0;
+//			++$linesScaned;
+//			$url1 = $this->imported_data_parsed_model->getModelByUrl($urls['url1']);
+//			$url2 = $this->imported_data_parsed_model->getModelByUrl($urls['url2']);
+//			$model1 = '';
+//			$model2 = '';
+//			if ($url1 === FALSE)
+//			{
+//				++$nfurls;
+//				$this->temp_data_model->addUrlToNonFound($urls['url1'], $process);
+//				$atuc -= 1;
+//				//$notFoundUrlsArr[]=$urls[0];
+//			} else
+//			{
+//				$tm = false;
+//				if ($url1['ph_attr'])
+//				{
+//					$tm = unserialize($url1['ph_attr']);
+//				}
+//				$model1 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : FALSE;
+//			}
+//			if ($url2 === FALSE)
+//			{
+//				++$nfurls;
+//				$this->temp_data_model->addUrlToNonFound($urls['url2'], $process);
+//				$atuc -= 1;
+//				//$notFoundUrlsArr[]=$urls[1];
+//			} else
+//			{
+//				$tm = false;
+//				if ($url2['ph_attr'])
+//				{
+//					$tm = unserialize($url2['ph_attr']);
+//				}
+//				$model2 = $tm['model'] && strlen($tm['model']) > 3 ? $tm['model'] : false;
+//			}
+//			if ($nfurls > 0)
+//			{
+//				$notFoundUrls += $nfurls;
+//			} else
+//			{
+//				$this->imported_data_parsed_model->addItem($url1['data_id'], $url2['data_id']);
+//				if ($model1)
+//				{
+//					if ($model2 && $model1 != $model2)
+//					{
+//						if (!($url2['model'] && strlen($url2['model']) > 3) || ($url2['model'] != $model1))
+//						{
+//							$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model1);
+//							$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
+//							++$itemsUpdated;
+//							$atuc -= 1;
+//						}
+//					} elseif (!$model2 && (!($url2['model'] && strlen($url2['model']) > 3) || $model1 != $url2['model'])
+//					)
+//					{
+//						$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model1);
+//						$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model1, $url1['rev'] + 1, $url1['data_id']);
+//						++$itemsUpdated;
+//						$atuc -= 1;
+//					}
+//				} elseif ($model2)
+//				{
+//					if (!($url1['model'] && strlen($url1['model']) > 3) || $model2 != $url1['model'])
+//					{
+//						$this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $model2);
+//						$this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model2, $url2['rev'] + 1, $url2['data_id']);
+//						++$itemsUpdated;
+//						$atuc -= 1;
+//					}
+//				} elseif (($url1['model'] && strlen($url1['model']) > 3))
+//				{
+//					if (!($url2['model'] && strlen($url2['model']) > 3) || ($url1['model'] != $url2['model']))
+//					{
+//						$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $url1['model']);
+//						$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
+//						++$itemsUpdated;
+//						$atuc -= 1;
+//					}
+//				} elseif (($url2['model'] && strlen($url2['model']) > 3))
+//				{
+//					$this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $url2['model']);
+//					$this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
+//					++$itemsUpdated;
+//					$atuc -= 1;
+//				} else
+//				{
+//					$model = time();
+//					$this->temp_data_model->addUpdData($url1['data_id'], $url1['model'], $model);
+//					$this->temp_data_model->addUpdData($url2['data_id'], $url2['model'], $model);
+//					$this->imported_data_parsed_model->updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
+//					$this->imported_data_parsed_model->updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
+//					$itemsUpdated += 2;
+//					$atuc -= 1;
+//				}
+//			}
+//			if ($atuc < 0)
+//			{
+//				exit('incrorrect ATUC');
+//			}
+//			$itemsUnchanged += $atuc;
+//			$timing = microtime(true) - $start;
+//
+//			if ($timing < 60)
+//			{
+//				
+//			} else
+//			{
+//				$this->thread_model->updateStatus($process, 'process', array('lines_scaned' => $linesScaned, 'items_updated' => $itemsUpdated, 'not_found_urls' => $notFoundUrls, 'items_unchanged' => $itemsUnchanged));
+//				$start = microtime(true);
+//				die();
+//			}
+//
+//			if ($size_data == $linesScaned)
+//			{
+//				$this->thread_model->updateStatus($process, 'end', array('lines_scaned' => $linesScaned, 'items_updated' => $itemsUpdated, 'not_found_urls' => $notFoundUrls, 'items_unchanged' => $itemsUnchanged));
+//				$uid = $this->session->userdata('user_id');
+//				if ($this->thread_model->current_all_process($uid) == $this->thread_model->current_end_process($uid))
+//				{
+//					$this->thread_model->clear($uid);
+//				}
+//			}
+//		}
+//	}
 
 	function fixawm_am($wmb, $amb)
 	{
@@ -3313,7 +3533,7 @@ class Crons extends MY_Controller
 			$this->site_categories_model->curl_async($call_link);
 		} else
 		{
-			shell_exec("wget -S -O- http://dev.contentanalyticsinc.com/producteditor/index.php/crons/fix_imported_data_parsed_models > /dev/null 2>/dev/null &");
+			shell_exec("wget -S -O- ".site_url('/crons/fix_imported_data_parsed_models')." > /dev/null 2>/dev/null &");
 		}
 	}
 
@@ -3377,6 +3597,448 @@ class Crons extends MY_Controller
 		    "s" => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=medium2",
 		    'l' => "http://webthumb.bluga.net/easythumb.php?user=$webthumb_user_id&url=$e_url&hash=$hash&size=large"
 		);
+	}
+	public function do_stats_bybatch()
+	{
+		echo "Script start working";
+		$tmp_dir = sys_get_temp_dir() . '/';
+		unlink($tmp_dir . ".locked");
+		if (file_exists($tmp_dir . ".locked"))
+		{
+			exit;
+		}
+		$first_start = time();
+		touch($tmp_dir . ".locked");
+		$cjo = 0;
+		try
+		{
+			$this->load->model('imported_data_parsed_model');
+			$this->load->model('sites_model');
+			$this->load->model('batches_model');
+			$this->load->model('statistics_new_model');
+			
+			//$this->statistics_new_model->truncate();
+			
+			//Checking the third segment of URI for truncate flag 
+			$batch_id = $this->uri->segment(3);
+                        if($batch_id){
+                            $batch = $this->batches_model->get($batch_id);
+                            if(empty($batch)){
+                                exit('incorrect batch.');
+                            }
+                        }
+			$this->different_revissions();
+			$dss = $this->imported_data_parsed_model->getDoStatsStatus(); //getting status of do_stats process
+			if (!$dss) //if status info does not exists
+			{
+				//Set status for prevent duplicate
+				$this->imported_data_parsed_model->setDoStatsStatus();
+				$this->settings_model->setLastUpdate(1); //adding last update info
+			} else
+			{
+				if ($dss->description === 'stopped') //if status info exists, and description is 'stopped'
+				{
+					$this->imported_data_parsed_model->updDoStatsStatus(1); //update status info
+				}
+				$this->settings_model->setLastUpdate(); //update status info
+			}
+			//Get items for scanning
+			$time_start = microtime(true);
+			$data_arr = $this->imported_data_parsed_model->do_stats_newupdated($batch_id);
+			echo "<br>get_data ---- " . (microtime(true) - $time_start);
+			if (count($data_arr) > 0) //run analyze if array does not empty
+			{
+				$sites_list = array();
+				//Get all existing sites, generate site list
+				$query_cus_res = $this->sites_model->getAll();
+				if (count($query_cus_res) > 0)
+				{
+					foreach ($query_cus_res as $key => $value)
+					{
+						$n = parse_url($value->url);
+						$sites_list[] = $n['host'];
+					}
+				}
+				$this->load->model('customers_model');
+				$customersList = $this->customers_model->getCustomersList();
+				//end of list creating script
+				//Start analize each item
+				foreach ($data_arr as $obj)
+				{
+					$foreach_start = microtime(true);
+					$own_price = 0;
+					$competitors_prices = array();
+					$price_diff = '';
+					$items_priced_higher_than_competitors = 0;
+					$short_description_wc = 0;
+					$long_description_wc = 0;
+					$short_seo_phrases = '?';
+					$long_seo_phrases = '?';
+					$similar_products_competitors = array();
+					$manufacturerInfo = '';
+					// Price difference
+					$own_site = parse_url($obj->url, PHP_URL_HOST);
+					if (!$own_site)
+					{	
+						$own_site = "own site";
+					}
+					$own_site = str_replace("www1.", "", str_replace("www.", "", $own_site));
+
+					$short_description = '';
+					$long_description = '';
+					echo "<br>" . "im+daat+id= " . $obj->imported_data_id . "</br>";
+					//Prepare description field
+					$short_description_wc = 0;
+					if (($obj->description !== null || $obj->description !== 'null') && trim($obj->description) !== "")
+					{
+						$short_description = $obj->description;
+						//replace all tags and big spaces to single space
+						$obj->description = preg_replace('#<[^>]+>#',' ', $obj->description);
+						$obj->description = preg_replace('/\s+/',' ', $obj->description);
+						//getting count of words in short description
+						$short_description_wc = count(explode(" ", $obj->description));
+					}
+					//Prepare long description field
+					$long_description_wc = 0;
+					if (($obj->long_description !== null || $obj->long_description !== 'null') && trim($obj->long_description) !== "")
+					{
+						$long_description = $obj->long_description;
+						//replace all tags and big spaces to single space
+						$obj->long_description = preg_replace('#<[^>]+>#', ' ', $obj->long_description);
+						$obj->long_description = preg_replace('/\s+/', ' ', $obj->long_description);
+						//getting count of words in short description
+						$long_description_wc = count(explode(" ", $obj->long_description));
+					}
+					//Prepare manufacturer info
+					if(!empty($obj->manufacturer_url))
+					{
+						$manufacturerInfo = serialize(array('url'=>$obj->manufacturer_url,
+						'images'=>$obj->manufacturer_images,'videos'=>$obj->manufacturer_videos));
+					}	
+					$hash_start = microtime(true);
+                                        //Prepare Title keywords
+					$title_keywords = $this->imported_data_parsed_model->checkHash($obj->imported_data_id, $obj->product_name, $short_description, $long_description);
+					echo 'Check hash '.(microtime(true) - $hash_start);
+					if(!$title_keywords)
+					{	
+						// Generate Title Keywords
+						$keywords_start = microtime(true);
+						$title_keywords = $this->title_keywords($obj->product_name, $short_description, $long_description);
+						echo "Title Keywords -------------------- <b>".(microtime(true) - $keywords_start)." seconds</b>\n";
+					}
+					$modelStart = microtime(true);
+					$m = '';
+					//If parsed attributes are exist, finding similar items and price diff
+					if (isset($obj->parsed_attributes) && isset($obj->parsed_attributes['model']) && strlen($obj->parsed_attributes['model']) > 3)
+					{
+						//getting model of item
+$modelGet = microtime(true);
+						if ($obj->model && (strlen($obj->model) > 3))
+						{
+							$m = $obj->model;
+						} else
+						{
+							$m = $obj->parsed_attributes['model'];
+						}
+						//getting model of item
+						try
+						{
+							//Get last existing price
+							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id,1);
+						} catch (Exception $e)
+						{
+							echo 'Error', $e->getMessage(), "\n";
+							$own_prices = $this->imported_data_parsed_model->getLastPrices($obj->imported_data_id,1);
+						}
+echo '<br> - model get -- '.(microtime(true) - $modelGet);
+						//if own_prices is not empty make price difference data
+						if (!empty($own_prices))
+						{
+$getSimilar = microtime(true);
+							$own_price = floatval($own_prices->price);
+							$obj->own_price = $own_price;
+							$price_diff_exists = array();
+							$price_diff_exists['id'] = $own_prices->id;
+							$price_diff_exists['own_site'] = $own_site;
+							$price_diff_exists['own_price'] = $own_price;
+							// getting list of similar items
+							try
+							{
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
+							} catch (Exception $e)
+							{
+								echo 'Error', $e->getMessage(), "\n";
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
+							}
+echo '<br> - similar get -- '.(microtime(true) - $getSimilar);
+							//If similar items was found, start comparing
+							if (!empty($similar_items))
+							{
+$checkSimilar = microtime(true);								
+								foreach ($similar_items as $ks => $vs)
+								{
+									$customer = "";
+									//find customer of similar item
+									foreach ($sites_list as $ki => $vi)
+									{
+										if (strpos($vs['url'], "$vi") !== false)
+										{
+											$customer = strtolower($this->sites_model->get_name_by_url($vi));
+											break;
+										}
+									}
+									
+									$similar_products_competitors[] = array(
+									    'imported_data_id' => $vs['imported_data_id'],
+									    'customer' => $customer
+									);
+$getPrices = microtime(true);								
+									//Getting a three last prices for each item
+									try
+									{
+										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id'],1);
+									} catch (Exception $e)
+									{
+										echo 'Error', $e->getMessage(), "\n";
+										//$this->load->model('statistics_model');
+										//$this->statistics_model->db->close();
+										//$this->statistics_model->db->initialize();
+										$three_last_prices = $this->imported_data_parsed_model->getLastPrices($vs['imported_data_id'],1);
+									}
+echo '<br> -- get last prices -- '.(microtime(true) - $getPrices);									
+									//If last three prices are exist, define range of prices and start comparing
+									if (!empty($three_last_prices))
+									{
+										$price_scatter = $own_price * 0.03;
+										$price_upper_range = $own_price + $price_scatter;
+										$price_lower_range = $own_price - $price_scatter;
+										$competitor_price = floatval($three_last_prices->price);
+										//If own price greater than competitor price, flag will be set,
+										//or if competitor price not in the defined range, then price should be updated 
+										if ($competitor_price < $own_price)
+										{
+											$items_priced_higher_than_competitors = 1;
+										}
+										if ($competitor_price > $price_upper_range || $competitor_price < $price_lower_range)
+										{
+											$price_diff_exists['competitor_customer'][] = $similar_items[$ks]['customer'];
+											$price_diff_exists['competitor_price'][] = $competitor_price;
+											$price_diff = $price_diff_exists;
+											$competitors_prices[] = $competitor_price;
+										}
+									}
+echo '<br> - similar check -- '.(microtime(true) - $checkSimilar);									
+								}
+							}
+						} else
+						{
+$getSimilar2 = 	microtime(true);						
+							//own priece does not exists, looking for similar items
+							try
+							{
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
+							} catch (Exception $e)
+							{
+								echo 'Error', $e->getMessage(), "\n";
+								$similar_items = $this->imported_data_parsed_model->getByParsedAttributes($m, 0, $obj->imported_data_id,$customersList);
+							}
+echo '<br> - similar get 2 -- '.(microtime(true) - $getSimilar2);							
+							//If similar items were found, add imported_data_id and customer to similar product competitors
+							if (!empty($similar_items))
+							{
+$checkSimilar2 = microtime(true);								
+								foreach ($similar_items as $ks => $vs)
+								{
+									$customer = "";
+									foreach ($sites_list as $ki => $vi)
+									{
+										if (strpos($vs['url'], "$vi") !== false)
+										{
+											$customer = strtolower($this->sites_model->get_name_by_url($vi));
+											break;
+										}
+									}
+									$similar_products_competitors[] = array(
+									    'imported_data_id' => $vs['imported_data_id'],
+									    'customer' => $customer
+									);
+								}
+echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);								
+							}
+						}
+						$time = microtime(true) - $modelStart;
+						echo "<br>model exists_and some actions - " . $time . 'seconds';
+					} else
+					{
+						//if parsed attributes were not found, create custom model
+						$time_start = microtime(true);
+						if(isset($obj->imported_data_id))
+						{
+							echo "<br>im+daat+id= " . $obj->imported_data_id;
+							//checking for custom model
+							if ($model = $this->imported_data_parsed_model->check_if_exists_custom_model($obj->imported_data_id))
+							{
+								echo "<br>exists custom model ------------- ";
+								$same_pr = $this->imported_data_parsed_model->getByParsedAttributes($model, 0, $obj->imported_data_id,$customersList);
+							} else //geterate custom model if it does not exists
+							{
+								echo "<br>geting custom model - ";
+								$same_pr = array();
+								echo "product name  = " . $obj->product_name;
+								$same_pr = $this->imported_data_parsed_model->getByProductNameNew($obj->imported_data_id, $obj->product_name, '', 0, $sites_list);
+								echo "<br>custom model is ready ------------ ";
+							}
+						}
+						$time = microtime(true) - $time_start;
+						echo $time . " seconds (important)";
+						//looking for similar competitors
+						foreach ($same_pr as $key => $val)
+						{
+							$customer = "";
+							foreach ($sites_list as $ki => $vi)
+							{
+								if (strpos($val['url'], "$vi") !== false)
+								{
+									$customer = strtolower($this->sites_model->get_name_by_url($vi));
+									break;
+								}
+							}
+							$similar_products_competitors[] = array('imported_data_id' => $val['imported_data_id'], 'customer' => $customer);
+						}
+					}
+
+					$time = microtime(true) - $time_start;
+					//WC Short
+					$time_start = microtime(true);
+					//Get research_data_id and batch_id
+					$research_and_batch_ids = $this->statistics_new_model->getResearchDataAndBatchIds($obj->imported_data_id);
+					if (!$research_and_batch_ids)
+					{
+						//If research_data_id and batch_id were not found, define them by default
+						$research_and_batch_ids = array(array(
+							'research_data_id' => 0,
+							'batch_id' => 0
+						));
+					}
+					$time = microtime(true) - $time_start;
+					echo "<br>research_data ---------------------- " . $time . " seconds";
+					//$insertStart = microtime(true);
+					//insert new statistics data to statistics_new table if it not exists in table and update if exists
+					try
+					{
+						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids, $manufacturerInfo);
+					} catch (Exception $e)
+					{
+						echo 'Error', $e->getMessage(), "\n";
+						//$this->load->model('statistics_model');
+						//$this->statistics_model->db->close();
+						//$this->statistics_model->db->initialize();
+
+						$insert_id = $this->statistics_new_model->insert_updated($obj->imported_data_id, $obj->revision, $short_description_wc, $long_description_wc, $title_keywords, $own_price, serialize($price_diff), serialize($competitors_prices), $items_priced_higher_than_competitors, serialize($similar_products_competitors), $research_and_batch_ids, $manufacturerInfo);
+					}
+					$endTime = microtime(true);
+					//echo "<br>insert/update ----------------------- " . ($endTime - $insertStart) . " seconds<br>";
+					echo "<br>global foreach --------------------- " . ($endTime - $foreach_start) . " seconds<br>";
+				} //end foreach
+				
+				$cjo = $this->settings_model->getDescription();
+				$cjo++;
+				$this->settings_model->updateDescription($cjo);
+			}
+		} catch (Exception $e)
+		{
+			echo 'Error', $e->getMessage(), "\n";
+			unlink($tmp_dir . ".locked");
+		}
+		$time = time() - $first_start;
+		echo "<br>all -- " . $time . "<br>";
+		unlink($tmp_dir . ".locked");
+		$data_arr = $this->imported_data_parsed_model->do_stats_newupdated($batch_id); //get next 50 items to scan
+		$start = $this->settings_model->getDescription();
+		$stats_status = $this->settings_model->getDoStatsStatus(); //get status of do_stats
+		$total_items = $this->settings_model->getLastUpdate(); //get count of all items in time of starting
+		//If queque has items and status is started and count of all items bigger than count of scanned items , start script again
+		if (count($data_arr) > 0 && $stats_status->description === 'started' && ($cjo - 1) * 50 < intval($total_items['description']))
+		{ 
+			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
+			echo $utd->td;  //exit;
+			//make asynchronous web request to do_stats_forupdated page
+                        $url_link ="wget -S -O - ".site_url('/crons/do_stats_bybatch/'.$batch_id)." > /dev/null 2>/dev/null &"; 
+			shell_exec($url_link);
+		} else
+		{
+			//Or send report about success
+			$this->settings_model->setLastUpdate(); //set last update time
+			$mtd = $this->imported_data_parsed_model->getTimeDif(); // timing of process
+			echo $mtd->td;
+			//Remove status about started state
+			if ($stats_status->description === 'started') //if status is started
+			{
+				$this->imported_data_parsed_model->delDoStatsStatus(); //remove status info
+			}
+			$this->settings_model->updateDescription(0);  //reset cron_job_offset 0
+
+			
+			$this->load->library('email');
+			$this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
+			$this->email->to('bayclimber@gmail.com');
+			$this->email->subject('Cron job report');
+			$this->email->message('Cron job for do_statistics_new is done.<br> Timing = ' . $mtd->td); //.'<br> Total items updated: '.$qty['description']
+			$this->email->send(); 
+		}
+		unlink($tmp_dir . ".locked");
+	}
+	
+	function checkUploadedFiles()
+	{
+		$path = dirname(__FILE__);
+		echo 'Path to script: '.$path;
+		$uploadFolder = $this -> config -> item('csv_upload_dir');
+		echo '<br>Path to upload folder: '.$uploadFolder;
+		if(is_dir($uploadFolder))
+		{
+			$list = scandir($uploadFolder);
+			if(is_array($list) && count($list) > 2)
+			{
+				unset($list[0]);
+				unset($list[1]);
+				echo '<table border=1 cellpadding=5><tr><th>Filename</th><th>Changed</th>';
+				foreach($list as $l)
+				{
+					echo '<tr><td>'.$l.'</td><td>  '.date('Y-m-d H:i:s',filemtime($uploadFolder.'/'.$l)).'</td><tr>';
+				}
+				echo '</tr></table>';
+			}
+		}	
+	}
+	
+	function renameExistingFiles($suffix = '')
+	{
+		if(empty($suffix) || preg_match('#^[0-9]+$#',$suffix))
+		{	
+			$uploadFolder = $this -> config -> item('csv_upload_dir');
+			if(is_dir($uploadFolder))
+			{
+				$list = scandir($uploadFolder);
+				if(is_array($list) && count($list) > 2)
+				{
+					unset($list[0]);
+					unset($list[1]);
+					foreach($list as $l)
+					{	
+						$ext = end(explode('.',$l));
+						$name = preg_replace('#_[0-9]+.'.$ext.'#','',$l);
+						$name = str_replace('.'.$ext,'',$name);
+						if(preg_match('#^[0-9]+$#',$suffix))
+						{
+							$suffix = '_'.$suffix;
+						}	
+						rename($uploadFolder.'/'.$l,$uploadFolder.'/'.$name.$suffix.'.'.$ext);
+					}
+				}
+			}
+		}
+		$this->checkUploadedFiles();
 	}
 
 }

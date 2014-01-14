@@ -59,6 +59,7 @@ class Assess extends MY_Controller {
         $this->data['c_year'] = $c_year;
         $this->data['img_av'] = $this->webshoots_model->getWeekAvailableScreens($c_week, $c_year);
         $this->data['webshoots_model'] = $this->webshoots_model;
+	$this->data['login'] = $this->session->flashdata('login_init');
         // $this->data['rec'] = $this->webshoots_model->get_recipients_list();
         $this->render();
     }
@@ -246,7 +247,7 @@ class Assess extends MY_Controller {
 	}
 	
     public function get_assess_info() {
-       
+
         $st_time = microtime(TRUE);      
 		
         $batch_id = $this->input->get('batch_id');
@@ -298,6 +299,7 @@ class Assess extends MY_Controller {
 				'display_competitor_columns' => false,
 				'sort_dir' => array( 'default' => 'desc' ),
 				'flagged' => $this->input->get('flagged'),
+				'needFilters' => $this->input->get('needFilters'),
 				'summaryFilterData' => array( 'default' => array(), 'callback' => function($value) {
 					return $value ? explode(',', $value) : array();
 				}),
@@ -312,13 +314,14 @@ class Assess extends MY_Controller {
             $params->date_from = $build_assess_params->date_from;
             $params->date_to = $build_assess_params->date_to;
             $batch2 = $this->input->get('batch2') && $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
+			$params->displayCount = $this->input->get('displayCount', false);
             if ($batch2 === '') {
                 $params->iDisplayLength = $this->input->get('iDisplayLength');
                 $params->iDisplayStart = $this->input->get('iDisplayStart');
             }
 			
             $results = $this->get_data_for_assess($params);
-			
+	
             $cmp = array();  
 
             if ($batch2 && $batch2 != 'all') {
@@ -545,6 +548,7 @@ class Assess extends MY_Controller {
                                     $val->video_count1 = $video_count;
                                     $val->title_pa1 = $title_pa;
                                     $val->links_count1 = $title_pa;
+				    $val->total_description_wc1 = $val->short_description_wc1+$val->long_description_wc1;
                                     $cmpare->imported_data_id = $item['imported_data_id'];
                                     $batch2_items_count++;
 
@@ -644,13 +648,46 @@ class Assess extends MY_Controller {
         $results = $this->statistics_new_model->getStatsData_min_max($imported_data_id,$graphBuild);
             return $results;
         }
+
+	/**
+	 * get the last 6 crawl dates
+	 *
+	 * @access	private
+	 * @return	array
+	 */
+	private function get_trendline_dates($batch_id) 
+	{
+		$this->load->model('settings_model');
+		$this->load->model('statistics_model');
+		$this->load->model('statistics_new_model');
+		$results = $this->statistics_new_model->get_trendline_dates($batch_id);
+		return $results;
+	}
+
+	/**
+	 * get the value of the items crawled in every date
+	 *
+	 * @access	private
+	 * @param	int
+	 * @param	string
+	 * @param	array
+	 * @return	array
+	 */
+    private function get_trendline_data($imported_data_id, $graphBuild) 
+	{
+		$this->load->model('settings_model');
+		$this->load->model('statistics_model');
+		$this->load->model('statistics_new_model');
+		$results = $this->statistics_new_model->getStatsData_trendlines($imported_data_id, $graphBuild);
+		return $results;
+	}
+
     private function get_data_for_assess($params) {        
-        $this->load->model('statistics_model');
-        $this->load->model('statistics_new_model');
-		
         if ($this->settings['statistics_table'] == "statistics_new") {
+	    $this->load->model('statistics_new_model');
             $results = $this->statistics_new_model->getStatsData($params);
         } else {
+	    $this->load->model('statistics_model');
             $results = $this->statistics_model->getStatsData($params);
         }
         //$results = $this->statistics_model->getStatsData($params);
@@ -2875,7 +2912,7 @@ class Assess extends MY_Controller {
             $columns = array(
                 'product_name' => 'true',                               
                 'url' => 'true',                                
-                'short_description_wc' => 'true',			               
+                'total_description_wc' => 'true',                                
                 'title_seo_phrases' => 'true',                                                       
             );
         }
@@ -3060,6 +3097,7 @@ class Assess extends MY_Controller {
 
         
         $duplicate_content_range = 25;
+        $needFilters = $build_assess_params->needFilters;
         $success_filter_entries = array();
         $customer_name = $this->batches_model->getCustomerById($batch_id);
         $customer_url = parse_url($customer_name[0]->url);
@@ -3068,6 +3106,7 @@ class Assess extends MY_Controller {
         $batch2_meta_percents = array();
         $report = array();
         $pricing_details = array();
+        $stored_filter_items = array();
 		
 		//getting columns				
 		$raw_columns = $columns;
@@ -3086,7 +3125,8 @@ class Assess extends MY_Controller {
         $total_rows = count($results);
         $iterator_limit = $displayCount ? $display_start + $displayCount : $total_rows;
 		
-        for ($row_iterator = $display_start; $row_iterator < $iterator_limit && $row_iterator < $total_rows; $row_iterator++) {	
+        // for ($row_iterator = $display_start; $row_iterator < $iterator_limit && $row_iterator < $total_rows; $row_iterator++) {	
+        for ($row_iterator = $display_start; $row_iterator < $total_rows; $row_iterator++) {	
 			$row_key = $row_iterator;
 			$row = $results[$row_iterator];
 								
@@ -3144,34 +3184,12 @@ class Assess extends MY_Controller {
             $result_row->lower_price_exist = false;
             $result_row->snap = '';           
             $tb_product_name = '';
+			$result_row->murl = '';
+			$result_row->mimg = 0;
+			$result_row->mvid = 0;
+			$result_row->total_description_wc = $result_row->short_description_wc+$result_row->long_description_wc;
 
-			
-			
-			if ($build_assess_params->short_less_check && $build_assess_params->short_more_check) {
-                if ($result_row->short_description_wc > $build_assess_params->short_less && $result_row->short_description_wc < $build_assess_params->short_more) {
-                    continue;
-                }
-            } else {
-                if ($build_assess_params->short_less_check && $result_row->short_description_wc > $build_assess_params->short_less) {
-                    continue;
-                }
-                if ($build_assess_params->short_more_check && $result_row->short_description_wc < $build_assess_params->short_more) {
-                    continue;
-                }
-            }
-
-            if ($build_assess_params->long_less_check && $build_assess_params->long_more_check) {
-                if ($result_row->long_description_wc > $build_assess_params->long_less && $result_row->long_description_wc < $build_assess_params->long_more) {
-                    continue;
-                }
-            } else {
-                if ($build_assess_params->long_less_check && $result_row->long_description_wc > $build_assess_params->long_less) {
-                    continue;
-                }
-                if ($build_assess_params->long_more_check && $result_row->long_description_wc < $build_assess_params->long_more) {
-                    continue;
-                }
-            }
+			$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);	
 			
             if ($row->short_description) {
                 $result_row->short_description = $row->short_description;
@@ -3183,64 +3201,6 @@ class Assess extends MY_Controller {
             } else {
                 $result_row->long_description = '';
             }
-
-
-//Dublicate Content      
-            if (!$row->Short_Description2 || !$row->Long_Description2) {
-
-                if ($row->short_description) {
-                    $short_desc_1 = $row->short_description;
-                } else {
-                    $short_desc_1 = '';
-                }
-                if ($row->long_description) {
-                    $long_desc_1 = $row->long_description;
-                } else {
-                    $long_desc_1 = '';
-                }
-                $desc_1 = $short_desc_1 . ' ' . $long_desc_1;
-
-                if ($row->Short_Description1) {
-                    $short_desc_2 = $row->Short_Description1;
-                } else {
-                    $short_desc_2 = '';
-                }
-                if ($row->Long_Description1) {
-                    $long_desc_2 = $row->Long_Description1;
-                } else {
-                    $long_desc_2 = '';
-                }
-                $desc_2 = $short_desc_2 . ' ' . $long_desc_2;
-
-                if (strcasecmp($desc_1, $desc_2) <= 0)
-                    similar_text($desc_1, $desc_2, $percent);
-                else
-                    similar_text($desc_2, $desc_1, $percent);
-
-                $percent = number_format($percent, 2);
-
-                if ($percent >= 25) {
-                    $skus_25_duplicate_content++;
-                    $this->filterBySummaryCriteria('skus_25_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                if ($percent >= 50) {
-                    $skus_50_duplicate_content++;
-                    $this->filterBySummaryCriteria('skus_50_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                if ($percent >= 75) {
-                    $skus_75_duplicate_content++;
-                    $this->filterBySummaryCriteria('skus_75_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                $result_row->Duplicate_Content.= $percent . ' %';                
-            } else {
-                $result_row->Duplicate_Content.='';
-            }
-
-
-
 
             if ($build_assess_params->max_similar_item_count > 0) {                
                 $sim_items = $row->similar_items;
@@ -3343,55 +3303,70 @@ class Assess extends MY_Controller {
                         $links_count = $parsed_anchors_unserialize['quantity'];
                    
                     $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
+					
+					if ($needFilters) 
+					{						
+						if (isset($parsed_attributes_unserialize['pdf_count']) && $parsed_attributes_unserialize['pdf_count']) {
+							$skus_pdfs_competitor++;
+							$this->filterBySummaryCriteria('skus_pdfs_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						}
+						
+						if (isset($parsed_attributes_unserialize['video_count']) && $parsed_attributes_unserialize['video_count']) {
+							$skus_videos_competitor++;
+							$this->filterBySummaryCriteria('skus_videos_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						}
+						
+						if (isset($parsed_attributes_unserialize['product_images']))
+						{
+							if (!$parsed_attributes_unserialize['product_images']) {
+								$skus_with_no_product_images_competitor++;
+								$this->filterBySummaryCriteria('skus_with_no_product_images_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							}
+							
+							if ($parsed_attributes_unserialize['product_images'] == 1) {
+								$skus_with_one_product_image_competitor++;
+								$this->filterBySummaryCriteria('skus_with_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							}
+							
+							if ($parsed_attributes_unserialize['product_images'] > 1) {
+								$skus_with_more_than_one_product_image_competitor++;
+								$this->filterBySummaryCriteria('skus_with_more_than_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							}
+						}
 
-                    if (isset($parsed_attributes_unserialize['pdf_count']) && $parsed_attributes_unserialize['pdf_count']) {
-                        $skus_pdfs_competitor++;
-                        $this->filterBySummaryCriteria('skus_pdfs_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                    }
-					
-					if (isset($parsed_attributes_unserialize['video_count']) && $parsed_attributes_unserialize['video_count']) {
-                        $skus_videos_competitor++;
-                        $this->filterBySummaryCriteria('skus_videos_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                    }
-					
-					if (isset($parsed_attributes_unserialize['product_images']))
-					{
-						if (!$parsed_attributes_unserialize['product_images']) {
-							$skus_with_no_product_images_competitor++;
-							$this->filterBySummaryCriteria('skus_with_no_product_images_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
+						if (!$parsed_anchors_unserialize['quantity']) {
+							$skus_with_zero_product_description_links_competitor++;
+							$this->filterBySummaryCriteria('skus_with_zero_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						}
 						
-						if ($parsed_attributes_unserialize['product_images'] == 1) {
-							$skus_with_one_product_image_competitor++;
-							$this->filterBySummaryCriteria('skus_with_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
+						if($parsed_anchors_unserialize['quantity'] > 0) {
+							$skus_with_more_than_one_product_description_links_competitor++;
+							$this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						}
+
+						
+						if (isset($parsed_attributes_unserialize['title']) && $parsed_attributes_unserialize['title'] && strlen($parsed_attributes_unserialize['title']) < 70) {
+							$skus_title_less_than_70_chars_competitor++;
+							$this->filterBySummaryCriteria('skus_title_less_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						}
 						
-						if ($parsed_attributes_unserialize['product_images'] > 1) {
-							$skus_with_more_than_one_product_image_competitor++;
-							$this->filterBySummaryCriteria('skus_with_more_than_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
+						if (isset($parsed_attributes_unserialize['title']) && $parsed_attributes_unserialize['title'] && strlen($parsed_attributes_unserialize['title']) >= 70) {
+							$skus_title_more_than_70_chars_competitor++;
+							$this->filterBySummaryCriteria('skus_title_more_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						}
+						if (isset($result_row->mvid)) {
+							$skus_with_manufacturer_videos++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						}
+						if (isset($result_row->mimg)) {
+							$skus_with_manufacturer_images++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						} 
+						if (isset($result_row->murl)) { 
+							$skus_with_manufacturer_pages++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						}
 					}
-
-                    if (!$parsed_anchors_unserialize['quantity']) {
-                        $skus_with_zero_product_description_links_competitor++;
-                        $this->filterBySummaryCriteria('skus_with_zero_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                    }
-                    
-                    if($parsed_anchors_unserialize['quantity'] > 0) {
-                        $skus_with_more_than_one_product_description_links_competitor++;
-                        $this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                    }
-
-					
-					if (isset($parsed_attributes_unserialize['title']) && $parsed_attributes_unserialize['title'] && strlen($parsed_attributes_unserialize['title']) < 70) {
-                        $skus_title_less_than_70_chars_competitor++;
-                        $this->filterBySummaryCriteria('skus_title_less_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                    }
-					
-					if (isset($parsed_attributes_unserialize['title']) && $parsed_attributes_unserialize['title'] && strlen($parsed_attributes_unserialize['title']) >= 70) {
-                        $skus_title_more_than_70_chars_competitor++;
-                        $this->filterBySummaryCriteria('skus_title_more_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                    }
 
                     if ($parsed_meta_unserialize['description']) {
                         $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
@@ -3488,11 +3463,11 @@ class Assess extends MY_Controller {
                     $result_row['video_count' . $i] = $video_count ? $video_count : 'None';
                     $result_row['title_pa' . $i] = $title_pa ? $title_pa : 'None';
                     $result_row['links_count' . $i] = $links_count ? $links_count : 'None';
+                    $result_row['total_description_wc' . $i] = $result_row['short_description_wc' . $i]+$result_row['long_description_wc' . $i];
                 }
 
                 $result_row = (object) $result_row;
             }
-
             if ($row->snap1 && $row->snap1 != '') {
                 $result_row->snap1 = "<span style='cursor:pointer;'><img src='" . base_url() . "webshoots/" . $row->snap1 . "' /></snap>";
             }
@@ -3852,19 +3827,39 @@ class Assess extends MY_Controller {
                 if (!empty($title_seo_pr)) {
                     $str_title_long_seo = '<table class="table_keywords_long 3186">';
                     foreach ($title_seo_pr as $val) {
-                        $str_title_long_seo .= '<tr><td>' . $val['ph'] . '</td><td class = "phr-density">  ' . $val['prc']
-                                . '%</td><td style="display:none;" class = "phr-frequency">  ' . $val['frq'] . '</td></tr>';
+                        $str_title_long_seo .= '<tr><td>' . $val['ph'] . '</td><td class = "phr-density" style="display:none;">  ' . $val['prc']
+                                . '%</td><td class = "phr-frequency">  ' . $val['frq'] . '</td></tr>';
                     }
                     $result_row->title_seo_phrases = $str_title_long_seo . '</table>';
                 }
+		if(!empty($row->manufacturer_info))
+		{
+			$mi = unserialize($row->manufacturer_info);
+			$result_row->murl = $mi['url'];
+			$result_row->mimg = $mi['images'];
+			$result_row->mvid = $mi['videos'];
+			if(strlen($mi['url']) > 0)
+			{	
+				$skus_with_manufacturer_pages++;
+				$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+			}
+			if($mi['images'] > 0)
+			{	
+				$skus_with_manufacturer_images++;
+				$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+			}
+			if($mi['videos'] > 0)
+			{	
+				$skus_with_manufacturer_videos++;
+				$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+			}	
+		}
             } else {
                 $result_row->short_seo_phrases = $row->short_seo_phrases;
                 $result_row->long_seo_phrases = $row->long_seo_phrases;
                 $result_row->title_seo_phrases = '';
             }
-
 	
-
             if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content) {
                 $dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
                 $duplicate_customers_short = '';
@@ -3913,271 +3908,336 @@ class Assess extends MY_Controller {
                 $items_unoptimized_product_content++;
             }    	
 			
-			$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-            if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count']) {
-                $skus_pdfs++;
-                $this->filterBySummaryCriteria('skus_pdfs', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
+			//Dublicate Content      
+			if (!$row->Short_Description2 || !$row->Long_Description2) {
 
-			if (isset($pars_atr['parsed_attributes']['video_count']) && $pars_atr['parsed_attributes']['video_count']) {
-                $skus_videos++;
-                $this->filterBySummaryCriteria('skus_videos', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
+				if ($row->short_description) {
+					$short_desc_1 = $row->short_description;
+				} else {
+					$short_desc_1 = '';
+				}
+				if ($row->long_description) {
+					$long_desc_1 = $row->long_description;
+				} else {
+					$long_desc_1 = '';
+				}
+				$desc_1 = $short_desc_1 . ' ' . $long_desc_1;
+
+				if ($row->Short_Description1) {
+					$short_desc_2 = $row->Short_Description1;
+				} else {
+					$short_desc_2 = '';
+				}
+				if ($row->Long_Description1) {
+					$long_desc_2 = $row->Long_Description1;
+				} else {
+					$long_desc_2 = '';
+				}
+				$desc_2 = $short_desc_2 . ' ' . $long_desc_2;
+
+				if (strcasecmp($desc_1, $desc_2) <= 0)
+					similar_text($desc_1, $desc_2, $percent);
+				else
+					similar_text($desc_2, $desc_1, $percent);
+
+				$percent = number_format($percent, 2);
+				
+				if ($needFilters)
+				{
+					if ($percent >= 25) {
+						$skus_25_duplicate_content++;
+						$this->filterBySummaryCriteria('skus_25_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+
+					if ($percent >= 50) {
+						$skus_50_duplicate_content++;
+						$this->filterBySummaryCriteria('skus_50_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+
+					if ($percent >= 75) {
+						$skus_75_duplicate_content++;
+						$this->filterBySummaryCriteria('skus_75_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+				}
+
+				$result_row->Duplicate_Content.= $percent . '%';                
+			} else {
+				$result_row->Duplicate_Content.='';
+			}
 			
-			if (isset($pars_atr['parsed_attributes']['product_images']))
-			{
-				if (!$pars_atr['parsed_attributes']['product_images']) {
-					$skus_with_no_product_images++;
-					$this->filterBySummaryCriteria('skus_with_no_product_images', $build_assess_params->summaryFilterData, $success_filter_entries);
+			if ($needFilters)
+			{									
+				if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count']) {
+					$skus_pdfs++;
+					$this->filterBySummaryCriteria('skus_pdfs', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if (isset($pars_atr['parsed_attributes']['video_count']) && $pars_atr['parsed_attributes']['video_count']) {
+					$skus_videos++;
+					$this->filterBySummaryCriteria('skus_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 				}
 				
-				if ($pars_atr['parsed_attributes']['product_images'] == 1) {
-					$skus_with_one_product_image++;
-					$this->filterBySummaryCriteria('skus_with_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries);
+				if (isset($pars_atr['parsed_attributes']['product_images']))
+				{
+					if (!$pars_atr['parsed_attributes']['product_images']) {
+						$skus_with_no_product_images++;
+						$this->filterBySummaryCriteria('skus_with_no_product_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+					
+					if ($pars_atr['parsed_attributes']['product_images'] == 1) {
+						$skus_with_one_product_image++;
+						$this->filterBySummaryCriteria('skus_with_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+					
+					if ($pars_atr['parsed_attributes']['product_images'] > 1) {
+						$skus_with_more_than_one_product_image++;
+						$this->filterBySummaryCriteria('skus_with_more_than_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+				}
+
+				if (!$pars_atr['Anchors']['quantity']) {
+						$skus_with_zero_product_description_links++;
+						$this->filterBySummaryCriteria('skus_with_zero_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+				if($pars_atr['Anchors']['quantity'] > 0) {
+						$skus_with_more_than_one_product_description_links++;
+						$this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if (isset($pars_atr['parsed_attributes']['title']) && $pars_atr['parsed_attributes']['title'] && $pars_atr['parsed_attributes']['title'] < 70) {
+					$skus_title_less_than_70_chars++;
+					$this->filterBySummaryCriteria('skus_title_less_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if (isset($pars_atr['parsed_attributes']['title']) && $pars_atr['parsed_attributes']['title'] && $pars_atr['parsed_attributes']['title'] >= 70) {
+					$skus_title_more_than_70_chars++;
+					$this->filterBySummaryCriteria('skus_title_more_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}	
+
+				//gap analises
+				if ($build_assess_params->max_similar_item_count > 0) {
+					$sim_items = $row->similar_items;
+
+					if (isset($sim_items[$i - 1]) && ($sim_items[$i - 1]->long_description_wc || $sim_items[$i - 1]->short_description_wc) && ($sim_items[$i - 1]->short_description_wc + $sim_items[$i - 1]->long_description_wc) < 100) {
+						$totoal = $sim_items[$i - 1]->short_description_wc + $sim_items[$i - 1]->long_description_wc;
+						$result_row->gap.="Competitor total product description length only $totoal words<br>";
+					}
+
+
+					if ($result_row->column_features1 > $result_row->column_features) {
+						$x = $result_row->column_features1 - $result_row->column_features;
+						$result_row->gap.="Competitor has ".$x." features listed<br>";
+					}
+
+					if ($result_row->column_features < $result_row->column_features1) {
+						$skus_fewer_features_than_competitor++;
+						$this->filterBySummaryCriteria('skus_fewer_features_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+
+					if ($result_row->column_reviews < $result_row->column_reviews1) {
+						$skus_fewer_reviews_than_competitor++;
+						$this->filterBySummaryCriteria('skus_fewer_reviews_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+
+					
+
+					if ($result_row->column_features1) {
+						$skus_features_competitor++;
+						$this->filterBySummaryCriteria('skus_features_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+
+				
+
+					//Second batch								
+					if (!$result_row->column_reviews1) {
+						$skus_zero_reviews_competitor++;
+						$this->filterBySummaryCriteria('skus_zero_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+
+					if ($result_row->column_reviews1 >= 1 && $result_row->column_reviews1 <= 4) {
+						$skus_one_four_reviews_competitor++;
+						$this->filterBySummaryCriteria('skus_one_four_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+
+					if ($result_row->column_reviews1 >= 5) {
+						$skus_more_than_five_reviews_competitor++;
+						$this->filterBySummaryCriteria('skus_more_than_five_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
+
+					if ($result_row->column_reviews1 >= 100) {
+						$skus_more_than_hundred_reviews_competitor++;
+						$this->filterBySummaryCriteria('skus_more_than_hundred_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					}
 				}
 				
-				if ($pars_atr['parsed_attributes']['product_images'] > 1) {
-					$skus_with_more_than_one_product_image++;
-					$this->filterBySummaryCriteria('skus_with_more_than_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries);
+				if ($result_row->column_features) {
+					$skus_features++;
+					$this->filterBySummaryCriteria('skus_features', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 				}
-			}
-
-            if (!$pars_atr['Anchors']['quantity']) {
-                    $skus_with_zero_product_description_links++;
-                    $this->filterBySummaryCriteria('skus_with_zero_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-            if($pars_atr['Anchors']['quantity'] > 0) {
-                    $skus_with_more_than_one_product_description_links++;
-                    $this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-			if (isset($pars_atr['parsed_attributes']['title']) && $pars_atr['parsed_attributes']['title'] && $pars_atr['parsed_attributes']['title'] < 70) {
-                $skus_title_less_than_70_chars++;
-                $this->filterBySummaryCriteria('skus_title_less_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-			if (isset($pars_atr['parsed_attributes']['title']) && $pars_atr['parsed_attributes']['title'] && $pars_atr['parsed_attributes']['title'] >= 70) {
-                $skus_title_more_than_70_chars++;
-                $this->filterBySummaryCriteria('skus_title_more_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }	
-
-			//gap analises
-            if ($build_assess_params->max_similar_item_count > 0) {
-                $sim_items = $row->similar_items;
-
-                if (isset($sim_items[$i - 1]) && ($sim_items[$i - 1]->long_description_wc || $sim_items[$i - 1]->short_description_wc) && ($sim_items[$i - 1]->short_description_wc + $sim_items[$i - 1]->long_description_wc) < 100) {
-                    $totoal = $sim_items[$i - 1]->short_description_wc + $sim_items[$i - 1]->long_description_wc;
-                    $result_row->gap.="Competitor total product description length only $totoal words<br>";
-                }
-
-
-                if ($result_row->column_features1 > $result_row->column_features) {
-                    $x = $result_row->column_features1 - $result_row->column_features;
-                    $result_row->gap.="Competitor has ".$x." features listed<br>";
-                }
-
-                if ($result_row->column_features < $result_row->column_features1) {
-                    $skus_fewer_features_than_competitor++;
-                    $this->filterBySummaryCriteria('skus_fewer_features_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                if ($result_row->column_reviews < $result_row->column_reviews1) {
-                    $skus_fewer_reviews_than_competitor++;
-                    $this->filterBySummaryCriteria('skus_fewer_reviews_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                if ($result_row->column_features) {
-                    $skus_features++;
-                    $this->filterBySummaryCriteria('skus_features', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                if ($result_row->column_features1) {
-                    $skus_features_competitor++;
-                    $this->filterBySummaryCriteria('skus_features_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                /*
-                 * Reviews section
-                 */
-                //First batch								
-                if (!$result_row->column_reviews) {
-                    $skus_zero_reviews++;
-                    $this->filterBySummaryCriteria('skus_zero_reviews', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                if ($result_row->column_reviews >= 1 && $result_row->column_reviews <= 4) {
-                    $skus_one_four_reviews++;
-                    $this->filterBySummaryCriteria('skus_one_four_reviews', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                if ($result_row->column_reviews >= 5) {
-                    $skus_more_than_five_reviews++;
-                    $this->filterBySummaryCriteria('skus_more_than_five_reviews', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                if ($result_row->column_reviews >= 100) {
-                    $skus_more_than_hundred_reviews++;
-                    $this->filterBySummaryCriteria('skus_more_than_hundred_reviews', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                //Second batch								
-                if (!$result_row->column_reviews1) {
-                    $skus_zero_reviews_competitor++;
-                    $this->filterBySummaryCriteria('skus_zero_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                if ($result_row->column_reviews1 >= 1 && $result_row->column_reviews1 <= 4) {
-                    $skus_one_four_reviews_competitor++;
-                    $this->filterBySummaryCriteria('skus_one_four_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                if ($result_row->column_reviews1 >= 5) {
-                    $skus_more_than_five_reviews_competitor++;
-                    $this->filterBySummaryCriteria('skus_more_than_five_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-
-                if ($result_row->column_reviews1 >= 100) {
-                    $skus_more_than_hundred_reviews_competitor++;
-                    $this->filterBySummaryCriteria('skus_more_than_hundred_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-                }
-            }
-			
-            if ($result_row->lower_price_exist == true) {
-                $items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
-
-                $this->filterBySummaryCriteria('assess_report_items_priced_higher_than_competitors', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-			
-			if (trim($result_row->column_external_content)) {
-                $skus_third_party_content++;
-                $this->filterBySummaryCriteria('skus_third_party_content', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-            if (trim($result_row->column_external_content1)) {
-                $skus_third_party_content_competitor++;
-                $this->filterBySummaryCriteria('skus_third_party_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-            $first_general_description_size = $result_row->short_description_wc + $result_row->long_description_wc;
-            $second_general_description_size = $result_row->short_description_wc1 + $result_row->long_description_wc1;
-
-            if ($first_general_description_size < $second_general_description_size) {
-                $skus_shorter_than_competitor_product_content++;
-                $this->filterBySummaryCriteria('skus_shorter_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-            if ($first_general_description_size > $second_general_description_size) {
-                $skus_longer_than_competitor_product_content++;
-                $this->filterBySummaryCriteria('skus_longer_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-            if ($first_general_description_size == $second_general_description_size) {
-                $skus_same_competitor_product_content++;
-                $this->filterBySummaryCriteria('skus_same_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-            // For Batch 1
-            if ($first_general_description_size < 50) {
-                $skus_fewer_50_product_content++;
-                $this->filterBySummaryCriteria('skus_fewer_50_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-            if ($first_general_description_size < 100) {
-                $skus_fewer_100_product_content++;
-                $this->filterBySummaryCriteria('skus_fewer_100_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-            if ($first_general_description_size < 150) {
-                $skus_fewer_150_product_content++;
-                $this->filterBySummaryCriteria('skus_fewer_150_product_content', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-            // For Competitor (Batch 2)
-            if ($second_general_description_size < 50 && $build_assess_params->compare_batch_id) {
-                $skus_fewer_50_product_content_competitor++;
-                $this->filterBySummaryCriteria('skus_fewer_50_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-            if ($second_general_description_size < 100 && $build_assess_params->compare_batch_id) {
-                $skus_fewer_100_product_content_competitor++;
-                $this->filterBySummaryCriteria('skus_fewer_100_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-
-            if ($second_general_description_size < 150 && $build_assess_params->compare_batch_id) {
-                $skus_fewer_150_product_content_competitor++;
-                $this->filterBySummaryCriteria('skus_fewer_150_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-            }
-			
-					$batch1_filtered_title_percents = substr_count($result_row->title_seo_phrases, '%');
-			$batch2_filtered_title_percents = substr_count($result_row->title_seo_phrases1, '%');
-			
-			if ($batch1_filtered_title_percents < $batch2_filtered_title_percents)
-			{
-				$skus_fewer_competitor_optimized_keywords++;
-				$this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);					
-			}
-			
-			if (!$batch1_filtered_title_percents)
-			{
-				$skus_zero_optimized_keywords++;
-				$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);
-			}
-			
-			if ($batch1_filtered_title_percents >= 1)
-			{
-				$skus_one_optimized_keywords++;
-				$this->filterBySummaryCriteria('skus_one_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);		
-			}
 				
-			if ($batch1_filtered_title_percents >= 2)
-			{
-				$skus_two_optimized_keywords++;
-				$this->filterBySummaryCriteria('skus_two_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);			
-			}
-				
-			if ($batch1_filtered_title_percents >= 3)
-			{
-				$skus_three_optimized_keywords++;			
-				$this->filterBySummaryCriteria('skus_three_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries);
-			}
-			
-			
-			if (!$batch2_filtered_title_percents)
-			{
-				$skus_zero_optimized_keywords_competitor++;
-				$this->filterBySummaryCriteria('skus_zero_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-			}
-			
-			if ($batch2_filtered_title_percents >= 1)
-			{
-				$skus_one_optimized_keywords_competitor++;
-				$this->filterBySummaryCriteria('skus_one_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);		
-			}
-				
-			if ($batch2_filtered_title_percents >= 2)
-			{
-				$skus_two_optimized_keywords_competitor++;
-				$this->filterBySummaryCriteria('skus_two_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);			
-			}
-				
-			if ($batch2_filtered_title_percents >= 3)
-			{
-				$skus_three_optimized_keywords_competitor++;			
-				$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries);
-			}
-						
-			$are_records_filtered = $this->checkSuccessFilterEntries($success_filter_entries, $build_assess_params->summaryFilterData);
-            			
-			if (!$build_assess_params->summaryFilterData) {
-                $result_table[] = $result_row;				
-            } else if ($are_records_filtered) {
-				
-				if ($filtered_count >= $display_start && $filtered_count < ($display_start + $display_length))
-				{					
-					$result_table[] = $result_row;	
+				/*
+				 * Reviews section
+				 */
+				//First batch								
+				if (!$result_row->column_reviews) {
+					$skus_zero_reviews++;
+					$this->filterBySummaryCriteria('skus_zero_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 				}
-				$filtered_count++;				
-			}											       
+
+				if ($result_row->column_reviews >= 1 && $result_row->column_reviews <= 4) {
+					$skus_one_four_reviews++;
+					$this->filterBySummaryCriteria('skus_one_four_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if ($result_row->column_reviews >= 5) {
+					$skus_more_than_five_reviews++;
+					$this->filterBySummaryCriteria('skus_more_than_five_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if ($result_row->column_reviews >= 100) {
+					$skus_more_than_hundred_reviews++;
+					$this->filterBySummaryCriteria('skus_more_than_hundred_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+				
+				if ($result_row->lower_price_exist == true) {
+					$items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
+
+					$this->filterBySummaryCriteria('assess_report_items_priced_higher_than_competitors', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+				
+				if (trim($result_row->column_external_content)) {
+					$skus_third_party_content++;
+					$this->filterBySummaryCriteria('skus_third_party_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if (trim($result_row->column_external_content1)) {
+					$skus_third_party_content_competitor++;
+					$this->filterBySummaryCriteria('skus_third_party_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				$first_general_description_size = $result_row->short_description_wc + $result_row->long_description_wc;
+				$second_general_description_size = $result_row->short_description_wc1 + $result_row->long_description_wc1;
+
+				if ($first_general_description_size < $second_general_description_size) {
+					$skus_shorter_than_competitor_product_content++;
+					$this->filterBySummaryCriteria('skus_shorter_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if ($first_general_description_size > $second_general_description_size) {
+					$skus_longer_than_competitor_product_content++;
+					$this->filterBySummaryCriteria('skus_longer_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if ($first_general_description_size == $second_general_description_size) {
+					$skus_same_competitor_product_content++;
+					$this->filterBySummaryCriteria('skus_same_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				// For Batch 1
+				if ($first_general_description_size < 50) {
+					$skus_fewer_50_product_content++;
+					$this->filterBySummaryCriteria('skus_fewer_50_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if ($first_general_description_size < 100) {
+					$skus_fewer_100_product_content++;
+					$this->filterBySummaryCriteria('skus_fewer_100_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if ($first_general_description_size < 150) {
+					$skus_fewer_150_product_content++;
+					$this->filterBySummaryCriteria('skus_fewer_150_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				// For Competitor (Batch 2)
+				if ($second_general_description_size < 50 && $build_assess_params->compare_batch_id) {
+					$skus_fewer_50_product_content_competitor++;
+					$this->filterBySummaryCriteria('skus_fewer_50_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if ($second_general_description_size < 100 && $build_assess_params->compare_batch_id) {
+					$skus_fewer_100_product_content_competitor++;
+					$this->filterBySummaryCriteria('skus_fewer_100_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+
+				if ($second_general_description_size < 150 && $build_assess_params->compare_batch_id) {
+					$skus_fewer_150_product_content_competitor++;
+					$this->filterBySummaryCriteria('skus_fewer_150_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+				
+				$batch1_filtered_title_percents = substr_count($result_row->title_seo_phrases, '%');
+				$batch2_filtered_title_percents = substr_count($result_row->title_seo_phrases1, '%');
+				
+				if ($batch1_filtered_title_percents < $batch2_filtered_title_percents)
+				{
+					$skus_fewer_competitor_optimized_keywords++;
+					$this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);					
+				}
+				
+				if (!$batch1_filtered_title_percents)
+				{
+					$skus_zero_optimized_keywords++;
+					$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+				
+				if ($batch1_filtered_title_percents >= 1)
+				{
+					$skus_one_optimized_keywords++;
+					$this->filterBySummaryCriteria('skus_one_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);		
+				}
+					
+				if ($batch1_filtered_title_percents >= 2)
+				{
+					$skus_two_optimized_keywords++;
+					$this->filterBySummaryCriteria('skus_two_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);			
+				}
+					
+				if ($batch1_filtered_title_percents >= 3)
+				{
+					$skus_three_optimized_keywords++;			
+					$this->filterBySummaryCriteria('skus_three_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+				
+				
+				if (!$batch2_filtered_title_percents)
+				{
+					$skus_zero_optimized_keywords_competitor++;
+					$this->filterBySummaryCriteria('skus_zero_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+				
+				if ($batch2_filtered_title_percents >= 1)
+				{
+					$skus_one_optimized_keywords_competitor++;
+					$this->filterBySummaryCriteria('skus_one_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);		
+				}
+					
+				if ($batch2_filtered_title_percents >= 2)
+				{
+					$skus_two_optimized_keywords_competitor++;
+					$this->filterBySummaryCriteria('skus_two_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);			
+				}
+					
+				if ($batch2_filtered_title_percents >= 3)
+				{
+					$skus_three_optimized_keywords_competitor++;			
+					$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+				if (isset($data_row->mvid)) {
+							$skus_with_manufacturer_videos++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}
+			        if (isset($data_row->mimg)) {
+							$skus_with_manufacturer_images++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				} 
+				if (isset($data_row->murl)) { 
+							$skus_with_manufacturer_pages++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				}				
+            }
+					
+			if ($row_iterator < $iterator_limit)
+				$result_table[$row_iterator] = $result_row;	
         }
 
 
@@ -4187,123 +4247,130 @@ class Assess extends MY_Controller {
             $own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
         }
 
-
-		$summary_fields = array(
-			'assess_report_total_items' => array( 'value' => $own_batch_total_items, 'percentage' => array() ),
-			'items_priced_higher_than_competitors' => array( 'value' => $items_priced_higher_than_competitors, 'percentage' => array('batch1')),
-			'items_have_more_than_20_percent_duplicate_content' => array( 'value' => $items_have_more_than_20_percent_duplicate_content, 'percentage' => array()),
-			'skus_25_duplicate_content' => array( 'value' => $skus_25_duplicate_content, 'percentage' => array('batch1')),
-			'skus_50_duplicate_content' => array( 'value' => $skus_50_duplicate_content, 'percentage' => array('batch1')),
-			'skus_75_duplicate_content' => array( 'value' => $skus_75_duplicate_content, 'percentage' => array('batch1')),
-			'items_unoptimized_product_content' => array( 'value' => $items_unoptimized_product_content, 'percentage' => array()),
-			'items_short_products_content_short' => array( 'value' => $items_short_products_content_short, 'percentage' => array()),
-			'items_long_products_content_short' => array( 'value' => $items_long_products_content_short, 'percentage' => array()),
-			'short_wc_total_not_0' => array( 'value' => $short_wc_total_not_0, 'percentage' => array()),
-			'long_wc_total_not_0' => array( 'value' => $long_wc_total_not_0, 'percentage' => array()),
-			'short_description_wc_lower_range' => array( 'value' => $build_assess_params->short_less, 'percentage' => array()),
-			'long_description_wc_lower_range' => array( 'value' => $build_assess_params->long_less, 'percentage' => array()),
-			'skus_shorter_than_competitor_product_content' => array( 'value' => $skus_shorter_than_competitor_product_content, 'percentage' => array('batch1')),
-			'skus_longer_than_competitor_product_content' => array( 'value' => $skus_longer_than_competitor_product_content, 'percentage' => array('batch1')),
-			'skus_same_competitor_product_content' => array( 'value' => $skus_same_competitor_product_content, 'percentage' => array('batch1')),
-			'skus_fewer_features_than_competitor' => array( 'value' => $skus_fewer_features_than_competitor, 'percentage' => array('batch1'), 'icon' => $skus_fewer_features_than_competitor ? 'assess_report_seo_red.png' : 'assess_report_seo.png'),
-			'skus_fewer_reviews_than_competitor' => array( 'value' => $skus_fewer_reviews_than_competitor, 'percentage' => array('batch1')),
-			'skus_fewer_competitor_optimized_keywords' => array( 'value' => $skus_fewer_competitor_optimized_keywords, 'percentage' => array('batch1')),
-			
-			'skus_zero_optimized_keywords' => array( 'value' => $skus_zero_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_zero_optimized_keywords_competitor)),
-			'skus_one_optimized_keywords' => array( 'value' => $skus_one_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_one_optimized_keywords_competitor)),
-			'skus_two_optimized_keywords' => array( 'value' => $skus_two_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_two_optimized_keywords_competitor)),
-			'skus_three_optimized_keywords' => array( 'value' => $skus_three_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_three_optimized_keywords_competitor)),
-			
-			'skus_zero_optimized_keywords_competitor' => array( 'value' => $skus_zero_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_zero_optimized_keywords)),
-			'skus_one_optimized_keywords_competitor' => array( 'value' => $skus_one_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_one_optimized_keywords)),
-			'skus_two_optimized_keywords_competitor' => array( 'value' => $skus_two_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_two_optimized_keywords)),
-			'skus_three_optimized_keywords_competitor' => array( 'value' => $skus_three_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_three_optimized_keywords)),
-			
-			'skus_title_less_than_70_chars' => array( 'value' => $skus_title_less_than_70_chars, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_title_less_than_70_chars_competitor)),
-			'skus_title_more_than_70_chars' => array( 'value' => $skus_title_more_than_70_chars, 'percentage' => array('batch1', 'competitor'), 'icon_percentage' => function($percent) {
-				if ($percent > 50)
-					return 'assess_report_seo_red.png';
-				else if ($percent >= 25 && $percent <= 50)
-					return 'assess_report_seo_yellow.png';
-				else
-					return 'assess_report_seo.png';
-			}, 'generals' => array('competitor' => $skus_title_more_than_70_chars_competitor)),
-			
-			'skus_title_less_than_70_chars_competitor' => array( 'value' => $skus_title_less_than_70_chars_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_title_less_than_70_chars)),
-			'skus_title_more_than_70_chars_competitor' => array( 'value' => $skus_title_more_than_70_chars_competitor, 'percentage' => array('batch2', 'competitor'), 'icon_percentage' => function($percent) {
-				if ($percent > 50)
-					return 'assess_report_seo_red.png';
-				else if ($percent >= 25 && $percent <= 50)
-					return 'assess_report_seo_yellow.png';
-				else
-					return 'assess_report_seo.png';
-			}, 'generals' => array('competitor' => $skus_title_more_than_70_chars)),
-			
-			'total_items_selected_by_filter' => array( 'value' => count($result_table), 'percentage' => array()),
-			'assess_report_competitor_matches_number' => array( 'value' => $build_assess_params->batch2_items_count, 'percentage' => array()),
-			'skus_third_party_content' => array( 'value' => $skus_third_party_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_third_party_content_competitor)),
-			'skus_third_party_content_competitor' => array( 'value' => $skus_third_party_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_third_party_content)),
-			'skus_fewer_50_product_content' => array( 'value' => $skus_fewer_50_product_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_fewer_50_product_content_competitor)),
-			'skus_fewer_100_product_content' => array( 'value' => $skus_fewer_100_product_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_fewer_100_product_content_competitor)),
-			'skus_fewer_150_product_content' => array( 'value' => $skus_fewer_150_product_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_fewer_150_product_content_competitor)),		
-			'skus_fewer_50_product_content_competitor' => array( 'value' => $skus_fewer_50_product_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_fewer_50_product_content)),
-			'skus_fewer_100_product_content_competitor' => array( 'value' => $skus_fewer_100_product_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_fewer_100_product_content)),
-			'skus_fewer_150_product_content_competitor' => array( 'value' => $skus_fewer_150_product_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_fewer_150_product_content)),		
-			'skus_features' => array( 'value' => $skus_features, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_features_competitor)),
-			'skus_features_competitor' => array( 'value' => $skus_features_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_features)),
-						
-			'skus_zero_reviews' => array( 'value' => $skus_zero_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_zero_reviews_competitor)),
-			'skus_one_four_reviews' => array( 'value' => $skus_one_four_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_one_four_reviews_competitor)),
-			'skus_more_than_five_reviews' => array( 'value' => $skus_more_than_five_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_five_reviews_competitor)),
-			'skus_more_than_hundred_reviews' => array( 'value' => $skus_more_than_hundred_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_hundred_reviews_competitor)),
-						
-			'skus_zero_reviews_competitor' => array( 'value' => $skus_zero_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_zero_reviews)),
-			'skus_one_four_reviews_competitor' => array( 'value' => $skus_one_four_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_one_four_reviews)),
-			'skus_more_than_five_reviews_competitor' => array( 'value' => $skus_more_than_five_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_five_reviews)),
-			'skus_more_than_hundred_reviews_competitor' => array( 'value' => $skus_more_than_hundred_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_hundred_reviews)),
-			
-			'skus_pdfs' => array( 'value' => $skus_pdfs, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_pdfs_competitor), 'icon_percentage' => function($percent) {
-				return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
-			}),
-			'skus_pdfs_competitor' => array( 'value' => $skus_pdfs_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_pdfs), 'icon_percentage' => function($percent) {
-				return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
-			}),
-			
-			'skus_videos' => array( 'value' => $skus_videos, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_videos_competitor), 'icon_percentage' => function($percent) {
-				return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
-			}),
-			'skus_videos_competitor' => array( 'value' => $skus_videos_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_videos), 'icon_percentage' => function($percent) {
-				return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
-			}),
-			
-			'skus_with_no_product_images' => array( 'value' => $skus_with_no_product_images, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_no_product_images_competitor)),
-			'skus_with_one_product_image' => array( 'value' => $skus_with_one_product_image, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_one_product_image_competitor)),
-			'skus_with_more_than_one_product_image' => array( 'value' => $skus_with_more_than_one_product_image, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_more_than_one_product_image_competitor)),
-			
-			'skus_with_no_product_images_competitor' => array( 'value' => $skus_with_no_product_images_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_no_product_images)),
-			'skus_with_one_product_image_competitor' => array( 'value' => $skus_with_one_product_image_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_one_product_image)),
-			'skus_with_more_than_one_product_image_competitor' => array( 'value' => $skus_with_more_than_one_product_image_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_more_than_one_product_image)),
-            'skus_with_zero_product_description_links' => array( 'value' => $skus_with_zero_product_description_links, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
-            'skus_with_more_than_one_product_description_links' => array( 'value' => $skus_with_more_than_one_product_description_links, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
-
-            'skus_with_zero_product_description_links_competitor' => array( 'value' => $skus_with_zero_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links)),
-            'skus_with_more_than_one_product_description_links_competitor' => array( 'value' => $skus_with_more_than_one_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
-
-		);		
+		if ($needFilters)
+		{
+			$summary_fields = array(
+				'assess_report_total_items' => array( 'value' => $own_batch_total_items, 'percentage' => array() ),
+				'items_priced_higher_than_competitors' => array( 'value' => $items_priced_higher_than_competitors, 'percentage' => array('batch1')),
+				'items_have_more_than_20_percent_duplicate_content' => array( 'value' => $items_have_more_than_20_percent_duplicate_content, 'percentage' => array()),
+				'skus_25_duplicate_content' => array( 'value' => $skus_25_duplicate_content, 'percentage' => array('batch1')),
+				'skus_50_duplicate_content' => array( 'value' => $skus_50_duplicate_content, 'percentage' => array('batch1')),
+				'skus_75_duplicate_content' => array( 'value' => $skus_75_duplicate_content, 'percentage' => array('batch1')),
+				'items_unoptimized_product_content' => array( 'value' => $items_unoptimized_product_content, 'percentage' => array()),
+				'items_short_products_content_short' => array( 'value' => $items_short_products_content_short, 'percentage' => array()),
+				'items_long_products_content_short' => array( 'value' => $items_long_products_content_short, 'percentage' => array()),
+				'short_wc_total_not_0' => array( 'value' => $short_wc_total_not_0, 'percentage' => array()),
+				'long_wc_total_not_0' => array( 'value' => $long_wc_total_not_0, 'percentage' => array()),
+				'short_description_wc_lower_range' => array( 'value' => $build_assess_params->short_less, 'percentage' => array()),
+				'long_description_wc_lower_range' => array( 'value' => $build_assess_params->long_less, 'percentage' => array()),
+				'skus_shorter_than_competitor_product_content' => array( 'value' => $skus_shorter_than_competitor_product_content, 'percentage' => array('batch1')),
+				'skus_longer_than_competitor_product_content' => array( 'value' => $skus_longer_than_competitor_product_content, 'percentage' => array('batch1')),
+				'skus_same_competitor_product_content' => array( 'value' => $skus_same_competitor_product_content, 'percentage' => array('batch1')),
+				'skus_fewer_features_than_competitor' => array( 'value' => $skus_fewer_features_than_competitor, 'percentage' => array('batch1'), 'icon' => $skus_fewer_features_than_competitor ? 'assess_report_seo_red.png' : 'assess_report_seo.png'),
+				'skus_fewer_reviews_than_competitor' => array( 'value' => $skus_fewer_reviews_than_competitor, 'percentage' => array('batch1')),
+				'skus_fewer_competitor_optimized_keywords' => array( 'value' => $skus_fewer_competitor_optimized_keywords, 'percentage' => array('batch1')),
 				
-		foreach ($summary_fields as $key => $summary_field)
-		{						
-			$my_percent = 0;
+				'skus_zero_optimized_keywords' => array( 'value' => $skus_zero_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_zero_optimized_keywords_competitor)),
+				'skus_one_optimized_keywords' => array( 'value' => $skus_one_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_one_optimized_keywords_competitor)),
+				'skus_two_optimized_keywords' => array( 'value' => $skus_two_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_two_optimized_keywords_competitor)),
+				'skus_three_optimized_keywords' => array( 'value' => $skus_three_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_three_optimized_keywords_competitor)),
+				
+				'skus_zero_optimized_keywords_competitor' => array( 'value' => $skus_zero_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_zero_optimized_keywords)),
+				'skus_one_optimized_keywords_competitor' => array( 'value' => $skus_one_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_one_optimized_keywords)),
+				'skus_two_optimized_keywords_competitor' => array( 'value' => $skus_two_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_two_optimized_keywords)),
+				'skus_three_optimized_keywords_competitor' => array( 'value' => $skus_three_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_three_optimized_keywords)),
+				
+				'skus_title_less_than_70_chars' => array( 'value' => $skus_title_less_than_70_chars, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_title_less_than_70_chars_competitor)),
+				'skus_title_more_than_70_chars' => array( 'value' => $skus_title_more_than_70_chars, 'percentage' => array('batch1', 'competitor'), 'icon_percentage' => function($percent) {
+					if ($percent > 50)
+						return 'assess_report_seo_red.png';
+					else if ($percent >= 25 && $percent <= 50)
+						return 'assess_report_seo_yellow.png';
+					else
+						return 'assess_report_seo.png';
+				}, 'generals' => array('competitor' => $skus_title_more_than_70_chars_competitor)),
+				
+				'skus_title_less_than_70_chars_competitor' => array( 'value' => $skus_title_less_than_70_chars_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_title_less_than_70_chars)),
+				'skus_title_more_than_70_chars_competitor' => array( 'value' => $skus_title_more_than_70_chars_competitor, 'percentage' => array('batch2', 'competitor'), 'icon_percentage' => function($percent) {
+					if ($percent > 50)
+						return 'assess_report_seo_red.png';
+					else if ($percent >= 25 && $percent <= 50)
+						return 'assess_report_seo_yellow.png';
+					else
+						return 'assess_report_seo.png';
+				}, 'generals' => array('competitor' => $skus_title_more_than_70_chars)),
+				
+				'total_items_selected_by_filter' => array( 'value' => count($result_table), 'percentage' => array()),
+				'assess_report_competitor_matches_number' => array( 'value' => $build_assess_params->batch2_items_count, 'percentage' => array()),
+				'skus_third_party_content' => array( 'value' => $skus_third_party_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_third_party_content_competitor)),
+				'skus_third_party_content_competitor' => array( 'value' => $skus_third_party_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_third_party_content)),
+				'skus_fewer_50_product_content' => array( 'value' => $skus_fewer_50_product_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_fewer_50_product_content_competitor)),
+				'skus_fewer_100_product_content' => array( 'value' => $skus_fewer_100_product_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_fewer_100_product_content_competitor)),
+				'skus_fewer_150_product_content' => array( 'value' => $skus_fewer_150_product_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_fewer_150_product_content_competitor)),		
+				'skus_fewer_50_product_content_competitor' => array( 'value' => $skus_fewer_50_product_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_fewer_50_product_content)),
+				'skus_fewer_100_product_content_competitor' => array( 'value' => $skus_fewer_100_product_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_fewer_100_product_content)),
+				'skus_fewer_150_product_content_competitor' => array( 'value' => $skus_fewer_150_product_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_fewer_150_product_content)),		
+				'skus_features' => array( 'value' => $skus_features, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_features_competitor)),
+				'skus_features_competitor' => array( 'value' => $skus_features_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_features)),
+							
+				'skus_zero_reviews' => array( 'value' => $skus_zero_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_zero_reviews_competitor)),
+				'skus_one_four_reviews' => array( 'value' => $skus_one_four_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_one_four_reviews_competitor)),
+				'skus_more_than_five_reviews' => array( 'value' => $skus_more_than_five_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_five_reviews_competitor)),
+				'skus_more_than_hundred_reviews' => array( 'value' => $skus_more_than_hundred_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_hundred_reviews_competitor)),
+							
+				'skus_zero_reviews_competitor' => array( 'value' => $skus_zero_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_zero_reviews)),
+				'skus_one_four_reviews_competitor' => array( 'value' => $skus_one_four_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_one_four_reviews)),
+				'skus_more_than_five_reviews_competitor' => array( 'value' => $skus_more_than_five_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_five_reviews)),
+				'skus_more_than_hundred_reviews_competitor' => array( 'value' => $skus_more_than_hundred_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_hundred_reviews)),
+				
+				'skus_pdfs' => array( 'value' => $skus_pdfs, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_pdfs_competitor), 'icon_percentage' => function($percent) {
+					return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+				}),
+				'skus_pdfs_competitor' => array( 'value' => $skus_pdfs_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_pdfs), 'icon_percentage' => function($percent) {
+					return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+				}),
+				
+				'skus_videos' => array( 'value' => $skus_videos, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_videos_competitor), 'icon_percentage' => function($percent) {
+					return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+				}),
+				'skus_videos_competitor' => array( 'value' => $skus_videos_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_videos), 'icon_percentage' => function($percent) {
+					return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+				}),
+				
+				'skus_with_no_product_images' => array( 'value' => $skus_with_no_product_images, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_no_product_images_competitor)),
+				'skus_with_one_product_image' => array( 'value' => $skus_with_one_product_image, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_one_product_image_competitor)),
+				'skus_with_more_than_one_product_image' => array( 'value' => $skus_with_more_than_one_product_image, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_more_than_one_product_image_competitor)),
+				
+				'skus_with_no_product_images_competitor' => array( 'value' => $skus_with_no_product_images_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_no_product_images)),
+				'skus_with_one_product_image_competitor' => array( 'value' => $skus_with_one_product_image_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_one_product_image)),
+				'skus_with_more_than_one_product_image_competitor' => array( 'value' => $skus_with_more_than_one_product_image_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_more_than_one_product_image)),
+				'skus_with_zero_product_description_links' => array( 'value' => $skus_with_zero_product_description_links, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
+				'skus_with_more_than_one_product_description_links' => array( 'value' => $skus_with_more_than_one_product_description_links, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
+
+				'skus_with_zero_product_description_links_competitor' => array( 'value' => $skus_with_zero_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links)),
+				'skus_with_more_than_one_product_description_links_competitor' => array( 'value' => $skus_with_more_than_one_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
+				'skus_with_manufacturer_videos' => array( 'value' => (isset($skus_with_manufacturer_videos)) ? $skus_with_manufacturer_videos : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_videos)),
+				'skus_with_manufacturer_images' => array( 'value' => (isset($skus_with_manufacturer_images)) ? $skus_with_manufacturer_images : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_images)),
+				'skus_with_manufacturer_pages' => array( 'value' => (isset($skus_with_manufacturer_pages)) ? $skus_with_manufacturer_pages : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_pages)),
+
+			);		
+					
+			foreach ($summary_fields as $key => $summary_field)
+			{						
+				$my_percent = 0;
+				
+				$report['summary'][$key] = trim($summary_field['value']) . $this->calculatePercentage(array('batch1' => $own_batch_total_items, 'batch2' => $build_assess_params->batch2_items_count), $summary_field, $my_percent);
+				if (isset($summary_field['icon']))
+					$report['summary'][$key . '_icon'] = $summary_field['icon'];
+				
+				if (isset($summary_field['icon_percentage']))
+				{
+					$report['summary'][$key . '_icon'] = $summary_field['icon_percentage']($my_percent);
+				}			
+			}	
 			
-			$report['summary'][$key] = trim($summary_field['value']) . $this->calculatePercentage(array('batch1' => $own_batch_total_items, 'batch2' => $build_assess_params->batch2_items_count), $summary_field, $my_percent);
-			if (isset($summary_field['icon']))
-				$report['summary'][$key . '_icon'] = $summary_field['icon'];
-			
-			if (isset($summary_field['icon_percentage']))
-			{
-				$report['summary'][$key . '_icon'] = $summary_field['icon_percentage']($my_percent);
-			}			
-		}		              
+			$report['stored_filter_items'] = $stored_filter_items;
+		}
 
         if ($items_priced_higher_than_competitors > 0) {
             $report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on ' . $items_priced_higher_than_competitors . ' item(s)';
@@ -4322,6 +4389,8 @@ class Assess extends MY_Controller {
         }
 
         $report['detail_comparisons_total'] = $detail_comparisons_total;
+        
+		
         //Debugging
         $dur = microtime(true) - $st_time;
         header('Mem-and-Time2-BAT03: ' . memory_get_usage() . '-' . $dur);
@@ -4358,11 +4427,11 @@ class Assess extends MY_Controller {
             $this->sort_type = is_numeric($result_table[0]->$s_column) ? "num" : "";
 
 
-            if ($s_column == 'product_name') {
-                usort($result_table, array("Assess", "assess_sort_ignore"));
-            } else {
-                usort($result_table, array("Assess", "assess_sort"));
-            }
+            // if ($s_column == 'product_name') {
+                // usort($result_table, array("Assess", "assess_sort_ignore"));
+            // } else {
+                // usort($result_table, array("Assess", "assess_sort"));
+            // }
         }
 
 
@@ -4518,14 +4587,17 @@ class Assess extends MY_Controller {
                         'H1_Tags' => $data_row->H1_Tags,
                         'H1_Tags_Count' => $data_row->H1_Tags_Count,
                         'H2_Tags' => $data_row->H2_Tags,
-                        'H2_Tags_Count' => $data_row->H2_Tags_Count,
-                        'duplicate_content' => $data_row->duplicate_content,
+                        'H2_Tags_Count' => $data_row->H2_Tags_Count,                                               
                         'column_external_content' => $data_row->column_external_content,
                         'column_reviews' => $data_row->column_reviews,
                         'average_review' => $data_row->average_review,
                         'column_features' => $data_row->column_features,
                         'price_diff' => $data_row->price_diff,
-                        'recommendations' => $recommendations_html,                       
+                        'recommendations' => $recommendations_html,      
+			'murl' => $data_row->murl,
+			'mimg' =>  $data_row->mimg,
+			'mvid' => $data_row->mvid,
+			'total_description_wc' => $data_row->total_description_wc
                     );
 
                     if ($build_assess_params->max_similar_item_count > 0) {
@@ -4558,10 +4630,11 @@ class Assess extends MY_Controller {
                             $output_row['video_count' . $i] = $data_row['video_count' . $i] != null ? $data_row['video_count' . $i] : 'none';
                             $output_row['title_pa' . $i] = $data_row['title_pa' . $i] != null ? $data_row['title_pa' . $i] : '';
                             $output_row['links_count' . $i] = $data_row['links_count' . $i] != null ? $data_row['links_count' . $i] : '';
+			    $output_row['total_description_wc' . $i] = $output_row['short_description_wc' . $i]+$output_row['long_description_wc' . $i];
                         }
-
+			
                         $output_row['gap'] = $data_row['gap'];
-                        $output_row['Duplicate_Content'] = $data_row['Duplicate_Content'];                      
+                        $output_row['duplicate_content'] = $data_row['Duplicate_Content'];                      
                     } else {
                         $output_row['snap1'] = $data_row->snap1;
                         $output_row['imp_data_id1'] = $data_row->imp_data_id1;
@@ -4591,7 +4664,8 @@ class Assess extends MY_Controller {
                         $output_row['title_pa1'] = $data_row->title_pa1;
                         $output_row['links_count1'] = $data_row->links_count1;
                         $output_row['gap'] = $data_row->gap;
-                        $output_row['Duplicate_Content'] = $data_row->Duplicate_Content;
+                        $output_row['duplicate_content'] = $data_row->Duplicate_Content;
+                        $output_row['total_description_wc1'] = $output_row['short_description_wc1']+$output_row['long_description_wc1'];
                     }
                     
                     $output['aaData'][] = AssessHelper::setTableData($columns, $output_row);
@@ -4604,6 +4678,7 @@ class Assess extends MY_Controller {
         $output['ExtraData']['display_competitor_columns'] = $build_assess_params->display_competitor_columns;
         $output['ExtraData']['getSelectableColumns'] = AssessHelper::getSelectableColumns($raw_columns);
         $output['ExtraData']['isCompleted'] = $iterator_limit >= $total_rows;
+        $output['ExtraData']['fixedTotalRows'] = $total_rows;
          		
         return $output;
     }
@@ -4639,9 +4714,15 @@ class Assess extends MY_Controller {
         return $wrapper_begin . rtrim($r, ', ') . $wrapper_end;
     }
 
-    private function filterBySummaryCriteria($current_criteria, $filterCriterias, &$success_filter_entries) {
-        $success_filter_entries[] = in_array('batch_me_' . $current_criteria, $filterCriterias) || in_array('batch_competitor_' . $current_criteria, $filterCriterias);
-				
+    private function filterBySummaryCriteria($current_criteria, $filterCriterias, &$success_filter_entries, &$stored_filter_items, $index) {
+        $is_batch = in_array('batch_me_' . $current_criteria, $filterCriterias);
+        $is_competitor = in_array('batch_competitor_' . $current_criteria, $filterCriterias);
+		
+		$success_filter_entries[] = $is_batch || $is_competitor;
+		
+		$prefix = $is_batch ? 'batch_me_' : $is_competitor ? 'batch_competitor_' : '';
+		
+		$stored_filter_items[$prefix . $current_criteria][] = $index;		
     }
 
     private function checkSuccessFilterEntries($success_filter_entries, $filterCriterias) {
@@ -4795,9 +4876,26 @@ class Assess extends MY_Controller {
 			$params->txt_filter = '';
 			$params->date_from = '';
 			$params->date_to = '';
+
+			// Castro: check if I have to get half of the results
+			if($this->input->post('halfResults') !== FALSE)
+			{
+				$params->halfResults = $this->input->post('halfResults');
+			}
+
 			$results = $this->get_data_for_assess($params);
-			$include_trendlines = TRUE; // Castro: include trendlines? YES OR NO
-			$trendline_dates = array(); // Castro var that stores all the available trendline dates
+
+			$trendline_dates = array();
+			$trendline_dates_items = array(); // Castro: stores the number of items that every date has
+			
+			if($this->input->post('includeTrendlines') == "true")
+			{
+				$include_trendlines = TRUE; // Castro: include trendlines? YES OR NO
+			}
+			else
+			{
+				$include_trendlines = FALSE; // Castro: include trendlines? YES OR NO
+			}
 
             if ($batch_compare_id != -1) {
                 foreach ($results as $val) {
@@ -4858,29 +4956,35 @@ class Assess extends MY_Controller {
                 } else {
                     $snap_data[0]['Features'][] = 0;
                 }
-                $arr = $this->get_min_max($data_row->imported_data_id,$graphBuild); 
-                $updated_short_description_wc = '';
-                $updated_long_description_wc = '';
-                $updated_total_description_wc = '';
-                $updated_revision = '';
-                $updated_Features = '';
-                $updated_h1_word_counts = '';
-                $updated_h2_word_counts = '';
+                $arr = $this->get_trendline_data($data_row->imported_data_id, $graphBuild); 
+                $updated_short_description_wc = array();
+                $updated_long_description_wc = array();
+                $updated_total_description_wc = array();
+                $updated_revision = array();
+                $updated_Features = array();
+                $updated_h1_word_counts = array();
+                $updated_h2_word_counts = array();
 				$updated_trendlines_data = array(); // Castro #1119, var that going to store trendlines data
 
 				// Castro : store all the available dates in trendline_dates array
 				if($include_trendlines)
 				{
+					$last_crawl_date = date('Y-m-d', strtotime($data_row->Date));
+
 					foreach($arr as $a)
 					{
 						if(isset($a->date))
 						{
 							$a->trendline_date = date('Y-m-d', strtotime($a->date));
+							$a->days_from_last_crawl = (strtotime($last_crawl_date) - strtotime($a->trendline_date)) / (3600 * 24);
 
 							if( ! in_array($a->trendline_date, $trendline_dates))
 							{
 								$trendline_dates[] = $a->trendline_date;
+								$trendline_dates_items[$a->trendline_date] = 0;
 							}
+
+							$trendline_dates_items[$a->trendline_date] += 1;
 						}
 					}
 				}
@@ -4889,20 +4993,20 @@ class Assess extends MY_Controller {
 				{
 					foreach($arr as $a)
 					{
-						if($a->date !='')
+						if($a->date !='' && $a->days_from_last_crawl > 0)
 						{
 							$long_des = count(explode(' ',$a->long_description));
 							$des = count(explode(' ',$a->description));
 							if($des == 1 && $long_des == 1)
 							{
-								$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - null  words<br>';  
+								$updated_total_description_wc[$a->trendline_date] ='Total Description Word Count: '.$a->date .' - null  words<br>';  
 								$updated_trendlines_data[$a->trendline_date] = 0;
 							}
 							else
 							{
 								$updated_total_description_wc_int = (count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)));
 
-								$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words<br>"; 
+								$updated_total_description_wc[$a->trendline_date] ='<span class="dot_data" data-year="' . date('Y', strtotime($a->trendline_date)) . '" data-month="' . (date('n', strtotime($a->trendline_date)) - 1) . '"  data-day="' . date('j', strtotime($a->trendline_date)) . '" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_total_description_wc_int . '">Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words</span><br>"; 
 
 								$updated_trendlines_data[$a->trendline_date] = $updated_total_description_wc_int;
 							}
@@ -4913,52 +5017,56 @@ class Assess extends MY_Controller {
 				{
 					foreach($arr as $a)
 					{
-						$pars = unserialize($a->parsed_attributes);
-						$htags_upd = unserialize($a->HTags);
+						if($a->date !='' && $a->days_from_last_crawl > 0)
+						{
+							$pars = unserialize($a->parsed_attributes);
+							$htags_upd = unserialize($a->HTags);
 
-						$updated_short_description_wc_int = count(explode(' ',$a->description));
-						$updated_long_description_wc_int = count(explode(' ',$a->long_description));
-						$updated_total_description_wc_int = (count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)));
-						$updated_revision_int = $pars['review_count'];
-						$updated_Features_int = $pars['feature_count'];
-						$updated_h1_word_counts_int = strlen(implode("", $htags_upd['h1']));
-						$updated_h2_word_counts_int = strlen(implode("", $htags_upd['h2']));
+							$updated_short_description_wc_int = count(explode(' ',$a->description));
+							$updated_long_description_wc_int = count(explode(' ',$a->long_description));
+							$updated_total_description_wc_int = (count(explode(' ',$a->long_description)) + count(explode(' ',$a->description)));
+							$updated_revision_int = $pars['review_count'];
+							$updated_Features_int = $pars['feature_count'];
+							$updated_h1_word_counts_int = strlen(implode("", $htags_upd['h1']));
+							$updated_h2_word_counts_int = strlen(implode("", $htags_upd['h2']));
 
-						$updated_short_description_wc.='Short Description: '.$a->date .' - ' . $updated_short_description_wc_int . "  words<br>";
-						$updated_long_description_wc.='Long Description: '.$a->date .' - ' . $updated_long_description_wc_int . " words <br>";
-						$updated_total_description_wc.='Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words<br>";
-						$updated_revision.='Reviews: '.$a->date .' - ' . $updated_revision_int . "<br>";
-						$updated_Features.='Features: '.$a->date .' - ' . $updated_Features_int . "<br>";
-						$updated_h1_word_counts.='H1 Characters: ' .$a->date .' - ' . $updated_h1_word_counts_int . " characters<br>";
-						$updated_h2_word_counts.='H2 Characters: ' .$a->date .' - ' . $updated_h2_word_counts_int . " characters<br>";
+							// Castro: data-date and data-value contains data for the mini chart
+							$updated_short_description_wc[$a->trendline_date] ='<span class="dot_data" data-year="' . date('Y', strtotime($a->trendline_date)) . '" data-month="' . (date('n', strtotime($a->trendline_date)) - 1) . '"  data-day="' . date('j', strtotime($a->trendline_date)) . '"  data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_short_description_wc_int . '">Short Description: '.$a->date .' - ' . $updated_short_description_wc_int . "  words</span><br>";
+							$updated_long_description_wc[$a->trendline_date] ='<span class="dot_data" data-year="' . date('Y', strtotime($a->trendline_date)) . '" data-month="' . (date('n', strtotime($a->trendline_date)) - 1) . '"  data-day="' . date('j', strtotime($a->trendline_date)) . '" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_long_description_wc_int . '">Long Description: '.$a->date .' - ' . $updated_long_description_wc_int . " words </span><br>";
+							$updated_total_description_wc[$a->trendline_date] ='<span class="dot_data" data-year="' . date('Y', strtotime($a->trendline_date)) . '" data-month="' . (date('n', strtotime($a->trendline_date)) - 1) . '"  data-day="' . date('j', strtotime($a->trendline_date)) . '" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_total_description_wc_int . '">Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words</span><br>";
+							$updated_revision[$a->trendline_date] ='<span class="dot_data" data-year="' . date('Y', strtotime($a->trendline_date)) . '" data-month="' . (date('n', strtotime($a->trendline_date)) - 1) . '"  data-day="' . date('j', strtotime($a->trendline_date)) . '" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_revision_int . '">Reviews: '.$a->date .' - ' . $updated_revision_int . "<br>";
+							$updated_Features[$a->trendline_date] ='<span class="dot_data" data-year="' . date('Y', strtotime($a->trendline_date)) . '" data-month="' . (date('n', strtotime($a->trendline_date)) - 1) . '"  data-day="' . date('j', strtotime($a->trendline_date)) . '" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_Features_int . '">Features: '.$a->date .' - ' . $updated_Features_int . "</span><br>";
+							$updated_h1_word_counts[$a->trendline_date] ='<span class="dot_data" data-year="' . date('Y', strtotime($a->trendline_date)) . '" data-month="' . (date('n', strtotime($a->trendline_date)) - 1) . '"  data-day="' . date('j', strtotime($a->trendline_date)) . '" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_h1_word_counts_int . '">H1 Characters: ' .$a->date .' - ' . $updated_h1_word_counts_int . " characters</span><br>";
+							$updated_h2_word_counts[$a->trendline_date] ='<span class="dot_data" data-year="' . date('Y', strtotime($a->trendline_date)) . '" data-month="' . (date('n', strtotime($a->trendline_date)) - 1) . '"  data-day="' . date('j', strtotime($a->trendline_date)) . '" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_h2_word_counts_int . '">H2 Characters: ' .$a->date .' - ' . $updated_h2_word_counts_int . " characters</span><br>";
 
-						// Castro: display the proper value in trendlines
-						if($graphBuild == "short_description_wc")
-						{
-							$trendline_value = $updated_short_description_wc_int;
-						}
-						else if($graphBuild == "long_description_wc")
-						{
-							$trendline_value = $updated_long_description_wc_int;
-						}
-						else if($graphBuild == "h1_word_counts")
-						{
-							$trendline_value = $updated_h1_word_counts_int;
-						}
-						else if($graphBuild == "h2_word_counts")
-						{
-							$trendline_value = $updated_h2_word_counts_int;
-						}
-						else if($graphBuild == "revision")
-						{
-							$trendline_value = $updated_revision_int;
-						}
-						else if($graphBuild == "Features")
-						{
-							$trendline_value = $updated_Features_int;
-						}
+							// Castro: display the proper value in trendlines
+							if($graphBuild == "short_description_wc")
+							{
+								$trendline_value = $updated_short_description_wc_int;
+							}
+							else if($graphBuild == "long_description_wc")
+							{
+								$trendline_value = $updated_long_description_wc_int;
+							}
+							else if($graphBuild == "h1_word_counts")
+							{
+								$trendline_value = $updated_h1_word_counts_int;
+							}
+							else if($graphBuild == "h2_word_counts")
+							{
+								$trendline_value = $updated_h2_word_counts_int;
+							}
+							else if($graphBuild == "revision")
+							{
+								$trendline_value = $updated_revision_int;
+							}
+							else if($graphBuild == "Features")
+							{
+								$trendline_value = $updated_Features_int;
+							}
 
-						$updated_trendlines_data[$a->trendline_date] = $trendline_value;
+							$updated_trendlines_data[$a->trendline_date] = $trendline_value;
+						}
 					}
 				}
 				$snap_data[0]['updated_short_description_wc'][] =  $updated_short_description_wc;
@@ -5001,7 +5109,7 @@ class Assess extends MY_Controller {
                     $snap_data[1]['Features'][] = (int) $data_row_sim[0]->column_features;
                     $snap_data[1]['Date'][] = (string) $data_row_sim[0]->Date;
                     
-                $arr1 = $this->get_min_max($data_row_sim[0]->imported_data_id,$graphBuild);
+                $arr1 = $this->get_trendline_data($data_row_sim[0]->imported_data_id,$graphBuild);
                 $updated_short_description_wc1 = '';
                 $updated_long_description_wc1 = '';
                 $updated_total_description_wc1 = '';
@@ -5066,14 +5174,28 @@ class Assess extends MY_Controller {
 			{
 				$maximum_trendlines = 6; // set the maximum number of trendlines to show
 
-				sort($trendline_dates);
-				$ordered_trendline_dates = array_reverse($trendline_dates);
+				asort($trendline_dates_items);
 
-				// limit total trendlines
-				if($ordered_trendline_dates > $maximum_trendlines)
+				$final_trendline_dates = array();
+				$trendline_dates_to_remove = array();
+
+				$total_trendlines = 0;
+				foreach($trendline_dates_items as $trendline_date_with_more_items => $total_items)
 				{
-					$ordered_trendline_dates = array_slice($ordered_trendline_dates, 0, 6);
+					$total_trendlines++;
+					if($total_trendlines < 6)
+					{
+						$final_trendline_dates[] = $trendline_date_with_more_items;
+					}
+					else
+					{
+						$trendline_dates_to_remove[] = $trendline_date_with_more_items;
+					}
 				}
+
+				sort($final_trendline_dates);
+				$ordered_trendline_dates = array_reverse($final_trendline_dates);
+
 
 				for($i = 0; $i < count($snap_data[0]['updated_trendlines_data']); $i++)
 				{
@@ -5093,6 +5215,23 @@ class Assess extends MY_Controller {
 					}
 
 					$snap_data[0]['updated_trendlines_data'][$i] = $ordered_trendline_data;
+				}
+
+				// Castro : remove all unwanted dates from results
+
+				$fields_with_unwanted_dates = array('updated_short_description_wc', 'updated_long_description_wc', 'updated_total_description_wc', 'updated_revision', 'updated_Features', 'updated_h1_word_counts', 'updated_h2_word_counts');
+
+				foreach($fields_with_unwanted_dates as $fields_with_unwanted_date)
+				{
+					for($i = 0; $i < count($snap_data[0][$fields_with_unwanted_date]); $i++)
+					{
+						foreach($trendline_dates_to_remove as $trendline_date_to_remove)
+						{
+							unset($snap_data[0][$fields_with_unwanted_date][$i][$trendline_date_to_remove]);
+						}
+
+						$snap_data[0][$fields_with_unwanted_date][$i] = implode(" ", $snap_data[0][$fields_with_unwanted_date][$i]);
+					}
 				}
 			}
 

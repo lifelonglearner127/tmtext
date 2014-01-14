@@ -59,12 +59,12 @@ $(function() {
 		  .indexOf(m[3].toUpperCase()) >= 0;
 	};
 	
-	$( '#research_assess_update' ).ajaxStart(function() {
-		$( this ).text( "Updating..." ).attr('disabled', 'disabled');
+	$( document ).ajaxStart(function() {
+		$( '#research_assess_update' ).text( "Updating..." ).attr('disabled', 'disabled');
 	});
 	
-	$( '#research_assess_update' ).ajaxStop(function() {
-		$( this ).text( "Update" ).removeAttr('disabled');
+	$( document ).ajaxStop(function() {
+		$( '#research_assess_update' ).text( "Update" ).removeAttr('disabled');
 	});
 	
     $.ajax({
@@ -391,6 +391,32 @@ $(function() {
 			$(".table_scroll_wrapper").show();
 		}
 	});
+	
+	function filterItems(json) {
+		var stored_filter_items = json.ExtraData.report.stored_filter_items
+		  , r = [];		  
+		
+		outputedFilterIndexes = [];
+		
+		for (var selected_filter_it = 0; selected_filter_it < summaryInfoSelectedElements.length; selected_filter_it++) {
+			
+			var pure_filter_id = summaryInfoSelectedElements[selected_filter_it].replace(/(batch_me_|batch_competitor_)/, '');
+			
+			for (var stored_filter_item_it = 0; stored_filter_item_it < stored_filter_items[ pure_filter_id ].length; stored_filter_item_it++) {
+				
+				var stored_item_index = stored_filter_items[ pure_filter_id ][stored_filter_item_it];
+												
+				if (!~outputedFilterIndexes.indexOf(stored_item_index))
+				{
+					r.push(json.aaData[ stored_item_index ]);
+					outputedFilterIndexes.push(stored_item_index);
+				}								
+			}
+		}
+		
+		json.ExtraData.fixedTotalRows = outputedFilterIndexes.length;			
+		json.aaData = r;		
+	}
 		
 	function readAssessData() {
 		var research_batch = $('.research_assess_batches_select')
@@ -400,12 +426,13 @@ $(function() {
 		  
 		$('.assess_report_download_panel').hide();
         $("#tblAssess tbody tr").remove();
-		
+					
 		if (!json_data)
 		{																
-			var aoData = buildTableParams([{ name : 'displayCount',	value : 200 }]);	
+			var aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);	
 				
 			$.getJSON(readAssessUrl, aoData, function(json) {
+				$('.tbl_arrows_and_gear_wrapper #research_batches_columns').css({opacity:1,cursor:'pointer'});
 				if(!json)
 					return;	
 																			
@@ -414,8 +441,15 @@ $(function() {
 				tblAssess = reInitializeTblAssess(json);				
 			});       							
 		}
-		else									
-			tblAssess = reInitializeTblAssess(json_data); 					
+		else {
+			
+			//rebuilding dataTable results according to the selected filters
+			if (summaryInfoSelectedElements.length) {				
+				filterItems(json_data);				
+			}
+			
+			tblAssess = reInitializeTblAssess(json_data, false, true); 								
+		}
     }	
 	
 	function pullRestItems()
@@ -423,25 +457,34 @@ $(function() {
 		var research_batch = $('.research_assess_batches_select')
 		  , research_batch_competitor = $('#research_assess_compare_batches_batch')
           , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				  
-          , aoData = buildTableParams([]);		  
+          , aoData = buildTableParams([])
+          , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null
+		  , needToBeReloaded = false;		  
 			
 		$.getJSON(readAssessUrl, aoData, function(json) {
 			if(!json)
 				return;	
-																		
+
+			//saving report information to the custom local storage
+			json.ExtraData.report = json_data.ExtraData.report;
+			
 			customLocalStorage[storage_key] = JSON.stringify(json);
-			tblAssess = reInitializeTblAssess(json);
+			
+			tblAssess = reInitializeTblAssess(json, needToBeReloaded);
 		});       
 	}
 	
-	function reInitializeTblAssess(json_data) {
-		
-		return $('#tblAssess').dataTable(_.extend({
+	function reInitializeTblAssess(json_data, needToBeReloaded, rebuildFilters) {
+				
+		var _dataTableLastPageNumber = dataTableLastPageNumber ? dataTableLastPageNumber : 0
+		  , needToBeReloaded = needToBeReloaded == undefined ? true : needToBeReloaded;
+			
+		var r = $('#tblAssess').dataTable(_.extend({
 			bDestroy : true,
 			bJQeuryUI : true,				
 			bJUI : true,				
 			sPaginationType : 'full_numbers',
-			aaSorting : [[5, "desc"]],
+			aaSorting : [],			
 			bAutoWidth : false,
 			bProcessing : true,
 			bDeferRender : true,								
@@ -456,26 +499,32 @@ $(function() {
 				$('#tblAssess thead th').css('width', '100%');	
 				
 				resizeImpDown();
-
-				if (!oSettings.isCompleted)
-					pullRestItems();
+				
+				console.log('Building report... ' + needToBeReloaded);
+				
+				if (needToBeReloaded || rebuildFilters)
+					buildReport(json_data);							
+				
+				if (needToBeReloaded)				
+					pullRestItems();				
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
 				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
 				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
-				console.log('local draw callback');
+				// console.log('local draw callback');		
 				
-				console.log(oSettings);
-				
+				dataTableLastPageNumber = oSettings._iDisplayStart / oSettings._iDisplayLength;
+
 				tblAssess.fnAdjustColumnSizing(false);						
 			},
-			fnPreDrawCallback : function( oSettings ) {										
-				buildReport(json_data);
-				
+			fnPreDrawCallback : function( oSettings ) {		
+				// console.log('PRE local draw callback');		
+								
 				//setting main tblAssess instance
-				tblAssess = oSettings.oInstance;
+				tblAssess = oSettings.oInstance;			
+				
 				tblAllColumns = tblAssess.fnGetAllSColumnNames();
 				
 				if (json_data.ExtraData)
@@ -487,57 +536,24 @@ $(function() {
 				}
 			},
 			oLanguage : {
-				sInfo : "Showing _START_ to _END_ of _TOTAL_ records",
+				sInfo : "Showing _START_ to _END_ of " + json_data.ExtraData.fixedTotalRows + " records",
 				sInfoEmpty : "Showing 0 to 0 of 0 records",
 				sInfoFiltered : "",
 				sSearch : "Filter:",
 				sLengthMenu : "_MENU_ rows"
 			},
-			aoColumns : json_data.aoColumns
+			aoColumns : json_data.aoColumns,			
 		}, json_data));	
+		
+		r.fnPageChange(_dataTableLastPageNumber);
+		
+		return r;
 	}	
 
 	// setting global static variables	
 	$.fn.dataTable.defaults.bJQueryUI = true;	
 	
-    
-    // tblAssess = $('#tblAssess').dataTable({
-		// aoColumns : columns,
-		// bDestroy : true,
-		// bAutoWidth : false,
-		// fnInitComplete : function( oSettings,json ) {										
-			
-			// displayInitColumns(oSettings);					
-		// },
-	// });
 
-	
-	// tblAllColumns = tblAssess.fnGetAllSColumnNames();
-	
-	// function displayInitColumns(oSettings)
-	// {		
-		
-		// var columns_checkboxes = $('#research_assess_choiceColumnDialog').find('input[type=checkbox]:checked');
-		// var columns_checkboxes_checked = []
-		  // , localTblAssess = oSettings.oInstance;
-		  
-        // $.each(columns_checkboxes, function(index, value) {
-            // columns_checkboxes_checked.push($(value).data('col_name'));
-        // });		
-		// $.each(oSettings.oInstance.fnGetAllSColumnNames(), function(index, value) {
-				
-			// value = value.replace(/[0-9]$/, '');				
-			// if (oSettings.aoColumns[index])
-			// {										
-				// if ($.inArray(value, tableCase.details_compare) > -1 && $.inArray(value, columns_checkboxes_checked) > -1) {						
-					// localTblAssess.fnSetColumnVis(index, true, false);
-				// } else {
-					// localTblAssess.fnSetColumnVis(index, false, false);						
-				// }
-			// }
-		// }); 
-	// }
-	
 	$('.get_board_view_snap').on('click', function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';		
 		var compare_batch_id = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val() ;
@@ -639,90 +655,156 @@ $(function() {
 	{
 		if(is_disabled)
 		{
+			if(chart1 != null)
+			{
+				chart1.destroy();
+				chart1 = null;
+			}
 			$('#graphDropDown').attr("disabled", true);
 			$('#show_over_time').attr("disabled", true);
-			$('#highChartContainer').empty().addClass("loading");
+			$('#show_over_time_span').css("color", "#999");
+			$('#assess_graph').addClass("loading");
+			removeMiniChart();
 		}
 		else
 		{
 			$('#graphDropDown').removeAttr("disabled");
 			$('#show_over_time').removeAttr("disabled");
-			$("#highChartContainer").removeClass("loading");
+			$('#show_over_time_span').css("color", "#222");
+			$("#assess_graph").removeClass("loading");
+			
+			$('.highcharts-button').each(function(i){
+				if(i > 0)
+				{
+					$(this).remove();
+				}
+			});
 		}
 	}
 
-function highChart(graphBuild) {
-	
-	// Castro #1119: disable charts dropdown and show over time checkbox and empty chart container
-	toggleGraphFields(true);
-	
-	var batch_set = $('.result_batch_items:checked').val() || 'me';	
-    var batch1Value = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
-    var batch2Value = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
-    var batch1Name = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
-    var batch2Name = $(batch_sets[batch_set]['batch_compare']).find('option:selected').text();
-    
-    if(batch1Value == false || batch1Value == 0 || typeof batch1Value == 'undefined'){
-        batch1Value = -1;
-    }
-    if(batch2Value == false || batch2Value == 0 || typeof batch2Value == 'undefined'){
-        batch2Value = -1;
-    }
-    $.ajax({
-        type: "POST",
-        url: readGraphDataUrl,
-        data: {
-            batch_id: batch1Value,
-            batch_compare_id: batch2Value,
-            graphBuild: graphBuild
-        },
-		error: function()
-		{
-			toggleGraphFields(false);
-			alert("There was an error retrieving chart data");
+	function highChart(graphBuild) 
+	{
+		// Castro #1119: disable charts dropdown and show over time checkbox and empty chart container
+		toggleGraphFields(true);
+		
+		var batch_set = $('.result_batch_items:checked').val() || 'me';	
+		var batch1Value = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
+		var batch2Value = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
+		var batch1Name = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
+		var batch2Name = $(batch_sets[batch_set]['batch_compare']).find('option:selected').text();
+		
+		if(batch1Value == false || batch1Value == 0 || typeof batch1Value == 'undefined'){
+			batch1Value = -1;
 		}
-    }).done(function(data){					
-        var value1 = [];
-        var value2 = [];
-        var valueName = [];
-        valueName[0] = [];
-        valueName[1] = [];
-        var valueDate = [];
-        valueDate[0] = [];
-        valueDate[1] = [];
-        var valueUrl = [];
-        valueUrl[0] = [];
-        valueUrl[1] = [];
-        var graphName1 = '';
-        var graphName2 = '';
-        var cloneToolTip = null;
-        var cloneToolTip2 = null;
-        var updated_Features = [];
-        updated_Features[0] = [];
-        updated_Features[1] = [];
-        var updated_long_description_wc = [];
-        updated_long_description_wc[0] = [];
-        updated_long_description_wc[1] = [];
-        var updated_revision = [];
-        updated_revision[0] = [];
-        updated_revision[1] = [];
-        var updated_short_description_wc = [];
-        updated_short_description_wc[0] = [];
-        updated_short_description_wc[1] = [];
-        var updated_total_description_wc = [];
-        updated_total_description_wc[0] = [];
-        updated_total_description_wc[1] = [];
-        var updated_h1_word_counts = [];
-        updated_h1_word_counts[0] = [];
-        updated_h1_word_counts[1] = [];
-        var updated_h2_word_counts = [];
-        updated_h2_word_counts[0] = [];
-        updated_h2_word_counts[1] = [];
-        var oldest_values =[];
-        oldest_values[0] =[];
-        oldest_values[1] =[];
-        if(data.length) {
-    
+		if(batch2Value == false || batch2Value == 0 || typeof batch2Value == 'undefined'){
+			batch2Value = -1;
+		}
+		
+		var show_trendlines = $("#show_over_time").is(":checked");
+		
+		$.ajax({
+			type: "POST",
+			url: readGraphDataUrl,
+			data: {
+				batch_id: batch1Value,
+				batch_compare_id: batch2Value,
+				graphBuild: graphBuild,
+				halfResults:0,
+				includeTrendlines : show_trendlines
+			},
+			error: function()
+			{
+				toggleGraphFields(false);
+				alert("There was an error retrieving chart data");
+			}
+		}).done(function(data){					
+
+			var first_half_data = data;
+			
+			createHighChart(first_half_data, graphBuild, batch1Value, batch1Name, batch2Value, batch2Name);
+			
+			$.ajax({
+				type: "POST",
+				url: readGraphDataUrl,
+				data: {
+					batch_id: batch1Value,
+					batch_compare_id: batch2Value,
+					graphBuild: graphBuild,
+					halfResults:1,
+					includeTrendlines : show_trendlines
+				},
+				error: function()
+				{
+					toggleGraphFields(false);
+					alert("There was an error retrieving chart data");
+				}
+			}).done(function(data){					
+
+				chart1.destroy(); // Castro #1270: destroy first chart to prevent memory leaks
+				
+				// Castro #1270: merge first json object with second json object
+				for(key in data[0])
+				{
+					var array_to_merge = data[0][key];
+					
+					for(var i = 0; i < array_to_merge.length; i++)
+					{
+						first_half_data[0][key].push(array_to_merge[i]);
+					}
+				}
+				
+				createHighChart(first_half_data, graphBuild, batch1Value, batch1Name, batch2Value, batch2Name);
+				
+				// Castro #1119: enable drodown and checkbox again remove loading image
+				toggleGraphFields(false);
+			});
+		});
+		
+	}
+
+	function createHighChart(data, graphBuild, batch1Value, batch1Name, batch2Value, batch2Name)
+	{
+		var value1 = [];
+		var value2 = [];
+		var valueName = [];
+		valueName[0] = [];
+		valueName[1] = [];
+		var valueDate = [];
+		valueDate[0] = [];
+		valueDate[1] = [];
+		var valueUrl = [];
+		valueUrl[0] = [];
+		valueUrl[1] = [];
+		var graphName1 = '';
+		var graphName2 = '';
+		var cloneToolTip = null;
+		var cloneToolTip2 = null;
+		var updated_Features = [];
+		updated_Features[0] = [];
+		updated_Features[1] = [];
+		var updated_long_description_wc = [];
+		updated_long_description_wc[0] = [];
+		updated_long_description_wc[1] = [];
+		var updated_revision = [];
+		updated_revision[0] = [];
+		updated_revision[1] = [];
+		var updated_short_description_wc = [];
+		updated_short_description_wc[0] = [];
+		updated_short_description_wc[1] = [];
+		var updated_total_description_wc = [];
+		updated_total_description_wc[0] = [];
+		updated_total_description_wc[1] = [];
+		var updated_h1_word_counts = [];
+		updated_h1_word_counts[0] = [];
+		updated_h1_word_counts[1] = [];
+		var updated_h2_word_counts = [];
+		updated_h2_word_counts[0] = [];
+		updated_h2_word_counts[1] = [];
+		var oldest_values =[];
+		oldest_values[0] =[];
+		oldest_values[1] =[];
+		if(data.length) 
+		{
             /***First Batch - Begin***/
             if(data[0] && data[0].product_name.length > 0){
                 valueName[0] = data[0].product_name;
@@ -899,6 +981,26 @@ function highChart(graphBuild) {
             }
             /***Switch - End***/
         }
+        
+        var legendEnabled = true;
+        
+        // if show over time is checked graph key should be date
+        if($("#show_over_time").is(":checked"))
+		{
+			var first_date = valueDate[0][0];
+			
+			var batch1GraphKey = first_date.substring(0, 10);
+		}
+		else
+		{
+			if(batch2Value == -1)
+			{
+				legendEnabled = false;
+			}
+			
+			var batch1GraphKey = batch1Name;
+		}
+        
         var seriesObj;
         if(batch1Value != -1 && batch2Value != -1){
             seriesObj = [
@@ -916,7 +1018,7 @@ function highChart(graphBuild) {
         } else if(batch2Value == -1){
             seriesObj = [
                             {
-                                name: batch1Name,
+                                name: batch1GraphKey,
                                 data: value1,
                                 color: '#2f7ed8'
                             }
@@ -951,7 +1053,6 @@ function highChart(graphBuild) {
 				
 				for(item in current_trendline)
 				{
-					console.log(item);
 					trendline_series[j][i] = current_trendline[item];
 					j++;
 				}
@@ -966,44 +1067,48 @@ function highChart(graphBuild) {
 				}
 			}
 		}
-
-        var chart1 = new Highcharts.Chart({
-            title: {
-                text: ''
-            },
-            chart: {
-                renderTo: 'highChartContainer',
-                zoomType: 'x',
-                spacingRight: 20,
-            },
-            xAxis: {
-                min: 0,
-                max: 300,
-                categories: [],
-                labels: {
-                  enabled: false
-                }
-            },
-            yAxis: {
-                minPadding: 0.1,
-                maxPadding: 2,
-                min:0
-            },
-            tooltip: {
-                shared: true,
-                useHTML: true,
-//                positioner: function (boxWidth, boxHeight, point) {
-//                    if(point.plotX < bigdatalength*2.3)
-//                        return { x: point.plotX +100, y: 0 };
-//                    else
-//                        return { x: point.plotX -300, y: 0 };
-//                },
-                positioner: function () {
-                        return { x: 85, y: 0 };
-                },
-                formatter: function() {
-                    var result = '<small>'+this.x+'</small> <div class="highcharts-tooltip-close" onclick=\'$(".highcharts-tooltip").css("visibility","hidden"); $("div .highcharts-tooltip span").css("visibility","hidden");\' style="float:right;">X</div><br />';
-                    var j;
+		
+		chart1 = new Highcharts.Chart(
+		{
+			title: {
+				text: ''
+			},
+			chart: {
+				renderTo: 'highChartContainer',
+				zoomType: 'x',
+				spacingRight: 20,
+			},
+			xAxis: {
+				min: 0,
+				max: 300,
+				categories: [],
+				labels: {
+				enabled: false
+				}
+			},
+			yAxis: {
+				minPadding: 0.1,
+				maxPadding: 2,
+				min:0
+			},
+			legend : {
+				enabled : true
+			},
+			tooltip: {
+				shared: true,
+				useHTML: true,
+			//positioner: function (boxWidth, boxHeight, point) {
+			//    if(point.plotX < bigdatalength*2.3)
+			//        return { x: point.plotX +100, y: 0 };
+			//    else
+			//        return { x: point.plotX -300, y: 0 };
+			//},
+				positioner: function () {
+						return { x: 85, y: 0 };
+				},
+				formatter: function() {
+					var result = '<small>'+this.x+'</small> <div class="highcharts-tooltip-close" onclick=\'$(".highcharts-tooltip").css("visibility","hidden"); $("div .highcharts-tooltip span").css("visibility","hidden");\' style="float:right;">X</div><br />';
+					var j;
 					
 					if($('#show_over_time').prop('checked')){
 						var display_property = "block";
@@ -1012,98 +1117,154 @@ function highChart(graphBuild) {
 
 					}
 					
-                    $.each(this.points, function(i, datum) 
+					$.each(this.points, function(i, datum) 
 					{
-						console.log(datum);
 						// Castro #1119: add line to tooltip only when show overtime is not checked
-                        if(i > 0  && ! $("#show_over_time").is(":checked"))
+						if(i > 0  && ! $("#show_over_time").is(":checked"))
 						{
 							result += '<hr style="border-top: 1px solid #2f7ed8;margin:0;" />';
 						}
 						
-                        if(datum.series.color == '#2f7ed8')
+						if(datum.series.color == '#2f7ed8')
 						{
-                            j = 0;
+							j = 0;
 						}
-                        else
+						else
 						{
-                            j = 1;
+							j = 1;
 						}
 						
 						// Castro #1119: add data to tooltip only when show overtime is not checked or is the first point
 						if((i > 0 && ! $("#show_over_time").is(":checked")) || (i == 0 && datum.series.color == '#2f7ed8'))
 						{
-							result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b>';
-							result += '<br /><span>' + valueName[j][datum.x] + '</span>';
+							
+							if(batch2Value != -1)
+							{
+								result += '<b style="color: '+datum.series.color+';" >' + datum.series.name + '</b><br />';
+							}
+							
+							result += '<span class="item_name">' + valueName[j][datum.x] + '</span>';
+							
 							result += '<br /><a href="'+valueUrl[j][datum.x]+'" target="_blank" style="color: blue;" >' + valueUrl[j][datum.x] + '</a>';
-							result += '<br /><span ">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' '+graphName2+'</span>';
-							result += '<span style="color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span>';
+							
+							var crawl_date = new Date(valueDate[j][datum.x]);
+							
+							result += '<br /><span class="dot_data" data-year="' + crawl_date.getFullYear() +  '" data-month="' + crawl_date.getMonth() +  '" data-day="' + crawl_date.getDate() +  '" data-date="0" data-value="' + datum.y + '">'+graphName1+' ' + valueDate[j][datum.x] + ' - ' + datum.y + ' <span class="units_name">'+graphName2+'</span></span>';
+
+							result += '<span class="trendlines_container"><span class="trendlines_details" style="float:left;color: grey;display:'+display_property+';" class="update_class">'+oldest_values[j][datum.x]+'</span></span>';
 						}
 					});
-                    return result;
-                }
-            },
+					
+					if($("#mini_chart_popup").is(":visible") || $("#tooltip_popup").is(":visible"))
+					{
+						return false;
+					}
+					else
+					{
+						return result;
+					}
+				}
+			},
+			plotOptions: {
+				series: {
+					turboThreshold : 3000,
+					cursor: 'pointer',
+					point: {
+						events: {
+							click: function() { 
+								
+								$("div.highcharts-tooltip").css("left", "-5000px"); // hide tooltip
+								$("g.highcharts-tooltip").attr("visibility", "hidden"); // hide tooltip
+								
+								// Castro: check if there is more than one point and show_over_time is checked to insert mini chart in popup
+								if($("#show_over_time").is(":checked"))
+								{
+									var minichart_series = new Array();
+									
+									// get data for mini chart
+									for(var i = ($("div.highcharts-tooltip .dot_data").length - 1); i >=0; i--)
+									{
+										var selected_dot_data = $("div.highcharts-tooltip .dot_data").eq(i);
+										minichart_series.push([
+											Date.UTC(parseInt(selected_dot_data.attr("data-year")),  parseInt(selected_dot_data.attr("data-month")), parseInt(selected_dot_data.attr("data-day"))), parseInt(selected_dot_data.attr("data-value"))
+										]);
+									}
+									
+									var chart_item_url = $("div.highcharts-tooltip a").eq(0).attr("href");
+									var chart_item_number = $("div.highcharts-tooltip small").eq(0).text();
+									var chart_item_name = $("div.highcharts-tooltip .item_name").eq(0).text();
+									var chart_unit_name = $("div.highcharts-tooltip .dot_data .units_name").text();
 
-            
-        plotOptions: {
-            series: {
-                cursor: 'pointer',
-                point: {
-                    events: {
-                        click: function() { 
-                            $('.highcharts-tooltip').first().css('visibility','visible');
-                            $('div .highcharts-tooltip span').first().css('visibility','visible');
-                            if (cloneToolTip)
-                            {
-                                chart1.container.firstChild.removeChild(cloneToolTip);
-                            }
-                            if (cloneToolTip2)
-                            {
-                                cloneToolTip2.remove();
-                            }
-                            cloneToolTip = this.series.chart.tooltip.label.element.cloneNode(true);
-                            chart1.container.firstChild.appendChild(cloneToolTip);
-                            
-                            cloneToolTip2 = $('.highcharts-tooltip').clone(); 
-                            $(chart1.container).append(cloneToolTip2);
-
-                            $('.highcharts-tooltip').first().css('visibility','hidden');
-                            $('div .highcharts-tooltip span').first().css('visibility','hidden');
-                        }
-                    }
-                }
-            }
-        },
-
-        scrollbar: {
-            enabled:true,
-			barBackgroundColor: 'gray',
-			barBorderRadius: 7,
-			barBorderWidth: 0,
-			buttonBackgroundColor: 'gray',
-			buttonBorderWidth: 0,
-			buttonArrowColor: 'yellow',
-			buttonBorderRadius: 7,
-			rifleColor: 'yellow',
-			trackBackgroundColor: 'white',
-			trackBorderWidth: 1,
-			trackBorderColor: 'silver',
-			trackBorderRadius: 7
-	    },
-
-            series: seriesObj
+									$("#mini_chart_popup").show();
+									$("#mini_chart_container").highcharts({
+										chart: {
+											type: 'line'
+										},
+										title: {
+											text: '<a target="_blank" href="' + chart_item_url + '" >' + chart_item_name + '</a>',
+											useHTML : true
+										},
+										subtitle: {
+											text: $("#graphDropDown option:selected").text()
+										},
+										xAxis: {
+											type: 'datetime',
+											dateTimeLabelFormats: { // don't display the dummy year
+												month: '%b %e',
+												year: '%b %e',
+											    day: '%b %e',
+											    week: '%b %e'
+											},
+											startOnTick : true
+										},
+										yAxis: {
+											title: {
+												text: 'Values'
+											},
+											min: 0
+										},
+										tooltip: {
+											formatter: function() {
+													return Highcharts.dateFormat('%b %e', this.x) +': '+ this.y + " " + chart_unit_name;
+											}
+										},
+										legend : {
+											enabled : false
+										},
+										series: [{ name : "Data", data : minichart_series}]
+									});
+								}
+								else
+								{
+									$("#tooltip_popup_container").html($("div.highcharts-tooltip").html());
+									$("#tooltip_popup_container .highcharts-tooltip-close").remove();
+									$("#tooltip_popup_container span:first").css("position", "relative");
+									$("#tooltip_popup").show();
+								}
+							}
+						}
+					}
+				}
+			},
+			scrollbar: {
+				enabled:true,
+				barBackgroundColor: 'gray',
+				barBorderRadius: 7,
+				barBorderWidth: 0,
+				buttonBackgroundColor: 'gray',
+				buttonBorderWidth: 0,
+				buttonArrowColor: 'yellow',
+				buttonBorderRadius: 7,
+				rifleColor: 'yellow',
+				trackBackgroundColor: 'white',
+				trackBorderWidth: 1,
+				trackBorderColor: 'silver',
+				trackBorderRadius: 7
+			},
+			series: seriesObj
         });
-		
-		// Castro #1119: enable drodown and checkbox again remove loading image
-		toggleGraphFields(false);
-		
-        $('.highcharts-button').each(function(i){
-            if(i > 0)
-                $(this).remove();
-        });
-    });
-    
-}
+	}
+
 	$('#graphDropDown').live('change',function(){
 		showHighChart();
 	});
@@ -1111,6 +1272,20 @@ function highChart(graphBuild) {
 	$('#show_over_time').live('click',function(){
 		showHighChart();
 	});
+	
+	$('#remove_mini_chart').live('click',function(){
+		removeMiniChart();
+	});
+	$('#remove_tooltip_popup').live('click',function(){
+		removeMiniChart();
+	});
+	
+	// Castro function to remove minichart
+	function removeMiniChart()
+	{
+		$("#mini_chart_popup").hide();
+		$("#tooltip_popup").hide();
+	}
 
 	// Castro #1119: function called by two events, show_over_time click and graphDropDown change
 	function showHighChart()
@@ -1299,6 +1474,13 @@ function highChart(graphBuild) {
 		var batch_set_toggle = $('#batch_set_toggle');
 		var common_batch1_filter_items = $('.common_batch1_filter_items');
 		var hidden_batch2_filter_items = $('.hidden_batch2_filter_items');
+		var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch');
+		
+		if (research_assess_compare_batches_batch.val() == 0)
+			$('.batch2_filter_item').css('visibility', 'hidden');
+		else
+			$('.batch2_filter_item').css('visibility', 'visible');
+		
 		if (batch_set_toggle.is(':checked'))
 		{
 			$('.selectable_summary_handle_with_competitor').addClass('dual_mode');
@@ -1405,6 +1587,7 @@ function highChart(graphBuild) {
     }   	   	
 		
 	function onDenisty(){
+	
 		var tkstatus = $.cookie('tkstatus');
 		if(typeof(tkstatus)!=='undefined'){
 			$.removeCookie('tkstatus');
@@ -1416,10 +1599,9 @@ function highChart(graphBuild) {
 		}
 		 $('.phr-frequency').hide();
 		 $('.phr-density').show();
+		 
 	}
-	$(document).on('click','#tk-denisty',function(){
-		onDenisty();
-	 });
+	
 	function onFrequency(){
 		var tkstatus = $.cookie('tkstatus');
 		if(typeof(tkstatus)!=='undefined'){
@@ -1433,9 +1615,15 @@ function highChart(graphBuild) {
 		$('.phr-density').hide();
 		$('.phr-frequency').show();
 	}
+	
+	$(document).on('click','#tk-denisty',function(){
+		onDenisty();
+	});	
+	
 	$(document).on('click','#tk-frequency',function(){
 		onFrequency();
 	});
+	
 	function setStatusFromCookie(){
 		var tkstatus = $.cookie('tkstatus');		
 		if(typeof(tkstatus)!=='undefined'){
@@ -2475,7 +2663,7 @@ function prevSibilfunc(curentSibil){
 
     $(".custom-batch-trigger").on("click", function(e) {
         e.preventDefault();
-        getCustomerDropdown();
+        //getCustomerDropdown();
         $.post(base_url + 'index.php/batches/index', {}, function(data) {
             $("#custom_batch_create_modal").html(data).dialog("open");
         });
@@ -2834,7 +3022,7 @@ function prevSibilfunc(curentSibil){
 		assessRequestParams.sort_dir = 'desc';
 		assessRequestParams.sSearch = '';
 		assessRequestParams.bRegex = false;
-		assessRequestParams.iDisplayLength = 10;
+		assessRequestParams.iDisplayLength = 5;
 		assessRequestParams.iDisplayStart = 0;		
 				
         return assessRequestParams;
@@ -2916,8 +3104,8 @@ function prevSibilfunc(curentSibil){
 	}	
 
   
-	  $('#tk-frequency').click(function() {
-	    var $target = $('input#column_title_seo_phrases');
+	$('#tk-frequency').on('click', function() {
+		var $target = $('input#column_title_seo_phrases');
 		newData = "column_title_seo_phrases_f";
 		
 		$target.removeAttr('id').attr({ 'id': newData });
@@ -2925,16 +3113,17 @@ function prevSibilfunc(curentSibil){
 		$target.removeAttr('data-col_name').attr({ 'data-col_name': 'title_seo_phrases_f' });
 		$target.click();
 		$target.click();
-		});
-		$('#tk-denisty').click(function() {
+	});
+	$('#tk-denisty').on('click', function() {
 		var $target = $('input#column_title_seo_phrases_f');
 		newData = "column_title_seo_phrases";
+		
 		$target.removeAttr('id').attr({ 'id': newData });
 		$target.removeAttr('name').attr({ 'name': newData });
 		$target.removeAttr('data-col_name').attr({ 'data-col_name': 'title_seo_phrases' });
 		$target.click();
 		$target.click();
-		});
+	});
 		
 		$('*[id*=mytext]:visible').each(function() {
 		$(this).doStuff();

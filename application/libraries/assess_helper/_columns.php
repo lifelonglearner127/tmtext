@@ -34,7 +34,8 @@ return array(
 		array(
 			'sTitle' => "item ID",
 			'sName' => 'item_id',
-			'sClass' => 'item_id'
+			'sClass' => 'item_id',
+			'nonSelected' => true
 		),
 		array(
 			'sTitle' => 'Model',
@@ -58,6 +59,12 @@ return array(
 			'sClass' => 'Page_Load_Time'
 		),
 		array(
+			'sTitle' => 'Prod Desc <span class="subtitle_word_long" ># Words</span>',
+			'sName' => 'total_description_wc',                
+			'sClass' => 'word_prod',
+			'newTitle' => 'Prod Desc <span class="subtitle_word_long" ># Words</span>'
+		),
+		array(
 			'sTitle' => '<span class="subtitle_desc_short" >Short</span> Description',
 			'sName' => 'Short_Description',                
 			'sClass' => 'Short_Description',
@@ -69,6 +76,18 @@ return array(
 			'sClass' => 'word_short',
 			'newTitle' => 'Short Desc <span class="subtitle_word_short?" ># Words</span>',
 		),
+		array(
+			'sTitle' => '<span class="subtitle_desc_long" >Long </span>Description',
+			'sName' => 'Long_Description',                
+			'sClass' => 'Long_Description',
+			'newTitle' => '<span class="subtitle_desc_long?" >Long </span>Description'
+		),
+		array(
+			'sTitle' => 'Long Desc <span class="subtitle_word_long" ># Words</span>',
+			'sName' => 'long_description_wc',                
+			'sClass' => 'word_long',
+			'newTitle' => 'Long Desc <span class="subtitle_word_long?" ># Words</span>'
+		),		
 		array(
 			'sTitle' => "Meta Keywords",
 			'sName' => 'Meta_Keywords',
@@ -84,8 +103,8 @@ return array(
 			'sTitle' => "Title Keywords", 
 			'sName' => 'title_seo_phrases',                
 			'sClass' => 'title_seo_phrases',
-			'moreHtml' => '<input id="tk-denisty" type="radio" name="title_keywords" value="density" checked /><label for="tk-denisty">Density</label>
-								<input id="tk-frequency" type="radio" name="title_keywords" value="Frequency"/><label for="tk-frequency">Frequency</label>'
+			'moreHtml' => '<input id="tk-denisty" type="radio" name="title_keywords" value="density" /><label for="tk-denisty">Density</label>
+								<input id="tk-frequency" type="radio" name="title_keywords" value="Frequency" checked /><label for="tk-frequency">Frequency</label>'
 		),
 		array(
 			'sTitle' => 'Images',
@@ -96,19 +115,7 @@ return array(
 			'sTitle' => 'Video', 
 			'sName' => 'video_count',             
 			'sClass' => 'video_count'
-		),
-		array(
-			'sTitle' => '<span class="subtitle_desc_long" >Long </span>Description',
-			'sName' => 'Long_Description',                
-			'sClass' => 'Long_Description',
-			'newTitle' => '<span class="subtitle_desc_long?" >Long </span>Description'
-		),
-		array(
-			'sTitle' => 'Long Desc <span class="subtitle_word_long" ># Words</span>',
-			'sName' => 'long_description_wc',                
-			'sClass' => 'word_long',
-			'newTitle' => 'Long Desc <span class="subtitle_word_long?" ># Words</span>'
-		),
+		),	
 		array(
 			'sTitle' => 'Links', 
 			'sName' => 'links_count',               
@@ -208,6 +215,24 @@ return array(
 			'sTitle' => 'Gap Analysis',
 			'sClass' => 'gap',
 			'sName' => 'gap',
+			'nonCompared' => true
+		),
+		array(
+			'sTitle' => 'Manufacturer Page',
+			'sClass' => 'murl',
+			'sName' => 'murl',
+			'nonCompared' => true
+		),
+		array(
+			'sTitle' => 'Manufacturer Images',
+			'sClass' => 'mimg',
+			'sName' => 'mimg',
+			'nonCompared' => true
+		),
+		array(
+			'sTitle' => 'Manufacturer Videos',
+			'sClass' => 'mvid',
+			'sName' => 'mvid',
 			'nonCompared' => true
 		)
 	);	

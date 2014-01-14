@@ -28,7 +28,21 @@ class Imported_data_parsed_archived_model extends CI_Model {
 
         return $query->result();
     }
-
+    function delete_duplicate_revisions(){
+       $sql = "select `imported_data_id`,`key`, `revision`, count(`id`) as cnt, min(id) as min_id
+                From imported_data_parsed_archived
+                Group By `imported_data_id` ,`key`, `revision`
+                having cnt > 1" ;
+       $query = $this->db->query($sql);
+       $results = $query->result_array();
+       
+       foreach($results as $k => $res){
+           
+              $this->db->where('id', $res['min_id']);
+              $this->db->delete($this->tables['imported_data_parsed_archived']);
+        }
+       
+    }
     function saveToArchive($imported_data_id, $without=null) {
     	$query = "insert into `".$this->tables['imported_data_parsed_archived']."` (`imported_data_id`, `key`, `value`, `model`, `revision`)
 			select `imported_data_id`, `key`, `value`, `model`, `revision` from `".$this->tables['imported_data_parsed']."` where imported_data_id = ".$imported_data_id;

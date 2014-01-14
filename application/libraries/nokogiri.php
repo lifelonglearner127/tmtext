@@ -235,6 +235,12 @@ class nokogiri implements IteratorAggregate{
 		}
 		if ($node->hasChildNodes()){
 			foreach ($node->childNodes as $childNode){
+				// [] fatal error fix on urls like http://www.amazon.com/LG-Electronics-47GA7900-47-Inch-LED-LCD/dp/B00BBAFWMO
+				// also fix for JS code in descriptions
+				if (!is_array($array[$childNode->nodeName])) {
+					$array[$childNode->nodeName] = null;
+				}
+
 				$array[$childNode->nodeName][] = $this->toArray($childNode);
 			}
 		}
