@@ -4850,6 +4850,9 @@ class Assess extends MY_Controller {
 
     public function get_graph_batch_data() {
 
+
+		session_start();
+
         if (isset($_POST['batch_id']) && isset($_POST['batch_compare_id']) && isset($_POST['graphBuild'])) {
             if (trim($_POST['batch_id']) == '')
                 $batch_id = -1;
@@ -5179,22 +5182,45 @@ class Assess extends MY_Controller {
 				$final_trendline_dates = array();
 				$trendline_dates_to_remove = array();
 
-				$total_trendlines = 0;
-				foreach($trendline_dates_items as $trendline_date_with_more_items => $total_items)
+				// check the dates of the last request to display the same dates in the second request dates are stores in session
+				if($this->input->post('requestTime') > 0 && isset($_SESSION['graph'.$this->input->post('requestTime')]))
 				{
-					$total_trendlines++;
-					if($total_trendlines < 6)
+					$final_trendline_dates = $_SESSION['graph'.$this->input->post('requestTime')];
+
+					unset($_SESSION['graph'.$this->input->post('requestTime')]);
+
+					foreach($trendline_dates_items as $trendline_date_with_more_items => $total_items)
 					{
-						$final_trendline_dates[] = $trendline_date_with_more_items;
+						if( ! in_array($trendline_date_with_more_items, $final_trendline_dates))
+						{
+							$trendline_dates_to_remove[] = $trendline_date_with_more_items;
+						}
 					}
-					else
+				}
+				else
+				{
+					$total_trendlines = 0;
+					foreach($trendline_dates_items as $trendline_date_with_more_items => $total_items)
 					{
-						$trendline_dates_to_remove[] = $trendline_date_with_more_items;
+						$total_trendlines++;
+						if($total_trendlines < 6)
+						{
+							$final_trendline_dates[] = $trendline_date_with_more_items;
+						}
+						else
+						{
+							$trendline_dates_to_remove[] = $trendline_date_with_more_items;
+						}
 					}
 				}
 
 				sort($final_trendline_dates);
 				$ordered_trendline_dates = array_reverse($final_trendline_dates);
+
+				if($this->input->post('requestTime') > 0 && ! isset($_SESSION['graph'.$this->input->post('requestTime')]))
+				{
+					$_SESSION['graph'.$this->input->post('requestTime')] = $ordered_trendline_dates;
+				}
 
 
 				for($i = 0; $i < count($snap_data[0]['updated_trendlines_data']); $i++)
