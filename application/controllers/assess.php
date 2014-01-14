@@ -4222,15 +4222,15 @@ class Assess extends MY_Controller {
 					$skus_three_optimized_keywords_competitor++;			
 					$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 				}
-				if (isset($data_row->mvid)) {
+				if (isset($data_row->mvid) && $data_row->mvid > 0) {
 							$skus_with_manufacturer_videos++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 				}
-			        if (isset($data_row->mimg)) {
+			        if (isset($data_row->mimg) && $data_row->mimg > 0) {
 							$skus_with_manufacturer_images++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 				} 
-				if (isset($data_row->murl)) { 
+				if (isset($data_row->murl) && strlen($data_row->murl) > 0) { 
 							$skus_with_manufacturer_pages++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 				}				

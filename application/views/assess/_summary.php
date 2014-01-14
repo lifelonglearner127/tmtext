@@ -16,7 +16,7 @@
 					<i class="icon-large icon-remove"></i>
 				</a>
 				<a class="ml_10 research_arrow hideShow" onclick="return false;" href="#">
-					<img src="<?php echo base_url();?>img/arrow.png">
+					<img src="<?php echo base_url();?>img/arrownew.png">
 				</a>
 				<a href="#" class="show_filters_configuration_popup">
 					<!-- <img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/settings@2x.png"> -->

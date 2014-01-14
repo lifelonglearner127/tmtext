@@ -37,7 +37,7 @@
 <!--            <label class="research_assess_flagged"><input type="checkbox" id="research_assess_flagged" > Only show flagged items</label>-->
             <div class="clear"></div>
             <a href="#" onclick="return false;" class="hideShow float_r">
-                <img src="<?php echo base_url();?>img/arrow.png" />
+                <img src="<?php echo base_url();?>img/arrownew.png" />
             </a>
         </h3>
         <div class="boxes_content">
@@ -189,7 +189,7 @@
 				<input type="radio" name="result_batch_items[]" class="result_batch_items" value="competitor" /> - Show Results
 			</span>
             <a href="#" onclick="return false;" class="hideShow float_r">
-                <img src="<?php echo base_url();?>img/arrow.png" />
+                <img src="<?php echo base_url();?>img/arrownew.png" />
             </a>
         </h3>
         <div class="boxes_content">                       
@@ -594,7 +594,7 @@
 							
 							<div class="tbl_arrows_and_gear_wrapper">
 								<a id="research_batches_columns" style='display: inline' class="" title="Customize..."><img  style="width:32px; heihgt: 32px;"src ="<?php echo base_url() ?>/img/gear_32_32.png"></a>
-								<a class='research_arrow research_arrow_assess_tbl_res' onclick='return false;'><img src='<?php echo base_url() ?>img/arrow.png'></a>
+								<a class='research_arrow research_arrow_assess_tbl_res' onclick='return false;'><img src='<?php echo base_url() ?>img/arrownew.png'></a>
 							</div>
 						</div>
 						
@@ -735,6 +735,11 @@
 			      $('#tblAssess_wrapper').show(); 
 			      $('#research_batches_columns').css({opacity:1,cursor:'pointer'});
 			}	    
+		});
+		$('ul.research_table_filter .hideShow,.ml_10.research_arrow.hideShow,.research_arrow.research_arrow_assess_tbl_res').hover(function(){
+			$('img',this).attr('src','<?= base_url('img/arrownewhover.png') ?>');
+		},function(){
+			$('img',this).attr('src','<?= base_url('img/arrownew.png') ?>');
 		});
 	});          
  </script>
