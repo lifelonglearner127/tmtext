@@ -749,6 +749,7 @@
 		$('#research_batches_columns_export').click(function(e) {
 			e.preventDefault();
 			$('#share_link_wrapper').dialog({width:350,resizable: false,modal : true});
+			$('.ui-dialog-titlebar-close').html('<span style="margin-top:-5px;">x</span>');
 		});
 	});          
  </script>
