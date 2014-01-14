@@ -885,7 +885,6 @@ ul.research_table_filter .hideShow{
 	right:6px;
 }
 a#research_batches_columns_export:hover,a.show_filters_configuration_popup:hover,
-#research_batches_columns:hover,ul.research_table_filter .hideShow:hover,
-.ml_10.research_arrow.hideShow:hover,.research_arrow.research_arrow_assess_tbl_res:hover{
+#research_batches_columns:hover{
 	background: #aaa;
 }
