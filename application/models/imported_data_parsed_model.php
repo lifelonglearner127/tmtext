@@ -2878,7 +2878,7 @@ echo "j  = ".$j;
 			{
 				$this->db->where('imported_data_id',$result['imported_data_id']);
 				$this->db->where('key','url');
-				$this->db->update($this->tables['imported_data_parsed'],$upd);
+				$this->db->update($this->tables['imported_data_parsed'],array('revision'=>$result['revision']+1));
 			}	
 		    }
 		    $query->free_result();

@@ -893,7 +893,7 @@ a#research_batches_columns_export:hover,a.show_filters_configuration_popup:hover
 	float:right;
 	margin-top:4px;
 }
-td.word_prod,td.Duplicate_Content{
+td.word_prod,td.word_prod1,td.Duplicate_Content,td.Duplicate_Content1{
 	text-align:center;
 }
 th.word_prod{
