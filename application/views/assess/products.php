@@ -217,7 +217,7 @@
 				<ul>
 				
 					<?php foreach(AssessHelper::getSelectableColumns(AssessHelper::columns()) as $column): ?>
-						<li>
+						<li id="<?php echo $column['sName']?>" class="<?php echo $column['sClass']?>" <?php if(isset($column['nonCompared'])){echo 'data-non_compare="true"';}  ?> <?php if(isset($column['bSortable'])){echo 'data-sortable="false"';}  ?> <?php if(isset($column['bVisible'])){echo 'data-visible="false"';}  ?> <?php if(isset($column['nonSelected'])){echo 'data-non_selected="true"';}  ?>>
 							<p>
 								<!-- $columns must be rewrited!!! -->
 								<input type="checkbox" class="research_assess_choiceColumnDialog_checkbox" id="column_<?php echo $column['sName']?>" data-col_name="<?php echo $column['sName']?>" name="column_<?php echo $column['sName']?>_name" <?php echo(isset($columns[$column['sName']]) && $columns[$column['sName']] == 'true' ? 'checked="checked"' : '') ?> />
