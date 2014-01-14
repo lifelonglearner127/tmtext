@@ -1468,18 +1468,42 @@ $(function() {
 		
 		return r;
 	}
+	
+	function transformFiltersSection()
+	{
+		var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch');
+		if (research_assess_compare_batches_batch.val() == 0)
+		{
+			var batch1_filter_item = $('.batch1_filter_item');
+			
+			$('.batch2_filter_item').hide();					
+			
+			if (!batch1_filter_item.hasClass('tmp_batch1_filter_item')) {
+				$('.batch1_filter_item').addClass('tmp_batch1_filter_item');
+				$('.batch1_filter_item').removeClass('batch1_filter_item');
+			}
+		}
+		else
+		{
+			var tmp_batch1_filter_item = $('.tmp_batch1_filter_item');
+			
+			$('.batch2_filter_item').show();			
+			
+			if (tmp_batch1_filter_item.length)
+			{
+				$('.tmp_batch1_filter_item').addClass('batch1_filter_item');
+				$('.tmp_batch1_filter_item').removeClass('tmp_batch1_filter_item');
+			}
+		}
+	}
 
 	function transformSummarySection()
 	{
 		var batch_set_toggle = $('#batch_set_toggle');
 		var common_batch1_filter_items = $('.common_batch1_filter_items');
 		var hidden_batch2_filter_items = $('.hidden_batch2_filter_items');
-		var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch');
-		
-		if (research_assess_compare_batches_batch.val() == 0)
-			$('.batch2_filter_item').css('visibility', 'hidden');
-		else
-			$('.batch2_filter_item').css('visibility', 'visible');
+				
+		transformFiltersSection();
 		
 		if (batch_set_toggle.is(':checked'))
 		{
