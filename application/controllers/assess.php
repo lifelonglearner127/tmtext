@@ -3835,7 +3835,7 @@ class Assess extends MY_Controller {
 		if(!empty($row->manufacturer_info))
 		{
 			$mi = unserialize($row->manufacturer_info);
-			$result_row->murl = $mi['url'];
+			$result_row->murl = '<a target="_blank" class="active_link" href="'.$mi['url'].'">'.$mi['url'].'</a>';
 			$result_row->mimg = $mi['images'];
 			$result_row->mvid = $mi['videos'];
 			if(strlen($mi['url']) > 0)
