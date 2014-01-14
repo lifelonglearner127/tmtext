@@ -3838,6 +3838,7 @@ class Assess extends MY_Controller {
 			$result_row->murl = $mi['url'];
 			$result_row->mimg = $mi['images'];
 			$result_row->mvid = $mi['videos'];
+			$skus_with_manufacturer_videos++;
 		}
             } else {
                 $result_row->short_seo_phrases = $row->short_seo_phrases;
