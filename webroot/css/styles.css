@@ -832,3 +832,10 @@ a.jq-assess {
 .summary_search_field{
 	width: 220px;
 }
+a.show_filters_configuration_popup:hover,#research_batches_columns_export:hover{
+	background:#aaa;
+	border-radius:4px;
+	margin-top:0;
+	padding:4px;
+	height:35px
+}

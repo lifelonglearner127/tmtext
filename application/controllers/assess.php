@@ -3356,11 +3356,11 @@ class Assess extends MY_Controller {
 						}
 						if (isset($result_row->mvid)) {
 							$skus_with_manufacturer_videos++;
-							$this->filterBySummaryCriteria('skus_with_manufacturer_videos_available', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						}
 						if (isset($result_row->mimg)) {
 							$skus_with_manufacturer_images++;
-							$this->filterBySummaryCriteria('skus_with_manufacturer_images_available', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						} 
 						if (isset($result_row->murl)) { 
 							$skus_with_manufacturer_pages++;
@@ -3840,15 +3840,18 @@ class Assess extends MY_Controller {
 			$result_row->mvid = $mi['videos'];
 			if(strlen($mi['url']) > 0)
 			{	
-				$skus_with_manufacturer_videos++;
+				$skus_with_manufacturer_pages++;
+				$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 			}
 			if($mi['images'] > 0)
 			{	
 				$skus_with_manufacturer_images++;
+				$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 			}
 			if($mi['videos'] > 0)
 			{	
-				$skus_with_manufacturer_pages++;
+				$skus_with_manufacturer_videos++;
+				$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 			}	
 		}
             } else {
@@ -4221,11 +4224,11 @@ class Assess extends MY_Controller {
 				}
 				if (isset($data_row->mvid)) {
 							$skus_with_manufacturer_videos++;
-							$this->filterBySummaryCriteria('skus_with_manufacturer_videos_available', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 				}
 			        if (isset($data_row->mimg)) {
 							$skus_with_manufacturer_images++;
-							$this->filterBySummaryCriteria('skus_with_manufacturer_images_available', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 				} 
 				if (isset($data_row->murl)) { 
 							$skus_with_manufacturer_pages++;
@@ -4346,8 +4349,8 @@ class Assess extends MY_Controller {
 
 				'skus_with_zero_product_description_links_competitor' => array( 'value' => $skus_with_zero_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links)),
 				'skus_with_more_than_one_product_description_links_competitor' => array( 'value' => $skus_with_more_than_one_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
-				'skus_with_manufacturer_videos_available' => array( 'value' => (isset($skus_with_manufacturer_videos)) ? $skus_with_manufacturer_videos : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_videos)),
-				'skus_with_manufacturer_images_available' => array( 'value' => (isset($skus_with_manufacturer_images)) ? $skus_with_manufacturer_images : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_images)),
+				'skus_with_manufacturer_videos' => array( 'value' => (isset($skus_with_manufacturer_videos)) ? $skus_with_manufacturer_videos : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_videos)),
+				'skus_with_manufacturer_images' => array( 'value' => (isset($skus_with_manufacturer_images)) ? $skus_with_manufacturer_images : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_images)),
 				'skus_with_manufacturer_pages' => array( 'value' => (isset($skus_with_manufacturer_pages)) ? $skus_with_manufacturer_pages : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_pages)),
 
 			);		

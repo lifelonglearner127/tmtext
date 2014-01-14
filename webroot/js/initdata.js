@@ -108,8 +108,8 @@ var summaryFieldNames = [
 		'skus_with_more_than_one_product_description_links_competitor',
 		
 		'assess_report_items_priced_higher_than_competitors',
-		'skus_with_manufacturer_videos_available',
-		'skus_with_manufacturer_images_available',
+		'skus_with_manufacturer_videos',
+		'skus_with_manufacturer_images',
 		'skus_with_manufacturer_pages'
 	];
 	
@@ -521,7 +521,36 @@ var filter_toggler_flag = 0
             "sName": "Duplicate_Content",            
             "sClass" :  "Duplicate_Content"
         },
-
+        {
+            "sTitle": "Manufacturer Pages",
+            "sName": "Duplicate_Content",            
+            "sClass" :  "Duplicate_Content"
+        },
+        {
+            "sTitle": "Duplicate Content",
+            "sName": "Duplicate_Content",            
+            "sClass" :  "Duplicate_Content"
+        },
+        {
+            "sTitle": "Duplicate Content",
+            "sName": "Duplicate_Content",            
+            "sClass" :  "Duplicate_Content"
+        },
+	{
+		'sTitle':'Manufacturer Page',
+		'sClass' : 'murl',
+		'sName' : 'murl'
+	},
+	{
+		'sTitle' : 'Manufacturer Images',
+		'sClass' : 'mimg',
+		'sName' : 'mimg'
+	},
+	{
+		'sTitle' : 'Manufacturer Videos',
+		'sClass' : 'mvid',
+		'sName' : 'mvid'
+	}
     ];
 
 var chart1 = null;

@@ -63,7 +63,7 @@ return array (
 		'skus_with_more_than_one_product_description_links' => 0,
 		'skus_with_more_than_one_product_description_links_competitor' => 0,
 		'filtered_count' => 0,
-		'skus_with_manufacturer_videos_available' => 0,
-		'skus_with_manufacturer_images_available' => 0,
+		'skus_with_manufacturer_videos' => 0,
+		'skus_with_manufacturer_images' => 0,
 		'skus_with_manufacturer_pages' => 0,
 	);
