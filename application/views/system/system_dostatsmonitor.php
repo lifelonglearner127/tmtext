@@ -213,7 +213,8 @@
             $('#start_do_stats').addClass('disabled');
             $('#do_stats_batch').addClass('disabled');
 	    if(typeof(force) !== 'undefined') url += '/'+force;
-	    $('#current_status span').text('Starting...');    
+	    $('#current_status span').text('Starting...');  
+	    activeStatBtn('stop'); //Issue #1317
             $.ajax({
                url:url 
             });
