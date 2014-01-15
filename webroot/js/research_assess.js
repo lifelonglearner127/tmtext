@@ -409,7 +409,8 @@ $(function() {
 	
 	function filterItems(json) {
 		var stored_filter_items = json.ExtraData.report.stored_filter_items
-		  , r = [];		  
+		  , r = []		  
+		  , encoded_r = [];		  
 		
 		outputedFilterIndexes = [];
 		
@@ -424,6 +425,8 @@ $(function() {
 				if (!~outputedFilterIndexes.indexOf(stored_item_index))
 				{
 					r.push(json.aaData[ stored_item_index ]);
+					encoded_r.push(json.ExtraData.json_encoded_data[ stored_item_index ]);
+					
 					outputedFilterIndexes.push(stored_item_index);
 				}								
 			}
@@ -431,6 +434,7 @@ $(function() {
 		
 		json.ExtraData.fixedTotalRows = outputedFilterIndexes.length;			
 		json.aaData = r;		
+		json.ExtraData.json_encoded_data = encoded_r;		
 	}
 		
 	function readAssessData() {
