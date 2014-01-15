@@ -2884,9 +2884,10 @@ class System extends MY_Controller {
              $this->temp_data_model->emptyTable('urlstomatch');
              $this->temp_data_model->emptyTable('updated_items');
              $this->settings_model->deledtMatching();
-             if($pid = $this -> settings_model -> get_value(-1, 'thread_pid'))
+             if($thread_history = $this -> settings_model -> get_value(-1, 'thread_history') !== false)
              {
-                 if($this->_is_process_running($pid))
+                 $pid = isset($thread_history['thread_pid'])?$thread_history['thread_pid']:0;
+                 if($pid && $this->_is_process_running($pid))
                     echo shell_exec("kill $pid");
              }
 	     echo 'ok';
@@ -2911,7 +2912,7 @@ class System extends MY_Controller {
             }
             
             $command = 'cd ' . FCPATH . ' 
-nohup php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/null &';
+php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/null &';
             echo shell_exec($command);
         }
         

@@ -3174,16 +3174,25 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             }
             // Set basic for child process
             $new_child_pid = posix_setsid();
-
-            $this->maxthreads = 10;
+            
+            $this->maxthreads = $this -> config -> item('thread_max');
+            if($this->maxthreads < 1)
+            {
+                $this->maxthreads = 1;
+            }
             $parent_sleep = 0;
             $start_run = microtime(true);        
-            log_message('ERROR', 'New Start ' .  $choosen_file . ' with threads=' . $this->maxthreads);
+            $history_run = array(
+                'start'=> 'New Start ' .  $choosen_file . ' with threads=' . $this->maxthreads . ' pid=' .$new_child_pid,
+                'thread_pid'=> $new_child_pid
+            );
             if(!$choosen_file)
             {
                 if(defined('CMD') && CMD )
                 {
-                    log_message('ERROR', 'File not defined ' );                
+                    log_message('ERROR', 'File not defined ' );
+                    $history_run['ERROR'] = 'File not defined ';
+                    $this->_save_history($history_run);                   
                     return;
                 }
                 $choosen_file = $this -> input -> post('choosen_file');
@@ -3214,7 +3223,9 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             $fileHandler = fopen($file,'r');
             if(!$fileHandler)
             {
-                log_message('ERROR', 'File not open ' .  $file);                
+                log_message('ERROR', 'File not open ' .  $file);
+                $history_run['ERROR'] = 'File not open ' .  $file;
+                $this->_save_history($history_run);
                 return;
             }
 
@@ -3227,14 +3238,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             $this -> temp_data_model -> createNonFoundTable();
             $this -> temp_data_model -> cUpdDataTable();
             $this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);
-            if($this -> settings_model -> get_value(-1, 'thread_pid'))
-            {
-                $this -> settings_model -> update_value(-1, 'thread_pid', $new_child_pid);
-            }
-            else
-            {
-                $this -> settings_model -> create(-1,'thread_pid', $new_child_pid, $description = 'PID by upload match ');
-            }
+            $this->_save_history($history_run);
             while ($line = fgets($fileHandler)) {
                     ++$linesTotal;
                     $res = '';
@@ -3284,16 +3288,17 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             }
             $start_run2 = microtime(true);        
             $exec_time = $start_run2 - $start_run;
-            log_message('ERROR', "{$exec_time} sec - {$linesAdded} lines Phase 2");  
-            log_message('ERROR', 'End all sec: ' . ($start_run2 - $start_run));
-            log_message('ERROR', 'memory usage (peak) : (' . memory_get_peak_usage(). ')' . memory_get_usage()) ;
-            log_message('ERROR', ' threads='. count($this->threads));
-            log_message('ERROR', ' parent waited='. $parent_sleep);
+            $history_run[] =  "{$exec_time} sec - {$linesAdded} lines Phase 2";  
+            $history_run[] =  'End all sec: ' . ($start_run2 - $start_run);
+            $history_run[] =  'memory usage (peak) : (' . memory_get_peak_usage(). ')' . memory_get_usage() ;
+            $history_run[] =  ' threads='. count($this->threads);
+            $history_run[] =  ' parent waited='. $parent_sleep;
             $notFoundUrls = $this->temp_data_model->getTableSize('notfoundurls');
             $itemsUpdated = $this->temp_data_model->getTableSize('updated_items');
             $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
             $this -> settings_model -> updateMatchingUrls($process, $val);
-            $this -> settings_model -> update_value(-1, 'thread_pid', 0);
+            $history_run['thread_pid'] = 0;
+            $this->_save_history($history_run);
         }
 
         function match_urls_thread_worker( $process, $urls_in_1, $urls_in_2 ) 
@@ -3377,7 +3382,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
         
         function _run_in_background($Command)
         {
-            $PID = shell_exec("nohup $Command > /dev/null 2> /dev/null & echo $!");
+            $PID = shell_exec("$Command > /dev/null 2> /dev/null & echo $!");
             return($PID);
         }
        
@@ -3409,6 +3414,15 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                 }
             }
             return true;
+        }
+
+        function _save_history($history_run = array())
+        {
+            if($this -> settings_model -> get_value(-1, 'thread_history') !== false) {
+                $this -> settings_model -> update_value(-1, 'thread_history', $history_run);
+            } else {
+                $this -> settings_model -> create(-1,'thread_history', $history_run, 'PID by upload match ');
+            }
         }
         
 //	function match_urls_thread()
