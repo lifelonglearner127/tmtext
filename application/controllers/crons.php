@@ -3246,27 +3246,34 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                         ++$linesAdded;
                         ++$linesScaned;
 
-                        
-                        for($i=0; $i<$this->maxthreads;$i++) {
-                            if(!isset($this->threads[$i]) || (isset($this->threads[$i]) && !$this->_is_process_running($this->threads[$i])))
-                            {
-                                // start new worker
-                                $this->threads[$i] = $this->_run_in_background("php cli.php crons match_urls_thread_worker \"$process\" " . urlencode($urls[0]) ." " . urlencode($urls[1]) . " ");
-                                break;
-                            }
-                        }
-                        while($this->_is_all_processes_running())
+                        if($this->maxthreads <= 1)
                         {
-                            // all worker is working - we waiting
-                            ++$parent_sleep;
-                            sleep(1);
+                            $urls_in_1 = urlencode($urls[0]);
+                            $urls_in_2 = urlencode($urls[1]);
+                            $atuc = $this->match_urls_thread_worker($process, $urls_in_1, $urls_in_2);
+                        } else
+                        {
+                            for($i=0; $i<$this->maxthreads;$i++) {
+                                if(!isset($this->threads[$i]) || (isset($this->threads[$i]) && !$this->_is_process_running($this->threads[$i])))
+                                {
+                                    // start new worker
+                                    $this->threads[$i] = $this->_run_in_background("php cli.php crons match_urls_thread_worker \"$process\" " . urlencode($urls[0]) ." " . urlencode($urls[1]) . " ");
+                                    break;
+                                }
+                            }
+                            while($this->_is_all_processes_running())
+                            {
+                                // all worker is working - we waiting
+                                ++$parent_sleep;
+                                sleep(1);
+                            }
+                            $atuc = 0;  // normal processed threads - not return from workers
                         }
-
-                    $atuc = 0;  // normal processed - not return from workers
-//                    if ($atuc < 0) {
-//                        log_message('ERROR','incorrect ATUC');
-//                        exit();
-//                    }
+                        
+                    if ($atuc < 0) {
+                        log_message('ERROR','incorrect ATUC');
+                        exit();
+                    }
                     $itemsUnchanged += $atuc;
                     $timing = microtime(true) - $start;
                             
