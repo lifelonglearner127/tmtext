@@ -538,8 +538,9 @@ $(function() {
 				if (needToBeReloaded)				
 					pullRestItems();			
 			},
-			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
-				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
+			fnRowCallback : function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {	
+				var settings = tblAssess.fnSettings();
+				$(nRow).attr("add_data", settings.json_encoded_data[ iDisplayIndex + settings._iDisplayStart ]); 	
 				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
