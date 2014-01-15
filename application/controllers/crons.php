@@ -3205,7 +3205,6 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             $file = $this -> config -> item('csv_upload_dir') . $choosen_file;
             $f_name = end(explode('/', $file));
             // reopen DB in child process
-            ini_set('mysql.connect_timeout', 120);
             $this->db->close();
             $this->db->initialize(); 
                     
@@ -3303,8 +3302,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 
         function match_urls_thread_worker( $process, $urls_in_1, $urls_in_2 ) 
         {
-            ini_set('mysql.connect_timeout', 120);
-            
+             
             $urls['url1'] = urldecode($urls_in_1);
             $urls['url2'] = urldecode($urls_in_2);
             $notFoundUrls = 0;
