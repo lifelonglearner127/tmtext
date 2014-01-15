@@ -381,8 +381,10 @@
         
         var status = '';
         
-        $('#clear_data_items').click(function(){
-        
+        $('#clear_data_items').live('click',function(){
+            if($("#clear_data_selection").val()== 0){
+               return false; 
+            }
             $( '#ajaxLoadAni' ).fadeIn( 'slow' );
             run_clear_data_process();
         });
