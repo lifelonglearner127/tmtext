@@ -3172,7 +3172,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                 // Parent process
                 exit();
             }
-            // Set basic for child child process
+            // Set basic for child process
             $new_child_pid = posix_setsid();
 
             $this->maxthreads = 10;
@@ -3196,6 +3196,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             $file = $this -> config -> item('csv_upload_dir') . $choosen_file;
             $f_name = end(explode('/', $file));
             // reopen DB in child process
+            ini_set('mysql.connect_timeout', 120);
             $this->db->close();
             $this->db->initialize(); 
                     
@@ -3297,6 +3298,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 
         function match_urls_thread_worker( $process, $urls_in_1, $urls_in_2 ) 
         {
+            ini_set('mysql.connect_timeout', 120);
             
             $urls['url1'] = urldecode($urls_in_1);
             $urls['url2'] = urldecode($urls_in_2);
@@ -3305,10 +3307,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 //            $this -> load -> model('settings_model');
             $this -> load -> model('imported_data_parsed_model');
             $this -> load -> model('temp_data_model');
-            // reopen DB in child process
-            $this->db->close();
-            $this->db->initialize(); 
-            
+
             // ===== not changed logic
             
                     $atuc = 2;
