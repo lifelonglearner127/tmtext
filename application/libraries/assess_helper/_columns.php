@@ -104,7 +104,7 @@ return array(
 			'sName' => 'title_seo_phrases',                
 			'sClass' => 'title_seo_phrases',
 			'moreHtml' => '	<input id="tk-frequency" type="radio" name="title_keywords" value="Frequency" checked="checked" /><label for="tk-frequency">Frequency</label>'
-		), //removed by Issue #1326 <input id="tk-denisty" type="radio" name="title_keywords" value="density" style="display:none" /><label style="display:none" for="tk-denisty">Density</label>
+		), //removed by Issue #1326 <input id="tk-denisty" type="radio" name="title_keywords" value="density" style="display:none" /><label style="display:none" for="tk-denisty">Density</label> 
 		array(
 			'sTitle' => 'Images',
 			'sName' => 'images_cmp',              
