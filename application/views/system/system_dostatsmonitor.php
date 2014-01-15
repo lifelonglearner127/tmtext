@@ -278,6 +278,7 @@
     function run_clear_data_process(){
         var selected_action =  $('#clear_data_selection').val();
         var url = '<?php echo site_url('system/clear_imported_data_parsed'); ?>';
+        $("#clear_data_items").addClass('disabled');
     if(selected_action !== 0) {   
         $.ajax({
                 url:url,
@@ -291,6 +292,7 @@
                    success: function(res) {
                        $("#show_items_count").text('Items count - '+res);
                        $('#ajaxLoadAni').fadeOut('slow');
+                        $("#clear_data_items").removeClass('disabled');
                    }
                 });
                     }
