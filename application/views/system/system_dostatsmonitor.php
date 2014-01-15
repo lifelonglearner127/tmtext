@@ -73,9 +73,25 @@
 			<?php //* ?>
 			<span id="stop_do_stats" class="btn btn-success fileinput-button" style=""> Stop Do Stats </span>
 			<?php //*/ ?>
-			<div id="clear_imported_data_parsed" style ="margin:10px 0px;">
+                        <div id="clear_data_type" >
+                            <select id="clear_data_selection" name="batch_select" style="margin: auto;">
+                                <option value="0">Select Operation</option>
+                                <option value="1">Delete duplicate revisions</option>
+                                <option value="2">Delete duplicate revisions from archive</option>
+                                <option value="3">Delete items that have not batch</option>
+                                <option value="4">Mark queued from archive</option>
+                            </select>
+                            <div id="ajaxLoadAni">
+                                <span>Loading...</span>
+                            </div>
+                            <div id="clear_imported_data_parsed" style ="margin:10px 0px">
 				<span id="clear_data_items" class="btn btn-success fileinput-button" style=""> Clean Imported Data Parsed </span>
-			</div>
+                            </div>
+                            <span id="show_items_count"></span>
+                        </div>
+                        
+			
+                        
 			<input type="checkbox" id="force_keywords" name="force_keywords" />&nbsp;<label>Force keywords re-generation</label>
                         <div id="delelte_selected_batch" >
                             <select id="batch_select" name="batch_select" style="margin: auto;">
@@ -197,7 +213,8 @@
             $('#start_do_stats').addClass('disabled');
             $('#do_stats_batch').addClass('disabled');
 	    if(typeof(force) !== 'undefined') url += '/'+force;
-	    $('#current_status span').text('Starting...');    
+	    $('#current_status span').text('Starting...');  
+	    activeStatBtn('stop'); //Issue #1317
             $.ajax({
                url:url 
             });
@@ -259,10 +276,27 @@
     }
     
     function run_clear_data_process(){
+        var selected_action =  $('#clear_data_selection').val();
         var url = '<?php echo site_url('system/clear_imported_data_parsed'); ?>';
+    if(selected_action !== 0) {   
         $.ajax({
-            url:url
-        });
+                url:url,
+                type: 'GET',
+                data:{n:selected_action},
+                success:function(data){
+                 url = '<?php echo site_url('system/unnessery_items_count'); ?>'+'/'+ selected_action;
+                $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+                $.ajax({
+                   url:url,
+                   success: function(res) {
+                       $("#show_items_count").text('Items count - '+res);
+                       $('#ajaxLoadAni').fadeOut('slow');
+                   }
+                });
+                    }
+
+           });
+        }
     }
     function getBatchData(batch){
         var url = '<?php echo site_url('system/get_size_of_batch'); ?>';
@@ -270,15 +304,15 @@
             $('#size_of_batch').text(' There is no selected batches. ');
         }
         else{
-            $.ajax({
-                url:url,
-                type: 'POST',
-                data:{batch_id:batch},
-                success:function(info){
-                    $('#size_of_batch').text(info+' items ');
-                }
-            });
-        }
+        $.ajax({
+            url:url,
+            type: 'POST',
+            data:{batch_id:batch},
+            success:function(info){
+                $('#size_of_batch').text(info+' items ');
+            }
+        });
+    }
     }
     function delete_selected_batch(batch){
         var url = '<?php echo site_url('crons/delete_batch_items_from_statistics_new/'); ?>'+'/'+batch;
@@ -320,8 +354,24 @@
             startDoStatsBatch(batch);
         }
     });
-
+           
 	$(document).ready(function() {
+        
+        $('#clear_data_selection').live('change',function(){
+        var url = '<?php echo site_url('system/unnessery_items_count'); ?>'+'/'+ $(this).val();
+        if($(this).val() != 0){    
+            $( '#ajaxLoadAni' ).fadeIn( 'slow' );
+            $.ajax({
+               url:url,
+               success: function(res) {
+                   $("#show_items_count").text('Items count - '+res);
+                   $('#ajaxLoadAni').fadeOut('slow');
+               }
+            });
+        }else{
+            $("#show_items_count").text('');
+        }
+        });
         itemsToUpdate();
         statusInfo();
         
@@ -330,6 +380,8 @@
         var status = '';
         
         $('#clear_data_items').click(function(){
+        
+            $( '#ajaxLoadAni' ).fadeIn( 'slow' );
             run_clear_data_process();
         });
         

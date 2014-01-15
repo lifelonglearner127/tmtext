@@ -1700,10 +1700,9 @@ $(function() {
 		$('.phr-density').hide();
 		$('.phr-frequency').show();
 	}
-	
-	$(document).on('click','#tk-denisty',function(){
+	/*$(document).on('click','#tk-denisty',function(){
 		onDenisty();
-	});	
+	});removed by Issue #1326 */	
 	
 	$(document).on('click','#tk-frequency',function(){
 		onFrequency();
@@ -1712,15 +1711,15 @@ $(function() {
 	function setStatusFromCookie(){
 		var tkstatus = $.cookie('tkstatus');		
 		if(typeof(tkstatus)!=='undefined'){
-			if(tkstatus==='denisty'){
-				onDenisty();
-			}
-			else{
+			//if(tkstatus==='denisty'){
+			//	onDenisty();
+			//}
+			//else{
 				onFrequency();
-			}
+			//} removed by Issue #1326
 		}
 		else{
-			$.cookie('tkstatus','denisty',options);
+			$.cookie('tkstatus','frequency',options);
 		}
 	}
 	

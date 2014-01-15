@@ -29,24 +29,58 @@ class System extends MY_Controller {
 	}
 
 	public function clear_imported_data_parsed() {
+            $n = $_GET['n'];
 		$this -> load -> model('imported_data_parsed_archived_model');
 		$this -> load -> model('imported_data_parsed_model');
                 $this -> load -> model('statistics_new_model');
 //		$this -> imported_data_parsed_archived_model -> mark_queued_from_archive();
-		$this -> imported_data_parsed_model -> delete_repeated_data();
-                $this -> imported_data_parsed_model -> delete_duplicate_revisions();
-                $this -> imported_data_parsed_archived_model ->delete_duplicate_revisions();
-                $results= $this -> imported_data_parsed_model ->get_items_that_havenot_batch();
+                if($n == 1){
+                   $this -> imported_data_parsed_model -> delete_repeated_data(); 
+                   $this -> imported_data_parsed_model -> delete_duplicate_revisions();
+                }
+		if($n == 2){
+                    $this -> imported_data_parsed_archived_model ->delete_duplicate_revisions();
+                }
+                if($n == 3){
+                    $results= $this -> imported_data_parsed_model ->get_items_that_havenot_batch();
                 
-                foreach($results as $result){
-                    if ($this -> imported_data_parsed_archived_model -> saveToArchive($result['imported_data_id'])) {
-                        $this -> imported_data_parsed_model -> deleteRows($result['imported_data_id']);
-                        $this -> statistics_new_model -> delete($result['imported_data_id']);
+                    foreach($results as $result){
+                        if ($this -> imported_data_parsed_archived_model -> saveToArchive($result['imported_data_id'])) {
+                            $this -> imported_data_parsed_model -> deleteRows($result['imported_data_id']);
+                            $this -> statistics_new_model -> delete($result['imported_data_id']);
+                        }
                     }
                 }
+                if($n == 4){
+                    $this -> imported_data_parsed_archived_model -> mark_queued_from_archive();
+                }
+                
 		echo "end";
 	}
-
+        public function unnessery_items_count(){
+            $this -> load -> model('imported_data_parsed_archived_model');
+            $this -> load -> model('imported_data_parsed_model');
+            $this -> load -> model('statistics_new_model');
+            $n = $this->uri->segment(3);
+            switch ($n){
+            case 0:
+            echo 0;
+            break;
+        case 1:
+            echo $this -> imported_data_parsed_model -> duplicate_revisions_count();
+            break;
+        case 2:
+            echo $this -> imported_data_parsed_archived_model ->duplicate_revisions_count();
+            break;
+        case 3:
+            echo  $this -> imported_data_parsed_model ->items_that_havenot_batch_count();
+            break;
+        case 4:
+            echo  $this -> imported_data_parsed_archived_model -> mark_queued_from_archive_count();
+            break;
+         }
+        
+        }
 	public function new_batch_nf_list_modal() {
 		$this -> load -> model('webshoots_model');
 		$rec_list = $this -> webshoots_model -> getEmailToBatchNotifyList();
@@ -2884,14 +2918,15 @@ class System extends MY_Controller {
              $this->temp_data_model->emptyTable('urlstomatch');
              $this->temp_data_model->emptyTable('updated_items');
              $this->settings_model->deledtMatching();
-             if($pid = $this -> settings_model -> get_value(-1, 'thread_pid'))
+             if($thread_history = $this -> settings_model -> get_value(-1, 'thread_history') !== false)
              {
-                 if($this->_is_process_running($pid))
+                 $pid = isset($thread_history['thread_pid'])?$thread_history['thread_pid']:0;
+                 if($pid && $this->_is_process_running($pid))
                     echo shell_exec("kill $pid");
              }
 	     echo 'ok';
 	}
-        
+
         function _is_process_running($PID)
         {
             $ProcessState = '';
@@ -2911,7 +2946,7 @@ class System extends MY_Controller {
             }
             
             $command = 'cd ' . FCPATH . ' 
-nohup php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/null &';
+php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/null &';
             echo shell_exec($command);
         }
         

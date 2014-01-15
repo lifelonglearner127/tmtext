@@ -20,13 +20,46 @@ class Imported_data_parsed_archived_model extends CI_Model {
     function __construct() {
         parent::__construct();
     }
-
+    
     function get($id) {
         $query = $this->db->where('id', $id)
                 ->limit(1)
                 ->get($this->tables['imported_data_parsed_archived']);
 
         return $query->result();
+    }
+    function duplicate_revisions_count(){
+        $sql = "SELECT COUNT( * ) as count
+                FROM (
+                SELECT  `imported_data_id` ,  `key` ,  `revision` , COUNT(  `id` ) AS cnt, MIN( id ) AS min_id
+                FROM  `imported_data_parsed_archived` 
+                GROUP BY  `imported_data_id` ,  `key` ,  `revision` 
+                HAVING cnt >1
+                ) AS tt";
+       $query = $this->db->query($sql);
+       $res= $query->row_array();
+        
+       return $res['count'];
+    }
+    
+    function mark_queued_from_archive_count(){
+        $sql = "SELECT COUNT( * ) AS count
+                FROM (
+                SELECT idpa.imported_data_id AS itemid
+                FROM imported_data_parsed_archived AS idpa
+                LEFT JOIN imported_data_parsed AS idp ON idpa.imported_data_id = idp.imported_data_id
+                INNER JOIN crawler_list AS cl ON idpa.imported_data_id = cl.imported_data_id
+                INNER JOIN research_data_to_crawler_list AS rdcl ON rdcl.crawler_list_id = cl.id
+                INNER JOIN research_data AS rd ON rd.id = rdcl.research_data_id
+                INNER JOIN batches AS b ON b.id = rd.batch_id
+                WHERE idp.imported_data_id IS NULL 
+                AND rd.batch_id IS NOT NULL 
+                GROUP BY idpa.imported_data_id
+                ) AS tt";
+        $query = $this->db->query($sql);
+        $res= $query->row_array();
+        
+        return $res['count'];
     }
     function delete_duplicate_revisions(){
        $sql = "select `imported_data_id`,`key`, `revision`, count(`id`) as cnt, min(id) as min_id
@@ -37,10 +70,9 @@ class Imported_data_parsed_archived_model extends CI_Model {
        $results = $query->result_array();
        
        foreach($results as $k => $res){
-           
-              $this->db->where('id', $res['min_id']);
-              $this->db->delete($this->tables['imported_data_parsed_archived']);
-        }
+            $this->db->where('id', $res['min_id']);
+            $this->db->delete($this->tables['imported_data_parsed_archived']);
+       }
        
     }
     function saveToArchive($imported_data_id, $without=null) {
