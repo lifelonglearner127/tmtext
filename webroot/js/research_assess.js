@@ -538,21 +538,21 @@ $(function() {
 				if (needToBeReloaded)				
 					pullRestItems();			
 			},
-			fnRowCallback : function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {	
-				var settings = tblAssess.fnSettings();
-				$(nRow).attr("add_data", settings.json_encoded_data[ iDisplayIndex + settings._iDisplayStart ]); 	
+			fnRowCallback : function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {						
 				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
-				// console.log('local draw callback');		
+				
+				// updating correct add_data attributes
+				var currentAvailableNodes = tblAssess.fnGetNodes();
+				for (var it = 0; it < currentAvailableNodes.length; it++) 
+					$(currentAvailableNodes[it]).attr('add_data', oSettings.json_encoded_data[ currentAvailableNodes[it]['_DT_RowIndex'] ]);				
 				
 				dataTableLastPageNumber = oSettings._iDisplayStart / oSettings._iDisplayLength;
 
 				tblAssess.fnAdjustColumnSizing(false);						
 			},
-			fnPreDrawCallback : function( oSettings ) {		
-				// console.log('PRE local draw callback');		
-								
+			fnPreDrawCallback : function( oSettings ) {														
 				//setting main tblAssess instance
 				tblAssess = oSettings.oInstance;			
 				
