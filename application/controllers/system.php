@@ -2790,14 +2790,15 @@ class System extends MY_Controller {
                                 ++$itemsUpdated;
                                 $atuc -= 1;
                             }
-                            else{
+                            elseif(!($url1['model'] && strlen($url1['model']) > 3)
+                                    &&!($url2['model'] && strlen($url2['model']) > 3)){
                                 $model = time();
                                 $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model);
                                 $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model);
                                 $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
                                 $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
                                 $itemsUpdated += 2;
-                                $atuc -= 1;
+                                $atuc -= 2;
                             }
 //                            if ($model1) {
 //                                    if ($model2 && $model1 != $model2) {
