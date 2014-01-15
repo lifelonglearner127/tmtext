@@ -85,7 +85,7 @@
                                 <span>Loading...</span>
                             </div>
                             <div id="clear_imported_data_parsed" style ="margin:10px 0px">
-				<span id="clear_data_items" class="btn btn-success fileinput-button" style=""> Clean Imported Data Parsed </span>
+				<span id="clear_data_items" class="btn btn-success fileinput-button" style=""> Clean Data </span>
                             </div>
                             <span id="show_items_count"></span>
                         </div>
