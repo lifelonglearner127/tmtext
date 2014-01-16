@@ -2785,3 +2785,20 @@ a#remove_mini_chart, a#remove_tooltip_popup{
 	color:black;
 	float:right;
 }
+
+#clear_data_selection {
+margin-right: 5px !important;
+float: left;
+}
+#show_items_count{ 
+    margin: -8px 0px 12px 4px;
+    display: block;
+}
+
+.tabbable .fixed-tab{
+    position: fixed;
+    top: 1px;
+    width: 76%;
+    z-index: 100;
+    background-color: white;
+}

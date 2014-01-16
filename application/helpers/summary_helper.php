@@ -26,7 +26,7 @@ if ( ! function_exists('render_filter_item'))
 								' . $label . '
 								<span class="' . $filter_id . ' mr_10" ></span>
 							</td>
-							<td width="' . $question_td_width . '" ' . (!$batch_class_number ? 'class="icon_question_wrapper"' : '') . '>
+							<td width="' . $question_td_width . '" class="q_wrapper ' . (!$batch_class_number ? 'icon_question_wrapper' : '') . '" >
 								' . $question_mark . '
 							</td>
 						</tr>

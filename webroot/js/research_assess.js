@@ -60,11 +60,18 @@ $(function() {
 	};
 	
 	$( document ).ajaxStart(function() {
-		$( '#research_assess_update' ).text( "Updating..." ).attr('disabled', 'disabled');
+		$( '#research_assess_update,#research_assess_update2' ).text( "Updating..." ).attr('disabled', 'disabled');
+		
+		$('.item_line').removeClass('ui-selected');
+		summaryInfoSelectedElements = [];
+		
+		$('.selectable_summary_info').selectable('disable');
 	});
 	
 	$( document ).ajaxStop(function() {
-		$( '#research_assess_update' ).text( "Update" ).removeAttr('disabled');
+		$( '#research_assess_update,#research_assess_update2' ).text( "Update" ).removeAttr('disabled');
+		
+		$('.selectable_summary_info').selectable('enable');			
 	});
 	
     $.ajax({
@@ -203,13 +210,18 @@ $(function() {
 	};
 	
 	$('.summary_edit_btn').on('click', function() {
-		var elem = $(this);
+		var elem = $(this)
+		  , research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch');
+		
 		if (!elem.hasClass('active'))
 		{
 			$(elem).text('Done');
 			$(elem).blur();
 			$('.icon_question_wrapper').css('vertical-align', 'bottom');
 			$('.selectable_summary_handle, .selectable_summary_handle_with_competitor').css({'visibility' : 'visible'});
+			
+			if (research_assess_compare_batches_batch.val() == 0)
+				$('.q_wrapper:not(".icon_question_wrapper")').css('vertical-align', 'bottom');
 		}
 		else 
 		{
@@ -217,6 +229,9 @@ $(function() {
 			$(elem).blur();
 			$('.icon_question_wrapper').css('vertical-align', 'middle');
 			$('.selectable_summary_handle, .selectable_summary_handle_with_competitor').css({'visibility' : 'hidden'});
+			
+			if (research_assess_compare_batches_batch.val() == 0)
+				$('.q_wrapper:not(".icon_question_wrapper")').css('vertical-align', 'middle');
 		}
 	});
 	
@@ -359,7 +374,7 @@ $(function() {
 	$('.selectable_summary_info').on('mousedown', function(e) {
 		e.metaKey = true;
 	}).selectable({
-		cancel : '.non-selectable, .question_mark, .popover_close_btn, .selectable_summary_handle, .selectable_summary_handle_with_competitor',
+		cancel : '.disabled_filter, .non-selectable, .question_mark, .popover_close_btn, .selectable_summary_handle, .selectable_summary_handle_with_competitor',
 		tolerance : 'touch',
 		filter : '.item_line',
 		selected : function(event, ui) {
@@ -394,7 +409,8 @@ $(function() {
 	
 	function filterItems(json) {
 		var stored_filter_items = json.ExtraData.report.stored_filter_items
-		  , r = [];		  
+		  , r = []		  
+		  , encoded_r = [];		  
 		
 		outputedFilterIndexes = [];
 		
@@ -409,6 +425,8 @@ $(function() {
 				if (!~outputedFilterIndexes.indexOf(stored_item_index))
 				{
 					r.push(json.aaData[ stored_item_index ]);
+					encoded_r.push(json.ExtraData.json_encoded_data[ stored_item_index ]);
+					
 					outputedFilterIndexes.push(stored_item_index);
 				}								
 			}
@@ -416,6 +434,7 @@ $(function() {
 		
 		json.ExtraData.fixedTotalRows = outputedFilterIndexes.length;			
 		json.aaData = r;		
+		json.ExtraData.json_encoded_data = encoded_r;		
 	}
 		
 	function readAssessData() {
@@ -423,14 +442,18 @@ $(function() {
 		  , research_batch_competitor = $('#research_assess_compare_batches_batch')
           , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				  
 		  , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null;	
-		  
+		
+		//cleaning filters between local storage batches (look below)
+		lastest_comparison_id = current_comparison_id;
+		current_comparison_id = storage_key;			
+		
 		$('.assess_report_download_panel').hide();
-        $("#tblAssess tbody tr").remove();
-					
+        $("#tblAssess tbody tr").remove();			
+		
 		if (!json_data)
 		{																
-			var aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);	
-				
+			var aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);						
+			
 			$.getJSON(readAssessUrl, aoData, function(json) {
 				$('.tbl_arrows_and_gear_wrapper #research_batches_columns').css({opacity:1,cursor:'pointer'});
 				if(!json)
@@ -446,6 +469,13 @@ $(function() {
 			//rebuilding dataTable results according to the selected filters
 			if (summaryInfoSelectedElements.length) {				
 				filterItems(json_data);				
+			}
+			
+			//cleaning filters between local storage batches
+			if (current_comparison_id != lastest_comparison_id)
+			{
+				$('.item_line').removeClass('ui-selected');
+				summaryInfoSelectedElements = [];
 			}
 			
 			tblAssess = reInitializeTblAssess(json_data, false, true); 								
@@ -506,22 +536,23 @@ $(function() {
 					buildReport(json_data);							
 				
 				if (needToBeReloaded)				
-					pullRestItems();				
+					pullRestItems();			
 			},
-			fnRowCallback : function(nRow, aData, iDisplayIndex) {					
-				$(nRow).attr("add_data", tblAssess.fnSettings().json_encoded_data[iDisplayIndex]); 	
+			fnRowCallback : function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {						
 				tblAssess_postRenderProcessing(nRow);					
 			},
 			fnDrawCallback : function(oSettings) {
-				// console.log('local draw callback');		
+				
+				// updating correct add_data attributes
+				var currentAvailableNodes = tblAssess.fnGetNodes();
+				for (var it = 0; it < currentAvailableNodes.length; it++) 
+					$(currentAvailableNodes[it]).attr('add_data', oSettings.json_encoded_data[ currentAvailableNodes[it]['_DT_RowIndex'] ]);				
 				
 				dataTableLastPageNumber = oSettings._iDisplayStart / oSettings._iDisplayLength;
 
 				tblAssess.fnAdjustColumnSizing(false);						
 			},
-			fnPreDrawCallback : function( oSettings ) {		
-				// console.log('PRE local draw callback');		
-								
+			fnPreDrawCallback : function( oSettings ) {														
 				//setting main tblAssess instance
 				tblAssess = oSettings.oInstance;			
 				
@@ -531,8 +562,7 @@ $(function() {
 				{
 					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data ? json_data.ExtraData.json_encoded_data : '';					
 					oSettings.display_competitor_columns = json_data.ExtraData.display_competitor_columns;					
-					oSettings.getSelectableColumns = json_data.ExtraData.getSelectableColumns;					
-					oSettings.isCompleted = json_data.ExtraData.isCompleted;					
+					oSettings.getSelectableColumns = json_data.ExtraData.getSelectableColumns;														
 				}
 			},
 			oLanguage : {
@@ -702,6 +732,9 @@ $(function() {
 		
 		var show_trendlines = $("#show_over_time").is(":checked");
 		
+		var d = new Date();
+		var request_time = d.getTime(); 
+		
 		$.ajax({
 			type: "POST",
 			url: readGraphDataUrl,
@@ -710,7 +743,8 @@ $(function() {
 				batch_compare_id: batch2Value,
 				graphBuild: graphBuild,
 				halfResults:0,
-				includeTrendlines : show_trendlines
+				includeTrendlines : show_trendlines,
+				requestTime : request_time
 			},
 			error: function()
 			{
@@ -731,7 +765,8 @@ $(function() {
 					batch_compare_id: batch2Value,
 					graphBuild: graphBuild,
 					halfResults:1,
-					includeTrendlines : show_trendlines
+					includeTrendlines : show_trendlines,
+					requestTime : request_time
 				},
 				error: function()
 				{
@@ -1468,18 +1503,68 @@ $(function() {
 		
 		return r;
 	}
+	
+	function transformFiltersSection()
+	{
+		var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch');
+		if (research_assess_compare_batches_batch.val() == 0)
+		{
+			var batch1_filter_item = $('.batch1_filter_item');
+			
+			$('.batch_me_and_competitor').css({
+				'margin' : '-4px 0',
+				'height' : '40px'
+			});
+			
+			$('.selectable_summary_handle_with_competitor').css({
+				'float' : 'right',
+				'margin' : '-36px 11px 0 0',
+				'top' : 0
+			});
+			
+			$('.batch2_filter_item').hide();		
+			
+			if (!batch1_filter_item.hasClass('tmp_batch1_filter_item')) {
+				$('.batch1_filter_item').addClass('tmp_batch1_filter_item');
+				$('.batch1_filter_item').removeClass('batch1_filter_item');
+			}
+			
+			$('.q_wrapper:not(".icon_question_wrapper")').attr('width', '1.5%');
+		}
+		else
+		{
+			var tmp_batch1_filter_item = $('.tmp_batch1_filter_item');
+			
+			$('.batch_me_and_competitor').css({
+				'margin' : '-20px 0',
+				'height' : ''
+			});
+			
+			$('.selectable_summary_handle_with_competitor').css({
+				'margin' : '21px 0px -60px 502px',
+				'float' : '',				
+				'top' : '21px'
+			});
+			
+			$('.batch2_filter_item').show();			
+			
+			if (tmp_batch1_filter_item.length)
+			{
+				$('.tmp_batch1_filter_item').addClass('batch1_filter_item');
+				$('.tmp_batch1_filter_item').removeClass('tmp_batch1_filter_item');
+			}
+			
+			$('.q_wrapper:not(".icon_question_wrapper")').attr('width', '3%');
+		}
+	}
 
 	function transformSummarySection()
 	{
 		var batch_set_toggle = $('#batch_set_toggle');
 		var common_batch1_filter_items = $('.common_batch1_filter_items');
 		var hidden_batch2_filter_items = $('.hidden_batch2_filter_items');
-		var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch');
-		
-		if (research_assess_compare_batches_batch.val() == 0)
-			$('.batch2_filter_item').css('visibility', 'hidden');
-		else
-			$('.batch2_filter_item').css('visibility', 'visible');
+				
+		transformFiltersSection();
 		
 		if (batch_set_toggle.is(':checked'))
 		{
@@ -1615,10 +1700,9 @@ $(function() {
 		$('.phr-density').hide();
 		$('.phr-frequency').show();
 	}
-	
-	$(document).on('click','#tk-denisty',function(){
+	/*$(document).on('click','#tk-denisty',function(){
 		onDenisty();
-	});	
+	});removed by Issue #1326 */	
 	
 	$(document).on('click','#tk-frequency',function(){
 		onFrequency();
@@ -1627,15 +1711,15 @@ $(function() {
 	function setStatusFromCookie(){
 		var tkstatus = $.cookie('tkstatus');		
 		if(typeof(tkstatus)!=='undefined'){
-			if(tkstatus==='denisty'){
-				onDenisty();
-			}
-			else{
+			//if(tkstatus==='denisty'){
+			//	onDenisty();
+			//}
+			//else{
 				onFrequency();
-			}
+			//} removed by Issue #1326
 		}
 		else{
-			$.cookie('tkstatus','denisty',options);
+			$.cookie('tkstatus','frequency',options);
 		}
 	}
 	
@@ -2716,12 +2800,6 @@ function prevSibilfunc(curentSibil){
         modal: true,      
         width: 'auto'
     });
-   $('#research_assess_choiceColumnDialog_export').dialog({
-        autoOpen: false,
-        resizable: false,
-        modal: true,      
-        width: 'auto'
-    });
 
     $('.assess_report_options_dialog_button').on('click', function() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
@@ -3050,53 +3128,73 @@ function prevSibilfunc(curentSibil){
         });
    });
     
-   $('#research_assess_export').live('click',function() {
-		var batch_set = $('.result_batch_items:checked').val() || 'me';
-       if(!GetURLParameter('checked_columns_results')){
-
-            $(this).attr('disabled', true);
-            var batch_id= $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
-            var batch_name= $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
-            var cmp_selected = $(batch_sets[batch_set]['batch_compare']).val();
-            
-       }else{
-            
-            $(this).attr('disabled', true);
-            var batch_id= GetURLParameter('batch_id_result');
-            var  batch_name=GetURLParameter('batch_name');
-            var cmp_selected = GetURLParameter('cmp_selected');
-         
-       }  
-        var columns_check = $('#research_assess_choiceColumnDialog_export').find('input[type=checkbox]:checked');
-            var columns_checked = [];
-            $.each(columns_check, function(index, value) {
-				if($(value).attr('id') == "column_title_seo_phrases_f" && $("#tk-frequency").is(':checked') ){
-					columns_checked.push("title_seo_phrases_f");
-				}
-				else{
-				columns_checked.push($(value).data('col_name'));
-				}
-                
-            });
-            console.log(columns_checked);
-            
-           var summaryFilterData = summaryInfoSelectedElements.join(',')
-          
-            
-        $(this).text('Exporting...');
-        var main_path=  $(this).prop('href');
-        $(this).attr('href', $(this).prop('href')+'?batch_id='+batch_id+'&cmp_selected='+cmp_selected+'&checked_columns='+columns_checked+'&batch_name='+batch_name+'&summaryFilterData='+summaryFilterData);
 	
-        $.fileDownload($(this).prop('href'))
-                .done(function() {
-            $('#research_assess_export').removeAttr('disabled');
-            $('#research_assess_export').attr('href', main_path);
-            $('#research_assess_export').text('Export');
-        })
-                .fail(function() {
-        });
-        
+	$(document).on('click', '#research_assess_export', function() {
+   
+		var batch_set = $('.result_batch_items:checked').val() || 'me'
+		  , checked_columns = ['url']
+		  , summaryFilterData = summaryInfoSelectedElements.join(',')
+		  , elem = $(this)
+		  , main_path = elem.prop('href') + '?';
+				
+		if ( !GetURLParameter('checked_columns_results') ) {
+            
+            var batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val()
+              , batch_name = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text()
+              , cmp_selected = $(batch_sets[batch_set]['batch_compare']).val(); 
+			
+		} else {
+                        
+            var batch_id = GetURLParameter('batch_id_result')
+              , batch_name = GetURLParameter('batch_name')
+              , cmp_selected = GetURLParameter('cmp_selected');
+         
+		}  
+		
+        // var columns_check = $('#research_assess_choiceColumnDialog_export').find('input[type=checkbox]:checked');
+      
+		// $.each(columns_check, function(index, value) {
+			// if($(value).attr('id') == "column_title_seo_phrases_f" && $("#tk-frequency").is(':checked') )
+				// checked_columns.push("title_seo_phrases_f");
+			// else 
+				// checked_columns.push($(value).data('col_name'));						
+		// });		                                         
+	
+        $.fileDownload( main_path + buildGetRequest({
+			batch_id : batch_id,
+			cmp_selected : cmp_selected,
+			checked_columns : checked_columns,
+			batch_name : batch_name,
+			summaryFilterData : summaryFilterData
+		}), {	
+			prepareCallback : function(url) {
+				elem.attr('disabled', true);
+				elem.text('Exporting...');
+			},
+			successCallback : function(url) {
+				console.log('FileDownload success!');
+				
+                elem.removeAttr('disabled');				
+				elem.text('Export');
+            },
+            failCallback : function(responseHtml, url) {
+				
+				console.log('FileDownload was FAILED!!!');
+            }
+		});
+		
+		return false;
     });
+	
+	function buildGetRequest(data)
+	{
+		var result_string = '';
+		
+		for (var key in data)
+			result_string += result_string ? '&' + key + '=' + data[key] : key + '=' + data[key];
+		
+		return result_string;		
+	}
 
 	function wrapResultsTable() {
 		$( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );

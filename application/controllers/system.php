@@ -29,24 +29,58 @@ class System extends MY_Controller {
 	}
 
 	public function clear_imported_data_parsed() {
+            $n = $_GET['n'];
 		$this -> load -> model('imported_data_parsed_archived_model');
 		$this -> load -> model('imported_data_parsed_model');
                 $this -> load -> model('statistics_new_model');
 //		$this -> imported_data_parsed_archived_model -> mark_queued_from_archive();
-		$this -> imported_data_parsed_model -> delete_repeated_data();
-                $this -> imported_data_parsed_model -> delete_duplicate_revisions();
-                $this -> imported_data_parsed_archived_model ->delete_duplicate_revisions();
-                $results= $this -> imported_data_parsed_model ->get_items_that_havenot_batch();
+                if($n == 1){
+                   $this -> imported_data_parsed_model -> delete_repeated_data(); 
+                   $this -> imported_data_parsed_model -> delete_duplicate_revisions();
+                }
+		if($n == 2){
+                    $this -> imported_data_parsed_archived_model ->delete_duplicate_revisions();
+                }
+                if($n == 3){
+                    $results= $this -> imported_data_parsed_model ->get_items_that_havenot_batch();
                 
-                foreach($results as $result){
-                    if ($this -> imported_data_parsed_archived_model -> saveToArchive($result['imported_data_id'])) {
-                        $this -> imported_data_parsed_model -> deleteRows($result['imported_data_id']);
-                        $this -> statistics_new_model -> delete($result['imported_data_id']);
+                    foreach($results as $result){
+                        if ($this -> imported_data_parsed_archived_model -> saveToArchive($result['imported_data_id'])) {
+                            $this -> imported_data_parsed_model -> deleteRows($result['imported_data_id']);
+                            $this -> statistics_new_model -> delete($result['imported_data_id']);
+                        }
                     }
                 }
+                if($n == 4){
+                    $this -> imported_data_parsed_archived_model -> mark_queued_from_archive();
+                }
+                
 		echo "end";
 	}
-
+        public function unnessery_items_count(){
+            $this -> load -> model('imported_data_parsed_archived_model');
+            $this -> load -> model('imported_data_parsed_model');
+            $this -> load -> model('statistics_new_model');
+            $n = $this->uri->segment(3);
+            switch ($n){
+            case 0:
+            echo 0;
+            break;
+        case 1:
+            echo $this -> imported_data_parsed_model -> duplicate_revisions_count();
+            break;
+        case 2:
+            echo $this -> imported_data_parsed_archived_model ->duplicate_revisions_count();
+            break;
+        case 3:
+            echo  $this -> imported_data_parsed_model ->items_that_havenot_batch_count();
+            break;
+        case 4:
+            echo  $this -> imported_data_parsed_archived_model -> mark_queued_from_archive_count();
+            break;
+         }
+        
+        }
 	public function new_batch_nf_list_modal() {
 		$this -> load -> model('webshoots_model');
 		$rec_list = $this -> webshoots_model -> getEmailToBatchNotifyList();
@@ -2756,14 +2790,15 @@ class System extends MY_Controller {
                                 ++$itemsUpdated;
                                 $atuc -= 1;
                             }
-                            else{
+                            elseif(!($url1['model'] && strlen($url1['model']) > 3)
+                                    &&!($url2['model'] && strlen($url2['model']) > 3)){
                                 $model = time();
                                 $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $model);
                                 $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $model);
                                 $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $model, $url2['rev'] + 1, $url2['data_id']);
                                 $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $model, $url1['rev'] + 1, $url1['data_id']);
                                 $itemsUpdated += 2;
-                                $atuc -= 1;
+                                $atuc -= 2;
                             }
 //                            if ($model1) {
 //                                    if ($model2 && $model1 != $model2) {
@@ -2884,8 +2919,21 @@ class System extends MY_Controller {
              $this->temp_data_model->emptyTable('urlstomatch');
              $this->temp_data_model->emptyTable('updated_items');
              $this->settings_model->deledtMatching();
+             if($thread_history = $this -> settings_model -> get_value(-1, 'thread_history') !== false)
+             {
+                 $pid = isset($thread_history['thread_pid'])?$thread_history['thread_pid']:0;
+                 if($pid && $this->_is_process_running($pid))
+                    echo shell_exec("kill $pid");
+             }
 	     echo 'ok';
 	}
+
+        function _is_process_running($PID)
+        {
+            $ProcessState = '';
+            exec("ps $PID", $ProcessState);
+            return(count($ProcessState) >= 2);
+        }
 
         public function check_urls_threading($choosen_file = null) {
             if(!$choosen_file)
@@ -2899,8 +2947,8 @@ class System extends MY_Controller {
             }
             
             $command = 'cd ' . FCPATH . ' 
-php cli.php crons match_urls_thread "' . $choosen_file . '" &';
-            echo shell_exec($command), PHP_EOL;
+php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/null &';
+            echo shell_exec($command);
         }
         
 

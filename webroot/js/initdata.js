@@ -29,6 +29,8 @@ var testIsFromLocalStorage = 0;
 var dataTableLastPageNumber = 0;
 var isReloaded = false;
 var outputedFilterIndexes = [];
+var current_comparison_id = 0;
+var lastest_comparison_id = 0;
 
 var FIRST_DISPLAY_LIMIT_COUNT = 100;
 var NEXT_DISPLAY_LIMIT_COUNT = 1000;

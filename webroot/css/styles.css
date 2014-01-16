@@ -392,6 +392,7 @@ ul.research_table_filter h3 {
     background: none repeat scroll 0 0 #CCCCCC;
     margin: 0;
     padding-left: 10px;
+    line-height:31px;
 }
 
 ul.research_table_filter_competitor {
@@ -791,15 +792,14 @@ a.jq-assess {
 
 .summary_edit_btn {
 	float: right;
-	margin: 4px 12px;
+	margin: 4px 12px 0 4px;
+	width: 83px;
 }
 
 .selectable_summary_handle, .selectable_summary_handle_with_competitor {
 	visibility: hidden;
 }
-#research_assess_choiceColumnDialog_export input, label {
-	display: inline;
-}
+
 .research_arrow_assess_tbl_res {
 	margin: 8px 0 0 16px;
 }
@@ -842,20 +842,19 @@ a.show_filters_configuration_popup,#research_batches_columns{
 	border-radius:4px;
 	margin-top:0;
 	padding:0;
-	height:33px;
+	height:32px;
 	position: relative;
 	top: 3px;
+	margin-right:-7px;
 }
 a#research_batches_columns_export{
+	border-radius: 4px 0 0 4px;
+	font-size: 29px;
 	height: 32px;
-	border-radius: 4px;
-	font-size: 32px;
+	padding: 0 0 2px;
 	position: relative;
 	top: 3px;
-	padding: 0px 0px 2px 0;	
-}
-a#research_batches_columns_export:hover,a.show_filters_configuration_popup:hover,#research_batches_columns:hover{
-	background: #aaa;
+	font-size-adjust:0.48;
 }
 .assess_tbl_show_case a:hover{
 	text-decoration: underline !important;
@@ -867,4 +866,34 @@ a#research_batches_columns_export:hover,a.show_filters_configuration_popup:hover
 #batch_set_toggle{
 	top:4px;
 	position:relative;
+}
+ul.research_table_filter .hideShow{
+    border-radius: 0 4px 4px 0;
+    padding: 9.5px 7px;
+    position: relative;
+    right: 0;
+    top: -43px;
+}
+.ml_10.research_arrow.hideShow,.research_arrow.research_arrow_assess_tbl_res{
+    border-radius: 4px;
+    padding: 9px 7px;
+    position: relative;
+    top: -7px;
+}
+.research_arrow.research_arrow_assess_tbl_res{
+	right:6px;
+}
+a#research_batches_columns_export:hover,a.show_filters_configuration_popup:hover,
+#research_batches_columns:hover{
+	background: #aaa;
+}
+#research_assess_update2{
+	float:right;
+	margin-top:4px;
+}
+td.word_prod,td.word_prod1,td.Duplicate_Content,td.Duplicate_Content1,td.mimg,td.mimg1,td.vid,td.vid1{
+	text-align:center;
+}
+th.word_prod{
+	width:80px !important;
 }

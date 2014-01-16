@@ -326,13 +326,13 @@ class Statistics_new_model extends CI_Model {
             (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Long_Description`,
             (select `value` from imported_data_parsed where `key`="HTags" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `HTags`,
             (select `value` from imported_data_parsed where `key`="Anchors" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Anchors`,
-
             (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
             ')
             ->from($this->tables['statistics_new'].' as s')
             ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id = s.imported_data_id', 'left')
             ->where('s.imported_data_id', $imported_data_id)->get();
-        $result =  $query->row();
+        $result = $query->row();
+	$query->free_result();
         return $result;
     }
 
@@ -480,7 +480,7 @@ class Statistics_new_model extends CI_Model {
 			$sql.=' FROM `' . $table_to_search . '` as idpa';
 			$sql.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key` = '".$key."'";
 			$sql.=" WHERE idpa1.`key` = '".$key."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
-			$sql.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 10) DESC LIMIT 10';
+			$sql.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 10) DESC LIMIT 15';
 
 			$query = $this->db->query($sql);
 			$temp_result = $query->result();
@@ -496,7 +496,7 @@ class Statistics_new_model extends CI_Model {
 				$sql_key.=' FROM `' . $table_to_search . '` as idpa';
 				$sql_key.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key` = '".$key1."'";
 				$sql_key.=" WHERE idpa1.`key` = '".$key1."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
-				$sql_key.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 10) DESC LIMIT 10';
+				$sql_key.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 15) DESC LIMIT 10';
 				
 				$query_key = $this->db->query($sql_key);
 				$temp_result_key = $query_key->result();
@@ -667,7 +667,7 @@ class Statistics_new_model extends CI_Model {
             $query = $this->db->query($sql);
  
             $result = $query->result();
-            
+            $query->free_result();
         return $result;   
     }
 //    function get_price_from_crawler_list($crawler_list_id){

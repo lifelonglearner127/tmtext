@@ -40,6 +40,49 @@ class Imported_data_parsed_model extends CI_Model {
     function __construct() {
         parent::__construct();
     }
+    function repeated_data_count(){
+        
+    }
+    function duplicate_revisions_count(){
+        $sql = "select  count(*) as count from (select  imported_data_id from (select `imported_data_id`,`key`, `revision`, count(`id`) as cnt, min(id) as min_id
+                From `imported_data_parsed`
+                Group By `imported_data_id` ,`key`, `revision`
+                having cnt > 1) as tt
+                group by tt.imported_data_id) as c";
+        $query = $this->db->query($sql);
+        $res= $query->row_array();
+        $count_of_duplicate_revision =  $res['count'];
+       
+       $sql = "SELECT COUNT( * ) AS count
+                FROM (
+                SELECT  `value` , COUNT( id ) AS cnt, MAX( imported_data_id ) AS max_data_id, MIN( imported_data_id ) AS min_data_id, MAX( revision ) AS max_revision, MIN( revision ) AS min_revision
+                FROM imported_data_parsed
+                WHERE  `key` =  'url'
+                GROUP BY  `value` 
+                HAVING cnt >1
+                AND (
+                max_data_id != min_data_id
+                OR max_revision != min_revision
+                )
+                ) AS tt";
+        $query = $this->db->query($sql);
+        $res= $query->row_array();
+        $count_of_items_having_multiple_revisions =  $res['count'];
+        return $count_of_duplicate_revision + $count_of_items_having_multiple_revisions;
+    }
+    function items_that_havenot_batch_count(){
+        $sql = 'SELECT COUNT( * ) AS count
+                FROM (
+                SELECT  `imported_data_id` ,  `revision` 
+                FROM  `statistics_new` 
+                WHERE  `batch_id` =0
+                GROUP BY  `imported_data_id`
+                ) AS tt';
+       $query = $this->db->query($sql);
+       $res= $query->row_array();
+        
+       return $res['count'];
+    }
     function delete_duplicate_revisions(){
        $sql = "select `imported_data_id`,`key`, `revision`, count(`id`) as cnt, min(id) as min_id
                 From imported_data_parsed
@@ -56,7 +99,7 @@ class Imported_data_parsed_model extends CI_Model {
        
     }
     public function delete_repeated_data(){
-        error_reporting(E_ALL);
+       
         $sql = "select `value`, count(id) as cnt, max(imported_data_id) as max_data_id, min(imported_data_id) as min_data_id
                 , max(revision) as max_revision, min(revision) as min_revision
                 from imported_data_parsed
@@ -77,6 +120,7 @@ class Imported_data_parsed_model extends CI_Model {
         }
             
    }
+   
     function model_info($imported_data_id, $model, $revision) {
 
         $update_object = array(
@@ -1481,7 +1525,7 @@ class Imported_data_parsed_model extends CI_Model {
 //    }
     function getData($value, $website = '', $category_id = '', $limit = '', $key = 'Product Name', $strict = false) {
 
-        $value = str_replace("-", "", $value);
+//        $value = str_replace("-", "", $value);
         $value2 = $this->db->escape($value);
         $sql = "select p.imported_data_id as imported_data_id
             , p.`value` as `url`
@@ -1498,8 +1542,8 @@ class Imported_data_parsed_model extends CI_Model {
             left join imported_data_parsed as p3 on p3.imported_data_id=p.imported_data_id and p3.`key`='Product Name'
             left join imported_data_parsed as p4 on p4.imported_data_id=p.imported_data_id and p4.`key`='parsed_attributes'
             left join imported_data_parsed as p5 on p5.imported_data_id=p.imported_data_id and p5.`key`='Features'
-            where (INSTR(REPLACE(`p`.`model`,'-',''), $value2)=1 OR INSTR($value2, REPLACE(`p`.`model`,'-',''))=1)
-                and p.`key`='url'
+            where "."`p`.`model`=$value2".//"(INSTR(REPLACE(`p`.`model`,'-',''), $value2)=1 OR INSTR($value2, REPLACE(`p`.`model`,'-',''))=1)
+                "and p.`key`='url'
                 group by p.imported_data_id
                 limit 20";
 	$data = array();
@@ -2878,7 +2922,7 @@ echo "j  = ".$j;
 			{
 				$this->db->where('imported_data_id',$result['imported_data_id']);
 				$this->db->where('key','url');
-				$this->db->update($this->tables['imported_data_parsed'],$upd);
+				$this->db->update($this->tables['imported_data_parsed'],array('revision'=>$result['revision']+1));
 			}	
 		    }
 		    $query->free_result();

@@ -16,7 +16,7 @@
 					<i class="icon-large icon-remove"></i>
 				</a>
 				<a class="ml_10 research_arrow hideShow" onclick="return false;" href="#">
-					<img src="<?php echo base_url();?>img/arrow.png">
+					<img src="<?php echo base_url();?>img/arrownew.png">
 				</a>
 				<a href="#" class="show_filters_configuration_popup">
 					<!-- <img style="width:32px; heihgt: 32px;" src="<?php echo base_url();?>img/settings@2x.png"> -->
@@ -37,6 +37,7 @@
 					<?php endif ?>
 				</span>
 				<button type="button" class="btn btn-primary summary_edit_btn" id="edit_summary" data-toggle="button">Edit</button>
+				<button id="research_assess_update2" class="btn btn-success">Update</button>
 			</h3>
 			<div style="clear: both;"></div>												
 			<div class="boxes_content resizable" style="padding:0px; height: 200px; overflow-y: scroll">	
