@@ -85,7 +85,7 @@
                                 <span>Loading...</span>
                             </div>
                             <div id="clear_imported_data_parsed" style ="margin:10px 0px">
-				<span id="clear_data_items" class="btn btn-success fileinput-button" style=""> Clean Imported Data Parsed </span>
+				<span id="clear_data_items" class="btn btn-success fileinput-button" style=""> Clean Data </span>
                             </div>
                             <span id="show_items_count"></span>
                         </div>
@@ -278,6 +278,7 @@
     function run_clear_data_process(){
         var selected_action =  $('#clear_data_selection').val();
         var url = '<?php echo site_url('system/clear_imported_data_parsed'); ?>';
+        $("#clear_data_items").addClass('disabled');
     if(selected_action !== 0) {   
         $.ajax({
                 url:url,
@@ -291,6 +292,7 @@
                    success: function(res) {
                        $("#show_items_count").text('Items count - '+res);
                        $('#ajaxLoadAni').fadeOut('slow');
+                        $("#clear_data_items").removeClass('disabled');
                    }
                 });
                     }
@@ -379,8 +381,10 @@
         
         var status = '';
         
-        $('#clear_data_items').click(function(){
-        
+        $('#clear_data_items').live('click',function(){
+            if($("#clear_data_selection").val()== 0){
+               return false; 
+            }
             $( '#ajaxLoadAni' ).fadeIn( 'slow' );
             run_clear_data_process();
         });

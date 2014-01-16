@@ -220,7 +220,7 @@ class Assess extends MY_Controller {
         return serialize($phrases);
     }
 	
-	private function buildObject(array $fields = array())
+	private function buildObject($instance, array $fields = array())
 	{
 		$r = new stdClass();
 		
@@ -231,7 +231,7 @@ class Assess extends MY_Controller {
 				$input_field = $this->input->get($key);
 			
 				if (isset($field['callback']))
-					$input_field = $field['callback']($input_field);
+					$input_field = $field['callback']($input_field, $instance);
 				
 				$input_field = $input_field ?: $field['default'];
 				
@@ -267,9 +267,19 @@ class Assess extends MY_Controller {
 			$columns = AssessHelper::columns();
 			if (!($txt_filter = $this->input->get('search_text'))) 
 				if (!($txt_filter = $this->input->get('sSearch'))) 
-					$txt_filter = '';			
+					$txt_filter = '';
 			
-           $build_assess_params = $this->buildObject(array(
+			
+           $build_assess_params = $this->buildObject($this, array(
+				'display_length' => array( 'default' => 5, 'callback' => function($value, $instance) {					
+					return (int)$instance->input->get('iDisplayLength', true);
+				}),
+				'display_start' => array( 'default' => 0, 'callback' => function($value, $instance) {					
+					return (int)$instance->input->get('iDisplayStart', true);
+				}),
+				'displayCount' => array( 'default' => false, 'callback' => function($value) {
+					return (int)$value;
+				}),
 				'date_from' => array( 'default' => '' ),
 				'date_to' => array( 'default' => '' ),
 				'price_diff' => array( 'default' => -1 ),
@@ -306,7 +316,7 @@ class Assess extends MY_Controller {
 				'compare_batch_id' => array( 'default' => null, 'callback' => function($value) {
 					return (int)$value;
 				}),
-			));			
+			));		
 			
             $params = new stdClass();
             $params->batch_id = $batch_id;
@@ -471,23 +481,6 @@ class Assess extends MY_Controller {
                                             $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
                                     }
 
-
-//                                    if ($parsed_meta_unserialize['keywords']) {
-//
-//                                       $Meta_Keywords_un = "<table class='table_keywords_long'>";
-//                                       $cnt_meta_un = explode(',', $parsed_meta_unserialize['keywords']);
-//                                       $cnt_meta_count_un = count($cnt_meta_un);
-//                                       foreach($cnt_meta_un as $cnt_m_un){
-//                                           $cnt_m_un = trim($cnt_m_un);
-//                                           $_count_meta_un = $this->keywords_appearence($parsed_meta_unserialize_val, $cnt_m_un);
-//                                           $_count_meta_num_un = round(($_count_meta_un * $cnt_meta_count_un / $parsed_meta_unserialize_val_count) * 100, 2) . "%";
-//                                           $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>".$_count_meta_num_un."</td></tr>";
-//                                       }
-//                                       $Meta_Keywords_un .= "</table>";
-//                                       $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
-//
-//                                   }
-
                                     if (isset($parsed_meta_unserialize['keywords'])) {
                                         $Meta_Keywords_un = '<table class="table_keywords_long">';
                                         $cnt_meta = explode(',', $parsed_meta_unserialize['keywords']);
@@ -503,23 +496,10 @@ class Assess extends MY_Controller {
                                                 $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . '%';
                                                 $Meta_Keywords_un .= '<tr><td>' . $cnt_m . '</td><td style="width: 25px;padding-right: 0px;">' . $_count_meta_num . '</td></tr>';
                                             }
-//                                                else if($cmpare->Short_Description){
-//                                                    $_count_meta = $this->keywords_appearence($cmpare->Short_Description, $cnt_m);
-//                                                    $_count_meta_num = round(($_count_meta * $cnt_meta_count / $cmpare->short_description_wc) * 100, 2) . "%";
-//                                                    $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
-//                                                }
-//                                                else if($cmpare->Long_Description){
-//                                                        $_count_meta = $this->keywords_appearence($cmpare->Short_Description, $cnt_m);
-//                                                        $_count_meta_num = round(($_count_meta * $cnt_meta_count / $cmpare->short_description_wc) * 100, 2) . "%";
-//                                                        $Meta_Keywords_un .= "<tr><td>" . $cnt_m . "</td><td>".$_count_meta_num."</td></tr>";
-//                                                    }
                                         }
                                         $Meta_Keywords_un .= '</table>';
                                         $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
                                     }
-
-
-
 
                                     $val->snap1 = $cmpare->snap;
                                     $val->imp_data_id1 = $item['imported_data_id'];
@@ -599,6 +579,7 @@ class Assess extends MY_Controller {
 
             $build_assess_params->batch2_items_count = $batch2_items_count;
             $output = $this->build_asses_table($results, $build_assess_params, $batch_id, $columns);
+
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
 //            header('Mem-and-Time4: '.memory_get_usage().'-'.$dur);
@@ -607,8 +588,6 @@ class Assess extends MY_Controller {
             $this->output->set_content_type('application/json')
                     ->set_output(json_encode($output));
         }
-		// if (function_exists('fastcgi_finish_request'))
-			// fastcgi_finish_request();
     }
 
     public function filterBatchByCustomerName() {
@@ -1115,7 +1094,7 @@ class Assess extends MY_Controller {
     public function export_assess() {
 
         $this->load->model('statistics_new_model');
-		//print_r($this->load->model('statistics_new_model'));
+		
         $batch_id = (int) trim($_GET['batch_id']);
         $cmp_selected = trim(strtolower($_GET['cmp_selected']));
         $selected_columns = $_GET['checked_columns'];
@@ -1126,8 +1105,6 @@ class Assess extends MY_Controller {
         $summaryFilterData = $this->input->get('summaryFilterData');
         $summaryFilterData = $summaryFilterData ? explode(',', $summaryFilterData) : array();
 
-		//print_r($selected_columns);
-		//print_r($summaryFilterData);
         if (($key = array_search('snap', $selected_columns)) !== false) {
             unset($selected_columns[$key]);
         }
@@ -1144,6 +1121,7 @@ class Assess extends MY_Controller {
             $this->load->helper('csv');
             array_to_csv(array(), date("Y-m-d H:i") . '.csv');
         }
+		
         if (empty($batch_id) || $batch_id == 0) {
             $batch_id = '';
             $qnd = '';
@@ -1315,12 +1293,13 @@ class Assess extends MY_Controller {
                 }
             }
         }
+		
         $res_array = array();
         $H1_tag_count = 0;
         $H2_tag_count = 0;
         $H1_tag_count_for_sim = 0;
         $H2_tag_count_for_sim = 0;
-//            if (in_array('H2_Tags', $selected_columns)) {
+
         foreach ($results as $key => $row) {
 
             $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
@@ -1391,10 +1370,10 @@ class Assess extends MY_Controller {
                 }
             }
         }
-//            }
+
 
         $arr = array();
-			//print_r($results);
+			
         foreach ($results as $key => $row) {
             $sim = $row->similar_items;
             $pars = unserialize($row->parsed_attributes);
@@ -1637,19 +1616,13 @@ class Assess extends MY_Controller {
 				$this->filterBySummaryCriteria('skus_fewer_150_product_content_competitor', $summaryFilterData, $success_filter_entries);
 			}
             
-            
-//                        if ($row->lower_price_exist == true) {									
-//				$this->filterBySummaryCriteria('assess_report_items_priced_higher_than_competitors', $build_assess_params->summaryFilterData, $success_filter_entries);	
-//			}
-			
-
    
 			if ($this->checkSuccessFilterEntries($success_filter_entries, $summaryFilterData)){
 				$arr[] = $row;
                          }
             
            
-        };
+        }
         
            
             foreach ($arr as $key => $row) {
@@ -1663,11 +1636,7 @@ class Assess extends MY_Controller {
                 $row = (object) $row;
                 
                 $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
-                //print_r($pars_atr);die;
-                //item_id
-                //if(in_array('item_id', $selected_columns)){
-                //    $res_array[$key]['item_id'] = $pars_atr['parsed_attributes']['item_id']?$pars_atr['parsed_attributes']['item_id']:' ';
-                //}
+           
 				if(in_array('imp_data_id', $selected_columns)){
                     $res_array[$key]['imp_data_id'] = $pars_atr['parsed_attributes']['item_id']?$pars_atr['parsed_attributes']['item_id']:' ';
 					
@@ -2385,12 +2354,7 @@ class Assess extends MY_Controller {
         if (in_array('column_external_content', $selected_columns)) {
             $line[] = 'Third Party Content';
         }
-//            if (in_array('column_features', $selected_columns)) {
-//                $res_array[$key]['column_features'] = $pars_atr['parsed_attributes']['feature_count'] !== false ? $pars_atr['parsed_attributes']['feature_count'] : '';
-//            }
-//            if (in_array('column_reviews', $selected_columns)) {
-//             $res_array[$key]['column_reviews'] = $pars_atr['parsed_attributes']['review_count'] !== false ? $pars_atr['parsed_attributes']['review_count'] : '';
-//               }
+
 
         if (in_array('H1_Tags', $selected_columns)) {
             if ($H1_tag_count > 0) {
@@ -2492,10 +2456,7 @@ class Assess extends MY_Controller {
                 }
             }
         }
-//            echo '<pre>';
-//            print_r($line);
-//            echo '<pre>';
-//            print_r($res_array);exit();
+          
         //deleting empty Short_Description, Long_Description, short_descripition_wc, long_description_wc colomns
         //filterBySummaryCriteria
         if (in_array('Short_Description', $selected_columns)) {
@@ -3094,7 +3055,12 @@ class Assess extends MY_Controller {
 
         
         $duplicate_content_range = 25;
+		
         $needFilters = $build_assess_params->needFilters;
+        $displayCount = $build_assess_params->displayCount;
+        $display_start = $build_assess_params->display_start;
+        $display_length = $build_assess_params->display_length;
+		
         $success_filter_entries = array();
         $customer_name = $this->batches_model->getCustomerById($batch_id);
         $customer_url = parse_url($customer_name[0]->url);
@@ -3111,18 +3077,10 @@ class Assess extends MY_Controller {
 		
 		//extracting initial data varialbes for filters
         extract(AssessHelper::getInitialFilterData());
-		
-        $display_length = intval($this->input->get('iDisplayLength', true));
-        $displayCount = $this->input->get('displayCount', false);
-        $display_start = intval($this->input->get('iDisplayStart', true));
-        if (empty($display_start)) {
-            $display_start = 0;
-        }
-             
-        $total_rows = count($results);
-        $iterator_limit = $displayCount ? $display_start + $displayCount : $total_rows;
-		
-        // for ($row_iterator = $display_start; $row_iterator < $iterator_limit && $row_iterator < $total_rows; $row_iterator++) {	
+		        	
+		$total_rows = count($results);		
+		$iterator_limit = $displayCount ? $display_start + $displayCount : $total_rows;
+			
         for ($row_iterator = $display_start; $row_iterator < $total_rows; $row_iterator++) {	
 			$row_key = $row_iterator;
 			$row = $results[$row_iterator];
@@ -3150,32 +3108,32 @@ class Assess extends MY_Controller {
 
             $result_row->short_description_wc = intval($row->short_description_wc);
             $result_row->long_description_wc = intval($row->long_description_wc);
-            $result_row->short_seo_phrases = "None";
-            $result_row->title_seo_phrases = "None";
-            $result_row->images_cmp = "None";
-            $result_row->video_count = "None";
-            $result_row->title_pa = "None";
-            $result_row->links_count = "None";
-            $result_row->long_seo_phrases = "None";
-            $result_row->price_diff = "-";
-            $result_row->imp_data_id = "";
-            $result_row->column_external_content = "";
-            $result_row->Custom_Keywords_Short_Description = "";
-            $result_row->Custom_Keywords_Long_Description = "";
-            $result_row->Meta_Description = "";
-            $result_row->Meta_Description_Count = "";
-            $result_row->item_id = "";
-            $result_row->Meta_Keywords = "";
-            $result_row->Page_Load_Time = "";
-            $result_row->model = "";
-            $result_row->H1_Tags = "";
-            $result_row->H1_Tags_Count = "";
-            $result_row->H2_Tags = "";
-            $result_row->H2_Tags_Count = "";
+            $result_row->short_seo_phrases = 'None';
+            $result_row->title_seo_phrases = 'None';
+            $result_row->images_cmp = 'None';
+            $result_row->video_count = 'None';
+            $result_row->title_pa = 'None';
+            $result_row->links_count = 'None';
+            $result_row->long_seo_phrases = 'None';
+            $result_row->price_diff = '-';
+            $result_row->imp_data_id = '';
+            $result_row->column_external_content = '';
+            $result_row->Custom_Keywords_Short_Description = '';
+            $result_row->Custom_Keywords_Long_Description = '';
+            $result_row->Meta_Description = '';
+            $result_row->Meta_Description_Count = '';
+            $result_row->item_id = '';
+            $result_row->Meta_Keywords = '';
+            $result_row->Page_Load_Time = '';
+            $result_row->model = '';
+            $result_row->H1_Tags = '';
+            $result_row->H1_Tags_Count = '';
+            $result_row->H2_Tags = '';
+            $result_row->H2_Tags_Count = '';
             $result_row->column_reviews = 0;
-            $result_row->average_review = "";
+            $result_row->average_review = '';
             $result_row->column_features = 0;
-            $result_row->duplicate_content = "-";
+            $result_row->duplicate_content = '-';
             $result_row->own_price = floatval($row->own_price);
             $price_diff = unserialize($row->price_diff);
             $result_row->lower_price_exist = false;
@@ -3234,50 +3192,10 @@ class Assess extends MY_Controller {
                         $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'], $parsed_attributes_unserialize['webcollage']);
 
                     $HTags = unserialize($sim_items[$i - 1]->HTags);
-
-                    if (isset($HTags['h1']) && $HTags['h1'] && $HTags['h1'] != '') {
-                        $H1 = $HTags['h1'];
-                        if (is_array($H1)) {
-                            $str_1 = "<table  class='table_keywords_long'>";
-                            $str_1_Count = "<table  class='table_keywords_long'>";
-                            foreach ($H1 as $h1) {
-                                $str_1.= "<tr><td>" . $h1 . "</td></tr>";
-                                $str_1_Count.="<tr><td>" . strlen($h1) . "</td></tr>";
-                            }
-                            $str_1 .="</table>";
-                            $str_1_Count .="</table>";
-                            $parsed_H1_Tags_unserialize_val = $str_1;
-                            $parsed_H1_Tags_unserialize_val_count = $str_1_Count;
-                        } else {
-                            $H1_Count = strlen($HTags['h1']);
-                            $parsed_H1_Tags_unserialize_val = "<table  class='table_keywords_long'><tr><td>" . $H1 . "</td></tr></table>";
-                            ;
-                            $parsed_H1_Tags_unserialize_val_count = "<table  class='table_keywords_long'><tr><td>" . $H1_Count . "</td></tr></table>";
-                            ;
-                        }
-                    }
-                    if (isset($HTags['h2']) && $HTags['h2'] && $HTags['h2'] != '') {
-                        $H2 = $HTags['h2'];
-                        if (is_array($H2)) {
-                            $str_2 = "<table  class='table_keywords_long'>";
-                            $str_2_Count = "<table  class='table_keywords_long'>";
-                            foreach ($H2 as $h2) {
-                                $str_2.= "<tr><td>" . $h2 . "</td></tr>";
-                                $str_2_Count.="<tr><td>" . strlen($h2) . "</td></tr>";
-                            }
-                            $str_2 .="</table>";
-                            $str_2_Count .="</table>";
-                            $parsed_H2_Tags_unserialize_val = $str_2;
-                            $parsed_H2_Tags_unserialize_val_count = $str_2_Count;
-                        } else {
-                            $H1_Count = strlen($HTags['h2']);
-                            $parsed_H2_Tags_unserialize_val = "<table  class='table_keywords_long'><tr><td>" . $H2 . "</td></tr></table>";
-                            ;
-                            $parsed_H2_Tags_unserialize_val_count = "<table  class='table_keywords_long'><tr><td>" . $H2_Count . "</td></tr></table>";
-                            ;
-                        }
-                    }
-
+					
+					$buildedH1Field = AssessHelper::buildHField($HTags, 'h1');
+					$buildedH2Field = AssessHelper::buildHField($HTags, 'h2');
+					                                       
                     if (isset($parsed_attributes_unserialize['item_id']))
                         $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
                     if (isset($parsed_attributes_unserialize['model']))
@@ -3448,10 +3366,10 @@ class Assess extends MY_Controller {
                     $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
                     $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
                     $result_row['column_external_content' . $i] = $column_external_content;
-                    $result_row['H1_Tags' . $i] = $parsed_H1_Tags_unserialize_val;
-                    $result_row['H1_Tags_Count' . $i] = $parsed_H1_Tags_unserialize_val_count;
-                    $result_row['H2_Tags' . $i] = $parsed_H2_Tags_unserialize_val;
-                    $result_row['H2_Tags_Count' . $i] = $parsed_H2_Tags_unserialize_val_count;
+                    $result_row['H1_Tags' . $i] = $buildedH1Field['value'];
+                    $result_row['H1_Tags_Count' . $i] = $buildedH1Field['count'];
+                    $result_row['H2_Tags' . $i] = $buildedH2Field['value'];
+                    $result_row['H2_Tags_Count' . $i] = $buildedH2Field['count'];
                     $result_row['column_reviews' . $i] = $parsed_column_reviews_unserialize_val;
                     $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
                     $result_row['column_features' . $i] = $parsed_column_features_unserialize_val;
@@ -3622,54 +3540,13 @@ class Assess extends MY_Controller {
                 $result_row->links_count = $pars_atr['Anchors']['quantity'];
             }
 
-
-            $result_row->H1_Tags = '';
-            $result_row->H1_Tags_Count = '';
-            if (isset($pars_atr['HTags']['h1']) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
-                $H1 = $pars_atr['HTags']['h1'];
-                if (is_array($H1)) {
-                    $str_1 = "<table  class='table_keywords_long'>";
-                    $str_1_Count = "<table  class='table_keywords_long'>";
-                    foreach ($H1 as $h1) {
-                        $str_1.= "<tr><td>" . $h1 . "</td></tr>";
-                        $str_1_Count.="<tr><td>" . strlen($h1) . "</td></tr>";
-                    }
-                    $str_1 .="</table>";
-                    $str_1_Count .="</table>";
-                    $result_row->H1_Tags = $str_1;
-                    $result_row->H1_Tags_Count = $str_1_Count;
-                } else {
-                    $H1_Count = strlen($pars_atr['HTags']['h1']);
-                    $result_row->H1_Tags = "<table  class='table_keywords_long'><tr><td>" . $H1 . "</td></tr></table>";
-                    ;
-                    $result_row->H1_Tags_Count = "<table  class='table_keywords_long'><tr><td>" . $H1_Count . "</td></tr></table>";
-                    ;
-                }
-            }
-
-            $result_row->H2_Tags = '';
-            $result_row->H2_Tags_Count = '';
-            if (isset($pars_atr['HTags']['h2']) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
-                $H2 = $pars_atr['HTags']['h2'];
-                if (is_array($H2)) {
-                    $str_2 = "<table  class='table_keywords_long'>";
-                    $str_2_Count = "<table  class='table_keywords_long'>";
-                    foreach ($H2 as $h2) {
-                        $str_2.= "<tr><td>" . $h2 . "</td></tr>";
-                        $str_2_Count.="<tr><td>" . strlen($h2) . "</td></tr>";
-                    }
-                    $str_2 .="</table>";
-                    $str_2_Count .="</table>";
-                    $result_row->H2_Tags = $str_2;
-                    $result_row->H2_Tags_Count = $str_2_Count;
-                } else {
-                    $H2_Count = strlen($pars_atr['HTags']['h2']);
-                    $result_row->H2_Tags = "<table  class='table_keywords_long'><tr><td>" . $H2 . "</td></tr></table>";
-                    ;
-                    $result_row->H2_Tags_Count = "<table  class='table_keywords_long'><tr><td>" . $H2_Count . "</td></tr></table>";
-                    ;
-                }
-            }
+			$buildedH1Field = AssessHelper::buildHField($pars_atr['HTags'], 'h1');
+			$buildedH2Field = AssessHelper::buildHField($pars_atr['HTags'], 'h2');
+			
+            $result_row->H1_Tags = $buildedH1Field['value'];
+            $result_row->H1_Tags_Count = $buildedH1Field['count'];
+			$result_row->H2_Tags = $buildedH2Field['value'];
+            $result_row->H2_Tags_Count = $buildedH2Field['count'];			          
 
             $custom_seo = $this->keywords_model->get_by_imp_id($row->imported_data_id);
             $Custom_Keywords_Long_Description = "<table class='table_keywords_long'>";
@@ -4434,9 +4311,9 @@ class Assess extends MY_Controller {
 
         $output = array(
             // "sEcho" => intval($this->input->get('sEcho')),
-            "sEcho" => ($filtered_count ?: $total_rows) / $display_length,
-            "iTotalRecords" => $filtered_count ?: $total_rows,
-            "iTotalDisplayRecords" => $filtered_count ?: $total_rows,            
+            "sEcho" => $total_rows / $display_length,
+            "iTotalRecords" => $total_rows,
+            "iTotalDisplayRecords" => $total_rows,            
             "iDisplayLength" => $display_length,
             "aaData" => array()
         );
@@ -4673,8 +4550,7 @@ class Assess extends MY_Controller {
         $output['aoColumns'] = $columns;
         $output['ExtraData']['report'] = $report;        
         $output['ExtraData']['display_competitor_columns'] = $build_assess_params->display_competitor_columns;
-        $output['ExtraData']['getSelectableColumns'] = AssessHelper::getSelectableColumns($raw_columns);
-        $output['ExtraData']['isCompleted'] = $iterator_limit >= $total_rows;
+        $output['ExtraData']['getSelectableColumns'] = AssessHelper::getSelectableColumns($raw_columns);        
         $output['ExtraData']['fixedTotalRows'] = $total_rows;
          		
         return $output;

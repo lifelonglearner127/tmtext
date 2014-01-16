@@ -1525,7 +1525,7 @@ class Imported_data_parsed_model extends CI_Model {
 //    }
     function getData($value, $website = '', $category_id = '', $limit = '', $key = 'Product Name', $strict = false) {
 
-        $value = str_replace("-", "", $value);
+//        $value = str_replace("-", "", $value);
         $value2 = $this->db->escape($value);
         $sql = "select p.imported_data_id as imported_data_id
             , p.`value` as `url`
@@ -1542,8 +1542,8 @@ class Imported_data_parsed_model extends CI_Model {
             left join imported_data_parsed as p3 on p3.imported_data_id=p.imported_data_id and p3.`key`='Product Name'
             left join imported_data_parsed as p4 on p4.imported_data_id=p.imported_data_id and p4.`key`='parsed_attributes'
             left join imported_data_parsed as p5 on p5.imported_data_id=p.imported_data_id and p5.`key`='Features'
-            where (INSTR(REPLACE(`p`.`model`,'-',''), $value2)=1 OR INSTR($value2, REPLACE(`p`.`model`,'-',''))=1)
-                and p.`key`='url'
+            where "."`p`.`model`=$value2".//"(INSTR(REPLACE(`p`.`model`,'-',''), $value2)=1 OR INSTR($value2, REPLACE(`p`.`model`,'-',''))=1)
+                "and p.`key`='url'
                 group by p.imported_data_id
                 limit 20";
 	$data = array();
