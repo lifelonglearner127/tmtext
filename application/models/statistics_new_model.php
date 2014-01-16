@@ -326,13 +326,13 @@ class Statistics_new_model extends CI_Model {
             (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Long_Description`,
             (select `value` from imported_data_parsed where `key`="HTags" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `HTags`,
             (select `value` from imported_data_parsed where `key`="Anchors" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Anchors`,
-
             (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
             ')
             ->from($this->tables['statistics_new'].' as s')
             ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id = s.imported_data_id', 'left')
             ->where('s.imported_data_id', $imported_data_id)->get();
-        $result =  $query->row();
+        $result = $query->row();
+	$query->free_result();
         return $result;
     }
 
@@ -667,7 +667,7 @@ class Statistics_new_model extends CI_Model {
             $query = $this->db->query($sql);
  
             $result = $query->result();
-            
+            $query->free_result();
         return $result;   
     }
 //    function get_price_from_crawler_list($crawler_list_id){
@@ -717,5 +717,23 @@ function if_url_in_batch($imported_data_id, $batch_id){
                 `url`='{$arr["url"]}'
             ");
         return $result;
+    }
+    
+    function update_similar_products_competitors($imp_id, $cmp_imp_id){
+        $this->db->where('imported_data_id', $imp_id);
+        $query= $this->db->get("statistics_new");
+        $res = $query->row_array();
+        $cmps = unserialize($res['similar_products_competitors']);
+        foreach($cmps as $k => $v){
+            if($v['imported_data_id'] == $cmp_imp_id){
+                unset($cmps[$k]);
+            }
+         $cmps = serialize( $cmps);   
+        }
+        $data = array(
+                        'similar_products_competitors' => $cmps,
+                     );
+        $this->db->where('imported_data_id', $imp_id);
+        $this->db->update('statistics_new', $data); 
     }
         }

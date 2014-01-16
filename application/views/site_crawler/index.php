@@ -82,6 +82,14 @@
 					$('button#snap_selected_batch').removeAttr("disabled");
 				}
 			});
+                        $(window).bind('scroll', function() {
+                            if ($(window).scrollTop() > 125) {
+                                $('.tabbable ul').first().addClass('fixed-tab');
+                            }
+                            else {
+                                $('.tabbable ul').removeClass('fixed-tab');
+                            }
+                       });
 
 			function submitBatchSnapProcess() {
 				var batch_id = $('select[name="batch"] > option:selected').val();

@@ -69,6 +69,7 @@
 
 				</p>
 			</div>
+                    <div id ="all_actions" style ="float: right; margin-top: -115px">
 			<span id="start_do_stats" class="btn btn-success fileinput-button" style=""> Start Do Stats </span>
 			<?php //* ?>
 			<span id="stop_do_stats" class="btn btn-success fileinput-button" style=""> Stop Do Stats </span>
@@ -106,6 +107,7 @@
                             <span id="delete_batch" class="btn btn-success fileinput-button" style=""> Delete Batch </span>
                             <span id="do_stats_batch" class="btn btn-success fileinput-button" style=""> Do Stats For Batch </span>
                         </div>
+                          </div>
 		</div>
 	</div>
 </div>
