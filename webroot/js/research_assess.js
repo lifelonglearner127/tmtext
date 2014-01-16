@@ -3152,9 +3152,6 @@ function prevSibilfunc(curentSibil){
          
 		}  
 		
-		elem.attr('disabled', true);
-		elem.text('Exporting...');
-		
         // var columns_check = $('#research_assess_choiceColumnDialog_export').find('input[type=checkbox]:checked');
       
 		// $.each(columns_check, function(index, value) {
@@ -3170,14 +3167,18 @@ function prevSibilfunc(curentSibil){
 			checked_columns : checked_columns,
 			batch_name : batch_name,
 			summaryFilterData : summaryFilterData
-		}), {			            
-			successCallback: function(url) {
+		}), {	
+			prepareCallback : function(url) {
+				elem.attr('disabled', true);
+				elem.text('Exporting...');
+			},
+			successCallback : function(url) {
 				console.log('FileDownload success!');
 				
                 elem.removeAttr('disabled');				
 				elem.text('Export');
             },
-            failCallback: function(responseHtml, url) {
+            failCallback : function(responseHtml, url) {
 				
 				console.log('FileDownload was FAILED!!!');
             }
