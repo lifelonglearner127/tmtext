@@ -718,4 +718,22 @@ function if_url_in_batch($imported_data_id, $batch_id){
             ");
         return $result;
     }
+    
+    function update_similar_products_competitors($imp_id, $cmp_imp_id){
+        $this->db->where('imported_data_id', $imp_id);
+        $query= $this->db->get("statistics_new");
+        $res = $query->row_array();
+        $cmps = unserialize($res['similar_products_competitors']);
+        foreach($cmps as $k => $v){
+            if($v['imported_data_id'] == $cmp_imp_id){
+                unset($cmps[$k]);
+            }
+         $cmps = serialize( $cmps);   
+        }
+        $data = array(
+                        'similar_products_competitors' => $cmps,
+                     );
+        $this->db->where('imported_data_id', $imp_id);
+        $this->db->update('statistics_new', $data); 
+    }
         }

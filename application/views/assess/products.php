@@ -336,7 +336,7 @@
         <input type="text" id="assessDetails_url1" />
         <a id="assess_open_url_btn1" class="icon-hand-right" target="_blank"></a>
     </p>
-
+    <input type="hidden" id="impdataid_cmp" val="" />
     <p>
         <label for="assessDetails_Price1">Price:</label>
         <input type="text" id="assessDetails_Price1" />

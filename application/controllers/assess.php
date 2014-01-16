@@ -5343,16 +5343,14 @@ class Assess extends MY_Controller {
 		die(json_encode($this->uss->save()));
 	}
         
-        public function deleteSecondaryMatch(){
-            if(isset($_POST['impdataid'])){
-                $data = array(
-                                'similar_products_competitors' => null,
-                             );
+       public function deleteSecondaryMatch(){
+          
+            if(isset($_POST['impdataid']) && $_POST['impdataid_cmp'] && $_POST['impdataid_cmp'] != ''){
                 $this->load->model('statistics_new_model');
-                $this->db->where('imported_data_id', $_POST['impdataid']);
-                $this->db->update('statistics_new', $data); 
+                $this->update_similar_products_competitors->similar_products_competitors($_POST['impdataid'], $_POST['impdataid_cmp']);
+                $this->update_similar_products_competitors->similar_products_competitors($_POST['impdataid_cmp'],$_POST['impdataid']);
                 return true;
-}
+            }
             return false;
         }
 }
