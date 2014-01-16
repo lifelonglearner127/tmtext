@@ -562,8 +562,7 @@ $(function() {
 				{
 					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data ? json_data.ExtraData.json_encoded_data : '';					
 					oSettings.display_competitor_columns = json_data.ExtraData.display_competitor_columns;					
-					oSettings.getSelectableColumns = json_data.ExtraData.getSelectableColumns;					
-					oSettings.isCompleted = json_data.ExtraData.isCompleted;					
+					oSettings.getSelectableColumns = json_data.ExtraData.getSelectableColumns;														
 				}
 			},
 			oLanguage : {
