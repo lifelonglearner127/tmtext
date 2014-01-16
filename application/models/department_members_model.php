@@ -311,6 +311,41 @@ class Department_members_model extends CI_Model {
         return $this->db->insert_id();
     }
 
+    function insert_for_sc(
+        $site_id, 
+        $department_id,
+        $text,
+        $url,
+        $parent_id = '',
+        $level = '',
+        $description_wc = 0, 
+        $description_text = '',
+        $keyword_count = '', 
+        $keyword_density = '', 
+        $description_title = '') 
+    {
+        $data = array(
+            'site_id' => $site_id,
+            'department_id' => $department_id,
+            'parent_id' => $parent_id,
+            'text' => $text,
+            'url' => $url,
+            'level' => $level,
+            'description_words' => $description_wc,
+            'description_text' => $description_text,
+            'title_keyword_description_count' => $keyword_count,
+            'title_keyword_description_density' => $keyword_density,
+            'description_title' => $description_title,
+            'customer_id' => 0,
+            'title_seo_keywords' => '',
+            'user_seo_keywords' => '',
+            'description_title' => $description_title
+        );
+
+        $this->db->insert($this->tables['department_members'], $data);
+        return $this->db->insert_id();
+    }
+
     function update($check_id, $department_id = '', $description_wc = 0,$description_text = '', $keyword_count = '',
                     $keyword_density = '',$description_title = '',$level)
     {

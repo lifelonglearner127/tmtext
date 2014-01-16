@@ -2855,12 +2855,12 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 							}
 							try
 							{
-								$department_members_id = $this->department_members_model->insert_for_sc($site_id, $department_id, $department_text);
+								$department_members_id = $this->department_members_model->insert_for_sc($site_id, $department_id, $department_text, $department_url);
 							} catch (Exception $e)
 							{
 								$this->department_members_model->db->close();
 								$this->department_members_model->db->initialize();
-								$department_members_id = $this->department_members_model->insert_for_sc($site_id, $department_id, $department_text);
+								$department_members_id = $this->department_members_model->insert_for_sc($site_id, $department_id, $department_text, $department_url);
 							}
 						}
 					}
