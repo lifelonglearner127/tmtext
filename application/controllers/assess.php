@@ -3073,6 +3073,7 @@ class Assess extends MY_Controller {
         $report = array();
         $pricing_details = array();
         $stored_filter_items = array();
+		$tb_product_name = 'tb_product_name';
 		
 		//getting columns				
 		$raw_columns = $columns;
@@ -3090,137 +3091,121 @@ class Assess extends MY_Controller {
 								
             $success_filter_entries = array();
             $f_count1 = 0;
-            $r_count1 = 0;
-            $result_row = new stdClass();
-            $result_row->gap = '';
+            $r_count1 = 0;            
             $meta_key_gap = 0;
-            $result_row->id = $row->id;
-            $result_row->imported_data_id = $row->imported_data_id;
-            $result_row->research_data_id = $row->research_data_id;
-            $result_row->created = $row->created;
-            if (!$row->product_name || $row->product_name == '') {
-                $result_row->product_name = '-';
-            } else {
-                $result_row->product_name = $row->product_name;
-            }
-            if (!$row->url || $row->url == '') {
-                $result_row->url = '-';
-            } else {
-                $result_row->url = $row->url;
-            }
-
-            $result_row->short_description_wc = intval($row->short_description_wc);
-            $result_row->long_description_wc = intval($row->long_description_wc);
-            $result_row->short_seo_phrases = 'None';
-            $result_row->title_seo_phrases = 'None';
-            $result_row->images_cmp = 'None';
-            $result_row->video_count = 'None';
-            $result_row->title_pa = 'None';
-            $result_row->links_count = 'None';
-            $result_row->long_seo_phrases = 'None';
-            $result_row->price_diff = '-';
-            $result_row->imp_data_id = '';
-            $result_row->column_external_content = '';
-            $result_row->Custom_Keywords_Short_Description = '';
-            $result_row->Custom_Keywords_Long_Description = '';
-            $result_row->Meta_Description = '';
-            $result_row->Meta_Description_Count = '';
-            $result_row->item_id = '';
-            $result_row->Meta_Keywords = '';
-            $result_row->Page_Load_Time = '';
-            $result_row->model = '';
-            $result_row->H1_Tags = '';
-            $result_row->H1_Tags_Count = '';
-            $result_row->H2_Tags = '';
-            $result_row->H2_Tags_Count = '';
-            $result_row->column_reviews = 0;
-            $result_row->average_review = '';
-            $result_row->column_features = 0;
-            $result_row->duplicate_content = '-';
-            $result_row->own_price = floatval($row->own_price);
-            $price_diff = unserialize($row->price_diff);
-            $result_row->lower_price_exist = false;
-            $result_row->snap = '';           
-            $tb_product_name = '';
-			$result_row->murl = '';
-			$result_row->mimg = 0;
-			$result_row->mvid = 0;
-			$result_row->total_description_wc = $result_row->short_description_wc+$result_row->long_description_wc;
-
-			$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);	
+                     			         
+			// getting initial (default) result row data
+			$result_row = AssessHelper::getInitialScalarRowData($row);
 			
-            if ($row->short_description) {
-                $result_row->short_description = $row->short_description;
-            } else {
-                $result_row->short_description = '';
-            }
-            if ($row->long_description) {
-                $result_row->long_description = $row->long_description;
-            } else {
-                $result_row->long_description = '';
-            }
-
+			
+			$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);	
+			         
             if ($build_assess_params->max_similar_item_count > 0) {                
                 $sim_items = $row->similar_items;
                 $max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
-                $tb_product_name = 'tb_product_name';
+                
 
-
-                for ($i = 1; $i <= $max_similar_item_count; $i++) {
-
-                    $parsed_attributes_unserialize_val = '';
+                for ($it = 0, $sim_it = 1; $it < $max_similar_item_count; $it++, $sim_it++) {
+                    
                     $parsed_anchors_unserialize_val = '';
                     $parsed_meta_unserialize_val = '';
                     $parsed_meta_unserialize_val_c = '';
                     $parsed_meta_unserialize_val_count = '';
-                    $parsed_meta_keywords_unserialize_val = '';
-                    $parsed_loaded_in_seconds_unserialize_val = '';
-                    $parsed_H1_Tags_unserialize_val = '';
-                    $parsed_H1_Tags_unserialize_val_count = '';
-                    $parsed_H2_Tags_unserialize_val = '';
-                    $parsed_H2_Tags_unserialize_val_count = '';
-                    $parsed_column_reviews_unserialize_val = 0;
-                    $parsed_average_review_unserialize_val = '';
-                    $parsed_column_features_unserialize_val = 0;
-                    $parsed_attributes_model_unserialize_val = '';
+                    $parsed_meta_keywords_unserialize_val = '';                                                                                              
                     $column_external_content = '';
-                    $images_cmp = '';
-                    $video_count = '';
-                    $title_pa = '';
-
-                    $parsed_attributes_unserialize = unserialize($sim_items[$i - 1]->parsed_attributes);
-                    $parsed_anchors_unserialize = unserialize($sim_items[$i - 1]->Anchors);
+                                                            
+                    $parsed_attributes_unserialize = unserialize($sim_items[$it]->parsed_attributes);
+                    $parsed_anchors_unserialize = unserialize($sim_items[$it]->Anchors);
 
                     if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
                         $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'], $parsed_attributes_unserialize['webcollage']);
 
-                    $HTags = unserialize($sim_items[$i - 1]->HTags);
+                    $HTags = unserialize($sim_items[$it]->HTags);
 					
 					$buildedH1Field = AssessHelper::buildHField($HTags, 'h1');
-					$buildedH2Field = AssessHelper::buildHField($HTags, 'h2');
-					                                       
-                    if (isset($parsed_attributes_unserialize['item_id']))
-                        $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
-                    if (isset($parsed_attributes_unserialize['model']))
-                        $parsed_attributes_model_unserialize_val = $parsed_attributes_unserialize['model'];
-                    if (isset($parsed_attributes_unserialize['loaded_in_seconds']))
-                        $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
-                    if (isset($parsed_attributes_unserialize['review_count']))
-                        $parsed_column_reviews_unserialize_val = $parsed_attributes_unserialize['review_count'];
-                    if (isset($parsed_attributes_unserialize['average_review']))
-                        $parsed_average_review_unserialize_val = $parsed_attributes_unserialize['average_review'];
-                    if (isset($parsed_attributes_unserialize['feature_count']))
-                        $parsed_column_features_unserialize_val = $parsed_attributes_unserialize['feature_count'];
-                    if (isset($parsed_attributes_unserialize['product_images']))
-                        $images_cmp = $parsed_attributes_unserialize['product_images'];
-                    if (isset($parsed_attributes_unserialize['video_count']))
-                        $video_count = $parsed_attributes_unserialize['video_count'];
-                    if (isset($parsed_attributes_unserialize['title']))
-                        $title_pa = $parsed_attributes_unserialize['title'];
-                    if (isset($parsed_anchors_unserialize['quantity']))
-                        $links_count = $parsed_anchors_unserialize['quantity'];
+					$buildedH2Field = AssessHelper::buildHField($HTags, 'h2');					                                      
+                    
+                    $parsed_attributes_unserialize_val = isset($parsed_attributes_unserialize['item_id']) ? $parsed_attributes_unserialize['item_id'] : '';
+					$parsed_attributes_model_unserialize_val = isset($parsed_attributes_unserialize['model']) ? $parsed_attributes_unserialize['model'] : '';
+					$parsed_loaded_in_seconds_unserialize_val = isset($parsed_attributes_unserialize['loaded_in_seconds']) ? $parsed_attributes_unserialize['loaded_in_seconds'] : '';
+                    $parsed_column_reviews_unserialize_val = isset($parsed_attributes_unserialize['review_count']) ? $parsed_attributes_unserialize['review_count'] : 0;
+					$parsed_average_review_unserialize_val = isset($parsed_attributes_unserialize['average_review']) ? $parsed_attributes_unserialize['average_review'] : '';
+					$parsed_column_features_unserialize_val = isset($parsed_attributes_unserialize['feature_count']) ? $parsed_attributes_unserialize['feature_count'] : 0;
+                    $images_cmp = isset($parsed_attributes_unserialize['product_images']) ? $parsed_attributes_unserialize['product_images'] : '';
+					$video_count = isset($parsed_attributes_unserialize['video_count']) ? $parsed_attributes_unserialize['video_count'] : '';
+					$title_pa = isset($parsed_attributes_unserialize['title']) ? $parsed_attributes_unserialize['title'] : '';                    
+                    $links_count = isset($parsed_anchors_unserialize['quantity']) ? $parsed_anchors_unserialize['quantity'] : '';
+                    
                    
-                    $parsed_meta_unserialize = unserialize($sim_items[$i - 1]->parsed_meta);
+                    $parsed_meta_unserialize = unserialize($sim_items[$it]->parsed_meta);
+					
+					    if ($parsed_meta_unserialize['description']) {
+                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
+                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+                        if ($parsed_meta_unserialize_val_c != 1)
+                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                        else
+                            $parsed_meta_unserialize_val_count = '';
+                    }
+                    else if ($parsed_meta_unserialize['Description']) {
+                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
+                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+                        if ($parsed_meta_unserialize_val_c != 1)
+                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+                        else
+                            $parsed_meta_unserialize_val_count = '';
+                    }
+  
+                    if ($parsed_meta_unserialize['keywords']) {
+
+                        $Meta_Keywords_un = "<table class='table_keywords_long'>";
+                        $cnt_meta_un = explode(',', $parsed_meta_unserialize['keywords']);
+                        $cnt_meta_count_un = count($cnt_meta_un);
+                        foreach ($cnt_meta_un as $key => $cnt_m_un) {
+                            $_count_meta_un = 0;
+                            $cnt_m_un = trim($cnt_m_un);
+                            if (!$cnt_m_un) {
+                                continue;
+                            }
+                            if ($sim_items[$it]->Long_Description || $sim_items[$it]->Short_Description) {
+                                $_count_meta_un = $this->keywords_appearence($sim_items[$it]->Long_Description . $sim_items[$it]->Short_Description, $cnt_m_un);
+                                $_count_meta_num_un = (float) round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$it]->long_description_wc + $sim_items[$it]->short_description_wc)) * 100, 2);
+
+                                $batch2_meta_percents[$row_key][$key] = $_count_meta_num_un;
+
+                                $_count_meta_num_un_proc = $_count_meta_num_un . "%";
+                                $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>" . $_count_meta_num_un_proc . "</td></tr>";
+//                        
+                                if ($i == 1 && !$meta_key_gap) {
+                                    $metta_prc = round(($_count_meta_un * $cnt_meta_count_un / ($row->long_description_wc + $row->short_description_wc)) * 100, 2);
+                                    if ($metta_prc >= 2) {
+                                        $meta_key_gap = $metta_prc;
+                                    }
+                                }
+                            }
+                        }
+                        $Meta_Keywords_un .= "</table>";
+                        $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+                    }
+
+
+                    if ($i == 1) {
+                        if (isset($parsed_attributes_unserialize['feature_count'])) {
+                            $f_count1 = $parsed_attributes_unserialize['feature_count'];
+                        } else {
+                            $f_count1 = 0;
+                        }
+                        if (isset($parsed_attributes_unserialize['review_count'])) {
+                            $r_count1 = $parsed_attributes_unserialize['review_count'];
+                        } else {
+                            $r_count1 = 0;
+                        }
+
+                        if (!$meta_key_gap) {
+
+                            $result_row->gap .= "Competitor is not keyword optimized<br>";
+                        }
+                    }
 					
 					if ($needFilters) 
 					{						
@@ -3285,192 +3270,40 @@ class Assess extends MY_Controller {
 							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
 						}
 					}
-
-                    if ($parsed_meta_unserialize['description']) {
-                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
-                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
-                        if ($parsed_meta_unserialize_val_c != 1)
-                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
-                        else
-                            $parsed_meta_unserialize_val_count = '';
-                    }
-                    else if ($parsed_meta_unserialize['Description']) {
-                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
-                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
-                        if ($parsed_meta_unserialize_val_c != 1)
-                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
-                        else
-                            $parsed_meta_unserialize_val_count = '';
-                    }
-  
-                    if ($parsed_meta_unserialize['keywords']) {
-
-                        $Meta_Keywords_un = "<table class='table_keywords_long'>";
-                        $cnt_meta_un = explode(',', $parsed_meta_unserialize['keywords']);
-                        $cnt_meta_count_un = count($cnt_meta_un);
-                        foreach ($cnt_meta_un as $key => $cnt_m_un) {
-                            $_count_meta_un = 0;
-                            $cnt_m_un = trim($cnt_m_un);
-                            if (!$cnt_m_un) {
-                                continue;
-                            }
-                            if ($sim_items[$i - 1]->Long_Description || $sim_items[$i - 1]->Short_Description) {
-                                $_count_meta_un = $this->keywords_appearence($sim_items[$i - 1]->Long_Description . $sim_items[$i - 1]->Short_Description, $cnt_m_un);
-                                $_count_meta_num_un = (float) round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$i - 1]->long_description_wc + $sim_items[$i - 1]->short_description_wc)) * 100, 2);
-
-                                $batch2_meta_percents[$row_key][$key] = $_count_meta_num_un;
-
-                                $_count_meta_num_un_proc = $_count_meta_num_un . "%";
-                                $Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>" . $_count_meta_num_un_proc . "</td></tr>";
-//                        
-                                if ($i == 1 && !$meta_key_gap) {
-                                    $metta_prc = round(($_count_meta_un * $cnt_meta_count_un / ($row->long_description_wc + $row->short_description_wc)) * 100, 2);
-                                    if ($metta_prc >= 2) {
-                                        $meta_key_gap = $metta_prc;
-                                    }
-                                }
-                            }
-                        }
-                        $Meta_Keywords_un .= "</table>";
-                        $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
-                    }
-
-
-                    if ($i == 1) {
-                        if (isset($parsed_attributes_unserialize['feature_count'])) {
-                            $f_count1 = $parsed_attributes_unserialize['feature_count'];
-                        } else {
-                            $f_count1 = 0;
-                        }
-                        if (isset($parsed_attributes_unserialize['review_count'])) {
-                            $r_count1 = $parsed_attributes_unserialize['review_count'];
-                        } else {
-                            $r_count1 = 0;
-                        }
-
-                        if (!$meta_key_gap) {
-
-                            $result_row->gap .= "Competitor is not keyword optimized<br>";
-                        }
-                    }
+                
                     $result_row = (array) $result_row;
-                    $result_row["snap$i"] = $sim_items[$i - 1]->snap !== false ? $sim_items[$i - 1]->snap : '-';
-                    $result_row["imp_data_id$i"] = $sim_items[$i - 1]->imported_data_id !== false ? $sim_items[$i - 1]->imported_data_id : '';
-                    $result_row['url' . $i] = $sim_items[$i - 1]->url !== false ? "<span class='res_url'><a target='_blank' href='" . $sim_items[$i - 1]->url . "'>" . $sim_items[$i - 1]->url . "</a></span>" : "-";
-                    $result_row['Page_Load_Time' . $i] = $parsed_loaded_in_seconds_unserialize_val;
-                    $result_row['product_name' . $i] = $sim_items[$i - 1]->product_name !== false ? "<span class='tb_product_name'>" . $sim_items[$i - 1]->product_name . "</span>" : "-";
-                    $result_row['item_id' . $i] = $parsed_attributes_unserialize_val;
-                    $result_row['model' . $i] = $parsed_attributes_model_unserialize_val;
-                    $result_row['short_description_wc' . $i] = $sim_items[$i - 1]->short_description_wc !== false ? $sim_items[$i - 1]->short_description_wc : '';
-                    $result_row['Short_Description' . $i] = $sim_items[$i - 1]->Short_Description !== false ? $sim_items[$i - 1]->Short_Description : '';
-                    $result_row['Long_Description' . $i] = $sim_items[$i - 1]->Long_Description !== false ? $sim_items[$i - 1]->Long_Description : '';
-                    $result_row['Meta_Keywords' . $i] = $parsed_meta_keywords_unserialize_val;
-                    $result_row['long_description_wc' . $i] = $sim_items[$i - 1]->long_description_wc !== false ? $sim_items[$i - 1]->long_description_wc : '';
-                    $result_row['Meta_Description' . $i] = $parsed_meta_unserialize_val;
-                    $result_row['Meta_Description_Count' . $i] = $parsed_meta_unserialize_val_count;
-                    $result_row['column_external_content' . $i] = $column_external_content;
-                    $result_row['H1_Tags' . $i] = $buildedH1Field['value'];
-                    $result_row['H1_Tags_Count' . $i] = $buildedH1Field['count'];
-                    $result_row['H2_Tags' . $i] = $buildedH2Field['value'];
-                    $result_row['H2_Tags_Count' . $i] = $buildedH2Field['count'];
-                    $result_row['column_reviews' . $i] = $parsed_column_reviews_unserialize_val;
-                    $result_row['average_review' . $i] = $parsed_average_review_unserialize_val;
-                    $result_row['column_features' . $i] = $parsed_column_features_unserialize_val;
-                    $result_row['title_seo_phrases' . $i] = $row->title_seo_pharses1 ? $row->title_seo_pharses1 : 'None';
-                    $result_row['images_cmp' . $i] = $images_cmp ? $images_cmp : 'None';
-                    $result_row['video_count' . $i] = $video_count ? $video_count : 'None';
-                    $result_row['title_pa' . $i] = $title_pa ? $title_pa : 'None';
-                    $result_row['links_count' . $i] = $links_count ? $links_count : 'None';
-                    $result_row['total_description_wc' . $i] = $result_row['short_description_wc' . $i]+$result_row['long_description_wc' . $i];
+                    $result_row['snap' . $sim_it] = $sim_items[$it]->snap !== false ? '<span style="cursor:pointer;"><img src="' . base_url() . 'webshoots/' . $sim_items[$it]->snap . '" /></snap>'  : '-';
+                    $result_row['title_seo_phrases' . $sim_it] = $row->title_seo_phrases1 ? $row->title_seo_phrases1 : 'None';
+                    $result_row['imp_data_id' . $sim_it] = $sim_items[$it]->imported_data_id !== false ? $sim_items[$it]->imported_data_id : '';
+                    $result_row['images_cmp' . $sim_it] = $images_cmp ? $images_cmp : 'None';
+                    $result_row['video_count' . $sim_it] = $video_count ? $video_count : 'None';
+                    $result_row['title_pa' . $sim_it] = $title_pa ? $title_pa : 'None';
+                    $result_row['product_name' . $sim_it] = $sim_items[$it]->product_name !== false ? "<span class='tb_product_name'>" . $sim_items[$it]->product_name . "</span>" : "-";
+                    $result_row['item_id' . $sim_it] = $parsed_attributes_unserialize_val;
+                    $result_row['Page_Load_Time' . $sim_it] = $parsed_loaded_in_seconds_unserialize_val;
+					$result_row['H1_Tags' . $sim_it] = $buildedH1Field['value'];
+                    $result_row['H1_Tags_Count' . $sim_it] = $buildedH1Field['count'];
+                    $result_row['H2_Tags' . $sim_it] = $buildedH2Field['value'];
+                    $result_row['H2_Tags_Count' . $sim_it] = $buildedH2Field['count'];
+                    $result_row['url' . $sim_it] = $sim_items[$it]->url !== false ? "<span class='res_url'><a target='_blank' href='" . $sim_items[$it]->url . "'>" . $sim_items[$it]->url . "</a></span>" : "-";
+                    $result_row['model' . $sim_it] = $parsed_attributes_model_unserialize_val;
+                    $result_row['short_description_wc' . $sim_it] = $sim_items[$it]->short_description_wc !== false ? $sim_items[$it]->short_description_wc : '';
+                    $result_row['Short_Description' . $sim_it] = $sim_items[$it]->Short_Description !== false ? $sim_items[$it]->Short_Description : '';
+                    $result_row['Long_Description' . $sim_it] = $sim_items[$it]->Long_Description !== false ? $sim_items[$it]->Long_Description : '';
+                    $result_row['Meta_Keywords' . $sim_it] = $parsed_meta_keywords_unserialize_val;
+                    $result_row['long_description_wc' . $sim_it] = $sim_items[$it]->long_description_wc !== false ? $sim_items[$it]->long_description_wc : '';
+                    $result_row['Meta_Description' . $sim_it] = $parsed_meta_unserialize_val;
+                    $result_row['Meta_Description_Count' . $sim_it] = $parsed_meta_unserialize_val_count;
+                    $result_row['column_external_content' . $sim_it] = $column_external_content;                    
+                    $result_row['column_reviews' . $sim_it] = $parsed_column_reviews_unserialize_val;
+                    $result_row['average_review' . $sim_it] = $parsed_average_review_unserialize_val;
+                    $result_row['column_features' . $sim_it] = $parsed_column_features_unserialize_val;
+                    $result_row['links_count' . $sim_it] = $links_count ? $links_count : 'None';
+                    $result_row['total_description_wc' . $sim_it] = $result_row['short_description_wc' . $sim_it] + $result_row['long_description_wc' . $sim_it];
                 }
 
                 $result_row = (object) $result_row;
-            }
-            if ($row->snap1 && $row->snap1 != '') {
-                $result_row->snap1 = "<span style='cursor:pointer;'><img src='" . base_url() . "webshoots/" . $row->snap1 . "' /></snap>";
-            }
-            if ($row->title_seo_phrases1) {
-                $result_row->title_seo_phrases1 = $row->title_seo_phrases1;
-            }
-            if ($row->imp_data_id1) {
-                $result_row->imp_data_id1 = $row->imp_data_id1;
-            }
-            if ($row->images_cmp1) {
-                $result_row->images_cmp1 = $row->images_cmp1;
-            }
-            if ($row->video_count1) {
-                $result_row->video_count1 = $row->video_count1;
-            }
-            if ($row->title_pa1) {
-                $result_row->title_pa1 = $row->title_pa1;
-            }
-            if ($row->links_count1) {
-                $result_row->links_count1 = $row->links_count1;
-            }
-            if ($row->product_name1) {
-                $result_row->product_name1 = $row->product_name1;
-            }
-            if ($row->item_id1) {
-                $result_row->item_id1 = $row->item_id1;
-            }
-            if ($row->Page_Load_Time1) {
-                $result_row->Page_Load_Time1 = $row->Page_Load_Time1;
-            }
-            if ($row->H1_Tags1) {
-                $result_row->H1_Tags1 = $row->H1_Tags1;
-            }
-            if ($row->H1_Tags_Count1) {
-                $result_row->H1_Tags_Count1 = $row->H1_Tags_Count1;
-            }
-            if ($row->H2_Tags1) {
-                $result_row->H2_Tags1 = $row->H2_Tags1;
-            }
-            if ($row->H2_Tags_Count1) {
-                $result_row->H2_Tags_Count1 = $row->H2_Tags_Count1;
-            }
-            if ($row->column_reviews1) {
-                $result_row->column_reviews1 = $row->column_reviews1;
-            }
-            if ($row->average_review1) {
-                $result_row->average_review1 = $row->average_review1;
-            }
-            if ($row->column_features1) {
-                $result_row->column_features1 = $row->column_features1;
-            }
-            if ($row->Short_Description1) {
-                $result_row->Short_Description1 = $row->Short_Description1;
-            }
-            if ($row->Long_Description1) {
-                $result_row->Long_Description1 = $row->Long_Description1;
-            }
-            if ($row->column_external_content1) {
-                $result_row->column_external_content1 = $row->column_external_content1;
-            }
-            if ($row->Meta_Keywords1) {
-                $result_row->Meta_Keywords1 = $row->Meta_Keywords1;
-            }
-            if ($row->model1) {
-                $result_row->model1 = $row->model1;
-            }
-            if ($row->url1) {
-                $result_row->url1 = "<span class='res_url'><a href='" . $row->url1 . "' target='_blank'>$row->url1</a><span>";
-            }
-            if ($row->short_description_wc1) {
-                $result_row->short_description_wc1 = $row->short_description_wc1;
-            }
-            if ($row->long_description_wc1) {
-                $result_row->long_description_wc1 = $row->long_description_wc1;
-            }
-            if ($row->Meta_Description1) {
-                $result_row->Meta_Description1 = $row->Meta_Description1;
-            }
-            if ($row->Meta_Description_Count1) {
-                $result_row->Meta_Description_Count1 = $row->Meta_Description_Count1;
-            }
-
-
-
-     
+            }	    
 
             if ($pars_atr['parsed_attributes']['cnetcontent'] || $pars_atr['parsed_attributes']['webcollage']) {
                 $result_row->column_external_content = $this->column_external_content($pars_atr['parsed_attributes']['cnetcontent'], $pars_atr['parsed_attributes']['webcollage']);

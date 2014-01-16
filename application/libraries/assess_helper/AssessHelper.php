@@ -135,6 +135,65 @@ class AssessHelper
 		);
 	}
 	
+	public static function getInitialScalarRowData($row)
+	{
+		$result_row = new stdClass();
+        
+		$result_row->gap = '';
+		$result_row->id = $row->id;
+		$result_row->imported_data_id = $row->imported_data_id;
+		$result_row->research_data_id = $row->research_data_id;
+		$result_row->created = $row->created;
+		$result_row->url = $row->url ?: '-';
+		$result_row->product_name = $row->product_name ?: '-';
+		$result_row->short_description_wc = intval($row->short_description_wc);
+		$result_row->long_description_wc = intval($row->long_description_wc);
+		$result_row->short_seo_phrases = 'None';
+		$result_row->title_seo_phrases = 'None';
+		$result_row->images_cmp = 'None';
+		$result_row->video_count = 'None';
+		$result_row->title_pa = 'None';
+		$result_row->links_count = 'None';
+		$result_row->long_seo_phrases = 'None';
+		$result_row->price_diff = '-';
+		$result_row->imp_data_id = '';
+		$result_row->column_external_content = '';
+		$result_row->Custom_Keywords_Short_Description = '';
+		$result_row->Custom_Keywords_Long_Description = '';
+		$result_row->Meta_Description = '';
+		$result_row->Meta_Description_Count = '';
+		$result_row->item_id = '';
+		$result_row->Meta_Keywords = '';
+		$result_row->Page_Load_Time = '';
+		$result_row->model = '';
+		$result_row->H1_Tags = '';
+		$result_row->H1_Tags_Count = '';
+		$result_row->H2_Tags = '';
+		$result_row->H2_Tags_Count = '';
+		$result_row->column_reviews = 0;
+		$result_row->average_review = '';
+		$result_row->column_features = 0;
+		$result_row->duplicate_content = '-';
+		$result_row->own_price = floatval($row->own_price);
+		$price_diff = unserialize($row->price_diff);
+		$result_row->lower_price_exist = false;
+		$result_row->snap = '';           
+		$tb_product_name = '';
+		$result_row->murl = '';
+		$result_row->mimg = 0;
+		$result_row->mvid = 0;
+		$result_row->total_description_wc = $result_row->short_description_wc + $result_row->long_description_wc;
+		$result_row->short_description = $row->short_description ?: '';
+		$result_row->long_description = $row->long_description ?: '';
+		
+		return $result_row;
+	}
+	
+	public static function appendResultRowData($result_row, $row)
+	{
+	
+	}
+	
 	public static function getInitialFilterData()
 	{			
 		return require_once(APPPATH . 'libraries/assess_helper/_filter_variables.php');

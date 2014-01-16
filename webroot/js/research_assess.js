@@ -10,34 +10,35 @@ function close_popover(elem)
 	
 	return false;
 }
-function topScroll(){
-	$( "#tableScrollWrapper.red" ).remove();
-	$( "#tableScrollWrapper" ).clone().insertBefore( "#tableScrollWrapper" ).addClass("red");
-	$( "#tableScrollWrapper:not(.red)" ).addClass("xw");
-	//$( "#tableScrollWrapper.red td" ).css("display", "none");
-	$( "div#tableScrollWrapper.red" ).css("height", "16px").css("width", "101.6%");
-	$(function(){
-    $(".red").scroll(function(){
-        $(".xw:not(.red)").scrollLeft($(".red").scrollLeft());
-		});
-	$(".xw:not(.red)").scroll(function(){
-        $(".red").scrollLeft($(".xw:not(.red)").scrollLeft());
-		});
-		//console.log("topScroll");
-		
-	});
-	$("#tblAssess").floatThead('reflow');
-}
+// function topScroll(){
+	// $( "#tableScrollWrapper.red" ).remove();
+	// $( "#tableScrollWrapper" ).clone().insertBefore( "#tableScrollWrapper" ).addClass("red");
+	// $( "#tableScrollWrapper:not(.red)" ).addClass("xw");
+	
+	// $( "div#tableScrollWrapper.red" ).css("height", "16px").css("width", "101.6%");
+	
+	// $(function(){
+		// $(".red").scroll(function(){
+			// $(".xw:not(.red)").scrollLeft($(".red").scrollLeft());
+		// });
+		// $(".xw:not(.red)").scroll(function(){
+			// $(".red").scrollLeft($(".xw:not(.red)").scrollLeft());
+		// });						
+	// });
+	
+	// $("#tblAssess").floatThead('reflow');
+// }
 function resizeImpDown(status){
 	
 	var status = status || true	
 	  , onResize = function(event) {			
-		tblAssessTable.floatThead({
-			scrollContainer: function($table){
-				return $table.closest('.wrapper');
-			}
-		});
-		topScroll();				
+	 	// tblAssessTable.floatThead({
+			// scrollContainer: function($table){
+				// return $table.closest('.wrapper');
+			// }
+		// });
+		
+		// tblAssessTable.floatThead('reflow'); 
 	};
 	
 	var tblAssessTable = $("#tblAssess");
@@ -527,9 +528,7 @@ $(function() {
 				
 				// bad hack, Nikita, please check
 				$('#tblAssess thead th').css('width', '100%');	
-				
-				resizeImpDown();
-				
+										
 				console.log('Building report... ' + needToBeReloaded);
 				
 				if (needToBeReloaded || rebuildFilters)
@@ -537,6 +536,8 @@ $(function() {
 				
 				if (needToBeReloaded)				
 					pullRestItems();			
+					
+				resizeImpDown();
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {						
 				tblAssess_postRenderProcessing(nRow);					
