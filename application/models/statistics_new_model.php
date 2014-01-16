@@ -326,13 +326,13 @@ class Statistics_new_model extends CI_Model {
             (select `value` from imported_data_parsed where `key`="Long_Description" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Long_Description`,
             (select `value` from imported_data_parsed where `key`="HTags" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `HTags`,
             (select `value` from imported_data_parsed where `key`="Anchors" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Anchors`,
-
             (select `value` from imported_data_parsed where `key`="Url" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `url`
             ')
             ->from($this->tables['statistics_new'].' as s')
             ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id = s.imported_data_id', 'left')
             ->where('s.imported_data_id', $imported_data_id)->get();
-        $result =  $query->row();
+        $result = $query->row();
+	$query->free_result();
         return $result;
     }
 
@@ -667,7 +667,7 @@ class Statistics_new_model extends CI_Model {
             $query = $this->db->query($sql);
  
             $result = $query->result();
-            
+            $query->free_result();
         return $result;   
     }
 //    function get_price_from_crawler_list($crawler_list_id){
