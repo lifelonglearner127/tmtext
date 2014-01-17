@@ -1418,45 +1418,44 @@ class Research extends MY_Controller {
         $this->form_validation->set_rules('revision', 'Revision', 'integer');*/
 
         if ($this->form_validation->run() === true) {
+	    $upd = array();
             $batch = $this->input->post('batch');
             $batch_id = $this->batches_model->getIdByName($batch);
             if($batch_id == false) {
                 $batch_id = $this->batches_model->insert($batch);
             }
-            $url = $this->input->post('url');
-            $product_name = $this->input->post('product_name');
-            $keyword1 = $this->input->post('keyword1');
-            $keyword2 = $this->input->post('keyword2');
-            $keyword3 = $this->input->post('keyword3');
-            $meta_title = $this->input->post('meta_title');
-            $meta_description = $this->input->post('meta_description');
-            $meta_keywords = $this->input->post('meta_keywords');
-            $short_description = $this->input->post('short_description');
-            $short_description_wc = $this->input->post('short_description_wc');
-            $long_description = $this->input->post('long_description');
-            $long_description_wc = $this->input->post('long_description_wc');
-            if ($this->input->post('revision')=='') {
+	    $upd['batch_id'] = $batch_id;
+            $upd['url'] = $this->input->post('url');
+            $upd['product_name'] = $this->input->post('product_name');
+            $upd['keyword1'] = $this->input->post('keyword1');
+            $upd['keyword2'] = $this->input->post('keyword2');
+            $upd['keyword3'] = $this->input->post('keyword3');
+            $upd['meta_title'] = $this->input->post('meta_title');
+            $upd['meta_description'] = $this->input->post('meta_description');
+            $upd['meta_keywords'] = $this->input->post('meta_keywords');
+            $upd['short_description'] = $this->input->post('short_description');
+            $upd['short_description_wc'] = $this->input->post('short_description_wc');
+            $upd['long_description'] = $this->input->post('long_description');
+            $upd['long_description_wc'] = $this->input->post('long_description_wc');
+	    $upd['revision'] = $this->input->post('revision');
+            if (!trim($upd['revision'])) {
                 $last_revision = $this->research_data_model->getLastRevision();
                 if(!empty($last_revision)){
-                    $revision = $last_revision[0]->revision + 1;
+                    $upd['revision'] = $last_revision + 1;
                 } else {
-                    $revision = 1;
+                    $upd['revision'] = 1;
                 }
-            } else {
-                $revision = $this->input->post('revision');
-            }
+            } 
             //$results = $this->research_data_model->getAllByProductName($product_name, $batch_id);
-            $results = $this->research_data_model->getProductByURL($url, $batch_id);
+            $results = $this->research_data_model->getProductByURL($upd['url'], $batch_id);
 
             if(empty($results)){
-                $data['research_data_id'] = $this->research_data_model->insert($batch_id, $url, $product_name, $keyword1, $keyword2,
-                    $keyword3, $meta_title, $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision);
+                $data['research_data_id'] = $this->research_data_model->insert($upd);
             } else {
-                $data['research_data_id'] = $this->research_data_model->update($results[0]->id, $batch_id, $url, $product_name, $short_description, $short_description_wc, $long_description, $long_description_wc, $keyword1, $keyword2,
-                    $keyword3, $meta_title, $meta_description, $meta_keywords, $revision);
+                $data['research_data_id'] = $this->research_data_model->update($results[0]->id, $upd);
             }
 
-            $data['revision'] = $revision;
+            $data['revision'] = $upd['revision'];
         } else {
             $data['message'] = (validation_errors() ? validation_errors() : $this->session->flashdata('message'));
         }
@@ -1700,18 +1699,57 @@ class Research extends MY_Controller {
         $this->load->model('customers_model');
 
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+	/*if(isset($fcont[0]) && strpos($fcont[0],'CATEGORY')) //checking for category fields in header
+	{
+		if($type == 'category')
+			{
+				$method = 'updateCategoryInfoByURL';
+				$model = 'product_category_model';
+			}
+		   $this->importURLWithCategories($file);
+		   return;
+	}*/
         $_rows = array();
+	$catRows = array();
+	$urlPos = 0;
+	$cnt = 0;
         if (($handle = fopen($file, "r")) !== FALSE) {
             while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-                if(!is_null($data[0]) && $data[0]!='URL' && $data[0]!=''){
-                    $_rows[] = $data[0];
+		if($cnt < 1)
+		{
+			$cols = count($data);
+			if($cols > 1)
+			{
+			       for($i = 0;$i < $cols;$i++)
+			       {
+				       if(strpos($data[$i],'URL') !== FALSE || strpos($data[$i],'http'))
+				       {
+					       $urlPos = $i;
+				       } elseif(strpos($data[$i],'CATEGORY_ID') !== FALSE)
+				       { 
+					       $cIdPos = $i;
+				       } elseif(strpos($data[$i],'CATEGORY_NAME') !== FALSE)
+				       { 
+					       $cNamePos = $i;
+				       }
+			       }
+			}  
+		}	
+                if(!is_null($data[$urlPos]) && trim($data[$urlPos]) && $data[$urlPos]!='URL'){
+                    $_rows[$cnt] = $data[$urlPos];
                 }
+		if(isset($cIdPos) && isset($cNamePos) && isset($data[$cIdPos]) && isset($data[$cNamePos]))
+		{
+			$catRows[$cnt]['id'] =  $data[$cIdPos]; 
+			$catRows[$cnt]['name'] =  $data[$cNamePos]; 
+		}
+		++$cnt;
             }
             fclose($handle);
         }
         $batch_id = $this->batches_model->getIdByName($this->input->post('batch_name'));
 
-        $added = $this->insert_rows($batch_id, $_rows);
+        $added = $this->insert_rows($batch_id, $_rows, $catRows);
 
         $str = $added;
         $duplicateItems = '';
@@ -1735,32 +1773,42 @@ class Research extends MY_Controller {
                 ->set_output(json_encode($response));
     }
 
-    private function insert_rows($batch_id, $_rows) {
+    private function insert_rows($batch_id = 0, $_rows = array(), $catRows = FALSE) {
         $this->load->model('research_data_model');
         $this->load->model('research_data_to_crawler_list_model');
         $this->load->model('crawler_list_model');
-		$this->load->library('PageProcessor');
-
-    	$last_revision = $this->research_data_model->getLastRevision();
+	if($catRows) $this->load->model('product_category_model');
+	$this->load->library('PageProcessor');
+	$ins = array();
+    	$ins['revision'] = $this->research_data_model->getLastRevision();
         $added = 0;
 
         $this->research_data_model->db->trans_start();
-        foreach($_rows as $_row){
+        foreach($_rows as $key=>$_row)
+	{
             $res = $this->research_data_model->checkItemUrl($batch_id, $_row);
-            if(empty($res)){
-              $research_data_id = $this->research_data_model->insert($batch_id, $_row, '', '', '',
-                    '', '', '', '', '', 0, '', 0,  $last_revision);
-                $added += 1;
+            if(!$res)
+	    {
+		$ins['category_id'] = 0;
+		if(isset($catRows[$key]))
+		{	
+			$ins['category_id'] = $this->product_category_model->update(array('category_name' => $catRows[$key]['name'], 'category_code' => $catRows[$key]['id'])); 
+		}	
+		$ins['batch_id'] = $batch_id;
+		$ins['url'] = $_row;
+                $research_data_id = $this->research_data_model->insert($ins);
+                ++$added;
 
                 // Insert to crawler list
-	            if ($research_data_id && $this->pageprocessor->isURL($_row)) {
-                    $crawler_list_id = $this->crawler_list_model->getByUrl($_row);
-                    if (!$crawler_list_id) {
-						$crawler_list_id = $this->crawler_list_model->insert($_row, 0);
-					}
-                    $this->research_data_to_crawler_list_model->insert($research_data_id, $crawler_list_id);
-					// add part if url already in crawler_list
-				}
+	            if ($research_data_id && $this->pageprocessor->isURL($_row)) 
+		    {
+			$crawler_list_id = $this->crawler_list_model->getByUrl($_row);
+			if (!$crawler_list_id) 
+			{
+				    $crawler_list_id = $this->crawler_list_model->insert($_row, 0);
+			}
+			$this->research_data_to_crawler_list_model->insert($research_data_id, $crawler_list_id); // add part if url already in crawler_list
+		    }
             }
         }
         $this->research_data_model->db->trans_complete();
@@ -1778,20 +1826,28 @@ class Research extends MY_Controller {
         $this->research_data_model->db->trans_complete();
     }
 
-   private function insert_rows_batch($batch_id, $_rows) {
+   private function insert_rows_batch($batch_id, $_rows, $catRows = FALSE) {
         $this->load->model('research_data_model');
         $this->load->model('research_data_to_crawler_list_model');
         $this->load->model('crawler_list_model');
-		$this->load->library('PageProcessor');
-
-    	$last_revision = $this->research_data_model->getLastRevision();
+	if($catRows) $this->load->model('product_category_model');
+	$this->load->library('PageProcessor');
+	$ins = array();
+    	$ins['revision'] = $this->research_data_model->getLastRevision();
         $added = 0;
 
         $this->research_data_model->db->trans_start();
-        foreach($_rows as $_row){
+        foreach($_rows as $key=>$_row){
             // Insert to crawler list
             if ($this->pageprocessor->isURL($_row)) {
-				$research_data_id = $this->research_data_model->insert($batch_id, $_row, '', '', '','', '', '', '', '', 0, '', 0,  $last_revision);
+				$ins['batch_id'] = $batch_id;
+				$ins['url'] = $_row;
+				$ins['category_id'] = 0;
+				if(isset($catRows[$key]))
+				{	
+					$ins['category_id'] = $this->product_category_model->update(array('category_name' => $catRows[$key]['name'], 'category_code' => $catRows[$key]['id'])); 
+				}
+				$research_data_id = $this->research_data_model->insert($ins);
                 $added += 1;
 
 				$crawler_list_id = $this->crawler_list_model->insert($_row, 0);

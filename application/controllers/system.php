@@ -2659,12 +2659,13 @@ class System extends MY_Controller {
         $start_run = microtime(true);        
         log_message('ERROR', 'Start ' .  $this -> input -> post('choosen_file'));    
 	    $file = $this -> config -> item('csv_upload_dir') . $this -> input -> post('choosen_file');
-            // If "manufacturer match file" checkbox os checked, start manufacturer info import
+            // If "manufacturer match file" checkbox is checked, start manufacturer info import
 	    if($manu_file_upload_opts == 'true')
 	    {
 		    $this->importManufacturerStatistic($file);
 		    return;
-	    }			
+	    }
+	    $fcont = file($file);//getting content of file
             $this -> load -> model('site_categories_model');
             $this -> load -> model('settings_model');
             $this -> load -> model('imported_data_parsed_model');
@@ -2674,7 +2675,6 @@ class System extends MY_Controller {
             $this -> temp_data_model -> emptyTable('urlstomatch');//remove data from 'urlstomatch' table
             $this -> temp_data_model -> emptyTable('updated_items');//remove data from 'updated_items' table
             $this -> settings_model -> deledtMatching();//Delete data of previous matching
-            $fcont = file($file);//getting content of file
             $linesTotal = 0;
             $itemsUpdated = 0;
             $itemsUnchanged = 0;
@@ -2691,7 +2691,7 @@ class System extends MY_Controller {
                 //*for big files
                 $res = '';
                 $urls = explode(',', trim(trim($line), ','));//Getting URLs from line
-                if (count($urls) == 2) {//If second url is missing line will be ignored
+                if (count($urls) > 1) {//If second url is missing line will be ignored
                     ++$linesAdded;
                     $this->temp_data_model->addUrlToMatch($urls[0], $urls[1]);//Add urls to table
                 }
@@ -2899,14 +2899,14 @@ class System extends MY_Controller {
 				{
 					//checking for each value of line
 					$c = $this->imported_data_parsed_model->updateManufacturerInfoByURL($d);
-					if($c === TRUE) $changed++; else $unchanged++; //count changed and unchanged items
+					if($c > 1) $changed++; elseif($c > 0) $unchanged++; //count changed and unchanged items
 				}
 			}
 			$all = $all -1; //first line is header, we counted only lines with data
 			$time = time();
 			$name = end(explode('/', $file)); //get name of file
 			$notFoundUrls = $all - ($changed + $unchanged); //calculating of urls that were not found
-                        $this->settings_model->createManufacturerMatching($name."|".$time."|".$all."|".$notFoundUrls."|".$changed."|".$unchanged."|1"); //adding statistic about current file
+                        $this->settings_model->createManufacturerMatching($name."|".$time."|".$all."|".$notFoundUrls."|".$changed."|".$unchanged."|".$type); //adding statistic about current file
 		}
 	}
 	
@@ -2978,12 +2978,20 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/n
 					$line .= '<br># Matches Updated: ' . $updated;
 					$line .= '<br># Matches Unchanged: ' . $ar[3];
                                         $json['active'] = TRUE;
-				} elseif(isset($ar[5]) && ($row->modified == '0000-00-00 00:00:01')){
+				} elseif(isset($ar[6]) && ($row->modified == '0000-00-00 00:00:01')){
 					$line .= 'Total matching URLs imported: ' . $ar[2] . '</p>';
 					$line .= '<p>'.'Uploaded filename: ' . $ar[0];
-					$line .= '<br>URLs not found in imported_data_parsed: ' . $ar[3];
+					if($ar[6] == 'manufacturer')
+					{	
+						$line .= '<br>URLs not found in imported_data_parsed: ' . $ar[3];
+					}	
+					else
+					{	
+						$line .= '<br>URLs not found in research_data: ' . $ar[3];	
+					}
 					$line .= '<br># Matches Updated: ' . $ar[4];
 					$line .= '<br># Matches Unchanged: ' . $ar[5];
+					if($ar[6] == 'manufacturer')
 					$json['manufacturer'] = TRUE;
 				} else {
 					//                    $line .= 'Created-'.strtotime($row->created).'; Modified-'.strtotime($row->modified)

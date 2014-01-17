@@ -2861,7 +2861,7 @@ echo "j  = ".$j;
 	    $videos = 0;
 	    if(isset($data[2])) $images = $data[2]; 
 	    if(isset($data[3])) $videos = $data[3]; 
-	    $updated = FALSE;
+	    $updated = 0;
 	    if(strlen($oURL) > 0 && (strlen($mURL) > 0))
 	    {
 		    $this->db->select('i.imported_data_id,i.model,i.revision,url.value as url,img.value as img,vid.value as vid');
@@ -2874,6 +2874,7 @@ echo "j  = ".$j;
 		    $query = $this->db->get();
 		    if($query->num_rows > 0)
 		    {
+			$updated = 1;
 			$result = $query->row_array();
 			$upd['revision'] = $result['revision']+1;
 			if(!$result['url'])
@@ -2890,7 +2891,7 @@ echo "j  = ".$j;
 				$ins['key'] = 'manufacturer_videos';
 				$ins['value'] = $videos;
 				$this->db->insert($this->tables['imported_data_parsed'],$ins);
-				$updated = TRUE;
+				$updated = 2;
 			} else
 			{
 				if($mURL != $result['url'])
@@ -2899,7 +2900,7 @@ echo "j  = ".$j;
 					$this->db->where('key','manufacturer_url');
 					$upd['value'] = $mURL;
 					$this->db->update($this->tables['imported_data_parsed'],$upd);
-					$updated = TRUE;
+					$updated = 2;
 				}
 				if($images != $result['img'])
 				{	
@@ -2907,7 +2908,7 @@ echo "j  = ".$j;
 					$this->db->where('key','manufacturer_images');
 					$upd['value'] = $images;
 					$this->db->update($this->tables['imported_data_parsed'],$upd);
-					$updated = TRUE;
+					$updated = 2;
 				}
 				if($videos != $result['vid'])
 				{	
@@ -2915,10 +2916,10 @@ echo "j  = ".$j;
 					$this->db->where('key','manufacturer_videos');
 					$upd['value'] = $videos;
 					$this->db->update($this->tables['imported_data_parsed'],$upd);
-					$updated = TRUE;
+					$updated = 2;
 				}
 			}
-			if($updated)
+			if($updated > 1)
 			{
 				$this->db->where('imported_data_id',$result['imported_data_id']);
 				$this->db->where('key','url');

@@ -126,62 +126,26 @@ class Research_data_model extends CI_Model {
 
    }
   //Max
-    function insert($batch_id, $url, $product_name, $keyword1, $keyword2, $keyword3, $meta_name,
-                    $meta_description, $meta_keywords, $short_description, $short_description_wc, $long_description, $long_description_wc, $revision = 1)
+    function insert($data)
     {
         $CI =& get_instance();
-        $this->batch_id = $batch_id;
-        $this->user_id = $CI->ion_auth->get_user_id();
-        $this->url = $url;
-        $this->product_name = $product_name;
-        $this->keyword1 = $keyword1;
-        $this->keyword2 = $keyword2;
-        $this->keyword3 = $keyword3;
-        $this->meta_name = $meta_name;
-        $this->meta_description = $meta_description ;
-        $this->meta_keywords = $meta_keywords;
-        $this->short_description = $short_description;
-        $this->short_description_wc = $short_description_wc;
-        $this->long_description = $long_description;
-        $this->long_description_wc = $long_description_wc;
-        $this->revision = $revision;
-        $this->priority = 50;
-        $this->status = 'created';
-        $this->created = date('Y-m-d h:i:s');
-        $this->modified = date('Y-m-d h:i:s');
-        $this->db->insert($this->tables['research_data'], $this);
+	$data['user_id'] = $CI->ion_auth->get_user_id();
+        $data['priority'] = 50;
+        $data['status'] = 'created';
+        $data['created'] = date('Y-m-d h:i:s');
+        $data['modified'] = date('Y-m-d h:i:s');
+        $this->db->insert($this->tables['research_data'], $data);
         return $this->db->insert_id();
     }
 
-   function update($id, $batch_id, $url, $product_name, $short_description, $short_description_wc, $long_description, $long_description_wc, $keyword1='', $keyword2='', $keyword3='', $meta_name='',
-                    $meta_description='', $meta_keywords='', $revision='')
+   function update($id, $data)
     {
         $CI =& get_instance();
-        $this->batch_id = $batch_id;
-        $this->user_id = $CI->ion_auth->get_user_id();
-        $this->url = $url;
-        $this->product_name = $product_name;
-        $this->keyword1 = $keyword1;
-        $this->keyword2 = $keyword2;
-        $this->keyword3 = $keyword3;
-        $this->meta_name = $meta_name;
-        $this->meta_description = $meta_description;
-        $this->meta_keywords = $meta_keywords;
-        $this->short_description = $short_description;
-        $this->short_description_wc = $short_description_wc;
-        $this->long_description = $long_description;
-        $this->long_description_wc = $long_description_wc;
-        $this->priority = 50;
-        $this->status = 'edited';
-        $this->revision = $revision;
-        $this->modified = date('Y-m-d h:i:s');
-
-        unset($this->created);
-
-        $result = $this->db->update($this->tables['research_data'],
-            $this,
-            array('id' => $id));
-
+	$data['user_id'] = $CI->ion_auth->get_user_id();
+        $data['priority'] = 50;
+        $data['status'] = 'edited';
+        $data['modified'] = date('Y-m-d h:i:s');
+        $result = $this->db->update($this->tables['research_data'],$data,array('id' => $id));
         return $result;
     }
 
@@ -336,8 +300,14 @@ class Research_data_model extends CI_Model {
     }
 
     function getLastRevision(){
-        $query = $this->db->select('revision')->limit(1)->order_by("id", "desc")->get($this->tables['research_data']);
-        return $query->result();
+	$rev = 0;    
+        $query = $this->db->select('MIN(revision) as rev')->get($this->tables['research_data']);
+	if($query->num_rows > 0)
+	{	
+		$res = $query->row_array();
+		$rev = $res['rev'];
+	}	
+	return $rev;
     }
 
     function getAllByBatchId($batch_id){
@@ -387,11 +357,12 @@ class Research_data_model extends CI_Model {
     }
 
     public function checkItemUrl($batch_id, $url){
-        $query = $this->db->where('url', $url)->where('batch_id', $batch_id)
-            ->limit(1)
-            ->get($this->tables['research_data']);
-
-        return $query->result();
+        $query = $this->db->where('url', $url)->where('batch_id', $batch_id)->get($this->tables['research_data']);
+	if($query->num_rows > 0)
+	{
+		return TRUE;
+	}
+        return FALSE;
     }
 
     function do_stats($batch_id)

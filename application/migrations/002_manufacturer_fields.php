@@ -7,7 +7,7 @@ class Migration_Manufacturer_fields extends CI_Migration
 
 	public function up()
 	{
-		$fields = array('manufacturer_info' => array('type' => 'TEXT','null'=>TRUEc));
+		$fields = array('manufacturer_info' => array('type' => 'TEXT','null'=>TRUE));
 		$this->dbforge->add_column('statistics_new', $fields);
 	}
 

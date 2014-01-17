@@ -297,7 +297,7 @@ class Statistics_new_model extends CI_Model {
 		//	WHERE cl.imported_data_id = 20
                
         $query = $this->db
-            ->select('research_data_id, batch_id')
+            ->select('research_data_id, batch_id, rd.category_id')
             ->from('crawler_list as cl')
             ->join('research_data_to_crawler_list as rdc', 'cl.id = rdc.crawler_list_id')
             ->join('research_data as rd', 'rdc.research_data_id = rd.id')

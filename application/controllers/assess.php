@@ -4856,7 +4856,7 @@ class Assess extends MY_Controller {
                 } else {
                     $snap_data[0]['Features'][] = 0;
                 }
-               // $arr = $this->get_trendline_data($data_row->imported_data_id, $graphBuild); 
+                //$arr = $this->get_trendline_data($data_row->imported_data_id, $graphBuild); 
                 $arr = $this->statistics_new_model->getStatsData_trendlines($data_row->imported_data_id, $graphBuild); 
                 $updated_short_description_wc = array();
                 $updated_long_description_wc = array();
