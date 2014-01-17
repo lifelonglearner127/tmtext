@@ -246,6 +246,176 @@ class Assess extends MY_Controller {
 		return $r;
 	}
 	
+	public function getComparisonData($build_assess_params, $data)
+	{
+		$params = new stdClass();
+		$params->batch_id = $data['batch_id'];
+		$params->txt_filter = $data['txt_filter'];
+		$params->date_from = $build_assess_params->date_from;
+		$params->date_to = $build_assess_params->date_to;
+		$batch2 = $this->input->get('batch2') && $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
+		$params->displayCount = $this->input->get('displayCount', false);
+		if ($batch2 === '') {
+			$params->iDisplayLength = $this->input->get('iDisplayLength');
+			$params->iDisplayStart = $this->input->get('iDisplayStart');
+		}
+		
+		$results = $this->get_data_for_assess($params);
+
+		$cmp = array();  
+		$batch2_items_count = 0;
+
+		if ($batch2 && $batch2 != 'all') 
+		{
+			$this->load->model('batches_model');
+			$build_assess_params->max_similar_item_count = 1;
+			$build_assess_params->display_competitor_columns = true;
+
+			$customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
+
+			foreach ($results as $val) {
+				$similar_items_data = array();
+				if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0) {
+
+					$similar_items = unserialize($val->similar_products_competitors);
+
+					if (count($similar_items) > 1) {
+						foreach ($similar_items as $key => $item) {
+							$tsp = '';
+
+							if (!empty($customer_name) && !empty($item['customer']) && $this->statistics_new_model->if_url_in_batch($item['imported_data_id'], $batch2)) {
+								$parsed_anchors_unserialize_val = '';
+								$parsed_meta_unserialize_val = '';
+								$parsed_meta_unserialize_val_c = '';                                    
+								$parsed_meta_keywords_unserialize_val = '';
+								$parsed_review_count_unserialize_val_count = '';                                                                        
+								$title_seo_prases = array();
+																																		  
+								$parsed_column_features_unserialize_val_count = 0;
+								$column_external_content = '';
+								$cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
+								
+								$parsed_anchors_unserialize = unserialize($cmpare->Anchors);
+
+								$parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+
+								if ($cmpare->title_keywords != '' && $cmpare->title_keywords != 'None') {
+									$title_seo_prases = unserialize($cmpare->title_keywords);
+								}
+								if (!empty($title_seo_prases)) {
+
+									$str_title_long_seo = '<table class="table_keywords_long">';
+									foreach ($title_seo_prases as $pras) {
+										$str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td class = "phr-density">  ' . $pras['prc']
+												. '%</td><td style="display:none;" class = "phr-frequency">  ' . $pras['frq'] . '</td></tr>';
+									}
+									$tsp = $str_title_long_seo . '</table>';
+								}
+								$HTags = unserialize($cmpare->HTags);
+								
+								$buildedH1Field = AssessHelper::buildHField($HTags, 'h1');
+								$buildedH2Field = AssessHelper::buildHField($HTags, 'h2');
+																									   
+								$parsed_attributes_unserialize_val = isset($parsed_attributes_unserialize['item_id']) ? $parsed_attributes_unserialize['item_id'] : '';
+								$parsed_model_unserialize_val = isset($parsed_attributes_unserialize['model']) ? $parsed_attributes_unserialize['model'] : '';
+								$parsed_loaded_in_seconds_unserialize_val = isset($parsed_attributes_unserialize['loaded_in_seconds']) ? $parsed_attributes_unserialize['loaded_in_seconds'] : '';
+								$parsed_column_reviews_unserialize_val = isset($parsed_attributes_unserialize['review_count']) ? $parsed_attributes_unserialize['review_count']: 0;
+								$parsed_average_review_unserialize_val_count = isset($parsed_attributes_unserialize['average_review']) ? $parsed_attributes_unserialize['average_review'] : '';
+								$parsed_column_features_unserialize_val_count = isset($parsed_attributes_unserialize['feature_count']) ? $parsed_attributes_unserialize['feature_count'] : 0;
+								$images_cmp = isset($parsed_attributes_unserialize['product_images']) ? $parsed_attributes_unserialize['product_images'] : 'none';				
+								$video_count = isset($parsed_attributes_unserialize['video_count']) ? $parsed_attributes_unserialize['video_count'] : 'none';                      
+								$title_pa = isset($parsed_attributes_unserialize['title']) ? $parsed_attributes_unserialize['title'] : 'none';                                    
+								$links_count = isset($parsed_anchors_unserialize['quantity']) ? $parsed_anchors_unserialize['quantity'] : 'none';
+									
+								if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
+									$column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'], $parsed_attributes_unserialize['webcollage']);										                                   
+
+								$parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
+
+								if (isset($parsed_meta_unserialize['description'])) {
+									$parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
+									$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+									if ($parsed_meta_unserialize_val_c != 1)
+										$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+								}
+								else if (isset($parsed_meta_unserialize['Description'])) {
+									$parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
+									$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+									if ($parsed_meta_unserialize_val_c != 1)
+										$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+								}
+
+								if (isset($parsed_meta_unserialize['keywords'])) {
+									$Meta_Keywords_un = '<table class="table_keywords_long">';
+									$cnt_meta = explode(',', $parsed_meta_unserialize['keywords']);
+									$cnt_meta_count = count($cnt_meta);
+									$_count_meta = 0;
+									foreach ($cnt_meta as $cnt_m) {
+										$cnt_m = trim($cnt_m);
+										if (!$cnt_m) {
+											continue;
+										}
+										if ($cmpare->Short_Description || $cmpare->Long_Description) {
+											$_count_meta = $this->keywords_appearence($cmpare->Long_Description . $cmpare->Short_Description, $cnt_m);
+											$_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . '%';
+											$Meta_Keywords_un .= '<tr><td>' . $cnt_m . '</td><td style="width: 25px;padding-right: 0px;">' . $_count_meta_num . '</td></tr>';
+										}
+									}
+									$Meta_Keywords_un .= '</table>';
+									$parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+								}
+
+								$val->snap1 = $cmpare->snap;
+								$val->imp_data_id1 = $item['imported_data_id'];
+								$val->product_name1 = $cmpare->product_name;
+								$val->item_id1 = $parsed_attributes_unserialize_val;
+								$val->model1 = $parsed_model_unserialize_val;
+								$val->url1 = $cmpare->url;
+								$val->Page_Load_Time1 = $parsed_loaded_in_seconds_unserialize_val;
+								$val->Short_Description1 = $cmpare->Short_Description;
+								$val->short_description_wc1 = $cmpare->short_description_wc;
+								$val->Meta_Keywords1 = $parsed_meta_keywords_unserialize_val;
+								$val->Long_Description1 = $cmpare->Long_Description;
+								$val->long_description_wc1 = $cmpare->long_description_wc;
+								$val->Meta_Description1 = $parsed_meta_unserialize_val;
+								$val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
+								$val->column_external_content1 = $column_external_content;
+								$val->H1_Tags1 = $buildedH1Field['value'];
+								$val->H1_Tags_Count1 = $buildedH1Field['count'];
+								$val->H2_Tags1 = $buildedH2Field['value'];
+								$val->H2_Tags_Count1 = $buildedH2Field['count'];
+								$val->column_reviews1 = $parsed_column_reviews_unserialize_val;
+								$val->average_review1 = $parsed_average_review_unserialize_val_count;
+								$val->column_features1 = $parsed_column_features_unserialize_val_count;
+								$val->title_seo_phrases1 = $tsp !== '' ? $tsp : 'None';
+								$val->images_cmp1 = $images_cmp;
+								$val->video_count1 = $video_count;
+								$val->title_pa1 = $title_pa;
+								$val->links_count1 = $title_pa;
+								$val->total_description_wc1 = $val->short_description_wc1+$val->long_description_wc1;
+								$cmpare->imported_data_id = $item['imported_data_id'];
+								$batch2_items_count++;
+
+								$similar_items_data[] = $cmpare;
+								$val->similar_items = $similar_items_data;
+
+								$cmp[] = $val;
+								break;
+							}
+						}
+					}
+				}
+			}
+			$results = $cmp;
+		}   
+
+		$build_assess_params->batch2_items_count = $batch2_items_count;
+		
+		return array(
+			'results' => $results
+		);
+	}
+	
     public function get_assess_info() {
 
         $st_time = microtime(TRUE);      
@@ -263,14 +433,14 @@ class Assess extends MY_Controller {
             $this->output->set_content_type('application/json')
                     ->set_output(json_encode($output));			
         } else {			 
-			$batch2_items_count = 0;
+			
 			$columns = AssessHelper::columns();
+			
 			if (!($txt_filter = $this->input->get('search_text'))) 
 				if (!($txt_filter = $this->input->get('sSearch'))) 
 					$txt_filter = '';
-			
-			
-           $build_assess_params = $this->buildObject($this, array(
+						
+			$build_assess_params = $this->buildObject($this, array(
 				'display_length' => array( 'default' => 5, 'callback' => function($value, $instance) {					
 					return (int)$instance->input->get('iDisplayLength', true);
 				}),
@@ -318,267 +488,12 @@ class Assess extends MY_Controller {
 				}),
 			));		
 			
-            $params = new stdClass();
-            $params->batch_id = $batch_id;
-            $params->txt_filter = $txt_filter;
-            $params->date_from = $build_assess_params->date_from;
-            $params->date_to = $build_assess_params->date_to;
-            $batch2 = $this->input->get('batch2') && $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
-			$params->displayCount = $this->input->get('displayCount', false);
-            if ($batch2 === '') {
-                $params->iDisplayLength = $this->input->get('iDisplayLength');
-                $params->iDisplayStart = $this->input->get('iDisplayStart');
-            }
-			
-            $results = $this->get_data_for_assess($params);
-	
-            $cmp = array();  
-
-            if ($batch2 && $batch2 != 'all') {
-                $this->load->model('batches_model');
-                $build_assess_params->max_similar_item_count = 1;
-                $build_assess_params->display_competitor_columns = true;
-
-                $customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
-
-                foreach ($results as $val) {
-                    $similar_items_data = array();
-                    if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0) {
-
-                        $similar_items = unserialize($val->similar_products_competitors);
-
-                        if (count($similar_items) > 1) {
-                            foreach ($similar_items as $key => $item) {
-                                $tsp = '';
-
-                                if (!empty($customer_name) && !empty($item['customer']) && $this->statistics_new_model->if_url_in_batch($item['imported_data_id'], $batch2)) {
-                                    $parsed_attributes_unserialize_val = '';
-                                    $parsed_anchors_unserialize_val = '';
-                                    $parsed_meta_unserialize_val = '';
-                                    $parsed_meta_unserialize_val_c = '';
-                                    $parsed_model_unserialize_val = '';
-                                    $parsed_meta_keywords_unserialize_val = '';
-                                    $parsed_review_count_unserialize_val_count = '';
-                                    $parsed_loaded_in_seconds_unserialize_val = '';
-                                    $parsed_H1_Tags_unserialize_val = '';
-                                    $parsed_H1_Tags_unserialize_val_count = '';
-                                    $parsed_H2_Tags_unserialize_val = '';
-                                    $parsed_column_reviews_unserialize_val = 0;
-                                    $parsed_H2_Tags_unserialize_val_count = '';
-                                    $parsed_average_review_unserialize_val_count = '';
-                                    $title_seo_prases = array();
-                                    $images_cmp = 'none';
-                                    $video_count = 'none';
-                                    $title_pa = 'none';
-                                    $links_count = 'none';
-                                    $parsed_column_features_unserialize_val_count = 0;
-                                    $column_external_content = '';
-                                    $cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
-
-                                    
-                                    $parsed_anchors_unserialize = unserialize($cmpare->Anchors);
-
-                                    $parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
-
-                                    if ($cmpare->title_keywords != '' && $cmpare->title_keywords != 'None') {
-                                        $title_seo_prases = unserialize($cmpare->title_keywords);
-                                    }
-                                    if (!empty($title_seo_prases)) {
-
-                                        $str_title_long_seo = '<table class="table_keywords_long">';
-                                        foreach ($title_seo_prases as $pras) {
-                                            $str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td class = "phr-density">  ' . $pras['prc']
-                                                    . '%</td><td style="display:none;" class = "phr-frequency">  ' . $pras['frq'] . '</td></tr>';
-                                        }
-                                        $tsp = $str_title_long_seo . '</table>';
-                                    }
-                                    $HTags = unserialize($cmpare->HTags);
-
-                                    if (isset($HTags['h1']) && $HTags['h1'] && $HTags['h1'] != '') {
-                                        $H1 = $HTags['h1'];
-                                        if (is_array($H1)) {
-                                            $str_1 = '<table  class="table_keywords_long">';
-                                            $str_1_Count = '<table  class="table_keywords_long">';
-                                            foreach ($H1 as $h1) {
-                                                $str_1.= '<tr><td>' . $h1 . '</td></tr>';
-                                                $str_1_Count.='<tr><td>' . strlen($h1) . '</td></tr>';
-                                            }
-                                            $str_1 .= '</table>';
-                                            $str_1_Count .= '</table>';
-                                            $parsed_H1_Tags_unserialize_val = $str_1;
-                                            $parsed_H1_Tags_unserialize_val_count = $str_1_Count;
-                                        } else {
-                                            $H1_Count = strlen($HTags['h1']);
-                                            $parsed_H1_Tags_unserialize_val = '<table  class="table_keywords_long"><tr><td>' . $H1 . '</td></tr></table>';
-                                            ;
-                                            $parsed_H1_Tags_unserialize_val_count = '<table  class="table_keywords_long"><tr><td>' . $H1_Count . '</td></tr></table>';
-                                            ;
-                                        }
-                                    }
-                                    if (isset($HTags['h2']) && $HTags['h2'] && $HTags['h2'] != '') {
-                                        $H2 = $HTags['h2'];
-                                        if (is_array($H2)) {
-                                            $str_2 = '<table  class="table_keywords_long">';
-                                            $str_2_Count = '<table  class="table_keywords_long">';
-                                            foreach ($H2 as $h2) {
-                                                $str_2.= '<tr><td>' . $h2 . '</td></tr>';
-                                                $str_2_Count.='<tr><td>' . strlen($h2) . '</td></tr>';
-                                            }
-                                            $str_2 .= '</table>';
-                                            $str_2_Count .='</table>';
-                                            $parsed_H2_Tags_unserialize_val = $str_2;
-                                            $parsed_H2_Tags_unserialize_val_count = $str_2_Count;
-                                        } else {
-                                            $H1_Count = strlen($HTags['h2']);
-                                            $parsed_H2_Tags_unserialize_val = '<table  class="table_keywords_long"><tr><td>' . $H2 . '</td></tr></table>';
-                                            ;
-                                            $parsed_H2_Tags_unserialize_val_count = '<table  class="table_keywords_long"><tr><td>' . $H2_Count . '</td></tr></table>';
-                                            ;
-                                        }
-                                    }
-                                    if (isset($parsed_attributes_unserialize['item_id']))
-                                        $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
-
-                                    if (isset($parsed_attributes_unserialize['model']))
-                                        $parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
-
-                                    if (isset($parsed_attributes_unserialize['loaded_in_seconds']))
-                                        $parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
-//                       
-                                    if (isset($parsed_attributes_unserialize['review_count']))
-                                        $parsed_column_reviews_unserialize_val = $parsed_attributes_unserialize['review_count'];
-
-                                    if (isset($parsed_attributes_unserialize['average_review']))
-                                        $parsed_average_review_unserialize_val_count = $parsed_attributes_unserialize['average_review'];
-
-                                    if (isset($parsed_attributes_unserialize['feature_count']))
-                                        $parsed_column_features_unserialize_val_count = $parsed_attributes_unserialize['feature_count'];
-
-                                    if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
-                                        $column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'], $parsed_attributes_unserialize['webcollage']);
-                                    if (isset($parsed_attributes_unserialize['product_images']))
-                                        $images_cmp = $parsed_attributes_unserialize['product_images'];
-                                    if (isset($parsed_attributes_unserialize['video_count']))
-                                        $video_count = $parsed_attributes_unserialize['video_count'];
-                                    if (isset($parsed_attributes_unserialize['title']))
-                                        $title_pa = $parsed_attributes_unserialize['title'];
-
-                                    if (isset($parsed_anchors_unserialize['quantity']))
-                                        $links_count = $parsed_anchors_unserialize['quantity'];
-
-                                    $parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
-
-                                    if (isset($parsed_meta_unserialize['description'])) {
-                                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
-                                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
-                                        if ($parsed_meta_unserialize_val_c != 1)
-                                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
-                                    }
-                                    else if (isset($parsed_meta_unserialize['Description'])) {
-                                        $parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
-                                        $parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
-                                        if ($parsed_meta_unserialize_val_c != 1)
-                                            $parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
-                                    }
-
-                                    if (isset($parsed_meta_unserialize['keywords'])) {
-                                        $Meta_Keywords_un = '<table class="table_keywords_long">';
-                                        $cnt_meta = explode(',', $parsed_meta_unserialize['keywords']);
-                                        $cnt_meta_count = count($cnt_meta);
-                                        $_count_meta = 0;
-                                        foreach ($cnt_meta as $cnt_m) {
-                                            $cnt_m = trim($cnt_m);
-                                            if (!$cnt_m) {
-                                                continue;
-                                            }
-                                            if ($cmpare->Short_Description || $cmpare->Long_Description) {
-                                                $_count_meta = $this->keywords_appearence($cmpare->Long_Description . $cmpare->Short_Description, $cnt_m);
-                                                $_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . '%';
-                                                $Meta_Keywords_un .= '<tr><td>' . $cnt_m . '</td><td style="width: 25px;padding-right: 0px;">' . $_count_meta_num . '</td></tr>';
-                                            }
-                                        }
-                                        $Meta_Keywords_un .= '</table>';
-                                        $parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
-                                    }
-
-                                    $val->snap1 = $cmpare->snap;
-                                    $val->imp_data_id1 = $item['imported_data_id'];
-                                    $val->product_name1 = $cmpare->product_name;
-                                    $val->item_id1 = $parsed_attributes_unserialize_val;
-                                    $val->model1 = $parsed_model_unserialize_val;
-                                    $val->url1 = $cmpare->url;
-                                    $val->Page_Load_Time1 = $parsed_loaded_in_seconds_unserialize_val;
-                                    $val->Short_Description1 = $cmpare->Short_Description;
-                                    $val->short_description_wc1 = $cmpare->short_description_wc;
-                                    $val->Meta_Keywords1 = $parsed_meta_keywords_unserialize_val;
-                                    $val->Long_Description1 = $cmpare->Long_Description;
-                                    $val->long_description_wc1 = $cmpare->long_description_wc;
-                                    $val->Meta_Description1 = $parsed_meta_unserialize_val;
-                                    $val->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
-                                    $val->column_external_content1 = $column_external_content;
-                                    $val->H1_Tags1 = $parsed_H1_Tags_unserialize_val;
-                                    $val->H1_Tags_Count1 = $parsed_H1_Tags_unserialize_val_count;
-                                    $val->H2_Tags1 = $parsed_H2_Tags_unserialize_val;
-                                    $val->H2_Tags_Count1 = $parsed_H2_Tags_unserialize_val_count;
-                                    $val->column_reviews1 = $parsed_column_reviews_unserialize_val;
-                                    $val->average_review1 = $parsed_average_review_unserialize_val_count;
-                                    $val->column_features1 = $parsed_column_features_unserialize_val_count;
-                                    $val->title_seo_phrases1 = $tsp !== '' ? $tsp : 'None';
-                                    $val->images_cmp1 = $images_cmp;
-                                    $val->video_count1 = $video_count;
-                                    $val->title_pa1 = $title_pa;
-                                    $val->links_count1 = $title_pa;
-				    $val->total_description_wc1 = $val->short_description_wc1+$val->long_description_wc1;
-                                    $cmpare->imported_data_id = $item['imported_data_id'];
-                                    $batch2_items_count++;
-
-                                    $similar_items_data[] = $cmpare;
-                                    $val->similar_items = $similar_items_data;
-
-                                    $cmp[] = $val;
-                                    break;
-                                }
-                            }
-
-
-                            //$cmp[] = $val;
-                        }
-                    }
-                }
-                $results = $cmp;
-            }
-
-            if ($batch2 == 'all') {
-                $max_similar_item_count = 1;
-                $this->load->model('batches_model');
-                $customer_name = $this->batches_model->getCustomerUrlByBatch($batch_id);
-                $cmp = array();
-                foreach ($results as $key1 => $val) {
-                    $similar_items = unserialize($val->similar_products_competitors);
-                    $similar_items_data = array();
-                    if (count($similar_items) > 1) {
-                        foreach ($similar_items as $key => $item) {
-                            if (substr_count(strtolower($customer_name), strtolower($item['customer'])) == 0) {
-                                $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
-
-                                $similar_items_data[] = $cmpare;
-                            }
-                        }
-                        $sim_item_count = count($similar_items_data);
-                        if ($sim_item_count > $max_similar_item_count) {
-                            $max_similar_item_count = $sim_item_count;
-                        }
-                        $val->similar_items = $similar_items_data;
-                        $results[$key1] = $val;
-                    } else {
-                        unset($results[$key1]);
-                    }
-                }
-                $build_assess_params->max_similar_item_count = $max_similar_item_count;
-            }
-
-            $build_assess_params->batch2_items_count = $batch2_items_count;
-            $output = $this->build_asses_table($results, $build_assess_params, $batch_id, $columns);
+			$comparison_data = $this->getComparisonData($build_assess_params, array(
+				'batch_id' => $batch_id,
+				'txt_filter' => $txt_filter,				
+			));
+           
+            $output = $this->build_asses_table($comparison_data['results'], $build_assess_params, $batch_id, $columns);
 
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
@@ -1258,42 +1173,7 @@ class Assess extends MY_Controller {
             $results = $cmp;
         }
 
-        if ($cmp_selected == 'all') {
-            $max_similar_item_count = 0;
-            $this->load->model('batches_model');
-            $customer_name = $this->batches_model->getCustomerUrlByBatch($batch_id);
-
-            foreach ($results as $key1 => $val) {
-                $similar_items = unserialize($val->similar_products_competitors);
-                $similar_items_data = array();
-                if (count($similar_items) > 1) {
-                    foreach ($similar_items as $key => $item) {
-                        if (substr_count(strtolower($customer_name), strtolower($item['customer'])) == 0) {
-//                                $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
-//                                $data = $this->export_assess_cmp($similar_items[$key]['imported_data_id'],$selected_columns);
-//                                echo '<pre>';
-//                                print_r($data); exit();
-//                                $similar_items_data[] = $cmpare;
-//                              $similar_items_data[] = $similar_items[$key]['imported_data_id'];
-//                            
-                            $cmpare = $this->statistics_new_model->get_compare_item($similar_items[$key]['imported_data_id']);
-
-                            $similar_items_data[] = $cmpare;
-                        }
-                    }
-                    $sim_item_count = count($similar_items_data);
-                    if ($sim_item_count > $max_similar_item_count) {
-                        $max_similar_item_count = $sim_item_count;
-                    }
-                    $val->similar_items = $similar_items_data;
-
-                    $results[$key1] = $val;
-                } else {
-                    unset($results[$key1]);
-                }
-            }
-        }
-		
+        		
         $res_array = array();
         $H1_tag_count = 0;
         $H2_tag_count = 0;
