@@ -39,18 +39,13 @@ class Product_category_model extends CI_Model
 		$result = 0;
 		if (isset($data['category_name']) && isset($data['category_code']))
 		{
-			$this->db->select('id,category_name');
+			$this->db->select('id');
 			$this->db->where('category_code',$data['category_code']);
 			$this->db->where('category_name',$data['category_name']);
 			$query = $this->db->get($this->table);
 			if($query->num_rows > 0)
 			{
 				$row = $query->row_array();
-				if($row['category_name'] != $row['category_name'])
-				{
-					$this->db->where('id',$row['id']);
-					$this->db->update($this->table,$data);
-				}	
 				$result = $row['id'];
 			} else
 			{
