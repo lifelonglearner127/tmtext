@@ -5004,11 +5004,10 @@ class Assess extends MY_Controller {
 	}
         
        public function deleteSecondaryMatch(){
-          
-            if(isset($_POST['impdataid']) && $_POST['impdataid_cmp'] && $_POST['impdataid_cmp'] != ''){
+            if(isset($_POST['impdataid']) && $_POST['cmp_impdataid'] && $_POST['cmp_impdataid'] != ''){
                 $this->load->model('statistics_new_model');
-                $this->update_similar_products_competitors->similar_products_competitors($_POST['impdataid'], $_POST['impdataid_cmp']);
-                $this->update_similar_products_competitors->similar_products_competitors($_POST['impdataid_cmp'],$_POST['impdataid']);
+                $this->statistics_new_model->update_similar_products_competitors($_POST['impdataid'], $_POST['cmp_impdataid']);
+                $this->statistics_new_model->update_similar_products_competitors($_POST['cmp_impdataid'],$_POST['impdataid']);
                 return true;
             }
             return false;
