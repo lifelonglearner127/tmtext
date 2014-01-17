@@ -2954,7 +2954,7 @@ class Assess extends MY_Controller {
 	{
 		foreach($catList as $cl)
 		{
-			$prodCats[$cl['id']] = $cl['category_name'];
+			$prodCats[$cl['id']] = $cl['category_name'].' ('.$cl['category_code'].')';
 		}	
 	}	
         
@@ -4160,7 +4160,8 @@ class Assess extends MY_Controller {
 			'murl' => $data_row->murl,
 			'mimg' =>  $data_row->mimg,
 			'mvid' => $data_row->mvid,
-			'total_description_wc' => $data_row->total_description_wc
+			'total_description_wc' => $data_row->total_description_wc,
+			'prodcat' => $data_row->prodcat
                     );
 
                     if ($build_assess_params->max_similar_item_count > 0) {

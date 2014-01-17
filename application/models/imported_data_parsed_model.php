@@ -1192,7 +1192,7 @@ class Imported_data_parsed_model extends CI_Model {
             $this->db->join('crawler_list as cl','cl.imported_data_id = p.imported_data_id');
             $this->db->join('research_data_to_crawler_list as rdcl','cl.id = rdcl.crawler_list_id');
             $this->db->join('research_data as rd','rd.id = rdcl.research_data_id');
-            $this->db->where('rd.batch_id',$batch_id);
+            $this->db->where('rd.batch_id',$batch_id); 
         }
 	$this->db->where("(p.key = 'URL') AND (p.revision != sn.revision OR sn.revision IS NULL)",NULL,FALSE);
 	$this->db->group_by('imported_data_id');

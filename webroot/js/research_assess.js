@@ -440,8 +440,9 @@ $(function() {
 		
 	function readAssessData() {
 		var research_batch = $('.research_assess_batches_select')
+		  , research_category = $('#prodcats')
 		  , research_batch_competitor = $('#research_assess_compare_batches_batch')
-          , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				  
+          , storage_key = research_batch.val()+'_'+research_category.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				  
 		  , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null;	
 		
 		//cleaning filters between local storage batches (look below)
@@ -486,12 +487,13 @@ $(function() {
 	function pullRestItems()
 	{	
 		var research_batch = $('.research_assess_batches_select')
+		  , research_category = $('#prodcats')
 		  , research_batch_competitor = $('#research_assess_compare_batches_batch')
-          , storage_key = research_batch.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				  
+          , storage_key = research_batch.val()+'_'+research_category.val() + '_' + (parseInt(research_batch_competitor.val() ? research_batch_competitor.val() : 0) + 0)				  
           , aoData = buildTableParams([])
           , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null
 		  , needToBeReloaded = false;		  
-			
+		console.log(storage_key);	
 		$.getJSON(readAssessUrl, aoData, function(json) {
 			if(!json)
 				return;	
@@ -3270,7 +3272,7 @@ function prevSibilfunc(curentSibil){
 	$('.assess_report_download_panel').hide();
 	function updateCategories(selectedBatchId)
 	{
-		var opts = '<option value="">Select category</option>';
+		var opts = '<option value="0">Select category</option>';
 		if(typeof(selectedBatchId) == 'undefined')
 		{
 			$('#prodcats').html(opts);

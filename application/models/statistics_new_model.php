@@ -632,7 +632,7 @@ class Statistics_new_model extends CI_Model {
         }
 	if(isset($params->category_id) && intval($params->category_id) > 0)
 	{
-		$category = ' AND category_id = '.$params->category_id;
+		$category = ' AND s.category_id = '.$params->category_id;
 	}	
 		
         $limit = isset($params->iDisplayLength) && $params->iDisplayLength != 0 ? "LIMIT $params->iDisplayStart, $params->iDisplayLength" : '';
