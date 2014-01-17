@@ -3272,7 +3272,7 @@ function prevSibilfunc(curentSibil){
 	$('.assess_report_download_panel').hide();
 	function updateCategories(selectedBatchId)
 	{
-		var opts = '<option value="0">Select category</option>';
+		var opts = '<option value="0">All categories</option>';
 		if(typeof(selectedBatchId) == 'undefined')
 		{
 			$('#prodcats').html(opts);
