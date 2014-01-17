@@ -97,20 +97,21 @@ class Product_category_model extends CI_Model
 		return $updated;
 	}
 
-	function getCatsByBatchId($batchId = 0, $order = array('category_name'=>'asc'))
+	function getCatsByBatchId($batchId = 0)
 	{
 		$result = array();
 		$this->db->select('c.*');
+		$this->db->distinct();
 		$this->db->from($this->table.' c');
-		$this->db->join($this->tableResearch.' r','r.category_id = c.id AND batch_id ='.$batchId);
-		$this->db->order_by($order);
+		$this->db->join($this->tableResearch.' r','r.category_id = c.id AND r.batch_id ='.$batchId);
+		$this->db->order_by('category_name','asc');
 		$query = $this->db->get();
 		if($query->num_rows > 0)
 		{
 			$result = $query->result_array();
 		}
 		$query->free_result();
-		return $result();
+		return $result;
 	}
 
 }

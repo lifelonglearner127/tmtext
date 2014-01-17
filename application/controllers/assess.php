@@ -33,6 +33,7 @@ class Assess extends MY_Controller {
 			'save_summary_filters_order' => true,
             'deleteSecondaryMatch' => true,
             'getColumns' => true,
+            'getCategoriesByBatch' => true,
         ));
     }
 
@@ -251,6 +252,7 @@ class Assess extends MY_Controller {
 		$params = new stdClass();
 		$params->batch_id = $data['batch_id'];
 		$params->txt_filter = $data['txt_filter'];
+		$params->category_id = $data['category_id'];
 		$params->date_from = $build_assess_params->date_from;
 		$params->date_to = $build_assess_params->date_to;
 		$batch2 = $this->input->get('batch2') && $this->input->get('batch2') == 'undefined' ? '' : $this->input->get('batch2');
@@ -259,7 +261,7 @@ class Assess extends MY_Controller {
 			$params->iDisplayLength = $this->input->get('iDisplayLength');
 			$params->iDisplayStart = $this->input->get('iDisplayStart');
 		}
-		
+			
 		$results = $this->get_data_for_assess($params);
 
 		$cmp = array();  
@@ -421,6 +423,7 @@ class Assess extends MY_Controller {
         $st_time = microtime(TRUE);      
 		
         $batch_id = $this->input->get('batch_id');
+        $category_id = $this->input->get('prodcat_id');
         if ($batch_id == 0) {
             $output = array(
                 'sEcho' => 1,
@@ -490,10 +493,11 @@ class Assess extends MY_Controller {
 			
 			$comparison_data = $this->getComparisonData($build_assess_params, array(
 				'batch_id' => $batch_id,
-				'txt_filter' => $txt_filter,				
+				'txt_filter' => $txt_filter,
+				'category_id' => $category_id
 			));
            
-            $output = $this->build_asses_table($comparison_data['results'], $build_assess_params, $batch_id, $columns);
+            $output = $this->build_asses_table($comparison_data['results'], $build_assess_params, $batch_id, $columns, $category_id);
 
 //            //Debugging
 //            $dur = microtime(true)-$st_time;
@@ -2927,7 +2931,7 @@ class Assess extends MY_Controller {
         return strpos($str1, $str2) !== FALSE;
     }
 
-    private function build_asses_table($results, $build_assess_params, $batch_id = '', $columns = array()) 
+    private function build_asses_table($results, $build_assess_params, $batch_id = '', $columns = array(), $catId = FALSE) 
 	{
         //Debugging
         $st_time = microtime(true);
@@ -5024,4 +5028,16 @@ class Assess extends MY_Controller {
              array_unshift($res, array('url1', 'url2'));
              array_to_csv($res, 'unmatches.csv');
         }
+	
+	public function getCategoriesByBatch()
+	{
+		$id = intval($id);
+		$json['list'] = array();
+		if($id > 0)
+		{
+			$this->load->model('product_category_model');
+			$json['list'] = $this->product_category_model->getCatsByBatchId($id);
+		}
+		echo json_encode($json);
+	}
 }

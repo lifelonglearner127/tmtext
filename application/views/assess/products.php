@@ -22,7 +22,7 @@
                         <option value="<?php echo $ks; ?>"><?php echo $vs; ?></option>
                     <?php endforeach;?>
                 </select>
-                <select name="research_assess_categories" class="research_assess_batches_select2 mt_10 mr_10 ml_20" style="width: 175px;">
+                <select name="research_assess_categories" id="prodcats" class="research_assess_batches_select2 mt_10 mr_10 ml_20" style="width: 175px;">
                     <option value="">Select category</option>
 		    <?php foreach($prod_category_list as $c):?>
                         <option data-code="<?= $c['category_code'] ?>" value="<?= $c['id'] ?>"><?= $c['category_name'] ?></option>

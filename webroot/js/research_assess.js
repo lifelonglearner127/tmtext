@@ -2485,8 +2485,22 @@ function prevSibilfunc(curentSibil){
         var selectedBatch = $(this).find("option:selected").text();
         var selectedBatchId = $(this).find("option:selected").val();
         $('.assess_report_download_panel').hide();
-//        alert('sdhfbh');
-
+	$.get(categoriesByBatch+'/'+selectedBatchId,function(d){
+		if(typeof(d.list) == 'object')
+		{
+			var list = d.list;
+			var opts = '<option value="">Select category</option>';
+			if(list.length > 0)
+			{	
+				for(var l in list)
+				{
+					if(typeof(list[l]) == 'object')
+					opts += '<option data-code="'+list[l].category_code+'" value="'+list[l].id+'">'+list[l].category_name+'</option>';
+				}
+			}
+			$('#prodcats').html(opts);
+		}
+	},'json');
         $.ajax({
             type: "POST",
             url: rememberBatchValue,
@@ -3046,6 +3060,7 @@ function prevSibilfunc(curentSibil){
 
         assessRequestParams.search_text = $('#assess_filter_text').val();
         assessRequestParams.batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
+        assessRequestParams.prodcat_id = $('select#prodcats').find('option:selected').val();
 
         var assess_filter_datefrom = $('#assess_filter_datefrom').val();
         var assess_filter_dateto = $('#assess_filter_dateto').val();

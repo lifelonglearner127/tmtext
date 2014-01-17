@@ -3,6 +3,7 @@ var readBoardSnapUrl = base_url + 'index.php/assess/get_board_view_snap';
 var readGraphDataUrl = base_url + 'index.php/assess/get_graph_batch_data';
 var readAssessUrlCompare = base_url + 'index.php/assess/compare';
 var rememberBatchValue = base_url + 'index.php/assess/remember_batches';
+var categoriesByBatch = base_url + 'index.php/assess/getCategoriesByBatch';
 var getbatchesvalue = base_url + 'index.php/assess/getbatchvalues';
 var get_summary_filters = base_url + 'index.php/assess/get_summary_filters';
 var save_summary_filters = base_url + 'index.php/assess/save_summary_filters';

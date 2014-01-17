@@ -630,6 +630,10 @@ class Statistics_new_model extends CI_Model {
             $txt_filter_part2 = ')  as `data` where `data`.`imported_data_id` like \'%'.trim($this->db->escape($params->txt_filter),"'").'%\'';
 
         }
+	if(isset($params->category_id) && intval($params->category_id) > 0)
+	{
+		$category = ' AND category_id = '.$params->category_id;
+	}	
 		
         $limit = isset($params->iDisplayLength) && $params->iDisplayLength != 0 ? "LIMIT $params->iDisplayStart, $params->iDisplayLength" : '';
 		
@@ -663,7 +667,7 @@ class Statistics_new_model extends CI_Model {
             (select `value` from imported_data_parsed where `key`="parsed_attributes" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `parsed_attributes`,
             (select `value` from imported_data_parsed where `key`="Anchors" and `imported_data_id` = `s`.`imported_data_id`  limit 1) as `Anchors`
             
-            from '.$this->tables['statistics_new'].' as `s` left join '.$this->tables['crawler_list'].' as `cl` on `cl`.`imported_data_id` = `s`.`imported_data_id` where `s`.`batch_id`='.$batch_id.$txt_filter_part2;
+            from '.$this->tables['statistics_new'].' as `s` left join '.$this->tables['crawler_list'].' as `cl` on `cl`.`imported_data_id` = `s`.`imported_data_id` where `s`.`batch_id`='.$batch_id.$txt_filter_part2.$category;
 
             $query = $this->db->query($sql);
  
