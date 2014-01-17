@@ -32,13 +32,13 @@ function resizeImpDown(status){
 	
 	var status = status || true	
 	  , onResize = function(event) {			
-	 	// tblAssessTable.floatThead({
-			// scrollContainer: function($table){
-				// return $table.closest('.wrapper');
-			// }
-		// });
+	 	tblAssessTable.floatThead({
+			scrollContainer: function($table){
+				return $table.closest('.wrapper');
+			}
+		});
 		
-		// tblAssessTable.floatThead('reflow'); 
+		tblAssessTable.floatThead('reflow'); 
 	};
 	
 	var tblAssessTable = $("#tblAssess");
@@ -536,8 +536,8 @@ $(function() {
 				
 				if (needToBeReloaded)				
 					pullRestItems();			
-					
-				resizeImpDown();
+				else
+					resizeImpDown();
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {						
 				tblAssess_postRenderProcessing(nRow);					
