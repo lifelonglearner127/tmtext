@@ -2728,7 +2728,9 @@ class System extends MY_Controller {
             $this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);//Add matching info to settings table
             $start = microtime(true);
             $timing = 0;
-    $exec_time = microtime(true) - $start_run;
+            
+    $start_run1 = microtime(true);
+    $exec_time = $start_run1 - $start_run;
     log_message('ERROR', "{$exec_time}sec - {$linesAdded} lines Phase 1");            
     log_message('ERROR', "Start while");            
     //Process of importing URLs can take long time, and makes problem with script executing time limit

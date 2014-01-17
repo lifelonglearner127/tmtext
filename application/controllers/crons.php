@@ -3027,6 +3027,8 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		$itemsUnchanged = $this->uri->segment(7);
 		$start = microtime(true);
 		$timing = 0;
+    $start_run1 = microtime(true);
+    log_message('ERROR', "Start while cron");                 
 		while ($timing < 200 && $urls = $this->temp_data_model->getLineFromTable('urlstomatch'))
 		{
 			$atuc = 2;
@@ -3142,10 +3144,15 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                     $timing = microtime(true) - $start;
 		}
 		//*/
+    $start_run2 = microtime(true);        
+    $exec_time = $start_run2 - $start_run1;
+    log_message('ERROR', "{$exec_time}sec - {$linesScaned} lines Phase 2");  
+    log_message('ERROR', 'memory usage (peak) : (' . memory_get_peak_usage(). ')' . memory_get_usage()) ;                
 		if ($timing < 200)
 		{
 			$val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
 			$this->settings_model->updateMatchingUrls($process, $val);
+                    log_message('ERROR','Cron stoped');
 		} else
 		{
 			$lts = $this->temp_data_model->getTableSize('urlstomatch');
@@ -3275,13 +3282,15 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                         log_message('ERROR','incorrect ATUC');
                         exit();
                     }
-                    $itemsUnchanged += $atuc;
+//                    $itemsUnchanged += $atuc;
                     $timing = microtime(true) - $start;
                             
                     if ($timing - $old_timing > 5 ) // set the update interval information for frontend
                     {
                             $lts = $linesScaned;
                             $itemsUpdated = $this->temp_data_model->getTableSize('updated_items');
+                            $notFoundUrls = $this->temp_data_model->getTableSize('notfoundurls');
+                            $itemsUnchanged = (2 * $linesScaned) - ( $itemsUpdated + $notFoundUrls);
                             $this->settings_model->procUpdMatchingUrls($process, $lts, $itemsUnchanged);
                             $old_timing = $timing;
                     }                            
@@ -3302,10 +3311,12 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
             $history_run[] =  ' parent waited='. $parent_sleep;
             $notFoundUrls = $this->temp_data_model->getTableSize('notfoundurls');
             $itemsUpdated = $this->temp_data_model->getTableSize('updated_items');
+            $itemsUnchanged = (2 * $linesScaned) - ( $itemsUpdated + $notFoundUrls);
             $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
             $this -> settings_model -> updateMatchingUrls($process, $val);
             $history_run['thread_pid'] = 0;
             $this->_save_history($history_run);
+            log_message('ERROR','MatchingUrls:' . print_r($history_run,true));
         }
 
         function match_urls_thread_worker( $process, $urls_in_1, $urls_in_2 ) 
