@@ -2938,7 +2938,25 @@ class Assess extends MY_Controller {
         $this->load->model('batches_model');
         $this->load->model('statistics_model');
         $this->load->model('statistics_duplicate_content_model');
-
+        $this->load->model('product_category_model');
+	if(intval($catId) > 0)
+	{
+		$catList = $this->product_category_model->get(array('id'=>$catId));
+	} elseif(intval($batch_id) > 0)
+	{
+		$catList = $this->product_category_model->getCatsByBatchId($batch_id);
+	} else
+	{	
+		$catList = $this->product_category_model->get();
+	}
+	$prodCats = array();
+	if(is_array($catList))
+	{
+		foreach($catList as $cl)
+		{
+			$prodCats[$cl['id']] = $cl['category_name'];
+		}	
+	}	
         
         $duplicate_content_range = 25;
 		
@@ -3372,6 +3390,11 @@ class Assess extends MY_Controller {
                     }
                     $result_row->title_seo_phrases = $str_title_long_seo . '</table>';
                 }
+		$result_row->prodcat = 'None';
+		if(isset($prodCats[$row->category_id]))
+		{	
+			$result_row->prodcat = $prodCats[$row->category_id];
+		}
 		if(!empty($row->manufacturer_info))
 		{
 			$mi = unserialize($row->manufacturer_info);
@@ -5029,7 +5052,7 @@ class Assess extends MY_Controller {
              array_to_csv($res, 'unmatches.csv');
         }
 	
-	public function getCategoriesByBatch()
+	public function getCategoriesByBatch($id = 0)
 	{
 		$id = intval($id);
 		$json['list'] = array();

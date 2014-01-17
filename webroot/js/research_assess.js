@@ -2317,8 +2317,10 @@ function prevSibilfunc(curentSibil){
                 for (var i = 0; i < data.length; i++) {
                     research_assess_batches.append('<option value="' + data[i]['id'] + '">' + data[i]['title'] + '</option>');
                 }
+		updateCategories(data[0]['id']);
             } else if (data.length == 0 && res.target.value != "select customer") {
                 research_assess_batches.empty();
+		updateCategories();
             }            
         });
         var own_customer = $(this).val();
@@ -2485,22 +2487,7 @@ function prevSibilfunc(curentSibil){
         var selectedBatch = $(this).find("option:selected").text();
         var selectedBatchId = $(this).find("option:selected").val();
         $('.assess_report_download_panel').hide();
-	$.get(categoriesByBatch+'/'+selectedBatchId,function(d){
-		if(typeof(d.list) == 'object')
-		{
-			var list = d.list;
-			var opts = '<option value="">Select category</option>';
-			if(list.length > 0)
-			{	
-				for(var l in list)
-				{
-					if(typeof(list[l]) == 'object')
-					opts += '<option data-code="'+list[l].category_code+'" value="'+list[l].id+'">'+list[l].category_name+'</option>';
-				}
-			}
-			$('#prodcats').html(opts);
-		}
-	},'json');
+	updateCategories(selectedBatchId);
         $.ajax({
             type: "POST",
             url: rememberBatchValue,
@@ -3281,4 +3268,27 @@ function prevSibilfunc(curentSibil){
     );    
 		
 	$('.assess_report_download_panel').hide();
+	function updateCategories(selectedBatchId)
+	{
+		var opts = '<option value="">Select category</option>';
+		if(typeof(selectedBatchId) == 'undefined')
+		{
+			$('#prodcats').html(opts);
+		}	
+		$.get(categoriesByBatch+'/'+selectedBatchId,function(d){
+			if(typeof(d.list) == 'object')
+			{
+				var list = d.list;
+				if(list.length > 0)
+				{	
+					for(var l in list)
+					{
+						if(typeof(list[l]) == 'object')
+						opts += '<option data-code="'+list[l].category_code+'" value="'+list[l].id+'">'+list[l].category_name+'</option>';
+					}
+				}
+				$('#prodcats').html(opts);
+			}
+		},'json');
+	}	
 });

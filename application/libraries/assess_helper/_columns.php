@@ -233,5 +233,11 @@ return array(
 			'sClass' => 'mvid',
 			'sName' => 'mvid',
 			'nonCompared' => true
+		),
+		array(
+			'sTitle' => 'Category',
+			'sClass' => 'prodcat',
+			'sName' => 'prodcat',
+			'nonCompared' => true
 		)
 	);	
