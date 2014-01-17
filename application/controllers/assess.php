@@ -2714,6 +2714,8 @@ class Assess extends MY_Controller {
 
         $this->data['customer_list'] = $this->getCustomersByUserId();
         $this->data['category_list'] = $this->category_list();
+	$this->load->model('product_category_model');
+        $this->data['prod_category_list'] = $this->product_category_model->get();
         if (!empty($this->data['customer_list'])) {
             $this->data['batches_list'] = $this->batches_list();
         }
