@@ -7,7 +7,7 @@ class Migration_Default_values_research_table extends CI_Migration
 
 	public function up()
 	{
-		$field = array('category_id' => array('type' => 'INT','constraint' => 11,'null'=>TRUE));
+		$field = array('category_id' => array('type' => 'INT','constraint' => 11,'null'=>TRUE,'default'=>'0'));
 		$this->dbforge->add_column('research_data', $field);
 		$fields = array(
 		    'product_name' => array(
@@ -77,12 +77,6 @@ class Migration_Default_values_research_table extends CI_Migration
 			'type' =>'TINYINT',
 			'constraint' => '4',
 			'null' => TRUE,
-		    ),
-		    'category_id' => array(
-			'type' =>'INT',
-			'constraint' => '11',
-			'null' => TRUE,
-			'default' => '0'
 		    )
 		);
 		$this->dbforge->modify_column('research_data', $fields);
