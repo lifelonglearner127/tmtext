@@ -1740,8 +1740,8 @@ class Research extends MY_Controller {
                 }
 		if(isset($cIdPos) && isset($cNamePos) && isset($data[$cIdPos]) && isset($data[$cNamePos]))
 		{
-			$catRows[$cnt]['id'] =  $data[$cIdPos]; 
-			$catRows[$cnt]['name'] =  $data[$cNamePos]; 
+			$catRows[$cnt]['category_code'] =  $data[$cIdPos]; 
+			$catRows[$cnt]['category_name'] =  $data[$cNamePos]; 
 		}
 		++$cnt;
             }
@@ -1792,7 +1792,7 @@ class Research extends MY_Controller {
 		$ins['category_id'] = 0;
 		if(isset($catRows[$key]))
 		{	
-			$ins['category_id'] = $this->product_category_model->update(array('category_name' => $catRows[$key]['name'], 'category_code' => $catRows[$key]['id'])); 
+			$ins['category_id'] = $this->product_category_model->update($catRows[$key]); 
 		}	
 		$ins['batch_id'] = $batch_id;
 		$ins['url'] = $_row;

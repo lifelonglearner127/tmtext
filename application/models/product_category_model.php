@@ -49,12 +49,12 @@ class Product_category_model extends CI_Model
 				if($row['category_name'] != $row['category_name'])
 				{
 					$this->db->where('id',$row['id']);
-					$this->db->update($data);
+					$this->db->update($this->table,$data);
 				}	
 				$result = $row['id'];
 			} else
 			{
-				$this->db->insert($data);
+				$this->db->insert($this->table,$data);
 				$result = $this->db->insert_id();
 			}
 			$query->free_result();
