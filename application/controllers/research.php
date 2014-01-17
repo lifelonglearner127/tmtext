@@ -1695,34 +1695,38 @@ class Research extends MY_Controller {
     }
 
     public function csv_import() {
-        $this->load->model('batches_model');
-        $this->load->model('customers_model');
-
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
-	/*if(isset($fcont[0]) && strpos($fcont[0],'CATEGORY')) //checking for category fields in header
-	{
-		if($type == 'category')
-			{
-				$method = 'updateCategoryInfoByURL';
-				$model = 'product_category_model';
-			}
-		   $this->importURLWithCategories($file);
-		   return;
-	}*/
-        $_rows = array();
-	$catRows = array();
 	$urlPos = 0;
+	$cIdPos = 100;
+	$cNamePos = 100;
 	$cnt = 0;
         if (($handle = fopen($file, "r")) !== FALSE) {
-            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-		if($cnt < 1)
+		$this->load->model('batches_model');
+		$ins = array();
+		$ins['batch_id'] = $this->batches_model->getIdByName($this->input->post('batch_name'));
+		if(!$ins['batch_id']) 
+		{	
+			$ins['batch_id'] = 0;
+		}	
+		$this->load->model('research_data_model');
+		$this->load->model('research_data_to_crawler_list_model');
+		$this->load->model('crawler_list_model');
+		$this->load->model('product_category_model');
+		$this->load->library('PageProcessor');
+		$ins['revision'] = $this->research_data_model->getLastRevision();
+		$added = 0;
+		$this->research_data_model->db->trans_start();	
+	
+            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) 
+	    {
+		if($cnt < 1) //checking first line
 		{
 			$cols = count($data);
-			if($cols > 1)
+			if($cols > 1) //if line has more than one column
 			{
-			       for($i = 0;$i < $cols;$i++)
+			       for($i = 0;$i < $cols;$i++) //checking all columns for URL, and category fields
 			       {
-				       if(strpos($data[$i],'URL') !== FALSE || strpos($data[$i],'http'))
+				       if(strpos($data[$i],'URL') !== FALSE || strpos($data[$i],'http')!== FALSE)
 				       {
 					       $urlPos = $i;
 				       } elseif(strpos($data[$i],'CATEGORY_ID') !== FALSE)
@@ -1734,22 +1738,37 @@ class Research extends MY_Controller {
 				       }
 			       }
 			}  
-		}	
-                if(!is_null($data[$urlPos]) && trim($data[$urlPos]) && $data[$urlPos]!='URL'){
-                    $_rows[$cnt] = $data[$urlPos];
+		}elseif(!empty($data[$urlPos]) && $data[$urlPos]!='URL'){
+		        if(!$this->research_data_model->checkItemUrl($ins['batch_id'], $data[$urlPos]))
+			{
+			    $ins['category_id'] = 0;
+			    if(isset($data[$cIdPos]) && isset($data[$cNamePos]))
+			    {	
+				    $ins['category_id'] = $this->product_category_model->update(array('category_name'=>$data[$cNamePos],'category_code'=>$data[$cIdPos])); 
+			    }	
+			    $ins['url'] = $data[$urlPos];
+			    $research_data_id = $this->research_data_model->insert($ins);
+			    ++$added;
+
+			    // Insert to crawler list
+				if ($research_data_id && $this->pageprocessor->isURL($data[$urlPos])) 
+				{
+				    $crawler_list_id = $this->crawler_list_model->getByUrl($data[$urlPos]);
+				    if (!$crawler_list_id) 
+				    {
+						$crawler_list_id = $this->crawler_list_model->insert($data[$urlPos], 0);
+				    }
+				    $this->research_data_to_crawler_list_model->insert($research_data_id, $crawler_list_id); // add part if url already in crawler_list
+				}
+			}
                 }
-		if(isset($cIdPos) && isset($cNamePos) && isset($data[$cIdPos]) && isset($data[$cNamePos]))
-		{
-			$catRows[$cnt]['category_code'] =  $data[$cIdPos]; 
-			$catRows[$cnt]['category_name'] =  $data[$cNamePos]; 
-		}
 		++$cnt;
             }
+	    $this->research_data_model->db->trans_complete();
             fclose($handle);
         }
-        $batch_id = $this->batches_model->getIdByName($this->input->post('batch_name'));
 
-        $added = $this->insert_rows($batch_id, $_rows, $catRows);
+     //   $added = $this->insert_rows($batch_id, $_rows, $catRows);
 
         $str = $added;
         $duplicateItems = '';
@@ -1767,7 +1786,7 @@ class Research extends MY_Controller {
             $duplicateItems = '';
         }
 
-        $response['batch_id'] = $batch_id;
+        $response['batch_id'] = $ins['batch_id'];
         $response['message'] = $str .' added to batch' . $duplicateItems;
          $this->output->set_content_type('application/json')
                 ->set_output(json_encode($response));
