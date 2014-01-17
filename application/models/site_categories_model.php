@@ -103,17 +103,17 @@ class Site_categories_model extends CI_Model {
     }
 	
 	function getDataByCategory($category_id){
-	$sql = "SELECT `description_text`, `description_words` FROM `site_categories` WHERE `flag`='ready' and `id` = '".$category_id."'";
-    $query = $this->db->query($sql);
-	$result = $query->result();
-    return $result[0];
+    	$sql = "SELECT `description_text`, `description_words` FROM `site_categories` WHERE `flag`='ready' and `id` = '".$category_id."'";
+        $query = $this->db->query($sql);
+    	$result = $query->result();
+        return $result[0];
 	}
 	
-	 function UpdateKeywordsData($category_id, $user_seo_keywords = "",$user_keyword_description_count = 0,$user_keyword_description_density = 0){
-	 $sql="UPDATE `site_categories` SET `user_seo_keywords` = '".$user_seo_keywords."',`user_keyword_description_count` = $user_keyword_description_count,`user_keyword_description_density` = $user_keyword_description_density WHERE `id` = $category_id";
-	 $query = $this->db->query($sql);
-	 return $query;
-	 }
+    function UpdateKeywordsData($category_id, $user_seo_keywords = "",$user_keyword_description_count = 0,$user_keyword_description_density = 0){
+        $sql="UPDATE `site_categories` SET `user_seo_keywords` = '".$user_seo_keywords."',`user_keyword_description_count` = $user_keyword_description_count,`user_keyword_description_density` = $user_keyword_description_density WHERE `id` = $category_id";
+        $query = $this->db->query($sql);
+        return $query;
+    }
 
 
     function getUrlByCategory($category_id){
@@ -146,6 +146,13 @@ class Site_categories_model extends CI_Model {
         return $this->db->insert_id();
     }
 
+    function update($id, $data) 
+    {
+        $this->db->where('id', $id);
+        $this->db->update($this->tables['site_categories'], $data);
+        return $id;
+    }
+
     function delete($id)
     {
         $data = array(
@@ -174,7 +181,7 @@ class Site_categories_model extends CI_Model {
         if($department_id!=''){
             $str .= " and `department_members_id` = '".$department_id."'";
         }
-        $query = $this->db->query("SELECT `id` FROM `site_categories` WHERE `site_id` = '".$site_id."' and `flag`='ready' ".$str." and `text`='".addslashes(trim($text))."' limit 1");
+        $query = $this->db->query("SELECT `id` FROM `site_categories` WHERE `site_id` = '".$site_id."' ".$str." and `text`='".addslashes(trim($text))."' limit 1");
         if($query->num_rows() > 0) {
             return $query->row()->id;
         }

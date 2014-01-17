@@ -1380,7 +1380,7 @@ function readBestSellers(department_id,site_name,table_name) {
         },
 
         success: function( data ) {
-		
+
             var tableDataString = '';
 			
             for(var i=0; i<data.length; i++){
@@ -1412,8 +1412,9 @@ function readBestSellers(department_id,site_name,table_name) {
                 } else {
                     tableDataString += '<td>';
                 }
-                var user_seo_keywords = data[i].user_seo_keywords.trim();
-                var user_keyword_description_density = ' - '+data[i].user_keyword_description_density.trim()+'%';
+                var user_seo_keywords = data[i].user_seo_keywords == null ? '' : data[i].user_seo_keywords.trim();
+                var user_keyword_description_density = data[i].user_keyword_description_density == null ? '' : ' - ' + data[i].user_keyword_description_density.trim() + '%';
+
                 if(user_seo_keywords == '')
                     user_keyword_description_density = ' -  N/A';
                 tableDataString += '<input type="text" style="width: 95px;float: left;margin-right: 5px;" placeholder="Your keyword" onblur="keywordAjax(this);" onkeypress="keywordAjaxCode(this);" name="keyword" value="'+user_seo_keywords+'" />';

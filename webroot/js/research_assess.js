@@ -10,34 +10,35 @@ function close_popover(elem)
 	
 	return false;
 }
-function topScroll(){
-	$( "#tableScrollWrapper.red" ).remove();
-	$( "#tableScrollWrapper" ).clone().insertBefore( "#tableScrollWrapper" ).addClass("red");
-	$( "#tableScrollWrapper:not(.red)" ).addClass("xw");
-	//$( "#tableScrollWrapper.red td" ).css("display", "none");
-	$( "div#tableScrollWrapper.red" ).css("height", "16px").css("width", "101.6%");
-	$(function(){
-    $(".red").scroll(function(){
-        $(".xw:not(.red)").scrollLeft($(".red").scrollLeft());
-		});
-	$(".xw:not(.red)").scroll(function(){
-        $(".red").scrollLeft($(".xw:not(.red)").scrollLeft());
-		});
-		//console.log("topScroll");
-		
-	});
-	$("#tblAssess").floatThead('reflow');
-}
+// function topScroll(){
+	// $( "#tableScrollWrapper.red" ).remove();
+	// $( "#tableScrollWrapper" ).clone().insertBefore( "#tableScrollWrapper" ).addClass("red");
+	// $( "#tableScrollWrapper:not(.red)" ).addClass("xw");
+	
+	// $( "div#tableScrollWrapper.red" ).css("height", "16px").css("width", "101.6%");
+	
+	// $(function(){
+		// $(".red").scroll(function(){
+			// $(".xw:not(.red)").scrollLeft($(".red").scrollLeft());
+		// });
+		// $(".xw:not(.red)").scroll(function(){
+			// $(".red").scrollLeft($(".xw:not(.red)").scrollLeft());
+		// });						
+	// });
+	
+	// $("#tblAssess").floatThead('reflow');
+// }
 function resizeImpDown(status){
 	
 	var status = status || true	
 	  , onResize = function(event) {			
-		tblAssessTable.floatThead({
+	 	tblAssessTable.floatThead({
 			scrollContainer: function($table){
 				return $table.closest('.wrapper');
 			}
 		});
-		topScroll();				
+		
+		tblAssessTable.floatThead('reflow'); 
 	};
 	
 	var tblAssessTable = $("#tblAssess");
@@ -527,9 +528,7 @@ $(function() {
 				
 				// bad hack, Nikita, please check
 				$('#tblAssess thead th').css('width', '100%');	
-				
-				resizeImpDown();
-				
+										
 				console.log('Building report... ' + needToBeReloaded);
 				
 				if (needToBeReloaded || rebuildFilters)
@@ -537,6 +536,8 @@ $(function() {
 				
 				if (needToBeReloaded)				
 					pullRestItems();			
+				else
+					resizeImpDown();
 			},
 			fnRowCallback : function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {						
 				tblAssess_postRenderProcessing(nRow);					
@@ -562,7 +563,7 @@ $(function() {
 				{
 					oSettings.json_encoded_data = json_data.ExtraData.json_encoded_data ? json_data.ExtraData.json_encoded_data : '';					
 					oSettings.display_competitor_columns = json_data.ExtraData.display_competitor_columns;					
-					oSettings.getSelectableColumns = json_data.ExtraData.getSelectableColumns;														
+					oSettings.getSelectableColumns = json_data.ExtraData.getSelectableColumns;					
 				}
 			},
 			oLanguage : {
@@ -1953,6 +1954,7 @@ $(function() {
             return;
         }
         var url_compare =$(add_data.url1).find('a').attr('href');
+        
         $('#ajaxLoadAni').fadeIn('slow');
         $('#impdataid').attr('val',add_data.imported_data_id);
         $('#assessDetails_ProductName').val(add_data.product_name);
@@ -1961,7 +1963,7 @@ $(function() {
         $('#assess_open_url_btn').attr('href', add_data.url);
         // $('#assessDetails_Price').val(add_data.own_price);
         $('#assessDetails_Price').val( Number(add_data.own_price).toFixed(2) );
-
+        $("#impdataid_cmp").val(add_data.imp_data_id1);
         $('#assessDetails_ProductName1').val(add_data.product_name1);
         $('#assessDetails_Model1').val(add_data.model1);
         $('#assessDetails_url1').val(url_compare);
@@ -2160,12 +2162,15 @@ $(function() {
                 style: 'margin-right:125px',
                 click: function() {
                     var impdata_id = $('#impdataid').attr('val');
+                    var cmp_im_data_id = $('#impdataid_cmp').val();
                     $.ajax({
                         url: base_url + 'index.php/assess/deleteSecondaryMatch',
                         dataType: 'json',
                         type: 'post',
                         data: {
-                            impdataid: impdata_id
+                            impdataid: impdata_id,
+                            cmp_impdataid: cmp_im_data_id
+                            
                 }
                     }).done(function(){
                         $('#assessDetailsDialog').dialog('close');                        
