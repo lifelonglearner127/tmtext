@@ -867,3 +867,11 @@ id int not null auto_increment
 ,foreign key (item1) references imported_data(id) on delete cascade on update cascade
 ,foreign key (item2) references imported_data(id) on delete cascade on update cascade
 )engine=InnoDB;
+
+# 17/01 Max 
+CREATE TABLE  `tmeditor`.`black_list` (
+`id` INT NOT NULL AUTO_INCREMENT ,
+`im_id_1` INT NOT NULL ,
+`im_id_2` INT NOT NULL ,
+PRIMARY KEY (  `id` )
+) ENGINE = MYISAM ;
