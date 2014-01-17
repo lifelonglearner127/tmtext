@@ -999,11 +999,11 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 					$time = microtime(true) - $time_start;
 					//WC Short
 					$time_start = microtime(true);
-					//Get research_data_id and batch_id
+					//Get research_data_id, batch_id and category_id
 					$research_and_batch_ids = $this->statistics_new_model->getResearchDataAndBatchIds($obj->imported_data_id);
 					if (!$research_and_batch_ids)
 					{
-						//If research_data_id and batch_id were not found, define them by default
+						//If research_data_id, batch_id and category_id were not found, define them by default
 						$research_and_batch_ids = array(array(
 							'research_data_id' => 0,
 							'batch_id' => 0,

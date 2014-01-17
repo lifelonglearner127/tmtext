@@ -253,6 +253,7 @@ class Statistics_new_model extends CI_Model {
         foreach($research_and_batch_ids as $research_and_batch_id){
 		$idata['batch_id'] = $research_and_batch_id['batch_id'];
 		$idata['research_data_id'] = $research_and_batch_id['research_data_id']; 
+		$idata['category_id'] = $research_and_batch_id['category_id']; 
 		$this->db->where('imported_data_id', $imported_data_id)->where('batch_id', $research_and_batch_id['batch_id']);
 		$query= $this->db->get("statistics_new");    
 		if($query->num_rows()>0){
