@@ -869,7 +869,7 @@ id int not null auto_increment
 )engine=InnoDB;
 
 # 17/01 Max 
-CREATE TABLE  `tmeditor`.`black_list` (
+CREATE TABLE `black_list` (
 `id` INT NOT NULL AUTO_INCREMENT ,
 `im_id_1` INT NOT NULL ,
 `im_id_2` INT NOT NULL ,
