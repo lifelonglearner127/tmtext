@@ -2869,6 +2869,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 							{
 								$department_id = $check_department_id;
 							}
+
 							try
 							{
 								$department_members_id = $this->department_members_model->insert_for_sc($site_id, $department_id, $department_text, $department_url);
@@ -2905,89 +2906,147 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 					// === debuging stack (end)
 					// === insert / update decisions stuffs (start)
 					$parent_id = 0;
-					if ($parent_text != '')
-					{
-						try
-						{
+
+					if($parent_text != '') {
+
+						// If level = 0, then parent is in the department_members table and no need to add it to the site_categories table
+						// Else, try to search parent in the site_categories table
+
+						if($level < 0) {
 							$parent_id = $this->site_categories_model->checkExist($site_id, $parent_text);
-						} catch (Exception $e)
-						{
-							$this->site_categories_model->db->close();
-							$this->site_categories_model->db->initialize();
-							$parent_id = $this->site_categories_model->checkExist($site_id, $parent_text);
+
+							// If parent exists, update its flag
+							// Else, insert parent with known site_id, department_members_id and text = parent_text
+
+							if($parent_id !== false) {
+								$this->site_categories_model->updateFlag($site_id, $parent_text, $department_members_id);
+							}
+							else {
+								$parent_id = $this->site_categories_model->insert(0, $site_id, $parent_text, '', 0, '', $department_members_id, 0, 0, '', '', '', '', '');
+							}
 						}
-						if ($parent_id == false)
-						{
-							try
-							{
-								$parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
-							} catch (Exception $e)
-							{
-								$this->site_categories_model->db->close();
-								$this->site_categories_model->db->initialize();
-								$parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
-							}
-							$debug_stack_mid['parent_id'] = $parent_id;
-						} else
-						{
-							try
-							{
-								$site_categories_model_update_flag_one = $this->site_categories_model->updateFlag($site_id, $parent_text, $department_members_id);
-							} catch (Exception $e)
-							{
-								$this->site_categories_model->db->close();
-								$this->site_categories_model->db->initialize();
-								$site_categories_model_update_flag_one = $this->site_categories_model->updateFlag($site_id, $parent_text, $department_members_id);
-							}
-							$debug_stack_mid['site_categories_model_update_flag_one'] = $site_categories_model_update_flag_one;
+
+						// If it's known parent_id and not known department_members_id, try to get department_members_id from parent row
+						if($parent_id != 0 && $department_members_id == 0) {
+							$res = $this->site_categories_model->checkDepartmentId($parent_id);
+							$department_members_id = $res->department_members_id;
 						}
 					}
 
-					if ($parent_id != 0 && $department_members_id == 0)
-					{
-						$res = $this->site_categories_model->checkDepartmentId($parent_id);
-						$department_members_id = $res->department_members_id;
-						$debug_stack_mid['department_members_id'] = $department_members_id;
+					if($text != '') {
+						// Try to search category in the site_categories table by site_id, department_members_id and text
+						// If it exists, update its flag and other data except site_id, department_members_id and text
+						// Else, insert new category
+
+						$category_id = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
+
+						if($category_id !== false) {
+							$this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
+							$update_data = array(
+								'parent_id' => $parent_id,
+								'url' => $url,
+								'special' => $special,
+								'parent_text' => $parent_text,
+								'level' => $level,
+								'nr_products' => $nr_products,
+								'description_words' => $description_wc,
+								'title_keyword_description_count' => $keyword_count,
+								'title_keyword_description_density' => $keyword_density,
+								'description_title' => $description_title,
+								'description_text' => $description_text
+							);
+							$this->site_categories_model->update($category_id, $update_data);
+						}
+						else {
+							$category_id = $this->site_categories_model->insert($parent_id, $site_id, 
+								$text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, 
+								$keyword_count, $keyword_density, $description_title, $description_text, $level);
+						}
 					}
 
-					if ($text != '')
-					{
-						try
-						{
-							$check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
-						} catch (Exception $e)
-						{
-							$this->site_categories_model->db->close();
-							$this->site_categories_model->db->initialize();
-							$check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
-						}
-						$debug_stack_mid['check_site'] = $check_site;
-						if ($check_site == false)
-						{
-							try
-							{
-								$site_categories_model_insert = $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
-							} catch (Exception $e)
-							{
-								$this->site_categories_model->db->close();
-								$this->site_categories_model->db->initialize();
-								$site_categories_model_insert = $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
-							}
-							$debug_stack_mid['site_categories_model_insert'] = $site_categories_model_insert;
-						} else
-						{
-							try
-							{
-								$site_categories_model_update_flag_two = $this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
-							} catch (Exception $e)
-							{
-								$this->site_categories_model->db->close();
-								$this->site_categories_model->db->initialize();
-								$site_categories_model_update_flag_two = $this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
-							}
-							$debug_stack_mid['site_categories_model_update_flag_two'] = $site_categories_model_update_flag_two;
-						}
-					}
+					// if ($parent_text != '') 
+					// {
+					// 	try
+					// 	{
+					// 		$parent_id = $this->site_categories_model->checkExist($site_id, $parent_text);
+					// 	} catch (Exception $e)
+					// 	{
+					// 		$this->site_categories_model->db->close();
+					// 		$this->site_categories_model->db->initialize();
+					// 		$parent_id = $this->site_categories_model->checkExist($site_id, $parent_text);
+					// 	}
+					// 	if ($parent_id == false)
+					// 	{
+					// 		try
+					// 		{
+					// 			$parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
+					// 		} catch (Exception $e)
+					// 		{
+					// 			$this->site_categories_model->db->close();
+					// 			$this->site_categories_model->db->initialize();
+					// 			$parent_id = $this->site_categories_model->insert(0, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
+					// 		}
+					// 		$debug_stack_mid['parent_id'] = $parent_id;
+					// 	} else
+					// 	{
+					// 		try
+					// 		{
+					// 			$site_categories_model_update_flag_one = $this->site_categories_model->updateFlag($site_id, $parent_text, $department_members_id);
+					// 		} catch (Exception $e)
+					// 		{
+					// 			$this->site_categories_model->db->close();
+					// 			$this->site_categories_model->db->initialize();
+					// 			$site_categories_model_update_flag_one = $this->site_categories_model->updateFlag($site_id, $parent_text, $department_members_id);
+					// 		}
+					// 		$debug_stack_mid['site_categories_model_update_flag_one'] = $site_categories_model_update_flag_one;
+					// 	}
+					// }
+
+					// if ($parent_id != 0 && $department_members_id == 0)
+					// {
+					// 	$res = $this->site_categories_model->checkDepartmentId($parent_id);
+					// 	$department_members_id = $res->department_members_id;
+					// 	$debug_stack_mid['department_members_id'] = $department_members_id;
+					// }
+
+					// if ($text != '')
+					// {
+					// 	try
+					// 	{
+					// 		$check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
+					// 	} catch (Exception $e)
+					// 	{
+					// 		$this->site_categories_model->db->close();
+					// 		$this->site_categories_model->db->initialize();
+					// 		$check_site = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
+					// 	}
+					// 	$debug_stack_mid['check_site'] = $check_site;
+					// 	if ($check_site == false)
+					// 	{
+					// 		try
+					// 		{
+					// 			$site_categories_model_insert = $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
+					// 		} catch (Exception $e)
+					// 		{
+					// 			$this->site_categories_model->db->close();
+					// 			$this->site_categories_model->db->initialize();
+					// 			$site_categories_model_insert = $this->site_categories_model->insert($parent_id, $site_id, $text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
+					// 		}
+					// 		$debug_stack_mid['site_categories_model_insert'] = $site_categories_model_insert;
+					// 	} else
+					// 	{
+					// 		try
+					// 		{
+					// 			$site_categories_model_update_flag_two = $this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
+					// 		} catch (Exception $e)
+					// 		{
+					// 			$this->site_categories_model->db->close();
+					// 			$this->site_categories_model->db->initialize();
+					// 			$site_categories_model_update_flag_two = $this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
+					// 		}
+					// 		$debug_stack_mid['site_categories_model_update_flag_two'] = $site_categories_model_update_flag_two;
+					// 	}
+					// }
 					// === insert / update decisions stuffs (end)
 					$debug_stack['site_categories'][] = $debug_stack_mid;
 				}
