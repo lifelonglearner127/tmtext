@@ -11,8 +11,8 @@ class AssessHelper
 	/**
 	 *  @brief Adds competitor columns to the existing columns
 	 *  
-	 *  @param [in] $columns                existing primary columns
-	 *  @param [in] $max_similar_item_count count of similar item
+	 *  @param $columns                existing primary columns
+	 *  @param $max_similar_item_count count of similar item
 	 *  
 	 *  @return appended with competitor columns array of columns
 	 */
@@ -47,8 +47,8 @@ class AssessHelper
 	/**
 	 *  @brief Get string representation of existing columns (with competitor columns)
 	 *  
-	 *  @param [in] $columns                existing columns
-	 *  @param [in] $max_similar_item_count count of similar items
+	 *  @param $columns                existing columns
+	 *  @param $max_similar_item_count count of similar items
 	 *  
 	 *  @return string of column names
 	 */
@@ -65,8 +65,8 @@ class AssessHelper
 	/**
 	 *  @brief Link columns with column data
 	 *  
-	 *  @param [in] $columns existing columns
-	 *  @param [in] $data    input data
+	 *  @param $columns existing columns
+	 *  @param $data    input data
 	 *  
 	 *  @return array of data
 	 */
@@ -82,7 +82,7 @@ class AssessHelper
 	/**
 	 *  @brief Returns array of selectable columns for the frontend modal popup list
 	 *  
-	 *  @param [in] $columns Existing columns
+	 *  @param $columns Existing columns
 	 *  @return array of selectable columns	   	
 	 */
 	public static function getSelectableColumns($columns)
@@ -99,8 +99,8 @@ class AssessHelper
 	/**
 	 *  @brief Build H[attribute] output data
 	 *  
-	 *  @param [in] $data      Source data
-	 *  @param [in] $attribute h tag. Example: h1
+	 *  @param $data      Source data
+	 *  @param $attribute h tag. Example: h1
 	 *  @return array of H[attribute] with value and count	 
 	 */
 	public static function buildHField($data, $attribute)
@@ -192,6 +192,34 @@ class AssessHelper
 	public static function appendResultRowData($result_row, $row)
 	{
 	
+	}		
+	
+	/**
+	 *  @brief Gets Custom Short Description Keywords
+	 *  
+	 *  @param $data array of input data
+	 *  
+	 *  @return concatenated custom description keywords
+	 */
+	public static function getCustomDescriptionKeywords($data)
+	{
+		$r = '<table class="' . $data['table_class'] . '">';
+		
+		foreach ($data['seo_elements'] as $seo_element)
+		{					
+			if (isset($data['custom_seo'][$seo_element]) && $custom_seo[$seo_element]) {
+				if ($data['row']->{$data['key']}) {
+					$_count = $data['controller']->keywords_appearence($data['row']->{$data['key']}, $data['custom_seo'][$seo_element]);
+					$cnt = count(explode(' ', $data['custom_seo'][$seo_element]));
+					$_count = round(($_count * $cnt / $data['row']->{$data['key'] . '_wc'}) * 100, 2) . '%';
+					$r .= '<tr><td>' . $data['custom_seo'][$seo_element] . "</td><td>$_count</td></tr>";
+				} else {
+					$_count = ' ';
+				}
+			}		
+		}
+	
+		return $r . '</table>';	
 	}
 	
 	public static function getInitialFilterData()
