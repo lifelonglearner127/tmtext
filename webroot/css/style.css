@@ -2806,3 +2806,7 @@ float: left;
 .site_crawler_content #url_status_radio label {
 	display: inline;
 }
+
+#force_keywords{
+    display : inline-block;
+}
