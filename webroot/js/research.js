@@ -124,6 +124,15 @@ function researchKeywordsAnalizer() {
 
 $(document).ready(function () {
 
+    $("#export_bad_matches").click(function(){
+            
+           $(this).text('Exporting...');
+            $.fileDownload(base_url+"index.php/system/unmatches_csv").done(function() {
+                        $('#export_bad_matches').text('Export bad matches');
+                })
+                        .fail(function() {
+                });
+            });
     $('.hideShow').live("click", function(){
         $(this).parent().parent().toggleClass('hideBox');
     });

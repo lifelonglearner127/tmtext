@@ -3063,5 +3063,13 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/n
 		$items = file_get_contents($file);
 		echo 'Remaining ' . $items . ' items.';
 	}
-        
+        public function unmatches_csv(){
+            
+             $this->load->model('black_list_model');
+             $res = $this->black_list_model->create_csv();
+             $this->load->helper('csv');
+             array_unshift($res, array('url1', 'url2'));
+             $date = date("Y-m-d H:i");
+             array_to_csv($res, $date.'unmatches.csv');
+        }
 }
