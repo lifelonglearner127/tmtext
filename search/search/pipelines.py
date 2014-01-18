@@ -88,7 +88,11 @@ class URLsPipeline(object):
 
 			# if a match was found add it to the fields to be output
 			#TODO: this includes the comma at the end of the line even with no results
-			fields.append(item['product_url'] if 'product_url' in item else "")
+			if 'product_url' in item:
+				fields.append(item['product_url'])
+			elif option==3:
+				fields.append("")
+			#fields.append(item['product_url'] if 'product_url' in item else "")
 			
 			# if output type is 3, add additional fields
 			if option == 3:
