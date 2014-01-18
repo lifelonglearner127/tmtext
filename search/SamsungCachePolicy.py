@@ -19,8 +19,8 @@ class SamsungCachePolicy(DummyPolicy):
 
  	sys.stderr.write("IN CACHE POLICY")
  	print "RESPONSE", response
- 	print isinstance(response.body_as_unicode(), unicode)
- 	# print type(response)
+ 	#print isinstance(response.body_as_unicode(), unicode)
+ 	print type(response)
 
  	# if response:
 	 # 	hxs = HtmlXPathSelector(response)
