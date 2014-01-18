@@ -32,6 +32,7 @@ var isReloaded = false;
 var outputedFilterIndexes = [];
 var current_comparison_id = 0;
 var lastest_comparison_id = 0;
+var isCompareBatchSelected = false;
 
 var FIRST_DISPLAY_LIMIT_COUNT = 100;
 var NEXT_DISPLAY_LIMIT_COUNT = 1000;
