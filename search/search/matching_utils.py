@@ -145,10 +145,10 @@ class ProcessText():
 			if 'product_brand' in product2:
 				product2_brand = " ".join(ProcessText.normalize(product2['product_brand']))
 
-				########LOG
-				if product2_brand:
-					print "BRAND EXTRACTED: ", product2_brand, "FROM URL ", product2['product_url'] 
-				###########
+				# ########LOG
+				# if product2_brand:
+				# 	print "BRAND EXTRACTED: ", product2_brand, "FROM URL ", product2['product_url'] 
+				# ###########
 
 
 			else:
