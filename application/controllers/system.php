@@ -2779,16 +2779,16 @@ class System extends MY_Controller {
                     } else {
                             $this -> imported_data_parsed_model -> addItem($url1['data_id'], $url2['data_id']);
                             if(($url1['model'] && strlen($url1['model']) > 3)
-                                    && $url1['model'] != $url2['model']){
+                                    && strval($url1['model']) !== strval($url2['model'])){
                                 $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $url1['model']);
-                                $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], strval($url1['model']), $url1['rev'] + 1, $url1['data_id']);
                                 ++$itemsUpdated;
                                 $atuc -= 1;
                             }
                             elseif(($url2['model'] && strlen($url2['model']) > 3)
-                                    && $url2['model'] != $url1['model']){
+                                    && strval($url2['model']) !== strval($url1['model'])){
                                 $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $url2['model']);
-                                $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], strval($url2['model']), $url2['rev'] + 1, $url2['data_id']);
                                 ++$itemsUpdated;
                                 $atuc -= 1;
                             }
