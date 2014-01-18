@@ -255,7 +255,7 @@
 				<li>
 					<p>						
 						<label for="export_primary">
-							<input type="radio" value="export_primary" id="export_primary" name="assess_export_option" /> Export only primary site URLs
+							<input type="radio" value="export_primary" id="export_primary" name="assess_export_option" checked /> Export only primary site URLs
 						</label>
 					</p>
 				</li>
