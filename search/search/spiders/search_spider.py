@@ -299,7 +299,7 @@ class SearchSpider(BaseSpider):
 			# if product_model_index >= 0:
 			# 	product_model = product_name[product_model_index]
 				
-			print "MODEL EXTRACTED: ", product_model, " FROM NAME ", product_name
+			#print "MODEL EXTRACTED: ", product_model, " FROM NAME ", product_name
 
 		# if there is no product brand, get first word in name, assume it's the brand
 		product_brand_extracted = ""
