@@ -1694,7 +1694,7 @@ class Research extends MY_Controller {
         ));
     }
 
-    public function csv_import() {
+    public function csv_import() {  
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
 	$newname = str_replace(' ','_',$file);
 	if(rename($file,$newname))
@@ -1760,7 +1760,7 @@ class Research extends MY_Controller {
 			    $ins['url'] = $data[$urlPos];
 			    $research_data_id = $this->research_data_model->insert($ins);
 			    ++$added;
-			    file_put_contents($statFile,$added.' of '.$total);
+			    if($total > 0 && !($added%10)) file_put_contents($statFile,$added.' of '.$total);
 			    // Insert to crawler list
 				if ($research_data_id && $this->pageprocessor->isURL($data[$urlPos])) 
 				{
