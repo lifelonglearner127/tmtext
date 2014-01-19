@@ -1708,7 +1708,8 @@ class Research extends MY_Controller {
         if (($handle = fopen($file, "r")) !== FALSE) {
 		$this->load->model('batches_model');
 		$ins = array();
-		$ins['batch_id'] = $this->batches_model->getIdByName($this->input->post('batch_name'));
+		$batchName = $this->input->post('batch_name');
+		$ins['batch_id'] = $this->batches_model->getIdByName($batchName);
 		if(!$ins['batch_id']) 
 		{	
 			$ins['batch_id'] = 0;
@@ -1804,7 +1805,7 @@ class Research extends MY_Controller {
 	$this->email->from('info@dev.contentsolutionsinc.com', 'Content Analytics');
 	$this->email->to('bayclimber@gmail.com');
 	$this->email->bcc('igor.g.work@gmail.com');
-	$this->email->subject('Batch '.$ins['batch_id'].' was imported');
+	$this->email->subject('Batch '.$batchName.' ('.$ins['batch_id'].') was imported');
 	$this->email->message($response['message']); 
 	$this->email->send(); 
          $this->output->set_content_type('application/json')
