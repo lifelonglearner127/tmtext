@@ -2435,13 +2435,16 @@ function prevSibilfunc(curentSibil){
 
     $('#research_assess_compare_batches_batch').change(function() {
 
+		var elem = $(this);
+		
+		isCompareBatchSelected = !!parseInt(elem.val());
+		
         $.ajax({
             type: "POST",
             url: rememberBatchValue,
             data: {compare_batch_id: $('select[id="research_assess_compare_batches_batch"]').find('option:selected').val()}
 
         });
-
 
         var selectedBatch = $(this).find("option:selected").text();
         $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
@@ -3030,17 +3033,23 @@ function prevSibilfunc(curentSibil){
     }
 
    
-	function buildTableParams(existingParams) {
+	function buildTableParams(existingParams, isObject) {
 
-        var assessRequestParams = collectionParams();
-        for (var p in assessRequestParams) {
-            existingParams.push({
-                "name": p,
-                "value": assessRequestParams[p]
-            });
+        var assessRequestParams = collectionParams()
+		  , isObject = isObject == undefined || isObject ? true : false;
+		
+		if (!isObject)
+			return assessRequestParams;
+		else {
+			for (var p in assessRequestParams) {
+				existingParams.push({
+					"name": p,
+					"value": assessRequestParams[p]
+				});
 
-        }
-        return existingParams;
+			}
+			return existingParams;
+		}
     }
     function collectionParams() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
@@ -3135,75 +3144,7 @@ function prevSibilfunc(curentSibil){
         })
                 .fail(function() {
         });
-   });
-    
-	
-	$(document).on('click', '#research_assess_export', function() {
-   
-		var batch_set = $('.result_batch_items:checked').val() || 'me'
-		  , checked_columns = ['url']
-		  , summaryFilterData = summaryInfoSelectedElements.join(',')
-		  , elem = $(this)
-		  , main_path = elem.prop('href') + '?';
-				
-		if ( !GetURLParameter('checked_columns_results') ) {
-            
-            var batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val()
-              , batch_name = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text()
-              , cmp_selected = $(batch_sets[batch_set]['batch_compare']).val(); 
-			
-		} else {
-                        
-            var batch_id = GetURLParameter('batch_id_result')
-              , batch_name = GetURLParameter('batch_name')
-              , cmp_selected = GetURLParameter('cmp_selected');
-         
-		}  
-		
-        // var columns_check = $('#research_assess_choiceColumnDialog_export').find('input[type=checkbox]:checked');
-      
-		// $.each(columns_check, function(index, value) {
-			// if($(value).attr('id') == "column_title_seo_phrases_f" && $("#tk-frequency").is(':checked') )
-				// checked_columns.push("title_seo_phrases_f");
-			// else 
-				// checked_columns.push($(value).data('col_name'));						
-		// });		                                         
-	
-        $.fileDownload( main_path + buildGetRequest({
-			batch_id : batch_id,
-			cmp_selected : cmp_selected,
-			checked_columns : checked_columns,
-			batch_name : batch_name,
-			summaryFilterData : summaryFilterData
-		}), {	
-			prepareCallback : function(url) {
-				elem.attr('disabled', true);
-				elem.text('Exporting...');
-			},
-			successCallback : function(url) {
-				console.log('FileDownload success!');
-				
-                elem.removeAttr('disabled');				
-				elem.text('Export');
-            },
-            failCallback : function(responseHtml, url) {
-				
-				console.log('FileDownload was FAILED!!!');
-            }
-		});
-		
-		return false;
-    });
-	
-	function buildGetRequest(data)
-	{
-		var result_string = '';
-		
-		for (var key in data)
-			result_string += result_string ? '&' + key + '=' + data[key] : key + '=' + data[key];
-		
-		return result_string;		
-	}
+   });    	
 
 	function wrapResultsTable() {
 		$( "div[id^=tblAssess_length], div[id^=assess_tbl_show_case], div[class^=dataTables_filter], div[id^=tblAssess_processing]" ).wrapAll( "<div class='fg-toolbar ui-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix'></div>" );
@@ -3293,4 +3234,98 @@ function prevSibilfunc(curentSibil){
 			}
 		},'json');
 	}	
+	
+	function exportAssessData()
+	{
+		var batch_set = $('.result_batch_items:checked').val() || 'me'
+		  , checked_columns = ['url']
+		  , summaryFilterData = summaryInfoSelectedElements.join(',')
+		  , elem = this
+		  , main_path = elem.prop('href') + '?';
+				
+		if ( !GetURLParameter('checked_columns_results') ) {
+            
+            var batch_id = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val()
+              , batch_name = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text()
+              , cmp_selected = $(batch_sets[batch_set]['batch_compare']).val(); 
+			
+		} else {
+                        
+            var batch_id = GetURLParameter('batch_id_result')
+              , batch_name = GetURLParameter('batch_name')
+              , cmp_selected = GetURLParameter('cmp_selected');
+         
+		}  		 	                                        
+	
+        $.fileDownload( main_path + buildGetRequest($.extend(buildTableParams([], false), {
+			batch_id : batch_id,
+			cmp_selected : cmp_selected,
+			checked_columns : checked_columns,
+			batch_name : batch_name,
+			summaryFilterData : summaryFilterData
+		})), {	
+			prepareCallback : function(url) {
+				elem.attr('disabled', true);
+				elem.text('Exporting...');
+			},
+			successCallback : function(url) {
+				console.log('FileDownload success!');
+				
+                elem.removeAttr('disabled');				
+				elem.text('Export');
+            },
+            failCallback : function(responseHtml, url) {
+				
+				console.log('FileDownload was FAILED!!!');
+            }
+		});
+	}
+	
+	function buildGetRequest(data)
+	{
+		var result_string = '';
+		
+		for (var key in data)
+			result_string += result_string ? '&' + key + '=' + data[key] : key + '=' + data[key];
+		
+		return result_string;		
+	}
+	
+	$(document).on('click', '#research_assess_export', function() {   
+		$('#research_assess_export_assess_dialog').dialog('open');		
+		return false;
+    });
+	
+	/* Popup Modals Section */
+	$('#research_assess_export_assess_dialog').dialog({
+        autoOpen: false,
+        resizable: false,
+        modal: true,
+		open : function( event, ui ) {
+			if (!isCompareBatchSelected)
+				$('#export_primary_and_secondary').attr('disabled', 'disabled');
+			else
+				$('#export_primary_and_secondary').removeAttr('disabled');
+		},
+        buttons: {
+            'Cancel': {               
+                text: 'Cancel',
+                click: function() {
+                    $(this).dialog('close');
+                }
+            },
+            'Continue': { 
+				text : 'Continue',
+                click : function() {
+					var formData = $('#export_options_form').serialize();
+					
+					// It doesn't work yet.... in progress!
+                    exportAssessData.call($('#research_assess_export'));
+					
+                    $(this).dialog('close');
+                }
+            }
+        },
+        width: '450px'
+    });
 });

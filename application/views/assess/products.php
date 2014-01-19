@@ -245,6 +245,41 @@
     </div>
 </div>
 
+
+<!-- choise column dialog box -->
+<div id="research_assess_export_assess_dialog" title="Export options" >
+    <div>
+        <form action="" method="post" id="export_options_form">
+			            
+			<ul>
+				<li>
+					<p>						
+						<label for="export_primary">
+							<input type="radio" value="export_primary" id="export_primary" name="assess_export_option" checked /> Export only primary site URLs
+						</label>
+					</p>
+				</li>
+				<li>
+					<p>						
+						<label for="export_primary_and_secondary">
+							<input type="radio" value="export_primary_and_secondary" id="export_primary_and_secondary" name="assess_export_option" /> Export primary and comparison site URLs
+						</label>		
+					</p>
+				</li>
+				<li>
+					<p>						
+						<label for="export_everything">
+							<input type="radio" value="export_everything" id="export_everything" name="assess_export_option" /> Export all displayed results columns		
+						</label>					
+					</p>
+				</li>					
+			</ul>            
+		
+        </form>
+    </div>
+</div>
+
+
 <div id="assessDetailsDialog" title="Details">
     <form name="access_details">
     <div style="float:left;"  class="details_left">

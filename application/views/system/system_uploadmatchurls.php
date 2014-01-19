@@ -1,3 +1,4 @@
+<script type="text/javascript" src="<?php echo base_url();?>js/jquery.fileDownload.js"></script>
 <div class="tabbable">
     <ul class="nav nav-tabs jq-system-tabs">
            <li class=""><a data-toggle="tab" href="<?php echo site_url('system');?>">General</a></li>
@@ -88,7 +89,8 @@
 	          </span>
 	          <span class="btn btn-danger pull-left" id="stop_matches_manu" style='margin-left: 10px;'>Stop</span>
 		      	<input type="hidden" name="choosen_file_manu" /> -->
-		      </div>
+	  </div>
+          <span class="btn btn-danger pull-left" id="export_bad_matches" style='float: right;display: block; margin-top: -199px; margin-right: 20px;'>Export Bad Matches</span>
       </div>
   </div>
 </div>
@@ -191,6 +193,7 @@
         }
 
 	$(document).ready(function() {
+            
             $('#stop_matches').on('click', function(){
                 flag_stop_match = true;
                 if(match_ajax != ""){
@@ -200,7 +203,7 @@
 			activeBtns('unactive');
 			$("#matching").html("Process has been stopped.");
 		});
-            })
+            });
             matching_checking_int = setInterval(check_matching_status,5000);
             $("#download_not_founds").click(function(){
                 alert('works.');

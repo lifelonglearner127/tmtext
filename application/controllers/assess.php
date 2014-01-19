@@ -5045,14 +5045,6 @@ class Assess extends MY_Controller {
             return false;
         }
         
-        public function unmatches_csv(){
-             $this->load->model('black_list_model');
-             $res = $this->black_list_model->create_csv();
-             $this->load->helper('csv');
-             array_unshift($res, array('url1', 'url2'));
-             array_to_csv($res, 'unmatches.csv');
-        }
-	
 	public function getCategoriesByBatch($id = 0)
 	{
 		$id = intval($id);

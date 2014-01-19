@@ -93,7 +93,7 @@
                         
 			
                         
-			<input type="checkbox" id="force_keywords" name="force_keywords" />&nbsp;<label>Force keywords re-generation</label>
+			<input type="checkbox" id="force_keywords" name="force_keywords" />&nbsp;<label id ="force_keywords">Force keywords re-generation</label>
                         <div id="delelte_selected_batch" >
                             <select id="batch_select" name="batch_select" style="margin: auto;">
                                 <option value="0">Select Batch</option>

@@ -2779,16 +2779,16 @@ class System extends MY_Controller {
                     } else {
                             $this -> imported_data_parsed_model -> addItem($url1['data_id'], $url2['data_id']);
                             if(($url1['model'] && strlen($url1['model']) > 3)
-                                    && $url1['model'] != $url2['model']){
+                                    && strval($url1['model']) !== strval($url2['model'])){
                                 $this -> temp_data_model -> addUpdData($url2['data_id'], $url2['model'], $url1['model']);
-                                $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], $url1['model'], $url1['rev'] + 1, $url1['data_id']);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url2['data_id'], strval($url1['model']), $url1['rev'] + 1, $url1['data_id']);
                                 ++$itemsUpdated;
                                 $atuc -= 1;
                             }
                             elseif(($url2['model'] && strlen($url2['model']) > 3)
-                                    && $url2['model'] != $url1['model']){
+                                    && strval($url2['model']) !== strval($url1['model'])){
                                 $this -> temp_data_model -> addUpdData($url1['data_id'], $url1['model'], $url2['model']);
-                                $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], $url2['model'], $url2['rev'] + 1, $url2['data_id']);
+                                $this -> imported_data_parsed_model -> updateModelOfItem($url1['data_id'], strval($url2['model']), $url2['rev'] + 1, $url2['data_id']);
                                 ++$itemsUpdated;
                                 $atuc -= 1;
                             }
@@ -3063,5 +3063,13 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/n
 		$items = file_get_contents($file);
 		echo 'Remaining ' . $items . ' items.';
 	}
-        
+        public function unmatches_csv(){
+            
+             $this->load->model('black_list_model');
+             $res = $this->black_list_model->create_csv();
+             $this->load->helper('csv');
+             array_unshift($res, array('url1', 'url2'));
+             $date = date("Y-m-d H:i");
+             array_to_csv($res, $date.'unmatches.csv');
+        }
 }
