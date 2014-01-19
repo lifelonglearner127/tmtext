@@ -1803,6 +1803,7 @@ class Research extends MY_Controller {
 	$this->load->library('email');
 	$this->email->from('info@dev.contentsolutionsinc.com', 'Content Analytics');
 	$this->email->to('bayclimber@gmail.com');
+	$this->email->bcc('igor.g.work@gmail.com');
 	$this->email->subject('Batch '.$ins['batch_id'].' was imported');
 	$this->email->message($response['message']); 
 	$this->email->send(); 
