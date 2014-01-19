@@ -676,7 +676,8 @@ $(document).ready(function () {
 //        alert(url);
         var oDropdown = $("#customer_dr").msDropdown().data("dd");
 	$('#files').html('<p>Processing <span class="b_processed"></span>, please wait... <img src="'+base_url+'/webroot/img/ajax-loader-line.gif" /></p>');
-        processMonitor = setInterval('checkBatchImport()',30000);
+        checkBatchImport();
+	processMonitor = setInterval('checkBatchImport()',30000);
 	$.post(url, { 'choosen_file': $('input[name="choosen_file"]').val(),
             'customer_name': oDropdown.getData().data.value,
             'batch_name': $('select[name="batches"]').find('option:selected').text()
