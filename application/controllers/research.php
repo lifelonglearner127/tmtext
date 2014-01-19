@@ -1760,7 +1760,7 @@ class Research extends MY_Controller {
 			    $ins['url'] = $data[$urlPos];
 			    $research_data_id = $this->research_data_model->insert($ins);
 			    ++$added;
-			    if($total > 0 && !($added%10)) file_put_contents($statFile,$added.' of '.$total);
+			    if(($added%20) < 1) file_put_contents($statFile,$added.' of '.$total);
 			    // Insert to crawler list
 				if ($research_data_id && $this->pageprocessor->isURL($data[$urlPos])) 
 				{
@@ -1800,6 +1800,12 @@ class Research extends MY_Controller {
 
         $response['batch_id'] = $ins['batch_id'];
         $response['message'] = $str .' added to batch' . $duplicateItems;
+	$this->load->library('email');
+	$this->email->from('info@dev.contentsolutionsinc.com', 'Content Analytics');
+	$this->email->to('bayclimber@gmail.com');
+	$this->email->subject('Batch '.$ins['batch_id'].' was imported');
+	$this->email->message($response['message']); 
+	$this->email->send(); 
          $this->output->set_content_type('application/json')
                 ->set_output(json_encode($response));
     }
