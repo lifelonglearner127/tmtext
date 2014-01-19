@@ -1728,6 +1728,7 @@ class Research extends MY_Controller {
 		      $total = intval(str_replace($file,'',$checkFile));  
 		}
 		$statFile = $this->config->item('csv_upload_dir').'statbatch'.$this->ion_auth->get_user_id();
+		file_put_contents($statFile,$cnt.' of '.$total);
 	    $this->research_data_model->db->trans_start();	
             while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) 
 	    {
@@ -1761,7 +1762,6 @@ class Research extends MY_Controller {
 			    $ins['url'] = $data[$urlPos];
 			    $research_data_id = $this->research_data_model->insert($ins);
 			    ++$added;
-			    if(($added%20) < 1) file_put_contents($statFile,$added.' of '.$total);
 			    // Insert to crawler list
 				if ($research_data_id && $this->pageprocessor->isURL($data[$urlPos])) 
 				{
@@ -1775,6 +1775,7 @@ class Research extends MY_Controller {
 			}
                 }
 		++$cnt;
+		if(($cnt%20) < 1) file_put_contents($statFile,$cnt.' of '.$total);
             }
 	    $this->research_data_model->db->trans_complete();
             fclose($handle);
