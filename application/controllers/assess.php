@@ -34,6 +34,7 @@ class Assess extends MY_Controller {
             'deleteSecondaryMatch' => true,
             'getColumns' => true,
             'getCategoriesByBatch' => true,
+	    'checkImportProcess' => true
         ));
     }
 
@@ -5055,5 +5056,14 @@ class Assess extends MY_Controller {
 			$json['list'] = $this->product_category_model->getCatsByBatchId($id);
 		}
 		echo json_encode($json);
+	}
+	
+	public function checkImportProcess()
+	{
+		$file = $this->config->item('csv_upload_dir').'statbatch'.$this->ion_auth->get_user_id();
+		if(file_exists($file))
+		{	
+			echo file_get_contents($file);
+		} 
 	}
 }

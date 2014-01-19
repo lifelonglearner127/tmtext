@@ -669,18 +669,20 @@ $(document).ready(function () {
         $('.batch_info').html('');
         $('#files').html('');
     });
-
+    var processMonitor;
     $(document).on("click", "button#csv_import_create_batch", function(event){
         event.preventDefault();
         var url = $(this).parents().find('form').attr( 'action' ).replace('save', 'csv_import');
 //        alert(url);
         var oDropdown = $("#customer_dr").msDropdown().data("dd");
-	$('#files').html('<p>Processing, please wait... <img src="'+base_url+'/webroot/img/ajax-loader-line.gif" /></p>');
-        $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val(),
+	$('#files').html('<p>Processing <span class="b_processed"></span>, please wait... <img src="'+base_url+'/webroot/img/ajax-loader-line.gif" /></p>');
+        processMonitor = setInterval('checkBatchImport()',5000);
+	$.post(url, { 'choosen_file': $('input[name="choosen_file"]').val(),
             'customer_name': oDropdown.getData().data.value,
             'batch_name': $('select[name="batches"]').find('option:selected').text()
         }, function(data) {
             $('#files').html('<p>'+data.message+'</p>');
+	    clearInterval(processMonitor);
             $.post(base_url + 'index.php/research/getBatchInfo', { 'batch_id': data.batch_id}, function(data){
                 if(data.created != undefined){
                     $('.batch_info').html('<ul class="ml_0"><li>Created: '+data.created+'</li><li>Item Last Added: '+data.modified+'</li>' +
@@ -775,3 +777,9 @@ $(document).ready(function () {
         });
     });
 });
+
+function checkBatchImport(){
+	$.get(base_url + 'index.php/assess/checkImportProcess',function(d){
+		$('.b_processed').text(d);
+	});
+}

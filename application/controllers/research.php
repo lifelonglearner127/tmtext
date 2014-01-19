@@ -1696,6 +1696,11 @@ class Research extends MY_Controller {
 
     public function csv_import() {
         $file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
+	$newname = str_replace(' ','_',$file);
+	if(rename($file,$newname))
+	{
+		$file = $newname;
+	}	
 	$urlPos = 0;
 	$cIdPos = 100;
 	$cNamePos = 100;
@@ -1715,8 +1720,14 @@ class Research extends MY_Controller {
 		$this->load->library('PageProcessor');
 		$ins['revision'] = $this->research_data_model->getLastRevision();
 		$added = 0;
-		$this->research_data_model->db->trans_start();	
-	
+		$checkFile = exec('wc -l '.$file);
+		$total = 0;
+		if(trim($checkFile))
+		{
+		      $total = intval(str_replace($file,'',$checkFile));  
+		}
+		$statFile = $this->config->item('csv_upload_dir').'statbatch'.$this->ion_auth->get_user_id();
+	    $this->research_data_model->db->trans_start();	
             while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) 
 	    {
 		if($cnt < 1) //checking first line
@@ -1749,7 +1760,7 @@ class Research extends MY_Controller {
 			    $ins['url'] = $data[$urlPos];
 			    $research_data_id = $this->research_data_model->insert($ins);
 			    ++$added;
-
+			    file_put_contents($statFile,$added.' of '.$total);
 			    // Insert to crawler list
 				if ($research_data_id && $this->pageprocessor->isURL($data[$urlPos])) 
 				{
@@ -1766,6 +1777,7 @@ class Research extends MY_Controller {
             }
 	    $this->research_data_model->db->trans_complete();
             fclose($handle);
+	    unlink($statFile);
         }
 
      //   $added = $this->insert_rows($batch_id, $_rows, $catRows);
