@@ -3033,17 +3033,23 @@ function prevSibilfunc(curentSibil){
     }
 
    
-	function buildTableParams(existingParams) {
+	function buildTableParams(existingParams, isObject) {
 
-        var assessRequestParams = collectionParams();
-        for (var p in assessRequestParams) {
-            existingParams.push({
-                "name": p,
-                "value": assessRequestParams[p]
-            });
+        var assessRequestParams = collectionParams()
+		  , isObject = isObject == undefined || isObject ? true : false;
+		
+		if (!isObject)
+			return assessRequestParams;
+		else {
+			for (var p in assessRequestParams) {
+				existingParams.push({
+					"name": p,
+					"value": assessRequestParams[p]
+				});
 
-        }
-        return existingParams;
+			}
+			return existingParams;
+		}
     }
     function collectionParams() {
 		var batch_set = $('.result_batch_items:checked').val() || 'me';
@@ -3251,13 +3257,13 @@ function prevSibilfunc(curentSibil){
          
 		}  		 	                                        
 	
-        $.fileDownload( main_path + buildGetRequest({
+        $.fileDownload( main_path + buildGetRequest($.extend(buildTableParams([], false), {
 			batch_id : batch_id,
 			cmp_selected : cmp_selected,
 			checked_columns : checked_columns,
 			batch_name : batch_name,
 			summaryFilterData : summaryFilterData
-		}), {	
+		})), {	
 			prepareCallback : function(url) {
 				elem.attr('disabled', true);
 				elem.text('Exporting...');
