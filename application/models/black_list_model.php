@@ -37,4 +37,39 @@ class Black_list_model extends CI_Model {
         $results = $query->result_array();
         return $results;
     }
+    
+     function bad_matches_data($search, $iDisplayStart , $iDisplayLength,$sEcho) {
+        $sql = "SELECT idp1.`value` AS url1, idp2.`value` AS url2, idp1.`imported_data_id` AS im_id_1, idp2.`imported_data_id` AS im_id_2
+                FROM black_list AS bl
+                INNER JOIN imported_data_parsed AS idp1 ON bl.im_id_1 = idp1.imported_data_id
+                AND idp1.`key` =  'url'
+                INNER JOIN imported_data_parsed AS idp2 ON bl.im_id_2 = idp2.imported_data_id
+                AND idp2.`key` =  'url'";
+        $query = $this->db->query($sql);
+        if($search){
+                    $this->db->like('value',$search)
+                    ->or_like('model',$search);;   
+                }
+                $this->db->Limit($iDisplayLength,$iDisplayStart);
+        $results = $query->result_array();
+        $data = array();
+        foreach($results as $val){
+            $delUrl = base_url('/index.php/system/delete_unmatching_couple/'.$val['im_id_1'].'/'.$val['im_id_2']);
+            $action =  '<div id="'.$val['im_id_1'].'"><a class="deleteBtn  icon-remove ml_5" data-id1="'.$val['im_id_1'].'"  data-id2="'.$val['im_id_2'].'"style="float:left;" href="' .  $delUrl  . '"></a></div>';
+            $data[]= array($val['url2'],  $val['url1'] ,  $action);
+        }
+        $items_count = 10;
+        $result = array(
+            "sEcho" => (int)$sEcho,
+            "iTotalRecords" =>  (int)$items_count ,
+            "iTotalDisplayRecords" =>  (int)$items_count,
+            "aaData" => $data
+        );
+        return $result;
+    }
+    function delete($id1, $id2){
+        $sql = "delete from black_list where (im_id_1 = $id1 and im_id_2 = $id2) or (im_id_1 = $id2 and im_id_2 = $id1)";
+        $this->db->query($sql);
+        echo  "ok";
+    }
 }

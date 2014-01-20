@@ -3140,4 +3140,35 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" "Update" > /dev/null
              $date = date("Y-m-d H:i");
              array_to_csv($res, $date.'unmatches.csv');
         }
+        
+         public function bad_matches(){
+             $this->render();
+        }
+        public function bad_matches_data(){
+            $this->load->model('black_list_model');
+            $search = NULL;
+            $iDisplayStart = 1;
+            $iDisplayLength = null;
+            if ( isset( $_GET['iDisplayStart'] ) && $_GET['iDisplayLength'] != '-1' )
+            {
+                $iDisplayStart = $_GET['iDisplayStart'];
+                $iDisplayLength = $_GET['iDisplayLength'];
+                
+            }
+            if ( $_GET['sSearch'] != "" ){
+                $search = $_GET['sSearch'];
+            }
+                $sEcho = $_GET['sEcho'];
+           
+            $results = $this ->black_list_model -> bad_matches_data($search, $iDisplayStart , $iDisplayLength,$sEcho);
+            $this -> output -> set_content_type('application/json') -> set_output(json_encode($results));
+            
+        } 
+        public function delete_unmatching_couple(){
+            $id1 =  $this->uri->segment(3);
+            $id2 = $this->uri->segment(4);
+            $this->load->model('black_list_model');
+            $this->black_list_model->delete($id1, $id2);
+        }
+
 }
