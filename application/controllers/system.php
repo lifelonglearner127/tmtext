@@ -643,10 +643,18 @@ class System extends MY_Controller {
 		session_start();
 		// $filespath = realpath(base_url()) . "jl_import_dir";
 		$filespath = $this->config->item('csv_upload_dir') . 'partial';
-		
+
 		if (!file_exists($filespath)) {
-			mkdir($filespath);
+			echo 'dir ' . $filespath . ' doesn`t exist<br>';
+			if(!mkdir($filespath)) {
+				echo 'can`t create dir ' . $filespath . '<br>';
+			} else {
+				echo 'dir ' . $filespath . ' created<br>';
+			}
+		} else {
+			echo 'dir ' . $filespath . ' exists<br>';
 		}
+
 		if (isset($_SESSION['mpost'])) {//$this->uri->segment(n)
 			$_POST['site_id'] = $_SESSION['mpost']['site_id'];
 			$_POST['site_name'] = $_SESSION['mpost']['site_name'];
@@ -658,7 +666,11 @@ class System extends MY_Controller {
 			$fobj = '';
 			foreach ($fcont as $line) {
 				if (!file_exists($filespath . '/temp_imp_jl_' . $fnum . '.jl')) {
-					file_put_contents($filespath . '/temp_imp_jl_' . $fnum . '.jl', $line);
+					if(file_put_contents($filespath . '/temp_imp_jl_' . $fnum . '.jl', $line) === false) {
+						echo 'can`t create file ' . $filespath . '/temp_imp_jl_' . $fnum . '.jl<br>';
+					} else {
+						echo 'file ' . $filespath . '/temp_imp_jl_' . $fnum . '.jl created<br>';
+					}
 					$fobj = fopen($filespath . '/temp_imp_jl_' . $fnum . '.jl', 'a');
 				} else
 					fwrite($fobj, $line);
