@@ -31,6 +31,13 @@ class Crawler_spot_requests_model extends CI_Model {
         return $query->result();
     }
 
+    function getWhere($request_ids)
+    {
+    	$this->db->where_in('request_id', $request_ids);
+        $query = $this->db->get($this->tables['crawler_spot_requests']);
+        return $query->result();
+    }
+
     function getNotTerminated()
     {
     	$this->db->where_not_in('state_name', array('cancelled','closed'));

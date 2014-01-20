@@ -1131,10 +1131,16 @@ jQuery(document).ready(function($) {
 	$(document).on("click", "#terminate_requests", function(){
 		var ids = [];
 		$("#Spot_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
-            ids[index] = $(value).data('instance_id');
+            ids[index] = $(value).data('request_id');
 		});
 
 		$.post(base_url+'index.php/site_crawler/terminate_spot', { ids: ids }, function(data) {
+			var inst = data.instanceids;
+			if (inst !== undefined && inst.length>0) {
+				$.post(base_url+'index.php/site_crawler/terminate_instances', { ids: inst }, function(data) {
+					loadCurrentListStop( true, inst );
+				});
+			}
 			loadSpotList( true, ids );
 		});
 	});

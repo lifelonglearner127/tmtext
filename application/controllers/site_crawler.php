@@ -583,15 +583,22 @@ class Site_Crawler extends MY_Controller {
 	}
 	public function terminate_spot() {
 		$this -> load -> library('awslib');
+		$this -> load -> model('crawler_spot_requests_model');
 
 		$stopping = false;
 		if ($this -> input -> post('ids')) {
 			$ids = $this -> input -> post('ids');
 
-			if ($result = $this -> awslib -> cancelSpot($ids)) {
-				$stopping = true;
+			$instanceids = array();
+			$results = $this->crawler_spot_requests_model->getWhere($ids);
+			foreach ($results as $row) {
+				$instanceids[] = $row -> instanceid;
 			}
-			$this -> output -> set_content_type('application/json') -> set_output(json_encode(array('stopping' => $stopping)));
+
+//			if ($result = $this -> awslib -> cancelSpot($ids)) {
+				$stopping = true;
+//			}
+			$this -> output -> set_content_type('application/json') -> set_output(json_encode(array('stopping' => $stopping, 'instanceids' => $instanceids)));
 		}
 	}
 
