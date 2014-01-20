@@ -1739,50 +1739,50 @@ label.dd-selected-text, label.dd-option-text{
     margin-top: -9px;
 }
 
-#Current_List ul {
+#Current_List ul, #Spot_List ul {
     margin: 0px 0px 0px 0px;
     font-size: 13px;
 }
 
-#Current_List ul li {
+#Current_List ul li, #Spot_List ul li {
     line-height: 17px;
 }
 
-#Current_List ul lh {
+#Current_List ul lh, #Spot_List ul lh {
     font-weight: bold;
     line-height: 19px;
 }
 
-#Current_List ul li span, #Current_List ul lh span{
+#Current_List ul li span, #Current_List ul lh span, #Spot_List ul li span, #Spot_List ul lh span {
     padding: 5px 5px 5px 5px;
     /*border-right: 1px solid #ccc;*/
     display: inline-block;
     width: 12%;
 }
 
-#Current_List ul li span input{
+#Current_List ul li span input, #Spot_List ul li span input{
     margin: 0px;
     height: 21px;
 }
 
-#Current_List ul li span input[type='checkbox']{
+#Current_List ul li span input[type='checkbox'], #Spot_List ul li span input[type='checkbox']{
     height: 15px;
 }
 
-#Current_List ul lh, #Current_List ul li  {
+#Current_List ul lh, #Current_List ul li, #Spot_List ul lh, #Spot_List ul li {
     border-bottom: 1px solid #ccc;
 }
 
-#Current_List ul li:last-child {
+#Current_List ul li:last-child, #Spot_List ul li:last-child {
     border-bottom: 0px;
 }
 
-#Current_List ul li span:first-child, #Current_List ul lh span:first-child {
+#Current_List ul li span:first-child, #Current_List ul lh span:first-child, #Spot_List ul li span:first-child, #Spot_List ul lh span:first-child {
     border-right: 0px;
     width: 5%;
 }
 
-#Current_List ul li span:last-child, #Current_List ul lh span:last-child {
+#Current_List ul li span:last-child, #Current_List ul lh span:last-child, #Spot_List ul li span:last-child, #Spot_List ul lh span:last-child {
     border-right: 0px;
     width: 35%;
 }

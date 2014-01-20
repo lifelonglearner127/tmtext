@@ -37,6 +37,13 @@ class Crawler_instances_model extends CI_Model {
         return $query->result();
     }
 
+    function alreadyInserted($instance_id)
+    {
+    	$this->db->where('instance_id', $instance_id);
+        $query = $this->db->get($this->tables['crawler_instances']);
+        return $query->result();
+    }
+
     function insert($instance_id, $instance_type, $state_name, $public_dns_name)
     {
         $this->instance_id = $instance_id;

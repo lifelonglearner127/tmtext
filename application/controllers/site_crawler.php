@@ -496,8 +496,12 @@ class Site_Crawler extends MY_Controller {
 
 	public function get_instances() {
 		$this -> load -> model('crawler_instances_model');
-
 		$this -> output -> set_content_type('application/json') -> set_output(json_encode(array('instances' => $this -> crawler_instances_model -> getNotTerminated(), )));
+	}
+
+	public function get_spot_requests() {
+		$this -> load -> model('crawler_spot_requests_model');
+		$this -> output -> set_content_type('application/json') -> set_output(json_encode(array('requests' => $this -> crawler_spot_requests_model -> getNotTerminated(), )));
 	}
 
 	public function run_instances() {
@@ -517,6 +521,36 @@ class Site_Crawler extends MY_Controller {
 
 			foreach ($instances as $instance) {
 				$this -> crawler_instances_model -> insert($instance['InstanceId'], $instance['InstanceType'], $instance['State']['Name'], $instance['PublicDnsName']);
+			}
+			$started = true;
+		}
+
+		$this -> output -> set_content_type('application/json') -> set_output(json_encode(array('started' => $started, 'ids' => $ids)));
+	}
+
+	public function run_spot_instances() {
+		$quantity = 1;
+		$price = "0.005";
+		$started = false;
+
+		if ($this -> input -> post('quantity')) {
+			$quantity = $this -> input -> post('quantity');
+		}
+
+		if ($this -> input -> post('price')) {
+			$price = $this -> input -> post('price');
+		}
+
+		$this -> load -> model('crawler_spot_requests_model');
+		$this -> load -> library('awslib');
+
+		if ($result = $this -> awslib -> runSpot($price, $quantity)) {
+			$ids = $result -> getPath('SpotInstanceRequests/*/SpotInstanceRequestId');
+
+			$requests = $result -> getPath('SpotInstanceRequests');
+
+			foreach ($requests as $request) {
+				$this -> crawler_spot_requests_model -> insert($request['SpotInstanceRequestId'], $request['SpotPrice'], null, $request['State'], $request['Status']['Code']);
 			}
 			$started = true;
 		}
@@ -547,8 +581,21 @@ class Site_Crawler extends MY_Controller {
 
 		}
 	}
+	public function terminate_spot() {
+		$this -> load -> library('awslib');
 
-	public function wait_start_instances() {
+		$stopping = false;
+		if ($this -> input -> post('ids')) {
+			$ids = $this -> input -> post('ids');
+
+			if ($result = $this -> awslib -> cancelSpot($ids)) {
+				$stopping = true;
+			}
+			$this -> output -> set_content_type('application/json') -> set_output(json_encode(array('stopping' => $stopping)));
+		}
+	}
+
+	public function wait_start_instances($insert=null) {
 		$this -> load -> model('crawler_instances_model');
 		$this -> load -> library('awslib');
 
@@ -559,10 +606,12 @@ class Site_Crawler extends MY_Controller {
 
 			if ($result = $this -> awslib -> describe($ids)) {
 				$instances = $result -> getPath('Reservations/*/Instances');
-				//				var_dump($result, $instances);
-
 				foreach ($instances as $instance) {
-					$this -> crawler_instances_model -> update($instance['InstanceId'], $instance['InstanceType'], $instance['State']['Name'], $instance['PublicDnsName']);
+					if (isset($insert) && $insert==1 && !$this -> crawler_instances_model -> alreadyInserted($instance['InstanceId'])) {
+						$this -> crawler_instances_model -> insert($instance['InstanceId'], $instance['InstanceType'], $instance['State']['Name'], $instance['PublicDnsName']);
+					} else {
+						$this -> crawler_instances_model -> update($instance['InstanceId'], $instance['InstanceType'], $instance['State']['Name'], $instance['PublicDnsName']);
+					}
 				}
 			}
 		}
@@ -586,6 +635,35 @@ class Site_Crawler extends MY_Controller {
 				}
 			}
 		}
+	}
+
+	public function wait_spot_instances() {
+		$this -> load -> model('crawler_spot_requests_model');
+		$this -> load -> library('awslib');
+
+		$refresh = false;
+		if ($this -> input -> post('ids')) {
+			$ids = $this -> input -> post('ids');
+
+			if ($result = $this -> awslib -> describeSpot($ids)) {
+				$ids = $result -> getPath('SpotInstanceRequests/*/SpotInstanceRequestId');
+
+				$requests = $result -> getPath('SpotInstanceRequests');
+
+				$refresh = false;
+				$instances = array();
+				foreach ($requests as $request) {
+					if ($request['State'] === 'open') {
+						$refresh = true;
+					} else if ($request['State'] === 'active' && isset($request['InstanceId']) && !empty($request['InstanceId'])) {
+						$instances[] = $request['InstanceId'];
+					}
+					$this -> crawler_spot_requests_model -> update($request['SpotInstanceRequestId'], $request['SpotPrice'], $request['InstanceId'], $request['State'], $request['Status']['Code']);
+				}
+			}
+		}
+
+		$this -> output -> set_content_type('application/json') -> set_output(json_encode(array('refresh' => $refresh, 'instances' => $instances)));
 	}
 
 	public function queue_locked() {

@@ -1111,6 +1111,12 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	$(document).on("click", "#run_spot_instances", function(){
+		$.post(base_url+'index.php/site_crawler/run_spot_instances', {quantity: $('input[name="instances"]').val(), price: $('input[name="instance_price"]').val()  }, function(data) {
+			loadSpotList(data.started, data.ids);
+		});
+	});
+
 	$(document).on("click", "#terminate_instances", function(){
 		var ids = [];
 		$("#Current_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
@@ -1119,6 +1125,17 @@ jQuery(document).ready(function($) {
 
 		$.post(base_url+'index.php/site_crawler/terminate_instances', { ids: ids }, function(data) {
 			loadCurrentListStop( true, ids );
+		});
+	});
+
+	$(document).on("click", "#terminate_requests", function(){
+		var ids = [];
+		$("#Spot_List > ul > li input[type='checkbox']:checked").each(function(index, value) {
+            ids[index] = $(value).data('instance_id');
+		});
+
+		$.post(base_url+'index.php/site_crawler/terminate_spot', { ids: ids }, function(data) {
+			loadSpotList( true, ids );
 		});
 	});
 
