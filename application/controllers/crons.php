@@ -2541,7 +2541,9 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		$this->load->model('department_members_model');
 		$this->load->model('site_categories_model');
 		session_start();
-		$filespath = realpath(base_url()) . "jl_import_dir";
+		// $filespath = realpath(base_url()) . "jl_import_dir";
+		$filespath = $this->config->item('csv_upload_dir') . 'partial';
+
 		if (!file_exists($filespath))
 		{
 			mkdir($filespath);
