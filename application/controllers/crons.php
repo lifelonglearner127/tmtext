@@ -41,6 +41,7 @@ class Crons extends MY_Controller
 		    'save_departments_categories' => TRUE,
 		    'match_urls' => TRUE,
 		    'match_urls_thread' => TRUE,
+                    'match_urls_thread_update' => TRUE,
 		    'match_urls_thread_worker' => TRUE,
 		    'stop_do_stats' => true,
 		    'get_stats_status' => true,
@@ -3234,153 +3235,196 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		}
 	}
 
-	function match_urls_thread($choosen_file = null)
-	{
+    function match_urls_thread($choosen_file = null, $mode = 'Upload+Update') {
 // Specific settings for server need            
 //            $child_pid = pcntl_fork();
 //            if ($child_pid) {
 //                // Parent process
 //                exit();
 //            }
-            // Set basic for child process
-            $new_child_pid = posix_setsid();
-            
-            $this->maxthreads = $this -> config -> item('thread_max');
-            if($this->maxthreads < 1)
-            {
-                $this->maxthreads = 1;
-            }
-            $parent_sleep = 0;
-            $start_run = microtime(true);        
-            $history_run = array(
-                'start'=> 'New Start ' .  $choosen_file . ' with threads=' . $this->maxthreads . ' pid=' .$new_child_pid,
-                'thread_pid'=> $new_child_pid
-            );
-            if(!$choosen_file)
-            {
-                if(defined('CMD') && CMD )
-                {
-                    log_message('ERROR', 'File not defined ' );
-                    $history_run['ERROR'] = 'File not defined ';
-                    $this->_save_history($history_run);                   
-                    return;
-                }
-                $choosen_file = $this -> input -> post('choosen_file');
-            }
-            
-            $this -> load -> model('site_categories_model');
-            $this -> load -> model('settings_model');
-            $this -> load -> model('imported_data_parsed_model');
-            $this -> load -> model('temp_data_model');
-            $file = $this -> config -> item('csv_upload_dir') . $choosen_file;
-            $f_name = end(explode('/', $file));
-            // reopen DB in child process
-            $this->db->close();
-            $this->db->initialize(); 
-                    
-            $this -> temp_data_model -> emptyTable('notfoundurls');
-            $this -> temp_data_model -> emptyTable('urlstomatch');
-            $this -> temp_data_model -> emptyTable('updated_items');
-            $this -> settings_model -> deledtMatching();
-            $linesTotal = 0;
-            $itemsUpdated = 0;
-            $itemsUnchanged = 0;
-            $linesAdded = 0;
-            $linesScaned = 0;
-            $notFoundUrls = 0;
-            $notFoundUrlsArr = array();
-            $fileHandler = fopen($file,'r');
-            if(!$fileHandler)
-            {
-                log_message('ERROR', 'File not open ' .  $file);
-                $history_run['ERROR'] = 'File not open ' .  $file;
+        // Set basic for child process
+        $new_child_pid = posix_setsid();
+log_message('ERROR', 'Start ' . $mode . ' ' . $choosen_file . ' pid=' . $new_child_pid);
+        if ($mode !== 'Upload+Update') {
+            $mode = 'Update';
+        }
+        $this->maxthreads = $this->config->item('thread_max');
+        if ($this->maxthreads < 1) {
+            $this->maxthreads = 1;
+        }
+        $parent_sleep = 0;
+        $start_run = microtime(true);
+        $start = microtime(true);
+        $timing = 0;
+        $old_timing = 0;
+        $process = time();
+        if (!$choosen_file) {
+            if (defined('CMD') && CMD) {
+                log_message('ERROR', 'File not defined ');
+                $history_run['ERROR'] = 'File not defined ';
                 $this->_save_history($history_run);
                 return;
             }
+            $choosen_file = $this->input->post('choosen_file');
+        }
+        $history_run = array(
+            'start' => 'Start ' . $mode . ' ' . $choosen_file . ' with threads=' . $this->maxthreads . ' pid=' . $new_child_pid,
+            'thread_pid' => $new_child_pid
+        );
 
-
-            $start = microtime(true);
-            $timing = 0;
-            $old_timing =0;
-            $process = time();
-            $this -> temp_data_model -> createMatchUrlsTable();
-            $this -> temp_data_model -> createNonFoundTable();
-            $this -> temp_data_model -> cUpdDataTable();
-            $this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);
-            $this->_save_history($history_run);
-            while ($line = fgets($fileHandler)) {
-                    ++$linesTotal;
-                    $res = '';
-                    $urls = explode(',', trim(trim($line), ','));
-                    if (count($urls) == 2) {
-                        ++$linesAdded;
-                        ++$linesScaned;
-
-                        if($this->maxthreads <= 1)
-                        {
-                            $urls_in_1 = urlencode($urls[0]);
-                            $urls_in_2 = urlencode($urls[1]);
-                            $atuc = $this->match_urls_thread_worker($process, $urls_in_1, $urls_in_2);
-                        } else
-                        {
-                            for($i=0; $i<$this->maxthreads;$i++) {
-                                if(!isset($this->threads[$i]) || (isset($this->threads[$i]) && !$this->_is_process_running($this->threads[$i])))
-                                {
-                                    // start new worker
-                                    $this->threads[$i] = $this->_run_in_background("php cli.php crons match_urls_thread_worker \"$process\" " . urlencode($urls[0]) ." " . urlencode($urls[1]) . " ");
-                                    break;
-                                }
-                            }
-                            while($this->_is_all_processes_running())
-                            {
-                                // all worker is working - we waiting
-                                ++$parent_sleep;
-                                sleep(1);
-                            }
-                            $atuc = 0;  // normal processed threads - not return from workers
-                        }
-                        
-                    if ($atuc < 0) {
-                        log_message('ERROR','incorrect ATUC');
-                        exit();
-                    }
-//                    $itemsUnchanged += $atuc;
-                    $timing = microtime(true) - $start;
-                            
-                    if ($timing - $old_timing > 5 ) // set the update interval information for frontend
-                    {
-                            $lts = $linesScaned;
-                            $itemsUpdated = $this->temp_data_model->getTableSize('updated_items');
-                            $notFoundUrls = $this->temp_data_model->getTableSize('notfoundurls');
-                            $itemsUnchanged = (2 * $linesScaned) - ( $itemsUpdated + $notFoundUrls);
-                            $this->settings_model->procUpdMatchingUrls($process, $lts, $itemsUnchanged);
-                            $old_timing = $timing;
-                    }                            
-                    }
+        $this->load->model('settings_model');
+        $this->load->model('imported_data_parsed_model');
+        $this->load->model('temp_data_model');
+        $this->load->model('matchurls_data_model');
+        if ($mode == 'Upload+Update') {
+            $file = $this->config->item('csv_upload_dir') . $choosen_file;
+//                $f_name = end(explode('/', $file));
+        } else {
+            if ($choosen_file == 'all') {
+                log_message('ERROR', 'This operation (all CSV update) not permitted');
+                $history_run['ERROR'] = 'This operation (all CSV update) not permitted';
+                $this->_save_history($history_run);
+                return;
             }
-            fclose($fileHandler);
-            while(!$this->_is_all_processes_stopped())
-            {
-                // worker is working - we waiting
-                sleep(1);
+        }
+        // reopen DB in child process
+//            $this->db->close();
+//            $this->db->initialize(); 
+
+        $this->temp_data_model->emptyTable('notfoundurls');
+//            $this -> temp_data_model -> emptyTable('urlstomatch');
+
+        $this->temp_data_model->emptyTable('updated_items');
+        $this->settings_model->deledtMatching();
+        $this->matchurls_data_model->createCSVFileTables();
+
+        $this->temp_data_model->createMatchUrlsTable();
+        $this->temp_data_model->createNonFoundTable();
+        $this->temp_data_model->cUpdDataTable();
+
+        $itemsUpdated = 0;
+        $itemsUnchanged = 0;
+        $linesAdded = 0;
+        $linesScaned = 0;
+        $notFoundUrls = 0;
+        $urlsCSV = array();
+        $fileHandler = false;
+
+        if ($mode == 'Upload+Update') {
+            // Mode Upload+Update
+            $fileHandler = fopen($file, 'r');
+            if (!$fileHandler) {
+                log_message('ERROR', 'File not open ' . $file);
+                $history_run['ERROR'] = 'File not open ' . $file;
+                $this->_save_history($history_run);
+                return;
             }
-            $start_run2 = microtime(true);        
-            $exec_time = $start_run2 - $start_run;
-            $history_run[] =  "{$exec_time} sec - {$linesAdded} lines Phase 2";  
-            $history_run[] =  'End all sec: ' . ($start_run2 - $start_run);
-            $history_run[] =  'memory usage (peak) : (' . memory_get_peak_usage(). ')' . memory_get_usage() ;
-            $history_run[] =  ' threads='. count($this->threads);
-            $history_run[] =  ' parent waited='. $parent_sleep;
-            $notFoundUrls = $this->temp_data_model->getTableSize('notfoundurls');
-            $itemsUpdated = $this->temp_data_model->getTableSize('updated_items');
-            $itemsUnchanged = (2 * $linesScaned) - ( $itemsUpdated + $notFoundUrls);
-            $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
-            $this -> settings_model -> updateMatchingUrls($process, $val);
-            $history_run['thread_pid'] = 0;
-            $this->_save_history($history_run);
-            log_message('ERROR','MatchingUrls:' . print_r($history_run,true));
+            if ($fileCSV_id = $this->matchurls_data_model->getIdCSVFile($choosen_file)) {
+                $this->matchurls_data_model->deleteCSV($fileCSV_id);
+                log_message('ERROR', 'DB cleared for file ' . $choosen_file . ' file_id=' . $fileCSV_id);
+            }
+            $fileCSV_id = $this->matchurls_data_model->addCSVFile($choosen_file);
+        } else {
+            // Mode Update only
+            $fileCSV_id = $this->matchurls_data_model->getIdCSVFile($choosen_file);
+            if (!$fileCSV_id) {
+                log_message('ERROR', 'File not cacher in DB ' . $choosen_file);
+                $history_run['ERROR'] = 'File not cacher in DB ' . $choosen_file;
+            }
+            $urlsCSV = $this->matchurls_data_model->getUrlsCSVFile($fileCSV_id);
+            $linesAdded = count($urlsCSV);
         }
 
+        $this->settings_model->addMatchingUrls($mode . ' ' . $choosen_file, $process, $linesAdded);
+        $this->_save_history($history_run);
+
+        while ($urls = $this->_nextMathUrlsPair($mode, $fileHandler, $urlsCSV)) {
+
+            ++$linesScaned;
+
+            if ($mode == 'Upload+Update') {
+                $this->matchurls_data_model->addUrlToMatch($fileCSV_id, $urls['url1'], $urls['url2']); //Add urls to table
+            }
+            $urls_in_1 = urlencode($urls['url1']);
+            $urls_in_2 = urlencode($urls['url2']);
+
+            if ($this->maxthreads <= 1) {
+                $atuc = $this->match_urls_thread_worker($process, $urls_in_1, $urls_in_2);
+            } else {
+                for ($i = 0; $i < $this->maxthreads; $i++) {
+                    if (!isset($this->threads[$i]) || (isset($this->threads[$i]) && !$this->_is_process_running($this->threads[$i]))) {
+                        // start new worker
+                        $this->threads[$i] = $this->_run_in_background("php cli.php crons match_urls_thread_worker \"$process\" " . $urls_in_1 . " " . $urls_in_1 . " ");
+                        break;
+                    }
+                }
+                while ($this->_is_all_processes_running()) {
+                    // all worker is working - we waiting
+                    ++$parent_sleep;
+                    sleep(1);
+                }
+                $atuc = 0;  // normal processed with threads - not return from workers
+            }
+
+            if ($atuc < 0) {
+                log_message('ERROR', 'incorrect ATUC');
+                exit();
+            }
+//                    $itemsUnchanged += $atuc;
+            $timing = microtime(true) - $start;
+
+            if ($timing - $old_timing > 5) { // set the update interval information for frontend
+                $lts = $linesScaned;
+                $itemsUpdated = $this->temp_data_model->getTableSize('updated_items');
+                $notFoundUrls = $this->temp_data_model->getTableSize('notfoundurls');
+                $itemsUnchanged = (2 * $linesScaned) - ( $itemsUpdated + $notFoundUrls);
+                $this->settings_model->procUpdMatchingUrls($process, $lts, $itemsUnchanged);
+                $old_timing = $timing;
+            }
+        }
+        if ($mode == 'Upload+Update') {
+            fclose($fileHandler);
+        }
+        while ($this->maxthreads > 1 && !$this->_is_all_processes_stopped()) {
+            // worker is working - we waiting
+            sleep(1);
+        }
+        $start_run2 = microtime(true);
+        $exec_time = $start_run2 - $start_run;
+        $history_run[] = "{$exec_time} sec - {$linesScaned} lines Phase 2";
+        $history_run[] = 'End all sec: ' . ($start_run2 - $start_run);
+        $history_run[] = 'memory usage (peak) : (' . memory_get_peak_usage() . ')' . memory_get_usage();
+        $history_run[] = ' threads=' . count($this->threads);
+        $history_run[] = ' parent waited=' . $parent_sleep;
+        $notFoundUrls = $this->temp_data_model->getTableSize('notfoundurls');
+        $itemsUpdated = $this->temp_data_model->getTableSize('updated_items');
+        $itemsUnchanged = (2 * $linesScaned) - ( $itemsUpdated + $notFoundUrls);
+        $val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
+        $this->settings_model->updateMatchingUrls($process, $val);
+        $history_run['thread_pid'] = 0;
+        $this->_save_history($history_run);
+        log_message('ERROR', 'MatchingUrls:' . print_r($history_run, true));
+    }
+
+    function _nextMathUrlsPair($mode, &$fileHandler, &$urlsCSV) {
+        if ($mode == 'Upload+Update') {
+            while ($line = fgets($fileHandler)) {
+                $urls = explode(',', trim(trim($line), ','));
+                if (count($urls) == 2) {
+//log_message('ERROR', "mode={$mode} urls=" . print_r($urls,true));                    
+                    return array('url1' => $urls[0], 'url2' => $urls[1]);
+                }
+            }
+        } else {
+            if($urls = next($urlsCSV)) {
+//log_message('ERROR', "mode={$mode} urls=" . print_r($urls,true));
+                return array('url1' => $urls->url1, 'url2' => $urls->url2);
+            }
+        }
+        return false;
+    }
+
+        
         function match_urls_thread_worker( $process, $urls_in_1, $urls_in_2 ) 
         {
              

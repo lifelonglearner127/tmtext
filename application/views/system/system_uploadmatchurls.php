@@ -23,6 +23,7 @@
   <div class="tab-content">
       <div id="mathchurls" class="tab-pane active">
           <div id="matching"></div>
+          <div class="row-fluid">
           <span class="btn btn-success fileinput-button pull-left" style="">
               Upload
               <i class="icon-plus icon-white"></i>
@@ -34,9 +35,20 @@
               <input type="file" multiple="" name="files[]" id="upload_urls_new">
           </span>
           <span class="btn btn-danger pull-left" id="stop_matches" style='margin-left: 10px;'>Stop</span>
+          </div>
+          <div class="row-fluid"  id="matching_uploaded">
+                    <label>Uploaded files:</label>
+                    <?php  echo form_dropdown('csv_files_list', $csv_files_list, null, 'id="choosen_file_select" class="inline_block lh_30 w_375 mb_reset"'); ?>
+          <span class="btn btn-success" id="update_urls" style="margin-left: 10px;"<?php if(count($csv_files_list)<2) echo ' disabled="disabled"';?> >Update</span>
+          <span class="btn btn-danger" id="delete_matches" style='margin-left: 10px;'<?php if(count($csv_files_list)<2) echo ' disabled="disabled"';?> >Delete</span>
+          </div>
           <input type="hidden" name="choosen_file" />
           <script>
 			var match_ajax = "";
+                        var update_urls_ajax = "";
+                        var delete_urls_ajax = "";
+                        var matching_uploaded = "";
+                        
             var flag_stop_match = false;
             $(function () {
                 var url = '<?php echo site_url('system/upload_match_urls'); ?>';
@@ -49,7 +61,7 @@
                     var manu_file_upload_opts = $("#manu_upload_urls_check").is(":checked");
                     console.log("manu_file_upload_opts status: ", manu_file_upload_opts);
                     match_ajax = $.post(url, {'choosen_file': $('input[name="choosen_file"]').val(), 'manu_file_upload_opts': manu_file_upload_opts}, function(data) {
-                  		console.log(data);
+                  		console.log(data);  matchingUploaded();
                     }, 'json');
 		    if(flag_stop_match)
 		    {	    
@@ -70,12 +82,49 @@
                     $('input[name="choosen_file"]').val(data.result.files[0].name);
                     var url = base_url+'index.php/system/check_urls_threading';
                     var manu_file_upload_opts = $("#manu_upload_urls_check").is(":checked");
-                    console.log("manu_file_upload_opts status: ", manu_file_upload_opts);
-                    match_ajax = $.post(url, {'choosen_file': $('input[name="choosen_file"]').val(), 'manu_file_upload_opts': manu_file_upload_opts}, function(data) {
-                  		console.log(data);
-                    }, 'json');
+                    match_ajax = $.ajax({
+                            type: "POST",
+                            async: true,
+                            url: url,
+                            data:  { 'choosen_file': $('input[name="choosen_file"]').val(), 'manu_file_upload_opts': manu_file_upload_opts },
+                            success: function (msg) 
+                                    { /*alert(msg) ;*/ matchingUploaded(); match_ajax = ""; },
+                            error: function (err)
+                            { alert(err.responseText); match_ajax = "";}
+                        });                    
                   }
                 });
+                $('#update_urls').on('click', function(e){
+                    var url = base_url+'index.php/system/update_urls_threading';
+                    if(update_urls_ajax == ""){
+                        update_urls_ajax = $.ajax({
+                            type: "POST",
+                            async: true,
+                            url: url,
+                            data:  { 'choosen_file': $('select#choosen_file_select').val() },
+                            success: function (msg) 
+                                    { update_urls_ajax = ""; },
+                            error: function (err)
+                            { alert(err.responseText); update_urls_ajax = "";}
+                        });
+                    }
+                });
+                $('#delete_matches').on('click', function(e){
+                    var url = base_url+'index.php/system/delete_load_urls';
+                    if(delete_urls_ajax == ""){ 
+                        delete_urls_ajax = $.ajax({
+                            type: "POST",
+                            async: true,
+                            url: url,
+                            data:  { 'choosen_file': $('select#choosen_file_select').val() },
+                            success: function (msg) 
+                                    { matchingUploaded(); delete_urls_ajax = ""; },
+                            error: function (err)
+                            { alert(err.responseText); delete_urls_ajax = "";}
+                        });
+                    }
+                });
+            
             });
             
           </script>
@@ -139,6 +188,7 @@
         var old_data=false;
         function check_matching_status(){
             if(flag_stop_match){
+                matchingUploaded();
                 return clearInterval(matching_checking_int)
             }    
             if($("#matching").length==0)return false;
@@ -172,6 +222,16 @@
             });
         }
         
+        function matchingUploaded() {
+                var url = base_url+'index.php/system/system_uploadmatchurls_update';
+
+                matching_uploaded = $.post(url, {}, 'html').done(function(data) { console.log(data);
+                        if(typeof(data) != 'undefined') {
+                                $("#matching_uploaded select").html(data);
+                        }
+                });
+        };
+                
         function activeBtns(type)
         {
             if(typeof(type) == 'undefined')
@@ -214,7 +274,7 @@
                     }
                 });
             });
-
+     
 		// ---- UI tooltips (start)
 		$("#pm_tab_newrow_btn").tooltip({
 			placement: 'bottom',
