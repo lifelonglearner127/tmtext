@@ -2848,12 +2848,12 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 					{
 						try
 						{
-							$check_id = $this->department_members_model->checkExist($site_id, $department_text);
+							$check_id = $this->department_members_model->checkExist($site_id, $department_text, $department_url);
 						} catch (Exception $e)
 						{
 							$this->department_members_model->db->close();
 							$this->department_members_model->db->initialize();
-							$check_id = $this->department_members_model->checkExist($site_id, $department_text);
+							$check_id = $this->department_members_model->checkExist($site_id, $department_text, $department_url);
 						}
 						if ($check_id)
 						{
