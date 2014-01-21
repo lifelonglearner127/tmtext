@@ -2586,8 +2586,8 @@ class Assess extends MY_Controller {
 
 									$str_title_long_seo = '<table class="table_keywords_long">';
 									foreach ($title_seo_prases as $pras) {
-										$str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td class = "phr-density">  ' . $pras['prc']
-												. '%</td><td style="display:none;" class = "phr-frequency">  ' . $pras['frq'] . '</td></tr>';
+										$str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td class = "phr-density" style="display:none;">  ' . $pras['prc']
+												. '%</td><td class = "phr-frequency">  ' . $pras['frq'] . '</td></tr>';
 									}
 									$tsp = $str_title_long_seo . '</table>';
 								}
