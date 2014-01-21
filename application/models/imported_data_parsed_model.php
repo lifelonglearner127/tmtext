@@ -40,9 +40,6 @@ class Imported_data_parsed_model extends CI_Model {
     function __construct() {
         parent::__construct();
     }
-    function repeated_data_count(){
-        
-    }
     function duplicate_revisions_count(){
         $sql = "select  count(*) as count from (select  imported_data_id from (select `imported_data_id`,`key`, `revision`, count(`id`) as cnt, min(id) as min_id
                 From `imported_data_parsed`
