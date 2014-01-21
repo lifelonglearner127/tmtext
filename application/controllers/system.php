@@ -718,7 +718,7 @@ class System extends MY_Controller {
 		$site_id = $this -> input -> post('site_id');
 		$site_name = explode(".", strtolower($this -> input -> post('site_name')));
 		$sited = implode('/', $site_name);
-		$call_link = base_url() . "crons/save_departments_categories/$site_id/$sited";
+		$call_link = base_url() . "index.php/crons/save_departments_categories/$site_id/$sited";
 		// > /dev/null 2>/dev/null &";
 		//echo $call_link;
 		$this -> site_categories_model -> curl_async($call_link);

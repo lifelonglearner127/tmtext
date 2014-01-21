@@ -2545,7 +2545,9 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		// $filespath = realpath(base_url()) . "jl_import_dir";
 		$filespath = $this->config->item('csv_upload_dir') . 'partial';
 
+		echo '<pre>';
 		var_dump($filespath);
+		echo '</pre>';
 
 		if (!file_exists($filespath))
 		{
@@ -2585,7 +2587,9 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		//$file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
 		$flist = get_filenames($filespath);
 
+		echo '<pre>';
 		var_dump($flist);
+		echo '</pre>';
 
 		if (empty($flist))
 		{
@@ -2608,7 +2612,9 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		    'site_categories' => array()
 		);
 
+		echo '<pre>';
 		var_dump($cfile);
+		echo '</pre>';
 
 		// new change 1 line
 		set_time_limit(1000);
@@ -3075,7 +3081,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		if (count($flist) > 0)
 		{
 			$sited = implode('/', $site_name);
-			$call_link = base_url() . "crons/save_departments_categories/$site_id/$sited"; // > /dev/null 2>/dev/null &";
+			$call_link = base_url() . "index.php/crons/save_departments_categories/$site_id/$sited"; // > /dev/null 2>/dev/null &";
 			// echo $call_link;
 
             // tmp:
@@ -3087,7 +3093,9 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		}
 		//        else{
 		//unset($_SESSION['mpost']);
+		echo '<pre>';
 		var_dump($debug_stack);
+		echo '</pre>';
 
         // tmp:
 		// $this->output->set_content_type('application/json')->set_output(json_encode($debug_stack));
