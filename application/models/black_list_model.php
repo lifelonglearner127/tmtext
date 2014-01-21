@@ -10,6 +10,26 @@ class Black_list_model extends CI_Model {
     {
         parent::__construct();
     }
+    function get($im_id){
+        $arr = array();
+        $query = $this->db->where('im_id_1', $im_id)
+                ->or_where('im_id_2', $im_id)
+            ->get($this->tables['black_list']);
+        $ress = $query->result_array();
+        foreach($ress as $res){
+            if($res['im_id_1'] != $im_id){
+               $arr[] = $res['im_id_1'];  
+            }
+            if($res['im_id_2'] != $im_id){
+               $arr[] = $res['im_id_2'];  
+            }
+
+        }
+        if(count($arr)>0){
+            return $arr;
+        }
+        return false;
+    }
     function insert($im_id_1, $im_id_2){
         $query = $this->db->where('im_id_1', $im_id_1)
                 ->or_where('im_id_2', $im_id_1)

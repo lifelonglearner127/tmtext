@@ -758,6 +758,7 @@ class Crons extends MY_Controller
 			$this->load->model('imported_data_parsed_model');
 			$this->load->model('sites_model');
 			$this->load->model('statistics_new_model');
+                        $this->load->model('black_list_model');
 			
 			//$this->statistics_new_model->truncate();
 			
@@ -927,11 +928,14 @@ $checkSimilar = microtime(true);
 											break;
 										}
 									}
-									
-									$similar_products_competitors[] = array(
-									    'imported_data_id' => $vs['imported_data_id'],
-									    'customer' => $customer
-									);
+                                                                        
+                                                                        $black_list_arr =$this->black_list_model->get($obj->imported_data_id);
+									if( !($black_list_arr && in_array($vs['imported_data_id'], $black_list_arr))){
+                                                                            $similar_products_competitors[] = array(
+                                                                                'imported_data_id' => $vs['imported_data_id'],
+                                                                                'customer' => $customer
+                                                                            );
+                                                                        }
 $getPrices = microtime(true);								
 									//Getting a three last prices for each item
 									try
@@ -998,10 +1002,13 @@ $checkSimilar2 = microtime(true);
 											break;
 										}
 									}
-									$similar_products_competitors[] = array(
-									    'imported_data_id' => $vs['imported_data_id'],
-									    'customer' => $customer
+                                                                        $black_list_arr =$this->black_list_model->get($obj->imported_data_id);
+									if( !($black_list_arr  && in_array($vs['imported_data_id'], $black_list_arr))){
+                                                                            $similar_products_competitors[] = array(
+                                                                                'imported_data_id' => $vs['imported_data_id'],
+                                                                                'customer' => $customer
 									);
+                                                                        }
 								}
 echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);								
 							}
@@ -1043,7 +1050,13 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 									break;
 								}
 							}
-							$similar_products_competitors[] = array('imported_data_id' => $val['imported_data_id'], 'customer' => $customer);
+                                                        $black_list_arr =$this->black_list_model->get($obj->imported_data_id);
+									if( !($black_list_arr && in_array($val['imported_data_id'], $black_list_arr))){
+                                                                            $similar_products_competitors[] = array(
+                                                                                'imported_data_id' => $val['imported_data_id'],
+                                                                                'customer' => $customer
+									);
+                                                        }
 						}
 					}
 
