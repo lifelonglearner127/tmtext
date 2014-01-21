@@ -34,7 +34,9 @@ class Assess extends MY_Controller {
             'deleteSecondaryMatch' => true,
             'getColumns' => true,
             'getCategoriesByBatch' => true,
-	    'checkImportProcess' => true
+	    'checkImportProcess' => true,
+	    'getBatchesExcludeOwnCustomer'=> true,
+	    'addSecondary'=> true
         ));
     }
 
@@ -515,17 +517,18 @@ class Assess extends MY_Controller {
         $this->load->model('customers_model');
         $customer_id = $this->customers_model->getIdByName($this->input->post('customer_name'));
         $batches = $this->batches_model->getAllByCustomer($customer_id);
+	$secondaryBatch = $this->batches_model->getSecondaryBatch(array('secondary_customer_id'=>$customer_id,'primary_batch_id'=>$this->input->post('primary_batch')));
         $batches_list = array();
         if (strtolower($this->input->post('customer_name')) == "select customer") {
             $batches = $this->batches_model->getAll();
             $batches_list[] = array('id' => 0, 'title' => 'Select batch');
         }
-
         if (!empty($batches)) {
 
             foreach ($batches as $batch) {
-
-                $batches_list[] = array('id' => $batch->id, 'title' => $batch->title);
+		$is_secondary = 0;    
+		if($secondaryBatch == $batch->id) $is_secondary = 1;   
+                $batches_list[] = array('id' => $batch->id, 'title' => $batch->title, 'is_secondary' => $is_secondary);
             }
         }
         $this->output->set_content_type('application/json')
@@ -4739,5 +4742,30 @@ class Assess extends MY_Controller {
 		{	
 			echo file_get_contents($file);
 		} 
+	}
+	
+	public function getBatchesExcludeOwnCustomer($batchId = 0)
+	{
+		$batchId = intval($batchId);
+		$json['list'] = array();
+		if($batchId > 0)
+		{
+		     $this->load->model('batches_model');
+		     $json['list'] = $this->batches_model->getBatchesForComparingByBatchId($batchId);
+		}
+		echo json_encode($json);
+	}
+	
+	public function addSecondary()
+	{
+		$params = $this->input->post();
+		$json['success'] = FALSE;
+		if(is_array($params) && count($params) > 2)
+		{
+			$this->load->model('batches_model');
+			$this->batches_model->addSecondaryBatch($params);
+			$json['success'] = TRUE;
+		}
+		echo json_encode($json);
 	}
 }

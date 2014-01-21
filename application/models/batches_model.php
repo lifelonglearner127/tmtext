@@ -11,7 +11,8 @@ class Batches_model extends CI_Model {
     var $tables = array(
         'batches' => 'batches',
         'customers' => 'customers',
-        'research_data' => 'research_data'
+        'research_data' => 'research_data',
+        'secondary_batches' => 'secondary_batches'
     );
 
     function __construct()
@@ -201,5 +202,60 @@ class Batches_model extends CI_Model {
                 `id`='{$id}'
                 ");
         return $result;
+    }
+    
+    function getBatchesForComparingByBatchId($batch_id = 0)
+    {
+	$result = array();    
+        $this->db->select('b.id,b.title,b.customer_id,c.name,s.secondary_batch_id');
+	$this->db->from($this->tables['batches']. ' b');
+	$this->db->join($this->tables['customers'].' c','c.id = b.customer_id');
+	$this->db->join($this->tables['secondary_batches'].' s','s.secondary_customer_id = b.customer_id AND s.primary_batch_id = '.$batch_id,'LEFT');
+        $this->db->where('b.customer_id != (SELECT customer_id FROM '.$this->tables['batches'].' WHERE id = '.$batch_id.' )',NULL,FALSE );
+	$query = $this->db->get();
+        if($query->num_rows() > 0) 
+	{
+             $results = $query->result_array();
+	     foreach($results as $row)
+	     {
+		 $result[$row['customer_id']]['name'] = $row['name'];     
+		 $result[$row['customer_id']]['secondary_id'] = $row['secondary_batch_id'];     
+		 $result[$row['customer_id']]['batches'][$row['id']] = $row['title'];     
+	     }
+        }
+        return $result;
+    }
+    
+    function addSecondaryBatch($data = array())
+    { 
+	    if(isset($data['primary_batch_id']) && isset($data['secondary_batch_id']) && isset($data['secondary_customer_id']))
+	    {
+		  $this->db->where('primary_batch_id',$data['primary_batch_id']);  
+		  $this->db->where('secondary_customer_id',$data['secondary_customer_id']);  
+		  $query = $this->db->get($this->tables['secondary_batches']);
+		  if($query->num_rows > 0)
+		  {
+			  $this->db->where('primary_batch_id',$data['primary_batch_id']);  
+			  $this->db->where('secondary_customer_id',$data['secondary_customer_id']);
+			  $this->db->update($this->tables['secondary_batches'],array('secondary_batch_id'=>$data['secondary_batch_id']));
+		  } else
+		  { 
+			  $this->db->insert($this->tables['secondary_batches'],$data);
+		  }
+	    }	    
+    }
+    
+    function getSecondaryBatch($where = array())
+    {
+	    $result = FALSE;
+	    $this->db->select('secondary_batch_id');
+	    $this->db->where($where);
+	    $query = $this->db->get($this->tables['secondary_batches']);
+	    if($query->num_rows > 0)
+	    {
+		    $result = $query->row();
+		    $result = $result->secondary_batch_id;
+	    }
+	    return $result;
     }
 }
