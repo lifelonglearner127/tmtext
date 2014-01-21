@@ -10,24 +10,7 @@ function close_popover(elem)
 	
 	return false;
 }
-// function topScroll(){
-	// $( "#tableScrollWrapper.red" ).remove();
-	// $( "#tableScrollWrapper" ).clone().insertBefore( "#tableScrollWrapper" ).addClass("red");
-	// $( "#tableScrollWrapper:not(.red)" ).addClass("xw");
-	
-	// $( "div#tableScrollWrapper.red" ).css("height", "16px").css("width", "101.6%");
-	
-	// $(function(){
-		// $(".red").scroll(function(){
-			// $(".xw:not(.red)").scrollLeft($(".red").scrollLeft());
-		// });
-		// $(".xw:not(.red)").scroll(function(){
-			// $(".red").scrollLeft($(".xw:not(.red)").scrollLeft());
-		// });						
-	// });
-	
-	// $("#tblAssess").floatThead('reflow');
-// }
+
 function resizeImpDown(status){
 	
 	var status = status || true	
@@ -3331,8 +3314,7 @@ function prevSibilfunc(curentSibil){
 				text : 'Continue',
                 click : function() {
 					var formData = $('#export_options_form').serializeArray();
-					
-					// It doesn't work yet.... in progress!
+										
                     exportAssessData.call($('#research_assess_export'), formData[0].value);
 					
                     $(this).dialog('close');

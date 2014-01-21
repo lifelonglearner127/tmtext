@@ -1,13 +1,10 @@
 <?php
 
 require_once(APPPATH . 'models/base_model.php');
+require_once(APPPATH . 'models/ifilters.php');
 
-class Filters_values extends Base_model 
-{	
-	const ICON_BLUE = 'assess_report_seo.png';
-	const ICON_YELLOW = 'assess_report_yellow.png';
-	const ICON_RED = 'assess_report_seo_red.png';
-
+class Filters_values extends Base_model implements IFilters 
+{		
 	public $id;
 	public $value;
 	public $filter_id;
