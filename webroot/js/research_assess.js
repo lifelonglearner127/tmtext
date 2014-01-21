@@ -2416,12 +2416,13 @@ function prevSibilfunc(curentSibil){
     $('#research_assess_compare_batches_customer').change(function(res) {
         var research_assess_compare_batches_batch = $("#research_assess_compare_batches_batch");
         $.post(base_url + 'index.php/assess/filterBatchByCustomerName', {
-            'customer_name': res.target.value
+            'customer_name': res.target.value, 'primary_batch': $('select[name="research_assess_batches"]').val()
         }, function(data) {
             if (data.length > 0) {
                 research_assess_compare_batches_batch.empty();
                 for (var i = 0; i < data.length; i++) {
-                    research_assess_compare_batches_batch.append('<option value="' + data[i]['id'] + '">' + data[i]['title'] + '</option>');
+		    var sel = ''; if(data[i]['is_secondary'] == 1) sel = 'selected="selected"';	
+                    research_assess_compare_batches_batch.append('<option '+sel+' value="' + data[i]['id'] + '">' + data[i]['title'] + '</option>');
                     if (i == 0 && $.trim($('#research_assess_compare_batches_customer').val()) == "select customer") {
 
                         research_assess_compare_batches_batch.append('<option value="all">' + "All" + '</option>');
@@ -2446,7 +2447,7 @@ function prevSibilfunc(curentSibil){
 
         });
 
-        var selectedBatch = $(this).find("option:selected").text();
+        var selectedBatch = $(this).find("option:selected").text(); 
         $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
             'batch': selectedBatch
         }, function(data) {
@@ -2517,7 +2518,7 @@ function prevSibilfunc(curentSibil){
             }
 			console.log('research_assess_batches on change event');
             buildReport(data);
-        }
+        } 
         $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
             'batch': selectedBatch
         }, function(data) {
@@ -2580,7 +2581,7 @@ function prevSibilfunc(curentSibil){
             }
 			console.log('research_assess_batches_competitor on change event');
             buildReport(data);
-        }
+        } 
         $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
             'batch': selectedBatch
         }, function(data) {
