@@ -60,6 +60,11 @@ class Site_categories_model extends CI_Model {
         $out.= "Content-Length: " . strlen($post_string) . "\r\n";
         $out.= "Connection: Close\r\n\r\n";
         fwrite($fp, $out);
+
+        while (!feof($fp)) {
+            echo fgets($fp, 128);
+        }
+        
         fclose($fp);
     }
 

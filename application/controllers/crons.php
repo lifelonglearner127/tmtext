@@ -2544,6 +2544,8 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		// $filespath = realpath(base_url()) . "jl_import_dir";
 		$filespath = $this->config->item('csv_upload_dir') . 'partial';
 
+		var_dump($filespath);
+
 		if (!file_exists($filespath))
 		{
 			mkdir($filespath);
@@ -2581,6 +2583,9 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		$site_name = explode(".", strtolower($this->input->post('site_name')));
 		//$file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
 		$flist = get_filenames($filespath);
+
+		var_dump($flist);
+
 		if (empty($flist))
 		{
 			//unset($_SESSION['mpost']);
@@ -2601,6 +2606,8 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		    'department_members' => array(),
 		    'site_categories' => array()
 		);
+
+		var_dump($cfile);
 
 		// new change 1 line
 		set_time_limit(1000);
@@ -2958,12 +2965,16 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 								'description_title' => $description_title,
 								'description_text' => $description_text
 							);
-							$this->site_categories_model->update($category_id, $update_data);
+							$site_categories_model_update_flag_two = $this->site_categories_model->update($category_id, $update_data);
+
+							$debug_stack_mid['site_categories_model_update_flag_two'] = $site_categories_model_update_flag_two;
 						}
 						else {
 							$category_id = $this->site_categories_model->insert($parent_id, $site_id, 
 								$text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, 
 								$keyword_count, $keyword_density, $description_title, $description_text, $level);
+
+							$debug_stack_mid['site_categories_model_insert'] = $category_id;
 						}
 					}
 
@@ -3056,21 +3067,29 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 				// ==== 'site_categories' DB table actions stuffs (end)
 			}
 		}
-		unlink($file);
+
+        // tmp:
+		// unlink($file);
+
 		if (count($flist) > 0)
 		{
 			$sited = implode('/', $site_name);
 			$call_link = base_url() . "crons/save_departments_categories/$site_id/$sited"; // > /dev/null 2>/dev/null &";
-			//echo $call_link;
-			echo $call_link;
-			$this->site_categories_model->curl_async($call_link);
+			// echo $call_link;
+
+            // tmp:
+			// $this->site_categories_model->curl_async($call_link);
+
 			//$srec = shell_exec("wget -S -O- ".$call_link);
 			//echo $srec;
 //          shell_exec("wget -S -O- ".  base_url()."system/save_department_categories > /dev/null 2>/dev/null &");
 		}
 		//        else{
 		//unset($_SESSION['mpost']);
-		$this->output->set_content_type('application/json')->set_output(json_encode($debug_stack));
+		var_dump($debug_stack);
+
+        // tmp:
+		// $this->output->set_content_type('application/json')->set_output(json_encode($debug_stack));
 //          }
 	}
 

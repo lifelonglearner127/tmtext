@@ -666,14 +666,16 @@ class System extends MY_Controller {
 			$fobj = '';
 			foreach ($fcont as $line) {
 				if (!file_exists($filespath . '/temp_imp_jl_' . $fnum . '.jl')) {
+					echo 'file ' . $filespath . ' doesn`t exist<br>';
 					if(file_put_contents($filespath . '/temp_imp_jl_' . $fnum . '.jl', $line) === false) {
 						echo 'can`t create file ' . $filespath . '/temp_imp_jl_' . $fnum . '.jl<br>';
 					} else {
 						echo 'file ' . $filespath . '/temp_imp_jl_' . $fnum . '.jl created<br>';
 					}
 					$fobj = fopen($filespath . '/temp_imp_jl_' . $fnum . '.jl', 'a');
-				} else
+				} else {
 					fwrite($fobj, $line);
+				}
 				if ($i == 500) {
 					++$fnum;
 					$i = 0;

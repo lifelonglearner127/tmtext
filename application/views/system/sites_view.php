@@ -619,11 +619,16 @@
                                     $('input[name="choosen_file"]').val(data.result.files[0].name);
 
                                     var url = base_url+'index.php/system/save_departments_categories';
-                                    $.post(url, { 'choosen_file': $('input[name="choosen_file"]').val(),
+                                    $.post(
+                                        url, 
+                                        { 
+                                            'choosen_file': $('input[name="choosen_file"]').val(),
                                             'site_id':  $("#sites .btn_caret_sign").attr('id'),
                                             'site_name':  $("#sites .btn_caret_sign").text()
-                                        }, function(data) {
+                                        }, 
+                                        function(data) {
                                             console.log(data);
+
                                             $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name':  $("#sites .btn_caret_sign").text()}, function(data) {
                                                 $("select[name='department']").empty();
                                                 if(data.length > 0){
@@ -641,7 +646,14 @@
                                                     }
                                                 }
                                             });
-                                    }, 'json');
+                                        }, 
+                                        'json'
+                                    ).fail( function(xhr, textStatus, errorThrown) {
+                                        console.log(xhr);
+                                        console.log(textStatus);
+                                        console.log(errorThrown);
+                                    });
+                                      
                                 }
                             });
                             $('#modify_department').click(function(){
