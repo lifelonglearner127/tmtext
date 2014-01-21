@@ -54,6 +54,7 @@
 		<li class="">
 			<a data-toggle="tab" href="<?php echo site_url('system/sync_keyword_status'); ?>">Sync Keyword Status</a>
 		</li>
+                <li class=""><a data-toggle="tab" href="<?php echo site_url('system/bad_matches');?>">Bad Matches</a></li>
 	</ul>
 	<div class="tab-content">
 		<div id="do_stats_status_moitor" class="tab-pane active">
