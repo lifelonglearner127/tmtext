@@ -550,7 +550,7 @@
 						<option value="Features">Features</option>
 					</select>
 					<input id="show_over_time" style="width: auto;margin-left:10px;margin-right:4px;" type="checkbox">
-					<span id="show_over_time_span"><label for="show_over_time" style="font-weight:bold;font-size:1em;">Show changes over time</label></span>
+					<span id="show_over_time_span"><label for="show_over_time" style="font-weight:bold;font-size:1em;display:inline;">Show changes over time</label></span>
 				</div>
 <!-- 			Castro #1119: convert dropdown to static end -->
                 <div id="assess_graph">

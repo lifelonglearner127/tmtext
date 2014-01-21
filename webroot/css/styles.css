@@ -891,7 +891,8 @@ a#research_batches_columns_export:hover,a.show_filters_configuration_popup:hover
 	float:right;
 	margin-top:4px;
 }
-td.word_prod,td.word_prod1,td.Duplicate_Content,td.Duplicate_Content1,td.mimg,td.mimg1,td.vid,td.vid1{
+td.word_prod,td.word_prod1,td.Duplicate_Content,td.Duplicate_Content1,td.mimg,td.mimg1,td.vid,td.vid1,
+td.images_cmp,td.images_cmp1,td.video_count,td.video_count1{
 	text-align:center;
 }
 th.word_prod{
@@ -900,4 +901,8 @@ th.word_prod{
 
 #set_compare_batches_batch,#set_compare_batches_customer{
 	font-size:14px;
+}
+
+#show_over_time[disabled]{
+	cursor:pointer !important;
 }
