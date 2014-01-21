@@ -2817,12 +2817,14 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 					{
 						try
 						{
-							$department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+							// $department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+							$department_members_model_up_flag = $this->department_members_model->updateFlagById($check_id);
 						} catch (Exception $e)
 						{
 							$this->department_members_model->db->close();
 							$this->department_members_model->db->initialize();
-							$department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+							// $department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+							$department_members_model_up_flag = $this->department_members_model->updateFlagById($check_id);
 						}
 						$debug_stack_mid['department_members_model_up_flag'] = $department_members_model_up_flag;
 						try
@@ -2858,6 +2860,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 						if ($check_id)
 						{
 							$department_members_id = $check_id;
+							$department_members_model_up_flag = $this->department_members_model->updateFlagById($check_id);
 						} else
 						{
 							$department_id = 0;
