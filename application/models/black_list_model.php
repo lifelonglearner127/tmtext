@@ -44,9 +44,7 @@ class Black_list_model extends CI_Model {
                 INNER JOIN imported_data_parsed AS idp1 ON bl.im_id_1 = idp1.imported_data_id
                 AND idp1.`key` =  'url'
                 INNER JOIN imported_data_parsed AS idp2 ON bl.im_id_2 = idp2.imported_data_id
-                AND idp2.`key` =  'url'";
-      
-        
+                AND idp2.`key` = 'url'";
         if($search){
            $sql .= " and (idp1.`value` like   '%".$search."%' or idp2.`value` like   '%".$search."%')";
                 }

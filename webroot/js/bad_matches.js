@@ -1,7 +1,8 @@
-var delUrl = '';
-var readUrl = base_url + 'index.php/system/bad_matches_data';
-var  tblMatches;
-var delHref;
+var delUrl = '',
+readUrl = base_url + 'index.php/system/bad_matches_data',
+tblMatches,
+delHref,
+selected_row;
 var columns = [
     {
         "sTitle": "Url1",
@@ -43,7 +44,7 @@ $(document).ready(function() {
 //                $( '#ajaxLoadAni' ).fadeIn( 'slow' );
                
                 var aaa = $.post( delHref, {}, 'json').done(function(data) {
-                   
+                   selected_row.remove();
                 });
                 $(this).dialog('close');
 
@@ -56,6 +57,7 @@ $(document).ready(function() {
     $('#tblMatches').delegate('a.deleteBtn', 'click', function() {
         $('#delConfDialog1').dialog('open');
         delHref = $(this).attr('href');
+        selected_row = $(this).closest('tr');
         return false;
 
     }); //end delete delegate
