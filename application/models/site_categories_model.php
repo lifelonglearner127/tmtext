@@ -61,9 +61,9 @@ class Site_categories_model extends CI_Model {
         $out.= "Connection: Close\r\n\r\n";
         fwrite($fp, $out);
 
-        // while (!feof($fp)) {
-        //     echo fgets($fp, 128);
-        // }
+        while (!feof($fp)) {
+            echo fgets($fp, 128);
+        }
         
         fclose($fp);
     }
