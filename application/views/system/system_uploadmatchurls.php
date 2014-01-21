@@ -234,7 +234,7 @@
         function matchingUploaded() {
                 var url = base_url+'index.php/system/system_uploadmatchurls_update';
 
-                matching_uploaded = $.post(url, {}, 'html').done(function(data) { console.log(data);
+                matching_uploaded = $.post(url, {}, 'html').done(function(data) {
                         if(typeof(data) != 'undefined') {
                             if($("#matching_uploaded select").html(data).find('option').length > 1) {
                                 $('#update_urls').removeAttr("disabled");
@@ -244,8 +244,6 @@
                                 $('#delete_matches').attr("disabled", "disabled");                                
                             }
                         }
-                            console.log(typeof(data));
-                            console.log($("#matching_uploaded select").find('option').length);
                 });
         };
                 
