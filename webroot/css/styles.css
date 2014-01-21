@@ -906,3 +906,7 @@ th.word_prod{
 #show_over_time[disabled]{
 	cursor:pointer !important;
 }
+
+#dt_tbl{
+	overflow:hidden;
+}

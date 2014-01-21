@@ -14,14 +14,14 @@ function close_popover(elem)
 function resizeImpDown(status){
 	
 	var status = status || true	
-	  , onResize = function(event) {			
-	 	tblAssessTable.floatThead({
+	  , onResize = function(event) {  			
+	 	/*tblAssessTable.floatThead({
 			scrollContainer: function($table){
 				return $table.closest('.wrapper');
 			}
 		});
 		
-		tblAssessTable.floatThead('reflow'); 
+		tblAssessTable.floatThead('reflow'); */
 	};
 	
 	var tblAssessTable = $("#tblAssess");
@@ -31,7 +31,7 @@ function resizeImpDown(status){
 		gripInnerHtml:"<div class='grip'></div>", 
 		draggingClass:"dragging",
 		onResize : onResize
-	});	
+	}); 
 	
 	onResize(null);
 }
