@@ -2563,7 +2563,7 @@ body.login_block{
 .subtitle_word_short, .subtitle_word_long, .subtitle_keyword_short, .subtitle_keyword_long{
     font-size: 10px!important;
 }
-.word_short, .word_short1 {
+td.word_short, td.word_short1 {
 	text-align: center;
 }
 .products_tb tr, .products_tb td{
