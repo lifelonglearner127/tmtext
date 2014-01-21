@@ -1490,12 +1490,27 @@ $(function() {
 		return r;
 	}
 	
+	function displayCustomFilters(onlyWithCompetitorFilters, method)
+	{	
+		_.map(onlyWithCompetitorFilters, function(filterid) {
+			$('.item_line[data-filterid$="' + filterid + '"]')[method]();
+		})			
+	}
+	
 	function transformFiltersSection()
 	{
-		var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch');
+		var research_assess_compare_batches_batch = $('#research_assess_compare_batches_batch');			
+		
 		if (research_assess_compare_batches_batch.val() == 0)
 		{
 			var batch1_filter_item = $('.batch1_filter_item');
+			
+			// display/hide	custom filters
+			displayCustomFilters([
+				'skus_shorter_than_competitor_product_content',
+				'skus_same_competitor_product_content',
+				'skus_fewer_competitor_optimized_keywords',
+			], 'hide');
 			
 			$('.batch_me_and_competitor').css({
 				'margin' : '-4px 0',
