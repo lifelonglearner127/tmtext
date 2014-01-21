@@ -2505,7 +2505,7 @@ class Assess extends MY_Controller {
 		}	
         
         $duplicate_content_range = 25;
-		$build_assess_params->batch2_items_count = $batch2_items_count = 0;
+		$batch2_items_count = 0;
 		
         $needFilters = $build_assess_params->needFilters;
         $displayCount = $build_assess_params->displayCount;
@@ -3563,7 +3563,7 @@ class Assess extends MY_Controller {
 				}, 'generals' => array('competitor' => $skus_title_more_than_70_chars)),
 				
 				'total_items_selected_by_filter' => array( 'value' => count($result_table), 'percentage' => array()),
-				'assess_report_competitor_matches_number' => array( 'value' => $build_assess_params->batch2_items_count, 'percentage' => array()),
+				'assess_report_competitor_matches_number' => array( 'value' => $batch2_items_count, 'percentage' => array()),
 				'skus_third_party_content' => array( 'value' => $skus_third_party_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_third_party_content_competitor)),
 				'skus_third_party_content_competitor' => array( 'value' => $skus_third_party_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_third_party_content)),
 				'skus_fewer_50_product_content' => array( 'value' => $skus_fewer_50_product_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_fewer_50_product_content_competitor)),
@@ -3621,7 +3621,7 @@ class Assess extends MY_Controller {
 			{						
 				$my_percent = 0;
 				
-				$report['summary'][$key] = trim($summary_field['value']) . $this->calculatePercentage(array('batch1' => $own_batch_total_items, 'batch2' => $build_assess_params->batch2_items_count), $summary_field, $my_percent);
+				$report['summary'][$key] = trim($summary_field['value']) . $this->calculatePercentage(array('batch1' => $own_batch_total_items, 'batch2' => $batch2_items_count), $summary_field, $my_percent);
 				if (isset($summary_field['icon']))
 					$report['summary'][$key . '_icon'] = $summary_field['icon'];
 				
