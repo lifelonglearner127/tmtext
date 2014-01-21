@@ -3075,17 +3075,12 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			}
 		}
 
-        // tmp:
-		// unlink($file);
-
+		unlink($file);
 		if (count($flist) > 0)
 		{
 			$sited = implode('/', $site_name);
 			$call_link = base_url() . "index.php/crons/save_departments_categories/$site_id/$sited"; // > /dev/null 2>/dev/null &";
-			// echo $call_link;
-
-            // tmp:
-			// $this->site_categories_model->curl_async($call_link);
+			$this->site_categories_model->curl_async($call_link);
 
 			//$srec = shell_exec("wget -S -O- ".$call_link);
 			//echo $srec;
