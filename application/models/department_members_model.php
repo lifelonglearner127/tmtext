@@ -398,6 +398,16 @@ class Department_members_model extends CI_Model {
         return $this->db->update($this->tables['department_members'], $data);
     }
 
+    function updateFlagById($id) 
+    {
+        $data = array(
+            'flag' => 'ready'
+        );
+
+        $this->db->where('id', $id);
+        return $this->db->update($this->tables['department_members'], $data);
+    }
+
 
     function getDescriptionData($site_id)
     {

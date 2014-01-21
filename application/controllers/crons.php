@@ -51,6 +51,7 @@ class Crons extends MY_Controller
 		    'fixmodel_length' => true,
 		    'fix_revisions' => true,
 		    'checkUploadedFiles' =>true, 
+                    'reset_models'=>true,
 		    'do_stats_bybatch' =>true, 
 		    'renameExistingFiles' =>true 
 		));
@@ -262,6 +263,55 @@ class Crons extends MY_Controller
 		);
 		return $res;
 	}
+        public function reset_models($batch_id=false){
+            if($batch_id==0){
+                echo '<br>All batches.<br>';exit;
+                $sql = "UPDATE imported_data_parsed SET model='null'";
+                $this->db->query($sql);
+		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
+		{
+			$call_link = base_url() . "fix_imported_data_parsed_models";
+			$this->site_categories_model->curl_async($call_link);
+		} else
+		{
+			shell_exec("wget -S -O- ".site_url('/crons/fix_imported_data_parsed_models')." > /dev/null 2>/dev/null &");
+		}
+            }
+            else{
+                $sql='select p.imported_data_id, idp.`value` as parsed_attributes
+                    from imported_data_parsed as p
+                    left join imported_data_parsed as idp 
+                    on p.imported_data_id=idp.imported_data_id and idp.`key`=\'parsed_attributes\'
+                    inner join crawler_list as cl on cl.imported_data_id = p.imported_data_id
+                    inner join research_data_to_crawler_list as rdcl on cl.id = rdcl.crawler_list_id
+                    inner join research_data as rd on rd.id = rdcl.research_data_id
+                    inner join batches as b on b.id =rd.batch_id
+                    where p.`key` = \'URL\' and b.id = '.$batch_id.
+                    ' group by imported_data_id'
+                        ;
+                $query = $this->db->query($sql);
+                if($query->num_rows>0){
+                    foreach($query->result() as $item){
+//                        var_dump($item); exit;
+                        $model = '';
+                        if($item->parsed_attributes){
+                            $pa = unserialize($item->parsed_attributes);
+                            if(isset($pa['model'])&&strlen($pa['model'])>3){
+                                $model=$pa['model'];
+                            }
+                        }
+                        else{
+                            $model='null';
+                        }
+                        $this->db->where('imported_data_id',$item->imported_data_id);
+                        $data=array(
+                            'model'=>$model
+                        );
+                        $this->db->update('imported_data_parsed',$data);
+                    }
+                }
+            }
+        }
 
 	/**
 	 * Cron Job for CI home tab screenshots reports mailer
@@ -2817,12 +2867,14 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 					{
 						try
 						{
-							$department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+							// $department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+							$department_members_model_up_flag = $this->department_members_model->updateFlagById($check_id);
 						} catch (Exception $e)
 						{
 							$this->department_members_model->db->close();
 							$this->department_members_model->db->initialize();
-							$department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+							// $department_members_model_up_flag = $this->department_members_model->updateFlag($site_id, $department_text);
+							$department_members_model_up_flag = $this->department_members_model->updateFlagById($check_id);
 						}
 						$debug_stack_mid['department_members_model_up_flag'] = $department_members_model_up_flag;
 						try
@@ -2858,6 +2910,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 						if ($check_id)
 						{
 							$department_members_id = $check_id;
+							$department_members_model_up_flag = $this->department_members_model->updateFlagById($check_id);
 						} else
 						{
 							$department_id = 0;
