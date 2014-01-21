@@ -897,3 +897,7 @@ td.word_prod,td.word_prod1,td.Duplicate_Content,td.Duplicate_Content1,td.mimg,td
 th.word_prod{
 	width:80px !important;
 }
+
+#set_compare_batches_batch,#set_compare_batches_customer{
+	font-size:14px;
+}

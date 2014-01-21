@@ -1,4 +1,7 @@
 <?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+require_once(APPPATH . 'models/ifilters.php');
+
 if ( ! function_exists('render_filter_item'))
 {
 	function render_filter_item($index, $filter_id, $icon, $label, $batch_class_number = '', $is_extended_partial = true, array $question = array(), $display = false)
@@ -48,6 +51,10 @@ if ( ! function_exists('get_filters') )
 		return array(
 			array(
 				'data_filter_id' => 'assess_report_total_items',
+				'filter_id' => array( 
+					IFilters::ASSESS_REPORT_TOTAL_ITEMS,
+					IFilters::ASSESS_REPORT_TOTAL_ITEMS_COMPETITOR,
+				),
 				'icon' => 'assess_report_number.png',
 				'label' => 'Total SKUs Analyzed:',
 				'has_competitor' => true,
@@ -67,6 +74,7 @@ if ( ! function_exists('get_filters') )
 			),			
 			array(
 				'data_filter_id' => 'assess_report_items_priced_higher_than_competitors',
+				'filter_id' => IFilters::ASSESS_REPORT_ITEMS_PRICED_HIGHER_THAN_COMPETITORS,
 				'icon' => 'assess_report_dollar.png',
 				'label' => 'SKUs priced higher than competitor:',				
 				'question' => array(				
@@ -75,6 +83,7 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_shorter_than_competitor_product_content',
+				'filter_id' => IFilters::SKUS_SHORTER_THAN_COMPETITOR_PRODUCT_CONTENT,
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs that have shorter product content than competitor:',
 				'is_default' => true,
@@ -84,6 +93,7 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_longer_than_competitor_product_content',
+				'filter_id' => IFilters::SKUS_LONGER_THAN_COMPETITOR_PRODUCT_CONTENT,
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs that have longer product content than competitor:',
 				'question' => array(				
@@ -92,6 +102,7 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_same_competitor_product_content',
+				'filter_id' => IFilters::SKUS_SAME_COMPETITOR_PRODUCT_CONTENT,
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs that have same length product content as competitor:',
 				'question' => array(				
@@ -100,6 +111,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_fewer_50_product_content',
+				'filter_id' => array(
+					IFilters::SKUS_FEWER_50_PRODUCT_CONTENT,
+					IFilters::SKUS_FEWER_50_PRODUCT_CONTENT_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs with product content < 50 words:',
 				'has_competitor' => true,
@@ -115,6 +130,10 @@ if ( ! function_exists('get_filters') )
 			),		
 			array(
 				'data_filter_id' => 'skus_fewer_100_product_content',
+				'filter_id' => array(
+					IFilters::SKUS_FEWER_100_PRODUCT_CONTENT,
+					IFilters::SKUS_FEWER_100_PRODUCT_CONTENT_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs with product content < 100 words:',				
 				'has_competitor' => true,
@@ -130,6 +149,10 @@ if ( ! function_exists('get_filters') )
 			),		
 			array(
 				'data_filter_id' => 'skus_fewer_150_product_content',
+				'filter_id' => array(
+					IFilters::SKUS_FEWER_150_PRODUCT_CONTENT,
+					IFilters::SKUS_FEWER_150_PRODUCT_CONTENT_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs with product content < 150 words:',
 				'has_competitor' => true,
@@ -144,6 +167,7 @@ if ( ! function_exists('get_filters') )
 			),		
 			array(
 				'data_filter_id' => 'skus_fewer_competitor_optimized_keywords',
+				'filter_id' => IFilters::SKUS_FEWER_COMPETITOR_OPTIMIZED_KEYWORDS,
 				'icon' => 'assess_report_seo_red.png',
 				'is_default' => true,
 				'label' => 'SKUs that have product content with fewer keywords from the title than competitor:','question' => array(				
@@ -152,6 +176,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_zero_optimized_keywords',
+				'filter_id' => array(
+					IFilters::SKUS_ZERO_OPTIMIZED_KEYWORDS,
+					IFilters::SKUS_ZERO_OPTIMIZED_KEYWORDS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs that contain no keywords from the product title in the product description:',
 				'has_competitor' => true,
@@ -167,6 +195,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_one_optimized_keywords',
+				'filter_id' => array(
+					IFilters::SKUS_ONE_OPTIMIZED_KEYWORDS,
+					IFilters::SKUS_ONE_OPTIMIZED_KEYWORDS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs that contain only 1 keyword from the product title in the product description:',
 				'has_competitor' => true,
@@ -182,6 +214,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_two_optimized_keywords',
+				'filter_id' => array(
+					IFilters::SKUS_TWO_OPTIMIZED_KEYWORDS,
+					IFilters::SKUS_TWO_OPTIMIZED_KEYWORDS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo_yellow.png',
 				'label' => 'SKUs that contain 2 keywords from the product title in the product description:',
 				'has_competitor' => true,
@@ -196,6 +232,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_three_optimized_keywords',
+				'filter_id' => array(
+					IFilters::SKUS_THREE_OPTIMIZED_KEYWORDS,
+					IFilters::SKUS_THREE_OPTIMIZED_KEYWORDS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs that contain 3 or more keywords from the product title in the product description:',
 				'has_competitor' => true,
@@ -210,6 +250,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_title_less_than_70_chars',
+				'filter_id' => array(
+					IFilters::SKUS_TITLE_LESS_THAN_70_CHARS,
+					IFilters::SKUS_TITLE_LESS_THAN_70_CHARS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs with title < 70 characters:',
 				'has_competitor' => true,
@@ -224,6 +268,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_title_more_than_70_chars',
+				'filter_id' => array(
+					IFilters::SKUS_TITLE_MORE_THAN_70_CHARS,
+					IFilters::SKUS_TITLE_MORE_THAN_70_CHARS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs that have title of 70 characters or more:',
 				'has_competitor' => true,
@@ -238,6 +286,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_with_no_product_images',
+				'filter_id' => array(
+					IFilters::SKUS_WITH_NO_PRODUCT_IMAGES,
+					IFilters::SKUS_WITH_NO_PRODUCT_IMAGES_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs with no product images:',
 				'has_competitor' => true,
@@ -252,6 +304,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_with_one_product_image',
+				'filter_id' => array(
+					IFilters::SKUS_WITH_ONE_PRODUCT_IMAGE,
+					IFilters::SKUS_WITH_ONE_PRODUCT_IMAGE_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs with one product image:',
 				'has_competitor' => true,
@@ -266,6 +322,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_with_more_than_one_product_image',
+				'filter_id' => array(
+					IFilters::SKUS_WITH_MORE_THAN_ONE_PRODUCT_IMAGE,
+					IFilters::SKUS_WITH_MORE_THAN_ONE_PRODUCT_IMAGE_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs with more than one product image:',
 				'has_competitor' => true,
@@ -280,6 +340,7 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_fewer_reviews_than_competitor',
+				'filter_id' => IFilters::SKUS_FEWER_REVIEWS_THAN_COMPETITOR,
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs that have fewer reviews than competitor:',	
 				'question' => array(				
@@ -288,6 +349,10 @@ if ( ! function_exists('get_filters') )
 			),		
 			array(
 				'data_filter_id' => 'skus_zero_reviews',
+				'filter_id' => array(
+					IFilters::SKUS_ZERO_REVIEWS,
+					IFilters::SKUS_ZERO_REVIEWS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs that have 0 reviews:',	
 				'has_competitor' => true,
@@ -302,6 +367,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_one_four_reviews',
+				'filter_id' => array(
+					IFilters::SKUS_ONE_FOUR_REVIEWS,
+					IFilters::SKUS_ONE_FOUR_REVIEWS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs that have 1 - 4 reviews:',	
 				'has_competitor' => true,
@@ -316,6 +385,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_more_than_five_reviews',
+				'filter_id' => array(
+					IFilters::SKUS_MORE_THAN_FIVE_REVIEWS,
+					IFilters::SKUS_MORE_THAN_FIVE_REVIEWS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs that have 5 or more reviews:',	
 				'has_competitor' => true,
@@ -330,6 +403,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_more_than_hundred_reviews',
+				'filter_id' => array(
+					IFilters::SKUS_MORE_THAN_HUNDRED_REVIEWS,
+					IFilters::SKUS_MORE_THAN_HUNDRED_REVIEWS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs that have 100 or more reviews:',	
 				'has_competitor' => true,
@@ -344,6 +421,7 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_fewer_features_than_competitor',
+				'filter_id' => IFilters::SKUS_FEWER_FEATURES_THAN_COMPETITOR,
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs that have fewer product specifications listed than competitor:',
 				'question' => array(				
@@ -352,6 +430,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_features',
+				'filter_id' => array(
+					IFilters::SKUS_FEATURES,
+					IFilters::SKUS_FEATURES_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs that have at least 1 product specification:',
 				'has_competitor' => true,
@@ -366,6 +448,7 @@ if ( ! function_exists('get_filters') )
 			),		
 			array(
 				'data_filter_id' => 'skus_75_duplicate_content',
+				'filter_id' => IFilters::SKUS_75_DUPLICATE_CONTENT,
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs that have 75% or more duplicate content:',		
 				'is_default' => true,
@@ -375,6 +458,7 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_50_duplicate_content',
+				'filter_id' => IFilters::SKUS_50_DUPLICATE_CONTENT,
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs that have 50% or more duplicate content:',			
 				'question' => array(					
@@ -383,6 +467,7 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_25_duplicate_content',
+				'filter_id' => IFilters::SKUS_25_DUPLICATE_CONTENT,
 				'icon' => 'assess_report_seo_yellow.png',
 				'label' => 'SKUs that have 25% or more duplicate content:',			
 				'question' => array(					
@@ -391,6 +476,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_third_party_content',
+				'filter_id' => array(
+					IFilters::SKUS_THIRD_PARTY_CONTENT,
+					IFilters::SKUS_THIRD_PARTY_CONTENT_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs that have third party content:',
 				'has_competitor' => true,
@@ -405,6 +494,10 @@ if ( ! function_exists('get_filters') )
 			),		
 			array(
 				'data_filter_id' => 'skus_pdfs',
+				'filter_id' => array(
+					IFilters::SKUS_PDFS,
+					IFilters::SKUS_PDFS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs that have PDFs:',
 				'has_competitor' => true,
@@ -419,6 +512,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_videos',
+				'filter_id' => array(
+					IFilters::SKUS_VIDEOS,
+					IFilters::SKUS_VIDEOS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo.png',
 				'label' => 'SKUs that have videos:',
 				'has_competitor' => true,
@@ -433,6 +530,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_with_zero_product_description_links',
+				'filter_id' => array(
+					IFilters::SKUS_WITH_ZERO_PRODUCT_DESCRIPTION_LINKS,
+					IFilters::SKUS_WITH_ZERO_PRODUCT_DESCRIPTION_LINKS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs with 0 Product Description links:',	
 				'has_competitor' => true,
@@ -447,6 +548,10 @@ if ( ! function_exists('get_filters') )
 			),
 			array(
 				'data_filter_id' => 'skus_with_more_than_one_product_description_links',
+				'filter_id' => array(
+					IFilters::SKUS_WITH_MORE_THAN_ONE_PRODUCT_DESCRIPTION_LINKS,
+					IFilters::SKUS_WITH_MORE_THAN_ONE_PRODUCT_DESCRIPTION_LINKS_COMPETITOR,
+				),
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs with > 0 Product Description links:',	
 				'has_competitor' => true,
@@ -459,8 +564,9 @@ if ( ! function_exists('get_filters') )
 					)
 				)
 			),	
-		        array(
+			array(
 				'data_filter_id' => 'skus_with_manufacturer_videos',
+				'filter_id' => IFilters::SKUS_WITH_MANUFACTURER_VIDEOS,
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs with manufacturer videos available:',
 				'is_default' => true,
@@ -468,8 +574,9 @@ if ( ! function_exists('get_filters') )
 					'explanation' => 'The number of your SKUs that have manufacturer videos.',
 				)
 			),
-		        array(
+			array(
 				'data_filter_id' => 'skus_with_manufacturer_images',
+				'filter_id' => IFilters::SKUS_WITH_MANUFACTURER_IMAGES,
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs with manufacturer images available:',
 				'is_default' => true,
@@ -477,8 +584,9 @@ if ( ! function_exists('get_filters') )
 					'explanation' => 'The number of your SKUs that have manufacturer images.',
 				)
 			),
-		        array(
+			array(
 				'data_filter_id' => 'skus_with_manufacturer_pages',
+				'filter_id' => IFilters::SKUS_WITH_MANUFACTURER_PAGES,
 				'icon' => 'assess_report_seo_red.png',
 				'label' => 'SKUs with manufacturer pages:',
 				'is_default' => true,

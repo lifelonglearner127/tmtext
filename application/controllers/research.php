@@ -1651,7 +1651,7 @@ class Research extends MY_Controller {
         $this->output->set_content_type('application/json')
             ->set_output(json_encode($batches_list));
     }
-
+    
     public function filterBatchByCustomer(){
         $this->load->model('batches_model');
         $this->load->model('customers_model');

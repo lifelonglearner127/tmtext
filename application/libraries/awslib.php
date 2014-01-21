@@ -12,6 +12,7 @@ class Awslib {
 
     public $debug=true;
     public $ssh=true;
+    public $securityGroupName = 'test-security-group';
 
     public $errors = array();
 
@@ -26,25 +27,23 @@ class Awslib {
         $this->ec2client = $this->aws->get('ec2');
     }
 
-    function run($min=1,$max=1){
-		$securityGroupName = 'test-security-group';
-
-		try{
+    function security() {
+		try {
 			$result = $this->ec2client->describeSecurityGroups(array(
-			    'GroupNames' => array($securityGroupName)
+			    'GroupNames' => array($this->securityGroupName)
 			));
 		} catch(Exception $e) {
 			if ($e->getExceptionCode() == 'InvalidGroup.NotFound') {
 				//Creating group
 				$result = $this->ec2client->createSecurityGroup(array(
-				    'GroupName'   => $securityGroupName,
+				    'GroupName'   => $this->securityGroupName,
 				    'Description' => 'ssh server security'
 				));
 
 				if ($this->ssh) {
 					// SSH auth
 					$this->ec2client->authorizeSecurityGroupIngress(array(
-					    'GroupName'     => $securityGroupName,
+					    'GroupName'     => $this->securityGroupName,
 					    'IpPermissions' => array(
 					        array(
 					            'IpProtocol' => 'tcp',
@@ -58,12 +57,20 @@ class Awslib {
 					));
 				}
 			} else {
-				if($this->debug){
+				if ($this->debug) {
 					$this->errors[] = $e->getMessage();
 				}
 				return false;
 			}
 		}
+
+		return true;
+    }
+
+    function run($min=1,$max=1) {
+    	if (!$this->security()) {
+    		return false;
+    	}
 
 		$result = $this->ec2client->runInstances(array(
 		    'ImageId'        => $this->CI->config->item('aws_ami_id'),
@@ -71,7 +78,25 @@ class Awslib {
 		    'MaxCount'       => $max,
 		    'InstanceType'   => $this->CI->config->item('aws_instance_type'),
 //		    'KeyName'        => $keyPairName,
-		    'SecurityGroups' => array($securityGroupName),
+		    'SecurityGroups' => array($this->securityGroupName),
+		));
+
+		return $result;
+    }
+
+	function runSpot($price='0.005', $count=1) {
+    	if (!$this->security()) {
+    		return false;
+    	}
+
+		$result = $this->ec2client->requestSpotInstances(array(
+    		'SpotPrice' => $price,
+			'InstanceCount' => $count,
+			'LaunchSpecification' => array(
+				'ImageId' => $this->CI->config->item('aws_ami_id'),
+				'InstanceType' => $this->CI->config->item('aws_instance_type'),
+				'SecurityGroups' => array($this->securityGroupName),
+			),
 		));
 
 		return $result;
@@ -104,6 +129,13 @@ class Awslib {
 		return $result;
     }
 
+    function describeSpot($ids) {
+    	$result = $this->ec2client->describeSpotInstanceRequests(array(
+		    'SpotInstanceRequestIds' => $ids,
+		));
+		return $result;
+    }
+
     function waitRunning($ids) {
     	$this->ec2client->waitUntilInstanceRunning(array(
 		    'InstanceIds' => $ids,
@@ -114,6 +146,13 @@ class Awslib {
     	$this->ec2client->waitUntilInstanceTerminated(array(
 		    'InstanceIds' => $ids,
 		));
+    }
+
+    function cancelSpot($ids) {
+    	$result = $this->ec2client->cancelSpotInstanceRequests(array(
+		    'SpotInstanceRequestIds' => $ids,
+		));
+		return $result;
     }
 
 }

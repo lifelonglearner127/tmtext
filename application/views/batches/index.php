@@ -251,7 +251,13 @@
 				Items will be added to a batch if you choose an existing batch.
 				<div class="span11 batch_info mt_10"></div>
 			</div>
-		</div>
+	</div>
+	    <div id="set_compare_batch_wrap" style="display:none;">
+		    <label>Set seconary batch for comparing:</label>
+		    <select id="set_compare_batches_customer"></select>
+		    <select id="set_compare_batches_batch"></select>&nbsp;&nbsp;
+		    <div id="save-secondary" class="btn btn-success">Set</div>
+	    </div>    
         <div class="row-fluid mt_20">
             <!--textarea id="urls" class="span10" style="min-height: 111px"></textarea-->
             <div class="search_area uneditable-input span9" onClick="this.contentEditable='true';" style="cursor: text; width:536px; min-height: 111px; overflow : auto; float: left;" id="urls"></div>

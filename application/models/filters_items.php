@@ -1,8 +1,9 @@
 <?php
 
 require_once(APPPATH . 'models/base_model.php');
+require_once(APPPATH . 'models/ifilters.php');
 
-class Filters_items extends Base_model 
+class Filters_items extends Base_model implements IFilters 
 {	
 	public $id;
 	public $item_key;

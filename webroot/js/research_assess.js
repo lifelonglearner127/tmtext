@@ -10,24 +10,7 @@ function close_popover(elem)
 	
 	return false;
 }
-// function topScroll(){
-	// $( "#tableScrollWrapper.red" ).remove();
-	// $( "#tableScrollWrapper" ).clone().insertBefore( "#tableScrollWrapper" ).addClass("red");
-	// $( "#tableScrollWrapper:not(.red)" ).addClass("xw");
-	
-	// $( "div#tableScrollWrapper.red" ).css("height", "16px").css("width", "101.6%");
-	
-	// $(function(){
-		// $(".red").scroll(function(){
-			// $(".xw:not(.red)").scrollLeft($(".red").scrollLeft());
-		// });
-		// $(".xw:not(.red)").scroll(function(){
-			// $(".red").scrollLeft($(".xw:not(.red)").scrollLeft());
-		// });						
-	// });
-	
-	// $("#tblAssess").floatThead('reflow');
-// }
+
 function resizeImpDown(status){
 	
 	var status = status || true	
@@ -2416,12 +2399,13 @@ function prevSibilfunc(curentSibil){
     $('#research_assess_compare_batches_customer').change(function(res) {
         var research_assess_compare_batches_batch = $("#research_assess_compare_batches_batch");
         $.post(base_url + 'index.php/assess/filterBatchByCustomerName', {
-            'customer_name': res.target.value
+            'customer_name': res.target.value, 'primary_batch': $('select[name="research_assess_batches"]').val()
         }, function(data) {
             if (data.length > 0) {
                 research_assess_compare_batches_batch.empty();
                 for (var i = 0; i < data.length; i++) {
-                    research_assess_compare_batches_batch.append('<option value="' + data[i]['id'] + '">' + data[i]['title'] + '</option>');
+		    var sel = ''; if(data[i]['is_secondary'] == 1) sel = 'selected="selected"';	
+                    research_assess_compare_batches_batch.append('<option '+sel+' value="' + data[i]['id'] + '">' + data[i]['title'] + '</option>');
                     if (i == 0 && $.trim($('#research_assess_compare_batches_customer').val()) == "select customer") {
 
                         research_assess_compare_batches_batch.append('<option value="all">' + "All" + '</option>');
@@ -2446,7 +2430,7 @@ function prevSibilfunc(curentSibil){
 
         });
 
-        var selectedBatch = $(this).find("option:selected").text();
+        var selectedBatch = $(this).find("option:selected").text(); 
         $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
             'batch': selectedBatch
         }, function(data) {
@@ -2517,7 +2501,7 @@ function prevSibilfunc(curentSibil){
             }
 			console.log('research_assess_batches on change event');
             buildReport(data);
-        }
+        } 
         $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
             'batch': selectedBatch
         }, function(data) {
@@ -2580,7 +2564,7 @@ function prevSibilfunc(curentSibil){
             }
 			console.log('research_assess_batches_competitor on change event');
             buildReport(data);
-        }
+        } 
         $.post(base_url + 'index.php/assess/filterCustomerByBatch', {
             'batch': selectedBatch
         }, function(data) {
@@ -3235,13 +3219,19 @@ function prevSibilfunc(curentSibil){
 		},'json');
 	}	
 	
-	function exportAssessData()
+	function exportAssessData(mode)
 	{
+		if (typeof tblAssess == 'undefined') {
+			alert("Data is not received yet. Please click Update button first.");
+			return false;
+		}
+		
 		var batch_set = $('.result_batch_items:checked').val() || 'me'
 		  , checked_columns = ['url']
 		  , summaryFilterData = summaryInfoSelectedElements.join(',')
 		  , elem = this
-		  , main_path = elem.prop('href') + '?';
+		  , main_path = elem.prop('href') + '?'
+		  , settings = tblAssess.fnSettings();
 				
 		if ( !GetURLParameter('checked_columns_results') ) {
             
@@ -3256,7 +3246,13 @@ function prevSibilfunc(curentSibil){
               , cmp_selected = GetURLParameter('cmp_selected');
          
 		}  		 	                                        
-	
+
+		//exporting all selectable marked columns
+		if (mode == 'export_everything')		
+			for (var it in settings.getSelectableColumns)				
+				if ($('#column_' + settings.getSelectableColumns[it]['sName']).is(':checked'))
+					checked_columns.push(settings.getSelectableColumns[it]['sName']);								
+		
         $.fileDownload( main_path + buildGetRequest($.extend(buildTableParams([], false), {
 			batch_id : batch_id,
 			cmp_selected : cmp_selected,
@@ -3317,10 +3313,9 @@ function prevSibilfunc(curentSibil){
             'Continue': { 
 				text : 'Continue',
                 click : function() {
-					var formData = $('#export_options_form').serialize();
-					
-					// It doesn't work yet.... in progress!
-                    exportAssessData.call($('#research_assess_export'));
+					var formData = $('#export_options_form').serializeArray();
+										
+                    exportAssessData.call($('#research_assess_export'), formData[0].value);
 					
                     $(this).dialog('close');
                 }

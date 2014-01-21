@@ -154,10 +154,10 @@
                 <div style="float: left;">
                     Compare with:
                     <select id="research_assess_compare_batches_customer"></select>
-                    <select id="research_assess_compare_batches_batch"></select>
+                    <select id="research_assess_compare_batches_batch" style="display:none;"></select>
 
                 </div>
-                <div style="float: left;" class="ml_5">
+                <div style="float: left;margin-left:24px !important;" class="ml_5">
                     <button id="research_assess_compare_batches_reset" class="btn">Reset</button>
                 </div>
                 <div style="float: left; padding-top: 5px; margin-left: 10px;">

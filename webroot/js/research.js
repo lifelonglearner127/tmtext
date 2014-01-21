@@ -731,7 +731,10 @@ $(document).ready(function () {
 
         return false;
     });
-
+    var secBatches = $('#set_compare_batches_batch');
+    var secCustomers = $('#set_compare_batches_customer');
+    var setWrap = $('#set_compare_batch_wrap');
+    var sbi;
     $(document).on("change", 'select[name="batches"]', function() {
 //        alert();
         var selectedBatch = $(this).find("option:selected").text();
@@ -749,7 +752,50 @@ $(document).ready(function () {
             if (selectedBatch.length == 0)
                 oDropdown.setIndexByValue('All Customers');
         });
-        
+	secBatches = $('#set_compare_batches_batch');
+	secCustomers = $('#set_compare_batches_customer');
+	setWrap = $('#set_compare_batch_wrap');
+	sbi = selectedBatchId;
+	$.get(base_url+'index.php/assess/getBatchesExcludeOwnCustomer/'+selectedBatchId,function(d){ 
+		if(typeof(d) !== 'undefined' && typeof(d.list) !== 'undefined')
+		{
+			var list = d.list;
+			var opts_c = '';
+			var opts_b = '';
+			for(var i in list)
+			{
+				if(typeof(list[i].batches) == 'object')
+				{	
+					opts_c += '<option value="'+i+'">'+list[i].name+'</option>';
+					var b = list[i].batches;
+					for(var j in b)
+					{
+						if(typeof(b) == 'object')
+						{	var s = 0;
+							if(list[i].secondary_id == j) s = 1;
+							opts_b += '<option data-selected="'+s+'" data-customer="'+i+'" value="'+j+'">'+b[j]+'</option>';
+						}	
+					}
+				}
+			}	
+			secCustomers.html(opts_c);
+			secBatches.html(opts_b);
+			var firstId = $('option:first',secBatches).data('customer');
+			$('option',secBatches).hide();
+			$('option[data-customer="'+firstId+'"]',secBatches).show();
+			$('option[data-selected="1"]',secBatches).attr('selected',true);
+			if(opts_c == '' || opts_b == '')
+			{	
+				setWrap.fadeOut();
+			} else
+			{	
+				setWrap.fadeIn();
+			}	
+		} else
+		{
+			setWrap.fadeOut();	
+		}
+	},'json');
         $.post(base_url + 'index.php/research/get_urls_from_batch', {
             'batch': selectedBatchId
         }, function(data){
@@ -777,6 +823,30 @@ $(document).ready(function () {
             }
         });
     });
+    secCustomers.change(function(){
+		var id = $(this).val();
+		$('option',secBatches).hide();
+		$('option[data-customer="'+id+'"]',secBatches).show();
+		$('option[data-customer="'+id+'"]:first',secBatches).attr('selected',true);
+		$('option[data-selected="1"]',secBatches).attr('selected',true);
+	});
+	$('body').on('click','#save-secondary',function(){
+		$.post(base_url+'index.php/assess/addSecondary', {
+			 primary_batch_id:sbi,
+			 secondary_batch_id:secBatches.val(),
+			 secondary_customer_id:secCustomers.val()
+		        },function(d){
+				if(d.success)
+				{
+					$('option[data-customer="'+secCustomers.val()+'"]',secBatches).attr('data-selected','0');
+					$('option[value="'+secBatches.val()+'"]',secBatches).attr('data-selected','1');
+					if($('#research_assess_compare_batches_customer').size() > 0)
+					{
+						$('#research_assess_compare_batches_customer').val('select customer').change();
+					}
+				}
+			},'json');
+	});
 });
 
 function checkBatchImport(){

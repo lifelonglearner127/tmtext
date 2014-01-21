@@ -17,44 +17,25 @@
             <li class=""><a data-toggle="tab" href="<?php echo site_url('measure/measure_pricing');?>">Pricing </a></li>
             <li class="active"><a data-toggle="tab" href="<?php echo site_url('measure/product_models');?>">Product models </a></li>
             <li class=""><a data-toggle="tab" href="<?php echo site_url('system/snapshot_queue');?>">Snapshot Queue</a></li>
-            <li class=""><a data-toggle="tab" href="<?php echo site_url('system/sync_keyword_status');?>">Sync Keyword Status</a></li>
-            <li class=""><a data-toggle="tab" href="<?php echo site_url('system/bad_matches');?>">Bad Matches</a></li>
+            <li class=""><a data-toggle="tab" href="<?php echo site_url('system/sync_keyword_status');?>">Sync Keyword Status</a></li> 
         </ul>
     <div class="tab-content">
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/smoothness/jquery-ui-1.8.2.custom.css" />
         <link type="text/css" rel="stylesheet" href="<?php echo base_url();?>css/styles.css" />
-        <script type="text/javascript" src="<?php echo base_url();?>js/change_model.js"></script>
+        <script type="text/javascript" src="<?php echo base_url();?>js/bad_matches.js"></script>
         <div class="row-fluid">
-            <div id="ajaxLoadAni">
+<!--            <div id="ajaxLoadAni">
                 <span>Loading...</span>
-            </div>
+            </div>-->
 
-            <!-- update form in dialog box -->
-            <div id="updateDialog1" title="Update">
-                <div>
-                    <form action="" method="post">
-                        <p>
-                            <label for="title">Model:</label>
-                            <input type="text" id="title" name="title" />
-                        </p>
-
-                        <input type="hidden" id="userId" name="id" />
-                    </form>
-                </div>
-            </div>
-
+           
             <!-- delete confirmation dialog box -->
             <div id="delConfDialog1" title="Confirm">
-                <p>Are you sure you want to delete model<br><span class="imported_data_id_"></span>?</p>
-                <input type="hidden" id="" name="del_im_id" />
+                <p>Are you sure you want to delete this couple<br><span class="imported_data_id_"></span>?</p>
             </div>
-
-
             <!-- message dialog box -->
             <div id="msgDialog"><p></p></div>
-            
-            
-            <table id="tblModels" class="tblDataTable" >
+            <table id="tblMatches" class="tblDataTable" >
                  <thead>
                  </thead>
                  <tbody>

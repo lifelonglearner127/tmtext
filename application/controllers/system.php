@@ -15,7 +15,8 @@ class System extends MY_Controller {
 		$this -> load -> model('imported_data_parsed_model');
 		$this -> load -> library('form_validation');
 
-		$this -> ion_auth -> add_auth_rules(array('urls_snapshot' => true, 'check_urls_threading' => true, 'stopChecking'=>true));
+		$this -> ion_auth -> add_auth_rules(array('urls_snapshot' => true, 'update_urls_threading' => true, 'check_urls_threading' => true, 'stopChecking'=>true,
+                                                          'delete_load_urls'=>true, 'system_uploadmatchurls_update'=>true ));
 
 	}
 
@@ -1696,7 +1697,7 @@ class System extends MY_Controller {
 		$sites = $this -> sites_model -> getAll();
 		$sitesArray = array();
 		foreach ($sites as $site) {
-			if (!in_array($customer -> name, sitesArray)) {
+			if (!in_array($site -> name, $sitesArray)) {
 				$sitesArray[$site -> id] = $site -> name;
 			}
 		}
@@ -2572,6 +2573,12 @@ class System extends MY_Controller {
 	}
 
 	public function system_uploadmatchurls() {
+                $this -> load -> model('matchurls_data_model');
+                $this -> matchurls_data_model -> createCSVFileTables();
+                $this -> data['csv_files_list']['all'] = 'All';
+                foreach ($this->matchurls_data_model->getAll() as $key => $value) {
+                    $this -> data['csv_files_list'][$value->file_name] = $value->file_name;
+                }
 		$this -> render();
 	}
 
@@ -2937,11 +2944,11 @@ class System extends MY_Controller {
              $this->temp_data_model->emptyTable('urlstomatch');
              $this->temp_data_model->emptyTable('updated_items');
              $this->settings_model->deledtMatching();
-             if($thread_history = $this -> settings_model -> get_value(-1, 'thread_history') !== false)
+             if( ($thread_history = $this -> settings_model -> get_value(-1, 'thread_history')) !== false)
              {
                  $pid = isset($thread_history['thread_pid'])?$thread_history['thread_pid']:0;
                  if($pid && $this->_is_process_running($pid))
-                    echo shell_exec("kill $pid");
+                     echo shell_exec("kill $pid");
              }
 	     echo 'ok';
 	}
@@ -2969,7 +2976,54 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/n
             echo shell_exec($command);
         }
         
+        public function update_urls_threading($choosen_file = null) {
+            if(!$choosen_file) {
+                if(defined('CMD') && CMD ) {
+                    log_message('ERROR', __METHOD__ .' : File not defined ' );                
+                    return;
+                }
+                $choosen_file = $this -> input -> post('choosen_file');
+            }
+            
+            $command = 'cd ' . FCPATH . ' 
+php cli.php crons match_urls_thread "' . $choosen_file . '" "Update" > /dev/null 2>/dev/null &';
+            echo shell_exec($command);
+        }
+        
+        public function delete_load_urls($choosen_file = null) {
+                $this -> load -> model('matchurls_data_model');
+                if(!$choosen_file) {
+                    $choosen_file = $this -> input -> post('choosen_file');
+                }
+                if(empty($choosen_file))
+                {
+                    echo 'File name is not defined ', PHP_EOL;
+                    return ;
+                }
+                if($choosen_file != 'all') {
+                    if ($fileCSV_id = $this->matchurls_data_model->getIdCSVFile($choosen_file)) {
+                        $this->matchurls_data_model->deleteCSV($fileCSV_id);
+                        log_message('ERROR', 'DB cleared for file ' . $choosen_file . ' file_id=' . $fileCSV_id);
+                        echo $choosen_file . ' - cleared', PHP_EOL;
+                    }
+                } else {
+                    foreach ($this->matchurls_data_model->getAll() as $key => $value) {
+                        $this->matchurls_data_model->deleteCSV($value->file_id);
+                        echo $value->file_name . ' - cleared', PHP_EOL;
+                    }
+                }
+        }
 
+	public function system_uploadmatchurls_update() {
+                $this -> load -> model('matchurls_data_model');
+                $this -> matchurls_data_model -> createCSVFileTables();
+                $data = array('csv_files_list'=> array('all' => 'All'));
+                foreach ($this->matchurls_data_model->getAll() as $key => $value) {
+                    $data['csv_files_list'][$value->file_name] = $value->file_name;
+                }
+                echo form_dropdown('csv_files_list', $data['csv_files_list'], null, 'id="choosen_file_select" class="inline_block lh_30 w_375 mb_reset"');
+	}
+        
 	function get_matching_urls() {
 		$this -> load -> model('settings_model');
 		$this -> load -> model('temp_data_model');
@@ -3088,4 +3142,35 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/n
              $date = date("Y-m-d H:i");
              array_to_csv($res, $date.'unmatches.csv');
         }
+        
+         public function bad_matches(){
+             $this->render();
+        }
+        public function bad_matches_data(){
+            $this->load->model('black_list_model');
+            $search = NULL;
+            $iDisplayStart = 1;
+            $iDisplayLength = null;
+            if ( isset( $_GET['iDisplayStart'] ) && $_GET['iDisplayLength'] != '-1' )
+            {
+                $iDisplayStart = $_GET['iDisplayStart'];
+                $iDisplayLength = $_GET['iDisplayLength'];
+                
+            }
+            if ( $_GET['sSearch'] != "" ){
+                $search = $_GET['sSearch'];
+            }
+                $sEcho = $_GET['sEcho'];
+           
+            $results = $this ->black_list_model -> bad_matches_data($search, $iDisplayStart , $iDisplayLength,$sEcho);
+            $this -> output -> set_content_type('application/json') -> set_output(json_encode($results));
+            
+        } 
+        public function delete_unmatching_couple(){
+            $id1 =  $this->uri->segment(3);
+            $id2 = $this->uri->segment(4);
+            $this->load->model('black_list_model');
+            $this->black_list_model->delete($id1, $id2);
+        }
+
 }
