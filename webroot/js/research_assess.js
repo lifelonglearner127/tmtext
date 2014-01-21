@@ -3235,13 +3235,19 @@ function prevSibilfunc(curentSibil){
 		},'json');
 	}	
 	
-	function exportAssessData()
+	function exportAssessData(mode)
 	{
+		if (typeof tblAssess == 'undefined') {
+			alert("Data is not received yet. Please click Update button first.");
+			return false;
+		}
+		
 		var batch_set = $('.result_batch_items:checked').val() || 'me'
 		  , checked_columns = ['url']
 		  , summaryFilterData = summaryInfoSelectedElements.join(',')
 		  , elem = this
-		  , main_path = elem.prop('href') + '?';
+		  , main_path = elem.prop('href') + '?'
+		  , settings = tblAssess.fnSettings();
 				
 		if ( !GetURLParameter('checked_columns_results') ) {
             
@@ -3256,7 +3262,13 @@ function prevSibilfunc(curentSibil){
               , cmp_selected = GetURLParameter('cmp_selected');
          
 		}  		 	                                        
-	
+
+		//exporting all selectable marked columns
+		if (mode == 'export_everything')		
+			for (var it in settings.getSelectableColumns)				
+				if ($('#column_' + settings.getSelectableColumns[it]['sName']).is(':checked'))
+					checked_columns.push(settings.getSelectableColumns[it]['sName']);								
+		
         $.fileDownload( main_path + buildGetRequest($.extend(buildTableParams([], false), {
 			batch_id : batch_id,
 			cmp_selected : cmp_selected,
@@ -3317,10 +3329,10 @@ function prevSibilfunc(curentSibil){
             'Continue': { 
 				text : 'Continue',
                 click : function() {
-					var formData = $('#export_options_form').serialize();
+					var formData = $('#export_options_form').serializeArray();
 					
 					// It doesn't work yet.... in progress!
-                    exportAssessData.call($('#research_assess_export'));
+                    exportAssessData.call($('#research_assess_export'), formData[0].value);
 					
                     $(this).dialog('close');
                 }
