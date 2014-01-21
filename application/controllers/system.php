@@ -2574,6 +2574,17 @@ class System extends MY_Controller {
 
 	public function system_uploadmatchurls() {
                 $this -> load -> model('matchurls_data_model');
+                $this -> load -> model('settings_model');
+                if(($thread = $this -> settings_model -> get_value(-1, 'thread_settings')) === false) {
+                    $thread = array('max' => 1);
+                    $this -> settings_model -> create(-1,'thread_settings', $thread, 'Threads settings by upload match ');
+                }
+                if(!isset($thread['max']) || (isset($thread['max']) && $thread['max'] < 1))
+                {
+                    $thread['max'] = 1;
+                    $this -> settings_model -> update_value(-1, 'thread_settings', $thread);
+                }
+                $this -> data['thread_max'] = $thread['max'];
                 $this -> matchurls_data_model -> createCSVFileTables();
                 $this -> data['csv_files_list']['all'] = 'All';
                 foreach ($this->matchurls_data_model->getAll() as $key => $value) {
@@ -2960,7 +2971,7 @@ class System extends MY_Controller {
             return(count($ProcessState) >= 2);
         }
 
-        public function check_urls_threading($choosen_file = null) {
+        public function check_urls_threading($choosen_file = null, $thread_max = null ) {
             if(!$choosen_file)
             {
                 if(defined('CMD') && CMD )
@@ -2971,12 +2982,22 @@ class System extends MY_Controller {
                 $choosen_file = $this -> input -> post('choosen_file');
             }
             
+            if(!$thread_max) {
+                if(defined('CMD') && CMD ) {
+                    $thread_max = 1;
+                    log_message('ERROR', __METHOD__ .' : Max threads not defined, set to ' . $thread_max );                
+                }
+                $thread_max = $this -> input -> post('thread_max');
+            }
+            if($thread_max < 1)
+                $thread_max = 1;
+            
             $command = 'cd ' . FCPATH . ' 
-php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/null &';
+php cli.php crons match_urls_thread "' . $choosen_file . '" "' . $thread_max . '" > /dev/null 2>/dev/null &';
             echo shell_exec($command);
         }
         
-        public function update_urls_threading($choosen_file = null) {
+        public function update_urls_threading($choosen_file = null, $thread_max = null ) {
             if(!$choosen_file) {
                 if(defined('CMD') && CMD ) {
                     log_message('ERROR', __METHOD__ .' : File not defined ' );                
@@ -2985,8 +3006,18 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" > /dev/null 2>/dev/n
                 $choosen_file = $this -> input -> post('choosen_file');
             }
             
+            if(!$thread_max) {
+                if(defined('CMD') && CMD ) {
+                    $thread_max = 1;
+                    log_message('ERROR', __METHOD__ .' : Max threads not defined, set to ' . $thread_max );                
+                }
+                $thread_max = $this -> input -> post('thread_max');
+            }
+            if($thread_max < 1)
+                $thread_max = 1;
+            
             $command = 'cd ' . FCPATH . ' 
-php cli.php crons match_urls_thread "' . $choosen_file . '" "Update" > /dev/null 2>/dev/null &';
+php cli.php crons match_urls_thread "' . $choosen_file . '" "' . $thread_max . '" "Update" > /dev/null 2>/dev/null &';
             echo shell_exec($command);
         }
         

@@ -23,8 +23,17 @@
     </ul>
   <div class="tab-content">
       <div id="mathchurls" class="tab-pane active">
-          <div id="matching"></div>
+          <div class="row-fluid span3 pull-right form-horizontal">
           <div class="row-fluid">
+              <input type="text" class="span3 pull-right form-control" name="threades" id="inputThreads" value="<?php echo $thread_max;?>">
+              <label for="inputThreads" class="pull-right control-label">MAX Threads</label>
+          </div>
+          <div class="row-fluid"  style='margin-top: 15px;'>
+            <span class="btn btn-danger pull-right form-control" id="export_bad_matches">Export Bad Matches</span>
+          </div>
+          </div>
+          <div id="matching" class="span7"></div>
+          <div class="row-fluid span7">
           <span class="btn btn-success fileinput-button pull-left" style="">
               Upload
               <i class="icon-plus icon-white"></i>
@@ -37,19 +46,30 @@
           </span>
           <span class="btn btn-danger pull-left" id="stop_matches" style='margin-left: 10px;'>Stop</span>
           </div>
-          <div class="row-fluid"  id="matching_uploaded">
+          <div class="row-fluid span7"  id="matching_uploaded" style='margin-top: 5px;'>
                     <label>Uploaded files:</label>
                     <?php  echo form_dropdown('csv_files_list', $csv_files_list, null, 'id="choosen_file_select" class="inline_block lh_30 w_375 mb_reset"'); ?>
           <span class="btn btn-success" id="update_urls" style="margin-left: 10px;"<?php if(count($csv_files_list)<2) echo ' disabled="disabled"';?> >Update</span>
           <span class="btn btn-danger" id="delete_matches" style='margin-left: 10px;'<?php if(count($csv_files_list)<2) echo ' disabled="disabled"';?> >Delete</span>
           </div>
           <input type="hidden" name="choosen_file" />
+          <div style='float: left; width: 100%; clear: both; margin-top: 10px;'>
+-          	<input type='checkbox' name='manu_upload_urls_check' id='manu_upload_urls_check'>
+          	<label for='manu_upload_urls_check'>manufacturer match file</label>
+          	<!-- <span class="btn btn-success fileinput-button pull-left" style="">
+	              Upload manufacturer
+	              <i class="icon-plus icon-white"></i>
+	              <input type="file" multiple="" name="files[]" id="upload_urls_manu">
+	          </span>
+	          <span class="btn btn-danger pull-left" id="stop_matches_manu" style='margin-left: 10px;'>Stop</span>
+		      	<input type="hidden" name="choosen_file_manu" /> -->
+	  </div>
           <script>
 			var match_ajax = "";
                         var update_urls_ajax = "";
                         var delete_urls_ajax = "";
                         var matching_uploaded = "";
-                        
+                        var old_status = "";
             var flag_stop_match = false;
             $(function () {
                 var url = '<?php echo site_url('system/upload_match_urls'); ?>';
@@ -87,7 +107,7 @@
                             type: "POST",
                             async: true,
                             url: url,
-                            data:  { 'choosen_file': $('input[name="choosen_file"]').val(), 'manu_file_upload_opts': manu_file_upload_opts },
+                            data:  { 'choosen_file': $('input[name="choosen_file"]').val(), 'thread_max': $('#inputThreads').val(), 'manu_file_upload_opts': manu_file_upload_opts },
                             success: function (msg) 
                                     { /*alert(msg) ;*/ matchingUploaded(); match_ajax = ""; },
                             error: function (err)
@@ -102,7 +122,7 @@
                             type: "POST",
                             async: true,
                             url: url,
-                            data:  { 'choosen_file': $('select#choosen_file_select').val() },
+                            data:  { 'choosen_file': $('select#choosen_file_select').val(), 'thread_max': $('#inputThreads').val() },
                             success: function (msg) 
                                     { update_urls_ajax = ""; },
                             error: function (err)
@@ -129,18 +149,6 @@
             });
             
           </script>
-          <div style='float: left; width: 100%; clear: both; margin-top: 10px;'>
--          	<input type='checkbox' name='manu_upload_urls_check' id='manu_upload_urls_check'>
-          	<label for='manu_upload_urls_check'>manufacturer match file</label>
-          	<!-- <span class="btn btn-success fileinput-button pull-left" style="">
-	              Upload manufacturer
-	              <i class="icon-plus icon-white"></i>
-	              <input type="file" multiple="" name="files[]" id="upload_urls_manu">
-	          </span>
-	          <span class="btn btn-danger pull-left" id="stop_matches_manu" style='margin-left: 10px;'>Stop</span>
-		      	<input type="hidden" name="choosen_file_manu" /> -->
-	  </div>
-          <span class="btn btn-danger pull-left" id="export_bad_matches" style='float: right;display: block; margin-top: -199px; margin-right: 20px;'>Export Bad Matches</span>
       </div>
   </div>
 </div>
@@ -226,9 +234,15 @@
         function matchingUploaded() {
                 var url = base_url+'index.php/system/system_uploadmatchurls_update';
 
-                matching_uploaded = $.post(url, {}, 'html').done(function(data) { console.log(data);
+                matching_uploaded = $.post(url, {}, 'html').done(function(data) {
                         if(typeof(data) != 'undefined') {
-                                $("#matching_uploaded select").html(data);
+                            if($("#matching_uploaded select").html(data).find('option').length > 1) {
+                                $('#update_urls').removeAttr("disabled");
+                                $('#delete_matches').removeAttr("disabled");
+                            } else {
+                                $('#update_urls').attr("disabled", "disabled");
+                                $('#delete_matches').attr("disabled", "disabled");                                
+                            }
                         }
                 });
         };
@@ -250,7 +264,11 @@
                  $('#mathchurls .btn-success').removeClass('disabled');
                  $('#mathchurls #stop_matches').addClass('disabled');
 		 old_data=false;
-             }   
+             }
+             if( old_status != type ) {
+                 matchingUploaded();
+                 old_status = type;
+             }
         }
 
 	$(document).ready(function() {

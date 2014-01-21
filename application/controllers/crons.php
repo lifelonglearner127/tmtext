@@ -3257,7 +3257,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		}
 	}
 
-    function match_urls_thread($choosen_file = null, $mode = 'Upload+Update') {
+    function match_urls_thread($choosen_file = null, $thread_max = 1, $mode = 'Upload+Update') {
 // Specific settings for server need            
 //            $child_pid = pcntl_fork();
 //            if ($child_pid) {
@@ -3270,7 +3270,15 @@ log_message('ERROR', 'Start ' . $mode . ' ' . $choosen_file . ' pid=' . $new_chi
         if ($mode !== 'Upload+Update') {
             $mode = 'Update';
         }
-        $this->maxthreads = $this->config->item('thread_max');
+        if(!$thread_max) {
+            if(defined('CMD') && CMD ) {
+                $thread_max = 1;
+                log_message('ERROR', __METHOD__ .' : Max threads not defined, set to ' . $thread_max );                
+            }
+            $thread_max = $this -> input -> post('thread_max');
+        }
+        
+        $this->maxthreads = $thread_max; // $this->config->item('thread_max');
         if ($this->maxthreads < 1) {
             $this->maxthreads = 1;
         }
@@ -3298,6 +3306,14 @@ log_message('ERROR', 'Start ' . $mode . ' ' . $choosen_file . ' pid=' . $new_chi
         $this->load->model('imported_data_parsed_model');
         $this->load->model('temp_data_model');
         $this->load->model('matchurls_data_model');
+        
+        if(($thread = $this -> settings_model -> get_value(-1, 'thread_settings')) === false) {
+            $thread = array('max' => $this->maxthreads);
+            $this -> settings_model -> create(-1,'thread_settings', $thread, 'Threads settings by upload match ');
+        }
+        $thread['max'] = $this->maxthreads;
+        $this -> settings_model -> update_value(-1, 'thread_settings', $thread);
+        
         if ($mode == 'Upload+Update') {
             $file = $this->config->item('csv_upload_dir') . $choosen_file;
 //                $f_name = end(explode('/', $file));

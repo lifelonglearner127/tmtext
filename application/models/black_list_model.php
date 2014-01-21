@@ -44,13 +44,12 @@ class Black_list_model extends CI_Model {
                 INNER JOIN imported_data_parsed AS idp1 ON bl.im_id_1 = idp1.imported_data_id
                 AND idp1.`key` =  'url'
                 INNER JOIN imported_data_parsed AS idp2 ON bl.im_id_2 = idp2.imported_data_id
-                AND idp2.`key` =  'url'";
-        $query = $this->db->query($sql);
+                AND idp2.`key` = 'url'";
         if($search){
-                    $this->db->like('value',$search)
-                    ->or_like('model',$search);;   
+           $sql .= " and (idp1.`value` like   '%".$search."%' or idp2.`value` like   '%".$search."%')";
                 }
-                $this->db->Limit($iDisplayLength,$iDisplayStart);
+        $sql .= " LIMIT $iDisplayLength OFFSET  $iDisplayStart";
+        $query = $this->db->query($sql);
         $results = $query->result_array();
         $data = array();
         foreach($results as $val){
