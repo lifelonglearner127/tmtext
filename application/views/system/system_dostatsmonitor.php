@@ -108,7 +108,18 @@
                             <span id="delete_batch" class="btn btn-success fileinput-button" style=""> Delete Batch </span>
                             <span id="do_stats_batch" class="btn btn-success fileinput-button" style=""> Do Stats For Batch </span>
                         </div>
-                          </div>
+                        <div id="reset_custom_models">
+                            <select id="batch_select_reset" name="batch_select" style="margin: auto;">
+                                <option value="0">All Batch</option>
+                                <?php if(isset($batches)&&!empty($batches)&&  is_array($batches)):?>
+                                <?php foreach($batches as $batch):?>
+                                <option value="<?php echo $batch->id;?>"><?php echo $batch->title;?></option>
+                                <?php endforeach;?>
+                                <?php endif; ?>
+                            </select>
+                            <span id="reset_models" class="btn btn-success fileinput-button" style=""> Clear ALL Matches </span>
+                        </div>
+                    </div>
 		</div>
 	</div>
 </div>
@@ -320,12 +331,24 @@
     }
     }
     function delete_selected_batch(batch){
+        if(!confirm('Do you want to delete of selected batche from statistics_new?')){
+            return;
+        }
         var url = '<?php echo site_url('crons/delete_batch_items_from_statistics_new/'); ?>'+'/'+batch;
         $.ajax({
             url:url,
             success:function(){
                getBatchData(batch);
             }
+        });
+    }
+    function reset_selected_batch_models(batch){
+        if(!confirm('Do you want to reset models for selected batch '+ batch +'?')){
+            return;
+        }
+        var url = '<?php echo site_url('crons/reset_models'); ?>'+'/'+batch;
+        $.ajax({
+            url:url,
         });
     }
     function startDoStatsBatch(batch){
@@ -343,6 +366,11 @@
         else{
             delete_selected_batch(batch);
         }
+    });
+    $('#reset_models').on('click',function(){
+        var batch = $('#batch_select_reset').find('option:selected').val();
+        batch = (batch!=='undefined')?batch:0;
+        reset_selected_batch_models(batch);
     });
     $('#delelte_selected_batch').change(function(event){
         //alert($(this).find('option:selected').val());
