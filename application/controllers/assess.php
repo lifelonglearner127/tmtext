@@ -2506,6 +2506,7 @@ class Assess extends MY_Controller {
         
         $duplicate_content_range = 25;
 		$batch2_items_count = 0;
+		$iterator = 0;
 		
         $needFilters = $build_assess_params->needFilters;
         $displayCount = $build_assess_params->displayCount;
@@ -2542,10 +2543,7 @@ class Assess extends MY_Controller {
             $similar_items_data = array();
             $f_count1 = 0;
             $r_count1 = 0;            
-            $meta_key_gap = 0;
-                     			         
-			// getting initial (default) result row data
-			$result_row = AssessHelper::getInitialScalarRowData($row);
+            $meta_key_gap = 0;                     			         		
 			
 			if ($batch2 && $batch2 != 'all') 
 			{
@@ -2698,6 +2696,9 @@ class Assess extends MY_Controller {
 				}	
 			}
 			
+			// getting initial (default) result row data
+			$result_row = AssessHelper::getInitialScalarRowData($row);
+			
 			$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);	
 			         
             if ($build_assess_params->max_similar_item_count > 0) {                
@@ -2811,61 +2812,61 @@ class Assess extends MY_Controller {
 					{						
 						if (isset($parsed_attributes_unserialize['pdf_count']) && $parsed_attributes_unserialize['pdf_count']) {
 							$skus_pdfs_competitor++;
-							$this->filterBySummaryCriteria('skus_pdfs_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_pdfs_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 						}
 						
 						if (isset($parsed_attributes_unserialize['video_count']) && $parsed_attributes_unserialize['video_count']) {
 							$skus_videos_competitor++;
-							$this->filterBySummaryCriteria('skus_videos_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_videos_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 						}
 						
 						if (isset($parsed_attributes_unserialize['product_images']))
 						{
 							if (!$parsed_attributes_unserialize['product_images']) {
 								$skus_with_no_product_images_competitor++;
-								$this->filterBySummaryCriteria('skus_with_no_product_images_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+								$this->filterBySummaryCriteria('skus_with_no_product_images_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 							}
 							
 							if ($parsed_attributes_unserialize['product_images'] == 1) {
 								$skus_with_one_product_image_competitor++;
-								$this->filterBySummaryCriteria('skus_with_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+								$this->filterBySummaryCriteria('skus_with_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 							}
 							
 							if ($parsed_attributes_unserialize['product_images'] > 1) {
 								$skus_with_more_than_one_product_image_competitor++;
-								$this->filterBySummaryCriteria('skus_with_more_than_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+								$this->filterBySummaryCriteria('skus_with_more_than_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 							}
 						}
 
 						if (!$parsed_anchors_unserialize['quantity']) {
 							$skus_with_zero_product_description_links_competitor++;
-							$this->filterBySummaryCriteria('skus_with_zero_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_zero_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 						}elseif($parsed_anchors_unserialize['quantity'] > 0) {
 							$skus_with_more_than_one_product_description_links_competitor++;
-							$this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 						}
 
 						
 						if (isset($parsed_attributes_unserialize['title']) && $parsed_attributes_unserialize['title'] && strlen($parsed_attributes_unserialize['title']) < 70) {
 							$skus_title_less_than_70_chars_competitor++;
-							$this->filterBySummaryCriteria('skus_title_less_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_title_less_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 						}
 						
 						if (isset($parsed_attributes_unserialize['title']) && $parsed_attributes_unserialize['title'] && strlen($parsed_attributes_unserialize['title']) >= 70) {
 							$skus_title_more_than_70_chars_competitor++;
-							$this->filterBySummaryCriteria('skus_title_more_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_title_more_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 						}
 						if (isset($result_row->mvid) && $result_row->mvid > 0) {
 							$skus_with_manufacturer_videos++;
-							$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 						}
 						if (isset($result_row->mimg) && $result_row->mimg > 0) {
 							$skus_with_manufacturer_images++;
-							$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 						} 
 						if (isset($result_row->murl) && strlen($result_row->murl) > 0) { 
 							$skus_with_manufacturer_pages++;
-							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 						}
 					}
                 
@@ -3101,17 +3102,17 @@ class Assess extends MY_Controller {
 			if(strlen($mi['url']) > 0)
 			{	
 				$skus_with_manufacturer_pages++;
-				$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 			}
 			if($mi['images'] > 0)
 			{	
 				$skus_with_manufacturer_images++;
-				$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 			}
 			if($mi['videos'] > 0)
 			{	
 				$skus_with_manufacturer_videos++;
-				$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+				$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 			}	
 		}
             } else {
@@ -3206,17 +3207,17 @@ class Assess extends MY_Controller {
 				{
 					if ($percent >= 25) {
 						$skus_25_duplicate_content++;
-						$this->filterBySummaryCriteria('skus_25_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_25_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 
 					if ($percent >= 50) {
 						$skus_50_duplicate_content++;
-						$this->filterBySummaryCriteria('skus_50_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_50_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 
 					if ($percent >= 75) {
 						$skus_75_duplicate_content++;
-						$this->filterBySummaryCriteria('skus_75_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_75_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 				}
 
@@ -3229,49 +3230,49 @@ class Assess extends MY_Controller {
 			{									
 				if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count']) {
 					$skus_pdfs++;
-					$this->filterBySummaryCriteria('skus_pdfs', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_pdfs', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if (isset($pars_atr['parsed_attributes']['video_count']) && $pars_atr['parsed_attributes']['video_count']) {
 					$skus_videos++;
-					$this->filterBySummaryCriteria('skus_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 				
 				if (isset($pars_atr['parsed_attributes']['product_images']))
 				{
 					if (!$pars_atr['parsed_attributes']['product_images']) {
 						$skus_with_no_product_images++;
-						$this->filterBySummaryCriteria('skus_with_no_product_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_with_no_product_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 					
 					if ($pars_atr['parsed_attributes']['product_images'] == 1) {
 						$skus_with_one_product_image++;
-						$this->filterBySummaryCriteria('skus_with_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_with_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 					
 					if ($pars_atr['parsed_attributes']['product_images'] > 1) {
 						$skus_with_more_than_one_product_image++;
-						$this->filterBySummaryCriteria('skus_with_more_than_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_with_more_than_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 				}
 
 				if (!$pars_atr['Anchors']['quantity']) {
 						$skus_with_zero_product_description_links++;
-						$this->filterBySummaryCriteria('skus_with_zero_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_with_zero_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 				if($pars_atr['Anchors']['quantity'] > 0) {
 						$skus_with_more_than_one_product_description_links++;
-						$this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if (isset($pars_atr['parsed_attributes']['title']) && $pars_atr['parsed_attributes']['title'] && $pars_atr['parsed_attributes']['title'] < 70) {
 					$skus_title_less_than_70_chars++;
-					$this->filterBySummaryCriteria('skus_title_less_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_title_less_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if (isset($pars_atr['parsed_attributes']['title']) && $pars_atr['parsed_attributes']['title'] && $pars_atr['parsed_attributes']['title'] >= 70) {
 					$skus_title_more_than_70_chars++;
-					$this->filterBySummaryCriteria('skus_title_more_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_title_more_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}	
 
 				//gap analises
@@ -3291,19 +3292,19 @@ class Assess extends MY_Controller {
 
 					if ($result_row->column_features < $result_row->column_features1) {
 						$skus_fewer_features_than_competitor++;
-						$this->filterBySummaryCriteria('skus_fewer_features_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_fewer_features_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 
 					if ($result_row->column_reviews < $result_row->column_reviews1) {
 						$skus_fewer_reviews_than_competitor++;
-						$this->filterBySummaryCriteria('skus_fewer_reviews_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_fewer_reviews_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 
 					
 
 					if ($result_row->column_features1) {
 						$skus_features_competitor++;
-						$this->filterBySummaryCriteria('skus_features_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_features_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 
 				
@@ -3311,28 +3312,28 @@ class Assess extends MY_Controller {
 					//Second batch								
 					if (!$result_row->column_reviews1) {
 						$skus_zero_reviews_competitor++;
-						$this->filterBySummaryCriteria('skus_zero_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_zero_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 
 					if ($result_row->column_reviews1 >= 1 && $result_row->column_reviews1 <= 4) {
 						$skus_one_four_reviews_competitor++;
-						$this->filterBySummaryCriteria('skus_one_four_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_one_four_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 
 					if ($result_row->column_reviews1 >= 5) {
 						$skus_more_than_five_reviews_competitor++;
-						$this->filterBySummaryCriteria('skus_more_than_five_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_more_than_five_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 
 					if ($result_row->column_reviews1 >= 100) {
 						$skus_more_than_hundred_reviews_competitor++;
-						$this->filterBySummaryCriteria('skus_more_than_hundred_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+						$this->filterBySummaryCriteria('skus_more_than_hundred_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 					}
 				}
 				
 				if ($result_row->column_features) {
 					$skus_features++;
-					$this->filterBySummaryCriteria('skus_features', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_features', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 				
 				/*
@@ -3341,38 +3342,38 @@ class Assess extends MY_Controller {
 				//First batch								
 				if (!$result_row->column_reviews) {
 					$skus_zero_reviews++;
-					$this->filterBySummaryCriteria('skus_zero_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_zero_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if ($result_row->column_reviews >= 1 && $result_row->column_reviews <= 4) {
 					$skus_one_four_reviews++;
-					$this->filterBySummaryCriteria('skus_one_four_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_one_four_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if ($result_row->column_reviews >= 5) {
 					$skus_more_than_five_reviews++;
-					$this->filterBySummaryCriteria('skus_more_than_five_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_more_than_five_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if ($result_row->column_reviews >= 100) {
 					$skus_more_than_hundred_reviews++;
-					$this->filterBySummaryCriteria('skus_more_than_hundred_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_more_than_hundred_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 				
 				if ($result_row->lower_price_exist == true) {
 					$items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
 
-					$this->filterBySummaryCriteria('assess_report_items_priced_higher_than_competitors', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('assess_report_items_priced_higher_than_competitors', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 				
 				if (trim($result_row->column_external_content)) {
 					$skus_third_party_content++;
-					$this->filterBySummaryCriteria('skus_third_party_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_third_party_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if (trim($result_row->column_external_content1)) {
 					$skus_third_party_content_competitor++;
-					$this->filterBySummaryCriteria('skus_third_party_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_third_party_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				$first_general_description_size = $result_row->short_description_wc + $result_row->long_description_wc;
@@ -3380,49 +3381,49 @@ class Assess extends MY_Controller {
 
 				if ($first_general_description_size < $second_general_description_size) {
 					$skus_shorter_than_competitor_product_content++;
-					$this->filterBySummaryCriteria('skus_shorter_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_shorter_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if ($first_general_description_size > $second_general_description_size) {
 					$skus_longer_than_competitor_product_content++;
-					$this->filterBySummaryCriteria('skus_longer_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_longer_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if ($first_general_description_size == $second_general_description_size) {
 					$skus_same_competitor_product_content++;
-					$this->filterBySummaryCriteria('skus_same_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_same_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				// For Batch 1
 				if ($first_general_description_size < 50) {
 					$skus_fewer_50_product_content++;
-					$this->filterBySummaryCriteria('skus_fewer_50_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_fewer_50_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if ($first_general_description_size < 100) {
 					$skus_fewer_100_product_content++;
-					$this->filterBySummaryCriteria('skus_fewer_100_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_fewer_100_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if ($first_general_description_size < 150) {
 					$skus_fewer_150_product_content++;
-					$this->filterBySummaryCriteria('skus_fewer_150_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_fewer_150_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				// For Competitor (Batch 2)
 				if ($second_general_description_size < 50 && $build_assess_params->compare_batch_id) {
 					$skus_fewer_50_product_content_competitor++;
-					$this->filterBySummaryCriteria('skus_fewer_50_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_fewer_50_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if ($second_general_description_size < 100 && $build_assess_params->compare_batch_id) {
 					$skus_fewer_100_product_content_competitor++;
-					$this->filterBySummaryCriteria('skus_fewer_100_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_fewer_100_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 
 				if ($second_general_description_size < 150 && $build_assess_params->compare_batch_id) {
 					$skus_fewer_150_product_content_competitor++;
-					$this->filterBySummaryCriteria('skus_fewer_150_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_fewer_150_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 				
 				$batch1_filtered_title_percents = substr_count($result_row->title_seo_phrases, '%');
@@ -3431,73 +3432,79 @@ class Assess extends MY_Controller {
 				if ($batch1_filtered_title_percents < $batch2_filtered_title_percents)
 				{
 					$skus_fewer_competitor_optimized_keywords++;
-					$this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);					
+					$this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);					
 				}
 				
 				if (!$batch1_filtered_title_percents)
 				{
 					$skus_zero_optimized_keywords++;
-					$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 				
 				if ($batch1_filtered_title_percents >= 1)
 				{
 					$skus_one_optimized_keywords++;
-					$this->filterBySummaryCriteria('skus_one_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);		
+					$this->filterBySummaryCriteria('skus_one_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);		
 				}
 					
 				if ($batch1_filtered_title_percents >= 2)
 				{
 					$skus_two_optimized_keywords++;
-					$this->filterBySummaryCriteria('skus_two_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);			
+					$this->filterBySummaryCriteria('skus_two_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);			
 				}
 					
 				if ($batch1_filtered_title_percents >= 3)
 				{
 					$skus_three_optimized_keywords++;			
-					$this->filterBySummaryCriteria('skus_three_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_three_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 				
 				
 				if (!$batch2_filtered_title_percents)
 				{
 					$skus_zero_optimized_keywords_competitor++;
-					$this->filterBySummaryCriteria('skus_zero_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_zero_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 				
 				if ($batch2_filtered_title_percents >= 1)
 				{
 					$skus_one_optimized_keywords_competitor++;
-					$this->filterBySummaryCriteria('skus_one_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);		
+					$this->filterBySummaryCriteria('skus_one_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);		
 				}
 					
 				if ($batch2_filtered_title_percents >= 2)
 				{
 					$skus_two_optimized_keywords_competitor++;
-					$this->filterBySummaryCriteria('skus_two_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);			
+					$this->filterBySummaryCriteria('skus_two_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);			
 				}
 					
 				if ($batch2_filtered_title_percents >= 3)
 				{
 					$skus_three_optimized_keywords_competitor++;			
-					$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+					$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 				if (isset($data_row->mvid) && $data_row->mvid > 0) {
 							$skus_with_manufacturer_videos++;
-							$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 			        if (isset($data_row->mimg) && $data_row->mimg > 0) {
 							$skus_with_manufacturer_images++;
-							$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				} 
 				if (isset($data_row->murl) && strlen($data_row->murl) > 0) { 
 							$skus_with_manufacturer_pages++;
-							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $row_iterator);
+							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
             }
-					
+			
+			
 			if ($row_iterator < $iterator_limit)
-				$result_table[$row_iterator] = $result_row;	
+				$result_table[$row_iterator] = $result_row;
+	
+			$iterator++;
+			$report['test_row_iterator'] = $row_iterator;
+			$report['test_iterator_limit'] = $iterator_limit;
+			$report['test_iterator'] = $iterator;
         }
 
 
