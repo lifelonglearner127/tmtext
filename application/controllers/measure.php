@@ -21,6 +21,8 @@ class Measure extends MY_Controller {
             //redirect them to the login page
             redirect('auth/login', 'refresh');
         }
+        
+//        $this -> ion_auth -> add_auth_rules(array('getDashboardCatSKU' => true));
     }
 
     public function home() {
@@ -1599,6 +1601,35 @@ class Measure extends MY_Controller {
         $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
 
+    public function getDashboardCatSKU() {
+        $this->load->model('sites_model');
+        $this->load->model('site_categories_model');
+        $site_id = $this->sites_model->getIdByName($this->input->post('site_name'));
+        
+        $data_categories = $this->site_categories_model->db
+                ->where('site_id', $site_id)
+                ->count_all_results($this->site_categories_model->tables['site_categories']);
+        $page = intval($this->uri->segment(3));
+        $this->load->library('pagination');
+        $config['base_url'] = $this->config->site_url() . '/measure/getDashboardCatSKU';
+        $config['total_rows'] = $data_categories;
+        $config['per_page'] = '20';
+        $config['uri_segment'] = 3;
+        $data['detail']     = $this->site_categories_model->db
+                ->select(' `id`, `text`, `nr_products`, `url`  ')
+                ->limit($config['per_page'], $page)
+                ->order_by('text')
+                ->where('site_id', $site_id)
+                ->get($this->site_categories_model->tables['site_categories'])
+                ->result();
+        
+        $this->pagination->initialize($config);
+        $data['pagination'] = $this->pagination->create_links(5);
+
+        $this->output->set_content_type('application/json')->set_output(json_encode($data));
+        
+    }
+    
     public function get_board_view_item_data() {
         $this->load->model('department_members_model');
         $dm_id = $this->input->post('dm_id');

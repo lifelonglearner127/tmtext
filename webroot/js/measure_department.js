@@ -6,7 +6,7 @@ updateHref,
 updateId,
 delId;
 var oTable;
-console.log("UPDATED: 28.10.2013");
+console.log("UPDATED: 22.01.2014");
 /* Formating function for row details */
 function fnFormatDetails ( nTr )
 {
@@ -500,6 +500,11 @@ $( function() {
     });
 
 
+    $(document).on('click', 'li.cat_pagination a', function(event) {
+        event.preventDefault();
+        getCatDataSKU($(this).parents('li.cat_pagination').attr('data_site'),$(this).parents('td').find('span.dep_title'),$(this).attr('href'));
+    });
+
 }); //end document ready
 
 function showBoardItemPreviewModal(data) {
@@ -795,7 +800,8 @@ function globalCatDashboard(site_name){
     }, function(data) {
         var dep_content = data.total - data.res_more_than_0;
         var dep_optimize = data.res_more_than_0 - data.keyword_optimize;
-        var data_str = '<tr><td nowrap><span class="dep_title"><span class="dep_left_part">Sub Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span></td><td>&nbsp;</td></tr>';
+        var data_str = '<tr><td nowrap class="dep_first_part span6">' +
+                '<span class="dep_title" onclick="getCatDataSKU(\''+site_name+'\', this);"><span class="dep_left_part">Sub Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span><ul></ul></td><td>&nbsp;</td></tr>';
         data_str += '<tr><td nowrap class="dep_first_part span6" onclick="getCatData(\''+site_name+'\', this, \'`description_words` > 0\', 1);">' +
             '<span class="dep_title"><span class="dep_left_part">Sub Categories that have content:  </span>' +
             '<span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span><span class="snap_img_left"></span>';
@@ -1161,7 +1167,8 @@ function allCatDashboard(site_name, site_name_sec){
     }, function(data) {
         var dep_content = data.total - data.res_more_than_0;
         var dep_optimize = data.res_more_than_0 - data.keyword_optimize;
-        header_first_table += '<tr><td nowrap><span class="dep_title"><span class="dep_left_part">Sub Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span></td>';
+        header_first_table += '<tr><td nowrap class="dep_first_part span6">' +
+                '<span class="dep_title" onclick="getCatDataSKU(\''+site_name+'\', this);"><span class="dep_left_part">Sub Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span><ul></ul></td>';
         first_part_table += '<tr><td nowrap class="dep_first_part span6" onclick="getCatData(\''+site_name+'\', this, \'`description_words` > 0\', 1);">' +
             '<span class="dep_title"><span class="dep_left_part">Sub Categories that have content:  </span>' +
             '<span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
@@ -1203,7 +1210,8 @@ function allCatDashboard(site_name, site_name_sec){
         }, function(data) {
             var dep_content = data.total - data.res_more_than_0;
             var dep_optimize = data.res_more_than_0 - data.keyword_optimize;
-            header_first_table += '<td nowrap><span class="dep_title"><span class="dep_left_part">Sub Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span></td></tr>';
+            header_first_table += '<td nowrap class="dep_first_part span6">' +
+                '<span class="dep_title" onclick="getCatDataSKU(\''+site_name_sec+'\', this);"><span class="dep_left_part">Sub Categories Analyzed: </span><span class="dep_total_numbers">'+data.total+'</span></span><ul></ul></td></tr>';
             first_part_table += '<td nowrap class="dep_first_part span6" onclick="getCatData(\''+site_name_sec+'\', this, \'`description_words` > 0\', 1);">' +
                 '<span class="dep_title"><span class="dep_left_part">Sub Categories that have content:  </span>' +
                 '<span class="dep_total_numbers">'+data.res_more_than_0+'/'+data.total+'</span></span>';
@@ -1599,6 +1607,29 @@ function standaloneDepartmentScreenDetector() {
             $("#dep_monitor").on('mouseover', function() { departmentScreenDetectorMouseOver(data); } );
         } else {
             $("#dep_monitor").hide();
+        }
+    });
+}
+
+function getCatDataSKU(site_name, obj, url){
+    if (url == undefined) {
+        url = base_url + 'index.php/measure/getDashboardCatSKU';
+    }
+    $.post(url, {
+        'site_name': site_name
+    }, function(data) {
+        if(data.detail.length > 0){
+            var data_str = '<li class="cat_header  cat_pagination pagination-centered" data_site="'+site_name+'">'+data.pagination
+                    +'</li><li class="cat_header"><span class="dep_text">SUB CATEGORY</span><span class="dep_keywords">SKU</span></li>';
+            for(var j=0; j<data.detail.length; j++){
+                data_str += '<li><span class="dep_text">';
+                data_str += '<a id="'+data.detail[j].id+'"  href="'+data.detail[j].url+'" target="_blank">'+data.detail[j].text+'</a>';
+                data_str += '</span><span class="dep_keywords">';
+                data_str += data.detail[j].nr_products;
+                data_str += '</span></li>';
+            };
+            var el = $(obj).siblings('ul');
+            el.html(data_str);
         }
     });
 }
