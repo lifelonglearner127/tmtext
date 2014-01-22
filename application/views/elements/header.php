@@ -68,6 +68,7 @@
     <script type="text/javascript" src="http://code.highcharts.com/stock/highstock.js"></script>
     <script src="http://code.highcharts.com/modules/exporting.js"></script>
     <script src="<?php echo base_url();?>js/colResizable-1.3.min.js"></script>
+    <script src="<?php echo base_url();?>js/system.js"></script>
     
     <!-- for compare_results page -->
     <?php  

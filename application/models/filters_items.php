@@ -14,7 +14,7 @@ class Filters_items extends Base_model implements IFilters
 	{
 		return array(
 			'filter_id' => array('type' => 'required'),
-			'combination_id' => array('type' => 'required')
+			'combination_id' => array('type' => 'required'),
 			'item_key' => array('type' => 'required')
 		);
 	}

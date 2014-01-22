@@ -16,7 +16,7 @@ class System extends MY_Controller {
 		$this -> load -> library('form_validation');
 
 		$this -> ion_auth -> add_auth_rules(array('urls_snapshot' => true, 'update_urls_threading' => true, 'check_urls_threading' => true, 'stopChecking'=>true,
-                                                          'delete_load_urls'=>true, 'system_uploadmatchurls_update'=>true ));
+                                                          'delete_load_urls'=>true, 'system_uploadmatchurls_update'=>true, 'filters' => true, 'generate_filters' => true));
 
 	}
 
@@ -3203,5 +3203,34 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" "' . $thread_max . '
             $this->load->model('black_list_model');
             $this->black_list_model->delete($id1, $id2);
         }
-
+	
+	/**
+	 *  @brief system filters action for generating filter data based on bathces combinations
+	 *  	 
+	 *  @author Oleg Meleshko <qu1ze34@gmail.com>	 
+	 */
+	public function filters() 
+	{		
+		$this->render();
+	}
+	
+	/**
+	 *  @brief ajax action which generates filters data
+	 *  
+	 *  @author Oleg Meleshko <qu1ze34@gmail.com>	 	
+	 */
+	public function generate_filters()
+	{
+		$this->load->model('filters_items', 'fi');
+		$this->load->model('filters_values', 'fv');
+		$this->load->model('batches_combinations', 'bc');
+		
+		//generating batches_combinations		
+		$combinations = $_POST['type'] == Batches_combinations::TYPE_ALL_POSSIBLE_COMBINATIONS ? $this->bc->generateAllPossibleCombinations() : $this->bc->generateManualCombinations($_POST['combinations']);	
+				
+		$this->output->set_content_type('application/json')->set_output(json_encode(array(
+			'status' => 'success', 			
+			'combinations' => $combinations
+		)));				
+	}
 }
