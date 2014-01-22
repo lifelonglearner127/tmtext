@@ -37,6 +37,17 @@ abstract class Base_model extends CI_Model
 	}
 	
 	/**
+	 *  @brief Finds a single active record with the specified primary key.
+	 *  
+	 *  @param $pk primary key value
+	 *  @return the record found	 
+	 */
+	public function findByPk($pk)
+	{
+		return $this->findByAttributes(array('id' => $pk));
+	}
+	
+	/**
 	 *  @brief This method can be used for finding only one record in any database table depends on model.
 	 *  
 	 *  @param $attributes query attributes
@@ -50,6 +61,21 @@ abstract class Base_model extends CI_Model
 			->get($this->getTableName());
 			
 		return $query->row();
+	}
+	
+	/**
+	 *  @brief Finds all active records that have the specified attribute values
+	 *  
+	 *  @param $attributes query attributes
+	 *  @return All records found. An empty array is returned if none is found.
+	 */
+	public function findAllByAttributes(array $attributes)
+	{
+		$query = $this->db
+			->where($attributes)			
+			->get($this->getTableName());
+			
+		return $query->result();
 	}
 	
 	/**
@@ -93,14 +119,7 @@ abstract class Base_model extends CI_Model
 	 *  @return boolean whether the saving should be executed	 
 	 */
 	public function beforeSave()
-	{
-		if (!$this->create_time)
-			$this->create_time = time();
-		
-		$this->update_time = time();
-		
-		$this->user_ip = $_SERVER['REMOTE_ADDR'];
-		
+	{			
 		return true;
 	}	
 	
@@ -124,7 +143,7 @@ abstract class Base_model extends CI_Model
 	 *  @brief Saves the current record
 	 *  
 	 *  @param $runValidation boolean $runValidation whether to perform validation before saving the record.
-	 *  @return boolean whether the saving succeeds
+	 *  @return affected rows count
 	 */
 	public function save($runValidation = true)
 	{	
@@ -136,9 +155,49 @@ abstract class Base_model extends CI_Model
 				else 
 					$this->db->insert($this->getTableName(), $this);				
 				
-				return true;
+				return $this->db->affected_rows();
 			}
 		
 		return false;
+	}
+	
+	/**
+	 *  @brief Deletes the row corresponding to this active record.
+	 *  
+	 *  @param $pk primary key value
+	 *  @return affected rows count	
+	 */
+	public function deleteByPk($pk)
+	{
+		return $this->deleteByAttributes(array('id' => $pk));
+	}	
+	
+	/**
+	 *  @brief Deletes rows which match the specified attribute values.
+	 *  
+	 *  @param $attributes list of attribute values
+	 *  @return affected rows count
+	 */
+	public function deleteAllByAttributes(array $attributes)
+	{
+		$this->db->delete($this->getTableName(), $attributes);
+			
+		return $this->db->affected_rows();
+	}
+	
+	/**
+	 *  @brief Deletes rows with the specified condition.
+	 *  
+	 *  @param $truncate boolean should be truncated or no, false is by default.
+	 *  @return affected rows count	
+	 */
+	public function deleteAll($truncate = false)
+	{		
+		if (!$truncate)
+			$this->db->empty_table($this->getTableName());
+		else
+			$this->db->truncate($this->getTableName());
+		
+		return $this->db->affected_rows();
 	}
 }

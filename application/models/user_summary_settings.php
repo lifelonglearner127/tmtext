@@ -38,5 +38,19 @@ class User_summary_settings extends Base_model
 	public function getSettings($setting_id = null)
 	{
 		return is_null($setting_id) ? $this->settings : $this->settings[$setting_id];
-	}			
+	}	
+
+	public function beforeSave()
+	{
+		$r = parent::beforeSave();
+		
+		if (!$this->create_time)
+			$this->create_time = time();
+		
+		$this->update_time = time();
+		
+		$this->user_ip = $_SERVER['REMOTE_ADDR'];
+		
+		return $r;
+	}	
 }
