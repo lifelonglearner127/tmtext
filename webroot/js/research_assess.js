@@ -2223,7 +2223,7 @@ function nextSibilfunc(curentSibil){
                    $('#tblAssess tbody tr:first td:first').click();
                    $('#assessDetailsDialog_btnNext').text('Next >')
                    $('#assessDetailsDialog_btnNext').removeClass('next_page')
-               },15000);
+               },1000);
            }
 }
 function prevSibilfunc(curentSibil){
@@ -2250,7 +2250,7 @@ function prevSibilfunc(curentSibil){
                    }
                    $('#assessDetailsDialog_btnPrev').text('< Prev');
                    $('#assessDetailsDialog_btnPrev').removeClass('prev_page');
-               },15000);
+               },1000);
        }
 }
 //    $('#assessDetailsDialog input[type="text"], textarea').bind({
