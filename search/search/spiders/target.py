@@ -15,14 +15,14 @@ import re
 import sys
 
 
-class AmazonSpider(SearchSpider):
+class TargetSpider(SearchSpider):
 
-	name = "amazon"
+	name = "target"
 
 	# initialize fields specific to this derived spider
 	def init_sub(self):
-		self.target_site = "amazon"
-		self.start_urls = [ "http://www.amazon.com" ]
+		self.target_site = "target"
+		self.start_urls = [ "http://www.target.com" ]
 
 	# parse results page for amazon, extract info for all products returned by search (keep them in "meta")
 	def parseResults(self, response):
@@ -39,17 +39,9 @@ class AmazonSpider(SearchSpider):
 		else:
 			product_urls = response.meta['search_results']
 
-		results = hxs.select("//h3[@class='newaps']/a")
+		results = hxs.select("//div[@class='productTitle']/a")
 		for result in results:
 			product_url = result.select("@href").extract()[0]
-				
-			# remove the part after "/ref" containing details about the search query
-			m = re.match("(.*)/ref=(.*)", product_url)
-			if m:
-				product_url = m.group(1)
-
-			product_url = Utils.add_domain(product_url, "http://www.amazon.com")
-
 			product_urls.add(product_url)
 
 		# extract product info from product pages (send request to parse first URL in list)
@@ -100,29 +92,18 @@ class AmazonSpider(SearchSpider):
 		if 'origin_model' in response.meta:
 			item['origin_model'] = response.meta['origin_model']
 
-		# if 'origin_id' in response.meta:
-		# 	item['origin_id'] = response.meta['origin_id']
-		# 	assert self.by_id
-		# else:
-		# 	assert not self.by_id
-
-
 		# extract product name
-		#TODO: id='title' doesn't work for all, should I use a 'contains' or something?
-		# extract titles that are not empty (ignoring whitespace)
-		# eliminate "Amazon Prime Free Trial"
 
-		#TODO: to test this
-		#product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
-		product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
+		#TODO: is this general enough?
+		product_name = hxs.select("//h2[@class='product-name item']/span[@itemprop='name']/text()").extract()
 		if not product_name:
 			self.log("Error: No product name: " + str(response.url), level=log.INFO)
 
 		else:
 			item['product_name'] = product_name[0].strip()
 
-			# extract product model number
-			model_number_holder = hxs.select("//tr[@class='item-model-number']/td[@class='value']/text() | //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text()").extract()
+			#TODO: no model number field?
+			model_number_holder = None
 			if model_number_holder:
 				item['product_model'] = model_number_holder[0].strip()
 			# if no product model explicitly on the page, try to extract it from name
@@ -133,22 +114,13 @@ class AmazonSpider(SearchSpider):
 				#print "MODEL EXTRACTED: ", product_model_extracted, " FROM NAME ", item['product_name'].encode("utf-8")
 
 
-			brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
-			if brand_holder:
-				item['product_brand'] = brand_holder[0]
-			else:
-				pass
-				#sys.stderr.write("Didn't find product brand: " + response.url + "\n")
+			#TODO: no brand field?
 
 			# extract price
 			#! extracting list price and not discount price when discounts available?
-			price_holder = hxs.select("//span[contains(@id,'priceblock')]/text() | //span[@class='a-color-price']/text() " + \
-				"| //span[@class='listprice']/text() | //span[@id='actualPriceValue']/text() | //b[@class='priceLarge']/text() | //span[@class='price']/text()").extract()
+			#TODO: complete this with other types of pages
+			price_holder = hxs.select("//span[@class='offerPrice']/text()").extract()
 
-			# if we can't find it like above try other things:
-			if not price_holder:
-				# prefer new prices to used ones
-				price_holder = hxs.select("//span[contains(@class, 'olp-new')]//text()[contains(.,'$')]").extract()
 			if price_holder:
 				product_target_price = price_holder[0].strip()
 				# remove commas separating orders of magnitude (ex 2,000)
