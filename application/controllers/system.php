@@ -3233,4 +3233,9 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" "' . $thread_max . '
 			'combinations' => $combinations
 		)));				
 	}
+        public function workflow(){
+            $this -> load -> model('batches_model');
+            $this->data['batches'] = $this -> batches_model -> getAll();
+            $this->render();
+        }                       
 }

@@ -25,6 +25,10 @@
 			'site_url' => 'system/system_dostatsmonitor',
 			'label' => 'Do_stats Monitor'
 		),
+               array(
+			'site_url' => 'system/workflow',
+			'label' => 'Workflow'
+		),
 		array(
 			'site_url' => 'brand/import',
 			'label' => 'Brands'
