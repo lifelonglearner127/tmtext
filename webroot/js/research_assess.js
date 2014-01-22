@@ -2102,6 +2102,8 @@ $(function() {
         autoOpen: false,
         modal: true,
         resizable: false,
+	height:420,
+	width: 870,
         buttons: {
             // 'Close': {
             //     text: 'Cancel',
@@ -2111,6 +2113,7 @@ $(function() {
             // },
             'Close': {
                 text: 'Close',
+		 class: 'btn-details',
                 click: function() {
                     $(this).dialog('close');
                 }
@@ -2118,7 +2121,7 @@ $(function() {
             'Save': {
                 text: 'Save',
                 id: 'assessDetailsDialog_btnSave',
-                class: 'btn-success',
+                class: 'btn-success btn-details',
                 click: function() {
                     //saveData();
                 }
@@ -2127,7 +2130,7 @@ $(function() {
                 text: 'Next >',
                 id: 'assessDetailsDialog_btnNext',
                 style: 'margin-right:35px',
-                class: 'btn_next_dialog',
+                class: 'btn_next_dialog btn-details',
                 click: function() {
                   nextSibilfunc(curentSibil);
                 }
@@ -2136,7 +2139,7 @@ $(function() {
                 text: '< Prev',
                 id: 'assessDetailsDialog_btnPrev',
                 style: 'margin-right:10px',
-                class: 'btn_prev_dialog',
+                class: 'btn_prev_dialog btn-details',
                 click: function() {
                     prevSibilfunc(curentSibil)
                 }
@@ -2145,6 +2148,7 @@ $(function() {
                 text: 'Not a match',
                 id: 'assessDetailsDialog_btnNotAMatch',
                 style: 'margin-right:125px',
+		class: 'btn-details',
                 click: function() {
                     var impdata_id = $('#impdataid').attr('val');
                     var cmp_im_data_id = $('#impdataid_cmp').val();
@@ -2168,6 +2172,7 @@ $(function() {
                 text: 'Re-Crawl',
                 id: 'assessDetailsDialog_btnReCrawl',
                 style: 'margin-right:-210px; float:right; display:none',
+		class: 'btn-details',
                 click: function() {
                      $.post(base_url+'index.php/site_crawler/crawl_all', {
                          recrawl: 1,
@@ -2183,7 +2188,6 @@ $(function() {
                 id: 'assessDetailsDialog_btnIncludeInReport'
             }
         },
-        width: '850px'
     });
 function nextSibilfunc(curentSibil){
     $('.btn_prev_dialog').removeAttr('disabled');

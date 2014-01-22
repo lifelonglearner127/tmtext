@@ -27,7 +27,21 @@
 
 .assessDetails_SEO_wrap {
     float: left;
-    margin-left: 10px;
+    margin-left: 4px;
+    border:1px solid #ccc;
+    border-radius: 4px;
+    overflow: auto;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+       -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+       -webkit-transition: border linear 0.2s, box-shadow linear 0.2s;
+       -moz-transition: border linear 0.2s, box-shadow linear 0.2s;
+    -o-transition: border linear 0.2s, box-shadow linear 0.2s;
+    transition: border linear 0.2s, box-shadow linear 0.2s;
+    padding: 4px 6px;
+    height: 70px;
+    width: 267px;
+    cursor: text;
 }
 .assessDetails_SEO_wrap table {
     font-size: 12px !important;
@@ -2637,7 +2651,7 @@ input[name="search_crawl_data"] {
 }
 
 #preview_crawl_snap_modal{
-    width: 850px !important;
+    width: 850px !important; 
 }
 .jq-batches{
     margin-top: 10px;

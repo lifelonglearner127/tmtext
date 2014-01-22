@@ -2584,12 +2584,12 @@ class Assess extends MY_Controller {
 								}
 								if (!empty($title_seo_prases)) {
 
-									$str_title_long_seo = '<table class="table_keywords_long">';
+									$str_title_long_seo = '<div class="table_keywords_long">';
 									foreach ($title_seo_prases as $pras) {
-										$str_title_long_seo .= '<tr><td>' . $pras['ph'] . '</td><td class = "phr-density" style="display:none;">  ' . $pras['prc']
-												. '%</td><td class = "phr-frequency">  ' . $pras['frq'] . '</td></tr>';
+										$str_title_long_seo .= '<p>' . $pras['ph'] . '<span class = "phr-density" style="display:none;">  ' . $pras['prc']
+												. '%</span><span class = "phr-frequency"> - ' . $pras['frq'] . '</span></p>';
 									}
-									$tsp = $str_title_long_seo . '</table>';
+									$tsp = $str_title_long_seo . '</div>';
 								}
 								$HTags = unserialize($cmpare->HTags);
 								
@@ -2878,7 +2878,7 @@ class Assess extends MY_Controller {
                     $result_row['images_cmp' . $sim_it] = $images_cmp ? $images_cmp : 'None';
                     $result_row['video_count' . $sim_it] = $video_count ? $video_count : 'None';
                     $result_row['title_pa' . $sim_it] = $title_pa ? $title_pa : 'None';
-                    $result_row['product_name' . $sim_it] = $sim_items[$it]->product_name !== false ? "<span class='tb_product_name'>" . $sim_items[$it]->product_name . "</span>" : "-";
+                    $result_row['product_name' . $sim_it] = $sim_items[$it]->product_name !== false ?  $sim_items[$it]->product_name  : "-";
                     $result_row['item_id' . $sim_it] = $parsed_attributes_unserialize_val;
                     $result_row['Page_Load_Time' . $sim_it] = $parsed_loaded_in_seconds_unserialize_val;
 					$result_row['H1_Tags' . $sim_it] = $buildedH1Field['value'];
@@ -3082,12 +3082,12 @@ class Assess extends MY_Controller {
                     $title_seo_pr = unserialize($row->title_keywords);
                 }
                 if (!empty($title_seo_pr)) {
-                    $str_title_long_seo = '<table class="table_keywords_long 3186">';
+                    $str_title_long_seo = '<div class="table_keywords_long 3186">';
                     foreach ($title_seo_pr as $val) {
-                        $str_title_long_seo .= '<tr><td>' . $val['ph'] . '</td><td class = "phr-density" style="display:none;">  ' . $val['prc']
-                                . '%</td><td class = "phr-frequency">  ' . $val['frq'] . '</td></tr>';
+                        $str_title_long_seo .= '<p>' . $val['ph'] . '<span class = "phr-density" style="display:none;">  ' . $val['prc']
+                                . '%</span><span class = "phr-frequency"> - ' . $val['frq'] . '</span></p>';
                     }
-                    $result_row->title_seo_phrases = $str_title_long_seo . '</table>';
+                    $result_row->title_seo_phrases = $str_title_long_seo . '</div>';
                 }
 		$result_row->prodcat = 'None';
 		if(isset($prodCats[$row->category_id]))
