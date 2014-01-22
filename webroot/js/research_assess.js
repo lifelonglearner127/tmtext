@@ -2430,7 +2430,10 @@ function prevSibilfunc(curentSibil){
                         research_assess_compare_batches_batch.append('<option value="all">' + "All" + '</option>');
                     } else if(i == (data.length -1))
 		    {
+			    if( $('option:selected',research_assess_compare_batches_batch).size() > 0)
 			    $('option:selected',research_assess_compare_batches_batch).change();
+			    else
+			    $('option:first',research_assess_compare_batches_batch).change();	    
 		    }    
                 }
             } else if (data.length == 0 && res.target.value != "select customer") {
