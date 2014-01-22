@@ -783,7 +783,7 @@ $(document).ready(function () {
 			var firstId = $('option:first',secBatches).data('customer');
 			$('option',secBatches).hide();
 			$('option[data-customer="'+firstId+'"]',secBatches).show();
-			$('option[data-selected="1"]',secBatches).attr('selected',true);
+			$('option[data-selected="1"]',secBatches).attr('selected',true).change();
 			if(opts_c == '' || opts_b == '')
 			{	
 				setWrap.fadeOut();

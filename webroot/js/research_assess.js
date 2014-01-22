@@ -2428,7 +2428,10 @@ function prevSibilfunc(curentSibil){
                     if (i == 0 && $.trim($('#research_assess_compare_batches_customer').val()) == "select customer") {
 
                         research_assess_compare_batches_batch.append('<option value="all">' + "All" + '</option>');
-                    }
+                    } else if(i == (data.length -1))
+		    {
+			    $('option:selected',research_assess_compare_batches_batch).change();
+		    }    
                 }
             } else if (data.length == 0 && res.target.value != "select customer") {
                 research_assess_compare_batches_batch.empty();
