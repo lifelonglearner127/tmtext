@@ -249,7 +249,9 @@ class SearchSpider(BaseSpider):
 				if m:
 					item['origin_url'] = m.group(1)
 				#item['origin_id'] = self.extract_walmart_id(item['origin_url'])
-				yield item
+				if self.name != 'manufacturer':
+					# don't return empty matches in manufacturer spider
+					yield item
 				return
 
 			#TODO: if it contains 2 words, first could be brand - also add it in similar_names function
@@ -257,6 +259,7 @@ class SearchSpider(BaseSpider):
 			if product_model_holder:
 				product_model = product_model_holder[0]
 
+		#TODO: for the sites below, complete with missing logic, for not returning empty elements in manufacturer spider
 		elif site == 'newegg':
 			product_name_holder = hxs.select("//span[@itemprop='name']/text()").extract()
 			if product_name_holder:
