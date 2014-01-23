@@ -2791,6 +2791,9 @@ div#assess_graph.loading{
 	height:330px;
 	margin: 0 30px;
 }
+#mini_chart_container .highcharts-title {
+    text-align: center;
+}
 #tooltip_popup_container {
 width: 900px;
 line-height: 14px;
