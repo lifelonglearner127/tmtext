@@ -339,12 +339,12 @@ class SearchSpider(BaseSpider):
 					self.log("Manufacturer site not supported (" + product_brand_extracted + ") or not able to extract brand from product name (" + product_name + ")\n", level=log.ERROR)
 
 					## comment lines below to: don't return anything if you can't search on manufacturer site
-					item = SearchItem()
-					item['origin_url'] = response.url
-					item['origin_name'] = product_name
-					if product_model:
-						item['origin_model'] = product_model
-					yield item
+					# item = SearchItem()
+					# item['origin_url'] = response.url
+					# item['origin_name'] = product_name
+					# if product_model:
+					# 	item['origin_model'] = product_model
+					# yield item
 					return
 
 			# if specific site is not set, search on manufacturer site as extracted from name
@@ -356,12 +356,12 @@ class SearchSpider(BaseSpider):
 					self.log("Will abort matching for product, extracted brand does not match specified manufacturer option (" + product_brand_extracted + ")\n", level=log.INFO)
 
 					## comment lines below to: don't return anything if you can't search on manufacturer site
-					item = SearchItem()
-					item['origin_url'] = response.url
-					item['origin_name'] = product_name
-					if product_model:
-						item['origin_model'] = product_model
-					yield item
+					# item = SearchItem()
+					# item['origin_url'] = response.url
+					# item['origin_name'] = product_name
+					# if product_model:
+					# 	item['origin_model'] = product_model
+					# yield item
 					return
 
 				else:
