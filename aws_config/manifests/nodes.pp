@@ -102,6 +102,14 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
     	mode => 644
   	}
 
+  	# add config file to ubuntu user as well to skip identifying bitbucket on clone
+	file { "/home/ubuntu/.ssh/config":
+	    source => "puppet:///modules/common/ssh_config",
+    	owner => ubuntu,
+    	group => ubuntu,
+    	mode => 644
+  	}
+
   	# startup script - pulling from repo
   	file { "/home/ubuntu/startup_script.sh":
     	source => "puppet:///modules/common/startup_script.sh",
