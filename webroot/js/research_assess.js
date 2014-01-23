@@ -762,17 +762,22 @@ $(function() {
 			}).done(function(data){					
 
 				chart1.destroy(); // Castro #1270: destroy first chart to prevent memory leaks
-				
+
+                                for(var j = 0; j < data.length; j++) // merge all part first json object with second json object
+                                {
 				// Castro #1270: merge first json object with second json object
-				for(key in data[0])
+				for(key in data[j])
 				{
-					var array_to_merge = data[0][key];
-					
-					for(var i = 0; i < array_to_merge.length; i++)
-					{
-						first_half_data[0][key].push(array_to_merge[i]);
-					}
+					if(typeof(first_half_data[j][key]) != 'undefined') // second portion is differend
+                                        {
+                                            var array_to_merge = data[j][key];
+                                            for(var i = 0; i < array_to_merge.length; i++)
+                                            {
+                                                    first_half_data[j][key].push(array_to_merge[i]);
+                                            }
+                                        }
 				}
+                                }
 				
 				createHighChart(first_half_data, graphBuild, batch1Value, batch1Name, batch2Value, batch2Name);
 				
