@@ -33,6 +33,11 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
  		require => exec['apt-update-1']
 	}
 
+	package {'sshfs':
+   		ensure => present,
+ 		require => exec['apt-update-1']
+	}
+
 	exec { 'pip-scrapy':
 		command => '/usr/bin/pip install scrapy',
 		require => [package['python-pip'], package['python-dev'], package['libxslt1-dev']],
