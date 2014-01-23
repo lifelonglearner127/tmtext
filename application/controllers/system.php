@@ -16,7 +16,7 @@ class System extends MY_Controller {
 		$this -> load -> library('form_validation');
 
 		$this -> ion_auth -> add_auth_rules(array('urls_snapshot' => true, 'update_urls_threading' => true, 'check_urls_threading' => true, 'stopChecking'=>true,
-                                                          'delete_load_urls'=>true, 'system_uploadmatchurls_update'=>true, 'filters' => true, 'generate_filters' => true));
+                                                          'delete_load_urls'=>true, 'system_uploadmatchurls_update'=>true, 'filters' => true, 'generate_filters' => true, 'remove_batches_combination' => true));
 
 	}
 
@@ -3229,10 +3229,30 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" "' . $thread_max . '
 		$combinations = $_POST['type'] == Batches_combinations::TYPE_ALL_POSSIBLE_COMBINATIONS ? $this->bc->generateAllPossibleCombinations() : $this->bc->generateManualCombinations($_POST['combinations']);	
 				
 		$this->output->set_content_type('application/json')->set_output(json_encode(array(
-			'status' => 'success', 			
+			'status' => true, 			
 			'combinations' => $combinations
 		)));				
 	}
+	
+	/**
+	 *  @brief Removes batches combination
+	 *  
+	 *  @author Oleg Meleshko <qu1ze34@gmail.com>	 
+	 */
+	public function remove_batches_combination()
+	{
+		$this->load->model('filters_items', 'fi');
+		$this->load->model('filters_values', 'fv');
+		$this->load->model('batches_combinations', 'bc');
+		
+		$combo_id = $_POST['combination_id'];
+		
+		$this->output->set_content_type('application/json')->set_output(json_encode(array(
+			'status' => $this->bc->deleteAllByAttributes(array('batches_combination' => $combo_id)) && $this->fi->deleteAllByAttributes(array('combination_id' => $combo_id)) && $this->fv->deleteAllByAttributes(array('combination_id' => $combo_id))
+		)));
+	}
+	
+	
         public function workflow(){
             $this -> load -> model('batches_model');
             $this->data['batches'] = $this -> batches_model -> getAll();

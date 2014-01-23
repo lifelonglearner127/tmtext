@@ -2824,3 +2824,18 @@ float: left;
 #force_keywords{
     display : inline-block;
 }
+
+#current_combinations {
+	overflow: auto;
+	width: 369px;
+	height: 200px;
+	border: 1px gray solid;
+}
+.manual_wrapper {
+	margin: 0 0 10px 0;
+}
+
+.remove_combination_form_fields {
+	position: relative;
+	bottom: 4px;
+}

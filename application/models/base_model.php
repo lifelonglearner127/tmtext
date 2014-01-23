@@ -20,20 +20,15 @@ abstract class Base_model extends CI_Model
 	 *  @return array of validation rules	 
 	 */
 	abstract protected function getRules();
-	
+		
 	/**
-	 *  @brief This method can be used for finding records in any database table depends on model.
+	 *  @brief Finds all active records satisfying the specified condition.
 	 *  
-	 *  @param $id Primary Key id to be find by
-	 *  @return database object	 
+	 *  @return list of active records satisfying the specified condition
 	 */
-	public function find($id)
+	public function findAll()
 	{
-		$query = $this->db
-			->where(array('id' => $id))
-			->get($this->getTableName());
-			
-		return $query->row();
+		return $this->findAllByAttributes(array());
 	}
 	
 	/**
@@ -143,19 +138,15 @@ abstract class Base_model extends CI_Model
 	 *  @brief Saves the current record
 	 *  
 	 *  @param $runValidation boolean $runValidation whether to perform validation before saving the record.
-	 *  @return affected rows count
+	 *  @return boolean
 	 */
 	public function save($runValidation = true)
 	{	
 		if (!$runValidation || $this->beforeValidate())
 			if ($this->beforeSave()) 
-			{				
-				if ($this->id) 				
-					$this->db->update($this->getTableName(), $this, array('id' => $this->id));
-				else 
-					$this->db->insert($this->getTableName(), $this);				
-				
-				return $this->db->affected_rows();
+			{								
+				$r = $this->id ? $this->db->update($this->getTableName(), $this, array('id' => $this->id)) : $this->db->insert($this->getTableName(), $this);
+				return $r || $this->db->affected_rows();
 			}
 		
 		return false;
@@ -165,39 +156,36 @@ abstract class Base_model extends CI_Model
 	 *  @brief Deletes the row corresponding to this active record.
 	 *  
 	 *  @param $pk primary key value
-	 *  @return affected rows count	
+	 *  @return boolean
 	 */
 	public function deleteByPk($pk)
 	{
-		return $this->deleteByAttributes(array('id' => $pk));
+		return $this->deleteAllByAttributes(array('id' => $pk));
 	}	
 	
 	/**
 	 *  @brief Deletes rows which match the specified attribute values.
 	 *  
 	 *  @param $attributes list of attribute values
-	 *  @return affected rows count
+	 *  @return boolean
 	 */
 	public function deleteAllByAttributes(array $attributes)
 	{
-		$this->db->delete($this->getTableName(), $attributes);
+		$r = $this->db->delete($this->getTableName(), $attributes);
 			
-		return $this->db->affected_rows();
+		return $r || $this->db->affected_rows();
 	}
 	
 	/**
 	 *  @brief Deletes rows with the specified condition.
 	 *  
 	 *  @param $truncate boolean should be truncated or no, false is by default.
-	 *  @return affected rows count	
+	 *  @return boolean	
 	 */
 	public function deleteAll($truncate = false)
-	{		
-		if (!$truncate)
-			$this->db->empty_table($this->getTableName());
-		else
-			$this->db->truncate($this->getTableName());
+	{				
+		$r = !$truncate ? $this->db->empty_table($this->getTableName()) : $this->db->truncate($this->getTableName());
 		
-		return $this->db->affected_rows();
+		return $r || $this->db->affected_rows();
 	}
 }

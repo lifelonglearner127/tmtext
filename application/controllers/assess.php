@@ -4790,14 +4790,18 @@ class Assess extends MY_Controller {
         
 	public function getCategoriesByBatch($id = 0)
 	{
-		$id = intval($id);
-		$json['list'] = array();
-		if($id > 0)
+		$id = (int)$id;
+		$categories = array();
+		
+		if($id)
 		{
 			$this->load->model('product_category_model');
-			$json['list'] = $this->product_category_model->getCatsByBatchId($id);
+			$categories = $this->product_category_model->getCatsByBatchId($id);
 		}
-		echo json_encode($json);
+		
+		$this->output->set_content_type('application/json')->set_output(json_encode(array(
+			'list' => $categories
+		)));
 	}
 	
 	public function checkImportProcess()
