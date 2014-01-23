@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # set hostname and install puppet on every node with vagrant ssh -c
-for node in 1 2 3 4 5 6 7 8 9 10
+for node in $(seq 1 10)
 	do 
 	vagrant ssh "node$node" -c \
 		"echo 'node$node' | sudo tee /etc/hostname; \
