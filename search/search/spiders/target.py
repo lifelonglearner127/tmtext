@@ -24,7 +24,7 @@ class TargetSpider(SearchSpider):
 		self.target_site = "target"
 		self.start_urls = [ "http://www.target.com" ]
 
-	# parse results page for amazon, extract info for all products returned by search (keep them in "meta")
+	# parse results page for target, extract info for all products returned by search (keep them in "meta")
 	def parseResults(self, response):
 		hxs = HtmlXPathSelector(response)
 
@@ -53,7 +53,7 @@ class TargetSpider(SearchSpider):
 		# otherwise send them back to parseResults and wait for the next query, save all product URLs in search_results
 		# this way we avoid duplicates
 		if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
-			request = Request(product_urls.pop(), callback = self.parse_product_amazon, meta = response.meta)
+			request = Request(product_urls.pop(), callback = self.parse_product_target, meta = response.meta)
 			request.meta['items'] = items
 
 			# this will be the new product_urls list with the first item popped
@@ -72,9 +72,9 @@ class TargetSpider(SearchSpider):
 			# only send the response we have as an argument, no need to make a new request
 			return self.reduceResults(response)
 
-	# extract product info from a product page for amazon
+	# extract product info from a product page for target
 	# keep product pages left to parse in 'search_results' meta key, send back to parseResults_new when done with all
-	def parse_product_amazon(self, response):
+	def parse_product_target(self, response):
 
 		hxs = HtmlXPathSelector(response)
 
@@ -97,7 +97,7 @@ class TargetSpider(SearchSpider):
 		#TODO: is this general enough?
 		product_name = hxs.select("//h2[@class='product-name item']/span[@itemprop='name']/text()").extract()
 		if not product_name:
-			self.log("Error: No product name: " + str(response.url), level=log.INFO)
+			self.log("Error: No product name: " + str(response.url) + " from product: " + origin_url, level=log.INFO)
 
 		else:
 			item['product_name'] = product_name[0].strip()
@@ -142,7 +142,7 @@ class TargetSpider(SearchSpider):
 		product_urls = response.meta['search_results']
 
 		if product_urls:
-			request = Request(product_urls.pop(), callback = self.parse_product_amazon, meta = response.meta)
+			request = Request(product_urls.pop(), callback = self.parse_product_target, meta = response.meta)
 			request.meta['items'] = items
 			# eliminate next product from pending list (this will be the new list with the first item popped)
 			request.meta['search_results'] = product_urls
