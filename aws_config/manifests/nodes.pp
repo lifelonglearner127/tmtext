@@ -76,6 +76,22 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 		group => ubuntu,
 	}
 
+	# clone repo if it doesn't exist
+	exec {"clone-tmtext":
+		creates => "/home/ubuntu/tmtext",
+		cwd => "/home/ubuntu",
+		user => "ubuntu",
+		command => "git clone -q git@bitbucket.org:dfeinleib/tmtext.git",
+		require => package['git'],
+	}
+
+	# make sure repo directory belongs to ubuntu user
+	file { "/home/ubuntu/tmtext":
+		owner => ubuntu,
+		group => ubuntu,
+		recurse => true,
+	}
+
 
 	# make sure root has access to repo (to pull at startup)
 	file { "/root/.ssh/config":
