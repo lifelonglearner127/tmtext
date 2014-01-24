@@ -35,14 +35,15 @@ class TargetSpider(SearchSpider):
 
 		# add product URLs to be parsed to this list
 		if 'search_results' not in response.meta:
-			product_urls = set()
+			product_urls_and_names = set()
 		else:
-			product_urls = response.meta['search_results']
+			product_urls_and_names = response.meta['search_results']
 
 		results = hxs.select("//div[@class='productTitle']/a")
 		for result in results:
 			product_url = result.select("@href").extract()[0]
-			product_urls.add(product_url)
+			product_name = result.select("text()").extract()[0]
+			product_urls_and_names.add((product_url, product_name))
 
 		# extract product info from product pages (send request to parse first URL in list)
 		# add as meta all that was received as meta, will pass it on to reduceResults function in the end
@@ -52,12 +53,17 @@ class TargetSpider(SearchSpider):
 		# (there are no more pending requests)
 		# otherwise send them back to parseResults and wait for the next query, save all product URLs in search_results
 		# this way we avoid duplicates
-		if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
-			request = Request(product_urls.pop(), callback = self.parse_product_target, meta = response.meta)
+		if product_urls_and_names and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
+			# get first url in the list and pop it
+			product_url_and_name = product_urls_and_names.pop()
+			request = Request(product_url_and_name[0], callback = self.parse_product_target, meta = response.meta)
 			request.meta['items'] = items
 
+			# send as meta product name as extracted from results page (to be used if name not found in product page)
+			request.meta['product_name'] = product_url_and_name[1]
+
 			# this will be the new product_urls list with the first item popped
-			request.meta['search_results'] = product_urls
+			request.meta['search_results'] = product_urls_and_names
 
 			return request
 
@@ -68,7 +74,7 @@ class TargetSpider(SearchSpider):
 		else:
 			response.meta['items'] = items
 			response.meta['parsed'] = True
-			response.meta['search_results'] = product_urls
+			response.meta['search_results'] = product_urls_and_names
 			# only send the response we have as an argument, no need to make a new request
 			return self.reduceResults(response)
 
@@ -96,6 +102,12 @@ class TargetSpider(SearchSpider):
 
 		#TODO: is this general enough?
 		product_name = hxs.select("//h2[@class='product-name item']/span[@itemprop='name']/text()").extract()
+
+		# if you can't find product name in product page, use the one extracted from results page
+		if not product_name:
+			product_name = response.meta['product_name']
+			self.log("Error: product name not found on product page, extracted from results page: " + product_name + " " + origin_url, level=log.INFO)
+
 		if not product_name:
 			self.log("Error: No product name: " + str(response.url) + " from product: " + origin_url, level=log.INFO)
 
@@ -139,13 +151,17 @@ class TargetSpider(SearchSpider):
 			items.add(item)
 
 		# if there are any more results to be parsed, send a request back to this method with the next product to be parsed
-		product_urls = response.meta['search_results']
+		product_urls_and_names = response.meta['search_results']
 
-		if product_urls:
-			request = Request(product_urls.pop(), callback = self.parse_product_target, meta = response.meta)
+		if product_urls_and_names:
+			product_url_and_name = product_urls_and_names.pop()
+			request = Request(product_url_and_name[0], callback = self.parse_product_target, meta = response.meta)
 			request.meta['items'] = items
 			# eliminate next product from pending list (this will be the new list with the first item popped)
-			request.meta['search_results'] = product_urls
+
+			# send product name with request as well
+			request.meta['product_name'] = product_url_and_name[1]
+			request.meta['search_results'] = product_urls_and_names
 
 			return request
 		else:
