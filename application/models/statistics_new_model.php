@@ -481,7 +481,7 @@ class Statistics_new_model extends CI_Model {
 			$sql='SELECT ';
 			$sql.=" idpa1.`value` as '".$key."',idpa.`value` as `date`";
 			$sql.=' FROM `' . $table_to_search . '` as idpa';
-			$sql.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision`";
+			$sql.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key` = '".$key."'";
 			$sql.=" WHERE idpa1.`key` = '".$key."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
 			$sql.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 10) DESC LIMIT 15';
 //echo "\r\n".$sql."\r\n";
@@ -498,7 +498,7 @@ class Statistics_new_model extends CI_Model {
 				$sql_key='SELECT ';
 				$sql_key.=" idpa1.`value` as '".$key1."',idpa.`value` as `date`";
 				$sql_key.=' FROM `' . $table_to_search . '` as idpa';
-				$sql_key.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision`";
+				$sql_key.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key` = '".$key1."'";
 				$sql_key.=" WHERE idpa1.`key` = '".$key1."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
 				$sql_key.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 15) DESC LIMIT 10';
 				
