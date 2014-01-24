@@ -49,10 +49,9 @@ class Batches_model extends CI_Model {
             ->from($this->tables['batches'].' as b')
             ->join($this->tables['customers'].' as c', 'b.customer_id = c.id', 'left')
             ->where('b.id', $batch_id)
-            ->limit(1)
             ->get();
 
-        return $query->result();
+        return $query->row();
     }
     /*function getAll()
     {

@@ -317,6 +317,7 @@ class Statistics_new_model extends CI_Model {
             
     
     function get_compare_item($imported_data_id){
+	$result = array();    
         $query = $this->db
             ->select('s.imported_data_id,s.long_description_wc,s.short_description_wc, cl.snap, cl.snap_date, cl.snap_state, s.title_keywords,
             (select `value` from imported_data_parsed where `key`="Product Name" and `imported_data_id` = `s`.`imported_data_id` limit 1) as `product_name`,
@@ -332,7 +333,10 @@ class Statistics_new_model extends CI_Model {
             ->from($this->tables['statistics_new'].' as s')
             ->join($this->tables['crawler_list'].' as cl', 'cl.imported_data_id = s.imported_data_id', 'left')
             ->where('s.imported_data_id', $imported_data_id)->get();
-        $result = $query->row();
+	if($query->num_rows > 0)
+	{	
+		$result = $query->row();
+	}	
 	$query->free_result();
         return $result;
     }

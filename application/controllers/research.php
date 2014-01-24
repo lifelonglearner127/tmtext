@@ -434,7 +434,7 @@ class Research extends MY_Controller {
         $this->load->model('statistics_duplicate_content_model');
 
         $customer_name = $this->batches_model->getCustomerById($batch_id);
-        $customer_url = parse_url($customer_name[0]->url);
+        $customer_url = parse_url($customer_name->url);
         $result_table = array();
         $report = array();
         $pricing_details = array();
@@ -722,7 +722,7 @@ class Research extends MY_Controller {
         $report['recommendations']['absent_items'] = $absent_items;
         $report['summary']['absent_items_count'] = count($absent_items);
         $report['summary']['own_batch_name'] = $own_batch[0]->title;
-        $report['summary']['compare_customer_name'] = $compare_customer[0]->name;
+        $report['summary']['compare_customer_name'] = $compare_customer->name;
         $report['summary']['compare_batch_name'] = $compare_batch[0]->title;
 
         if ($items_priced_higher_than_competitors > 0) {
