@@ -1620,7 +1620,7 @@ function getCatDataSKU(site_name, obj, url){
     }, function(data) {
         if(data.detail.length > 0){
             var data_str = '<li class="cat_header  cat_pagination pagination-centered" data_site="'+site_name+'">'+data.pagination
-                    +'</li><li class="cat_header"><span class="dep_text">SUB CATEGORY</span><span class="dep_keywords">SKU</span></li>';
+                    +'</li><li class="cat_header"><span class="dep_text">SUB CATEGORY</span><span class="dep_keywords">SKUs</span></li>';
             for(var j=0; j<data.detail.length; j++){
                 data_str += '<li><span class="dep_text">';
                 data_str += '<a id="'+data.detail[j].id+'"  href="'+data.detail[j].url+'" target="_blank">'+data.detail[j].text+'</a>';
