@@ -438,8 +438,7 @@ class Statistics_new_model extends CI_Model {
 	 * @param	array
 	 * @return	array
 	 */
-	function getStatsData_trendlines($imported_data_id, $graphBuild)
-	{   
+	function getStatsData_trendlines($imported_data_id, $graphBuild) {   
 		switch ($graphBuild) {
 			case 'short_description_wc':
 			$key = 'description';
@@ -478,8 +477,7 @@ class Statistics_new_model extends CI_Model {
 
 		$result = $result_key = array();
 		
-		foreach($tables_to_search as $table_to_search)
-		{
+		foreach ($tables_to_search as $table_to_search) {
 			$sql='SELECT ';
 			$sql.=" idpa1.`value` as '".$key."',idpa.`value` as `date`";
 			$sql.=' FROM `' . $table_to_search . '` as idpa';
@@ -490,12 +488,11 @@ class Statistics_new_model extends CI_Model {
 			$query = $this->db->query($sql);
 			$temp_result = $query->result();
 
-			foreach($temp_result as $this_result)
-			{
+			foreach($temp_result as $this_result) {
 				$result[] = $this_result;
 			}
 			
-			if($key1 !=''){
+			if ($key1 !='') {
 				$sql_key='SELECT ';
 				$sql_key.=" idpa1.`value` as '".$key1."',idpa.`value` as `date`";
 				$sql_key.=' FROM `' . $table_to_search . '` as idpa';
@@ -506,35 +503,26 @@ class Statistics_new_model extends CI_Model {
 				$query_key = $this->db->query($sql_key);
 				$temp_result_key = $query_key->result();
 
-				foreach($temp_result_key as $this_result_key)
-				{
+				foreach($temp_result_key as $this_result_key) {
 					$result_key[] = $this_result_key;
 				}
 			}
 		}
 
-		if((count($result) !=0) && (count($result_key) !=0))
-		{
+		if((count($result) !=0) && (count($result_key) !=0)) {
 			$res = array();
-			foreach($result_key as $res_k)
-			{
-				foreach($result as $k)
-				{
-					if($k->date == $res_k->date)
-					{
+			foreach($result_key as $res_k) {
+				foreach($result as $k) {
+					if($k->date == $res_k->date) {
 						$res[] = array('date'=>$res_k->date,'long_description'=>$k->long_description,'description'=>$res_k->description);break;
 					}
 				}
 			}
 			
 			return (object) $res;
-		}
-		elseif((count($result_key) !=0) && (count($result) == 0))
-		{
+		} else if ((count($result_key) !=0) && (count($result) == 0)) {
 			return $result_key;
-		}
-		else
-		{
+		} else {
 			return $result;
 		}
 	}
