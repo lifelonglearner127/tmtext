@@ -17,6 +17,8 @@ class ProcessText():
 	MEASURE_MATCH_WEIGHT = 3
 	NONWORD_MATCH_WEIGHT = 2
 	DICTIONARY_WORD_MATCH_WEIGHT = 1
+	# if price difference is above this value, consider score penalization
+	PRODUCT_PRICE_THRESHOLD = 10
 
 	# exception brands - are brands names but are also found in the dictionary
 	brand_exceptions = ['philips', 'sharp', 'sceptre', 'westinghouse', 'element', 'curtis', 'emerson', 'xerox', 'kellogg']
@@ -173,7 +175,10 @@ class ProcessText():
 
 					# price penalization active for price_score>0.5, calculated by formula:
 					# (price_score*3)^2 (grows quadratically with price difference)
-					if price_score > 0.5:
+
+					# only consider this for product price differnces larger than a constant (10$)
+					#TODO: should I somehow asymptotically make them smaller when difference is smaller instead of omitting them completely?
+					if price_score > 0.5 and product_price_difference > self.PRODUCT_PRICE_THRESHOLD:
 						price_score_penalization = (price_score * 3) ** 2
 
 					#print "PRICE SCORE:", price_score_penalization, price_score, product_price, product2_price
