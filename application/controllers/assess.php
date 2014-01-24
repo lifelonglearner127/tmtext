@@ -4129,7 +4129,7 @@ class Assess extends MY_Controller {
     }
 
     public function get_graph_batch_data() {
-$stimer = microtime(true);
+//$stimer = microtime(true);
 		if($this->input->get('testing')) {
 			$stimer = microtime(true);
 			$stime = time();
@@ -4231,7 +4231,7 @@ $stimer = microtime(true);
                 $results = $cmp;
             } 
 			$dataRowStart = microtime(true);
-echo "\r\n" . ($dataRowStart - $stimer) . "\r\n";
+//echo "\r\n" . ($dataRowStart - $stimer) . "\r\n";
             //batch info
             foreach ($results as $k => $data_row) {
                 $parsed_attributes_feature = unserialize($data_row->parsed_attributes);
@@ -4264,9 +4264,9 @@ echo "\r\n" . ($dataRowStart - $stimer) . "\r\n";
                 $snap_data[0]['Date'][] = (string) $data_row->Date;
                  
                 //$arr = $this->get_trendline_data($data_row->imported_data_id, $graphBuild); 
-echo "\r\nBefore: " . (microtime(true) - $dataRowStart) . "\r\n";
+//echo "\r\nBefore: " . (microtime(true) - $dataRowStart) . "\r\n";
                 $arr = $this->statistics_new_model->getStatsData_trendlines($data_row->imported_data_id, $graphBuild);
-echo "\r\nAfter: " . (microtime(true) - $dataRowStart) . "\r\n";
+//echo "\r\nAfter: " . (microtime(true) - $dataRowStart) . "\r\n";
                 $updated_short_description_wc = array();
                 $updated_long_description_wc = array();
                 $updated_total_description_wc = array();
