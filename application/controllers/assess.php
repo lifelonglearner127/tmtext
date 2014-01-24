@@ -227,7 +227,7 @@ class Assess extends MY_Controller {
 	private function buildObject($instance, array $fields = array())
 	{
 		$r = new stdClass();
-		
+			
 		foreach($fields as $key => $field)
 		{
 			if (is_array($field))
@@ -266,8 +266,6 @@ class Assess extends MY_Controller {
 		}
 			
 		$results = $this->get_data_for_assess($params);
-		
-		
 
 		if ($batch2 && $batch2 != 'all') 
 		{			
@@ -305,7 +303,7 @@ class Assess extends MY_Controller {
 			if (!($txt_filter = $this->input->get('search_text'))) 
 				if (!($txt_filter = $this->input->get('sSearch'))) 
 					$txt_filter = '';
-						
+					
 			$build_assess_params = $this->buildObject($this, array(
 				'display_length' => array( 'default' => 5, 'callback' => function($value, $instance) {					
 					return (int)$instance->input->get('iDisplayLength', true);
@@ -559,12 +557,12 @@ class Assess extends MY_Controller {
 
         $this->load->model('statistics_new_model');
 		
-        $batch_id = (int) trim($_GET['batch_id']);
-        $cmp_selected = trim(strtolower($_GET['cmp_selected']));
-        $selected_columns = $_GET['checked_columns'];
+        $batch_id = (int) trim($this->input->get('batch_id'));
+        $cmp_selected = trim(strtolower($this->input->get('cmp_selected')));
+        $selected_columns = $this->input->get('checked_columns');
         $selected_columns = explode(',', trim($selected_columns));
 		
-        $batch_name = $_GET['batch_name'];
+        $batch_name = $this->input->get('batch_name');
 
         $summaryFilterData = $this->input->get('summaryFilterData');
         $summaryFilterData = $summaryFilterData ? explode(',', $summaryFilterData) : array();
@@ -596,9 +594,8 @@ class Assess extends MY_Controller {
         $params = new stdClass();
         $params->batch_id = $batch_id;
         $results = $this->get_data_for_assess($params);
-		
         $cmp = array();
-        if ($cmp_selected != '' && $cmp_selected != 0 && $cmp_selected != 'all') {
+        if (!empty($cmp_selected) && $cmp_selected != 'all') {
 
             $this->load->model('batches_model');
             $max_similar_item_count = 1;
@@ -734,7 +731,7 @@ class Assess extends MY_Controller {
             $pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
 
 
-            if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && $pars_atr['HTags']['h1'] != '') {
+            if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && trim($pars_atr['HTags']['h1'])) {
                 $H1 = $pars_atr['HTags']['h1'];
                 if (is_array($H1)) {
 
@@ -749,7 +746,7 @@ class Assess extends MY_Controller {
                 }
             }
 
-            if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && $pars_atr['HTags']['h2'] != '') {
+            if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && trim($pars_atr['HTags']['h2'])) {
                 $H2 = $pars_atr['HTags']['h2'];
                 if (is_array($H2)) {
 
@@ -772,41 +769,58 @@ class Assess extends MY_Controller {
             if (in_array('H1_Tags', $selected_columns) && $pars_atr_for_sim['HTags']['h1'] && $pars_atr_for_sim['HTags']['h1'] != '') {
                 $H1 = $pars_atr_for_sim['HTags']['h1'];
                 if (is_array($H1)) {
-
-                    if (count($H1) > $H1_tag_count_for_sim) {
-                        $H1_tag_count_for_sim = count($H1);
+		$h1Cnt = count($H1);						
+                    if ($h1Cnt > $H1_tag_count_for_sim) {
+                        $H1_tag_count_for_sim = $h1Cnt;
                     }
                 } else {
 
-                    if ($H1_tag_count_for_sim == 0) {
+                    if ($H1_tag_count_for_sim < 1) {
                         $H1_tag_count_for_sim = 1;
                     }
                 }
             }
 
-            if (in_array('H2_Tags', $selected_columns) && $pars_atr_for_sim['HTags']['h2'] && $pars_atr_for_sim['HTags']['h2'] != '') {
+            if (in_array('H2_Tags', $selected_columns) && $pars_atr_for_sim['HTags']['h2'] && trim($pars_atr_for_sim['HTags']['h2'])) {
                 $H2 = $pars_atr_for_sim['HTags']['h2'];
                 if (is_array($H2)) {
-
-                    if (count($H2) > $H2_tag_count_for_sim) {
-                        $H2_tag_count_for_sim = count($H2);
+		$h2Cnt = count($H2);	
+                    if ($h2Cnt > $H2_tag_count_for_sim) {
+                        $H2_tag_count_for_sim = $h2Cnt;
                     }
-                } else {
-
-                    if ($H2_tag_count_for_sim == 0) {
+                } elseif ($H2_tag_count_for_sim < 1) {
                         $H2_tag_count_for_sim = 1;
-                    }
                 }
             }
         }
 
 
         $arr = array();
-			
+	
         foreach ($results as $key => $row) {
             $sim = $row->similar_items;
             $pars = unserialize($row->parsed_attributes);
             $sim_pars = unserialize($sim[0]->parsed_attributes);
+	    $title_seo_pr = array();
+	    $row->title_seo_phrases = 0;
+                if (trim($row->title_keywords) && $row->title_keywords != 'None') {
+                    $title_seo_pr = unserialize($row->title_keywords);
+                }
+                if (!empty($title_seo_pr)) {
+                    foreach ($title_seo_pr as $val) {
+			    $row->title_seo_phrases += $val['frq'];
+                    }
+                }
+	    $title_seo_pr = array();							
+	    $sim[0]->title_seo_phrases	 = 0;	
+		if (trim($sim[0]->title_keywords) && $sim[0]->title_keywords != 'None') {
+                    $title_seo_pr = unserialize($sim[0]->title_keywords);
+                }
+                if (!empty($title_seo_pr)) {
+                    foreach ($title_seo_pr as $val) {
+			    $sim[0]->title_seo_phrases += $val['frq'];
+                    }
+                }						
 
             $success_filter_entries =array();
    
@@ -835,42 +849,40 @@ class Assess extends MY_Controller {
                 $desc_2 = $short_desc_2.' '.$long_desc_2 ;
                
                 if (strcasecmp($desc_1, $desc_2) <= 0)
-					similar_text($desc_1, $desc_2, $percent);
-				else
-					similar_text($desc_2, $desc_1, $percent);
+		{	
+			similar_text($desc_1, $desc_2, $percent);
+		}else
+		{
+			similar_text($desc_2, $desc_1, $percent);
+		}	
 					
                 $percent = number_format($percent, 2);
 			
 				if ($percent >= 25)
 				{
-					
 					$this->filterBySummaryCriteria('skus_25_duplicate_content', $summaryFilterData, $success_filter_entries);
                                 }
 				
 				if ($percent >= 50)
 				{
-					
 					$this->filterBySummaryCriteria('skus_50_duplicate_content', $summaryFilterData, $success_filter_entries);
 				}
 				
 				if ($percent >= 75)
 				{
-					
 					$this->filterBySummaryCriteria('skus_75_duplicate_content', $summaryFilterData, $success_filter_entries);
 				}
 
                                  
                                 if (isset($pars['pdf_count']) && $pars['pdf_count'])
                                 {				
-
                                         $this->filterBySummaryCriteria('skus_pdfs', $summaryFilterData, $success_filter_entries);	
                                 }
            
             
                                 if (isset($sim_pars['pdf_count']) && $sim_pars['pdf_count'])
-                                {				
+                                {	
                                         $this->filterBySummaryCriteria('skus_pdfs_competitor', $summaryFilterData, $success_filter_entries);	
-                                 
                                 }
             
             
@@ -887,8 +899,8 @@ class Assess extends MY_Controller {
 				}
 				
 				if ($pars['feature_count'])
-				{					
-				
+				{	
+					
 					$this->filterBySummaryCriteria('skus_features', $summaryFilterData, $success_filter_entries);	
 				}
 					
@@ -930,10 +942,10 @@ class Assess extends MY_Controller {
 				if ($sim_pars['review_count'] >= 100)
 				{										
 					$this->filterBySummaryCriteria('skus_more_than_hundred_reviews_competitor', $summaryFilterData, $success_filter_entries);	
-				}															                        
-                                
-			$batch1_filtered_title_percents = substr_count($row->title_seo_phrases, '%');
-			$batch2_filtered_title_percents = substr_count($sim[0]->title_seo_phrases, '%');
+				}	
+				
+			$batch1_filtered_title_percents = $row->title_seo_phrases; //substr_count($row->title_seo_phrases, '%');
+			$batch2_filtered_title_percents = $sim[0]->title_seo_phrases; //substr_count($sim[0]->title_seo_phrases, '%');
 			
 			if ($batch1_filtered_title_percents < $batch2_filtered_title_percents)
 			{				
@@ -941,7 +953,7 @@ class Assess extends MY_Controller {
 			}
 			
 			if (!$batch1_filtered_title_percents)
-			{			
+			{		
 				$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $summaryFilterData, $success_filter_entries);
 			}
 			
@@ -1052,9 +1064,10 @@ class Assess extends MY_Controller {
             
            
         }
-        
-           
+	
+	
             foreach ($arr as $key => $row) {
+		$success_filter_entries = array();    
                 $row->Short_Description = $row->short_description; 
                 $row->Long_Description = $row->long_description;
                 
@@ -1110,7 +1123,17 @@ class Assess extends MY_Controller {
                 $long_desc_1 = '';
             }
             $desc_1 = $short_desc_1 . ' ' . $long_desc_1;
-
+	    $sim = $row->similar_items;
+	    $title_seo_pr = array();							
+	    $sim[0]->title_seo_phrases = 0;	
+		if (trim($sim[0]->title_keywords) && $sim[0]->title_keywords != 'None') {
+                    $title_seo_pr = unserialize($sim[0]->title_keywords);
+                }
+                if (!empty($title_seo_pr)) {
+                    foreach ($title_seo_pr as $val) {
+			    $sim[0]->title_seo_phrases += $val['frq'];
+                    }
+                }
             if ($sim[0]->Short_Description) {
                 $short_desc_2 = $sim[0]->Short_Description;
             } else {
@@ -1203,19 +1226,19 @@ class Assess extends MY_Controller {
                 $this->filterBySummaryCriteria('skus_more_than_hundred_reviews_competitor', $summaryFilterData, $success_filter_entries);
             }
 
-            $batch1_filtered_title_percents = substr_count($row->title_seo_phrases, '%');
-            $batch2_filtered_title_percents = substr_count($sim[0]->title_seo_phrases, '%');
+            $batch1_filtered_title_percents = $row->title_seo_phrases; //substr_count($row->title_seo_phrases, '%');
+            $batch2_filtered_title_percents = $sim[0]->title_seo_phrases; //substr_count($sim[0]->title_seo_phrases, '%');
 
             if ($batch1_filtered_title_percents < $batch2_filtered_title_percents) {
 
                 $this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $summaryFilterData, $success_filter_entries);
             }
 
-            if (!$batch1_filtered_title_percents) {
-
+           /* if (!$batch1_filtered_title_percents) {
+		    $testcnt++;
                 $this->filterBySummaryCriteria('skus_zero_optimized_keywords', $summaryFilterData, $success_filter_entries);
             }
-
+	    
             if ($batch1_filtered_title_percents >= 1) {
 
                 $this->filterBySummaryCriteria('skus_one_optimized_keywords', $summaryFilterData, $success_filter_entries);
@@ -1229,7 +1252,7 @@ class Assess extends MY_Controller {
             if ($batch1_filtered_title_percents >= 3) {
 
                 $this->filterBySummaryCriteria('skus_three_optimized_keywords', $summaryFilterData, $success_filter_entries);
-            }
+            }*/
 
 
 
@@ -1300,12 +1323,12 @@ class Assess extends MY_Controller {
 //			}
 
 
-
-            if ($this->checkSuccessFilterEntries($success_filter_entries, $summaryFilterData)) {
+	   
+	    if ($this->checkSuccessFilterEntries($success_filter_entries, $summaryFilterData)) {
                 $arr[] = $row;
             }
-        };
-
+        }
+	    
 
         foreach ($arr as $key => $row) {
             $row->Short_Description = $row->short_description;
@@ -3976,20 +3999,21 @@ class Assess extends MY_Controller {
     }
 
     private function filterBySummaryCriteria($current_criteria, $filterCriterias, &$success_filter_entries, &$stored_filter_items, $index) {
-        $is_batch = in_array('batch_me_' . $current_criteria, $filterCriterias);
-        $is_competitor = in_array('batch_competitor_' . $current_criteria, $filterCriterias);
-		
-		$success_filter_entries[] = $is_batch || $is_competitor;
+	    $is_batch = in_array('batch_me_' . $current_criteria, $filterCriterias);
+            $is_competitor = in_array('batch_competitor_' . $current_criteria, $filterCriterias);
+	    
+            $is_competitor = in_array('batch_competitor_' . $current_criteria, $filterCriterias);
+	    $success_filter_entries[] = $is_batch || $is_competitor;
 		
 		$prefix = $is_batch ? 'batch_me_' : $is_competitor ? 'batch_competitor_' : '';
 		
 		$stored_filter_items[$prefix . $current_criteria][] = $index;		
     }
 
-    private function checkSuccessFilterEntries($success_filter_entries, $filterCriterias) {
+    private function checkSuccessFilterEntries($success_filter_entries, $filterCriterias) {  
         if (!$filterCriterias)
             return true;
-
+	
         return array_filter($success_filter_entries);
     }
 
