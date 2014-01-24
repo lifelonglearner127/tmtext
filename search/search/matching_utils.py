@@ -178,7 +178,7 @@ class ProcessText():
 
 					# only consider this for product price differnces larger than a constant (10$)
 					#TODO: should I somehow asymptotically make them smaller when difference is smaller instead of omitting them completely?
-					if price_score > 0.5 and product_price_difference > self.PRODUCT_PRICE_THRESHOLD:
+					if price_score > 0.5 and product_price_difference > ProcessText.PRODUCT_PRICE_THRESHOLD:
 						price_score_penalization = (price_score * 3) ** 2
 
 					#print "PRICE SCORE:", price_score_penalization, price_score, product_price, product2_price
