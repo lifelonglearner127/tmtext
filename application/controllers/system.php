@@ -3226,7 +3226,7 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" "' . $thread_max . '
 		$this->load->model('batches_combinations', 'bc');
 		
 		//generating batches_combinations		
-		$combinations = $_POST['type'] == Batches_combinations::TYPE_ALL_POSSIBLE_COMBINATIONS ? $this->bc->generateAllPossibleCombinations() : $this->bc->generateManualCombinations($_POST['combinations']);	
+		$combinations = $_POST['type'] == Batches_combinations::TYPE_ALL_POSSIBLE_COMBINATIONS ? $this->bc->generateAllPossibleCombinations() : $this->bc->generateManualCombinations($_POST['batches_combination']);	
 				
 		$this->output->set_content_type('application/json')->set_output(json_encode(array(
 			'status' => true, 			

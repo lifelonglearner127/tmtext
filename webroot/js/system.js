@@ -1,6 +1,10 @@
 $(document).ready(function() {
 	
-	$('.manual_wrapper_content').html($('.raw_fields').html());
+	function pasteRawManualForm() {
+		$('.manual_wrapper_content').html($('.raw_fields').html());
+	}
+	
+	pasteRawManualForm();
 	
 	$('.raw_fields .first_fields_row').append('<a href="#" class="remove_combination_form_fields"><i class="icon-remove"></i></a>');	
 	
@@ -15,8 +19,11 @@ $(document).ready(function() {
 	
 	$('.add_one_more_combination').on('click', function(e) {
 		e.preventDefault();
-		
-		$('.manual_wrapper_content').append($('.raw_fields').html());
+		var rawHtml = $('.raw_fields').html()
+		  , updatedHtml = rawHtml.replace(/\[([0-9]+)\]/g, function(match, contents) {			
+			return '[' + (parseInt(contents) + 1) + ']';
+		  });
+		$('.manual_wrapper_content').append(updatedHtml);
 		
 		return false;
 	});
@@ -46,6 +53,8 @@ $(document).ready(function() {
 					});
 					
 					$('#current_combinations').html(combinations);
+					
+					pasteRawManualForm();
 				}
 			}
 		});

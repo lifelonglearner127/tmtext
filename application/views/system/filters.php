@@ -48,9 +48,10 @@
 				</form>
 				
 				<div class="raw_fields" style="display: none">					
-					<div class="batches_combinations_fields_row">
-						<div class="first_fields_row">
-							<select name="first_batch[]" class="first_batch">
+					<div class="batches_combinations_fields_row">						
+						<div class="first_fields_row">							
+							
+							<select name="batches_combination[0][first_batch]" class="first_batch">
 								<option value="0">Select batch</option>
 								<?php foreach ($batches as $batch): ?>
 									<option value="<?php echo $batch->id ?>">
@@ -59,13 +60,13 @@
 								<?php endforeach ?>
 							</select>
 							
-							<select name="category[]" class="category">
+							<select name="batches_combination[0][category]" class="category">
 								<option value="0">Select category</option>
 							</select>															
 						</div>
 						
-						<div class="second_fields_row">
-							<select name="second_batch[]" class="second_batch">
+						<div class="second_fields_row">													
+							<select name="batches_combination[0][second_batch]" class="second_batch">
 								<option value="0">Select batch</option>
 								<?php foreach ($batches as $batch): ?>
 									<option value="<?php echo $batch->id ?>">
@@ -74,6 +75,9 @@
 								<?php endforeach ?>
 							</select>
 						</div>
+						<div >
+							<input name="batches_combination[0][title]" type="text" placeholder="Title" />
+						</div >
 						<div class="clearfix"></div>
 					</div>	
 				</div>
