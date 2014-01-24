@@ -105,15 +105,15 @@ class TargetSpider(SearchSpider):
 
 		# if you can't find product name in product page, use the one extracted from results page
 		if not product_name:
-			product_name = response.meta['product_name']
-			self.log("Error: product name not found on product page, extracted from results page: " + product_name + " " + origin_url, level=log.INFO)
-
-		if not product_name:
-			self.log("Error: No product name: " + str(response.url) + " from product: " + origin_url, level=log.INFO)
-
+			item['product_name'] = response.meta['product_name']
+			self.log("Error: product name not found on product page, extracted from results page: " + item['product_name'] + " " + origin_url, level=log.INFO)
 		else:
 			item['product_name'] = product_name[0].strip()
 
+		if not item['product_name']:
+			self.log("Error: No product name: " + str(response.url) + " from product: " + origin_url, level=log.INFO)
+
+		else:
 			#TODO: no model number field?
 			model_number_holder = None
 			if model_number_holder:
