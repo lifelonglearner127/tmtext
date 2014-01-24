@@ -4129,36 +4129,29 @@ class Assess extends MY_Controller {
     }
 
     public function get_graph_batch_data() {
-	if($this->input->get('testing'))
-	{
-		$stimer = microtime(true);
-		$stime = time();
-		$_POST['batch_id'] = $this->input->get('testing');
-		if($this->input->get('compare'))
-		{	
-			$_POST['batch_compare_id'] = $this->input->get('compare');
+		if($this->input->get('testing')) {
+			$stimer = microtime(true);
+			$stime = time();
+			$_POST['batch_id'] = $this->input->get('testing');
+			if($this->input->get('compare')) {
+				$_POST['batch_compare_id'] = $this->input->get('compare');
+			} else {
+				$_POST['batch_compare_id'] = -1;	
+			}
+			if($this->input->get('type')) {
+				$_POST['graphBuild'] = $this->input->get('type');
+			} else {	
+				$_POST['graphBuild'] = 'total_description_wc';
+			}
+			$_POST['halfResults'] = 1;
+			$_POST['includeTrendlines'] = false;
+			$_POST['requestTime'] = $stime;
+			$str =  '<br>Batch: '.$_POST['batch_id'];
+			$str .= '<br>Compare: '.$_POST['batch_compare_id'];
+			$str .= '<br>Type: '.$_POST['graphBuild'];
+			echo $str;
 		}
-		else
-		{
-			$_POST['batch_compare_id'] = -1;	
-		}
-		if($this->input->get('type'))
-		{
-			$_POST['graphBuild'] = $this->input->get('type');
-		}else
-		{	
-			$_POST['graphBuild'] = 'total_description_wc';
-		}	
-		$_POST['halfResults'] = 1;
-		$_POST['includeTrendlines'] = false;
-		$_POST['requestTime'] = $stime;
-		$str =  '<br>Batch: '.$_POST['batch_id'];
-		$str .= '<br>Compare: '.$_POST['batch_compare_id'];
-		$str .= '<br>Type: '.$_POST['graphBuild'];
-		echo $str;
-	}	
 		session_start();
-
         if (isset($_POST['batch_id']) && isset($_POST['batch_compare_id']) && isset($_POST['graphBuild'])) {
             if (trim($_POST['batch_id']) == '')
                 $batch_id = -1;
@@ -4175,20 +4168,16 @@ class Assess extends MY_Controller {
                 $this->load->model('batches_model');
                 $customer_name = $this->batches_model->getCustomerUrlByBatch($batch_compare_id);
             }
-
 			$batch_arr = array($batch_id, $batch_compare_id);
 			$snap_data = array();
 			$min_max = array();
-
 			$params = new stdClass();
 			$params->batch_id = $batch_id;
 			$params->txt_filter = '';
 			$params->date_from = '';
 			$params->date_to = '';
-
 			// Castro: check if I have to get half of the results
-			if($this->input->post('halfResults') !== FALSE)
-			{
+			if($this->input->post('halfResults') !== FALSE) {
 				$params->halfResults = $this->input->post('halfResults');
 			}
 			$getDataTime = microtime(true);
@@ -4197,12 +4186,9 @@ class Assess extends MY_Controller {
 			$trendline_dates = array();
 			$trendline_dates_items = array(); // Castro: stores the number of items that every date has
 			
-			if($this->input->post('includeTrendlines') == "true")
-			{
+			if($this->input->post('includeTrendlines') == "true") {
 				$include_trendlines = TRUE; // Castro: include trendlines? YES OR NO
-			}
-			else
-			{
+			} else {
 				$include_trendlines = FALSE; // Castro: include trendlines? YES OR NO
 			}
 
@@ -4212,9 +4198,7 @@ class Assess extends MY_Controller {
                         $similar_items = unserialize($val->similar_products_competitors);
                         if (count($similar_items) > 1) {
                             foreach ($similar_items as $key => $item) {
-
                                 if (substr_count(strtolower($customer_name), strtolower($item['customer'])) > 0) {
-
                                     $parsed_attributes_column_features_unserialize_val = '';
                                     $parsed_model_unserialize_val = '';
                                     $parsed_review_count_unserialize_val_count = '';
@@ -4245,7 +4229,7 @@ class Assess extends MY_Controller {
                 }
                 $results = $cmp;
             } 
-	    $dataRowStart = microtime(true);
+			$dataRowStart = microtime(true);
             //batch info
             foreach ($results as $k => $data_row) {
                 $parsed_attributes_feature = unserialize($data_row->parsed_attributes);
@@ -4275,8 +4259,6 @@ class Assess extends MY_Controller {
                     $snap_data[0]['Features'][] = 0;
                 }
                 
-                
-                
                 $snap_data[0]['Date'][] = (string) $data_row->Date;
                  
                 //$arr = $this->get_trendline_data($data_row->imported_data_id, $graphBuild); 
@@ -4291,18 +4273,15 @@ class Assess extends MY_Controller {
 				$updated_trendlines_data = array(); // Castro #1119, var that going to store trendlines data
 
 				// Castro : store all the available dates in trendline_dates array
-				if($include_trendlines)
-				{
+				if($include_trendlines) {
 					$last_crawl_date = date('Y-m-d', strtotime($data_row->Date));
 
-					foreach($arr as $a)
-					{
-						if(isset($a->date))
-						{
+					foreach($arr as $a) {
+						if(isset($a->date)) {
 							$a->trendline_date = date('Y-m-d', strtotime($a->date));
 							$a->days_from_last_crawl = (strtotime($last_crawl_date) - strtotime($a->trendline_date)) / (3600 * 24);
 
-							if( ! in_array($a->trendline_date, $trendline_dates))
+							if( ! in_array($a->trendline_date, $trendline_dates)) 
 							{
 								$trendline_dates[] = $a->trendline_date;
 								$trendline_dates_items[$a->trendline_date] = 0;
@@ -4313,34 +4292,24 @@ class Assess extends MY_Controller {
 					}
 				}
 
-                if($graphBuild == "total_description_wc")
-		{
-					foreach($arr as $a)
-					{
-						if(trim($a->date) && $a->days_from_last_crawl > 0)
-						{
+                if($graphBuild == "total_description_wc") {
+					foreach($arr as $a) {
+						if(trim($a->date) && $a->days_from_last_crawl > 0) {
 							$long_des = count(explode(' ',$a->long_description));
 							$des = count(explode(' ',$a->description));
-							if($des == 1 && $long_des == 1)
-							{
+							if($des == 1 && $long_des == 1) {
 								$updated_total_description_wc[$a->trendline_date] ='Total Description Word Count: '.$a->date .' - null  words<br>';  
 								$updated_trendlines_data[$a->trendline_date] = 0;
-							}
-							else
-							{
+							} else {
 								$updated_total_description_wc_int = $long_des + $des;
 								$updated_total_description_wc[$a->trendline_date] ='<span class="dot_data" data-year="' . date('Y', strtotime($a->trendline_date)) . '" data-month="' . (date('n', strtotime($a->trendline_date)) - 1) . '"  data-day="' . date('j', strtotime($a->trendline_date)) . '" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_total_description_wc_int . '">Total Description Word Count: '.$a->date .' - ' . $updated_total_description_wc_int . "  words</span><br>"; 
 								$updated_trendlines_data[$a->trendline_date] = $updated_total_description_wc_int;
 							}
 						}
 					}
-		}
-		else
-		{
-					foreach($arr as $a)
-					{
-						if(trim($a->date) && $a->days_from_last_crawl > 0)
-						{
+				} else {
+					foreach($arr as $a) {
+						if(trim($a->date) && $a->days_from_last_crawl > 0) {
 							$pars = unserialize($a->parsed_attributes);
 							$htags_upd = unserialize($a->HTags);
 
@@ -4362,8 +4331,7 @@ class Assess extends MY_Controller {
 							$updated_h2_word_counts[$a->trendline_date] ='<span class="dot_data" data-year="' . date('Y', strtotime($a->trendline_date)) . '" data-month="' . (date('n', strtotime($a->trendline_date)) - 1) . '"  data-day="' . date('j', strtotime($a->trendline_date)) . '" data-date="' . $a->days_from_last_crawl . '"  data-value="' . $updated_h2_word_counts_int . '">H2 Characters: ' .$a->date .' - ' . $updated_h2_word_counts_int . " characters</span><br>";
 
 							// Castro: display the proper value in trendlines
-							switch($graphBuild)
-							{
+							switch($graphBuild) {
 								case "short_description_wc": $trendline_value = $updated_short_description_wc_int; break;
 								case "long_description_wc": $trendline_value = $updated_long_description_wc_int; break;
 								case "h1_word_counts": $trendline_value = $updated_h1_word_counts_int; break;
@@ -4375,7 +4343,7 @@ class Assess extends MY_Controller {
 							$updated_trendlines_data[$a->trendline_date] = $trendline_value;
 						}
 					}
-				}                        
+				}
 				$snap_data[0]['updated_short_description_wc'][] =  $updated_short_description_wc;
 				$snap_data[0]['updated_long_description_wc'][] =  $updated_long_description_wc;
 				$snap_data[0]['updated_total_description_wc'][] =  $updated_total_description_wc;
@@ -4384,29 +4352,22 @@ class Assess extends MY_Controller {
 				$snap_data[0]['updated_h1_word_counts'][] =  $updated_h1_word_counts;
 				$snap_data[0]['updated_h2_word_counts'][] =  $updated_h2_word_counts;
 				$snap_data[0]['updated_trendlines_data'][] =  $updated_trendlines_data;
-
 //                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
-                if($graphBuild == "h1_word_counts"||"h2_word_counts")
-                {
+                if($graphBuild == "h1_word_counts"||"h2_word_counts") {
                     $htags = unserialize($data_row->htags);
                     if ($htags) {
-                        if($graphBuild == "h1_word_counts")
-                        {
+                        if($graphBuild == "h1_word_counts") {
                             if (isset($htags['h1'])) 
                                 $snap_data[0]['h1_word_counts'][] = strlen(implode("", $htags['h1']));
                             else 
                                 $snap_data[0]['h1_word_counts'][] = 0;
-                        }
-                        elseif($graphBuild == "h2_word_counts")
-                        {
-                            if (isset($htags['h2'])) 
+                        } else if($graphBuild == "h2_word_counts") {
+                            if (isset($htags['h2']))
                                 $snap_data[0]['h2_word_counts'][] = strlen(implode("", $htags['h2']));
-                            else 
+                            else
                                 $snap_data[0]['h2_word_counts'][] = 0;
                         }
-                    } 
-                    else 
-                    {
+                    } else {
                         $snap_data[0]['h1_word_counts'][] = 0;
                         $snap_data[0]['h2_word_counts'][] = 0;
                     }
@@ -4434,145 +4395,115 @@ class Assess extends MY_Controller {
                     $snap_data[1]['Features'][] = (int) $data_row_sim[0]->column_features;
                     $snap_data[1]['Date'][] = (string) $data_row_sim[0]->Date;
                     
-             // $arr1 = $this->get_trendline_data($data_row_sim[0]->imported_data_id,$graphBuild);
-                $arr1 = $this->statistics_new_model->getStatsData_trendlines($data_row_sim[0]->imported_data_id, $graphBuild);
-                $updated_short_description_wc1 = '';
-                $updated_long_description_wc1 = '';
-                $updated_total_description_wc1 = '';
-                $updated_revision1 = '';
-                $updated_Features1 = '';
-                $updated_h1_word_counts1 = '';
-                $updated_h2_word_counts1 = '';
-                 if($graphBuild == "total_description_wc"){
-                    foreach($arr1 as $a1){
-                      if(trim($a1->date)){
-                          $long_des1 = count(explode(' ',$a1->long_description));
-                          $des1 = count(explode(' ',$a1->description));
-                          if($des1 == 1 && $long_des1 == 1)
-                            $updated_total_description_wc1.='Total Description Word Count: '.$a1->date .' - null  words<br>';  
-                          else    
-                            $updated_total_description_wc1.='Total Description Word Count: '.$a1->date .' - '.($long_des1 + $des1)."  words<br>";  
-                      }
-                    
-                    }
-                 }else{
-                    foreach($arr1 as $a1){
-                    $pars1 = unserialize($a1->parsed_attributes);
-                    $htags_upd1 = unserialize($a1->HTags);
-		    $dwc = count(explode(' ',$a1->description));
-		    $ldwc = count(explode(' ',$a1->long_description));
-                    $updated_short_description_wc1.='Short Description: '.$a1->date .' - '. $dwc."  words<br>";
-                    $updated_long_description_wc1.='Long Description: '.$a1->date .' - '.$ldwc." words <br>";
-                    $updated_total_description_wc1.='Total Description Word Count: '.$a1->date .' - '.($ldwc + $dwc)."  words<br>";
-                    $updated_revision1.='Reviews: '.$a1->date .' - '.$pars1['review_count']."<br>";
-                    $updated_Features1.='Features: '.$a1->date .' - '.$pars1['feature_count']."<br>";
-                    $updated_h1_word_counts1.='H1 Characters: ' .$a1->date .' - '.strlen(implode("", $htags_upd1['h1']))." characters <br>";
-                    $updated_h2_word_counts1.='H2 Characters: ' .$a1->date .' - '.strlen(implode("", $htags_upd1['h2']))." characters <br>";
-                    }
-                 }   
-                
-                $snap_data[1]['updated_short_description_wc'][] =  $updated_short_description_wc1;
-                $snap_data[1]['updated_long_description_wc'][] =  $updated_long_description_wc1;
-                $snap_data[1]['updated_total_description_wc'][] =  $updated_total_description_wc1;
-                $snap_data[1]['updated_revision'][] =  $updated_revision1;
-                $snap_data[1]['updated_Features'][] =  $updated_Features1;
-                $snap_data[1]['updated_h1_word_counts'][] =  $updated_h1_word_counts1;
-                $snap_data[1]['updated_h2_word_counts'][] =  $updated_h2_word_counts1;  
+				 // $arr1 = $this->get_trendline_data($data_row_sim[0]->imported_data_id,$graphBuild);
+					$arr1 = $this->statistics_new_model->getStatsData_trendlines($data_row_sim[0]->imported_data_id, $graphBuild);
+					$updated_short_description_wc1 = '';
+					$updated_long_description_wc1 = '';
+					$updated_total_description_wc1 = '';
+					$updated_revision1 = '';
+					$updated_Features1 = '';
+					$updated_h1_word_counts1 = '';
+					$updated_h2_word_counts1 = '';
+					if ($graphBuild == "total_description_wc") {
+						foreach ($arr1 as $a1) {
+							if (trim($a1->date)) {
+								$long_des1 = count(explode(' ',$a1->long_description));
+								$des1 = count(explode(' ',$a1->description));
+								if ($des1 == 1 && $long_des1 == 1)
+									$updated_total_description_wc1.='Total Description Word Count: '.$a1->date .' - null  words<br>';  
+								else
+									$updated_total_description_wc1.='Total Description Word Count: '.$a1->date .' - '.($long_des1 + $des1)."  words<br>";  
+							}
+						}
+					} else {
+						foreach ($arr1 as $a1) {
+							$pars1 = unserialize($a1->parsed_attributes);
+							$htags_upd1 = unserialize($a1->HTags);
+							$dwc = count(explode(' ',$a1->description));
+							$ldwc = count(explode(' ',$a1->long_description));
+							$updated_short_description_wc1.='Short Description: '.$a1->date .' - '. $dwc."  words<br>";
+							$updated_long_description_wc1.='Long Description: '.$a1->date .' - '.$ldwc." words <br>";
+							$updated_total_description_wc1.='Total Description Word Count: '.$a1->date .' - '.($ldwc + $dwc)."  words<br>";
+							$updated_revision1.='Reviews: '.$a1->date .' - '.$pars1['review_count']."<br>";
+							$updated_Features1.='Features: '.$a1->date .' - '.$pars1['feature_count']."<br>";
+							$updated_h1_word_counts1.='H1 Characters: ' .$a1->date .' - '.strlen(implode("", $htags_upd1['h1']))." characters <br>";
+							$updated_h2_word_counts1.='H2 Characters: ' .$a1->date .' - '.strlen(implode("", $htags_upd1['h2']))." characters <br>";
+						}
+					}
+					$snap_data[1]['updated_short_description_wc'][] =  $updated_short_description_wc1;
+					$snap_data[1]['updated_long_description_wc'][] =  $updated_long_description_wc1;
+					$snap_data[1]['updated_total_description_wc'][] =  $updated_total_description_wc1;
+					$snap_data[1]['updated_revision'][] =  $updated_revision1;
+					$snap_data[1]['updated_Features'][] =  $updated_Features1;
+					$snap_data[1]['updated_h1_word_counts'][] =  $updated_h1_word_counts1;
+					$snap_data[1]['updated_h2_word_counts'][] =  $updated_h2_word_counts1;  
 //                      $snap_data[1]['own_price'][] = (float) $data_row_sim[0]->own_price;
-                if($graphBuild == "h1_word_counts"||"h2_word_counts")
-                {
-                    $htags = unserialize($data_row_sim[0]->HTags);
-                    if ($htags) 
-                    {
-                        if($graphBuild == "h1_word_counts")
-                        {
-                            if (isset($htags['h1'])) {
-                                $snap_data[1]['h1_word_counts'][] = strlen(implode("", $htags['h1']));
-                            } else {
-                            $snap_data[1]['h1_word_counts'][] = 0;
-                            }
-                        }
-                        if($graphBuild == "h2_word_counts")
-                        {
-                            if (isset($htags['h2'])) {
-                                $snap_data[1]['h2_word_counts'][] = strlen(implode("", $htags['h2']));
-                            } else {
-                            $snap_data[1]['h2_word_counts'][] = 0;
-                            }
-                        }
-                    } else {
-                        $snap_data[1]['h1_word_counts'][] = 0;
-                        $snap_data[1]['h2_word_counts'][] = 0;
-                    }
-                }
+					if ($graphBuild == "h1_word_counts" || "h2_word_counts") {
+						$htags = unserialize($data_row_sim[0]->HTags);
+						if ($htags) {
+							if($graphBuild == "h1_word_counts") {
+								if (isset($htags['h1'])) {
+									$snap_data[1]['h1_word_counts'][] = strlen(implode("", $htags['h1']));
+								} else {
+									$snap_data[1]['h1_word_counts'][] = 0;
+								}
+							}
+							if($graphBuild == "h2_word_counts") {
+								if (isset($htags['h2'])) {
+									$snap_data[1]['h2_word_counts'][] = strlen(implode("", $htags['h2']));
+								} else {
+									$snap_data[1]['h2_word_counts'][] = 0;
+								}
+							}
+						} else {
+							$snap_data[1]['h1_word_counts'][] = 0;
+							$snap_data[1]['h2_word_counts'][] = 0;
+						}
+					}
                 }
             }
-	    if($this->input->get('testing')) { echo '<br>DataRowForeach: '.(microtime(true) - $dataRowStart); }
-
+			if ($this->input->get('testing')) { echo '<br>DataRowForeach: '.(microtime(true) - $dataRowStart); }
 			// Castro prepare and order all trendline data, set missing dates values to null
-			if($include_trendlines)
-			{
+			if($include_trendlines) {
 				$maximum_trendlines = 6; // set the maximum number of trendlines to show
-
 				asort($trendline_dates_items);
-
 				$final_trendline_dates = array();
 				$trendline_dates_to_remove = array();
 
 				// check the dates of the last request to display the same dates in the second request dates are stores in session
-				if($this->input->post('requestTime') > 0 && isset($_SESSION['graph'.$this->input->post('requestTime')]))
-				{
+				if($this->input->post('requestTime') > 0 && isset($_SESSION['graph'.$this->input->post('requestTime')])) {
 					$final_trendline_dates = $_SESSION['graph'.$this->input->post('requestTime')];
-
 					unset($_SESSION['graph'.$this->input->post('requestTime')]);
-
-					foreach($trendline_dates_items as $trendline_date_with_more_items => $total_items)
-					{
-						if( ! in_array($trendline_date_with_more_items, $final_trendline_dates))
-						{
+					foreach($trendline_dates_items as $trendline_date_with_more_items => $total_items) {
+						if( ! in_array($trendline_date_with_more_items, $final_trendline_dates)) {
 							$trendline_dates_to_remove[] = $trendline_date_with_more_items;
 						}
 					}
-				}
-				else
-				{
+				} else {
 					$total_trendlines = 0;
-					foreach($trendline_dates_items as $trendline_date_with_more_items => $total_items)
-					{
+					foreach($trendline_dates_items as $trendline_date_with_more_items => $total_items) {
 						$total_trendlines++;
-						if($total_trendlines < 6)
-						{
+						if($total_trendlines < 6) {
 							$final_trendline_dates[] = $trendline_date_with_more_items;
-						}
-						else
-						{
+						} else {
 							$trendline_dates_to_remove[] = $trendline_date_with_more_items;
 						}
 					}
 				}
-
 				sort($final_trendline_dates);
 				$ordered_trendline_dates = array_reverse($final_trendline_dates);
-
-				if($this->input->post('requestTime') > 0 && ! isset($_SESSION['graph'.$this->input->post('requestTime')]))
-				{
+				if($this->input->post('requestTime') > 0 && ! isset($_SESSION['graph'.$this->input->post('requestTime')])) {
 					$_SESSION['graph'.$this->input->post('requestTime')] = $ordered_trendline_dates;
 				}
-
 				$lim = count($snap_data[0]['updated_trendlines_data']);
-				for($i = 0; $i < $lim; $i++)
-				{
+				for($i = 0; $i < $lim; $i++) {
 					$current_trendline_data = $snap_data[0]['updated_trendlines_data'][$i];
 					$ordered_trendline_data = array();
 
-					foreach($ordered_trendline_dates as $ordered_trendline_date)
-					{
-						if(isset($current_trendline_data[$ordered_trendline_date]))
-						{
+					foreach($ordered_trendline_dates as $ordered_trendline_date) {
+						if(isset($current_trendline_data[$ordered_trendline_date])) {
 							$ordered_trendline_data[$ordered_trendline_date] = (int) $current_trendline_data[$ordered_trendline_date];
-						}
-						else
-						{
+						} else {
 							$ordered_trendline_data[$ordered_trendline_date] = NULL;
 						}
 					}
@@ -4584,16 +4515,12 @@ class Assess extends MY_Controller {
 
 				$fields_with_unwanted_dates = array('updated_short_description_wc', 'updated_long_description_wc', 'updated_total_description_wc', 'updated_revision', 'updated_Features', 'updated_h1_word_counts', 'updated_h2_word_counts');
 
-				foreach($fields_with_unwanted_dates as $fields_with_unwanted_date)
-				{
+				foreach($fields_with_unwanted_dates as $fields_with_unwanted_date) {
 					$lim = count($snap_data[0][$fields_with_unwanted_date]);
-					for($i = 0; $i < $lim; $i++)
-					{
-						foreach($trendline_dates_to_remove as $trendline_date_to_remove)
-						{
+					for($i = 0; $i < $lim; $i++) {
+						foreach($trendline_dates_to_remove as $trendline_date_to_remove) {
 							unset($snap_data[0][$fields_with_unwanted_date][$i][$trendline_date_to_remove]);
 						}
-
 						$snap_data[0][$fields_with_unwanted_date][$i] = implode(" ", $snap_data[0][$fields_with_unwanted_date][$i]);
 					}
 				}
@@ -4601,10 +4528,10 @@ class Assess extends MY_Controller {
 
 //            echo '<pre>';
 //            print_r($snap_data); die();
-	     if(!$this->input->get('testing'))
-              $this->output->set_content_type('application/json')->set_output(json_encode($snap_data));
+			if(!$this->input->get('testing'))
+				$this->output->set_content_type('application/json')->set_output(json_encode($snap_data));
         }
-	if($this->input->get('testing')) { echo '<br>all microtime: '.(microtime(true) - $stimer); echo '<br>all time: '.(time() - $stime); }
+		if($this->input->get('testing')) { echo '<br>all microtime: '.(microtime(true) - $stimer); echo '<br>all time: '.(time() - $stime); }
     }
 
     private function keywords_appearence($desc, $phrase) {
