@@ -908,7 +908,8 @@ th.word_prod{
 }
 
 #dt_tbl{
-	overflow:hidden;
+	overflow-x:auto;
+	overflow-y:hidden;
 }
 
 .btn-details{
