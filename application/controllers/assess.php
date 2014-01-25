@@ -3519,10 +3519,7 @@ class Assess extends MY_Controller {
 			if ($iterator < $iterator_limit)
 				$result_table[$iterator] = $result_row;
 	
-			$iterator++;
-			$report['test_row_iterator'] = $row_iterator;
-			$report['test_iterator_limit'] = $iterator_limit;
-			$report['test_iterator'] = $iterator;
+			$iterator++;			
         }
 
 

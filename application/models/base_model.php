@@ -9,6 +9,9 @@
  
 abstract class Base_model extends CI_Model 
 {
+	
+	private static $_models = array();
+	
 	/**
 	 *  @return This method should return database table name.	 	
 	 */
@@ -20,7 +23,21 @@ abstract class Base_model extends CI_Model
 	 *  @return array of validation rules	 
 	 */
 	abstract protected function getRules();
-		
+	
+	/**
+	 *  @brief Returns the static model of the specified class.
+	 *  
+	 *  @param string $className active record class name.
+	 *  @return active record model instance
+	 */
+	public static function model($className = __CLASS__)
+	{
+		if (!isset(self::$_models[$className]))
+			self::$_models[$className] = new $className();	
+					
+		return self::$_models[$className];
+	}
+	
 	/**
 	 *  @brief Finds all active records satisfying the specified condition.
 	 *  

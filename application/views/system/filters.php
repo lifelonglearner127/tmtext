@@ -18,6 +18,7 @@
 								<?php foreach ($current_batches_combinations as $key => $current_batches_combination): ?>
 									<div>
 										<?php echo $key + 1 ?>. <?php echo $current_batches_combination->title ?>
+										<?php echo $current_batches_combination->category_id ? '(' . $current_batches_combination->category_id . ')' : '' ?>
 										<a href="#" data-combination-id="<?php echo $current_batches_combination->batches_combination ?>" class="remove_batches_combinations">
 											<i class="icon-remove"></i>
 										</a>
