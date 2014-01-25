@@ -37,6 +37,50 @@ class Temp_data_model extends CI_Model {
             )";
         $this->db->query($sql);
     }
+    public function addUrlToUploaded($file_id,$url1,$url2){
+        $data = array(
+            'url1'=>$url1,
+            'url2'=>$url2,
+            'file_id'=>$file_id
+        );
+        $this->db->insert('matchurls',$data);
+    }
+    public function getFileId($file_name){
+        $this->db->select('id');
+        $this->db->from('matchurls_csvfile');
+        $this->db->where('file_name', $file_name);
+        $query = $this->db->get();
+        if($query->num_rows===0){
+            return FALSE;
+        }
+        return $query->first_row();
+    }
+    public function deleteUrls($file_id){
+        $this->db->where('file_id',$file_id);
+        $this->db->delete('matchurls');
+    }
+    public function loadUrlsFromDb($id){
+        $this->db->select('file_name');
+        $this->db->from('matchurls_csvfile');
+        $this->db->where('file_id',$id);
+        $query = $this->db->get();
+        if($query->num_rows===0){
+            return FALSE;
+        }
+        $row = $query->first_row();
+        $sql = 'insert into urlstomatch (url1,url2)
+            select url1, url2 
+            from matchurls
+            where file_id='.$id;
+        $this->db->query($sql);
+        return $row->file_name;
+    }
+    public function getFileList(){
+        $this->db->select('file_id, file_name');
+        $this->db->from('matchurls_csvfile');
+        $query = $this->db->get();
+        return $query->result();
+    }
 
     public function dropTable($table){
         $sql = "DROP TABLE IF EXISTS `$table`";

@@ -265,7 +265,7 @@ class Crons extends MY_Controller
 	}
         public function reset_models($batch_id=false){
             if($batch_id==0){
-                echo '<br>All batches.<br>';exit;
+//                echo '<br>All batches.<br>';exit;
                 $sql = "UPDATE imported_data_parsed SET model='null'";
                 $this->db->query($sql);
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
@@ -310,6 +310,8 @@ class Crons extends MY_Controller
                         $this->db->update('imported_data_parsed',$data);
                     }
                 }
+                $url_link ="wget -S -O - ".site_url('/crons/cron_job_manager')." > /dev/null 2>/dev/null &"; 
+                shell_exec($url_link);
             }
         }
 
@@ -739,6 +741,8 @@ class Crons extends MY_Controller
 			$this->db->delete('statistics_new', array('imported_data_id' => $res->imported_data_id));
 		}
 		echo "batch_id = $batch_id <br> end";
+                $url_link ="wget -S -O - ".site_url('/crons/cron_job_manager')." > /dev/null 2>/dev/null &"; 
+                shell_exec($url_link);
 	}
 
 	public function do_stats_forupdated($forceKeywords = FALSE)
@@ -1139,10 +1143,32 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			$this->email->subject('Cron job report');
 			$this->email->message('Cron job for do_statistics_new is done.<br> Timing = ' . $mtd->td); //.'<br> Total items updated: '.$qty['description']
 			$this->email->send(); 
+                        $url_link ="wget -S -O - ".site_url('/crons/cron_job_manager')." > /dev/null 2>/dev/null &"; 
+			shell_exec($url_link);
 		}
 		unlink($tmp_dir . ".locked");
 	}
-
+        //Controls the Workflow process 
+        function cron_job_manager(){
+            $this->load->model('workflow_model');
+            $task = $this->workflow_model->getCurrentTask();
+            if(!$task){
+                exit;
+            }
+            $url = $task->function_url!==0?
+                    ('wget -S -O - '
+                    .site_url($task->function_url)
+                    .($task->function_param?('/'.$task->function_param):'')
+                    .' > /dev/null 2>/dev/null &')
+                    :'';
+            if($url!==''){
+                shell_exec($url);
+                $this->workflow_model->nextStep();
+            }
+            else{
+                $this->workflow_model->lastStep();
+            }
+        }
 	function different_revissions()
 	{
 		$sql_cmd = "select imported_data_id, max(revision) as max_revision
@@ -3172,14 +3198,39 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		$this->load->model('settings_model');
 		$this->load->model('imported_data_parsed_model');
 		$process = $this->uri->segment(3);
-		$linesScaned = $this->uri->segment(4);
-		$notFoundUrls = $this->uri->segment(6);
-		$itemsUpdated = $this->uri->segment(5);
-		$itemsUnchanged = $this->uri->segment(7);
+                    $linesScaned = 0;
+                    $notFoundUrls = 0;
+                    $itemsUpdated = 0;
+                    $itemsUnchanged = 0;
+                if($process==='import_from_db'){
+                    $file_id = $this->uri->segment(4);
+                    $this->temp_data_model->emptyTable('notfoundurls');
+                    $this->temp_data_model->emptyTable('urlstomatch');
+                    $this->temp_data_model->emptyTable('updated_items');
+                    $this->settings_model->deledtMatching();
+                    $f_name = $this->temp_data_model->loadUrlsFromDb($file_id);
+                    if($f_name===FALSE){
+                        $url_link ="wget -S -O - ".site_url('/crons/cron_job_manager')." > /dev/null 2>/dev/null &"; 
+			shell_exec($url_link);
+                        exit;
+                    }
+                    $this->temp_data_model->createMatchUrlsTable();//Creates the table for keeping twins of URLs
+                    $process = time();
+                    $linesAdded = $this->temp_data_model->getTableSize('urlstomatch');
+                    $this -> temp_data_model -> createNonFoundTable();//Creating table for non found urls
+                    $this -> temp_data_model -> cUpdDataTable();//Create table for updated items
+                    $this -> settings_model -> addMatchingUrls($f_name, $process, $linesAdded);//Add matching info to settings table
+                }
+                else{
+                    $linesScaned = $this->uri->segment(4);
+                    $notFoundUrls = $this->uri->segment(6);
+                    $itemsUpdated = $this->uri->segment(5);
+                    $itemsUnchanged = $this->uri->segment(7);
+                }
 		$start = microtime(true);
 		$timing = 0;
     $start_run1 = microtime(true);
-    log_message('ERROR', "Start while cron");                 
+    log_message('ERROR', "Start while cron");  
 		while ($timing < 200 && $urls = $this->temp_data_model->getLineFromTable('urlstomatch'))
 		{
 			$atuc = 2;
@@ -3304,6 +3355,8 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			$val = "$process|$linesScaned|$notFoundUrls|$itemsUpdated|$itemsUnchanged";
 			$this->settings_model->updateMatchingUrls($process, $val);
                     log_message('ERROR','Cron stoped');
+                        $url_link ="wget -S -O - ".site_url('/crons/cron_job_manager')." > /dev/null 2>/dev/null &"; 
+			shell_exec($url_link);
 		} else
 		{
 			$lts = $this->temp_data_model->getTableSize('urlstomatch');
@@ -3841,6 +3894,8 @@ log_message('ERROR', 'Start ' . $mode . ' ' . $choosen_file . ' pid=' . $new_chi
 		}
 		if (microtime() - $start < 200 || $i == 0)
 		{
+                        $url_link ="wget -S -O - ".site_url('/crons/cron_job_manager')." > /dev/null 2>/dev/null &"; 
+			shell_exec($url_link);
 			exit;
 		}
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
