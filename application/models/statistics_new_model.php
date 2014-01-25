@@ -484,10 +484,7 @@ class Statistics_new_model extends CI_Model {
 			$sql.=" left join `" . $table_to_search . "` as idpa1 on idpa.`imported_data_id`  = idpa1.`imported_data_id` and idpa.`revision`=idpa1.`revision` and idpa1.`key`='".$key."'";
 			$sql.=" WHERE idpa1.`key` = '".$key."' and idpa.`key` = 'date' and idpa.`imported_data_id`=".$imported_data_id;
 			$sql.=' GROUP BY SUBSTRING(`idpa`.`value`, 1, 10) ORDER BY SUBSTRING(`idpa`.`value`, 1, 10) DESC LIMIT 15';
-//echo "\r\n".$sql."\r\n";
-//echo "\r\n".microtime()."\r\n";
 			$query = $this->db->query($sql);
-//echo "\r\n".microtime()."\r\n";
 			$temp_result = $query->result();
 
 			foreach($temp_result as $this_result) {
