@@ -2,5 +2,7 @@
 
 /etc/init.d/networking restart
 
-cd tmtext; git pull origin master; cd
+cd /home/ubuntu/tmtext; 
+/usr/bin/git pull origin master
+chown -R ubuntu:ubuntu /home/ubuntu/tmtext
 
