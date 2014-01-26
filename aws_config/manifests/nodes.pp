@@ -13,6 +13,7 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 		require => service['networking'],
 	}
 
+	# packages
 	package { 'git':
 		ensure => present,
 		require => exec['apt-update-1'],
@@ -38,21 +39,29 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
  		require => exec['apt-update-1']
 	}
 
-	exec { 'pip-scrapy':
-		command => '/usr/bin/pip install scrapy',
+
+	# python packages
+
+	package { 'scrapy':
+		ensure => present,
+		provider => 'pip',
 		require => [package['python-pip'], package['python-dev'], package['libxslt1-dev']],
 	}
 
-	exec { 'pip-nltk':
-		command => '/usr/bin/pip install nltk',
+	package { 'nltk':
+		ensure => present,
+		provider => 'pip',
 		require => package['python-pip'],
 	}
 
-	exec { 'pip-selenium':
-		command => '/usr/bin/pip install selenium',
+	package { 'selenium':
+		ensure => present,
+		provider => 'pip',
 		require => package['python-pip'],
 	}
 
+
+	# SSH
 
 	# ssh keys
 	file { "/home/ubuntu/.ssh":
@@ -76,23 +85,6 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 		group => ubuntu,
 	}
 
-	# clone repo if it doesn't exist
-	exec {"clone-tmtext":
-		creates => "/home/ubuntu/tmtext",
-		cwd => "/home/ubuntu",
-		user => "ubuntu",
-		command => "/usr/bin/git clone -q git@bitbucket.org:dfeinleib/tmtext.git",
-		require => package['git'],
-	}
-
-	# make sure repo directory belongs to ubuntu user
-	file { "/home/ubuntu/tmtext":
-		owner => ubuntu,
-		group => ubuntu,
-		recurse => true,
-	}
-
-
 	# make sure root has access to repo (to pull at startup)
 	file { "/root/.ssh/config":
 	    source => "puppet:///modules/common/ssh_config",
@@ -109,6 +101,18 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
     	mode => 644
   	}
 
+
+  	# git repo
+
+	# clone repo if it doesn't exist
+	exec {"clone-tmtext":
+		creates => "/home/ubuntu/tmtext",
+		cwd => "/home/ubuntu",
+		user => "ubuntu",
+		command => "/usr/bin/git clone -q git@bitbucket.org:dfeinleib/tmtext.git",
+		require => package['git'],
+	}
+
   	# startup script - pulling from repo
   	file { "/home/ubuntu/startup_script.sh":
     	source => "puppet:///modules/common/startup_script.sh",
@@ -122,6 +126,41 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
     	owner => root,
     	group => root,
     	mode => 755
+  	}
+
+  	# mount second partition
+
+
+  	# exec { "create-mountpoint":
+  	# 	command => "/bin/mkdir /mnt/part2",
+  	# 	creates => "/mnt/part2",
+  	# }
+
+  	# # unmount partition from /mnt
+  	# exec {'umount-partition':
+  	# 	command => "/bin/umount /dev/xvdb",
+  	# }
+
+  	mount { "/mnt":
+  		device => "/dev/xvdb",
+  		fstype => "ext3",
+  		ensure => "mounted",
+  		atboot => true,
+  	}
+
+  	# create cache folder in larget partition, symlink to cache in homedir
+	file{ "/mnt/scrapy_cache":
+  		ensure => "directory",
+  		owner => "ubuntu",
+  		group => "ubuntu",
+  		require => mount["/mnt"]
+  	}
+
+  	file { "/home/ubuntu/.scrapy_cache":
+  		ensure => link,
+  		target => "/mnt/scrapy_cache",
+  		owner => "ubuntu",
+  		group => "ubuntu",
   	}
 
 }
