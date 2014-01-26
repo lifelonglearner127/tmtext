@@ -46,8 +46,15 @@ class Batches_combinations extends Base_model
 		$combination->category_id = $data['category'];
 		
 		$combination->title = $data['first_batch_id'] == $data['second_batch_id'] || isset($data['hasCustomTitle']) ? $data['first_batch_title'] : $data['first_batch_title'] . ' - ' . $data['second_batch_title'];
-					
-		return $combination->save() && Filters_values::model()->generateFiltersValues($data) ? $combination : false;		
+			
+		if ($combination->save()) {
+			$combination->id = $this->db->insert_id();
+			
+			if (Filters_values::model()->generateFiltersValues($data))
+				return $combination;
+		}
+			
+		return false;
 	}
 	
 	private function generateCombinations(array $batches = array(), $from_db = false)

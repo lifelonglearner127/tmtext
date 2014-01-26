@@ -49,7 +49,7 @@ $(document).ready(function() {
 					var combinations = '';
 					
 					_.map(data.combinations, function(combo, index) {					
-						combinations += '<div>' + (index + 1) + '. ' + combo['title'] + ' <a href="#" data-combination-id="' + combo['batches_combination'] + '" class="remove_batches_combinations"><i class="icon-remove"></i></a></div>';
+						combinations += '<div>' + (index + 1) + '. ' + combo['title'] + ' <a href="#" data-combination-id="' + combo['id'] + '" data-combination-code="' + combo['batches_combination'] + '" class="remove_batches_combinations"><i class="icon-remove"></i></a></div>';
 					});
 					
 					$('#current_combinations').html(combinations);

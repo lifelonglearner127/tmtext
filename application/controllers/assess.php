@@ -2528,8 +2528,8 @@ class Assess extends MY_Controller {
 		}	
         
         $duplicate_content_range = 25;
-	$batch2_items_count = 0;
-	$iterator = 0;
+		$batch2_items_count = 0;
+		$iterator = 0;
 		
         $needFilters = $build_assess_params->needFilters;
         $displayCount = $build_assess_params->displayCount;
@@ -3182,11 +3182,7 @@ class Assess extends MY_Controller {
                     $result_row->duplicate_content = $duplicate_customers;
                 }
             }
-
-            if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None') {
-                $items_unoptimized_product_content++;
-            }    	
-			
+            
 			//Dublicate Content      
 			if (!$row->Short_Description2 || !$row->Long_Description2) {
 
@@ -3533,18 +3529,10 @@ class Assess extends MY_Controller {
 		{
 			$summary_fields = array(
 				'assess_report_total_items' => array( 'value' => $own_batch_total_items, 'percentage' => array() ),
-				'items_priced_higher_than_competitors' => array( 'value' => $items_priced_higher_than_competitors, 'percentage' => array('batch1')),
-				'items_have_more_than_20_percent_duplicate_content' => array( 'value' => $items_have_more_than_20_percent_duplicate_content, 'percentage' => array()),
+				'items_priced_higher_than_competitors' => array( 'value' => $items_priced_higher_than_competitors, 'percentage' => array('batch1')),				
 				'skus_25_duplicate_content' => array( 'value' => $skus_25_duplicate_content, 'percentage' => array('batch1')),
 				'skus_50_duplicate_content' => array( 'value' => $skus_50_duplicate_content, 'percentage' => array('batch1')),
-				'skus_75_duplicate_content' => array( 'value' => $skus_75_duplicate_content, 'percentage' => array('batch1')),
-				'items_unoptimized_product_content' => array( 'value' => $items_unoptimized_product_content, 'percentage' => array()),
-				'items_short_products_content_short' => array( 'value' => $items_short_products_content_short, 'percentage' => array()),
-				'items_long_products_content_short' => array( 'value' => $items_long_products_content_short, 'percentage' => array()),
-				'short_wc_total_not_0' => array( 'value' => $short_wc_total_not_0, 'percentage' => array()),
-				'long_wc_total_not_0' => array( 'value' => $long_wc_total_not_0, 'percentage' => array()),
-				'short_description_wc_lower_range' => array( 'value' => $build_assess_params->short_less, 'percentage' => array()),
-				'long_description_wc_lower_range' => array( 'value' => $build_assess_params->long_less, 'percentage' => array()),
+				'skus_75_duplicate_content' => array( 'value' => $skus_75_duplicate_content, 'percentage' => array('batch1')),					
 				'skus_shorter_than_competitor_product_content' => array( 'value' => $skus_shorter_than_competitor_product_content, 'percentage' => array('batch1')),
 				'skus_longer_than_competitor_product_content' => array( 'value' => $skus_longer_than_competitor_product_content, 'percentage' => array('batch1')),
 				'skus_same_competitor_product_content' => array( 'value' => $skus_same_competitor_product_content, 'percentage' => array('batch1')),
@@ -3660,16 +3648,7 @@ class Assess extends MY_Controller {
         }
         if ($items_have_more_than_20_percent_duplicate_content > 0) {
             $report['recommendations']['items_have_more_than_20_percent_duplicate_content'] = 'Create original product content';
-        }
-        if ($items_unoptimized_product_content > 0) {
-            $report['recommendations']['items_unoptimized_product_content'] = 'Optimize product content';
-        }
-        if ($items_short_products_content_short > 0) {
-            $report['recommendations']['items_short_products_content_short'] = 'Increase short product description lengths';
-        }
-        if ($items_long_products_content_short > 0) {
-            $report['recommendations']['items_long_products_content_short'] = 'Increase long product description lengths';
-        }
+        }                        
 
         $report['detail_comparisons_total'] = $detail_comparisons_total;
         

@@ -10,6 +10,11 @@ class Filters_items extends Base_model implements IFilters
 	public $filter_id;
 	public $combination_id;	
 	
+	public static function model($className = __CLASS__)
+	{
+		return parent::model($className);
+	}
+	
 	public function getRules()
 	{
 		return array(
@@ -23,5 +28,9 @@ class Filters_items extends Base_model implements IFilters
 	{
 		return 'filters_items';
 	}		
-			
+		
+	public function save_filtered_items($stored_filter_items)
+	{
+		return true;
+	}
 }

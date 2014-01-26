@@ -3248,7 +3248,7 @@ php cli.php crons match_urls_thread "' . $choosen_file . '" "' . $thread_max . '
 		$combo_id = $_POST['combination_id'];
 		
 		$this->output->set_content_type('application/json')->set_output(json_encode(array(
-			'status' => $this->bc->deleteAllByAttributes(array('batches_combination' => $combo_id)) && $this->fi->deleteAllByAttributes(array('combination_id' => $combo_id)) && $this->fv->deleteAllByAttributes(array('combination_id' => $combo_id))
+			'status' => $this->bc->deleteByPk($combo_id) && $this->fi->deleteAllByAttributes(array('combination_id' => $combo_id)) && $this->fv->deleteAllByAttributes(array('combination_id' => $combo_id))
 		)));
 	}
 	

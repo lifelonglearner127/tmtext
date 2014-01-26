@@ -19,7 +19,7 @@
 									<div>
 										<?php echo $key + 1 ?>. <?php echo $current_batches_combination->title ?>
 										<?php echo $current_batches_combination->category_id ? '(' . $current_batches_combination->category_id . ')' : '' ?>
-										<a href="#" data-combination-id="<?php echo $current_batches_combination->batches_combination ?>" class="remove_batches_combinations">
+										<a href="#" data-combination-id="<?php echo $current_batches_combination->id ?>" data-combination-code="<?php echo $current_batches_combination->batches_combination ?>" class="remove_batches_combinations">
 											<i class="icon-remove"></i>
 										</a>
 									</div>
