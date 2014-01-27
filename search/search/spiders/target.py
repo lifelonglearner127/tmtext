@@ -39,7 +39,8 @@ class TargetSpider(SearchSpider):
 		else:
 			items = set()
 
-		results = hxs.select("//ul[@class='productsListView']/li")
+		#results = hxs.select("//ul[@class='productsListView']/li")
+		results = hxs.select("//li[@class='tile standard']")
 		for result in results:
 			item = SearchItem()
 			product_title_holder = result.select(".//div[@class='productTitle']/a")
