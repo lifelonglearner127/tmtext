@@ -449,13 +449,14 @@ $(function() {
 				return;
 			
 			var reportData = buildFilters(filters_data);
-			buildReport({
-				ExtraData : {
-					report : {
-						summary : reportData
+			if (!_.isEmpty(reportData))
+				buildReport({
+					ExtraData : {
+						report : {
+							summary : reportData
+						}
 					}
-				}
-			});
+				});
 			toggleDetailsCompareBlocks(true);
 			
 			$.getJSON(readAssessUrl, aoData, function(json) {
@@ -463,7 +464,8 @@ $(function() {
 					return;	
 					
 				var assessData = $.extend(json, filters_data);
-				json.ExtraData.report.summary = reportData;
+				if (!_.isEmpty(reportData))
+					json.ExtraData.report.summary = reportData;
 				  
 				$('.tbl_arrows_and_gear_wrapper #research_batches_columns').css({opacity:1,cursor:'pointer'});					
 																

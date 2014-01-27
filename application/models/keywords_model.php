@@ -13,6 +13,9 @@ class Keywords_model extends CI_Model {
 
     function get_by_imp_id($im_data_id)
     {
+		if (!$im_data_id)
+			return array();
+			
         $query = $this->db->where('imported_data_id',$im_data_id)->where("revision = (SELECT  MAX(revision) as revision
                       FROM keywords_new WHERE `imported_data_id`= $im_data_id
                       GROUP BY imported_data_id)", NULL, FALSE)

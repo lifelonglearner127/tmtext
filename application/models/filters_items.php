@@ -47,7 +47,9 @@ class Filters_items extends Base_model implements IFilters
 				$sql_rows[] = '("' . json_encode($stored_filters) . '", ' . $filters_values_id . ', ' .  $data['combination_id'] . ')';							
 			}
 		}
-		$this->db->query($sql . implode(', ' , $sql_rows) . ';');
+		
+		if ($sql_rows)
+			$this->db->query($sql . implode(', ' , $sql_rows) . ';');
 		
 		return $filter_items;				
 	}
