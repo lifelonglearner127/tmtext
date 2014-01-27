@@ -52,7 +52,10 @@ $(document).ready(function() {
 						combinations += '<div>' + (index + 1) + '. ' + combo['title'] + ' <a href="#" data-combination-id="' + combo['id'] + '" data-combination-code="' + combo['batches_combination'] + '" class="remove_batches_combinations"><i class="icon-remove"></i></a></div>';
 					});
 					
-					$('#current_combinations').html(combinations);
+					if ($('.combination_type:checked').val() == 2)
+						$('#current_combinations').append(combinations);						
+					else
+						$('#current_combinations').html(combinations);
 					
 					pasteRawManualForm();
 				}
