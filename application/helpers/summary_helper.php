@@ -26,7 +26,7 @@ if ( ! function_exists('render_filter_item'))
 								<img src="' . base_url() . 'img/' . $icon . '" class="' . $filter_id . '_icon" />
 							</td>
 							<td>
-								' . $label . '
+								<span class="filter_text_label">' . $label . '</span>
 								<span class="' . $filter_id . ' mr_10" ></span>
 							</td>
 							<td width="' . $question_td_width . '" class="q_wrapper ' . (!$batch_class_number ? 'icon_question_wrapper' : '') . '" >

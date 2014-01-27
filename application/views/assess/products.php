@@ -279,6 +279,19 @@
     </div>
 </div>
 
+<div id="research_assess_filters_combos" title="Filters combinations" >
+    <div>
+		<div class="selected_filters_names"></div>
+        <form action="" method="post" id="filter_combinations_form">
+			            
+			<p>
+				<input name="filter_combo_name" />
+			</p>
+		
+        </form>
+    </div>
+</div>
+
 
 <div id="assessDetailsDialog" title="Details">
     <form name="access_details">
