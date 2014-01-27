@@ -34,13 +34,13 @@ $this->load->view('system/_tabs', array(
         <option value="0">Select Day</option>
     </select>
     <select id ="actions" multiple="multiple" size="5" >
-        <option value="0">Select Operations</option>
+        <option value="all">All</option>
         <option value="1">Crawling</option>
         <option value="2">URL Import</option>
         <option value="3">Do stats</option>
     </select>
     <select id="workflow_batches" multiple="multiple" size="5">
-        <option value="0">Select Batch</option>
+        <option value="all">All</option>
         <?php
         foreach ($batches as $batch) {
             ?>

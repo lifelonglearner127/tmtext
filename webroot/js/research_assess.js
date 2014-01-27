@@ -3395,13 +3395,11 @@ function prevSibilfunc(curentSibil){
                     $(this).dialog('close');
                 }
             },
-            'Continue': { 
-				text : 'Continue',
+            'Export': { 
+		text : 'Export',
                 click : function() {
-					var formData = $('#export_options_form').serializeArray();
-										
+		    var formData = $('#export_options_form').serializeArray();
                     exportAssessData.call($('#research_assess_export'), formData[0].value);
-					
                     $(this).dialog('close');
                 }
             }

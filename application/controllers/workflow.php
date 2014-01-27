@@ -42,7 +42,8 @@ class Workflow extends MY_Controller {
     }
 
     public function delete_operation() {
-        
+        $id = $this->input->post('id');
+        $this->operations_model->deleteAllByAttributes(array('id' => $id));
     }
 
     public function add_prc() {
@@ -62,6 +63,7 @@ class Workflow extends MY_Controller {
     }
 
     public function delete_prc() {
+        $id = $this->input->post('id');
         $this->process_model->deleteAllByAttributes(array('id' => $id));
     }
 

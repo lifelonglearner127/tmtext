@@ -642,7 +642,11 @@
                                     }).done(function (e, data) {
                                         setDepartmentstCategories();
                                         //remove preloader
-                                        $("#preloader-dc").remove();
+                                       $("#preloader-dc").hide(2000,function(){
+                                            setDepartmentstCategories();
+                                            $("#preloader-dc").remove();
+                                       });
+                                        
                                     }); 
                                 }
                             });
