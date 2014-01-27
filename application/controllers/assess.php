@@ -552,8 +552,1622 @@ class Assess extends MY_Controller {
         $this->output->set_content_type('application/json')
                 ->set_output(json_encode($comparison));
     }
+    
+    public function export_assess()
+    {
+		$this->load->model('statistics_new_model');
 
-    public function export_assess() {
+		$batch_id = (int) trim($this->input->get('batch_id'));
+		$cmp_selected = trim(strtolower($this->input->get('cmp_selected')));
+		$selected_columns = $this->input->get('checked_columns');
+		$selected_columns = explode(',', trim($selected_columns));
+		$batch_name = $this->input->get('batch_name');
+
+		$summaryFilterData = $this->input->get('summaryFilterData');
+		$summaryFilterData = $summaryFilterData ? explode(',', $summaryFilterData) : array();
+
+		if (($key = array_search('snap', $selected_columns)) !== false)
+		{
+			unset($selected_columns[$key]);
+		}
+		$line = array('created' => 'Date', 'imp_data_id' => 'Item ID', 'product_name' => 'Product Name', 'url' => 'Url', 'Short_Description' => 'Short Description', 'short_description_wc' => 'Short Desc # Words', 'Long_Description' => 'Long Description', 'long_description_wc' => 'Long Desc # Words', 'short_seo_phrases' => ' Short Desc - Found SEO Keywords', 'long_seo_phrases' => ' Short Desc - Found SEO Keywords', 'price_diff' => 'Price', 'column_features' => 'Features', 'column_reviews' => 'Reviews', 'average_review' => 'Avg Review', 'title_seo_phrases' => 'Title Keywords');
+
+		foreach ($line as $key => $val)
+		{
+			if (!in_array($key, $selected_columns))
+			{
+				unset($line[$key]);
+			}
+		}
+
+		if (count($line) == 0)
+		{
+			$this->load->helper('csv');
+			array_to_csv(array(), date("Y-m-d H:i") . '.csv');
+		}
+
+		$params = new stdClass();
+		$params->batch_id = $batch_id;
+		$results = $this->get_data_for_assess($params);
+		$cmp = array();
+		if (!empty($cmp_selected) && $cmp_selected != 'all')
+		{
+			$this->load->model('batches_model');
+			$max_similar_item_count = 1;
+			$customer_name = $this->batches_model->getCustomerUrlByBatch($cmp_selected);
+
+			foreach ($results as $val)
+			{
+				$val->Long_Description = $val->long_description;
+				$val->Short_Description = $val->short_description;
+				$similar_items_data = array();
+				if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0)
+				{
+					$similar_items = unserialize($val->similar_products_competitors);
+					if (count($similar_items) > 1)
+					{
+						foreach ($similar_items as $key => $item)
+						{
+							if (!empty($customer_name) && !empty($item['customer']) && $this->statistics_new_model->if_url_in_batch($item['imported_data_id'], $cmp_selected))
+							{
+								$den_for_gap = 0;
+								$parsed_attributes_unserialize_val = '';
+								$parsed_meta_unserialize_val = '';
+								$parsed_meta_unserialize_val_c = '';
+								$parsed_attributes_column_features_unserialize_val = 0;
+								$parsed_model_unserialize_val = '';
+								$parsed_meta_keywords_unserialize_val = '';
+								$parsed_loaded_in_seconds_unserialize_val = '';
+								$parsed_average_review_unserialize_val_count = '';
+								$column_external_content = '';
+								$parsed_review_count_unserialize_val_count = 0;
+								$cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
+
+								$parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+								if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
+									$column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'], $parsed_attributes_unserialize['webcollage']);
+
+								if (isset($parsed_attributes_unserialize['feature_count']))
+									$parsed_attributes_column_features_unserialize_val = $parsed_attributes_unserialize['feature_count'];
+								//if (isset($parsed_attributes_unserialize['item_id']))
+								//    $parsed_attributes_unserialize_val = $parsed_attributes_unserialize['item_id'];
+								if (isset($parsed_attributes_unserialize['model']))
+									$parsed_model_unserialize_val = $parsed_attributes_unserialize['model'];
+								if (isset($parsed_attributes_unserialize['loaded_in_seconds']))
+									$parsed_loaded_in_seconds_unserialize_val = $parsed_attributes_unserialize['loaded_in_seconds'];
+								if (isset($parsed_attributes_unserialize['average_review']))
+									$parsed_average_review_unserialize_val_count = $parsed_attributes_unserialize['average_review'];
+								if (isset($parsed_attributes_unserialize['review_count']))
+									$parsed_review_count_unserialize_val_count = $parsed_attributes_unserialize['review_count'];
+
+								$parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
+
+								if (isset($parsed_meta_unserialize['description']))
+								{
+									$parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
+									$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+									if ($parsed_meta_unserialize_val_c != 1)
+										$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+								}
+								else if (isset($parsed_meta_unserialize['Description']))
+								{
+									$parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
+									$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize_val));
+									if ($parsed_meta_unserialize_val_c != 1)
+										$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+								}
+
+
+
+								if (isset($parsed_meta_unserialize['keywords']))
+								{
+									$Meta_Keywords_un = "";
+									$cnt_meta = explode(',', $parsed_meta_unserialize['keywords']);
+									$cnt_meta_count = count($cnt_meta);
+									$_count_meta = 0;
+									foreach ($cnt_meta as $cnt_m)
+									{
+										$cnt_m = trim($cnt_m);
+										if ($cmpare->Short_Description || $cmpare->Long_Description)
+										{
+											$_count_meta = $this->keywords_appearence($cmpare->Long_Description . $cmpare->Short_Description, $cnt_m);
+											$_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2);
+
+											if ($_count_meta_num >= 2)
+											{
+												$den_for_gap = $_count_meta_num;
+											}
+
+											$Meta_Keywords_un .= $cnt_m . "  - " . $_count_meta_num . "%, ";
+										}
+									}
+
+									$parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+								}
+								//export title keywords compare
+								$title_seo_prases = array();
+								if ($cmpare->title_keywords != '' && $cmpare->title_keywords != 'None')
+								{
+									$title_seo_prases = unserialize($cmpare->title_keywords);
+								}
+								if (!empty($title_seo_prases))
+								{
+									$title_seo_phrases = '';
+									foreach ($title_seo_prases as $pras)
+									{
+										$title_seo_phrases .= $pras['ph'] . ' - ' . $pras['prc'] . '%,  ';
+									}
+								}
+
+
+								//$cmpare->item_id = $parsed_attributes_unserialize_val;
+								$cmpare->model = $parsed_model_unserialize_val;
+								$cmpare->den_for_gap = $den_for_gap;
+								$cmpare->Page_Load_Time = $parsed_loaded_in_seconds_unserialize_val;
+
+								$cmpare->Meta_Keywords = $parsed_meta_keywords_unserialize_val;
+								$cmpare->column_features = $parsed_attributes_column_features_unserialize_val;
+								$cmpare->column_external_content = $column_external_content;
+
+								$cmpare->Meta_Description = $parsed_meta_unserialize_val;
+								$cmpare->Meta_Description_Count = $parsed_meta_unserialize_val_count;
+								$cmpare->average_review = $parsed_average_review_unserialize_val_count;
+								$cmpare->review_count = $parsed_review_count_unserialize_val_count;
+								$cmpare->title_seo_phrases = $title_seo_phrases;
+
+								$similar_items_data[] = $cmpare;
+								$val->similar_items = $similar_items_data;
+
+								$cmp[] = $val;
+								break;
+							}
+						}
+					}
+				}
+			}
+			$results = $cmp;
+		}
+
+
+		$res_array = array();
+		$H1_tag_count = 0;
+		$H2_tag_count = 0;
+		$H1_tag_count_for_sim = 0;
+		$H2_tag_count_for_sim = 0;
+
+		foreach ($results as $key => $row)
+		{
+			$sim = $row->similar_items;
+			$pars = unserialize($row->parsed_attributes);
+			$sim_pars = unserialize($sim[0]->parsed_attributes);
+			$title_seo_pr = array();
+			$row->title_seo_phrases = 0;
+			if (trim($row->title_keywords) && $row->title_keywords != 'None')
+			{
+				$title_seo_pr = unserialize($row->title_keywords);
+			}
+			$str_title_long_seo = '';
+			if (!empty($title_seo_pr))
+			{
+				foreach ($title_seo_pr as $val)
+				{
+					$row->title_seo_phrases += $val['frq'];
+					$str_title_long_seo .= $val['ph'] . ' - ' . $val['prc'] . '%,  ';
+				}
+			}
+			$title_seo_pr = array();
+			$sim[0]->title_seo_phrases = 0;
+			if (trim($sim[0]->title_keywords) && $sim[0]->title_keywords != 'None')
+			{
+				$title_seo_pr = unserialize($sim[0]->title_keywords);
+			}
+			if (!empty($title_seo_pr))
+			{
+				foreach ($title_seo_pr as $val)
+				{
+					$sim[0]->title_seo_phrases += $val['frq'];
+				}
+			}
+			
+			$success_filter_entries = array();
+			$row->Short_Description = $row->short_description;
+			$row->Long_Description = $row->long_description;
+
+			if ($row->short_description)
+			{
+				$short_desc_1 = $row->short_description;
+			} else
+			{
+				$short_desc_1 = '';
+			}
+			if ($row->long_description)
+			{
+				$long_desc_1 = $row->long_description;
+			} else
+			{
+				$long_desc_1 = '';
+			}
+			$desc_1 = $short_desc_1 . ' ' . $long_desc_1;
+
+			if ($sim[0]->Short_Description)
+			{
+				$short_desc_2 = $sim[0]->Short_Description;
+			} else
+			{
+				$short_desc_2 = '';
+			}
+			if ($sim[0]->Long_Description)
+			{
+				$long_desc_2 = $sim[0]->Long_Description;
+			} else
+			{
+				$long_desc_2 = '';
+			}
+			$desc_2 = $short_desc_2 . ' ' . $long_desc_2;
+
+			if (strcasecmp($desc_1, $desc_2) <= 0)
+			{
+				similar_text($desc_1, $desc_2, $percent);
+			} else
+			{
+				similar_text($desc_2, $desc_1, $percent);
+			}
+
+			$percent = number_format($percent, 2);
+			if ($percent >= 25)
+			{
+				$this->filterBySummaryCriteria('skus_25_duplicate_content', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($percent >= 50)
+			{
+				$this->filterBySummaryCriteria('skus_50_duplicate_content', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($percent >= 75)
+			{
+				$this->filterBySummaryCriteria('skus_75_duplicate_content', $summaryFilterData, $success_filter_entries);
+			}
+
+
+			if (isset($pars['pdf_count']) && $pars['pdf_count'])
+			{
+				$this->filterBySummaryCriteria('skus_pdfs', $summaryFilterData, $success_filter_entries);
+			}
+
+
+			if (isset($sim_pars['pdf_count']) && $sim_pars['pdf_count'])
+			{
+				$this->filterBySummaryCriteria('skus_pdfs_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+
+			if ($pars['feature_count'] < $sim_pars['feature_count'])
+			{
+
+				$this->filterBySummaryCriteria('skus_fewer_features_than_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($pars['review_count'] < $sim_pars['review_count('])
+			{
+
+				$this->filterBySummaryCriteria('skus_fewer_reviews_than_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($pars['feature_count'])
+			{
+
+				$this->filterBySummaryCriteria('skus_features', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($sim_pars['feature_count'])
+			{
+
+				$this->filterBySummaryCriteria('skus_features_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+			if (!$pars['review_count'])
+			{
+				$this->filterBySummaryCriteria('skus_zero_reviews', $summaryFilterData, $success_filter_entries);
+			}
+			if ($pars['review_count'] >= 1 && $pars['review_count'] <= 4)
+			{
+				$this->filterBySummaryCriteria('skus_one_four_reviews', $summaryFilterData, $success_filter_entries);
+			}
+			if ($pars['review_count'] >= 5)
+			{
+				$this->filterBySummaryCriteria('skus_more_than_five_reviews', $summaryFilterData, $success_filter_entries);
+			}
+			if ($pars['review_count'] >= 100)
+			{
+				$this->filterBySummaryCriteria('skus_more_than_hundred_reviews', $summaryFilterData, $success_filter_entries);
+			}
+
+			if (!$sim_pars['review_count'])
+			{
+				$this->filterBySummaryCriteria('skus_zero_reviews_competitor', $summaryFilterData, $success_filter_entries);
+			}
+			if ($sim_pars['review_count'] >= 1 && $sim_pars['review_count'] <= 4)
+			{
+				$this->filterBySummaryCriteria('skus_one_four_reviews_competitor', $summaryFilterData, $success_filter_entries);
+			}
+			if ($sim_pars['review_count'] >= 5)
+			{
+				$this->filterBySummaryCriteria('skus_more_than_five_reviews_competitor', $summaryFilterData, $success_filter_entries);
+			}
+			if ($sim_pars['review_count'] >= 100)
+			{
+				$this->filterBySummaryCriteria('skus_more_than_hundred_reviews_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+			$batch1_filtered_title_percents = $row->title_seo_phrases; 
+			$batch2_filtered_title_percents = $sim[0]->title_seo_phrases; 
+
+			if ($batch1_filtered_title_percents < $batch2_filtered_title_percents)
+			{
+				$this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $summaryFilterData, $success_filter_entries);
+			}
+			
+			if (!$batch1_filtered_title_percents)
+			{
+				$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $summaryFilterData, $success_filter_entries);
+			}
+			
+			if ($batch1_filtered_title_percents >= 1)
+			{
+				$this->filterBySummaryCriteria('skus_one_optimized_keywords', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($batch1_filtered_title_percents >= 2)
+			{
+				$this->filterBySummaryCriteria('skus_two_optimized_keywords', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($batch1_filtered_title_percents >= 3)
+			{
+				$this->filterBySummaryCriteria('skus_three_optimized_keywords', $summaryFilterData, $success_filter_entries);
+			}
+
+			if (!$batch2_filtered_title_percents)
+			{
+				$this->filterBySummaryCriteria('skus_zero_optimized_keywords_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($batch2_filtered_title_percents >= 1)
+			{
+				$this->filterBySummaryCriteria('skus_one_optimized_keywords_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($batch2_filtered_title_percents >= 2)
+			{
+				$this->filterBySummaryCriteria('skus_two_optimized_keywords_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($batch2_filtered_title_percents >= 3)
+			{
+				$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+
+
+			if ($row->column_external_content)
+			{
+
+				$this->filterBySummaryCriteria('skus_third_party_content', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($sim[0]->column_external_content)
+			{
+
+				$this->filterBySummaryCriteria('skus_third_party_content_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+			$first_general_description_size = $row->short_description_wc + $row->long_description_wc;
+			$second_general_description_size = $sim[0]->long_description_wc + $sim[0]->short_description_wc;
+
+			if ($first_general_description_size < $second_general_description_size)
+			{
+
+				$this->filterBySummaryCriteria('skus_shorter_than_competitor_product_content', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($first_general_description_size > $second_general_description_size)
+			{
+
+				$this->filterBySummaryCriteria('skus_longer_than_competitor_product_content', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($first_general_description_size == $second_general_description_size)
+			{
+
+				$this->filterBySummaryCriteria('skus_same_competitor_product_content', $summaryFilterData, $success_filter_entries);
+			}
+
+			// For Batch 1
+			if ($first_general_description_size < 50)
+			{
+
+				$this->filterBySummaryCriteria('skus_fewer_50_product_content', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($first_general_description_size < 100)
+			{
+
+				$this->filterBySummaryCriteria('skus_fewer_100_product_content', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($first_general_description_size < 150)
+			{
+
+				$this->filterBySummaryCriteria('skus_fewer_150_product_content', $summaryFilterData, $success_filter_entries);
+			}
+
+			// For Competitor (Batch 2)
+			if ($second_general_description_size < 50)
+			{
+
+				$this->filterBySummaryCriteria('skus_fewer_50_product_content_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($second_general_description_size < 100)
+			{
+				$this->filterBySummaryCriteria('skus_fewer_100_product_content_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+			if ($second_general_description_size < 150)
+			{
+				$this->filterBySummaryCriteria('skus_fewer_150_product_content_competitor', $summaryFilterData, $success_filter_entries);
+			}
+
+			
+			//checking if row should be added to file
+			if ($this->checkSuccessFilterEntries($success_filter_entries, $summaryFilterData))
+			{
+				$arr = array();
+				$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+				foreach ($line as $k => $v)
+				{
+					$arr[$k] = $row->$k;
+				}
+				
+				//Htag_count
+				if (in_array('H1_Tags', $selected_columns) && $pars_atr['HTags']['h1'] && trim($pars_atr['HTags']['h1']))
+				{
+					$H1 = $pars_atr['HTags']['h1'];
+					if (is_array($H1))
+					{
+						$h1cnt = count($H1);
+						if ($h1cnt > $H1_tag_count)
+						{
+							$H1_tag_count = $h1cnt;
+						}
+						$i = 0;
+						foreach ($H1 as $k => $h1)
+						{
+							if ($i < 2)
+							{
+								$arr['H1_Tags' . $k] = $h1;
+								$arr['H1_Tags_Count' . $k] = strlen($h1);
+								$i++;
+							} else
+							{
+								break;
+							}
+						}
+					} else
+					{
+						if ($H1_tag_count == 0)
+						{
+							$H1_tag_count = 1;
+						}
+						$arr['H1_Tags0'] = $H1;
+						$arr['H1_Tags_Count0'] = strlen($H1);
+					}
+					if ($H1_tag_count > 0)
+					{
+						if ($H1_tag_count > 2)
+						{
+							$H1_tag_count = 2;
+						}
+
+						for ($k = 0; $k < $H1_tag_count; $k++)
+						{
+							if (!$arr['H1_Tags' . $k])
+							{
+								$arr['H1_Tags' . $k] = '';
+								$arr['H1_Tags_Count' . $k] = ' ';
+							}
+						}
+					}
+				}
+				if (in_array('H2_Tags', $selected_columns) && $pars_atr['HTags']['h2'] && trim($pars_atr['HTags']['h2']))
+				{
+					$H2 = $pars_atr['HTags']['h2'];
+					if (is_array($H2))
+					{
+						$h2cnt = count($H2);
+						if ($h2cnt > $H2_tag_count)
+						{
+							$H2_tag_count = $h2cnt;
+						}
+						$i = 0;
+						foreach ($H2 as $k => $h2)
+						{
+							if ($i < 2)
+							{
+								$arr['H2_Tags' . $k] = $h2;
+								$arr['H2_Tags_Count' . $k] = strlen($h2);
+								$i++;
+							} else
+							{
+								break;
+							}
+						}
+					} else
+					{
+						if ($H2_tag_count < 1)
+						{
+							$H2_tag_count = 1;
+						}
+						$arr['H2_Tags0'] = $H2;
+						$arr['H2_Tags_Count0'] = strlen($H2);
+					}
+					if ($H2_tag_count > 0)
+					{
+						if ($H2_tag_count > 2)
+						{
+							$H2_tag_count = 2;
+						}
+						for ($k = 0; $k < $H2_tag_count; $k++)
+						{
+							if (!$arr['H2_Tags' . $k])
+							{
+								$arr['H2_Tags' . $k] = '';
+								$arr['H2_Tags_Count' . $k] = ' ';
+							}
+						}
+					}
+				} else
+				{
+					if ($H2_tag_count > 2)
+					{
+						$H2_tag_count = 2;
+					}
+					for ($k = 0; $k < $H2_tag_count; $k++)
+					{
+						if (!$arr['H2_Tags' . $k])
+						{
+							$arr['H2_Tags' . $k] = '';
+							$arr['H2_Tags_Count' . $k] = ' ';
+						}
+					}
+				}
+				//Htag_count for similar 
+				$pars_atr_for_sim = $this->imported_data_parsed_model->getByImId($sim[0]->imported_data_id);
+				if (in_array('H1_Tags', $selected_columns) && $pars_atr_for_sim['HTags']['h1'] && $pars_atr_for_sim['HTags']['h1'] != '')
+				{
+					$H1 = $pars_atr_for_sim['HTags']['h1'];
+					if (is_array($H1))
+					{
+						$h1Cnt = count($H1);
+						if ($h1Cnt > $H1_tag_count_for_sim)
+						{
+							$H1_tag_count_for_sim = $h1Cnt;
+						}
+					} else
+					{
+
+						if ($H1_tag_count_for_sim < 1)
+						{
+							$H1_tag_count_for_sim = 1;
+						}
+					}
+				}
+				if (in_array('H2_Tags', $selected_columns) && $pars_atr_for_sim['HTags']['h2'] && trim($pars_atr_for_sim['HTags']['h2']))
+				{
+					$H2 = $pars_atr_for_sim['HTags']['h2'];
+					if (is_array($H2))
+					{
+						$h2Cnt = count($H2);
+						if ($h2Cnt > $H2_tag_count_for_sim)
+						{
+							$H2_tag_count_for_sim = $h2Cnt;
+						}
+					} elseif ($H2_tag_count_for_sim < 1)
+					{
+						$H2_tag_count_for_sim = 1;
+					}
+				}
+
+				if (trim($arr['short_seo_phrases']) != 'None')
+				{
+					$shortArr = unserialize($arr['short_seo_phrases']);
+					if ($shortArr)
+					{
+						$shortString = '';
+						foreach ($shortArr as $value)
+						{
+							$shortString .= $value['ph'] . "\r\n";
+						}
+						$arr['short_seo_phrases'] = trim($shortString);
+					}
+				}
+				if (trim($arr['long_seo_phrases']) != 'None')
+				{
+
+					$longArr = unserialize($arr['long_seo_phrases']);
+
+					if ($longArr)
+					{
+						$longString = '';
+						foreach ($longArr as $value)
+						{
+							$longString .= $value['ph'] . "\r\n";
+						}
+						$arr['long_seo_phrases'] = trim($longString);
+					}
+				}
+
+
+				if (in_array('imp_data_id', $selected_columns))
+				{
+					$arr['imp_data_id'] = $pars_atr['parsed_attributes']['item_id'] ? $pars_atr['parsed_attributes']['item_id'] : ' ';
+				}
+				//model
+				if (in_array('model', $selected_columns))
+				{
+					$arr['model'] = $pars_atr['parsed_attributes']['model'] ? $pars_atr['parsed_attributes']['model'] : '';
+				}
+				//meta keywords
+				if (in_array('Meta_Keywords', $selected_columns))
+				{
+					$parsed_meta_keywords_unserialize_val = "";
+					if ($pars_atr['parsed_meta']['keywords'])
+					{
+						$Meta_Keywords_un = "";
+						$cnt_meta = explode(',', $pars_atr['parsed_meta']['keywords']);
+						$cnt_meta_count = count($cnt_meta);
+						$_count_meta = 0;
+						foreach ($cnt_meta as $cnt_m)
+						{
+							$cnt_m = trim($cnt_m);
+							if ($row->Short_Description || $row->Long_Description)
+							{
+								$_count_meta = $this->keywords_appearence($row->Long_Description . $row->Short_Description, $cnt_m);
+								$_count_meta_num = round(($_count_meta * $cnt_meta_count / ($row->long_description_wc + $row->short_description_wc)) * 100, 2) . "%";
+								$Meta_Keywords_un .= $cnt_m . "  - " . $_count_meta_num . ", ";
+							}
+						}
+						$parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+					}
+					$arr['meta_keywords'] = $parsed_meta_keywords_unserialize_val ? $parsed_meta_keywords_unserialize_val : '';
+				}
+				//meta description
+				if (in_array('Meta_Description', $selected_columns))
+				{
+					if ($pars_atr['parsed_meta']['description'] && $pars_atr['parsed_meta']['description'] != '')
+					{
+						$arr['meta_description'] = $pars_atr['parsed_meta']['description'];
+						$arr['Meta_Description_Count'] = count(explode(" ", $pars_atr['parsed_meta']['description']));
+					} else if ($pars_atr['parsed_meta']['Description'] && $pars_atr['parsed_meta']['Description'] != '')
+					{
+						$arr['meta_description'] = $pars_atr['parsed_meta']['Description'];
+						$arr['Meta_Description_Count'] = count(explode(" ", $pars_atr['parsed_meta']['Description']));
+					}
+				}
+				//custom keywords
+				if (in_array('Custom_Keywords_Short_Description', $selected_columns) || in_array('Custom_Keywords_Long_Description', $selected_columns))
+				{
+					$custom_keywords = $this->custom_keywords($row->imported_data_id, $row->Long_Description, $row->long_description_wc, $row->Short_Description, $row->short_description_wc);
+					if (in_array('Custom_Keywords_Short_Description', $selected_columns))
+					{
+						$arr['Custom_Keywords_Short_Description'] = $custom_keywords['Custom_Keywords_Short'];
+					}
+					if (in_array('Custom_Keywords_Long_Description', $selected_columns))
+					{
+						$arr['Custom_Keywords_Long_Description'] = $custom_keywords['Custom_Keywords_Long'];
+					}
+				}
+				//loaded_in_seconds
+				if (in_array('Page_Load_Time', $selected_columns))
+				{
+					$arr['Page_Load_Time'] = $pars_atr['parsed_attributes']['loaded_in_seconds'] !== false ? $pars_atr['parsed_attributes']['loaded_in_seconds'] : '';
+				}
+				if (in_array('column_external_content', $selected_columns))
+				{
+					$arr['column_external_content'] = $this->column_external_content($pars_atr['parsed_attributes']['cnetcontent'], $pars_atr['parsed_attributes']['webcollage']);
+				}
+				if (in_array('column_features', $selected_columns))
+				{
+					$arr['column_features'] = $pars_atr['parsed_attributes']['feature_count'] !== false ? $pars_atr['parsed_attributes']['feature_count'] : 0;
+				}
+				if (in_array('column_reviews', $selected_columns))
+				{
+					$arr['column_reviews'] = $pars_atr['parsed_attributes']['review_count'] !== false ? $pars_atr['parsed_attributes']['review_count'] : 0;
+				}
+				if (in_array('average_review', $selected_columns))
+				{
+					$arr['average_review'] = $pars_atr['parsed_attributes']['average_review'] !== false ? $pars_atr['parsed_attributes']['average_review'] : '-';
+				}
+				if (in_array('title_seo_phrases', $selected_columns))
+				{
+					$arr['title_seo_phrases'] = $str_title_long_seo;
+				}
+
+				if (in_array('title_seo_phrases_f', $selected_columns))
+				{
+					$arr['title_seo_phrases'] = $str_title_long_seo;
+				}
+
+				if (in_array('price_diff', $selected_columns))
+				{
+					$price_diff = unserialize($row->price_diff);
+					if ($price_diff)
+					{
+						$own_price = floatval($price_diff['own_price']);
+						$own_site = str_replace('www.', '', $price_diff['own_site']);
+						$own_site = str_replace('www1.', '', $own_site);
+						$price_diff_res = $own_site . " - $" . number_format($price_diff['own_price'], 2);
+						$flag_competitor = false;
+						$lim = count($price_diff['competitor_customer']);
+						for ($i = 0; $i < $lim; $i++)
+						{
+							if ($customer_url["host"] != $price_diff['competitor_customer'][$i])
+							{
+								if ($own_price > floatval($price_diff['competitor_price'][$i]))
+								{
+									$competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
+									$competitor_site = str_replace('www.', '', $competitor_site);
+									$price_diff_res .= "\r\n" . $competitor_site . " - $" . number_format($price_diff['competitor_price'][$i], 2);
+								}
+							}
+						}
+						$arr['price_diff'] = $price_diff_res;
+					} else
+					{
+						$arr['price_diff'] = '';
+					}
+				}
+
+				//similar items
+				$f_count1 = 0;
+				for ($i = 1; $i <= $max_similar_item_count; $i++)
+				{
+
+					if ($i < 2)
+					{
+						if (isset($sim[$i - 1]->column_features))
+						{
+							$f_count1 = $sim[$i - 1]->column_features;
+						} else
+						{
+							$f_count1 = 0;
+						}
+					}
+
+					if (in_array('gap', $selected_columns))
+					{
+						$arr['Gap analysis'] = '';
+
+						if (isset($sim[$i - 1]) && ($sim[$i - 1]->long_description_wc || $sim[$i - 1]->short_description_wc) && ($sim[$i - 1]->short_description_wc + $sim[$i - 1]->long_description_wc) < 100)
+						{
+							$totoal = $sim[$i - 1]->short_description_wc + $sim[$i - 1]->long_description_wc;
+							$arr['Gap analysis'] .= 'Competitor total product description length only' . $totoal . 'words, ';
+						}
+
+						if ($arr['column_features'] && $f_count1 && $f_count1 > $arr['column_features'])
+						{
+							$x = $f_count1 - $arr['column_features'];
+
+							$arr['Gap analysis'] .= 'Competitor has ' . $x . ' features listed, ';
+						}
+						if (!$sim[$i - 1]->den_for_gap)
+						{
+
+							$arr['Gap analysis'] .= "Competitor is not keyword optimized, ";
+						}
+						$arr['Gap analysis'] = rtrim($arr['Gap analysis'], ", ");
+					}
+
+					if (in_array('Duplicate_Content', $selected_columns))
+					{
+
+
+						if ($row->Short_Description)
+						{
+							$short_desc_1 = $row->Short_Description;
+						} else
+						{
+							$short_desc_1 = '';
+						}
+						if ($row->Long_Description)
+						{
+							$long_desc_1 = $row->Long_Description;
+						} else
+						{
+							$long_desc_1 = '';
+						}
+						$desc_1 = $short_desc_1 . ' ' . $long_desc_1;
+
+						if ($row->similar_items[0]->Short_Description)
+						{
+							$short_desc_2 = $row->similar_items[0]->Short_Description;
+						} else
+						{
+							$short_desc_2 = '';
+						}
+						if ($row->similar_items[0]->Long_Description)
+						{
+							$long_desc_2 = $row->similar_items[0]->Long_Description;
+						} else
+						{
+							$long_desc_2 = '';
+						}
+						$desc_2 = $short_desc_2 . ' ' . $long_desc_2;
+
+						similar_text($desc_1, $desc_2, $percent);
+						$percent = number_format($percent, 2);
+						$arr['Duplicate_Content'] = $percent . ' %';
+					}
+
+					if (in_array('imp_data_id', $selected_columns))
+					{
+						if ($i < 2)
+						{
+							$arr['imp_data_id'] = $sim[$i - 1]->imported_data_id ? $sim[$i - 1]->imported_data_id : ' - ';
+						} else
+						{
+							$arr['imp_data_id' . $i] = $sim[$i - 1]->imported_data_id ? $sim[$i - 1]->imported_data_id : ' - ';
+						}
+					}
+					if (in_array('model', $selected_columns))
+					{
+						$arr['Model (' . $i . ")"] = $sim[$i - 1]->model ? $sim[$i - 1]->model : '';
+					}
+					if (in_array('product_name', $selected_columns))
+					{
+						$arr['Product Name (' . $i . ")"] = $sim[$i - 1]->product_name ? $sim[$i - 1]->product_name : ' - ';
+					}
+					if (in_array('url', $selected_columns))
+					{
+						$arr['Url (' . $i . ")"] = $sim[$i - 1]->url ? $sim[$i - 1]->url : '';
+					}
+
+
+					if (in_array('Short_Description', $selected_columns))
+					{
+						$arr['Short Description (' . $i . ")"] = $sim[$i - 1]->Short_Description ? $sim[$i - 1]->Short_Description : '';
+					}
+					if (in_array('short_description_wc', $selected_columns))
+					{
+						$arr['Short Desc # Words (' . $i . ")"] = $sim[$i - 1]->short_description_wc ? $sim[$i - 1]->short_description_wc : '';
+					}
+					if (in_array('Long_Description', $selected_columns))
+					{
+						$arr['Long_Description (' . $i . ")"] = $sim[$i - 1]->Long_Description ? $sim[$i - 1]->Long_Description : '';
+					}
+					if (in_array('long_description_wc', $selected_columns))
+					{
+						$arr['Long Desc # Words (' . $i . ")"] = $sim[$i - 1]->long_description_wc ? $sim[$i - 1]->long_description_wc : '';
+					}
+
+					if (in_array('Meta_Keywords', $selected_columns))
+					{
+						$arr['Meta_Keywords(' . $i . ")"] = $sim[$i - 1]->Meta_Keywords ? $sim[$i - 1]->Meta_Keywords : '';
+					}
+					if (in_array('Meta_Description', $selected_columns))
+					{
+						$arr['Meta_Description (' . $i . ")"] = $sim[$i - 1]->Meta_Description ? $sim[$i - 1]->Meta_Description : '';
+						$arr['Meta Desc Words (' . $i . ")"] = $sim[$i - 1]->Meta_Description_Count ? $sim[$i - 1]->Meta_Description_Count : '';
+					}
+					if (in_array('Page_Load_Time', $selected_columns))
+					{
+						$arr['Page Load Time (' . $i . ")"] = $sim[$i - 1]->Page_Load_Time ? $sim[$i - 1]->Page_Load_Time : ' - ';
+					}
+
+					if (in_array('column_features', $selected_columns))
+					{
+						$arr['column_features(' . $i . ")"] = $sim[$i - 1]->column_features ? $sim[$i - 1]->column_features : 0;
+					}
+					if (in_array('column_external_content', $selected_columns))
+					{
+						$arr['column_external_content(' . $i . ")"] = $sim[$i - 1]->column_external_content ? $sim[$i - 1]->column_external_content : '';
+					}
+					if (in_array('column_reviews', $selected_columns))
+					{
+						$arr['column_reviews(' . $i . ")"] = $sim[$i - 1]->review_count ? $sim[$i - 1]->review_count : 0;
+					}
+					if (in_array('average_review', $selected_columns))
+					{
+						$arr['average_review(' . $i . ")"] = $sim[$i - 1]->average_review ? $sim[$i - 1]->average_review : ' - ';
+					}
+					if (in_array('title_seo_phrases', $selected_columns))
+					{
+						$arr['title_seo_phrases(' . $i . ")"] = $sim[$i - 1]->title_seo_phrases ? $sim[$i - 1]->title_seo_phrases : ' - ';
+					}
+					if (in_array('title_seo_phrases_f', $selected_columns))
+					{
+						$arr['title_seo_phrases_f(' . $i . ")"] = $sim[$i - 1]->title_seo_phrases ? $sim[$i - 1]->title_seo_phrases : ' - ';
+					}
+					// HTags for similar
+					$HTags_for_similar = unserialize($sim[$i - 1]->HTags);
+
+					if (in_array('H1_Tags', $selected_columns) && $HTags_for_similar['h1'] && $HTags_for_similar['h1'] != '')
+					{
+						$H1 = $HTags_for_similar['h1'];
+						if (is_array($H1))
+						{
+
+							$j = 0;
+							foreach ($H1 as $k => $h1)
+							{
+								if ($j < 2)
+								{
+									$arr['H1_Tags' . $k . '(' . $i . ')'] = $h1;
+									$arr['H1_Tags_Count' . $k . '(' . $i . ')'] = strlen($h1);
+									$j++;
+								}
+							}
+						} else
+						{
+							$arr['H1_Tags0 (' . $i . ')'] = $H1;
+							$arr['H1_Tags_Count0 (' . $i . ')'] = strlen($H1);
+						}
+
+						if ($H1_tag_count_for_sim > 0)
+						{
+							if ($H1_tag_count_for_sim > 2)
+							{
+								$H1_tag_count_for_sim = 2;
+							}
+
+							for ($k = 0; $k < $H1_tag_count_for_sim; $k++)
+							{
+								if (!$arr['H1_Tags' . $k . '(' . $i . ')'])
+								{
+									$arr['H1_Tags' . $k . '(' . $i . ')'] = '';
+									$arr['H1_Tags_Count' . $k . '(' . $i . ')'] = ' ';
+								}
+							}
+						}
+					}
+					if (in_array('H2_Tags', $selected_columns) && $HTags_for_similar['h2'] && $HTags_for_similar['h2'] != '')
+					{
+						$H2 = $HTags_for_similar['h2'];
+						if (is_array($H2))
+						{
+
+							$j = 0;
+							foreach ($H2 as $k => $h2)
+							{
+								if ($j < 2)
+								{
+									$arr['H2_Tags' . $k . '(' . $i . ')'] = $h2;
+									$arr['H2_Tags_Count' . $k . '(' . $i . ')'] = strlen($h2);
+									$j++;
+								}
+							}
+						} else
+						{
+							$arr['H2_Tags0 (' . $i . ')'] = $H2;
+							$arr['H2_Tags_Count0 (' . $i . ')'] = strlen($H2);
+						}
+
+						if ($H2_tag_count_for_sim > 0)
+						{
+							if ($H2_tag_count_for_sim > 2)
+							{
+								$H2_tag_count_for_sim = 2;
+							}
+
+							for ($k = 0; $k < $H2_tag_count_for_sim; $k++)
+							{
+								if (!$arr['H2_Tags' . $k . '(' . $i . ')'])
+								{
+									$arr['H2_Tags' . $k . '(' . $i . ')'] = '';
+									$arr['H2_Tags_Count' . $k . '(' . $i . ')'] = ' ';
+								}
+							}
+						}
+					} else
+					{
+						if ($H2_tag_count_for_sim > 2)
+						{
+							$H2_tag_count_for_sim = 2;
+						}
+
+						for ($k = 0; $k < $H2_tag_count_for_sim; $k++)
+						{
+							if (!$arr['H2_Tags' . $k . '(' . $i . ')'])
+							{
+								$arr['H2_Tags' . $k . '(' . $i . ')'] = '';
+								$arr['H2_Tags_Count' . $k . '(' . $i . ')'] = ' ';
+							}
+						}
+					}
+				}
+
+				$res_array[] = $arr;
+			}
+		}
+
+
+		if (in_array('model', $selected_columns))
+		{
+			array_unshift($line, 'Model');
+		}
+		if (in_array('imp_data_id', $selected_columns))
+		{
+			array_unshift($line, 'Item ID');
+		}
+		if (in_array('Meta_Keywords', $selected_columns))
+		{
+			$line[] = 'Meta Keywords - Keyword Density';
+		}
+
+		//meta description
+		if (in_array('Meta_Description', $selected_columns))
+		{
+			$line[] = 'Meta Description';
+			$line[] = 'Meta Desc Words';
+		}
+		if (in_array('Custom_Keywords_Short_Description', $selected_columns))
+		{
+			$line[] = 'Custom Keywords - Short Description';
+		}
+		if (in_array('Custom_Keywords_Long_Description', $selected_columns))
+		{
+			$line[] = 'Custom Keywords - Long Description';
+		}
+		if (in_array('Page_Load_Time', $selected_columns))
+		{
+			$line[] = 'Page Load Time';
+		}
+		if (in_array('column_external_content', $selected_columns))
+		{
+			$line[] = 'Third Party Content';
+		}
+
+
+		if (in_array('H1_Tags', $selected_columns))
+		{
+			if ($H1_tag_count > 0)
+			{
+				for ($k = 1; $k <= $H1_tag_count; $k++)
+				{
+					$line[] = "H1_tag ($k) ";
+					$line[] = "Chars ($k)";
+				}
+			}
+		}
+		if (in_array('H2_Tags', $selected_columns))
+		{
+			if ($H2_tag_count > 0)
+			{
+				for ($k = 1; $k <= $H2_tag_count; $k++)
+				{
+					$line[] = "H2_tag ($k) ";
+					$line[] = "Chars ($k)";
+				}
+			}
+		}
+
+
+
+
+		for ($i = 1; $i <= $max_similar_item_count; $i++)
+		{
+			if (in_array('gap', $selected_columns))
+			{
+				$line[] = 'Gap Analysis';
+			}
+			if (in_array('Duplicate_Content', $selected_columns))
+			{
+				$line[] = 'Duplicate Content';
+			}
+			if (in_array('imp_data_id', $selected_columns))
+			{
+				$line[] = "Item Id(" . ($i + 1) . ")";
+			}
+			if (in_array('model', $selected_columns))
+			{
+				$line[] = "Model(" . ($i + 1) . ")";
+			}
+
+			if (in_array('product_name', $selected_columns))
+			{
+				$line[] = "Product Name(" . ($i + 1) . ")";
+			}
+			if (in_array('url', $selected_columns))
+			{
+				$line[] = "Url(" . ($i + 1) . ")";
+			}
+			if (in_array('Short_Description', $selected_columns))
+			{
+				$line[] = "Short Description(" . ($i + 1) . ")";
+			}
+			if (in_array('short_description_wc', $selected_columns))
+			{
+				$line[] = "Short Desc # Words(" . ($i + 1) . ")";
+			}
+			if (in_array('Long_Description', $selected_columns))
+			{
+				$line[] = "Long Description(" . ($i + 1) . ")";
+			}
+			if (in_array('long_description_wc', $selected_columns))
+			{
+				$line[] = " Long Desc # Words(" . ($i + 1) . ")";
+			}
+			if (in_array('Meta_Keywords', $selected_columns))
+			{
+				$line[] = "Meta Keywords (" . ($i + 1) . ") - Keyword Density";
+			}
+			if (in_array('Meta_Description', $selected_columns))
+			{
+				$line[] = "Meta Description(" . ($i + 1) . ")";
+				$line[] = " Meta Desc Words(" . ($i + 1) . ")";
+			}
+			if (in_array('Page_Load_Time', $selected_columns))
+			{
+				$line[] = "Page Load Time(" . ($i + 1) . ")";
+			}
+			if (in_array('column_features', $selected_columns))
+			{
+				$line[] = "Features(" . ($i + 1) . ")";
+			}
+			if (in_array('column_external_content', $selected_columns))
+			{
+				$line[] = "Third Party Content(" . ($i + 1) . ")";
+			}
+			if (in_array('column_reviews', $selected_columns))
+			{
+				$line[] = "Reviews(" . ($i + 1) . ")";
+			}
+			if (in_array('average_review', $selected_columns))
+			{
+				$line[] = "Avg Review(" . ($i + 1) . ")";
+			}
+			if (in_array('title_seo_phrases', $selected_columns))
+			{
+				$line[] = "Title Keywords(" . ($i + 1) . ")";
+			}
+			if (in_array('title_seo_phrases_f', $selected_columns))
+			{
+				$line[] = "Title Keywords(" . ($i + 1) . ")";
+			}
+			if (in_array('H1_Tags', $selected_columns))
+			{
+				if ($H1_tag_count_for_sim > 0)
+				{
+					for ($k = 1; $k <= $H1_tag_count_for_sim; $k++)
+					{
+						$line[] = "H1_tag ($k)    (" . ($i + 1) . ")";
+						$line[] = "Chars ($k)    (" . ($i + 1) . ")";
+					}
+				}
+			}
+			if (in_array('H2_Tags', $selected_columns))
+			{
+				if ($H2_tag_count_for_sim > 0)
+				{
+					for ($k = 1; $k <= $H2_tag_count_for_sim; $k++)
+					{
+						$line[] = "H2_tag ($k)    (" . ($i + 1) . ")";
+						$line[] = "Chars ($k)    (" . ($i + 1) . ")";
+					}
+				}
+			}
+		}
+
+		//deleting empty Short_Description, Long_Description, short_descripition_wc, long_description_wc colomns
+		//filterBySummaryCriteria
+		if (in_array('Short_Description', $selected_columns))
+		{
+			$short_description_count = 0;
+			if (isset($max_similar_item_count))
+			{
+				$short_description_count_1 = 0;
+			}
+		}
+		if (in_array('Long_Description', $selected_columns))
+		{
+			$long_description_count = 0;
+			if (isset($max_similar_item_count))
+			{
+				$long_description_count_1 = 0;
+			}
+		}
+		if (in_array('short_description_wc', $selected_columns))
+		{
+			$short_description_wc_count = 0;
+			if (isset($max_similar_item_count))
+			{
+				$short_description_wc_count_1 = 0;
+			}
+		}
+		if (in_array('long_description_wc', $selected_columns))
+		{
+			$long_description_wc_count = 0;
+			if (isset($max_similar_item_count))
+			{
+				$long_description_wc_count_1 = 0;
+			}
+		}
+
+		foreach ($res_array as $key => $value)
+		{
+
+			if (in_array('Short_Description', $selected_columns))
+			{
+				if (!$res_array[$key]['Short_Description'])
+					$short_description_count++;
+				if (isset($max_similar_item_count))
+				{
+					if (!$res_array[$key]['Short Description (1)'])
+						$short_description_count_1++;
+				}
+			}
+			if (in_array('Long_Description', $selected_columns))
+			{
+				if (!$res_array[$key]['Long_Description'])
+					$long_description_count++;
+				if (isset($max_similar_item_count))
+				{
+					if (!$res_array[$key]['Long_Description (1)'])
+						$long_description_count_1++;
+				}
+			}
+			if (in_array('short_description_wc', $selected_columns))
+			{
+				if ($res_array[$key]['short_description_wc'] == 0)
+					$short_description_wc_count++;
+				if (isset($max_similar_item_count))
+				{
+					if ($res_array[$key]['Short Desc # Words (1)'] == 0)
+						$short_description_wc_count_1++;
+				}
+			}
+			if (in_array('long_description_wc', $selected_columns))
+			{
+				if ($res_array[$key]['long_description_wc'] == 0)
+					$long_description_wc_count++;
+				if (isset($max_similar_item_count))
+				{
+					if ($res_array[$key]['Long Desc # Words (1)'] == 0)
+						$long_description_wc_count_1++;
+				}
+			}
+		}
+
+		if (in_array('Short_Description', $selected_columns))
+		{
+			if ($short_description_count == count($res_array))
+			{
+				foreach ($res_array as $key => $res)
+				{
+					unset($res_array[$key]['Short_Description']);
+				}
+				unset($line['Short_Description']);
+			}
+			if (isset($max_similar_item_count))
+			{
+				if ($short_description_count_1 == count($res_array))
+				{
+					foreach ($res_array as $key => $res)
+					{
+						unset($res_array[$key]['Short Description (1)']);
+					}
+					unset($line['18']);
+				}
+			}
+		}
+		if (in_array('Long_Description', $selected_columns))
+		{
+			if ($long_description_count == count($res_array))
+			{
+				foreach ($res_array as $key => $res)
+				{
+					unset($res_array[$key]['Long_Description']);
+				}
+				unset($line['Long_Description']);
+			}
+			if (isset($max_similar_item_count))
+			{
+				if ($long_description_count_1 == count($res_array))
+				{
+					foreach ($res_array as $key => $res)
+					{
+						unset($res_array[$key]['Long_Description (1)']);
+					}
+					unset($line['20']);
+				}
+			}
+		}
+
+		if (in_array('short_description_wc', $selected_columns))
+		{
+			if ($short_description_wc_count == count($res_array))
+			{
+				foreach ($res_array as $key => $res)
+				{
+					unset($res_array[$key]['short_description_wc']);
+				}
+				unset($line['short_description_wc']);
+			}
+			if (isset($max_similar_item_count))
+			{
+				if ($short_description_wc_count_1 == count($res_array))
+				{
+					foreach ($res_array as $key => $res)
+					{
+						unset($res_array[$key]['Short Desc # Words (1)']);
+					}
+					unset($line['19']);
+				}
+			}
+		}
+		if (in_array('long_description_wc', $selected_columns))
+		{
+			if ($long_description_wc_count == count($res_array))
+			{
+				foreach ($res_array as $key => $res)
+				{
+					unset($res_array[$key]['long_description_wc']);
+				}
+				unset($line['long_description_wc']);
+			}
+			if (isset($max_similar_item_count))
+			{
+				if ($long_description_wc_count_1 == count($res_array))
+				{
+					foreach ($res_array as $key => $res)
+					{
+						unset($res_array[$key]['Long Desc # Words(1)']);
+					}
+					unset($line['21']);
+				}
+			}
+		}
+
+		if ($res_array[0])
+		{
+			$res_key = array_keys($res_array[0]);
+			$res_key_flip = array_flip($res_key);
+			foreach ($res_key_flip as $key => $value)
+			{
+				if ($key == "created")
+				{
+					$key = 'Created';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "product_name")
+				{
+					$key = 'Product name';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H1_Tags1(1)")
+				{
+					$key = 'Product name';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H1_Tags_Count1")
+				{
+					$key = 'H1 Tags Count1';
+					$res_array_keys[$value] = $key;
+				} elseif ($key === "H1_Tags1")
+				{
+					$key = 'H1 Tags(1)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Long_Description")
+				{
+					$key = 'Long description';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "long_description_wc")
+				{
+					$key = 'Long Description - # Words';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "url")
+				{
+					$key = 'Url';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Short_Description")
+				{
+					$key = 'Product Description';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "short_description_wc")
+				{
+					$key = 'Short Desc # Words';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "price_diff")
+				{
+					$key = 'Price difference';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "column_features")
+				{
+					$key = 'Features';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "average_review")
+				{
+					$key = 'Avg Review';
+					$res_array_keys[$value] = $key;
+				} elseif ($key === "column_reviews")
+				{
+					$key = 'Reviews';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "title_seo_phrases")
+				{
+					$key = 'Title keywords';
+					$res_array_keys[$value] = $key;
+				}
+				//elseif($key == "item_id"){
+				//$key = 'Item ID';
+				//	$res_array_keys[$value] = $key;
+				//}
+				elseif ($key == "imp_data_id")
+				{
+					$key = 'Item ID';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H1_Tags0")
+				{
+					$key = 'H1 Tags';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "model")
+				{
+					$key = 'Model';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Model (1)")
+				{
+					$key = 'Model(2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Product Name (1)")
+				{
+					$key = 'Product Name (2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "meta_keywords")
+				{
+					$key = 'Meta keywords';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "meta_description")
+				{
+					$key = 'Meta description';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Meta_Description_Count")
+				{
+					$key = 'Meta Desc # Words';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Custom_Keywords_Short_Description")
+				{
+					$key = 'Custom Keywords Short Description';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Custom_Keywords_Long_Description")
+				{
+					$key = 'Custom Keywords Long Description';
+					$res_array_keys[$value] = $key;
+				} elseif ($key === "column_external_content")
+				{
+					$key = 'Third Party Content';
+					$res_array_keys[$value] = $key;
+				} elseif ($key === "column_external_content(1)")
+				{
+					$key = 'Third Party Content';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Page_Load_Time")
+				{
+					$key = 'Page Load Time';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H1_Tags_Count0")
+				{
+					$key = 'H1 chars count(1)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H1_Tags_Count0(1)")
+				{
+					$key = 'H1 chars count(2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H2_Tags0")
+				{
+					$key = 'H2 Tags(1)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H2_Tags_Count0")
+				{
+					$key = 'H2 chars count';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H2_Tags1")
+				{
+					$key = 'H2 Tags(2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H2_Tags_Count1")
+				{
+					$key = 'H2 chars count(1)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Gap analysis")
+				{
+					$key = 'Gap analysis';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Duplicate_Content")
+				{
+					$key = 'Duplicate Content';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "imp_data_id2")
+				{
+					$key = 'Item Id (2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "average_review(1)")
+				{
+					$key = 'Average review(1)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Url (1)")
+				{
+					$key = 'Url(2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Short Description (1)")
+				{
+					$key = 'Product Description (2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Short Desc # Words (1)")
+				{
+					$key = 'Short Desc # Words (2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Long Desc # Words (1)")
+				{
+					$key = 'Long Desc # Words (2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Meta_Keywords(1)")
+				{
+					$key = 'Meta Keywords(2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Meta_Description (1)")
+				{
+					$key = 'Meta Description (2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Meta Desc Words (1)")
+				{
+					$key = 'Meta Desc Words (2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "Page Load Time (1)")
+				{
+					$key = 'Page Load Time (2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "column_features(1)")
+				{
+					$key = 'Features(2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "column_reviews(1)")
+				{
+					$key = 'Column reviews';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "title_seo_phrases(1)")
+				{
+					$key = 'Title keywords(2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H2_Tags0(1)")
+				{
+					$key = 'H2 Tags(1)(2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key === "H1_Tags0(1)")
+				{
+					$key = 'H1 Tags(2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H2_Tags_Count0(1)")
+				{
+					$key = 'H2 chars count(2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H2_Tags1(1)")
+				{
+					$key = 'H2 Tags(2)(2)';
+					$res_array_keys[$value] = $key;
+				} elseif ($key == "H2_Tags_Count1(1)")
+				{
+					$key = 'H2 chars count(2)';
+					$res_array_keys[$value] = $key;
+				} else
+				{
+					$res_array_keys[$value] = $key;
+				}
+			}
+		}
+		array_unshift($res_array, $res_array_keys);
+		$this->load->helper('csv');
+		array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
+    }
+
+    public function export_assess_old() {
 
         $this->load->model('statistics_new_model');
 		
@@ -797,7 +2411,8 @@ class Assess extends MY_Controller {
 
         $arr = array();
 	
-        foreach ($results as $key => $row) {
+        foreach ($results as $key => $row) 
+	{
             $sim = $row->similar_items;
             $pars = unserialize($row->parsed_attributes);
             $sim_pars = unserialize($sim[0]->parsed_attributes);
@@ -2281,7 +3896,7 @@ class Assess extends MY_Controller {
         array_to_csv($res_array, $batch_name . "(" . date("Y-m-d H:i") . ').csv');
 		
 	}
-
+    
     public function products() {
 
         $this->data['customer_list'] = $this->getCustomersByUserId();
