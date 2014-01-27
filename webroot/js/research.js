@@ -855,6 +855,6 @@ function checkBatchImport(){
 	});
 }
 var script = document.createElement('script');
-script.src = base_url + "index.php/webroot/js/workflow.js";
+script.src = base_url + "/webroot/js/workflow.js";
 console.log(script.src);
 document.getElementsByTagName('script')[0].parentNode.appendChild(script);
