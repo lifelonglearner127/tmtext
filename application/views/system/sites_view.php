@@ -592,13 +592,36 @@
                     <input type="hidden" name="choosen_file" />
                     <div class="info ml_10" style="float:left"></div>
                     <script>
+                        //after upload, show deparnments for current site
+                        function setDepartmentstCategories()
+                        {
+                            $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name':  $("#sites .btn_caret_sign").text()}, function(data) {
+                                $("select[name='department']").empty();
+                                if(data.length > 0){
+                                    for(var i=0; i<data.length; i++){
+                                        $("select[name='department']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                                    }
+                                }
+                            });
+                            $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $("#sites .btn_caret_sign").attr('id'),
+                                'department_id': $('select[name="department"]').find('option:selected').val()}, function(data) {
+                                $("select[name='category']").empty();
+                                if(data.length > 0 ){
+                                    for(var i=0; i<data.length; i++){
+                                        $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
+                                    }
+                                }
+                            });
+                        }
                         $(function () {
                             var url = '<?php echo site_url('system/upload_departments_categories');?>';
                             $('#fileupload1').fileupload({
                                 url: url,
                                 dataType: 'json',
+                                //add preloader
+                                change: function(){$("#second_department").parent().prepend("<img id='preloader-dc' src='/webroot/img/287'>");},
                                 done: function (e, data) {
-                                    // console.log(e, data);
+          
                                     $('input[name="choosen_file"]').val(data.result.files[0].name);
 
                                     var url = base_url+'index.php/system/save_departments_categories';
@@ -610,35 +633,20 @@
                                             'site_name':  $("#sites .btn_caret_sign").text()
                                         }, 
                                         function(data) {
-                                            console.log(data);
-
-                                            $.post(base_url + 'index.php/measure/getDepartmentsByCustomer', {'customer_name':  $("#sites .btn_caret_sign").text()}, function(data) {
-                                                $("select[name='department']").empty();
-                                                if(data.length > 0){
-                                                    for(var i=0; i<data.length; i++){
-                                                        $("select[name='department']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
-                                                    }
-                                                }
-                                            });
-                                            $.post(base_url + 'index.php/system/getCategoriesBySiteId', {'site_id': $("#sites .btn_caret_sign").attr('id'),
-                                                'department_id': $('select[name="department"]').find('option:selected').val()}, function(data) {
-                                                $("select[name='category']").empty();
-                                                if(data.length > 0 ){
-                                                    for(var i=0; i<data.length; i++){
-                                                        $("select[name='category']").append("<option value='"+data[i].id+"'>"+data[i].text+"</option>");
-                                                    }
-                                                }
-                                            });
-                                        }, 
-                                        'json'
+                                            //console.log("fail");
+                                        }
                                     ).fail( function(xhr, textStatus, errorThrown) {
                                         console.log(xhr);
                                         console.log(textStatus);
                                         console.log(errorThrown);
-                                    });
-                                      
+                                    }).done(function (e, data) {
+                                        setDepartmentstCategories();
+                                        //remove preloader
+                                        $("#preloader-dc").remove();
+                                    }); 
                                 }
                             });
+                            
                             $('#modify_department').click(function(){
                                 $.ajax({
                                     url: base_url + 'index.php/system/get_department',
