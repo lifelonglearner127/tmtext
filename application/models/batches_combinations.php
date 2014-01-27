@@ -26,7 +26,15 @@ class Batches_combinations extends Base_model
 	public function generateAllPossibleCombinations()
 	{
 		$this->load->model('batches_model');
+		$this->load->model('product_category_model');
+		$this->load->model('filters_values');
+		$this->load->model('filters_items');
+		
 		$batches = $this->batches_model->getAll();
+		//truncating batches_combinations table
+		$this->deleteAll(true);
+		$this->filters_values->deleteAll(true);
+		$this->filters_items->deleteAll(true);
 				
 		return $this->generateCombinations($batches, true);
 	}
@@ -58,18 +66,9 @@ class Batches_combinations extends Base_model
 	}
 	
 	private function generateCombinations(array $batches = array(), $from_db = false)
-	{		
-		$this->load->model('product_category_model');
-		$this->load->model('filters_values');
-		$this->load->model('filters_items');
-			
+	{					
 		$combinations = array();
-		
-		//truncating batches_combinations table
-		$this->deleteAll(true);
-		$this->filters_values->deleteAll(true);
-		$this->filters_items->deleteAll(true);
-		
+
 		//creating all possible combinations from database	
 		if ($from_db)
 			foreach ($batches as $first_batch)
