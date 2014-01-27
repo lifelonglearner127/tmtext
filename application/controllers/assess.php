@@ -5239,8 +5239,8 @@ class Assess extends MY_Controller {
 				'skus_with_manufacturer_images' => array( 'value' => (isset($skus_with_manufacturer_images)) ? $skus_with_manufacturer_images : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_images)),
 				'skus_with_manufacturer_pages' => array( 'value' => (isset($skus_with_manufacturer_pages)) ? $skus_with_manufacturer_pages : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_pages)),
 
-			);		
-					
+			);	
+				
 			foreach ($summary_fields as $key => $summary_field)
 			{						
 				$my_percent = 0;
@@ -5944,7 +5944,7 @@ class Assess extends MY_Controller {
 				$snap_data[0]['updated_h2_word_counts'][] =  $updated_h2_word_counts;
 				$snap_data[0]['updated_trendlines_data'][] =  $updated_trendlines_data;
 //                $snap_data[0]['own_price'][] = (float) $data_row->own_price;
-                if($graphBuild == "h1_word_counts"||"h2_word_counts") {
+                if($graphBuild == "h1_word_counts"|| $graphBuild == "h2_word_counts") {
                     $htags = unserialize($data_row->htags);
                     if ($htags) {
                         if($graphBuild == "h1_word_counts") {
@@ -6029,7 +6029,7 @@ class Assess extends MY_Controller {
 					$snap_data[1]['updated_h1_word_counts'][] =  $updated_h1_word_counts1;
 					$snap_data[1]['updated_h2_word_counts'][] =  $updated_h2_word_counts1;  
 //                      $snap_data[1]['own_price'][] = (float) $data_row_sim[0]->own_price;
-					if ($graphBuild == "h1_word_counts" || "h2_word_counts") {
+					if ($graphBuild == "h1_word_counts" || $graphBuild == "h2_word_counts") {
 						$htags = unserialize($data_row_sim[0]->HTags);
 						if ($htags) {
 							if($graphBuild == "h1_word_counts") {
@@ -6057,7 +6057,7 @@ class Assess extends MY_Controller {
 			// Castro prepare and order all trendline data, set missing dates values to null
 			if($include_trendlines) {
 				$maximum_trendlines = 6; // set the maximum number of trendlines to show
-				asort($trendline_dates_items);
+				arsort($trendline_dates_items);
 				$final_trendline_dates = array();
 				$trendline_dates_to_remove = array();
 
