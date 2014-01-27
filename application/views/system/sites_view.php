@@ -639,10 +639,14 @@
                                         console.log(xhr);
                                         console.log(textStatus);
                                         console.log(errorThrown);
-                                    }).done(function (e, data) {
+                                    }).done(function (e, data) {S
                                         setDepartmentstCategories();
                                         //remove preloader
-                                        $("#preloader-dc").remove();
+                                       $("#preloader-dc").hide(2000,function(){
+                                            setDepartmentstCategories();
+                                            $("#preloader-dc").remove();
+                                       });
+                                        
                                     }); 
                                 }
                             });
