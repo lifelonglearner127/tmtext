@@ -71,12 +71,13 @@ class Filters_values extends Base_model implements IFilters
 		self::SKUS_WITH_MANUFACTURER_VIDEOS => 'skus_with_manufacturer_videos',
 		self::SKUS_WITH_MANUFACTURER_IMAGES => 'skus_with_manufacturer_images',
 		self::SKUS_WITH_MANUFACTURER_PAGES => 'skus_with_manufacturer_pages',
+		self::ASSESS_REPORT_TOTAL_ITEMS_SELECTED_BY_FILTER => 'total_items_selected_by_filter',
 	);
 	
 	public function __construct()
 	{
 		parent::__construct();
-		$this->load->model('filter_items', 'fi');
+		$this->load->model('filters_items', 'fi');
 		$this->load->model('statistics_new_model');
 		$this->load->model('batches_model');
         $this->load->model('statistics_model');
@@ -1227,7 +1228,7 @@ class Filters_values extends Base_model implements IFilters
 			'skus_with_manufacturer_pages' => array( 'value' => (isset($skus_with_manufacturer_pages)) ? $skus_with_manufacturer_pages : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_pages)),
 
 		);		
-				
+		
 		foreach ($summary_fields as $key => $summary_field)
 		{						
 			$my_percent = 0;
@@ -1244,10 +1245,11 @@ class Filters_values extends Base_model implements IFilters
 				$filter_value->icon = $report['summary'][$key . '_icon'] = $summary_field['icon_percentage']($my_percent);
 				
 			$filter_value->save();					
+			
+			Filters_items::model()->save_filtered_items($data, $stored_filter_items, $this->db->insert_id());
 		}	
-		
-		
-		Filters_items::model()->save_filtered_items($stored_filter_items);		
+					
+		return true;
 	}
 	
 	private function keywords_appearence($desc, $phrase) {
@@ -1310,5 +1312,10 @@ class Filters_values extends Base_model implements IFilters
 
         return $wrapper_begin . rtrim($r, ', ') . $wrapper_end;
     }
+	
+	public function getFilters($filter_id = null)
+	{
+		return is_null($filter_id) ? $this->filters : $this->filters[$filter_id];
+	}
 			
 }

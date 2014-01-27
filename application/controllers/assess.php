@@ -34,6 +34,8 @@ class Assess extends MY_Controller {
             'deleteSecondaryMatch' => true,
             'getColumns' => true,
             'getCategoriesByBatch' => true,
+            'get_filters' => true,
+            'get_filters_ids' => true,
 	    'checkImportProcess' => true,
 	    'getBatchesExcludeOwnCustomer'=> true,
 	    'addSecondary'=> true
@@ -3240,7 +3242,7 @@ class Assess extends MY_Controller {
 				$result_row->Duplicate_Content.='';
 			}
 			
-			if ($needFilters)
+ 			if ($needFilters)
 			{									
 				if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count']) {
 					$skus_pdfs++;
@@ -3289,7 +3291,7 @@ class Assess extends MY_Controller {
 					$this->filterBySummaryCriteria('skus_title_more_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}	
 
-				//gap analises
+				// gap analises
 				if ($build_assess_params->max_similar_item_count > 0) {
 					$sim_items = $row->similar_items;
 
@@ -3323,7 +3325,7 @@ class Assess extends MY_Controller {
 
 				
 
-					//Second batch								
+					// Second batch								
 					if (!$result_row->column_reviews1) {
 						$skus_zero_reviews_competitor++;
 						$this->filterBySummaryCriteria('skus_zero_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
@@ -3350,10 +3352,8 @@ class Assess extends MY_Controller {
 					$this->filterBySummaryCriteria('skus_features', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
 				
-				/*
-				 * Reviews section
-				 */
-				//First batch								
+				
+				// First batch								
 				if (!$result_row->column_reviews) {
 					$skus_zero_reviews++;
 					$this->filterBySummaryCriteria('skus_zero_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
@@ -3509,7 +3509,7 @@ class Assess extends MY_Controller {
 							$skus_with_manufacturer_pages++;
 							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
-            }
+            } 
 			
 			
 			if ($iterator < $iterator_limit)
@@ -4696,6 +4696,33 @@ class Assess extends MY_Controller {
 		$this->uss->setting_value = json_encode($this->input->post('summary_items_order'));
 		
 		die(json_encode($this->uss->save()));
+	}
+	
+	public function get_filters_ids()
+	{
+		$this->load->model('filters_values');			
+		$this->output->set_content_type('application/json')->set_output(json_encode(array( 'filters_ids' => $this->filters_values->getFilters() )));		
+	}
+	
+	public function get_filters()
+	{		
+		$this->load->model('filters_values');
+		$this->load->model('filters_items');
+		$this->load->model('batches_combinations');
+		
+		$batches_combination = $_GET['batches_combination'];
+		$filters_data = array(			
+			'filters_values' => '',
+			'filters_items' => ''					
+		);		
+		if ($combination = $this->batches_combinations->findByAttributes(array('batches_combination' => $batches_combination)))			
+			if (($filters_values = $this->filters_values->findAllByAttributes(array('combination_id' => $combination->id))) !== array()) 		
+				if (($filters_items = $this->filters_items->findAllByAttributes(array('combination_id' => $combination->id))) !== array()) {		
+					$filters_data['filters_values'] = $filters_values;
+					$filters_data['filters_items'] = $filters_items;			
+				}		
+		
+		$this->output->set_content_type('application/json')->set_output(json_encode($filters_data));		
 	}
         
        public function deleteSecondaryMatch(){

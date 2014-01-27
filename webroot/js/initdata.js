@@ -9,6 +9,8 @@ var get_summary_filters = base_url + 'index.php/assess/get_summary_filters';
 var save_summary_filters = base_url + 'index.php/assess/save_summary_filters';
 var save_summary_filters_order = base_url + 'index.php/assess/save_summary_filters_order';
 var get_columns = base_url + 'index.php/assess/getColumns';
+var get_filters = base_url + 'index.php/assess/get_filters';
+var get_filters_ids = base_url + 'index.php/assess/get_filters_ids';
 var serevr_side = true;
 var serverside_table;
 var tblAllColumns = [];
@@ -33,6 +35,9 @@ var outputedFilterIndexes = [];
 var current_comparison_id = 0;
 var lastest_comparison_id = 0;
 var isCompareBatchSelected = false;
+var global_filters_values;
+var global_filters_items;
+var global_filters_ids;
 
 var FIRST_DISPLAY_LIMIT_COUNT = 100;
 var NEXT_DISPLAY_LIMIT_COUNT = 1000;

@@ -205,4 +205,28 @@ abstract class Base_model extends CI_Model
 		
 		return $r || $this->db->affected_rows();
 	}
+	
+	/**
+	 *  @brief Specifies which related objects should be eagerly loaded
+	 *  
+	 *  @param $join join array
+	 *  @return DB object	
+	 */
+	public function with($join)
+	{
+		$default_type = 'inner';
+		if (is_array($join))
+			$this->db
+				->join($join['table'], $join['on'], isset($join['type']) ? $join['type'] : $default_type);
+        else
+			$this->db
+				->join($join, '`' . $this->getTableName() . '`.`' . $join . '_id` = `' . $join . '`.`id`', $default_type);
+			
+		return $this;
+	}
+	
+	public function multipleSave($models)
+	{
+		
+	}
 }

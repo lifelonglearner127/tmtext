@@ -70,6 +70,13 @@ $(function() {
 			$('select[id="research_assess_compare_batches_batch"]').val(last_compare_batch_id).change();
 			 			                              
         });
+	
+	//getting filters configuration ids
+	$.getJSON(get_filters_ids, function(data) {
+		if (!data)
+			return false;
+		global_filters_ids = data.filters_ids;
+	});
         
     $.fn.serializeObject = function() {
         var o = {};
@@ -420,6 +427,54 @@ $(function() {
 		json.aaData = r;		
 		json.ExtraData.json_encoded_data = encoded_r;		
 	}
+	
+	function buildFilters(filters_data)
+	{
+		var r_summary = {};
+		
+		_.map(filters_data.filters_values, function(value, index) {
+			r_summary[ global_filters_ids[value.filter_id] ] = value.value;
+		});
+		
+		return r_summary;
+	}
+	
+	function getNewSummaryData(storage_key)
+	{
+		var deferred = $.Deferred()		
+		  , aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);						
+			
+		$.getJSON(get_filters, { batches_combination : storage_key }, function(filters_data) {
+			if (!filters_data)						
+				return;
+			
+			var reportData = buildFilters(filters_data);
+			buildReport({
+				ExtraData : {
+					report : {
+						summary : reportData
+					}
+				}
+			});
+			toggleDetailsCompareBlocks(true);
+			
+			$.getJSON(readAssessUrl, aoData, function(json) {
+				if(!json)
+					return;	
+					
+				var assessData = $.extend(json, filters_data);
+				json.ExtraData.report.summary = reportData;
+				  
+				$('.tbl_arrows_and_gear_wrapper #research_batches_columns').css({opacity:1,cursor:'pointer'});					
+																
+				customLocalStorage[storage_key] = JSON.stringify(assessData);														
+									
+				tblAssess = reInitializeTblAssess(assessData);	
+			});
+						
+		});
+				
+	}
 		
 	function readAssessData() {
 		var research_batch = $('.research_assess_batches_select')
@@ -435,20 +490,8 @@ $(function() {
 		$('.assess_report_download_panel').hide();
         $("#tblAssess tbody tr").remove();			
 		
-		if (!json_data)
-		{																
-			var aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);						
-			
-			$.getJSON(readAssessUrl, aoData, function(json) {
-				$('.tbl_arrows_and_gear_wrapper #research_batches_columns').css({opacity:1,cursor:'pointer'});
-				if(!json)
-					return;	
-																			
-				customLocalStorage[storage_key] = JSON.stringify(json);		
-									
-				tblAssess = reInitializeTblAssess(json);				
-			});       							
-		}
+		if (!json_data)		
+			getNewSummaryData(storage_key);						   								
 		else {
 			
 			//rebuilding dataTable results according to the selected filters
@@ -482,6 +525,8 @@ $(function() {
 				return;	
 
 			//saving report information to the custom local storage
+			json.filters_values = json_data.filters_values;
+			json.filters_items = json_data.filters_items;
 			json.ExtraData.report = json_data.ExtraData.report;
 			
 			customLocalStorage[storage_key] = JSON.stringify(json);
@@ -516,8 +561,8 @@ $(function() {
 										
 				console.log('Building report... ' + needToBeReloaded);
 				
-				if (needToBeReloaded || rebuildFilters)
-					buildReport(json_data);							
+				// if (needToBeReloaded || rebuildFilters)
+					// buildReport(json_data);							
 				
 				if (needToBeReloaded)				
 					pullRestItems();			
@@ -1667,6 +1712,7 @@ $(function() {
 	
     function buildReport(data) {
         if (data.ExtraData == undefined) {
+			console.log('report panel false');
             reportPanel(false);
             return;
         }

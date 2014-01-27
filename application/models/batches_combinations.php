@@ -39,9 +39,9 @@ class Batches_combinations extends Base_model
 	private function buildBatchesCombinationObject(array $data = array())
 	{
 		$combination = new Batches_combinations;
-		$combination->batches_combination = $data['first_batch_id'] == $data['second_batch_id'] ? $data['first_batch_id'] . '_0' : $data['first_batch_id'] . '_' . $data['second_batch_id'];
-		$combination->batches_combination .= $data['category'] ? '_' . $data['category'] : '_0';
-		
+		$category_id = $data['category'] ? '_' . $data['category'] : '_0';
+		$combination->batches_combination = $data['first_batch_id'] == $data['second_batch_id'] ? $data['first_batch_id'] . $category_id : $data['first_batch_id'] . $category_id . '_' . $data['second_batch_id'];
+				
 		// needs to be fixed
 		$combination->category_id = $data['category'];
 		
@@ -60,11 +60,15 @@ class Batches_combinations extends Base_model
 	private function generateCombinations(array $batches = array(), $from_db = false)
 	{		
 		$this->load->model('product_category_model');
+		$this->load->model('filters_values');
+		$this->load->model('filters_items');
 			
 		$combinations = array();
 		
 		//truncating batches_combinations table
 		$this->deleteAll(true);
+		$this->filters_values->deleteAll(true);
+		$this->filters_items->deleteAll(true);
 		
 		//creating all possible combinations from database	
 		if ($from_db)
