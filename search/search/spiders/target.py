@@ -50,7 +50,7 @@ class TargetSpider(SearchSpider):
 			item['product_name'] = product_name
 
 
-			print "ITEM", product_name
+			#print "ITEM", product_name
 
 			# quit if there is no product name
 			if not item['product_name']:
@@ -72,6 +72,10 @@ class TargetSpider(SearchSpider):
 			# extract price
 			#! extracting regular price and not discount price when discounts available?
 			price_holder = result.select(".//p[@class='regularprice-label']//text()[contains(.,'$')]").extract()
+
+			# second attempt at finding price
+			if not price_holder:
+				price_holder = result.select(".//p[@class='price price-label ppuContainer']/text()").extract()
 
 			if price_holder:
 				product_target_price = price_holder[0].strip()
