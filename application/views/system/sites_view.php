@@ -639,7 +639,7 @@
                                         console.log(xhr);
                                         console.log(textStatus);
                                         console.log(errorThrown);
-                                    }).done(function (e, data) {S
+                                    }).done(function (e, data) {
                                         setDepartmentstCategories();
                                         //remove preloader
                                        $("#preloader-dc").hide(2000,function(){
