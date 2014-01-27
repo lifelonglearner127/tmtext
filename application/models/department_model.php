@@ -35,7 +35,7 @@ class Department_model extends CI_Model {
         $this->db->insert($this->tables['departments'], $this);
         return $this->db->insert_id();
     }
-
+    
     function getAll()
     {
         $this->db->order_by("short_name", "asc");
@@ -60,5 +60,24 @@ class Department_model extends CI_Model {
             return $query->row()->id;
         }
         return false;
+    }
+    function checkExists($arrayData,$colName="short_name")
+    {
+        $arrSTR = '';
+        for($i=0;$i<count($arrayData);$i++)
+            $arrSTR .= "'".$arrayData[$i]['department_text']."',";
+        $arrSTR = rtrim($arrSTR,",");
+        $sql = "SELECT * FROM ".$this->tables['departments']." WHERE ".$colName." in (".$arrSTR.")";
+
+        return $this->db->query($sql)->result();
+    }
+    function insertDebTexts($insertDebText)
+    {
+        $data = array();
+        for($i=0;$i<count($insertDebText);$i++)
+        {
+            array_push($data, array('name' => $insertDebText[$i]['department_text'] ,'short_name' => $insertDebText[$i]['department_text'] ,'level' => 0,'parent_id' => NULL));
+        }
+        return $this->db->insert_batch($this->tables['departments'], $data); 
     }
 }

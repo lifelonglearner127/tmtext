@@ -386,6 +386,82 @@ class Department_members_model extends CI_Model {
         }
         return false;
     }
+    function checkExists($site_id,$data)
+    {
+        $textSTR = '';
+        $urlSTR = '';
+        for($i=0;$i<count($data);$i++)
+        {
+            $textSTR .= "'".$data[$i]['text']."', ";
+            $urlSTR .= "'".$data[$i]['url']."', ";
+        }
+        $textSTR = rtrim($textSTR,", ");
+        $urlSTR = rtrim($urlSTR,", ");
+        $sql = "SELECT * FROM ".$this->tables['department_members']." WHERE site_id=".$site_id." AND `text` in (".$textSTR.") AND `url` in (".$urlSTR.")";
+
+        return $this->db->query($sql)->result();
+    }
+    function updates($data)
+    {
+        
+        $data_to_update = array();
+        for($i=0;$i<count($data);$i++)
+        {
+            if(isset($data[$i]['department_members_id']) && $data[$i]['department_members_id']!=0)
+            {
+                array_push($data_to_update,array(
+                    'id'=>$data[$i]['department_members_id'],
+                    'level' => $data[$i]['level'],
+                    'department_id' => $data[$i]['department_id'],
+                    'description_words' => $data[$i]['description_wc'],
+                    'description_text' => $data[$i]['description_text'],
+                    'title_keyword_description_count' => $data[$i]['keyword_count'],
+                    'title_keyword_description_density' => $data[$i]['keyword_density'],
+                    'description_title' => $data[$i]['description_title'],
+                    'flag' => 'ready'
+                ));
+            }
+        }
+        return $this->db->update_batch($this->tables['department_members'], $data_to_update, 'id');
+    }
+    function updatesFlagByIds($data)
+    {
+        
+        $data_to_update = array();
+        for($i=0;$i<count($data);$i++)
+        {
+            array_push($data_to_update,array(
+                    'id'=>$data[$i]->id,
+                    'flag' => 'ready'
+                ));
+        }
+        return $this->db->update_batch($this->tables['department_members'], $data_to_update, 'id');
+    }
+    function inserts($site_id,$data)
+    {
+        $data_for_insert = array();
+        for($i=0;$i<count($data);$i++)
+        {
+            array_push($data_for_insert,array(
+                'text' => $data[$i]['text'],
+                'url' => $data[$i]['url'],
+                'department_id' => $data[$i]['department_id'],
+                'site_id' => $site_id,
+                'parent_id' => 0,
+                'level' => $data[$i]['level'],
+                'description_words' => $data[$i]['description_wc'],
+                'description_text' => $data[$i]['description_text'],
+                'title_keyword_description_count' => $data[$i]['keyword_count'],
+                'title_keyword_description_density' => $data[$i]['keyword_density'],
+                'description_title' => $data[$i]['description_title'],
+                'customer_id'=>0,
+                'title_seo_keywords'=>'',
+                'user_seo_keywords'=>'',
+                'description_title' =>''// $description_title
+            ));
+        }
+        return  $this->db->insert_batch($this->tables['department_members'], $data_for_insert);
+    }
 
     function updateFlag($site_id, $text)
     {
