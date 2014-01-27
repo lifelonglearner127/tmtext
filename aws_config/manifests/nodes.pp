@@ -10,33 +10,33 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 
 	exec { 'apt-update-1':
 		command => '/usr/bin/apt-get update',
-		require => service['networking'],
+		require => Service['networking'],
 	}
 
 	# packages
 	package { 'git':
 		ensure => present,
-		require => exec['apt-update-1'],
+		require => Exec['apt-update-1'],
 	}
 	
 	package { 'python-pip':
 		ensure => present,
-		require => exec['apt-update-1'],
+		require => Exec['apt-update-1'],
 	}
 
 	package { 'python-dev':
 		ensure => present,
-		require => exec['apt-update-1'],
+		require => Exec['apt-update-1'],
 	}
 
 	package {'libxslt1-dev':
    		ensure => present,
- 		require => exec['apt-update-1']
+ 		require => Exec['apt-update-1']
 	}
 
 	package {'sshfs':
    		ensure => present,
- 		require => exec['apt-update-1']
+ 		require => Exec['apt-update-1']
 	}
 
 
@@ -45,19 +45,19 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 	package { 'scrapy':
 		ensure => present,
 		provider => 'pip',
-		require => [package['python-pip'], package['python-dev'], package['libxslt1-dev']],
+		require => [Package['python-pip'], Package['python-dev'], Package['libxslt1-dev']],
 	}
 
 	package { 'nltk':
 		ensure => present,
 		provider => 'pip',
-		require => package['python-pip'],
+		require => Package['python-pip'],
 	}
 
 	package { 'selenium':
 		ensure => present,
 		provider => 'pip',
-		require => package['python-pip'],
+		require => Package['python-pip'],
 	}
 
 
@@ -110,7 +110,7 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 		cwd => "/home/ubuntu",
 		user => "ubuntu",
 		command => "/usr/bin/git clone -q git@bitbucket.org:dfeinleib/tmtext.git",
-		require => package['git'],
+		require => Package['git'],
 	}
 
   	# startup script - pulling from repo
@@ -130,35 +130,46 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 
   	# mount second partition
 
-
-  	# exec { "create-mountpoint":
-  	# 	command => "/bin/mkdir /mnt/part2",
-  	# 	creates => "/mnt/part2",
-  	# }
+  	exec { "create-mountpoint":
+  		command => "/bin/mkdir /mnt/part2",
+  		creates => "/mnt/part2",
+  		before => Mount["/mnt/part2"]
+  	}
 
   	# # unmount partition from /mnt
   	# exec {'umount-partition':
   	# 	command => "/bin/umount /dev/xvdb",
   	# }
 
-  	mount { "/mnt":
+  	# mount { "/mnt":
+  	# 	device => "/dev/xvdb",
+  	# 	ensure => "unmounted",
+  	# 	before => Mount["/mnt/part2"]
+  	# }
+
+  	# mount on /mnt/part2 and add to /etc/fstab
+  	# !before this /mnt must be unmounted and its line deleted from fstab (it's in there by default)
+  	mount { "/mnt/part2":
   		device => "/dev/xvdb",
-  		fstype => "ext3",
+  		fstype => "auto",
   		ensure => "mounted",
+  		options => "defaults,nobootwait,comment=cloudconfig",
+  		pass => 2,
   		atboot => true,
+  		require => [Exec['create-mountpoint']], #Exec['umount-partition']]
   	}
 
-  	# create cache folder in larget partition, symlink to cache in homedir
-	file{ "/mnt/scrapy_cache":
+  	# create cache folder in larger partition, symlink to cache in homedir
+	file{ "/mnt/part2/scrapy_cache":
   		ensure => "directory",
   		owner => "ubuntu",
   		group => "ubuntu",
-  		require => mount["/mnt"]
+  		require => Mount["/mnt/part2"]
   	}
 
   	file { "/home/ubuntu/.scrapy_cache":
   		ensure => link,
-  		target => "/mnt/scrapy_cache",
+  		target => "/mnt/part2/scrapy_cache",
   		owner => "ubuntu",
   		group => "ubuntu",
   	}
