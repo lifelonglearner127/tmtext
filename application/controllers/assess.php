@@ -5239,8 +5239,8 @@ class Assess extends MY_Controller {
 				'skus_with_manufacturer_images' => array( 'value' => (isset($skus_with_manufacturer_images)) ? $skus_with_manufacturer_images : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_images)),
 				'skus_with_manufacturer_pages' => array( 'value' => (isset($skus_with_manufacturer_pages)) ? $skus_with_manufacturer_pages : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_pages)),
 
-			);		
-					
+			);	
+				
 			foreach ($summary_fields as $key => $summary_field)
 			{						
 				$my_percent = 0;
