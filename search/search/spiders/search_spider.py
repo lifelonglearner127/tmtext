@@ -468,6 +468,7 @@ class SearchSpider(BaseSpider):
 		items = response.meta['items']
 		#site = response.meta['origin_site']
 
+		#TODO: do we still need this?
 		if 'parsed' not in response.meta:
 
 			# pass to specific prase results function (in derived class)

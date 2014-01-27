@@ -24,8 +24,95 @@ class TargetSpider(SearchSpider):
 		self.target_site = "target"
 		self.start_urls = [ "http://www.target.com" ]
 
+	# # try to find product name using its page URL and the name extracted from results page (usually incomplete)
+	# def build_product_name(results_name, URL):
+	# 	pass
+
+
+	# create product items from results using only results pages (extracting needed info on products from there)
 	# parse results page for target, extract info for all products returned by search (keep them in "meta")
 	def parseResults(self, response):
+		hxs = HtmlXPathSelector(response)
+
+		if 'items' in response.meta:
+			items = response.meta['items']
+		else:
+			items = set()
+
+		results = hxs.select("//ul[@class='productsListView']/li")
+		for result in results:
+			item = SearchItem()
+			product_title_holder = result.select(".//div[@class='productTitle']/a")
+			product_url = product_title_holder.select("@href").extract()[0]
+			item['product_url'] = product_url
+			product_name = product_title_holder.select("@title").extract()[0]
+			item['product_name'] = product_name
+
+
+			print "ITEM", product_name
+
+			# quit if there is no product name
+			if not item['product_name']:
+				self.log("Error: No product name: " + str(response.url) + " from product: " + origin_url, level=log.WARNING)
+				continue
+
+			# add url, name and model of product to be matched (from origin site)
+			item['origin_url'] = response.meta['origin_url']
+			item['origin_name'] = response.meta['origin_name']
+
+			if 'origin_model' in response.meta:
+				item['origin_model'] = response.meta['origin_model']
+
+			# extract product model from name
+			product_model_extracted = ProcessText.extract_model_from_name(item['product_name'])
+			if product_model_extracted:
+				item['product_model'] = product_model_extracted
+
+			# extract price
+			#! extracting regular price and not discount price when discounts available?
+			price_holder = result.select(".//p[@class='regularprice-label']//text()[contains(.,'$')]").extract()
+
+			if price_holder:
+				product_target_price = price_holder[0].strip()
+				# remove commas separating orders of magnitude (ex 2,000)
+				product_target_price = re.sub(",","",product_target_price)
+				m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
+				if m:
+					item['product_target_price'] = float(m.group(1))
+				else:
+					sys.stderr.write("Didn't match product price: " + product_target_price + " " + response.url + "\n")
+
+			else:
+				sys.stderr.write("Didn't find product price: " + response.url + "\n")
+
+			# extract product brand
+			brand_holder = product_title_holder.select("parent::node()//span[@class='description']/a/text()").extract()
+			if brand_holder:
+				item['product_brand'] = brand_holder[0]
+				self.log("Extracted brand: " + item['product_brand'] + " from results page: " + str(response.url), level=log.INFO)
+
+			# add result to items
+			items.add(item)
+
+
+		# extract product info from product pages (send request to parse first URL in list)
+		# add as meta all that was received as meta, will pass it on to reduceResults function in the end
+		# also send as meta the entire results list (the product pages URLs), will receive callback when they have all been parsed
+
+		# send the request back to reduceResults (with updated 'items') whether there are any more pending requests or not
+		# if there are, reduceResults will send the next one back here, if not it will return the final result
+
+		response.meta['items'] = items
+
+		# and field 'parsed' to indicate that the call was received from this method (was not the initial one)
+		#TODO: do we still need this?
+		response.meta['parsed'] = True
+		# only send the response we have as an argument, no need to make a new request
+		return self.reduceResults(response)
+
+	# create product items from results using product pages (extracting needed info on products from there)
+	# parse results page for target, extract info for all products returned by search (keep them in "meta")
+	def parseResults_withProductPages(self, response):
 		hxs = HtmlXPathSelector(response)
 
 		if 'items' in response.meta:
@@ -51,7 +138,7 @@ class TargetSpider(SearchSpider):
 
 		# send the request further to parse product pages only if we gathered all the product URLs from all the queries 
 		# (there are no more pending requests)
-		# otherwise send them back to parseResults and wait for the next query, save all product URLs in search_results
+		# otherwise send them back to reduceResults and wait for the next query, save all product URLs in search_results
 		# this way we avoid duplicates
 		if product_urls_and_names and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
 			# get first url in the list and pop it
