@@ -823,7 +823,7 @@ $(document).ready(function () {
             }
         });
     });
-    secCustomers.change(function(){
+	$('body').on('change','#set_compare_batches_customer',function(){
 		var id = $(this).val();
 		$('option',secBatches).hide();
 		$('option[data-customer="'+id+'"]',secBatches).show();
