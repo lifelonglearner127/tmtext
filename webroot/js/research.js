@@ -828,7 +828,7 @@ $(document).ready(function () {
 		$('option',secBatches).hide();
 		$('option[data-customer="'+id+'"]',secBatches).show();
 		$('option[data-customer="'+id+'"]:first',secBatches).attr('selected',true);
-		$('option[data-selected="1"]',secBatches).attr('selected',true);
+		$('option[data-selected="1"][data-customer="'+id+'"]',secBatches).attr('selected',true);
 	});
 	$('body').on('click','#save-secondary',function(){
 		$.post(base_url+'index.php/assess/addSecondary', {
