@@ -561,8 +561,8 @@ $(function() {
 										
 				console.log('Building report... ' + needToBeReloaded);
 				
-				// if (needToBeReloaded || rebuildFilters)
-					// buildReport(json_data);							
+				if (needToBeReloaded || rebuildFilters)
+					buildReport(json_data);							
 				
 				if (needToBeReloaded)				
 					pullRestItems();			
