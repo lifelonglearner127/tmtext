@@ -13,6 +13,7 @@ class Workflow extends MY_Controller {
         }
         $this->load->model('workflow_model');
         $this->load->model('operations_model');
+        $this->load->model('process_model');
     }
 
     public function index() {
