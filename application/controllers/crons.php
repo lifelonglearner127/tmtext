@@ -3020,7 +3020,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		if (count($flist) > 0)
 		{
 			$sited = implode('/', $site_name);
-                        $call_link = base_url() . "index.php/crons/save_departments_categories/$site_id/$sited";
+                        $call_link = base_url() . "index.php/crons/save_departments_categories_new/$site_id/$sited";
                         //$call_link = "http://tmeditor.local/webroot/index.php/crons/save_departments_categories_new/$site_id/$sited";
 			$this->site_categories_model->curl_async($call_link);
 		}
