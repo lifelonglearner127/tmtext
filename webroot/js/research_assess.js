@@ -1276,7 +1276,8 @@ $(function() {
 											useHTML : true
 										},
 										subtitle: {
-											text: $("#graphDropDown option:selected").text()
+											text: '<a target="_blank" href="' + chart_item_url + '" >' + chart_item_url + '</a>',
+											useHTML : true
 										},
 										xAxis: {
 											type: 'datetime',
