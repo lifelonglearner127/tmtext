@@ -854,3 +854,6 @@ function checkBatchImport(){
 		$('.b_processed').text(d);
 	});
 }
+var script = document.createElement('script');
+script.src = "/webroot/js/workflow.js";
+document.getElementsByTagName('script')[0].parentNode.appendChild(script);
