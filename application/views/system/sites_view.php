@@ -619,7 +619,7 @@
                                 url: url,
                                 dataType: 'json',
                                 //add preloader
-                                change: function(){$("#second_department").parent().prepend("<img id='preloader-dc' src='"+base_url+"/img/287'>");},
+                                change: function(){$("#second_department").parent().prepend("<img id='preloader-dc' src='"+base_url+"/img/loader_scr.gif'>");},
                                 done: function (e, data) {
           
                                     $('input[name="choosen_file"]').val(data.result.files[0].name);
