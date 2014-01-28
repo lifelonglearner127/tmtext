@@ -753,10 +753,13 @@ $(function() {
 
 	function reDrowHighChart() 
 	{
+                
+            var graphBuild = $('#graphDropDown').children('option:selected').val();
+                
+            if(graphBuild != '') {    
 		// Castro #1119: disable charts dropdown and show over time checkbox and empty chart container
 		toggleGraphFields(true);
                 
-		var graphBuild = $('#graphDropDown').children('option:selected').val();
 		var batch_set = $('.result_batch_items:checked').val() || 'me';	
 		var batch1Value = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
 		var batch2Value = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
@@ -778,6 +781,7 @@ $(function() {
                     toggleGraphFields(false);
                 } else
                     highChart(graphBuild);
+            }
         }
         
 	function highChart(graphBuild) 
