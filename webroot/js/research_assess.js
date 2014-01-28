@@ -2549,16 +2549,13 @@ function prevSibilfunc(curentSibil){
 	});
 
     $('#research_assess_compare_batches_reset').click(function() {
-	$('#research_assess_compare_batches_customer').val('select customer').prop('selected', true);
-        $('#research_assess_compare_batches_batch').val('select batch').prop('selected', true);
-        
+		$('#research_assess_compare_batches_customer').val('select customer').prop('selected', true);
+        $('#research_assess_compare_batches_batch').val('0').prop('selected', true);
         $('#research_assess_compare_batches_customer').change();
 //        $('#research_assess_compare_batches_batch').change();
-        
         // deprecated?
-	$('#research_assess_compare_batches_customer_competitor').val('select customer').prop('selected', true);
+		$('#research_assess_compare_batches_customer_competitor').val('select customer').prop('selected', true);
         $('#research_assess_compare_batches_batch_competitor').val('select batch').prop('selected', true);
-        
 //        $('#research_assess_compare_batches_customer_competitor').change();
 //        $('#research_assess_compare_batches_batch_competitor').change();
     });
