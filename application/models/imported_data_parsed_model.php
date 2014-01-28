@@ -1542,7 +1542,7 @@ class Imported_data_parsed_model extends CI_Model {
             where "."`p`.`model`=$value2".//"(INSTR(REPLACE(`p`.`model`,'-',''), $value2)=1 OR INSTR($value2, REPLACE(`p`.`model`,'-',''))=1)
                 "and p.`key`='url'
                 group by p.imported_data_id
-                limit 20";
+                limit 100";
 	$data = array();
         $query = $this->db->query($sql);
 	if ($query->num_rows() > 0) {
