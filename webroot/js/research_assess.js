@@ -3393,7 +3393,7 @@ function prevSibilfunc(curentSibil){
 				buildSummaryInfoSelectedElements();
 			});
 			
-			$('#research_assess_update').click();
+			// $('#research_assess_update').click();
 		}
 	});
 	
