@@ -3481,12 +3481,16 @@ function prevSibilfunc(curentSibil){
         modal: true,
 		open : function ( event, ui ) {
 			var filters = '';
+			var selectedCombo = $('.pre_stored_filters_combos option:selected').text();
 			
 			_.map(summaryInfoSelectedElementsTexts, function(value) {
 				filters += '<div>' + value.replace(':', '') + '</div>';
 			})
 			
 			$('.selected_filters_names').html(filters);
+			
+			if (selectedCombo.length)
+				$('#filter_combination_title').val(selectedCombo);
 		},
         buttons: {           
             'Save': {
@@ -3507,7 +3511,7 @@ function prevSibilfunc(curentSibil){
                     $.post( base_url + 'index.php/assess/save_filters_combo', assess_report_options_form, function(data) {
 						if (data && data.status)
 						{
-							$('.pre_stored_filters_combos').append("<option value='" + data.status.filters_ids + "'>" + data.status.title + "</option>");
+							$('.pre_stored_filters_combos').append("<option data-comboid='" + data.status.id + "' value='" + data.status.filters_ids + "'>" + data.status.title + "</option>");
 							$('.pre_stored_filters_combos').val(data.status.filters_ids);
 							modal.dialog('close');
 						}
@@ -3516,7 +3520,33 @@ function prevSibilfunc(curentSibil){
 							
 					}, 'json');                    
                 }
-            }
+            },
+			'Remove' : {
+				id : 'assess_report_filters_combos_remove',
+				text : 'Remove',
+				click : function() {
+					var combo = $('.pre_stored_filters_combos')
+					  , comboid = combo.find('option:selected').data('comboid')
+					  , modal = $(this)
+					  , removeData = {
+							id : comboid
+					    };
+						
+					$.post( base_url + 'index.php/assess/remove_filter_combo', removeData, function(data) {
+						if (data && data.status)
+						{
+							$('.pre_stored_filters_combos option[data-comboid="' + comboid + '"]').remove();
+							
+							$('.ui-selected').removeClass('ui-selected');
+		
+							//refreshing
+							buildSummaryInfoSelectedElements();
+							
+							modal.dialog('close');
+						}
+					}, 'json');
+				}
+			}
         },
         width: '450px'
     });

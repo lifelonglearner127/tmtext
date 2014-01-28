@@ -19,7 +19,7 @@
 				<select class="pre_stored_filters_combos" style="position: relative; top: 3px">
 					<option value="0">Select Filter</option>
 					<?php foreach ($filters_combos as $filters_combo): ?>
-						<option value='<?php echo $filters_combo->filters_ids ?>'><?php echo $filters_combo->title ?></option>
+						<option data-comboid="<?php echo $filters_combo->id ?>" value='<?php echo $filters_combo->filters_ids ?>'><?php echo $filters_combo->title ?></option>
 					<?php endforeach ?>
 				</select>
 				<button id="new_filters_combination" class="btn btn-success" style="position: relative; bottom: 2px">New...</button>
