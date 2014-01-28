@@ -3387,8 +3387,10 @@ function prevSibilfunc(curentSibil){
 		if (json && json.length) {
 			_.map(json, function(id) {
 				console.log(global_filters_ids[id]);
-				// $('.item_line[data-filterid$="' + global_filters_ids[id] + '"]:not([data-filterid*="competitor"])').addClass('ui-selected');
-				$('.item_line[data-filterid$="' + global_filters_ids[id] + '"]').addClass('ui-selected');
+				if ($('#research_assess_compare_batches_batch option:selected').val() == 0)
+					$('.item_line[data-filterid$="' + global_filters_ids[id] + '"]:not([data-filterid*="competitor"])').addClass('ui-selected');
+				else
+					$('.item_line[data-filterid$="' + global_filters_ids[id] + '"]').addClass('ui-selected');
 				
 				buildSummaryInfoSelectedElements();
 			});
