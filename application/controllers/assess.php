@@ -3954,7 +3954,7 @@ class Assess extends MY_Controller {
 		$combination = $this->batches_combinations->findByAttributes($comboPattern);
 		if(isset($combination->id) && $combination->id > 0)
 		{	
-			$countedFilters = $this->filters_values->getFiltersValuesByCombination($combination->id);
+			//$countedFilters = $this->filters_values->getFiltersValuesByCombination($combination->id);
 		}	
 		
 		$success_filter_entries = array();
@@ -5423,8 +5423,7 @@ class Assess extends MY_Controller {
 			}
 
 			$report['stored_filter_items'] = $stored_filter_items;
-		}
-		if($countedFilters)
+		} elseif($countedFilters)
 		{	
 			$report['summary'] = $countedFilters;
 		}	
