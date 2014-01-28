@@ -279,13 +279,15 @@
     </div>
 </div>
 
-<div id="research_assess_filters_combos" title="Filters combinations" >
+<div id="research_assess_filters_combos" title="Create Filter Combination" >
     <div>
 		<div class="selected_filters_names"></div>
         <form action="" method="post" id="filter_combinations_form">
 			            
 			<p>
-				<input name="filter_combo_name" />
+				<label>New Filter Combo: 
+					<input name="title" />
+				</label>
 			</p>
 		
         </form>
@@ -504,6 +506,7 @@
 		'user_filters' => $user_filters,
 		'user_filters_order' => $user_filters_order,
 		'wrapper_class' => 'assess_report_compare',
+		'filters_combos' => $filters_combos
 	)) 
 ?>
 <div class="row-fluid">	
