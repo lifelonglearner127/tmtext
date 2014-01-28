@@ -89,7 +89,7 @@ class TargetSpider(SearchSpider):
 					self.log("Didn't match product price: " + product_target_price + " " + response.url + "\n", level=log.WARNING)
 
 			else:
-				self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
+				self.log("Didn't find product price: " + response.url + "\n", level=log.DEBUG)
 
 			# extract product brand
 			brand_holder = product_title_holder.select("parent::node()//span[@class='description']/a/text()").extract()
