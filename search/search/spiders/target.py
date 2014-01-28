@@ -54,7 +54,7 @@ class TargetSpider(SearchSpider):
 
 			# quit if there is no product name
 			if not item['product_name']:
-				self.log("Error: No product name: " + str(response.url) + " from product: " + origin_url, level=log.WARNING)
+				self.log("No product name: " + str(response.url) + " from product: " + origin_url, level=log.ERROR)
 				continue
 
 			# add url, name and model of product to be matched (from origin site)
@@ -81,20 +81,21 @@ class TargetSpider(SearchSpider):
 				product_target_price = price_holder[0].strip()
 				# remove commas separating orders of magnitude (ex 2,000)
 				product_target_price = re.sub(",","",product_target_price)
+				# if more than one match, it will get the first one
 				m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
 				if m:
 					item['product_target_price'] = float(m.group(1))
 				else:
-					sys.stderr.write("Didn't match product price: " + product_target_price + " " + response.url + "\n")
+					self.log("Didn't match product price: " + product_target_price + " " + response.url + "\n", level=log.WARNING)
 
 			else:
-				sys.stderr.write("Didn't find product price: " + response.url + "\n")
+				self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
 
 			# extract product brand
 			brand_holder = product_title_holder.select("parent::node()//span[@class='description']/a/text()").extract()
 			if brand_holder:
 				item['product_brand'] = brand_holder[0]
-				self.log("Extracted brand: " + item['product_brand'] + " from results page: " + str(response.url), level=log.INFO)
+				self.log("Extracted brand: " + item['product_brand'] + " from results page: " + str(response.url), level=log.DEBUG)
 
 			# add result to items
 			items.add(item)
