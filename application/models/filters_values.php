@@ -1317,16 +1317,19 @@ class Filters_values extends Base_model implements IFilters
 		return is_null($filter_id) ? $this->filters : $this->filters[$filter_id];
 	}
 	
-	function getFiltersValuesByCombination($combination_id = 1)
+	function getFiltersValuesByCombination($combination_id = 0)
 	{
 		$result = array();
 		$combination_id = (int) $combination_id;
-		$filters = $this->findAllByAttributes(array('combination_id'=>$combination_id));
-		if(is_array($filters))
+		if($combination_id > 0)
 		{	
-			foreach($filters as $row)
-			{
-				$result[$this->filters[$row->filter_id]] = $row->value;
+			$filters = $this->findAllByAttributes(array('combination_id'=>$combination_id));
+			if(is_array($filters))
+			{	
+				foreach($filters as $row)
+				{
+					$result[$this->filters[$row->filter_id]] = $row->value;
+				}
 			}
 		}
 		return $result; 
