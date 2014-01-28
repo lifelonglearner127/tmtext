@@ -286,7 +286,7 @@
 			            
 			<p>
 				<label>New Filter Combo: 
-					<input name="title" />
+					<input name="title" id="filter_combination_title" />
 				</label>
 			</p>
 		

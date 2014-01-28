@@ -16,6 +16,8 @@ var serverside_table;
 var tblAllColumns = [];
 var summaryInfoSelectedElements = [];
 var tblAssess;
+var first_half_data = []; // data for graph
+var first_half_data_options = {}; // options data for graph
 var last_batch_id;
 var last_compare_batch_id;
 var summary_active_items = [];

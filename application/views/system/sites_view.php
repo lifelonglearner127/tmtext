@@ -619,7 +619,7 @@
                                 url: url,
                                 dataType: 'json',
                                 //add preloader
-                                change: function(){$("#second_department").parent().prepend("<img id='preloader-dc' src='"+base_url+"/img/loader_scr.gif'>");},
+                                change: function(){$("#second_department").parent().prepend("<img id='preloader-dc' src='"+base_url+"/img/loader_scr.gif'/>");},
                                 done: function (e, data) {
           
                                     $('input[name="choosen_file"]').val(data.result.files[0].name);
@@ -640,10 +640,11 @@
                                         console.log(textStatus);
                                         console.log(errorThrown);
                                     }).done(function (e, data) {
-                                        setDepartmentstCategories();
+                                        //setDepartmentstCategories();
                                         //remove preloader
                                        $("#preloader-dc").hide(2000,function(){
-                                            setDepartmentstCategories();
+                                            //setDepartmentstCategories();
+                                            $("#second_department").parent().prepend("<span style='color:red;'>The file is being processed. It will take time.</span>");
                                             $("#preloader-dc").remove();
                                        });
                                         

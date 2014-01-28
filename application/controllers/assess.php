@@ -37,6 +37,7 @@ class Assess extends MY_Controller {
             'get_filters' => true,
             'get_filters_ids' => true,
             'save_filters_combo' => true,
+            'remove_filter_combo' => true,
 	    'checkImportProcess' => true,
 	    'getBatchesExcludeOwnCustomer'=> true,
 	    'addSecondary'=> true
@@ -7640,6 +7641,14 @@ class Assess extends MY_Controller {
 		}
 		
 		$this->output->set_content_type('application/json')->set_output(json_encode(array( 'status' => $r ? $this->filters_combos : false )));		
+	}
+	
+	public function remove_filter_combo()
+	{
+		$this->load->model('filters_combos');
+		$r = $this->filters_combos->deleteByPk($this->input->post('id'));
+		
+		$this->output->set_content_type('application/json')->set_output(json_encode(array( 'status' => $r )));		
 	}
         
        public function deleteSecondaryMatch(){

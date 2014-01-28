@@ -2706,8 +2706,10 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 				"nr_products"=>0,
 				"special"=>"",
 				"nr_products"=>"",
+                                "parent_id"=>0,
 				'level'=>0,
 				'work_table'=>'',
+                                'parent_text'=>'',
                                 'department_members_id'=>0
 				);
 			
@@ -2733,9 +2735,9 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 
 			//url
 			if (isset($row->url) && is_array($row->url))
-				$mainLine['url'] = addslashes($row->url[0]);
+				$mainLine['url'] = str_replace("/?","?",addslashes($row->url[0]));
 			else if (isset($row->url) && !is_array($row->url) && !is_null($row->url))
-				$mainLine['url'] = addslashes($row->url);
+				$mainLine['url'] = str_replace("/?","?",addslashes($row->url));
 			
 			//text
 			if (isset($row->text) && is_array($row->text))
@@ -2745,7 +2747,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			
 			//department_url
 			if (isset($row->department_url) && !is_null($row->department_url) && $row->department_url != '')
-				$mainLine['department_url'] = addslashes($row->department_url);
+				$mainLine['department_url'] = str_replace("/?","?",addslashes($row->department_url));
 			
 			//description title
 			if (isset($row->description_title) && is_array($row->description_title))
@@ -2785,9 +2787,9 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			
 			//parent url
 			if (isset($row->parent_url) && is_array($row->parent_url))
-				$mainLine['parent_url'] = addslashes($row->parent_url[0]);
+				$mainLine['parent_url'] = str_replace("/?","?",addslashes($row->parent_url[0]));
 			else if (isset($row->parent_url) && !is_array($row->parent_url) && !is_null($row->parent_url) && $row->parent_url != '')
-				$mainLine['parent_url'] = addslashes($row->parent_url);
+				$mainLine['parent_url'] = str_replace("/?","?",addslashes($row->parent_url));
 			
 			//parent text
 			if (isset($row->parent_text) && is_array($row->parent_text))
@@ -2805,30 +2807,30 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 
 		$department_members = array();
                 
-		$sc_department_text = array();
+		/*$sc_department_text = array();
                 $sc_parent_text = array();
-                $sc_text = array();
+                $sc_text = array();*/
             
 		for($i=0;$i<count($linesFromFile);$i++)
 		{
 			if ($linesFromFile[$i]['work_table'] == 'department_members')	
 				array_push($department_members,$linesFromFile[$i]);
                         
-			if($linesFromFile[$i]['work_table'] == 'site_categories')
-			{
-				if ($linesFromFile[$i]['department_text'] != '')
-				{
-					array_push($sc_department_text,$linesFromFile[$i]);
-				}
-				if($linesFromFile[$i]['parent_text'] != '')
-				{
-					array_push($sc_parent_text,$linesFromFile[$i]);
-				}
-				if($linesFromFile[$i]['text'] != '') 
-				{
-					array_push($sc_text,$linesFromFile[$i]);
-				}
-			}
+			/*if($linesFromFile[$i]['work_table'] == 'site_categories')
+                        {
+                            if ($linesFromFile[$i]['department_text'] != '')
+                            {
+                                array_push($sc_department_text,$linesFromFile[$i]);
+                            }       
+                            if($linesFromFile[$i]['parent_text'] != '')
+                            {
+                               array_push($sc_parent_text,$linesFromFile[$i]);
+                            }
+                            if($linesFromFile[$i]['text'] != '') 
+                            {
+                                array_push($sc_text,$linesFromFile[$i]);
+                            }
+			}*/
 		}
                 /*department_members start*/   
                 if(count($department_members)>0)
@@ -2932,21 +2934,117 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                     if(!empty($idsExisting))
                             $this->department_members_model->updates($department_members);
                     
-                    //echo "idsExisting<br/><br/";var_dump($idsExisting);echo "<br/><br/><br/>";
-                    //echo "department_members<br/><br/><br/>";var_dump($department_members);echo "<br/><br/><br/>";
-                    //echo "dmm_insert_data<br/><br/><br/>";var_dump($dmm_insert_data);die();
                 }
 		//department_members end
-                /*site_categories start*/
                 
+                
+                /*site_categories start*/
+                  /*  
                 if(count($sc_department_text)>0)
                 {
-                    /*$checkExists = $this->department_members_model->checkExists($site_id, $sc_department_text);//try
-                    if(!empty($checkExists))
-                        $this->department_members_model->updatesFlagByIds($checkExists);
+                    //SELECT
+                    $checkExists_sc_department_text = $this->department_members_model->checkExists($site_id, $sc_department_text);//try
+                    
+                    $notExistList = array();
+                    
+                    if (count($checkExists_sc_department_text) > 0) 
+                    {
+                        //UPDATE
+                        $this->department_members_model->updatesFlagByIds($checkExists_sc_department_text);
+                        
+                        for ($i = 0; $i < count($sc_department_text); $i++) 
+                        {
+                            
+                            $is_find = 0;
+                            for ($j = 0; $j < count($checkExists_sc_department_text); $j++) 
+                            {
+                                if ($checkExists_sc_department_text[$j]->text == $sc_department_text[$i]['text']) {
+                                    $sc_department_text[$i]['department_id'] = $checkExists_sc_department_text[$j]->id;
+                                    $is_find = 2;
+                                }
+                                if ($checkExists_sc_department_text[$j]->text != $sc_department_text[$i]['text']) {
+                                    if($is_find!=2)
+                                    $is_find = 1;
+                                }
+                            }
+                            if ($is_find==1) 
+                            {
+                                $sc_department_text[$i]['department_id']= 0;
+                                array_push($notExistList,$sc_department_text[$i]);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for ($i = 0; $i < count($sc_department_text); $i++) 
+                        {
+                            $sc_department_text[$i]['department_id']= 0;
+                            array_push($notExistList,$sc_department_text[$i]);
+                        }
+                    }
+                    
+   
+
+                    $check_department_ids = $this->department_model->checkExists($notExistList);//try
+                    
+                    $noDataInDepartmentTable = array();
+                    if (count($check_department_ids) > 0) 
+                    {
+                        for ($i = 0; $i < count($notExistList); $i++) 
+                        {
+                            
+                            $is_find = 0;
+                            for ($j = 0; $j < count($check_department_ids); $j++) 
+                            {
+                                if ($check_department_ids[$j]->short_name == $notExistList[$i]['department_text']) 
+                                {
+                                    $notExistList[$i]['department_id'] = $check_department_ids[$j]->id;
+                                    $is_find = 2;
+                                    break;
+                                }
+                                if ($check_department_ids[$j]->short_name != $notExistList[$i]['department_text']) 
+                                {
+                                    if($is_find!=2)
+                                    {
+                                        $is_find = 1;
+                                    }
+                                }
+                            }
+                            if ($is_find==1) 
+                            {
+                                array_push($noDataInDepartmentTable,$notExistList[$i]);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for ($i = 0; $i < count($notExistList); $i++) 
+                        {
+                            array_push($noDataInDepartmentTable,$notExistList[$i]);
+                        }
+                    }
+                    
+                    if(count($noDataInDepartmentTable)>0)
+                    {
+                        //INSERT
+                        $insertDebTexts_result = $this->department_model->insertDebTexts($noDataInDepartmentTable);//try               
+                    }
+                    //SELECT
+                    $c = $this->department_model->checkExists($notExistList);
                     
                     
-                    
+                    var_dump($c);
+                    echo "<br/><br/><br/><br/>";
+                    var_dump($check_department_ids);
+                    echo "<br/><br/><br/><br/>";
+                    var_dump($noDataInDepartmentTable);
+                    echo "<br/><br/><br/><br/>";
+                    //var_dump($notExistList);
+                    $notExistList[0]['department_members_id'] = 10;
+                    echo "<br/><br/><br/><br/>";
+                    var_dump($sc_parent_text);
+                    die();
+                    ////
                     var_dump($checkExists);die();
                                             if ($check_id)
                                             {
@@ -2964,11 +3062,13 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                                                             $department_id = $check_department_id;
                                                     }
                                                     $department_members_id = $this->department_members_model->insert_for_sc($site_id, $department_id, $department_text, $department_url);
-                                            }*/
-                }   
+                                            }////
+                }   /*
                 if(count($sc_parent_text)>0)
                 {
-                    /*if($level < 0) {
+                 ////
+                 
+                    if($level < 0) {
                                                     $parent_id = $this->site_categories_model->checkExist($site_id, $parent_text);
 
                                                     // If parent exists, update its flag
@@ -2986,11 +3086,52 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                                             if($parent_id != 0 && $department_members_id == 0) {
                                                     $res = $this->site_categories_model->checkDepartmentId($parent_id);
                                                     $department_members_id = $res->department_members_id;
-                                            }*/
+                                            }
                 }
                 if(count($sc_text)>0)
                 {
-                    /*$category_id = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
+                    //SELECT
+                    $existsData = $this->site_categories_model->checkExists($site_id, $sc_text);
+                    if (count($check_department_ids) > 0) 
+                    {
+                        for ($i = 0; $i < count($notExistList); $i++) 
+                        {
+                            
+                            $is_find = 0;
+                            for ($j = 0; $j < count($check_department_ids); $j++) 
+                            {
+                                if ($check_department_ids[$j]->short_name == $notExistList[$i]['department_text']) 
+                                {
+                                    $notExistList[$i]['department_id'] = $check_department_ids[$j]->id;
+                                    $is_find = 2;
+                                    break;
+                                }
+                                if ($check_department_ids[$j]->short_name != $notExistList[$i]['department_text']) 
+                                {
+                                    if($is_find!=2)
+                                    {
+                                        $is_find = 1;
+                                    }
+                                }
+                            }
+                            if ($is_find==1) 
+                            {
+                                array_push($noDataInDepartmentTable,$notExistList[$i]);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for ($i = 0; $i < count($notExistList); $i++) 
+                        {
+                            array_push($noDataInDepartmentTable,$notExistList[$i]);
+                        }
+                    }
+                 
+                    $this->site_categories_model->update($category_id, $sc_text);
+                    
+                    ///
+                    $category_id = $this->site_categories_model->checkExist($site_id, $text, $department_members_id);
                                             if($category_id !== false) {
                                                     $this->site_categories_model->updateFlag($site_id, $text, $department_members_id);
                                                     $update_data = array(
@@ -3011,29 +3152,128 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
                                             else 
                                             {
                                                     $category_id = $this->site_categories_model->insert($parent_id, $site_id,$text, $url, $special, $parent_text, $department_members_id, $nr_products, $description_wc, $keyword_count, $keyword_density, $description_title, $description_text, $level);
-                                            }*/
-                }          
+                                            }////
+                      
+                }       */   
                 //site_categories end
                 
+                for($i=0;$i<count($linesFromFile);$i++)
+                {
+                    if ($linesFromFile[$i]['work_table'] == 'site_categories')
+                    {
+                            if ($linesFromFile[$i]['department_text'] != '')
+                            {
+                                    $check_id = $this->department_members_model->checkExist($site_id, $linesFromFile[$i]['department_text'], $linesFromFile[$i]['department_url']);
+                                    if ($check_id)
+                                    {
+                                            $linesFromFile[$i]['department_members_id'] = $check_id;
+                                            $this->department_members_model->updateFlagById($check_id);
+                                    } else
+                                    {
+                                            $linesFromFile[$i]['department_id'] = 0;
+                                            $linesFromFile[$i]['department_id'] = $this->department_model->checkExist($linesFromFile[$i]['department_text']);
+                                            if ($linesFromFile[$i]['department_id'] == false)
+                                            {
+                                                    $linesFromFile[$i]['department_id'] = $this->department_model->insert($linesFromFile[$i]['department_text'], $linesFromFile[$i]['department_text']);
+                                            }
+                                            $linesFromFile[$i]['department_members_id'] = $this->department_members_model->insert_for_sc($site_id, $linesFromFile[$i]['department_id'], $linesFromFile[$i]['department_text'], $linesFromFile[$i]['department_url']);
+                                    }
+                            }
+                            // === insert / update decisions stuffs (start)
+                            $parent_id = 0;
+                            if($linesFromFile[$i]['parent_text'] != '') {
+
+                                    // If level = 0, then parent is in the department_members table and no need to add it to the site_categories table
+                                    // Else, try to search parent in the site_categories table
+
+                                    if($linesFromFile[$i]['level'] < 0) {
+                                            $parent_id = $this->site_categories_model->checkExist($site_id, $linesFromFile[$i]['parent_text']);
+
+                                            // If parent exists, update its flag
+                                            // Else, insert parent with known site_id, department_members_id and text = parent_text
+
+                                            if($parent_id !== false) {
+                                                    $this->site_categories_model->updateFlag($site_id, $linesFromFile[$i]['parent_text'], $linesFromFile[$i]['department_members_id']);
+                                            }
+                                            else {
+                                                    $parent_id = $this->site_categories_model->insert(0, $site_id, $linesFromFile[$i]['parent_text'], '', 0, '', $linesFromFile[$i]['department_members_id'], 0, 0, '', '', '', '', '');
+                                            }
+                                    }
+
+                                    // If it's known parent_id and not known department_members_id, try to get department_members_id from parent row
+                                    if($parent_id != 0 && $linesFromFile[$i]['department_members_id'] == 0) {
+                                            $res = $this->site_categories_model->checkDepartmentId($parent_id);
+                                            $linesFromFile[$i]['department_members_id'] = $res->department_members_id;
+                                    }
+                            }
+                            if($linesFromFile[$i]['text'] != '') {
+                                    // Try to search category in the site_categories table by site_id, department_members_id and text
+                                    // If it exists, update its flag and other data except site_id, department_members_id and text
+                                    // Else, insert new category
+
+                                    $category_id = $this->site_categories_model->checkExist($site_id, $linesFromFile[$i]['text'], $linesFromFile[$i]['department_members_id']);
+                                    if($category_id !== false) {
+                                            $this->site_categories_model->updateFlag($site_id, $linesFromFile[$i]['text'], $linesFromFile[$i]['department_members_id']);
+                                            $update_data = array(
+                                                    'parent_id' => $parent_id,
+                                                    'url' => $linesFromFile[$i]['url'],
+                                                    'special' => $linesFromFile[$i]['special'],
+                                                    'parent_text' => $linesFromFile[$i]['parent_text'],
+                                                    'level' => $linesFromFile[$i]['level'],
+                                                    'nr_products' => $linesFromFile[$i]['nr_products'],
+                                                    'description_words' => $linesFromFile[$i]['description_wc'],
+                                                    'title_keyword_description_count' => $linesFromFile[$i]['keyword_count'],
+                                                    'title_keyword_description_density' => $linesFromFile[$i]['keyword_density'],
+                                                    'description_title' => $linesFromFile[$i]['description_title'],
+                                                    'description_text' => $linesFromFile[$i]['description_text']
+                                            );
+                                            $this->site_categories_model->update($category_id, $update_data);
+                                    }
+                                    else {
+                                            $category_id = $this->site_categories_model->insert(
+                                                    $parent_id,
+                                                    $site_id, 
+                                                    $linesFromFile[$i]['text'],
+                                                    $linesFromFile[$i]['url'], 
+                                                    $linesFromFile[$i]['special'],
+                                                    $linesFromFile[$i]['parent_text'], 
+                                                    $linesFromFile[$i]['department_members_id'], 
+                                                    $linesFromFile[$i]['nr_products'], 
+                                                    $linesFromFile[$i]['description_wc'], 
+                                                    $linesFromFile[$i]['keyword_count'], 
+                                                    $linesFromFile[$i]['keyword_density'], 
+                                                    $linesFromFile[$i]['description_title'], 
+                                                    $linesFromFile[$i]['description_text'], 
+                                                    $linesFromFile[$i]['level']);
+                                    }
+                            }
+                    }
+                }
+		// ==== 'site_categories' DB table actions stuffs (end)
+                
                 //delete 
-		unlink($file);
+                try{unlink($file);}
+                catch (Exception $ex){ echo "errDel";}
+                
 		if (count($flist) > 0)
 		{
 			$sited = implode('/', $site_name);
-                        $call_link = base_url() . "index.php/crons/save_departments_categories_new/$site_id/$sited";
-                        //$call_link = "http://tmeditor.local/webroot/index.php/crons/save_departments_categories_new/$site_id/$sited";
+                        //$call_link = base_url() . "index.php/crons/save_departments_categories_new/$site_id/$sited";
+                        $call_link = "http://tmeditor.local/webroot/index.php/crons/save_departments_categories_new/$site_id/$sited";
 			$this->site_categories_model->curl_async($call_link);
 		}
 	}
 	public function save_departments_categories()
 	{
-		$this->load->helper('file');
+		$site_id = $this->uri->rsegment(3);
+            
+                $this->load->helper('file');
 		$this->load->model('department_model');
 		$this->load->model('department_members_model');
 		$this->load->model('site_categories_model');
 		session_start();
 		// $filespath = realpath(base_url()) . "jl_import_dir";
-		$filespath = $this->config->item('csv_upload_dir') . 'partial';
+		$filespath = $this->config->item('csv_upload_dir') . 'partial/'.$site_id;
 
 		echo '<pre>';
 		var_dump($filespath);
@@ -3049,37 +3289,16 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			$_POST['site_name'] = $this->uri->segment(4) . '.' . $this->uri->segment(5);
 		} else
 		{
-			$file = $this->config->item('csv_upload_dir') . $this->input->post('choosen_file');
-			$fcont = file($file);
-			$i = 1;
-			$fnum = 0;
-			$fobj = '';
-			foreach ($fcont as $line)
-			{
-				if (!file_exists($filespath . '/temp_imp_jl_' . $fnum . '.jl'))
-				{
-					file_put_contents($filespath . '/temp_imp_jl_' . $fnum . '.jl', $line);
-					$fobj = fopen($filespath . '/temp_imp_jl_' . $fnum . '.jl', 'a');
-				}
-				else
-					fwrite($fobj, $line);
-				if ($i == 500)
-				{
-					++$fnum;
-					$i = 0;
-					fclose($fobj);
-				}
-				++$i;
-			}
+			die();
 		}
-		$site_id = $this->input->post('site_id');
+		
 		$site_name = explode(".", strtolower($this->input->post('site_name')));
 		//$file = $this->config->item('csv_upload_dir').$this->input->post('choosen_file');
 		$flist = get_filenames($filespath);
 
-		echo '<pre>';
+		/*echo '<pre>';
 		var_dump($flist);
-		echo '</pre>';
+		echo '</pre>';*/
 
 		if (empty($flist))
 		{
@@ -3102,12 +3321,12 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		    'site_categories' => array()
 		);
 
-		echo '<pre>';
+		/*echo '<pre>';
 		var_dump($cfile);
-		echo '</pre>';
+		echo '</pre>';*/
 
 		// new change 1 line
-		set_time_limit(1000);
+		//set_time_limit(1000);
 		foreach ($cfile as $line)
 		{
 			$line = rtrim(trim($line), ',');
@@ -3155,10 +3374,10 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			}
 			if (isset($row->url) && is_array($row->url))
 			{
-				$url = addslashes($row->url[0]);
+				$url = str_replace("/?","?",addslashes($row->url[0]));
 			} else if (isset($row->url) && !is_array($row->url) && !is_null($row->url))
 			{
-				$url = addslashes($row->url);
+				$url = str_replace("/?","?",addslashes($row->url));
 			}
 			if (isset($row->text) && is_array($row->text))
 			{
@@ -3169,7 +3388,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			}
 			if (isset($row->department_url) && !is_null($row->department_url) && $row->department_url != '')
 			{
-				$department_url = addslashes($row->department_url);
+				$department_url = str_replace("/?","?",addslashes($row->department_url));
 			}
 			if (isset($row->description_title) && is_array($row->description_title))
 			{
@@ -3215,10 +3434,10 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			}
 			if (isset($row->parent_url) && is_array($row->parent_url))
 			{
-				$parent_url = addslashes($row->parent_url[0]);
+				$parent_url = str_replace("/?","?",addslashes($row->parent_url[0]));
 			} else if (isset($row->parent_url) && !is_array($row->parent_url) && !is_null($row->parent_url) && $row->parent_url != '')
 			{
-				$parent_url = addslashes($row->parent_url);
+				$parent_url = str_replace("/?","?",addslashes($row->parent_url));
 			}
 			if (isset($row->parent_text) && is_array($row->parent_text))
 			{
@@ -3567,12 +3786,17 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 				// ==== 'site_categories' DB table actions stuffs (end)
 			}
 		}
-
-		unlink($file);
+                if(is_file($file))
+                {
+                    try{unlink($file);}
+                    catch (Exception $ex){ echo "errDel";}
+                }
 		if (count($flist) > 0)
 		{
 			$sited = implode('/', $site_name);
-			$call_link = base_url() . "index.php/crons/save_departments_categories/$site_id/$sited"; // > /dev/null 2>/dev/null &";
+			$call_link = base_url() . "index.php/crons/save_departments_categories/$site_id/$sited";
+                        //$call_link = "http://tmeditor.local/webroot/index.php/crons/save_departments_categories/$site_id/$sited";
+                        echo $call_link;
 			$this->site_categories_model->curl_async($call_link);
 
 			//$srec = shell_exec("wget -S -O- ".$call_link);
@@ -3581,9 +3805,6 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		}
 		//        else{
 		//unset($_SESSION['mpost']);
-		echo '<pre>';
-		var_dump($debug_stack);
-		echo '</pre>';
 
         // tmp:
 		// $this->output->set_content_type('application/json')->set_output(json_encode($debug_stack));
