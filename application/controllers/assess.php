@@ -3907,8 +3907,1580 @@ class Assess extends MY_Controller {
         }
         return strpos($str1, $str2) !== FALSE;
     }
+    
+    private function build_asses_table($results, $build_assess_params, $batch_id = '', $columns = array(), $catId = FALSE)
+    {
+		$st_time = microtime(true);
+		$this->load->model('batches_model');
+		$this->load->model('statistics_duplicate_content_model');
 
-    private function build_asses_table($results, $build_assess_params, $batch_id = '', $columns = array(), $catId = FALSE) 
+		$this->load->model('product_category_model');
+		$catId = intval($catId);
+		$batch_id = intval($batch_id);
+		if ($catId)
+		{
+			$catList = $this->product_category_model->get(array('id' => $catId));
+		} elseif ($batch_id > 0)
+		{
+			$catList = $this->product_category_model->getCatsByBatchId($batch_id);
+		} else
+		{
+			$catList = $this->product_category_model->get();
+		}
+		$prodCats = array();
+		if (is_array($catList))
+		{
+			foreach ($catList as $cl)
+			{
+				$prodCats[$cl['id']] = $cl['category_name'] . ' (' . $cl['category_code'] . ')';
+			}
+		}
+
+		$duplicate_content_range = 25;
+		$batch2_items_count = 0;
+		$iterator = 0;
+
+		$needFilters = $build_assess_params->needFilters;
+		$displayCount = $build_assess_params->displayCount;
+		$display_start = $build_assess_params->display_start;
+		$display_length = $build_assess_params->display_length;
+		$batch2 = $build_assess_params->batch2;
+
+		$success_filter_entries = array();
+		$customer_name = $this->batches_model->getCustomerById($batch_id);
+		$customer_url = parse_url($customer_name->url);
+		$batch1_meta_percents = array();
+		$batch2_meta_percents = array();
+		$report = array();
+		// $pricing_details = array(); //Looks like this variable was not used
+		$stored_filter_items = array();
+		$tb_product_name = 'tb_product_name';
+
+		//getting columns				
+		$raw_columns = $columns;
+		$columns = AssessHelper::addCompetitorColumns($columns);
+
+		//extracting initial data varialbes for filters
+		extract(AssessHelper::getInitialFilterData());
+
+		$result_table_rows_count = $total_rows = count($results);
+		$iterator_limit = $displayCount ? $display_start + $displayCount : $total_rows;
+		$itemsTotal = 0;
+		$theFirstRow = array();
+		
+		$output = array(
+		    "sEcho" => 0,
+		    "iTotalRecords" => 0,
+		    "iTotalDisplayRecords" => 0,
+		    "iDisplayLength" => $display_length,
+		    "aaData" => array()
+		);
+		
+		for ($row_iterator = $display_start; $row_iterator < $total_rows; $row_iterator++)
+		{
+			$row_key = $row_iterator;
+			$row = $results[$row_iterator];
+			$success_filter_entries = array();
+			$similar_items_data = array();
+			$f_count1 = 0;
+			$r_count1 = 0;
+			$meta_key_gap = 0;
+
+			if ($batch2 && $batch2 != 'all')
+			{
+				$customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
+				if (stripos($row->similar_products_competitors, $customer_name) > 0)
+				{
+					$similar_items = unserialize($row->similar_products_competitors);
+
+					if (count($similar_items) > 1)
+					{
+						$has_similar_items = false;
+						foreach ($similar_items as $key => $item)
+						{
+							$tsp = '';
+
+							if (!empty($customer_name) && !empty($item['customer']) && $this->statistics_new_model->if_url_in_batch($item['imported_data_id'], $batch2))
+							{
+								$parsed_anchors_unserialize_val = '';
+								$parsed_meta_keywords_unserialize_val = '';
+								$parsed_review_count_unserialize_val_count = '';
+								$title_seo_prases = array();
+
+								$parsed_column_features_unserialize_val_count = 0;
+								$column_external_content = '';
+								$cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
+								if (isset($cmpare->Anchors))
+								{
+									$parsed_anchors_unserialize = unserialize($cmpare->Anchors);
+								}
+								if (isset($cmpare->Anchors))
+								{
+									$parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+								}
+
+								if (trim($cmpare->title_keywords) && $cmpare->title_keywords != 'None')
+								{
+									$title_seo_prases = unserialize($cmpare->title_keywords);
+								}
+								if (!empty($title_seo_prases))
+								{
+
+									$str_title_long_seo = '<div class="table_keywords_long">';
+									foreach ($title_seo_prases as $pras)
+									{
+										$str_title_long_seo .= '<p>' . $pras['ph'] . '<span class = "phr-density" style="display:none;">  ' . $pras['prc']
+											. '%</span><span class = "phr-frequency"> - ' . $pras['frq'] . '</span></p>';
+									}
+									$tsp = $str_title_long_seo . '</div>';
+								}
+								$HTags = unserialize($cmpare->HTags);
+
+								$buildedH1Field = AssessHelper::buildHField($HTags, 'h1');
+								$buildedH2Field = AssessHelper::buildHField($HTags, 'h2');
+
+								$parsed_attributes_unserialize_val = isset($parsed_attributes_unserialize['item_id']) ? $parsed_attributes_unserialize['item_id'] : '';
+								$parsed_model_unserialize_val = isset($parsed_attributes_unserialize['model']) ? $parsed_attributes_unserialize['model'] : '';
+								$parsed_loaded_in_seconds_unserialize_val = isset($parsed_attributes_unserialize['loaded_in_seconds']) ? $parsed_attributes_unserialize['loaded_in_seconds'] : '';
+								$parsed_column_reviews_unserialize_val = isset($parsed_attributes_unserialize['review_count']) ? $parsed_attributes_unserialize['review_count'] : 0;
+								$parsed_average_review_unserialize_val_count = isset($parsed_attributes_unserialize['average_review']) ? $parsed_attributes_unserialize['average_review'] : '';
+								$parsed_column_features_unserialize_val_count = isset($parsed_attributes_unserialize['feature_count']) ? $parsed_attributes_unserialize['feature_count'] : 0;
+								$images_cmp = isset($parsed_attributes_unserialize['product_images']) ? $parsed_attributes_unserialize['product_images'] : 'none';
+								$video_count = isset($parsed_attributes_unserialize['video_count']) ? $parsed_attributes_unserialize['video_count'] : 'none';
+								$title_pa = isset($parsed_attributes_unserialize['title']) ? $parsed_attributes_unserialize['title'] : 'none';
+								$links_count = isset($parsed_anchors_unserialize['quantity']) ? $parsed_anchors_unserialize['quantity'] : 'none';
+
+								if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
+									$column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'], $parsed_attributes_unserialize['webcollage']);
+
+								$parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
+
+								if (isset($parsed_meta_unserialize['description']))
+								{
+									$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize['description']));
+									if ($parsed_meta_unserialize_val_c < 1)
+										$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+								}
+								else if (isset($parsed_meta_unserialize['Description']))
+								{
+									$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize['Description']));
+									if ($parsed_meta_unserialize_val_c < 1)
+										$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+								}
+
+								if (isset($parsed_meta_unserialize['keywords']))
+								{
+									$Meta_Keywords_un = '<table class="table_keywords_long">';
+									$cnt_meta = explode(',', $parsed_meta_unserialize['keywords']);
+									$cnt_meta_count = count($cnt_meta);
+									$_count_meta = 0;
+									foreach ($cnt_meta as $cnt_m)
+									{
+										$cnt_m = trim($cnt_m);
+										if (!$cnt_m)
+										{
+											continue;
+										}
+										if ($cmpare->Short_Description || $cmpare->Long_Description)
+										{
+											$_count_meta = $this->keywords_appearence($cmpare->Long_Description . $cmpare->Short_Description, $cnt_m);
+											$_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . '%';
+											$Meta_Keywords_un .= '<tr><td>' . $cnt_m . '</td><td style="width: 25px;padding-right: 0px;">' . $_count_meta_num . '</td></tr>';
+										}
+									}
+									$Meta_Keywords_un .= '</table>';
+									$parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+								}
+
+								$row->snap1 = $cmpare->snap;
+								$row->imp_data_id1 = $item['imported_data_id'];
+								$row->product_name1 = $cmpare->product_name;
+								$row->item_id1 = $parsed_attributes_unserialize_row;
+								$row->model1 = $parsed_model_unserialize_row;
+								$row->url1 = $cmpare->url;
+								$row->Page_Load_Time1 = $parsed_loaded_in_seconds_unserialize_row;
+								$row->Short_Description1 = $cmpare->Short_Description;
+								$row->short_description_wc1 = $cmpare->short_description_wc;
+								$row->Meta_Keywords1 = $parsed_meta_keywords_unserialize_row;
+								$row->Long_Description1 = $cmpare->Long_Description;
+								$row->long_description_wc1 = $cmpare->long_description_wc;
+								$row->Meta_Description1 = $parsed_meta_unserialize_row;
+								$row->Meta_Description_Count1 = $parsed_meta_unserialize_row_count;
+								$row->column_external_content1 = $column_external_content;
+								$row->H1_Tags1 = $buildedH1Field['rowue'];
+								$row->H1_Tags_Count1 = $buildedH1Field['count'];
+								$row->H2_Tags1 = $buildedH2Field['rowue'];
+								$row->H2_Tags_Count1 = $buildedH2Field['count'];
+								$row->column_reviews1 = $parsed_column_reviews_unserialize_row;
+								$row->average_review1 = $parsed_average_review_unserialize_row_count;
+								$row->column_features1 = $parsed_column_features_unserialize_row_count;
+								$row->title_seo_phrases1 = $tsp !== '' ? $tsp : 'None';
+								$row->images_cmp1 = $images_cmp;
+								$row->video_count1 = $video_count;
+								$row->title_pa1 = $title_pa;
+								$row->links_count1 = $links_count;
+								$row->total_description_wc1 = $row->short_description_wc1 + $row->long_description_wc1;
+								$cmpare->imported_data_id = $item['imported_data_id'];
+								$batch2_items_count++;
+
+								$similar_items_data[] = $cmpare;
+								$row->similar_items = $similar_items_data;
+
+								$has_similar_items = true;
+								break;
+							}
+						}
+						if (!$has_similar_items)
+						{
+							$result_table_rows_count--;
+							continue;
+						}
+					} else
+					{
+						$result_table_rows_count--;
+						continue;
+					}
+				} else
+				{
+					$result_table_rows_count--;
+					continue;
+				}
+			}
+
+			// getting initial (default) result row data
+			$result_row = AssessHelper::getInitialScalarRowData($row);
+
+			$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+
+			if ($build_assess_params->max_similar_item_count > 0)
+			{
+				$sim_items = $row->similar_items;
+				$max_similar_item_count = (int) $build_assess_params->max_similar_item_count;
+
+
+				for ($it = 0, $sim_it = 1; $it < $max_similar_item_count; $it++, $sim_it++)
+				{
+
+					$parsed_anchors_unserialize_val = '';
+					$parsed_meta_unserialize_val_count = '';
+					$parsed_meta_keywords_unserialize_val = '';
+					$column_external_content = '';
+
+					$parsed_attributes_unserialize = unserialize($sim_items[$it]->parsed_attributes);
+					$parsed_anchors_unserialize = unserialize($sim_items[$it]->Anchors);
+
+					if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
+						$column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'], $parsed_attributes_unserialize['webcollage']);
+
+					$HTags = unserialize($sim_items[$it]->HTags);
+
+					$buildedH1Field = AssessHelper::buildHField($HTags, 'h1');
+					$buildedH2Field = AssessHelper::buildHField($HTags, 'h2');
+
+					$parsed_attributes_unserialize_val = isset($parsed_attributes_unserialize['item_id']) ? $parsed_attributes_unserialize['item_id'] : '';
+					$parsed_attributes_model_unserialize_val = isset($parsed_attributes_unserialize['model']) ? $parsed_attributes_unserialize['model'] : '';
+					$parsed_loaded_in_seconds_unserialize_val = isset($parsed_attributes_unserialize['loaded_in_seconds']) ? $parsed_attributes_unserialize['loaded_in_seconds'] : '';
+					$parsed_column_reviews_unserialize_val = isset($parsed_attributes_unserialize['review_count']) ? $parsed_attributes_unserialize['review_count'] : 0;
+					$parsed_average_review_unserialize_val = isset($parsed_attributes_unserialize['average_review']) ? $parsed_attributes_unserialize['average_review'] : '';
+					$parsed_column_features_unserialize_val = isset($parsed_attributes_unserialize['feature_count']) ? $parsed_attributes_unserialize['feature_count'] : 0;
+					$images_cmp = isset($parsed_attributes_unserialize['product_images']) ? $parsed_attributes_unserialize['product_images'] : '';
+					$video_count = isset($parsed_attributes_unserialize['video_count']) ? $parsed_attributes_unserialize['video_count'] : '';
+					$title_pa = isset($parsed_attributes_unserialize['title']) ? $parsed_attributes_unserialize['title'] : '';
+					$links_count = isset($parsed_anchors_unserialize['quantity']) ? $parsed_anchors_unserialize['quantity'] : '';
+
+
+					$parsed_meta_unserialize = unserialize($sim_items[$it]->parsed_meta);
+
+					if ($parsed_meta_unserialize['description'])
+					{
+						$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize['description']));
+						if ($parsed_meta_unserialize_val_c < 1)
+							$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+					}
+					else if ($parsed_meta_unserialize['Description'])
+					{
+						$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize['Description']));
+						if ($parsed_meta_unserialize_val_c != 1)
+							$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+					}
+
+					if ($parsed_meta_unserialize['keywords'])
+					{
+
+						$Meta_Keywords_un = "<table class='table_keywords_long'>";
+						$cnt_meta_un = explode(',', $parsed_meta_unserialize['keywords']);
+						$cnt_meta_count_un = count($cnt_meta_un);
+						foreach ($cnt_meta_un as $key => $cnt_m_un)
+						{
+							$_count_meta_un = 0;
+							$cnt_m_un = trim($cnt_m_un);
+							if (!$cnt_m_un)
+							{
+								continue;
+							}
+							if ($sim_items[$it]->Long_Description || $sim_items[$it]->Short_Description)
+							{
+								$_count_meta_un = $this->keywords_appearence($sim_items[$it]->Long_Description . $sim_items[$it]->Short_Description, $cnt_m_un);
+								$_count_meta_num_un = (float) round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$it]->long_description_wc + $sim_items[$it]->short_description_wc)) * 100, 2);
+
+								$batch2_meta_percents[$row_key][$key] = $_count_meta_num_un;
+
+								$_count_meta_num_un_proc = $_count_meta_num_un . "%";
+								$Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>" . $_count_meta_num_un_proc . "</td></tr>";
+//                        
+								if ($it == 1 && !$meta_key_gap)
+								{
+									$metta_prc = round(($_count_meta_un * $cnt_meta_count_un / ($row->long_description_wc + $row->short_description_wc)) * 100, 2);
+									if ($metta_prc >= 2)
+									{
+										$meta_key_gap = $metta_prc;
+									}
+								}
+							}
+						}
+						$Meta_Keywords_un .= "</table>";
+						$parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+					}
+
+
+					if ($i == 1)
+					{
+						if (isset($parsed_attributes_unserialize['feature_count']))
+						{
+							$f_count1 = $parsed_attributes_unserialize['feature_count'];
+						} else
+						{
+							$f_count1 = 0;
+						}
+						if (isset($parsed_attributes_unserialize['review_count']))
+						{
+							$r_count1 = $parsed_attributes_unserialize['review_count'];
+						} else
+						{
+							$r_count1 = 0;
+						}
+
+						if (!$meta_key_gap)
+						{
+
+							$result_row->gap .= "Competitor is not keyword optimized<br>";
+						}
+					}
+
+					if ($needFilters)
+					{
+						if (isset($parsed_attributes_unserialize['pdf_count']) && $parsed_attributes_unserialize['pdf_count'])
+						{
+							$skus_pdfs_competitor++;
+							$this->filterBySummaryCriteria('skus_pdfs_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+						}
+
+						if (isset($parsed_attributes_unserialize['video_count']) && $parsed_attributes_unserialize['video_count'])
+						{
+							$skus_videos_competitor++;
+							$this->filterBySummaryCriteria('skus_videos_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+						}
+
+						if (isset($parsed_attributes_unserialize['product_images']))
+						{
+							if (!$parsed_attributes_unserialize['product_images'])
+							{
+								$skus_with_no_product_images_competitor++;
+								$this->filterBySummaryCriteria('skus_with_no_product_images_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+							}
+
+							if ($parsed_attributes_unserialize['product_images'] == 1)
+							{
+								$skus_with_one_product_image_competitor++;
+								$this->filterBySummaryCriteria('skus_with_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+							}
+
+							if ($parsed_attributes_unserialize['product_images'] > 1)
+							{
+								$skus_with_more_than_one_product_image_competitor++;
+								$this->filterBySummaryCriteria('skus_with_more_than_one_product_image_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+							}
+						}
+
+						if (!$parsed_anchors_unserialize['quantity'])
+						{
+							$skus_with_zero_product_description_links_competitor++;
+							$this->filterBySummaryCriteria('skus_with_zero_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+						} elseif ($parsed_anchors_unserialize['quantity'] > 0)
+						{
+							$skus_with_more_than_one_product_description_links_competitor++;
+							$this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+						}
+
+
+						if (isset($parsed_attributes_unserialize['title']) && $parsed_attributes_unserialize['title'] && strlen($parsed_attributes_unserialize['title']) < 70)
+						{
+							$skus_title_less_than_70_chars_competitor++;
+							$this->filterBySummaryCriteria('skus_title_less_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+						}
+
+						if (isset($parsed_attributes_unserialize['title']) && $parsed_attributes_unserialize['title'] && strlen($parsed_attributes_unserialize['title']) >= 70)
+						{
+							$skus_title_more_than_70_chars_competitor++;
+							$this->filterBySummaryCriteria('skus_title_more_than_70_chars_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+						}
+						if (isset($result_row->mvid) && $result_row->mvid > 0)
+						{
+							$skus_with_manufacturer_videos++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+						}
+						if (isset($result_row->mimg) && $result_row->mimg > 0)
+						{
+							$skus_with_manufacturer_images++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+						}
+						if (isset($result_row->murl) && strlen($result_row->murl) > 0)
+						{
+							$skus_with_manufacturer_pages++;
+							$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+						}
+					}
+
+					$result_row = (array) $result_row;
+					$result_row['snap' . $sim_it] = $sim_items[$it]->snap !== false ? '<span style="cursor:pointer;"><img src="' . base_url() . 'webshoots/' . $sim_items[$it]->snap . '" /></snap>' : '-';
+					$result_row['title_seo_phrases' . $sim_it] = $row->title_seo_phrases1 ? $row->title_seo_phrases1 : 'None';
+					$result_row['imp_data_id' . $sim_it] = $sim_items[$it]->imported_data_id !== false ? $sim_items[$it]->imported_data_id : '';
+					$result_row['images_cmp' . $sim_it] = $images_cmp ? $images_cmp : 'None';
+					$result_row['video_count' . $sim_it] = $video_count ? $video_count : 'None';
+					$result_row['title_pa' . $sim_it] = $title_pa ? $title_pa : 'None';
+					$result_row['product_name' . $sim_it] = $sim_items[$it]->product_name !== false ? $sim_items[$it]->product_name : "-";
+					$result_row['item_id' . $sim_it] = $parsed_attributes_unserialize_val;
+					$result_row['Page_Load_Time' . $sim_it] = $parsed_loaded_in_seconds_unserialize_val;
+					$result_row['H1_Tags' . $sim_it] = $buildedH1Field['value'];
+					$result_row['H1_Tags_Count' . $sim_it] = $buildedH1Field['count'];
+					$result_row['H2_Tags' . $sim_it] = $buildedH2Field['value'];
+					$result_row['H2_Tags_Count' . $sim_it] = $buildedH2Field['count'];
+					$result_row['url' . $sim_it] = $sim_items[$it]->url !== false ? "<span class='res_url'><a target='_blank' href='" . $sim_items[$it]->url . "'>" . $sim_items[$it]->url . "</a></span>" : "-";
+					$result_row['model' . $sim_it] = $parsed_attributes_model_unserialize_val;
+					$result_row['short_description_wc' . $sim_it] = $sim_items[$it]->short_description_wc !== false ? $sim_items[$it]->short_description_wc : '';
+					$result_row['Short_Description' . $sim_it] = $sim_items[$it]->Short_Description !== false ? $sim_items[$it]->Short_Description : '';
+					$result_row['Long_Description' . $sim_it] = $sim_items[$it]->Long_Description !== false ? $sim_items[$it]->Long_Description : '';
+					$result_row['Meta_Keywords' . $sim_it] = $parsed_meta_keywords_unserialize_val;
+					$result_row['long_description_wc' . $sim_it] = $sim_items[$it]->long_description_wc !== false ? $sim_items[$it]->long_description_wc : '';
+					$result_row['Meta_Description' . $sim_it] = $parsed_meta_unserialize_val;
+					$result_row['Meta_Description_Count' . $sim_it] = $parsed_meta_unserialize_val_count;
+					$result_row['column_external_content' . $sim_it] = $column_external_content;
+					$result_row['column_reviews' . $sim_it] = $parsed_column_reviews_unserialize_val;
+					$result_row['average_review' . $sim_it] = $parsed_average_review_unserialize_val;
+					$result_row['column_features' . $sim_it] = $parsed_column_features_unserialize_val;
+					$result_row['links_count' . $sim_it] = $links_count ? $links_count : 'None';
+					$result_row['total_description_wc' . $sim_it] = $result_row['short_description_wc' . $sim_it] + $result_row['long_description_wc' . $sim_it];
+				}
+
+				$result_row = (object) $result_row;
+			}
+
+			if ($pars_atr['parsed_attributes']['cnetcontent'] || $pars_atr['parsed_attributes']['webcollage'])
+			{
+				$result_row->column_external_content = $this->column_external_content($pars_atr['parsed_attributes']['cnetcontent'], $pars_atr['parsed_attributes']['webcollage']);
+			}
+			$result_row->column_reviews = $pars_atr['parsed_attributes']['review_count'];
+			$result_row->column_features = $pars_atr['parsed_attributes']['feature_count'];
+
+			if ($pars_atr['parsed_meta']['description'] && $pars_atr['parsed_meta']['description'] != '')
+			{
+				$pars_atr_array = $pars_atr['parsed_meta']['description'];
+				$result_row->Meta_Description = $pars_atr_array;
+				$words_des = count(explode(" ", $pars_atr_array));
+				$result_row->Meta_Description_Count = $words_des;
+			} else if ($pars_atr['parsed_meta']['Description'] && $pars_atr['parsed_meta']['Description'] != '')
+			{
+				$pars_atr_array = $pars_atr['parsed_meta']['Description'];
+				$result_row->Meta_Description = $pars_atr_array;
+				$words_des = count(explode(" ", $pars_atr_array));
+				$result_row->Meta_Description_Count = $words_des;
+			}
+
+
+
+			if ($pars_atr['parsed_meta']['keywords'] && $pars_atr['parsed_meta']['keywords'] != '')
+			{
+				$Meta_Keywords = "<table class='table_keywords_long'>";
+				$cnt_meta = explode(',', $pars_atr['parsed_meta']['keywords']);
+				$cnt_meta_count = count($cnt_meta);
+				$_count_meta = 0;
+				foreach ($cnt_meta as $key => $cnt_m)
+				{
+					$cnt_m = trim($cnt_m);
+					if (!$cnt_m)
+					{
+						continue;
+					}
+					if ($result_row->long_description || $result_row->short_description)
+					{
+						$_count_meta = $this->keywords_appearence($result_row->long_description . $result_row->short_description, $cnt_m);
+						$_count_meta_num = (float) round(($_count_meta * $cnt_meta_count / ($result_row->long_description_wc + $result_row->short_description_wc)) * 100, 2);
+
+						$batch1_meta_percents[$row_key][$key] = $_count_meta_num;
+
+						$_count_meta_num_proc = $_count_meta_num . "%";
+						$Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td style='width: 25px;padding-right: 0px;'>" . $_count_meta_num . "%</td></tr>";
+					}
+				}
+				$Meta_Keywords .= "</table>";
+				$result_row->Meta_Keywords = $Meta_Keywords;
+			}
+
+			if (isset($pars_atr['parsed_attributes']['item_id']) && $pars_atr['parsed_attributes']['item_id'] != '')
+			{
+				$result_row->item_id = $pars_atr['parsed_attributes']['item_id'];
+			}
+
+			if (isset($pars_atr['parsed_attributes']['model']) && $pars_atr['parsed_attributes']['model'] != '')
+			{
+				$result_row->model = $pars_atr['parsed_attributes']['model'];
+			}
+
+			if (isset($pars_atr['parsed_attributes']['loaded_in_seconds']) && $pars_atr['parsed_attributes']['loaded_in_seconds'] != '')
+			{
+				$result_row->Page_Load_Time = $pars_atr['parsed_attributes']['loaded_in_seconds'];
+			}
+			if (isset($pars_atr['parsed_attributes']['average_review']) && $pars_atr['parsed_attributes']['average_review'] != '')
+			{
+				$result_row->average_review = $pars_atr['parsed_attributes']['average_review'];
+			}
+			if (isset($pars_atr['parsed_attributes']['product_images']))
+			{
+				$result_row->images_cmp = $pars_atr['parsed_attributes']['product_images'];
+			}
+			if (isset($pars_atr['parsed_attributes']['video_count']))
+			{
+				$result_row->video_count = $pars_atr['parsed_attributes']['video_count'];
+			}
+			if (isset($pars_atr['parsed_attributes']['title']))
+			{
+				$result_row->title_pa = $pars_atr['parsed_attributes']['title'];
+			}
+			if (isset($pars_atr['Anchors']['quantity']))
+			{
+				$result_row->links_count = $pars_atr['Anchors']['quantity'];
+			}
+
+			$buildedH1Field = AssessHelper::buildHField($pars_atr['HTags'], 'h1');
+			$buildedH2Field = AssessHelper::buildHField($pars_atr['HTags'], 'h2');
+
+			$result_row->H1_Tags = $buildedH1Field['value'];
+			$result_row->H1_Tags_Count = $buildedH1Field['count'];
+			$result_row->H2_Tags = $buildedH2Field['value'];
+			$result_row->H2_Tags_Count = $buildedH2Field['count'];
+
+			$custom_seo = $this->keywords_model->get_by_imp_id($row->imported_data_id);
+
+			$result_row->Custom_Keywords_Long_Description = AssessHelper::getCustomDescriptionKeywords(array(
+				    'row' => $row,
+				    'custom_seo' => $custom_seo,
+				    'table_class' => 'table_keywords_long',
+				    'seo_elements' => array(
+					'primary', 'secondary', 'tetriary'
+				    ),
+				    'controller' => $this,
+				    'key' => 'long_description'
+			));
+
+			$result_row->Custom_Keywords_Short_Description = AssessHelper::getCustomDescriptionKeywords(array(
+				    'row' => $row,
+				    'custom_seo' => $custom_seo,
+				    'table_class' => 'table_keywords_short',
+				    'seo_elements' => array(
+					'primary', 'secondary', 'tetriary'
+				    ),
+				    'controller' => $this,
+				    'key' => 'short_description'
+			));
+
+
+			if ($row->snap != null && $row->snap != '')
+			{
+				$result_row->snap = $row->snap;
+			}
+
+			if (floatval($row->own_price) <> false)
+			{
+				$own_site = parse_url($row->url, PHP_URL_HOST);
+				$own_site = str_replace('www.', '', $own_site);
+				$own_site = str_replace('www1.', '', $own_site);
+				$result_row->price_diff = "<nobr>" . $own_site . " - $" . $row->own_price . "</nobr><br />";
+//                var_dump($row->own_price);
+			}
+
+			if (count($price_diff) > 1)
+			{
+				$own_price = floatval($price_diff['own_price']);
+				$own_site = str_replace('www.', '', $price_diff['own_site']);
+				$own_site = str_replace('www1.', '', $own_site);
+				$price_diff_res = "<nobr>" . $own_site . " - $" . $price_diff['own_price'] . "</nobr><br />";
+				$flag_competitor = false;
+				$lim = count($price_diff['competitor_customer']);
+				for ($i = 0; $i < $lim; $i++)
+				{
+					if ($customer_url["host"] != $price_diff['competitor_customer'][$i])
+					{
+						if ($own_price > floatval($price_diff['competitor_price'][$i]))
+						{
+							$result_row->lower_price_exist = true;
+							$competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
+							$price_diff_res .= "<input type='hidden'><nobr>" . $competitor_site . " - $" . $price_diff['competitor_price'][$i] . "</nobr><br />";
+						}
+					}
+				}
+
+				$result_row->price_diff = $price_diff_res;
+			}
+
+			$result_row->competitors_prices = unserialize($row->competitors_prices);
+
+			if (property_exists($row, 'include_in_assess_report') && intval($row->include_in_assess_report) > 0)
+			{
+				$detail_comparisons_total += 1;
+			}
+
+			if ($this->settings['statistics_table'] == "statistics_new")
+			{
+				$short_seo = false;
+				if (strpos($row->short_seo_phrases, 'a:') !== false)
+				{
+					$short_seo = unserialize($row->short_seo_phrases);
+				}
+				if ($short_seo)
+				{
+					$str_short_seo = '<table class="table_keywords_short">';
+					foreach ($short_seo as $val)
+					{
+						$str_short_seo .= '<tr><td>' . $val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
+					}
+					$result_row->short_seo_phrases = $str_short_seo . '</table>';
+				}
+				$long_seo = false;
+				if (strpos($row->long_seo_phrases, 'a:') !== FALSE)
+				{
+					$long_seo = @unserialize($row->long_seo_phrases);
+				}
+				if ($long_seo)
+				{
+					$str_long_seo = '<table class="table_keywords_long">';
+					foreach ($long_seo as $val)
+					{
+						$str_long_seo .= '<tr><td>' . $val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
+					}
+					$result_row->long_seo_phrases = $str_long_seo . '</table>';
+				}
+				//getting title_keywords from statistics_new
+				$title_seo_pr = array();
+				if ($row->title_keywords != '' && $row->title_keywords != 'None')
+				{
+					$title_seo_pr = unserialize($row->title_keywords);
+				}
+				if (!empty($title_seo_pr))
+				{
+					$str_title_long_seo = '<div class="table_keywords_long 3186">';
+					foreach ($title_seo_pr as $val)
+					{
+						$str_title_long_seo .= '<p>' . $val['ph'] . '<span class = "phr-density" style="display:none;">  ' . $val['prc']
+							. '%</span><span class = "phr-frequency"> - ' . $val['frq'] . '</span></p>';
+					}
+					$result_row->title_seo_phrases = $str_title_long_seo . '</div>';
+				}
+				$result_row->prodcat = 'None';
+				if (isset($prodCats[$row->category_id]))
+				{
+					$result_row->prodcat = $prodCats[$row->category_id];
+				}
+				if (!empty($row->manufacturer_info))
+				{
+					$mi = unserialize($row->manufacturer_info);
+					$result_row->murl = '<a target="_blank" class="active_link" href="' . $mi['url'] . '">' . $mi['url'] . '</a>';
+					$result_row->mimg = $mi['images'];
+					$result_row->mvid = $mi['videos'];
+					if (strlen($mi['url']) > 0)
+					{
+						$skus_with_manufacturer_pages++;
+						$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+					if ($mi['images'] > 0)
+					{
+						$skus_with_manufacturer_images++;
+						$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+					if ($mi['videos'] > 0)
+					{
+						$skus_with_manufacturer_videos++;
+						$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+				}
+			} else
+			{
+				$result_row->short_seo_phrases = $row->short_seo_phrases;
+				$result_row->long_seo_phrases = $row->long_seo_phrases;
+				$result_row->title_seo_phrases = '';
+			}
+
+			if ($build_assess_params->short_duplicate_content || $build_assess_params->long_duplicate_content)
+			{
+				$dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
+				$duplicate_customers_short = '';
+				$duplicate_customers_long = '';
+				$duplicate_short_percent_total = 0;
+				$duplicate_long_percent_total = 0;
+				if (count($dc) > 1)
+				{
+					foreach ($dc as $vs)
+					{
+						if ($customer_url['host'] == $vs->customer)
+						{
+							$short_percent = 0;
+							$long_percent = 0;
+							if ($build_assess_params->short_duplicate_content)
+							{
+								$duplicate_short_percent_total = 100 - round($vs->short_original, 1);
+								$short_percent = 100 - round($vs->short_original, 1);
+								if ($short_percent > 0)
+								{
+									$duplicate_customers_short = '<nobr>' . $short_percent . '%</nobr><br />';
+								}
+							}
+							if ($build_assess_params->long_duplicate_content)
+							{
+								$duplicate_long_percent_total = 100 - round($vs->long_original, 1);
+								$long_percent = 100 - round($vs->long_original, 1);
+								if ($long_percent > 0)
+								{
+									$duplicate_customers_long = '<nobr>' . $vs->customer . ' - ' . $long_percent . '%</nobr><br />';
+								}
+							}
+						}
+					}
+
+					if ($duplicate_customers_short != '')
+					{
+						$duplicate_customers = 'Duplicate short<br />' . $duplicate_customers_short;
+					}
+					if ($duplicate_customers_long != '')
+					{
+						$duplicate_customers = $duplicate_customers . 'Duplicate long<br />' . $duplicate_customers_long;
+					}
+
+					if ($duplicate_short_percent_total > $duplicate_content_range || $duplicate_long_percent_total > $duplicate_content_range)
+					{
+						$duplicate_customers = "<input type='hidden'/>" . $duplicate_customers;
+					}
+					$result_row->duplicate_content = $duplicate_customers;
+				}
+			}
+
+			//Dublicate Content      
+			if (!$row->Short_Description2 || !$row->Long_Description2)
+			{
+				$short_desc_1 = '';
+				if ($row->short_description)
+				{
+					$short_desc_1 = $row->short_description;
+				}
+				$long_desc_1 = '';
+				if ($row->long_description)
+				{
+					$long_desc_1 = $row->long_description;
+				}
+				$desc_1 = $short_desc_1 . ' ' . $long_desc_1;
+				$short_desc_2 = '';
+				if ($row->Short_Description1)
+				{
+					$short_desc_2 = $row->Short_Description1;
+				}
+				$long_desc_2 = '';
+				if ($row->Long_Description1)
+				{
+					$long_desc_2 = $row->Long_Description1;
+				}
+				$desc_2 = $short_desc_2 . ' ' . $long_desc_2;
+
+				if (strcasecmp($desc_1, $desc_2) <= 0)
+				{
+					similar_text($desc_1, $desc_2, $percent);
+				} else
+				{
+					similar_text($desc_2, $desc_1, $percent);
+				}
+
+				$percent = number_format($percent, 2);
+
+				if ($needFilters)
+				{
+					if ($percent >= 25)
+					{
+						$skus_25_duplicate_content++;
+						$this->filterBySummaryCriteria('skus_25_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+
+					if ($percent >= 50)
+					{
+						$skus_50_duplicate_content++;
+						$this->filterBySummaryCriteria('skus_50_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+
+					if ($percent >= 75)
+					{
+						$skus_75_duplicate_content++;
+						$this->filterBySummaryCriteria('skus_75_duplicate_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+				}
+
+				$result_row->Duplicate_Content.= $percent . '%';
+			} else
+			{
+				$result_row->Duplicate_Content.='';
+			}
+
+			if ($needFilters)
+			{
+				if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count'])
+				{
+					$skus_pdfs++;
+					$this->filterBySummaryCriteria('skus_pdfs', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if (isset($pars_atr['parsed_attributes']['video_count']) && $pars_atr['parsed_attributes']['video_count'])
+				{
+					$skus_videos++;
+					$this->filterBySummaryCriteria('skus_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if (isset($pars_atr['parsed_attributes']['product_images']))
+				{
+					if (!$pars_atr['parsed_attributes']['product_images'])
+					{
+						$skus_with_no_product_images++;
+						$this->filterBySummaryCriteria('skus_with_no_product_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+
+					if ($pars_atr['parsed_attributes']['product_images'] == 1)
+					{
+						$skus_with_one_product_image++;
+						$this->filterBySummaryCriteria('skus_with_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+
+					if ($pars_atr['parsed_attributes']['product_images'] > 1)
+					{
+						$skus_with_more_than_one_product_image++;
+						$this->filterBySummaryCriteria('skus_with_more_than_one_product_image', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+				}
+
+				if (!$pars_atr['Anchors']['quantity'])
+				{
+					$skus_with_zero_product_description_links++;
+					$this->filterBySummaryCriteria('skus_with_zero_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+				if ($pars_atr['Anchors']['quantity'] > 0)
+				{
+					$skus_with_more_than_one_product_description_links++;
+					$this->filterBySummaryCriteria('skus_with_more_than_one_product_description_links', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if (isset($pars_atr['parsed_attributes']['title']) && $pars_atr['parsed_attributes']['title'] && $pars_atr['parsed_attributes']['title'] < 70)
+				{
+					$skus_title_less_than_70_chars++;
+					$this->filterBySummaryCriteria('skus_title_less_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if (isset($pars_atr['parsed_attributes']['title']) && $pars_atr['parsed_attributes']['title'] && $pars_atr['parsed_attributes']['title'] >= 70)
+				{
+					$skus_title_more_than_70_chars++;
+					$this->filterBySummaryCriteria('skus_title_more_than_70_chars', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				// gap analises
+				if ($build_assess_params->max_similar_item_count > 0)
+				{
+					$sim_items = $row->similar_items;
+
+					if (isset($sim_items[$i - 1]) && ($sim_items[$i - 1]->long_description_wc || $sim_items[$i - 1]->short_description_wc) && ($sim_items[$i - 1]->short_description_wc + $sim_items[$i - 1]->long_description_wc) < 100)
+					{
+						$totoal = $sim_items[$i - 1]->short_description_wc + $sim_items[$i - 1]->long_description_wc;
+						$result_row->gap.="Competitor total product description length only $totoal words<br>";
+					}
+
+
+					if ($result_row->column_features1 > $result_row->column_features)
+					{
+						$x = $result_row->column_features1 - $result_row->column_features;
+						$result_row->gap.="Competitor has " . $x . " features listed<br>";
+					}
+
+					if ($result_row->column_features < $result_row->column_features1)
+					{
+						$skus_fewer_features_than_competitor++;
+						$this->filterBySummaryCriteria('skus_fewer_features_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+
+					if ($result_row->column_reviews < $result_row->column_reviews1)
+					{
+						$skus_fewer_reviews_than_competitor++;
+						$this->filterBySummaryCriteria('skus_fewer_reviews_than_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+
+					if ($result_row->column_features1)
+					{
+						$skus_features_competitor++;
+						$this->filterBySummaryCriteria('skus_features_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+
+
+					// Second batch								
+					if (!$result_row->column_reviews1)
+					{
+						$skus_zero_reviews_competitor++;
+						$this->filterBySummaryCriteria('skus_zero_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+
+					if ($result_row->column_reviews1 >= 1 && $result_row->column_reviews1 <= 4)
+					{
+						$skus_one_four_reviews_competitor++;
+						$this->filterBySummaryCriteria('skus_one_four_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+
+					if ($result_row->column_reviews1 >= 5)
+					{
+						$skus_more_than_five_reviews_competitor++;
+						$this->filterBySummaryCriteria('skus_more_than_five_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+
+					if ($result_row->column_reviews1 >= 100)
+					{
+						$skus_more_than_hundred_reviews_competitor++;
+						$this->filterBySummaryCriteria('skus_more_than_hundred_reviews_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+					}
+				}
+
+				if ($result_row->column_features)
+				{
+					$skus_features++;
+					$this->filterBySummaryCriteria('skus_features', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+
+				// First batch								
+				if (!$result_row->column_reviews)
+				{
+					$skus_zero_reviews++;
+					$this->filterBySummaryCriteria('skus_zero_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($result_row->column_reviews >= 1 && $result_row->column_reviews <= 4)
+				{
+					$skus_one_four_reviews++;
+					$this->filterBySummaryCriteria('skus_one_four_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($result_row->column_reviews >= 5)
+				{
+					$skus_more_than_five_reviews++;
+					$this->filterBySummaryCriteria('skus_more_than_five_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($result_row->column_reviews >= 100)
+				{
+					$skus_more_than_hundred_reviews++;
+					$this->filterBySummaryCriteria('skus_more_than_hundred_reviews', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($result_row->lower_price_exist == true)
+				{
+					$items_priced_higher_than_competitors += $row->items_priced_higher_than_competitors;
+
+					$this->filterBySummaryCriteria('assess_report_items_priced_higher_than_competitors', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if (trim($result_row->column_external_content))
+				{
+					$skus_third_party_content++;
+					$this->filterBySummaryCriteria('skus_third_party_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if (trim($result_row->column_external_content1))
+				{
+					$skus_third_party_content_competitor++;
+					$this->filterBySummaryCriteria('skus_third_party_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				$first_general_description_size = $result_row->short_description_wc + $result_row->long_description_wc;
+				$second_general_description_size = $result_row->short_description_wc1 + $result_row->long_description_wc1;
+
+				if ($first_general_description_size < $second_general_description_size)
+				{
+					$skus_shorter_than_competitor_product_content++;
+					$this->filterBySummaryCriteria('skus_shorter_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($first_general_description_size > $second_general_description_size)
+				{
+					$skus_longer_than_competitor_product_content++;
+					$this->filterBySummaryCriteria('skus_longer_than_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($first_general_description_size == $second_general_description_size)
+				{
+					$skus_same_competitor_product_content++;
+					$this->filterBySummaryCriteria('skus_same_competitor_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				// For Batch 1
+				if ($first_general_description_size < 50)
+				{
+					$skus_fewer_50_product_content++;
+					$this->filterBySummaryCriteria('skus_fewer_50_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($first_general_description_size < 100)
+				{
+					$skus_fewer_100_product_content++;
+					$this->filterBySummaryCriteria('skus_fewer_100_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($first_general_description_size < 150)
+				{
+					$skus_fewer_150_product_content++;
+					$this->filterBySummaryCriteria('skus_fewer_150_product_content', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				// For Competitor (Batch 2)
+				if ($second_general_description_size < 50 && $build_assess_params->compare_batch_id)
+				{
+					$skus_fewer_50_product_content_competitor++;
+					$this->filterBySummaryCriteria('skus_fewer_50_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($second_general_description_size < 100 && $build_assess_params->compare_batch_id)
+				{
+					$skus_fewer_100_product_content_competitor++;
+					$this->filterBySummaryCriteria('skus_fewer_100_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($second_general_description_size < 150 && $build_assess_params->compare_batch_id)
+				{
+					$skus_fewer_150_product_content_competitor++;
+					$this->filterBySummaryCriteria('skus_fewer_150_product_content_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				$batch1_filtered_title_percents = substr_count($result_row->title_seo_phrases, '%');
+				$batch2_filtered_title_percents = substr_count($result_row->title_seo_phrases1, '%');
+
+				if ($batch1_filtered_title_percents < $batch2_filtered_title_percents)
+				{
+					$skus_fewer_competitor_optimized_keywords++;
+					$this->filterBySummaryCriteria('skus_fewer_competitor_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if (!$batch1_filtered_title_percents)
+				{
+					$skus_zero_optimized_keywords++;
+					$this->filterBySummaryCriteria('skus_zero_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($batch1_filtered_title_percents >= 1)
+				{
+					$skus_one_optimized_keywords++;
+					$this->filterBySummaryCriteria('skus_one_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($batch1_filtered_title_percents >= 2)
+				{
+					$skus_two_optimized_keywords++;
+					$this->filterBySummaryCriteria('skus_two_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($batch1_filtered_title_percents >= 3)
+				{
+					$skus_three_optimized_keywords++;
+					$this->filterBySummaryCriteria('skus_three_optimized_keywords', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+
+				if (!$batch2_filtered_title_percents)
+				{
+					$skus_zero_optimized_keywords_competitor++;
+					$this->filterBySummaryCriteria('skus_zero_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($batch2_filtered_title_percents >= 1)
+				{
+					$skus_one_optimized_keywords_competitor++;
+					$this->filterBySummaryCriteria('skus_one_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($batch2_filtered_title_percents >= 2)
+				{
+					$skus_two_optimized_keywords_competitor++;
+					$this->filterBySummaryCriteria('skus_two_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+
+				if ($batch2_filtered_title_percents >= 3)
+				{
+					$skus_three_optimized_keywords_competitor++;
+					$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+				if (isset($data_row->mvid) && $data_row->mvid > 0)
+				{
+					$skus_with_manufacturer_videos++;
+					$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+				if (isset($data_row->mimg) && $data_row->mimg > 0)
+				{
+					$skus_with_manufacturer_images++;
+					$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+				if (isset($data_row->murl) && strlen($data_row->murl) > 0)
+				{
+					$skus_with_manufacturer_pages++;
+					$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
+				}
+			}
+
+			
+			if ($iterator < $iterator_limit)
+			{
+				//$result_table[$iterator] = $result_row;
+				if($iterator < 1)
+				{	
+					$theFirstRow = $result_row;
+				}	
+				if (isset($result_row->recommendations))
+				{
+					// this is for absent product in selected batch only
+					$recommendations_html = '<ul class="assess_recommendations"><li>' . $result_row->recommendations . '</li></ul>';
+				} else
+				{
+					$img_path = base_url() . "img/";
+					$recommendations = array();
+
+					if ($result_row->short_description_wc == 0 && $result_row->long_description_wc == 0)
+					{
+						$recommendations[] = array(
+						    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_D.png">',
+						    'msg' => 'Add product descriptions',
+						);
+					}
+
+					if ($result_row->short_description_wc > 0 && $result_row->long_description_wc == 0)
+					{
+						if ($result_row->short_description_wc > 100)
+						{
+							$sd_diff = 100 - $result_row->short_description_wc;
+						} else
+						{
+							$sd_diff = $build_assess_params->short_less - $result_row->short_description_wc;
+						}
+						if ($sd_diff > 0)
+						{
+							$recommendations[] = array(
+							    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+							    'msg' => 'Increase descriptions word count by ' . $sd_diff . ' words',
+							);
+						}
+					}
+					if ($result_row->long_description_wc > 0 && $result_row->short_description_wc == 0)
+					{
+						if ($result_row->long_description_wc > 200)
+						{
+							$ld_diff = 200 - $result_row->long_description_wc;
+						} else
+						{
+							$ld_diff = $build_assess_params->long_less - $result_row->long_description_wc;
+						}
+						if ($ld_diff > 0)
+						{
+							$recommendations[] = array(
+							    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+							    'msg' => 'Increase descriptions word count by ' . $ld_diff . ' words',
+							);
+						}
+					}
+
+					if ($result_row->short_description_wc > 0 && $result_row->long_description_wc > 0)
+					{
+						if ($result_row->short_description_wc > 100)
+						{
+							$sd_diff = 100 - $result_row->short_description_wc;
+						} else
+						{
+							$sd_diff = $build_assess_params->short_less - $result_row->short_description_wc;
+						}
+						if ($sd_diff > 0)
+						{
+							$recommendations[] = array(
+							    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+							    'msg' => 'Increase short descriptions word count by ' . $sd_diff . ' words',
+							);
+						}
+					}
+					if ($result_row->long_description_wc > 0 && $result_row->short_description_wc != 0)
+					{
+						if ($result_row->long_description_wc > 200)
+						{
+							$ld_diff = 200 - $result_row->long_description_wc;
+						} else
+						{
+							$ld_diff = $build_assess_params->long_less - $result_row->long_description_wc;
+						}
+						if ($ld_diff > 0)
+						{
+							$recommendations[] = array(
+							    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+							    'msg' => 'Increase long descriptions word count by ' . $ld_diff . ' words',
+							);
+						}
+					}
+
+					if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None')
+					{
+						$recommendations[] = array(
+						    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_seo.png">',
+						    'msg' => 'Keyword optimize product content',
+						);
+					}
+					if ($result_row->lower_price_exist == true && !empty($result_row->competitors_prices))
+					{
+						if (min($result_row->competitors_prices) < $result_row->own_price)
+						{
+							$min_price_diff = $result_row->own_price - min($result_row->competitors_prices);
+							$recommendations[] = array(
+							    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_dollar.png">',
+							    'msg' => 'Lower price by $' . $min_price_diff . ' to be competitive',
+							);
+						}
+					}
+
+					$result_row->recommendations = $recommendations;
+					$lim = count($recommendations);
+					for ($i = 0; $i < $lim; $i++)
+					{
+						$recommendations[$i] = '<li>' . $recommendations[$i]['img'] . $recommendations[$i]['msg'] . '</li>';
+					}
+
+					$recommendations_html = '<ul class="assess_recommendations">' . implode('', $recommendations) . '</ul>';
+				}
+
+				$row_created_array = explode(' ', $result_row->created);
+				$row_created = '<nobr>' . $row_created_array[0] . '</nobr><br/>';
+				$row_created = $row_created . '<nobr>' . $row_created_array[1] . '</nobr>';
+				$snap = '';
+
+				$row_url = '<a class="active_link" href="' . $result_row->url . '" target="_blank">' . $result_row->url . '</a>';
+				if ($result_row->snap != '')
+				{
+					$file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $result_row->snap;
+					if (file_exists($file))
+					{
+						if (filesize($file) > 1024)
+						{
+							$snap = "<img src='" . base_url() . "webshoots/" . $result_row->snap . "' />";
+						}
+					}
+				}
+
+				$output_row = array(
+				    'snap' => '<span style="cursor:pointer;">' . $snap . '</span>',
+				    'created' => $row_created,
+				    'imp_data_id' => $result_row->imported_data_id,
+				    'product_name' => '<span class= "' . $tb_product_name . '">' . $result_row->product_name . "</span>",
+				    'item_id' => $result_row->item_id,
+				    'model' => $result_row->model,
+				    'url' => $row_url,
+				    'Page_Load_Time' => $result_row->Page_Load_Time,
+				    'Short_Description' => $result_row->short_description,
+				    'short_description_wc' => $result_row->short_description_wc,
+				    'Meta_Keywords' => $result_row->Meta_Keywords,
+				    'short_seo_phrases' => $result_row->short_seo_phrases,
+				    'title_seo_phrases' => $result_row->title_seo_phrases,
+				    'images_cmp' => $result_row->images_cmp,
+				    'video_count' => $result_row->video_count,
+				    'title_pa' => $result_row->title_pa,
+				    'links_count' => $result_row->links_count,
+				    'long_description' => $result_row->long_description,
+				    'long_description_wc' => $result_row->long_description_wc,
+				    'long_seo_phrases' => $result_row->long_seo_phrases,
+				    'Custom_Keywords_Short_Description' => $result_row->Custom_Keywords_Short_Description,
+				    'Custom_Keywords_Long_Description' => $result_row->Custom_Keywords_Long_Description,
+				    'Meta_Description' => $result_row->Meta_Description,
+				    'Meta_Description_Count' => $result_row->Meta_Description_Count,
+				    'H1_Tags' => $result_row->H1_Tags,
+				    'H1_Tags_Count' => $result_row->H1_Tags_Count,
+				    'H2_Tags' => $result_row->H2_Tags,
+				    'H2_Tags_Count' => $result_row->H2_Tags_Count,
+				    'column_external_content' => $result_row->column_external_content,
+				    'column_reviews' => $result_row->column_reviews,
+				    'average_review' => $result_row->average_review,
+				    'column_features' => $result_row->column_features,
+				    'price_diff' => $result_row->price_diff,
+				    'recommendations' => $recommendations_html,
+				    'murl' => $result_row->murl,
+				    'mimg' => $result_row->mimg,
+				    'mvid' => $result_row->mvid,
+				    'total_description_wc' => $result_row->total_description_wc,
+				    'prodcat' => $result_row->prodcat
+				);
+
+				if ($build_assess_params->max_similar_item_count > 0)
+				{
+					$result_row = (array) $result_row;
+					for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++)
+					{
+						$output_row['snap' . $i] = $result_row['snap' . $i] != null ? $result_row['snap' . $i] : '-';
+						$output_row['imp_data_id' . $i] = $result_row['imp_data_id' . $i] != null ? $result_row['imp_data_id' . $i] : '';
+						$output_row['product_name' . $i] = $result_row['product_name' . $i] != null ? $result_row['product_name' . $i] : '-';
+						$output_row['item_id' . $i] = $result_row['item_id' . $i] != null ? $result_row['item_id' . $i] : '';
+						$output_row['model' . $i] = $result_row['model' . $i] != null ? $result_row['model' . $i] : '';
+						$output_row['url' . $i] = $result_row['url' . $i] != null ? $result_row['url' . $i] : '-';
+						$output_row['Page_Load_Time' . $i] = $result_row['Page_Load_Time' . $i] != null ? $result_row['Page_Load_Time' . $i] : '';
+						$output_row['Short_Description' . $i] = $result_row['Short_Description' . $i] != null ? $result_row['Short_Description' . $i] : '';
+						$output_row['short_description_wc' . $i] = $result_row['short_description_wc' . $i] != null ? $result_row['short_description_wc' . $i] : '';
+						$output_row['Meta_Keywords' . $i] = $result_row['Meta_Keywords' . $i] != null ? $result_row['Meta_Keywords' . $i] : '';
+						$output_row['Long_Description' . $i] = $result_row['Long_Description' . $i] != null ? $result_row['Long_Description' . $i] : '';
+						$output_row['long_description_wc' . $i] = $result_row['long_description_wc' . $i] != null ? $result_row['long_description_wc' . $i] : '';
+						$output_row['Meta_Description' . $i] = $result_row['Meta_Description' . $i] != null ? $result_row['Meta_Description' . $i] : '';
+						$output_row['Meta_Description_Count' . $i] = $result_row['Meta_Description_Count' . $i] != null ? $result_row['Meta_Description_Count' . $i] : '';
+						$output_row['column_external_content' . $i] = $result_row['column_external_content' . $i] != null ? $result_row['column_external_content' . $i] : '';
+						$output_row['H1_Tags' . $i] = $result_row['H1_Tags' . $i] != null ? $result_row['H1_Tags' . $i] : '';
+						$output_row['H1_Tags_Count' . $i] = $result_row['H1_Tags_Count' . $i] != null ? $result_row['H1_Tags_Count' . $i] : '';
+						$output_row['H2_Tags' . $i] = $result_row['H2_Tags' . $i] != null ? $result_row['H2_Tags' . $i] : '';
+						$output_row['H2_Tags_Count' . $i] = $result_row['H2_Tags_Count' . $i] != null ? $result_row['H2_Tags_Count' . $i] : '';
+						$output_row['column_reviews' . $i] = $result_row['column_reviews' . $i] != null ? $result_row['column_reviews' . $i] : 0;
+						$output_row['average_review' . $i] = $result_row['average_review' . $i] != null ? $result_row['average_review' . $i] : '';
+						$output_row['column_features' . $i] = $result_row['column_features' . $i] != null ? $result_row['column_features' . $i] : '';
+						$output_row['title_seo_phrases' . $i] = $result_row['title_seo_phrases' . $i] != null ? $result_row['title_seo_phrases' . $i] : '';
+						$output_row['images_cmp' . $i] = $result_row['images_cmp' . $i] != null ? $result_row['images_cmp' . $i] : 'none';
+						$output_row['video_count' . $i] = $result_row['video_count' . $i] != null ? $result_row['video_count' . $i] : 'none';
+						$output_row['title_pa' . $i] = $result_row['title_pa' . $i] != null ? $result_row['title_pa' . $i] : '';
+						$output_row['links_count' . $i] = $result_row['links_count' . $i] != null ? $result_row['links_count' . $i] : '';
+						$output_row['total_description_wc' . $i] = $output_row['short_description_wc' . $i] + $output_row['long_description_wc' . $i];
+					}
+
+					$output_row['gap'] = $result_row['gap'];
+					$output_row['duplicate_content'] = $result_row['Duplicate_Content'];
+				} else
+				{
+					$output_row['snap1'] = $result_row->snap1;
+					$output_row['imp_data_id1'] = $result_row->imp_data_id1;
+					$output_row['product_name1'] = $result_row->product_name1;
+					$output_row['item_id1'] = $result_row->item_id1;
+					$output_row['model1'] = $result_row->model1;
+					$output_row['url1'] = $result_row->url1;
+					$output_row['Page_Load_Time1'] = $result_row->Page_Load_Time1;
+					$output_row['Short_Description1'] = $result_row->Short_Description1;
+					$output_row['short_description_wc1'] = $result_row->short_description_wc1;
+					$output_row['Meta_Keywords1'] = $result_row->Meta_Keywords1;
+					$output_row['Long_Description1'] = $result_row->Long_Description1;
+					$output_row['long_description_wc1'] = $result_row->long_description_wc1;
+					$output_row['Meta_Description1'] = $result_row->Meta_Description1;
+					$output_row['Meta_Description_Count1'] = $result_row->Meta_Description_Count1;
+					$output_row['column_external_content1'] = $result_row->column_external_content1;
+					$output_row['H1_Tags1'] = $result_row->H1_Tags1;
+					$output_row['H1_Tags_Count1'] = $result_row->H1_Tags_Count1;
+					$output_row['H2_Tags1'] = $result_row->H2_Tags1;
+					$output_row['H2_Tags_Count1'] = $result_row->H2_Tags_Count1;
+					$output_row['column_reviews1'] = $result_row->column_reviews1;
+					$output_row['average_review1'] = $result_row->average_review1;
+					$output_row['column_features1'] = $result_row->column_features1;
+					$output_row['title_seo_phrases1'] = $result_row->title_seo_phrases1;
+					$output_row['images_cmp1'] = $result_row->images_cmp1;
+					$output_row['video_count1'] = $result_row->video_count1;
+					$output_row['title_pa1'] = $result_row->title_pa1;
+					$output_row['links_count1'] = $result_row->links_count1;
+					$output_row['gap'] = $result_row->gap;
+					$output_row['duplicate_content'] = $result_row->Duplicate_Content;
+					$output_row['total_description_wc1'] = $output_row['short_description_wc1'] + $output_row['long_description_wc1'];
+				}
+
+				$output['aaData'][] = AssessHelper::setTableData($columns, $output_row);
+				$output['ExtraData']['json_encoded_data'][] = json_encode($result_row);
+				++$itemsTotal;
+			}
+			++$iterator;
+		}
+
+
+		if ($this->settings['statistics_table'] == "statistics_new")
+		{
+			$own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
+		} else
+		{
+			$own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
+		}
+
+		if ($needFilters)
+		{
+			$summary_fields = array(
+			    'assess_report_total_items' => array('value' => $own_batch_total_items, 'percentage' => array()),
+			    'items_priced_higher_than_competitors' => array('value' => $items_priced_higher_than_competitors, 'percentage' => array('batch1')),
+			    'skus_25_duplicate_content' => array('value' => $skus_25_duplicate_content, 'percentage' => array('batch1')),
+			    'skus_50_duplicate_content' => array('value' => $skus_50_duplicate_content, 'percentage' => array('batch1')),
+			    'skus_75_duplicate_content' => array('value' => $skus_75_duplicate_content, 'percentage' => array('batch1')),
+			    'skus_shorter_than_competitor_product_content' => array('value' => $skus_shorter_than_competitor_product_content, 'percentage' => array('batch1')),
+			    'skus_longer_than_competitor_product_content' => array('value' => $skus_longer_than_competitor_product_content, 'percentage' => array('batch1')),
+			    'skus_same_competitor_product_content' => array('value' => $skus_same_competitor_product_content, 'percentage' => array('batch1')),
+			    'skus_fewer_features_than_competitor' => array('value' => $skus_fewer_features_than_competitor, 'percentage' => array('batch1'), 'icon' => $skus_fewer_features_than_competitor ? 'assess_report_seo_red.png' : 'assess_report_seo.png'),
+			    'skus_fewer_reviews_than_competitor' => array('value' => $skus_fewer_reviews_than_competitor, 'percentage' => array('batch1')),
+			    'skus_fewer_competitor_optimized_keywords' => array('value' => $skus_fewer_competitor_optimized_keywords, 'percentage' => array('batch1')),
+			    'skus_zero_optimized_keywords' => array('value' => $skus_zero_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_zero_optimized_keywords_competitor)),
+			    'skus_one_optimized_keywords' => array('value' => $skus_one_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_one_optimized_keywords_competitor)),
+			    'skus_two_optimized_keywords' => array('value' => $skus_two_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_two_optimized_keywords_competitor)),
+			    'skus_three_optimized_keywords' => array('value' => $skus_three_optimized_keywords, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_three_optimized_keywords_competitor)),
+			    'skus_zero_optimized_keywords_competitor' => array('value' => $skus_zero_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_zero_optimized_keywords)),
+			    'skus_one_optimized_keywords_competitor' => array('value' => $skus_one_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_one_optimized_keywords)),
+			    'skus_two_optimized_keywords_competitor' => array('value' => $skus_two_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_two_optimized_keywords)),
+			    'skus_three_optimized_keywords_competitor' => array('value' => $skus_three_optimized_keywords_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_three_optimized_keywords)),
+			    'skus_title_less_than_70_chars' => array('value' => $skus_title_less_than_70_chars, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_title_less_than_70_chars_competitor)),
+			    'skus_title_more_than_70_chars' => array('value' => $skus_title_more_than_70_chars, 'percentage' => array('batch1', 'competitor'), 'icon_percentage' => function($percent) {
+					if ($percent > 50)
+						return 'assess_report_seo_red.png';
+					else if ($percent >= 25 && $percent <= 50)
+						return 'assess_report_seo_yellow.png';
+					else
+						return 'assess_report_seo.png';
+				}, 'generals' => array('competitor' => $skus_title_more_than_70_chars_competitor)),
+			    'skus_title_less_than_70_chars_competitor' => array('value' => $skus_title_less_than_70_chars_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_title_less_than_70_chars)),
+			    'skus_title_more_than_70_chars_competitor' => array('value' => $skus_title_more_than_70_chars_competitor, 'percentage' => array('batch2', 'competitor'), 'icon_percentage' => function($percent) {
+					if ($percent > 50)
+						return 'assess_report_seo_red.png';
+					else if ($percent >= 25 && $percent <= 50)
+						return 'assess_report_seo_yellow.png';
+					else
+						return 'assess_report_seo.png';
+				}, 'generals' => array('competitor' => $skus_title_more_than_70_chars)),
+			    'total_items_selected_by_filter' => array('value' => $itemsTotal, 'percentage' => array()),
+			    'assess_report_competitor_matches_number' => array('value' => $batch2_items_count, 'percentage' => array()),
+			    'skus_third_party_content' => array('value' => $skus_third_party_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_third_party_content_competitor)),
+			    'skus_third_party_content_competitor' => array('value' => $skus_third_party_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_third_party_content)),
+			    'skus_fewer_50_product_content' => array('value' => $skus_fewer_50_product_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_fewer_50_product_content_competitor)),
+			    'skus_fewer_100_product_content' => array('value' => $skus_fewer_100_product_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_fewer_100_product_content_competitor)),
+			    'skus_fewer_150_product_content' => array('value' => $skus_fewer_150_product_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_fewer_150_product_content_competitor)),
+			    'skus_fewer_50_product_content_competitor' => array('value' => $skus_fewer_50_product_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_fewer_50_product_content)),
+			    'skus_fewer_100_product_content_competitor' => array('value' => $skus_fewer_100_product_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_fewer_100_product_content)),
+			    'skus_fewer_150_product_content_competitor' => array('value' => $skus_fewer_150_product_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_fewer_150_product_content)),
+			    'skus_features' => array('value' => $skus_features, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_features_competitor)),
+			    'skus_features_competitor' => array('value' => $skus_features_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_features)),
+			    'skus_zero_reviews' => array('value' => $skus_zero_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_zero_reviews_competitor)),
+			    'skus_one_four_reviews' => array('value' => $skus_one_four_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_one_four_reviews_competitor)),
+			    'skus_more_than_five_reviews' => array('value' => $skus_more_than_five_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_five_reviews_competitor)),
+			    'skus_more_than_hundred_reviews' => array('value' => $skus_more_than_hundred_reviews, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_hundred_reviews_competitor)),
+			    'skus_zero_reviews_competitor' => array('value' => $skus_zero_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_zero_reviews)),
+			    'skus_one_four_reviews_competitor' => array('value' => $skus_one_four_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_one_four_reviews)),
+			    'skus_more_than_five_reviews_competitor' => array('value' => $skus_more_than_five_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_five_reviews)),
+			    'skus_more_than_hundred_reviews_competitor' => array('value' => $skus_more_than_hundred_reviews_competitor, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_more_than_hundred_reviews)),
+			    'skus_pdfs' => array('value' => $skus_pdfs, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_pdfs_competitor), 'icon_percentage' => function($percent) {
+					return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+				}),
+			    'skus_pdfs_competitor' => array('value' => $skus_pdfs_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_pdfs), 'icon_percentage' => function($percent) {
+					return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+				}),
+			    'skus_videos' => array('value' => $skus_videos, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_videos_competitor), 'icon_percentage' => function($percent) {
+					return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+				}),
+			    'skus_videos_competitor' => array('value' => $skus_videos_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_videos), 'icon_percentage' => function($percent) {
+					return $percent < 50 ? 'assess_report_seo_red.png' : 'assess_report_seo.png';
+				}),
+			    'skus_with_no_product_images' => array('value' => $skus_with_no_product_images, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_no_product_images_competitor)),
+			    'skus_with_one_product_image' => array('value' => $skus_with_one_product_image, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_one_product_image_competitor)),
+			    'skus_with_more_than_one_product_image' => array('value' => $skus_with_more_than_one_product_image, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_more_than_one_product_image_competitor)),
+			    'skus_with_no_product_images_competitor' => array('value' => $skus_with_no_product_images_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_no_product_images)),
+			    'skus_with_one_product_image_competitor' => array('value' => $skus_with_one_product_image_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_one_product_image)),
+			    'skus_with_more_than_one_product_image_competitor' => array('value' => $skus_with_more_than_one_product_image_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_more_than_one_product_image)),
+			    'skus_with_zero_product_description_links' => array('value' => $skus_with_zero_product_description_links, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links_competitor)),
+			    'skus_with_more_than_one_product_description_links' => array('value' => $skus_with_more_than_one_product_description_links, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_with_more_than_one_product_description_links_competitor)),
+			    'skus_with_zero_product_description_links_competitor' => array('value' => $skus_with_zero_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_zero_product_description_links)),
+			    'skus_with_more_than_one_product_description_links_competitor' => array('value' => $skus_with_more_than_one_product_description_links_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_more_than_one_product_description_links)),
+			    'skus_with_manufacturer_videos' => array('value' => (isset($skus_with_manufacturer_videos)) ? $skus_with_manufacturer_videos : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_videos)),
+			    'skus_with_manufacturer_images' => array('value' => (isset($skus_with_manufacturer_images)) ? $skus_with_manufacturer_images : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_images)),
+			    'skus_with_manufacturer_pages' => array('value' => (isset($skus_with_manufacturer_pages)) ? $skus_with_manufacturer_pages : 0, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_with_manufacturer_pages)),
+			);
+
+			foreach ($summary_fields as $key => $summary_field)
+			{
+				$my_percent = 0;
+
+				$report['summary'][$key] = trim($summary_field['value']) . $this->calculatePercentage(array('batch1' => $own_batch_total_items, 'batch2' => $batch2_items_count), $summary_field, $my_percent);
+				if (isset($summary_field['icon']))
+					$report['summary'][$key . '_icon'] = $summary_field['icon'];
+
+				if (isset($summary_field['icon_percentage']))
+				{
+					$report['summary'][$key . '_icon'] = $summary_field['icon_percentage']($my_percent);
+				}
+			}
+
+			$report['stored_filter_items'] = $stored_filter_items;
+		}
+
+		if ($items_priced_higher_than_competitors > 0)
+		{
+			$report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on ' . $items_priced_higher_than_competitors . ' item(s)';
+		}
+		if ($items_have_more_than_20_percent_duplicate_content > 0)
+		{
+			$report['recommendations']['items_have_more_than_20_percent_duplicate_content'] = 'Create original product content';
+		}
+
+		$report['detail_comparisons_total'] = $detail_comparisons_total;
+
+
+
+		$this->load->library('pagination');
+		$config['base_url'] = $this->config->site_url() . '/assess/comparison_detail';
+		$config['total_rows'] = $detail_comparisons_total;
+		$config['per_page'] = '1';
+		$config['uri_segment'] = 3;
+		$this->pagination->initialize($config);
+		$report['comparison_pagination'] = $this->pagination->create_links();
+
+
+		if ($build_assess_params->all_columns)
+		{
+			$s_columns = explode(',', $build_assess_params->all_columns);
+			$s_column_index_cmp = $build_assess_params->sort_columns;
+			$s_column_index = intval($build_assess_params->sort_columns);
+			$s_column = $s_columns[$s_column_index];
+			$this->sort_column = $s_column;
+			$sort_direction = strtolower($build_assess_params->sort_dir);
+			if ($s_column == 'price_diff')
+			{
+				if ($sort_direction == 'asc')
+				{
+					$this->sort_direction = 'desc';
+				} else
+				if ($sort_direction == 'desc')
+				{
+					$this->sort_direction = 'asc';
+				} else
+				{
+					$this->sort_direction = 'asc';
+				}
+			} else
+			{
+				$this->sort_direction = $sort_direction;
+			}
+			$this->sort_type = is_numeric($theFirstRow->$s_column) ? "num" : "";
+		}
+
+		
+		$output['sEcho'] = $result_table_rows_count / $display_length;
+		$output['iTotalRecords'] = $result_table_rows_count;
+		$output['iTotalDisplayRecords'] = $result_table_rows_count;
+		//$output['iDisplayLength'] = $display_length;
+		
+		$output['aoColumns'] = $columns;
+		$output['ExtraData']['report'] = $report;
+		$output['ExtraData']['display_competitor_columns'] = $build_assess_params->display_competitor_columns;
+		$output['ExtraData']['getSelectableColumns'] = AssessHelper::getSelectableColumns($raw_columns);
+		$output['ExtraData']['fixedTotalRows'] = $result_table_rows_count;
+
+		return $output;
+    }
+    
+    private function build_asses_table_old($results, $build_assess_params, $batch_id = '', $columns = array(), $catId = FALSE) 
 	{
         //Debugging
         $st_time = microtime(true);
