@@ -36,6 +36,7 @@ class Assess extends MY_Controller {
             'getCategoriesByBatch' => true,
             'get_filters' => true,
             'get_filters_ids' => true,
+            'save_filters_combo' => true,
 	    'checkImportProcess' => true,
 	    'getBatchesExcludeOwnCustomer'=> true,
 	    'addSecondary'=> true
@@ -3909,6 +3910,9 @@ class Assess extends MY_Controller {
             $this->data['batches_list'] = $this->batches_list();
         }
 		
+		$this->load->model('filters_combos');
+		$this->data['filters_combos'] = $this->filters_combos->findAll();
+		
 		$this->load->model('user_summary_settings', 'uss');
         $user_id = $this->ion_auth->get_user_id();
         
@@ -6338,6 +6342,23 @@ class Assess extends MY_Controller {
 				}		
 		
 		$this->output->set_content_type('application/json')->set_output(json_encode($filters_data));		
+	}
+	
+	public function save_filters_combo()
+	{
+		$filters_ids = $this->input->post('filters_ids');
+		if (!$filters_ids)
+			$r = false;
+		else {
+			$this->load->model('filters_combos');
+			$this->filters_combos->title = $this->input->post('title');
+			$this->filters_combos->filters_ids = json_encode($filters_ids);
+			$r = $this->filters_combos->save();
+			if ($r)
+				$this->filters_combos->id = $this->db->insert_id();
+		}
+		
+		$this->output->set_content_type('application/json')->set_output(json_encode(array( 'status' => $r ? $this->filters_combos : false )));		
 	}
         
        public function deleteSecondaryMatch(){

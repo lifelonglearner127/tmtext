@@ -285,7 +285,7 @@
         <form action="" method="post" id="filter_combinations_form">
 			            
 			<p>
-				<input name="filter_combo_name" />
+				<input name="title" />
 			</p>
 		
         </form>
@@ -504,6 +504,7 @@
 		'user_filters' => $user_filters,
 		'user_filters_order' => $user_filters_order,
 		'wrapper_class' => 'assess_report_compare',
+		'filters_combos' => $filters_combos
 	)) 
 ?>
 <div class="row-fluid">	

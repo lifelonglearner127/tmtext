@@ -362,6 +362,23 @@ $(function() {
 		
 	$( ".selectable_summary_info" ).disableSelection();
 	
+	function buildSummaryInfoSelectedElements()
+	{
+		summaryInfoSelectedElements = [];
+		summaryInfoSelectedElementsTexts = [];
+		$('.selectable_summary_info .ui-selected').each(function(index, element) {
+			var filterid = $(element).data('filterid');
+			if (filterid) {
+				
+				if (!~$.inArray(filterid, summaryInfoSelectedElements))
+				{
+					summaryInfoSelectedElements.push(filterid);						
+					summaryInfoSelectedElementsTexts.push($.trim( $(element).find('.filter_text_label').text() ));
+				}
+			}
+		});		
+	}
+	
 	$('.selectable_summary_info').on('mousedown', function(e) {
 		e.metaKey = true;
 	}).selectable({
@@ -369,28 +386,11 @@ $(function() {
 		tolerance : 'touch',
 		filter : '.item_line',
 		selected : function(event, ui) {
-			// console.log('Selected...');
-			summaryInfoSelectedElements = [];
-			summaryInfoSelectedElementsTexts = [];
-			$('.selectable_summary_info .ui-selected').each(function(index, element) {
-				var filterid = $(element).data('filterid');
-				if (filterid) {
-					summaryInfoSelectedElements.push(filterid);
-					summaryInfoSelectedElementsTexts.push($(element).find('.filter_text_label').text());
-				}
-			});			
+			
+			buildSummaryInfoSelectedElements();
 		},
 		unselected : function(event,ui) {
-			// console.log('Unselected...');
-			summaryInfoSelectedElements = [];
-			summaryInfoSelectedElementsTexts = [];
-			$('.selectable_summary_info .ui-selected').each(function(index, element) {		
-				var filterid = $(element).data('filterid');
-				if (filterid) {
-					summaryInfoSelectedElements.push(filterid);
-					summaryInfoSelectedElementsTexts.push($(element).find('.filter_text_label').text());
-				}
-			});			
+			buildSummaryInfoSelectedElements();
 		},	
 	}).find( ".item_line:not(.batch1_filter_item):not(.batch2_filter_item)" )   
 		.addClass( "ui-corner-all" )
@@ -3378,6 +3378,28 @@ function prevSibilfunc(curentSibil){
 		return result_string;		
 	}
 	
+	$(document).on('change', '.pre_stored_filters_combos', function() {
+		var elem = $(this)
+		  , json = JSON.parse(elem.val());
+		
+		$('.ui-selected').removeClass('ui-selected');
+		
+		//refreshing
+		buildSummaryInfoSelectedElements();
+		
+		if (json && json.length) {
+			_.map(json, function(id) {
+				console.log(global_filters_ids[id]);
+				// $('.item_line[data-filterid$="' + global_filters_ids[id] + '"]:not([data-filterid*="competitor"])').addClass('ui-selected');
+				$('.item_line[data-filterid$="' + global_filters_ids[id] + '"]').addClass('ui-selected');
+				
+				buildSummaryInfoSelectedElements();
+			});
+			
+			$('#research_assess_update').click();
+		}
+	});
+	
 	$(document).on('click', '#research_assess_export', function() {   
 		$('#research_assess_export_assess_dialog').dialog('open');		
 		return false;
@@ -3442,18 +3464,28 @@ function prevSibilfunc(curentSibil){
             'Save': {
                 id: 'assess_report_options_dialog_save',
                 text: 'Save',
-                click: function() {
-                    // var batch_id = $('select[name="research_assess_batches"] option:selected').val();
-                    // var assess_report_options_form = $('#assess_report_options_form').serializeObject();
-                    // assess_report_options_form.batch_id = batch_id;
-                    // var data = {
-                        // 'data': JSON.stringify(assess_report_options_form)
-                    // };
-                    // $.post(
-                            // base_url + 'index.php/assess/research_assess_report_options_set',
-                            // data
-                            // );
-                    $(this).dialog('close');
+                click: function() {                    
+                    var assess_report_options_form = $('#filter_combinations_form').serializeObject()
+					  , invertedGlobalFilterIds = _.invert(global_filters_ids)
+					  , modal = $(this);
+					  
+					assess_report_options_form.filters_ids = [];
+					
+					_.map(summaryInfoSelectedElements, function(value) {
+						var pureFilterName = value.replace(/(batch_me_|batch_competitor_)/g, '');						
+						assess_report_options_form.filters_ids.push( invertedGlobalFilterIds[pureFilterName] );
+					});
+														
+                    $.post( base_url + 'index.php/assess/save_filters_combo', assess_report_options_form, function(data) {
+						if (data && data.status)
+						{
+							$('.pre_stored_filters_combos').append("<option value='" + data.status.filters_ids + "'>" + data.status.title + "</option>");
+							modal.dialog('close');
+						}
+						else
+							alert('You need to typy combo name or select at least 1 filter');
+							
+					}, 'json');                    
                 }
             }
         },
