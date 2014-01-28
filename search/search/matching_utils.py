@@ -57,9 +57,10 @@ class ProcessText():
 		text = re.sub("w/(?= )", "with", text)
 
 		#TODO also do something to match 30x30 with 30"x30"?
-		# replace x between numbers (or ") with space (usualy a dimension e.g. 11"x30")
-		#TODO: what if it's part of a model number? (maybe not because model numbers are all in caps?)
-		text = re.sub("(?<= |^[0-9\"])x(?=[0-9])", " ", text)
+		# replace x between numbers (or " or ') with space (usualy a dimension e.g. 11"x30")
+		#TODO: what if it's part of a model nu-mber? (maybe not because model numbers are all in caps?)
+		#TODO: also match if it starts at beginning of text (^ instead of space)
+		text = re.sub("(?<= [0-9\"\'])x(?=[0-9])", " ", text)
 
 		#! including ' as an exception keeps things like women's a single word. also doesn't find it as a word in wordnet -> too high a priority
 		# excluding it leads to women's->women (s is a stopword)

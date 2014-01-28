@@ -25,7 +25,9 @@ with open(sys.argv[1], "r") as file1:
 				lines2[match[0]] = match[1]
 
 for product in lines1:
-	if lines1[product] != lines2[product]:
-		print ",".join([product, lines1[product], lines2[product]])
+	# in case they don't contain the same origin products (for ex for partial results files)
+	if product in lines2:
+		if lines1[product] != lines2[product]:
+			print ",".join([product, lines1[product], lines2[product]])
 
 
