@@ -644,7 +644,6 @@ class System extends MY_Controller {
 		$this -> load -> model('site_categories_model');
 		session_start();
 		$filespath = $this->config->item('csv_upload_dir') . 'partial/'.$site_id;
-
 		if (!file_exists($filespath)) {
 			echo 'dir ' . $filespath . ' doesn`t exist<br>';
 			if(!mkdir($filespath)) {
@@ -688,7 +687,7 @@ class System extends MY_Controller {
 		$site_name = explode(".", strtolower($this -> input -> post('site_name')));
 		$sited = implode('/', $site_name);
 		$call_link = base_url() . "index.php/crons/save_departments_categories_new/$site_id/$sited";
-                //$call_link = "http://tmeditor.local/webroot/index.php/crons/save_departments_categories_new/$site_id/$sited";
+                //$call_link = "http://tmeditor.local/webroot/index.php/crons/save_departments_categories/$site_id/$sited";
 		// > /dev/null 2>/dev/null &";
 		//echo $call_link;
 		$this -> site_categories_model -> curl_async($call_link);
