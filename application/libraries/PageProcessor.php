@@ -2046,6 +2046,117 @@ class PageProcessor {
 
 		return $result;
 	}
+
+	public function process_target() {
+		foreach($this->nokogiri->get('h2.product-name .fn') as $item) {
+			$title = $item['#text'][0];
+		}
+
+		if(empty($title)) {
+			foreach($this->nokogiri->get('h2.collection-name span') as $item) {
+				$title = $item['#text'][0];
+			}
+		}
+
+		foreach($this->nokogiri->get('.content-set .content span') as $item) {
+			if (isset($item['itemprop']) && ($item['itemprop']=='description')){
+		 		$description = trim($item['#text'][0]);
+			}
+		}
+
+		if(empty($description)) {
+			foreach($this->nokogiri->get('div.collection-desc') as $item) {
+		 		$description = trim($item['#text'][0]);
+			}
+		}
+
+		foreach($this->nokogiri->get('#price_main .price .offerPrice') as $item) {
+			if (isset($item['itemprop']) && (($item['itemprop']=='lowPrice') || ($item['itemprop']=='price')) ){
+				if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+					$price = $match[1];
+				}
+			}
+		}
+
+		if(empty($price)) {
+			foreach($this->nokogiri->get('#price_main .offerprice .price span') as $item) {
+				if (isset($item['itemprop']) && (($item['itemprop']=='lowPrice') || ($item['itemprop']=='price')) ){
+					if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+						$price = $match[1];
+					}
+				}
+			}
+		}
+
+		foreach($this->nokogiri->get('#price_main .price .regPriceDisplay del') as $item) {
+			if (preg_match('/\$([0-9]+[\.]*[0-9]*)/', $item['#text'][0], $match)) {
+				$price_old = $match[1];
+			}
+		}
+
+		foreach($this->nokogiri->get('.content-set .content .innerlistings li') as $item) {
+			if (isset($item['span'])) {
+				$features[] = trim($item['span'][0]['#text'][0]).' '.trim($item['#text'][0]);
+			} else if (isset($item['strong'])) {
+				$features[] = trim($item['strong'][0]['#text'][0]).' '.trim($item['#text'][0]);
+			}
+		}
+		$features = implode("\n",$features);
+
+		return array(
+			'Product Name' => $title,
+			'Description' => $description,
+			'Long_Description' => str_ireplace('&nbsp;',' ', $descriptionLong),
+			'Features' => $features,
+			'Price' => $price,
+			'PriceOld' => $price_old
+		);
+	}
+
+	public function attributes_target() {
+		$result = array();
+
+		foreach($this->nokogiri->get('.content-set .content ul li') as $item) {
+			if (isset($item['em']) && isset($item['em'][0]["#text"][0]) && ($item['em'][0]["#text"][0]=='ISBN:')) {
+				$result['UPC/EAN/ISBN'] =  trim($item['#text'][0]);
+			} else if (isset($item['span']) && isset($item['span'][0]["#text"][0]) && ($item['span'][0]["#text"][0]=='ISBN:')) {
+				$result['UPC/EAN/ISBN'] =  trim($item['#text'][0]);
+			}
+		}
+
+		if (isset($this->processed_data['Features'])) {
+			$result['feature_count'] = count(explode("\n",$this->processed_data['Features']));
+		}
+
+		foreach($this->nokogiri->get('.bvReviewText .rating-count span') as $item) {
+			if (isset($item['itemprop']) && ($item['itemprop']=='reviewCount')){
+		 		$result['review_count'] = trim($item['#text'][0]);
+			}
+		}
+
+		foreach($this->nokogiri->get('.bvReviewText .rating-large .rating') as $item) {
+			if (trim($item['#text'][0]) !== 'Not rated:') {
+	 			$result['average_review'] = trim($item['#text'][0]);
+			}
+		}
+
+		foreach($this->nokogiri->get('.bvReviewText .rating-large .screen-reader-only') as $item) {
+			if (isset($item['#text'][1]) && (strpos($item['#text'][1], 'out of 5 stars')!==false) ){
+		 		$result['max_review'] = 5;
+			}
+		}
+
+		if ($this->nokogiri->get('#collectionHeroImage .carouselmoreblock .carouselviewport ul li')) {
+			$result['product_images'] = count($this->nokogiri->get('#collectionHeroImage .carouselmoreblock .carouselviewport ul li')->toArray());
+		}
+
+		if (($result['product_images']==0) && $this->nokogiri->get('#ProductDetails .primaryImgContainer .contentModule .carouselviewport ul li')) {
+			$result['product_images'] = count($this->nokogiri->get('#ProductDetails .primaryImgContainer .contentModule .carouselviewport ul li')->toArray());
+		}
+
+		return $result;
+	}
+
 }
 
 ?>

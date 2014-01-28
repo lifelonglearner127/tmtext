@@ -49,13 +49,13 @@ $(function() {
 		$('.item_line').removeClass('ui-selected');
 		summaryInfoSelectedElements = [];
 		
-		$('.selectable_summary_info').selectable('disable');
+		// $('.selectable_summary_info').selectable('disable');
 	});
 	
 	$( document ).ajaxStop(function() {
 		$( '#research_assess_update,#research_assess_update2' ).text( "Update" ).removeAttr('disabled');
 		
-		$('.selectable_summary_info').selectable('enable');			
+		// $('.selectable_summary_info').selectable('enable');			
 	});
 	
     $.ajax({
@@ -362,6 +362,23 @@ $(function() {
 		
 	$( ".selectable_summary_info" ).disableSelection();
 	
+	function buildSummaryInfoSelectedElements()
+	{
+		summaryInfoSelectedElements = [];
+		summaryInfoSelectedElementsTexts = [];
+		$('.selectable_summary_info .ui-selected').each(function(index, element) {
+			var filterid = $(element).data('filterid');
+			if (filterid) {
+				
+				if (!~$.inArray(filterid, summaryInfoSelectedElements))
+				{
+					summaryInfoSelectedElements.push(filterid);						
+					summaryInfoSelectedElementsTexts.push($.trim( $(element).find('.filter_text_label').text() ));
+				}
+			}
+		});		
+	}
+	
 	$('.selectable_summary_info').on('mousedown', function(e) {
 		e.metaKey = true;
 	}).selectable({
@@ -369,22 +386,11 @@ $(function() {
 		tolerance : 'touch',
 		filter : '.item_line',
 		selected : function(event, ui) {
-			// console.log('Selected...');
-			summaryInfoSelectedElements = [];
-			$('.selectable_summary_info .ui-selected').each(function(index, element) {
-				var filterid = $(element).data('filterid');
-				if (filterid)
-					summaryInfoSelectedElements.push(filterid);
-			});			
+			
+			buildSummaryInfoSelectedElements();
 		},
 		unselected : function(event,ui) {
-			// console.log('Unselected...');
-			summaryInfoSelectedElements = [];
-			$('.selectable_summary_info .ui-selected').each(function(index, element) {		
-				var filterid = $(element).data('filterid');
-				if (filterid)
-					summaryInfoSelectedElements.push(filterid);
-			});			
+			buildSummaryInfoSelectedElements();
 		},	
 	}).find( ".item_line:not(.batch1_filter_item):not(.batch2_filter_item)" )   
 		.addClass( "ui-corner-all" )
@@ -449,13 +455,14 @@ $(function() {
 				return;
 			
 			var reportData = buildFilters(filters_data);
-			buildReport({
-				ExtraData : {
-					report : {
-						summary : reportData
+			if (!_.isEmpty(reportData))
+				buildReport({
+					ExtraData : {
+						report : {
+							summary : reportData
+						}
 					}
-				}
-			});
+				});
 			toggleDetailsCompareBlocks(true);
 			
 			$.getJSON(readAssessUrl, aoData, function(json) {
@@ -463,7 +470,8 @@ $(function() {
 					return;	
 					
 				var assessData = $.extend(json, filters_data);
-				json.ExtraData.report.summary = reportData;
+				if (!_.isEmpty(reportData))
+					json.ExtraData.report.summary = reportData;
 				  
 				$('.tbl_arrows_and_gear_wrapper #research_batches_columns').css({opacity:1,cursor:'pointer'});					
 																
@@ -743,6 +751,35 @@ $(function() {
 		}
 	}
 
+	function reDrowHighChart() 
+	{
+		// Castro #1119: disable charts dropdown and show over time checkbox and empty chart container
+		toggleGraphFields(true);
+                
+		var graphBuild = $('#graphDropDown').children('option:selected').val();
+		var batch_set = $('.result_batch_items:checked').val() || 'me';	
+		var batch1Value = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
+		var batch2Value = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
+		var batch1Name = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').text();
+		var batch2Name = $(batch_sets[batch_set]['batch_compare']).find('option:selected').text();
+		
+		if(batch1Value == false || batch1Value == 0 || typeof batch1Value == 'undefined'){
+			batch1Value = -1;
+		}
+		if(batch2Value == false || batch2Value == 0 || typeof batch2Value == 'undefined'){
+			batch2Value = -1;
+		}
+                if(first_half_data.length > 0 
+                        && ( batch2Value == -1 || (first_half_data_options.batch2Value == batch2Value && first_half_data_options.batch2Name == batch2Name))
+                        && first_half_data_options.batch1Value == batch1Value && first_half_data_options.batch1Name == batch1Name
+                        && first_half_data_options.graphBuild == graphBuild
+                   ) {
+                    createHighChart(first_half_data, graphBuild, batch1Value, batch1Name, batch2Value, batch2Name);
+                    toggleGraphFields(false);
+                } else
+                    highChart(graphBuild);
+        }
+        
 	function highChart(graphBuild) 
 	{
 		// Castro #1119: disable charts dropdown and show over time checkbox and empty chart container
@@ -784,7 +821,12 @@ $(function() {
 			}
 		}).done(function(data){					
 
-			var first_half_data = data;
+			first_half_data = data;
+                        first_half_data_options = {
+                            graphBuild : graphBuild,
+                            batch1Value : batch1Value, batch1Name : batch1Name,
+                            batch2Value : batch2Value, batch2Name :batch2Name
+                        };
 			
 			createHighChart(first_half_data, graphBuild, batch1Value, batch1Name, batch2Value, batch2Name);
 			
@@ -2541,16 +2583,13 @@ function prevSibilfunc(curentSibil){
 	});
 
     $('#research_assess_compare_batches_reset').click(function() {
-	$('#research_assess_compare_batches_customer').val('select customer').prop('selected', true);
-        $('#research_assess_compare_batches_batch').val('select batch').prop('selected', true);
-        
+		$('#research_assess_compare_batches_customer').val('select customer').prop('selected', true);
+        $('#research_assess_compare_batches_batch').val('0').prop('selected', true);
         $('#research_assess_compare_batches_customer').change();
 //        $('#research_assess_compare_batches_batch').change();
-        
         // deprecated?
-	$('#research_assess_compare_batches_customer_competitor').val('select customer').prop('selected', true);
+		$('#research_assess_compare_batches_customer_competitor').val('select customer').prop('selected', true);
         $('#research_assess_compare_batches_batch_competitor').val('select batch').prop('selected', true);
-        
 //        $('#research_assess_compare_batches_customer_competitor').change();
 //        $('#research_assess_compare_batches_batch_competitor').change();
     });
@@ -2728,9 +2767,9 @@ function prevSibilfunc(curentSibil){
     });
 
     $('#research_assess_update').on('click', function() {
-       						
+       		if($('#assess_graph_dropdown').is(":visible")) reDrowHighChart();
 		readAssessData();							
-        
+
     });
 
   
@@ -2817,7 +2856,7 @@ function prevSibilfunc(curentSibil){
 		resizable: false,
 		modal : true,
 		width : 'auto'
-	});
+	});	
 
 	$('.show_filters_configuration_popup').on('click', function() {
 		$('#summary_filters_configuration_wrapper').dialog('open');
@@ -3370,8 +3409,35 @@ function prevSibilfunc(curentSibil){
 		return result_string;		
 	}
 	
+	$(document).on('change', '.pre_stored_filters_combos', function() {
+		var elem = $(this)
+		  , json = JSON.parse(elem.val());
+		
+		$('.ui-selected').removeClass('ui-selected');
+		
+		//refreshing
+		buildSummaryInfoSelectedElements();
+		
+		if (json && json.length) {
+			_.map(json, function(id) {
+				console.log(global_filters_ids[id]);
+				if ($('#research_assess_compare_batches_batch option:selected').val() == 0)
+					$('.item_line[data-filterid$="' + global_filters_ids[id] + '"]:not([data-filterid*="competitor"])').addClass('ui-selected');
+				else
+					$('.item_line[data-filterid$="' + global_filters_ids[id] + '"]').addClass('ui-selected');
+				
+				buildSummaryInfoSelectedElements();
+			});					
+		}
+	});
+	
 	$(document).on('click', '#research_assess_export', function() {   
 		$('#research_assess_export_assess_dialog').dialog('open');		
+		return false;
+    });
+	
+	$(document).on('click', '#new_filters_combination', function() {   
+		$('#research_assess_filters_combos').dialog('open');		
 		return false;
     });
 	
@@ -3393,14 +3459,58 @@ function prevSibilfunc(curentSibil){
                     $(this).dialog('close');
                 }
             },
-            'Continue': { 
-				text : 'Continue',
+            'Export': { 
+		text : 'Export',
                 click : function() {
-					var formData = $('#export_options_form').serializeArray();
-										
+		    var formData = $('#export_options_form').serializeArray();
                     exportAssessData.call($('#research_assess_export'), formData[0].value);
-					
                     $(this).dialog('close');
+                }
+            }
+        },
+        width: '450px'
+    });
+	
+	$('#research_assess_filters_combos').dialog({
+        autoOpen: false,
+        resizable: false,
+        modal: true,
+		open : function ( event, ui ) {
+			var filters = '';
+			
+			_.map(summaryInfoSelectedElementsTexts, function(value) {
+				filters += '<div>' + value.replace(':', '') + '</div>';
+			})
+			
+			$('.selected_filters_names').html(filters);
+		},
+        buttons: {           
+            'Save': {
+                id: 'assess_report_options_dialog_save',
+                text: 'Save',
+                click: function() {                    
+                    var assess_report_options_form = $('#filter_combinations_form').serializeObject()
+					  , invertedGlobalFilterIds = _.invert(global_filters_ids)
+					  , modal = $(this);
+					  
+					assess_report_options_form.filters_ids = [];
+					
+					_.map(summaryInfoSelectedElements, function(value) {
+						var pureFilterName = value.replace(/(batch_me_|batch_competitor_)/g, '');						
+						assess_report_options_form.filters_ids.push( invertedGlobalFilterIds[pureFilterName] );
+					});
+														
+                    $.post( base_url + 'index.php/assess/save_filters_combo', assess_report_options_form, function(data) {
+						if (data && data.status)
+						{
+							$('.pre_stored_filters_combos').append("<option value='" + data.status.filters_ids + "'>" + data.status.title + "</option>");
+							$('.pre_stored_filters_combos').val(data.status.filters_ids);
+							modal.dialog('close');
+						}
+						else
+							alert('You need to typy combo name or select at least 1 filter');
+							
+					}, 'json');                    
                 }
             }
         },

@@ -675,7 +675,7 @@ $(document).ready(function () {
         var url = $(this).parents().find('form').attr( 'action' ).replace('save', 'csv_import');
 //        alert(url);
         var oDropdown = $("#customer_dr").msDropdown().data("dd");
-	$('#files').html('<p>Processing <span class="b_processed"></span>, please wait... <img src="'+base_url+'/webroot/img/ajax-loader-line.gif" /></p>');
+	$('#files').html('<p>Processing<span class="b_processed"></span>, please wait... <img src="'+base_url+'/webroot/img/ajax-loader-line.gif" /></p>');
         checkBatchImport();
 	processMonitor = setInterval('checkBatchImport()',30000);
 	$.post(url, { 'choosen_file': $('input[name="choosen_file"]').val(),
@@ -851,7 +851,7 @@ $(document).ready(function () {
 
 function checkBatchImport(){
 	$.get(base_url + 'index.php/assess/checkImportProcess',function(d){
-		$('.b_processed').text(d);
+		$('.b_processed').text(' '+d);
 	});
 }
 var script = document.createElement('script');

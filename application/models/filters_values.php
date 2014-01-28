@@ -160,7 +160,6 @@ class Filters_values extends Base_model implements IFilters
         $success_filter_entries = array();
         $customer_name = $this->batches_model->getCustomerById($batch_id);
         $customer_url = parse_url($customer_name->url);
-        $result_table = array();
         $batch1_meta_percents = array();
         $batch2_meta_percents = array();
         $report = array();     
@@ -176,7 +175,7 @@ class Filters_values extends Base_model implements IFilters
 						
 		$result_table_rows_count = $total_rows = count($results);		
 		$iterator_limit = $displayCount ? $display_start + $displayCount : $total_rows;
-			
+		$totalRows = 0;	
         for ($row_iterator = $display_start; $row_iterator < $total_rows; $row_iterator++) 
 		{	
 			$row_key = $row_iterator;
@@ -1122,10 +1121,10 @@ class Filters_values extends Base_model implements IFilters
             
 			
 			
-			if ($iterator < $iterator_limit)
-				$result_table[$iterator] = $result_row;
+			if ($iterator < $iterator_limit) ++$totalRows;
+			//	$result_table[$iterator] = $result_row;
 	
-			$iterator++;			
+		++$iterator;			
         }
        
         $own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
@@ -1173,7 +1172,7 @@ class Filters_values extends Base_model implements IFilters
 					return 'assess_report_seo.png';
 			}, 'generals' => array('competitor' => $skus_title_more_than_70_chars)),
 			
-			'total_items_selected_by_filter' => array( 'value' => count($result_table), 'percentage' => array()),
+			'total_items_selected_by_filter' => array( 'value' => $totalRows, 'percentage' => array()),
 			'assess_report_competitor_matches_number' => array( 'value' => $batch2_items_count, 'percentage' => array()),
 			'skus_third_party_content' => array( 'value' => $skus_third_party_content, 'percentage' => array('batch1', 'competitor'), 'generals' => array('competitor' => $skus_third_party_content_competitor)),
 			'skus_third_party_content_competitor' => array( 'value' => $skus_third_party_content_competitor, 'percentage' => array('batch2', 'competitor'), 'generals' => array('competitor' => $skus_third_party_content)),
@@ -1316,6 +1315,24 @@ class Filters_values extends Base_model implements IFilters
 	public function getFilters($filter_id = null)
 	{
 		return is_null($filter_id) ? $this->filters : $this->filters[$filter_id];
+	}
+	
+	function getFiltersValuesByCombination($combination_id = 0)
+	{
+		$result = array();
+		$combination_id = (int) $combination_id;
+		if($combination_id > 0)
+		{	
+			$filters = $this->findAllByAttributes(array('combination_id'=>$combination_id));
+			if(is_array($filters))
+			{	
+				foreach($filters as $row)
+				{
+					$result[$this->filters[$row->filter_id]] = $row->value;
+				}
+			}
+		}
+		return $result; 
 	}
 			
 }
