@@ -71,7 +71,7 @@ abstract class Base_model extends CI_Model
 			->where($attributes)
 			->limit(1)
 			->get($this->getTableName());
-			
+		
 		return $query->row();
 	}
 	
@@ -86,7 +86,7 @@ abstract class Base_model extends CI_Model
 		$query = $this->db
 			->where($attributes)			
 			->get($this->getTableName());
-			
+		
 		return $query->result();
 	}
 	

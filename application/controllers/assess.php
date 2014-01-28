@@ -3946,6 +3946,17 @@ class Assess extends MY_Controller {
 		$display_length = $build_assess_params->display_length;
 		$batch2 = $build_assess_params->batch2;
 
+		$countedFilters = FALSE;	
+		$this->load->model('filters_values');
+		$this->load->model('batches_combinations');
+		if(!$batch2) $batch2 = 0;
+		$comboPattern['batches_combination'] = $batch_id . '_' . $catId . '_' . $batch2;
+		$combination = $this->batches_combinations->findByAttributes($comboPattern);
+		if(isset($combination->id) && $combination->id > 0)
+		{	
+			$countedFilters = $this->filters_values->getFiltersValuesByCombination($combination->id);
+		}	
+		
 		$success_filter_entries = array();
 		$customer_name = $this->batches_model->getCustomerById($batch_id);
 		$customer_url = parse_url($customer_name->url);
@@ -4267,7 +4278,7 @@ class Assess extends MY_Controller {
 						}
 					}
 
-					if ($needFilters)
+					if ($needFilters && !$countedFilters)
 					{
 						if (isset($parsed_attributes_unserialize['pdf_count']) && $parsed_attributes_unserialize['pdf_count'])
 						{
@@ -4707,7 +4718,7 @@ class Assess extends MY_Controller {
 
 				$percent = number_format($percent, 2);
 
-				if ($needFilters)
+				if ($needFilters && !$countedFilters)
 				{
 					if ($percent >= 25)
 					{
@@ -4734,7 +4745,7 @@ class Assess extends MY_Controller {
 				$result_row->Duplicate_Content.='';
 			}
 
-			if ($needFilters)
+			if ($needFilters && !$countedFilters)
 			{
 				if (isset($pars_atr['parsed_attributes']['pdf_count']) && $pars_atr['parsed_attributes']['pdf_count'])
 				{
@@ -5310,7 +5321,7 @@ class Assess extends MY_Controller {
 			$own_batch_total_items = $this->statistics_model->total_items_in_batch($batch_id);
 		}
 
-		if ($needFilters)
+		if ($needFilters && !$countedFilters)
 		{
 			$summary_fields = array(
 			    'assess_report_total_items' => array('value' => $own_batch_total_items, 'percentage' => array()),
@@ -5413,7 +5424,10 @@ class Assess extends MY_Controller {
 
 			$report['stored_filter_items'] = $stored_filter_items;
 		}
-
+		if($countedFilters)
+		{	
+			$report['summary'] = $countedFilters;
+		}	
 		if ($items_priced_higher_than_competitors > 0)
 		{
 			$report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on ' . $items_priced_higher_than_competitors . ' item(s)';
@@ -5468,7 +5482,6 @@ class Assess extends MY_Controller {
 		$output['sEcho'] = $result_table_rows_count / $display_length;
 		$output['iTotalRecords'] = $result_table_rows_count;
 		$output['iTotalDisplayRecords'] = $result_table_rows_count;
-		//$output['iDisplayLength'] = $display_length;
 		
 		$output['aoColumns'] = $columns;
 		$output['ExtraData']['report'] = $report;
