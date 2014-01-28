@@ -75,7 +75,7 @@ class TargetSpider(SearchSpider):
 
 			# second attempt at finding price
 			if not price_holder:
-				price_holder = result.select(".//p[@class='price price-label ppuContainer']/text()").extract()
+				price_holder = result.select(".//p[contains(@class, 'price price-label')]/text()").extract()
 
 			if price_holder:
 				product_target_price = price_holder[0].strip()
