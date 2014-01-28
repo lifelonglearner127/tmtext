@@ -774,21 +774,16 @@ class Assess extends MY_Controller {
 			$success_filter_entries = array();
 			$row->Short_Description = $row->short_description;
 			$row->Long_Description = $row->long_description;
-
+			$short_desc_1 = '';
 			if ($row->short_description)
 			{
 				$short_desc_1 = $row->short_description;
-			} else
-			{
-				$short_desc_1 = '';
-			}
+			} 
+			$long_desc_1 = '';
 			if ($row->long_description)
 			{
 				$long_desc_1 = $row->long_description;
-			} else
-			{
-				$long_desc_1 = '';
-			}
+			} 
 			$desc_1 = $short_desc_1 . ' ' . $long_desc_1;
 
 			if ($sim[0]->Short_Description)
@@ -949,8 +944,6 @@ class Assess extends MY_Controller {
 			{
 				$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $summaryFilterData, $success_filter_entries);
 			}
-
-
 
 			if ($row->column_external_content)
 			{
@@ -1373,8 +1366,6 @@ class Assess extends MY_Controller {
 
 					if (in_array('Duplicate_Content', $selected_columns))
 					{
-
-
 						if ($row->Short_Description)
 						{
 							$short_desc_1 = $row->Short_Description;
@@ -1493,7 +1484,6 @@ class Assess extends MY_Controller {
 					}
 					// HTags for similar
 					$HTags_for_similar = unserialize($sim[$i - 1]->HTags);
-
 					if (in_array('H1_Tags', $selected_columns) && $HTags_for_similar['h1'] && $HTags_for_similar['h1'] != '')
 					{
 						$H1 = $HTags_for_similar['h1'];
@@ -1795,372 +1785,170 @@ class Assess extends MY_Controller {
 				$long_description_wc_count_1 = 0;
 			}
 		}
-
+		$resArrCnt = count($res_array);
 		foreach ($res_array as $key => $value)
 		{
 
 			if (in_array('Short_Description', $selected_columns))
 			{
-				if (!$res_array[$key]['Short_Description'])
+				if (!$value['Short_Description'])
 					$short_description_count++;
 				if (isset($max_similar_item_count))
 				{
-					if (!$res_array[$key]['Short Description (1)'])
+					if (!$value['Short Description (1)'])
 						$short_description_count_1++;
+				}
+				if ($short_description_count == $resArrCnt)
+				{
+					unset($res_array[$key]['Short_Description']);
+					unset($line['Short_Description']);
+				}
+				if (isset($max_similar_item_count))
+				{
+					if ($short_description_count_1 == $resArrCnt)
+					{
+						unset($res_array[$key]['Short Description (1)']);
+						unset($line['18']);
+					}
 				}
 			}
 			if (in_array('Long_Description', $selected_columns))
 			{
-				if (!$res_array[$key]['Long_Description'])
+				if (!$value['Long_Description'])
 					$long_description_count++;
 				if (isset($max_similar_item_count))
 				{
-					if (!$res_array[$key]['Long_Description (1)'])
+					if (!$value['Long_Description (1)'])
 						$long_description_count_1++;
+				}
+				if ($long_description_count == $resArrCnt)
+				{
+					unset($res_array[$key]['Long_Description']);
+					unset($line['Long_Description']);
+				}
+				if (isset($max_similar_item_count))
+				{
+					if ($long_description_count_1 == $resArrCnt)
+					{
+						
+						unset($res_array[$key]['Long_Description (1)']);
+						unset($line['20']);
+					}
 				}
 			}
 			if (in_array('short_description_wc', $selected_columns))
 			{
-				if ($res_array[$key]['short_description_wc'] == 0)
+				if ($value['short_description_wc'] == 0)
 					$short_description_wc_count++;
 				if (isset($max_similar_item_count))
 				{
-					if ($res_array[$key]['Short Desc # Words (1)'] == 0)
+					if ($value['Short Desc # Words (1)'] == 0)
 						$short_description_wc_count_1++;
+				}
+				if ($short_description_wc_count == $resArrCnt)
+				{
+					unset($res_array[$key]['short_description_wc']);
+					unset($line['short_description_wc']);
+				}
+				if (isset($max_similar_item_count))
+				{
+					if ($short_description_wc_count_1 == $resArrCnt)
+					{
+						unset($res_array[$key]['Short Desc # Words (1)']);
+						unset($line['19']);
+					}
 				}
 			}
 			if (in_array('long_description_wc', $selected_columns))
 			{
-				if ($res_array[$key]['long_description_wc'] == 0)
+				if ($value['long_description_wc'] == 0)
 					$long_description_wc_count++;
 				if (isset($max_similar_item_count))
 				{
-					if ($res_array[$key]['Long Desc # Words (1)'] == 0)
+					if ($value['Long Desc # Words (1)'] == 0)
 						$long_description_wc_count_1++;
 				}
-			}
-		}
-
-		if (in_array('Short_Description', $selected_columns))
-		{
-			if ($short_description_count == count($res_array))
-			{
-				foreach ($res_array as $key => $res)
-				{
-					unset($res_array[$key]['Short_Description']);
-				}
-				unset($line['Short_Description']);
-			}
-			if (isset($max_similar_item_count))
-			{
-				if ($short_description_count_1 == count($res_array))
-				{
-					foreach ($res_array as $key => $res)
-					{
-						unset($res_array[$key]['Short Description (1)']);
-					}
-					unset($line['18']);
-				}
-			}
-		}
-		if (in_array('Long_Description', $selected_columns))
-		{
-			if ($long_description_count == count($res_array))
-			{
-				foreach ($res_array as $key => $res)
-				{
-					unset($res_array[$key]['Long_Description']);
-				}
-				unset($line['Long_Description']);
-			}
-			if (isset($max_similar_item_count))
-			{
-				if ($long_description_count_1 == count($res_array))
-				{
-					foreach ($res_array as $key => $res)
-					{
-						unset($res_array[$key]['Long_Description (1)']);
-					}
-					unset($line['20']);
-				}
-			}
-		}
-
-		if (in_array('short_description_wc', $selected_columns))
-		{
-			if ($short_description_wc_count == count($res_array))
-			{
-				foreach ($res_array as $key => $res)
-				{
-					unset($res_array[$key]['short_description_wc']);
-				}
-				unset($line['short_description_wc']);
-			}
-			if (isset($max_similar_item_count))
-			{
-				if ($short_description_wc_count_1 == count($res_array))
-				{
-					foreach ($res_array as $key => $res)
-					{
-						unset($res_array[$key]['Short Desc # Words (1)']);
-					}
-					unset($line['19']);
-				}
-			}
-		}
-		if (in_array('long_description_wc', $selected_columns))
-		{
-			if ($long_description_wc_count == count($res_array))
-			{
-				foreach ($res_array as $key => $res)
+				if ($long_description_wc_count == $resArrCnt)
 				{
 					unset($res_array[$key]['long_description_wc']);
+					unset($line['long_description_wc']);
 				}
-				unset($line['long_description_wc']);
-			}
-			if (isset($max_similar_item_count))
-			{
-				if ($long_description_wc_count_1 == count($res_array))
+				if (isset($max_similar_item_count))
 				{
-					foreach ($res_array as $key => $res)
+					if ($long_description_wc_count_1 == $resArrCnt)
 					{
 						unset($res_array[$key]['Long Desc # Words(1)']);
+						unset($line['21']);
 					}
-					unset($line['21']);
 				}
 			}
+			
 		}
 
-		if ($res_array[0])
+
+
+		if (isset($res_array[0]))
 		{
 			$res_key = array_keys($res_array[0]);
 			$res_key_flip = array_flip($res_key);
 			foreach ($res_key_flip as $key => $value)
 			{
-				if ($key == "created")
+				switch($key)
 				{
-					$key = 'Created';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "product_name")
-				{
-					$key = 'Product name';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H1_Tags1(1)")
-				{
-					$key = 'Product name';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H1_Tags_Count1")
-				{
-					$key = 'H1 Tags Count1';
-					$res_array_keys[$value] = $key;
-				} elseif ($key === "H1_Tags1")
-				{
-					$key = 'H1 Tags(1)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Long_Description")
-				{
-					$key = 'Long description';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "long_description_wc")
-				{
-					$key = 'Long Description - # Words';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "url")
-				{
-					$key = 'Url';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Short_Description")
-				{
-					$key = 'Product Description';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "short_description_wc")
-				{
-					$key = 'Short Desc # Words';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "price_diff")
-				{
-					$key = 'Price difference';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "column_features")
-				{
-					$key = 'Features';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "average_review")
-				{
-					$key = 'Avg Review';
-					$res_array_keys[$value] = $key;
-				} elseif ($key === "column_reviews")
-				{
-					$key = 'Reviews';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "title_seo_phrases")
-				{
-					$key = 'Title keywords';
-					$res_array_keys[$value] = $key;
-				}
-				//elseif($key == "item_id"){
-				//$key = 'Item ID';
-				//	$res_array_keys[$value] = $key;
-				//}
-				elseif ($key == "imp_data_id")
-				{
-					$key = 'Item ID';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H1_Tags0")
-				{
-					$key = 'H1 Tags';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "model")
-				{
-					$key = 'Model';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Model (1)")
-				{
-					$key = 'Model(2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Product Name (1)")
-				{
-					$key = 'Product Name (2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "meta_keywords")
-				{
-					$key = 'Meta keywords';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "meta_description")
-				{
-					$key = 'Meta description';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Meta_Description_Count")
-				{
-					$key = 'Meta Desc # Words';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Custom_Keywords_Short_Description")
-				{
-					$key = 'Custom Keywords Short Description';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Custom_Keywords_Long_Description")
-				{
-					$key = 'Custom Keywords Long Description';
-					$res_array_keys[$value] = $key;
-				} elseif ($key === "column_external_content")
-				{
-					$key = 'Third Party Content';
-					$res_array_keys[$value] = $key;
-				} elseif ($key === "column_external_content(1)")
-				{
-					$key = 'Third Party Content';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Page_Load_Time")
-				{
-					$key = 'Page Load Time';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H1_Tags_Count0")
-				{
-					$key = 'H1 chars count(1)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H1_Tags_Count0(1)")
-				{
-					$key = 'H1 chars count(2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H2_Tags0")
-				{
-					$key = 'H2 Tags(1)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H2_Tags_Count0")
-				{
-					$key = 'H2 chars count';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H2_Tags1")
-				{
-					$key = 'H2 Tags(2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H2_Tags_Count1")
-				{
-					$key = 'H2 chars count(1)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Gap analysis")
-				{
-					$key = 'Gap analysis';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Duplicate_Content")
-				{
-					$key = 'Duplicate Content';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "imp_data_id2")
-				{
-					$key = 'Item Id (2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "average_review(1)")
-				{
-					$key = 'Average review(1)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Url (1)")
-				{
-					$key = 'Url(2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Short Description (1)")
-				{
-					$key = 'Product Description (2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Short Desc # Words (1)")
-				{
-					$key = 'Short Desc # Words (2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Long Desc # Words (1)")
-				{
-					$key = 'Long Desc # Words (2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Meta_Keywords(1)")
-				{
-					$key = 'Meta Keywords(2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Meta_Description (1)")
-				{
-					$key = 'Meta Description (2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Meta Desc Words (1)")
-				{
-					$key = 'Meta Desc Words (2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "Page Load Time (1)")
-				{
-					$key = 'Page Load Time (2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "column_features(1)")
-				{
-					$key = 'Features(2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "column_reviews(1)")
-				{
-					$key = 'Column reviews';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "title_seo_phrases(1)")
-				{
-					$key = 'Title keywords(2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H2_Tags0(1)")
-				{
-					$key = 'H2 Tags(1)(2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key === "H1_Tags0(1)")
-				{
-					$key = 'H1 Tags(2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H2_Tags_Count0(1)")
-				{
-					$key = 'H2 chars count(2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H2_Tags1(1)")
-				{
-					$key = 'H2 Tags(2)(2)';
-					$res_array_keys[$value] = $key;
-				} elseif ($key == "H2_Tags_Count1(1)")
-				{
-					$key = 'H2 chars count(2)';
-					$res_array_keys[$value] = $key;
-				} else
-				{
-					$res_array_keys[$value] = $key;
+					case 'created': $key = 'Created'; $res_array_keys[$value] = $key; break;
+					case 'product_name': $key = 'Product name'; $res_array_keys[$value] = $key; break;
+					case 'H1_Tags1(1)': $key = 'H1 Tags1'; $res_array_keys[$value] = $key; break;
+					case 'H1_Tags_Count1': $key = 'H1 Tags Count1'; $res_array_keys[$value] = $key; break;
+					case 'H1_Tags1': $key = 'H1 Tags(1)'; $res_array_keys[$value] = $key; break;
+					case 'Long_Description': $key = 'Long description'; $res_array_keys[$value] = $key; break;
+					case 'long_description_wc': $key = 'Long Description - # Words'; $res_array_keys[$value] = $key; break;
+					case 'url': $key = 'Url'; $res_array_keys[$value] = $key; break;
+					case 'Short_Description': $key = 'Product Description'; $res_array_keys[$value] = $key; break;
+					case 'short_description_wc': $key = 'Short Desc # Words'; $res_array_keys[$value] = $key; break;
+					case 'price_diff': $key = 'Price difference'; $res_array_keys[$value] = $key; break;
+					case 'column_features': $key = 'Features'; $res_array_keys[$value] = $key; break;
+					case 'average_review': $key = 'Avg Review'; $res_array_keys[$value] = $key; break;
+					case 'column_reviews': $key = 'Reviews'; $res_array_keys[$value] = $key; break;
+					case 'title_seo_phrases': $key = 'Title keywords'; $res_array_keys[$value] = $key; break;
+					case 'imp_data_id': $key = 'Item ID'; $res_array_keys[$value] = $key; break;
+					case 'H1_Tags0': $key = 'H1 Tags'; $res_array_keys[$value] = $key; break;
+					case 'Model (1)': $key = 'Model(2)'; $res_array_keys[$value] = $key; break;
+					case 'Product Name (1)': $key = 'Product Name (2)'; $res_array_keys[$value] = $key; break;
+					case 'meta_keywords': $key = 'Meta keywords'; $res_array_keys[$value] = $key; break;
+					case 'meta_description': $key = 'Meta description'; $res_array_keys[$value] = $key; break;
+					case 'Meta_Description_Count': $key = 'Meta Desc # Words'; $res_array_keys[$value] = $key; break;
+					case 'Custom_Keywords_Short_Description': $key = 'Custom Keywords Short Description'; $res_array_keys[$value] = $key; break;
+					case 'Custom_Keywords_Long_Description': $key = 'Custom Keywords Long Description'; $res_array_keys[$value] = $key; break;
+					case 'column_external_content': $key = 'Third Party Content'; $res_array_keys[$value] = $key; break;
+					case 'column_external_content(1)': $key = 'Third Party Content'; $res_array_keys[$value] = $key; break;
+					case 'Page_Load_Time': $key = 'Page Load Time'; $res_array_keys[$value] = $key; break;
+					case 'H1_Tags_Count0': $key = 'H1 chars count(1)'; $res_array_keys[$value] = $key; break;
+					case 'H1_Tags_Count0(1)': $key = 'H1 chars count(2)'; $res_array_keys[$value] = $key; break;
+					case 'H2_Tags0': $key = 'H2 Tags(1)'; $res_array_keys[$value] = $key; break;
+					case 'H1_Tags_Count0(1)': $key = 'H1 chars count(2)'; $res_array_keys[$value] = $key; break;
+					case 'H2_Tags_Count0': $key = 'H2 chars count'; $res_array_keys[$value] = $key; break;
+					case 'H2_Tags1': $key = 'H2 Tags(2)'; $res_array_keys[$value] = $key; break;
+					case 'H2_Tags_Count1': $key = 'H2 chars count(1)'; $res_array_keys[$value] = $key; break;
+					case 'Gap analysis': $key = 'Gap analysis'; $res_array_keys[$value] = $key; break;
+					case 'Duplicate_Content': $key = 'Duplicate Content'; $res_array_keys[$value] = $key; break;
+					case 'imp_data_id2': $key = 'Item Id (2)'; $res_array_keys[$value] = $key; break;
+					case 'average_review(1)': $key = 'Average review(1)'; $res_array_keys[$value] = $key; break;
+					case 'Url (1)': $key = 'Url(2)'; $res_array_keys[$value] = $key; break;
+					case 'Short Description (1)': $key = 'Product Description (2)'; $res_array_keys[$value] = $key; break;
+					case 'Short Desc # Words (1)': $key = 'Short Desc # Words (2)'; $res_array_keys[$value] = $key; break;
+					case 'Long Desc # Words (1)': $key = 'Long Desc # Words (2)'; $res_array_keys[$value] = $key; break;
+					case 'Meta_Keywords(1)': $key = 'Meta Keywords(2)'; $res_array_keys[$value] = $key; break;
+					case 'Page Load Time (1)': $key = 'Page Load Time (2)'; $res_array_keys[$value] = $key; break;
+					case 'column_features(1)': $key = 'Features(2)'; $res_array_keys[$value] = $key; break;
+					case 'column_reviews(1)': $key = 'Column reviews'; $res_array_keys[$value] = $key; break;
+					case 'Meta Desc Words (1)': $key = 'Meta Desc Words (2)'; $res_array_keys[$value] = $key; break;
+					case 'title_seo_phrases(1)': $key = 'Title keywords(2)'; $res_array_keys[$value] = $key; break;
+					case 'H2_Tags0(1)': $key = 'H2 Tags(1)(2)'; $res_array_keys[$value] = $key; break;
+					case 'H1_Tags0(1)': $key = 'H1 Tags(2)'; $res_array_keys[$value] = $key; break;
+					case 'H2_Tags_Count0(1)': $key = 'H2 chars count(2)'; $res_array_keys[$value] = $key; break;
+					case 'H2_Tags1(1)': $key = 'H2 Tags(2)(2)'; $res_array_keys[$value] = $key; break;
+					case 'H2_Tags_Count1(1)': $key = 'H2 chars count(2)'; $res_array_keys[$value] = $key; break;
+					default: $res_array_keys[$value] = $key; break;
 				}
 			}
 		}
