@@ -604,7 +604,7 @@ class Assess extends MY_Controller {
 				$val->Long_Description = $val->long_description;
 				$val->Short_Description = $val->short_description;
 				$similar_items_data = array();
-				if (substr_count(strtolower($val->similar_products_competitors), strtolower($customer_name)) > 0)
+				if (stripos($val->similar_products_competitors, $customer_name))
 				{
 					$similar_items = unserialize($val->similar_products_competitors);
 					if (count($similar_items) > 1)
@@ -3910,7 +3910,6 @@ class Assess extends MY_Controller {
     
     private function build_asses_table($results, $build_assess_params, $batch_id = '', $columns = array(), $catId = FALSE)
     {
-		$st_time = microtime(true);
 		$this->load->model('batches_model');
 		$this->load->model('statistics_duplicate_content_model');
 
@@ -3963,9 +3962,7 @@ class Assess extends MY_Controller {
 		$batch1_meta_percents = array();
 		$batch2_meta_percents = array();
 		$report = array();
-		// $pricing_details = array(); //Looks like this variable was not used
 		$stored_filter_items = array();
-		$tb_product_name = 'tb_product_name';
 
 		//getting columns				
 		$raw_columns = $columns;
@@ -3986,7 +3983,8 @@ class Assess extends MY_Controller {
 		    "iDisplayLength" => $display_length,
 		    "aaData" => array()
 		);
-		
+		$this->load->model('assess_results');
+		$this->assess_results->truncate();
 		for ($row_iterator = $display_start; $row_iterator < $total_rows; $row_iterator++)
 		{
 			$row_key = $row_iterator;
@@ -4581,7 +4579,7 @@ class Assess extends MY_Controller {
 				}
 				//getting title_keywords from statistics_new
 				$title_seo_pr = array();
-				if ($row->title_keywords != '' && $row->title_keywords != 'None')
+				if (trim($row->title_keywords) && $row->title_keywords != 'None')
 				{
 					$title_seo_pr = unserialize($row->title_keywords);
 				}
@@ -5033,17 +5031,17 @@ class Assess extends MY_Controller {
 					$skus_three_optimized_keywords_competitor++;
 					$this->filterBySummaryCriteria('skus_three_optimized_keywords_competitor', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
-				if (isset($data_row->mvid) && $data_row->mvid > 0)
+				if (isset($result_row->mvid) && $result_row->mvid > 0)
 				{
 					$skus_with_manufacturer_videos++;
 					$this->filterBySummaryCriteria('skus_with_manufacturer_videos', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
-				if (isset($data_row->mimg) && $data_row->mimg > 0)
+				if (isset($result_row->mimg) && $result_row->mimg > 0)
 				{
 					$skus_with_manufacturer_images++;
 					$this->filterBySummaryCriteria('skus_with_manufacturer_images', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
 				}
-				if (isset($data_row->murl) && strlen($data_row->murl) > 0)
+				if (isset($result_row->murl) && strlen($result_row->murl) > 0)
 				{
 					$skus_with_manufacturer_pages++;
 					$this->filterBySummaryCriteria('skus_with_manufacturer_pages', $build_assess_params->summaryFilterData, $success_filter_entries, $stored_filter_items, $iterator);
@@ -5061,7 +5059,7 @@ class Assess extends MY_Controller {
 				if (isset($result_row->recommendations))
 				{
 					// this is for absent product in selected batch only
-					$recommendations_html = '<ul class="assess_recommendations"><li>' . $result_row->recommendations . '</li></ul>';
+					$result_row->recommendations_html = '<ul class="assess_recommendations"><li>' . $result_row->recommendations . '</li></ul>';
 				} else
 				{
 					$img_path = base_url() . "img/";
@@ -5168,145 +5166,17 @@ class Assess extends MY_Controller {
 					$lim = count($recommendations);
 					for ($i = 0; $i < $lim; $i++)
 					{
-						$recommendations[$i] = '<li>' . $recommendations[$i]['img'] . $recommendations[$i]['msg'] . '</li>';
+					    $recommendations[$i] = '<li>' . $recommendations[$i]['img'] . $recommendations[$i]['msg'] . '</li>';
 					}
-
-					$recommendations_html = '<ul class="assess_recommendations">' . implode('', $recommendations) . '</ul>';
+					$result_row->recommendations_html = '<ul class="assess_recommendations">' . implode('', $recommendations) . '</ul>';
 				}
 
-				$row_created_array = explode(' ', $result_row->created);
-				$row_created = '<nobr>' . $row_created_array[0] . '</nobr><br/>';
-				$row_created = $row_created . '<nobr>' . $row_created_array[1] . '</nobr>';
-				$snap = '';
-
-				$row_url = '<a class="active_link" href="' . $result_row->url . '" target="_blank">' . $result_row->url . '</a>';
-				if ($result_row->snap != '')
-				{
-					$file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $result_row->snap;
-					if (file_exists($file))
-					{
-						if (filesize($file) > 1024)
-						{
-							$snap = "<img src='" . base_url() . "webshoots/" . $result_row->snap . "' />";
-						}
-					}
-				}
-
-				$output_row = array(
-				    'snap' => '<span style="cursor:pointer;">' . $snap . '</span>',
-				    'created' => $row_created,
-				    'imp_data_id' => $result_row->imported_data_id,
-				    'product_name' => '<span class= "' . $tb_product_name . '">' . $result_row->product_name . "</span>",
-				    'item_id' => $result_row->item_id,
-				    'model' => $result_row->model,
-				    'url' => $row_url,
-				    'Page_Load_Time' => $result_row->Page_Load_Time,
-				    'Short_Description' => $result_row->short_description,
-				    'short_description_wc' => $result_row->short_description_wc,
-				    'Meta_Keywords' => $result_row->Meta_Keywords,
-				    'short_seo_phrases' => $result_row->short_seo_phrases,
-				    'title_seo_phrases' => $result_row->title_seo_phrases,
-				    'images_cmp' => $result_row->images_cmp,
-				    'video_count' => $result_row->video_count,
-				    'title_pa' => $result_row->title_pa,
-				    'links_count' => $result_row->links_count,
-				    'long_description' => $result_row->long_description,
-				    'long_description_wc' => $result_row->long_description_wc,
-				    'long_seo_phrases' => $result_row->long_seo_phrases,
-				    'Custom_Keywords_Short_Description' => $result_row->Custom_Keywords_Short_Description,
-				    'Custom_Keywords_Long_Description' => $result_row->Custom_Keywords_Long_Description,
-				    'Meta_Description' => $result_row->Meta_Description,
-				    'Meta_Description_Count' => $result_row->Meta_Description_Count,
-				    'H1_Tags' => $result_row->H1_Tags,
-				    'H1_Tags_Count' => $result_row->H1_Tags_Count,
-				    'H2_Tags' => $result_row->H2_Tags,
-				    'H2_Tags_Count' => $result_row->H2_Tags_Count,
-				    'column_external_content' => $result_row->column_external_content,
-				    'column_reviews' => $result_row->column_reviews,
-				    'average_review' => $result_row->average_review,
-				    'column_features' => $result_row->column_features,
-				    'price_diff' => $result_row->price_diff,
-				    'recommendations' => $recommendations_html,
-				    'murl' => $result_row->murl,
-				    'mimg' => $result_row->mimg,
-				    'mvid' => $result_row->mvid,
-				    'total_description_wc' => $result_row->total_description_wc,
-				    'prodcat' => $result_row->prodcat
-				);
-
-				if ($build_assess_params->max_similar_item_count > 0)
-				{
-					$result_row = (array) $result_row;
-					for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++)
-					{
-						$output_row['snap' . $i] = $result_row['snap' . $i] != null ? $result_row['snap' . $i] : '-';
-						$output_row['imp_data_id' . $i] = $result_row['imp_data_id' . $i] != null ? $result_row['imp_data_id' . $i] : '';
-						$output_row['product_name' . $i] = $result_row['product_name' . $i] != null ? $result_row['product_name' . $i] : '-';
-						$output_row['item_id' . $i] = $result_row['item_id' . $i] != null ? $result_row['item_id' . $i] : '';
-						$output_row['model' . $i] = $result_row['model' . $i] != null ? $result_row['model' . $i] : '';
-						$output_row['url' . $i] = $result_row['url' . $i] != null ? $result_row['url' . $i] : '-';
-						$output_row['Page_Load_Time' . $i] = $result_row['Page_Load_Time' . $i] != null ? $result_row['Page_Load_Time' . $i] : '';
-						$output_row['Short_Description' . $i] = $result_row['Short_Description' . $i] != null ? $result_row['Short_Description' . $i] : '';
-						$output_row['short_description_wc' . $i] = $result_row['short_description_wc' . $i] != null ? $result_row['short_description_wc' . $i] : '';
-						$output_row['Meta_Keywords' . $i] = $result_row['Meta_Keywords' . $i] != null ? $result_row['Meta_Keywords' . $i] : '';
-						$output_row['Long_Description' . $i] = $result_row['Long_Description' . $i] != null ? $result_row['Long_Description' . $i] : '';
-						$output_row['long_description_wc' . $i] = $result_row['long_description_wc' . $i] != null ? $result_row['long_description_wc' . $i] : '';
-						$output_row['Meta_Description' . $i] = $result_row['Meta_Description' . $i] != null ? $result_row['Meta_Description' . $i] : '';
-						$output_row['Meta_Description_Count' . $i] = $result_row['Meta_Description_Count' . $i] != null ? $result_row['Meta_Description_Count' . $i] : '';
-						$output_row['column_external_content' . $i] = $result_row['column_external_content' . $i] != null ? $result_row['column_external_content' . $i] : '';
-						$output_row['H1_Tags' . $i] = $result_row['H1_Tags' . $i] != null ? $result_row['H1_Tags' . $i] : '';
-						$output_row['H1_Tags_Count' . $i] = $result_row['H1_Tags_Count' . $i] != null ? $result_row['H1_Tags_Count' . $i] : '';
-						$output_row['H2_Tags' . $i] = $result_row['H2_Tags' . $i] != null ? $result_row['H2_Tags' . $i] : '';
-						$output_row['H2_Tags_Count' . $i] = $result_row['H2_Tags_Count' . $i] != null ? $result_row['H2_Tags_Count' . $i] : '';
-						$output_row['column_reviews' . $i] = $result_row['column_reviews' . $i] != null ? $result_row['column_reviews' . $i] : 0;
-						$output_row['average_review' . $i] = $result_row['average_review' . $i] != null ? $result_row['average_review' . $i] : '';
-						$output_row['column_features' . $i] = $result_row['column_features' . $i] != null ? $result_row['column_features' . $i] : '';
-						$output_row['title_seo_phrases' . $i] = $result_row['title_seo_phrases' . $i] != null ? $result_row['title_seo_phrases' . $i] : '';
-						$output_row['images_cmp' . $i] = $result_row['images_cmp' . $i] != null ? $result_row['images_cmp' . $i] : 'none';
-						$output_row['video_count' . $i] = $result_row['video_count' . $i] != null ? $result_row['video_count' . $i] : 'none';
-						$output_row['title_pa' . $i] = $result_row['title_pa' . $i] != null ? $result_row['title_pa' . $i] : '';
-						$output_row['links_count' . $i] = $result_row['links_count' . $i] != null ? $result_row['links_count' . $i] : '';
-						$output_row['total_description_wc' . $i] = $output_row['short_description_wc' . $i] + $output_row['long_description_wc' . $i];
-					}
-
-					$output_row['gap'] = $result_row['gap'];
-					$output_row['duplicate_content'] = $result_row['Duplicate_Content'];
-				} else
-				{
-					$output_row['snap1'] = $result_row->snap1;
-					$output_row['imp_data_id1'] = $result_row->imp_data_id1;
-					$output_row['product_name1'] = $result_row->product_name1;
-					$output_row['item_id1'] = $result_row->item_id1;
-					$output_row['model1'] = $result_row->model1;
-					$output_row['url1'] = $result_row->url1;
-					$output_row['Page_Load_Time1'] = $result_row->Page_Load_Time1;
-					$output_row['Short_Description1'] = $result_row->Short_Description1;
-					$output_row['short_description_wc1'] = $result_row->short_description_wc1;
-					$output_row['Meta_Keywords1'] = $result_row->Meta_Keywords1;
-					$output_row['Long_Description1'] = $result_row->Long_Description1;
-					$output_row['long_description_wc1'] = $result_row->long_description_wc1;
-					$output_row['Meta_Description1'] = $result_row->Meta_Description1;
-					$output_row['Meta_Description_Count1'] = $result_row->Meta_Description_Count1;
-					$output_row['column_external_content1'] = $result_row->column_external_content1;
-					$output_row['H1_Tags1'] = $result_row->H1_Tags1;
-					$output_row['H1_Tags_Count1'] = $result_row->H1_Tags_Count1;
-					$output_row['H2_Tags1'] = $result_row->H2_Tags1;
-					$output_row['H2_Tags_Count1'] = $result_row->H2_Tags_Count1;
-					$output_row['column_reviews1'] = $result_row->column_reviews1;
-					$output_row['average_review1'] = $result_row->average_review1;
-					$output_row['column_features1'] = $result_row->column_features1;
-					$output_row['title_seo_phrases1'] = $result_row->title_seo_phrases1;
-					$output_row['images_cmp1'] = $result_row->images_cmp1;
-					$output_row['video_count1'] = $result_row->video_count1;
-					$output_row['title_pa1'] = $result_row->title_pa1;
-					$output_row['links_count1'] = $result_row->links_count1;
-					$output_row['gap'] = $result_row->gap;
-					$output_row['duplicate_content'] = $result_row->Duplicate_Content;
-					$output_row['total_description_wc1'] = $output_row['short_description_wc1'] + $output_row['long_description_wc1'];
-				}
-
-				$output['aaData'][] = AssessHelper::setTableData($columns, $output_row);
-				$output['ExtraData']['json_encoded_data'][] = json_encode($result_row);
+				
+				$o = $this->prepareAssessOutput($result_row,$build_assess_params,$columns);
+				$output['aaData'][] = $o['aaData'];
+				$output['ExtraData']['json_encoded_data'][] = $o['ExtraData'];
+				$this->assess_results->saveRow($result_row);
+				
 				++$itemsTotal;
 			}
 			++$iterator;
@@ -5489,6 +5359,46 @@ class Assess extends MY_Controller {
 		$output['ExtraData']['fixedTotalRows'] = $result_table_rows_count;
 
 		return $output;
+    }
+    
+    private function prepareAssessOutput($result_row,$build_assess_params,$columns)
+    {
+	    $row_created_array = explode(' ', $result_row->created);
+	    $row_created = '<nobr>' . $row_created_array[0] . '</nobr><br/>';
+	    $row_created = $row_created . '<nobr>' . $row_created_array[1] . '</nobr>';
+	    $snap = '';
+            $row_url = '<a class="active_link" href="' . $result_row->url . '" target="_blank">' . $result_row->url . '</a>';
+	    if (trim($result_row->snap))
+	    {
+		  $file = realpath(BASEPATH . "../webroot/webshoots") . '/' . $result_row->snap;
+		  if (file_exists($file))
+		  {
+			 if (filesize($file) > 1024)
+			 {
+				 $snap = "<img src='" . base_url() . "webshoots/" . $result_row->snap . "' />";
+			 }
+		  }
+	    }		
+	    $output_row = (array) $result_row;
+	    $output_row['snap'] = '<span style="cursor:pointer;">' . $snap . '</span>';
+	    $output_row['created'] = $row_created;
+	    $output_row['url'] = $row_url;
+	    $output_row['recommendations'] = $result_row->recommendations_html;
+
+	    if ($build_assess_params->max_similar_item_count > 1)
+	    {
+			$result_row = (array) $result_row;
+			for ($i = 1; $i <= $build_assess_params->max_similar_item_count; $i++)
+			{
+				$output_row['total_description_wc' . $i] = $output_row['short_description_wc' . $i] + $output_row['long_description_wc' . $i];
+			}
+	    } else
+	    {
+			$output_row['total_description_wc1'] = $output_row['short_description_wc1'] + $output_row['long_description_wc1'];
+	    }
+	    $output['aaData'] = AssessHelper::setTableData($columns, $output_row);
+	    $output['ExtraData'] = json_encode($result_row);
+	    return $output;
     }
     
     private function build_asses_table_old($results, $build_assess_params, $batch_id = '', $columns = array(), $catId = FALSE) 
