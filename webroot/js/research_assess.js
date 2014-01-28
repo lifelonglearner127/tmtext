@@ -49,13 +49,13 @@ $(function() {
 		$('.item_line').removeClass('ui-selected');
 		summaryInfoSelectedElements = [];
 		
-		$('.selectable_summary_info').selectable('disable');
+		// $('.selectable_summary_info').selectable('disable');
 	});
 	
 	$( document ).ajaxStop(function() {
 		$( '#research_assess_update,#research_assess_update2' ).text( "Update" ).removeAttr('disabled');
 		
-		$('.selectable_summary_info').selectable('enable');			
+		// $('.selectable_summary_info').selectable('enable');			
 	});
 	
     $.ajax({
@@ -3393,9 +3393,7 @@ function prevSibilfunc(curentSibil){
 					$('.item_line[data-filterid$="' + global_filters_ids[id] + '"]').addClass('ui-selected');
 				
 				buildSummaryInfoSelectedElements();
-			});
-			
-			// $('#research_assess_update').click();
+			});					
 		}
 	});
 	
@@ -3452,14 +3450,7 @@ function prevSibilfunc(curentSibil){
 			
 			$('.selected_filters_names').html(filters);
 		},
-        buttons: {
-            'Cancel': {
-                id: 'assess_report_options_dialog_cancel',
-                text: 'Cancel',
-                click: function() {
-                    $(this).dialog('close');
-                }
-            },
+        buttons: {           
             'Save': {
                 id: 'assess_report_options_dialog_save',
                 text: 'Save',
@@ -3479,6 +3470,7 @@ function prevSibilfunc(curentSibil){
 						if (data && data.status)
 						{
 							$('.pre_stored_filters_combos').append("<option value='" + data.status.filters_ids + "'>" + data.status.title + "</option>");
+							$('.pre_stored_filters_combos').val(data.status.filters_ids);
 							modal.dialog('close');
 						}
 						else

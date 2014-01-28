@@ -279,13 +279,15 @@
     </div>
 </div>
 
-<div id="research_assess_filters_combos" title="Filters combinations" >
+<div id="research_assess_filters_combos" title="Create Filter Combination" >
     <div>
 		<div class="selected_filters_names"></div>
         <form action="" method="post" id="filter_combinations_form">
 			            
 			<p>
-				<input name="title" />
+				<label>New Filter Combo: 
+					<input name="title" />
+				</label>
 			</p>
 		
         </form>
