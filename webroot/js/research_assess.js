@@ -2735,6 +2735,7 @@ function prevSibilfunc(curentSibil){
     $('#research_assess_update').on('click', function() {
        						
 		readAssessData();							
+		$('#graphDropDown').change();
         
     });
 
