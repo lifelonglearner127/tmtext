@@ -157,10 +157,10 @@ class AmazonSpider(SearchSpider):
 				if m:
 					item['product_target_price'] = float(m.group(1))
 				else:
-					sys.stderr.write("Didn't match product price: " + product_target_price + " " + response.url + "\n")
+					self.log("Didn't match product price: " + product_target_price + " " + response.url + "\n", level=log.WARNING)
 
 			else:
-				sys.stderr.write("Didn't find product price: " + response.url + "\n")
+				self.log("Didn't find product price: " + response.url + "\n", level=log.DEBUG)
 
 
 			# add result to items
