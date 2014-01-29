@@ -23,6 +23,8 @@ HTTPCACHE_STORAGE = 'scrapy.contrib.downloadermiddleware.httpcache.FilesystemCac
 HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
 #HTTPCACHE_POLICY = 'SamsungCachePolicy.SamsungCachePolicy'
 
+DOWNLOAD_DELAY = 0.25 
+
 # $HOME/.scrapy_cache
 import os
 homedir = os.getenv("HOME")
