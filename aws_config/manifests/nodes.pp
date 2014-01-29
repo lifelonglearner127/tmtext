@@ -85,6 +85,13 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 		group => ubuntu,
 	}
 
+  ssh_authorized_key { "ssh_key":
+    ensure => "present",
+    key    => "AAAAB3NzaC1yc2EAAAADAQABAAABAQCe+SG4qezR2z8Ma1JR4Uux9XtuwyFlQT8tk3pMBr0WIBIXaOICIa6YM9xeBHsUb24IVk4KQs8pmY42q1P8MjqIIXA62q4G2nqRn97I3/W2KLH4z4QRNnG8UPkOvGcW0XaKjzSKdEepWBDTIxKeVdRbhlr2ZSp3/FGlbQ2KhqffIg65X3fnvPTorCh4X85iqvfhibddiRC+DmKvVKvrgrw5q/YysB4e0Ho5ql6UiKlCtU88o1yyrXeiPAlYhI4HFfrlaISEg0WUPxotBmpLZXOPb9UvG5wQ4i3FGj8fW1hGhn5E2zxe1o+GyPssTR25fnyATj17Nnm+z8r/C3SE7xyD",
+    type   => "ssh-rsa",
+    user   => "ubuntu",
+  }
+
 	# make sure root has access to repo (to pull at startup)
 	file { "/root/.ssh/config":
 	    source => "puppet:///modules/common/ssh_config",
