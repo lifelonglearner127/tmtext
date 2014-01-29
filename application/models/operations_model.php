@@ -73,8 +73,9 @@ class Operations_model extends Base_model {
         }
 
     public function update() {
-        
+        $this->db->update($this->getTableName(), $data, array('id' => $data['id']));       
     }
+
 
 //    public function delete($id) {
 //        

@@ -24,10 +24,21 @@ class Workflow extends MY_Controller {
         echo json_encode($res);
     }
     public function get_operations(){
+        $id = $this->input->post('id');
+        if($id){
+            $id = $this->input->post('id');
+            $res = $this->operations_model->findAllByAttributes(array('id' => $id));
+        }else{
         $res = $this->operations_model->findAll();
+        }
         echo json_encode((array)$res);
     }
+    public function get_operation(){
+        $id = $this->input->post('id');
+        $res = $this->operations_model->findAllByAttributes(array('id' => $id));
+        echo json_encode((array)$res);
 
+    }
     public function add_operation() {
         $title = $this->input->post('op_name');
         $url = $this->input->post('op_url');
@@ -38,7 +49,16 @@ class Workflow extends MY_Controller {
     }
 
     public function update_operation() {
-        
+         $id =  $this->input->post('id');
+//       $this->id = $id;
+//       $this->func_title = $this->input->post('op_name');
+//       $this->func_url = $this->input->post('op_url');
+//       $this->operations_model->save();
+       $data =array();
+       $data['id'] = $id;
+       $data['func_title'] = $this->input->post('op_name');
+       $data['func_url'] = $this->input->post('op_url');
+       $this->operations_model->update($data);
     }
 
     public function delete_operation() {
