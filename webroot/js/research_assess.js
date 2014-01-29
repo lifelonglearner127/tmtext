@@ -366,6 +366,7 @@ $(function() {
 	{
 		summaryInfoSelectedElements = [];
 		summaryInfoSelectedElementsTexts = [];
+		summaryInfoSelectedElementsIds = [];
 		$('.selectable_summary_info .ui-selected').each(function(index, element) {
 			var filterid = $(element).data('filterid');
 			if (filterid) {
@@ -374,6 +375,7 @@ $(function() {
 				{
 					summaryInfoSelectedElements.push(filterid);						
 					summaryInfoSelectedElementsTexts.push($.trim( $(element).find('.filter_text_label').text() ));
+					summaryInfoSelectedElementsIds.push( $(element).data('realfilter-id') );
 				}
 			}
 		});		
@@ -405,33 +407,37 @@ $(function() {
 	});
 	
 	function filterItems(json) {
-		var stored_filter_items = json.ExtraData.report.stored_filter_items
-		  , r = []		  
-		  , encoded_r = [];		  
-		
-		outputedFilterIndexes = [];
-		
-		for (var selected_filter_it = 0; selected_filter_it < summaryInfoSelectedElements.length; selected_filter_it++) {
+		var outputedFilterIndexes = []
+		  , r = []
+		  , encoded_r = [];
+		  
+		_.map(summaryInfoSelectedElementsIds, function(value) {
 			
-			var pure_filter_id = summaryInfoSelectedElements[selected_filter_it].replace(/(batch_me_|batch_competitor_)/, '');
-			
-			for (var stored_filter_item_it = 0; stored_filter_item_it < stored_filter_items[ pure_filter_id ].length; stored_filter_item_it++) {
+			_.map(
+				_.filter(json.filters_items, function(filter_item) {
+					return value == filter_item.filter_id;
+				})
+			, function(filtered_item) {
+				if (filtered_item.item_key == 'null')
+					return;
 				
-				var stored_item_index = stored_filter_items[ pure_filter_id ][stored_filter_item_it];
-												
-				if (!~outputedFilterIndexes.indexOf(stored_item_index))
-				{
-					r.push(json.aaData[ stored_item_index ]);
-					encoded_r.push(json.ExtraData.json_encoded_data[ stored_item_index ]);
+				var item_keys = JSON.parse(filtered_item.item_key);
+				_.map(item_keys, function(item_index) {
+					if (~outputedFilterIndexes.indexOf(item_index))
+						return;
+						
+					r.push(json.aaData[ item_index ]);
+					encoded_r.push(json.ExtraData.json_encoded_data[ item_index ]);
 					
-					outputedFilterIndexes.push(stored_item_index);
-				}								
-			}
-		}
-		
+					outputedFilterIndexes.push(item_index);
+				});
+			});
+		});
+	
 		json.ExtraData.fixedTotalRows = outputedFilterIndexes.length;			
 		json.aaData = r;		
-		json.ExtraData.json_encoded_data = encoded_r;		
+		json.ExtraData.json_encoded_data = encoded_r;
+				
 	}
 	
 	function buildFilters(filters_data)

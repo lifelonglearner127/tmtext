@@ -41,6 +41,7 @@ var global_filters_values;
 var global_filters_items;
 var global_filters_ids;
 var summaryInfoSelectedElementsTexts = [];
+var summaryInfoSelectedElementsIds = [];
 
 var FIRST_DISPLAY_LIMIT_COUNT = 100;
 var NEXT_DISPLAY_LIMIT_COUNT = 1000;
