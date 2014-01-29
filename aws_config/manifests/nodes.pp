@@ -92,6 +92,14 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
     user   => "ubuntu",
   }
 
+  # create folder to share between them
+    file { "/home/ubuntu/shared_sshfs":
+      ensure => "directory",
+      owner  => "ubuntu",
+      group  => "ubuntu",
+      #creates => "/home/ubuntu/shared_sshfs"
+    }
+
 	# make sure root has access to repo (to pull at startup)
 	file { "/root/.ssh/config":
 	    source => "puppet:///modules/common/ssh_config",
