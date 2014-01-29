@@ -64,13 +64,19 @@ $(document).ready(function() {
     $("#create_operation").click(function() {
         var op_name = $.trim($("#opr_title").val());
         var op_url = $.trim($("#opr_url").val());
-        if (op_name !== '' && op_url !== '') {
+        var param_type = $.trim($("#param_type").val());
+        if(param_type == 0){
+            alert('Please select parameter type');
+            return false;
+        }
+        
+        if (op_name !== '' && op_url !== '' && param_type != 0) {
             var url = base_url + 'index.php/workflow/add_operation';
 
             $.ajax({
                 url: url,
                 type: 'POST',
-                data: {op_name: op_name, op_url: op_url},
+                data: {op_name: op_name, op_url: op_url, param_type: param_type},
                 success: function(data) {
                     $("#sel_op").append("<option selected ='selected' value='" + data + "'>" + op_name + "</option>");
                     $("#actions").append("<option value='" + data + "'>" + op_name + "</option>");
