@@ -216,7 +216,7 @@ class SearchSpider(BaseSpider):
 				product_price_big = hxs.select("//span[@class='bigPriceText1']/text()").extract()
 
 				if not product_price_big:
-					sys.stderr.write("Didn't find product price: " + response.url + "\n")
+					self.log("Didn't find product price: " + response.url + "\n", level=log.DEBUG)
 				# if there is a range of prices take their average
 				if len(product_price_big) > 1:
 

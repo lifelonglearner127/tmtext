@@ -160,7 +160,7 @@ class AmazonSpider(SearchSpider):
 					self.log("Didn't match product price: " + product_target_price + " " + response.url + "\n", level=log.WARNING)
 
 			else:
-				self.log("Didn't find product price: " + response.url + "\n", level=log.DEBUG)
+				self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
 
 
 			# add result to items
