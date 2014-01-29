@@ -6656,7 +6656,11 @@ class Assess extends MY_Controller {
                 if($graphBuild == "total_description_wc") {
 					foreach($arr as $a) {
 						if(trim($a->date) && $a->days_from_last_crawl > 0) {
-							$long_des = count(explode(' ',$a->long_description));
+							if(isset($a->long_description)) {
+                                                            $long_des = count(explode(' ',$a->long_description));
+                                                        } else {
+                                                            $long_des = 1;
+                                                        }
 							$des = count(explode(' ',$a->description));
 							if($des == 1 && $long_des == 1) {
 								$updated_total_description_wc[$a->trendline_date] ='Total Description Word Count: '.$a->date .' - null  words<br>';  
@@ -6829,6 +6833,11 @@ class Assess extends MY_Controller {
 				$maximum_trendlines = 6; // set the maximum number of trendlines to show
 				arsort($trendline_dates_items);
 				$final_trendline_dates = array();
+                                
+                                $this->load->model('statistics_trendline_dates_model');
+                                // save statistics for next requests - $trendline_dates_items may be updated
+                                $this->statistics_trendline_dates_model->updateStats($trendline_dates_items, $graphBuild, $batch_id, $batch_compare_id);
+
 				$trendline_dates_to_remove = array();
 
 				// check the dates of the last request to display the same dates in the second request dates are stores in session
@@ -6844,7 +6853,7 @@ class Assess extends MY_Controller {
 					$total_trendlines = 0;
 					foreach($trendline_dates_items as $trendline_date_with_more_items => $total_items) {
 						$total_trendlines++;
-						if($total_trendlines < 6) {
+						if($total_trendlines < $maximum_trendlines) {
 							$final_trendline_dates[] = $trendline_date_with_more_items;
 						} else {
 							$trendline_dates_to_remove[] = $trendline_date_with_more_items;
