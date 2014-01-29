@@ -34,15 +34,20 @@ class Workflow_model extends CI_model {
 	 *  @return process name and task	 
 	 */
         public function getCurrentTask(){
-            $sql = "select p.process_name
-                , COALESCE(f.function_url,0) as function_url
-                , COALESCE(ps.function_param,'none') as function_param
+            $sql = "select p.process_name,  p.process_step as p_step
+                , p.process_started, p.process_ended
+                 , COALESCE(ps.step_number,0) as ps_step
+                 , COALESCE(f.func_url,'none') as function_url
+                , COALESCE(ps.function_param,0) as function_param
                 from processes as p
                 left join process_steps as ps 
                 on p.id = ps.process_id and ps.step_number=(p.process_step+1)
-                inner join functions as f on f.id=ps.function_id
+                 left join operations as f on f.id=ps.operation_id
                 where p.week_day = weekday(current_timestamp)
-                and (p.process_ended is null or dayofyear(p.process_ended)<dayofyear(current_timestamp))";
+                and (p.process_ended is null 
+                or dayofyear(p.process_ended) is null 
+                or dayofyear(p.process_ended)<dayofyear(current_timestamp))
+                ";
             $query = $this->db->query($sql);
             if($query->num_rows==0){
                 return false;
@@ -84,15 +89,16 @@ class Workflow_model extends CI_model {
             if($query->num_rows==0){
                 return false;
             }
-            $row = $query->firs_row();
+            $row = $query->first_row();
             $data = array(
                 'process_step'=>$row->process_step+1
             );
-            if($row->process_started===null){
+            $pst='';
+            if($row->process_started=='0000-00-00 00:00:00'||$row->process_step==0){
                 $pst = ', process_started=current_timestamp';
             }
             $sql = 'UPDATE processes SET process_step='.($row->process_step+1)
-                    .', process_ended=current_timestamp'
+                    //.', process_ended=\'0000-00-00 00:00:00\''
                     .$pst
                     .' WHERE id='.$row->id;
             $this->db->query($sql);
@@ -105,7 +111,7 @@ class Workflow_model extends CI_model {
             if($query->num_rows==0){
                 return false;
             }
-            $row = $query->firs_row();
+            $row = $query->first_row();
             $sql = "UPDATE processes SET process_step=0, process_ended=current_timestamp
                 WHERE id=".$row->id;
             $this->db->query($sql);
@@ -124,7 +130,7 @@ class Workflow_model extends CI_model {
             $query = $this->db->get();
             return $query->num_rows===1;
         }
-        public function addSteps($process,$oper,$param){
+        public function addSteps($process,$oper,$param=FALSE){
             if($this->checkProcess($process)||$this->checkOperation($oper)){
                 return FALSE;
             }
@@ -141,9 +147,11 @@ class Workflow_model extends CI_model {
             $data = array(
                 'process_id'=>$process,
                 'operation_id'=>$oper,
-                'function_param'=>$param,
                 'step_number'=>$step
             );
+            if($param!==FALSE){
+                $data['function_param']=$param;
+            }
             $this->db->insert('process_steps',$data);
             return $this->db->insert_id();
         }

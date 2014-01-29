@@ -55,6 +55,39 @@ class Workflow extends MY_Controller {
         $param = '';
         $id = $this->process_model->add($title, $day);
         $this->workflow_model->addSteps($id, $oper, $param);
+        $oper_list = $this->operations_model->getall();
+        foreach($oper as $op){
+            foreach($oper_list as $key=>$so){
+                if($so['id']===$op){
+                    $ar = array();
+                    if($so['param_type']==='batch'){
+                        $ar = $batches;
+                    }
+                    elseif($so['param_type']==='file'){
+                        $ar = $url_import_file;
+                    }
+                    elseif($so['param_type']==='none'){
+                        $oper_list[$key]['step']=$value;
+                    }
+                    foreach($ar as $value){
+                        $oper_list[$key]['step'][]=$value;
+                    }
+                    break;
+                }
+            }
+        }
+        foreach ($oper_list as $op){
+            if(isset($op['step'])){
+                if(is_array($op['step'])){
+                    foreach ($op['step'] as $value){
+                        $this->workflow_model->addSteps($id,$op['id'],$value);
+                    }
+                }
+                else{
+                    $this->workflow_model->addSteps($id,$op['id']);
+                }
+            }
+        }
         echo $id;
     }
 
