@@ -74,7 +74,7 @@ class Workflow extends MY_Controller {
         $url_import_file = $this->input->post("url_import_file");
         $param = '';
         $id = $this->process_model->add($title, $day);
-        $this->workflow_model->addSteps($id, $oper, $param);
+//        $this->workflow_model->addSteps($id, $oper, $param);
         $oper_list = $this->operations_model->getall();
         foreach($oper as $op){
             foreach($oper_list as $key=>$so){
