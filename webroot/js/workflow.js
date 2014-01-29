@@ -5,14 +5,17 @@ $(document).ready(function() {
     var all_processes_url = base_url + 'index.php/workflow/get_processes';
     var all_operations_url = base_url + 'index.php/workflow/get_operations';
     var update_op = base_url + 'index.php/workflow/update_operation';
-
+    var class_for_url_import = ''; 
     $.ajax({
         url: all_operations_url,
         type: 'POST',
         success: function(data) {
             $.each($.parseJSON(data), function(index, val) {
-                $("#sel_op").append("<option  value='" + val.id + "'>" + val.func_title + "</option>");
-                $("#actions").append("<option  value='" + val.id + "'>" + val.func_title + "</option>");
+                if(val.param_type == 'file'){
+                    class_for_url_import = "class= 'url_import_action'";
+                }
+                $("#sel_op").append("<option "+ class_for_url_import+" value='" + val.id + "'>" + val.func_title + "</option>");
+                $("#actions").append("<option "+ class_for_url_import+" value='" + val.id + "'>" + val.func_title + "</option>");
             });
         }
     });
@@ -137,7 +140,8 @@ $(document).ready(function() {
         var ops = $.trim($("#actions").val());
         var url_import_file = $.trim($("#import_file_name").val());
         var batches = $.trim($("#workflow_batches").val());
-        if (ops !== null && day !== 0 && !($("#actions").find('option[value = "2"]:selected').val() !== undefined && url_import_file == 0) && process_name != '') {
+        
+        if (ops !== null && day !== '' && !($("#actions").find('.url_import_action:selected').val() !== undefined && url_import_file == 0) && process_name != '') {
             var url = base_url + 'index.php/workflow/add_prc';
             $.ajax({
                 url: url,
@@ -152,7 +156,7 @@ $(document).ready(function() {
     });
 
     $("#actions").live('click', function() {
-        if ($(this).find('option[value = "2"]:selected').val() !== undefined) {
+        if ($(this).find('.url_import_action:selected').val() !== undefined) {
             $("#import_file_name").show();
         }
         else {
@@ -166,7 +170,7 @@ $(document).ready(function() {
         var day = $("#days").val();
         var batches = $("#workflow_batches").val();
         var import_file_name = $("#import_file_name").val();
-        if (selected_actions !== null && day !== 0 && !($("#actions").find('option[value = "2"]:selected').val() !== undefined && import_file_name == 0) && process_name != '') {
+        if (selected_actions !== null && day !== 0 && !($("#actions").find('.url_import_action:selected').val() !== undefined && import_file_name == 0) && process_name != '') {
 
         }
 

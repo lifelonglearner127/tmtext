@@ -35,7 +35,7 @@ $this->load->view('system/_tabs', array(
     <select id ="processes_list">
         <option value="0">Select Process</option>
     </select>
-    <label id ="process_name">Process Name</label>
+    <label s>Process Name</label>
     <input type="text" id="process_name" name="process_name" />
     <select id ="days">
         <option value="">Select Day</option>
@@ -49,9 +49,7 @@ $this->load->view('system/_tabs', array(
     </select>
     <select id ="actions" multiple="multiple" size="5" >
         <option value="all">All</option>
-        <option value="1">Crawling</option>
-        <option value="2">URL Import</option>
-        <option value="3">Do stats</option>
+        
     </select>
     <select id="workflow_batches" multiple="multiple" size="5">
         <option value="all">All</option>
