@@ -40,6 +40,12 @@ import sys
 class SearchSpider(BaseSpider):
 
 	name = "search"
+	amazon_cookie_header = "x-wl-uid=1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=; session-token=JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=; x-amz-captcha-1=1391100438353490; x-amz-captcha-2=+EDhq9rcotSRn783vYMxdQ==; csm-hit=337.71|1391093239619; ubid-main=188-7820618-3817319; session-id-time=2082787201l; session-id=177-0028713-4113141"
+	amazon_cookies = {"x-wl-uid" : "1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=", \
+	"session-token" : "JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=",\
+	"x-amz-captcha-1" : "1391100438353490" , "x-amz-captcha-2" : "+EDhq9rcotSRn783vYMxdQ==", "csm-hit" : "337.71|1391093239619", "ubid-main" : "188-7820618-3817319",\
+	"session-id-time" : "2082787201l", "session-id" : "177-0028713-4113141"}
+
 	allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
 					   "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com"]
 
@@ -114,6 +120,14 @@ class SearchSpider(BaseSpider):
 			search_pages = self.build_search_pages(search_query)
 
 			request = Request(search_pages[self.target_site], callback = self.parseResults)
+
+			# set amazon cookies
+			if self.target_site == 'amazon':
+				request.cookies = self.amazon_cookies
+				request.headers['Cookies'] = self.amazon_cookie_header
+				request.meta['dont_merge_cookies'] = True
+				print "SET AMAZON COOKIES"
+
 			request.meta['origin_name'] = self.product_name
 			request.meta['query'] = search_query
 
@@ -389,7 +403,15 @@ class SearchSpider(BaseSpider):
 			search_pages1 = self.build_search_pages(query1)
 			#page1 = search_pages1[self.target_site]
 			page1 = search_pages1[target_site]
-			request1 = Request(page1, callback = self.parseResults, cookies=cookies)
+
+			request1 = Request(page1, callback = self.parseResults)
+
+			# set amazon cookies
+			if target_site == 'amazon':
+				request1.cookies = self.amazon_cookies
+				request1.headers['Cookies'] = self.amazon_cookie_header
+				request1.meta['dont_merge_cookies'] = True
+				print "SET AMAZON COOKIES"
 
 			request1.meta['query'] = query1
 			request1.meta['target_site'] = target_site
@@ -402,7 +424,13 @@ class SearchSpider(BaseSpider):
 		search_pages2 = self.build_search_pages(query2)
 		#page2 = search_pages2[self.target_site]
 		page2 = search_pages2[target_site]
-		request2 = Request(page2, callback = self.parseResults, cookies=cookies)
+		request2 = Request(page2, callback = self.parseResults)
+
+		# set cookies for amazon
+		if target_site == 'amazon':
+				request2.cookies = self.amazon_cookies
+				request2.headers['Cookies'] = self.amazon_cookie_header
+				request2.meta['dont_merge_cookies'] = True
 
 		request2.meta['query'] = query2
 		request2.meta['target_site'] = target_site
@@ -422,7 +450,13 @@ class SearchSpider(BaseSpider):
 			search_pages3 = self.build_search_pages(query3)
 			#page3 = search_pages3[self.target_site]
 			page3 = search_pages3[target_site]
-			request3 = Request(page3, callback = self.parseResults, cookies=cookies)
+			request3 = Request(page3, callback = self.parseResults)
+
+			# set amazon cookies
+			if target_site == 'amazon':
+				request3.cookies = self.amazon_cookies
+				request3.headers['Cookies'] = self.amazon_cookie_header
+				request3.meta['dont_merge_cookies'] = True
 
 			request3.meta['query'] = query3
 			request3.meta['target_site'] = target_site
