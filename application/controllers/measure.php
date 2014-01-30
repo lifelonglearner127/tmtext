@@ -1608,6 +1608,7 @@ class Measure extends MY_Controller {
         
         $data_categories = $this->site_categories_model->db
                 ->where('site_id', $site_id)
+                ->group_by('text')
                 ->count_all_results($this->site_categories_model->tables['site_categories']);
         $page = intval($this->uri->segment(3));
         $this->load->library('pagination');
@@ -1618,6 +1619,7 @@ class Measure extends MY_Controller {
         $data['detail']     = $this->site_categories_model->db
                 ->select(' `id`, `text`, `nr_products`, `url`  ')
                 ->limit($config['per_page'], $page)
+                ->group_by('text')
                 ->order_by('text')
                 ->where('site_id', $site_id)
                 ->get($this->site_categories_model->tables['site_categories'])
