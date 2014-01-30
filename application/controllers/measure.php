@@ -1610,6 +1610,9 @@ class Measure extends MY_Controller {
                 ->where('site_id', $site_id)
                 ->group_by('text')
                 ->count_all_results($this->site_categories_model->tables['site_categories']);
+        $sql = $this->site_categories_model->db->query("SELECT count( * ) AS total FROM ( SELECT TEXT FROM `site_categories` WHERE site_id =".$site_id." AND `flag` = 'ready' GROUP BY TEXT HAVING COUNT( TEXT ) >0 ) AS t");
+        $result = $sql->result();
+        $data_categories = $result[0]->total;
         $page = intval($this->uri->segment(3));
         $this->load->library('pagination');
         $config['base_url'] = $this->config->site_url() . '/measure/getDashboardCatSKU';
