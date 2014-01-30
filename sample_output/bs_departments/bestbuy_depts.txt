@@ -1,0 +1,10 @@
+set([u'Audio',
+     u'Cameras & Camcorders',
+     u'Car & GPS',
+     u'Computers',
+     u'Home & Appliances',
+     u'Mobile Phones',
+     u'Music, Movies & Books',
+     u'Office',
+     u'TV & Video',
+     u'Video Games & Gadgets'])
