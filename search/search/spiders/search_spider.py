@@ -126,7 +126,7 @@ class SearchSpider(BaseSpider):
 				request.cookies = self.amazon_cookies
 				request.headers['Cookies'] = self.amazon_cookie_header
 				request.meta['dont_merge_cookies'] = True
-				print "SET AMAZON COOKIES"
+				#print "SET AMAZON COOKIES"
 
 			request.meta['origin_name'] = self.product_name
 			request.meta['query'] = search_query
@@ -411,7 +411,7 @@ class SearchSpider(BaseSpider):
 				request1.cookies = self.amazon_cookies
 				request1.headers['Cookies'] = self.amazon_cookie_header
 				request1.meta['dont_merge_cookies'] = True
-				print "SET AMAZON COOKIES"
+				#print "SET AMAZON COOKIES"
 
 			request1.meta['query'] = query1
 			request1.meta['target_site'] = target_site
