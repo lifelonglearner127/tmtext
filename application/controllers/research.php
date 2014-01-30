@@ -151,7 +151,7 @@ class Research extends MY_Controller {
             $batch_info = $this->batches_model->get($batch_id);
             $last_date = $this->research_data_model->getLastAddedDateItem($batch_id);
             $result = array();
-            $result['created'] = mdate('%m/%d/%Y',strtotime($batch_info[0]->created));
+            $result['created'] = mdate('%m/%d/%Y',strtotime($batch_info->created));
             $result['modified'] = mdate('%m/%d/%Y',strtotime($last_date[0]->modified));
 
             $params = new stdClass();
@@ -721,9 +721,9 @@ class Research extends MY_Controller {
 
         $report['recommendations']['absent_items'] = $absent_items;
         $report['summary']['absent_items_count'] = count($absent_items);
-        $report['summary']['own_batch_name'] = $own_batch[0]->title;
+        $report['summary']['own_batch_name'] = $own_batch->title;
         $report['summary']['compare_customer_name'] = $compare_customer->name;
-        $report['summary']['compare_batch_name'] = $compare_batch[0]->title;
+        $report['summary']['compare_batch_name'] = $compare_batch->title;
 
         if ($items_priced_higher_than_competitors > 0) {
             $report['recommendations']['items_priced_higher_than_competitors'] = 'Reduce pricing on '.$items_priced_higher_than_competitors.' item(s)';

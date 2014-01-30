@@ -4,7 +4,7 @@ require_once(APPPATH . 'models/ifilters.php');
 
 if ( ! function_exists('render_filter_item'))
 {
-	function render_filter_item($index, $filter_id, $icon, $label, $batch_class_number = '', $is_extended_partial = true, array $question = array(), $display = false)
+	function render_filter_item($index, $filter_id, $icon, $label, $batch_class_number = '', $is_extended_partial = true, array $question = array(), $display = false, $real_filter_id = '')
 	{
 		// $icon_td_width = $batch_class_number ? '10%' : '7.5%';
 		$icon_td_width = '45px';
@@ -18,7 +18,7 @@ if ( ! function_exists('render_filter_item'))
 		</span>' : '';
 								
 		$r = '
-			<div class="' . ($display == 'none' ? '' : 'selected_by_config') . ' mt_10 ml_15 item_line ' . ($is_extended_partial ? 'ui-widget-content' : 'non-selectable') . ' ' . ($batch_class_number) . '" data-filterid="' . $filter_id . '" data-filterkey="' . $index . '" style="display: ' . $display . '">
+			<div class="' . ($display == 'none' ? '' : 'selected_by_config') . ' mt_10 ml_15 item_line ' . ($is_extended_partial ? 'ui-widget-content' : 'non-selectable') . ' ' . ($batch_class_number) . '" data-filterid="' . $filter_id . '" data-filterkey="' . $index . '" data-realfilter-id="' . $real_filter_id . '" style="display: ' . $display . '">
 				<div class="mr_10">
 					<table width="100%">
 						<tr>

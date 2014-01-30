@@ -340,7 +340,7 @@ class Filters_values extends Base_model implements IFilters
 			
 			// getting initial (default) result row data
 			$result_row = AssessHelper::getInitialScalarRowData($row);
-			
+			$this->load->model('imported_data_parsed_model');
 			$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);	
 			         
             if ($max_similar_item_count > 0) {                
@@ -1233,7 +1233,7 @@ class Filters_values extends Base_model implements IFilters
 			$my_percent = 0;
 			$filter_value = new Filters_values;
 			$filter_value->combination_id = $data['combination_id'];
-			$filter_value->filter_id = array_search($key, $this->filters);
+			$filter_id = $filter_value->filter_id = array_search($key, $this->filters);
 			
 			$filter_value->value = $report['summary'][$key] = trim($summary_field['value']) . $this->calculatePercentage(array('batch1' => $own_batch_total_items, 'batch2' => $batch2_items_count), $summary_field, $my_percent);
 			
@@ -1245,7 +1245,7 @@ class Filters_values extends Base_model implements IFilters
 				
 			$filter_value->save();					
 			
-			Filters_items::model()->save_filtered_items($data, $stored_filter_items, $this->db->insert_id());
+			Filters_items::model()->save_filtered_items($data, $stored_filter_items[$key], $filter_id);
 		}	
 					
 		return true;

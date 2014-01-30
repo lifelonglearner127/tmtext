@@ -366,6 +366,7 @@ $(function() {
 	{
 		summaryInfoSelectedElements = [];
 		summaryInfoSelectedElementsTexts = [];
+		summaryInfoSelectedElementsIds = [];
 		$('.selectable_summary_info .ui-selected').each(function(index, element) {
 			var filterid = $(element).data('filterid');
 			if (filterid) {
@@ -374,6 +375,7 @@ $(function() {
 				{
 					summaryInfoSelectedElements.push(filterid);						
 					summaryInfoSelectedElementsTexts.push($.trim( $(element).find('.filter_text_label').text() ));
+					summaryInfoSelectedElementsIds.push( $(element).data('realfilter-id') );
 				}
 			}
 		});		
@@ -405,33 +407,37 @@ $(function() {
 	});
 	
 	function filterItems(json) {
-		var stored_filter_items = json.ExtraData.report.stored_filter_items
-		  , r = []		  
-		  , encoded_r = [];		  
-		
-		outputedFilterIndexes = [];
-		
-		for (var selected_filter_it = 0; selected_filter_it < summaryInfoSelectedElements.length; selected_filter_it++) {
+		var outputedFilterIndexes = []
+		  , r = []
+		  , encoded_r = [];
+		  
+		_.map(summaryInfoSelectedElementsIds, function(value) {
 			
-			var pure_filter_id = summaryInfoSelectedElements[selected_filter_it].replace(/(batch_me_|batch_competitor_)/, '');
-			
-			for (var stored_filter_item_it = 0; stored_filter_item_it < stored_filter_items[ pure_filter_id ].length; stored_filter_item_it++) {
+			_.map(
+				_.filter(json.filters_items, function(filter_item) {
+					return value == filter_item.filter_id;
+				})
+			, function(filtered_item) {
+				if (filtered_item.item_key == 'null')
+					return;
 				
-				var stored_item_index = stored_filter_items[ pure_filter_id ][stored_filter_item_it];
-												
-				if (!~outputedFilterIndexes.indexOf(stored_item_index))
-				{
-					r.push(json.aaData[ stored_item_index ]);
-					encoded_r.push(json.ExtraData.json_encoded_data[ stored_item_index ]);
+				var item_keys = JSON.parse(filtered_item.item_key);
+				_.map(item_keys, function(item_index) {
+					if (~outputedFilterIndexes.indexOf(item_index))
+						return;
+						
+					r.push(json.aaData[ item_index ]);
+					encoded_r.push(json.ExtraData.json_encoded_data[ item_index ]);
 					
-					outputedFilterIndexes.push(stored_item_index);
-				}								
-			}
-		}
-		
+					outputedFilterIndexes.push(item_index);
+				});
+			});
+		});
+	
 		json.ExtraData.fixedTotalRows = outputedFilterIndexes.length;			
 		json.aaData = r;		
-		json.ExtraData.json_encoded_data = encoded_r;		
+		json.ExtraData.json_encoded_data = encoded_r;
+				
 	}
 	
 	function buildFilters(filters_data)
@@ -450,7 +456,7 @@ $(function() {
 		var deferred = $.Deferred()		
 		  , aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);						
 			
-		$.getJSON(get_filters, { batches_combination : storage_key }, function(filters_data) {
+		globalXHR = $.getJSON(get_filters, { batches_combination : storage_key }, function(filters_data) {
 			if (!filters_data)						
 				return;
 			
@@ -465,7 +471,7 @@ $(function() {
 				});
 			toggleDetailsCompareBlocks(true);
 			
-			$.getJSON(readAssessUrl, aoData, function(json) {
+			globalXHR = $.getJSON(readAssessUrl, aoData, function(json) {
 				if(!json)
 					return;	
 					
@@ -477,7 +483,8 @@ $(function() {
 																
 				customLocalStorage[storage_key] = JSON.stringify(assessData);														
 									
-				tblAssess = reInitializeTblAssess(assessData);	
+				tblAssess = reInitializeTblAssess(assessData);
+				
 			});
 						
 		});
@@ -485,6 +492,10 @@ $(function() {
 	}
 		
 	function readAssessData() {
+		
+		if (!_.isNull(globalXHR))
+			globalXHR.abort();
+			
 		var research_batch = $('.research_assess_batches_select')
 		  , research_category = $('#prodcats')
 		  , research_batch_competitor = $('#research_assess_compare_batches_batch')
@@ -527,8 +538,8 @@ $(function() {
           , aoData = buildTableParams([])
           , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null
 		  , needToBeReloaded = false;		  
-		console.log(storage_key);	
-		$.getJSON(readAssessUrl, aoData, function(json) {
+		
+		globalXHR = $.getJSON(readAssessUrl, aoData, function(json) {
 			if(!json)
 				return;	
 
@@ -540,6 +551,7 @@ $(function() {
 			customLocalStorage[storage_key] = JSON.stringify(json);
 			
 			tblAssess = reInitializeTblAssess(json, needToBeReloaded);
+						
 		});       
 	}
 	
@@ -753,10 +765,13 @@ $(function() {
 
 	function reDrowHighChart() 
 	{
+                
+            var graphBuild = $('#graphDropDown').children('option:selected').val();
+                
+            if(graphBuild != '') {    
 		// Castro #1119: disable charts dropdown and show over time checkbox and empty chart container
 		toggleGraphFields(true);
                 
-		var graphBuild = $('#graphDropDown').children('option:selected').val();
 		var batch_set = $('.result_batch_items:checked').val() || 'me';	
 		var batch1Value = $('select[name="' + batch_sets[batch_set]['batch_batch'] + '"]').find('option:selected').val();
 		var batch2Value = $(batch_sets[batch_set]['batch_compare']).find('option:selected').val();
@@ -778,6 +793,7 @@ $(function() {
                     toggleGraphFields(false);
                 } else
                     highChart(graphBuild);
+            }
         }
         
 	function highChart(graphBuild) 
@@ -2583,6 +2599,11 @@ function prevSibilfunc(curentSibil){
 	});
 
     $('#research_assess_compare_batches_reset').click(function() {
+		
+		//interuupting current ajax request
+		if (!_.isNull(globalXHR))
+			globalXHR.abort();
+	
 		$('#research_assess_compare_batches_customer').val('select customer').prop('selected', true);
         $('#research_assess_compare_batches_batch').val('0').prop('selected', true);
         $('#research_assess_compare_batches_customer').change();
@@ -3477,12 +3498,16 @@ function prevSibilfunc(curentSibil){
         modal: true,
 		open : function ( event, ui ) {
 			var filters = '';
+			var selectedCombo = $('.pre_stored_filters_combos option:selected').text();
 			
 			_.map(summaryInfoSelectedElementsTexts, function(value) {
 				filters += '<div>' + value.replace(':', '') + '</div>';
 			})
 			
 			$('.selected_filters_names').html(filters);
+			
+			if (selectedCombo.length)
+				$('#filter_combination_title').val(selectedCombo);
 		},
         buttons: {           
             'Save': {
@@ -3503,7 +3528,7 @@ function prevSibilfunc(curentSibil){
                     $.post( base_url + 'index.php/assess/save_filters_combo', assess_report_options_form, function(data) {
 						if (data && data.status)
 						{
-							$('.pre_stored_filters_combos').append("<option value='" + data.status.filters_ids + "'>" + data.status.title + "</option>");
+							$('.pre_stored_filters_combos').append("<option data-comboid='" + data.status.id + "' value='" + data.status.filters_ids + "'>" + data.status.title + "</option>");
 							$('.pre_stored_filters_combos').val(data.status.filters_ids);
 							modal.dialog('close');
 						}
@@ -3512,7 +3537,33 @@ function prevSibilfunc(curentSibil){
 							
 					}, 'json');                    
                 }
-            }
+            },
+			'Remove' : {
+				id : 'assess_report_filters_combos_remove',
+				text : 'Remove',
+				click : function() {
+					var combo = $('.pre_stored_filters_combos')
+					  , comboid = combo.find('option:selected').data('comboid')
+					  , modal = $(this)
+					  , removeData = {
+							id : comboid
+					    };
+						
+					$.post( base_url + 'index.php/assess/remove_filter_combo', removeData, function(data) {
+						if (data && data.status)
+						{
+							$('.pre_stored_filters_combos option[data-comboid="' + comboid + '"]').remove();
+							
+							$('.ui-selected').removeClass('ui-selected');
+		
+							//refreshing
+							buildSummaryInfoSelectedElements();
+							
+							modal.dialog('close');
+						}
+					}, 'json');
+				}
+			}
         },
         width: '450px'
     });

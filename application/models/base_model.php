@@ -215,6 +215,7 @@ abstract class Base_model extends CI_Model
 	public function with($join)
 	{
 		$default_type = 'inner';
+		
 		if (is_array($join))
 			$this->db
 				->join($join['table'], $join['on'], isset($join['type']) ? $join['type'] : $default_type);
@@ -225,8 +226,15 @@ abstract class Base_model extends CI_Model
 		return $this;
 	}
 	
-	public function multipleSave($models)
-	{
+	/**
+	 *  @brief Inserts multiple rows into the db table.
+	 *  
+	 *  @return boolean
+	 */
+	public function multipleInsert($models = array())
+	{  
+		$r = $this->db->insert_batch($this->getTableName(), (array)$models);
 		
+		return $r || $this->db->affected_rows();
 	}
 }

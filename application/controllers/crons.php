@@ -54,7 +54,8 @@ class Crons extends MY_Controller
 		    'checkUploadedFiles' =>true, 
                     'reset_models'=>true,
 		    'do_stats_bybatch' =>true, 
-		    'renameExistingFiles' =>true 
+		    'renameExistingFiles' =>true,
+		    'addBatchesToResult' => true
 		));
 		$this->load->library('helpers');
 		$this->load->helper('algoritm');
@@ -805,6 +806,7 @@ class Crons extends MY_Controller
 				$this->load->model('customers_model');
 				$customersList = $this->customers_model->getCustomersList();
 				//end of list creating script
+				$usedBatches = array();
 				//Start analize each item
 				foreach ($data_arr as $obj)
 				{
@@ -1078,6 +1080,15 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 							'batch_id' => 0,
 						        'category_id' => 0
 						));
+					} else
+					{
+						foreach($research_and_batch_ids as $r)
+						{
+							if(!in_array($r['batch_id'],$usedBatches))
+							{
+								$usedBatches[] = $r['batch_id'];
+							}
+						}
 					}
 					$time = microtime(true) - $time_start;
 					echo "<br>research_data ---------------------- " . $time . " seconds";
@@ -1137,7 +1148,6 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			}
 			$this->settings_model->updateDescription(0);  //reset cron_job_offset 0
 
-			
 			$this->load->library('email');
 			$this->email->from('info@dev.contentsolutionsinc.com', '!!!!');
 			$this->email->to('bayclimber@gmail.com');
@@ -1146,9 +1156,855 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			$this->email->send(); 
                         $url_link ="wget -S -O - ".site_url('/crons/cron_job_manager')." > /dev/null 2>/dev/null &"; 
 			shell_exec($url_link);
+			$this->generateResults($usedBatches);
 		}
 		unlink($tmp_dir . ".locked");
 	}
+	
+	function addBatchesToResult()
+	{
+		$this->generateResults(array(133,123));
+		echo 'Done';
+	}
+	
+	private function generateResults($batches = array())
+	{
+		$cnt = count($batches);
+		if(is_array($batches) && ($cnt > 0))
+		{
+			$newBatches = array();
+			$combinations = array();
+			$this->load->model('batches_model');
+			$this->load->model('batches_combinations');
+			for($b = 0;$b < $cnt; $b++)
+			{
+				$batchCombos = $this->batches_combinations->findAllByAttributes(array('batches_combination REGEXP'=>'^'.$batches[$b].'_'));
+				$cCnt = count($batchCombos);
+				if($cCnt > 0)
+				{
+					for($c = 0; $c < $cCnt; $c++)
+					{
+						if(!in_array($batchCombos[$c]->id,$combinations))
+						{
+							$combinations[] = $batchCombos[$c]->id;
+						}	
+					}
+				} else
+				{
+					$batch = $this->batches_model->getBatchesForComparingByBatchId($batches[$b],FALSE);
+					$newCombos = $this->batches_combinations->generateCombinationsForBatch($batches[$b],$batch);
+					$combinations = array_merge($combinations,$newCombos);
+				}
+			}
+			$allCnt = count($combinations);
+			if($allCnt > 0)
+			{
+				$this->load->model('statistics_new_model');
+				$this->load->model('assess_results');
+				$this->load->model('keywords_model');
+				$this->load->model('imported_data_parsed_model');
+				for($a = 0; $a < $allCnt; $a++)
+				{
+					$combo = $this->batches_combinations->findByPk($combinations[$a]);
+					$combo = explode('_',$combo->batches_combination); 
+					if(isset($combo[0]) && isset($combo[1]) && isset($combo[2]))
+					{	
+						//$this->calculateResult($combinations[$a],$combo);	
+						$batch_id = intval($combo[0]);
+						$catId = intval($combo[1]);
+						$batch2 = intval($combo[2]);
+						if($batch_id <= 0 || $combinations[$a] <= 0)
+						{
+							return;
+						}
+						
+						$this->assess_results->deleteAllByAttributes(array('combination'=>$combinations[$a]));
+						$params->batch_id = $batch_id;
+						$params->category_id = $catId;
+						$results = $this->statistics_new_model->getStatsData($params);
+						$duplicate_content_range = 25;
+						$batch2_items_count = 0;
+						$customer_name = $this->batches_model->getCustomerById($batch_id);
+						$customer_url = parse_url($customer_name->url);
+						$batch1_meta_percents = array();
+						$batch2_meta_percents = array();
+						$report = array();
+						$result_table_rows_count = $total_rows = count($results);
+						
+						for ($row_iterator = 0; $row_iterator < $total_rows; $row_iterator++)
+						{
+							$row_key = $row_iterator;
+							$row = $results[$row_iterator];
+							$similar_items_data = array();
+							$f_count1 = 0;
+							$r_count1 = 0;
+							$meta_key_gap = 0;
+
+							if ($batch2 > 0)
+							{
+								$customer_name = $this->batches_model->getCustomerUrlByBatch($batch2);
+								if (stripos($row->similar_products_competitors, $customer_name) > 0)
+								{
+									$similar_items = unserialize($row->similar_products_competitors);
+									if (count($similar_items) > 1)
+									{
+										$has_similar_items = false;
+										foreach ($similar_items as $key => $item)
+										{
+											$tsp = '';
+											if (!empty($customer_name) && !empty($item['customer']) && $this->statistics_new_model->if_url_in_batch($item['imported_data_id'], $batch2))
+											{
+												$parsed_anchors_unserialize_val = '';
+												$parsed_meta_keywords_unserialize_val = '';
+												$title_seo_prases = array();
+
+												$column_external_content = '';
+												$cmpare = $this->statistics_new_model->get_compare_item($item['imported_data_id']);
+												if (isset($cmpare->Anchors))
+												{
+													$parsed_anchors_unserialize = unserialize($cmpare->Anchors);
+												}
+												if (isset($cmpare->Anchors))
+												{
+													$parsed_attributes_unserialize = unserialize($cmpare->parsed_attributes);
+												}
+												if (trim($cmpare->title_keywords) && $cmpare->title_keywords != 'None')
+												{
+													$title_seo_prases = unserialize($cmpare->title_keywords);
+												}
+												if (!empty($title_seo_prases))
+												{
+
+													$str_title_long_seo = '<div class="table_keywords_long">';
+													foreach ($title_seo_prases as $pras)
+													{
+														$str_title_long_seo .= '<p>' . $pras['ph'] . '<span class = "phr-density" style="display:none;">  ' . $pras['prc']
+															. '%</span><span class = "phr-frequency"> - ' . $pras['frq'] . '</span></p>';
+													}
+													$tsp = $str_title_long_seo . '</div>';
+												}
+												$HTags = unserialize($cmpare->HTags);
+												$buildedH1Field = AssessHelper::buildHField($HTags, 'h1');
+												$buildedH2Field = AssessHelper::buildHField($HTags, 'h2');
+
+												$parsed_attributes_unserialize_val = isset($parsed_attributes_unserialize['item_id']) ? $parsed_attributes_unserialize['item_id'] : '';
+												$parsed_loaded_in_seconds_unserialize_val = isset($parsed_attributes_unserialize['loaded_in_seconds']) ? $parsed_attributes_unserialize['loaded_in_seconds'] : '';
+												$parsed_column_reviews_unserialize_val = isset($parsed_attributes_unserialize['review_count']) ? $parsed_attributes_unserialize['review_count'] : 0;
+												$images_cmp = isset($parsed_attributes_unserialize['product_images']) ? $parsed_attributes_unserialize['product_images'] : 'none';
+												$video_count = isset($parsed_attributes_unserialize['video_count']) ? $parsed_attributes_unserialize['video_count'] : 'none';
+												$title_pa = isset($parsed_attributes_unserialize['title']) ? $parsed_attributes_unserialize['title'] : 'none';
+												$links_count = isset($parsed_anchors_unserialize['quantity']) ? $parsed_anchors_unserialize['quantity'] : 'none';
+
+												if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
+													$column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'], $parsed_attributes_unserialize['webcollage']);
+
+												$parsed_meta_unserialize = unserialize($cmpare->parsed_meta);
+
+												if (isset($parsed_meta_unserialize['description']))
+												{
+													$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize['description']));
+													if ($parsed_meta_unserialize_val_c < 1)
+														$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+												}
+												else if (isset($parsed_meta_unserialize['Description']))
+												{
+													$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize['Description']));
+													if ($parsed_meta_unserialize_val_c < 1)
+														$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+												}
+
+												if (isset($parsed_meta_unserialize['keywords']))
+												{
+													$Meta_Keywords_un = '<table class="table_keywords_long">';
+													$cnt_meta = explode(',', $parsed_meta_unserialize['keywords']);
+													$cnt_meta_count = count($cnt_meta);
+													$_count_meta = 0;
+													foreach ($cnt_meta as $cnt_m)
+													{
+														$cnt_m = trim($cnt_m);
+														if (!$cnt_m)
+														{
+															continue;
+														}
+														if ($cmpare->Short_Description || $cmpare->Long_Description)
+														{
+															$_count_meta = $this->keywords_appearence($cmpare->Long_Description . $cmpare->Short_Description, $cnt_m);
+															$_count_meta_num = round(($_count_meta * $cnt_meta_count / ($cmpare->long_description_wc + $cmpare->short_description_wc)) * 100, 2) . '%';
+															$Meta_Keywords_un .= '<tr><td>' . $cnt_m . '</td><td style="width: 25px;padding-right: 0px;">' . $_count_meta_num . '</td></tr>';
+														}
+													}
+													$Meta_Keywords_un .= '</table>';
+													$parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+												}
+
+												$row->snap1 = $cmpare->snap;
+												$row->imp_data_id1 = $item['imported_data_id'];
+												$row->product_name1 = $cmpare->product_name;
+												$row->item_id1 = $parsed_attributes_unserialize_row;
+												$row->model1 = $parsed_model_unserialize_row;
+												$row->url1 = $cmpare->url;
+												$row->Page_Load_Time1 = $parsed_loaded_in_seconds_unserialize_row;
+												$row->Short_Description1 = $cmpare->Short_Description;
+												$row->short_description_wc1 = $cmpare->short_description_wc;
+												$row->Meta_Keywords1 = $parsed_meta_keywords_unserialize_row;
+												$row->Long_Description1 = $cmpare->Long_Description;
+												$row->long_description_wc1 = $cmpare->long_description_wc;
+												$row->Meta_Description1 = $parsed_meta_unserialize_row;
+												$row->Meta_Description_Count1 = $parsed_meta_unserialize_row_count;
+												$row->column_external_content1 = $column_external_content;
+												$row->H1_Tags1 = $buildedH1Field['rowue'];
+												$row->H1_Tags_Count1 = $buildedH1Field['count'];
+												$row->H2_Tags1 = $buildedH2Field['rowue'];
+												$row->H2_Tags_Count1 = $buildedH2Field['count'];
+												$row->column_reviews1 = $parsed_column_reviews_unserialize_row;
+												$row->average_review1 = $parsed_average_review_unserialize_row_count;
+												$row->column_features1 = $parsed_column_features_unserialize_row_count;
+												$row->title_seo_phrases1 = $tsp !== '' ? $tsp : 'None';
+												$row->images_cmp1 = $images_cmp;
+												$row->video_count1 = $video_count;
+												$row->title_pa1 = $title_pa;
+												$row->links_count1 = $links_count;
+												$row->total_description_wc1 = $row->short_description_wc1 + $row->long_description_wc1;
+												$cmpare->imported_data_id = $item['imported_data_id'];
+												++$batch2_items_count;
+												$similar_items_data[] = $cmpare;
+												$row->similar_items = $similar_items_data;
+												$has_similar_items = true;
+												break;
+											}
+										}
+										if (!$has_similar_items)
+										{
+											$result_table_rows_count--;
+											continue;
+										}
+									} else
+									{
+										$result_table_rows_count--;
+										continue;
+									}
+								} else
+								{
+									$result_table_rows_count--;
+									continue;
+								}
+							}
+
+							// getting initial (default) result row data
+							$result_row = AssessHelper::getInitialScalarRowData($row);
+
+							$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);
+							if ($batch2 > 0)
+							{
+								$sim_items = $row->similar_items;
+
+
+								for ($it = 0, $sim_it = 1; $it < 1; $it++, $sim_it++)
+								{
+									$it = 0;
+									$parsed_anchors_unserialize_val = '';
+									$parsed_meta_unserialize_val_count = '';
+									$parsed_meta_keywords_unserialize_val = '';
+									$column_external_content = '';
+
+									$parsed_attributes_unserialize = unserialize($sim_items[$it]->parsed_attributes);
+									$parsed_anchors_unserialize = unserialize($sim_items[$it]->Anchors);
+
+									if (isset($parsed_attributes_unserialize['cnetcontent']) || isset($parsed_attributes_unserialize['webcollage']))
+										$column_external_content = $this->column_external_content($parsed_attributes_unserialize['cnetcontent'], $parsed_attributes_unserialize['webcollage']);
+
+									$HTags = unserialize($sim_items[$it]->HTags);
+
+									$buildedH1Field = AssessHelper::buildHField($HTags, 'h1');
+									$buildedH2Field = AssessHelper::buildHField($HTags, 'h2');
+
+									$parsed_attributes_unserialize_val = isset($parsed_attributes_unserialize['item_id']) ? $parsed_attributes_unserialize['item_id'] : '';
+									$parsed_attributes_model_unserialize_val = isset($parsed_attributes_unserialize['model']) ? $parsed_attributes_unserialize['model'] : '';
+									$parsed_loaded_in_seconds_unserialize_val = isset($parsed_attributes_unserialize['loaded_in_seconds']) ? $parsed_attributes_unserialize['loaded_in_seconds'] : '';
+									$parsed_column_reviews_unserialize_val = isset($parsed_attributes_unserialize['review_count']) ? $parsed_attributes_unserialize['review_count'] : 0;
+									$parsed_average_review_unserialize_val = isset($parsed_attributes_unserialize['average_review']) ? $parsed_attributes_unserialize['average_review'] : '';
+									$parsed_column_features_unserialize_val = isset($parsed_attributes_unserialize['feature_count']) ? $parsed_attributes_unserialize['feature_count'] : 0;
+									$images_cmp = isset($parsed_attributes_unserialize['product_images']) ? $parsed_attributes_unserialize['product_images'] : '';
+									$video_count = isset($parsed_attributes_unserialize['video_count']) ? $parsed_attributes_unserialize['video_count'] : '';
+									$title_pa = isset($parsed_attributes_unserialize['title']) ? $parsed_attributes_unserialize['title'] : '';
+									$links_count = isset($parsed_anchors_unserialize['quantity']) ? $parsed_anchors_unserialize['quantity'] : '';
+
+
+									$parsed_meta_unserialize = unserialize($sim_items[$it]->parsed_meta);
+
+									if ($parsed_meta_unserialize['description'])
+									{
+										$parsed_meta_unserialize_val = $parsed_meta_unserialize['description'];
+										$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize['description']));
+										if ($parsed_meta_unserialize_val_c < 1)
+											$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+									}
+									else if ($parsed_meta_unserialize['Description'])
+									{
+										$parsed_meta_unserialize_val = $parsed_meta_unserialize['Description'];
+										$parsed_meta_unserialize_val_c = count(explode(" ", $parsed_meta_unserialize['Description']));
+										if ($parsed_meta_unserialize_val_c != 1)
+											$parsed_meta_unserialize_val_count = $parsed_meta_unserialize_val_c;
+									}
+
+									if ($parsed_meta_unserialize['keywords'])
+									{
+
+										$Meta_Keywords_un = "<table class='table_keywords_long'>";
+										$cnt_meta_un = explode(',', $parsed_meta_unserialize['keywords']);
+										$cnt_meta_count_un = count($cnt_meta_un);
+										foreach ($cnt_meta_un as $key => $cnt_m_un)
+										{
+											$_count_meta_un = 0;
+											$cnt_m_un = trim($cnt_m_un);
+											if (!$cnt_m_un)
+											{
+												continue;
+											}
+											if ($sim_items[$it]->Long_Description || $sim_items[$it]->Short_Description)
+											{
+												$_count_meta_un = $this->keywords_appearence($sim_items[$it]->Long_Description . $sim_items[$it]->Short_Description, $cnt_m_un);
+												$_count_meta_num_un = (float) round(($_count_meta_un * $cnt_meta_count_un / ($sim_items[$it]->long_description_wc + $sim_items[$it]->short_description_wc)) * 100, 2);
+
+												$batch2_meta_percents[$row_key][$key] = $_count_meta_num_un;
+
+												$_count_meta_num_un_proc = $_count_meta_num_un . "%";
+												$Meta_Keywords_un .= "<tr><td>" . $cnt_m_un . "</td><td>" . $_count_meta_num_un_proc . "</td></tr>";
+				//                        
+												if ($it == 1 && !$meta_key_gap)
+												{
+													$metta_prc = round(($_count_meta_un * $cnt_meta_count_un / ($row->long_description_wc + $row->short_description_wc)) * 100, 2);
+													if ($metta_prc >= 2)
+													{
+														$meta_key_gap = $metta_prc;
+													}
+												}
+											}
+										}
+										$Meta_Keywords_un .= "</table>";
+										$parsed_meta_keywords_unserialize_val = $Meta_Keywords_un;
+									}
+
+
+									/*if ($it == 1)
+									{
+										$f_count1 = 0;
+										if (isset($parsed_attributes_unserialize['feature_count']))
+										{
+											$f_count1 = $parsed_attributes_unserialize['feature_count'];
+										} 
+										$r_count1 = 0;
+										if (isset($parsed_attributes_unserialize['review_count']))
+										{
+											$r_count1 = $parsed_attributes_unserialize['review_count'];
+										}
+										if (!$meta_key_gap)
+										{
+
+											$result_row->gap .= "Competitor is not keyword optimized<br>";
+										}
+									}*/			
+
+									//$result_row = (array) $result_row;
+									$result_row->snap1 = $sim_items[$it]->snap !== false ? '<span style="cursor:pointer;"><img src="' . base_url() . 'webshoots/' . $sim_items[$it]->snap . '" /></snap>' : '-';
+									$result_row->title_seo_phrases1 = $row->title_seo_phrases1 ? $row->title_seo_phrases1 : 'None';
+									$result_row->imp_data_id1 = $sim_items[$it]->imported_data_id !== false ? $sim_items[$it]->imported_data_id : '';
+									$result_row->images_cmp1 = $images_cmp ? $images_cmp : 'None';
+									$result_row->video_count1 = $video_count ? $video_count : 'None';
+									$result_row->title_pa1 = $title_pa ? $title_pa : 'None';
+									$result_row->product_name1 = $sim_items[$it]->product_name !== false ? $sim_items[$it]->product_name : "-";
+									$result_row->item_id1 = $parsed_attributes_unserialize_val;
+									$result_row->Page_Load_Time1 = $parsed_loaded_in_seconds_unserialize_val;
+									$result_row->H1_Tags1 = $buildedH1Field['value'];
+									$result_row->H1_Tags_Count1 = $buildedH1Field['count'];
+									$result_row->H2_Tags1 = $buildedH2Field['value'];
+									$result_row->H2_Tags_Count1 = $buildedH2Field['count'];
+									$result_row->url1 = $sim_items[$it]->url !== false ? "<span class='res_url'><a target='_blank' href='" . $sim_items[$it]->url . "'>" . $sim_items[$it]->url . "</a></span>" : "-";
+									$result_row->model1 = $parsed_attributes_model_unserialize_val;
+									$result_row->short_description_wc1 = $sim_items[$it]->short_description_wc !== false ? $sim_items[$it]->short_description_wc : '';
+									$result_row->Short_Description1 = $sim_items[$it]->Short_Description !== false ? $sim_items[$it]->Short_Description : '';
+									$result_row->Long_Description1 = $sim_items[$it]->Long_Description !== false ? $sim_items[$it]->Long_Description : '';
+									$result_row->Meta_Keywords1 = $parsed_meta_keywords_unserialize_val;
+									$result_row->long_description_wc1 = $sim_items[$it]->long_description_wc !== false ? $sim_items[$it]->long_description_wc : '';
+									$result_row->Meta_Description1 = $parsed_meta_unserialize_val;
+									$result_row->Meta_Description_Count1 = $parsed_meta_unserialize_val_count;
+									$result_row->column_external_content1 = $column_external_content;
+									$result_row->column_reviews1 = $parsed_column_reviews_unserialize_val;
+									$result_row->average_review1 = $parsed_average_review_unserialize_val;
+									$result_row->column_features1 = $parsed_column_features_unserialize_val;
+									$result_row->links_count1 = $links_count ? $links_count : 'None';
+									$result_row->total_description_wc1 = $result_row->short_description_wc1 + $result_row->long_description_wc1;
+								}
+
+							}
+
+							if ($pars_atr['parsed_attributes']['cnetcontent'] || $pars_atr['parsed_attributes']['webcollage'])
+							{
+								$result_row->column_external_content = $this->column_external_content($pars_atr['parsed_attributes']['cnetcontent'], $pars_atr['parsed_attributes']['webcollage']);
+							}
+							$result_row->column_reviews = $pars_atr['parsed_attributes']['review_count'];
+							$result_row->column_features = $pars_atr['parsed_attributes']['feature_count'];
+
+							if ($pars_atr['parsed_meta']['description'] && trim($pars_atr['parsed_meta']['description']))
+							{
+								$pars_atr_array = $pars_atr['parsed_meta']['description'];
+								$result_row->Meta_Description = $pars_atr_array;
+								$words_des = count(explode(" ", $pars_atr_array));
+								$result_row->Meta_Description_Count = $words_des;
+							} else if ($pars_atr['parsed_meta']['Description'] && trim($pars_atr['parsed_meta']['Description']))
+							{
+								$pars_atr_array = $pars_atr['parsed_meta']['Description'];
+								$result_row->Meta_Description = $pars_atr_array;
+								$words_des = count(explode(" ", $pars_atr_array));
+								$result_row->Meta_Description_Count = $words_des;
+							}
+
+
+
+							if ($pars_atr['parsed_meta']['keywords'] && trim($pars_atr['parsed_meta']['keywords']))
+							{
+								$Meta_Keywords = "<table class='table_keywords_long'>";
+								$cnt_meta = explode(',', $pars_atr['parsed_meta']['keywords']);
+								$cnt_meta_count = count($cnt_meta);
+								$_count_meta = 0;
+								foreach ($cnt_meta as $key => $cnt_m)
+								{
+									$cnt_m = trim($cnt_m);
+									if (!$cnt_m)
+									{
+										continue;
+									}
+									if ($result_row->long_description || $result_row->short_description)
+									{
+										$_count_meta = $this->keywords_appearence($result_row->long_description . $result_row->short_description, $cnt_m);
+										$_count_meta_num = (float) round(($_count_meta * $cnt_meta_count / ($result_row->long_description_wc + $result_row->short_description_wc)) * 100, 2);
+
+										$batch1_meta_percents[$row_key][$key] = $_count_meta_num;
+
+										$_count_meta_num_proc = $_count_meta_num . "%";
+										$Meta_Keywords .= "<tr><td>" . $cnt_m . "</td><td style='width: 25px;padding-right: 0px;'>" . $_count_meta_num . "%</td></tr>";
+									}
+								}
+								$Meta_Keywords .= "</table>";
+								$result_row->Meta_Keywords = $Meta_Keywords;
+							}
+
+							if (isset($pars_atr['parsed_attributes']['item_id']) && $pars_atr['parsed_attributes']['item_id'] != '')
+							{
+								$result_row->item_id = $pars_atr['parsed_attributes']['item_id'];
+							}
+
+							if (isset($pars_atr['parsed_attributes']['model']) && $pars_atr['parsed_attributes']['model'] != '')
+							{
+								$result_row->model = $pars_atr['parsed_attributes']['model'];
+							}
+
+							if (isset($pars_atr['parsed_attributes']['loaded_in_seconds']) && $pars_atr['parsed_attributes']['loaded_in_seconds'] != '')
+							{
+								$result_row->Page_Load_Time = $pars_atr['parsed_attributes']['loaded_in_seconds'];
+							}
+							if (isset($pars_atr['parsed_attributes']['average_review']) && $pars_atr['parsed_attributes']['average_review'] != '')
+							{
+								$result_row->average_review = $pars_atr['parsed_attributes']['average_review'];
+							}
+							if (isset($pars_atr['parsed_attributes']['product_images']))
+							{
+								$result_row->images_cmp = $pars_atr['parsed_attributes']['product_images'];
+							}
+							if (isset($pars_atr['parsed_attributes']['video_count']))
+							{
+								$result_row->video_count = $pars_atr['parsed_attributes']['video_count'];
+							}
+							if (isset($pars_atr['parsed_attributes']['title']))
+							{
+								$result_row->title_pa = $pars_atr['parsed_attributes']['title'];
+							}
+							if (isset($pars_atr['Anchors']['quantity']))
+							{
+								$result_row->links_count = $pars_atr['Anchors']['quantity'];
+							}
+
+							$buildedH1Field = AssessHelper::buildHField($pars_atr['HTags'], 'h1');
+							$buildedH2Field = AssessHelper::buildHField($pars_atr['HTags'], 'h2');
+
+							$result_row->H1_Tags = $buildedH1Field['value'];
+							$result_row->H1_Tags_Count = $buildedH1Field['count'];
+							$result_row->H2_Tags = $buildedH2Field['value'];
+							$result_row->H2_Tags_Count = $buildedH2Field['count'];
+
+							$custom_seo = $this->keywords_model->get_by_imp_id($row->imported_data_id);
+
+							$result_row->Custom_Keywords_Long_Description = AssessHelper::getCustomDescriptionKeywords(array(
+								    'row' => $row,
+								    'custom_seo' => $custom_seo,
+								    'table_class' => 'table_keywords_long',
+								    'seo_elements' => array(
+									'primary', 'secondary', 'tetriary'
+								    ),
+								    'controller' => $this,
+								    'key' => 'long_description'
+							));
+
+							$result_row->Custom_Keywords_Short_Description = AssessHelper::getCustomDescriptionKeywords(array(
+								    'row' => $row,
+								    'custom_seo' => $custom_seo,
+								    'table_class' => 'table_keywords_short',
+								    'seo_elements' => array(
+									'primary', 'secondary', 'tetriary'
+								    ),
+								    'controller' => $this,
+								    'key' => 'short_description'
+							));
+
+
+							if ($row->snap != null && $row->snap != '')
+							{
+								$result_row->snap = $row->snap;
+							}
+
+							if (floatval($row->own_price) <> false)
+							{
+								$own_site = parse_url($row->url, PHP_URL_HOST);
+								$own_site = str_replace('www.', '', $own_site);
+								$own_site = str_replace('www1.', '', $own_site);
+								$result_row->price_diff = "<nobr>" . $own_site . " - $" . $row->own_price . "</nobr><br />";
+							}
+
+							if (count($price_diff) > 1)
+							{
+								$own_price = floatval($price_diff['own_price']);
+								$own_site = str_replace('www.', '', $price_diff['own_site']);
+								$own_site = str_replace('www1.', '', $own_site);
+								$price_diff_res = "<nobr>" . $own_site . " - $" . $price_diff['own_price'] . "</nobr><br />";
+								$flag_competitor = false;
+								$lim = count($price_diff['competitor_customer']);
+								for ($i = 0; $i < $lim; $i++)
+								{
+									if ($customer_url["host"] != $price_diff['competitor_customer'][$i])
+									{
+										if ($own_price > floatval($price_diff['competitor_price'][$i]))
+										{
+											$result_row->lower_price_exist = true;
+											$competitor_site = str_replace('www.', '', $price_diff['competitor_customer'][$i]);
+											$price_diff_res .= "<input type='hidden'><nobr>" . $competitor_site . " - $" . $price_diff['competitor_price'][$i] . "</nobr><br />";
+										}
+									}
+								}
+
+								$result_row->price_diff = $price_diff_res;
+							}
+
+							$result_row->competitors_prices = unserialize($row->competitors_prices);
+
+							if (property_exists($row, 'include_in_assess_report') && intval($row->include_in_assess_report) > 0)
+							{
+								++$detail_comparisons_total;
+							}
+
+							if ($this->settings['statistics_table'] == "statistics_new")
+							{
+								$short_seo = false;
+								if (strpos($row->short_seo_phrases, 'a:') !== false)
+								{
+									$short_seo = unserialize($row->short_seo_phrases);
+								}
+								if ($short_seo)
+								{
+									$str_short_seo = '<table class="table_keywords_short">';
+									foreach ($short_seo as $val)
+									{
+										$str_short_seo .= '<tr><td>' . $val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
+									}
+									$result_row->short_seo_phrases = $str_short_seo . '</table>';
+								}
+								$long_seo = false;
+								if (strpos($row->long_seo_phrases, 'a:') !== FALSE)
+								{
+									$long_seo = unserialize($row->long_seo_phrases);
+								}
+								if ($long_seo)
+								{
+									$str_long_seo = '<table class="table_keywords_long">';
+									foreach ($long_seo as $val)
+									{
+										$str_long_seo .= '<tr><td>' . $val['ph'] . '</td><td>' . $val['prc'] . '%</td></tr>';
+									}
+									$result_row->long_seo_phrases = $str_long_seo . '</table>';
+								}
+								//getting title_keywords from statistics_new
+								$title_seo_pr = array();
+								if (trim($row->title_keywords) && $row->title_keywords != 'None')
+								{
+									$title_seo_pr = unserialize($row->title_keywords);
+								}
+								if (!empty($title_seo_pr))
+								{
+									$str_title_long_seo = '<div class="table_keywords_long 3186">';
+									foreach ($title_seo_pr as $val)
+									{
+										$str_title_long_seo .= '<p>' . $val['ph'] . '<span class = "phr-density" style="display:none;">  ' . $val['prc']
+											. '%</span><span class = "phr-frequency"> - ' . $val['frq'] . '</span></p>';
+									}
+									$result_row->title_seo_phrases = $str_title_long_seo . '</div>';
+								}
+								$result_row->prodcat = 'None';
+								if (isset($prodCats[$row->category_id]))
+								{
+									$result_row->prodcat = $prodCats[$row->category_id];
+								}
+								if (!empty($row->manufacturer_info))
+								{
+									$mi = unserialize($row->manufacturer_info);
+									$result_row->murl = '<a target="_blank" class="active_link" href="' . $mi['url'] . '">' . $mi['url'] . '</a>';
+									$result_row->mimg = $mi['images'];
+									$result_row->mvid = $mi['videos'];
+
+								}
+							} else
+							{
+								$result_row->short_seo_phrases = $row->short_seo_phrases;
+								$result_row->long_seo_phrases = $row->long_seo_phrases;
+								$result_row->title_seo_phrases = '';
+							}
+
+								$this->load->model('statistics_duplicate_content_model');
+								$dc = $this->statistics_duplicate_content_model->get($row->imported_data_id);
+								$duplicate_customers_short = '';
+								$duplicate_customers_long = '';
+								$duplicate_short_percent_total = 0;
+								$duplicate_long_percent_total = 0;
+								if (count($dc) > 1)
+								{
+									foreach ($dc as $vs)
+									{
+										if ($customer_url['host'] == $vs->customer)
+										{
+												$short_percent = 0;
+												$long_percent = 0;
+												$duplicate_short_percent_total = 100 - round($vs->short_original, 1);
+												$short_percent = 100 - round($vs->short_original, 1);
+												if ($short_percent > 0)
+												{
+													$duplicate_customers_short = '<nobr>' . $short_percent . '%</nobr><br />';
+												}
+												$duplicate_long_percent_total = 100 - round($vs->long_original, 1);
+												$long_percent = 100 - round($vs->long_original, 1);
+												if ($long_percent > 0)
+												{
+													$duplicate_customers_long = '<nobr>' . $vs->customer . ' - ' . $long_percent . '%</nobr><br />';
+												}
+										}
+									}
+
+									if (trim($duplicate_customers_short))
+									{
+										$duplicate_customers = 'Duplicate short<br />' . $duplicate_customers_short;
+									}
+									if (trim($duplicate_customers_long))
+									{
+										$duplicate_customers = $duplicate_customers . 'Duplicate long<br />' . $duplicate_customers_long;
+									}
+
+									if ($duplicate_short_percent_total > $duplicate_content_range || $duplicate_long_percent_total > $duplicate_content_range)
+									{
+										$duplicate_customers = "<input type='hidden'/>" . $duplicate_customers;
+									}
+									$result_row->duplicate_content = $duplicate_customers;
+								}
+
+							//Dublicate Content      
+							if (!$row->Short_Description2 || !$row->Long_Description2)
+							{
+								$short_desc_1 = '';
+								if ($row->short_description)
+								{
+									$short_desc_1 = $row->short_description;
+								}
+								$long_desc_1 = '';
+								if ($row->long_description)
+								{
+									$long_desc_1 = $row->long_description;
+								}
+								$desc_1 = $short_desc_1 . ' ' . $long_desc_1;
+								$short_desc_2 = '';
+								if ($row->Short_Description1)
+								{
+									$short_desc_2 = $row->Short_Description1;
+								}
+								$long_desc_2 = '';
+								if ($row->Long_Description1)
+								{
+									$long_desc_2 = $row->Long_Description1;
+								}
+								$desc_2 = $short_desc_2 . ' ' . $long_desc_2;
+
+								if (strcasecmp($desc_1, $desc_2) <= 0)
+								{
+									similar_text($desc_1, $desc_2, $percent);
+								} else
+								{
+									similar_text($desc_2, $desc_1, $percent);
+								}
+
+								$percent = number_format($percent, 2);			
+
+								$result_row->Duplicate_Content.= $percent . '%';
+							} else
+							{
+								$result_row->Duplicate_Content.='';
+							}		
+
+								if (isset($result_row->recommendations))
+								{
+									// this is for absent product in selected batch only
+									$result_row->recommendations_html = '<ul class="assess_recommendations"><li>' . $result_row->recommendations . '</li></ul>';
+								} else
+								{
+									$img_path = base_url() . "img/";
+									$recommendations = array();
+
+									if ($result_row->short_description_wc == 0 && $result_row->long_description_wc == 0)
+									{
+										$recommendations[] = array(
+										    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_D.png">',
+										    'msg' => 'Add product descriptions',
+										);
+									}
+
+									if ($result_row->short_description_wc > 0 && $result_row->long_description_wc == 0)
+									{
+										if ($result_row->short_description_wc > 100)
+										{
+											$sd_diff = 100 - $result_row->short_description_wc;
+										} else
+										{
+											$sd_diff = 20 - $result_row->short_description_wc;
+										}
+										if ($sd_diff > 0)
+										{
+											$recommendations[] = array(
+											    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+											    'msg' => 'Increase descriptions word count by ' . $sd_diff . ' words',
+											);
+										}
+									}
+									if ($result_row->long_description_wc > 0 && $result_row->short_description_wc == 0)
+									{
+										if ($result_row->long_description_wc > 200)
+										{
+											$ld_diff = 200 - $result_row->long_description_wc;
+										} else
+										{
+											$ld_diff = 100 - $result_row->long_description_wc;
+										}
+										if ($ld_diff > 0)
+										{
+											$recommendations[] = array(
+											    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+											    'msg' => 'Increase descriptions word count by ' . $ld_diff . ' words',
+											);
+										}
+									}
+
+									if ($result_row->short_description_wc > 0 && $result_row->long_description_wc > 0)
+									{
+										if ($result_row->short_description_wc > 100)
+										{
+											$sd_diff = 100 - $result_row->short_description_wc;
+										} else
+										{
+											$sd_diff = 20 - $result_row->short_description_wc;
+										}
+										if ($sd_diff > 0)
+										{
+											$recommendations[] = array(
+											    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+											    'msg' => 'Increase short descriptions word count by ' . $sd_diff . ' words',
+											);
+										}
+									}
+									if ($result_row->long_description_wc > 0 && $result_row->short_description_wc != 0)
+									{
+										if ($result_row->long_description_wc > 200)
+										{
+											$ld_diff = 200 - $result_row->long_description_wc;
+										} else
+										{
+											$ld_diff = 100 - $result_row->long_description_wc;
+										}
+										if ($ld_diff > 0)
+										{
+											$recommendations[] = array(
+											    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_arrow_up.png">',
+											    'msg' => 'Increase long descriptions word count by ' . $ld_diff . ' words',
+											);
+										}
+									}
+
+									if ($result_row->short_seo_phrases == 'None' && $result_row->long_seo_phrases == 'None')
+									{
+										$recommendations[] = array(
+										    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_seo.png">',
+										    'msg' => 'Keyword optimize product content',
+										);
+									}
+									if ($result_row->lower_price_exist == true && !empty($result_row->competitors_prices))
+									{
+										if (min($result_row->competitors_prices) < $result_row->own_price)
+										{
+											$min_price_diff = $result_row->own_price - min($result_row->competitors_prices);
+											$recommendations[] = array(
+											    'img' => '<img class="bullet" src="' . $img_path . 'assess_report_dollar.png">',
+											    'msg' => 'Lower price by $' . $min_price_diff . ' to be competitive',
+											);
+										}
+									}
+
+									$result_row->recommendations = $recommendations;
+									$lim = count($recommendations);
+									for ($i = 0; $i < $lim; $i++)
+									{
+									    $recommendations[$i] = '<li>' . $recommendations[$i]['img'] . $recommendations[$i]['msg'] . '</li>';
+									}
+									$result_row->recommendations_html = '<ul class="assess_recommendations">' . implode('', $recommendations) . '</ul>';
+								}
+								$this->assess_results->rows[] = array(
+									'id' => ($row_iterator+1),
+									'row_data' => json_encode($result_row),
+									'combination' => $combinations[$a]
+								);
+
+						}
+						if(is_array($this->assess_results->rows) && count($this->assess_results->rows) > 0)
+						{	
+							$this->assess_results->multipleInsert($this->assess_results->rows);
+							$this->assess_results->rows = array();
+						}	
+						
+					}
+				}
+			}
+		}	
+	}
+	
+	
+	private function keywords_appearence($desc, $phrase) {
+
+        $desc = strip_tags($desc);
+        return substr_count($desc, $phrase);
+	}
+	private function column_external_content($cnetcontent = false, $webcollage = false) {
+		$column_external_content = ' ';
+		if ($cnetcontent == 1 && $webcollage == 1)
+		    $column_external_content = 'CNET, Webcollage';
+		elseif ($cnetcontent == 1 && $webcollage != 1)
+		    $column_external_content = 'CNET';
+		elseif ($cnetcontent != 1 && $webcollage == 1)
+		    $column_external_content = 'Webcollage';
+		return $column_external_content;
+	}
+
+	
         //Controls the Workflow process 
         function cron_job_manager(){
             $this->load->model('workflow_model');

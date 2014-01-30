@@ -10,7 +10,7 @@
 	
 	<?php if (isset($filter_item['has_competitor']) && $filter_item['has_competitor']): ?>
 		<div class="batch_me_and_competitor" style="display: <?php echo $is_displayed ?>" data-filterid="<?php echo $batch_set . $filter_item['data_filter_id'] ?>">
-			<?php echo render_filter_item($key, $batch_set . $filter_item['data_filter_id'], $filter_item['icon'], $filter_item['label'], 'batch1_filter_item', true, $filter_item['question']['batch1'], $is_displayed) ?>					
+			<?php echo render_filter_item($key, $batch_set . $filter_item['data_filter_id'], $filter_item['icon'], $filter_item['label'], 'batch1_filter_item', true, $filter_item['question']['batch1'], $is_displayed, $filter_item['filter_id'][0]) ?>					
 			<div class="selectable_summary_handle_with_competitor"><i class="icon-move"></i></div>
 			
 			<?php
@@ -18,11 +18,11 @@
 				$batch2_label = isset($filter_item['competitor']) ? $filter_item['competitor']['label'] : 'Competitor ' . $filter_item['label'];
 			?>
 			
-			<?php echo render_filter_item($key, $batch_set . $batch2_id, $filter_item['icon'], $batch2_label, 'batch2_filter_item', true, $filter_item['question']['batch2'], $is_displayed) ?>										
+			<?php echo render_filter_item($key, $batch_set . $batch2_id, $filter_item['icon'], $batch2_label, 'batch2_filter_item', true, $filter_item['question']['batch2'], $is_displayed, $filter_item['filter_id'][1]) ?>										
 			<div style="clear: both" class="item_line_clear"></div>
 		</div>
 	<?php else: ?>		
-		<?php echo render_filter_item($key, $batch_set . $filter_item['data_filter_id'], $filter_item['icon'], $filter_item['label'], '', true, $filter_item['question'], $is_displayed) ?>						
+		<?php echo render_filter_item($key, $batch_set . $filter_item['data_filter_id'], $filter_item['icon'], $filter_item['label'], '', true, $filter_item['question'], $is_displayed, $filter_item['filter_id']) ?>						
 	<?php endif ?>	
 		
 <?php endforeach ?>

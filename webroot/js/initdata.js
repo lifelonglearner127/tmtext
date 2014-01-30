@@ -41,6 +41,7 @@ var global_filters_values;
 var global_filters_items;
 var global_filters_ids;
 var summaryInfoSelectedElementsTexts = [];
+var summaryInfoSelectedElementsIds = [];
 
 var FIRST_DISPLAY_LIMIT_COUNT = 100;
 var NEXT_DISPLAY_LIMIT_COUNT = 1000;
@@ -52,6 +53,8 @@ var customLocalStorage = {};
 
 var items_short_products_content_short = 0;
 var items_long_products_content_short = 0;
+
+var globalXHR = null;
 	
 var summaryFieldNames = [
 		'assess_report_total_items',

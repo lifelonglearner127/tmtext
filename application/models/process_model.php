@@ -23,7 +23,7 @@ class Process_model extends Base_model {
             'process_name' => $title,
             'week_day' => $day
         );
-        $this->db->insert('process', $data);
+        $this->db->insert('processes', $data);
         return $this->db->insert_id();
     }
 
