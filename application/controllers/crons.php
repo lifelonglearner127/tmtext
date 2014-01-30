@@ -1156,7 +1156,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			$this->email->send(); 
                         $url_link ="wget -S -O - ".site_url('/crons/cron_job_manager')." > /dev/null 2>/dev/null &"; 
 			shell_exec($url_link);
-			$this->generateResults($usedBatches);
+			//$this->generateResults($usedBatches);
 		}
 		unlink($tmp_dir . ".locked");
 	}

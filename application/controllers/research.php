@@ -1739,19 +1739,19 @@ class Research extends MY_Controller {
 			{
 			       for($i = 0;$i < $cols;$i++) //checking all columns for URL, and category fields
 			       {
-				       if(strpos($data[$i],'URL') !== FALSE || strpos($data[$i],'http')!== FALSE)
+				       if(stripos($data[$i],'URL') !== FALSE || stripos($data[$i],'http')!== FALSE)
 				       {
 					       $urlPos = $i;
-				       } elseif(strpos($data[$i],'CATEGORY_ID') !== FALSE)
+				       } elseif(stripos($data[$i],'CATEGORY_ID') !== FALSE)
 				       { 
 					       $cIdPos = $i;
-				       } elseif(strpos($data[$i],'CATEGORY_NAME') !== FALSE)
+				       } elseif(stripos($data[$i],'CATEGORY_NAME') !== FALSE)
 				       { 
 					       $cNamePos = $i;
 				       }
 			       }
 			}  
-		}elseif(!empty($data[$urlPos]) && $data[$urlPos]!='URL'){
+		}elseif(!empty($data[$urlPos]) && ($data[$urlPos] != 'URL' || $data[$urlPos] != 'url')){
 		        if(!$this->research_data_model->checkItemUrl($ins['batch_id'], $data[$urlPos]))
 			{
 			    $ins['category_id'] = 0;
