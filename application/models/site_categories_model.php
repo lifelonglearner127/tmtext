@@ -219,7 +219,7 @@ class Site_categories_model extends CI_Model {
 
     function getDescriptionData($site_id)
     {
-        $sql = $this->db->query("SELECT c(SELECT COUNT( * ) AS duplicate_count
+        $sql = $this->db->query("SELECT (SELECT COUNT( * ) AS duplicate_count
                             FROM (
                             SELECT TEXT
                             FROM  `site_categories` 
