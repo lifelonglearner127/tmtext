@@ -219,11 +219,20 @@ class Site_categories_model extends CI_Model {
 
     function getDescriptionData($site_id)
     {
-        $sql = $this->db->query("SELECT count(*) as total,
+        $sql = $this->db->query("SELECT count(SELECT COUNT( * ) AS duplicate_count
+                                        FROM (
+
+                                        SELECT TEXT
+                                        FROM  `site_categories` 
+                                        WHERE site_id =".$site_id."
+                                        AND  `flag` =  'ready'
+                                        GROUP BY TEXT
+                                        HAVING COUNT( TEXT ) >0
+                                        ) AS t) as total,
                 (SELECT round(avg(`description_words`)) AS c  FROM `site_categories` WHERE `site_id`=".$site_id." and `description_words`>0 GROUP BY `site_id`) as res_avg,
                 count(if((`description_words`>0 and `description_words`<250), id, null)) as more,
                 count(if(`description_words`>0, id, null)) as more_than_0
-                FROM  `site_categories` WHERE `site_id`=".$site_id." and `flag`='ready' GROUP BY `site_categories`.text");
+                FROM  `site_categories` WHERE `site_id`=".$site_id." and `flag`='ready'");
         $result = $sql->result();
         return array(
             'total' => $result[0]->total,
