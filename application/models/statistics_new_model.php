@@ -607,7 +607,7 @@ class Statistics_new_model extends CI_Model {
     }
     function getStatsData($params)
     {
-//        $st_time = microtime(TRUE);
+	    
         if(empty($params->batch_id)){
             $batch_id = '';
         } else {
@@ -661,7 +661,7 @@ class Statistics_new_model extends CI_Model {
             from '.$this->tables['statistics_new'].' as `s` left join '.$this->tables['crawler_list'].' as `cl` on `cl`.`imported_data_id` = `s`.`imported_data_id` where `s`.`batch_id`='.$batch_id.$txt_filter_part2.$category;
 	    
             $query = $this->db->query($sql);
-        
+	    
             $result = $query->result();
             $query->free_result();
         return $result;   

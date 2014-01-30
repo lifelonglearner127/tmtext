@@ -232,7 +232,7 @@ abstract class Base_model extends CI_Model
 	 *  @return boolean
 	 */
 	public function multipleInsert($models = array())
-	{
+	{  
 		$r = $this->db->insert_batch($this->getTableName(), (array)$models);
 		
 		return $r || $this->db->affected_rows();

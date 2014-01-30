@@ -29,10 +29,9 @@ class Batches_model extends CI_Model {
     function get($id)
     {
         $query = $this->db->where('id', $id)
-            ->limit(1)
             ->get($this->tables['batches']);
 
-        return $query->result();
+        return $query->row();
     }
 
     function getAll($order = "title")
@@ -203,23 +202,36 @@ class Batches_model extends CI_Model {
         return $result;
     }
     
-    function getBatchesForComparingByBatchId($batch_id = 0)
+    function getBatchesForComparingByBatchId($batch_id = 0, $withSecond = TRUE)
     {
 	$result = array();    
-        $this->db->select('b.id,b.title,b.customer_id,c.name,s.secondary_batch_id');
+        $this->db->select('b.id,b.title,b.customer_id,c.name');
 	$this->db->from($this->tables['batches']. ' b');
 	$this->db->join($this->tables['customers'].' c','c.id = b.customer_id');
-	$this->db->join($this->tables['secondary_batches'].' s','s.secondary_customer_id = b.customer_id AND s.primary_batch_id = '.$batch_id,'LEFT');
-        $this->db->where('b.customer_id != (SELECT customer_id FROM '.$this->tables['batches'].' WHERE id = '.$batch_id.' )',NULL,FALSE );
+	if($withSecond)
+	{	
+		$this->db->select('s.secondary_batch_id');
+		$this->db->join($this->tables['secondary_batches'].' s','s.secondary_customer_id = b.customer_id AND s.primary_batch_id = '.$batch_id,'LEFT');
+	}
+	$this->db->where('b.customer_id != (SELECT customer_id FROM '.$this->tables['batches'].' WHERE id = '.$batch_id.' )',NULL,FALSE );
 	$query = $this->db->get();
         if($query->num_rows() > 0) 
 	{
              $results = $query->result_array();
-	     foreach($results as $row)
+	     if($withSecond)
+	     {	     
+		foreach($results as $row)
+		{
+		    $result[$row['customer_id']]['name'] = $row['name'];     
+		    $result[$row['customer_id']]['secondary_id'] = $row['secondary_batch_id'];     
+		    $result[$row['customer_id']]['batches'][$row['id']] = $row['title'];     
+		}
+	     } else
 	     {
-		 $result[$row['customer_id']]['name'] = $row['name'];     
-		 $result[$row['customer_id']]['secondary_id'] = $row['secondary_batch_id'];     
-		 $result[$row['customer_id']]['batches'][$row['id']] = $row['title'];     
+		   foreach($results as $row)
+		   {
+			 $result[$row['id']] = $row['title'];     
+		   }  
 	     }
         }
         return $result;

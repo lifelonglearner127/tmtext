@@ -57,8 +57,9 @@ class Batches_combinations extends Base_model
 			
 		if ($combination->save()) {
 			$combination->id = $this->db->insert_id();
-			
-			if (Filters_values::model()->generateFiltersValues($data))
+			//if (Filters_values::model()->generateFiltersValues($data))
+			//$this->load->model('filters_values');
+			//if ($this->filters_values->generateFiltersValues($data))
 				return $combination;
 		}
 			
@@ -98,7 +99,7 @@ class Batches_combinations extends Base_model
 						}
 					}
 				}
-		else
+		else 
 			foreach ($batches as $batch_combination) {
 				if ($combination = $this->buildBatchesCombinationObject(array(
 					'first_batch_id' => $batch_combination['first_batch'],
@@ -111,6 +112,72 @@ class Batches_combinations extends Base_model
 				}				
 			}
 		
+		return $combinations;
+	}
+	
+	function generateCombinationsForBatch($batchId = 0, $batches = array())
+	{	
+		$combinations = array();
+		if(is_array($batches))
+		{	
+			$this->load->model('product_category_model');
+			$this->load->model('batches_model');
+			$firstBatch = $this->batches_model->get($batchId);
+			$categories = $this->product_category_model->getCatsByBatchId($batchId);
+			if ($combination = $this->buildBatchesCombinationObject(array(
+							'first_batch_id' => $batchId,
+							'second_batch_id' => 0,
+							'category' => 0,
+							'first_batch_title' => $firstBatch->title,
+							'second_batch_title' => ''
+							))) {
+							$combinations[] = $combination;
+							}
+			if (count($categories) > 0)
+			{						
+						foreach ($categories as $category) 
+						{	
+							if ($combination = $this->buildBatchesCombinationObject(array(
+								'first_batch_id' => $batchId,
+								'second_batch_id' => 0,
+								'category' => $category->id,
+								'first_batch_title' => $firstBatch->title,
+								'second_batch_title' => '',
+							))) {
+								$combinations[] = $combination;
+							}
+						}	
+			}				
+			foreach ($batches as $id => $title) 
+			{
+					if (count($categories) > 0)
+					{						
+						foreach ($categories as $category) 
+						{	
+							if ($combination = $this->buildBatchesCombinationObject(array(
+								'first_batch_id' => $batchId,
+								'second_batch_id' => $id,
+								'category' => $category->id,
+								'first_batch_title' => $firstBatch->title,
+								'second_batch_title' => $title,
+							))) {
+								$combinations[] = $combination;
+							}
+						}	
+					} else 
+					{						
+						if ($combination = $this->buildBatchesCombinationObject(array(
+							'first_batch_id' => $batchId,
+							'second_batch_id' => $id,
+							'category' => 0,
+							'first_batch_title' => $firstBatch->title,
+							'second_batch_title' => $title,
+						))) {
+							$combinations[] = $combination;
+						}
+					}
+		      }
+		}
 		return $combinations;
 	}
 }

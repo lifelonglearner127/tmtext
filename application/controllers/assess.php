@@ -270,7 +270,7 @@ class Assess extends MY_Controller {
 		}
 			
 		$results = $this->get_data_for_assess($params);
-
+		 
 		if ($batch2 && $batch2 != 'all') 
 		{			
 			$build_assess_params->max_similar_item_count = 1;
@@ -361,7 +361,7 @@ class Assess extends MY_Controller {
 				'txt_filter' => $txt_filter,
 				'category_id' => $category_id
 			));
-           
+			
             $output = $this->build_asses_table($comparison_data['results'], $build_assess_params, $batch_id, $columns, $category_id);
 
 //            //Debugging
@@ -3940,23 +3940,16 @@ class Assess extends MY_Controller {
 		$batch2_items_count = 0;
 		$iterator = 0;
 
-		$needFilters = $build_assess_params->needFilters;
 		$displayCount = $build_assess_params->displayCount;
 		$display_start = $build_assess_params->display_start;
 		$display_length = $build_assess_params->display_length;
 		$batch2 = $build_assess_params->batch2;
-
-		$countedFilters = FALSE;	
-		if(!$batch2) $batch2 = 0;
-		$comboPattern['batches_combination'] = $batch_id . '_' . $catId . '_' . $batch2;	
 		
-		$success_filter_entries = array();
 		$customer_name = $this->batches_model->getCustomerById($batch_id);
 		$customer_url = parse_url($customer_name->url);
 		$batch1_meta_percents = array();
 		$batch2_meta_percents = array();
 		$report = array();
-		$stored_filter_items = array();
 
 		//getting columns				
 		$raw_columns = $columns;
@@ -3978,12 +3971,11 @@ class Assess extends MY_Controller {
 		    "aaData" => array()
 		);
 		$this->load->model('assess_results');
-		$this->assess_results->truncate();
+		$this->assess_results->deleteAll(TRUE);
 		for ($row_iterator = $display_start; $row_iterator < $total_rows; $row_iterator++)
 		{
 			$row_key = $row_iterator;
 			$row = $results[$row_iterator];
-			$success_filter_entries = array();
 			$similar_items_data = array();
 			$f_count1 = 0;
 			$r_count1 = 0;
@@ -4630,7 +4622,6 @@ class Assess extends MY_Controller {
 			
 			if ($iterator < $iterator_limit)
 			{
-				//$result_table[$iterator] = $result_row;
 				if($iterator < 1)
 				{	
 					$theFirstRow = $result_row;
@@ -4755,25 +4746,15 @@ class Assess extends MY_Controller {
 				$output['aaData'][] = $o['aaData'];
 				$output['ExtraData']['json_encoded_data'][] = $o['ExtraData'];
 				
-				// $this->assess_results->saveRow($result_row); // Igor, I hope you're kidding... :) Making transaction (insertion) to database on each iteration - ...(not good at all). You need to use prepared statements (query bindings in CI) OR Base_model multipleInsert method, see below. (Oleg)
-				$this->assess_results->rows[] = array(
-					'row_data' => json_encode($row)
-				);
-				
 				
 				++$itemsTotal;
 			} else
-				break; // Igor, right now we don't need to calculate filters here anymore, so we don't need to iterate entire array from now, but you can change that if you need. (Oleg)
-			
-			
-			
+			{	
+				break; 
+			}	
 			++$iterator;
 		}
 		
-		//Igor, multiple insertion is here: (I tested, insertion works as earlier, please check by yourself).
-		$this->assess_results->multipleInsert($this->assess_results->rows);
-
-
 		if ($this->settings['statistics_table'] == "statistics_new")
 		{
 			$own_batch_total_items = $this->statistics_new_model->total_items_in_batch($batch_id);
@@ -4842,7 +4823,6 @@ class Assess extends MY_Controller {
 		$output['ExtraData']['display_competitor_columns'] = $build_assess_params->display_competitor_columns;
 		$output['ExtraData']['getSelectableColumns'] = AssessHelper::getSelectableColumns($raw_columns);
 		$output['ExtraData']['fixedTotalRows'] = $result_table_rows_count;
-
 		return $output;
     }
     

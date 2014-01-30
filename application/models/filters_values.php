@@ -340,7 +340,7 @@ class Filters_values extends Base_model implements IFilters
 			
 			// getting initial (default) result row data
 			$result_row = AssessHelper::getInitialScalarRowData($row);
-			
+			$this->load->model('imported_data_parsed_model');
 			$pars_atr = $this->imported_data_parsed_model->getByImId($row->imported_data_id);	
 			         
             if ($max_similar_item_count > 0) {                

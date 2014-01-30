@@ -20,6 +20,7 @@ class Assess_results extends Base_model
 		return array(
 			'id' => array('type' => 'required'),			
 			'row_data' => array('type' => 'required'),			
+			'combination' => array('type' => 'required'),			
 		);
 	}
 	
@@ -27,15 +28,4 @@ class Assess_results extends Base_model
 	{
 		return 'assess_results';
 	}	
-	
-	//please look at deleteAll(true) base_model method (Oleg)
-	public function truncate()
-	{
-		$this->db->truncate($this->getTableName()); 
-	}
-	//you can use save method from base_model (Oleg)
-	public function saveRow($row)
-	{
-		$this->db->insert($this->getTableName(),array('row_data'=>json_encode($row))); 
-	}
 }
