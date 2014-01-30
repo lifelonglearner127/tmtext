@@ -10,5 +10,5 @@ for node in "$@";
 	 b=  map(lambda x: x.group(1), filter(None, map(lambda x: re.search(\"(\d+\.\d+\.\d+\.\d+)\",x) , a))) \
 	 ; print b[0] "' \
 	 node$node | grep -v WARNING`;
-	 echo "$IP node$node" >> hosts;
+	 echo "node$node $IP" >> hosts;
 done
