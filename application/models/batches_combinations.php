@@ -10,6 +10,7 @@ class Batches_combinations extends Base_model
 	public $id;
 	public $batches_combination;
 	public $category_id;	
+	public $status;	
 	
 	public function getRules()
 	{
@@ -179,5 +180,11 @@ class Batches_combinations extends Base_model
 		      }
 		}
 		return $combinations;
+	}
+	
+	function update($id, $data)
+	{
+		$this->db->where('id',$id);
+		$this->db->update($this->getTableName(),$data);
 	}
 }

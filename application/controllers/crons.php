@@ -55,7 +55,7 @@ class Crons extends MY_Controller
                     'reset_models'=>true,
 		    'do_stats_bybatch' =>true, 
 		    'renameExistingFiles' =>true,
-		    'addBatchesToResult' => true
+		    'checkCombinationsForUpdate' => true
 		));
 		$this->load->library('helpers');
 		$this->load->helper('algoritm');
@@ -1130,6 +1130,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		//If queque has items and status is started and count of all items bigger than count of scanned items , start script again
 		if (count($data_arr) > 0 && $stats_status->description === 'started' && ($cjo - 1) * 50 < intval($total_items['description']))
 		{ 
+			$this->setCombinationsForUpdate($usedBatches);
 			$utd = $this->imported_data_parsed_model->getLUTimeDiff();
 			echo $utd->td;  //exit;
 			//make asynchronous web request to do_stats_forupdated page
@@ -1156,24 +1157,28 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 			$this->email->send(); 
                         $url_link ="wget -S -O - ".site_url('/crons/cron_job_manager')." > /dev/null 2>/dev/null &"; 
 			shell_exec($url_link);
-			//$this->generateResults($usedBatches);
+			$this->checkCombinationsForUpdate();
 		}
 		unlink($tmp_dir . ".locked");
 	}
 	
-	function addBatchesToResult()
+	public function checkCombinationsForUpdate()
 	{
-		$this->generateResults(array(133,123));
-		echo 'Done';
+		$this->load->model('batches_combinations');
+		$combos = $this->batches_combinations->findAllByAttributes(array('status' => 0));
+		foreach($combos as $combo)
+		{
+			$this->generateResults($combo->id);
+		}
+		echo 'Done, updated '.count($combos).' combination(s)';
 	}
 	
-	private function generateResults($batches = array())
+	private function setCombinationsForUpdate($batches = array())
 	{
+		$combinations = array();
 		$cnt = count($batches);
 		if(is_array($batches) && ($cnt > 0))
 		{
-			$newBatches = array();
-			$combinations = array();
 			$this->load->model('batches_model');
 			$this->load->model('batches_combinations');
 			for($b = 0;$b < $cnt; $b++)
@@ -1186,6 +1191,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 					{
 						if(!in_array($batchCombos[$c]->id,$combinations))
 						{
+							$this->batches_combinations->update($batchCombos[$c]->id,array('status'=>0));
 							$combinations[] = $batchCombos[$c]->id;
 						}	
 					}
@@ -1196,29 +1202,36 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 					$combinations = array_merge($combinations,$newCombos);
 				}
 			}
-			$allCnt = count($combinations);
-			if($allCnt > 0)
+		}	
+		return $combinations;
+	}
+		
+	private function generateResults($combinationId = 0)
+	{
+			$combinationId = (int) $combinationId;
+			if($combinationId <= 0)
 			{
+				return;
+			}	
+				$this->load->model('batches_model');
+				$this->load->model('batches_combinations');
 				$this->load->model('statistics_new_model');
 				$this->load->model('assess_results');
 				$this->load->model('keywords_model');
 				$this->load->model('imported_data_parsed_model');
-				for($a = 0; $a < $allCnt; $a++)
-				{
-					$combo = $this->batches_combinations->findByPk($combinations[$a]);
-					$combo = explode('_',$combo->batches_combination); 
-					if(isset($combo[0]) && isset($combo[1]) && isset($combo[2]))
-					{	
-						//$this->calculateResult($combinations[$a],$combo);	
+				$combo = $this->batches_combinations->findByPk($combinationId);
+				$combo = explode('_',$combo->batches_combination); 
+				if(isset($combo[0]) && isset($combo[1]) && isset($combo[2]))
+				{	
 						$batch_id = intval($combo[0]);
 						$catId = intval($combo[1]);
 						$batch2 = intval($combo[2]);
-						if($batch_id <= 0 || $combinations[$a] <= 0)
+						if($batch_id <= 0 || $combinationId <= 0)
 						{
 							return;
 						}
-						
-						$this->assess_results->deleteAllByAttributes(array('combination'=>$combinations[$a]));
+						$this->batches_combinations->update($combinationId,array('status'=>1)); //locked
+						$this->assess_results->deleteAllByAttributes(array('combination'=>$combinationId));
 						$params->batch_id = $batch_id;
 						$params->category_id = $catId;
 						$results = $this->statistics_new_model->getStatsData($params);
@@ -1971,7 +1984,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 								$this->assess_results->rows[] = array(
 									'id' => ($row_iterator+1),
 									'row_data' => json_encode($result_row),
-									'combination' => $combinations[$a]
+									'combination' => $combinationId
 								);
 
 						}
@@ -1979,12 +1992,11 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 						{	
 							$this->assess_results->multipleInsert($this->assess_results->rows);
 							$this->assess_results->rows = array();
+							$this->batches_combinations->update($combinationId,array('status'=>2)); //updated
 						}	
-						
-					}
-				}
+					
 			}
-		}	
+			
 	}
 	
 	
