@@ -484,8 +484,7 @@ $(function() {
 				customLocalStorage[storage_key] = JSON.stringify(assessData);														
 									
 				tblAssess = reInitializeTblAssess(assessData);
-
-				globalXHR = null;
+				
 			});
 						
 		});
@@ -552,8 +551,7 @@ $(function() {
 			customLocalStorage[storage_key] = JSON.stringify(json);
 			
 			tblAssess = reInitializeTblAssess(json, needToBeReloaded);
-			
-			globalXHR = null;
+						
 		});       
 	}
 	
