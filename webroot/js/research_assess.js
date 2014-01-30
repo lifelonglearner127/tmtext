@@ -2601,6 +2601,11 @@ function prevSibilfunc(curentSibil){
 	});
 
     $('#research_assess_compare_batches_reset').click(function() {
+		
+		//interuupting current ajax request
+		if (!_.isNull(globalXHR))
+			globalXHR.abort();
+	
 		$('#research_assess_compare_batches_customer').val('select customer').prop('selected', true);
         $('#research_assess_compare_batches_batch').val('0').prop('selected', true);
         $('#research_assess_compare_batches_customer').change();
