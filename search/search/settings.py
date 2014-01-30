@@ -23,9 +23,9 @@ HTTPCACHE_STORAGE = 'scrapy.contrib.downloadermiddleware.httpcache.FilesystemCac
 HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
 #HTTPCACHE_POLICY = 'SamsungCachePolicy.SamsungCachePolicy'
 
-DOWNLOAD_DELAY = 1
+#DOWNLOAD_DELAY = 1
 #TODO
-COOKIES_ENABLED = False
+#COOKIES_ENABLED = False
 
 # $HOME/.scrapy_cache
 import os
