@@ -456,7 +456,7 @@ $(function() {
 		var deferred = $.Deferred()		
 		  , aoData = buildTableParams([{ name : 'displayCount',	value : FIRST_DISPLAY_LIMIT_COUNT }, { name : 'needFilters', value : true }]);						
 			
-		$.getJSON(get_filters, { batches_combination : storage_key }, function(filters_data) {
+		globalXHR = $.getJSON(get_filters, { batches_combination : storage_key }, function(filters_data) {
 			if (!filters_data)						
 				return;
 			
@@ -471,7 +471,7 @@ $(function() {
 				});
 			toggleDetailsCompareBlocks(true);
 			
-			$.getJSON(readAssessUrl, aoData, function(json) {
+			globalXHR = $.getJSON(readAssessUrl, aoData, function(json) {
 				if(!json)
 					return;	
 					
@@ -483,7 +483,8 @@ $(function() {
 																
 				customLocalStorage[storage_key] = JSON.stringify(assessData);														
 									
-				tblAssess = reInitializeTblAssess(assessData);	
+				tblAssess = reInitializeTblAssess(assessData);
+				
 			});
 						
 		});
@@ -491,6 +492,10 @@ $(function() {
 	}
 		
 	function readAssessData() {
+		
+		if (!_.isNull(globalXHR))
+			globalXHR.abort();
+			
 		var research_batch = $('.research_assess_batches_select')
 		  , research_category = $('#prodcats')
 		  , research_batch_competitor = $('#research_assess_compare_batches_batch')
@@ -533,8 +538,8 @@ $(function() {
           , aoData = buildTableParams([])
           , json_data = customLocalStorage[storage_key] ? JSON.parse(customLocalStorage[storage_key]) : null
 		  , needToBeReloaded = false;		  
-		console.log(storage_key);	
-		$.getJSON(readAssessUrl, aoData, function(json) {
+		
+		globalXHR = $.getJSON(readAssessUrl, aoData, function(json) {
 			if(!json)
 				return;	
 
@@ -546,6 +551,7 @@ $(function() {
 			customLocalStorage[storage_key] = JSON.stringify(json);
 			
 			tblAssess = reInitializeTblAssess(json, needToBeReloaded);
+						
 		});       
 	}
 	
@@ -2593,6 +2599,11 @@ function prevSibilfunc(curentSibil){
 	});
 
     $('#research_assess_compare_batches_reset').click(function() {
+		
+		//interuupting current ajax request
+		if (!_.isNull(globalXHR))
+			globalXHR.abort();
+	
 		$('#research_assess_compare_batches_customer').val('select customer').prop('selected', true);
         $('#research_assess_compare_batches_batch').val('0').prop('selected', true);
         $('#research_assess_compare_batches_customer').change();

@@ -33,6 +33,19 @@ $(document).ready(function() {
             }
         });
     });
+    
+    var imp_file_names = base_url + 'index.php/workflow/get_imp_file_names';
+            $.ajax({
+                url: imp_file_names,
+                type: 'POST',
+                success: function(data) {
+                    $.each($.parseJSON(data), function(index, val) {
+                    $("#import_file_name").append("<option selected ='selected' value='" + val.file_id + "'>" + val.file_name + "</option>");
+                    });
+                    
+           }
+    });
+   
     $.ajax({
         url: all_processes_url,
         type: 'POST',
@@ -194,6 +207,6 @@ $(document).ready(function() {
 
         }
     });
-
+    
 });
 //processes end

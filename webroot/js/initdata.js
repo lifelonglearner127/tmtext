@@ -53,6 +53,8 @@ var customLocalStorage = {};
 
 var items_short_products_content_short = 0;
 var items_long_products_content_short = 0;
+
+var globalXHR = null;
 	
 var summaryFieldNames = [
 		'assess_report_total_items',

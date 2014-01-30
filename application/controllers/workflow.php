@@ -14,6 +14,7 @@ class Workflow extends MY_Controller {
         $this->load->model('workflow_model');
         $this->load->model('operations_model');
         $this->load->model('process_model');
+        $this->load->model('matchurls_data_model');
     }
 
     public function index() {
@@ -69,8 +70,10 @@ class Workflow extends MY_Controller {
     public function add_prc() {
         $title = $this->input->post('process_name');
         $day =  $this->input->post('day');
-        $oper =  $this->input->post('ops');
-        $batches=  $this->input->post('batches');
+        $oper =  trim($this->input->post('ops'));
+        $oper = explode(',',$oper);
+        $batches=  trim($this->input->post('batches'));
+        $batches = explode(',',$batches);
         $url_import_file = $this->input->post("url_import_file");
         $param = '';
         $id = $this->process_model->add($title, $day);
@@ -118,6 +121,11 @@ class Workflow extends MY_Controller {
     public function delete_prc() {
         $id = $this->input->post('id');
         $this->process_model->deleteAllByAttributes(array('id' => $id));
+    }
+    
+    public function get_imp_file_names(){
+        $res = $this->matchurls_data_model->getAll();
+        echo json_encode($res);
     }
 
 }
