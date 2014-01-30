@@ -4,7 +4,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Migration_Combination_status extends CI_Migration
 {
-
 	public function up()
 	{
 		if(!$this->db->field_exists('status','batches_combinations'))
@@ -21,5 +20,4 @@ class Migration_Combination_status extends CI_Migration
 			$this->dbforge->drop_column('batches_combinations', 'status');
 		}	
 	}
-
 }

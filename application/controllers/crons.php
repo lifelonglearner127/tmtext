@@ -1172,7 +1172,7 @@ echo '<br> - similar check 2 -- '.(microtime(true) - $checkSimilar2);
 		}
 		echo 'Done, updated '.count($combos).' combination(s)';
 	}
-	
+	  
 	private function setCombinationsForUpdate($batches = array())
 	{
 		$combinations = array();

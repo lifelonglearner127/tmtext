@@ -185,6 +185,6 @@ class Batches_combinations extends Base_model
 	function update($id, $data)
 	{
 		$this->db->where('id',$id);
-		$this->db->update($this->getTableName(),$data);
+		$this->db->update($this->getTableName(),$data);  
 	}
 }
