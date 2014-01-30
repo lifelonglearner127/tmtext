@@ -22,6 +22,7 @@ class Migration_Fields_for_results extends CI_Migration
 
 	public function down()
 	{
+		$this->db->truncate('assess_results');
 		$this->db->query('ALTER TABLE `assess_results` DROP PRIMARY KEY');
 		$this->dbforge->drop_column('assess_results', 'combination');
 		$this->db->query('ALTER TABLE `assess_results` ADD PRIMARY KEY (`id`);');
