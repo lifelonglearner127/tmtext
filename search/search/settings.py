@@ -23,7 +23,7 @@ HTTPCACHE_STORAGE = 'scrapy.contrib.downloadermiddleware.httpcache.FilesystemCac
 HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
 #HTTPCACHE_POLICY = 'SamsungCachePolicy.SamsungCachePolicy'
 
-#DOWNLOAD_DELAY = 1
+DOWNLOAD_DELAY = 0.25
 #TODO
 #COOKIES_ENABLED = False
 
