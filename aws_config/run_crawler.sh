@@ -10,8 +10,8 @@ sleep 10;
 
 # only halt if this is not batch 1 (node 1 hosts shared folder)
 #if [ "$BATCH" -ne 1 ]
-HOST=`hostname`; 
-if [ "$HOST" != "node1" ]
-	then
-	sudo halt;
-fi
+# HOST=`hostname`; 
+# if [ "$HOST" != "node1" ]
+# 	then
+# 	sudo halt;
+# fi
