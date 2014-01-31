@@ -136,6 +136,14 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
     	mode => 777
   	}
 
+    # add script to open sshfs
+    file { "/home/ubuntu/sshfs_script.sh":
+      source => "puppet:///modules/common/sshfs_script.sh",
+      owner => ubuntu,
+      group => ubuntu,
+      mode => 777
+    }
+
   	file { "/etc/rc.local":
     	source => "puppet:///modules/common/rc.local",
     	owner => root,
