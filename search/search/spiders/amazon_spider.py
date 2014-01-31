@@ -125,7 +125,7 @@ class AmazonSpider(SearchSpider):
 		#product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
 		product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
 		if not product_name:
-			self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.INFO)
+			self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.ERROR)
 
 		else:
 			item['product_name'] = product_name[0].strip()
