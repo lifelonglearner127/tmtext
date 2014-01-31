@@ -12,6 +12,7 @@ from search.matching_utils import ProcessText
 
 import re
 import sys
+import json
 
 # from selenium import webdriver
 # import time
@@ -40,11 +41,11 @@ import sys
 class SearchSpider(BaseSpider):
 
 	name = "search"
-	amazon_cookie_header = "x-wl-uid=1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=; session-token=JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=; x-amz-captcha-1=1391100438353490; x-amz-captcha-2=+EDhq9rcotSRn783vYMxdQ==; csm-hit=337.71|1391093239619; ubid-main=188-7820618-3817319; session-id-time=2082787201l; session-id=177-0028713-4113141"
-	amazon_cookies = {"x-wl-uid" : "1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=", \
-	"session-token" : "JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=",\
-	"x-amz-captcha-1" : "1391100438353490" , "x-amz-captcha-2" : "+EDhq9rcotSRn783vYMxdQ==", "csm-hit" : "337.71|1391093239619", "ubid-main" : "188-7820618-3817319",\
-	"session-id-time" : "2082787201l", "session-id" : "177-0028713-4113141"}
+	# amazon_cookie_header = "x-wl-uid=1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=; session-token=JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=; x-amz-captcha-1=1391100438353490; x-amz-captcha-2=+EDhq9rcotSRn783vYMxdQ==; csm-hit=337.71|1391093239619; ubid-main=188-7820618-3817319; session-id-time=2082787201l; session-id=177-0028713-4113141"
+	# amazon_cookies = {"x-wl-uid" : "1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=", \
+	# "session-token" : "JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=",\
+	# "x-amz-captcha-1" : "1391100438353490" , "x-amz-captcha-2" : "+EDhq9rcotSRn783vYMxdQ==", "csm-hit" : "337.71|1391093239619", "ubid-main" : "188-7820618-3817319",\
+	# "session-id-time" : "2082787201l", "session-id" : "177-0028713-4113141"}
 
 	allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
 					   "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com"]
@@ -57,7 +58,7 @@ class SearchSpider(BaseSpider):
 	#				output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
 	#				threshold - parameter for selecting results (the lower the value the more permissive the selection)
 	def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
-		output = 2, threshold = 1.0, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None):#, by_id = False):
+		output = 2, threshold = 1.0, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
 
 		# call specific init for each derived class
 		self.init_sub()
@@ -74,6 +75,17 @@ class SearchSpider(BaseSpider):
 		self.use_proxy = use_proxy
 		self.manufacturer_site = manufacturer_site
 		#self.by_id = by_id
+
+		# set cookies
+		self.cookies_file = cookies_file
+		if cookies_file:
+			self.cookies = json.load(open(cookies_file), "r")
+			self.amazon_cookies = self.cookies['amazon_cookies']
+			amazon_cookie_header = ""
+			for cookie in self.amazon_cookies:
+				amazon_cookie_header += cookie + "=" + self.amazon_cookies[cookie] + "; "
+			self.amazon_cookie_header = amazon_cookie_header
+			
 
 	def build_search_pages(self, search_query):
 		# build list of urls = search pages for each site
@@ -122,7 +134,7 @@ class SearchSpider(BaseSpider):
 			request = Request(search_pages[self.target_site], callback = self.parseResults)
 
 			# set amazon cookies
-			if self.target_site == 'amazon':
+			if (self.target_site == 'amazon' and self.cookies_file):
 				request.cookies = self.amazon_cookies
 				request.headers['Cookies'] = self.amazon_cookie_header
 				request.meta['dont_merge_cookies'] = True
@@ -407,7 +419,7 @@ class SearchSpider(BaseSpider):
 			request1 = Request(page1, callback = self.parseResults)
 
 			# set amazon cookies
-			if target_site == 'amazon':
+			if (self.target_site == 'amazon' and self.cookies_file):
 				request1.cookies = self.amazon_cookies
 				request1.headers['Cookies'] = self.amazon_cookie_header
 				request1.meta['dont_merge_cookies'] = True
@@ -427,7 +439,7 @@ class SearchSpider(BaseSpider):
 		request2 = Request(page2, callback = self.parseResults)
 
 		# set cookies for amazon
-		if target_site == 'amazon':
+		if (self.target_site == 'amazon' and self.cookies_file):
 				request2.cookies = self.amazon_cookies
 				request2.headers['Cookies'] = self.amazon_cookie_header
 				request2.meta['dont_merge_cookies'] = True
@@ -453,7 +465,7 @@ class SearchSpider(BaseSpider):
 			request3 = Request(page3, callback = self.parseResults)
 
 			# set amazon cookies
-			if target_site == 'amazon':
+			if (self.target_site == 'amazon' and self.cookies_file):
 				request3.cookies = self.amazon_cookies
 				request3.headers['Cookies'] = self.amazon_cookie_header
 				request3.meta['dont_merge_cookies'] = True
