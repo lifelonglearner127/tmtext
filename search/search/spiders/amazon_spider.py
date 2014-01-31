@@ -70,7 +70,7 @@ class AmazonSpider(SearchSpider):
 			if self.cookies_file:
 				request.cookies = self.amazon_cookies
 				request.headers['Cookies'] = self.amazon_cookie_header
-				request.meta['dont_merge_cookies'] = True
+				#request.meta['dont_merge_cookies'] = True
 			request.meta['items'] = items
 
 			# this will be the new product_urls list with the first item popped
@@ -183,7 +183,7 @@ class AmazonSpider(SearchSpider):
 			if self.cookies_file:
 				request.cookies = self.amazon_cookies
 				request.headers['Cookies'] = self.amazon_cookie_header
-				request.meta['dont_merge_cookies'] = True
+				#request.meta['dont_merge_cookies'] = True
 			request.meta['items'] = items
 			# eliminate next product from pending list (this will be the new list with the first item popped)
 			request.meta['search_results'] = product_urls

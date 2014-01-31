@@ -137,7 +137,7 @@ class SearchSpider(BaseSpider):
 			if (self.target_site == 'amazon' and self.cookies_file):
 				request.cookies = self.amazon_cookies
 				request.headers['Cookies'] = self.amazon_cookie_header
-				request.meta['dont_merge_cookies'] = True
+				#request.meta['dont_merge_cookies'] = True
 				#print "SET AMAZON COOKIES"
 
 			request.meta['origin_name'] = self.product_name
@@ -422,7 +422,7 @@ class SearchSpider(BaseSpider):
 			if (self.target_site == 'amazon' and self.cookies_file):
 				request1.cookies = self.amazon_cookies
 				request1.headers['Cookies'] = self.amazon_cookie_header
-				request1.meta['dont_merge_cookies'] = True
+				#request1.meta['dont_merge_cookies'] = True
 				#print "SET AMAZON COOKIES"
 
 			request1.meta['query'] = query1
@@ -442,7 +442,7 @@ class SearchSpider(BaseSpider):
 		if (self.target_site == 'amazon' and self.cookies_file):
 				request2.cookies = self.amazon_cookies
 				request2.headers['Cookies'] = self.amazon_cookie_header
-				request2.meta['dont_merge_cookies'] = True
+				#request2.meta['dont_merge_cookies'] = True
 
 		request2.meta['query'] = query2
 		request2.meta['target_site'] = target_site
@@ -468,7 +468,7 @@ class SearchSpider(BaseSpider):
 			if (self.target_site == 'amazon' and self.cookies_file):
 				request3.cookies = self.amazon_cookies
 				request3.headers['Cookies'] = self.amazon_cookie_header
-				request3.meta['dont_merge_cookies'] = True
+				#request3.meta['dont_merge_cookies'] = True
 
 			request3.meta['query'] = query3
 			request3.meta['target_site'] = target_site
