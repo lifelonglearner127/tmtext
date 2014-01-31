@@ -85,7 +85,7 @@ class SearchSpider(BaseSpider):
 			for cookie in self.amazon_cookies:
 				amazon_cookie_header += cookie + "=" + self.amazon_cookies[cookie] + "; "
 			self.amazon_cookie_header = amazon_cookie_header
-			
+
 
 	def build_search_pages(self, search_query):
 		# build list of urls = search pages for each site
@@ -138,7 +138,7 @@ class SearchSpider(BaseSpider):
 				request.cookies = self.amazon_cookies
 				request.headers['Cookies'] = self.amazon_cookie_header
 				request.meta['dont_merge_cookies'] = True
-				print "SET AMAZON COOKIES"
+				#print "SET AMAZON COOKIES"
 
 			request.meta['origin_name'] = self.product_name
 			request.meta['query'] = search_query
