@@ -92,13 +92,23 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
     user   => "ubuntu",
   }
 
-  # create folder to share between them
-    file { "/home/ubuntu/shared_sshfs":
-      ensure => "directory",
-      owner  => "ubuntu",
-      group  => "ubuntu",
-      #creates => "/home/ubuntu/shared_sshfs"
-    }
+  # # create folder to share between them
+  #   file { "/home/ubuntu/shared_sshfs":
+  #     ensure => "directory",
+  #     owner  => "ubuntu",
+  #     group  => "ubuntu",
+  #     mode => 644
+  #     #creates => "/home/ubuntu/shared_sshfs"
+  #   }
+
+  exec { "create-shared-sshfs":
+    # return successful whatever mkdir returns (it will return 1 if shared_sshfs mounted)
+    command => "/bin/mkdir shared_sshfs || true",
+    cwd => "/home/ubuntu",
+    user => "ubuntu",
+    creates => "/home/ubuntu/shared_sshfs"
+  }
+
 
 	# make sure root has access to repo (to pull at startup)
 	file { "/root/.ssh/config":
