@@ -72,8 +72,8 @@ class SherwinSpider(BaseSpider):
 
     			item['level'] = 0
 
-    			yield item
-    			#TODO: or yield request? to add description and products count
+    			#yield item
+    			yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
     			# get subcategories in category
     			subcategories = category.select("ul/li")
@@ -97,3 +97,27 @@ class SherwinSpider(BaseSpider):
     				yield item
 
     		department_id += 1
+
+    def parseCategory(self, response):
+    	hxs = HtmlXPathSelector(response)
+
+    	item = response.meta['item']
+
+    	#TODO: test if this xpath should include other types of pages
+    	description_text_holder = hxs.select("//p[@class='subtitle grey']/text()").extract()
+    	description_title_holder = hxs.select("//h1/text()[normalize-space()!='']").extract()
+
+    	if description_text_holder:
+    		item['description_text'] = description_text_holder[0]
+    		item['description_title'] = description_title_holder[0]
+
+	    	description_tokenized = Utils.normalize_text(item['description_text'])
+	    	item['description_wc'] = len(description_tokenized)
+
+	    	(item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+
+    	#TODO: add product count
+
+    	yield item
+
+
