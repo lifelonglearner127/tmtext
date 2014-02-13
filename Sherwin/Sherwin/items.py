@@ -6,6 +6,7 @@ class CategoryItem(Item):
     url = Field() # url of category
     text = Field() # name of category
     parent_text = Field() # name of parent category (if any)
+    parent_url = Field() # url to parent category page (if any)
     level = Field() # level of category in the nested list (from narrower to broader categories)
     special = Field() # is it a special category? (1 or nothing)
     description_text = Field() # text of category description (if any)
