@@ -72,7 +72,8 @@ class SherwinSpider(BaseSpider):
 
     			item['level'] = 0
 
-    			#yield item
+    			#TODO: do we need description_wc here as well?
+
     			yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
     			# get subcategories in category
@@ -93,8 +94,7 @@ class SherwinSpider(BaseSpider):
 
     				item['level'] = -1
 
-    				#TODO: yield request instead
-    				yield item
+    				yield Request(item['url'], callback = self.parseSubcategory, meta = {'item' : item})
 
     		department_id += 1
 
@@ -115,9 +115,55 @@ class SherwinSpider(BaseSpider):
 	    	item['description_wc'] = len(description_tokenized)
 
 	    	(item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+	    else:
+	    	item['description_wc'] = 0
 
-    	#TODO: add product count
+    	#TODO: add product count?
 
     	yield item
+
+    #TODO: check if pages on the same level always look the same, like I assumed. if not, do it recursively (not with 3 functions, but 1)
+
+    def parseSubcategory(self, response):
+    	hxs = HtmlXPathSelector(response)
+
+    	subcategory = response.meta['item']
+
+    	# get its subcategories
+    	subsubcategories = hxs.select("//div[@class='product-category-expanded']//h3[@class='title']")
+    	for subsubcategory in subsubcategories:
+    		item = CategoryItem()
+    		item['text'] = subsubcategory.select("a/text()").extract()[0]
+    		item['url'] = Utils.add_domain(subsubcategory.select("a/@href").extract()[0], self.base_url)
+
+    		item['parent_text'] = subcategory['text']
+    		item['parent_url'] = subcategory['url']
+    		item['department_text'] = subcategory['department_text']
+    		#TODO
+    		# item['department_url'] = subcategory['department_url']
+    		item['department_id'] = subcategory['department_id']
+
+    		item['level'] = subcategory['level'] - 1
+
+    		description_text_holder = subsubcategory.select("following-sibling::p[@class='description'][1]/text()").extract()
+    		if description_text_holder:
+	    		item['description_text'] = description_text_holder[0]
+	    		item['description_title'] = item['text']
+	    		description_tokenized = Utils.normalize_text(item['description_text'])
+		    	item['description_wc'] = len(description_tokenized)
+
+		    	(item['keyword_count'], item['keyword_density']) = Utils.phrases_freq(item['description_title'], item['description_text'])
+
+		    else:
+		    	item['description_wc'] = 0
+
+	    	yield item
+
+
+
+
+
+ 
+
 
 
