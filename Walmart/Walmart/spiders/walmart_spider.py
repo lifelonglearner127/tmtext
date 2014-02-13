@@ -39,29 +39,29 @@ class WalmartSpider(BaseSpider):
         links = hxs.select("//div[@class='MidContainer']/div[3]//a[@class='NavM']")
         parent_links = hxs.select("//div[@class='MidContainer']/div[3]//a[@class='NavXLBold']")
 
-        for link in links:
-            item = CategoryItem()
+        # for link in links:
+        #     item = CategoryItem()
 
-            # search for the category's parent
-            parents = []
+        #     # search for the category's parent
+        #     parents = []
 
-            # select the preceding siblings that are a category title (have a child that is an a tag with a certain class)
-            parents = link.select('parent::node()').select('preceding-sibling::node()').select('child::a[@class=\'NavXLBold\']')
+        #     # select the preceding siblings that are a category title (have a child that is an a tag with a certain class)
+        #     parents = link.select('parent::node()').select('preceding-sibling::node()').select('child::a[@class=\'NavXLBold\']')
 
-            # if we found such siblings, get the last one to be the parent
-            if parents:
-                item['parent_text'] = parents[-1].select('text()').extract()[0]
-                item['parent_url'] = parents[-1].select('@href').extract()[0]
+        #     # if we found such siblings, get the last one to be the parent
+        #     if parents:
+        #         item['parent_text'] = parents[-1].select('text()').extract()[0]
+        #         item['parent_url'] = parents[-1].select('@href').extract()[0]
 
-                item['parent_url'] = Utils.add_domain(item['parent_url'], self.root_url)
+        #         item['parent_url'] = Utils.add_domain(item['parent_url'], self.root_url)
 
-            item['text'] = link.select('text()').extract()[0]
-            item['url'] = link.select('@href').extract()[0]
+        #     item['text'] = link.select('text()').extract()[0]
+        #     item['url'] = link.select('@href').extract()[0]
 
-            # add domain if relative URL
-            item['url'] = Utils.add_domain(item['url'], self.root_url)
+        #     # add domain if relative URL
+        #     item['url'] = Utils.add_domain(item['url'], self.root_url)
 
-            item['level'] = 0
+        #     item['level'] = 0
 
             # to avoid duplicates, only extract highest level categories in this function (so don't return if level 0)
             #yield item
