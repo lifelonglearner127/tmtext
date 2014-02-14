@@ -35,11 +35,13 @@ class SherwinSpider(BaseSpider):
 		for department in departments:
 			item = CategoryItem()
 			department_text = department.select("text()").extract()[0]
-			item['department_text'] = department_text
 
-			#TODO: add department_url, from sherwin-williams.com ...? get department list from there and match with departments from here by seeing if names match
+			# don't add department info if this is department level
+			# item['department_text'] = department_text
 
-			item['department_id'] = department_id
+			# #TODO: add department_url, from sherwin-williams.com ...? get department list from there and match with departments from here by seeing if names match
+
+			# item['department_id'] = department_id
 
 			item['text'] = department_text
 
@@ -51,7 +53,6 @@ class SherwinSpider(BaseSpider):
 			yield item
 
 			# get categories in department
-			#TODO: this is wrong, gets categories for all departments below this point
 			categories = department.select("following-sibling::ul[1]/li")
 			for category in categories:
 				item = CategoryItem()
@@ -118,19 +119,20 @@ class SherwinSpider(BaseSpider):
 		else:
 			item['description_wc'] = 0
 
-		#TODO: add product count?
-
 		yield item
 
-	#TODO: check if pages on the same level always look the same, like I assumed. if not, do it recursively (not with 3 functions, but 1)
 
 	def parseSubcategory(self, response):
 		hxs = HtmlXPathSelector(response)
 
 		subcategory = response.meta['item']
 
+		# yield this subcategory
+		yield subcategory
+
 		# get its subcategories
 		subsubcategories = hxs.select("//div[@class='product-category-expanded']//h3[@class='title']")
+
 		for subsubcategory in subsubcategories:
 			item = CategoryItem()
 			item['text'] = subsubcategory.select("a/text()").extract()[0]
@@ -156,19 +158,26 @@ class SherwinSpider(BaseSpider):
 			else:
 				item['description_wc'] = 0
 
-			# parse subsubcategory page to get product count
-			yield Request(item['url'], callback = self.parseSubsubcategory, meta = {'item' : item})
+			# parse subcategory page to get product count, or further subsubcategory
+			yield Request(item['url'], callback = self.parseSubcategoryPage, meta = {'item' : item})
 
-	def parseSubsubcategory(self, response):
+	def parseSubcategoryPage(self, response):
 		hxs = HtmlXPathSelector(response)
 		item = response.meta['item']
 
-		#TODO: test
+		# if there is a product count, we reached the final page and can stop (after returning the subcategory)
 		product_count_holder = hxs.select("//li[@class='count']//text()[normalize-space()!='']").re("(?<=of )[0-9]+")
 
 		if product_count_holder:
 			item['nr_products'] = int(product_count_holder[0])
 
-		#TODO: else - there must be another subcategory - parse it! example: http://www.sherwin-williams.com/home-builders/products/catalog/categories/exterior-paint-coatings/floor-coatings-exterior/
+			# return item (we reached the end)
+			yield item
 
-		yield item
+		# if there is no product category, assume there is a further subcategory; so send it back to parseCategory as well as returning it as a subcategory (below)
+		else:
+			# return this subcategory anyway
+			yield item
+
+			# then pass it to parseSubcategory to pe parsed for subsubcategories
+			yield Request(response.url, callback = self.parseSubcategory, meta = response.meta)

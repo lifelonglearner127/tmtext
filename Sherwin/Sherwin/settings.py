@@ -13,5 +13,7 @@ NEWSPIDER_MODULE = 'Sherwin.spiders'
 
 ITEM_PIPELINES = ['Sherwin.pipelines.CommaSeparatedLinesPipeline']
 
+DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'Sherwin (+http://www.yourdomain.com)'
