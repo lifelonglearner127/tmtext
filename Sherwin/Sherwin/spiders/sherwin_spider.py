@@ -36,12 +36,11 @@ class SherwinSpider(BaseSpider):
 			item = CategoryItem()
 			department_text = department.select("text()").extract()[0]
 
-			# don't add department info if this is department level
-			# item['department_text'] = department_text
+			item['department_text'] = department_text
 
 			# #TODO: add department_url, from sherwin-williams.com ...? get department list from there and match with departments from here by seeing if names match
 
-			# item['department_id'] = department_id
+			item['department_id'] = department_id
 
 			item['text'] = department_text
 
@@ -61,6 +60,14 @@ class SherwinSpider(BaseSpider):
 				category_url =  Utils.add_domain(category.select("a/@href").extract()[0], self.base_url)
 				item['text'] = category_text
 				item['url'] = category_url
+
+				# if it's not a 'products' category, mark it and all its subcategories as special
+
+				if category_text != 'Products':
+					item['special'] = 1
+					special = True
+				else:
+					special = False
 
 				item['department_id'] = department_id
 				item['department_text'] = department_text
@@ -94,6 +101,10 @@ class SherwinSpider(BaseSpider):
 					item['parent_url'] = category_url
 
 					item['level'] = -1
+
+					# if parent is special, category is special
+					if special:
+						item['special'] = 1
 
 					yield Request(item['url'], callback = self.parseSubcategory, meta = {'item' : item})
 
@@ -130,6 +141,12 @@ class SherwinSpider(BaseSpider):
 		# yield this subcategory
 		yield subcategory
 
+		# if subcategory was special, we'll mark all subsubcategories as special
+		if 'special' in subcategory:
+			special = True
+		else:
+			special = False
+
 		# get its subcategories
 		subsubcategories = hxs.select("//div[@class='product-category-expanded']//h3[@class='title']")
 
@@ -137,6 +154,9 @@ class SherwinSpider(BaseSpider):
 			item = CategoryItem()
 			item['text'] = subsubcategory.select("a/text()").extract()[0]
 			item['url'] = Utils.add_domain(subsubcategory.select("a/@href").extract()[0], self.base_url)
+
+			if special:
+				item['special'] = 1
 
 			item['parent_text'] = subcategory['text']
 			item['parent_url'] = subcategory['url']

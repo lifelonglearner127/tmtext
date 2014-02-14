@@ -68,6 +68,9 @@ class AmazonSpider(BaseSpider):
                 # if its parent is the special category, mark this one as special too
                 if (item['parent_text'] == special_item['text']):
                     item['special'] = 1
+                    special = True
+                else:
+                    special = False
 
             department_id += 1
 
