@@ -33,26 +33,32 @@ class SherwinSpider(BaseSpider):
 		departments = hxs.select("//h2")
 		department_id = 0
 		for department in departments:
-			item = CategoryItem()
+			department_item = CategoryItem()
 			department_text = department.select("text()").extract()[0]
 
-			item['department_text'] = department_text
+			department_item['department_text'] = department_text
 
 			# #TODO: add department_url, from sherwin-williams.com ...? get department list from there and match with departments from here by seeing if names match
 
-			item['department_id'] = department_id
+			department_item['department_id'] = department_id
 
-			item['text'] = department_text
+			department_item['text'] = department_text
 
-			#TODO
-			#item['url'] = 
-			item['level'] = 1
+			department_item['level'] = 1
 
-			# return item
-			yield item
 
 			# get categories in department
 			categories = department.select("following-sibling::ul[1]/li")
+
+			# extract department url from one of its categories urls (it's not available directly)
+			category_ex = categories[0]
+			category_ex_url = Utils.add_domain(category_ex.select("a/@href").extract()[0], self.base_url)
+			# extract first part of url
+			m = re.match("(http://www.sherwin\-williams\.com/[^/]+)/.*", category_ex_url)
+			department_url = m.group(1)
+			department_item['department_url'] = department_url
+			department_item['url'] = department_url
+
 			for category in categories:
 				item = CategoryItem()
 				#TODO: special if 'Services'? or Specifications, or Ads...
@@ -71,12 +77,10 @@ class SherwinSpider(BaseSpider):
 
 				item['department_id'] = department_id
 				item['department_text'] = department_text
-				#TODO
-				# item['department_url'] = 
+				item['department_url'] = department_url
 
 				item['parent_text'] = department_text
-				#TODO
-				# item['parent_url'] = 
+				item['parent_url'] = department_url
 
 				item['level'] = 0
 
@@ -94,8 +98,7 @@ class SherwinSpider(BaseSpider):
 
 					item['department_id'] = department_id
 					item['department_text'] = department_text
-					#TODO
-					# item['department_url'] = 
+					item['department_url'] = department_url
 
 					item['parent_text'] = category_text
 					item['parent_url'] = category_url
@@ -109,6 +112,9 @@ class SherwinSpider(BaseSpider):
 					yield Request(item['url'], callback = self.parseSubcategory, meta = {'item' : item})
 
 			department_id += 1
+
+			# return department
+			yield department_item
 
 	def parseCategory(self, response):
 		hxs = HtmlXPathSelector(response)
@@ -161,7 +167,7 @@ class SherwinSpider(BaseSpider):
 			item['parent_text'] = subcategory['text']
 			item['parent_url'] = subcategory['url']
 			item['department_text'] = subcategory['department_text']
-			# item['department_url'] = subcategory['department_url']
+			item['department_url'] = subcategory['department_url']
 			item['department_id'] = subcategory['department_id']
 
 			item['level'] = subcategory['level'] - 1
