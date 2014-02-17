@@ -15,8 +15,8 @@ class BJsSpider(BaseSpider):
     name = "bjs"
     allowed_domains = ["bjs.com"]
     start_urls = [
-        #"http://www.bjs.com/webapp/wcs/stores/servlet/SiteMapView?langId=-1&storeId=10201&catalogId=10001",
-        "file:///home/ana/code/nlp_reviews/misc/the_pages/BJ's%20Wholesale%20Club.html"
+        "http://www.bjs.com/webapp/wcs/stores/servlet/SiteMapView?langId=-1&storeId=10201&catalogId=10001",
+        #"file:///home/ana/code/nlp_reviews/misc/the_pages/BJ's%20Wholesale%20Club.html"
     ]
 
     def parse(self, response):
