@@ -1,1 +1,0 @@
-<title><?php echo $title_dyn; ?></title>
