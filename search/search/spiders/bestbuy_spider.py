@@ -52,9 +52,9 @@ class BestbuySpider(SearchSpider):
 
 			if 'origin_id' in response.meta:
 				request.meta['origin_id'] = response.meta['origin_id']
-				assert self.by_id
-			else:
-				assert not self.by_id
+			# 	assert self.by_id
+			# else:
+			# 	assert not self.by_id
 
 
 			model_holder = result.select("parent::node()/parent::node()//strong[@itemprop='model']/text()").extract()
