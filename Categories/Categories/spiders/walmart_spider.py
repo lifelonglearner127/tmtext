@@ -104,6 +104,55 @@ class WalmartSpider(BaseSpider):
         item['department_url'] = response.meta['department_url']
         item['department_id'] = response.meta['department_id']
 
+
+
+        # Extract subcategories breakdown if any ("classification" field)
+        classification_criteria = hxs.select("//form[@id='refine']//h6[@class='AdvSearchSubhead']")
+        classification_dictionary = {}
+        for criterion in classification_criteria:
+            criterion_name = criterion.select(".//text()[normalize-space()!='']").extract()[0].strip()
+            # extract subcategories by this criterion:
+            # find first subcategories list element following this criterion name, ignore if subcategory text starts with "See " ("See fewer", "See more")
+            subcategories = criterion.select("following-sibling::div[contains(@class,'accordionContainer')][1]/ul[@class='MainMenu AdvSearchMenu']/li/a[not(contains(text(), 'See '))]")
+            # then filter by regex only ones whose text contains at least one letter (for ex, for customers rating subcats, they have no name, only a picture with nr of starts, we don't want them)
+            subcategories = filter(lambda x: x.select("text()").re(".*[A-Za-z]+.*"), subcategories)
+
+            # if we found these, create the classification dictionary
+            if criterion_name and subcategories:
+                subcategories_list = []
+                for subcategory in subcategories:
+                    subcategory_name = subcategory.select("@title").extract()[0]
+                    # replace &nbsp with space, trim
+                    subcategory_name = subcategory_name.replace("&nbsp"," ").strip()
+                    # extract product count
+                    subcategory_prodcount = subcategory.select("span[@class='count']/text()").extract()
+                    # if there is no count field, extract prodcount from subcategory name
+                    if subcategory_prodcount:
+                        m = re.match("\(([0-9]+)\)",subcategory_prodcount[0].strip())
+                        # eliminate parantheses surrounding number and convert to int
+                        if m:
+                            subcategory_prodcount = m.group(1)
+                        else:
+                            subcategory_prodcount = subcategory_prodcount[0].strip()
+                    else:
+                        # if there is no product count in separate element, try to extract it from subcategory name
+                        subcategory_name = subcategory.select(".//text()[normalize-space()!='']").extract()[0].replace("&nbsp", " ").replace(u"\xa0", " ").strip()
+                        m = re.match(".*\(([0-9]+)\)", subcategory_name)
+                        if m:
+                            subcategory_prodcount = m.group(1)
+                            
+                    if subcategory_name and subcategory_prodcount:
+                        subcategory_item = {"name": subcategory_name, "nr_products": int(subcategory_prodcount)}
+                        subcategories_list.append(subcategory_item)
+
+                classification_dictionary[criterion_name] = subcategories_list
+
+        if classification_dictionary:
+            item['classification'] = classification_dictionary
+
+
+        ##########################################################################################
+        #
         # Extract description title, text, wordcount, and keyword density (if any)
 
 
@@ -168,6 +217,7 @@ class WalmartSpider(BaseSpider):
 
             description_holder = desc_winner
 
+
         # try to find description title in <b> tag in the holder;
         # if it's not found, try to find it in the first <p> if the description
         # if found there, exclude it from the description body
@@ -218,6 +268,12 @@ class WalmartSpider(BaseSpider):
         else:
             item['description_wc'] = 0
 
+        #
+        ##################################################################################
+
+
+
+        # Extract product count
 
         # find if there is a wc field on the page
         wc_field = hxs.select("//div[@class='mrl mod-toggleItemCount']/span/text() |\
@@ -310,11 +366,14 @@ class WalmartSpider(BaseSpider):
                     # #TODO: i don't even know this
                     # item['description_wc'] = 0
                     # yield item
+
+                    # send subcategory items to be parsed again
                     if (item['url'], item['parent_url']) not in self.crawled:
                         yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item, \
                             'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'], 'department_id' : response.meta['department_id']})
                         self.crawled.append((item['url'], item['parent_url']))
 
+                # return current item
                 # idea for sending parent and collecting nr products. send all of these subcats as a list in meta, pass it on, when list becomes empty, yield the parent
                 yield parent_item
                     #yield Request(item['url'], callback = self.parsePage, meta = {'item' : item, 'parent_item' : parent_item})
