@@ -20,8 +20,15 @@ class CategoryItem(Item):
     department_text = Field() # name of the department it belongs to
     department_url = Field() # url of the department it belongs to
     department_id = Field() # unique id of the department it belongs to
+    classification = Field() # dictionary containing breakdown of a (sub)category into further subcategories, by various criteria (e.g. Brand). Optional (for now only implemented for Walmart)
+    # Classification dictionary structure:
+    # "classification": {
+                        # "<Criterion1>": [
+                        #                     {"name": "<Name1.1>", "nr_products": <Nr1.1>},
+                        #                     {"name": "<Name1.2>", "nr_products": <Nr1.2>}
+                        #                 ]
+                        # }
 
-    #TODO
     page_text = Field() # name of page in sitemap that the category was found on (necessary for some sites, optional)
     page_url = Field() # url of page in sitemap that the category was found on (necessary for some sites, optional)
 
