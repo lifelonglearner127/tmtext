@@ -137,9 +137,10 @@ class WalmartSpider(BaseSpider):
                     else:
                         # if there is no product count in separate element, try to extract it from subcategory name
                         subcategory_name = subcategory.select(".//text()[normalize-space()!='']").extract()[0].replace("&nbsp", " ").replace(u"\xa0", " ").strip()
-                        m = re.match(".*\(([0-9]+)\)", subcategory_name)
+                        m = re.match("(.*)\(([0-9]+)\)", subcategory_name)
                         if m:
-                            subcategory_prodcount = m.group(1)
+                            subcategory_prodcount = m.group(2)
+                            subcategory_name = m.group(1).strip()
                             
                     if subcategory_name and subcategory_prodcount:
                         subcategory_item = {"name": subcategory_name, "nr_products": int(subcategory_prodcount)}
