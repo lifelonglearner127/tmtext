@@ -37,13 +37,17 @@ class URLsPipeline(object):
 			titles = []
 			if int(spider.output) >= 2:
 				titles.append("Original_URL")
-			if int(spider.output) == 3:
-				titles.append("Original_product_name")
-				titles.append("Original_product_model")
+
+			# TODO: uncomment.
+			# if int(spider.output) == 3:
+			# 	titles.append("Original_product_name")
+			# 	titles.append("Original_product_model")
 			titles.append("Match_URL")
-			if int(spider.output) == 3:
-				titles.append("Match_product_name")
-				titles.append("Match_product_model")
+
+			# TODO. uncomment
+			# if int(spider.output) == 3:
+			# 	titles.append("Match_product_name")
+			# 	titles.append("Match_product_model")
 
 			if (spider.name == 'manufacturer'):
 				titles.append("Product_images")
@@ -78,13 +82,14 @@ class URLsPipeline(object):
 		else:
 			fields = [item['origin_url']]
 
-			# if output type is 3, add additional fields
-			if option == 3:
-				assert 'origin_name' in item
-				# in product name: escape double quotes and enclose in double quotes - use json.dumps for this
-				#TODO: should I also escape single quotes?
-				fields.append(json.dumps(item['origin_name']))
-				fields.append(item['origin_model'] if 'origin_model' in item else "")
+			# TODO. uncomment
+			# # if output type is 3, add additional fields
+			# if option == 3:
+			# 	assert 'origin_name' in item
+			# 	# in product name: escape double quotes and enclose in double quotes - use json.dumps for this
+			# 	#TODO: should I also escape single quotes?
+			# 	fields.append(json.dumps(item['origin_name']))
+			# 	fields.append(item['origin_model'] if 'origin_model' in item else "")
 
 			# if a match was found add it to the fields to be output
 			#TODO: this includes the comma at the end of the line even with no results
@@ -97,14 +102,15 @@ class URLsPipeline(object):
 			# if output type is 3, add additional fields
 			if option == 3:
 
-				# if there was a match (there is a 'product_url', there should also be a 'product_name')
-				if 'product_url' in item:
-					assert 'product_name' in item
-					assert 'confidence' in item
+				# TODO: uncomment.
+				# # if there was a match (there is a 'product_url', there should also be a 'product_name')
+				# if 'product_url' in item:
+				# 	assert 'product_name' in item
+				# 	assert 'confidence' in item
 
-				# in product name: escape double quotes and enclose in double quotes
-				fields.append(json.dumps(item['product_name']) if 'product_name' in item else "")
-				fields.append(item['product_model'] if 'product_model' in item else "")
+				# # in product name: escape double quotes and enclose in double quotes
+				# fields.append(json.dumps(item['product_name']) if 'product_name' in item else "")
+				# fields.append(item['product_model'] if 'product_model' in item else "")
 
 				# format confidence score on a total of 5 characters and 2 decimal points 
 				fields.append(str("%5.2f" % item['confidence']) if 'confidence' in item else "")
