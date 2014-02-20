@@ -590,8 +590,8 @@ class CaturlsSpider(BaseSpider):
 				if m:
 					next_url = m.group(1) + str(page)
 				else:
-					print 'not ok url ', response.url, page
-			print 'next url ', next_url
+					print 'Error: not ok url ', response.url, page
+			#print 'next url ', next_url
 			yield Request(url = next_url, callback = self.parsePage_newegg, meta = {'page' : page})
 
 	# parse a Tigerdirect category page and extract product URLs
