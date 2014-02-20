@@ -29,6 +29,11 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 		require => Exec['apt-update-1'],
 	}
 
+  package { 'python-opencv':
+    ensure => present,
+    require => Exec['apt-update-1'],
+  }
+
 	package {'libxslt1-dev':
    		ensure => present,
  		require => Exec['apt-update-1']
@@ -59,6 +64,12 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 		provider => 'pip',
 		require => Package['python-pip'],
 	}
+
+  package { 'numpy':
+    ensure => present,
+    provider => 'pip',
+    require => Package['python-pip'],
+  }
 
 
 	# SSH
