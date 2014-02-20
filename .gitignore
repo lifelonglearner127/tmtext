@@ -1,6 +1,11 @@
 *.txt
 *.out
 *.pyc
+*.jpg
+*.png
+*.dia
+*.sublime-project
+*.sublime-workspace
 
 # Hidden files
 !.htaccess
