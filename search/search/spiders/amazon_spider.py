@@ -1,6 +1,7 @@
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
+from scrapy.http import FormRequest
 from scrapy.http import TextResponse
 from scrapy.http import Response
 from scrapy.exceptions import CloseSpider
@@ -13,6 +14,10 @@ from search.matching_utils import ProcessText
 
 import re
 import sys
+import os
+
+import captcha_solver
+import urllib
 
 
 class AmazonSpider(SearchSpider):
@@ -28,6 +33,58 @@ class AmazonSpider(SearchSpider):
 	def init_sub(self):
 		self.target_site = "amazon"
 		self.start_urls = [ "http://www.amazon.com" ]
+
+		# captcha classifier. initialize to null and train the first time we encounter a captcha
+		self.CB = None
+
+		# paths for data necessary for captcha solving
+		self.CAPTCHAS_DIR = "captchas"
+		self.SOLVED_CAPTCHAS_DIR = "solved_captchas"
+		self.TRAIN_DATA_PATH = "train_captchas_data"
+
+	# given an image URL of the captcha, download the image and solve the captcha, return the result as text
+	def solve_captcha(self, image_URL):
+
+		# create necessary directories
+		if not os.path.exists(self.CAPTCHAS_DIR):
+			os.makedirs(self.CAPTCHAS_DIR)
+		if not os.path.exists(self.SOLVED_CAPTCHAS_DIR):
+			os.makedirs(self.SOLVED_CAPTCHAS_DIR)
+
+		# solve captcha
+		# get image name
+		m = re.match(".*/(Captcha_.*)",image_URL)
+		if not m:
+			return None
+
+		else:
+			image_name = m.group(1)
+
+			# download image
+			urllib.urlretrieve(image_URL, self.CAPTCHAS_DIR + "/" + image_name)
+
+			captcha_text = None
+
+			try:
+				# solve captcha
+
+				# train the classifier the first time it's used.
+				# so if it's not been initialized, train it now
+				if not self.CB:
+					self.CB = captcha_solver.CaptchaBreaker(self.TRAIN_DATA_PATH)
+					self.log("Training captcha classifier...", level=log.INFO)
+
+
+				captcha_text = self.CB.test_captcha(self.CAPTCHAS_DIR + "/" + image_name)
+
+				# save it again with solved captcha text as name
+				urllib.urlretrieve(image_URL, self.SOLVED_CAPTCHAS_DIR + "/" + captcha_text + ".jpg")
+				self.log("Solving captcha: " + image_URL + " with result " + captcha_text, level=log.WARNING)
+
+			except Exception, e:
+				self.log("Exception from captcha solving, for captcha " + self.CAPTCHAS_DIR + "/" + image_name + "\nException message: " + str(e), level=log.ERROR)
+
+			return captcha_text
 
 	# parse results page for amazon, extract info for all products returned by search (keep them in "meta")
 	def parseResults(self, response):
@@ -126,6 +183,23 @@ class AmazonSpider(SearchSpider):
 		product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
 		if not product_name:
 			self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.ERROR)
+
+			# assume there is a captcha to crack
+			
+			# solve captcha
+			captcha_text = None
+			image = hxs.select(".//img/@src").extract()
+			if image:
+				captcha_text = self.solve_captcha(image[0])
+
+			# value to use if there was an exception
+			if not captcha_text:
+				captcha_text = ''
+			
+			# create a FormRequest to this same URL, with everything needed in meta
+			# items, cookies and search_urls not changed from previous response so no need to set them again
+	
+			return [FormRequest.from_response(response, callback = self.parse_product_amazon, formdata={'field-keywords' : captcha_text}, meta = response.meta)]
 
 		else:
 			item['product_name'] = product_name[0].strip()
