@@ -4,6 +4,7 @@ from scrapy.http import Request
 from scrapy.http import TextResponse
 from Caturls.items import ProductItem
 from pprint import pprint
+from scrapy import log
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -582,20 +583,26 @@ class CaturlsSpider(BaseSpider):
 				item['product_url'] = product_link.select("@href").extract()[0]
 				yield item
 
-			# crawl further pages
-			# will automatically stop when it doesn't find any more pages because the URL won't be valid
-			page = int(response.meta['page']) + 1
-			next_url = ""
-			if page == 2:
-				next_url = response.url + "/Page-2"
-			else:
-				m = re.match("(http://www.newegg.com/.*Page-)[0-9]+", response.url)
-				if m:
-					next_url = m.group(1) + str(page)
+			# crawl further pages - artificially construct page names by changing parameter in URL
+			# only try if there is a "next" link on the page, pointing to the next page, so as not to be stuck in an infinite loop
+
+			next_page = hxs.select("//li[@class='enabled']/a[@title='next']")
+			if next_page:
+				page = int(response.meta['page']) + 1
+				next_url = ""
+				if page == 2:
+					next_url = response.url + "/Page-2"
 				else:
-					print 'Error: not ok url ', response.url, page
-			#print 'next url ', next_url
-			yield Request(url = next_url, callback = self.parsePage_newegg, meta = {'page' : page})
+					m = re.match("(http://www.newegg.com/.*Page-)[0-9]+", response.url)
+					if m:
+						next_url = m.group(1) + str(page)
+
+					else:
+						self.log("Error: not ok url " + response.url + " , page " + str(page), level=log.WARNING)
+						return
+
+				yield Request(url = next_url, callback = self.parsePage_newegg, meta = {'page' : page})
+				#print 'next url ', next_url
 
 	# parse a Tigerdirect category page and extract product URLs
 	def parsePage_tigerdirect(self, response):
