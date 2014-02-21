@@ -571,6 +571,11 @@ class CaturlsSpider(BaseSpider):
 			while el:
 				# parse the link as a subcategory
 				subcat_url = el.select("a/@href").extract()[0]
+				# clean URL of parameters. 
+				# if this is not done, it will end up in a infinite loop below (constructing next pages urls, they will always point to the same page, first one)
+				m = re.match("([^\?]+)\?.*", subcat_url)
+				if m:
+					subcat_url = m.group(1)
 				yield Request(url = subcat_url, callback = self.parsePage_newegg, meta = {'page' : 1})
 
 				# get next element in menu (that is not a title)
