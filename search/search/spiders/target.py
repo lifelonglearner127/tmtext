@@ -44,17 +44,17 @@ class TargetSpider(SearchSpider):
 		for result in results:
 			item = SearchItem()
 			product_title_holder = result.select(".//div[@class='tileInfo']/a[contains(@class,'productTitle')]")
-			product_url = product_title_holder.select("@href").extract()[0]
-			item['product_url'] = product_url
-			product_name = product_title_holder.select("@title").extract()[0]
-			item['product_name'] = product_name
-
+			product_url = product_title_holder.select("@href").extract()
+			product_name = product_title_holder.select("@title").extract()
 
 			#print "ITEM", product_name
 
 			# quit if there is no product name
+			if product_name and product_url:
+				item['product_url'] = product_url[0]
+				item['product_name'] = product_name[0]
 			if not item['product_name']:
-				self.log("No product name: " + str(response.url) + " from product: " + origin_url, level=log.ERROR)
+				self.log("No product name: " + str(response.url) + " from product: " + response.meta['origin_url'], level=log.ERROR)
 				continue
 
 			# add url, name and model of product to be matched (from origin site)
