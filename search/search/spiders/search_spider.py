@@ -218,6 +218,10 @@ class SearchSpider(BaseSpider):
 		product_brand = ""
 		product_price = ""
 
+
+		#############################################################3
+		# Extract product attributes (differently depending on site)
+
 		if site == 'staples':
 
 			product_name = hxs.select("//h1/text()").extract()[0]
@@ -305,13 +309,15 @@ class SearchSpider(BaseSpider):
 		else:
 			raise CloseSpider("Unsupported site: " + site)
 
-		# create search queries and get the results using the target site's search function
-
 		if site == 'staples':
 			zipcode = "12345"
 			cookies = {"zipcode": zipcode}
 		else:
 			cookies = {}
+
+
+		#######################################################################
+		# Create search queries to the second site, based on product attributes
 
 		request = None
 
@@ -497,6 +503,11 @@ class SearchSpider(BaseSpider):
 		#TODO: should this be here??
 		target_site = product_brand_extracted
 
+		if not request:
+			print "NO REQUEST", response.url
+
+		print "SENDING REQUEST FOR ", product_name, response.url
+
 		yield request
 
 
@@ -510,6 +521,8 @@ class SearchSpider(BaseSpider):
 	# accumulate results for each (sending the pending requests and the partial results as metadata),
 	# and lastly select the best result by selecting the best match between the original product's name and the result products' names
 	def reduceResults(self, response):
+
+		print "IN REDUCE RESULTS"
 
 		items = response.meta['items']
 		#site = response.meta['origin_site']
@@ -540,6 +553,7 @@ class SearchSpider(BaseSpider):
 			pending_requests = response.meta['pending_requests']
 
 			if pending_requests:
+				print "PENDING REQUESTS FOR", response.meta['origin_url'], response.meta['origin_name']
 				request = pending_requests[0]
 
 				# update pending requests
@@ -570,9 +584,10 @@ class SearchSpider(BaseSpider):
 
 				return request
 
-
 			# if there are no more pending requests, use cumulated items to find best match and send it as a result
 			else:
+
+				print "DONE FOR ", response.meta['origin_url'], response.meta['origin_name']
 
 				best_match = None
 
@@ -598,10 +613,8 @@ class SearchSpider(BaseSpider):
 					# 	#print item['product_name'].encode("utf-8")
 					# #print '\n'
 
-					self.log( "FINAL: " + str(best_match), level=log.WARNING)
-
+				self.log( "FINAL: " + str(best_match), level=log.WARNING)
 				self.log( "\n----------------------------------------------\n", level=log.WARNING)
-
 
 				if not best_match:
 					# if there are no results but the option was to include original product URL, create an item with just that
@@ -625,10 +638,11 @@ class SearchSpider(BaseSpider):
 				return best_match
 
 		else:
-			# output item if match not found for either output type
-			#if self.output == 2:
+			# output item if match not found
 			item = SearchItem()
 			#item['origin_site'] = site
+
+			print "DONE FOR ", response.meta['origin_name']
 			
 			item['origin_url'] = response.meta['origin_url']
 			item['origin_name'] = response.meta['origin_name']
@@ -640,6 +654,9 @@ class SearchSpider(BaseSpider):
 			# 	assert not self.by_id
 
 			#TODO: uncomment below - it should not have been in if/else branch!
+
+			self.log( "FINAL: " + str(item), level=log.WARNING)
+			self.log( "\n----------------------------------------------\n", level=log.WARNING)
 
 			return [item]
 

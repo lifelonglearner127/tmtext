@@ -18,6 +18,7 @@ import os
 
 import captcha_solver
 import urllib
+import urllib2
 
 
 class AmazonSpider(SearchSpider):
@@ -86,9 +87,16 @@ class AmazonSpider(SearchSpider):
 
 			return captcha_text
 
+	# check if a certain URL is valid or gets a 404 response
+	def check_url(self, URL):
+		resp = urllib.urlopen(URL)
+		return (resp.getcode() != 404)
+
 	# parse results page for amazon, extract info for all products returned by search (keep them in "meta")
 	def parseResults(self, response):
 		hxs = HtmlXPathSelector(response)
+
+		print "PARSE AMAZON FOR", response.meta['origin_url'], "RESULTS PAGE", response.url
 
 		if 'items' in response.meta:
 			items = response.meta['items']
@@ -101,6 +109,8 @@ class AmazonSpider(SearchSpider):
 		else:
 			product_urls = response.meta['search_results']
 
+
+		# get search results for received results page and add them to product_urls to be parsed
 		results = hxs.select("//h3[@class='newaps']/a")
 		for result in results:
 			product_url = result.select("@href").extract()[0]
@@ -144,11 +154,16 @@ class AmazonSpider(SearchSpider):
 			response.meta['parsed'] = True
 			response.meta['search_results'] = product_urls
 			# only send the response we have as an argument, no need to make a new request
+
+			print "RETURNING TO REDUCE RESULTS", response.meta['origin_url']
 			return self.reduceResults(response)
 
 	# extract product info from a product page for amazon
 	# keep product pages left to parse in 'search_results' meta key, send back to parseResults_new when done with all
 	def parse_product_amazon(self, response):
+
+		print "PARSE AMAZON PRODUCT FOR", response.meta['origin_url'], response.url
+
 
 		hxs = HtmlXPathSelector(response)
 
@@ -182,6 +197,7 @@ class AmazonSpider(SearchSpider):
 		#product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
 		product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
 		if not product_name:
+			print "NO PRODUCT NAME FOR", response.url
 			self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.ERROR)
 
 			# assume there is a captcha to crack
@@ -200,14 +216,10 @@ class AmazonSpider(SearchSpider):
 					captcha_text = ''
 
 
-				#TODO: if there is no product name but no captcha either, so let's say it just outputs to log that there was an error, does that also mean all meta info is lost? (request is not passed on)
-				#No, it just doesn't get added to items, the request is made anyway
-				#TODO: don't return this request if page is not form? (it generates en exception)
-				
 				# create a FormRequest to this same URL, with everything needed in meta
 				# items, cookies and search_urls not changed from previous response so no need to set them again
-		
-				#TODO: yield?
+	
+				# redo the entire request (no items will be lost)		
 				return [FormRequest.from_response(response, callback = self.parse_product_amazon, formdata={'field-keywords' : captcha_text}, meta = response.meta)]
 
 		else:
@@ -258,11 +270,29 @@ class AmazonSpider(SearchSpider):
 			# add result to items
 			items.add(item)
 
-		# if there are any more results to be parsed, send a request back to this method with the next product to be parsed
+
+		print "STILL IN parse_product FOR", response.url
+
 		product_urls = response.meta['search_results']
 
+		# try to send request to parse next product, try until url for next product url is valid (response not 404)
+		# this is needed because if next product url is not valid, this request will not be sent and all info about this match (stored in request meta) will be lost
+
+		# find first valid next product url
+		next_product_url = None
 		if product_urls:
-			request = Request(product_urls.pop(), callback = self.parse_product_amazon, meta = response.meta)
+			next_product_url = product_urls.pop()
+		while (product_urls and not self.check_url(next_product_url)):
+			print "404 FROM", next_product_url
+			next_product_url = product_urls.pop()
+
+		# handle corner case of bad next product url
+		if not product_urls and next_product_url and not self.check_url(next_product_url):
+			next_product_url = None
+
+		# if a next product url was found, send new request back to parse_product_url
+		if next_product_url:
+			request = Request(next_product_url, callback = self.parse_product_amazon, meta = response.meta)
 			if self.cookies_file:
 				request.cookies = self.amazon_cookies
 				request.headers['Cookies'] = self.amazon_cookie_header
@@ -271,14 +301,21 @@ class AmazonSpider(SearchSpider):
 			# eliminate next product from pending list (this will be the new list with the first item popped)
 			request.meta['search_results'] = product_urls
 
+			print "RETURNING FROM PARSE AMAZON PRODUCT TO parse_product FOR", response.meta['origin_url'], response.url, "NEXT IS", next_product_url
+			respcode = urllib.urlopen(next_product_url)
+
 			return request
+
+		# if no next valid product url was found
 		else:
-			# otherwise, we are done, send a the response back to reduceResults (no need to make a new request)
+			# we are done, send a the response back to reduceResults (no need to make a new request)
 			# add as meta newly added items
 			# also add 'parsed' field to indicate that the parsing of all products was completed and they cand be further used
 			# (actually that the call was made from this method and was not the initial one, so it has to move on to the next request)
 
 			response.meta['parsed'] = True
 			response.meta['items'] = items
+
+			print "RETURNING FROM PARSE AMAZON PRODUCT TO reduce_results FOR", response.meta['origin_url'], response.url
 
 			return self.reduceResults(response)
