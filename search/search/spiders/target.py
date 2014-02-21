@@ -51,7 +51,12 @@ class TargetSpider(SearchSpider):
 
 			# quit if there is no product name
 			if product_name and product_url:
-				item['product_url'] = product_url[0]
+				# clean url
+				m = re.match("(.*)#prodSlot*",url.extract(), product_url[0])
+				if m:
+					item['product_url'] = m.group(1)
+				else:
+					item['product_url'] = product_url[0]
 				item['product_name'] = product_name[0]
 			else:
 				self.log("No product name: " + str(response.url) + " from product: " + response.meta['origin_url'], level=log.ERROR)
