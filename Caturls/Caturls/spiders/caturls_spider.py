@@ -71,6 +71,9 @@ class CaturlsSpider(BaseSpider):
 		#self.start_urls = ["http://www.overstock.com/Electronics/Tablet-PCs/New,/condition,/24821/subcat.html?TID=TN:ELEC:Tablet"]
 		# newegg laptops
 		#self.start_urls = ["http://www.newegg.com/Laptops-Notebooks/SubCategory/ID-32"]
+		# newegg videocards http://www.newegg.com/Video-Cards-Video-Devices/Category/ID-38
+		# newegg motherboards http://www.newegg.com/Motherboards/Category/ID-20
+		# newegg cameras http://www.newegg.com/DSLR-Cameras/SubCategory/ID-784
 		# tigerdirect DSLR cameras
 		#self.start_urls = ["http://www.tigerdirect.com/applications/Category/guidedSearch.asp?CatId=7&sel=Detail;131_1337_58001_58001"]
 
