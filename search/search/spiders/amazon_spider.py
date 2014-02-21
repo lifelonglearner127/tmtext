@@ -88,7 +88,7 @@ class AmazonSpider(SearchSpider):
 			return captcha_text
 
 	# check if a certain URL is valid or gets a 404 response
-	def check_url(self, URL):
+	def is_valid_url(self, URL):
 		resp = urllib.urlopen(URL)
 		return (resp.getcode() != 404)
 
@@ -96,7 +96,7 @@ class AmazonSpider(SearchSpider):
 	def parseResults(self, response):
 		hxs = HtmlXPathSelector(response)
 
-		print "PARSE AMAZON FOR", response.meta['origin_url'], "RESULTS PAGE", response.url
+		# print "PARSE AMAZON FOR", response.meta['origin_url'], "RESULTS PAGE", response.url
 
 		if 'items' in response.meta:
 			items = response.meta['items']
@@ -155,14 +155,14 @@ class AmazonSpider(SearchSpider):
 			response.meta['search_results'] = product_urls
 			# only send the response we have as an argument, no need to make a new request
 
-			print "RETURNING TO REDUCE RESULTS", response.meta['origin_url']
+			# print "RETURNING TO REDUCE RESULTS", response.meta['origin_url']
 			return self.reduceResults(response)
 
 	# extract product info from a product page for amazon
 	# keep product pages left to parse in 'search_results' meta key, send back to parseResults_new when done with all
 	def parse_product_amazon(self, response):
 
-		print "PARSE AMAZON PRODUCT FOR", response.meta['origin_url'], response.url
+		# print "PARSE AMAZON PRODUCT FOR", response.meta['origin_url'], response.url
 
 
 		hxs = HtmlXPathSelector(response)
@@ -197,7 +197,7 @@ class AmazonSpider(SearchSpider):
 		#product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
 		product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
 		if not product_name:
-			print "NO PRODUCT NAME FOR", response.url
+			# print "NO PRODUCT NAME FOR", response.url
 			self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.ERROR)
 
 			# assume there is a captcha to crack
@@ -234,7 +234,7 @@ class AmazonSpider(SearchSpider):
 				product_model_extracted = ProcessText.extract_model_from_name(item['product_name'])
 				if product_model_extracted:
 					item['product_model'] = product_model_extracted
-				#print "MODEL EXTRACTED: ", product_model_extracted, " FROM NAME ", item['product_name'].encode("utf-8")
+				## print "MODEL EXTRACTED: ", product_model_extracted, " FROM NAME ", item['product_name'].encode("utf-8")
 
 
 			brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
@@ -271,7 +271,7 @@ class AmazonSpider(SearchSpider):
 			items.add(item)
 
 
-		print "STILL IN parse_product FOR", response.url
+		# print "STILL IN parse_product FOR", response.url
 
 		product_urls = response.meta['search_results']
 
@@ -282,12 +282,12 @@ class AmazonSpider(SearchSpider):
 		next_product_url = None
 		if product_urls:
 			next_product_url = product_urls.pop()
-		while (product_urls and not self.check_url(next_product_url)):
-			print "404 FROM", next_product_url
+		while (product_urls and not self.is_valid_url(next_product_url)):
+			# print "404 FROM", next_product_url
 			next_product_url = product_urls.pop()
 
 		# handle corner case of bad next product url
-		if not product_urls and next_product_url and not self.check_url(next_product_url):
+		if not product_urls and next_product_url and not self.is_valid_url(next_product_url):
 			next_product_url = None
 
 		# if a next product url was found, send new request back to parse_product_url
@@ -301,7 +301,7 @@ class AmazonSpider(SearchSpider):
 			# eliminate next product from pending list (this will be the new list with the first item popped)
 			request.meta['search_results'] = product_urls
 
-			print "RETURNING FROM PARSE AMAZON PRODUCT TO parse_product FOR", response.meta['origin_url'], response.url, "NEXT IS", next_product_url
+			# print "RETURNING FROM PARSE AMAZON PRODUCT TO parse_product FOR", response.meta['origin_url'], response.url, "NEXT IS", next_product_url
 			respcode = urllib.urlopen(next_product_url)
 
 			return request
@@ -316,6 +316,6 @@ class AmazonSpider(SearchSpider):
 			response.meta['parsed'] = True
 			response.meta['items'] = items
 
-			print "RETURNING FROM PARSE AMAZON PRODUCT TO reduce_results FOR", response.meta['origin_url'], response.url
+			# print "RETURNING FROM PARSE AMAZON PRODUCT TO reduce_results FOR", response.meta['origin_url'], response.url
 
 			return self.reduceResults(response)

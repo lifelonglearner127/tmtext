@@ -138,7 +138,7 @@ class SearchSpider(BaseSpider):
 				request.cookies = self.amazon_cookies
 				request.headers['Cookies'] = self.amazon_cookie_header
 				#request.meta['dont_merge_cookies'] = True
-				#print "SET AMAZON COOKIES"
+				## print "SET AMAZON COOKIES"
 
 			request.meta['origin_name'] = self.product_name
 			request.meta['query'] = search_query
@@ -337,7 +337,7 @@ class SearchSpider(BaseSpider):
 			# if product_model_index >= 0:
 			# 	product_model = product_name[product_model_index]
 				
-			#print "MODEL EXTRACTED: ", product_model, " FROM NAME ", product_name
+			## print "MODEL EXTRACTED: ", product_model, " FROM NAME ", product_name
 
 		# if there is no product brand, get first word in name, assume it's the brand
 		product_brand_extracted = ""
@@ -429,7 +429,7 @@ class SearchSpider(BaseSpider):
 				request1.cookies = self.amazon_cookies
 				request1.headers['Cookies'] = self.amazon_cookie_header
 				#request1.meta['dont_merge_cookies'] = True
-				#print "SET AMAZON COOKIES"
+				## print "SET AMAZON COOKIES"
 
 			request1.meta['query'] = query1
 			request1.meta['target_site'] = target_site
@@ -503,10 +503,7 @@ class SearchSpider(BaseSpider):
 		#TODO: should this be here??
 		target_site = product_brand_extracted
 
-		if not request:
-			print "NO REQUEST", response.url
-
-		print "SENDING REQUEST FOR ", product_name, response.url
+		# print "SENDING REQUEST FOR ", product_name, response.url
 
 		yield request
 
@@ -522,7 +519,7 @@ class SearchSpider(BaseSpider):
 	# and lastly select the best result by selecting the best match between the original product's name and the result products' names
 	def reduceResults(self, response):
 
-		print "IN REDUCE RESULTS"
+		# print "IN REDUCE RESULTS"
 
 		items = response.meta['items']
 		#site = response.meta['origin_site']
@@ -537,7 +534,7 @@ class SearchSpider(BaseSpider):
 			del response.meta['parsed']
 
 
-		#print stuff
+		## print stuff
 		self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level=log.DEBUG)
 		self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
 		self.log( "MATCHES: ", level=log.DEBUG)
@@ -553,7 +550,7 @@ class SearchSpider(BaseSpider):
 			pending_requests = response.meta['pending_requests']
 
 			if pending_requests:
-				print "PENDING REQUESTS FOR", response.meta['origin_url'], response.meta['origin_name']
+				# print "PENDING REQUESTS FOR", response.meta['origin_url'], response.meta['origin_name']
 				request = pending_requests[0]
 
 				# update pending requests
@@ -587,7 +584,7 @@ class SearchSpider(BaseSpider):
 			# if there are no more pending requests, use cumulated items to find best match and send it as a result
 			else:
 
-				print "DONE FOR ", response.meta['origin_url'], response.meta['origin_name']
+				# print "DONE FOR ", response.meta['origin_url'], response.meta['origin_name']
 
 				best_match = None
 
@@ -602,16 +599,16 @@ class SearchSpider(BaseSpider):
 
 					if 'origin_price' in response.meta:
 						product_price = response.meta['origin_price']
-						#print "PRICE:", product_price
+						## print "PRICE:", product_price
 					else:
 						product_price = None
-						#print "NO PRICE"
+						## print "NO PRICE"
 					best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], product_price, items, threshold)
 
 					# #self.log( "ALL MATCHES: ", level=log.WARNING)					
 					# for item in items:
-					# 	#print item['product_name'].encode("utf-8")
-					# #print '\n'
+					# 	## print item['product_name'].encode("utf-8")
+					# ## print '\n'
 
 				self.log( "FINAL: " + str(best_match), level=log.WARNING)
 				self.log( "\n----------------------------------------------\n", level=log.WARNING)
@@ -642,7 +639,7 @@ class SearchSpider(BaseSpider):
 			item = SearchItem()
 			#item['origin_site'] = site
 
-			print "DONE FOR ", response.meta['origin_name']
+			# print "DONE FOR ", response.meta['origin_name']
 			
 			item['origin_url'] = response.meta['origin_url']
 			item['origin_name'] = response.meta['origin_name']
