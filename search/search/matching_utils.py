@@ -220,7 +220,13 @@ class ProcessText():
 
 			# compute confidence of result (using 'threshold' as a landmark - score equal to threshold means 50% confidence)
 			# make sure it doesn't exceed 100%
-			confidence = 100 * min(1.0, score/(2.0 * threshold))
+			if threshold != 0:
+				confidence = 100 * min(1.0, score/(2.0 * threshold))
+			else:
+				log.msg("Threshold was 0 for products: " + str(words1) + "; " + str(words2), level=log.INFO)
+				# this means the log in threshold computation above was 0, so products had 1-word names. if anything matched, confidence should be 100%
+				confidence = 100.0
+
 
 			product2['confidence'] = confidence
 
