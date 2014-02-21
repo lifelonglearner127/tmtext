@@ -43,7 +43,7 @@ class TargetSpider(SearchSpider):
 		results = hxs.select("//li[contains(@class,'tile standard')]")
 		for result in results:
 			item = SearchItem()
-			product_title_holder = result.select(".//div[@class='productTitle']/a")
+			product_title_holder = result.select(".//div[@class='tileInfo']/a[contains(@class,'productTitle')]")
 			product_url = product_title_holder.select("@href").extract()[0]
 			item['product_url'] = product_url
 			product_name = product_title_holder.select("@title").extract()[0]
@@ -92,7 +92,7 @@ class TargetSpider(SearchSpider):
 				self.log("Didn't find product price: " + response.url + "\n", level=log.DEBUG)
 
 			# extract product brand
-			brand_holder = product_title_holder.select("parent::node()//span[@class='description']/a/text()").extract()
+			brand_holder = product_title_holder.select("parent::node()//a[contains(@class,'productBrand')]/a/text()").extract()
 			if brand_holder:
 				item['product_brand'] = brand_holder[0]
 				self.log("Extracted brand: " + item['product_brand'] + " from results page: " + str(response.url), level=log.DEBUG)
