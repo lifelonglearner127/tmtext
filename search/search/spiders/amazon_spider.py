@@ -185,26 +185,30 @@ class AmazonSpider(SearchSpider):
 			self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.ERROR)
 
 			# assume there is a captcha to crack
-			
-			# solve captcha
-			captcha_text = None
-			image = hxs.select(".//img/@src").extract()
-			if image:
-				captcha_text = self.solve_captcha(image[0])
+			# check if there is a form on the page - that means it's probably the captcha form
+			forms = hxs.select("//form")
+			if forms:
+				
+				# solve captcha
+				captcha_text = None
+				image = hxs.select(".//img/@src").extract()
+				if image:
+					captcha_text = self.solve_captcha(image[0])
 
-			# value to use if there was an exception
-			if not captcha_text:
-				captcha_text = ''
+				# value to use if there was an exception
+				if not captcha_text:
+					captcha_text = ''
 
 
-			#TODO: if there is no product name but no captcha either, so let's say it just outputs to log that there was an error, does that also mean all meta info is lost? (request is not passed on)
-			#No, it just doesn't get added to items, the request is made anyway
-			#TODO: don't return this request if page is not form? (it generates en exception)
-			
-			# create a FormRequest to this same URL, with everything needed in meta
-			# items, cookies and search_urls not changed from previous response so no need to set them again
-	
-			return [FormRequest.from_response(response, callback = self.parse_product_amazon, formdata={'field-keywords' : captcha_text}, meta = response.meta)]
+				#TODO: if there is no product name but no captcha either, so let's say it just outputs to log that there was an error, does that also mean all meta info is lost? (request is not passed on)
+				#No, it just doesn't get added to items, the request is made anyway
+				#TODO: don't return this request if page is not form? (it generates en exception)
+				
+				# create a FormRequest to this same URL, with everything needed in meta
+				# items, cookies and search_urls not changed from previous response so no need to set them again
+		
+				#TODO: yield?
+				return [FormRequest.from_response(response, callback = self.parse_product_amazon, formdata={'field-keywords' : captcha_text}, meta = response.meta)]
 
 		else:
 			item['product_name'] = product_name[0].strip()
