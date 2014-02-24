@@ -19,12 +19,15 @@ class LinesPipeline(object):
 # write each JSON object on one line, lines separated by commas
 class CommaSeparatedLinesPipeline(object):
 
-	# categories tree - tree of entire sitemap structured as dictionary with keys being tuples of (category url, parent url) - because these are unique
+	# categories tree - tree of entire sitemap structured as dictionary with keys being category ids (catid field)
 	# and values being dictionaries containing:
 	# - item represented by that URL
 	# - list of subcategories of that item (just their URLs)
 	# if has_tree flag is on in spider, this tree will be built and used to aggregate number of products for each category where it's not explicitly specified on the site
 	categories_tree = {}
+
+	# store list of ids of all top level categories (departments). needed for categories tree traversal
+	top_level_categories = []
 
 	def __init__(self):
 		# flag indicating if the first item has been written to output
@@ -39,27 +42,19 @@ class CommaSeparatedLinesPipeline(object):
 	def process_item_fortree(self, item):
 		# add key-value pair where key is current's item URL
 		# and value is dict containing item and subcategories list (for now empty)
-		if 'parent_url' in item:
-			key = (item['url'], item['parent_url'])
-		else:
-			key = item['url']
-		self.categories_tree[key] = {}
-		self.categories_tree[key]['item'] = item
+		self.categories_tree[item['catid']] = {}
+		self.categories_tree[item['catid']]['item'] = item
 		# create subcategories list if it doesn't exist (may have been created by previous items)
-		if 'subcategories' not in self.categories_tree[key]:
-			self.categories_tree[key]['subcategories'] = []
+		if 'subcategories' not in self.categories_tree[item['catid']]:
+			self.categories_tree[item['catid']]['subcategories'] = []
 		
 		# add item URL to subcategories list of its parent's element in the tree
 		# create parent item in categories tree if it doesn't exist
-		if 'parent_url' in item:
-			if 'grandparent_url' in item:
-				key = (item['parent_url'], item['grandparent_url'])
-			else:
-				key = item['parent_url']
-			if key not in self.categories_tree:
-				self.categories_tree[key] = {'subcategories': []}
+		if 'parent_catid' in item:
+			if item['parent_catid'] not in self.categories_tree:
+				self.categories_tree[item['parent_catid']] = {'subcategories': []}
 			# append url to the parent's subcategories list
-			self.categories_tree[key]['subcategories'].append(item['url'])
+			self.categories_tree[item['parent_catid']]['subcategories'].append(item['url'])
 
 	def process_item(self, item, spider):
 		if spider.has_tree:

@@ -31,7 +31,7 @@ class WalmartSpider(BaseSpider):
     root_url = "http://www.walmart.com"
 
     # set flag that indicates this spider has a categories tree that should be used in pipelines to aggregate product number per dept/top level category
-    has_tree = False
+    has_tree = True
 
     # keep crawled items represented by (url, parent_url, department_url) pairs
     # to eliminate duplicates
