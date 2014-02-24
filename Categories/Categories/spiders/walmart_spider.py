@@ -30,8 +30,10 @@ class WalmartSpider(BaseSpider):
     ]
     root_url = "http://www.walmart.com"
 
-    # keep crawled items represented by (url, parent_url) pairs
+    # keep crawled items represented by (url, parent_url, department_url) pairs
     # to eliminate duplicates
+    # (adding department_url makes sure that if one entire department is found as a subcategory of another for ex, both (and their complete category trees) will be crawled)
+
     crawled = []
 
     def parse(self, response):
@@ -369,10 +371,11 @@ class WalmartSpider(BaseSpider):
                     # yield item
 
                     # send subcategory items to be parsed again
-                    if (item['url'], item['parent_url']) not in self.crawled:
+                    # if not already crawled
+                    if (item['url'], item['parent_url'], response.meta['department_url']) not in self.crawled:
                         yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item, \
                             'department_text' : response.meta['department_text'], 'department_url' : response.meta['department_url'], 'department_id' : response.meta['department_id']})
-                        self.crawled.append((item['url'], item['parent_url']))
+                        self.crawled.append((item['url'], item['parent_url'], response.meta['department_url']))
 
                 # return current item
                 # idea for sending parent and collecting nr products. send all of these subcats as a list in meta, pass it on, when list becomes empty, yield the parent
