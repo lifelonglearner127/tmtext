@@ -74,9 +74,26 @@ class CommaSeparatedLinesPipeline(object):
 				self.started = True
 			return item
 
+
+	# complete nr_products field for all categories in the tree where it is missing
+	def compute_item_counts(self):
+		# do a depth first count for all top level categories
+		for key in top_level_categories:
+			category_item = categories_tree[key]['item']
+			if 'nr_products' not in category_item:
+				category_item['nr_products'] = self.depth_first_count(key)
+
+	# complete nr_products field for all categories in the tree where it is missing, by using its children categories
+	# use depth-first traversal to collect all nr_products info for each category's subcategory
+	def depth_first_count(self, key):
+		pass
+
+
 	def close_spider(self, spider):
 		# if spider uses category tree, then all the output needs to be written to file now
 		if spider.has_tree:
+			# compute all nr_products for all categories using the tree
+			self.compute_item_counts()
 			for key in self.categories_tree:
 				line = json.dumps(dict(self.categories_tree[key]['item']))
 				if self.started:

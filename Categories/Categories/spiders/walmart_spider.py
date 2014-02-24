@@ -79,7 +79,7 @@ class WalmartSpider(BaseSpider):
 
         department_id = 0
 
-        for link in parent_links:
+        for link in [parent_links[2]]:
             item = CategoryItem()
 
             item['text'] = link.select('text()').extract()[0]
