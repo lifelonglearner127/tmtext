@@ -30,10 +30,12 @@ class WalmartSpider(BaseSpider):
     ]
     root_url = "http://www.walmart.com"
 
+    # set flag that indicates this spider has a categories tree that should be used in pipelines to aggregate product number per dept/top level category
+    has_tree = True
+
     # keep crawled items represented by (url, parent_url, department_url) pairs
     # to eliminate duplicates
     # (adding department_url makes sure that if one entire department is found as a subcategory of another for ex, both (and their complete category trees) will be crawled)
-
     crawled = []
 
     def parse(self, response):
@@ -90,8 +92,6 @@ class WalmartSpider(BaseSpider):
 
             department_id += 1
 
-            #yield item
-
             # send category page to parseCategory function to extract description and number of products and add them to the item
             yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item, \
                 'department_text' : item['text'], 'department_url' : item['url'], 'department_id' : department_id})
@@ -106,8 +106,7 @@ class WalmartSpider(BaseSpider):
         item['department_url'] = response.meta['department_url']
         item['department_id'] = response.meta['department_id']
 
-
-
+     
         # Extract subcategories breakdown if any ("classification" field)
         classification_criteria = hxs.select("//form[@id='refine']//h6[@class='AdvSearchSubhead']")
         classification_dictionary = {}
@@ -289,21 +288,9 @@ class WalmartSpider(BaseSpider):
             if m2:
                 item['nr_products'] = int(m2.group(1))
             yield item
-        # # find if there are any products on this page
-        # product_holders = hxs.select("//a[@class='prodLink ListItemLink']").extract()
-        # if product_holders:
-        #     # parse every page and collect total number of products
-        #     #print "URL ", response.url, " HAS PRODUCTS"
-
-        #     # item['nr_products'] = 1
-        #     #yield item
-        #     yield Request(response.url, callback = self.parsePage, meta = {'item' : item})
-
+    
         else:
             # look for links to subcategory pages in menu
-            # subcategories_links = hxs.select("//div[@class='G1001 LeftNavRM']/div[@class='yuimenuitemlabel browseInOuter leftnav-item leftnav-depth-1']/a[@class='browseIn'] | \
-            #     //div[@class='G1001 LeftNavRM wmCatPage']/div[@class='yuimenuitemlabel browseInOuter']/a[@class='browseIn']")
-
             subcategories_links = hxs.select("//div[contains(@class, 'G1001 LeftNavRM')]/div[contains(@class, 'yuimenuitemlabel browseInOuter')]/a[@class='browseIn']")
 
             if not subcategories_links:

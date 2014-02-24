@@ -32,8 +32,8 @@ class CategoryItem(Item):
     page_text = Field() # name of page in sitemap that the category was found on (necessary for some sites, optional)
     page_url = Field() # url of page in sitemap that the category was found on (necessary for some sites, optional)
 
-    toplevel_category_text = Field() # name of top-level (level 0) category that current item belongs to
-    toplevel_category_url = Field() # url of page of top-level (level 0) category that current item belongs to
+    toplevel_category_text = Field() # (optional, not yet implemented) name of top-level (level 0) category that current item belongs to
+    toplevel_category_url = Field() # (optional, not yet implemented) url of page of top-level (level 0) category that current item belongs to
 
 
 class ProductItem(Item):

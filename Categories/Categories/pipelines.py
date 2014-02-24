@@ -18,6 +18,11 @@ class LinesPipeline(object):
 
 # write each JSON object on one line, lines separated by commas
 class CommaSeparatedLinesPipeline(object):
+
+    # categories tree - tree of entire sitemap structured as dictionary with keys being URLs of categories, and values being a dictionary containing a list of its subcategories URLs
+    # if has_tree flag is on in spider, this tree will be built and used to aggregate number of products for each category where it's not explicitly specified on the site
+    categories_tree = {}
+
 	def __init__(self):
 		# flag indicating if the first item has been written to output
 		self.started = False
@@ -26,14 +31,22 @@ class CommaSeparatedLinesPipeline(object):
 		filename = spider.name + "_categories.jl"
 		self.file = open(filename, 'wb')
 
+	# process item in spider for which we build the sitemap tree
+	def process_item_fortree(self, item):
+		pass
+
 	def process_item(self, item, spider):
-		line = json.dumps(dict(item))
-		if self.started:
-			self.file.write(",\n" + line)
+		if spider.has_tree:
+			self.process_item_fortree(item)
 		else:
-			self.file.write(line)
-			self.started = True
-		return item
+			# if we're not aggregating number of products, just return the item
+			line = json.dumps(dict(item))
+			if self.started:
+				self.file.write(",\n" + line)
+			else:
+				self.file.write(line)
+				self.started = True
+			return item
 
 	def close_spider(self, spider):
 		self.file.close()
