@@ -346,16 +346,17 @@ class WalmartSpider(BaseSpider):
 
                     item['level'] = level
 
-                    #item['nr_products'] = 1
-                    #parent_item['nr_products'] = 1
-
-                    # temporary
                     item['parent_text'] = parent_item['text']
                     item['parent_url'] = parent_item['url']
 
-                    # #TODO: i don't even know this
-                    # item['description_wc'] = 0
-                    # yield item
+                    if 'parent_text' in parent_item:
+                        item['grandparent_text'] = parent_item['parent_text']
+                    if 'parent_url' in parent_item:
+                        item['grandparent_url'] = parent_item['parent_url']
+
+                    # if parent's parents are missing, level must be at least 0
+                    if 'parent_text' not in parent_item or 'parent_url' not in parent_item:
+                        assert level >= 0
 
                     # send subcategory items to be parsed again
                     # if not already crawled

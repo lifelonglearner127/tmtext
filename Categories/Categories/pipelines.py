@@ -39,7 +39,6 @@ class CommaSeparatedLinesPipeline(object):
 	def process_item_fortree(self, item):
 		# add key-value pair where key is current's item URL
 		# and value is dict containing item and subcategories list (for now empty)
-		if 'parent_url'
 		self.categories_tree[item['url']] = {}
 		self.categories_tree[item['url']]['item'] = item
 		# create subcategories list if it doesn't exist (may have been created by previous items)
