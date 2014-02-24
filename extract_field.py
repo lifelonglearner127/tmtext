@@ -41,7 +41,11 @@ for line in f:
 		if options.filter_field and options.filter_value:
 			# need to wrap value in unicode() for int items
 			if options.filter_field in item and unicode(item[options.filter_field]) == options.filter_value:
-				fields.append(item[options.field])
+				if options.field2 and options.field2 in item:
+					fields.append((item[options.field], item[options.field2]))
+				else:
+					fields.append(item[options.field])
+
 		else:
 			if options.field2 and options.field2 in item:
 				fields.append((item[options.field], item[options.field2]))
