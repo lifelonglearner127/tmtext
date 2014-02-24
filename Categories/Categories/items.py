@@ -9,7 +9,7 @@ class CategoryItem(Item):
     parent_url = Field() # url of parent category page
     grandparent_text = Field() # name of 'grandparent' category (optional)
     grandparent_url = Field() # url of 'grandparent' category (optional)
-    level = Field() # level of category in the nested list (from narrower to broader categories)
+    level = Field() # level of category in the category tree (from narrower to broader categories). Departments have level 1, top level categories level 0, further subcategories have levels<0
     special = Field() # is it a special category? (1 or nothing)
     description_text = Field() # text of category description (if any)
     description_title = Field() # title of category description (if any)
@@ -31,6 +31,9 @@ class CategoryItem(Item):
 
     page_text = Field() # name of page in sitemap that the category was found on (necessary for some sites, optional)
     page_url = Field() # url of page in sitemap that the category was found on (necessary for some sites, optional)
+
+    toplevel_category_text = Field() # name of top-level (level 0) category that current item belongs to
+    toplevel_category_url = Field() # url of page of top-level (level 0) category that current item belongs to
 
 
 class ProductItem(Item):
