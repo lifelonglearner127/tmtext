@@ -35,6 +35,9 @@ class CategoryItem(Item):
     toplevel_category_text = Field() # (optional, not yet implemented) name of top-level (level 0) category that current item belongs to
     toplevel_category_url = Field() # (optional, not yet implemented) url of page of top-level (level 0) category that current item belongs to
 
+    catid = Field() # (optional) unique id identifying current item. Used where categories tree is necessary (where total item count for each category is used)
+    parent_catid = Field() # (optional) unique id identifying parent of current category. Used where categories tree is necessary (where total item count for each category is used)
+
 
 class ProductItem(Item):
 	url = Field() # url of product page

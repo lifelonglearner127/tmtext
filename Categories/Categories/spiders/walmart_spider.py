@@ -31,12 +31,15 @@ class WalmartSpider(BaseSpider):
     root_url = "http://www.walmart.com"
 
     # set flag that indicates this spider has a categories tree that should be used in pipelines to aggregate product number per dept/top level category
-    has_tree = True
+    has_tree = False
 
     # keep crawled items represented by (url, parent_url, department_url) pairs
     # to eliminate duplicates
     # (adding department_url makes sure that if one entire department is found as a subcategory of another for ex, both (and their complete category trees) will be crawled)
     crawled = []
+
+    # last used category id, used for autoincrementing ids idenrifying categories
+    id_count = 0
 
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
@@ -79,7 +82,7 @@ class WalmartSpider(BaseSpider):
 
         department_id = 0
 
-        for link in [parent_links[2]]:
+        for link in parent_links:
             item = CategoryItem()
 
             item['text'] = link.select('text()').extract()[0]
@@ -105,6 +108,10 @@ class WalmartSpider(BaseSpider):
         item['department_text'] = response.meta['department_text']
         item['department_url'] = response.meta['department_url']
         item['department_id'] = response.meta['department_id']
+
+        # assign unique id
+        item['catid'] = self.id_count
+        self.id_count += 1
 
      
         # Extract subcategories breakdown if any ("classification" field)
@@ -348,6 +355,7 @@ class WalmartSpider(BaseSpider):
 
                     item['parent_text'] = parent_item['text']
                     item['parent_url'] = parent_item['url']
+                    item['parent_catid'] = parent_item['catid']
 
                     if 'parent_text' in parent_item:
                         item['grandparent_text'] = parent_item['parent_text']
