@@ -19,7 +19,8 @@ class LinesPipeline(object):
 # write each JSON object on one line, lines separated by commas
 class CommaSeparatedLinesPipeline(object):
 
-	# categories tree - tree of entire sitemap structured as dictionary with keys being URLs of categories, and values being dictionaries containing:
+	# categories tree - tree of entire sitemap structured as dictionary with keys being category_urls - this is not feasible! caturls are not unique
+	# and values being dictionaries containing:
 	# - item represented by that URL
 	# - list of subcategories of that item (just their URLs)
 	# if has_tree flag is on in spider, this tree will be built and used to aggregate number of products for each category where it's not explicitly specified on the site
@@ -38,6 +39,7 @@ class CommaSeparatedLinesPipeline(object):
 	def process_item_fortree(self, item):
 		# add key-value pair where key is current's item URL
 		# and value is dict containing item and subcategories list (for now empty)
+		if 'parent_url'
 		self.categories_tree[item['url']] = {}
 		self.categories_tree[item['url']]['item'] = item
 		# create subcategories list if it doesn't exist (may have been created by previous items)
@@ -47,7 +49,7 @@ class CommaSeparatedLinesPipeline(object):
 		# add item URL to subcategories list of its parent's element in the tree
 		# create parent item in categories tree if it doesn't exist
 		if 'parent_url' in item:
-			if item['parent_url'] not in categories_tree:
+			if item['parent_url'] not in self.categories_tree:
 				self.categories_tree[item['parent_url']] = {'subcategories': []}
 			# append url to the parent's subcategories list
 			self.categories_tree[item['parent_url']]['subcategories'].append(item['url'])
@@ -66,7 +68,18 @@ class CommaSeparatedLinesPipeline(object):
 			return item
 
 	def close_spider(self, spider):
-		self.file.close()
+		# if spider uses category tree, then all the output needs to be written to file now
+		if spider.has_tree:
+			for url in self.categories_tree:
+				line = json.dumps(dict(self.categories_tree[url]['item']))
+				if self.started:
+					self.file.write(",\n" + line)
+				else:
+					self.file.write(line)
+					self.started = True
+		else:
+			# otherwise just close the file (items were output in process_item)
+			self.file.close()
 
 
 # write entire content as a JSON object in the output file
