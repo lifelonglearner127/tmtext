@@ -38,6 +38,7 @@ class CommaSeparatedLinesPipeline(object):
 	def process_item_fortree(self, item):
 		# add key-value pair where key is current's item URL
 		# and value is dict containing item and subcategories list (for now empty)
+		self.categories_tree[item['url']] = {}
 		self.categories_tree[item['url']]['item'] = item
 		# create subcategories list if it doesn't exist (may have been created by previous items)
 		if 'subcategories' not in self.categories_tree[item['url']]:
@@ -45,10 +46,11 @@ class CommaSeparatedLinesPipeline(object):
 		
 		# add item URL to subcategories list of its parent's element in the tree
 		# create parent item in categories tree if it doesn't exist
-		if item['parent_url'] not in categories_tree:
-			self.categories_tree[item['parent_url']] = {'subcategories': []}
-		# append url to the parent's subcategories list
-		self.categories_tree[item['parent_url']]['subcategories'].append(item['url'])
+		if 'parent_url' in item:
+			if item['parent_url'] not in categories_tree:
+				self.categories_tree[item['parent_url']] = {'subcategories': []}
+			# append url to the parent's subcategories list
+			self.categories_tree[item['parent_url']]['subcategories'].append(item['url'])
 
 	def process_item(self, item, spider):
 		if spider.has_tree:
