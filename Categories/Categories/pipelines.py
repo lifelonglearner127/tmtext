@@ -47,6 +47,10 @@ class CommaSeparatedLinesPipeline(object):
 		# create subcategories list if it doesn't exist (may have been created by previous items)
 		if 'subcategories' not in self.categories_tree[item['catid']]:
 			self.categories_tree[item['catid']]['subcategories'] = []
+
+		# add to top level categories if it's a department
+		if item['level'] == 1:
+			self.top_level_categories.append(item['catid'])
 		
 		# add item URL to subcategories list of its parent's element in the tree
 		# create parent item in categories tree if it doesn't exist
@@ -54,7 +58,7 @@ class CommaSeparatedLinesPipeline(object):
 			if item['parent_catid'] not in self.categories_tree:
 				self.categories_tree[item['parent_catid']] = {'subcategories': []}
 			# append url to the parent's subcategories list
-			self.categories_tree[item['parent_catid']]['subcategories'].append(item['url'])
+			self.categories_tree[item['parent_catid']]['subcategories'].append(item['catid'])
 
 	def process_item(self, item, spider):
 		if spider.has_tree:
@@ -73,15 +77,43 @@ class CommaSeparatedLinesPipeline(object):
 	# complete nr_products field for all categories in the tree where it is missing
 	def compute_item_counts(self):
 		# do a depth first count for all top level categories
-		for key in top_level_categories:
-			category_item = categories_tree[key]['item']
+		for key in self.top_level_categories:
+			category_item = self.categories_tree[key]['item']
 			if 'nr_products' not in category_item:
 				category_item['nr_products'] = self.depth_first_count(key)
 
 	# complete nr_products field for all categories in the tree where it is missing, by using its children categories
 	# use depth-first traversal to collect all nr_products info for each category's subcategory
 	def depth_first_count(self, key):
-		pass
+		if 'subcategories' in self.categories_tree[key]:
+			subcategories = self.categories_tree[key]['subcategories']
+
+			nr_products = 0
+
+			# collect item count from all subcategories
+			for subcategory in subcategories:
+				# if it's available as extracted from the site, use that
+				if 'nr_products' in self.categories_tree[subcategory]['item']:
+					subcategory_product_count = self.categories_tree[subcategory]['item']['nr_products']
+
+				else:
+					subcategory_product_count = self.depth_first_count(subcategory)
+
+				# add subcategory item count to its parent's item count
+				nr_products += subcategory_product_count
+
+			self.categories_tree[key]['item']['nr_products'] = nr_products
+
+			return nr_products
+
+		# if there are no subcategories, it must be a leaf item
+		if 'subcategories' not in self.cateogries_tree[key] or not self.categores_tree[key]['subcategories']:
+			if 'nr_products' in self.categories_tree[key]:
+				nr_products = self.categories_tree[key]['nr_products']
+			else:
+				nr_products = 0
+
+			return nr_products
 
 
 	def close_spider(self, spider):
