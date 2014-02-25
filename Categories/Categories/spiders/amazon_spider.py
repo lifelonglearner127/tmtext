@@ -25,6 +25,40 @@ class AmazonSpider(BaseSpider):
         "http://www.amazon.com/gp/site-directory/ref=sa_menu_top_fullstore",
     ]
 
+    # hardcoded toplevel categories (level 1 and 2) urls to replace/supplement some of the ones found on the sitemap above (point to the same category, but have different page content. they were found manually)
+    # reason: they provide more info regarding product count than the ones found on the sitemap
+    # keys are categories names as found in the sitemap, values are URLs associated with them, that will replace/supplement the links found on the sitemap
+    extra_toplevel_categories_urls = {"Baby" : "http://www.amazon.com/s/ref=lp_166835011_ex_n_1?rh=n%3A165796011&bbn=165796011&ie=UTF8&qid=1393338541", \
+                                "Electronics & Computers" : "http://www.amazon.com/s/ref=lp_172659_ex_n_1?rh=n%3A172282&bbn=172282&ie=UTF8&qid=1393338741", \
+                                "Home, Garden & Tools" : "http://www.amazon.com/s/ref=lp_284507_ex_n_1?rh=n%3A1055398&bbn=1055398&ie=UTF8&qid=1393338782"}
+
+
+    # flag indicating whether to compute overall product counts in pipelines phase for this spider.
+    # if on, 'catid' and 'parent_catid' fields need to be implemented
+    compute_nrproducts = False
+
+    # check if 2 catgory names are the same
+    # does some normalization of the names and compares the words in them
+    # to be used for identifying extra_toplevel_categories_urls when they occur in the sitemap
+    def is_same_name(self, name1, name2):
+        # eliminate non-word characters
+        name1 = re.sub("[^a-zA-Z]", " ", name1).lower()
+        name2 = re.sub("[^a-zA-Z]", " ", name2).lower()
+
+        name1_words = name1.split()
+        name2_words = name2.split()
+
+        return set(name1_words) == set(name2_words)
+
+    # find key in dict using is_same_name as equality function (return key from dict where is_same_name returns true for given target_key)
+    def find_matching_key(self, target_key, dictionary):
+        for key in dictionary:
+            if self.is_same_name(target_key, key):
+                return key
+
+        return None
+
+    # start parsing of top level categories extracted from sitemap; pass them to parseCategory
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         links_level1 = hxs.select("//div[@id='siteDirectory']//table//a")
@@ -38,6 +72,7 @@ class AmazonSpider(BaseSpider):
         special_item['text'] = titles_level1[0].select('text()').extract()[0]
         special_item['level'] = 2
         special_item['special'] = 1
+
         #items.append(special_item)
         yield special_item
 
@@ -47,9 +82,17 @@ class AmazonSpider(BaseSpider):
             item['text'] = title.select('text()').extract()[0]
             item['level'] = 2
 
-            yield item
+            # if item is found among extra_toplevel_categories_urls, add info from that url
+            extra_category = self.find_matching_key(item['text'], self.extra_toplevel_categories_urls)
+            if extra_category:
+                item['url'] = self.extra_toplevel_categories_urls[extra_category]
 
-            #items.append(item)
+                # collect number of products from this alternate URL
+                yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+
+            else:
+                yield item
+
         department_id = 0
 
         # add level 1 categories to items
@@ -77,10 +120,8 @@ class AmazonSpider(BaseSpider):
             yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1, \
                 'department_text' : item['text'], 'department_url' : item['url'], 'department_id' : department_id})
 
-            #items.append(item)
 
-        #return items
-
+    # parse category and return item corresponding to it (for categories where URL available - level 2 and lower)
     def parseCategory(self, response):
         hxs = HtmlXPathSelector(response)
 
@@ -88,6 +129,7 @@ class AmazonSpider(BaseSpider):
         item = response.meta['parent']
 
         # add department name, url and id for item
+
         item['department_text'] = response.meta['department_text']
         item['department_url'] = response.meta['department_url']
         item['department_id'] = response.meta['department_id']
@@ -143,8 +185,115 @@ class AmazonSpider(BaseSpider):
             item['description_wc'] = 0
 
 
-        #TODO: when I use yield request, remember to add department_text, department_url and department_id parameters to it
+        # if item is found among extra_toplevel_categories_urls, and no product count was found, add info from that url
+        extra_category = self.find_matching_key(item['text'], self.extra_toplevel_categories_urls)
+        if not prod_count_holder and extra_category:
+            
+            # collect number of products from this alternate URL
+            # this will also extract subcategories and their count
+            yield Request(self.extra_toplevel_categories_urls[extra_category], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+
+        else:
+
+            yield item
+
+
+    # extract item count for a certain category, then yield item received in meta
+    # also extract and yield subcategories
+    # use menu on left side of the page on the category page
+    # will mainly be used for categories in extra_toplevel_categories_urls
+    def extract_nrprods_and_subcats(self, response):
+        hxs = HtmlXPathSelector(response)
+
+        item = response.meta['item']
+
+        prod_count_holder = hxs.select("//h2[@class='resultCount']/span/text()").extract()
+        if prod_count_holder:
+            prod_count = prod_count_holder[0]
+            # extract number
+            m = re.match(".*\s*of\s*([0-9,]+)\s*Results\s*", prod_count)
+            if m:
+                item['nr_products'] = int(re.sub(",","",m.group(1)))
+
         yield item
+
+        parent_item = item
+
+        # extract subcategories
+        # currently extracting subcategories for categories on any level, for level 2 this may cause duplicates (we already extract level 1)
+        # extract subcategories from first menu on the left, assume this is the subcategories menu
+        #TODO: test or make more robust
+        subcategories = hxs.select("//h2[1]/following-sibling::ul[1]/li/a")
+        for subcategory in subcategories:
+            subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
+            subcategory_text = subcategory.select("span[@class='refinementLink']/text()").extract()[0].strip()
+            # extract product count, clean it of commas and parantheses
+            subcategory_prodcount_holder = subcategory.select("span[@class='narrowValue']/text()").extract()
+            if not subcategory_prodcount_holder:
+                continue
+            subcategory_prodcount = subcategory_prodcount_holder[0].replace(";nbsp&"," ").strip()
+
+            m = re.match("\(([0-9,]+)\)", subcategory_prodcount)
+            if m:
+                subcategory_prodcount = m.group(1).replace(",","")
+            
+
+            item = CategoryItem()
+            item['url'] = subcategory_url
+            item['text'] = subcategory_text
+
+            item['parent_text'] = parent_item['text']
+            item['parent_url'] = parent_item['url']
+
+            # this won't be available for level 2 items
+            if 'department_text' in parent_item:
+                item['department_text'] = parent_item['department_text']
+                item['department_url'] = parent_item['department_url']
+                item['department_id'] = parent_item['department_id']
+
+            item['level'] = parent_item['level'] - 1
+
+            item['nr_products'] = subcategory_prodcount
+
+            # no description extracted
+            item['description_wc'] = 0
+
+            yield item
+
+
+
+
+    #############################################
+    # Trying to automatically extract better (that have product count) category landing pages through some twisted naviation - leave for later. replaced with some hardcoded pages in extra_toplevel_categories_urls
+    #     # if no product count try to find the correct landing page for this category:
+    #     # try to find a link to an "All ..." page (will point to a subcategory of this one), then on that page try to find the link to the department page (so an alternate link for this subcategory)
+    #     if not prod_count_holder and item['level']==1:
+    #         # find a subcategory link
+    #         subcategory = hxs.select("//p[@class='seeMore']/a/@href").extract()
+    #         if subcategory:
+    #             print "FOUND SUBCATEGORY OF", response.url, ": ", subcategory[0]
+    #             yield Request(url = Utils.add_domain(subcategory[0], "http://www.amazon.com"), callback = self.extractCatURL, meta = response.meta)
+    #         else:
+    #             print "NO SUBCATEGORY", response.url
+
+    #         #yield Request(callback )
+
+    # # try to extract better category page, with product count available (linked to from a subcategory)
+    # # receives subcategory page URL and tries to find link to top level category
+    # def extractCatURL(self, response):
+    #     hxs = HtmlXPathSelector(response)
+
+    #     # find "Department" in submenu and get link below it - will link to top level category
+    #     department_link = hxs.select("//h2[contains(text(),'Department')]/following-sibling::ul[1]/li/a")
+    #     if department_link:
+    #         department_url = Utils.add_domain(department_link.select("@href").extract()[0], "http://www.amazon.com")
+    #         department_text = department_link.select("./text() | ./span/text()").re("[a-zA-Z ]+")[0]
+
+    #         print "YES DEPARTMENT LINK", response.url, department_text
+
+    #         yield Request(department_url, callback = self.parseCategory, meta=response.meta)
+    #     else:
+    #         print "NO DEPARTMENT LINK", response.url
 
 
 ################################
