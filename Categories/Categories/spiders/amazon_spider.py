@@ -150,7 +150,7 @@ class AmazonSpider(BaseSpider):
 ################################
 # Run with 
 #
-# scrapy crawl bestseller
+# scrapy crawl amazon_bestseller
 #
 ################################
 

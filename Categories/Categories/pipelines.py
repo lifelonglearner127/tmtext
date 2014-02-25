@@ -91,6 +91,9 @@ class CommaSeparatedLinesPipeline(object):
 			nr_products = 0
 
 			# collect item count from all subcategories
+
+			#TODO: problem: sometimes the same subcategory (URL) appears under different category subtrees, even different levels. it will end up being counted twice...
+			# example: Wine Racks, see its parents, both of the same department
 			for subcategory in subcategories:
 				# if it's available as extracted from the site, use that
 				if 'nr_products' in self.categories_tree[subcategory]['item']:
