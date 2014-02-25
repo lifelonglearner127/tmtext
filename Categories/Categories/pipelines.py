@@ -23,7 +23,7 @@ class CommaSeparatedLinesPipeline(object):
 	# and values being dictionaries containing:
 	# - item represented by that URL
 	# - list of subcategories of that item (just their URLs)
-	# if has_tree flag is on in spider, this tree will be built and used to aggregate number of products for each category where it's not explicitly specified on the site
+	# if compute_nrproducts flag is on in spider, this tree will be built and used to aggregate number of products for each category where it's not explicitly specified on the site
 	categories_tree = {}
 
 	# store list of ids of all top level categories (departments). needed for categories tree traversal
@@ -61,7 +61,7 @@ class CommaSeparatedLinesPipeline(object):
 			self.categories_tree[item['parent_catid']]['subcategories'].append(item['catid'])
 
 	def process_item(self, item, spider):
-		if spider.has_tree:
+		if spider.compute_nrproducts:
 			self.process_item_fortree(item)
 		else:
 			# if we're not aggregating number of products, just return the item
@@ -118,7 +118,7 @@ class CommaSeparatedLinesPipeline(object):
 
 	def close_spider(self, spider):
 		# if spider uses category tree, then all the output needs to be written to file now
-		if spider.has_tree:
+		if spider.compute_nrproducts:
 			# compute all nr_products for all categories using the tree
 			self.compute_item_counts()
 			for key in self.categories_tree:
