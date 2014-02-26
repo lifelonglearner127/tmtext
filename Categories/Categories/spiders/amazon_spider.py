@@ -40,6 +40,9 @@ class AmazonSpider(BaseSpider):
     # counter for department id, will be used to autoincrement department id
     department_count = 0
 
+    # level to stop crawling (don't extract subcategories below this level)
+    LEVEL_BARRIER = 0
+
 
     # check if 2 catgory names are the same
     # does some normalization of the names and compares the words in them
@@ -67,7 +70,6 @@ class AmazonSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
         links_level1 = hxs.select("//div[@id='siteDirectory']//table//a")
         titles_level1 = hxs.select("//div//table//h2")
-        #items = []
 
         # add level 1 categories to items
 
@@ -190,22 +192,31 @@ class AmazonSpider(BaseSpider):
 
         # if item is found among extra_toplevel_categories_urls, and no product count was found, add info from that url
         extra_category = self.find_matching_key(item['text'], self.extra_toplevel_categories_urls)
-        if not prod_count_holder and extra_category:
-            
+
+        #yield item
+
+        # crawl level 0 categories (only for their product count and subcategories - no descriptions...)
+
+        if extra_category:
+        
             # collect number of products from this alternate URL
             # this will also extract subcategories and their count
             yield Request(self.extra_toplevel_categories_urls[extra_category], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
 
         else:
-
-            yield item
+            # extract subcategories and their count for category even if not in extra_...
+            yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
 
 
     # extract item count for a certain category, then yield item received in meta
-    # also extract and yield subcategories
+    # also extract and yield subcategories (and their subcategories, down to a certain level)
     # use menu on left side of the page on the category page
     # will mainly be used for categories in extra_toplevel_categories_urls
+
+    # Obs: does not extract description info
+    # Obs: it's not exhaustive. if page doesn't match what it expects, it gives up
     def extract_nrprods_and_subcats(self, response):
+
         hxs = HtmlXPathSelector(response)
 
         item = response.meta['item']
@@ -228,6 +239,9 @@ class AmazonSpider(BaseSpider):
         #TODO: test or make more robust
         subcategories = hxs.select("//h2[1]/following-sibling::ul[1]/li/a")
         for subcategory in subcategories:
+            # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
+            if not subcategory.select("span[@class='refinementLink']"):
+                continue
             subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
             subcategory_text = subcategory.select("span[@class='refinementLink']/text()").extract()[0].strip()
             # extract product count, clean it of commas and parantheses
@@ -269,7 +283,14 @@ class AmazonSpider(BaseSpider):
             # no description extracted
             item['description_wc'] = 0
 
-            yield item
+            # extract their subcategories as well (needed for "Home Improvement")
+            # stop at a certain level
+            if item['level'] > self.LEVEL_BARRIER:
+                yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+
+            else:
+                # stop here, yield the item
+                yield item
 
 
 
