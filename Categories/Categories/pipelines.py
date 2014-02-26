@@ -61,7 +61,7 @@ class CommaSeparatedLinesPipeline(object):
 			self.categories_tree[item['parent_catid']]['subcategories'].append(item['catid'])
 
 	def process_item(self, item, spider):
-		if spider.compute_nrproducts:
+		if hasattr(spider, 'compute_nrproducts') and spider.compute_nrproducts:
 			self.process_item_fortree(item)
 		else:
 			# if we're not aggregating number of products, just return the item
@@ -121,7 +121,7 @@ class CommaSeparatedLinesPipeline(object):
 
 	def close_spider(self, spider):
 		# if spider uses category tree, then all the output needs to be written to file now
-		if spider.compute_nrproducts:
+		if hasattr(spider, 'compute_nrproducts') and spider.compute_nrproducts:
 			# compute all nr_products for all categories using the tree
 			self.compute_item_counts()
 			for key in self.categories_tree:

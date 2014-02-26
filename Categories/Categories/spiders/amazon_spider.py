@@ -35,7 +35,7 @@ class AmazonSpider(BaseSpider):
 
     # flag indicating whether to compute overall product counts in pipelines phase for this spider.
     # if on, 'catid' and 'parent_catid' fields need to be implemented
-    compute_nrproducts = False
+    #compute_nrproducts = False
 
     # counter for department id, will be used to autoincrement department id
     department_count = 0
