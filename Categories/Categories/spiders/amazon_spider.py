@@ -37,6 +37,10 @@ class AmazonSpider(BaseSpider):
     # if on, 'catid' and 'parent_catid' fields need to be implemented
     compute_nrproducts = False
 
+    # counter for department id, will be used to autoincrement department id
+    department_count = 0
+
+
     # check if 2 catgory names are the same
     # does some normalization of the names and compares the words in them
     # to be used for identifying extra_toplevel_categories_urls when they occur in the sitemap
@@ -93,8 +97,6 @@ class AmazonSpider(BaseSpider):
             else:
                 yield item
 
-        department_id = 0
-
         # add level 1 categories to items
         for link in links_level1:
             item = CategoryItem()
@@ -115,7 +117,8 @@ class AmazonSpider(BaseSpider):
                 else:
                     special = False
 
-            department_id += 1
+            department_id = self.department_count
+            self.department_count += 1
 
             yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1, \
                 'department_text' : item['text'], 'department_url' : item['url'], 'department_id' : department_id})
@@ -250,6 +253,14 @@ class AmazonSpider(BaseSpider):
                 item['department_text'] = parent_item['department_text']
                 item['department_url'] = parent_item['department_url']
                 item['department_id'] = parent_item['department_id']
+
+            else:
+                # the parent must be a level 2 category - so this will be considered department
+                assert parent_item['level'] == 2
+                item['department_text'] = item['text']
+                item['department_url'] = item['url']
+                item['department_id'] = self.department_count
+                self.department_count += 1
 
             item['level'] = parent_item['level'] - 1
 
