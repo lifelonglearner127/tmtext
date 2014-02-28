@@ -80,43 +80,66 @@ class CommaSeparatedLinesPipeline(object):
 		for key in self.top_level_categories:
 			category_item = self.categories_tree[key]['item']
 			if 'nr_products' not in category_item:
-				category_item['nr_products'] = self.depth_first_count(key)
+
+				# compute nr_products from dict output of depth_first_count
+				count_dict = self.depth_first_count(key)
+				category_item['nr_products'] = sum(count_dict(values))
 
 	# complete nr_products field for all categories in the tree where it is missing, by using its children categories
 	# use depth-first traversal to collect all nr_products info for each category's subcategory
+	# return dictionary containing all product counts to be added to compute current one, indexed by category URL
 	def depth_first_count(self, key):
+		# build dictionary with keys = URLs of subcategories whose item count to add to current one, values = their item count
+		# this avoids duplicate subcategories and inaccurate final item counts (they are duplicates in terms of their pages' URLs)
+		# use dicionary to compute product count and add product count to current item; then return dictionary
+
+		# if it's available as extracted from the site, use that
+		if 'nr_products' in self.categories_tree[key]['item']:
+			count_dict = {self.categories_tree[key]['item']['url'] : self.categories_tree[key]['item']['nr_products']}
+			# no need to set its item's product count, it is already set
+
+			return count_dict
+
+		# else - if it's not available as extracted from the site, compute it from its subcategorie
+
 		if 'subcategories' in self.categories_tree[key]:
 			subcategories = self.categories_tree[key]['subcategories']
 
-			nr_products = 0
+			count_dict = {}
 
-			# collect item count from all subcategories
+		# collect item count from all subcategories
 
 			#TODO: problem: sometimes the same subcategory (URL) appears under different category subtrees, even different levels. it will end up being counted twice...
 			# example: Wine Racks, see its parents, both of the same department
 			for subcategory in subcategories:
-				# if it's available as extracted from the site, use that
 				if 'nr_products' in self.categories_tree[subcategory]['item']:
-					subcategory_product_count = self.categories_tree[subcategory]['item']['nr_products']
+					subcategory_count_dict = {self.categories.categories_tree[subcategory][subcategory]['url'] : self.categories_tree[subcategory]['item']['nr_products']}
 
 				else:
-					subcategory_product_count = self.depth_first_count(subcategory)
+					subcategory_count_dict = self.depth_first_count(subcategory)
 
-				# add subcategory item count to its parent's item count
-				nr_products += subcategory_product_count
+				# add subcategory categories dict to its parent's dict
+				count_dict.update(subcategory_count_dict)
 
+			# compute current item's product count based on its subcategories dict
+			nr_products = sum(count_dict.values())
+
+			# add its item count to its
 			self.categories_tree[key]['item']['nr_products'] = nr_products
 
-			return nr_products
+			print count_dict
 
-		# if there are no subcategories, it must be a leaf item
+			return count_dict
+
+		# if there are no subcategories and no product count, return 0
 		if 'subcategories' not in self.cateogries_tree[key] or not self.categores_tree[key]['subcategories']:
 			if 'nr_products' in self.categories_tree[key]:
 				nr_products = self.categories_tree[key]['nr_products']
 			else:
 				nr_products = 0
 
-			return nr_products
+			count_dict = {self.categories_tree[key]['item']['url'] : nr_products}
+			return count_dict
 
 
 	def close_spider(self, spider):
