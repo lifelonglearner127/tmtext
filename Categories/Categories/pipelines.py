@@ -83,7 +83,7 @@ class CommaSeparatedLinesPipeline(object):
 
 				# compute nr_products from dict output of depth_first_count
 				count_dict = self.depth_first_count(key)
-				category_item['nr_products'] = sum(count_dict(values))
+				category_item['nr_products'] = sum(count_dict.values())
 
 	# complete nr_products field for all categories in the tree where it is missing, by using its children categories
 	# use depth-first traversal to collect all nr_products info for each category's subcategory
@@ -113,7 +113,7 @@ class CommaSeparatedLinesPipeline(object):
 			# example: Wine Racks, see its parents, both of the same department
 			for subcategory in subcategories:
 				if 'nr_products' in self.categories_tree[subcategory]['item']:
-					subcategory_count_dict = {self.categories.categories_tree[subcategory][subcategory]['url'] : self.categories_tree[subcategory]['item']['nr_products']}
+					subcategory_count_dict = {self.categories_tree[subcategory]['item']['url'] : self.categories_tree[subcategory]['item']['nr_products']}
 
 				else:
 					subcategory_count_dict = self.depth_first_count(subcategory)
