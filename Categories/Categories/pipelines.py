@@ -127,7 +127,7 @@ class CommaSeparatedLinesPipeline(object):
 			# add its item count to its
 			self.categories_tree[key]['item']['nr_products'] = nr_products
 
-			print count_dict
+			#print count_dict
 
 			return count_dict
 

@@ -54,9 +54,9 @@ for line in f:
 
 for el in sorted(fields):
 	if type(el) is tuple:
-		print map(lambda x: unicode(x), el)
+		print map(lambda x: x.encode("utf-8"), el)
 	else:
-		print unicode(el)
+		print el.encode("utf-8")
 
 print len(fields), len(set(fields))
 

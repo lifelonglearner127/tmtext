@@ -82,8 +82,23 @@ class WalmartSpider(BaseSpider):
 
         department_id = 0
 
+        #TO remove:
+        # # artificial category - parent to all departments (root of entire sitemap tree). used to get total walmart product count
+        # sitemap_root = CategoryItem()
+        # sitemap_root['url'] = "http://www.walmart.com"
+        # sitemap_root['text'] = "Walmart"
+        # sitemap_root['department_id'] = 0
+        # sitemap_root['level'] = 2
+        # sitemap_root['catid'] = 0
+        # self.id_count += 1
+        # yield sitemap_root
+
         for link in parent_links:
             item = CategoryItem()
+
+            #TO remove:
+            # # link to artificial parent category
+            # item['parent_catid'] = 0
 
             item['text'] = link.select('text()').extract()[0]
             item['url'] = link.select('@href').extract()[0]

@@ -41,7 +41,7 @@ class AmazonSpider(BaseSpider):
     department_count = 0
 
     # level to stop crawling (don't extract subcategories below this level)
-    LEVEL_BARRIER = 0
+    LEVEL_BARRIER = -1
 
 
     # check if 2 catgory names are the same
@@ -122,7 +122,7 @@ class AmazonSpider(BaseSpider):
             department_id = self.department_count
             self.department_count += 1
 
-            yield Request(item['url'], callback = self.parseCategory, meta = {'parent' : item, 'level' : 1, \
+            yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item, 'level' : 1, \
                 'department_text' : item['text'], 'department_url' : item['url'], 'department_id' : department_id})
 
 
@@ -131,22 +131,25 @@ class AmazonSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
 
         # extract additional info for received parent and return it
-        item = response.meta['parent']
+        item = response.meta['item']
 
-        # add department name, url and id for item
+        # add department name, url and id for item (if not already set - from extract_item_count_and_subcategories)
 
-        item['department_text'] = response.meta['department_text']
-        item['department_url'] = response.meta['department_url']
-        item['department_id'] = response.meta['department_id']
+        if 'department_id' not in item:
+            item['department_text'] = response.meta['department_text']
+            item['department_url'] = response.meta['department_url']
+            item['department_id'] = response.meta['department_id']
 
-        # extract product count if available
-        prod_count_holder = hxs.select("//h2[@class='resultCount']/span/text()").extract()
-        if prod_count_holder:
-            prod_count = prod_count_holder[0]
-            # extract number
-            m = re.match(".*\s*of\s*([0-9,]+)\s*Results\s*", prod_count)
-            if m:
-                item['nr_products'] = int(re.sub(",","",m.group(1)))
+
+        # extract product count if available and not already extracted (in extract_itemcount_and_subcategories, from menu of the left, without crawling the actual url)
+        if 'nr_products' not in item:
+            prod_count_holder = hxs.select("//h2[@class='resultCount']/span/text()").extract()
+            if prod_count_holder:
+                prod_count = prod_count_holder[0]
+                # extract number
+                m = re.match(".*\s*of\s*([0-9,]+)\s*Results\s*", prod_count)
+                if m:
+                    item['nr_products'] = int(re.sub(",","",m.group(1)))
 
         # extract description if available
         # only extracts descriptions that contain a h2. is that good?
@@ -213,7 +216,7 @@ class AmazonSpider(BaseSpider):
     # use menu on left side of the page on the category page
     # will mainly be used for categories in extra_toplevel_categories_urls
 
-    # Obs: does not extract description info
+    # after subcategories extracted, send them to parseCategory to extract description as well
     # Obs: it's not exhaustive. if page doesn't match what it expects, it gives up
     def extract_nrprods_and_subcats(self, response):
 
@@ -221,76 +224,87 @@ class AmazonSpider(BaseSpider):
 
         item = response.meta['item']
 
-        prod_count_holder = hxs.select("//h2[@class='resultCount']/span/text()").extract()
-        if prod_count_holder:
-            prod_count = prod_count_holder[0]
-            # extract number
-            m = re.match(".*\s*of\s*([0-9,]+)\s*Results\s*", prod_count)
-            if m:
-                item['nr_products'] = int(re.sub(",","",m.group(1)))
+        # extract nr_products if not already extracted. necessary for extra_categories
+        if 'nr_products' not in item:
+            prod_count_holder = hxs.select("//h2[@class='resultCount']/span/text()").extract()
+            if prod_count_holder:
+                #print "DIDN'T HAVE PRODUCT COUNT", response.url
+                prod_count = prod_count_holder[0]
+                # extract number
+                m = re.match(".*\s*of\s*([0-9,]+)\s*Results\s*", prod_count)
+                if m:
+                    item['nr_products'] = int(re.sub(",","",m.group(1)))
 
         yield item
 
         parent_item = item
 
-        # extract subcategories
+        # extract subcategories, if level is above barrier
         # currently extracting subcategories for categories on any level, for level 2 this may cause duplicates (we already extract level 1)
         # extract subcategories from first menu on the left, assume this is the subcategories menu
         #TODO: test or make more robust
-        subcategories = hxs.select("//h2[1]/following-sibling::ul[1]/li/a")
-        for subcategory in subcategories:
-            # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
-            if not subcategory.select("span[@class='refinementLink']"):
-                continue
-            subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
-            subcategory_text = subcategory.select("span[@class='refinementLink']/text()").extract()[0].strip()
-            # extract product count, clean it of commas and parantheses
-            subcategory_prodcount_holder = subcategory.select("span[@class='narrowValue']/text()").extract()
-            if not subcategory_prodcount_holder:
-                continue
-            subcategory_prodcount = subcategory_prodcount_holder[0].replace(";nbsp&"," ").strip()
 
-            m = re.match("\(([0-9,]+)\)", subcategory_prodcount)
-            if m:
-                subcategory_prodcount = m.group(1).replace(",","")
-            
+        if item['level'] > self.LEVEL_BARRIER:
+            subcategories = hxs.select("//h2[1]/following-sibling::ul[1]/li/a")
+            for subcategory in subcategories:
+                # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
+                if not subcategory.select("span[@class='refinementLink']"):
+                    continue
+                subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
+                subcategory_text = subcategory.select("span[@class='refinementLink']/text()").extract()[0].strip()
+                # extract product count, clean it of commas and parantheses
+                subcategory_prodcount_holder = subcategory.select("span[@class='narrowValue']/text()").extract()
+                if not subcategory_prodcount_holder:
+                    continue
+                subcategory_prodcount = subcategory_prodcount_holder[0].replace(";nbsp&"," ").strip()
 
-            item = CategoryItem()
-            item['url'] = subcategory_url
-            item['text'] = subcategory_text
+                m = re.match("\(([0-9,]+)\)", subcategory_prodcount)
+                if m:
+                    subcategory_prodcount = m.group(1).replace(",","")
+                
 
-            item['parent_text'] = parent_item['text']
-            item['parent_url'] = parent_item['url']
+                item = CategoryItem()
+                item['url'] = subcategory_url
+                item['text'] = subcategory_text
 
-            # this won't be available for level 2 items
-            if 'department_text' in parent_item:
-                item['department_text'] = parent_item['department_text']
-                item['department_url'] = parent_item['department_url']
-                item['department_id'] = parent_item['department_id']
+                item['parent_text'] = parent_item['text']
+                item['parent_url'] = parent_item['url']
 
-            else:
-                # the parent must be a level 2 category - so this will be considered department
-                assert parent_item['level'] == 2
-                item['department_text'] = item['text']
-                item['department_url'] = item['url']
-                item['department_id'] = self.department_count
-                self.department_count += 1
+                # this won't be available for level 2 items
+                if 'department_text' in parent_item:
+                    item['department_text'] = parent_item['department_text']
+                    item['department_url'] = parent_item['department_url']
+                    item['department_id'] = parent_item['department_id']
 
-            item['level'] = parent_item['level'] - 1
+                else:
+                    # the parent must be a level 2 category - so this will be considered department
+                    assert parent_item['level'] == 2
+                    item['department_text'] = item['text']
+                    item['department_url'] = item['url']
+                    item['department_id'] = self.department_count
+                    self.department_count += 1
 
-            item['nr_products'] = subcategory_prodcount
+                item['level'] = parent_item['level'] - 1
 
-            # no description extracted
-            item['description_wc'] = 0
+                item['nr_products'] = subcategory_prodcount
 
-            # extract their subcategories as well (needed for "Home Improvement")
-            # stop at a certain level
-            if item['level'] > self.LEVEL_BARRIER:
-                yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+                # # no description extracted
+                # item['description_wc'] = 0
 
-            else:
-                # stop here, yield the item
-                yield item
+
+                # send to parseCategory to extract description as well
+                yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
+
+
+                # # extract their subcategories as well (needed for "Home Improvement")
+                # # stop at a certain level
+                # if item['level'] > self.LEVEL_BARRIER:
+                #     #yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+                #     yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
+
+                # else:
+                #     # stop here, yield the item
+                #     yield item
 
 
 
