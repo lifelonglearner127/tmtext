@@ -11,7 +11,7 @@ class Utils():
     # append domain name in front of relative URL if it's missing
     @staticmethod
     def add_domain(url, root_url):
-        if not re.match("http:.*", url):
+        if not re.match("https?:.*", url):
             url = root_url + url
         return url
 
