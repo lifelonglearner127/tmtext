@@ -43,6 +43,11 @@ class AmazonSpider(BaseSpider):
     # level to stop crawling (don't extract subcategories below this level)
     LEVEL_BARRIER = -1
 
+    # associates department names with their ids
+    departments_ids = {}
+    # associates department names with their urls (will be available only for extra_categories)
+    department_urls = {}
+
 
     # check if 2 catgory names are the same
     # does some normalization of the names and compares the words in them
@@ -78,6 +83,11 @@ class AmazonSpider(BaseSpider):
         special_item['text'] = titles_level1[0].select('text()').extract()[0]
         special_item['level'] = 2
         special_item['special'] = 1
+        special_item['department_text'] = special_item['text']
+        special_item['department_id'] = self.department_count
+        self.departments_ids[special_item['text']] = special_item['department_id']
+        self.department_count += 1
+
 
         #items.append(special_item)
         yield special_item
@@ -87,11 +97,17 @@ class AmazonSpider(BaseSpider):
             item = CategoryItem()
             item['text'] = title.select('text()').extract()[0]
             item['level'] = 2
+            item['department_text'] = item['text']
+            item['department_id'] = self.department_count
+            self.departments_ids[item['text']] = item['department_id']
+            self.department_count += 1
 
             # if item is found among extra_toplevel_categories_urls, add info from that url
             extra_category = self.find_matching_key(item['text'], self.extra_toplevel_categories_urls)
             if extra_category:
                 item['url'] = self.extra_toplevel_categories_urls[extra_category]
+                item['department_url'] = item['url']
+                self.department_urls[item['text']] = item['url']
 
                 # collect number of products from this alternate URL
                 yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
@@ -109,8 +125,19 @@ class AmazonSpider(BaseSpider):
 
             parent = link.select("parent::node()/parent::node()/preceding-sibling::node()")
             parent_text = parent.select('text()').extract()
+
+            # category should have a parent (its department) and that parent should have been extracted earlier (above) and put in the ids dictionary, necessary for getting the department id
+            assert parent_text
+            assert parent_text[0] in self.departments_ids
             if parent_text:
                 item['parent_text'] = parent_text[0]
+                item['department_text'] = item['parent_text']
+                item['department_id'] = self.departments_ids[item['department_text']]
+
+                # get department url from department_urls, will be availble only for extra_categories
+                if item['department_text'] in self.department_urls:
+                    assert self.find_matching_key(item['department_text'], self.extra_toplevel_categories_urls)
+                    item['department_url'] = self.department_urls[item['department_text']]
 
                 # if its parent is the special category, mark this one as special too
                 if (item['parent_text'] == special_item['text']):
@@ -119,12 +146,12 @@ class AmazonSpider(BaseSpider):
                 else:
                     special = False
 
-            department_id = self.department_count
-            self.department_count += 1
+            # department_id = self.department_count
+            # self.department_count += 1
 
-            item['department_text'] = item['text']
-            item['department_url'] = item['url']
-            item['department_id'] = department_id
+            # item['department_text'] = item['text']
+            # item['department_url'] = item['url']
+            # item['department_id'] = department_id
 
             yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
@@ -268,19 +295,28 @@ class AmazonSpider(BaseSpider):
                 item['parent_text'] = parent_item['text']
                 item['parent_url'] = parent_item['url']
 
-                # this won't be available for level 2 items
+                # considering departments to be level 2 categories (top level) - so every category must have a department text
+                assert 'department_text' in parent_item
                 if 'department_text' in parent_item:
                     item['department_text'] = parent_item['department_text']
-                    item['department_url'] = parent_item['department_url']
+                    #item['department_url'] = parent_item['department_url']
                     item['department_id'] = parent_item['department_id']
 
+                # only level 2 categories in extra_categories have department_url
+                if 'department_url' in parent_item:
+                    item['department_url'] = parent_item['department_url']
                 else:
-                    # the parent must be a level 2 category - so this will be considered department
-                    assert parent_item['level'] == 2
-                    item['department_text'] = item['text']
-                    item['department_url'] = item['url']
-                    item['department_id'] = self.department_count
-                    self.department_count += 1
+                    assert not self.find_matching_key(item['department_text'], self.extra_toplevel_categories_urls)
+                    if self.find_matching_key(item['department_text'], self.extra_toplevel_categories_urls):
+                        print "DEPARTMENT_TEXT", item['department_text'], "--"+str(self.find_matching_key(item['department_text'], self.extra_toplevel_categories_urls))+"--"
+
+                # else:
+                #     # the parent must be a level 2 category - so this will be considered department
+                #     assert parent_item['level'] == 2
+                #     item['department_text'] = item['text']
+                #     #item['department_url'] = item['url']
+                #     item['department_id'] = self.department_count
+                #     self.department_count += 1
 
                 item['level'] = parent_item['level'] - 1
 
