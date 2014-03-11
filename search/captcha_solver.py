@@ -8,9 +8,6 @@ import sys
 import os
 import re
 
-#import deskew
-import segment_image
-
 
 class CaptchaBreaker:
 
@@ -101,6 +98,61 @@ class CaptchaBreaker:
 			sys.stderr.write("Could not add borders, shape " + str(height) + "," + str(width) + "\n")
 		return dst
 
+	# segment image into letters, return images corresponding to letters in their order of appearance
+	def segment(self, im):
+
+		gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+		#blur = cv2.GaussianBlur(gray,(5,5),0)
+
+		#cv2.threshold(blur,220,255,cv2.THRESH_BINARY_INV, thresh)
+		thresh = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,1,11,2)
+
+		#cv2.imshow('thresh', thresh)
+
+		#################      Now finding Contours         ###################
+		kernel = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
+
+		#TODO: try to vary iterations
+		thresh = cv2.erode(thresh,kernel,iterations = 1)
+
+		#cv2.imwrite('thresh.jpg', thresh)
+		contours,hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+
+		#i=0
+		rois = []
+		im2 = np.copy(im)
+		for cnt in contours:
+		  
+		    #print "area above 50"
+		    [x,y,w,h] = cv2.boundingRect(cnt)
+
+		    # reject subimages with height or width below 5 pixels
+		    if (h<5) or (w<5):
+		    	continue
+
+		    #print "height above 10"
+		    
+		    cv2.rectangle(im2,(x,y),(x+w,y+h),(0,0,255),2)
+	    
+		    roi = gray[y:y+h,x:x+w]
+
+		    # if y>5 and x>5:
+		    # 	roi = gray[y-5:y+h+5,x-5:x+w+5]
+
+		    # store roi and x coordinate to sort by
+		    rois.append((roi, x))
+		    # cv2.imwrite('letter'+str(i)+'.jpg',roi)
+		    # i+=1
+
+		    # roismall = cv2.resize(roi,(10,10))
+
+		#cv2.imwrite('segmented.jpg', im2)
+
+		# sort rois by x coordinate
+		ret = map(lambda x: x[0],sorted(rois, key=lambda x: x[1]))
+
+		return ret
+
 	def get_images_from_dir(self, directory):
 		train_images_names = os.listdir(directory)
 		train_images = []
@@ -136,7 +188,7 @@ class CaptchaBreaker:
 		return (images, labels)
 
 	def get_images_from_captcha(self, filename):
-		images = segment_image.segment(cv2.imread(filename))
+		images = self.segment(cv2.imread(filename))
 
 		for i in range(len(images)):
 			images[i] = cv2.adaptiveThreshold(images[i],255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,1,11,2)
