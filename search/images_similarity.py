@@ -95,7 +95,10 @@ def add_borders(image, target_height, target_width):
 		sys.stderr.write("Could not add borders, shape " + str(height) + "," + str(width) + "\n")
 	return dst
 
-def images_identical(image1, image2):
+def images_identical(image_name1, image_name2):
+
+	image1 = cv2.imread(image_name1)
+	image2 = cv2.imread(image_name2)
 
 	# #TODO: fix this for images where it's not clear which is bigger
 	# # image1 should be the bigger image
@@ -186,11 +189,5 @@ def images_identical(image1, image2):
 	return score
 
 if __name__=='__main__':
-	image1 = cv2.imread(sys.argv[1])
-	image2 = cv2.imread(sys.argv[2])
 
-	# image1 = cv2.imread("image1.jpg")
-	# image2 = cv2.imread("image2.jpg")
-
-
-	print images_identical(image1, image2)
+	print images_identical(sys.argv[1], sys.argv[2])
