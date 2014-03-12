@@ -41,7 +41,7 @@ class AmazonSpider(BaseSpider):
     department_count = 0
 
     # level to stop crawling (don't extract subcategories below this level)
-    LEVEL_BARRIER = -1
+    LEVEL_BARRIER = -2
 
     # associates department names with their ids
     departments_ids = {}
@@ -276,7 +276,7 @@ class AmazonSpider(BaseSpider):
                 if not subcategory.select("span[@class='refinementLink']"):
                     continue
                 subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
-                subcategory_text = subcategory.select("span[@class='refinementLink']/text()").extract()[0].strip()
+                subcategory_text = subcategory.select("span[@class='refinementLink']//text()").extract()[0].strip()
                 # extract product count, clean it of commas and parantheses
                 subcategory_prodcount_holder = subcategory.select("span[@class='narrowValue']/text()").extract()
                 if not subcategory_prodcount_holder:

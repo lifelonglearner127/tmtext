@@ -59,7 +59,7 @@ def segment(im):
 	# sort rois by size
 	#TODO: correct?
 	ret = map(lambda x: x[0],sorted(rois, key=lambda x: -len(x[0])))
-	print map(lambda x: len(x), ret)
+	#print map(lambda x: len(x), ret)
 
 	return ret[0]
 
@@ -95,7 +95,11 @@ def add_borders(image, target_height, target_width):
 		sys.stderr.write("Could not add borders, shape " + str(height) + "," + str(width) + "\n")
 	return dst
 
-def images_identical(image_name1, image_name2):
+
+# tests if 2 images given by their filenames are the same
+# returns a confidence score
+# method: 1 - use median of pixels, 2 - use average of pixels
+def images_identical(image_name1, image_name2, method=1):
 
 	image1 = cv2.imread(image_name1)
 	image2 = cv2.imread(image_name2)
@@ -179,9 +183,12 @@ def images_identical(image_name1, image_name2):
 
 	#TODO: experiment with median vs average
 	# maybe include some way of enforcing perfectly identical pixels. or very very close. hm. i guess that's what median does?
-	print 'average', numpy.average(differences), 'score', (255.0 - numpy.average(differences)) / 255 * 100
-	print 'median', numpy.median(differences), 'score', (255.0 - numpy.median(differences)) / 255 * 100
-	medium_difference = numpy.average(differences)
+	if method==2:
+		#print 'average', numpy.average(differences), 'score', (255.0 - numpy.average(differences)) / 255 * 100
+		medium_difference = numpy.average(differences)
+	if method==1:
+		#print 'median', numpy.median(differences), 'score', (255.0 - numpy.median(differences)) / 255 * 100
+		medium_difference = numpy.median(differences)
 
 
 	# compute confidence score for match
@@ -190,4 +197,4 @@ def images_identical(image_name1, image_name2):
 
 if __name__=='__main__':
 
-	print images_identical(sys.argv[1], sys.argv[2])
+	print images_identical(sys.argv[1], sys.argv[2], 2)
