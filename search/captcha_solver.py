@@ -8,6 +8,8 @@ import sys
 import os
 import re
 
+import urllib
+
 
 class CaptchaBreaker:
 
@@ -236,8 +238,8 @@ class CaptchaBreaker:
 
 	#TODO: doesn't work
 	def train_from_file(self, train_data_file):
-		train = np.load(train_data_file + "_images.npy")
-		train_labels = np.load(train_data_file + "_labels.npy")
+		train = np.load(train_data_file + "/train_captchas_data_images.npy")
+		train_labels = np.load(train_data_file + "/train_captchas_data_labels.npy")
 		knn = cv2.KNearest()
 		knn.train(train,train_labels)
 
@@ -282,44 +284,107 @@ class CaptchaBreaker:
 		print accuracy
 
 
+# wrapper for CaptchaBreaker that uses it to solve captchas, trains it only on first call of solving method
+class CaptchaBreakerWrapper():
+
+	# captcha breaker
+	CB = None
+
+	# paths for data necessary for captcha solving
+	CAPTCHAS_DIR = "captchas"
+	SOLVED_CAPTCHAS_DIR = "solved_captchas"
+	TRAIN_DATA_PATH = "train_captchas_data"
+
+	# given an image URL of the captcha, download the image and solve the captcha, return the result as text
+	# set debug_info to True for printing debug messages on stderr
+	def solve_captcha(self, image_URL, debug_info=True):
+
+		# create necessary directories
+		if not os.path.exists(self.CAPTCHAS_DIR):
+			os.makedirs(self.CAPTCHAS_DIR)
+		if not os.path.exists(self.SOLVED_CAPTCHAS_DIR):
+			os.makedirs(self.SOLVED_CAPTCHAS_DIR)
+
+		# solve captcha
+		
+		# get image name
+		m = re.match(".*/(Captcha_.*)",image_URL)
+		if not m:
+			return None
+
+		else:
+			image_name = m.group(1)
+
+			# download image
+			urllib.urlretrieve(image_URL, self.CAPTCHAS_DIR + "/" + image_name)
+
+			captcha_text = None
+
+			try:
+				# solve captcha
+
+				# train the classifier the first time it's used.
+				# so if it's not been initialized, train it now
+				if not self.CB:
+					self.CB = CaptchaBreaker(self.TRAIN_DATA_PATH)
+					sys.stderr.write("Training captcha classifier...\n")
+
+
+				captcha_text = self.CB.test_captcha(self.CAPTCHAS_DIR + "/" + image_name)
+
+				# save it again with solved captcha text as name
+				urllib.urlretrieve(image_URL, self.SOLVED_CAPTCHAS_DIR + "/" + captcha_text + ".jpg")
+				sys.stderr.write("Solving captcha: " + image_URL + " with result " + captcha_text + "\n")
+
+			except Exception, e:
+				sys.stderr.write("Exception from captcha solving, for captcha " + self.CAPTCHAS_DIR + "/" + image_name + "\nException message: " + str(e) + "\n")
+
+			return captcha_text
+
+
 if __name__=="__main__":
 
-	np.set_printoptions(threshold=np.nan)
-	# get train and test arguments
-	train_data = sys.argv[1]
+	# np.set_printoptions(threshold=np.nan)
+	# # get train and test arguments
+	# train_data = sys.argv[1]
 
-	if os.path.isdir(train_data):
-		CB = CaptchaBreaker(train_data, from_dir=True)
-	else:
-		CB = CaptchaBreaker(train_data, from_dir=False)
+	# if os.path.isdir(train_data):
+	# 	CB = CaptchaBreaker(train_data, from_dir=True)
+	# else:
+	# 	CB = CaptchaBreaker(train_data, from_dir=False)
 
-	# iterate through all left arguments (they are considered to be test data)
-	arg = 2
-	while arg < len(sys.argv):
-		test_data = sys.argv[arg]
+	# # iterate through all left arguments (they are considered to be test data)
+	# arg = 2
+	# while arg < len(sys.argv):
+	# 	test_data = sys.argv[arg]
 
-		# # decide if training should be done from directory or data file
-		# if os.path.isdir(train_data):
-		# 	model = train_from_dir(train_data, "train_all_data")
-		# else:
-		# 	# doesn't work
-		# 	model = train_from_file(train_data)
+	# 	# # decide if training should be done from directory or data file
+	# 	# if os.path.isdir(train_data):
+	# 	# 	model = train_from_dir(train_data, "train_all_data")
+	# 	# else:
+	# 	# 	# doesn't work
+	# 	# 	model = train_from_file(train_data)
 
-		# decide if testing should be done on directory or captcha
-		if os.path.isdir(test_data):
-			CB.test_dir(test_data)
-		else:
-			result = CB.test_captcha(test_data)
-			# test accuracy
-			m = re.match('.*/(.*)\.jpg', test_data)
+	# 	# decide if testing should be done on directory or captcha
+	# 	if os.path.isdir(test_data):
+	# 		CB.test_dir(test_data)
+	# 	else:
+	# 		result = CB.test_captcha(test_data)
+	# 		# test accuracy
+	# 		m = re.match('.*/(.*)\.jpg', test_data)
 
-			if not m:
-				m = re.match("(.*)\.jpg", test_data)
-			captcha_name = m.group(1)
-			print result
-			if result == captcha_name:
-				print 'OK!'
-			else:
-				print 'NOT OK; actual', captcha_name
-			print
-		arg += 1
+	# 		if not m:
+	# 			m = re.match("(.*)\.jpg", test_data)
+	# 		captcha_name = m.group(1)
+	# 		print result
+	# 		if result == captcha_name:
+	# 			print 'OK!'
+	# 		else:
+	# 			print 'NOT OK; actual', captcha_name
+	# 		print
+	# 	arg += 1
+
+	CW = CaptchaBreakerWrapper()
+	CW.solve_captcha("http://ecx.images-amazon.com/captcha/bfhuzdtn/Captcha_distpnvhaw.jpg")
+	CW.solve_captcha("http://ecx.images-amazon.com/captcha/bfhuzdtn/Captcha_distpnvhaw.jpg")
+	CW.solve_captcha("http://ecx.images-amazon.com/captcha/bfhuzdtn/Captcha_distpnvhaw.jpg")

@@ -35,57 +35,9 @@ class AmazonSpider(SearchSpider):
 		self.target_site = "amazon"
 		self.start_urls = [ "http://www.amazon.com" ]
 
-		# captcha classifier. initialize to null and train the first time we encounter a captcha
-		self.CB = None
+		# captcha solver - will be used when encountering blocked page from amazon
+		self.CB = captcha_solver.CaptchaBreakerWrapper()
 
-		# paths for data necessary for captcha solving
-		self.CAPTCHAS_DIR = "captchas"
-		self.SOLVED_CAPTCHAS_DIR = "solved_captchas"
-		self.TRAIN_DATA_PATH = "train_captchas_data"
-
-	# given an image URL of the captcha, download the image and solve the captcha, return the result as text
-	def solve_captcha(self, image_URL):
-
-		# create necessary directories
-		if not os.path.exists(self.CAPTCHAS_DIR):
-			os.makedirs(self.CAPTCHAS_DIR)
-		if not os.path.exists(self.SOLVED_CAPTCHAS_DIR):
-			os.makedirs(self.SOLVED_CAPTCHAS_DIR)
-
-		# solve captcha
-		# get image name
-		m = re.match(".*/(Captcha_.*)",image_URL)
-		if not m:
-			return None
-
-		else:
-			image_name = m.group(1)
-
-			# download image
-			urllib.urlretrieve(image_URL, self.CAPTCHAS_DIR + "/" + image_name)
-
-			captcha_text = None
-
-			try:
-				# solve captcha
-
-				# train the classifier the first time it's used.
-				# so if it's not been initialized, train it now
-				if not self.CB:
-					self.CB = captcha_solver.CaptchaBreaker(self.TRAIN_DATA_PATH)
-					self.log("Training captcha classifier...", level=log.INFO)
-
-
-				captcha_text = self.CB.test_captcha(self.CAPTCHAS_DIR + "/" + image_name)
-
-				# save it again with solved captcha text as name
-				urllib.urlretrieve(image_URL, self.SOLVED_CAPTCHAS_DIR + "/" + captcha_text + ".jpg")
-				self.log("Solving captcha: " + image_URL + " with result " + captcha_text, level=log.WARNING)
-
-			except Exception, e:
-				self.log("Exception from captcha solving, for captcha " + self.CAPTCHAS_DIR + "/" + image_name + "\nException message: " + str(e), level=log.ERROR)
-
-			return captcha_text
 
 	# check if a certain URL is valid or gets a 404 response
 	def is_valid_url(self, URL):
@@ -209,7 +161,7 @@ class AmazonSpider(SearchSpider):
 				captcha_text = None
 				image = hxs.select(".//img/@src").extract()
 				if image:
-					captcha_text = self.solve_captcha(image[0])
+					captcha_text = self.CB.solve_captcha(image[0])
 
 				# value to use if there was an exception
 				if not captcha_text:
