@@ -41,6 +41,9 @@ class WalmartSpider(BaseSpider):
     # last used category id, used for autoincrementing ids idenrifying categories
     id_count = 0
 
+    # hardcoded values for special category's item count. Currently used for 'Value of the day' that typically has fixed number of products, and nowhere to extract it from page
+    special_itemcount = {'value of the day' : 2}
+
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         #links = hxs.select("//div[@class='MidContainer']/div[3]//a[@class='NavM']")
@@ -309,8 +312,16 @@ class WalmartSpider(BaseSpider):
             m2 = m2 = re.match("\s*Items\s*[0-9\-]+\s*of\s*([0-9]+)\s*total\s*", wc_field[0])
             if m2:
                 item['nr_products'] = int(m2.group(1))
+
+        # set item count for special items (hardcoded in special_itemcount)
+        if item['text'].lower() in self.special_itemcount:
+            item['nr_products'] = self.special_itemcount[item['text'].lower()]
+
+
+        # Extract subcategories if no product count found
+        if 'nr_products' in item:
             yield item
-    
+
         else:
             # look for links to subcategory pages in menu
             subcategories_links = hxs.select("//div[contains(@class, 'G1001 LeftNavRM')]/div[contains(@class, 'yuimenuitemlabel browseInOuter')]/a[@class='browseIn']")
