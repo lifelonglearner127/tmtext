@@ -12,7 +12,7 @@ To try it I recommend:
 In another terminal:
 # cd url_service
 # source bin/activate
-# python tests_url_service.py
+# python -m unittest tests_url_service.py
 
 If that works, the environment is OK and the service is working properly.
 
