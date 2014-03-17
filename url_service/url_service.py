@@ -110,11 +110,6 @@ def url_load_failed(request):
 
     return response
 
-    # Read Form.
-    # INSERT
-
-    return Response()
-
 
 ## subscribers
 
