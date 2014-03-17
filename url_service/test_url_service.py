@@ -26,7 +26,7 @@ class UrlServiceTest(unittest.TestCase):
         # is tested.
 
         self.url_base = u'http://www.example.com/'
-        self.url_paths = ['a', 'b', 'c']
+        self.url_paths = ['a', 'b', 'c', '']
         self.queued_urls = list(map(list, zip(
             [self.url_base + path for path in self.url_paths],
             count(1), count(100, 100), count(1000, 1000))))
@@ -37,6 +37,7 @@ class UrlServiceTest(unittest.TestCase):
         # Clear the DB.
         self.db.execute("DELETE FROM queued_url")
         self.db.execute("DELETE FROM raw_pages")
+        self.db.execute("DELETE FROM load_failure")
 
         self.db.executemany(
             """INSERT
