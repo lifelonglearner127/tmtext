@@ -310,6 +310,8 @@ class CaptchaBreakerWrapper():
 		# get image name
 		m = re.match(".*/(Captcha_.*)",image_URL)
 		if not m:
+			if debug_info:
+				sys.stderr.write("Couldn't extract captcha image name from URL ", image_url)
 			return None
 
 		else:
@@ -327,17 +329,19 @@ class CaptchaBreakerWrapper():
 				# so if it's not been initialized, train it now
 				if not self.CB:
 					self.CB = CaptchaBreaker(self.TRAIN_DATA_PATH)
-					sys.stderr.write("Training captcha classifier...\n")
+					if debug_info:
+						sys.stderr.write("Training captcha classifier...\n")
 
 
 				captcha_text = self.CB.test_captcha(self.CAPTCHAS_DIR + "/" + image_name)
 
 				# save it again with solved captcha text as name
 				urllib.urlretrieve(image_URL, self.SOLVED_CAPTCHAS_DIR + "/" + captcha_text + ".jpg")
-				sys.stderr.write("Solving captcha: " + image_URL + " with result " + captcha_text + "\n")
+				if debug_info:
+					sys.stderr.write("Solving captcha: " + image_URL + " with result " + captcha_text + "\n")
 
 			except Exception, e:
-				sys.stderr.write("Exception from captcha solving, for captcha " + self.CAPTCHAS_DIR + "/" + image_name + "\nException message: " + str(e) + "\n")
+				sys.stderr.write("Exception on solving captcha, for captcha " + self.CAPTCHAS_DIR + "/" + image_name + "\nException message: " + str(e) + "\n")
 
 			return captcha_text
 
@@ -385,6 +389,6 @@ if __name__=="__main__":
 	# 	arg += 1
 
 	CW = CaptchaBreakerWrapper()
-	CW.solve_captcha("http://ecx.images-amazon.com/captcha/bfhuzdtn/Captcha_distpnvhaw.jpg")
+	CW.solve_captcha("http://ecx.images-amazon.com/captcha/bfhuzdtn/Captcha_distpnvhaw.jpg", False)
 	CW.solve_captcha("http://ecx.images-amazon.com/captcha/bfhuzdtn/Captcha_distpnvhaw.jpg")
 	CW.solve_captcha("http://ecx.images-amazon.com/captcha/bfhuzdtn/Captcha_distpnvhaw.jpg")
