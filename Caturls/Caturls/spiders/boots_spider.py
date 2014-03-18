@@ -63,11 +63,9 @@ class BootsSpider(CaturlsSpider):
 		# return q
 
 		# parse url into parameters
-		print "URL:", query_string
 		parameters_strings = re.findall("[^\?&]+=[^\?&#]*", query_string)
 		# extract parameter and value for each
 		parameters = dict(map(lambda x: x.split("="), parameters_strings))
-		print "PARAMS:", parameters
 
 		return parameters		
 
@@ -78,6 +76,7 @@ class BootsSpider(CaturlsSpider):
 		print "URL:", url
 		m = re.match("(http://[^\?]+\?)([^#]+)(.*)", url)
 		base = m.group(1)
+		# unconcode these - otherwise urlencode will encode them again (in build_boots_param_url)
 		query_string = urllib.unquote(m.group(2))
 		trailing = m.group(3)
 		return (base, query_string, trailing)
@@ -86,8 +85,10 @@ class BootsSpider(CaturlsSpider):
 	# used to build a url displaying filtered results (by brand)
 
 	# see applyN and applyNe and setPageNumber here http://www.boots.com/wcsstore/ConsumerDirectStorefrontAssetStore/javascript/boots.search.tabs.js
-	# value is either new_endeca_value for applyN and applyNe, or page value for setPage_number
-	def build_boots_param_url(self, url, js_function, t_param, value):
+	# value is either new_endeca_value for applyN and applyNe, or page value for setPageNumber
+
+	# max_page is special argument passed for js_function value of setPageNumber. if set, only sets page number if it's below max_page. used to avoid infinite pagination loops
+	def build_boots_param_url(self, url, js_function, t_param, value, max_page=None):
 
 		# parse url and extract query string
 		base, qs, trailing = self.parse_url(url)
@@ -103,6 +104,9 @@ class BootsSpider(CaturlsSpider):
 			changed_param = 'Ne'
 		if js_function == 'setPageNumber':
 			changed_param = 'page'
+			# if page value is higher than max_page, abort
+			if max_page and value > max_page:
+				return None
 		# if it was none of these, there was a problem
 		if not changed_param:
 			self.log("Couldn't match js function name to any known functions: " + js_function + " \n", level=log.ERROR)
@@ -162,12 +166,15 @@ class BootsSpider(CaturlsSpider):
 				self.log("Omitting brand " + brand_name + "\n", level=log.INFO)
 				continue
 
+			else:
+				print "CRAWLING BRAND", brand_name
+
 			# extract js call in href of brand element
 			js_call_string = self.extract_boots_js_args(brand_url)
 			# build url
 			brand_page = self.build_boots_param_url(url, *(js_call_string))
 
-			return Request(url = brand_page, callback = self.parseBrandPage)
+			yield Request(url = brand_page, callback = self.parseBrandPage)
 
 	# parse results page for one brand and extract product urls, handle pagination
 	def parseBrandPage(self, response):
@@ -182,16 +189,21 @@ class BootsSpider(CaturlsSpider):
 
 
 		# crawl next pages if any
+		# find if there is a next page
+		# select maximum page number on the page
+		current_page = map(lambda x: int(x), hxs.select("//div[@class='pagination']/ul/li/span[@class='selected']/text()").extract())
+		max_page = max(current_page)
 		# extract 'next page' link
 		next_page_link = hxs.select("//li[@class='next']/a")
-		previous_page_link = hxs.select("//li[@class='previous']/a")
-		# if we find a previous page, it means we've reached the end; abort. (otherwise the page number will increase forever...)
-		if next_page_link and not previous_page_link:
+		if next_page_link:
 			# extract js call to next page, use it to build the next page url
 			js_call_string = self.extract_boots_js_args(next_page_link.select("@href").extract()[0].encode("utf-8"))
-			next_page = self.build_boots_param_url(response.url, *(js_call_string))
+			print "MAX_PAGE", max_page
+			next_page = self.build_boots_param_url(response.url, *(js_call_string), max_page=max_page)
 
-			yield Request(url = next_page, callback = self.parseBrandPage)
+			# if there is no next page, function will return None
+			if next_page:
+				yield Request(url = next_page, callback = self.parseBrandPage)
 
 
 
