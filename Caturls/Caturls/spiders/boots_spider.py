@@ -36,12 +36,49 @@ class BootsSpider(CaturlsSpider):
 	def __init__(self, cat_page, outfile = "product_urls.txt", use_proxy = False, brands_file=None):
 		super(BootsSpider, self).__init__(cat_page=cat_page, outfile=outfile, use_proxy=use_proxy)
 		self.brands = []
+		self.brands_normalized = []
 		# if a file with a list of specific brands is specified, add them to a class field
 		if brands_file:
 			brands_file_h = open(brands_file, "r")
 			for line in brands_file_h:
 				self.brands.append(line.strip())
 			brands_file_h.close()
+
+			self.brands_normalized = reduce(lambda x, y: x+y, map(lambda x: self.brand_versions_fuzzy(x), self.brands))
+
+	# create normalized verions of a brand name to fuzzy match against - include fill brands, also split by words etc
+	def brand_versions_fuzzy(self, brand):
+		retval = []
+
+		# eliminate these words from brands words lists. their matching would not be relevant
+		exceptions = ['and', 'solutions', 'food', 'hair', 'simple']
+
+		brand = brand.lower()
+
+		# split by spaces and non-words
+		tokens = re.split("[^\w]+", brand)
+
+		# add tokens to final list, if they have > 2 letters (eliminate 's', or 'st')
+		retval += filter(lambda x: len(x)>2, tokens)
+
+		# add whole brand name with words concatenated to final list
+		concatenated = re.sub("[^\w]", "", brand)
+		retval.append(concatenated)
+
+		# remove exceptions from list
+		retval = filter(lambda x: x not in exceptions, retval)
+
+		return list(set(retval))
+
+
+	# determine if a brand name is among the filter brand names; use fuzzy matching
+	#TODO: this has problems such as matching 2 brands that contain common words, like 'solutions'. currently avoiding this by hardcoded exceptions list in brand_versions_fuzzy
+	def name_matches_brands(self, name):
+		name_versions = self.brand_versions_fuzzy(name)
+		common = set(name_versions).intersection(set(self.brands_normalized))
+
+		# return True if common is not empty
+		return not not common
 
 	
 	def parse(self, response):
@@ -169,7 +206,7 @@ class BootsSpider(CaturlsSpider):
 			brand_name = self.clean_brand_name(brand_link.select("text()").extract()[0])
 
 			# if we have a whitelist of brands and current brand is not on it, move on
-			if self.brands and brand_name not in self.brands:
+			if self.brands and not self.name_matches_brands(brand_name):
 				self.log("Omitting brand " + brand_name.encode("utf-8"), level=log.INFO)
 				continue
 
