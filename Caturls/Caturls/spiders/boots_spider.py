@@ -237,7 +237,10 @@ class BootsSpider(CaturlsSpider):
 		# find if there is a next page
 		# select maximum page number on the page
 		available_pages = map(lambda x: int(x), hxs.select("//div[contains(@id,'t1')]//div[@class='pagination']/ul/li/a/text()").re("[0-9]+"))
-		max_page = max(available_pages)
+		if available_pages:
+			max_page = max(available_pages)
+		else:
+			max_page = 0
 		# extract 'next page' link
 		# only select from t1 tab (also see build_url... on omitting t4)
 		next_page_link = hxs.select("//div[contains(@id,'t1')]//li[@class='next']/a")
