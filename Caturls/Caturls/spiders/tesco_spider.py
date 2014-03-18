@@ -12,6 +12,8 @@ from spiders_utils import Utils
 import re
 import sys
 
+import urllib
+import urlparse
 
 ################################
 # Run with 
@@ -21,6 +23,8 @@ import sys
 # (if specified, brands_filename contains list of brands that should be considered - one brand on each line. other brands will be ignored)
 #
 ################################
+
+#TODO: Notice! Some products are not part of any brand; the crawler extracts only using brand filters and if product is not under any brand then it will not be extracted
 
 
 class TescoSpider(CaturlsSpider):
@@ -131,6 +135,12 @@ class TescoSpider(CaturlsSpider):
 	def parseBrandPage(self, response):
 		hxs = HtmlXPathSelector(response)
 
+		# extract item count
+		if 'item_count' in response.meta:
+			total_item_count = reponse.meta['item_count']
+		else:
+			total_item_count = int(hxs.select("//p[@id='filtered-products-count']").re("[0-9]+")[0])
+
 		# extract product holder. not extracting <a> element directly because each product holder has many a elements (all just as good, but we only want one)
 		product_holders = hxs.select("//div[@class='product ']")
 		for product_holder in product_holders:
@@ -143,5 +153,43 @@ class TescoSpider(CaturlsSpider):
 
 			yield item
 
-			#TODO: pagination support?
+		# crawl next pages if any left
+		if 'offset' not in response.meta:
+			offset = 0
+		else:
+			offset = response.meta['offset']
+
+		next_page = self.build_next_page_url(response.url, total_item_count, offset)
+
+		# if there are more products to crawl, send new request
+		if next_page:
+			yield Request(url = next_page, callback = self.parseBrandPage, meta = {'offset' : offset + 1, 'total_item_count' : total_item_count})
+
+	# build next page url, if there are more products to crawl
+	def build_next_page_url(self, page, total_item_count, current_offset):
+		products_per_page = 20
+
+		# if we parsed all products, return
+		if (current_offset + 1) * 20 >= total_item_count:
+			return None
+
+		# if there are still products to crawl
+		
+		# extract query string
+		m = re.match("(http://www[^\?&]+)\?([^#]*)", page)
+		base_page_url = m.group(1)
+		query_string = urllib.unquote(m.group(2)) # this is needed to neutralize the effects of urlencode, otherwise everything will be encoded twice
+		# increase value of 'offset' parameter
+		parameters_dict = urlparse.parse_qs(query_string) # returns parameters values as lists
+		parameters = {p : parameters_dict[p][0] for p in parameters_dict}
+		if 'offset' not in parameters:
+			# no offset only if offset was 0
+			assert current_offset == 0
+
+		parameters['offset'] = (current_offset + 1) * products_per_page
+		next_page_url = base_page_url + "?" + urllib.urlencode(parameters)
+		return next_page_url
+
+
+
 
