@@ -73,7 +73,7 @@ class BootsSpider(CaturlsSpider):
 	# returns 3 strings: base url, query string, and trailing string if any
 	def parse_url(self, url):
 		# extract everything between ? and # or end of the url
-		#print "URL:", url
+		##print "URL:", url
 		m = re.match("(http://[^\?]+\?)([^#]+)(.*)", url)
 		base = m.group(1)
 		# unconcode these - otherwise urlencode will encode them again (in build_boots_param_url)
@@ -100,14 +100,24 @@ class BootsSpider(CaturlsSpider):
 		changed_param = None
 		if js_function == 'applyN':
 			changed_param = 'N'
+			print "OMITTING t4", js_function
+			#TODO: what is up with t4?
+			# omit t4 requests - they are duplicates and point to pages containing what we don't want... not sure what they are about
+			if t_param == 't4':
+				return None
 		if js_function == 'applyNe':
 			changed_param = 'Ne'
+			#TODO: what is up with t4?
+			# omit t4 requests - they are duplicates and point to pages containing what we don't want... not sure what they are about
+			if t_param == 't4':
+				return None
 		if js_function == 'setPageNumber':
 			changed_param = 'page'
 			# if page value is higher than max_page, abort
 			if max_page and int(value) > max_page:
-				print "REACHED MAX PAGE", value, max_page
+				#print "REACHED MAX PAGE", value, max_page
 				return None
+
 		# if it was none of these, there was a problem
 		if not changed_param:
 			self.log("Couldn't match js function name to any known functions: " + js_function + " \n", level=log.ERROR)
@@ -164,7 +174,9 @@ class BootsSpider(CaturlsSpider):
 
 			# if we have a whitelist of brands and current brand is not on it, move on
 			if self.brands and brand_name not in self.brands:
-				self.log("Omitting brand " + brand_name + "\n", level=log.INFO)
+				# js_call_string = self.extract_boots_js_args(brand_url)
+				# brand_page = self.build_boots_param_url(url, *(js_call_string))
+				# self.log("Omitting brand " + brand_name.encode("utf-8") + " " + brand_url.encode("utf-8") + " " + brand_page.encode("utf-8") + "\n", level=log.INFO)
 				continue
 
 			# extract js call in href of brand element
@@ -172,45 +184,51 @@ class BootsSpider(CaturlsSpider):
 			# build url
 			brand_page = self.build_boots_param_url(url, *(js_call_string))
 
-			print "CRAWLING BRAND", brand_name, brand_page
-
-			yield Request(url = brand_page, callback = self.parseBrandPage)
+			# if build_boots_param_url returned None don't do anything (for ex it aborts on requests with param t4, check function def for more details)
+			if brand_page:
+				print "CRAWLING BRAND", brand_name, brand_page
+				yield Request(url = brand_page, callback = self.parseBrandPage)
+			else:
+				print "No result from extracting params (maybe t4)", url
 
 	# parse results page for one brand and extract product urls, handle pagination
 	def parseBrandPage(self, response):
 		hxs = HtmlXPathSelector(response)
 
+		print "CRAWLING PAGE", response.url
+
 		# extract product urls
-		product_urls = hxs.select("//div[@class='pl_productName']/a/@href")
+		# only select from t1 tab (also see build_url... on omitting t4)
+		product_urls = hxs.select("//div[contains(@id,'t1')]//div[@class='pl_productName']/a/@href")
 		for url in product_urls:
 			item = ProductItem()
 			item['product_url'] = url.extract().encode("utf-8")
 			yield item
 
 
-		# crawl next pages if any
-		# find if there is a next page
-		# select maximum page number on the page
-		available_pages = map(lambda x: int(x), hxs.select("//div[@class='pagination']/ul/li/a/text()").re("[0-9]+"))
-		print "PAGES", available_pages, response.url
-		max_page = max(available_pages)
-		# extract 'next page' link
-		next_page_link = hxs.select("//li[@class='next']/a")
-		if next_page_link:
-			# extract js call to next page, use it to build the next page url
-			js_call_string = self.extract_boots_js_args(next_page_link.select("@href").extract()[0].encode("utf-8"))
-			print "MAX_PAGE", max_page
-			next_page = self.build_boots_param_url(response.url, *(js_call_string), max_page=max_page)
+		# # crawl next pages if any
+		# # find if there is a next page
+		# # select maximum page number on the page
+		# available_pages = map(lambda x: int(x), hxs.select("//div[@class='pagination']/ul/li/a/text()").re("[0-9]+"))
+		# #print "PAGES", available_pages, response.url
+		# max_page = max(available_pages)
+		# # extract 'next page' link
+		# next_page_link = hxs.select("//li[@class='next']/a")
+		# if next_page_link:
+		# 	# extract js call to next page, use it to build the next page url
+		# 	js_call_string = self.extract_boots_js_args(next_page_link.select("@href").extract()[0].encode("utf-8"))
+		# 	#print "MAX_PAGE", max_page
+		# 	next_page = self.build_boots_param_url(response.url, *(js_call_string), max_page=max_page)
 
-			# if there is no next page, function will return None
-			if next_page:
-				print "Crawling page", next_page
-				yield Request(url = next_page, callback = self.parseBrandPage)
-			else:
-				print "Omitting page " + next_page
+		# 	# if there is no next page, function will return None
+		# 	if next_page:
+		# 		#print "Crawling page", next_page
+		# 		yield Request(url = next_page, callback = self.parseBrandPage)
+		# 	else:
+		# 		print "Omitting page " + next_page
 
-		else:
-			print "NO NEXT PAGE", response.url
+		# else:
+		# 	print "NO NEXT PAGE", response.url
 
 
 
