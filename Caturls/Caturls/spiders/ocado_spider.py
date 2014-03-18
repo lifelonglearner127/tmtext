@@ -90,6 +90,10 @@ class OcadoSpider(CaturlsSpider):
 			# replace old page number by new page number
 			next_page_url = m.group(1) + str(current_page_nr + 1)
 
+			# test if current product count is what we would expect given the page number
+			products_per_page = 20
+			assert current_product_count == ((current_page_nr + 1) * products_per_page)
+
 			return next_page_url
 
 
