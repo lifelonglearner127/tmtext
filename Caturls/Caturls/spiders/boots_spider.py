@@ -73,7 +73,7 @@ class BootsSpider(CaturlsSpider):
 	# returns 3 strings: base url, query string, and trailing string if any
 	def parse_url(self, url):
 		# extract everything between ? and # or end of the url
-		print "URL:", url
+		#print "URL:", url
 		m = re.match("(http://[^\?]+\?)([^#]+)(.*)", url)
 		base = m.group(1)
 		# unconcode these - otherwise urlencode will encode them again (in build_boots_param_url)
@@ -105,7 +105,8 @@ class BootsSpider(CaturlsSpider):
 		if js_function == 'setPageNumber':
 			changed_param = 'page'
 			# if page value is higher than max_page, abort
-			if max_page and value > max_page:
+			if max_page and int(value) > max_page:
+				print "REACHED MAX PAGE", value, max_page
 				return None
 		# if it was none of these, there was a problem
 		if not changed_param:
@@ -166,13 +167,12 @@ class BootsSpider(CaturlsSpider):
 				self.log("Omitting brand " + brand_name + "\n", level=log.INFO)
 				continue
 
-			else:
-				print "CRAWLING BRAND", brand_name
-
 			# extract js call in href of brand element
 			js_call_string = self.extract_boots_js_args(brand_url)
 			# build url
 			brand_page = self.build_boots_param_url(url, *(js_call_string))
+
+			print "CRAWLING BRAND", brand_name, brand_page
 
 			yield Request(url = brand_page, callback = self.parseBrandPage)
 
@@ -191,8 +191,9 @@ class BootsSpider(CaturlsSpider):
 		# crawl next pages if any
 		# find if there is a next page
 		# select maximum page number on the page
-		current_page = map(lambda x: int(x), hxs.select("//div[@class='pagination']/ul/li/span[@class='selected']/text()").extract())
-		max_page = max(current_page)
+		available_pages = map(lambda x: int(x), hxs.select("//div[@class='pagination']/ul/li/a/text()").re("[0-9]+"))
+		print "PAGES", available_pages, response.url
+		max_page = max(available_pages)
 		# extract 'next page' link
 		next_page_link = hxs.select("//li[@class='next']/a")
 		if next_page_link:
@@ -203,7 +204,13 @@ class BootsSpider(CaturlsSpider):
 
 			# if there is no next page, function will return None
 			if next_page:
+				print "Crawling page", next_page
 				yield Request(url = next_page, callback = self.parseBrandPage)
+			else:
+				print "Omitting page " + next_page
+
+		else:
+			print "NO NEXT PAGE", response.url
 
 
 
