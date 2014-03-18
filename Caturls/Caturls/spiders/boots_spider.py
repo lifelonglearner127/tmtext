@@ -209,11 +209,11 @@ class BootsSpider(CaturlsSpider):
 		# crawl next pages if any
 		# find if there is a next page
 		# select maximum page number on the page
-		available_pages = map(lambda x: int(x), hxs.select("//div[@class='pagination']/ul/li/a/text()").re("[0-9]+"))
+		available_pages = map(lambda x: int(x), hxs.select("//div[contains(@id,'t1')]//div[@class='pagination']/ul/li/a/text()").re("[0-9]+"))
 		#print "PAGES", available_pages, response.url
 		max_page = max(available_pages)
 		# extract 'next page' link
-		next_page_link = hxs.select("//li[@class='next']/a")
+		next_page_link = hxs.select("//div[contains(@id,'t1')]//li[@class='next']/a")
 		if next_page_link:
 			# extract js call to next page, use it to build the next page url
 			js_call_string = self.extract_boots_js_args(next_page_link.select("@href").extract()[0].encode("utf-8"))
