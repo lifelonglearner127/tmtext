@@ -113,7 +113,8 @@ class OcadoSpider(CaturlsSpider):
 
 		for product_url in product_urls:
 			item = ProductItem()
-			item['product_url'] = product_url
+			# remove parameters in url
+			item['product_url'] = Utils.clean_url(product_url)
 
 			yield item
 
