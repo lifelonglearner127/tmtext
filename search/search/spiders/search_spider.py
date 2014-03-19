@@ -48,7 +48,8 @@ class SearchSpider(BaseSpider):
 	# "session-id-time" : "2082787201l", "session-id" : "177-0028713-4113141"}
 
 	allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
-					   "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", "boots.com"]
+					   "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
+					   "boots.com", "ocado.com"]
 
 	# pass product as argument to constructor - either product name or product URL
 	# arguments:
@@ -88,7 +89,8 @@ class SearchSpider(BaseSpider):
 
 
 		# parseURL functions, one for each supported origin site
-		self.parse_url_functions = {'staples' : self.parseURL_staples, 'walmart' : self.parseURL_walmart, 'newegg' : self.parseURL_newegg, 'boots' : self.parseURL_boots}
+		self.parse_url_functions = {'staples' : self.parseURL_staples, 'walmart' : self.parseURL_walmart, 'newegg' : self.parseURL_newegg,\
+									 'boots' : self.parseURL_boots, 'ocado' : self.parseURL_ocado}
 
 
 	def build_search_pages(self, search_query):
@@ -557,7 +559,7 @@ class SearchSpider(BaseSpider):
 
 		return (product_name, product_model, None)
 
-	#TODO: add price info? product model?
+	#TODO: add price info? product model? brand?
 	def parseURL_boots(self, hxs):
 		product_name_holder = hxs.select("//div[@class='pd_productName']/h2/span[@itemprop='name']/text()").extract()
 
@@ -567,6 +569,19 @@ class SearchSpider(BaseSpider):
 			product_name = product_name_holder[0]
 		else:
 			product_name = None
+
+		return (product_name, None, None)
+
+	#TODO: add price info? product model? brand?
+	def parseURL_ocado(self, hxs):
+		product_name_holder = hxs.select("//h1[@class='productTitle']/strong/text()").extract()
+
+		# TEST
+		assert product_name_holder
+		if product_name_holder:
+			product_name = product_name_holder[0].strip()
+		else:
+			product_name_holder = None
 
 		return (product_name, None, None)
 
