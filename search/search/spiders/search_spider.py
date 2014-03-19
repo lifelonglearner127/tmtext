@@ -563,8 +563,6 @@ class SearchSpider(BaseSpider):
 	def parseURL_boots(self, hxs):
 		product_name_holder = hxs.select("//div[@class='pd_productName']/h2/span[@itemprop='name']/text()").extract()
 
-		# TEST
-		assert product_name_holder
 		if product_name_holder:
 			product_name = product_name_holder[0]
 		else:
@@ -576,8 +574,6 @@ class SearchSpider(BaseSpider):
 	def parseURL_ocado(self, hxs):
 		product_name_holder = hxs.select("//h1[@class='productTitle']/strong/text()").extract()
 
-		# TEST
-		assert product_name_holder
 		if product_name_holder:
 			product_name = product_name_holder[0].strip()
 		else:
@@ -589,8 +585,6 @@ class SearchSpider(BaseSpider):
 	def parseURL_tesco(self, hxs):
 		product_name_holder = hxs.select("//h1[@class='page-title']/text()").extract()
 
-		# TEST
-		assert product_name_holder
 		if product_name_holder:
 			product_name = product_name_holder[0].strip()
 		else:
