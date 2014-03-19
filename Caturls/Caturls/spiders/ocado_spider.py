@@ -33,7 +33,7 @@ class OcadoSpider(CaturlsSpider):
 	#self.start_urls = ["http://www.ocado.com/webshop/getCategories.do?tags=%7C20000%7C21584%7C21585"]
 
 	# add brand option
-	def __init__(self, cat_page, outfile = "product_urls.txt", use_proxy = False, brands_file=None):
+	def __init__(self, cat_page, outfile = "product_urls.csv", use_proxy = False, brands_file=None):
 		super(OcadoSpider, self).__init__(cat_page=cat_page, outfile=outfile, use_proxy=use_proxy)
 
 		self.base_url = "http://www.ocado.com"
@@ -49,8 +49,27 @@ class OcadoSpider(CaturlsSpider):
 
 			self.brands_normalized = reduce(lambda x, y: x+y, map(lambda x: self.brand_versions_fuzzy(x), self.brands))
 
-	# extract urls to brands pages, apply brand filter if option set; send page urls to be further prsed for product urls
+		# this spider uses classification by product
+		self.with_categories = True
+
+	# extract category pages and send them to be further parsed
 	def parse(self, response):
+		hxs = HtmlXPathSelector(response)
+
+		categories_links = hxs.select("//div[@class='nav baseLevel']/ul/li/a")
+		for category_link in categories_links:
+			category_name = category_link.select("text()").extract()[0]
+			category_url = Utils.add_domain(category_link.select("@href").extract()[0], self.base_url)
+
+			# if brand filter is set, send to parseCategory to extract brands pages from menu
+			if self.brands:
+				yield Request(url = category_url, callback = self.parseCategory, meta = {'category' : category_name})
+			# if we're extracting all brands, send it directly to extract products from it
+			else:
+				yield Request(url = category_url, callback = self.parseBrand, meta = {'category' : category_name})
+
+	# from category pages: extract urls to brands pages, apply brand filter if option set; send page urls to be further prsed for product urls
+	def parseCategory(self, response):
 		hxs = HtmlXPathSelector(response)
 
 		brands_links = hxs.select("//li[contains(@class,'brandsSel')]/a")
@@ -64,7 +83,7 @@ class OcadoSpider(CaturlsSpider):
 				continue
 
 			# crawl brand page if it passed filter
-			yield Request(url = brand_url, callback = self.parseBrand)
+			yield Request(url = brand_url, callback = self.parseBrand, meta = {'category' : response.meta['category']})
 
 	# build url for next page (add page parameter)
 	# return only if there is a next page (we haven't crawled all products)
@@ -100,6 +119,9 @@ class OcadoSpider(CaturlsSpider):
 	def parseBrand(self, response):
 		hxs = HtmlXPathSelector(response)
 
+		# category of items on current page
+		category = response.meta['category']
+
 		# set parameters in meta specifying current product count and total product count for this brand
 		# to be used for deciding on stop criteria on pagination
 		if 'total_product_count' in response.meta:
@@ -119,6 +141,7 @@ class OcadoSpider(CaturlsSpider):
 			item = ProductItem()
 			# remove parameters in url
 			item['product_url'] = Utils.clean_url(product_url)
+			item['category'] = category
 
 			yield item
 
@@ -129,6 +152,6 @@ class OcadoSpider(CaturlsSpider):
 		next_page = self.build_next_page_url(response.url, product_count, cur_product_count, first=('total_product_count' not in response.meta))
 
 		if next_page:
-			yield Request(url = next_page, callback = self.parseBrand, meta = {'total_product_count' : product_count, 'current_product_count' : cur_product_count})
+			yield Request(url = next_page, callback = self.parseBrand, meta = {'total_product_count' : product_count, 'current_product_count' : cur_product_count, 'category' : category})
 
 		
