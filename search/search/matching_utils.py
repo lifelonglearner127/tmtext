@@ -220,8 +220,14 @@ class ProcessText():
 
 			# compute confidence of result (using 'threshold' as a landmark - score equal to threshold means 50% confidence)
 			# make sure it doesn't exceed 100%
-			if threshold != 0:
-				confidence = 100 * min(1.0, score/(2.0 * threshold))
+			
+			# compute confidence using fixed param of 1.0 (default threshold property). compute threshold for this pair for param=1, and compute confidence.
+			# if threshold property (param) will change, spider will accept confidence scores lower than 50 or reject scores higher
+			# param_ and threshold_ are local values used only for confidence score computation
+			param_ = 1.0
+			threshold_ = param_*(math.log(float(len(words1) + len(words2))/2, 10))*10
+			if threshold_ != 0:
+				confidence = 100 * min(1.0, score/(2.0 * threshold_))
 			else:
 				log.msg("Threshold was 0 for products: " + str(words1) + "; " + str(words2), level=log.INFO)
 				# this means the log in threshold computation above was 0, so products had 1-word names. if anything matched, confidence should be 100%
@@ -378,7 +384,7 @@ class ProcessText():
 			# if a plural was matched, use that instead of singular form
 			matched_brand = intersection_brands.pop()
 
-			## use first match for now - seems to work better. eg: when brand made of 2 words but in second name they are on pos 2 and 3
+			## (not in use: - use first match for now - seems to work better. eg: when brand made of 2 words but in second name they are on pos 2 and 3)
 			# use longest match as matched brand
 			for word in intersection_brands:
 				if len(word) > len(matched_brand):
