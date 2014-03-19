@@ -36,7 +36,7 @@ class TescoSpider(CaturlsSpider):
 	#self.start_urls = ["http://www.tesco.com/direct/health-beauty/hair-care/cat3376671.cat?catId=4294961777"]
 
 	# add brand option
-	def __init__(self, cat_page, outfile = "product_urls.txt", use_proxy = False, brands_file=None):
+	def __init__(self, cat_page, outfile = "product_urls.csv", use_proxy = False, brands_file=None):
 		super(TescoSpider, self).__init__(cat_page=cat_page, outfile=outfile, use_proxy=use_proxy)
 
 		self.base_url = "http://www.tesco.com"
@@ -52,17 +52,22 @@ class TescoSpider(CaturlsSpider):
 
 			self.brands_normalized = reduce(lambda x, y: x+y, map(lambda x: self.brand_versions_fuzzy(x), self.brands))
 
+		# this spider uses classification by product
+		self.with_categories = True
+
 	# parse category page - extract subcategories, send their url to be further parsed (to parseSubcategory)
 	def parse(self, response):
 		hxs = HtmlXPathSelector(response)
 
-		subcats_links = hxs.select("//h2[contains(text(),'categories')]/following-sibling::ul[1]/li/a/@href").extract()
-		# add domain
-		subcats_urls = map(lambda x: Utils.add_domain(x, self.base_url), subcats_links)
+		subcats_links = hxs.select("//h2[contains(text(),'categories')]/following-sibling::ul[1]/li/a")
+		for subcat_link in subcats_links:
+			# extract name
+			subcat_name = subcat_link.select("span/text()").extract()[0].strip()
+			# extract url, add domain
+			subcat_url = Utils.add_domain(subcat_link.select("@href").extract()[0], self.base_url)
 
-		# send subcategories to be further parsed
-		for subcat in subcats_urls:
-			yield Request(url = subcat, callback = self.parseSubcategory)
+			# send subcategories to be further parsed
+			yield Request(url = subcat_url, callback = self.parseSubcategory, meta = {'category' : subcat_name})
 
 	# parse subcategory page - extract urls to brands menu page; or directly to brands pages (if all available on the page)
 	def parseSubcategory(self, response):
@@ -75,7 +80,7 @@ class TescoSpider(CaturlsSpider):
 
 		if brands_menu_page:
 			# send request for brands pages to be extracted
-			yield Request(url = Utils.add_domain(brands_menu_page[0], self.base_url), callback = self.parseBrandsMenu)
+			yield Request(url = Utils.add_domain(brands_menu_page[0], self.base_url), callback = self.parseBrandsMenu, meta = {'category' : response.meta['category']})
 		else:
 
 			# if no 'more' link, extract brand pages directly from this page (it means they are all here)
@@ -91,7 +96,7 @@ class TescoSpider(CaturlsSpider):
 					continue
 
 				# send request for brands page to be parsed and its products extracted
-				yield Request(url = brand_url, callback = self.parseBrandPage)
+				yield Request(url = brand_url, callback = self.parseBrandPage, meta = {'category' : response.meta['category']})
 
 
 
@@ -125,7 +130,7 @@ class TescoSpider(CaturlsSpider):
 
 				#print brand_page_url
 
-				yield Request(url = brand_page_url, callback = self.parseBrandPage)
+				yield Request(url = brand_page_url, callback = self.parseBrandPage, meta = {'category' : response.meta['category']})
 
 			except Exception, e:
 				self.log("Couldn't extract brand page from menu: " + e, level=log.ERROR)
@@ -134,6 +139,9 @@ class TescoSpider(CaturlsSpider):
 	# parse a brand's page and extract product urls
 	def parseBrandPage(self, response):
 		hxs = HtmlXPathSelector(response)
+
+		# category of items on this page
+		category = response.meta['category']
 
 		# extract item count
 		if 'item_count' in response.meta:
@@ -150,6 +158,7 @@ class TescoSpider(CaturlsSpider):
 
 			item = ProductItem()
 			item['product_url'] = product_url
+			item['category'] = category
 
 			yield item
 
@@ -163,7 +172,7 @@ class TescoSpider(CaturlsSpider):
 
 		# if there are more products to crawl, send new request
 		if next_page:
-			yield Request(url = next_page, callback = self.parseBrandPage, meta = {'offset' : offset + 1, 'total_item_count' : total_item_count})
+			yield Request(url = next_page, callback = self.parseBrandPage, meta = {'offset' : offset + 1, 'total_item_count' : total_item_count, 'category' : category})
 
 	# build next page url, if there are more products to crawl
 	def build_next_page_url(self, page, total_item_count, current_offset):
