@@ -40,6 +40,9 @@ class CaturlsSpider(BaseSpider):
 		self.outfile = outfile
 		self.use_proxy = use_proxy
 
+		# flag to classify products by category, with additional 'cat' column in the output csv
+		self.with_categories = False
+
 		# keep track of parsed pages to avoid duplicates
 		# used for newegg motherboards
 		self.parsed_pages = []

@@ -33,7 +33,7 @@ class BootsSpider(CaturlsSpider):
 	#self.start_urls = ["http://www.boots.com/en/Beauty/Hair/"]
 
 	# add brand option
-	def __init__(self, cat_page, outfile = "product_urls.txt", use_proxy = False, brands_file=None):
+	def __init__(self, cat_page, outfile = "product_urls.csv", use_proxy = False, brands_file=None):
 		super(BootsSpider, self).__init__(cat_page=cat_page, outfile=outfile, use_proxy=use_proxy)
 		self.brands = []
 		self.brands_normalized = []
@@ -46,16 +46,51 @@ class BootsSpider(CaturlsSpider):
 
 			self.brands_normalized = reduce(lambda x, y: x+y, map(lambda x: self.brand_versions_fuzzy(x), self.brands))
 
-	
+		# this spider uses classification by product
+		self.with_categories = True
+
+
+	# extract categories and send their pages to further be parsed
 	def parse(self, response):
 		hxs = HtmlXPathSelector(response)
-		# get link to results by brand ('More' link in the left side menu under 'Brand')
-		brands_result_link = hxs.select("//h3[.//text()='Brand']/following-sibling::ul[1]/li[last()]/a/@href").extract()
 
-		if brands_result_link:
-			return Request(brands_result_link[0], callback=self.parsePage)
+		# extract links to subcategories
+		categories_links = hxs.select("//h3")[0].select("following-sibling::ul/li/a")
+		for category_link in categories_links:
+			category_name = self.clean_name(category_link.select("span/text()").extract()[0])
+			category_url = category_link.select("@href").extract()[0]
+
+			yield Request(url = category_url, callback = self.parseCategory, meta = {'category' : category_name})
+
+	# parse category page - further extract brands pages and pass on to be parsed. filter by brand if it applies
+	def parseCategory(self, response):
+		hxs = HtmlXPathSelector(response)
+
+		# if there is a 'More' link - get link to results by brand ('More' link in the left side menu under 'Brand')
+		more_brands_link = hxs.select("//h3[.//text()='Brand']/following-sibling::ul[1]/li/a/span[contains(text(),'More')]")
+		if more_brands_link:
+			brands_result_link = hxs.select("//h3[.//text()='Brand']/following-sibling::ul[1]/li[last()]/a/@href").extract()
+
+			if brands_result_link:
+				yield Request(brands_result_link[0], callback=self.parsePage, meta = {'category' : response.meta['category']})
+			else:
+				self.log("No link to search results by brand; aborting crawling", level=log.ERROR)
+
+		# if there is no 'More' link - extract links to brands pages directly
 		else:
-			self.log("No link to search results by brand; aborting crawling", level=log.ERROR)
+			brands_pages_links = hxs.select("//h3[.//text()='Brand']/following-sibling::ul[1]/li/a")
+			for brand_link in brands_pages_links:
+				brand_page_url = brand_link.select("@href").extract()[0]
+				brand_name = self.clean_name(brand_link.select("span/text()").extract()[0])
+
+				# if we have a whitelist of brands and current brand is not on it, move on
+				if self.brands and not self.name_matches_brands(brand_name):
+					self.log("Omitting brand " + brand_name.encode("utf-8"), level=log.INFO)
+					continue
+
+				# send brand page to be parsed (products extracted)
+				yield Request(url = brand_page_url, callback = self.parseBrandPage, meta = {'category' : response.meta['category']})
+
 
 	# extract query parameters from a URL, return them as a dict
 	# uses regex, no url libraries (alternative to urlparse)
@@ -153,9 +188,9 @@ class BootsSpider(CaturlsSpider):
 		m = re.match("javascript:(applyNe?|setPageNumber)\('(t[0-9])', '([0-9 ]+)'(, .*)?\);", js_call_string)
 		return (m.group(1), m.group(2), m.group(3))
 
-	# get name of brand as appears in menu and return actual brand name
-	def clean_brand_name(self, brand):
-		m = re.match("\s*(.+)\s*\([0-9]+\).*", brand, flags=re.DOTALL|re.MULTILINE)
+	# get name of brand/category as appears in menu and return actual brand name
+	def clean_name(self, name):
+		m = re.match("\s*(.+)\s*\([0-9]+\).*", name, flags=re.DOTALL|re.MULTILINE)
 		return m.group(1).strip()
 
 	# get link to results page containg brands menu (from parse) and extract link for each brand, pass it to parseBrandPage
@@ -169,7 +204,7 @@ class BootsSpider(CaturlsSpider):
 
 		for brand_link in brand_links:
 			brand_url = brand_link.select("@href").extract()[0]
-			brand_name = self.clean_brand_name(brand_link.select("text()").extract()[0])
+			brand_name = self.clean_name(brand_link.select("text()").extract()[0])
 
 			# if we have a whitelist of brands and current brand is not on it, move on
 			if self.brands and not self.name_matches_brands(brand_name):
@@ -183,12 +218,15 @@ class BootsSpider(CaturlsSpider):
 
 			# if build_boots_param_url returned None don't do anything (for ex it aborts on requests with param t4, check function def for more details)
 			if brand_page:
-				yield Request(url = brand_page, callback = self.parseBrandPage)
+				yield Request(url = brand_page, callback = self.parseBrandPage, meta = {'category' : response.meta['category']})
 
 
 	# parse results page for one brand and extract product urls, handle pagination
 	def parseBrandPage(self, response):
 		hxs = HtmlXPathSelector(response)
+
+		# category of items on these page
+		category = response.meta['category']
 
 		# extract product urls
 		# only select from t1 tab (also see build_url... on omitting t4)
@@ -196,6 +234,7 @@ class BootsSpider(CaturlsSpider):
 		for url in product_urls:
 			item = ProductItem()
 			item['product_url'] = url.extract().encode("utf-8")
+			item['category'] = category
 			yield item
 
 
@@ -217,7 +256,7 @@ class BootsSpider(CaturlsSpider):
 
 			# if there is no next page, function will return None
 			if next_page:
-				yield Request(url = next_page, callback = self.parseBrandPage)
+				yield Request(url = next_page, callback = self.parseBrandPage, meta = {'category' : category})
 			
 
 
