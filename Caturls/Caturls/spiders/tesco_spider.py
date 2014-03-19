@@ -67,7 +67,12 @@ class TescoSpider(CaturlsSpider):
 			subcat_url = Utils.add_domain(subcat_link.select("@href").extract()[0], self.base_url)
 
 			# send subcategories to be further parsed
-			yield Request(url = subcat_url, callback = self.parseSubcategory, meta = {'category' : subcat_name})
+			# if brand filter is set, senf to parseSubcategory for brands to be extracted etc
+			if self.brands:
+				yield Request(url = subcat_url, callback = self.parseSubcategory, meta = {'category' : subcat_name})
+			# if brand filter is not set, send directly to extract products
+			else:
+				yield Request(url = subcat_url, callback = self.parseBrandPage, meta = {'category' : subcat_name})
 
 	# parse subcategory page - extract urls to brands menu page; or directly to brands pages (if all available on the page)
 	def parseSubcategory(self, response):
