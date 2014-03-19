@@ -49,7 +49,7 @@ class SearchSpider(BaseSpider):
 
 	allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
 					   "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
-					   "boots.com", "ocado.com"]
+					   "boots.com", "ocado.com", "tesco.com"]
 
 	# pass product as argument to constructor - either product name or product URL
 	# arguments:
@@ -90,7 +90,7 @@ class SearchSpider(BaseSpider):
 
 		# parseURL functions, one for each supported origin site
 		self.parse_url_functions = {'staples' : self.parseURL_staples, 'walmart' : self.parseURL_walmart, 'newegg' : self.parseURL_newegg,\
-									 'boots' : self.parseURL_boots, 'ocado' : self.parseURL_ocado}
+									 'boots' : self.parseURL_boots, 'ocado' : self.parseURL_ocado, 'tesco' : self.parseURL_tesco}
 
 
 	def build_search_pages(self, search_query):
@@ -575,6 +575,19 @@ class SearchSpider(BaseSpider):
 	#TODO: add price info? product model? brand?
 	def parseURL_ocado(self, hxs):
 		product_name_holder = hxs.select("//h1[@class='productTitle']/strong/text()").extract()
+
+		# TEST
+		assert product_name_holder
+		if product_name_holder:
+			product_name = product_name_holder[0].strip()
+		else:
+			product_name_holder = Nonebrand
+
+		return (product_name, None, None)
+
+	#TODO: add price info? product model? brand
+	def parseURL_tesco(self, hxs):
+		product_name_holder = hxs.select("//h1[@class='page-title']/text()").extract()
 
 		# TEST
 		assert product_name_holder
