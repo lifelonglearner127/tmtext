@@ -311,7 +311,7 @@ class CaptchaBreakerWrapper():
 		m = re.match(".*/(Captcha_.*)",image_URL)
 		if not m:
 			if debug_info:
-				sys.stderr.write("Couldn't extract captcha image name from URL ", image_url)
+				sys.stderr.write("Couldn't extract captcha image name from URL ", image_URL)
 			return None
 
 		else:
