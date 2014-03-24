@@ -46,7 +46,14 @@ class OcadoSpider(SearchSpider):
 			item = SearchItem()
 			product_url = result.select("@href").extract()[0]
 			# extract all text in <a> (contains product name inside <strong>, and size(ml) directly in text())
-			product_name = " ".join(result.select(".//text()").extract()).strip()
+
+			# node containing full product name if the displayed one is abbreviated. use this one if exists, and displayed one if it doesn't
+			product_name_node = result.select("strong/abbr/@title")
+			product_name = product_name_node.extract()[0] if product_name_node else result.select("strong/text()").extract()[0]
+			# assert name is not abbreviated
+			assert '...' not in product_name
+			# add product quantity
+			product_name_full = product_name + result.select("text()").extract()[0].strip()
 
 			#print "ITEM", product_name
 
@@ -55,7 +62,7 @@ class OcadoSpider(SearchSpider):
 				# clean url
 				item['product_url'] = Utils.add_domain(Utils.clean_url(product_url), self.base_url)
 				
-				item['product_name'] = product_name
+				item['product_name'] = product_name_full
 			else:
 				self.log("No product name: " + str(response.url) + " from product: " + response.meta['origin_url'], level=log.ERROR)
 				continue
