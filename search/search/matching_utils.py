@@ -535,7 +535,7 @@ class ProcessText():
 		and nonwords==0 \
 		and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz") and \
 		not re.match("[0-9]{3,}[kmgt]b", word) and not re.match("[0-9]{3,}p", word) and not re.match("[0-9]{2,}hz", word) \
-		and not re.match("[0-9\.]{1,4}oz", word):
+		and not re.match("[0-9\.]{1,4}oz", word) and not re.match("[0-9\.]{1,4}ml", word):
 		# word is not a memory size, frequency(Hz) or pixels description etc
 			return True
 
