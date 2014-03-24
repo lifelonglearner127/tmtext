@@ -53,7 +53,7 @@ class OcadoSpider(SearchSpider):
 			# quit if there is no product name
 			if product_name and product_url:
 				# clean url
-				item['product_url'] = Utils.add_domain(product_url, self.base_url)
+				item['product_url'] = Utils.add_domain(Utils.clean_url(product_url), self.base_url)
 				
 				item['product_name'] = product_name
 			else:
