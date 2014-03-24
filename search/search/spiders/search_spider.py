@@ -573,12 +573,11 @@ class SearchSpider(BaseSpider):
 
 	#TODO: add price info? product model? brand?
 	def parseURL_ocado(self, hxs):
-		product_name_holder = hxs.select("//h1[@class='productTitle']/strong/text()").extract()
-
-		if product_name_holder:
-			product_name = product_name_holder[0].strip()
-		else:
-			product_name_holder = Nonebrand
+		# extract all text in this node, including product name and quantity and concatenate it to one string
+		product_name = " ".join(map(lambda x: x.strip(), hxs.select("//h1[@class='productTitle']//text()").extract()))
+		# if it's the empty string, set it to None
+		if not product_name:
+			product_name = None
 
 		return (product_name, None, None)
 

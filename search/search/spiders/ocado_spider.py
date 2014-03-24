@@ -53,7 +53,9 @@ class OcadoSpider(SearchSpider):
 			# assert name is not abbreviated
 			assert '...' not in product_name
 			# add product quantity
-			product_name_full = product_name + result.select("text()").extract()[0].strip()
+			product_quantity_node = result.select("text()[normalize-space()!='']")
+			product_quantity = product_quantity_node.extract()[0].strip() if product_quantity_node else ""
+			product_name_full = product_name + " " + product_quantity
 
 			#print "ITEM", product_name
 
