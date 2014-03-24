@@ -4,6 +4,7 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet
 from scrapy import log
+import unicodedata
 import itertools
 import math
 
@@ -32,14 +33,20 @@ class ProcessText():
 
 	def normalize(orig_text, stem=True, exclude_stopwords=True, lowercase=True):
 		text = orig_text
+
+		# first normalize variant of " to " (inches symbol) - found on sony.com (need to do this on unicode version of text or the character will be lost at ascii conversion)
+		text = re.sub(u'\u201d', "\"", text, re.UNICODE)
+
+		# convert text to ascii. so accented letters and special characters are all normalized to ascii characters
+		# first normalize unicode form
+		#TODO: test
+		text = unicodedata.normalize("NFD", unicode(text)).encode("ascii", "ignore")
+
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		#						Feet = '
 		# TODO: suitable for all sites?
 		text = re.sub("[- ]*[iI]nch", "\"", text)
 		text = re.sub("(?<=[0-9])[iI][nN](?!=c)","\"", text)
-
-		# normalize variant of " to " (inches symbol) - found on sony.com
-		text = re.sub(u'\u201d', "\"", text, re.UNICODE)
 
 		# normalize feet
 		text = re.sub("[- ]*[fF]eet", "\'", text)
