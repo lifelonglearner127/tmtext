@@ -113,7 +113,8 @@ class SearchSpider(BaseSpider):
 						"sony": "http://store.sony.com/search?SearchTerm=%s" % search_query, \
 						"samsung": "http://www.samsung.com/us/function/search/espsearchResult.do?input_keyword=%s" % search_query, \
 						"target" : "http://www.target.com/s?searchTerm=" + search_query + "&category=0%7CAll%7Cmatchallpartial%7Call+categories&lnk=snav_sbox_" + search_query, \
-						"ocado" : "http://www.ocado.com/webshop/getSearchProducts.do?clearTabs=yes&isFreshSearch=true&entry=%s" % search_query
+						"ocado" : "http://www.ocado.com/webshop/getSearchProducts.do?clearTabs=yes&isFreshSearch=true&entry=%s" % search_query,
+						"tesco" : "http://www.tesco.com/direct/search-results/results.page?catId=4294967294&searchquery=%s" % search_query
 
 						}
 
