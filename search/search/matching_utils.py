@@ -4,6 +4,7 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet
 from scrapy import log
+import unicodedata
 import itertools
 import math
 
@@ -32,14 +33,20 @@ class ProcessText():
 
 	def normalize(orig_text, stem=True, exclude_stopwords=True, lowercase=True):
 		text = orig_text
+
+		# first normalize variant of " to " (inches symbol) - found on sony.com (need to do this on unicode version of text or the character will be lost at ascii conversion)
+		text = re.sub(u'\u201d', "\"", text, re.UNICODE)
+
+		# convert text to ascii. so accented letters and special characters are all normalized to ascii characters
+		# first normalize unicode form
+		#TODO: test
+		text = unicodedata.normalize("NFD", unicode(text)).encode("ascii", "ignore")
+
 		# other preprocessing: -Inch = " - fitting for staples->amazon search
 		#						Feet = '
 		# TODO: suitable for all sites?
 		text = re.sub("[- ]*[iI]nch", "\"", text)
 		text = re.sub("(?<=[0-9])[iI][nN](?!=c)","\"", text)
-
-		# normalize variant of " to " (inches symbol) - found on sony.com
-		text = re.sub(u'\u201d', "\"", text, re.UNICODE)
 
 		# normalize feet
 		text = re.sub("[- ]*[fF]eet", "\'", text)
@@ -220,8 +227,14 @@ class ProcessText():
 
 			# compute confidence of result (using 'threshold' as a landmark - score equal to threshold means 50% confidence)
 			# make sure it doesn't exceed 100%
-			if threshold != 0:
-				confidence = 100 * min(1.0, score/(2.0 * threshold))
+			
+			# compute confidence using fixed param of 1.0 (default threshold property). compute threshold for this pair for param=1, and compute confidence.
+			# if threshold property (param) will change, spider will accept confidence scores lower than 50 or reject scores higher
+			# param_ and threshold_ are local values used only for confidence score computation
+			param_ = 1.0
+			threshold_ = param_*(math.log(float(len(words1) + len(words2))/2, 10))*10
+			if threshold_ != 0:
+				confidence = 100 * min(1.0, score/(2.0 * threshold_))
 			else:
 				log.msg("Threshold was 0 for products: " + str(words1) + "; " + str(words2), level=log.INFO)
 				# this means the log in threshold computation above was 0, so products had 1-word names. if anything matched, confidence should be 100%
@@ -378,7 +391,7 @@ class ProcessText():
 			# if a plural was matched, use that instead of singular form
 			matched_brand = intersection_brands.pop()
 
-			## use first match for now - seems to work better. eg: when brand made of 2 words but in second name they are on pos 2 and 3
+			## (not in use: - use first match for now - seems to work better. eg: when brand made of 2 words but in second name they are on pos 2 and 3)
 			# use longest match as matched brand
 			for word in intersection_brands:
 				if len(word) > len(matched_brand):
@@ -522,7 +535,7 @@ class ProcessText():
 		and nonwords==0 \
 		and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz") and \
 		not re.match("[0-9]{3,}[kmgt]b", word) and not re.match("[0-9]{3,}p", word) and not re.match("[0-9]{2,}hz", word) \
-		and not re.match("[0-9\.]{1,4}oz", word):
+		and not re.match("[0-9\.]{1,4}oz", word) and not re.match("[0-9\.]{1,4}ml", word):
 		# word is not a memory size, frequency(Hz) or pixels description etc
 			return True
 

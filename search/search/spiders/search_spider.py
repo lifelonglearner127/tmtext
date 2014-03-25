@@ -48,7 +48,8 @@ class SearchSpider(BaseSpider):
 	# "session-id-time" : "2082787201l", "session-id" : "177-0028713-4113141"}
 
 	allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
-					   "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com"]
+					   "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
+					   "boots.com", "ocado.com", "tesco.com"]
 
 	# pass product as argument to constructor - either product name or product URL
 	# arguments:
@@ -87,6 +88,11 @@ class SearchSpider(BaseSpider):
 			self.amazon_cookie_header = amazon_cookie_header
 
 
+		# parseURL functions, one for each supported origin site
+		self.parse_url_functions = {'staples' : self.parseURL_staples, 'walmart' : self.parseURL_walmart, 'newegg' : self.parseURL_newegg,\
+									 'boots' : self.parseURL_boots, 'ocado' : self.parseURL_ocado, 'tesco' : self.parseURL_tesco}
+
+
 	def build_search_pages(self, search_query):
 		# build list of urls = search pages for each site
 		search_pages = {
@@ -106,7 +112,8 @@ class SearchSpider(BaseSpider):
 						"ebay": "http://www.ebay.com/sch/i.html?_trksid=p2050601.m570.l1313&_nkw=%s" % search_query, \
 						"sony": "http://store.sony.com/search?SearchTerm=%s" % search_query, \
 						"samsung": "http://www.samsung.com/us/function/search/espsearchResult.do?input_keyword=%s" % search_query, \
-						"target" : "http://www.target.com/s?searchTerm=" + search_query + "&category=0%7CAll%7Cmatchallpartial%7Call+categories&lnk=snav_sbox_" + search_query
+						"target" : "http://www.target.com/s?searchTerm=" + search_query + "&category=0%7CAll%7Cmatchallpartial%7Call+categories&lnk=snav_sbox_" + search_query, \
+						"ocado" : "http://www.ocado.com/webshop/getSearchProducts.do?clearTabs=yes&isFreshSearch=true&entry=%s" % search_query
 
 						}
 
@@ -213,101 +220,56 @@ class SearchSpider(BaseSpider):
 		site = response.meta['origin_site']
 		hxs = HtmlXPathSelector(response)
 
-		product_model = ""
+		# parse results page, handle each site separately
 
-		product_brand = ""
-		product_price = ""
+		# recieve requests for search pages with queries as:
+		# 1) product model (if available)
+		# 2) product name
+		# 3) parts of product's name
 
 
-		#############################################################3
+		#############################################################
 		# Extract product attributes (differently depending on site)
 
-		if site == 'staples':
 
-			product_name = hxs.select("//h1/text()").extract()[0]
-
-			model_nodes = hxs.select("//p[@class='itemModel']/text()").extract()
-			if model_nodes:
-				model_node = model_nodes[0]
-
-				model_node = re.sub("\W", " ", model_node, re.UNICODE)
-				m = re.match("(.*)Model:(.*)", model_node.encode("utf-8"), re.UNICODE)
-				
-				
-				if m:
-					product_model = m.group(2).strip()
-
-		elif site == 'walmart':
-			product_name_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
-			if product_name_holder:
-				product_name = product_name_holder[0].strip()
-
-				# get integer part of product price
-				product_price_big = hxs.select("//span[@class='bigPriceText1']/text()").extract()
-
-				if not product_price_big:
-					self.log("Didn't find product price: " + response.url + "\n", level=log.DEBUG)
-				# if there is a range of prices take their average
-				if len(product_price_big) > 1:
-
-					# remove $ and .
-					product_price_min = re.sub("[\$\.,]", "", product_price_big[0])
-					product_price_max = re.sub("[\$\.,]", "", product_price_big[-1])
-
-					#TODO: check if they're ints?
-					product_price_big = (int(product_price_min) + int(product_price_max))/2.0
-
-				elif product_price_big:
-					product_price_big = int(re.sub("[\$\.,]", "", product_price_big[0]))
-
-				# get fractional part of price
-				#TODO - not that important
-
-				if product_price_big:
-					product_price = product_price_big
-
-
-
-			else:
-				sys.stderr.write("Broken product page link (can't find item title): " + response.url + "\n")
-				# return the item as a non-matched item
-				item = SearchItem()
-				#item['origin_site'] = site
-				item['origin_url'] = response.url
-				# remove unnecessary parameters
-				m = re.match("(.*)\?enlargedSearch.*", item['origin_url'])
-				if m:
-					item['origin_url'] = m.group(1)
-				#item['origin_id'] = self.extract_walmart_id(item['origin_url'])
-				if self.name != 'manufacturer':
-					# don't return empty matches in manufacturer spider
-					yield item
-				return
-
-			#TODO: if it contains 2 words, first could be brand - also add it in similar_names function
-			product_model_holder = hxs.select("//td[contains(text(),'Model')]/following-sibling::*/text()").extract()
-			if product_model_holder:
-				product_model = product_model_holder[0]
-
-		#TODO: for the sites below, complete with missing logic, for not returning empty elements in manufacturer spider
-		elif site == 'newegg':
-			product_name_holder = hxs.select("//span[@itemprop='name']/text()").extract()
-			if product_name_holder:
-				product_name = product_name_holder[0].strip()
-			else:
-				sys.stderr.write("Broken product page link (can't find item title): " + response.url + "\n")
-				item = SearchItem()
-				#item['origin_site'] = site
-				item['origin_url'] = response.url
-				yield item
-				return
-			product_model_holder = hxs.select("//dt[text()='Model']/following-sibling::*/text()").extract()
-			if product_model_holder:
-				product_model = product_model_holder[0]
-
+		if site in self.parse_url_functions:
+			(product_name, product_model, product_price) = self.parse_url_functions[site](hxs)
 
 		else:
 			raise CloseSpider("Unsupported site: " + site)
+
+		# replace None attributes with the empty string - for output purposes (log mainly)
+		for attribute in (product_name, product_model, product_price):
+			if not attribute:
+				attribute = ""
+
+		#
+		# Log errors and return empty matches if no name was found
+		#
+		# if no product name, abort and send the item like it is (no match)
+		if not product_name:
+			sys.stderr.write("Broken product page link (can't find item title): " + response.url + "\n")
+			# return the item as a non-matched item
+			item = SearchItem()
+			#item['origin_site'] = site
+			item['origin_url'] = response.url
+
+			#TODO: move this somewhere more relevant
+			# remove unnecessary parameters for walmart links
+			m = re.match("(.*)\?enlargedSearch.*", item['origin_url'])
+			if m:
+				item['origin_url'] = m.group(1)
+			#item['origin_id'] = self.extract_walmart_id(item['origin_url'])
+
+
+			if self.name != 'manufacturer':
+				# don't return empty matches in manufacturer spider
+				yield item
+			return
+
+		# for walmart price extraction is implemented, so warn if it's not found
+		if not product_price and site=='walmart':
+			self.log("Didn't find product price: " + response.url + "\n", level=log.DEBUG)
 
 		if site == 'staples':
 			zipcode = "12345"
@@ -446,9 +408,9 @@ class SearchSpider(BaseSpider):
 
 		# set cookies for amazon
 		if (self.target_site == 'amazon' and self.cookies_file):
-				request2.cookies = self.amazon_cookies
-				request2.headers['Cookies'] = self.amazon_cookie_header
-				#request2.meta['dont_merge_cookies'] = True
+			request2.cookies = self.amazon_cookies
+			request2.headers['Cookies'] = self.amazon_cookie_header
+			#request2.meta['dont_merge_cookies'] = True
 
 		request2.meta['query'] = query2
 		request2.meta['target_site'] = target_site
@@ -508,12 +470,128 @@ class SearchSpider(BaseSpider):
 		yield request
 
 
-	# parse results page, handle each site separately
+	####################
+	# Site-specific parseURL functions - for extracting attributes origin products (to be matched)
+	# return tuples of (product_name, product_model, product_price) or the empty string if it was not found
 
-	# recieve requests for search pages with queries as:
-	# 1) product model (if available)
-	# 2) product name
-	# 3) parts of product's name
+	def parseURL_staples(self, hxs):
+
+		product_name = hxs.select("//h1/text()").extract()[0]
+
+		model_nodes = hxs.select("//p[@class='itemModel']/text()").extract()
+
+		product_model = None
+		if model_nodes:
+			model_node = model_nodes[0]
+
+			model_node = re.sub("\W", " ", model_node, re.UNICODE)
+			m = re.match("(.*)Model:(.*)", model_node.encode("utf-8"), re.UNICODE)
+			
+			
+			if m:
+				product_model = m.group(2).strip()
+
+		return (product_name, product_model, None)
+
+
+
+	def parseURL_walmart(self, hxs):
+
+		product_name_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
+		if product_name_holder:
+			product_name = product_name_holder[0].strip()
+		else:
+			product_name = None
+
+		# get integer part of product price
+		product_price_big = hxs.select("//span[@class='bigPriceText1']/text()").extract()
+
+		# if there is a range of prices take their average
+		if len(product_price_big) > 1:
+
+			# remove $ and .
+			product_price_min = re.sub("[\$\.,]", "", product_price_big[0])
+			product_price_max = re.sub("[\$\.,]", "", product_price_big[-1])
+
+			#TODO: check if they're ints?
+			product_price_big = (int(product_price_min) + int(product_price_max))/2.0
+
+		elif product_price_big:
+			product_price_big = int(re.sub("[\$\.,]", "", product_price_big[0]))
+
+		# get fractional part of price
+		#TODO - not that important
+
+		if product_price_big:
+			product_price = product_price_big
+		else:
+			product_price = None
+
+		#TODO: if it contains 2 words, first could be brand - also add it in similar_names function
+		product_model_holder = hxs.select("//td[contains(text(),'Model')]/following-sibling::*/text()").extract()
+		if product_model_holder:
+			product_model = product_model_holder[0]
+		else:
+			product_model = None
+
+		return (product_name, product_model, product_price)
+
+#TODO: for the sites below, complete with missing logic, for not returning empty elements in manufacturer spider
+	def parseURL_newegg(self, hxs):
+
+		product_name_holder = hxs.select("//span[@itemprop='name']/text()").extract()
+		if product_name_holder:
+			product_name = product_name_holder[0].strip()
+		else:
+			product_name = None
+
+		# else:
+		# 	sys.stderr.write("Broken product page link (can't find item title): " + response.url + "\n")
+		# 	item = SearchItem()
+		# 	#item['origin_site'] = site
+		# 	item['origin_url'] = response.url
+		# 	yield item
+		# 	return
+		product_model_holder = hxs.select("//dt[text()='Model']/following-sibling::*/text()").extract()
+		if product_model_holder:
+			product_model = product_model_holder[0]
+		else:
+			product_model = None
+
+		return (product_name, product_model, None)
+
+	#TODO: add price info? product model? brand?
+	def parseURL_boots(self, hxs):
+		product_name_holder = hxs.select("//div[@class='pd_productName']/h2/span[@itemprop='name']/text()").extract()
+
+		if product_name_holder:
+			product_name = product_name_holder[0]
+		else:
+			product_name = None
+
+		return (product_name, None, None)
+
+	#TODO: add price info? product model? brand?
+	def parseURL_ocado(self, hxs):
+		# extract all text in this node, including product name and quantity and concatenate it to one string
+		product_name = " ".join(map(lambda x: x.strip(), hxs.select("//h1[@class='productTitle']//text()").extract()))
+		# if it's the empty string, set it to None
+		if not product_name:
+			product_name = None
+
+		return (product_name, None, None)
+
+	#TODO: add price info? product model? brand
+	def parseURL_tesco(self, hxs):
+		product_name_holder = hxs.select("//h1[@class='page-title']/text()").extract()
+
+		if product_name_holder:
+			product_name = product_name_holder[0].strip()
+		else:
+			product_name_holder = None
+
+		return (product_name, None, None)
+
 
 	# accumulate results for each (sending the pending requests and the partial results as metadata),
 	# and lastly select the best result by selecting the best match between the original product's name and the result products' names
