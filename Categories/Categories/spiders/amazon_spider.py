@@ -320,7 +320,7 @@ class AmazonSpider(BaseSpider):
 
                 item['level'] = parent_item['level'] - 1
 
-                item['nr_products'] = subcategory_prodcount
+                item['nr_products'] = int(subcategory_prodcount)
 
                 # # no description extracted
                 # item['description_wc'] = 0
