@@ -15,19 +15,19 @@ import re
 import sys
 
 
-class OcadoSpider(SearchSpider):
+class BootsSpider(SearchSpider):
 
-	name = "ocado"
+	name = "boots"
 	# initialize fields specific to this derived spider
 	def init_sub(self):
-		self.target_site = "ocado"
-		self.start_urls = [ "http://www.ocado.com" ]
+		self.target_site = "boots"
+		self.start_urls = [ "http://www.boots.com" ]
 
-		self.base_url = "http://www.ocado.com"
+		self.base_url = "http://www.boots.com"
 
 
 	# create product items from results using only results pages (extracting needed info on products from there)
-	# parse results page for ocado, extract info for all products returned by search (keep them in "meta")
+	# parse results page for boots, extract info for all products returned by search (keep them in "meta")
 	def parseResults(self, response):
 		hxs = HtmlXPathSelector(response)
 
@@ -36,30 +36,23 @@ class OcadoSpider(SearchSpider):
 		else:
 			items = set()
 
-		results = hxs.select("//h3[@class='productTitle']/a")
+		# extract results, only from the gridView (otherwise we'd get duplicates)
+		results = hxs.select("//div[contains(@class,'grid')]//a[@class='productName']")
 		for result in results:
 			item = SearchItem()
-			product_url = result.select("@href").extract()[0]
-			# extract all text in <a> (contains product name inside <strong>, and size(ml) directly in text())
 
-			# node containing full product name if the displayed one is abbreviated. use this one if exists, and displayed one if it doesn't
-			product_name_node = result.select("strong/abbr/@title")
-			product_name = product_name_node.extract()[0] if product_name_node else result.select("strong/text()").extract()[0]
+			product_url = result.select("@href").extract()[0] #if result.select("@href") else None
+			product_name = result.select("text()").extract()[0] #if result.select("text()") else None
+
 			# assert name is not abbreviated
 			assert '...' not in product_name
-			# add product quantity
-			product_quantity_node = result.select("text()[normalize-space()!='']")
-			product_quantity = product_quantity_node.extract()[0].strip() if product_quantity_node else ""
-			product_name_full = product_name + " " + product_quantity
-
-			#print "ITEM", product_name
 
 			# quit if there is no product name
 			if product_name and product_url:
 				# clean url
-				item['product_url'] = Utils.add_domain(Utils.clean_url(product_url), self.base_url)
+				item['product_url'] = product_url
 				
-				item['product_name'] = product_name_full
+				item['product_name'] = product_name
 			else:
 				self.log("No product name: " + str(response.url) + " from product: " + response.meta['origin_url'], level=log.ERROR)
 				continue
