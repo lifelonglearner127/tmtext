@@ -86,6 +86,7 @@ class AmazonSpider(BaseSpider):
 
     # start parsing of top level categories extracted from sitemap; pass them to parseCategory
     def parse(self, response):
+
         hxs = HtmlXPathSelector(response)
         links_level1 = hxs.select("//div[@id='siteDirectory']//table//a")
         titles_level1 = hxs.select("//div//table//h2")
@@ -312,8 +313,8 @@ class AmazonSpider(BaseSpider):
                     m = re.match("\(([0-9,]+)\)", subcategory_prodcount)
                     if m:
                         subcategory_prodcount = m.group(1).replace(",","")
-
-                    item['nr_products'] = int(subcategory_prodcount)
+                else:
+                    subcategory_prodcount = None
 
                 
 
@@ -322,6 +323,9 @@ class AmazonSpider(BaseSpider):
                 item['text'] = subcategory_text
                 item['catid'] = self.catid
                 self.catid += 1
+
+                if subcategory_prodcount:
+                    item['nr_products'] = int(subcategory_prodcount)
 
                 item['parent_text'] = parent_item['text']
                 item['parent_url'] = parent_item['url']
@@ -339,8 +343,6 @@ class AmazonSpider(BaseSpider):
                     item['department_url'] = parent_item['department_url']
                 else:
                     assert not self.find_matching_key(item['department_text'], self.extra_toplevel_categories_urls)
-                    if self.find_matching_key(item['department_text'], self.extra_toplevel_categories_urls):
-                        print "DEPARTMENT_TEXT", item['department_text'], "--"+str(self.find_matching_key(item['department_text'], self.extra_toplevel_categories_urls))+"--"
 
                 # else:
                 #     # the parent must be a level 2 category - so this will be considered department
