@@ -54,7 +54,7 @@ class AmazonSpider(BaseSpider):
         self.catid = 0
 
         # level to stop crawling (don't extract subcategories below this level)
-        self.LEVEL_BARRIER = 0
+        self.LEVEL_BARRIER = -2
 
 
         # dictionarties associating department names with other attributes - to use for setting parent category info for level 1 categories
@@ -279,8 +279,6 @@ class AmazonSpider(BaseSpider):
 
         item = response.meta['item']
 
-        print "IN SUBCATS", item['text'].encode('utf-8'), item['url']
-
         # extract nr_products if not already extracted. necessary for extra_categories
         if 'nr_products' not in item:
             prod_count_holder = hxs.select("//h2[@class='resultCount']/span/text()").extract()
@@ -304,13 +302,10 @@ class AmazonSpider(BaseSpider):
         if item['level'] > self.LEVEL_BARRIER:
             subcategories = hxs.select("//h2[contains(text(),'Department')]/following-sibling::ul[1]/li/a")
             if not subcategories:
-                print "NO SUBCATEGORIES FOR", item['text'].encode('utf-8')
             for subcategory in subcategories:
                 # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
                 if not subcategory.select("span[@class='refinementLink']"):
-                    print "DIDNT FIND REFINEMENT FOR", item['text'].encode('utf-8')
                     continue
-                print "EXTRACTING CATEGORIES FOR", item['text'].encode('utf-8')
                 subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
                 subcategory_text = subcategory.select("span[@class='refinementLink']//text()").extract()[0].strip()
                 # extract product count, clean it of commas and parantheses
