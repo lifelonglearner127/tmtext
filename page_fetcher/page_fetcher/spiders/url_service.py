@@ -29,12 +29,12 @@ class UrlServiceSpider(Spider):
     SERVICE_URL = "http://localhost:8080/get_queued_urls/"
 
     def __init__(self, limit='100', list_urls=False, service_url=None,
-                 *args, **kwargs):
+                 captcha_retries=10, *args, **kwargs):
         super(UrlServiceSpider, self).__init__(*args, **kwargs)
 
-        self.urls = {}
         self.limit = limit
         self.list_urls = list_urls
+        self.captcha_retries = captcha_retries
 
         if service_url is not None:
             self.service_url = service_url
@@ -50,36 +50,30 @@ class UrlServiceSpider(Spider):
         for row in json.loads(response.body):
             url = row[0]
 
-            self.urls[url] = row
-
             if self.list_urls:
                 print url
 
-            yield Request(url, callback=self.parse_target,
+            req = Request(url, callback=self.parse_target,
                           errback=self.parse_target_err)
+            req.meta['url_data'] = row
+            yield req
 
     def parse_target(self, response):
-        if self._has_captcha(response.body):
-            return self._handle_captcha(response)
-        else:
-            return self._parse_target(response)
-
-    def parse_target_after_captcha(self, response):
-        if self._has_captcha(response.body):
+        if not self._has_captcha(response.body):
+            result = self._parse_target(response)
+        elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
             # We already tried to solve the captcha, give up.
 
-            original_url = response.request.headers['Referer']
-            item = RequestErrorItem(
-                id=self.urls[original_url][1],
+            result = RequestErrorItem(
+                id=response.meta['url_data'][1],
                 http_code=response.status,
                 error_string="Failed to solve captcha.")
-            return item
         else:
-            return self._parse_target(response)
+            result = self._handle_captcha(response)
+        return result
 
     def _parse_target(self, response):
-        url, url_id, imported_data_id, category_id = \
-            self.urls[response.request.url]
+        url, url_id, imported_data_id, category_id = response.meta['url_data']
 
         item = PageItem(
             id=url_id,
@@ -89,7 +83,11 @@ class UrlServiceSpider(Spider):
         return item
 
     def _handle_captcha(self, response):
-        scrapy.log.msg("Captcha challenge for %s." % response.request.url,
+        url, url_id, imported_data_id, category_id = response.meta['url_data']
+        captch_solve_try = response.meta.get('captch_solve_try', 0)
+
+        scrapy.log.msg("Captcha challenge for %s (try %d)."
+                       % (url, captch_solve_try),
                        level=scrapy.log.INFO)
 
         forms = Selector(response).xpath('//form')
@@ -108,18 +106,18 @@ class UrlServiceSpider(Spider):
         captcha = self._solve_captcha(captcha_img)
 
         if captcha is None:
-            scrapy.log.msg("Failed to solve captcha %s." % captcha_img,
-                           level=scrapy.log.WARNING)
-            item = RequestErrorItem(
-                id=self.urls[response.request.url][1],
+            err_msg = "Failed to guess captcha for '%s' (id: %s, try: %d)." % (
+                response.url, url_id, captch_solve_try)
+            scrapy.log.msg(err_msg, level=scrapy.log.ERROR)
+            result = RequestErrorItem(
+                id=url_id,
                 http_code=response.status,
-                error_string="Failed to solve captcha for %s." % response.url)
-            return item
+                error_string=err_msg)
         else:
-            scrapy.log.msg("Submitting captcha %s for %s."
-                           % (captcha, captcha_img),
+            scrapy.log.msg("Submitting captcha '%s' for '%s' (try %d)."
+                           % (captcha, captcha_img, captch_solve_try),
                            level=scrapy.log.INFO)
-            return FormRequest.from_response(
+            result = FormRequest.from_response(
                 response,
                 formname='',
                 formdata={
@@ -127,30 +125,27 @@ class UrlServiceSpider(Spider):
                     'amzn-r[0]': hidden_value2,
                     'field-keywords[0]': captcha,
                 },
-                callback=self.parse_target_after_captcha,
-                errback=self.parse_target_after_captcha_err)
+                callback=self.parse_target,
+                errback=self.parse_target_err)
+            result.meta['captch_solve_try'] = captch_solve_try + 1
+            result.meta['url_data'] = response.meta['url_data']
 
-    def parse_target_after_captcha_err(self, failure):
-        return self._handle_error(failure, "After trying to solve captcha: ")
+        return result
 
     def parse_target_err(self, failure):
-        return self._handle_error(failure)
-
-    def _handle_error(self, failure, error_string_prefix=''):
-        url_id = self.urls[failure.request.url][1]
+        url_id = failure.request.meta['url_data'][1]
         error_string = failure.getErrorMessage()
         if isinstance(failure.value, HttpError):
             status = failure.value.response.status
         else:
             status = 0
-            scrapy.log.msg(
-                "Unhandled failure type '%s'." % type(failure.value),
-                level=scrapy.log.ERROR)
+            scrapy.log.msg("Unhandled failure type '%s'. Will continue"
+                           % type(failure.value), level=scrapy.log.ERROR)
 
         item = RequestErrorItem(
             id=url_id,
             http_code=status,
-            error_string=error_string_prefix + error_string)
+            error_string=error_string)
         return item
 
     def _has_captcha(self, body):
