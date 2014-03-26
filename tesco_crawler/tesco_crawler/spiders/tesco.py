@@ -20,7 +20,9 @@ class TescoReviewSpider(Spider):
     _EXTRACT_REVIEWS_URL_RE = re.compile(
         r'prefetchConfigs:\s*\[\s*\{\s*url\s*:\s*"//([^"]+)', re.MULTILINE)
 
-    def __init__(self, start_url=None, start_urls_fn=None):
+    def __init__(self, start_url=None, start_urls_fn=None, *args, **kwargs):
+        super(TescoReviewSpider, self).__init__(*args, **kwargs)
+
         if start_url is not None:
             self.start_urls = [start_url]
 
