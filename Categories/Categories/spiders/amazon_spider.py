@@ -169,6 +169,7 @@ class AmazonSpider(BaseSpider):
                 if item['department_text'] in self.department_urls:
                     assert self.find_matching_key(item['department_text'], self.extra_toplevel_categories_urls)
                     item['department_url'] = self.department_urls[item['department_text']]
+                    item['parent_url'] = item['url']
 
                 # if its parent is the special category, mark this one as special too
                 if (item['parent_text'] == special_item['text']):
