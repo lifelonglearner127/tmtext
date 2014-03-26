@@ -30,7 +30,15 @@ class AmazonSpider(BaseSpider):
     # keys are categories names as found in the sitemap, values are URLs associated with them, that will replace/supplement the links found on the sitemap
     extra_toplevel_categories_urls = {"Baby" : "http://www.amazon.com/s/ref=lp_166835011_ex_n_1?rh=n%3A165796011&bbn=165796011&ie=UTF8&qid=1393338541", \
                                 "Electronics & Computers" : "http://www.amazon.com/s/ref=lp_172659_ex_n_1?rh=n%3A172282&bbn=172282&ie=UTF8&qid=1393338741", \
-                                "Home, Garden & Tools" : "http://www.amazon.com/s/ref=lp_284507_ex_n_1?rh=n%3A1055398&bbn=1055398&ie=UTF8&qid=1393338782"}
+                                "Home, Garden & Tools" : "http://www.amazon.com/s/ref=lp_284507_ex_n_1?rh=n%3A1055398&bbn=1055398&ie=UTF8&qid=1393338782",\
+                                "Kindle E-readers & Books" : "http://www.amazon.com/s/ref=lp_154606011_ex_n_1?rh=n%3A133140011&bbn=133140011&ie=UTF8&qid=1395704970", \
+                                "Apps & Games" : "http://www.amazon.com/b/ref=sd_allcat_fire_apps_games?ie=UTF8&node=3427287011", \
+                                "Movies & TV" : "http://www.amazon.com/action-adventure-dvd-bluray/b/ref=MoviesHPBB_Genres_Action?ie=UTF8&node=2650363011&pf_rd_m=ATVPDKIKX0DER&pf_rd_s=merchandised-search-left-2&pf_rd_r=0GAWFEZ3EXP8PEYCM6X3&pf_rd_t=101&pf_rd_p=1753817742&pf_rd_i=2625373011", \
+                                "All Beauty" : "http://www.amazon.com/s/ref=lp_11059031_ex_n_1?rh=n%3A3760911&bbn=3760911&ie=UTF8&qid=1395793680",\
+                                "Health, Household & Baby Care" : "http://www.amazon.com/s/ref=lp_6183682011_ex_n_1?rh=n%3A3760901&bbn=3760901&ie=UTF8&qid=1395822180", \
+                                "Tires & Wheels" : "http://www.amazon.com/s/ref=lp_353609011_ex_n_1?rh=n%3A15684181%2Cn%3A%2115690151%2Cn%3A15706571&bbn=15706571&ie=UTF8&qid=1395824546", \
+                                "Motorcycle & Powersports" : "http://www.amazon.com/s/ref=sr_ex_n_1?rh=n%3A15684181%2Cn%3A%2115690151%2Cn%3A346333011&bbn=346333011&ie=UTF8&qid=1395824599"
+                                }
 
 
     # flag indicating whether to compute overall product counts in pipelines phase for this spider.
@@ -296,13 +304,17 @@ class AmazonSpider(BaseSpider):
                 subcategory_text = subcategory.select("span[@class='refinementLink']//text()").extract()[0].strip()
                 # extract product count, clean it of commas and parantheses
                 subcategory_prodcount_holder = subcategory.select("span[@class='narrowValue']/text()").extract()
-                if not subcategory_prodcount_holder:
-                    continue
-                subcategory_prodcount = subcategory_prodcount_holder[0].replace(";nbsp&"," ").strip()
 
-                m = re.match("\(([0-9,]+)\)", subcategory_prodcount)
-                if m:
-                    subcategory_prodcount = m.group(1).replace(",","")
+                # if there's also product count available in the menu, extract it
+                if subcategory_prodcount_holder:
+                    subcategory_prodcount = subcategory_prodcount_holder[0].replace(";nbsp&"," ").strip()
+
+                    m = re.match("\(([0-9,]+)\)", subcategory_prodcount)
+                    if m:
+                        subcategory_prodcount = m.group(1).replace(",","")
+
+                    item['nr_products'] = int(subcategory_prodcount)
+
                 
 
                 item = CategoryItem()
@@ -339,8 +351,6 @@ class AmazonSpider(BaseSpider):
                 #     self.department_count += 1
 
                 item['level'] = parent_item['level'] - 1
-
-                item['nr_products'] = int(subcategory_prodcount)
 
                 # # no description extracted
                 # item['description_wc'] = 0
