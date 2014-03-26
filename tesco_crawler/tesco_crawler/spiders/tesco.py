@@ -1,7 +1,7 @@
 import json
 import re
 
-import scrapy.log
+from scrapy.log import (ERROR, INFO)
 from scrapy.http import Request
 from scrapy.selector import Selector
 from scrapy.spider import Spider
@@ -11,7 +11,7 @@ from tesco_crawler.items import BazaarVoiceReviewsItem
 
 class TescoReviewSpider(Spider):
     name = 'tesco_review'
-    allowed_domains = ["tesco.com", "display.bazaarvoice.com"]
+    allowed_domains = ["tesco.com", "bazaarvoice.com"]
     start_urls = []
 
     _BV_TESCO_API_CONF_URL = \
@@ -30,8 +30,7 @@ class TescoReviewSpider(Spider):
             with open(start_urls_fn) as start_urls_f:
                 self.start_urls = [url.strip() for url in start_urls_f]
 
-        scrapy.log.msg("Created with urls: " + ', '.join(self.start_urls),
-                       scrapy.log.INFO)
+        self.log("Created with urls: " + ', '.join(self.start_urls), INFO)
 
     def parse(self, response):
         sel = Selector(response)
@@ -39,8 +38,7 @@ class TescoReviewSpider(Spider):
         # Scrape BV configuration.
         prod_id, = sel.css('.details-container > script').re(
             r"productID\s*=\s*'([\d\w-]+)'")
-        scrapy.log.msg("Processing product '%s'." % prod_id,
-                       scrapy.log.INFO)
+        self.log("Processing product '%s'." % prod_id, INFO)
 
         r = Request(self._BV_TESCO_API_CONF_URL,
                     callback=self.parse_bv_conf)
@@ -53,14 +51,12 @@ class TescoReviewSpider(Spider):
         # Parse review URL.
         m = self._EXTRACT_REVIEWS_URL_RE.search(response.body)
         if m is None:
-            scrapy.log.msg(
+            self.log(
                 "Failed to parse URL from tesco.com's BV config URL for "
-                "product '%s'." % prod_id,
-                scrapy.log.ERROR)
+                "product '%s'." % prod_id, ERROR)
             req = None
         else:
-            scrapy.log.msg("Found config for product '%s'." % prod_id,
-                           scrapy.log.INFO)
+            self.log("Found config for product '%s'." % prod_id, INFO)
 
             url_template, = m.groups()
             url = 'http://' \
@@ -71,13 +67,13 @@ class TescoReviewSpider(Spider):
 
     def parse_bv(self, response):
         """Parses a BazaarVoice Json response."""
-        review = BazaarVoiceReviewsItem()
-        review.bv_client = "tesco"
         responses = json.loads(response.body)
-        review.data = responses['BatchedResults']['q1']['Includes']
+        review = BazaarVoiceReviewsItem(
+            bv_client="tesco",
+            data=responses['BatchedResults']['q1']['Includes']
+        )
 
-        scrapy.log.msg("Got reviews for products: %s" % ', '.join(
-            review.data['Products'].keys()),
-            scrapy.log.INFO)
+        self.log("Got reviews for products: %s" % ', '.join(
+            review['data']['Products'].keys()), INFO)
 
         return review
