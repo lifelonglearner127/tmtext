@@ -29,12 +29,12 @@ class UrlServiceSpider(Spider):
     SERVICE_URL = "http://localhost:8080/get_queued_urls/"
 
     def __init__(self, limit='100', list_urls=False, service_url=None,
-                 captcha_retries=10, *args, **kwargs):
+                 captcha_retries='10', *args, **kwargs):
         super(UrlServiceSpider, self).__init__(*args, **kwargs)
 
         self.limit = limit
         self.list_urls = list_urls
-        self.captcha_retries = captcha_retries
+        self.captcha_retries = int(captcha_retries)
 
         if service_url is not None:
             self.service_url = service_url
