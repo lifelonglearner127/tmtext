@@ -35,18 +35,24 @@ class AmazonSpider(BaseSpider):
 
     # flag indicating whether to compute overall product counts in pipelines phase for this spider.
     # if on, 'catid' and 'parent_catid' fields need to be implemented
-    #compute_nrproducts = False
+    compute_nrproducts = True
 
     # counter for department id, will be used to autoincrement department id
     department_count = 0
+    # counter for category id
+    catid = 0
 
     # level to stop crawling (don't extract subcategories below this level)
     LEVEL_BARRIER = -2
 
+
+    # dictionarties associating department names with other attributes - to use for setting parent category info for level 1 categories
     # associates department names with their ids
     departments_ids = {}
     # associates department names with their urls (will be available only for extra_categories)
     department_urls = {}
+    # associate department names with their category ids
+    departments_cat_ids = {}
 
 
     # check if 2 catgory names are the same
@@ -85,8 +91,13 @@ class AmazonSpider(BaseSpider):
         special_item['special'] = 1
         special_item['department_text'] = special_item['text']
         special_item['department_id'] = self.department_count
-        self.departments_ids[special_item['text']] = special_item['department_id']
         self.department_count += 1
+
+        special_item['catid'] = self.catid
+        self.catid += 1
+
+        self.departments_ids[special_item['text']] = special_item['department_id']
+        self.departments_cat_ids[special_item['text']] = special_item['catid']
 
 
         #items.append(special_item)
@@ -99,8 +110,13 @@ class AmazonSpider(BaseSpider):
             item['level'] = 2
             item['department_text'] = item['text']
             item['department_id'] = self.department_count
-            self.departments_ids[item['text']] = item['department_id']
             self.department_count += 1
+
+            item['catid'] = self.catid
+            self.catid += 1
+
+            self.departments_ids[item['text']] = item['department_id']
+            self.departments_cat_ids[item['text']] = item['catid']
 
             # if item is found among extra_toplevel_categories_urls, add info from that url
             extra_category = self.find_matching_key(item['text'], self.extra_toplevel_categories_urls)
@@ -133,6 +149,9 @@ class AmazonSpider(BaseSpider):
                 item['parent_text'] = parent_text[0]
                 item['department_text'] = item['parent_text']
                 item['department_id'] = self.departments_ids[item['department_text']]
+                item['parent_catid'] = self.departments_cat_ids[item['department_text']]
+                item['catid'] = self.catid
+                self.catid += 1
 
                 # get department url from department_urls, will be availble only for extra_categories
                 if item['department_text'] in self.department_urls:
@@ -218,10 +237,8 @@ class AmazonSpider(BaseSpider):
         # if item is found among extra_toplevel_categories_urls, and no product count was found, add info from that url
         extra_category = self.find_matching_key(item['text'], self.extra_toplevel_categories_urls)
 
-        #yield item
-
-        # crawl level 0 categories (only for their product count and subcategories - no descriptions...)
-
+        
+        # crawl lower level categories
         if 'nr_products' not in item or item['level'] > self.LEVEL_BARRIER:
             if extra_category:
             
@@ -270,7 +287,7 @@ class AmazonSpider(BaseSpider):
         #TODO: test or make more robust
 
         if item['level'] > self.LEVEL_BARRIER:
-            subcategories = hxs.select("//h2[1]/following-sibling::ul[1]/li/a")
+            subcategories = hxs.select("//h2[contains(text(),'Department')]/following-sibling::ul[1]/li/a")
             for subcategory in subcategories:
                 # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
                 if not subcategory.select("span[@class='refinementLink']"):
@@ -291,9 +308,12 @@ class AmazonSpider(BaseSpider):
                 item = CategoryItem()
                 item['url'] = subcategory_url
                 item['text'] = subcategory_text
+                item['catid'] = self.catid
+                self.catid += 1
 
                 item['parent_text'] = parent_item['text']
                 item['parent_url'] = parent_item['url']
+                item['parent_catid'] = parent_item['catid']
 
                 # considering departments to be level 2 categories (top level) - so every category must have a department text
                 assert 'department_text' in parent_item
