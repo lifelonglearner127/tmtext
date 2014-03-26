@@ -26,18 +26,25 @@ class UrlServiceSpider(Spider):
     allowed_domains = []
     start_urls = []
 
-    SERVICE_URL = "http://localhost:8080/get_queued_urls/?limit=%d"
+    SERVICE_URL = "http://localhost:8080/get_queued_urls/"
 
-    def __init__(self, limit='100', list_urls=None, *args, **kwargs):
+    def __init__(self, limit='100', list_urls=False, service_url=None,
+                 *args, **kwargs):
         super(UrlServiceSpider, self).__init__(*args, **kwargs)
 
         self.urls = {}
         self.limit = limit
         self.list_urls = list_urls
 
+        if service_url is not None:
+            self.service_url = service_url
+        else:
+            self.service_url = self.SERVICE_URL
+        self.service_url += '?limit=%d'
+
         self._cbw = CaptchaBreakerWrapper()
 
-        self.start_urls.append(self.SERVICE_URL % int(limit))
+        self.start_urls.append(self.service_url % int(limit))
 
     def parse(self, response):
         for row in json.loads(response.body):
