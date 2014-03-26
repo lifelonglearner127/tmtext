@@ -8,7 +8,10 @@ import json
 # write each JSON object on one line
 class LinesPipeline(object):
 	def open_spider(self, spider):
-		filename = spider.name + "_categories.jl"
+		if spider.outfile:
+			filename = outfile
+		else:
+			filename = spider.name + "_categories.jl"
 		self.file = open(filename, 'wb')
 
 	def process_item(self, item, spider):
@@ -35,7 +38,10 @@ class CommaSeparatedLinesPipeline(object):
 
 
 	def open_spider(self, spider):
-		filename = spider.name + "_categories.jl"
+		if spider.outfile:
+			filename = spider.outfile
+		else:
+			filename = spider.name + "_categories.jl"
 		self.file = open(filename, 'wb')
 
 	# process item in spider for which we build the sitemap tree

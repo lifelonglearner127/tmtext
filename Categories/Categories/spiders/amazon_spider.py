@@ -25,42 +25,45 @@ class AmazonSpider(BaseSpider):
         "http://www.amazon.com/gp/site-directory/ref=sa_menu_top_fullstore",
     ]
 
-    # hardcoded toplevel categories (level 1 and 2) urls to replace/supplement some of the ones found on the sitemap above (point to the same category, but have different page content. they were found manually)
-    # reason: they provide more info regarding product count than the ones found on the sitemap
-    # keys are categories names as found in the sitemap, values are URLs associated with them, that will replace/supplement the links found on the sitemap
-    extra_toplevel_categories_urls = {"Baby" : "http://www.amazon.com/s/ref=lp_166835011_ex_n_1?rh=n%3A165796011&bbn=165796011&ie=UTF8&qid=1393338541", \
-                                "Electronics & Computers" : "http://www.amazon.com/s/ref=lp_172659_ex_n_1?rh=n%3A172282&bbn=172282&ie=UTF8&qid=1393338741", \
-                                "Home, Garden & Tools" : "http://www.amazon.com/s/ref=lp_284507_ex_n_1?rh=n%3A1055398&bbn=1055398&ie=UTF8&qid=1393338782",\
-                                "Kindle E-readers & Books" : "http://www.amazon.com/s/ref=lp_154606011_ex_n_1?rh=n%3A133140011&bbn=133140011&ie=UTF8&qid=1395704970", \
-                                "Apps & Games" : "http://www.amazon.com/b/ref=sd_allcat_fire_apps_games?ie=UTF8&node=3427287011", \
-                                "Movies & TV" : "http://www.amazon.com/action-adventure-dvd-bluray/b/ref=MoviesHPBB_Genres_Action?ie=UTF8&node=2650363011&pf_rd_m=ATVPDKIKX0DER&pf_rd_s=merchandised-search-left-2&pf_rd_r=0GAWFEZ3EXP8PEYCM6X3&pf_rd_t=101&pf_rd_p=1753817742&pf_rd_i=2625373011", \
-                                "All Beauty" : "http://www.amazon.com/s/ref=lp_11059031_ex_n_1?rh=n%3A3760911&bbn=3760911&ie=UTF8&qid=1395793680",\
-                                "Health, Household & Baby Care" : "http://www.amazon.com/s/ref=lp_6183682011_ex_n_1?rh=n%3A3760901&bbn=3760901&ie=UTF8&qid=1395822180", \
-                                "Tires & Wheels" : "http://www.amazon.com/s/ref=lp_353609011_ex_n_1?rh=n%3A15684181%2Cn%3A%2115690151%2Cn%3A15706571&bbn=15706571&ie=UTF8&qid=1395824546", \
-                                "Motorcycle & Powersports" : "http://www.amazon.com/s/ref=sr_ex_n_1?rh=n%3A15684181%2Cn%3A%2115690151%2Cn%3A346333011&bbn=346333011&ie=UTF8&qid=1395824599"
-                                }
+    def __init__(self, outfile=None):
+        self.outfile = outfile
+
+        # hardcoded toplevel categories (level 1 and 2) urls to replace/supplement some of the ones found on the sitemap above (point to the same category, but have different page content. they were found manually)
+        # reason: they provide more info regarding product count than the ones found on the sitemap
+        # keys are categories names as found in the sitemap, values are URLs associated with them, that will replace/supplement the links found on the sitemap
+        self.extra_toplevel_categories_urls = {"Baby" : "http://www.amazon.com/s/ref=lp_166835011_ex_n_1?rh=n%3A165796011&bbn=165796011&ie=UTF8&qid=1393338541", \
+                                    "Electronics & Computers" : "http://www.amazon.com/s/ref=lp_172659_ex_n_1?rh=n%3A172282&bbn=172282&ie=UTF8&qid=1393338741", \
+                                    "Home, Garden & Tools" : "http://www.amazon.com/s/ref=lp_284507_ex_n_1?rh=n%3A1055398&bbn=1055398&ie=UTF8&qid=1393338782",\
+                                    "Kindle E-readers & Books" : "http://www.amazon.com/s/ref=lp_154606011_ex_n_1?rh=n%3A133140011&bbn=133140011&ie=UTF8&qid=1395704970", \
+                                    "Apps & Games" : "http://www.amazon.com/b/ref=sd_allcat_fire_apps_games?ie=UTF8&node=3427287011", \
+                                    "Movies & TV" : "http://www.amazon.com/action-adventure-dvd-bluray/b/ref=MoviesHPBB_Genres_Action?ie=UTF8&node=2650363011&pf_rd_m=ATVPDKIKX0DER&pf_rd_s=merchandised-search-left-2&pf_rd_r=0GAWFEZ3EXP8PEYCM6X3&pf_rd_t=101&pf_rd_p=1753817742&pf_rd_i=2625373011", \
+                                    "All Beauty" : "http://www.amazon.com/s/ref=lp_11059031_ex_n_1?rh=n%3A3760911&bbn=3760911&ie=UTF8&qid=1395793680",\
+                                    "Health, Household & Baby Care" : "http://www.amazon.com/s/ref=lp_6183682011_ex_n_1?rh=n%3A3760901&bbn=3760901&ie=UTF8&qid=1395822180", \
+                                    "Tires & Wheels" : "http://www.amazon.com/s/ref=lp_353609011_ex_n_1?rh=n%3A15684181%2Cn%3A%2115690151%2Cn%3A15706571&bbn=15706571&ie=UTF8&qid=1395824546", \
+                                    "Motorcycle & Powersports" : "http://www.amazon.com/s/ref=sr_ex_n_1?rh=n%3A15684181%2Cn%3A%2115690151%2Cn%3A346333011&bbn=346333011&ie=UTF8&qid=1395824599"
+                                    }
 
 
-    # flag indicating whether to compute overall product counts in pipelines phase for this spider.
-    # if on, 'catid' and 'parent_catid' fields need to be implemented
-    compute_nrproducts = True
+        # flag indicating whether to compute overall product counts in pipelines phase for this spider.
+        # if on, 'catid' and 'parent_catid' fields need to be implemented
+        self.compute_nrproducts = True
 
-    # counter for department id, will be used to autoincrement department id
-    department_count = 0
-    # counter for category id
-    catid = 0
+        # counter for department id, will be used to autoincrement department id
+        self.department_count = 0
+        # counter for category id
+        self.catid = 0
 
-    # level to stop crawling (don't extract subcategories below this level)
-    LEVEL_BARRIER = -2
+        # level to stop crawling (don't extract subcategories below this level)
+        self.LEVEL_BARRIER = 0
 
 
-    # dictionarties associating department names with other attributes - to use for setting parent category info for level 1 categories
-    # associates department names with their ids
-    departments_ids = {}
-    # associates department names with their urls (will be available only for extra_categories)
-    department_urls = {}
-    # associate department names with their category ids
-    departments_cat_ids = {}
+        # dictionarties associating department names with other attributes - to use for setting parent category info for level 1 categories
+        # associates department names with their ids
+        self.departments_ids = {}
+        # associates department names with their urls (will be available only for extra_categories)
+        self.department_urls = {}
+        # associate department names with their category ids
+        self.departments_cat_ids = {}
 
 
     # check if 2 catgory names are the same
