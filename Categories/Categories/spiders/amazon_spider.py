@@ -301,7 +301,6 @@ class AmazonSpider(BaseSpider):
 
         if item['level'] > self.LEVEL_BARRIER:
             subcategories = hxs.select("//h2[contains(text(),'Department')]/following-sibling::ul[1]/li/a")
-            if not subcategories:
             for subcategory in subcategories:
                 # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
                 if not subcategory.select("span[@class='refinementLink']"):
