@@ -32,7 +32,7 @@ class PageFetcherPipeline(object):
             'imported_data_id': page_item['imported_data_id'],
             'category_id': page_item['category_id'],
             'text': page_item['body'],
-            'request_debug_info': '',
+            'info': '',
         })
 
         if r.status_code < 400:
