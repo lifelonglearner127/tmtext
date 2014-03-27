@@ -84,7 +84,7 @@ class UrlServiceTest(unittest.TestCase):
             'imported_data_id': 102,
             'category_id': 103,
             'text': 'this is the content',
-            'request_debug_info': 'this is the debug info',
+            'info': 'this is the debug info',
         })
 
         self.assertEqual(200, r.status_code)
@@ -105,7 +105,7 @@ class UrlServiceTest(unittest.TestCase):
             'imported_data_id': 102,
             'category_id': 103,
             'text': 'this is the content',
-            'request_debug_info': 'this is the debug info',
+            'info': 'this is the debug info',
         })
 
         self.assertEqual(404, r.status_code)
@@ -121,7 +121,7 @@ class UrlServiceTest(unittest.TestCase):
             'imported_data_id': 102,
             'category_id': 103,
             'text': 'this is the content',
-            'request_debug_info': 'this is the debug info',
+            'info': 'this is the debug info',
         })
 
         self.assertEqual(404, r.status_code)

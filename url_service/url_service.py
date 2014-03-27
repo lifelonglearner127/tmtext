@@ -64,7 +64,7 @@ def save_parsed_from_text(request):
              int(request.POST['imported_data_id']),
              int(request.POST['category_id']),
              request.POST['text'],
-             request.POST['request_debug_info']])
+             request.POST['info']])
         request.db.commit()
     except KeyError as e:
         msg = "Field '%s' missing from data." % e.args
