@@ -7,6 +7,8 @@ from scrapy.item import Item, Field
 
 
 class PageItem(Item):
+    base_url = Field()
+
     id = Field()
     url = Field()
     imported_data_id = Field()
@@ -15,6 +17,8 @@ class PageItem(Item):
 
 
 class RequestErrorItem(Item):
+    base_url = Field()
+
     id = Field()
     http_code = Field()
     error_string = Field()

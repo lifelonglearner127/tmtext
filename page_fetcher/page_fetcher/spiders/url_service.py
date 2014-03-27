@@ -1,6 +1,7 @@
 import json
+import urlparse
 
-import scrapy.log
+from scrapy.log import DEBUG, INFO, ERROR
 from scrapy.spider import Spider
 from scrapy.http import (Request, FormRequest)
 from scrapy.selector import Selector
@@ -26,8 +27,6 @@ class UrlServiceSpider(Spider):
     allowed_domains = []
     start_urls = []
 
-    SERVICE_URL = "http://localhost:8080/get_queued_urls/"
-
     def __init__(self, limit='100', list_urls=False, service_url=None,
                  captcha_retries='10', *args, **kwargs):
         super(UrlServiceSpider, self).__init__(*args, **kwargs)
@@ -40,22 +39,26 @@ class UrlServiceSpider(Spider):
             self.service_url = service_url
         else:
             self.service_url = self.SERVICE_URL
-        self.service_url += '?limit=%d'
 
         self._cbw = CaptchaBreakerWrapper()
 
-        self.start_urls.append(self.service_url % int(limit))
+        queue_url = urlparse.urljoin(
+            self.service_url, 'get_queued_urls/?limit=%d&block=%d') \
+            % (int(limit), 0)
+        self.log("Fetching URLs with '%s'." % queue_url, level=DEBUG)
+        self.start_urls.append(queue_url)
 
     def parse(self, response):
-        for row in json.loads(response.body):
-            url = row[0]
+        for crawl_data in json.loads(response.body):
+            self.log("From URL Service: %s" % crawl_data, DEBUG)
+            url = crawl_data['url']
 
             if self.list_urls:
                 print url
 
             req = Request(url, callback=self.parse_target,
                           errback=self.parse_target_err)
-            req.meta['url_data'] = row
+            req.meta['crawl_data'] = crawl_data
             yield req
 
     def parse_target(self, response):
@@ -65,7 +68,8 @@ class UrlServiceSpider(Spider):
             # We already tried to solve the captcha, give up.
 
             result = RequestErrorItem(
-                id=response.meta['url_data'][1],
+                base_url=self.service_url,
+                id=response.meta['crawl_data']['id'],
                 http_code=response.status,
                 error_string="Failed to solve captcha.")
         else:
@@ -73,22 +77,24 @@ class UrlServiceSpider(Spider):
         return result
 
     def _parse_target(self, response):
-        url, url_id, imported_data_id, category_id = response.meta['url_data']
+        crawl_data = response.meta['crawl_data']
 
         item = PageItem(
-            id=url_id,
-            url=url,
-            imported_data_id=imported_data_id,
-            category_id=category_id, body=response.body)
+            base_url=self.service_url,
+            id=crawl_data['id'],
+            url=crawl_data['url'],
+            imported_data_id=crawl_data['imported_data_id'],
+            category_id=crawl_data['category_id'],
+            body=response.body)
         return item
 
     def _handle_captcha(self, response):
-        url, url_id, imported_data_id, category_id = response.meta['url_data']
+        crawl_data = response.meta['crawl_data']
         captch_solve_try = response.meta.get('captch_solve_try', 0)
 
-        scrapy.log.msg("Captcha challenge for %s (try %d)."
-                       % (url, captch_solve_try),
-                       level=scrapy.log.INFO)
+        self.log("Captcha challenge for %s (try %d)."
+                 % (crawl_data.get('url'), captch_solve_try),
+                 level=INFO)
 
         forms = Selector(response).xpath('//form')
         assert len(forms) == 1, "More than one form found."
@@ -99,24 +105,25 @@ class UrlServiceSpider(Spider):
         captcha_img = forms[0].xpath(
             '//img[contains(@src, "/captcha/")]/@src').extract()[0]
 
-        scrapy.log.msg(
+        self.log(
             "Extracted capcha values: (%s) (%s) (%s)"
             % (hidden_value1, hidden_value2, captcha_img),
-            level=scrapy.log.DEBUG)
+            level=DEBUG)
         captcha = self._solve_captcha(captcha_img)
 
         if captcha is None:
             err_msg = "Failed to guess captcha for '%s' (id: %s, try: %d)." % (
-                response.url, url_id, captch_solve_try)
-            scrapy.log.msg(err_msg, level=scrapy.log.ERROR)
+                crawl_data.get('url'), crawl_data.get('id'), captch_solve_try)
+            self.log(err_msg, level=ERROR)
             result = RequestErrorItem(
-                id=url_id,
+                base_url=self.service_url,
+                id=crawl_data['id'],
                 http_code=response.status,
                 error_string=err_msg)
         else:
-            scrapy.log.msg("Submitting captcha '%s' for '%s' (try %d)."
-                           % (captcha, captcha_img, captch_solve_try),
-                           level=scrapy.log.INFO)
+            self.log("Submitting captcha '%s' for '%s' (try %d)."
+                     % (captcha, captcha_img, captch_solve_try),
+                     level=INFO)
             result = FormRequest.from_response(
                 response,
                 formname='',
@@ -128,21 +135,22 @@ class UrlServiceSpider(Spider):
                 callback=self.parse_target,
                 errback=self.parse_target_err)
             result.meta['captch_solve_try'] = captch_solve_try + 1
-            result.meta['url_data'] = response.meta['url_data']
+            result.meta['crawl_data'] = response.meta['crawl_data']
 
         return result
 
     def parse_target_err(self, failure):
-        url_id = failure.request.meta['url_data'][1]
+        url_id = failure.request.meta['crawl_data']['id']
         error_string = failure.getErrorMessage()
         if isinstance(failure.value, HttpError):
             status = failure.value.response.status
         else:
             status = 0
-            scrapy.log.msg("Unhandled failure type '%s'. Will continue"
-                           % type(failure.value), level=scrapy.log.ERROR)
+            self.log("Unhandled failure type '%s'. Will continue"
+                     % type(failure.value), level=ERROR)
 
         item = RequestErrorItem(
+            base_url=self.service_url,
             id=url_id,
             http_code=status,
             error_string=error_string)
