@@ -105,10 +105,11 @@ class Categories:
 	# returns: dictionary indexed by word, with values consisting of the item of that category (from the spider's outputs)
 	def words_in_site(self, site):
 		# filename is of form "Site/site_categories.jl"
-		filename = site[0].upper() + site[1:] + "/" + site + "_categories.jl"
+		#filename = site[0].upper() + site[1:] + "/" + site + "_categories.jl"
+		filename =  site + "_categories.jl"
 		# separate handling for BJs
-		if site.strip() == "bjs":
-			filename = "BJs/bjs_categories.jl"
+		# if site.strip() == "bjs":
+		# 	filename = "BJs/bjs_categories.jl"
 		f = codecs.open(filename, "r", "utf-8")
 
 		words = {}
