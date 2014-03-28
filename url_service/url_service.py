@@ -1,6 +1,7 @@
 import os.path
 import json
 import logging
+import functools
 import sqlite3
 
 from wsgiref.simple_server import make_server
@@ -42,9 +43,14 @@ def queued_url(request):
             db.isolation_level = 'EXCLUSIVE'
 
         cur = db.execute(
-            """SELECT url, url_id, imported_data_id, category_id
+            """SELECT url, url_id, imported_data_id, category_id, 42 AS bid
             FROM queued_url ORDER BY id LIMIT %d""" % limit)
-        response = cur.fetchall()
+        response = [{k: str(v) for k, v in row}
+                    for row in map(
+                        functools.partial(zip, ['url', 'id',
+                                                'imported_data_id',
+                                                'category_id', 'bid']),
+                        cur.fetchall())]
     return response
 
 
@@ -64,7 +70,7 @@ def save_parsed_from_text(request):
              int(request.POST['imported_data_id']),
              int(request.POST['category_id']),
              request.POST['text'],
-             request.POST['request_debug_info']])
+             request.POST['info']])
         request.db.commit()
     except KeyError as e:
         msg = "Field '%s' missing from data." % e.args

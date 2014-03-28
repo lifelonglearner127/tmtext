@@ -1,4 +1,6 @@
-from itertools import count
+from collections import OrderedDict
+from itertools import count, repeat, imap, izip
+import functools
 import unittest
 import os.path
 import logging
@@ -27,9 +29,16 @@ class UrlServiceTest(unittest.TestCase):
 
         self.url_base = u'http://www.example.com/'
         self.url_paths = ['a', 'b', 'c', '']
-        self.queued_urls = list(map(list, zip(
-            [self.url_base + path for path in self.url_paths],
-            count(1), count(100, 100), count(1000, 1000))))
+        self.field_names = [u'url', u'id', u'imported_data_id', u'category_id',
+                            u'bid']
+        self.queued_urls = map(
+            OrderedDict,  # Ordered so that we can also use it as a tuple.
+            imap(functools.partial(zip, self.field_names),
+                 izip([self.url_base + path for path in self.url_paths],
+                      imap(unicode, count(1)),
+                      imap(unicode, count(100, 100)),
+                      imap(unicode, count(1000, 1000)),
+                      repeat(u'42'))))
 
         self.db = sqlite3.connect(
             os.path.join(url_service.HERE, url_service.DB_FN))
@@ -43,22 +52,18 @@ class UrlServiceTest(unittest.TestCase):
             """INSERT
                 INTO queued_url (url, url_id, imported_data_id, category_id)
                 VALUES (?, ?, ?, ?)""",
-            self.queued_urls)
+            (data.values()[:-1] for data in self.queued_urls))  # Discard bid.
         self.db.commit()
 
     def tearDown(self):
         self.db.close()
-        del self.db
-
-        del self.url_base
-        del self.url_paths
-        del self.queued_urls
 
     def test_get_queued_urls(self):
         r = requests.get(URL_BASE + URL_QUEUED_URLS)
 
         self.assertEqual(200, r.status_code)
-        self.assertEqual(self.queued_urls, json.loads(r.content))
+        self.assertSequenceEqual(map(dict, self.queued_urls),
+                                 json.loads(r.content))
 
     def test_get_queued_urls_limit(self):
         r = requests.get(URL_BASE + URL_QUEUED_URLS + '?limit=2')
@@ -66,7 +71,7 @@ class UrlServiceTest(unittest.TestCase):
         self.assertEqual(200, r.status_code)
         self.assertEqual('application/json; charset=UTF-8',
                          r.headers['content-type'])
-        self.assertEqual(self.queued_urls[:2], json.loads(r.content))
+        self.assertSequenceEqual(self.queued_urls[:2], json.loads(r.content))
 
     def test_get_queued_urls_404(self):
         r = requests.get(URL_BASE + URL_QUEUED_URLS + '?limit=A')
@@ -84,7 +89,7 @@ class UrlServiceTest(unittest.TestCase):
             'imported_data_id': 102,
             'category_id': 103,
             'text': 'this is the content',
-            'request_debug_info': 'this is the debug info',
+            'info': 'this is the debug info',
         })
 
         self.assertEqual(200, r.status_code)
@@ -105,7 +110,7 @@ class UrlServiceTest(unittest.TestCase):
             'imported_data_id': 102,
             'category_id': 103,
             'text': 'this is the content',
-            'request_debug_info': 'this is the debug info',
+            'info': 'this is the debug info',
         })
 
         self.assertEqual(404, r.status_code)
@@ -121,7 +126,7 @@ class UrlServiceTest(unittest.TestCase):
             'imported_data_id': 102,
             'category_id': 103,
             'text': 'this is the content',
-            'request_debug_info': 'this is the debug info',
+            'info': 'this is the debug info',
         })
 
         self.assertEqual(404, r.status_code)
@@ -171,3 +176,7 @@ class UrlServiceTest(unittest.TestCase):
         self.assertEqual("invalid literal for int() with base 10: "
                          "'four hundred and four'",
                          json.loads(r.content))
+
+
+if __name__ == '__main__':
+    unittest.main()
