@@ -27,12 +27,11 @@ class UrlServiceSpider(Spider):
     allowed_domains = []
     start_urls = []
 
-    def __init__(self, limit='100', list_urls=False, service_url=None,
+    def __init__(self, limit='100', service_url=None,
                  captcha_retries='10', *args, **kwargs):
         super(UrlServiceSpider, self).__init__(*args, **kwargs)
 
         self.limit = limit
-        self.list_urls = list_urls
         self.captcha_retries = int(captcha_retries)
 
         if service_url is not None:
@@ -52,9 +51,6 @@ class UrlServiceSpider(Spider):
         for crawl_data in json.loads(response.body):
             self.log("From URL Service: %s" % crawl_data, DEBUG)
             url = crawl_data['url']
-
-            if self.list_urls:
-                print url
 
             req = Request(url, callback=self.parse_target,
                           errback=self.parse_target_err)
