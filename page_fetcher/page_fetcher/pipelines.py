@@ -3,6 +3,7 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+import json
 import urlparse
 
 from scrapy.log import INFO, ERROR
@@ -41,7 +42,7 @@ class PageFetcherPipeline(object):
             'imported_data_id': page_item['imported_data_id'],
             'category_id': page_item['category_id'],
             'text': page_item['body'],
-            'info': '',
+            'info': json.dumps({'total_time': page_item['total_time']}),
         })
 
         if r.status_code < 400:

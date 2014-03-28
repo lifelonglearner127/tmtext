@@ -1,4 +1,5 @@
 import json
+import time
 import urlparse
 
 from scrapy.log import DEBUG, INFO, ERROR
@@ -55,6 +56,7 @@ class UrlServiceSpider(Spider):
             req = Request(url, callback=self.parse_target,
                           errback=self.parse_target_err)
             req.meta['crawl_data'] = crawl_data
+            req.meta['start_time'] = time.clock()
             yield req
 
     def parse_target(self, response):
@@ -77,6 +79,7 @@ class UrlServiceSpider(Spider):
 
         item = PageItem(
             base_url=self.service_url,
+            total_time=time.clock() - response.meta['start_time'],
             id=crawl_data['id'],
             url=crawl_data['url'],
             imported_data_id=crawl_data['imported_data_id'],
@@ -132,6 +135,7 @@ class UrlServiceSpider(Spider):
                 errback=self.parse_target_err)
             result.meta['captch_solve_try'] = captch_solve_try + 1
             result.meta['crawl_data'] = response.meta['crawl_data']
+            result.meta['start_time'] = response.meta['start_time']
 
         return result
 

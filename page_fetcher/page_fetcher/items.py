@@ -8,6 +8,7 @@ from scrapy.item import Item, Field
 
 class PageItem(Item):
     base_url = Field()
+    total_time = Field()
 
     id = Field()
     url = Field()
