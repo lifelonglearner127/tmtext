@@ -106,7 +106,7 @@ class CommaSeparatedLinesPipeline(object):
 
 			return count_dict
 
-		# else - if it's not available as extracted from the site, compute it from its subcategorie
+		# else - if it's not available as extracted from the site, compute it from its subcategories
 
 		if 'subcategories' in self.categories_tree[key]:
 			subcategories = self.categories_tree[key]['subcategories']

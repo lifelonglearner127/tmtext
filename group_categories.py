@@ -150,7 +150,7 @@ class Categories:
 		for word in words:
 			print Utils.stems[word]
 			for item in words[word]:
-				print "\t",item["text"]
+				print "\t",item["text"].encode("utf-8")
 		return sorted(words.items(), key=lambda x: len(x[1]), reverse=True)
 
 	# creates graph that connects words that are both found in a category name
@@ -160,10 +160,11 @@ class Categories:
 		words = nx.Graph()
 		for site in self.sites:
 			# filename is of form "Site/site_categories.jl"
-			filename = site[0].upper() + site[1:] + "/" + site + "_categories.jl"
+			#filename = site[0].upper() + site[1:] + "/" + site + "_categories.jl"
+			filename = site + "_categories.jl"
 			# separate handling for BJs
-			if site.strip() == "bjs":
-				filename = "BJs/bjs_categories.jl"
+			# if site.strip() == "bjs":
+			# 	filename = "BJs/bjs_categories.jl"
 			f = codecs.open(filename, "r", "utf-8")
 
 			for line in f:
@@ -375,6 +376,7 @@ class Categories:
 if __name__=="__main__":
 	sites = ["amazon", "bestbuy", "bjs", "bloomingdales", "overstock", "walmart", "wayfair"]
 	sites = ["bjs","bestbuy","walmart","amazon"]
+	sites = ["amazon", "walmart"]
 	gc = Categories(sites, 1)
 	groups = gc.group_by_common_words()
 	#pprint(groups)
