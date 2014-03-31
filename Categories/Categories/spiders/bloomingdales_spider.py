@@ -25,9 +25,15 @@ class BloomingdalesSpider(BaseSpider):
         "http://www1.bloomingdales.com/service/sitemap/index.ognc?cm_sp=NAVIGATION-_-BOTTOM_LINKS-_-SITE_MAP",
     ]
 
-    # keep crawled items represented by (url, parent_url, level) tuples
-    # to eliminate duplicates
-    crawled = []
+    def __init__(self):
+
+        # keep crawled items represented by (url, parent_url, level) tuples
+        # to eliminate duplicates
+        self.crawled = []
+
+        # level that is considered to contain departments
+        self.DEPARTMENT_LEVEL = 1
+
 
     def parse(self, response):
         hxs = HtmlXPathSelector(response)

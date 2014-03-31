@@ -22,6 +22,10 @@ class NeweggSpider(BaseSpider):
     allowed_domains = ["newegg.com"]
     start_urls = ["http://www.newegg.com"]
 
+    def __init__(self):
+        # level that is considered to contain departments
+        self.DEPARTMENT_LEVEL = 1
+
     # remove suffix (referrer?) from URL
     def clean_url(self, url):
         m = re.match("(.*)\?Tid=[0-9]+", url)

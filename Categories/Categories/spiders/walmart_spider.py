@@ -28,21 +28,27 @@ class WalmartSpider(BaseSpider):
     start_urls = [
         "http://www.walmart.com/cp/All-Departments/121828",
     ]
-    root_url = "http://www.walmart.com"
 
-    # set flag that indicates that for this spider, nr of products for each catgory should be computed
-    compute_nrproducts = True
 
-    # keep crawled items represented by (url, parent_url, department_url) pairs
-    # to eliminate duplicates
-    # (adding department_url makes sure that if one entire department is found as a subcategory of another for ex, both (and their complete category trees) will be crawled)
-    crawled = []
+    def __init__(self):
+        self.root_url = "http://www.walmart.com"
 
-    # last used category id, used for autoincrementing ids idenrifying categories
-    id_count = 0
+        # set flag that indicates that for this spider, nr of products for each catgory should be computed
+        self.compute_nrproducts = True
 
-    # hardcoded values for special category's item count. Currently used for 'Value of the day' that typically has fixed number of products, and nowhere to extract it from page
-    special_itemcount = {'value of the day' : 2}
+        # level that is considered to contain departments
+        self.DEPARTMENT_LEVEL = 1
+
+        # keep crawled items represented by (url, parent_url, department_url) pairs
+        # to eliminate duplicates
+        # (adding department_url makes sure that if one entire department is found as a subcategory of another for ex, both (and their complete category trees) will be crawled)
+        self.crawled = []
+
+        # last used category id, used for autoincrementing ids idenrifying categories
+        self.id_count = 0
+
+        # hardcoded values for special category's item count. Currently used for 'Value of the day' that typically has fixed number of products, and nowhere to extract it from page
+        self.special_itemcount = {'value of the day' : 2}
 
     def parse(self, response):
         hxs = HtmlXPathSelector(response)

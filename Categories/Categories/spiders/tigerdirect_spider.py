@@ -21,7 +21,13 @@ class TigerdirectSpider(BaseSpider):
         "http://www.tigerdirect.com/computerproducts.asp",
     ]
 
-    parsed_urls = []
+    def __init__(self):
+
+        self.parsed_urls = []
+        
+        # level that is considered to contain departments
+        self.DEPARTMENT_LEVEL = 1
+
 
     def parse(self, response):
         hxs = HtmlXPathSelector(response)

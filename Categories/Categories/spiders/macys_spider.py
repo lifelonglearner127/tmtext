@@ -23,6 +23,11 @@ class MacysSpider(BaseSpider):
         "http://www1.macys.com/cms/slp/2/Site-Index",
     ]
 
+    def __init__(self):
+        # level that is considered to contain departments
+        self.DEPARTMENT_LEVEL = 1
+
+
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         links = hxs.select("//div[@id='sitemap_header']/a")

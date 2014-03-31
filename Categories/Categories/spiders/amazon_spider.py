@@ -28,6 +28,9 @@ class AmazonSpider(BaseSpider):
     def __init__(self, outfile=None):
         self.outfile = outfile
 
+        # level that is considered to contain departments
+        self.DEPARTMENT_LEVEL = 2
+
         # hardcoded toplevel categories (level 1 and 2) urls to replace/supplement some of the ones found on the sitemap above (point to the same category, but have different page content. they were found manually)
         # reason: they provide more info regarding product count than the ones found on the sitemap
         # keys are categories names as found in the sitemap, values are URLs associated with them, that will replace/supplement the links found on the sitemap

@@ -22,6 +22,11 @@ class OverstockSpider(BaseSpider):
         "http://www.overstock.com/sitemap",
     ]
 
+    def __init__(self):
+        # level that is considered to contain departments
+        self.DEPARTMENT_LEVEL = 1
+
+
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
         # currently selecting bottom level categories, and their parents and parents of parents ("grandparents") in their fields

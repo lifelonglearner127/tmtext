@@ -28,6 +28,11 @@ class StaplesSpider(BaseSpider):
 	# use one random category page as the root page to extract departments
 	start_urls = ["http://www.staples.com/Televisions/cat_CL142471"]
 
+	def __init__(self):
+		# level that is considered to contain departments
+		self.DEPARTMENT_LEVEL = 1
+
+
 
 	def parse(self, response):
 

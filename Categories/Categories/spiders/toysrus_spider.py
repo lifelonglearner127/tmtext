@@ -22,6 +22,10 @@ class ToysrusSpider(BaseSpider):
 
     start_urls = ['http://www.toysrus.com/sitemap/map.jsp']
 
+    def __init__(self):
+        # level that is considered to contain departments
+        self.DEPARTMENT_LEVEL = 1
+
     # build urls list containing each page of the sitemap, and pass them to parsePage to extract items (categories)
     # the output will not be organized by page by default
     def parse(self, response):

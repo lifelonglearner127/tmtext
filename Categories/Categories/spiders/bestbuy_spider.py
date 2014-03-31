@@ -24,6 +24,11 @@ class BestbuySpider(BaseSpider):
         "http://www.bestbuy.com/site/sitemap.jsp",
     ]
 
+    def __init__(self):
+        # level that is considered to contain departments
+        self.DEPARTMENT_LEVEL = 1
+
+
     def parse(self, response):
         # currently not extracting parents that are non-links (smaller parent categories like "resources" and "shops")
         hxs = HtmlXPathSelector(response)

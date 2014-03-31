@@ -22,6 +22,9 @@ class WayfairSpider(BaseSpider):
         "http://www.wayfair.com/site_map.php",
     ]
 
+    def __init__(self):
+        self.DEPARTMENT_LEVEL = 1
+
     def parse(self, response):
         hxs = HtmlXPathSelector(response)
 

@@ -24,7 +24,13 @@ class SherwinSpider(BaseSpider):
 		"https://www.sherwin-williams.com/sitemap/",
 	]
 
-	base_url = "http://www.sherwin-williams.com"
+	def __init__(self):
+
+		self.base_url = "http://www.sherwin-williams.com"
+		
+		# level that is considered to contain departments
+		self.DEPARTMENT_LEVEL = 1
+
 
 	def parse(self, response):
 		hxs = HtmlXPathSelector(response)
