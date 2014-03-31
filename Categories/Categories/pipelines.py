@@ -8,7 +8,7 @@ import json
 # write each JSON object on one line
 class LinesPipeline(object):
 	def open_spider(self, spider):
-		if spider.outfile:
+		if hasattr(spider, 'outfile') and spider.outfile:
 			filename = outfile
 		else:
 			filename = spider.name + "_categories.jl"
@@ -38,7 +38,7 @@ class CommaSeparatedLinesPipeline(object):
 
 
 	def open_spider(self, spider):
-		if spider.outfile:
+		if hasattr(spider, 'outfile') and spider.outfile:
 			filename = spider.outfile
 		else:
 			filename = spider.name + "_categories.jl"
