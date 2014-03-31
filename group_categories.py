@@ -337,6 +337,10 @@ class Categories:
 		f = open('groups.jl', 'wb')
 		for group in groups:
 			line = json.dumps(group)
+
+			# just extract the 'text' of each element in the group
+			line = json.dumps({'Group_members' : map(lambda x: x['text'], group['Group_members'])})
+
 			f.write(line+"\n\n")
 		f.close()
 
