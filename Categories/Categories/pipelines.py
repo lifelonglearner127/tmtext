@@ -45,7 +45,7 @@ class CommaSeparatedLinesPipeline(object):
 		self.file = open(filename, 'wb')
 
 	# process item in spider for which we build the sitemap tree
-	def process_item_fortree(self, item):
+	def process_item_fortree(self, item, spider):
 		# add key-value pair where key is current's item URL
 		# and value is dict containing item and subcategories list (for now empty)
 		self.categories_tree[item['catid']] = {}
@@ -55,7 +55,7 @@ class CommaSeparatedLinesPipeline(object):
 			self.categories_tree[item['catid']]['subcategories'] = []
 
 		# add to top level categories if it's a department
-		if item['level'] == 1:
+		if item['level'] == spider.DEPARTMENT_LEVEL:
 			self.top_level_categories.append(item['catid'])
 		
 		# add item URL to subcategories list of its parent's element in the tree
@@ -68,7 +68,7 @@ class CommaSeparatedLinesPipeline(object):
 
 	def process_item(self, item, spider):
 		if hasattr(spider, 'compute_nrproducts') and spider.compute_nrproducts:
-			self.process_item_fortree(item)
+			self.process_item_fortree(item, spider)
 		else:
 			# if we're not aggregating number of products, just return the item
 			line = json.dumps(dict(item))
