@@ -22,7 +22,9 @@ class NeweggSpider(BaseSpider):
     allowed_domains = ["newegg.com"]
     start_urls = ["http://www.newegg.com"]
 
-    def __init__(self):
+    def __init__(self, outfile=None):
+        self.outfile = outfile
+
         # level that is considered to contain departments
         self.DEPARTMENT_LEVEL = 1
 

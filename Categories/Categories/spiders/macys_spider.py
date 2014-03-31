@@ -23,7 +23,9 @@ class MacysSpider(BaseSpider):
         "http://www1.macys.com/cms/slp/2/Site-Index",
     ]
 
-    def __init__(self):
+    def __init__(self, outfile=None):
+        self.outfile = outfile
+
         # level that is considered to contain departments
         self.DEPARTMENT_LEVEL = 1
 

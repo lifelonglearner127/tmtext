@@ -25,7 +25,9 @@ class BloomingdalesSpider(BaseSpider):
         "http://www1.bloomingdales.com/service/sitemap/index.ognc?cm_sp=NAVIGATION-_-BOTTOM_LINKS-_-SITE_MAP",
     ]
 
-    def __init__(self):
+    def __init__(self, outfile=None):
+
+        self.outfile = outfile
 
         # keep crawled items represented by (url, parent_url, level) tuples
         # to eliminate duplicates

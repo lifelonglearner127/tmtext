@@ -21,7 +21,9 @@ class TigerdirectSpider(BaseSpider):
         "http://www.tigerdirect.com/computerproducts.asp",
     ]
 
-    def __init__(self):
+    def __init__(self, outfile=None):
+
+        self.outfile = outfile
 
         self.parsed_urls = []
         

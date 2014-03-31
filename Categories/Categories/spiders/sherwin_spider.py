@@ -24,7 +24,9 @@ class SherwinSpider(BaseSpider):
 		"https://www.sherwin-williams.com/sitemap/",
 	]
 
-	def __init__(self):
+	def __init__(self, outfile=None):
+
+		self.outfile = outfile
 
 		self.base_url = "http://www.sherwin-williams.com"
 		

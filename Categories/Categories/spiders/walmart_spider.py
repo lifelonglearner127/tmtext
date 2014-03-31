@@ -30,8 +30,9 @@ class WalmartSpider(BaseSpider):
     ]
 
 
-    def __init__(self):
+    def __init__(self, outfile=None):
         self.root_url = "http://www.walmart.com"
+        self.outfile = outfile
 
         # set flag that indicates that for this spider, nr of products for each catgory should be computed
         self.compute_nrproducts = True

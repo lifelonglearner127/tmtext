@@ -19,7 +19,9 @@ class BJsSpider(BaseSpider):
         #"file:///home/ana/code/nlp_reviews/misc/the_pages/BJ's%20Wholesale%20Club.html"
     ]
 
-    def __init__(self):
+    def __init__(self, outfile=None):
+        self.outfile = outfile
+
         # level that is considered to contain departments
         self.DEPARTMENT_LEVEL = 1
 
