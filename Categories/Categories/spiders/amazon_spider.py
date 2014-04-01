@@ -2,7 +2,7 @@ from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from Categories.items import CategoryItem
 from Categories.items import ProductItem
-from scrapy.http import Request
+from scrapy.http import Request, FormRequest
 from scrapy.http import Response
 import re
 import sys
@@ -23,7 +23,7 @@ class AmazonSpider(BaseSpider):
     name = "amazon"
     allowed_domains = ["amazon.com"]
     start_urls = [
-        "http://www.amazon.com/gp/site-directory/ref=sa_menu_top_fullstore",
+        "http://www.amazon.com/gp/site-directory/ref=sa_menu_top_fullstore"
     ]
 
     def __init__(self, outfile=None):
@@ -70,7 +70,7 @@ class AmazonSpider(BaseSpider):
         self.departments_cat_ids = {}
 
         # captcha breaker
-        self.cb = CaptchaBreakerWrapper()
+        self.CB = CaptchaBreakerWrapper()
 
 
     # solve the captcha on this page and redirect back to method that sent us here (callback)
@@ -93,7 +93,8 @@ class AmazonSpider(BaseSpider):
         # items, cookies and search_urls not changed from previous response so no need to set them again
 
         # redirect to initial URL
-        return [FormRequest.from_response(response, callback = callback, formdata={'field-keywords' : captcha_text})]
+        #return [FormRequest.from_response(response, callback = callback, formdata={'field-keywords' : captcha_text})]
+        return FormRequest.from_response(response, callback = callback, formdata={'field-keywords' : captcha_text}, meta=response.meta)
 
     # test if page is form containing captcha
     def has_captcha(self, body):
@@ -125,6 +126,11 @@ class AmazonSpider(BaseSpider):
     def parse(self, response):
 
         hxs = HtmlXPathSelector(response)
+
+        if self.has_captcha(response.body):
+            yield self.solve_captcha_and_redirect(response, self.parse)
+            return
+
         links_level1 = hxs.select("//div[@id='siteDirectory']//table//a")
         titles_level1 = hxs.select("//div//table//h2")
 
@@ -224,6 +230,13 @@ class AmazonSpider(BaseSpider):
 
     # parse category and return item corresponding to it (for categories where URL available - level 2 and lower)
     def parseCategory(self, response):
+
+        # if we are getting blocked by captcha, solve and redirect back here
+        if self.has_captcha(response.body):
+            yield self.solve_captcha_and_redirect(response, self.parseCategory)
+            return
+
+
         hxs = HtmlXPathSelector(response)
 
         # extract additional info for received parent and return it
@@ -308,6 +321,10 @@ class AmazonSpider(BaseSpider):
     # after subcategories extracted, send them to parseCategory to extract description as well
     # Obs: it's not exhaustive. if page doesn't match what it expects, it gives up
     def extract_nrprods_and_subcats(self, response):
+
+        if self.has_captcha(response.body):
+            yield self.solve_captcha_and_redirect(response, self.extract_nrprods_and_subcats)
+            return
 
         hxs = HtmlXPathSelector(response)
 
