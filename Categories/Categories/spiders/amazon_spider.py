@@ -9,6 +9,7 @@ import sys
 import datetime
 
 from spiders_utils import Utils
+from captcha_solver import CaptchaBreakerWrapper
 
 ################################
 # Run with 
@@ -67,6 +68,36 @@ class AmazonSpider(BaseSpider):
         self.department_urls = {}
         # associate department names with their category ids
         self.departments_cat_ids = {}
+
+        # captcha breaker
+        self.cb = CaptchaBreakerWrapper()
+
+
+    # solve the captcha on this page and redirect back to method that sent us here (callback)
+    #TODO: add max retry times
+    def solve_captcha_and_redirect(self, response, callback):
+        hxs = HtmlXPathSelector(response)
+
+        # solve captcha
+        captcha_text = None
+        image = hxs.select(".//img/@src").extract()
+        if image:
+            captcha_text = self.CB.solve_captcha(image[0])
+
+        # value to use if there was an exception
+        if not captcha_text:
+            captcha_text = ''
+
+
+        # create a FormRequest to this same URL, with everything needed in meta
+        # items, cookies and search_urls not changed from previous response so no need to set them again
+
+        # redirect to initial URL
+        return [FormRequest.from_response(response, callback = callback, formdata={'field-keywords' : captcha_text})]
+
+    # test if page is form containing captcha
+    def has_captcha(self, body):
+        return '.images-amazon.com/captcha/' in body
 
 
     # check if 2 catgory names are the same
