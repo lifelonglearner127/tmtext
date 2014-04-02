@@ -23,8 +23,7 @@ class AmazonSpider(BaseSpider):
     name = "amazon"
     allowed_domains = ["amazon.com"]
     start_urls = [
-        #"http://www.amazon.com/gp/site-directory/ref=sa_menu_top_fullstore"
-        'http://www.amazon.com/errors/validateCaptcha?amzn=JfN9GrPFgV%2B837nR8vVVuw%3D%3D&amzn-r=%2FGold-Plated-Dome-Tungsten-Wedding%2Fdp%2FB0041H91TO%2Fref%3Dsr_1_1%3Fs%3Djewelry%26ie%3DUTF8%26qid%3D1391207507%26sr%3D1-1%26keywords%3Dring%2Bgold'
+        "http://www.amazon.com/gp/site-directory/ref=sa_menu_top_fullstore"
     ]
 
     def __init__(self, outfile=None):
