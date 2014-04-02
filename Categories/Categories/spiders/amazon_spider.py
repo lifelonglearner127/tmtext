@@ -23,7 +23,8 @@ class AmazonSpider(BaseSpider):
     name = "amazon"
     allowed_domains = ["amazon.com"]
     start_urls = [
-        "http://www.amazon.com/gp/site-directory/ref=sa_menu_top_fullstore"
+        #"http://www.amazon.com/gp/site-directory/ref=sa_menu_top_fullstore"
+        'http://www.amazon.com/errors/validateCaptcha?amzn=JfN9GrPFgV%2B837nR8vVVuw%3D%3D&amzn-r=%2FGold-Plated-Dome-Tungsten-Wedding%2Fdp%2FB0041H91TO%2Fref%3Dsr_1_1%3Fs%3Djewelry%26ie%3DUTF8%26qid%3D1391207507%26sr%3D1-1%26keywords%3Dring%2Bgold'
     ]
 
     def __init__(self, outfile=None):
@@ -60,6 +61,9 @@ class AmazonSpider(BaseSpider):
         # level to stop crawling (don't extract subcategories below this level)
         self.LEVEL_BARRIER = -2
 
+        # maximum number of retries when presented with captcha form
+        self.MAX_CAPTCHA_RETRY = 10
+
 
         # dictionarties associating department names with other attributes - to use for setting parent category info for level 1 categories
         # associates department names with their ids
@@ -74,7 +78,6 @@ class AmazonSpider(BaseSpider):
 
 
     # solve the captcha on this page and redirect back to method that sent us here (callback)
-    #TODO: add max retry times
     def solve_captcha_and_redirect(self, response, callback):
         hxs = HtmlXPathSelector(response)
 
@@ -94,7 +97,10 @@ class AmazonSpider(BaseSpider):
 
         # redirect to initial URL
         #return [FormRequest.from_response(response, callback = callback, formdata={'field-keywords' : captcha_text})]
-        return FormRequest.from_response(response, callback = callback, formdata={'field-keywords' : captcha_text}, meta=response.meta)
+        meta = response.meta
+        # decrease count for retry times left. if not set yet, this is first attempt, set it to MAX_CAPTCHA_RETRY
+        response.meta['retry_count'] = response.meta['retry_count'] - 1 if 'retry_count' in response.meta else self.MAX_CAPTCHA_RETRY
+        return FormRequest.from_response(response, callback = callback, formdata={'field-keywords' : captcha_text}, meta=meta)
 
     # test if page is form containing captcha
     def has_captcha(self, body):
@@ -127,8 +133,9 @@ class AmazonSpider(BaseSpider):
 
         hxs = HtmlXPathSelector(response)
 
-        if self.has_captcha(response.body):
-            yield self.solve_captcha_and_redirect(response, self.parse)
+        # if there is a captcha to solve, and we haven't exhausted our retries, try to solve it
+        if self.has_captcha(response.body) and ('retry_count' not in response.meta or response.meta['retry_count'] > 0):
+            yield self.solve_captcha_and_redirect(response, self.parse) # meta of response will contain number of retries left if set
             return
 
         links_level1 = hxs.select("//div[@id='siteDirectory']//table//a")
@@ -232,8 +239,9 @@ class AmazonSpider(BaseSpider):
     def parseCategory(self, response):
 
         # if we are getting blocked by captcha, solve and redirect back here
-        if self.has_captcha(response.body):
-            yield self.solve_captcha_and_redirect(response, self.parseCategory)
+        # if there is a captcha to solve, and we haven't exhausted our retries, try to solve it
+        if self.has_captcha(response.body) and ('retry_count' not in response.meta or response.meta['retry_count'] > 0):
+            yield self.solve_captcha_and_redirect(response, self.parseCategory) # meta of response will contain number of retries left if set
             return
 
 
@@ -322,8 +330,9 @@ class AmazonSpider(BaseSpider):
     # Obs: it's not exhaustive. if page doesn't match what it expects, it gives up
     def extract_nrprods_and_subcats(self, response):
 
-        if self.has_captcha(response.body):
-            yield self.solve_captcha_and_redirect(response, self.extract_nrprods_and_subcats)
+        # if there is a captcha to solve, and we haven't exhausted our retries, try to solve it
+        if self.has_captcha(response.body) and ('retry_count' not in response.meta or response.meta['retry_count'] > 0):
+            yield self.solve_captcha_and_redirect(response, self.extract_nrprods_and_subcats) # meta of response will contain number of retries left if set
             return
 
         hxs = HtmlXPathSelector(response)
