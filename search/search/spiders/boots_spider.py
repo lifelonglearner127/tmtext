@@ -13,6 +13,7 @@ from search.matching_utils import ProcessText
 
 import re
 import sys
+import urllib
 
 
 class BootsSpider(SearchSpider):
@@ -41,8 +42,8 @@ class BootsSpider(SearchSpider):
 		for result in results:
 			item = SearchItem()
 
-			product_url = result.select("@href").extract()[0] #if result.select("@href") else None
-			product_name = result.select("text()").extract()[0] #if result.select("text()") else None
+			product_url = result.select("@href").extract()[0]
+			product_name = result.select("text()").extract()[0]
 
 			# assert name is not abbreviated
 			# empirically, this only seems to produce false positives, so removed

@@ -233,7 +233,10 @@ class BootsSpider(CaturlsSpider):
 		product_urls = hxs.select("//div[contains(@id,'t1')]//div[@class='pl_productName']/a/@href")
 		for url in product_urls:
 			item = ProductItem()
-			item['product_url'] = url.extract().encode("utf-8")
+			product_url = url.extract().encode("utf-8")
+			# convert strange product url characters to percent encoding - only part after last / (the one before the last, since the last is followed by nothing)
+			product_url = '/'.join(product_url.split('/')[:-2]) + '/' + urllib.quote(product_url.split('/')[-2]) + '/'
+			item['product_url'] = product_url
 			item['category'] = category
 			yield item
 
