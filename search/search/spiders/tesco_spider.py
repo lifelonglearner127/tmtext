@@ -44,7 +44,8 @@ class TescoSpider(SearchSpider):
 			product_name = result.select("@title").extract()[0] if result.select("@title") else None
 
 			# assert name is not abbreviated
-			assert '...' not in product_name
+			# empirically, this only seems to produce false positives, so removed
+			# assert '...' not in product_name
 
 			# quit if there is no product name
 			if product_name and product_url:
