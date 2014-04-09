@@ -24,11 +24,12 @@ class PageFetcherPipeline(object):
     def process_item(self, item, spider):
         if isinstance(item, PageItem):
             self.save_page(item)
+
+            # Replace body not to clutter output.
+            item['body'] = "(body)"
         elif isinstance(item, RequestErrorItem):
             self.save_error(item)
 
-        # Replace body not to clutter output.
-        item['body'] = "(body)"
         return item
 
     def save_page(self, page_item):
@@ -57,7 +58,7 @@ class PageFetcherPipeline(object):
         self.log(msg, level=level)
 
     def save_error(self, error_item):
-        self.log("Saving load failure for URL id %d." % error_item.get('id'),
+        self.log("Saving load failure for URL id %s." % error_item.get('id'),
                  level=INFO)
 
         service_url = urlparse.urljoin(error_item['base_url'],
