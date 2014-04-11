@@ -360,23 +360,36 @@ class AmazonSpider(BaseSpider):
 
         if item['level'] > self.LEVEL_BARRIER:
             # TODO: make it work for Kids' Clothing as well\ 
-            subcategories = hxs.select("(//h2 | //h3)[text()='Department' or text()='Shop by Department']/following-sibling::ul[1]/li/a") # text must bot be that little arrow sign
+            subcategories = hxs.select("//h2[text()='Department']/following-sibling::ul[1]/li/a")
+            # only try "Shop by Department" if there is no "Department", otherwise might cause problems when both are present. e.g (http://www.amazon.com/Watches-Mens-Womens-Kids-Accessories/b/ref=sd_allcat_watches/187-9021585-5419616?ie=UTF8&node=377110011)
+            if not subcategories:
+                subcategories = hxs.select("(//h2 | //h3)[text()='Shop by Department']/following-sibling::ul[1]/li/a")
             for subcategory in subcategories:
                 # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
 
                 # there is an exception to this refinement link rule - then extract info directly from subcategory node, but only if len(text)>1 (otherwise we catch all the little arrows for parent cats)
                 if not subcategory.select("span[@class='refinementLink']"):
                     if len(subcategory.select(".//text()").extract()[0].strip())>1: # so it's not that little arrow thing
-                        subcategory_text = subcategory.select("text()").extract()[0].strip()
-                        subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
+                        subcategory_text_holder = subcategory.select("text()[normalize-space()!='']").extract()
+                        if subcategory_text_holder:
+                            subcategory_text = subcategory_text_holder[0].strip()
+                        else:
+                            continue
+                        subcategory_url_holder = subcategory.select("@href").extract()
+                        if subcategory_url_holder:
+                            subcategory_url = Utils.add_domain(subcategory_url_holder[0], "http://www.amazon.com")
+                        else:
+                            continue
                         subcategory_prodcount_holder = None
                     else:
                         continue
 
-                subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
-                subcategory_text = subcategory.select("span[@class='refinementLink']//text()").extract()[0].strip()
-                # extract product count, clean it of commas and parantheses
-                subcategory_prodcount_holder = subcategory.select("span[@class='narrowValue']/text()").extract()
+                else:
+
+                    subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
+                    subcategory_text = subcategory.select("span[@class='refinementLink']//text()").extract()[0].strip()
+                    # extract product count, clean it of commas and parantheses
+                    subcategory_prodcount_holder = subcategory.select("span[@class='narrowValue']/text()").extract()
 
                 # if there's also product count available in the menu, extract it
                 if subcategory_prodcount_holder:
