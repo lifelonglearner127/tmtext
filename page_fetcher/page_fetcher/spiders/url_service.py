@@ -32,13 +32,12 @@ class UrlServiceSpider(Spider):
                  captcha_retries='10', *args, **kwargs):
         super(UrlServiceSpider, self).__init__(*args, **kwargs)
 
+        if service_url is None:
+            raise AssertionError("Service URL is not optional.")
+
         self.limit = limit
         self.captcha_retries = int(captcha_retries)
-
-        if service_url is not None:
-            self.service_url = service_url
-        else:
-            self.service_url = self.SERVICE_URL
+        self.service_url = service_url
 
         self._cbw = CaptchaBreakerWrapper()
 
@@ -77,6 +76,12 @@ class UrlServiceSpider(Spider):
     def _parse_target(self, response):
         crawl_data = response.meta['crawl_data']
 
+        body = None
+        if hasattr(response, 'body_as_unicode'):
+            body = response.body_as_unicode().encode('utf-8')
+        else:
+            body = response.body  # Probably binary or incorrect Content-Type.
+
         item = PageItem(
             base_url=self.service_url,
             total_time=time.clock() - response.meta['start_time'],
@@ -84,7 +89,7 @@ class UrlServiceSpider(Spider):
             url=crawl_data['url'],
             imported_data_id=crawl_data['imported_data_id'],
             category_id=crawl_data['category_id'],
-            body=response.body)
+            body=body)
         return item
 
     def _handle_captcha(self, response):
@@ -127,9 +132,7 @@ class UrlServiceSpider(Spider):
                 response,
                 formname='',
                 formdata={
-                    'amzn[0]': hidden_value1,
-                    'amzn-r[0]': hidden_value2,
-                    'field-keywords[0]': captcha,
+                    'field-keywords': captcha,
                 },
                 callback=self.parse_target,
                 errback=self.parse_target_err)
