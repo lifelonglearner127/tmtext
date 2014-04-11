@@ -359,12 +359,20 @@ class AmazonSpider(BaseSpider):
         #TODO: test or make more robust
 
         if item['level'] > self.LEVEL_BARRIER:
-            # TODO: make it work for Kids' Clothing as well
-            subcategories = hxs.select("//h2[contains(text(),'Department')]/following-sibling::ul[1]/li/a")
+            # TODO: make it work for Kids' Clothing as well\ 
+            subcategories = hxs.select("(//h2 | //h3)[text()='Department' or text()='Shop by Department']/following-sibling::ul[1]/li/a") # text must bot be that little arrow sign
             for subcategory in subcategories:
                 # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
+
+                # there is an exception to this refinement link rule - then extract info directly from subcategory node, but only if len(text)>1 (otherwise we catch all the little arrows for parent cats)
                 if not subcategory.select("span[@class='refinementLink']"):
-                    continue
+                    if len(subcategory.select(".//text()").extract()[0].strip())>1: # so it's not that little arrow thing
+                        subcategory_text = subcategory.select("text()").extract()[0].strip()
+                        subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
+                        subcategory_prodcount_holder = None
+                    else:
+                        continue
+
                 subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
                 subcategory_text = subcategory.select("span[@class='refinementLink']//text()").extract()[0].strip()
                 # extract product count, clean it of commas and parantheses
