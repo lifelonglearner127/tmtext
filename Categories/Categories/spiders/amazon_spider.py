@@ -217,6 +217,10 @@ class AmazonSpider(BaseSpider):
                     item['department_url'] = self.department_urls[item['department_text']]
                     item['parent_url'] = item['url']
 
+                    #TODO: leave this or not?
+                    # Don't crawl subcategories of departments twice. If this is a department with url (extra_category), then we will crawl its subcategories. So ignore them here
+                    continue
+
                 # if its parent is the special category, mark this one as special too
                 if (item['parent_text'] == special_item['text']):
                     item['special'] = 1
