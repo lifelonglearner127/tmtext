@@ -263,9 +263,9 @@ class AmazonSpider(BaseSpider):
                 # for paged results: Showing ... out of ... Results
                 m = re.match(".*\s*of\s+([0-9,]+)\s+Results\s*", prod_count)
 
-                # for one page results: Showing ... Results
+                # for one page results: Showing ... Result(s)
                 if not m:
-                    m = re.match(".*\s+([0-9,]+)\s+Results\s*", prod_count)
+                    m = re.match(".*\s+([0-9,]+)\s+Results?\s*", prod_count)
 
                 if m:
                     item['nr_products'] = int(re.sub(",","",m.group(1)))
