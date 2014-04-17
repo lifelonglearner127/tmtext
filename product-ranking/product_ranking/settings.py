@@ -13,3 +13,6 @@ NEWSPIDER_MODULE = 'product_ranking.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'product_ranking (+http://www.yourdomain.com)'
+
+# Delay between requests not to be blocked (seconds).
+DOWNLOAD_DELAY = 0.5

@@ -1,7 +1,7 @@
 import string
 import urlparse
 
-from scrapy.log import (ERROR, INFO)
+from scrapy.log import (ERROR, WARNING, INFO)
 from scrapy.http import Request
 from scrapy.selector import Selector
 from scrapy.spider import Spider
@@ -82,15 +82,20 @@ class WalmartProductsSpider(Spider):
 
         remaining -= len(prod_urls)  # May go negative.
         if remaining >= 0:
-            # TODO Test at last page.
-            # TODO Going back an forth?
-            next_page, = sel.css('li.btn-nextResults > a').xpath('@href') \
+            next_pages = sel.css('li.btn-nextResults > a').xpath('@href') \
                 .extract()
-            # Callback = self.parse
-            r = Request(urlparse.urljoin(response.url, next_page))
-            r.meta['search_term'] = response.meta['search_term']
-            r.meta['remaining'] = remaining
-            yield r
+            if not next_pages:
+                pass  # Reached the end.
+            elif len(next_pages) > 1:
+                self.log("More than one 'next' page.", ERROR)
+            else:
+                next_page, = next_pages
+
+                # Callback = self.parse
+                r = Request(urlparse.urljoin(response.url, next_page))
+                r.meta['search_term'] = response.meta['search_term']
+                r.meta['remaining'] = remaining
+                yield r
 
     def parse_product(self, response):
         sel = Selector(response)
@@ -100,36 +105,45 @@ class WalmartProductsSpider(Spider):
         p['ranking'] = response.meta['ranking']
         p['total_matches'] = response.meta['total_matches']
 
-        self._populate_from_open_graph(sel, p)
+        self._populate_from_open_graph(response.url, sel, p)
 
-        self._populate_from_js(sel, p)
+        self._populate_from_js(response.url, sel, p)
 
-        self._populate_from_html(sel, p)
+        self._populate_from_html(response.url, sel, p)
 
         return p
 
-    def _populate_from_html(self, sel, product):
+    def _populate_from_html(self, url, sel, product):
         # Since different chunks of invalid HTML keep appearing in this
         # element, I'll just dump whatever is in there.
+        _set(product, 'title',
+             sel.xpath('//meta[@name="title"]/@content').extract())
         # TODO This source for the description is not reliable.
         _set(product, 'description',
              sel.xpath('//*[@class="ql-details-short-desc"]/*').extract(),
              conv=_compose(string.strip, ''.join))
+        # Lower quality description as fallback.
+        _set(product, 'description',
+             sel.xpath('//meta[@name="Description"]/@content').extract())
 
-    def _populate_from_js(self, sel, product):
+    def _populate_from_js(self, url, sel, product):
+        # This fails with movies.
         scripts = sel.xpath("//script[contains(text(), 'var DefaultItem =')]")
-        assert len(scripts) == 1, "Expected to match a single script block."
+        if not scripts:
+            self.log("No JS matched in %s" % url, WARNING)
+        if len(scripts) > 1:
+            self.log("Matched multiple script blocks in %s" % url, WARNING)
 
-        _set(product, 'upc', map(int, scripts.re("upc:\s*'(\d+)'")))
-        _set(product, 'brand', filter(None, scripts.re("brand:\s*'(.+)',$")))
-        _set(product, 'model', scripts.re("model:\s*'(.+)',$"))
-        _set(product, 'title', scripts.re("friendlyName:\s*'(.+)',$"))
+        _set(product, 'upc', map(int, scripts.re("upc:\s*'(\d+)',")))
+        _set(product, 'brand', filter(None, scripts.re("brand:\s*'(.+)',")))
+        _set(product, 'model', scripts.re("model:\s*'(.+)',"))
+        _set(product, 'title', scripts.re("friendlyName:\s*'(.+)',"))
         _set(product, 'price',
-             map(float, scripts.re("currentItemPrice:\s*'(\d+)',$")))
+             map(float, scripts.re("currentItemPrice:\s*'(\d+)',")))
         _set(product, 'rating',
-             map(float, scripts.re("currentRating:\s*'(.+)',$")))
+             map(float, scripts.re("currentRating:\s*'(.+)',")))
 
-    def _populate_from_open_graph(self, sel, product):
+    def _populate_from_open_graph(self, url, sel, product):
         """See about the Open Graph Protocol at http://ogp.me/"""
         # Extract all the meta tags with an attribute called property.
         metadata_dom = sel.xpath("/html/head/meta[@property]")
