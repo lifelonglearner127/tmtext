@@ -35,7 +35,8 @@ class AmazonSpider(BaseSpider):
         # hardcoded toplevel categories (level 1 and 2) urls to replace/supplement some of the ones found on the sitemap above (point to the same category, but have different page content. they were found manually)
         # reason: they provide more info regarding product count than the ones found on the sitemap
         # keys are categories names as found in the sitemap, values are URLs associated with them, that will replace/supplement the links found on the sitemap
-        self.extra_toplevel_categories_urls = {"Baby" : "http://www.amazon.com/s/ref=lp_166835011_ex_n_1?rh=n%3A165796011&bbn=165796011&ie=UTF8&qid=1393338541", \
+        self.extra_toplevel_categories_urls = {
+                                    "Baby" : "http://www.amazon.com/s/ref=lp_166835011_ex_n_1?rh=n%3A165796011&bbn=165796011&ie=UTF8&qid=1393338541", \
                                     "Electronics & Computers" : "http://www.amazon.com/s/ref=lp_172659_ex_n_1?rh=n%3A172282&bbn=172282&ie=UTF8&qid=1393338741", \
                                     "Home, Garden & Tools" : "http://www.amazon.com/s/ref=lp_284507_ex_n_1?rh=n%3A1055398&bbn=1055398&ie=UTF8&qid=1393338782",\
                                     "Kindle E-readers & Books" : "http://www.amazon.com/s/ref=lp_154606011_ex_n_1?rh=n%3A133140011&bbn=133140011&ie=UTF8&qid=1395704970", \
@@ -184,7 +185,7 @@ class AmazonSpider(BaseSpider):
                 self.department_urls[item['text']] = item['url']
 
                 # collect number of products from this alternate URL
-                yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+                yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
             else:
                 yield item
@@ -322,43 +323,32 @@ class AmazonSpider(BaseSpider):
             
                 # collect number of products from this alternate URL
                 # this will also extract subcategories and their count
-                yield Request(self.extra_toplevel_categories_urls[extra_category], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+                yield Request(self.extra_toplevel_categories_urls[extra_category], callback = self.extractSubcategories, meta = {'item' : item})
 
             else:
                 # extract subcategories and their count for category even if not in extra_...
-                yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+                yield Request(item['url'], callback = self.extractSubcategories, meta = {'item' : item})
         else:
             yield item
 
 
-    # extract item count for a certain category, then yield item received in meta
-    # also extract and yield subcategories (and their subcategories, down to a certain level)
+    # extract and yield subcategories for a category
     # use menu on left side of the page on the category page
     # will mainly be used for categories in extra_toplevel_categories_urls
 
     # after subcategories extracted, send them to parseCategory to extract description as well
     # Obs: it's not exhaustive. if page doesn't match what it expects, it gives up
-    def extract_nrprods_and_subcats(self, response):
+    def extractSubcategories(self, response):
 
         # if there is a captcha to solve, and we haven't exhausted our retries, try to solve it
         if self.has_captcha(response.body) and ('retry_count' not in response.meta or response.meta['retry_count'] > 0):
-            yield self.solve_captcha_and_redirect(response, self.extract_nrprods_and_subcats) # meta of response will contain number of retries left if set
+            yield self.solve_captcha_and_redirect(response, self.extractSubcategories) # meta of response will contain number of retries left if set
             return
 
         hxs = HtmlXPathSelector(response)
 
+        # returned received item, then extract its subcategories
         item = response.meta['item']
-
-        # extract nr_products if not already extracted. necessary for extra_categories
-        if 'nr_products' not in item:
-            prod_count_holder = hxs.select("//h2[@class='resultCount']/span/text()").extract()
-            if prod_count_holder:
-                #print "DIDN'T HAVE PRODUCT COUNT", response.url
-                prod_count = prod_count_holder[0]
-                # extract number
-                m = re.match(".*\s*of\s*([0-9,]+)\s*Results\s*", prod_count)
-                if m:
-                    item['nr_products'] = int(re.sub(",","",m.group(1)))
 
         yield item
 
@@ -461,7 +451,7 @@ class AmazonSpider(BaseSpider):
                 # # extract their subcategories as well (needed for "Home Improvement")
                 # # stop at a certain level
                 # if item['level'] > self.LEVEL_BARRIER:
-                #     #yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+                #     #yield Request(item['url'], callback = self.extractSubcategories, meta = {'item' : item})
                 #     yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
                 # else:
