@@ -35,7 +35,8 @@ class AmazonSpider(BaseSpider):
         # hardcoded toplevel categories (level 1 and 2) urls to replace/supplement some of the ones found on the sitemap above (point to the same category, but have different page content. they were found manually)
         # reason: they provide more info regarding product count than the ones found on the sitemap
         # keys are categories names as found in the sitemap, values are URLs associated with them, that will replace/supplement the links found on the sitemap
-        self.extra_toplevel_categories_urls = {"Baby" : "http://www.amazon.com/s/ref=lp_166835011_ex_n_1?rh=n%3A165796011&bbn=165796011&ie=UTF8&qid=1393338541", \
+        self.extra_toplevel_categories_urls = {
+                                    "Baby" : "http://www.amazon.com/s/ref=lp_166835011_ex_n_1?rh=n%3A165796011&bbn=165796011&ie=UTF8&qid=1393338541", \
                                     "Electronics & Computers" : "http://www.amazon.com/s/ref=lp_172659_ex_n_1?rh=n%3A172282&bbn=172282&ie=UTF8&qid=1393338741", \
                                     "Home, Garden & Tools" : "http://www.amazon.com/s/ref=lp_284507_ex_n_1?rh=n%3A1055398&bbn=1055398&ie=UTF8&qid=1393338782",\
                                     "Kindle E-readers & Books" : "http://www.amazon.com/s/ref=lp_154606011_ex_n_1?rh=n%3A133140011&bbn=133140011&ie=UTF8&qid=1395704970", \
@@ -184,7 +185,7 @@ class AmazonSpider(BaseSpider):
                 self.department_urls[item['text']] = item['url']
 
                 # collect number of products from this alternate URL
-                yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+                yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
             else:
                 yield item
@@ -216,6 +217,10 @@ class AmazonSpider(BaseSpider):
                     assert self.find_matching_key(item['department_text'], self.extra_toplevel_categories_urls)
                     item['department_url'] = self.department_urls[item['department_text']]
                     item['parent_url'] = item['url']
+
+                    #TODO: leave this or not?
+                    # Don't crawl subcategories of departments twice. If this is a department with url (extra_category), then we will crawl its subcategories. So ignore them here
+                    continue
 
                 # if its parent is the special category, mark this one as special too
                 if (item['parent_text'] == special_item['text']):
@@ -255,7 +260,14 @@ class AmazonSpider(BaseSpider):
             if prod_count_holder:
                 prod_count = prod_count_holder[0]
                 # extract number
-                m = re.match(".*\s*of\s*([0-9,]+)\s*Results\s*", prod_count)
+
+                # for paged results: Showing ... out of ... Results
+                m = re.match(".*\s*of\s+([0-9,]+)\s+Results\s*", prod_count)
+
+                # for one page results: Showing ... Result(s)
+                if not m:
+                    m = re.match(".*\s+([0-9,]+)\s+Results?\s*", prod_count)
+
                 if m:
                     item['nr_products'] = int(re.sub(",","",m.group(1)))
 
@@ -311,43 +323,32 @@ class AmazonSpider(BaseSpider):
             
                 # collect number of products from this alternate URL
                 # this will also extract subcategories and their count
-                yield Request(self.extra_toplevel_categories_urls[extra_category], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+                yield Request(self.extra_toplevel_categories_urls[extra_category], callback = self.extractSubcategories, meta = {'item' : item})
 
             else:
                 # extract subcategories and their count for category even if not in extra_...
-                yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+                yield Request(item['url'], callback = self.extractSubcategories, meta = {'item' : item})
         else:
             yield item
 
 
-    # extract item count for a certain category, then yield item received in meta
-    # also extract and yield subcategories (and their subcategories, down to a certain level)
+    # extract and yield subcategories for a category
     # use menu on left side of the page on the category page
     # will mainly be used for categories in extra_toplevel_categories_urls
 
     # after subcategories extracted, send them to parseCategory to extract description as well
     # Obs: it's not exhaustive. if page doesn't match what it expects, it gives up
-    def extract_nrprods_and_subcats(self, response):
+    def extractSubcategories(self, response):
 
         # if there is a captcha to solve, and we haven't exhausted our retries, try to solve it
         if self.has_captcha(response.body) and ('retry_count' not in response.meta or response.meta['retry_count'] > 0):
-            yield self.solve_captcha_and_redirect(response, self.extract_nrprods_and_subcats) # meta of response will contain number of retries left if set
+            yield self.solve_captcha_and_redirect(response, self.extractSubcategories) # meta of response will contain number of retries left if set
             return
 
         hxs = HtmlXPathSelector(response)
 
+        # returned received item, then extract its subcategories
         item = response.meta['item']
-
-        # extract nr_products if not already extracted. necessary for extra_categories
-        if 'nr_products' not in item:
-            prod_count_holder = hxs.select("//h2[@class='resultCount']/span/text()").extract()
-            if prod_count_holder:
-                #print "DIDN'T HAVE PRODUCT COUNT", response.url
-                prod_count = prod_count_holder[0]
-                # extract number
-                m = re.match(".*\s*of\s*([0-9,]+)\s*Results\s*", prod_count)
-                if m:
-                    item['nr_products'] = int(re.sub(",","",m.group(1)))
 
         yield item
 
@@ -359,16 +360,37 @@ class AmazonSpider(BaseSpider):
         #TODO: test or make more robust
 
         if item['level'] > self.LEVEL_BARRIER:
-            # TODO: make it work for Kids' Clothing as well
-            subcategories = hxs.select("//h2[contains(text(),'Department')]/following-sibling::ul[1]/li/a")
+            # TODO: make it work for Kids' Clothing as well\ 
+            subcategories = hxs.select("//h2[text()='Department']/following-sibling::ul[1]/li/a")
+            # only try "Shop by Department" if there is no "Department", otherwise might cause problems when both are present. e.g (http://www.amazon.com/Watches-Mens-Womens-Kids-Accessories/b/ref=sd_allcat_watches/187-9021585-5419616?ie=UTF8&node=377110011)
+            if not subcategories:
+                subcategories = hxs.select("(//h2 | //h3)[text()='Shop by Department']/following-sibling::ul[1]/li/a")
             for subcategory in subcategories:
                 # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
+
+                # there is an exception to this refinement link rule - then extract info directly from subcategory node, but only if len(text)>1 (otherwise we catch all the little arrows for parent cats)
                 if not subcategory.select("span[@class='refinementLink']"):
-                    continue
-                subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
-                subcategory_text = subcategory.select("span[@class='refinementLink']//text()").extract()[0].strip()
-                # extract product count, clean it of commas and parantheses
-                subcategory_prodcount_holder = subcategory.select("span[@class='narrowValue']/text()").extract()
+                    if len(subcategory.select(".//text()").extract()[0].strip())>1: # so it's not that little arrow thing
+                        subcategory_text_holder = subcategory.select("text()[normalize-space()!='']").extract()
+                        if subcategory_text_holder:
+                            subcategory_text = subcategory_text_holder[0].strip()
+                        else:
+                            continue
+                        subcategory_url_holder = subcategory.select("@href").extract()
+                        if subcategory_url_holder:
+                            subcategory_url = Utils.add_domain(subcategory_url_holder[0], "http://www.amazon.com")
+                        else:
+                            continue
+                        subcategory_prodcount_holder = None
+                    else:
+                        continue
+
+                else:
+
+                    subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
+                    subcategory_text = subcategory.select("span[@class='refinementLink']//text()").extract()[0].strip()
+                    # extract product count, clean it of commas and parantheses
+                    subcategory_prodcount_holder = subcategory.select("span[@class='narrowValue']/text()").extract()
 
                 # if there's also product count available in the menu, extract it
                 if subcategory_prodcount_holder:
@@ -429,7 +451,7 @@ class AmazonSpider(BaseSpider):
                 # # extract their subcategories as well (needed for "Home Improvement")
                 # # stop at a certain level
                 # if item['level'] > self.LEVEL_BARRIER:
-                #     #yield Request(item['url'], callback = self.extract_nrprods_and_subcats, meta = {'item' : item})
+                #     #yield Request(item['url'], callback = self.extractSubcategories, meta = {'item' : item})
                 #     yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
                 # else:

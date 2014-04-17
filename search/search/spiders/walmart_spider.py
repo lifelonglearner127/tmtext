@@ -67,9 +67,9 @@ class WalmartSpider(SearchSpider):
 
 			if 'origin_id' in response.meta:
 				request.meta['origin_id'] = response.meta['origin_id']
-				assert self.by_id
-			else:
-				assert not self.by_id
+			# 	assert self.by_id
+			# else:
+			# 	assert not self.by_id
 
 
 			items.add(item)
