@@ -100,6 +100,11 @@ class WalmartProductsSpider(Spider):
     def parse_product(self, response):
         sel = Selector(response)
 
+        if self._is_404(response.url):
+            self.log("Got 404 when coming from %s." % response.request.url,
+                     ERROR)
+            return
+
         p = SiteProductItem()
         p['search_term'] = response.meta['search_term']
         p['ranking'] = response.meta['ranking']
@@ -112,6 +117,10 @@ class WalmartProductsSpider(Spider):
         self._populate_from_html(response.url, sel, p)
 
         return p
+
+    def _is_404(self, url):
+        path = urlparse.urlsplit(url)[2]
+        return path == 'FileNotFound.aspx'
 
     def _populate_from_html(self, url, sel, product):
         # Since different chunks of invalid HTML keep appearing in this
