@@ -241,7 +241,7 @@ class AmazonSpider(BaseSpider):
 
                     #TODO: leave this or not?
                     # Don't crawl subcategories of departments twice. If this is a department with url (extra_category), then we will crawl its subcategories. So ignore them here
-                    continue
+                    #continue
 
                 # if its parent is the special category, mark this one as special too
                 if (item['parent_text'] == special_item['text']):
