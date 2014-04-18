@@ -388,8 +388,8 @@ class AmazonSpider(BaseSpider):
 
             # extract category title to check if it should be treated as a special category (exceptions to usual page structure)
             #TODO: not all pages have this
-            cat_title = hxs.select("//h1//text()").extract()[0].strip()
-            if cat_title in self.SUBCATS_MENU_SPECIAL:
+            cat_title = hxs.select("//h1//text()").extract()
+            if cat_title and cat_title[0].strip() in self.SUBCATS_MENU_SPECIAL:
                 subcategories = self.extractSubcategoriesSpecial(cat_title, hxs)
 
             else:
