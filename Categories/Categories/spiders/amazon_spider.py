@@ -384,8 +384,12 @@ class AmazonSpider(BaseSpider):
 
         if item['level'] > self.LEVEL_BARRIER:
 
-
-            subcategories = self.extractSubcategoriesFromMenu(hxs, parent_item['text'])
+            # check if it should be treated as a special category (exceptions to usual page structure)
+            if parent_item['text'] in self.SUBCATS_MENU_SPECIAL:
+                subcategories = self.extractSubcategoriesFromMenuSpecial(hxs, parent_item['text'])
+            else:
+                subcategories = self.extractSubcategoriesFromMenu(hxs, parent_item['text'])
+            
             for (subcategory_text, subcategory_url, subcategory_prodcount) in subcategories:
                 
 
@@ -435,17 +439,12 @@ class AmazonSpider(BaseSpider):
     # given a page (selector for it), extract subcategories from menu on the left
     # return generator of tuples representing subcategories with (name, url, item count)
     def extractSubcategoriesFromMenu(self, hxs, category_name):
-        # extract category title to check if it should be treated as a special category (exceptions to usual page structure)
-        #TODO: not all pages have this
-        if category_name in self.SUBCATS_MENU_SPECIAL:
-            subcategories = self.extractSubcategoriesFromMenuSpecial(category_name, hxs)
 
-        else:
-            # extract subcategories for regular page structure
-            subcategories = hxs.select("//h2[text()='Department']/following-sibling::ul[1]/li/a")
-            # only try "Shop by Department" if there is no "Department", otherwise might cause problems when both are present. e.g (http://www.amazon.com/Watches-Mens-Womens-Kids-Accessories/b/ref=sd_allcat_watches/187-9021585-5419616?ie=UTF8&node=377110011)
-            if not subcategories:
-                subcategories = hxs.select("(//h2 | //h3)[text()='Shop by Department']/following-sibling::ul[1]/li/a")
+        # extract subcategories for regular page structure
+        subcategories = hxs.select("//h2[text()='Department']/following-sibling::ul[1]/li/a")
+        # only try "Shop by Department" if there is no "Department", otherwise might cause problems when both are present. e.g (http://www.amazon.com/Watches-Mens-Womens-Kids-Accessories/b/ref=sd_allcat_watches/187-9021585-5419616?ie=UTF8&node=377110011)
+        if not subcategories:
+            subcategories = hxs.select("(//h2 | //h3)[text()='Shop by Department']/following-sibling::ul[1]/li/a")
 
 
         for subcategory in subcategories:
@@ -489,11 +488,15 @@ class AmazonSpider(BaseSpider):
 
     # extract subcategories from category page from special category pages that do not conform to regular page structure
     # return list of nodes containing the subcategories
-    def extractSubcategoriesFromMenuSpecial(self, cat_title, hxs):
+    def extractSubcategoriesFromMenuSpecial(self, hxs, cat_title):
         if cat_title in ["Team Sports", "All Sports & Outdoors"]:
             subcategories = hxs.select("//h3[text()='Shop by Sport']/following-sibling::ul[1]/li/a")
 
-            return subcategories
+            for subcategory in subcategories:
+                subcategory_name = subcategory.select("text()").extract()[0]
+                subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
+
+                yield (subcategory_name, subcategory_url, None)
 
 
 
