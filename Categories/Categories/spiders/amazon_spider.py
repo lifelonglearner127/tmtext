@@ -57,7 +57,7 @@ class AmazonSpider(BaseSpider):
 
         # category names with special page structure whose subcategories menu need to be parsed specifically
         # these are the titles found on the respective categories' pages
-        self.SUBCATS_MENU_SPECIAL = ['Team Sports', 'Sports & Outdoors']
+        self.SUBCATS_MENU_SPECIAL = ['Team Sports', 'All Sports & Outdoors']
 
 
         # flag indicating whether to compute overall product counts in pipelines phase for this spider.
@@ -385,7 +385,7 @@ class AmazonSpider(BaseSpider):
         if item['level'] > self.LEVEL_BARRIER:
 
 
-            subcategories = self.extractSubcategoriesFromMenu(hxs)
+            subcategories = self.extractSubcategoriesFromMenu(hxs, parent_item['text'])
             for (subcategory_text, subcategory_url, subcategory_prodcount) in subcategories:
                 
 
@@ -434,12 +434,11 @@ class AmazonSpider(BaseSpider):
 
     # given a page (selector for it), extract subcategories from menu on the left
     # return generator of tuples representing subcategories with (name, url, item count)
-    def extractSubcategoriesFromMenu(self, hxs):
+    def extractSubcategoriesFromMenu(self, hxs, category_name):
         # extract category title to check if it should be treated as a special category (exceptions to usual page structure)
         #TODO: not all pages have this
-        cat_title = hxs.select("//h1//text()").extract()
-        if (cat_title and cat_title[0].strip() in self.SUBCATS_MENU_SPECIAL):
-            subcategories = self.extractSubcategoriesSpecial(cat_title[0].strip(), hxs)
+        if category_name in self.SUBCATS_MENU_SPECIAL:
+            subcategories = self.extractSubcategoriesFromMenuSpecial(category_name, hxs)
 
         else:
             # extract subcategories for regular page structure
@@ -490,8 +489,8 @@ class AmazonSpider(BaseSpider):
 
     # extract subcategories from category page from special category pages that do not conform to regular page structure
     # return list of nodes containing the subcategories
-    def extractSubcategoriesSpecial(self, cat_title, hxs):
-        if cat_title in ["Team Sports", "Sports & Outdoors"]:
+    def extractSubcategoriesFromMenuSpecial(self, cat_title, hxs):
+        if cat_title in ["Team Sports", "All Sports & Outdoors"]:
             subcategories = hxs.select("//h3[text()='Shop by Sport']/following-sibling::ul[1]/li/a")
 
             return subcategories
