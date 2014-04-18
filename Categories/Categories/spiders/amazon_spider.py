@@ -380,63 +380,13 @@ class AmazonSpider(BaseSpider):
         parent_item = item
 
         # extract subcategories, if level is above barrier
-        # currently extracting subcategories for categories on any level, for level 2 this may cause duplicates (we already extract level 1)
         # extract subcategories from first menu on the left, assume this is the subcategories menu
-        #TODO: test or make more robust
 
         if item['level'] > self.LEVEL_BARRIER:
 
-            # extract category title to check if it should be treated as a special category (exceptions to usual page structure)
-            #TODO: not all pages have this
-            cat_title = hxs.select("//h1//text()").extract()
-            if cat_title and cat_title[0].strip() in self.SUBCATS_MENU_SPECIAL:
-                subcategories = self.extractSubcategoriesSpecial(cat_title[0].strip(), hxs)
 
-            else:
-                # extract subcategories for regular page structure
-                subcategories = hxs.select("//h2[text()='Department']/following-sibling::ul[1]/li/a")
-                # only try "Shop by Department" if there is no "Department", otherwise might cause problems when both are present. e.g (http://www.amazon.com/Watches-Mens-Womens-Kids-Accessories/b/ref=sd_allcat_watches/187-9021585-5419616?ie=UTF8&node=377110011)
-                if not subcategories:
-                    subcategories = hxs.select("(//h2 | //h3)[text()='Shop by Department']/following-sibling::ul[1]/li/a")
-
-
-            for subcategory in subcategories:
-                # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
-
-                # there is an exception to this refinement link rule - then extract info directly from subcategory node, but only if len(text)>1 (otherwise we catch all the little arrows for parent cats)
-                if not subcategory.select("span[@class='refinementLink']"):
-                    if len(subcategory.select(".//text()").extract()[0].strip())>1: # so it's not that little arrow thing
-                        subcategory_text_holder = subcategory.select("text()[normalize-space()!='']").extract()
-                        if subcategory_text_holder:
-                            subcategory_text = subcategory_text_holder[0].strip()
-                        else:
-                            continue
-                        subcategory_url_holder = subcategory.select("@href").extract()
-                        if subcategory_url_holder:
-                            subcategory_url = Utils.add_domain(subcategory_url_holder[0], "http://www.amazon.com")
-                        else:
-                            continue
-                        subcategory_prodcount_holder = None
-                    else:
-                        continue
-
-                else:
-
-                    subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
-                    subcategory_text = subcategory.select("span[@class='refinementLink']//text()").extract()[0].strip()
-                    # extract product count, clean it of commas and parantheses
-                    subcategory_prodcount_holder = subcategory.select("span[@class='narrowValue']/text()").extract()
-
-                # if there's also product count available in the menu, extract it
-                if subcategory_prodcount_holder:
-                    subcategory_prodcount = subcategory_prodcount_holder[0].replace(";nbsp&"," ").strip()
-
-                    m = re.match("\(([0-9,]+)\)", subcategory_prodcount)
-                    if m:
-                        subcategory_prodcount = m.group(1).replace(",","")
-                else:
-                    subcategory_prodcount = None
-
+            subcategories = self.extractSubcategoriesFromMenu(hxs)
+            for (subcategory_text, subcategory_url, subcategory_prodcount) in subcategories:
                 
 
                 item = CategoryItem()
@@ -482,6 +432,61 @@ class AmazonSpider(BaseSpider):
                 # send to parseCategory to extract description as well
                 yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
+    # given a page (selector for it), extract subcategories from menu on the left
+    # return generator of tuples representing subcategories with (name, url, item count)
+    def extractSubcategoriesFromMenu(self, hxs):
+        # extract category title to check if it should be treated as a special category (exceptions to usual page structure)
+        #TODO: not all pages have this
+        cat_title = hxs.select("//h1//text()").extract()
+        if (cat_title and cat_title[0].strip() in self.SUBCATS_MENU_SPECIAL):
+            subcategories = self.extractSubcategoriesSpecial(cat_title[0].strip(), hxs)
+
+        else:
+            # extract subcategories for regular page structure
+            subcategories = hxs.select("//h2[text()='Department']/following-sibling::ul[1]/li/a")
+            # only try "Shop by Department" if there is no "Department", otherwise might cause problems when both are present. e.g (http://www.amazon.com/Watches-Mens-Womens-Kids-Accessories/b/ref=sd_allcat_watches/187-9021585-5419616?ie=UTF8&node=377110011)
+            if not subcategories:
+                subcategories = hxs.select("(//h2 | //h3)[text()='Shop by Department']/following-sibling::ul[1]/li/a")
+
+
+        for subcategory in subcategories:
+            # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
+
+            # there is an exception to this refinement link rule - then extract info directly from subcategory node, but only if len(text)>1 (otherwise we catch all the little arrows for parent cats)
+            if not subcategory.select("span[@class='refinementLink']"):
+                if len(subcategory.select(".//text()").extract()[0].strip())>1: # so it's not that little arrow thing
+                    subcategory_text_holder = subcategory.select("text()[normalize-space()!='']").extract()
+                    if subcategory_text_holder:
+                        subcategory_text = subcategory_text_holder[0].strip()
+                    else:
+                        continue
+                    subcategory_url_holder = subcategory.select("@href").extract()
+                    if subcategory_url_holder:
+                        subcategory_url = Utils.add_domain(subcategory_url_holder[0], "http://www.amazon.com")
+                    else:
+                        continue
+                    subcategory_prodcount_holder = None
+                else:
+                    continue
+
+            else:
+
+                subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
+                subcategory_text = subcategory.select("span[@class='refinementLink']//text()").extract()[0].strip()
+                # extract product count, clean it of commas and parantheses
+                subcategory_prodcount_holder = subcategory.select("span[@class='narrowValue']/text()").extract()
+
+            # if there's also product count available in the menu, extract it
+            if subcategory_prodcount_holder:
+                subcategory_prodcount = subcategory_prodcount_holder[0].replace(";nbsp&"," ").strip()
+
+                m = re.match("\(([0-9,]+)\)", subcategory_prodcount)
+                if m:
+                    subcategory_prodcount = m.group(1).replace(",","")
+            else:
+                subcategory_prodcount = None
+
+            yield (subcategory_text, subcategory_url, subcategory_prodcount)
 
     # extract subcategories from category page from special category pages that do not conform to regular page structure
     # return list of nodes containing the subcategories
