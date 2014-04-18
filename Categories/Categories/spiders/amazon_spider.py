@@ -26,8 +26,14 @@ class AmazonSpider(BaseSpider):
         "http://www.amazon.com/gp/site-directory/ref=sa_menu_top_fullstore"
     ]
 
-    def __init__(self, outfile=None):
+    def __init__(self, outfile=None, test_category=None):
         self.outfile = outfile
+
+         # if this is set, only crawl this category (level 2/1 category name). used for testing
+        self.test_category = test_category
+        # if test category is set, set the name of outfile to a special "test" name
+        if self.test_category:
+            self.outfile = "amazon_categories_test.jl"
 
         # level that is considered to contain departments
         self.DEPARTMENT_LEVEL = 2
@@ -163,9 +169,11 @@ class AmazonSpider(BaseSpider):
         self.departments_ids[special_item['text']] = special_item['department_id']
         self.departments_cat_ids[special_item['text']] = special_item['catid']
 
+        #yield special_item
 
-        #items.append(special_item)
-        yield special_item
+        # if test category is set, and this is not it, ignore
+        if not self.test_category or special_item['text'] == self.test_category:
+            yield special_item
 
         # the rest of the titles are not special
         for title in titles_level1[1:]:
@@ -189,10 +197,18 @@ class AmazonSpider(BaseSpider):
                 item['department_url'] = item['url']
                 self.department_urls[item['text']] = item['url']
 
-                # collect number of products from this alternate URL
+                # if self.test_category is set, only send request if this is the test category
+                if self.test_category and item['text'] != self.test_category:
+                    continue
+
+                # parse this category further
                 yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
             else:
+                # if test category is set and this is not it, ignore
+                if self.test_category and item['text'] != self.test_category:
+                    continue
+
                 yield item
 
         # add level 1 categories to items
@@ -240,6 +256,10 @@ class AmazonSpider(BaseSpider):
             # item['department_text'] = item['text']
             # item['department_url'] = item['url']
             # item['department_id'] = department_id
+
+            # if self.test_category is set, only send request if this is the test category
+            if self.test_category and item['text'] != self.test_category:
+                continue
 
             yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
@@ -367,7 +387,8 @@ class AmazonSpider(BaseSpider):
         if item['level'] > self.LEVEL_BARRIER:
 
             # extract category title to check if it should be treated as a special category (exceptions to usual page structure)
-            cat_title = hxs.select("//h1//text()").strip()
+            #TODO: not all pages have this
+            cat_title = hxs.select("//h1//text()").extract()[0].strip()
             if cat_title in self.SUBCATS_MENU_SPECIAL:
                 subcategories = self.extractSubcategoriesSpecial(cat_title, hxs)
 
