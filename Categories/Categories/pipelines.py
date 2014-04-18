@@ -154,6 +154,11 @@ class CommaSeparatedLinesPipeline(object):
 			# compute all nr_products for all categories using the tree
 			self.compute_item_counts()
 			for key in self.categories_tree:
+
+				#TEST: to use with test_categories: if set, some categories won't have 'item' (I guess?)
+				if not 'item' in self.categories_tree[key] and spider.test_category:
+					continue
+					
 				line = json.dumps(dict(self.categories_tree[key]['item']))
 				if self.started:
 					self.file.write(",\n" + line)
