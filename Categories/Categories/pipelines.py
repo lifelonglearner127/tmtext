@@ -93,15 +93,15 @@ class CommaSeparatedLinesPipeline(object):
 
 	# complete nr_products field for all categories in the tree where it is missing, by using its children categories
 	# use depth-first traversal to collect all nr_products info for each category's subcategory
-	# return dictionary containing all product counts to be added to compute current one, indexed by category URL
-	def depth_first_count(self, key):
-		# build dictionary with keys = URLs of subcategories whose item count to add to current one, values = their item count
+	# return dictionary containing all product counts to be added to compute current one, indexed by item[key_field]
+	def depth_first_count(self, key, key_field='url'):
+		# build dictionary with keys (by default = URLs) of subcategories whose item count to add to current one, values = their item count
 		# this avoids duplicate subcategories and inaccurate final item counts (they are duplicates in terms of their pages' URLs)
 		# use dicionary to compute product count and add product count to current item; then return dictionary
 
 		# if it's available as extracted from the site, use that
 		if 'nr_products' in self.categories_tree[key]['item']:
-			count_dict = {self.categories_tree[key]['item']['url'] : self.categories_tree[key]['item']['nr_products']}
+			count_dict = {self.categories_tree[key]['item'][key_field] : self.categories_tree[key]['item']['nr_products']}
 			# no need to set its item's product count, it is already set
 
 			return count_dict
@@ -119,7 +119,7 @@ class CommaSeparatedLinesPipeline(object):
 			# example: Wine Racks, see its parents, both of the same department
 			for subcategory in subcategories:
 				if 'nr_products' in self.categories_tree[subcategory]['item']:
-					subcategory_count_dict = {self.categories_tree[subcategory]['item']['url'] : self.categories_tree[subcategory]['item']['nr_products']}
+					subcategory_count_dict = {self.categories_tree[subcategory]['item'][key_field] : self.categories_tree[subcategory]['item']['nr_products']}
 
 				else:
 					subcategory_count_dict = self.depth_first_count(subcategory)
@@ -144,7 +144,7 @@ class CommaSeparatedLinesPipeline(object):
 			else:
 				nr_products = 0
 
-			count_dict = {self.categories_tree[key]['item']['url'] : nr_products}
+			count_dict = {self.categories_tree[key]['item'][key_field] : nr_products}
 			return count_dict
 
 
@@ -158,7 +158,7 @@ class CommaSeparatedLinesPipeline(object):
 				#TEST: to use with test_categories: if set, some categories won't have 'item' (I guess?)
 				if not 'item' in self.categories_tree[key] and spider.test_category:
 					continue
-					
+
 				line = json.dumps(dict(self.categories_tree[key]['item']))
 				if self.started:
 					self.file.write(",\n" + line)
