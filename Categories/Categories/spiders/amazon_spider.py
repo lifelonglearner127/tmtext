@@ -35,7 +35,7 @@ class AmazonSpider(BaseSpider):
         # hardcoded toplevel categories (level 1 and 2) urls to replace/supplement some of the ones found on the sitemap above (point to the same category, but have different page content. they were found manually)
         # reason: they provide more info regarding product count than the ones found on the sitemap
         # keys are categories names as found in the sitemap, values are URLs associated with them, that will replace/supplement the links found on the sitemap
-        self.extra_toplevel_categories_urls = {
+        self.EXTRA_TOPLEVEL_CATEGORIES_URLS = {
                                     "Baby" : "http://www.amazon.com/s/ref=lp_166835011_ex_n_1?rh=n%3A165796011&bbn=165796011&ie=UTF8&qid=1393338541", \
                                     "Electronics & Computers" : "http://www.amazon.com/s/ref=lp_172659_ex_n_1?rh=n%3A172282&bbn=172282&ie=UTF8&qid=1393338741", \
                                     "Home, Garden & Tools" : "http://www.amazon.com/s/ref=lp_284507_ex_n_1?rh=n%3A1055398&bbn=1055398&ie=UTF8&qid=1393338782",\
@@ -48,6 +48,10 @@ class AmazonSpider(BaseSpider):
                                     "Motorcycle & Powersports" : "http://www.amazon.com/s/ref=sr_ex_n_1?rh=n%3A15684181%2Cn%3A%2115690151%2Cn%3A346333011&bbn=346333011&ie=UTF8&qid=1395824599", \
                                     "Automotive & Industrial" : "http://www.amazon.com/s/ref=sr_ex_n_1?rh=n%3A15684181&bbn=15684181" # this is partial - "Automotive and industrial" also contains the "Industrial & Scientific" cats which can be found in the sitemap
                                     }
+
+        # category names with special page structure whose subcategories menu need to be parsed specifically
+        # these are the titles found on the respective categories' pages
+        self.SUBCATS_MENU_SPECIAL = ['Team Sports']
 
 
         # flag indicating whether to compute overall product counts in pipelines phase for this spider.
@@ -110,7 +114,7 @@ class AmazonSpider(BaseSpider):
 
     # check if 2 catgory names are the same
     # does some normalization of the names and compares the words in them
-    # to be used for identifying extra_toplevel_categories_urls when they occur in the sitemap
+    # to be used for identifying EXTRA_TOPLEVEL_CATEGORIES_URLS when they occur in the sitemap
     def is_same_name(self, name1, name2):
         # eliminate non-word characters
         name1 = re.sub("[^a-zA-Z]", " ", name1).lower()
@@ -178,10 +182,10 @@ class AmazonSpider(BaseSpider):
             self.departments_ids[item['text']] = item['department_id']
             self.departments_cat_ids[item['text']] = item['catid']
 
-            # if item is found among extra_toplevel_categories_urls, add info from that url
-            extra_category = self.find_matching_key(item['text'], self.extra_toplevel_categories_urls)
+            # if item is found among EXTRA_TOPLEVEL_CATEGORIES_URLS, add info from that url
+            extra_category = self.find_matching_key(item['text'], self.EXTRA_TOPLEVEL_CATEGORIES_URLS)
             if extra_category:
-                item['url'] = self.extra_toplevel_categories_urls[extra_category]
+                item['url'] = self.EXTRA_TOPLEVEL_CATEGORIES_URLS[extra_category]
                 item['department_url'] = item['url']
                 self.department_urls[item['text']] = item['url']
 
@@ -215,7 +219,7 @@ class AmazonSpider(BaseSpider):
 
                 # get department url from department_urls, will be availble only for extra_categories
                 if item['department_text'] in self.department_urls:
-                    assert self.find_matching_key(item['department_text'], self.extra_toplevel_categories_urls)
+                    assert self.find_matching_key(item['department_text'], self.EXTRA_TOPLEVEL_CATEGORIES_URLS)
                     item['department_url'] = self.department_urls[item['department_text']]
                     item['parent_url'] = item['url']
 
@@ -314,8 +318,8 @@ class AmazonSpider(BaseSpider):
             item['description_wc'] = 0
 
 
-        # if item is found among extra_toplevel_categories_urls, and no product count was found, add info from that url
-        extra_category = self.find_matching_key(item['text'], self.extra_toplevel_categories_urls)
+        # if item is found among EXTRA_TOPLEVEL_CATEGORIES_URLS, and no product count was found, add info from that url
+        extra_category = self.find_matching_key(item['text'], self.EXTRA_TOPLEVEL_CATEGORIES_URLS)
 
         
         # crawl lower level categories
@@ -324,7 +328,7 @@ class AmazonSpider(BaseSpider):
             
                 # collect number of products from this alternate URL
                 # this will also extract subcategories and their count
-                yield Request(self.extra_toplevel_categories_urls[extra_category], callback = self.extractSubcategories, meta = {'item' : item})
+                yield Request(self.EXTRA_TOPLEVEL_CATEGORIES_URLS[extra_category], callback = self.extractSubcategories, meta = {'item' : item})
 
             else:
                 # extract subcategories and their count for category even if not in extra_...
@@ -335,7 +339,7 @@ class AmazonSpider(BaseSpider):
 
     # extract and yield subcategories for a category
     # use menu on left side of the page on the category page
-    # will mainly be used for categories in extra_toplevel_categories_urls
+    # will mainly be used for categories in EXTRA_TOPLEVEL_CATEGORIES_URLS
 
     # after subcategories extracted, send them to parseCategory to extract description as well
     # Obs: it's not exhaustive. if page doesn't match what it expects, it gives up
@@ -361,11 +365,20 @@ class AmazonSpider(BaseSpider):
         #TODO: test or make more robust
 
         if item['level'] > self.LEVEL_BARRIER:
-            # TODO: make it work for Kids' Clothing as well\ 
-            subcategories = hxs.select("//h2[text()='Department']/following-sibling::ul[1]/li/a")
-            # only try "Shop by Department" if there is no "Department", otherwise might cause problems when both are present. e.g (http://www.amazon.com/Watches-Mens-Womens-Kids-Accessories/b/ref=sd_allcat_watches/187-9021585-5419616?ie=UTF8&node=377110011)
-            if not subcategories:
-                subcategories = hxs.select("(//h2 | //h3)[text()='Shop by Department']/following-sibling::ul[1]/li/a")
+
+            # extract category title to check if it should be treated as a special category (exceptions to usual page structure)
+            cat_title = hxs.select("//h1//text()").strip()
+            if cat_title in self.SUBCATS_MENU_SPECIAL:
+                subcategories = self.extractSubcategoriesSpecial(cat_title, hxs)
+
+            else:
+                # extract subcategories for regular page structure
+                subcategories = hxs.select("//h2[text()='Department']/following-sibling::ul[1]/li/a")
+                # only try "Shop by Department" if there is no "Department", otherwise might cause problems when both are present. e.g (http://www.amazon.com/Watches-Mens-Womens-Kids-Accessories/b/ref=sd_allcat_watches/187-9021585-5419616?ie=UTF8&node=377110011)
+                if not subcategories:
+                    subcategories = hxs.select("(//h2 | //h3)[text()='Shop by Department']/following-sibling::ul[1]/li/a")
+
+
             for subcategory in subcategories:
                 # if we have a subcategory URL and product count with the expected format extract it, otherwise move on
 
@@ -429,7 +442,7 @@ class AmazonSpider(BaseSpider):
                 if 'department_url' in parent_item:
                     item['department_url'] = parent_item['department_url']
                 else:
-                    assert not self.find_matching_key(item['department_text'], self.extra_toplevel_categories_urls)
+                    assert not self.find_matching_key(item['department_text'], self.EXTRA_TOPLEVEL_CATEGORIES_URLS)
 
                 # else:
                 #     # the parent must be a level 2 category - so this will be considered department
@@ -449,21 +462,18 @@ class AmazonSpider(BaseSpider):
                 yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
 
-                # # extract their subcategories as well (needed for "Home Improvement")
-                # # stop at a certain level
-                # if item['level'] > self.LEVEL_BARRIER:
-                #     #yield Request(item['url'], callback = self.extractSubcategories, meta = {'item' : item})
-                #     yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
+        # extract subcategories from category page from special category pages that do not conform to regular page structure
+        # return list of nodes containing the subcategories
+        def extractSubcategoriesSpecial(cat_title, hxs):
+            if cat_title == "Team Sports":
+                subcategories = hxs.select("//h3[text()='Shop by Sport']/following-sibling::ul[1]/li/a")
 
-                # else:
-                #     # stop here, yield the item
-                #     yield item
-
+                return subcategories
 
 
 
     #############################################
-    # Trying to automatically extract better (that have product count) category landing pages through some twisted naviation - leave for later. replaced with some hardcoded pages in extra_toplevel_categories_urls
+    # Trying to automatically extract better (that have product count) category landing pages through some twisted naviation - leave for later. replaced with some hardcoded pages in EXTRA_TOPLEVEL_CATEGORIES_URLS
     #     # if no product count try to find the correct landing page for this category:
     #     # try to find a link to an "All ..." page (will point to a subcategory of this one), then on that page try to find the link to the department page (so an alternate link for this subcategory)
     #     if not prod_count_holder and item['level']==1:
