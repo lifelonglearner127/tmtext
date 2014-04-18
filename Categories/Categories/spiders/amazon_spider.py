@@ -57,7 +57,7 @@ class AmazonSpider(BaseSpider):
 
         # category names with special page structure whose subcategories menu need to be parsed specifically
         # these are the titles found on the respective categories' pages
-        self.SUBCATS_MENU_SPECIAL = ['Team Sports']
+        self.SUBCATS_MENU_SPECIAL = ['Team Sports', 'Sports & Outdoors']
 
 
         # flag indicating whether to compute overall product counts in pipelines phase for this spider.
@@ -390,7 +390,7 @@ class AmazonSpider(BaseSpider):
             #TODO: not all pages have this
             cat_title = hxs.select("//h1//text()").extract()
             if cat_title and cat_title[0].strip() in self.SUBCATS_MENU_SPECIAL:
-                subcategories = self.extractSubcategoriesSpecial(cat_title, hxs)
+                subcategories = self.extractSubcategoriesSpecial(cat_title[0].strip(), hxs)
 
             else:
                 # extract subcategories for regular page structure
@@ -483,13 +483,13 @@ class AmazonSpider(BaseSpider):
                 yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
 
-        # extract subcategories from category page from special category pages that do not conform to regular page structure
-        # return list of nodes containing the subcategories
-        def extractSubcategoriesSpecial(cat_title, hxs):
-            if cat_title == "Team Sports":
-                subcategories = hxs.select("//h3[text()='Shop by Sport']/following-sibling::ul[1]/li/a")
+    # extract subcategories from category page from special category pages that do not conform to regular page structure
+    # return list of nodes containing the subcategories
+    def extractSubcategoriesSpecial(self, cat_title, hxs):
+        if cat_title in ["Team Sports", "Sports & Outdoors"]:
+            subcategories = hxs.select("//h3[text()='Shop by Sport']/following-sibling::ul[1]/li/a")
 
-                return subcategories
+            return subcategories
 
 
 
