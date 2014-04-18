@@ -45,7 +45,8 @@ class AmazonSpider(BaseSpider):
                                     "All Beauty" : "http://www.amazon.com/s/ref=lp_11059031_ex_n_1?rh=n%3A3760911&bbn=3760911&ie=UTF8&qid=1395793680",\
                                     "Health, Household & Baby Care" : "http://www.amazon.com/s/ref=lp_6183682011_ex_n_1?rh=n%3A3760901&bbn=3760901&ie=UTF8&qid=1395822180", \
                                     "Tires & Wheels" : "http://www.amazon.com/s/ref=lp_353609011_ex_n_1?rh=n%3A15684181%2Cn%3A%2115690151%2Cn%3A15706571&bbn=15706571&ie=UTF8&qid=1395824546", \
-                                    "Motorcycle & Powersports" : "http://www.amazon.com/s/ref=sr_ex_n_1?rh=n%3A15684181%2Cn%3A%2115690151%2Cn%3A346333011&bbn=346333011&ie=UTF8&qid=1395824599"
+                                    "Motorcycle & Powersports" : "http://www.amazon.com/s/ref=sr_ex_n_1?rh=n%3A15684181%2Cn%3A%2115690151%2Cn%3A346333011&bbn=346333011&ie=UTF8&qid=1395824599", \
+                                    "Automotive & Industrial" : "http://www.amazon.com/s/ref=sr_ex_n_1?rh=n%3A15684181&bbn=15684181" # this is partial - "Automotive and industrial" also contains the "Industrial & Scientific" cats which can be found in the sitemap
                                     }
 
 
