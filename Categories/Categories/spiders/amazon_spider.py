@@ -383,6 +383,11 @@ class AmazonSpider(BaseSpider):
             # check if it should be treated as a special category (exceptions to usual page structure); then extract the subcategories with the appropriate method
             if self.isSpecialCategoryMenu(parent_item):
                 subcategories = self.extractSubcategoriesFromMenuSpecial(hxs, parent_item)
+
+                # if no subcategories were found, try with the regular extraction as well (ex http://www.amazon.com/clothing-accessories-men-women-kids/b/ref=sd_allcat_apr/179-7724806-1781144?ie=UTF8&node=1036592)
+                if not subcategories:
+                    subcategories = self.extractSubcategoriesFromMenu(hxs)
+
             else:
                 subcategories = self.extractSubcategoriesFromMenu(hxs)
             
@@ -515,6 +520,7 @@ class AmazonSpider(BaseSpider):
             yield (subcategory_name, subcategory_url, None)
 
     # check if category is special and subcategories from its menu should be extracted in a specific way
+    #TODO: replace these tests with some tests based on URL, more robust (after figuring out which is the stable part of the url)
     def isSpecialCategoryMenu(self, category):
         # category names with special page structure whose subcategories menu need to be parsed specifically
         # these are the titles found on the respective categories' pages
@@ -523,7 +529,7 @@ class AmazonSpider(BaseSpider):
             return True
 
         if category['text'] == 'Accessories' and ("Clothing" in category['parent_text']):
-            print "IS SPECIAL", category['url']
+            #print "IS SPECIAL", category['url']
             return True
 
 
