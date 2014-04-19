@@ -79,7 +79,12 @@ class AsdaProductsSpider(BaseProductsSpider):
         Sometimes an error status code is not returned and an error page is
         displayed. This methods detects that case for the search page.
         """
-        # The site sends proper status codes for errors.
+        data = json.loads(sel.xpath('//p/text()').extract()[0])
+        if data.get('statusCode') != '0':
+            self.log("Site reported error code '%s' and reason: %s"
+                     % (data.get('statusCode'), data.get('statusMessage')),
+                     WARNING)
+            return True
         return False
 
     def _scrape_total_matches(self, sel):
