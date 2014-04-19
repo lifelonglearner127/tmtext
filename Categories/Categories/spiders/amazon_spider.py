@@ -233,7 +233,7 @@ class AmazonSpider(BaseSpider):
                 if item['department_text'] in self.department_urls:
                     assert self.find_matching_key(item['department_text'], self.EXTRA_TOPLEVEL_CATEGORIES_URLS)
                     item['department_url'] = self.department_urls[item['department_text']]
-                    item['parent_url'] = item['url']
+                    item['parent_url'] = item['department_url']
 
                     #TODO: leave this or not?
                     # Don't crawl subcategories of departments twice. If this is a department with url (extra_category), then we will crawl its subcategories. So ignore them here
@@ -369,16 +369,14 @@ class AmazonSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
 
         # returned received item, then extract its subcategories
-        item = response.meta['item']
+        parent_item = response.meta['item']
 
-        yield item
-
-        parent_item = item
+        yield parent_item
 
         # extract subcategories, if level is above barrier
         # extract subcategories from first menu on the left, assume this is the subcategories menu
 
-        if item['level'] > self.LEVEL_BARRIER:
+        if parent_item['level'] > self.LEVEL_BARRIER:
 
             # check if it should be treated as a special category (exceptions to usual page structure); then extract the subcategories with the appropriate method
             if self.isSpecialCategoryMenu(parent_item):
