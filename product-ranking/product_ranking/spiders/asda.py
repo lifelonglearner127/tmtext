@@ -6,7 +6,7 @@ from itertools import islice
 import json
 import urlparse
 
-from scrapy.log import ERROR
+from scrapy.log import ERROR, WARNING
 from scrapy.http import Request
 from scrapy.selector import Selector
 
@@ -111,4 +111,4 @@ class AsdaProductsSpider(BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, sel):
         data = json.loads(sel.xpath('//p/text()').extract()[0])
-        return data['prefetch']
+        return data.get('prefetch')
