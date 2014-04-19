@@ -55,10 +55,6 @@ class AmazonSpider(BaseSpider):
                                     "Automotive & Industrial" : "http://www.amazon.com/s/ref=sr_ex_n_1?rh=n%3A15684181&bbn=15684181" # this is partial - "Automotive and industrial" also contains the "Industrial & Scientific" cats which can be found in the sitemap
                                     }
 
-        # category names with special page structure whose subcategories menu need to be parsed specifically
-        # these are the titles found on the respective categories' pages
-        self.SUBCATS_MENU_SPECIAL = ['Team Sports', 'All Sports & Outdoors']
-
 
         # flag indicating whether to compute overall product counts in pipelines phase for this spider.
         # if on, 'catid' and 'parent_catid' fields need to be implemented
@@ -493,20 +489,42 @@ class AmazonSpider(BaseSpider):
         cat_title = category['text']
         if cat_title in ["Team Sports", "All Sports & Outdoors"]:
             return self.extractSubcategoriesSports(hxs)
+        if category['text'] == 'Accessories' and ("Clothing" in category['parent_text']):
+            return self.extractSubcategoriesAccessories(hxs)
 
     # extract subcategories for special category: Sports
     def extractSubcategoriesSports(self, hxs):
-            subcategories = hxs.select("//h3[text()='Shop by Sport']/following-sibling::ul[1]/li/a")
+        subcategories = hxs.select("//h3[text()='Shop by Sport']/following-sibling::ul[1]/li/a")
 
-            for subcategory in subcategories:
-                subcategory_name = subcategory.select("text()").extract()[0]
-                subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
+        for subcategory in subcategories:
+            subcategory_name = subcategory.select("text()").extract()[0]
+            subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
 
-                yield (subcategory_name, subcategory_url, None)
+            yield (subcategory_name, subcategory_url, None)
+
+    # extract subcategories for special category: Accessories in Clothing
+    def extractSubcategoriesAccessories(self, hxs):
+        subcategories = hxs.select("//a[contains(text(),'Shop All')]")
+        for subcategory in subcategories:
+            # extract words after "Shop All" - that is the subcategory name
+            subcategory_text_full = subcategory.select("text()").extract()[0]
+            m = re.match("Shop All (.*)", subcategory_text_full)
+            subcategory_name = m.group(1).strip()
+            subcategory_url = Utils.add_domain(subcategory.select("@href").extract()[0], "http://www.amazon.com")
+
+            yield (subcategory_name, subcategory_url, None)
 
     # check if category is special and subcategories from its menu should be extracted in a specific way
     def isSpecialCategoryMenu(self, category):
-        return category['text'] in self.SUBCATS_MENU_SPECIAL
+        # category names with special page structure whose subcategories menu need to be parsed specifically
+        # these are the titles found on the respective categories' pages
+        SUBCATS_MENU_SPECIAL = ['Team Sports', 'All Sports & Outdoors']
+        if category['text'] in SUBCATS_MENU_SPECIAL:
+            return True
+
+        if category['text'] == 'Accessories' and ("Clothing" in category['parent_text']):
+            print "IS SPECIAL", category['url']
+            return True
 
 
 
