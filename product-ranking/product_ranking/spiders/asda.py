@@ -53,7 +53,7 @@ class AsdaProductsSpider(BaseProductsSpider):
             prod['brand'] = item['brandName']
             prod['price'] = item['price']
             # FIXME Verify by comparing a prod in another site.
-            prod['upc'] = item['cin']
+            prod['upc'] = int(item['cin'])
             prod['model'] = item['id']
             prod['image_url'] = item['imageURL']
             prod['url'] = item['productURL']
