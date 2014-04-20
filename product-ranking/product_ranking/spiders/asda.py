@@ -3,12 +3,13 @@ from __future__ import print_function
 from future_builtins import *
 
 import json
+import urllib
 
 from scrapy.log import WARNING
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 
 
 class AsdaProductsSpider(BaseProductsSpider):
@@ -17,10 +18,15 @@ class AsdaProductsSpider(BaseProductsSpider):
     start_urls = []
 
     SEARCH_URL = "http://groceries.asda.com/api/items/search" \
-        "?pagenum=1&productperpage=32&keyword={}" \
-        "&contentid=New_IM_Search_WithResults_promo_1&htmlassociationtype=0" \
-        "&listType=12&sortby=relevance+desc&cacheable=true&fromgi=gi" \
-        "&requestorigin=gi"
+        "?pagenum={pagenum}&productperpage={prods_per_page}" \
+        "&keyword={search_term}&contentid=New_IM_Search_WithResults_promo_1" \
+        "&htmlassociationtype=0&listType=12&sortby=relevance+desc" \
+        "&cacheable=true&fromgi=gi&requestorigin=gi"
+
+    def __init__(self, *args, **kwargs):
+        super(AsdaProductsSpider, self).__init__(
+            url_formatter=FormatterWithDefaults(pagenum=1, prods_per_page=32),
+            *args, **kwargs)
 
     def parse_product(self, response):
         raise AssertionError("This method should never be called.")
@@ -64,4 +70,13 @@ class AsdaProductsSpider(BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, sel):
         data = json.loads(sel.xpath('//p/text()').extract()[0])
-        return data.get('prefetch')
+
+        max_pages = int(data['maxPages'])
+        cur_page = int(data['currentPage'])
+        if cur_page >= max_pages:
+            return None
+
+        st = urllib.quote(data['keyword'])
+        return self.url_formatter.format(self.SEARCH_URL,
+                                         search_term=st,
+                                         pagenum=cur_page + 1)

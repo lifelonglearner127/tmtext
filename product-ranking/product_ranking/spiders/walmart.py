@@ -16,7 +16,7 @@ class WalmartProductsSpider(BaseProductsSpider):
     allowed_domains = ["walmart.com"]
 
     SEARCH_URL = "http://www.walmart.com/search/search-ng.do?ic=16_0&" \
-        "Find=Find&search_query={}&Find=Find&search_constraint=0"
+        "Find=Find&search_query={search_term}&Find=Find&search_constraint=0"
 
     def parse_product(self, response):
         sel = Selector(response)

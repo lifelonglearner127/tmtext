@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 
 from itertools import islice
+import string
 import urllib
 import urlparse
 
@@ -31,15 +32,36 @@ def cond_set(item, key, values, conv=lambda l: l[0]):
         item[key] = conv(values)
 
 
+class FormatterWithDefaults(string.Formatter):
+
+    def __init__(self, **defaults):
+        self.defaults = defaults
+
+    def get_field(self, field_name, args, kwargs):
+        # Handle a key not found
+        try:
+            val = super(FormatterWithDefaults, self).get_field(
+                field_name, args, kwargs)
+        except (KeyError, AttributeError):
+            val = self.defaults[field_name], field_name
+        return val
+
+
 class BaseProductsSpider(Spider):
     start_urls = []
 
     SEARCH_URL = None  # Override.
 
-    def __init__(self, quantity=None,
+    def __init__(self, url_formatter=None,
+                 quantity=None,
                  searchterms_str=None, searchterms_fn=None,
                  *args, **kwargs):
         super(BaseProductsSpider, self).__init__(*args, **kwargs)
+
+        if url_formatter is None:
+            self.url_formatter = string.Formatter()
+        else:
+            self.url_formatter = url_formatter
 
         if quantity is None:
             self.log("No quantity specified. Will retrieve all products.",
@@ -70,7 +92,8 @@ class BaseProductsSpider(Spider):
         """Generate Requests from the SEARCH_URL and the search terms."""
         for st in self.searchterms:
             yield Request(
-                self.SEARCH_URL.format(urllib.quote(st)),
+                self.url_formatter.format(self.SEARCH_URL,
+                                          search_term=urllib.quote(st)),
                 meta={'search_term': st, 'remaining': self.quantity})
 
     def parse(self, response):
