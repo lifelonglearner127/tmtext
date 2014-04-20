@@ -16,5 +16,4 @@ class SiteProductItem(Item):
     description = Field()   # String with HTML tags.
     brand = Field()         # String.
     price = Field()         # String, number with currency sign.
-    rating = Field()        # Tuple of 2 integers, numerator and denominator.
     locale = Field()        # String.
