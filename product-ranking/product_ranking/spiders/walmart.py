@@ -4,7 +4,7 @@ from future_builtins import *
 import string
 import urlparse
 
-from scrapy.log import (ERROR, WARNING)
+from scrapy.log import ERROR, WARNING
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem
@@ -21,15 +21,12 @@ class WalmartProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         sel = Selector(response)
 
-        if self._is_404(response.url):
+        if self._search_page_error(response):
             self.log("Got 404 when coming from %s." % response.request.url,
                      ERROR)
             return
 
-        p = SiteProductItem()
-        p['search_term'] = response.meta['search_term']
-        p['ranking'] = response.meta['ranking']
-        p['total_matches'] = response.meta['total_matches']
+        p = response.meta['product']
 
         self._populate_from_open_graph(response.url, sel, p)
 
@@ -39,22 +36,22 @@ class WalmartProductsSpider(BaseProductsSpider):
 
         return p
 
-    def _is_404(self, url):
-        path = urlparse.urlsplit(url)[2]
+    def _search_page_error(self, response):
+        path = urlparse.urlsplit(response.url)[2]
         return path == 'FileNotFound.aspx'
 
     def _populate_from_html(self, url, sel, product):
         # Since different chunks of invalid HTML keep appearing in this
         # element, I'll just dump whatever is in there.
         cond_set(product, 'title',
-             sel.xpath('//meta[@name="title"]/@content').extract())
+                 sel.xpath('//meta[@name="title"]/@content').extract())
         # TODO This source for the description is not reliable.
         cond_set(product, 'description',
-             sel.xpath('//*[@class="ql-details-short-desc"]/*').extract(),
-             conv=compose(string.strip, ''.join))
+                 sel.xpath('//*[@class="ql-details-short-desc"]/*').extract(),
+                 conv=compose(string.strip, ''.join))
         # Lower quality description as fallback.
         cond_set(product, 'description',
-             sel.xpath('//meta[@name="Description"]/@content').extract())
+                 sel.xpath('//meta[@name="Description"]/@content').extract())
 
     def _populate_from_js(self, url, sel, product):
         # This fails with movies.
@@ -65,13 +62,14 @@ class WalmartProductsSpider(BaseProductsSpider):
             self.log("Matched multiple script blocks in %s" % url, WARNING)
 
         cond_set(product, 'upc', map(int, scripts.re("upc:\s*'(\d+)',")))
-        cond_set(product, 'brand', filter(None, scripts.re("brand:\s*'(.+)',")))
+        cond_set(product, 'brand',
+                 filter(None, scripts.re("brand:\s*'(.+)',")))
         cond_set(product, 'model', scripts.re("model:\s*'(.+)',"))
         cond_set(product, 'title', scripts.re("friendlyName:\s*'(.+)',"))
         cond_set(product, 'price',
-             map(float, scripts.re("currentItemPrice:\s*'(\d+)',")))
+                 map(float, scripts.re("currentItemPrice:\s*'(\d+)',")))
         cond_set(product, 'rating',
-             map(float, scripts.re("currentRating:\s*'(.+)',")))
+                 map(float, scripts.re("currentRating:\s*'(.+)',")))
 
     def _populate_from_open_graph(self, url, sel, product):
         """See about the Open Graph Protocol at http://ogp.me/"""
@@ -104,11 +102,16 @@ class WalmartProductsSpider(BaseProductsSpider):
         return int(sel.css(".numResults ::text").extract()[0].split()[0])
 
     def _scrape_product_links(self, sel):
-        return sel.css('a.prodLink.GridItemLink').xpath('@href').extract()
+        links = sel.css('a.prodLink.GridItemLink ::attr(href)').extract()
+        if not links:
+            self.log("Found no product links.", ERROR)
+        for link in links:
+            yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, sel):
-        next_pages = sel.css('li.btn-nextResults > a').xpath('@href') \
-            .extract()
+        next_pages = sel.css('li.btn-nextResults > a ::attr(href)').extract()
         if len(next_pages) == 1:
             return next_pages[0]
+        elif len(next_pages) > 1:
+            self.log("Found more than one 'next page' link.", ERROR)
         return None

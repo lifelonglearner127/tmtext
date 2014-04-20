@@ -1,9 +1,10 @@
 from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 
+from itertools import islice
 import urlparse
 
-from scrapy.log import (ERROR, INFO)
+from scrapy.log import ERROR, INFO
 from scrapy.http import Request
 from scrapy.selector import Selector
 from scrapy.spider import Spider
@@ -69,32 +70,48 @@ class BaseProductsSpider(Spider):
             yield r
 
     def parse(self, response):
-        sel = Selector(response)
-
         remaining = response.meta['remaining']
-        total_matches = self._scrape_total_matches(sel)
+        search_term = response.meta['search_term']
 
-        prod_urls = self._scrape_product_links(sel)
-        for i, prod_url in enumerate(prod_urls[:remaining]):
-            r = Request(
-                urlparse.urljoin(response.url, prod_url),
-                callback=self.parse_product)
-            r.meta['search_term'] = response.meta['search_term']
-            r.meta['total_matches'] = total_matches
+        if self._search_page_error(response):
+            self.log("For search term '%s' with %d items remaining,"
+                     " failed to retrieve search page: %s"
+                     % (search_term, remaining, response.request.url),
+                     ERROR)
+            return
+
+        sel = Selector(response)
+        total_matches = self._scrape_total_matches(sel)
+        prods = self._scrape_product_links(sel)
+        i = -1  # "i" is also used after the loop.
+        for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
+            # Initialize the product as much as possible.
+            prod_item['search_term'] = search_term
+            prod_item['total_matches'] = total_matches
             # The ranking is the position in this page plus the number of
             # products from other pages.
-            r.meta['ranking'] = (i + 1) + (self.quantity - remaining)
-            yield r
+            prod_item['ranking'] = (i + 1) + (self.quantity - remaining)
 
-        remaining -= len(prod_urls)  # May go negative.
-        if remaining >= 0:
+            if prod_url is None:
+                # The product is complete, no need for another request.
+                yield prod_item
+            else:
+                # Another request is necessary to complete the product.
+                yield Request(
+                    urlparse.urljoin(response.url, prod_url),
+                    callback=self.parse_product,
+                    meta={'product': prod_item})
+
+        remaining -= i + 1
+        if remaining > 0:
             next_page = self._scrape_next_results_page_link(sel)
             if next_page is not None:
-                # Callback = self.parse
-                r = Request(urlparse.urljoin(response.url, next_page))
-                r.meta['search_term'] = response.meta['search_term']
-                r.meta['remaining'] = remaining
-                yield r
+                yield Request(
+                    urlparse.urljoin(response.url, next_page),
+                    self.parse,
+                    meta=dict(
+                        search_term=response.meta['search_term'],
+                        remaining=remaining))
 
     def parse_product(self, response):
         """parse_product(response:Response)
@@ -102,6 +119,15 @@ class BaseProductsSpider(Spider):
         Handles parsing of a product page.
         """
         raise NotImplementedError
+
+    def _search_page_error(self, response):
+        """_search_page_error(response:Response):bool
+
+        Sometimes an error status code is not returned and an error page is
+        displayed. This methods detects that case for the search page.
+        """
+        # Defaul implementation for sites that send proper status codes.
+        return False
 
     def _scrape_total_matches(self, sel):
         """_scrape_total_matches(sel:Selector):int
@@ -111,9 +137,11 @@ class BaseProductsSpider(Spider):
         raise NotImplementedError
 
     def _scrape_product_links(self, sel):
-        """_scrape_product_links(sel:Selector):iter<str>
+        """_scrape_product_links(sel:Selector)
+                :iter<tuple<str, SiteProductItem>>
 
-        Returns the products in the current results page.
+        Returns the products in the current results page and a SiteProductItem
+        which may be partially initialized.
         """
         raise NotImplementedError
 
