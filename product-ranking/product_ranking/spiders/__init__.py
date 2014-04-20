@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 
 from itertools import islice
+import urllib
 import urlparse
 
 from scrapy.log import ERROR, INFO
@@ -35,15 +36,19 @@ class BaseProductsSpider(Spider):
 
     SEARCH_URL = None  # Override.
 
-    def __init__(self, quantity='20',
+    def __init__(self, quantity=None,
                  searchterms_str=None, searchterms_fn=None,
                  *args, **kwargs):
         super(BaseProductsSpider, self).__init__(*args, **kwargs)
 
         if quantity is None:
-            raise AssertionError("Quantity parameter is mandatory.")
+            self.log("No quantity specified. Will retrieve all products.",
+                     INFO)
+            import sys
+            self.quantity = sys.maxint
+        else:
+            self.quantity = int(quantity)
 
-        self.quantity = int(quantity)
         self.searchterms = []
         if searchterms_str is not None:
             self.searchterms = searchterms_str.split(',')
@@ -64,10 +69,9 @@ class BaseProductsSpider(Spider):
     def start_requests(self):
         """Generate Requests from the SEARCH_URL and the search terms."""
         for st in self.searchterms:
-            r = Request(self.SEARCH_URL.format(st))
-            r.meta['search_term'] = st
-            r.meta['remaining'] = self.quantity
-            yield r
+            yield Request(
+                self.SEARCH_URL.format(urllib.quote(st)),
+                meta={'search_term': st, 'remaining': self.quantity})
 
     def parse(self, response):
         remaining = response.meta['remaining']
