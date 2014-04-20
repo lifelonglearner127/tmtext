@@ -10,27 +10,18 @@ from itertools import chain
 import csv
 import collections
 import json
-import sys
 
 
 def parse_arguments(argv=None):
-    if argv is None:
-        argv = sys.argv
+    import argparse
+    parser = argparse.ArgumentParser(description='Summarize search data.',
+                                     version="%(prog)s 0.1")
+    #"usage: %prog [options] output-file data-file [data-file ...]",
+    parser.add_argument('-f', '--filter', help="filter on <property>=<value>")
+    parser.add_argument('output', help="the CSV output file.")
+    parser.add_argument('inputs', nargs='+', help="the JSON line input files.")
 
-    from optparse import OptionParser
-    parser = OptionParser(
-        "usage: %prog [options] output-file data-file [data-file ...]",
-        version="%prog v0.1")
-    parser.add_option('-f', '--filter', help="filter on <property>=<value>")
-
-    options, args = parser.parse_args(argv[1:])
-
-    if len(args) > 2:
-        parser.error("Need more arguments.")
-
-    output_fn = args[0]
-    data_fns = args[1:]
-    return options, output_fn, data_fns
+    return parser.parse_args(argv)
 
 
 def main(argv=None):
@@ -40,19 +31,19 @@ def main(argv=None):
     sys.argv is used.
     Returns the return status code.
     """
-    options, output_fn, data_fns = parse_arguments(argv)
+    args = parse_arguments(argv)
 
-    if options.filter:
-        prop, value = options.filter.split('=')
+    if args.filter:
+        prop, value = args.filter.split('=')
 
     data = collections.defaultdict(lambda: collections.defaultdict(list))
-    for jl in chain(*map(open, data_fns)):
+    for jl in chain(*map(open, args.inputs)):
         rec = json.loads(jl)
-        if not options.filter \
+        if not args.filter \
                 or prop in rec and rec[prop].lower() == value.lower():
             data[rec['search_term']][rec.get('brand', '').lower()].append(rec)
 
-    writer = csv.writer(open(output_fn, 'w'))
+    writer = csv.writer(open(args.output, 'w'))
     writer.writerow(['site', 'search term', 'brand', 'total results',
                      'rankings', 'on first page'])
     for st, brands in data.items():
@@ -67,4 +58,5 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
+    import sys
     sys.exit(main())
