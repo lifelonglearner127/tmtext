@@ -52,7 +52,7 @@ class TargetSpider(SearchSpider):
 			# quit if there is no product name
 			if product_name and product_url:
 				# clean url
-				m = re.match("(.*)#prodSlot*",url.extract(), product_url[0])
+				m = re.match("(.*)#prodSlot*", product_url[0])
 				if m:
 					item['product_url'] = m.group(1)
 				else:
