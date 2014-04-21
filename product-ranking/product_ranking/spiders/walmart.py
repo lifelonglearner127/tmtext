@@ -40,7 +40,7 @@ class WalmartProductsSpider(BaseProductsSpider):
 
     def _search_page_error(self, response):
         path = urlparse.urlsplit(response.url)[2]
-        return path == 'FileNotFound.aspx'
+        return path == '/FileNotFound.aspx'
 
     def _populate_from_html(self, url, sel, product):
         # Since different chunks of invalid HTML keep appearing in this
