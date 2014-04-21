@@ -4,6 +4,7 @@ from scrapy.item import Item, Field
 
 
 class SiteProductItem(Item):
+    site = Field()          # String.
     search_term = Field()   # String.
     ranking = Field()       # Integer.
     total_matches = Field()  # Integer.

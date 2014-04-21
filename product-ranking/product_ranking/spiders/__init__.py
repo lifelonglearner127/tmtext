@@ -52,11 +52,20 @@ class BaseProductsSpider(Spider):
 
     SEARCH_URL = None  # Override.
 
-    def __init__(self, url_formatter=None,
+    def __init__(self,
+                 url_formatter=None,
                  quantity=None,
                  searchterms_str=None, searchterms_fn=None,
+                 site_name=None,
                  *args, **kwargs):
         super(BaseProductsSpider, self).__init__(*args, **kwargs)
+
+        if site_name is None:
+            assert len(self.allowed_domains) == 1, \
+                "A single allowed domain is required to auto-detect site name."
+            self.site_name = self.allowed_domains[0]
+        else:
+            self.site_name = site_name
 
         if url_formatter is None:
             self.url_formatter = string.Formatter()
@@ -80,7 +89,8 @@ class BaseProductsSpider(Spider):
         else:
             self.log("No search terms provided!", ERROR)
 
-        self.log("Created with %d search terms." % len(self.searchterms), INFO)
+        self.log("Created for %s with %d search terms."
+                 % (self.site_name, len(self.searchterms)), INFO)
 
     def make_requests_from_url(self, _):
         """This method does not apply to this type of spider so it is overriden
@@ -113,6 +123,7 @@ class BaseProductsSpider(Spider):
         i = -1  # "i" is also used after the loop.
         for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
             # Initialize the product as much as possible.
+            prod_item['site'] = self.site_name
             prod_item['search_term'] = search_term
             prod_item['total_matches'] = total_matches
             # The ranking is the position in this page plus the number of
@@ -139,6 +150,8 @@ class BaseProductsSpider(Spider):
                     meta=dict(
                         search_term=response.meta['search_term'],
                         remaining=remaining))
+
+    ## Abstract methods.
 
     def parse_product(self, response):
         """parse_product(response:Response)
