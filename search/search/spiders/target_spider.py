@@ -97,7 +97,7 @@ class TargetSpider(SearchSpider):
 				self.log("Didn't find product price: " + response.url + "\n", level=log.DEBUG)
 
 			# extract product brand
-			brand_holder = product_title_holder.select("parent::node()//a[contains(@class,'productBrand')]/a/text()").extract()
+			brand_holder = product_title_holder.select("parent::node()//a[contains(@class,'productBrand')]/text()").extract()
 			if brand_holder:
 				item['product_brand'] = brand_holder[0]
 				self.log("Extracted brand: " + item['product_brand'] + " from results page: " + str(response.url), level=log.DEBUG)
