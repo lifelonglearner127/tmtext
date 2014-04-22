@@ -6,6 +6,7 @@ from scrapy.http import Request, FormRequest
 from scrapy.http import Response
 
 from spiders_utils import Utils
+import re
 
 # crawls sitemap and extracts department and categories names and urls (as well as other info)
 class TargetSpider(Spider):
@@ -88,6 +89,25 @@ class TargetSpider(Spider):
     def parseCategory(self, response):
 
     	#TODO: add extraction of additional category info
-
+    	sel = Selector(response)
     	item = response.meta['item']
+
+    	# extract description
+    	description_texts = sel.xpath("//div[@class='subpart']/p//text()").extract()
+
+    	# replace all whitespace with one space, strip, and remove empty texts; then join them
+    	if description_texts:
+        	item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
+
+        	tokenized = Utils.normalize_text(item['description_text'])
+        	item['description_wc'] = len(tokenized)
+
+        else:
+        	item['description_wc'] = 0
+
+
+    	#TODO: add description title as category name if no title available?
+    	# then also add the keyword/density count
+
+
     	return item
