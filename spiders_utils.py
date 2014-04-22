@@ -80,7 +80,7 @@ class Utils():
 
 
     # normalize text to lowercase and eliminate non-word characters.
-    # return normalized string
+    # return list of tokens
     @staticmethod
     def normalize_text(text):
         # replace &nbsp with space
