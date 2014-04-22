@@ -43,7 +43,7 @@ class TargetSpider(Spider):
     		# extract departments
     		department_item = CategoryItem()
     		department_item['text'] = department.xpath("a/text()").extract()[0]
-    		department_item['url'] = Utils.add_domain(department.xpath("a/@href").extract()[0], self.BASE_URL)
+    		department_item['url'] = self.build_url(department.xpath("a/@href").extract()[0])
 
     		department_item['department_text'] = department_item['text']
     		department_item['department_url'] = department_item['url']
@@ -68,7 +68,7 @@ class TargetSpider(Spider):
     			subcategory_item = CategoryItem()
 
     			subcategory_item['text'] = subcategory.xpath("a/text()").extract()[0]
-    			subcategory_item['url'] = Utils.add_domain(subcategory.xpath("a/@href").extract()[0], self.BASE_URL)
+    			subcategory_item['url'] = self.build_url(subcategory.xpath("a/@href").extract()[0])
 
     			# its level is one less than its parent's level
     			subcategory_item['level'] = department_item['level'] - 1
@@ -111,3 +111,10 @@ class TargetSpider(Spider):
 
 
     	return item
+
+    # build URL from relative links found on pages: add base url and clean final url
+    def build_url(self, url):
+    	url = Utils.add_domain(url, self.BASE_URL)
+    	url = Utils.clean_url(url, ['#'])
+    	return url
+
