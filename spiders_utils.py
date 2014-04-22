@@ -15,18 +15,14 @@ class Utils():
             url = root_url + url
         return url
 
-    # clean url of extra parameters
+    # clean url of extra parameters, given a list of separators
+    # separators must appear as they should appear in a regex (escaped if necessary)
     @staticmethod
-    def clean_url(url):
-        # remove extra parameters (after ?)
-        m = re.match("(.*)\?.*", url)
-        if m:
-            url = m.group(1)
-
-        # remove part after ;
-        m = re.match("(.*);.*", url)
-        if m:
-            url = m.group(1)
+    def clean_url(url, separators=['\?',';']):
+    	for separator in separators:
+	        m = re.match("(.*)" + separator + ".*", url)
+	        if m:
+	            url = m.group(1)
 
         return url
 
