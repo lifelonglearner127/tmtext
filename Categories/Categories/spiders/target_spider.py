@@ -48,7 +48,7 @@ class TargetSpider(Spider):
 
     		# extract departments
     		department_item = CategoryItem()
-    		department_item['text'] = department.xpath("a/text()").extract()[0]
+    		department_item['text'] = department.xpath("a/text()").extract()[0].strip()
     		department_item['url'] = self.build_url(department.xpath("a/@href").extract()[0])
 
     		department_item['department_text'] = department_item['text']
@@ -73,7 +73,7 @@ class TargetSpider(Spider):
 
     			subcategory_item = CategoryItem()
 
-    			subcategory_item['text'] = subcategory.xpath("a/text()").extract()[0]
+    			subcategory_item['text'] = subcategory.xpath("a/text()").extract()[0].strip()
     			subcategory_item['url'] = self.build_url(subcategory.xpath("a/@href").extract()[0])
 
     			# its level is one less than its parent's level
@@ -149,7 +149,7 @@ class TargetSpider(Spider):
     	for subcategory in subcategories:
     		subcategory_item = CategoryItem()
 
-    		subcategory_item['text'] = subcategory.xpath("text()").extract()[0]
+    		subcategory_item['text'] = subcategory.xpath("text()").extract()[0].strip()
     		subcategory_item['url'] = self.build_url(subcategory.xpath("@href").extract()[0])
 
     		# filter duplicates
