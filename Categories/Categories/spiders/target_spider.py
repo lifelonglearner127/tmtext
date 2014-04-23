@@ -99,6 +99,10 @@ class TargetSpider(Spider):
     	# extract description
     	description_texts = sel.xpath("//div[@class='subpart']/p//text()").extract()
 
+    	# second try at finding descriptions
+    	if not description_texts:
+    		description_texts = sel.xpath("//div[@id='SEO_TEXT']//text()").extract()
+
     	# replace all whitespace with one space, strip, and remove empty texts; then join them
     	if description_texts:
         	item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
