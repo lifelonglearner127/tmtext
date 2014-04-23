@@ -20,6 +20,9 @@ class TargetSpider(Spider):
 	    # level that is considered to contain departments
 	    self.DEPARTMENT_LEVEL = 1
 
+	    # only crawl down to this level
+	    self.LEVEL_BARRIER = -1
+
 	    # flag indicating whether to compute overall product counts in pipelines phase for this spider.
 	    # if on, 'catid' and 'parent_catid' fields need to be implemented
 	    self.compute_nrproducts = True
@@ -126,7 +129,40 @@ class TargetSpider(Spider):
     		item['nr_products'] = int(nr_products)
 
 
-    	return item
+    	yield item
+
+    	# extract subcategories (if we haven't reached level barrier)
+    	if item['level'] <= self.LEVEL_BARRIER:
+    		return
+
+    	parent_item = item
+
+    	# "shop categories" menu
+    	subcategories = sel.xpath("//h3[text()='shop categories']/following-sibling::ul/li/a")
+    	for subcategory in subcategories:
+    		subcategory_item = CategoryItem()
+
+    		subcategory_item['text'] = subcategory.xpath("text()").extract()[0]
+    		subcategory_item['url'] = self.build_url(subcategory.xpath("@href").extract()[0])
+
+    		# assign next available category id
+    		self.catid += 1
+    		subcategory_item['catid'] = self.catid
+
+    		subcategory_item['level'] = parent_item['level'] - 1
+
+    		subcategory_item['parent_url'] = parent_item['url']
+    		subcategory_item['parent_text'] = parent_item['text']
+    		subcategory_item['parent_catid'] = parent_item['catid']
+
+    		subcategory_item['department_text'] = parent_item['department_text']
+    		subcategory_item['department_url'] = parent_item['department_url']
+    		subcategory_item['department_id'] = parent_item['department_id']
+
+    		# send this subcategory to be further parsed
+    		yield Request(subcategory_item['url'], callback = self.parseCategory, meta = {'item' : subcategory_item})
+
+
 
     # build URL from relative links found on pages: add base url and clean final url
     def build_url(self, url):
