@@ -34,7 +34,7 @@ class WalmartProductsSpider(BaseProductsSpider):
 
         self._populate_from_html(response.url, sel, p)
 
-        cond_set(p, 'locale', ['en_US'])  # Default locale.
+        cond_set(p, 'locale', ['en-US'])  # Default locale.
 
         return p
 

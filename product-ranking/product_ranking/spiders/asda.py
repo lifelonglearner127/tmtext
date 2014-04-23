@@ -64,7 +64,7 @@ class AsdaProductsSpider(BaseProductsSpider):
             prod['image_url'] = item['imageURL']
             prod['url'] = item['productURL']
 
-            prod['locale'] = "en_GB"
+            prod['locale'] = "en-GB"
 
             yield None, prod
 

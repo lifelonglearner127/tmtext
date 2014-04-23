@@ -8,6 +8,7 @@ class SiteProductItem(Item):
     search_term = Field()   # String.
     ranking = Field()       # Integer.
     total_matches = Field()  # Integer.
+    results_per_page = Field()  # Integer.
 
     title = Field()         # String.
     upc = Field()           # Integer.
