@@ -21,7 +21,7 @@ class TargetSpider(Spider):
 	    self.DEPARTMENT_LEVEL = 1
 
 	    # only crawl down to this level
-	    self.LEVEL_BARRIER = -1
+	    self.LEVEL_BARRIER = -10
 
 	    # flag indicating whether to compute overall product counts in pipelines phase for this spider.
 	    # if on, 'catid' and 'parent_catid' fields need to be implemented
@@ -34,6 +34,9 @@ class TargetSpider(Spider):
 
 	    # base of urls on this site used to build url for relative links
 	    self.BASE_URL = "http://www.target.com"
+
+	    # crawled urls - for an explicit duplicate filter
+	    self.crawled_urls = []
 
     # extract departments and next level categories
     def parse(self, response):
@@ -97,6 +100,8 @@ class TargetSpider(Spider):
 
     	#TODO: add extraction of additional category info
     	sel = Selector(response)
+
+    	#TODO: a lot of redirects. maybe for item, set 'url' to the one to which it was redirected? (response.url)
     	item = response.meta['item']
 
     	# extract description
@@ -131,6 +136,8 @@ class TargetSpider(Spider):
 
     	yield item
 
+    	self.crawled_urls.append(item['url'])
+
     	# extract subcategories (if we haven't reached level barrier)
     	if item['level'] <= self.LEVEL_BARRIER:
     		return
@@ -144,6 +151,10 @@ class TargetSpider(Spider):
 
     		subcategory_item['text'] = subcategory.xpath("text()").extract()[0]
     		subcategory_item['url'] = self.build_url(subcategory.xpath("@href").extract()[0])
+
+    		# filter duplicates
+    		if subcategory_item['url'] in self.crawled_urls:
+    			continue
 
     		# assign next available category id
     		self.catid += 1
