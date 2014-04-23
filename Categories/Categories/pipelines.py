@@ -156,7 +156,7 @@ class CommaSeparatedLinesPipeline(object):
 			for key in self.categories_tree:
 
 				#TEST: to use with test_categories: if set, some categories won't have 'item' (I guess?)
-				if not 'item' in self.categories_tree[key] and spider.test_category:
+				if not 'item' in self.categories_tree[key] and hasattr(spider, 'test_category') and spider.text_category:
 					continue
 
 				line = json.dumps(dict(self.categories_tree[key]['item']))
