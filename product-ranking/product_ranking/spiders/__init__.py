@@ -109,6 +109,7 @@ class BaseProductsSpider(Spider):
     def parse(self, response):
         remaining = response.meta['remaining']
         search_term = response.meta['search_term']
+        prods_per_page = response.meta.get('products_per_page')
 
         if self._search_page_error(response):
             self.log("For search term '%s' with %d items remaining,"
@@ -120,12 +121,16 @@ class BaseProductsSpider(Spider):
         sel = Selector(response)
         total_matches = self._scrape_total_matches(sel)
         prods = self._scrape_product_links(sel)
+        if prods_per_page is None:
+            prods = list(prods)
+            prods_per_page = len(prods)
         i = -1  # "i" is also used after the loop.
         for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
             # Initialize the product as much as possible.
             prod_item['site'] = self.site_name
             prod_item['search_term'] = search_term
             prod_item['total_matches'] = total_matches
+            prod_item['results_per_page'] = prods_per_page
             # The ranking is the position in this page plus the number of
             # products from other pages.
             prod_item['ranking'] = (i + 1) + (self.quantity - remaining)
@@ -148,8 +153,10 @@ class BaseProductsSpider(Spider):
                     urlparse.urljoin(response.url, next_page),
                     self.parse,
                     meta=dict(
-                        search_term=response.meta['search_term'],
-                        remaining=remaining))
+                        search_term=search_term,
+                        remaining=remaining,
+                        products_per_page=prods_per_page,
+                    ))
 
     ## Abstract methods.
 

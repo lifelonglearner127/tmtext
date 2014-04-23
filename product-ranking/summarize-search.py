@@ -12,12 +12,6 @@ import csv
 import json
 
 
-PAGE_SIZE = {
-    'walmart.com': 16,
-    'asda.com': 32,
-}
-
-
 def parse_arguments(argv=None):
     import argparse
     parser = argparse.ArgumentParser(description='Summarize search data.',
@@ -62,9 +56,9 @@ def main(argv=None):
     writer.writerow(['site', 'search term', 'brand', 'total results',
                      'rankings', 'on first page'])
     for site, search_terms in data.items():
-        page_size = PAGE_SIZE[site]
         for st, brands in search_terms.items():
             for brand, recs in brands.items():
+                page_size = recs[0]['results_per_page']
                 rankings = sorted(r['ranking'] for r in recs)
                 on_first_page = sum(1 for r in rankings if r <= page_size)
                 writer.writerow(
