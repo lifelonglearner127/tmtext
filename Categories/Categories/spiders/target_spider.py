@@ -77,6 +77,10 @@ class TargetSpider(Spider):
     			subcategory_item['department_url'] = department_item['department_url']
     			subcategory_item['department_id'] = department_item['department_id']
 
+    			subcategory_item['parent_text'] = department_item['text']
+    			subcategory_item['parent_url'] = department_item['url']
+    			subcategory_item['parent_catid'] = department_item['catid']
+
     			# assign next available category id
     			self.catid += 1
     			subcategory_item['catid'] = self.catid
