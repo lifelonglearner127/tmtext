@@ -80,8 +80,10 @@ class TescoProductsSpider(BaseProductsSpider):
     def _populate_from_html(self, url, sel, product):
         cond_set(product, 'title',
                  sel.css('div.productDetails > h1 ::text').extract())
+        # XPath indexes are base 1, so the first div is selected.
         cond_set(product, 'description',
-                 sel.xpath('//div[@class="content"][0]/node()').extract())
+                 sel.xpath('//div[@class="content"][1]/node()').extract(),
+                 conv=lambda vals: ''.join(vals))
         cond_set(product, 'locale', sel.xpath('/html/@lang').extract())
 
     def _populate_from_js(self, url, sel, product):
