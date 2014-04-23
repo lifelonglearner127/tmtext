@@ -110,6 +110,14 @@ class TargetSpider(Spider):
     	# then also add the keyword/density count
 
 
+    	# extract item count
+    	nr_products_node = sel.xpath("//ul[@class='results']//strong/text()")
+    	if nr_products_node:
+    		# nr of products is in the second of these nodes
+    		nr_products = nr_products_node.extract()[1].strip()
+    		item['nr_products'] = int(nr_products)
+
+
     	return item
 
     # build URL from relative links found on pages: add base url and clean final url
