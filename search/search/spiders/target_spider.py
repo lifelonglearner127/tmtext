@@ -44,6 +44,11 @@ class TargetSpider(SearchSpider):
 		for result in results:
 			item = SearchItem()
 			product_title_holder = result.select(".//div[@class='tileInfo']/a[contains(@class,'productTitle')]")
+
+			# try again, xpath for second type of page structure (ex http://www.target.com/c/quilts-bedding-home/-/N-5xtuw)
+			if not product_title_holder:
+				product_title_holder = result.select(".//div[@class='tileInfo']//*[contains(@class,'productTitle')]/a")
+
 			product_url = product_title_holder.select("@href").extract()
 			product_name = product_title_holder.select("@title").extract()
 
@@ -52,7 +57,7 @@ class TargetSpider(SearchSpider):
 			# quit if there is no product name
 			if product_name and product_url:
 				# clean url
-				m = re.match("(.*)#prodSlot*",url.extract(), product_url[0])
+				m = re.match("(.*)#prodSlot*", product_url[0])
 				if m:
 					item['product_url'] = m.group(1)
 				else:
@@ -97,7 +102,11 @@ class TargetSpider(SearchSpider):
 				self.log("Didn't find product price: " + response.url + "\n", level=log.DEBUG)
 
 			# extract product brand
-			brand_holder = product_title_holder.select("parent::node()//a[contains(@class,'productBrand')]/a/text()").extract()
+			brand_holder = product_title_holder.select("parent::node()//a[contains(@class,'productBrand')]/text()").extract()
+
+			# try again, xpath for second type of page structure (ex http://www.target.com/c/quilts-bedding-home/-/N-5xtuw)
+			if not brand_holder:
+				brand_holder = product_title_holder.select("parent::node()/span[@class='description']/a/text()").extract()
 			if brand_holder:
 				item['product_brand'] = brand_holder[0]
 				self.log("Extracted brand: " + item['product_brand'] + " from results page: " + str(response.url), level=log.DEBUG)

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-INPUT="tesco_haircare_all"
-SITE="amazon"
+INPUT="walmart_urls_topm1"
+SITE="target"
 
 for node in "$@"
 do
