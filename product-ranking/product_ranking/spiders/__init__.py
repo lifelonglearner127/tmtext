@@ -140,8 +140,10 @@ class BaseProductsSpider(Spider):
                 yield prod_item
             else:
                 # Another request is necessary to complete the product.
+                url = urlparse.urljoin(response.url, prod_url)
+                prod_item['url'] = url  # Tentative.
                 yield Request(
-                    urlparse.urljoin(response.url, prod_url),
+                    url,
                     callback=self.parse_product,
                     meta={'product': prod_item})
 
