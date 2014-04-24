@@ -35,7 +35,7 @@ class TargetSpider(Spider):
 	    # base of urls on this site used to build url for relative links
 	    self.BASE_URL = "http://www.target.com"
 
-	    # crawled urls - for an explicit duplicate filter
+	    # crawled urls - for an explicit duplicate filter. store seen (url, parent_url) pairs
 	    self.crawled_urls = []
 
     # extract departments and next level categories
@@ -136,7 +136,8 @@ class TargetSpider(Spider):
 
     	yield item
 
-    	self.crawled_urls.append(item['url'])
+    	if 'parent_url' in item:
+    		self.crawled_urls.append((item['url'], item['parent_url']))
 
     	# extract subcategories (if we haven't reached level barrier)
     	if item['level'] <= self.LEVEL_BARRIER:
@@ -145,7 +146,8 @@ class TargetSpider(Spider):
     	parent_item = item
 
     	# "shop categories" menu
-    	subcategories = sel.xpath("//h3[text()='shop categories']/following-sibling::ul/li/a")
+    	subcategories = sel.xpath("//h3[text() = 'shop categories']/following-sibling::ul/li/a")
+
     	for subcategory in subcategories:
     		subcategory_item = CategoryItem()
 
@@ -153,7 +155,9 @@ class TargetSpider(Spider):
     		subcategory_item['url'] = self.build_url(subcategory.xpath("@href").extract()[0])
 
     		# filter duplicates
-    		if subcategory_item['url'] in self.crawled_urls:
+    		if (subcategory_item['url'], parent_item['url']) in self.crawled_urls:
+    			# print subcategory_item['url']
+    			# print parent_item['url']
     			continue
 
     		# assign next available category id
