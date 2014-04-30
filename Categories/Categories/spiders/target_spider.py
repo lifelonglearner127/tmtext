@@ -3,6 +3,7 @@ from scrapy.selector import Selector
 from Categories.items import CategoryItem
 from Categories.items import ProductItem
 from scrapy.http import Request, FormRequest, Response, HtmlResponse
+from scrapy import log
 
 from spiders_utils import Utils
 import re
@@ -135,18 +136,6 @@ class TargetSpider(Spider):
     		nr_products = nr_products_node.extract()[1].strip()
     		item['nr_products'] = int(nr_products)
 
-    	# # alternative item count extraction
-    	# if not nr_products_node:
-    	# 	#nr_products_node = sel.xpath("//span[contains(@id, 'onlineValue2ResultCount')]/text()")
-    	# 	nr_products_node = sel.xpath("//span[contains(@id, 'featuresValue3ResultCount')]/text()")
-    	# 	if nr_products_node:
-    	# 		m = re.match("\(([0-9]+)\)", nr_products_node.extract()[0])
-    	# 		if m:
-    	# 			nr_products = m.group(1)
-    	# 			item['nr_products'] = int(nr_products)
-    	# 		print "ALTNR", response.url, nr_products
-
-
     	# alternative item count extraction
     	if not nr_products_node:
 
@@ -213,13 +202,11 @@ class TargetSpider(Spider):
 
     def parseCategory_special(self, response):
     	item = response.meta['item']
-    	if not response.body:
-    		print response.url
 
     	try:
     		body = json.loads(response.body)
     	except Exception:
-    		#print "DECODING DID NOT WORK FOR", response.url, item['url'], "BODY", len(response.body)
+    		self.log("Ajax content could not be json decoded for " + response.url + " for item " + item['url'] + "\n", level=log.ERROR)
     		yield item
     		return
 
