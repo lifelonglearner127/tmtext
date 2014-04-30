@@ -46,12 +46,11 @@ class CommaSeparatedLinesPipeline(object):
 
 	# process item in spider for which we build the sitemap tree
 	def process_item_fortree(self, item, spider):
-		# add key-value pair where key is current's item URL
+		# add key-value pair where key is current's item category id
 		# and value is dict containing item and subcategories list (for now empty)
 		self.categories_tree[item['catid']] = {}
 		self.categories_tree[item['catid']]['item'] = item
 
-		# print "CATID", item['catid'], "URL", item['url']
 		# create subcategories list if it doesn't exist (may have been created by previous items)
 		if 'subcategories' not in self.categories_tree[item['catid']]:
 			self.categories_tree[item['catid']]['subcategories'] = []
@@ -60,12 +59,14 @@ class CommaSeparatedLinesPipeline(object):
 		if item['level'] == spider.DEPARTMENT_LEVEL:
 			self.top_level_categories.append(item['catid'])
 		
-		# add item URL to subcategories list of its parent's element in the tree
+		# add item key (catid) to subcategories list of its parent's element in the tree
 		# create parent item in categories tree if it doesn't exist
 		if 'parent_catid' in item:
 			if item['parent_catid'] not in self.categories_tree:
 				self.categories_tree[item['parent_catid']] = {'subcategories': []}
-			# append url to the parent's subcategories list
+			# # append url to the parent's subcategories list
+			if 'subcategories' not in self.categories_tree[item['parent_catid']]:
+				self.categories_tree[item['parent_catid']] = []
 			self.categories_tree[item['parent_catid']]['subcategories'].append(item['catid'])
 
 	def process_item(self, item, spider):
