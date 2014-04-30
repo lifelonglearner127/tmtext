@@ -9,7 +9,7 @@
 BOT_NAME = 'Categories'
 
 #HTTPCACHE_STORAGE = 'scrapy.contrib.downloadermiddleware.httpcache.FilesystemCacheStorage'
-HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
+#HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
 import os
 homedir = os.getenv("HOME")
 HTTPCACHE_DIR = homedir + '/.scrapy_cache'
