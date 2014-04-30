@@ -50,6 +50,8 @@ class CommaSeparatedLinesPipeline(object):
 		# and value is dict containing item and subcategories list (for now empty)
 		self.categories_tree[item['catid']] = {}
 		self.categories_tree[item['catid']]['item'] = item
+
+		# print "CATID", item['catid'], "URL", item['url']
 		# create subcategories list if it doesn't exist (may have been created by previous items)
 		if 'subcategories' not in self.categories_tree[item['catid']]:
 			self.categories_tree[item['catid']]['subcategories'] = []
@@ -159,6 +161,8 @@ class CommaSeparatedLinesPipeline(object):
 				if not 'item' in self.categories_tree[key] and hasattr(spider, 'test_category') and spider.text_category:
 					continue
 
+				# if 'item' not in self.categories_tree[key]:
+				# 	print "NO ITEM FOR", key
 				line = json.dumps(dict(self.categories_tree[key]['item']))
 				if self.started:
 					self.file.write(",\n" + line)

@@ -2,11 +2,12 @@ from scrapy.spider import Spider
 from scrapy.selector import Selector
 from Categories.items import CategoryItem
 from Categories.items import ProductItem
-from scrapy.http import Request, FormRequest
-from scrapy.http import Response
+from scrapy.http import Request, FormRequest, Response, HtmlResponse
 
 from spiders_utils import Utils
 import re
+import urllib
+import json
 
 # crawls sitemap and extracts department and categories names and urls (as well as other info)
 class TargetSpider(Spider):
@@ -104,6 +105,7 @@ class TargetSpider(Spider):
     	#TODO: a lot of redirects. maybe for item, set 'url' to the one to which it was redirected? (response.url)
     	item = response.meta['item']
 
+
     	# extract description
     	description_texts = sel.xpath("//div[@class='subpart']/p//text()").extract()
 
@@ -129,9 +131,40 @@ class TargetSpider(Spider):
     	# extract item count
     	nr_products_node = sel.xpath("//ul[@class='results']//strong/text()")
     	if nr_products_node:
-    		# nr of products is in the second of these nodes
+    		# nr of products is in the second of these nodessel.xpath("//ul[@class='results']//strong/text()")
     		nr_products = nr_products_node.extract()[1].strip()
     		item['nr_products'] = int(nr_products)
+
+    	# # alternative item count extraction
+    	# if not nr_products_node:
+    	# 	#nr_products_node = sel.xpath("//span[contains(@id, 'onlineValue2ResultCount')]/text()")
+    	# 	nr_products_node = sel.xpath("//span[contains(@id, 'featuresValue3ResultCount')]/text()")
+    	# 	if nr_products_node:
+    	# 		m = re.match("\(([0-9]+)\)", nr_products_node.extract()[0])
+    	# 		if m:
+    	# 			nr_products = m.group(1)
+    	# 			item['nr_products'] = int(nr_products)
+    	# 		print "ALTNR", response.url, nr_products
+
+
+    	# alternative item count extraction
+    	if not nr_products_node:
+
+	    	# extract dynamycally loaded data by making an additional request (made by the page to load the data)
+	    	# extract url and parameters from form data
+	    	form = sel.xpath("//form[@name='dynamicAjaxFrm1']")
+	    	if form:
+	    		form_action = form.xpath("@action").extract()[0]
+	    		form_inputs = form.xpath("input")
+	    		# build string of parameters from input names and values
+	    		param_dict = {form_input.xpath("@name").extract()[0] : form_input.xpath("@value").extract()[0] for form_input in form_inputs}
+	    		param_string = urllib.urlencode(param_dict)
+	    		# build url to make request to
+	    		new_url = "http://www.target.com" + form_action + "&" + param_string
+
+	    		# if this url was found, redirect request to new method to extract item count as well, that method will yield the item
+	    		yield Request(new_url, callback = self.parseCategory_special, meta = {'item' : item})
+	    		return
 
 
     	yield item
@@ -176,6 +209,37 @@ class TargetSpider(Spider):
 
     		# send this subcategory to be further parsed
     		yield Request(subcategory_item['url'], callback = self.parseCategory, meta = {'item' : subcategory_item})
+
+
+    def parseCategory_special(self, response):
+    	item = response.meta['item']
+    	if not response.body:
+    		print response.url
+
+    	try:
+    		body = json.loads(response.body)
+    	except Exception:
+    		#print "DECODING DID NOT WORK FOR", response.url, item['url'], "BODY", len(response.body)
+    		yield item
+    		return
+
+    	content = body['PLP_For_Grid']
+
+    	new_response = HtmlResponse(response.url, body=content.encode("utf-8"))
+    	sel = Selector(new_response)
+    	
+    	nr_products_node = sel.xpath("//ul[@class='results']//strong/text()")
+    	if nr_products_node:
+    		# nr of products is in the second of these nodessel.xpath("//ul[@class='results']//strong/text()")
+    		nr_products = nr_products_node.extract()[1].strip()
+    		item['nr_products'] = int(nr_products)
+
+    	if 'parent_url' in item:
+    		self.crawled_urls.append((item['url'], item['parent_url']))
+
+    	#TODO: return back to parseCategories to extract subcategories
+
+    	yield item
 
 
 
