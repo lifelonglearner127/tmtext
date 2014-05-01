@@ -37,6 +37,9 @@ class TargetSpider(Spider):
 		# base of urls on this site used to build url for relative links
 		self.BASE_URL = "http://www.target.com"
 
+		# maximum number of retries for getting data for dynamically generated content
+		self.MAX_RETRIES_DYNCONT = 3
+
 		# crawled urls - for an explicit duplicate filter. store seen (url, parent_url) pairs
 		self.crawled_urls = []
 
@@ -212,8 +215,21 @@ class TargetSpider(Spider):
 		except Exception:
 			self.log("Ajax content could not be json decoded for " + response.url + " for item " + item['url'] + "\n", level=log.ERROR)
 
-			# give up - return item back to method it came from, with flag in meta indicating its referrer method
-			return Request(item['url'], callback = self.parseCategory, meta = {'item' : item, 'redirected' : True})
+			# retry a number of times, store number of left retries in meta
+			# after retries exhausted give up - return item back to method it came from, with flag in meta indicating its referrer method
+			
+			if 'retries' not in response.meta:
+				retries = self.MAX_RETRIES_DYNCONT
+			else:
+				retries = response.meta['retries'] - 1
+
+			if retries > 0:
+				# retry
+				#print "RETRYING FOR", item['url'], 'retries', retries
+				return Request(item['url'], callback = self.parseCategoryDyncontent, meta = {'item' : item, 'redirected' : True, 'retries' : retries})
+			else:
+				# give up
+				return Request(item['url'], callback = self.parseCategory, meta = {'item' : item, 'redirected' : True})
 
 		#print "Ajax content could be json decoded for ", response.url, " for item ", item['url']
 
