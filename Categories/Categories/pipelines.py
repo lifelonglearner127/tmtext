@@ -64,9 +64,9 @@ class CommaSeparatedLinesPipeline(object):
 		if 'parent_catid' in item:
 			if item['parent_catid'] not in self.categories_tree:
 				self.categories_tree[item['parent_catid']] = {'subcategories': []}
-			# # append url to the parent's subcategories list
-			if 'subcategories' not in self.categories_tree[item['parent_catid']]:
-				self.categories_tree[item['parent_catid']] = []
+			# append url to the parent's subcategories list
+			# if 'subcategories' not in self.categories_tree[item['parent_catid']]:
+			# 	self.categories_tree[item['parent_catid']] = []
 			self.categories_tree[item['parent_catid']]['subcategories'].append(item['catid'])
 
 	def process_item(self, item, spider):
