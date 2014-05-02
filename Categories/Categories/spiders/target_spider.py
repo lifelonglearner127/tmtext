@@ -38,7 +38,7 @@ class TargetSpider(Spider):
 		self.BASE_URL = "http://www.target.com"
 
 		# maximum number of retries for getting data for dynamically generated content
-		self.MAX_RETRIES_DYNCONT = 3
+		self.MAX_RETRIES_DYNCONT = 0
 
 		# crawled urls - for an explicit duplicate filter. store seen (url, parent_url) pairs
 		self.crawled_urls = []
@@ -174,7 +174,11 @@ class TargetSpider(Spider):
 		parent_item = item
 
 		# "shop categories" menu
-		subcategories = sel.xpath("//h3[text() = 'shop categories']/following-sibling::ul/li/a")
+		#subcategories = sel.xpath("//h3[text() = 'shop categories']/following-sibling::ul/li/a")
+		#TODO: replace the not startswith with != ?
+		subcategories_menu = sel.xpath("//h3[starts-with(text(), 'shop ') and not(starts-with(text(), 'shop by')) \
+			and not(starts-with(text(), 'shop for')) and not(contains(text(), ' size'))]")
+		subcategories = subcategories_menu.xpath("following-sibling::ul/li/a")
 
 		for subcategory in subcategories:
 			subcategory_item = CategoryItem()
