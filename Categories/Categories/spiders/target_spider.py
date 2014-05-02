@@ -23,7 +23,7 @@ class TargetSpider(Spider):
 		self.DEPARTMENT_LEVEL = 1
 
 		# only crawl down to this level
-		self.LEVEL_BARRIER = -10
+		self.LEVEL_BARRIER = -1
 
 		# flag indicating whether to compute overall product counts in pipelines phase for this spider.
 		# if on, 'catid' and 'parent_catid' fields need to be implemented
@@ -109,7 +109,27 @@ class TargetSpider(Spider):
 		#TODO: a lot of redirects. maybe for item, set 'url' to the one to which it was redirected? (response.url)
 		item = response.meta['item']
 
-		# First try to extract item count - if alternative extraction needs to be done.
+
+		# Description extraction needs to be done first because it can be found in regular /c/ pages that are first passed to this method.
+		# For other info (item count, subcategories), the spider will redirect to different page if necessary (where description won't be available)
+		# extract description
+		description_texts = sel.xpath("//div[@class='subpart']/p//text()").extract()
+
+		# second try at finding descriptions
+		if not description_texts:
+			description_texts = sel.xpath("//div[@id='SEO_TEXT']//text()").extract()
+
+		# replace all whitespace with one space, strip, and remove empty texts; then join them
+		if description_texts:
+			item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
+
+			tokenized = Utils.normalize_text(item['description_text'])
+			item['description_wc'] = len(tokenized)
+
+		else:
+			item['description_wc'] = 0
+
+		# try to extract item count - if alternative extraction needs to be done.
 		# this item's parsing will be redirected through different method and returned here
 
 		# extract item count
@@ -119,7 +139,22 @@ class TargetSpider(Spider):
 			nr_products = nr_products_node.extract()[1].strip()
 			item['nr_products'] = int(nr_products)
 
-		# alternative item count extraction
+		# alternative item count: try on same page, but with /sb/ instead of /c/ in url
+		if not nr_products_node:
+			m = re.match("http://www\.target\.com/c/(.*)", response.url)
+			if m:
+				new_url = "http://www.target.com/sb/" + m.group(1)
+
+				# retry to this same method but with new url
+				#TODO: will miss descriptions. leave it to the end of the method then. but I want subcats from that one too?
+				#OR extract it in secondary method and send it back to original url
+				yield Request(new_url, callback = self.parseCategory, meta = {'item' : item})
+
+			else:
+				if "/sb/" not in new_url:
+					print "DOES NOT MATCH", response.url
+
+		# alternative item count extraction 2 (dynamically generated content)
 		if not nr_products_node:
 
 			# extract dynamycally loaded data by making an additional request (made by the page to load the data)
@@ -141,24 +176,6 @@ class TargetSpider(Spider):
 					return
 
 
-		# extract description
-		description_texts = sel.xpath("//div[@class='subpart']/p//text()").extract()
-
-		# second try at finding descriptions
-		if not description_texts:
-			description_texts = sel.xpath("//div[@id='SEO_TEXT']//text()").extract()
-
-		# replace all whitespace with one space, strip, and remove empty texts; then join them
-		if description_texts:
-			item['description_text'] = " ".join([re.sub("\s+"," ", description_text.strip()) for description_text in description_texts if description_text.strip()])
-
-			tokenized = Utils.normalize_text(item['description_text'])
-			item['description_wc'] = len(tokenized)
-
-		else:
-			item['description_wc'] = 0
-
-
 		#TODO: add description title as category name if no title available?
 		# then also add the keyword/density count
 
@@ -177,7 +194,7 @@ class TargetSpider(Spider):
 		#subcategories = sel.xpath("//h3[text() = 'shop categories']/following-sibling::ul/li/a")
 		#TODO: replace the not startswith with != ?
 		subcategories_menu = sel.xpath("//h3[starts-with(text(), 'shop ') and not(starts-with(text(), 'shop by')) \
-			and not(starts-with(text(), 'shop for')) and not(contains(text(), ' size'))]")
+			and not(starts-with(text(), 'shop for')) and not(starts-with(text(), 'shop favorite')) and not(contains(text(), ' size'))]")
 		subcategories = subcategories_menu.xpath("following-sibling::ul/li/a")
 
 		for subcategory in subcategories:
