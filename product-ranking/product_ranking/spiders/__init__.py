@@ -110,6 +110,7 @@ class BaseProductsSpider(Spider):
         remaining = response.meta['remaining']
         search_term = response.meta['search_term']
         prods_per_page = response.meta.get('products_per_page')
+        total_matches = response.meta.get('total_matches')
 
         if self._search_page_error(response):
             self.log("For search term '%s' with %d items remaining,"
@@ -119,11 +120,17 @@ class BaseProductsSpider(Spider):
             return
 
         sel = Selector(response)
-        total_matches = self._scrape_total_matches(sel)
+
         prods = self._scrape_product_links(sel)
+
         if prods_per_page is None:
+            # Materialize prods to get its size.
             prods = list(prods)
             prods_per_page = len(prods)
+
+        if total_matches is None:
+            total_matches = self._scrape_total_matches(sel)
+
         i = -1  # "i" is also used after the loop.
         for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
             # Initialize the product as much as possible.
@@ -158,6 +165,7 @@ class BaseProductsSpider(Spider):
                         search_term=search_term,
                         remaining=remaining,
                         products_per_page=prods_per_page,
+                        total_matches=total_matches,
                     ))
 
     ## Abstract methods.
