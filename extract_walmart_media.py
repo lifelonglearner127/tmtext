@@ -10,8 +10,16 @@ BASE_URL_VIDEOREQ = "http://json.webcollage.net/apps/json/walmart?callback=jsonC
 # base URL for request containing pdf URL
 BASE_URL_PDFREQ = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
 
+def _check_url_format(product_page_url):
+	m = re.match("http://www\.walmart\.com/ip/[0-9]+", product_page_url)
+	return not not m
+
 def _extract_product_id(product_page_url):
-	#TODO: throw exception if not expected format
+	# check format of page url
+	if not _check_url_format(product_page_url):
+		sys.stderr.write("ERROR: Invalid URL.\nFormat of product URL should be\n\t http://www.walmart.com/ip/<product_id>\n")
+		sys.exit(1)
+
 	product_id = product_page_url.split('/')[-1]
 	return product_id
 
@@ -50,6 +58,12 @@ def pdf_url(product_page_url):
 		return None
 
 if __name__=="__main__":
+
+	# check if there is an argument
+	if len(sys.argv) <= 1:
+		sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython extract_walmart_media.py <walmart_product_url>\n")
+		sys.exit(1)
+
 	product_page_url = sys.argv[1]
 
 	# create json object with video and pdf urls
