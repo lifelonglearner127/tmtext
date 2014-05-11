@@ -15,11 +15,6 @@ def _check_url_format(product_page_url):
 	return not not m
 
 def _extract_product_id(product_page_url):
-	# check format of page url
-	if not _check_url_format(product_page_url):
-		sys.stderr.write("ERROR: Invalid URL.\nFormat of product URL should be\n\t http://www.walmart.com/ip/<product_id>\n")
-		sys.exit(1)
-
 	product_id = product_page_url.split('/')[-1]
 	return product_id
 
@@ -57,6 +52,12 @@ def pdf_url(product_page_url):
 	else:
 		return None
 
+def media_for_url(product_page_url):
+	# create json object with video and pdf urls
+	results = {'video_url' : video_url(product_page_url), \
+				'pdf_url' : pdf_url(product_page_url)}
+	return results
+
 if __name__=="__main__":
 
 	# check if there is an argument
@@ -66,7 +67,10 @@ if __name__=="__main__":
 
 	product_page_url = sys.argv[1]
 
+	# check format of page url
+	if not _check_url_format(product_page_url):
+		sys.stderr.write("ERROR: Invalid URL.\nFormat of product URL should be\n\t http://www.walmart.com/ip/<product_id>\n")
+		sys.exit(1)
+
 	# create json object with video and pdf urls
-	results = {'video_url' : video_url(product_page_url), \
-				'pdf_url' : pdf_url(product_page_url)}
-	print json.dumps(results)
+	print json.dumps(media_for_url(product_page_url))
