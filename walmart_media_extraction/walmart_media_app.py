@@ -20,7 +20,7 @@ class InvalidUsage(Exception):
         rv['message'] = self.message
         return rv
 
-@app.route('/get_media/<path:url>', methods=['GET'])
+@app.route('/get_walmart_media/<path:url>', methods=['GET'])
 def get_media_urls(url):
 	if not url:
 		raise InvalidUsage("No Walmart URL was provided. API must be called with URL like <host>/get_media/<walmart_url>"), 404
@@ -33,7 +33,7 @@ def get_media_urls(url):
 	ret = media_for_url(url)
 	return jsonify(ret)
 
-@app.route('/get_media', methods=['GET'])
+@app.route('/get_walmart_media', methods=['GET'])
 def get_media_urls_params():
 	args_dict = request.args
 	if 'product_page' not in args_dict:
@@ -62,4 +62,4 @@ def handle_invalid_usage(error):
 
 if __name__ == '__main__':
 	#TODO: change port to 80, host to 0.0.0.0 (so it can be used externally) and debug to false (not safe in production environment)
-    app.run('0.0.0.0', port=80, debug = True)
+    app.run(debug = True)
