@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from flask import Flask, jsonify, abort, request
-from extract_walmart_media import media_for_url, _check_url_format
+from extract_walmart_media import media_for_url, check_url_format
 
 app = Flask(__name__)
 
@@ -62,4 +62,4 @@ def handle_invalid_usage(error):
 
 if __name__ == '__main__':
 	#TODO: change port to 80, host to 0.0.0.0 (so it can be used externally) and debug to false (not safe in production environment)
-    app.run(debug = True)
+    app.run('0.0.0.0', port=80, debug = True)
