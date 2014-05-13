@@ -68,7 +68,7 @@ if __name__=="__main__":
 	product_page_url = sys.argv[1]
 
 	# check format of page url
-	if not _check_url_format(product_page_url):
+	if not check_url_format(product_page_url):
 		sys.stderr.write("ERROR: Invalid URL.\nFormat of product URL should be\n\t http://www.walmart.com/ip/<product_id>\n")
 		sys.exit(1)
 
