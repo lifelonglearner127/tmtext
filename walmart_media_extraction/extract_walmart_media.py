@@ -11,7 +11,7 @@ BASE_URL_VIDEOREQ = "http://json.webcollage.net/apps/json/walmart?callback=jsonC
 BASE_URL_PDFREQ = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
 
 def check_url_format(product_page_url):
-	m = re.match("http://www\.walmart\.com/ip/[0-9]+", product_page_url)
+	m = re.match("http://www\.walmart\.com/ip/[0-9]+$", product_page_url)
 	return not not m
 
 def _extract_product_id(product_page_url):
