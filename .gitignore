@@ -26,6 +26,17 @@ license.txt
 .project
 .settings
 
+#Virtualenv
+bin
+include
+lib
+man
+
+#Setuptools
+build
+dist
+*.egg-info
+
 #Other
 /application/logs
 /application/controllers/test.php
