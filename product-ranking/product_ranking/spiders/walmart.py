@@ -8,15 +8,32 @@ from scrapy.log import ERROR, WARNING
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import (BaseProductsSpider, cond_set, compose)
+from product_ranking.spiders import (BaseProductsSpider, FormatterWithDefaults,
+                                     cond_set, compose)
 
 
 class WalmartProductsSpider(BaseProductsSpider):
     name = 'walmart_products'
     allowed_domains = ["walmart.com"]
 
-    SEARCH_URL = "http://www.walmart.com/search/search-ng.do?ic=16_0&" \
-        "Find=Find&search_query={search_term}&Find=Find&search_constraint=0"
+    SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
+        "&_refineresult=true&ic=16_0&search_constraint=0" \
+        "&search_query={search_term}&search_sort={search_sort}"
+
+    SEARCH_SORT = {
+        'best_match': 0,
+        'high_price': 3,
+        'low_price': 4,
+        'best_sellers': 5,
+        'newest': 6,
+        'rating': 7,
+    }
+
+    def __init__(self, search_sort='best_match', *args, **kwargs):
+        super(WalmartProductsSpider, self).__init__(
+            url_formatter=FormatterWithDefaults(
+                search_sort=self.SEARCH_SORT[search_sort]),
+            *args, **kwargs)
 
     def parse_product(self, response):
         sel = Selector(response)
