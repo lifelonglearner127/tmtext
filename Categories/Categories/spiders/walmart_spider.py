@@ -55,7 +55,10 @@ class WalmartSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
         #links = hxs.select("//div[@class='MidContainer']/div[3]//a[@class='NavM']")
         #parent_links = hxs.select("//div[@class='MidContainer']/div[3]//a[@class='NavXLBold']")
-        parent_links = hxs.select("//div[@class='MidContainer']/div/div/div[not(@class)]//a[@class='NavXLBold']")
+        #parent_links = hxs.select("//div[@class='MidContainer']/div/div/div[not(@class)]//a[@class='NavXLBold']")
+
+        # only select <a> elements that have a href
+        parent_links = hxs.select("//div[@class='MidContainer']/div/div/div[not(@class)]//a[@class='NavXLBold'][@href]")
 
         # for link in links:
         #     item = CategoryItem()
