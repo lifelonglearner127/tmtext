@@ -29,11 +29,12 @@ class AmazonSpider(BaseSpider):
     def __init__(self, outfile=None, test_category=None):
         self.outfile = outfile
 
+        # if test category is set and no output file was specified, set the name of outfile to a special "test" name
+        if self.test_category and not self.outfile:
+            self.outfile = "amazon_categories_test.jl"
+
          # if this is set, only crawl this category (level 2/1 category name). used for testing
         self.test_category = test_category
-        # if test category is set, set the name of outfile to a special "test" name
-        if self.test_category:
-            self.outfile = "amazon_categories_test.jl"
 
         # level that is considered to contain departments
         self.DEPARTMENT_LEVEL = 2
