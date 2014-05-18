@@ -57,7 +57,7 @@ class WalmartSpider(BaseSpider):
         #parent_links = hxs.select("//div[@class='MidContainer']/div[3]//a[@class='NavXLBold']")
         #parent_links = hxs.select("//div[@class='MidContainer']/div/div/div[not(@class)]//a[@class='NavXLBold']")
 
-        parent_links = hxs.select("//div[@class='linkGroup']/div[not (@class)]/a[@class='NavXLBold'][@href]/text()").extract()
+        parent_links = hxs.select("//div[@class='linkGroup']/div[not (@class)]/a[@class='NavXLBold'][@href]")
 
         # for link in links:
         #     item = CategoryItem()
