@@ -21,16 +21,17 @@ DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
 HTTPCACHE_STORAGE = 'scrapy.contrib.downloadermiddleware.httpcache.FilesystemCacheStorage'
 HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
-#HTTPCACHE_POLICY = 'SamsungCachePolicy.SamsungCachePolicy'
 
 DOWNLOAD_DELAY = 0.05
-#TODO
-#COOKIES_ENABLED = False
 
-# $HOME/.scrapy_cache
 import os
 homedir = os.getenv("HOME")
 HTTPCACHE_DIR = homedir + '/.scrapy_cache'
+
+# don't cache redirects because of amazon spider for which captchas pages are redirects and cause infinite loops
+#TODO: set this on a per-spider basis?
+HTTPCACHE_IGNORE_HTTP_CODES = ['302']
+
 #HTTPCACHE_STORAGE = 'scrapy.contrib.httpcache.DbmCacheStorage'
 #HTTPCACHE_ENABLED = True
 
