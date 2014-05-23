@@ -41,8 +41,13 @@ class AmazonSpider(SearchSpider):
 
 	# check if a certain URL is valid or gets a 404 response
 	def is_valid_url(self, URL):
-		resp = urllib.urlopen(URL)
-		return (resp.getcode() != 404)
+		try:
+			resp = urllib.urlopen(URL)
+			return (resp.getcode() != 404)
+		except Exception, e:
+			self.log("Error checking status code for " + URL + ": " + e, level=log.ERROR)
+			return False
+
 
 	# parse results page for amazon, extract info for all products returned by search (keep them in "meta")
 	def parseResults(self, response):
@@ -254,6 +259,7 @@ class AmazonSpider(SearchSpider):
 			request.meta['search_results'] = product_urls
 
 			# print "RETURNING FROM PARSE AMAZON PRODUCT TO parse_product FOR", response.meta['origin_url'], response.url, "NEXT IS", next_product_url
+			#TODO: is this necessary?
 			respcode = urllib.urlopen(next_product_url)
 
 			return request
