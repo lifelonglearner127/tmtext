@@ -1,8 +1,10 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
+
 import collections
 import json
 import logging
+import subprocess
 import urllib
 import urllib2
 import urlparse
@@ -11,27 +13,65 @@ import pyramid.httpexceptions as exc
 from pyramid.view import view_config
 
 
+LOG = logging.getLogger(__name__)
+
+
 SCRAPYD_BASE_URL = 'spider._scrapyd.base_url'
 FILE_SERVER_BASE_URL = 'spider._result.base_url'
-
-LOG = logging.getLogger(__name__)
 
 
 SpiderConfig = collections.namedtuple('SpiderConfig',
                                       ['spider_name', 'project_name'])
 
 
+CommandConfig = collections.namedtuple('CommandConfig',
+                                       ['cmd', 'content_type'])
+
+
 def _find_config_spider(settings, path):
     for type_name in settings['spider._names'].split():
         prefix = 'spider.{}.'.format(type_name)
         resource = settings[prefix + 'resource']
-        if resource == path.strip('/'):
-            return SpiderConfig(settings[prefix + 'spider_name'],
-                                settings[prefix + 'project_name'])
+        if resource == path.rstrip('/'):
+            return SpiderConfig(
+                settings[prefix + 'spider_name'],
+                settings[prefix + 'project_name'],
+            )
     return None
 
 
-@view_config(route_name='spider')
+def _find_config_command(settings, path):
+    for type_name in settings['command._names'].split():
+        prefix = 'command.{}.'.format(type_name)
+        resource = settings[prefix + 'resource']
+        if resource == path.rstrip('/'):
+            return CommandConfig(
+                settings[prefix + 'cmd'],
+                settings[prefix + 'content_type'],
+            )
+    return None
+
+
+def command_view(request):
+    """Runs a command blocking until it finishes."""
+    settings = request.registry.settings
+
+    # Get spider of resource.
+    cfg = _find_config_command(settings, request.path)
+    if cfg is None:
+        raise exc.HTTPNotFound("Unknown resource.")
+
+    process = subprocess.Popen(
+        cfg.cmd.format(**request.params),
+        stdout=subprocess.PIPE,
+        shell=True,
+    )
+
+    request.response.content_type = cfg.content_type
+    request.response.body_file = process.stdout
+    return request.response
+
+
 def spider_view(request):
     """Starts job in Scrapyd and redirects to the "spider pending jobs" view."""
     settings = request.registry.settings
@@ -72,7 +112,7 @@ def spider_view(request):
         detail="Job '%s' started." % response['jobid'])
 
 
-@view_config(route_name='spider pending jobs')
+@view_config(route_name='spider pending jobs', request_method='GET')
 def spider_pending_view(request):
     project_name = request.matchdict['project']
     spider_name = request.matchdict['spider']
@@ -106,7 +146,8 @@ def spider_pending_view(request):
     raise exc.HTTPAccepted(detail=state)
 
 
-@view_config(route_name='spider job results')
+@view_config(route_name='spider job results', request_method='GET',
+             http_cache=3600)
 def spider_results_view(request):
     project_name = request.matchdict['project']
     spider_name = request.matchdict['spider']
@@ -122,7 +163,3 @@ def spider_results_view(request):
     except urllib2.HTTPError as e:
         raise exc.HTTPBadGateway(
             detail="The file server doesn't have the expected content: %s" % e)
-
-@view_config(route_name='command')
-def command_view(request):
-    return "Command"
