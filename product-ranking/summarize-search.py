@@ -27,7 +27,7 @@ def parse_arguments(argv=None):
 def main(argv=None):
     """main([argv]):int
 
-    Optionaly recieves the argument vector. If it is not provided,
+    Optionally receives the argument vector. If it is not provided,
     sys.argv is used.
     Returns the return status code.
     """
