@@ -7,7 +7,8 @@ complete. All query string parameters are passed to Scrapyd.
 When complete, the a link to the raw result will be provided. The result will be
 encoded in jsonlines.
 
-For commands, the API is as follows: ...
+For commands, the API is as follows: GET /{resource}/ blocks until the commands
+finishes and sends the output as response.
 """
 import logging
 import os.path
@@ -26,28 +27,33 @@ def add_routes(settings, config):
         names_key = '{}._names'.format(controller_type)
         for cfg_name in settings[names_key].split():
             resource_key = '{}.{}.resource'.format(controller_type, cfg_name)
-            resource_path = os.path.normpath('/' + settings[resource_key]) + '/'
+            resource_path = os.path.normpath(settings[resource_key]) + '/'
 
             LOG.info("Configuring %s '%s' under '%s'.", controller_type,
                      cfg_name, resource_path)
-            config.add_route(controller_type, resource_path,
-                             request_method='GET')
+            route_name = '{}-{}'.format(controller_type, cfg_name)
+            config.add_route(route_name, resource_path)
+            config.add_view(
+                'web_runner.views.{}_view'.format(controller_type),
+                route_name=route_name,
+                request_method='POST',
+            )
 
 
 def main(global_config, **settings):
-    """ This function returns a Pyramid WSGI application.
-    """
+    """ This function returns a Pyramid WSGI application."""
     config = Configurator(settings=settings)
     config.include('pyramid_chameleon')
+
     config.add_static_view('static', 'static', cache_max_age=3600)
 
     config.add_route("spider pending jobs",
-                     '/crawl/project/{project}/spider/{spider}/job/{jobid}/',
-                     request_method='GET')
+                     '/crawl/project/{project}/spider/{spider}/job/{jobid}/')
     config.add_route("spider job results",
-                     '/result/project/{project}/spider/{spider}/job/{jobid}/',
-                     request_method='GET')
+                     '/result/project/{project}/spider/{spider}/job/{jobid}/')
+
     add_routes(settings, config)
 
     config.scan()
+
     return config.make_wsgi_app()
