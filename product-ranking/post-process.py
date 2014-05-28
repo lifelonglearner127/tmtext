@@ -7,11 +7,14 @@ from future_builtins import *
 
 import json
 
+from product_ranking.pipelines import AddCalculatedFields
+
 
 def parse_arguments():
     import argparse
     parser = argparse.ArgumentParser(
-        description='Add extra fields to a product spider output.',
+        description="Perform post-processing for a product-ranking's"
+                    " spider output.",
         version="%(prog)s 0.1")
 
     return parser.parse_args()
@@ -23,13 +26,7 @@ def main():
     for line in sys.stdin:
         product = json.loads(line)
 
-        search_term = product['search_term'].lower()
-        title = product['title'].lower()
-
-        product['search_term_in_title_exactly'] = search_term in title
-
-        product['search_term_in_title_partial'] = any(
-            word in title for word in search_term.split())
+        product = AddCalculatedFields.process_item(product, None)
 
         json.dump(product, sys.stdout)
         sys.stdout.write(b'\n')

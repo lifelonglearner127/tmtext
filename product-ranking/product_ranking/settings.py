@@ -11,6 +11,10 @@ BOT_NAME = 'product_ranking'
 SPIDER_MODULES = ['product_ranking.spiders']
 NEWSPIDER_MODULE = 'product_ranking.spiders'
 
+ITEM_PIPELINES = {
+    'product_ranking.pipelines.AddCalculatedFields'
+}
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'product_ranking (+http://www.yourdomain.com)'
 
