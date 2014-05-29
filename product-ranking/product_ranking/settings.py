@@ -12,7 +12,7 @@ SPIDER_MODULES = ['product_ranking.spiders']
 NEWSPIDER_MODULE = 'product_ranking.spiders'
 
 ITEM_PIPELINES = {
-    'product_ranking.pipelines.AddCalculatedFields'
+    'product_ranking.pipelines.AddCalculatedFields': 300,
 }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
