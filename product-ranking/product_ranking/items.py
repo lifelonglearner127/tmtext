@@ -25,3 +25,4 @@ class SiteProductItem(Item):
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
     search_term_in_title_exactly = Field()  # Bool
+    search_term_in_title_interleaved = Field()  # Bool
