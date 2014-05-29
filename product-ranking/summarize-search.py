@@ -17,7 +17,7 @@ def parse_arguments(argv=None):
     parser = argparse.ArgumentParser(description='Summarize search data.',
                                      version="%(prog)s 0.1")
     #"usage: %prog [options] output-file data-file [data-file ...]",
-    parser.add_argument('-f', '--filter', help="filter on <property>=<value>")
+    parser.add_argument('--filter', help="filter on <property>=<value>")
     parser.add_argument('output', help="the CSV output file.")
     parser.add_argument('inputs', nargs='+', help="the JSON line input files.")
 
