@@ -1,6 +1,11 @@
 # vim:fileencoding=UTF-8
 
+import collections
+
 from scrapy.item import Item, Field
+
+
+RelatedProduct = collections.namedtuple("RelatedProduct", ['title', 'url'])
 
 
 class SiteProductItem(Item):
@@ -21,6 +26,8 @@ class SiteProductItem(Item):
     brand = Field()         # String.
     price = Field()         # String, number with currency sign.
     locale = Field()        # String.
+    # Dict of RelatedProducts. The key is the relation name.
+    related_products = Field()
 
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
