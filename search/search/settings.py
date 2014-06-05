@@ -26,7 +26,8 @@ DOWNLOAD_DELAY = 0.05
 
 import os
 homedir = os.getenv("HOME")
-HTTPCACHE_DIR = homedir + '/.scrapy_cache'
+#HTTPCACHE_DIR = homedir + '/.scrapy_cache'
+HTTPCACHE_DIR = homedir + '/.scrapy_cache_testsearch'
 
 # don't cache redirects because of amazon spider for which captchas pages are redirects and cause infinite loops
 #TODO: set this on a per-spider basis?
