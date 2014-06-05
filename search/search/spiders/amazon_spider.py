@@ -45,7 +45,7 @@ class AmazonSpider(SearchSpider):
 			resp = urllib.urlopen(URL)
 			return (resp.getcode() != 404)
 		except Exception, e:
-			self.log("Error checking status code for " + URL + ": " + e, level=log.ERROR)
+			self.log("Error checking status code for " + URL + ": " + str(e), level=log.ERROR)
 			return False
 
 
