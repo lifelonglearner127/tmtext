@@ -85,24 +85,28 @@ class WalmartProductsSpider(BaseProductsSpider):
         return result
 
     def parse_related_products(self, response):
-        m = re.match(r'.*?\((.+)\)', response.body)  # Extract JSON.
         product = response.meta['product']
+
+        m = re.match(r'.*?\((.+)\)', response.body)  # Extract JSON.
         if not m:
             self.log("Failed to parse related products.", WARNING)
         else:
             data = json.loads(m.group(1))
-            module_list = data.get('result', {}).get('moduleList')
-            if module_list:
-                product['related_products'] = {
-                    "buyers_also_bought":
-                        [RelatedProduct(self._generate_title_from_url(url), url)
-                         for ml in module_list[::-1]
-                         for url in Selector(text=ml['html']).css(
-                             'a.irs-title ::attr(href)').extract()],
-                }
+            module_list = data.get('result', {}).get('moduleList', [])
+            for module in module_list:
+                if module['moduleTitle'] == "People who bought this item also bought":
+                    product['related_products'] = {
+                        "buyers_also_bought": list(
+                            RelatedProduct(self._generate_title_from_url(url), url)
+                            for url in Selector(text=module['html']).css(
+                                'a.irs-title ::attr(href)').extract()
+                        ),
+                    }
+                    break
         return product
 
-    def _generate_title_from_url(self, url):
+    @staticmethod
+    def _generate_title_from_url(url):
         slug = url.rsplit('/', 2)[-2]
         return ' '.join(map(string.capitalize, slug.split('-')))
 
