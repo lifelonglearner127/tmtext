@@ -1,7 +1,5 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
-import collections
 import json
 import logging
 import subprocess
@@ -12,6 +10,8 @@ import urlparse
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
 
+from web_runner.util import find_spider_config, find_command_config
+
 
 LOG = logging.getLogger(__name__)
 
@@ -20,44 +20,12 @@ SCRAPYD_BASE_URL = 'spider._scrapyd.base_url'
 FILE_SERVER_BASE_URL = 'spider._result.base_url'
 
 
-SpiderConfig = collections.namedtuple('SpiderConfig',
-                                      ['spider_name', 'project_name'])
-
-
-CommandConfig = collections.namedtuple('CommandConfig',
-                                       ['cmd', 'content_type'])
-
-
-def _find_config_spider(settings, path):
-    for type_name in settings['spider._names'].split():
-        prefix = 'spider.{}.'.format(type_name)
-        resource = settings[prefix + 'resource']
-        if resource == path.rstrip('/'):
-            return SpiderConfig(
-                settings[prefix + 'spider_name'],
-                settings[prefix + 'project_name'],
-            )
-    return None
-
-
-def _find_config_command(settings, path):
-    for type_name in settings['command._names'].split():
-        prefix = 'command.{}.'.format(type_name)
-        resource = settings[prefix + 'resource']
-        if resource == path.rstrip('/'):
-            return CommandConfig(
-                settings[prefix + 'cmd'],
-                settings[prefix + 'content_type'],
-            )
-    return None
-
-
 def command_view(request):
     """Runs a command blocking until it finishes."""
     settings = request.registry.settings
 
     # Get spider of resource.
-    cfg = _find_config_command(settings, request.path)
+    cfg = find_command_config(settings, request.path)
     if cfg is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
@@ -72,12 +40,12 @@ def command_view(request):
     return request.response
 
 
-def spider_view(request):
+def spider_start_view(request):
     """Starts job in Scrapyd and redirects to the "spider pending jobs" view."""
     settings = request.registry.settings
 
     # Get spider of resource.
-    cfg = _find_config_spider(settings, request.path)
+    cfg = find_spider_config(settings, request.path)
     if cfg is None:
         raise exc.HTTPNotFound("Unknown resource.")
 

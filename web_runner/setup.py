@@ -10,7 +10,7 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
 
 requires = [
     'pyramid',
-    'pyramid_chameleon',
+    # 'pyramid_chameleon',
     'pyramid_debugtoolbar',
     'waitress',
     ]
@@ -34,7 +34,7 @@ setup(name='web_runner',
       zip_safe=False,
       install_requires=requires,
       tests_require=requires,
-      test_suite="web_runner",
+      #test_suite="web_runner",
       entry_points="""\
       [paste.app_factory]
       main = web_runner:main

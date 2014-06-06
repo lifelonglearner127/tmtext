@@ -7,8 +7,8 @@ complete. All query string parameters are passed to Scrapyd.
 When complete, the a link to the raw result will be provided. The result will be
 encoded in jsonlines.
 
-For commands, the API is as follows: GET /{resource}/ blocks until the commands
-finishes and sends the output as response.
+FIXME: Describe commands API
+
 """
 import logging
 import os.path
@@ -20,8 +20,8 @@ LOG = logging.getLogger(__name__)
 
 
 def add_routes(settings, config):
-    """Reads the configuration for commands and spiders and configures the
-    controllers to handle them.
+    """Reads the configuration for commands and spiders and configures views to
+    handle them.
     """
     for controller_type in ('command', 'spider'):
         names_key = '{}._names'.format(controller_type)
@@ -34,18 +34,18 @@ def add_routes(settings, config):
             route_name = '{}-{}'.format(controller_type, cfg_name)
             config.add_route(route_name, resource_path)
             config.add_view(
-                'web_runner.views.{}_view'.format(controller_type),
+                'web_runner.views.{}_start_view'.format(controller_type),
                 route_name=route_name,
                 request_method='POST',
             )
 
 
 def main(global_config, **settings):
-    """ This function returns a Pyramid WSGI application."""
+    """This function returns a Pyramid WSGI application."""
     config = Configurator(settings=settings)
-    config.include('pyramid_chameleon')
+    # config.include('pyramid_chameleon')
 
-    config.add_static_view('static', 'static', cache_max_age=3600)
+    # config.add_static_view('static', 'static', cache_max_age=3600)
 
     config.add_route("spider pending jobs",
                      '/crawl/project/{project}/spider/{spider}/job/{jobid}/')
