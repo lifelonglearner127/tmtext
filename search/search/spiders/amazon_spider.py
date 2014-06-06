@@ -45,7 +45,8 @@ class AmazonSpider(SearchSpider):
 			return (resp.getcode() != 404)
 		except Exception, e:
 			self.log("Error checking status code for " + URL + ": " + str(e), level=log.ERROR)
-			return False
+			#TODO: this will probably cause some problems, but for now it's safer like this, because more frequently than not this exception is 503 and should be ignored
+			return True
 
 
 	# parse results page for amazon, extract info for all products returned by search (keep them in "meta")
