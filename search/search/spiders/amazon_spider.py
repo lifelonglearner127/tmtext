@@ -42,6 +42,7 @@ class AmazonSpider(SearchSpider):
 	def is_valid_url(self, URL):
 		try:
 			resp = urllib2.urlopen(URL, timeout=5)
+			return (resp.getcode() != 404)
 		except Exception, e:
 			self.log("Error checking status code for " + URL + ": " + str(e), level=log.ERROR)
 			return False
