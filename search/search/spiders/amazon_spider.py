@@ -256,9 +256,6 @@ class AmazonSpider(SearchSpider):
 			# eliminate next product from pending list (this will be the new list with the first item popped)
 			request.meta['search_results'] = product_urls
 
-			# print "RETURNING FROM PARSE AMAZON PRODUCT TO parse_product FOR", response.meta['origin_url'], response.url, "NEXT IS", next_product_url
-			#TODO: is this necessary?
-			respcode = urllib2.urlopen(next_product_url)
 			return request
 
 		# if no next valid product url was found
