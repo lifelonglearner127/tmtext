@@ -7,7 +7,8 @@ import urllib2
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
 
-from web_runner.util import find_command_config, ScrapydMediator, SpiderConfig
+from web_runner.config_util import find_command_config, SpiderConfig
+from web_runner.scrapyd import ScrapydMediator
 
 
 LOG = logging.getLogger(__name__)
