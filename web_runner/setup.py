@@ -13,7 +13,9 @@ requires = [
     # 'pyramid_chameleon',
     'pyramid_debugtoolbar',
     'waitress',
-    ]
+
+    'enum34>=1.0',
+]
 
 setup(name='web_runner',
       version='0.0',
@@ -24,7 +26,7 @@ setup(name='web_runner',
         "Framework :: Pyramid",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
-        ],
+      ],
       author='',
       author_email='',
       url='',
@@ -33,7 +35,10 @@ setup(name='web_runner',
       include_package_data=True,
       zip_safe=False,
       install_requires=requires,
-      tests_require=requires,
+      tests_require=requires + [
+          'mock>=1.0.1',
+          'pyspecs>=2.2',
+      ],
       #test_suite="web_runner",
       entry_points="""\
       [paste.app_factory]

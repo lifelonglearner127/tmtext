@@ -1,23 +1,16 @@
 from __future__ import division, absolute_import, unicode_literals
 
-import json
 import logging
 import subprocess
-import urllib
 import urllib2
-import urlparse
 
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
 
-from web_runner.util import find_spider_config, find_command_config
+from web_runner.util import find_command_config, ScrapydMediator, SpiderConfig
 
 
 LOG = logging.getLogger(__name__)
-
-
-SCRAPYD_BASE_URL = 'spider._scrapyd.base_url'
-FILE_SERVER_BASE_URL = 'spider._result.base_url'
 
 
 def command_view(request):
@@ -44,29 +37,8 @@ def spider_start_view(request):
     """Starts job in Scrapyd and redirects to the "spider pending jobs" view."""
     settings = request.registry.settings
 
-    # Get spider of resource.
-    cfg = find_spider_config(settings, request.path)
-    if cfg is None:
-        raise exc.HTTPNotFound("Unknown resource.")
-
-    scrapyd_base_url = settings[SCRAPYD_BASE_URL]
-    try:
-        spider_name = cfg.spider_name.format(**request.params)
-        project_name = cfg.project_name.format(**request.params)
-    except KeyError as e:
-        raise exc.HTTPBadRequest(detail="Query parameter %s is required." % e)
-
-    url = urlparse.urljoin(scrapyd_base_url, 'schedule.json')
-    # FIXME Handle multivalued setting as in setting.
-    data = dict(request.params)
-    data.update({
-        'project': project_name,
-        'spider': spider_name,
-    })
-    LOG.info("Calling Scrapyd on '%s' with parameters: %s", url, data)
-    conn = urllib2.urlopen(url, urllib.urlencode(data))
-    response = json.load(conn)
-    conn.close()
+    mediator = ScrapydMediator.from_resource(settings, request.path)
+    response = mediator.start_job(request.params)
 
     if response['status'] != "ok":
         raise exc.HTTPBadGateway(
@@ -74,8 +46,8 @@ def spider_start_view(request):
                 **response))
     raise exc.HTTPFound(
         location=request.route_path("spider pending jobs",
-                                    project=project_name,
-                                    spider=spider_name,
+                                    project=mediator.config.project_name,
+                                    spider=mediator.config.spider_name,
                                     jobid=response['jobid']),
         detail="Job '%s' started." % response['jobid'])
 
@@ -86,30 +58,22 @@ def spider_pending_view(request):
     spider_name = request.matchdict['spider']
     job_id = request.matchdict['jobid']
 
-    base_url = request.registry.settings[SCRAPYD_BASE_URL]
-    url = urlparse.urljoin(base_url, 'listjobs.json') \
-        + '?' + urllib.urlencode({'project': project_name})
-    conn = urllib2.urlopen(url)
-    response = json.load(conn)
-    conn.close()
+    mediator = ScrapydMediator(
+        request.registry.settings, SpiderConfig(spider_name, project_name))
+    status = mediator.report_on_job(job_id)
 
-    if response['status'] != "ok":
-        LOG.error("Scrapyd was not OK: %s", json.dumps(response))
-        raise exc.HTTPBadGateway(
-            "Scrapyd was not OK, it was '{status}': {message}".format(
-                **response))
-
-    if any(job_desc['id'] == job_id for job_desc in response['finished']):
+    if status is ScrapydMediator.JobStatus.finished:
         raise exc.HTTPFound(
             location=request.route_path("spider job results",
                                         project=project_name,
                                         spider=spider_name,
                                         jobid=job_id),
             detail="Job finished.")
+
     state = 'Job state unknown.'
-    if any(job_desc['id'] == job_id for job_desc in response['pending']):
+    if status is ScrapydMediator.JobStatus.pending:
         state = "Job still waiting to run"
-    if any(job_desc['id'] == job_id for job_desc in response['running']):
+    elif status is ScrapydMediator.JobStatus.running:
         state = "Job running."
     raise exc.HTTPAccepted(detail=state)
 
@@ -121,12 +85,11 @@ def spider_results_view(request):
     spider_name = request.matchdict['spider']
     job_id = request.matchdict['jobid']
 
-    base_url = request.registry.settings[FILE_SERVER_BASE_URL]
-    url = urlparse.urljoin(
-        base_url, "{}/{}/{}.jl".format(project_name, spider_name, job_id))
+    mediator = ScrapydMediator(
+        request.registry.settings, SpiderConfig(spider_name, project_name))
     try:
-        conn = urllib2.urlopen(url)
-        request.response.body_file = conn
+        data_stream = mediator.retrieve_job_data(job_id)
+        request.response.body_file = data_stream
         return request.response
     except urllib2.HTTPError as e:
         raise exc.HTTPBadGateway(
