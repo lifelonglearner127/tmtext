@@ -17,7 +17,6 @@ import sys
 import os
 
 import captcha_solver
-import urllib
 import urllib2
 
 
@@ -41,13 +40,11 @@ class AmazonSpider(SearchSpider):
 
 	# check if a certain URL is valid or gets a 404 response
 	def is_valid_url(self, URL):
-		return True
-		# try:
-		# 	resp = urllib.urlopen(URL)
-		# 	return (resp.getcode() != 404)
-		# except Exception, e:
-		# 	self.log("Error checking status code for " + URL + ": " + str(e), level=log.ERROR)
-		# 	return False
+		try:
+			resp = urllib2.urlopen(URL, timeout=5)
+		except Exception, e:
+			self.log("Error checking status code for " + URL + ": " + str(e), level=log.ERROR)
+			return False
 
 
 	# parse results page for amazon, extract info for all products returned by search (keep them in "meta")
@@ -261,8 +258,7 @@ class AmazonSpider(SearchSpider):
 
 			# print "RETURNING FROM PARSE AMAZON PRODUCT TO parse_product FOR", response.meta['origin_url'], response.url, "NEXT IS", next_product_url
 			#TODO: is this necessary?
-			respcode = urllib.urlopen(next_product_url)
-
+			respcode = urllib2.urlopen(next_product_url)
 			return request
 
 		# if no next valid product url was found
