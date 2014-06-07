@@ -31,7 +31,8 @@ def main():
             product = json.loads(line)
             url = product['url']
             ranking = product['ranking']
-            if url in best_seller_rankings:
+            if url in best_seller_rankings \
+                    and ranking != best_seller_rankings[url]:
                 print("Found product with more than one best sellers ranking."
                       " '%s' has %d and %d. Using lowest."
                       % (url, best_seller_rankings[url], ranking),
