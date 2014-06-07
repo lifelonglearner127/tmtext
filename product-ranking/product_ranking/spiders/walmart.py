@@ -81,6 +81,7 @@ class WalmartProductsSpider(BaseProductsSpider):
                 ),
                 self.parse_related_products,
                 meta=response.meta.copy(),
+                priority=100,
             )
         return result
 
@@ -192,7 +193,7 @@ class WalmartProductsSpider(BaseProductsSpider):
     def _scrape_product_links(self, sel):
         links = sel.css('a.prodLink.GridItemLink ::attr(href)').extract()
         if not links:
-            self.log("Found no product links in %r." % sel.response, ERROR)
+            self.log("Found no product links in %r." % sel.response, WARNING)
         for link in links:
             yield link, SiteProductItem()
 

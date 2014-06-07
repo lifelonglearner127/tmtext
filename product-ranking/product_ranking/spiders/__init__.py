@@ -6,7 +6,7 @@ import string
 import urllib
 import urlparse
 
-from scrapy.log import ERROR, INFO
+from scrapy.log import ERROR, WARNING, INFO
 from scrapy.http import Request
 from scrapy.selector import Selector
 from scrapy.spider import Spider
@@ -107,19 +107,32 @@ class BaseProductsSpider(Spider):
                 meta={'search_term': st, 'remaining': self.quantity})
 
     def parse(self, response):
-        remaining = response.meta['remaining']
-        search_term = response.meta['search_term']
-        prods_per_page = response.meta.get('products_per_page')
-        total_matches = response.meta.get('total_matches')
-
         if self._search_page_error(response):
+            remaining = response.meta['remaining']
+            search_term = response.meta['search_term']
+
             self.log("For search term '%s' with %d items remaining,"
                      " failed to retrieve search page: %s"
                      % (search_term, remaining, response.request.url),
                      ERROR)
-            return
+        else:
+            prods_count = -1  # Also used after the loop.
+            for prods_count, request_or_prod in enumerate(
+                    self._get_products(response)):
+                yield request_or_prod
+            prods_count += 1  # Fix counter.
+    
+            request = self._get_next_products_page(response, prods_count)
+            if request is not None:
+                yield request
 
+    def _get_products(self, response):
         sel = Selector(response)
+
+        remaining = response.meta['remaining']
+        search_term = response.meta['search_term']
+        prods_per_page = response.meta.get('products_per_page')
+        total_matches = response.meta.get('total_matches')
 
         prods = self._scrape_product_links(sel)
 
@@ -131,7 +144,6 @@ class BaseProductsSpider(Spider):
         if total_matches is None:
             total_matches = self._scrape_total_matches(sel)
 
-        i = -1  # "i" is also used after the loop.
         for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
             # Initialize the product as much as possible.
             prod_item['site'] = self.site_name
@@ -152,21 +164,46 @@ class BaseProductsSpider(Spider):
                 yield Request(
                     url,
                     callback=self.parse_product,
-                    meta={'product': prod_item})
+                    meta={'product': prod_item},
+                )
 
-        remaining -= i + 1
-        if remaining > 0:
-            next_page = self._scrape_next_results_page_link(sel)
-            if next_page is not None:
-                yield Request(
-                    urlparse.urljoin(response.url, next_page),
-                    self.parse,
-                    meta=dict(
-                        search_term=search_term,
-                        remaining=remaining,
-                        products_per_page=prods_per_page,
-                        total_matches=total_matches,
-                    ))
+    def _get_next_products_page(self, response, prods_found):
+        link_page_attempt = response.meta.get('link_page_attempt', 1)
+
+        result = None
+        if prods_found > 0:
+            # This was a real product listing page.
+            remaining = response.meta['remaining']
+            remaining -= prods_found
+            if remaining > 0:
+                next_page = self._scrape_next_results_page_link(
+                    Selector(response))
+                if next_page is not None:
+                    url = urlparse.urljoin(response.url, next_page)
+                    new_meta = dict(response.meta)
+                    new_meta['remaining'] = remaining
+                    result = Request(url, self.parse, meta=new_meta, priority=1)
+        elif link_page_attempt > 2:
+            self.log(
+                "Giving up on results page after %d attempts: %s" % (
+                    link_page_attempt, response.request.url),
+                ERROR
+            )
+        else:
+            self.log(
+                "Will retry to get results page (attempt %d): %s" % (
+                    link_page_attempt, response.request.url),
+                WARNING
+            )
+
+            # Found no product links. Probably a transient error, lets retry.
+            new_meta = dict(response.meta)
+            new_meta['link_page_attempt'] = link_page_attempt + 1
+            # Add an attribute so that Scrapy doesn't discard as duplicate.
+            url = response.request.url + "&_=%d" % link_page_attempt
+            result = Request(url, self.parse, meta=new_meta, priority=1)
+
+        return result
 
     ## Abstract methods.
 
