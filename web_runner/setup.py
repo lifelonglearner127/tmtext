@@ -9,12 +9,14 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
     CHANGES = f.read()
 
 requires = [
-    'pyramid',
+    'pyramid>=1.5.1',
     # 'pyramid_chameleon',
     'pyramid_debugtoolbar',
     'waitress',
 
     'enum34>=1.0',
+    'subprocess32>=3.2.6',
+    'toolz>=0.6',
 ]
 
 setup(name='web_runner',

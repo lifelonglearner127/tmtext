@@ -1,2 +1,4 @@
 enum34>=1.0
-pyramid>=1.5
+pyramid>=1.5.1
+subprocess32>=3.2.6
+toolz>=0.6
