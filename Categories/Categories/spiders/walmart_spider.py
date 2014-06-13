@@ -6,6 +6,7 @@ from scrapy.http import Request
 import sys
 import re
 import datetime
+from scrapy import log
 
 from spiders_utils import Utils
 
@@ -128,7 +129,14 @@ class WalmartSpider(BaseSpider):
 
     # parse category page and extract description and number of products
     def parseCategory(self, response):
-        hxs = HtmlXPathSelector(response)
+
+        # URLs like health.walmart.com don't have body_as_unicode and generate an exception
+        try:
+            hxs = HtmlXPathSelector(response)
+        except AttributeError, e:
+            self.log("Could not get response from " + response.url + "; original exception: " + str(e) + "\n", level=log.WARNING)
+            return
+
         item = response.meta['item']
 
         # Add department text, url and id to item
