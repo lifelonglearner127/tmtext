@@ -7,7 +7,7 @@ SpiderConfig = collections.namedtuple('SpiderConfig',
 
 
 CommandConfig = collections.namedtuple(
-    'CommandConfig', ['cmd', 'content_type', 'spider_configs'])
+    'CommandConfig', ['name', 'cmd', 'content_type', 'spider_configs'])
 
 
 def find_spider_config(settings, path):
@@ -25,20 +25,26 @@ def find_spider_config(settings, path):
     return None
 
 
-def find_command_config(settings, path):
+def find_command_config_from_path(settings, path):
     path = path.strip('/')
 
-    for type_name in settings['command._names'].split():
-        prefix = 'command.{}.'.format(type_name)
+    for name in settings['command._names'].split():
+        prefix = 'command.{}.'.format(name)
 
         resource = settings[prefix + 'resource']
         if resource.strip('/') == path:
-            return CommandConfig(
-                settings[prefix + 'cmd'],
-                settings[prefix + 'content_type'],
-                list(find_command_crawls(settings, prefix + 'crawl.')),
-            )
+            return find_command_config_from_name(settings, name)
     return None
+
+
+def find_command_config_from_name(settings, name):
+    prefix = 'command.{}.'.format(name)
+    return CommandConfig(
+        name,
+        settings[prefix + 'cmd'],
+        settings[prefix + 'content_type'],
+        list(find_command_crawls(settings, prefix + 'crawl.')),
+    )
 
 
 def find_command_crawls(settings, prefix):

@@ -1,7 +1,9 @@
 import unittest
 
 from pyramid import testing
-import pyramid.exceptions as exc
+import pyramid.httpexceptions as exc
+
+from .views import spider_start_view
 
 
 class SpiderViewTests(unittest.TestCase):
@@ -21,6 +23,5 @@ class SpiderViewTests(unittest.TestCase):
         testing.tearDown()
 
     def test_unknown_resource(self):
-        from .views import spider_view
         request = testing.DummyRequest(path="/unexistant/path/")
-        self.assertRaises(exc.HTTPNotFound, spider_view, request)
+        self.assertRaises(exc.HTTPNotFound, spider_start_view, request)
