@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from flask import Flask, jsonify, abort, request
-from extract_walmart_media import media_for_url, check_url_format
+from extract_walmart_media import media_for_url, check_url_format, reviews_for_url
 
 app = Flask(__name__)
 
@@ -20,8 +20,7 @@ class InvalidUsage(Exception):
         rv['error'] = self.message
         return rv
 
-@app.route('/get_walmart_media/<path:url>', methods=['GET'])
-def get_media_urls(url):
+def check_input(url):
 	if not url:
 		raise InvalidUsage("No Walmart URL was provided. API must be called with URL like <host>/get_media/<walmart_url>"), 404
 
@@ -30,8 +29,20 @@ def get_media_urls(url):
 			"Parameter must be a Walmart URL of the form: http://www.walmart.com/ip/<product_id>",\
 			404)
 
+@app.route('/get_walmart_media/<path:url>', methods=['GET'])
+def get_media_urls(url):
+	check_input(url)
+
 	ret = media_for_url(url)
 	return jsonify(ret)
+
+@app.route('/get_walmart_reviews/<path:url>', methods=['GET'])
+def get_reviews(url):
+	check_input(url)
+
+	ret = reviews_for_url(url)
+	return jsonify(ret)
+
 
 # @app.route('/get_walmart_media', methods=['GET'])
 # def get_media_urls_params():

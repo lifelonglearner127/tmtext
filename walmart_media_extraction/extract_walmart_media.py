@@ -68,7 +68,7 @@ def reviews_for_url(product_page_url):
 		average_review = re.findall(r"class=\\\"BVRRRatingNormalOutOf\\\"> <span class=\\\"BVRRNumber BVRRRatingNumber\\\">([0-9\.]+)<", content)[0]
 	except Exception, e:
 		sys.stderr.write("Error extracting reviews info: No reviews info found for product " + product_page_url + "\n")
-		return None
+		return {"total_reviews": None, "average_review": None}
 	return {"total_reviews": reviews_count, "average_review": average_review}
 
 def main(args):
