@@ -23,8 +23,8 @@ class ProcessText_test(unittest.TestCase):
 
 	# test that average reviews are between 0 and 5
 	def test_review_range(self):
-		print "On url", url
 		for url in self.urls:
+			print "On url", url
 			response = reviews_for_url(url)
 
 			average_review = response['average_review']
