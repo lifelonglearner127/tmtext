@@ -7,7 +7,7 @@ import urllib2
 import enum
 import pyramid.httpexceptions as exc
 
-from web_runner.config_util import find_spider_config
+from web_runner.config_util import find_spider_config_from_path
 
 
 LOG = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class ScrapydMediator(object):
 
     @staticmethod
     def from_resource(settings, path):
-        return ScrapydMediator(settings, find_spider_config(settings, path))
+        return ScrapydMediator(settings, find_spider_config_from_path(settings, path))
 
     def __init__(self, settings, spider_config):
         if spider_config is None:

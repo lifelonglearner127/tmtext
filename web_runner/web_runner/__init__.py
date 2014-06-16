@@ -1,4 +1,4 @@
-"""This simple REST interface allows to run Scrapy spiders through
+"""This REST service allows to run Scrapy spiders through
 Scrapyd and to run commands over the resulting data.
 
 For spiders, the API is as follows: GET /{resource}/ redirects to
@@ -51,6 +51,9 @@ def main(global_config, **settings):
                      '/crawl/project/{project}/spider/{spider}/job/{jobid}/')
     config.add_route("spider job results",
                      '/result/project/{project}/spider/{spider}/job/{jobid}/')
+
+    config.add_route("command pending jobs", '/command/{name}/pending/{jobid}/')
+    config.add_route("command job results", '/command/{name}/result/{jobid}/')
 
     add_routes(settings, config)
 
