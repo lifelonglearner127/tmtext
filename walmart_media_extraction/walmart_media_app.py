@@ -26,7 +26,7 @@ def check_input(url):
 
 	if not check_url_format(url):
 		raise InvalidUsage(\
-			"Parameter must be a Walmart URL of the form: http://www.walmart.com/ip/<product_id>",\
+			"Invalid parameter " + str(url) + " Parameter must be a Walmart URL of the form: http://www.walmart.com/ip/<product_id>",\
 			404)
 
 @app.route('/get_walmart_media/<path:url>', methods=['GET'])

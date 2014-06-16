@@ -81,7 +81,7 @@ def main(args):
 
 	# check format of page url
 	if not check_url_format(product_page_url):
-		sys.stderr.write("ERROR: Invalid URL.\nFormat of product URL should be\n\t http://www.walmart.com/ip/<product_id>\n")
+		sys.stderr.write("ERROR: Invalid URL " + str(product_page_url) + "\nFormat of product URL should be\n\t http://www.walmart.com/ip/<product_id>\n")
 		sys.exit(1)
 
 	# create json object with video and pdf urls
