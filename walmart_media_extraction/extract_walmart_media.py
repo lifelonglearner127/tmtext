@@ -64,7 +64,7 @@ def reviews_for_url(product_page_url):
 	request_url = BASE_URL_REVIEWSREQ.format(_extract_product_id(product_page_url))
 	content = urllib.urlopen(request_url).read()
 	try:
-		reviews_count = re.findall(r"BVRRNonZeroCount\\\"><span class=\\\"BVRRNumber\\\">([0-9]+)<", content)[0]
+		reviews_count = re.findall(r"BVRRNonZeroCount\\\"><span class=\\\"BVRRNumber\\\">([0-9,]+)<", content)[0]
 		average_review = re.findall(r"class=\\\"BVRRRatingNormalOutOf\\\"> <span class=\\\"BVRRNumber BVRRRatingNumber\\\">([0-9\.]+)<", content)[0]
 	except Exception, e:
 		sys.stderr.write("Error extracting reviews info: No reviews info found for product " + product_page_url + "\n")
