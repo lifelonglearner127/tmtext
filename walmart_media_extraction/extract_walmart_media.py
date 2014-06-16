@@ -9,6 +9,8 @@ import json
 BASE_URL_VIDEOREQ = "http://json.webcollage.net/apps/json/walmart?callback=jsonCallback&environment-id=live&cpi="
 # base URL for request containing pdf URL
 BASE_URL_PDFREQ = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
+# base URL for request for product reviews - formatted string
+BASE_URL_REVIEWSREQ = 'http://walmart.ugc.bazaarvoice.com/1336a/%20{0}/reviews.djs?format=embeddedhtml'
 
 def check_url_format(product_page_url):
 	m = re.match("http://www\.walmart\.com/ip/[0-9]+$", product_page_url)
@@ -58,6 +60,17 @@ def media_for_url(product_page_url):
 				'pdf_url' : pdf_url(product_page_url)}
 	return results
 
+def reviews_for_url(product_page_url):
+	request_url = BASE_URL_REVIEWSREQ.format(_extract_product_id(product_page_url))
+	content = urllib.urlopen(request_url).read()
+	try:
+		reviews_count = re.findall(r"BVRRNonZeroCount\\\"><span class=\\\"BVRRNumber\\\">([0-9]+)<", content)[0]
+		average_review = re.findall(r"class=\\\"BVRRRatingNormalOutOf\\\"> <span class=\\\"BVRRNumber BVRRRatingNumber\\\">([0-9\.]+)<", content)[0]
+	except Exception, e:
+		sys.stderr.write("Error extracting reviews info: No reviews info found for product " + product_page_url + "\n")
+		return None
+	return {"total_reviews": reviews_count, "average_review": average_review}
+
 def main(args):
 	# check if there is an argument
 	if len(args) <= 1:
@@ -72,7 +85,8 @@ def main(args):
 		sys.exit(1)
 
 	# create json object with video and pdf urls
-	return json.dumps(media_for_url(product_page_url))
+#	return json.dumps(media_for_url(product_page_url))
+	return json.dumps(reviews_for_url(product_page_url))
 
 if __name__=="__main__":
 	print main(sys.argv)
