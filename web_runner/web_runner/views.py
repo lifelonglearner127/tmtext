@@ -11,12 +11,11 @@ import zlib
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
 import subprocess32 as subprocess
-from toolz.itertoolz import first
 
 from web_runner.config_util import find_command_config_from_path, \
     find_command_config_from_name, SpiderConfig
 from web_runner.scrapyd import ScrapydMediator
-from web_runner.util import pump
+from web_runner.util import RequestsLinePumper
 
 
 LOG = logging.getLogger(__name__)
@@ -31,8 +30,16 @@ def encode_ids(ids):
 
 def decode_ids(s):
     return pickle.loads(zlib.decompress(base64.urlsafe_b64decode(
-        # The framework will automatically decode it as Unicode but it's ASCII.
+        # Pyramid will automatically decode it as Unicode but it's ASCII.
         s.encode('ascii'))))
+
+
+def render_spider_config(request, spider_template_configs):
+    for config_template in spider_template_configs:
+        yield SpiderConfig(
+            config_template.spider_name.format(**request.params),
+            config_template.project_name.format(**request.params)
+        )
 
 
 def command_start_view(request):
@@ -42,12 +49,7 @@ def command_start_view(request):
     if cfg_templates is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
-    spider_cfgs = []
-    for cfg_template in cfg_templates.spider_configs:
-        spider_cfgs.append(SpiderConfig(
-            cfg_template.spider_name.format(request.params),
-            cfg_template.project_name.format(request.params)
-        ))
+    spider_cfgs = render_spider_config(request, cfg_templates.spider_configs)
 
     spider_job_ids = []
     for spider_cfg in spider_cfgs:
@@ -84,12 +86,14 @@ def command_pending(request):
     job_ids = decode_ids(encoded_job_ids)
 
     settings = request.registry.settings
-    cfg = find_command_config_from_name(settings, name)
-    if cfg is None:
+    cfg_template = find_command_config_from_name(settings, name)
+    if cfg_template is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
+    spider_cfgs = render_spider_config(request, cfg_template.spider_configs)
+
     running = 0
-    for job_id, spider_cfg in zip(job_ids, cfg.spider_configs):
+    for job_id, spider_cfg in zip(job_ids, spider_cfgs):
         status = ScrapydMediator(settings, spider_cfg).report_on_job(job_id)
         if status is ScrapydMediator.JobStatus.unknown:
             msg = "Job for spider '{}' with id '{}' has an unknown status." \
@@ -122,53 +126,102 @@ def command_result(request):
     job_ids = decode_ids(encoded_job_ids)
 
     settings = request.registry.settings
-    cfg = find_command_config_from_name(settings, name)
-    if cfg is None:
+    cfg_template = find_command_config_from_name(settings, name)
+    if cfg_template is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
+    spider_cfgs = render_spider_config(request, cfg_template.spider_configs)
+
+    # Create pipes.
     # This is slightly dangerous. Under load, by opening all connections at
     # once we may run out of file descriptors. We cannot keep everything in
     # memory either so the safer alternative would be to save to disk although
     # we can run out of disc space... oh well.
-    pipes = []
-    for job_id, spider_cfg in zip(job_ids, cfg.spider_configs):
-        data_stream = ScrapydMediator(settings, spider_cfg).retrieve_job_data(
-            job_id)
+    LOG.info("Setting up pipes for command jobs: %s", job_ids)
+    filenames = []
+    input_streams = []
+    for job_id, spider_cfg in zip(job_ids, spider_cfgs):
+        try:
+            input_streams.append(ScrapydMediator(
+                settings, spider_cfg).retrieve_job_data(job_id, stream=True))
 
-        # Create named pipes for each data stream.
-        filename = tempfile.mktemp()
-        os.mkfifo(filename)
-        fifo_fd = os.open(filename, os.O_WRONLY | os.O_NONBLOCK)
-        pipes.append((
-            filename,
-            pump(data_stream.fileno, fifo_fd),
-            fifo_fd,
-        ))
+            # Create named pipes for each data stream.
+            filename = tempfile.mktemp()
+            os.mkfifo(filename)
+            filenames.append(filename)
+        except urllib2.HTTPError as e:
+            raise exc.HTTPBadGateway(
+                "File server error.", comment="Error message: %s" % e)
 
+    args = dict(request.params)
+    for i, fn in enumerate(filenames):
+        args['spider %d' % i] = fn
+    cmd_line = cfg_template.cmd.format(**args)
+    LOG.info("Starting command: %s", cmd_line)
     process = subprocess.Popen(
-        cfg.cmd.format(**request.params) + ' ' + ' '.join(map(first, pipes)),
+        cmd_line,
         stdout=subprocess.PIPE,
         shell=True,
     )
 
-    # Feed the pipes non-blocking until there's no more data or the command
-    # terminates.
-    while True:
+    # Make sure it started.
+    try:
+        process.wait(timeout=0.1)
+
+        msg = "Command died before sending data: %s" % cmd_line
+        LOG.error(msg)
+        raise exc.HTTPBadGateway(msg)
+    except subprocess.TimeoutExpired:
+        pass
+
+    # Open the pipes for writing. This might block.
+    LOG.info("Opening pipes for writing for: %s", cmd_line)
+    pumpers = []
+    output_pipes = []
+    for fn, input_stream in zip(filenames, input_streams):
+        write_fifo_fd = os.open(fn, os.O_WRONLY)
+
+        pumpers.append(RequestsLinePumper(input_stream, write_fifo_fd))
+        output_pipes.append(write_fifo_fd)
+
+    # Feed the pipes without blocking until the command terminates.
+    LOG.info("Pumping IO for: %s", cmd_line)
+    output = []  # FIXME: This is bad as we are buffering in memory.
+    while pumpers:
         try:
-            process.wait(timeout=0.01)
+            stdout, _ = process.communicate(timeout=0.01)
+            output.append(stdout)
             break
         except subprocess.TimeoutExpired:
-            for pumper, _, _ in pipes:
-                next(pumper)  # Exercise the pumps.
+            for pumper in pumpers[:]:
+                if not pumper.pump():
+                    pumpers.remove(pumper)
 
-    # Cleanup. Close named pipes. Don't close input files as they belong to the
-    # framework.
-    for fn, _, fd in pipes:
-        os.close(fd)
-        os.unlink(fn)
+    # Cleanup. Close named pipes.
+    # Don't close input files as they belong to the framework.
+    LOG.info("Clean up for: %s", cmd_line)
+    for fn, fd in zip(filenames, output_pipes):
+        try:
+            os.close(fd)
+        except:
+            # If failed to close, it's bad but continue.
+            LOG.info("Failed to close file '%s'.", fn)
+        finally:
+            os.unlink(fn)
 
-    request.response.content_type = cfg.content_type
-    request.response.body_file = process.stdout
+    try:
+        LOG.info("Waiting for process to finish...")
+        stdout, _ = process.communicate(timeout=5)
+        output.append(stdout)
+        LOG.info("Process finished.")
+    except subprocess.TimeoutExpired:
+        process.kill()
+        LOG.warn("Process killed as it took too long.")
+
+    LOG.info("Command generated %s bytes.", sum(map(len, output)))
+
+    request.response.content_type = cfg_template.content_type
+    request.response.text = ''.join(output)
     return request.response
 
 
