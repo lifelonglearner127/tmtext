@@ -20,7 +20,7 @@ def _extract_product_id(product_page_url):
 	product_id = product_page_url.split('/')[-1]
 	return product_id
 
-def video_url(product_page_url):
+def _video_url(product_page_url):
 	request_url = BASE_URL_VIDEOREQ + _extract_product_id(product_page_url)
 
 	#TODO: handle errors
@@ -39,7 +39,12 @@ def video_url(product_page_url):
 
 		return None
 
-def pdf_url(product_page_url):
+# return dictionary with one element containing the video url
+def video_for_url(product_page_url):
+	results = {'video_url' : _video_url(product_page_url)}
+	return results
+
+def _pdf_url(product_page_url):
 	request_url = BASE_URL_PDFREQ + _extract_product_id(product_page_url)
 
 	response_text = urllib.urlopen(request_url).read().decode('string-escape')
@@ -54,10 +59,14 @@ def pdf_url(product_page_url):
 	else:
 		return None
 
+# return dictionary with one element containing the PDF
+def pdf_for_url(product_page_url):
+	results = {"pdf_url" : _pdf_url(product_page_url)}
+
 def media_for_url(product_page_url):
 	# create json object with video and pdf urls
-	results = {'video_url' : video_url(product_page_url), \
-				'pdf_url' : pdf_url(product_page_url)}
+	results = {'video_url' : _video_url(product_page_url), \
+				'pdf_url' : _pdf_url(product_page_url)}
 	return results
 
 def reviews_for_url(product_page_url):
