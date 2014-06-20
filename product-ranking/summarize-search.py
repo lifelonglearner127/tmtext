@@ -10,6 +10,7 @@ from itertools import chain
 from collections import defaultdict
 import csv
 import json
+import sys
 
 
 def parse_arguments(argv=None):
@@ -33,17 +34,21 @@ def main(argv=None):
     """
     args = parse_arguments(argv)
 
+    sentinel = ' sentinel '
     if args.filter:
         prop, value = args.filter.split('=')
+        value = value.lower()
+    else:
+        prop = None
+        value = sentinel
 
     dol = partial(defaultdict, list)  # defaultdict of list.
     d2ol = partial(defaultdict, dol)  # defaultdict of defaultdict of list.
     d3ol = partial(defaultdict, d2ol)  # ...
     data = d3ol()
-    for jl in chain(*map(open, args.inputs)):
+    for jl in chain.from_iterable(map(open, args.inputs)):
         rec = json.loads(jl)
-        if not args.filter \
-                or prop in rec and rec[prop].lower() == value.lower():
+        if rec.get(prop, sentinel).lower() == value:
             data[
                 rec['site']                     # First level, Sites.
             ][
@@ -52,7 +57,8 @@ def main(argv=None):
                 rec.get('brand', '').lower()    # Third level, brands.
             ].append(rec)                       # Last, a list with the prods.
 
-    writer = csv.writer(open(args.output, 'w'))
+    writer = csv.writer(
+        sys.stdout if args.output == '-' else open(args.output, 'w'))
     writer.writerow(['site', 'search term', 'brand', 'total results',
                      'rankings', 'on first page'])
     for site, search_terms in data.items():

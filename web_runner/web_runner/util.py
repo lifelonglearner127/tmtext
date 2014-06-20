@@ -1,6 +1,51 @@
 import fcntl
+import logging
 import os
 import select
+
+
+class RequestsLinePumper:
+    """Writes lines from a requests' request into a file like object.
+
+    This is not an asynchronous Pumper but will block only for small chunks.
+    """
+
+    def __init__(self, req, dest_fd):
+        """
+        :param req: Requests' request object.
+        :param dest_fd: FD to write to.
+        """
+        self._req = req
+        self._req_lines_iter = req.iter_lines()
+        self._dest_fd = dest_fd
+
+        self._data_left = True
+
+        #fcntl.fcntl(dest_fd, fcntl.F_SETFL, os.O_NONBLOCK)
+
+        self._log = logging.getLogger(__file__ + '.' + type(self).__name__)
+
+    def pump(self):
+        """Read a line from the request and writes it to the destination.
+
+        :returns: If there's possibly more data left.
+        """
+        if not self._data_left:
+            return False
+
+        _, write_ready, _ = select.select([], [self._dest_fd], [], 0)
+        if not write_ready:
+            return True
+
+        for line in self._req_lines_iter:
+            if line:  # Filter Keep-Alives.
+                # FIXME: This may block.
+                os.write(self._dest_fd, line)
+                self._log.info("Pumped %s bytes.", len(line))
+                return True
+
+        self._data_left = False
+        return False
 
 
 def pump(input_fd, output_fd, max_buffer_size=1024):

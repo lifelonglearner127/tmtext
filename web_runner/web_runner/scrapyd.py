@@ -6,6 +6,7 @@ import urllib2
 
 import enum
 import pyramid.httpexceptions as exc
+import requests
 
 from web_runner.config_util import find_spider_config_from_path
 
@@ -27,7 +28,8 @@ class ScrapydMediator(object):
 
     @staticmethod
     def from_resource(settings, path):
-        return ScrapydMediator(settings, find_spider_config_from_path(settings, path))
+        return ScrapydMediator(
+            settings, find_spider_config_from_path(settings, path))
 
     def __init__(self, settings, spider_config):
         if spider_config is None:
@@ -80,13 +82,13 @@ class ScrapydMediator(object):
 
         return status
 
-    def retrieve_job_data(self, jobid):
+    def retrieve_job_data(self, jobid, stream=False):
         url = urlparse.urljoin(
             self.file_server_base_url,
             "{}/{}/{}.jl".format(
                 self.config.project_name, self.config.spider_name, jobid)
         )
-        return urllib2.urlopen(url)
+        return requests.get(url, stream=stream)
 
     @staticmethod
     def _fetch_json(url, data=None):
