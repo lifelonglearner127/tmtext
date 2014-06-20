@@ -3,10 +3,6 @@ import os
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, 'README.txt')) as f:
-    README = f.read()
-with open(os.path.join(here, 'CHANGES.txt')) as f:
-    CHANGES = f.read()
 
 requires = [
     'pyramid>=1.5.1',
@@ -22,8 +18,7 @@ requires = [
 
 setup(name='web_runner',
       version='0.0',
-      description='web_runner',
-      long_description=README + '\n\n' + CHANGES,
+      description='Service to run Scrapyd spiders and filters over their output',
       classifiers=[
         "Programming Language :: Python",
         "Framework :: Pyramid",
