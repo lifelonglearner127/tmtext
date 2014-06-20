@@ -11,6 +11,7 @@ import zlib
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
 import subprocess32 as subprocess
+from config_util import find_spider_config_from_path
 
 from web_runner.config_util import find_command_config_from_path, \
     find_command_config_from_name, SpiderConfig
@@ -229,7 +230,10 @@ def spider_start_view(request):
     """Starts job in Scrapyd and redirects to the "spider pending jobs" view."""
     settings = request.registry.settings
 
-    mediator = ScrapydMediator.from_resource(settings, request.path)
+    cfg_template = find_spider_config_from_path(settings, request.path)
+    cfg = render_spider_config(request, cfg_template)
+
+    mediator = ScrapydMediator(settings, cfg)
     response = mediator.start_job(request.params)
 
     if response['status'] != "ok":

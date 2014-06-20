@@ -26,11 +26,6 @@ class ScrapydMediator(object):
         finished = 2
         pending = 3
 
-    @staticmethod
-    def from_resource(settings, path):
-        return ScrapydMediator(
-            settings, find_spider_config_from_path(settings, path))
-
     def __init__(self, settings, spider_config):
         if spider_config is None:
             raise exc.HTTPNotFound("Unknown resource.")
