@@ -15,6 +15,7 @@ requires = [
     'waitress',
 
     'enum34>=1.0',
+    'requests>=2.3.0',
     'subprocess32>=3.2.6',
     'toolz>=0.6',
 ]
