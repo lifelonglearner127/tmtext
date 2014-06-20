@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
 from flask import Flask, jsonify, abort, request
-from extract_walmart_media import media_for_url, check_url_format, reviews_for_url
+from extract_walmart_media import media_for_url, check_url_format, reviews_for_url, \
+pdf_for_url, video_for_url
 
 app = Flask(__name__)
 
@@ -29,40 +30,43 @@ def check_input(url):
 			"Invalid parameter " + str(url) + " Parameter must be a Walmart URL of the form: http://www.walmart.com/ip/<product_id>",\
 			404)
 
-@app.route('/get_walmart_media/<path:url>', methods=['GET'])
-def get_media_urls(url):
+# get all data: PDF, video and reviews
+@app.route('/get_walmart_data/<path:url>', methods=['GET'])
+def get_all_data(url):
 	check_input(url)
 
-	ret = media_for_url(url)
+	media_data = media_for_url(url)
+	reviews_data = reviews_for_url(url)
+	ret = dict(media_data.items() + reviews_data.items())
 	return jsonify(ret)
 
-@app.route('/get_walmart_reviews/<path:url>', methods=['GET'])
+@app.route('/get_walmart_data/reviews/<path:url>', methods=['GET'])
 def get_reviews(url):
 	check_input(url)
 
 	ret = reviews_for_url(url)
 	return jsonify(ret)
 
+@app.route('/get_walmart_data/media/<path:url>', methods=['GET'])
+def get_media_urls(url):
+	check_input(url)
 
-# @app.route('/get_walmart_media', methods=['GET'])
-# def get_media_urls_params():
-# 	args_dict = request.args
-# 	if 'product_page' not in args_dict:
-# 		raise InvalidUsage("Invalid Usage: 'product_page' parameter must be provided in the query string.", 404)
+	ret = media_for_url(url)
+	return jsonify(ret)
 
-# 	url = args_dict['product_page']
+@app.route('/get_walmart_data/PDF/<path:url>', methods=['GET'])
+def get_pdf_url(url):
+	check_input(url)
 
-# 	if not url:
-# 		raise InvalidUsage("No Walmart URL was provided."), 404
+	ret = pdf_for_url(url)
+	return jsonify(ret)
 
-# 	if not _check_url_format(url):
-# 		raise InvalidUsage(\
-# 			"Invalid parameter " + url + ". Parameter must be a Walmart URL must be of the form: http://www.walmart.com/ip/<product_id>",\
-# 			404)
+@app.route('/get_walmart_data/video/<path:url>', methods=['GET'])
+def get_video_url(url):
+	check_input(url)
 
-# 	ret = media_for_url(url)
-# 	return jsonify(ret)
-
+	ret = video_for_url(url)
+	return jsonify(ret)
 
 @app.errorhandler(InvalidUsage)
 def handle_invalid_usage(error):

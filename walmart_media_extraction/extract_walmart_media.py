@@ -62,6 +62,7 @@ def _pdf_url(product_page_url):
 # return dictionary with one element containing the PDF
 def pdf_for_url(product_page_url):
 	results = {"pdf_url" : _pdf_url(product_page_url)}
+	return results
 
 def media_for_url(product_page_url):
 	# create json object with video and pdf urls
