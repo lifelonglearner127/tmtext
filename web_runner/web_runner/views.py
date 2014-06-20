@@ -11,10 +11,9 @@ import zlib
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
 import subprocess32 as subprocess
-from config_util import find_spider_config_from_path
 
 from web_runner.config_util import find_command_config_from_path, \
-    find_command_config_from_name, SpiderConfig
+    find_command_config_from_name, find_spider_config_from_path, SpiderConfig
 from web_runner.scrapyd import ScrapydMediator
 from web_runner.util import RequestsLinePumper
 
