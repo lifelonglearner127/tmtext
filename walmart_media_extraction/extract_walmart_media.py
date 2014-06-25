@@ -26,18 +26,31 @@ def _video_url(product_page_url):
 	#TODO: handle errors
 	response_text = urllib.urlopen(request_url).read()
 
-	video_url_candidates = re.findall('(?<=")[^"]+\.flv(?=")', response_text)
+	# get first "src" value in response
+	video_url_candidates = re.findall("src: \"([^\"]+)\"", response_text)
 	if video_url_candidates:
 		# remove escapes
 		#TODO: better way to do this?
-		video_url = re.sub('\\\\', "", video_url_candidates[0])
-		#video_url = video_url_candidates[0].decode('string_escape')
+		video_url_candidate = re.sub('\\\\', "", video_url_candidates[0])
 
-		return video_url
+		# if it ends in flv, it's a video, ok
+		if video_url_candidate.endswith(".flv"):
+			return video_url_candidate
 
-	else:
+		# if it doesn't, it may be a url to make another request to, to get customer reviews video
+		new_response = urllib.urlopen(video_url_candidate).read()
+		video_id_candidates = re.findall("param name=\"video\" value=\"(.*)\"", new_response)
 
-		return None
+		if video_id_candidates:
+			video_id = video_id_candidates[0]
+
+			video_url_req = "http://client.expotv.com/vurl/%s?output=mp4" % video_id
+			video_url = urllib.urlopen(video_url_req).url
+			print video_url
+
+			return video_url
+
+	return None
 
 # return dictionary with one element containing the video url
 def video_for_url(product_page_url):
@@ -95,8 +108,8 @@ def main(args):
 		sys.exit(1)
 
 	# create json object with video and pdf urls
-#	return json.dumps(media_for_url(product_page_url))
-	return json.dumps(reviews_for_url(product_page_url))
+	return json.dumps(media_for_url(product_page_url))
+#	return json.dumps(reviews_for_url(product_page_url))
 
 if __name__=="__main__":
 	print main(sys.argv)
