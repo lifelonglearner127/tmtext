@@ -1,53 +1,20 @@
 from __future__ import division, absolute_import, unicode_literals
 
-import base64
 import logging
-import pickle
 import urllib2
-import zlib
 
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
 import subprocess32 as subprocess
 
-from web_runner.config_util import find_command_config_from_path, \
-    find_command_config_from_name, find_spider_config_from_path, SpiderConfig
+from web_runner.config_util import find_command_config_from_name, \
+    find_command_config_from_path, find_spider_config_from_path, SpiderConfig, \
+    render_spider_config
 from web_runner.scrapyd import ScrapydMediator
+from web_runner.util import encode_ids, decode_ids
 
 
 LOG = logging.getLogger(__name__)
-
-
-def encode_ids(ids):
-    return base64.urlsafe_b64encode(
-        zlib.compress(
-            pickle.dumps(ids, pickle.HIGHEST_PROTOCOL),
-            zlib.Z_BEST_COMPRESSION))
-
-
-def decode_ids(s):
-    return pickle.loads(zlib.decompress(base64.urlsafe_b64decode(
-        # Pyramid will automatically decode it as Unicode but it's ASCII.
-        s.encode('ascii'))))
-
-
-def render_spider_config(spider_template_configs, params, global_params=None):
-    """Renders the spider config from the given templates and parameters.
-
-    :param spider_template_configs: A list of config templates.
-    :param params: A list of dicts correlated with the list of templates.
-    :param global_params: A dict to override parameters for all templates.
-    :returns: A generator of rendered SpiderConfigs.
-    """
-    for template, p in zip(spider_template_configs, params):
-        merged_params = p.copy()
-        if global_params:
-            merged_params.update(global_params)
-
-        yield SpiderConfig(
-            template.spider_name.format(**merged_params),
-            template.project_name.format(**merged_params)
-        )
 
 
 def command_start_view(request):

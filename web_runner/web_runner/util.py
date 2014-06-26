@@ -2,6 +2,9 @@ import fcntl
 import logging
 import os
 import select
+import pickle
+import zlib
+import base64
 
 
 class RequestsLinePumper:
@@ -85,3 +88,16 @@ def pump(input_fd, output_fd, max_buffer_size=1024):
             data = data[written:]
 
         yield read, written
+
+
+def encode_ids(ids):
+    return base64.urlsafe_b64encode(
+        zlib.compress(
+            pickle.dumps(ids, pickle.HIGHEST_PROTOCOL),
+            zlib.Z_BEST_COMPRESSION))
+
+
+def decode_ids(s):
+    return pickle.loads(zlib.decompress(base64.urlsafe_b64decode(
+        # Pyramid will automatically decode it as Unicode but it's ASCII.
+        s.encode('ascii'))))

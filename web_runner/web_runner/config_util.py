@@ -90,3 +90,22 @@ def find_command_crawls(settings, prefix):
             yield cfg, params
     except KeyError:
         pass  # No more crawlers.
+
+
+def render_spider_config(spider_template_configs, params, global_params=None):
+    """Renders the spider config from the given templates and parameters.
+
+    :param spider_template_configs: A list of config templates.
+    :param params: A list of dicts correlated with the list of templates.
+    :param global_params: A dict to override parameters for all templates.
+    :returns: A generator of rendered SpiderConfigs.
+    """
+    for template, p in zip(spider_template_configs, params):
+        merged_params = p.copy()
+        if global_params:
+            merged_params.update(global_params)
+
+        yield SpiderConfig(
+            template.spider_name.format(**merged_params),
+            template.project_name.format(**merged_params)
+        )
