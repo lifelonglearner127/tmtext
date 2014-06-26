@@ -1,14 +1,5 @@
 """This REST service allows to run Scrapy spiders through
 Scrapyd and to run commands over the resulting data.
-
-For spiders, the API is as follows: GET /{resource}/ redirects to
-/spider/{spider}/job/{job}/ where the client will poll to see when the job is
-complete. All query string parameters are passed to Scrapyd.
-When complete, the a link to the raw result will be provided. The result will be
-encoded in jsonlines.
-
-FIXME: Describe commands API
-
 """
 import logging
 import os.path
@@ -43,9 +34,6 @@ def add_routes(settings, config):
 def main(global_config, **settings):
     """This function returns a Pyramid WSGI application."""
     config = Configurator(settings=settings)
-    # config.include('pyramid_chameleon')
-
-    # config.add_static_view('static', 'static', cache_max_age=3600)
 
     config.add_route("spider pending jobs",
                      '/crawl/project/{project}/spider/{spider}/job/{jobid}/')
