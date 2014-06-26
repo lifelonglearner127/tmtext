@@ -31,22 +31,37 @@ def decode_ids(s):
         s.encode('ascii'))))
 
 
-def render_spider_config(request, spider_template_configs):
-    for config_template in spider_template_configs:
+def render_spider_config(spider_template_configs, params, global_params=None):
+    """Renders the spider config from the given templates and parameters.
+
+    :param spider_template_configs: A list of config templates.
+    :param params: A list of dicts correlated with the list of templates.
+    :param global_params: A dict to override parameters for all templates.
+    :returns: A generator of rendered SpiderConfigs.
+    """
+    for template, p in zip(spider_template_configs, params):
+        merged_params = p.copy()
+        if global_params:
+            merged_params.update(global_params)
+
         yield SpiderConfig(
-            config_template.spider_name.format(**request.params),
-            config_template.project_name.format(**request.params)
+            template.spider_name.format(**merged_params),
+            template.project_name.format(**merged_params)
         )
 
 
 def command_start_view(request):
     """Schedules running a command plus spiders."""
     settings = request.registry.settings
-    cfg_templates = find_command_config_from_path(settings, request.path)
-    if cfg_templates is None:
+    cfg_template = find_command_config_from_path(settings, request.path)
+    if cfg_template is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
-    spider_cfgs = render_spider_config(request, cfg_templates.spider_configs)
+    spider_cfgs = render_spider_config(
+        cfg_template.spider_configs,
+        cfg_template.spider_params,
+        request.params,
+    )
 
     spider_job_ids = []
     for spider_cfg in spider_cfgs:
@@ -56,21 +71,21 @@ def command_start_view(request):
             raise exc.HTTPBadGateway(
                 "Failed to start a required crawl for command '{}'."
                 " Scrapyd was not OK, it was '{status}': {message}".format(
-                    cfg_templates.name, **response)
+                    cfg_template.name, **response)
             )
         spider_job_ids.append(response['jobid'])
         LOG.info("For command at '%s', started crawl job with id '%s'.",
-                 cfg_templates.name, response['jobid'])
+                 cfg_template.name, response['jobid'])
 
     raise exc.HTTPFound(
         location=request.route_path(
             "command pending jobs",
-            name=cfg_templates.name,
+            name=cfg_template.name,
             jobid=encode_ids(spider_job_ids),
             _query=request.params,
         ),
         detail="Command '{}' started with {} crawls.".format(
-            cfg_templates.name, len(spider_job_ids))
+            cfg_template.name, len(spider_job_ids))
     )
 
 
@@ -87,7 +102,11 @@ def command_pending(request):
     if cfg_template is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
-    spider_cfgs = render_spider_config(request, cfg_template.spider_configs)
+    spider_cfgs = render_spider_config(
+        cfg_template.spider_configs,
+        cfg_template.spider_params,
+        request.params,
+    )
 
     running = 0
     for job_id, spider_cfg in zip(job_ids, spider_cfgs):
@@ -127,7 +146,11 @@ def command_result(request):
     if cfg_template is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
-    spider_cfgs = render_spider_config(request, cfg_template.spider_configs)
+    spider_cfgs = render_spider_config(
+        cfg_template.spider_configs,
+        cfg_template.spider_params,
+        request.params,
+    )
 
     args = dict(request.params)
     for i, (job_id, spider_cfg) in enumerate(zip(job_ids, spider_cfgs)):
