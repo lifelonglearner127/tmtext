@@ -2,9 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 
 import base64
 import logging
-import os
 import pickle
-import tempfile
 import urllib2
 import zlib
 
@@ -15,7 +13,6 @@ import subprocess32 as subprocess
 from web_runner.config_util import find_command_config_from_path, \
     find_command_config_from_name, find_spider_config_from_path, SpiderConfig
 from web_runner.scrapyd import ScrapydMediator
-from web_runner.util import RequestsLinePumper
 
 
 LOG = logging.getLogger(__name__)
@@ -132,96 +129,34 @@ def command_result(request):
 
     spider_cfgs = render_spider_config(request, cfg_template.spider_configs)
 
-    # Create pipes.
-    # This is slightly dangerous. Under load, by opening all connections at
-    # once we may run out of file descriptors. We cannot keep everything in
-    # memory either so the safer alternative would be to save to disk although
-    # we can run out of disc space... oh well.
-    LOG.info("Setting up pipes for command jobs: %s", job_ids)
-    filenames = []
-    input_streams = []
-    for job_id, spider_cfg in zip(job_ids, spider_cfgs):
-        try:
-            input_streams.append(ScrapydMediator(
-                settings, spider_cfg).retrieve_job_data(job_id, stream=True))
-
-            # Create named pipes for each data stream.
-            filename = tempfile.mktemp()
-            os.mkfifo(filename)
-            filenames.append(filename)
-        except urllib2.HTTPError as e:
-            raise exc.HTTPBadGateway(
-                "File server error.", comment="Error message: %s" % e)
-
     args = dict(request.params)
-    for i, fn in enumerate(filenames):
+    for i, (job_id, spider_cfg) in enumerate(zip(job_ids, spider_cfgs)):
+        fn = ScrapydMediator(settings, spider_cfg).retrieve_job_data_fn(job_id)
         args['spider %d' % i] = fn
+
     cmd_line = cfg_template.cmd.format(**args)
     LOG.info("Starting command: %s", cmd_line)
     process = subprocess.Popen(
         cmd_line,
         stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         shell=True,
     )
 
-    # Make sure it started.
-    try:
-        process.wait(timeout=0.1)
+    LOG.info("Waiting until conn timeout for command to finish...")
+    stdout, stderr = process.communicate()
+    LOG.info("Process finished.")
 
-        msg = "Command died before sending data: %s" % cmd_line
-        LOG.error(msg)
-        raise exc.HTTPBadGateway(msg)
-    except subprocess.TimeoutExpired:
-        pass
+    if process.returncode != 0:
+        msg = "The command terminated with an return value of %s." \
+              " Process' standard error: %s" \
+              % (process.returncode, stderr)
+        LOG.warn(msg)
+        raise exc.HTTPBadGateway(detail=msg)
 
-    # Open the pipes for writing. This might block.
-    LOG.info("Opening pipes for writing for: %s", cmd_line)
-    pumpers = []
-    output_pipes = []
-    for fn, input_stream in zip(filenames, input_streams):
-        write_fifo_fd = os.open(fn, os.O_WRONLY)
-
-        pumpers.append(RequestsLinePumper(input_stream, write_fifo_fd))
-        output_pipes.append(write_fifo_fd)
-
-    # Feed the pipes without blocking until the command terminates.
-    LOG.info("Pumping IO for: %s", cmd_line)
-    output = []  # FIXME: This is bad as we are buffering in memory.
-    while pumpers:
-        try:
-            stdout, _ = process.communicate(timeout=0.01)
-            output.append(stdout)
-            break
-        except subprocess.TimeoutExpired:
-            for pumper in pumpers[:]:
-                if not pumper.pump():
-                    pumpers.remove(pumper)
-
-    # Cleanup. Close named pipes.
-    # Don't close input files as they belong to the framework.
-    LOG.info("Clean up for: %s", cmd_line)
-    for fn, fd in zip(filenames, output_pipes):
-        try:
-            os.close(fd)
-        except:
-            # If failed to close, it's bad but continue.
-            LOG.info("Failed to close file '%s'.", fn)
-        finally:
-            os.unlink(fn)
-
-    try:
-        LOG.info("Waiting for process to finish...")
-        stdout, _ = process.communicate(timeout=5)
-        output.append(stdout)
-        LOG.info("Process finished.")
-    except subprocess.TimeoutExpired:
-        process.kill()
-        LOG.warn("Process killed as it took too long.")
-
-    LOG.info("Command generated %s bytes.", sum(map(len, output)))
-
+    LOG.info("Command generated %s bytes.", len(stdout))
     request.response.content_type = cfg_template.content_type
-    request.response.text = ''.join(output)
+    request.response.body = stdout
     return request.response
 
 

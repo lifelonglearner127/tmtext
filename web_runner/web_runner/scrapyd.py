@@ -1,14 +1,12 @@
 import logging
 import urlparse
 import json
+import os.path
 import urllib
 import urllib2
 
 import enum
 import pyramid.httpexceptions as exc
-import requests
-
-from web_runner.config_util import find_spider_config_from_path
 
 
 LOG = logging.getLogger(__name__)
@@ -18,7 +16,7 @@ class ScrapydMediator(object):
 
     SCRAPYD_BASE_URL = 'spider._scrapyd.base_url'
 
-    FILE_SERVER_BASE_URL = 'spider._result.base_url'
+    SCRAPYD_ITEMS_PATH = 'spider._scrapyd.items_path'
 
     class JobStatus(enum.Enum):
         unknown = 0
@@ -31,8 +29,7 @@ class ScrapydMediator(object):
             raise exc.HTTPNotFound("Unknown resource.")
 
         self.scrapyd_base_url = settings[ScrapydMediator.SCRAPYD_BASE_URL]
-        self.file_server_base_url = \
-            settings[ScrapydMediator.FILE_SERVER_BASE_URL]
+        self.scrapyd_items_path = settings[ScrapydMediator.SCRAPYD_ITEMS_PATH]
 
         self.config = spider_config
 
@@ -77,13 +74,19 @@ class ScrapydMediator(object):
 
         return status
 
-    def retrieve_job_data(self, jobid, stream=False):
-        url = urlparse.urljoin(
-            self.file_server_base_url,
-            "{}/{}/{}.jl".format(
-                self.config.project_name, self.config.spider_name, jobid)
-        )
-        return requests.get(url, stream=stream)
+    def retrieve_job_data(self, jobid):
+        """Returns a file like object with the job's result."""
+        return open(self.retrieve_job_data_fn(jobid))
+
+    def retrieve_job_data_fn(self, jobid):
+        """Returns the path to the job's data file."""
+        path = os.path.normpath(os.path.expanduser(
+            self.scrapyd_items_path.format(
+                project_name=self.config.project_name,
+                spider_name=self.config.spider_name,
+            )
+        ))
+        return os.path.join(path, "%s.jl" % jobid)
 
     @staticmethod
     def _fetch_json(url, data=None):
