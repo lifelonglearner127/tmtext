@@ -1,5 +1,6 @@
 from __future__ import division, absolute_import, unicode_literals
 
+from itertools import repeat, starmap
 import logging
 import urllib2
 
@@ -27,10 +28,13 @@ def command_start_view(request):
     if cfg_template is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
-    spider_cfgs = render_spider_config(
-        cfg_template.spider_configs,
-        cfg_template.spider_params,
-        request.params,
+    spider_cfgs = starmap(
+        render_spider_config,
+        zip(
+            cfg_template.spider_configs,
+            cfg_template.spider_params,
+            repeat(request.params),
+        )
     )
 
     spider_job_ids = []
@@ -72,10 +76,13 @@ def command_pending(request):
     if cfg_template is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
-    spider_cfgs = render_spider_config(
-        cfg_template.spider_configs,
-        cfg_template.spider_params,
-        request.params,
+    spider_cfgs = starmap(
+        render_spider_config,
+        zip(
+            cfg_template.spider_configs,
+            cfg_template.spider_params,
+            repeat(request.params),
+        )
     )
 
     running = 0
@@ -116,10 +123,13 @@ def command_result(request):
     if cfg_template is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
-    spider_cfgs = render_spider_config(
-        cfg_template.spider_configs,
-        cfg_template.spider_params,
-        request.params,
+    spider_cfgs = starmap(
+        render_spider_config,
+        zip(
+            cfg_template.spider_configs,
+            cfg_template.spider_params,
+            repeat(request.params),
+        )
     )
 
     args = dict(request.params)
