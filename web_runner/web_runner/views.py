@@ -17,6 +17,9 @@ from web_runner.util import encode_ids, decode_ids
 LOG = logging.getLogger(__name__)
 
 
+# TODO Move command handling logic to a CommandMediator.
+
+
 def command_start_view(request):
     """Schedules running a command plus spiders."""
     settings = request.registry.settings
@@ -155,7 +158,7 @@ def spider_start_view(request):
     settings = request.registry.settings
 
     cfg_template = find_spider_config_from_path(settings, request.path)
-    cfg = render_spider_config(request, cfg_template)
+    cfg = render_spider_config(cfg_template, request.params)
 
     mediator = ScrapydMediator(settings, cfg)
     response = mediator.start_job(request.params)

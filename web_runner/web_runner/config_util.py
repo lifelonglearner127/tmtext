@@ -92,20 +92,22 @@ def find_command_crawls(settings, prefix):
         pass  # No more crawlers.
 
 
-def render_spider_config(spider_template_configs, params, global_params=None):
+def render_spider_config(spider_template_config, params, *more_params):
     """Renders the spider config from the given templates and parameters.
 
-    :param spider_template_configs: A list of config templates.
-    :param params: A list of dicts correlated with the list of templates.
-    :param global_params: A dict to override parameters for all templates.
-    :returns: A generator of rendered SpiderConfigs.
+    :param spider_template_config: A config templates.
+    :type spider_template_config: SpiderConfig
+    :param params: A dict with the values for the template.
+    :type params: dict
+    :param more_params: Dicts to override parameters for the template.
+    :type more_params: dict
+    :returns: A rendered SpiderConfigs.
     """
-    for template, p in zip(spider_template_configs, params):
-        merged_params = p.copy()
-        if global_params:
-            merged_params.update(global_params)
+    merged_params = dict(params)
+    for p in more_params:
+        merged_params.update(p)
 
-        yield SpiderConfig(
-            template.spider_name.format(**merged_params),
-            template.project_name.format(**merged_params)
-        )
+    return SpiderConfig(
+        spider_template_config.spider_name.format(**merged_params),
+        spider_template_config.project_name.format(**merged_params)
+    )
