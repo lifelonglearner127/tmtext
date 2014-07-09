@@ -7,6 +7,8 @@ import urllib2
 
 import enum
 import pyramid.httpexceptions as exc
+import requests
+import json
 
 
 LOG = logging.getLogger(__name__)
@@ -95,3 +97,69 @@ class ScrapydMediator(object):
         conn.close()
 
         return response
+
+
+class ScrapydInterface(object):
+    """Interface to Scrapyd
+
+    The main difference with ScrapydMediator, is that this class is not
+    oriented to have a spider.
+    This class is useful to return status and information about ScrapyD
+    """
+
+    def __init__(self, url):
+        self.scrapyd_url = url
+
+
+    def is_alive(self):
+        """Return if scrapyd is alive"""
+
+        try:
+            req = requests.get(self.scrapyd_url)
+        except requests.exceptions.RequestException, e:
+            return False
+
+        return req.status_code == 200
+
+
+    def get_projects(self):
+        """Get the list of scrapyd project
+
+        returns a tuple with:
+         * 0: boolean with Scrapyd operational status
+         * 1: list of scrapyd projects
+        """
+        url = self.scrapyd_url + 'listprojects.json'
+        try:
+            req = requests.get(url)
+        except requests.exceptions.RequestException, e:
+            return (False, None)
+       
+        output = json.loads(req.text)
+        status = output['status'].lower() == 'ok'
+        projects = output['projects']
+
+        return (status, projects)
+
+
+    def get_spiders(self, project):
+        """
+        """
+        if not project:
+            return None
+
+        url = "%slistspiders.json?project=%s" % (self.scrapyd_url, 
+          project)
+        try:
+            req = requests.get(url)
+        except requests.exceptions.RequestException, e:
+            return None
+
+        output = json.loads(req.text)
+        if output['status'].lower() == 'ok':
+            spiders = output['spiders']
+        else:
+            spiders = None
+
+        return spiders
+# vim: set expandtab ts=4 sw=4:

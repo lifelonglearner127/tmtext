@@ -6,12 +6,13 @@ import urllib2
 
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
+
 import subprocess32 as subprocess
 
 from web_runner.config_util import find_command_config_from_name, \
     find_command_config_from_path, find_spider_config_from_path, SpiderConfig, \
     render_spider_config
-from web_runner.scrapyd import ScrapydMediator
+from web_runner.scrapyd import ScrapydMediator, ScrapydInterface
 from web_runner.util import encode_ids, decode_ids
 
 
@@ -227,3 +228,27 @@ def spider_results_view(request):
     except urllib2.HTTPError as e:
         raise exc.HTTPBadGateway(
             detail="The file server doesn't have the expected content: %s" % e)
+
+
+@view_config(route_name='status', request_method='GET', renderer='json')
+def status(request):
+    """Check the Web Runner and Scrapyd Status"""
+
+    settings = request.registry.settings
+    scrapyd_baseurl = settings['spider._scrapyd.base_url']
+
+    scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
+    alive = scrapyd_interf.is_alive()
+    (operational, projects) = scrapyd_interf.get_projects()
+
+    # Get the spiders for all projects
+    spiders = {proj: scrapyd_interf.get_spiders(proj) for proj in projects}
+
+    output = {'scrapyd_alive': alive, 
+      'scrapyd_operational': operational,
+      'scrapyd_projects': projects,
+      'spiders': spiders,
+      'webRunner': True}
+
+    return output
+# vim: set expandtab ts=4 sw=4:
