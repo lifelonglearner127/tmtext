@@ -46,7 +46,6 @@ def _video_url(product_page_url):
 
 			video_url_req = "http://client.expotv.com/vurl/%s?output=mp4" % video_id
 			video_url = urllib.urlopen(video_url_req).url
-			print video_url
 
 			return video_url
 
