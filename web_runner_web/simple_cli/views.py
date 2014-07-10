@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.conf import settings
 import requests
 
 def index(request):
@@ -8,9 +9,10 @@ def index(request):
 def web_runner_status(request):
     """Display the status of Web Runner and Scrapyd"""
 
-    import pdb; pdb.set_trace()
     try:
-        req = requests.get('http://localhost:6543/status/')
+        base_url = settings.WEB_RUNNER_BASE_URL
+        url = '%sstatus/' % base_url
+        req = requests.get(url)
         web_runner_error = False
     except requests.exceptions.RequestException as e:
         web_runner_error = True
