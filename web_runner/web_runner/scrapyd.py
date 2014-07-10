@@ -162,4 +162,6 @@ class ScrapydInterface(object):
             spiders = None
 
         return spiders
+
+
 # vim: set expandtab ts=4 sw=4:

@@ -242,7 +242,10 @@ def status(request):
     (operational, projects) = scrapyd_interf.get_projects()
 
     # Get the spiders for all projects
-    spiders = {proj: scrapyd_interf.get_spiders(proj) for proj in projects}
+    if alive and operational:
+        spiders = {proj: scrapyd_interf.get_spiders(proj) for proj in projects}
+    else:
+        spiders = None
 
     output = {'scrapyd_alive': alive, 
       'scrapyd_operational': operational,
