@@ -1,2 +1,4 @@
+dir="/home/ubuntu/tmtext/walmart_media_extraction"
+mkdir -p "$dir"/logs
 time=`date +"%F"`
-python /home/ubuntu/tmtext/walmart_media_extraction/walmart_media_app.py 2>>/home/ubuntu/tmtext/walmart_media_extraction/logs/log_"$time".txt
+python "$dir"/walmart_media_app.py 2>>"$dir"/logs/log_"$time".txt
