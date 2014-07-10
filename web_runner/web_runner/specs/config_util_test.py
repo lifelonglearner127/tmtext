@@ -52,7 +52,8 @@ with given.a_configuration_of_a_command:
                 'tst',
                 'echo {key1}',
                 'text/plain',
-                [SpiderConfig('spider name', 'spider project')]
+                (SpiderConfig('spider name', 'spider project'),),
+                ({},),
             ))
 
     with when.searching_for_an_unexistant_resource:

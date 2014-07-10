@@ -1,55 +1,41 @@
 from __future__ import division, absolute_import, unicode_literals
 
-import base64
+from itertools import repeat, starmap
 import logging
-import os
-import pickle
-import tempfile
 import urllib2
-import zlib
 
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
 import subprocess32 as subprocess
 
-from web_runner.config_util import find_command_config_from_path, \
-    find_command_config_from_name, find_spider_config_from_path, SpiderConfig
+from web_runner.config_util import find_command_config_from_name, \
+    find_command_config_from_path, find_spider_config_from_path, SpiderConfig, \
+    render_spider_config
 from web_runner.scrapyd import ScrapydMediator
-from web_runner.util import RequestsLinePumper
+from web_runner.util import encode_ids, decode_ids
 
 
 LOG = logging.getLogger(__name__)
 
 
-def encode_ids(ids):
-    return base64.urlsafe_b64encode(
-        zlib.compress(
-            pickle.dumps(ids, pickle.HIGHEST_PROTOCOL),
-            zlib.Z_BEST_COMPRESSION))
-
-
-def decode_ids(s):
-    return pickle.loads(zlib.decompress(base64.urlsafe_b64decode(
-        # Pyramid will automatically decode it as Unicode but it's ASCII.
-        s.encode('ascii'))))
-
-
-def render_spider_config(request, spider_template_configs):
-    for config_template in spider_template_configs:
-        yield SpiderConfig(
-            config_template.spider_name.format(**request.params),
-            config_template.project_name.format(**request.params)
-        )
+# TODO Move command handling logic to a CommandMediator.
 
 
 def command_start_view(request):
     """Schedules running a command plus spiders."""
     settings = request.registry.settings
-    cfg_templates = find_command_config_from_path(settings, request.path)
-    if cfg_templates is None:
+    cfg_template = find_command_config_from_path(settings, request.path)
+    if cfg_template is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
-    spider_cfgs = render_spider_config(request, cfg_templates.spider_configs)
+    spider_cfgs = starmap(
+        render_spider_config,
+        zip(
+            cfg_template.spider_configs,
+            cfg_template.spider_params,
+            repeat(request.params),
+        )
+    )
 
     spider_job_ids = []
     for spider_cfg in spider_cfgs:
@@ -59,21 +45,21 @@ def command_start_view(request):
             raise exc.HTTPBadGateway(
                 "Failed to start a required crawl for command '{}'."
                 " Scrapyd was not OK, it was '{status}': {message}".format(
-                    cfg_templates.name, **response)
+                    cfg_template.name, **response)
             )
         spider_job_ids.append(response['jobid'])
         LOG.info("For command at '%s', started crawl job with id '%s'.",
-                 cfg_templates.name, response['jobid'])
+                 cfg_template.name, response['jobid'])
 
     raise exc.HTTPFound(
         location=request.route_path(
             "command pending jobs",
-            name=cfg_templates.name,
+            name=cfg_template.name,
             jobid=encode_ids(spider_job_ids),
             _query=request.params,
         ),
         detail="Command '{}' started with {} crawls.".format(
-            cfg_templates.name, len(spider_job_ids))
+            cfg_template.name, len(spider_job_ids))
     )
 
 
@@ -90,7 +76,14 @@ def command_pending(request):
     if cfg_template is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
-    spider_cfgs = render_spider_config(request, cfg_template.spider_configs)
+    spider_cfgs = starmap(
+        render_spider_config,
+        zip(
+            cfg_template.spider_configs,
+            cfg_template.spider_params,
+            repeat(request.params),
+        )
+    )
 
     running = 0
     for job_id, spider_cfg in zip(job_ids, spider_cfgs):
@@ -130,98 +123,43 @@ def command_result(request):
     if cfg_template is None:
         raise exc.HTTPNotFound("Unknown resource.")
 
-    spider_cfgs = render_spider_config(request, cfg_template.spider_configs)
-
-    # Create pipes.
-    # This is slightly dangerous. Under load, by opening all connections at
-    # once we may run out of file descriptors. We cannot keep everything in
-    # memory either so the safer alternative would be to save to disk although
-    # we can run out of disc space... oh well.
-    LOG.info("Setting up pipes for command jobs: %s", job_ids)
-    filenames = []
-    input_streams = []
-    for job_id, spider_cfg in zip(job_ids, spider_cfgs):
-        try:
-            input_streams.append(ScrapydMediator(
-                settings, spider_cfg).retrieve_job_data(job_id, stream=True))
-
-            # Create named pipes for each data stream.
-            filename = tempfile.mktemp()
-            os.mkfifo(filename)
-            filenames.append(filename)
-        except urllib2.HTTPError as e:
-            raise exc.HTTPBadGateway(
-                "File server error.", comment="Error message: %s" % e)
+    spider_cfgs = starmap(
+        render_spider_config,
+        zip(
+            cfg_template.spider_configs,
+            cfg_template.spider_params,
+            repeat(request.params),
+        )
+    )
 
     args = dict(request.params)
-    for i, fn in enumerate(filenames):
+    for i, (job_id, spider_cfg) in enumerate(zip(job_ids, spider_cfgs)):
+        fn = ScrapydMediator(settings, spider_cfg).retrieve_job_data_fn(job_id)
         args['spider %d' % i] = fn
+
     cmd_line = cfg_template.cmd.format(**args)
     LOG.info("Starting command: %s", cmd_line)
     process = subprocess.Popen(
         cmd_line,
         stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         shell=True,
     )
 
-    # Make sure it started.
-    try:
-        process.wait(timeout=0.1)
+    LOG.info("Waiting until conn timeout for command to finish...")
+    stdout, stderr = process.communicate()
+    LOG.info("Process finished.")
 
-        msg = "Command died before sending data: %s" % cmd_line
-        LOG.error(msg)
-        raise exc.HTTPBadGateway(msg)
-    except subprocess.TimeoutExpired:
-        pass
+    if process.returncode != 0:
+        msg = "The command terminated with an return value of %s." \
+              " Process' standard error: %s" \
+              % (process.returncode, stderr)
+        LOG.warn(msg)
+        raise exc.HTTPBadGateway(detail=msg)
 
-    # Open the pipes for writing. This might block.
-    LOG.info("Opening pipes for writing for: %s", cmd_line)
-    pumpers = []
-    output_pipes = []
-    for fn, input_stream in zip(filenames, input_streams):
-        write_fifo_fd = os.open(fn, os.O_WRONLY)
-
-        pumpers.append(RequestsLinePumper(input_stream, write_fifo_fd))
-        output_pipes.append(write_fifo_fd)
-
-    # Feed the pipes without blocking until the command terminates.
-    LOG.info("Pumping IO for: %s", cmd_line)
-    output = []  # FIXME: This is bad as we are buffering in memory.
-    while pumpers:
-        try:
-            stdout, _ = process.communicate(timeout=0.01)
-            output.append(stdout)
-            break
-        except subprocess.TimeoutExpired:
-            for pumper in pumpers[:]:
-                if not pumper.pump():
-                    pumpers.remove(pumper)
-
-    # Cleanup. Close named pipes.
-    # Don't close input files as they belong to the framework.
-    LOG.info("Clean up for: %s", cmd_line)
-    for fn, fd in zip(filenames, output_pipes):
-        try:
-            os.close(fd)
-        except:
-            # If failed to close, it's bad but continue.
-            LOG.info("Failed to close file '%s'.", fn)
-        finally:
-            os.unlink(fn)
-
-    try:
-        LOG.info("Waiting for process to finish...")
-        stdout, _ = process.communicate(timeout=5)
-        output.append(stdout)
-        LOG.info("Process finished.")
-    except subprocess.TimeoutExpired:
-        process.kill()
-        LOG.warn("Process killed as it took too long.")
-
-    LOG.info("Command generated %s bytes.", sum(map(len, output)))
-
+    LOG.info("Command generated %s bytes.", len(stdout))
     request.response.content_type = cfg_template.content_type
-    request.response.text = ''.join(output)
+    request.response.body = stdout
     return request.response
 
 
@@ -230,7 +168,7 @@ def spider_start_view(request):
     settings = request.registry.settings
 
     cfg_template = find_spider_config_from_path(settings, request.path)
-    cfg = render_spider_config(request, cfg_template)
+    cfg = render_spider_config(cfg_template, request.params)
 
     mediator = ScrapydMediator(settings, cfg)
     response = mediator.start_job(request.params)

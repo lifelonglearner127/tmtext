@@ -11,7 +11,7 @@ with given.a_configured_scrapyd_mediator:
     mediator = ScrapydMediator(
         {
             ScrapydMediator.SCRAPYD_BASE_URL: 'scrapyd url',
-            ScrapydMediator.FILE_SERVER_BASE_URL: 'file server url',
+            ScrapydMediator.SCRAPYD_ITEMS_PATH: 'scrapyd items path',
         },
         SpiderConfig('spider name', 'spider project')
     )
