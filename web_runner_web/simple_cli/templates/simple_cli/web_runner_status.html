@@ -1,0 +1,27 @@
+{% load dictionary_extras %}
+
+<h1>Web Runner status page</h1>
+
+Web Runner Status: {{webRunner}}
+<br>
+Scrapyd alive: {{scrapyd_alive}}
+<br>
+Scrapyd operational: {{scrapyd_operational}}
+<br>
+<br>
+<br>
+Scrapyd projects and spiders:
+    <ul>
+        {% for project in scrapyd_projects %}
+        <li>{{ project }}:
+            <ul>
+                {% for spider in spiders|access:project %} 
+                <li> {{ spider }} </li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+<br>
+<br>
+<br>
