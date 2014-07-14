@@ -16,11 +16,11 @@ class ProcessText_test(unittest.TestCase):
 		self.urls_dict = []
 		for url in self.urls:
 			product = {}
-			product['url'] = url
-			product['page_content'] = urllib.urlopen(url).read()
-			request_url = BASE_URL_VIDEOREQ + _extract_product_id(url)
-			product['response'] = response = urllib.urlopen(request_url).read()
-			self.urls_dict.append(product)
+			# product['url'] = url
+			# product['page_content'] = urllib.urlopen(url).read()
+			# request_url = BASE_URL_VIDEOREQ + _extract_product_id(url)
+			# product['response'] = response = urllib.urlopen(request_url).read()
+			# self.urls_dict.append(product)
 
 	# def test_errors(self):
 	# 	for url in self.urls:
@@ -29,13 +29,26 @@ class ProcessText_test(unittest.TestCase):
 	# 		self.assertTrue('error' not in result)
 
 	def test_video_if_button(self):
-		for product in self.urls_dict:
+		#for product in self.urls_dict:
+		for url in self.urls:
+
+			product = {}
+			product['url'] = url
+			product['page_content'] = urllib.urlopen(url).read()
+			request_url = BASE_URL_VIDEOREQ + _extract_product_id(url)
+			product['response'] = response = urllib.urlopen(request_url).read()
 
 			if "'video')" in product['page_content']:
 				if 'flv' in product['response']:
 					print "YES", product['url']
 				else:
 					print "NO", product['url']
+
+			else:
+				if 'flv' in product['response']:
+					print 'no button but video'
+				else:
+					print "no button", product['url']
 
 			# if "'video')" in product['page_content']:
 			# 	self.assertTrue('flv' in product['response'])
