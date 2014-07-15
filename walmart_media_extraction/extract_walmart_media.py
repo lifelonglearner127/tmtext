@@ -15,6 +15,7 @@ BASE_URL_PDFREQ = "http://content.webcollage.net/walmart/smart-button?ignore-jsp
 # base URL for request for product reviews - formatted string
 BASE_URL_REVIEWSREQ = 'http://walmart.ugc.bazaarvoice.com/1336a/%20{0}/reviews.djs?format=embeddedhtml'
 
+
 def check_url_format(product_page_url):
 	m = re.match("http://www\.walmart\.com/ip/[0-9]+$", product_page_url)
 	return not not m
@@ -108,7 +109,8 @@ def product_info(product_page_url, info_type_list):
 	time_end = time.clock()
 	# don't pass load time as info to be extracted by _info_from_tree
 	return_load_time = "load_time" in info_type_list
-	info_type_list.remove("load_time")
+	if return_load_time:
+		info_type_list.remove("load_time")
 	ret_dict = _info_from_tree(product_page_url, tree, info_type_list)
 	# add load time to dictionary -- if it's in the list
 	# TODO:
@@ -130,16 +132,6 @@ def page_tree(product_page_url):
 # This method is intended to act as a unitary way of getting all data needed,
 # looking to avoid generating the html tree for each kind of data (if there is more than 1 requested).
 def _info_from_tree(product_page_url, tree_html, info_type_list):
-	# dictionary mapping type of info to be extracted to the method that does it
-	info_to_method = { \
-		"name" : _product_name_from_tree, \
-		"keywords" : _meta_keywords_from_tree, \
-		"short_desc" : _short_description_from_tree, \
-		"long_desc" : _long_description_from_tree, \
-		"price" : _price_from_tree, \
-		"anchors" : _anchors_from_tree \
-	}
-
 	results_dict = {}
 
 	for info in info_type_list:
@@ -219,6 +211,21 @@ def main(args):
 	# create json object with video and pdf urls
 	#return json.dumps(media_for_url(product_page_url))
 #	return json.dumps(reviews_for_url(product_page_url))
+
+
+# TODO:
+#      figure out how to declare this in the beginning?
+# dictionary mapping type of info to be extracted to the method that does it
+# also used to define types of data that can be requested to the REST service
+info_to_method = { \
+	"name" : _product_name_from_tree, \
+	"keywords" : _meta_keywords_from_tree, \
+	"short_desc" : _short_description_from_tree, \
+	"long_desc" : _long_description_from_tree, \
+	"price" : _price_from_tree, \
+	"anchors" : _anchors_from_tree \
+}
+
 
 if __name__=="__main__":
 	print main(sys.argv)
