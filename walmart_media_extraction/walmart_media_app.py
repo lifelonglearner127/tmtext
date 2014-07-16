@@ -2,7 +2,7 @@
 
 from flask import Flask, jsonify, abort, request
 from extract_walmart_media import media_for_url, check_url_format, reviews_for_url, \
-pdf_for_url, video_for_url, product_info, info_to_method
+pdf_for_url, video_for_url, product_info, DATA_TYPES, DATA_TYPES_SPECIAL
 
 app = Flask(__name__)
 
@@ -38,10 +38,10 @@ def validate_args(arguments):
 
 	# also flatten list of lists arguments
 	argument_values = map(lambda s: unicode(s), sum(arguments.values(), []))
-	permitted_values = map(lambda s: unicode(s), info_to_method.keys() + ['video', 'pdf', 'reviews'])
+	permitted_values = map(lambda s: unicode(s), DATA_TYPES.keys() + DATA_TYPES_SPECIAL.keys())
 	permitted_keys = [u'data']
 
-	# if there are other keys besides "data" or other values outside of the predefined data types (info_to_method), return invalid usage
+	# if there are other keys besides "data" or other values outside of the predefined data types (DATA_TYPES), return invalid usage
 	if argument_keys != permitted_keys or set(argument_values).difference(set(permitted_values)):
 		# TODO:
 		#      improve formatting of this message
@@ -52,7 +52,7 @@ def validate_args(arguments):
 # general resource for getting walmart data.
 # can be used without arguments, in which case it will return all data
 # or with arguments like "data=<data_type1>&data=<data_type2>..." in which case it will return the specified data
-# the <data_type> values must be among the keys of info_to_method imported dictionary
+# the <data_type> values must be among the keys of DATA_TYPES imported dictionary
 @app.route('/get_walmart_data/<path:url>', methods=['GET'])
 def get_data(url):
 
@@ -66,27 +66,15 @@ def get_data(url):
 
 	# return all data if there are no arguments
 	if not request_arguments:
-		media_data = media_for_url(url)
-		reviews_data = reviews_for_url(url)
-		product_page_data = product_info(url)
-		# TODO:
-		#      add missing info
-		ret = dict(media_data.items() + reviews_data.items() + product_page_data.items())
+		ret = product_info(url)
 
 		return jsonify(ret)
 
 	# there are request arguments, validate them
 	validate_args(request_arguments)
 
-	# info extracted from product page
 	ret = product_info(url, request_arguments['data'])
-	# special info (not from product page):
-	if 'video' in request_arguments['data']:
-		ret.update(video_for_url(url))
-	if 'pdf' in request_arguments['data']:
-		ret.update(pdf_for_url['data'])
-	if 'reviews' in request_arguments['data']:
-		ret.update(reviews_for_url['data'])
+	
 	return jsonify(ret)
 
 
@@ -135,4 +123,4 @@ def handle_not_found(error):
 	return response
 
 if __name__ == '__main__':
-    app.run('0.0.0.0', port=80, debug=True)
+    app.run('0.0.0.0', port=80)

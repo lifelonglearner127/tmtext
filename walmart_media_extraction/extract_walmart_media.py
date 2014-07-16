@@ -105,8 +105,9 @@ def reviews_for_url(product_page_url):
 def product_info(product_page_url, info_type_list = None):
 
 	if not info_type_list:
-		info_type_list_copy = info_to_method.keys()
-
+		info_type_list = DATA_TYPES.keys()
+	
+	# copy of info list to send to _info_from_tree
 	info_type_list_copy = list(info_type_list)
 
 	# build page xml tree. also measure time it took and assume it's page load time (the rest is neglijable)
@@ -119,7 +120,7 @@ def product_info(product_page_url, info_type_list = None):
 		info_type_list_copy.remove("load_time")
 
 	# remove special info that is not to be extracted from the product page (and handled separately)
-	for special_info in ['video', 'pdf', 'reviews']:
+	for special_info in DATA_TYPES_SPECIAL.keys():
 		if special_info in info_type_list_copy:
 			info_type_list_copy.remove(special_info)
 	ret_dict = _info_from_tree(product_page_url, tree, info_type_list_copy)
@@ -129,6 +130,12 @@ def product_info(product_page_url, info_type_list = None):
 	#      - what happens if there are requests to js info too? count that load time as well?
 	if return_load_time:
 		ret_dict["load_time"] = round(time_end - time_start, 2)
+
+	# add special data
+	for special_info in DATA_TYPES_SPECIAL:
+		if special_info in info_type_list:
+			ret_dict.update(DATA_TYPES_SPECIAL[special_info](product_page_url))
+
 	return ret_dict
 
 # method that returns xml tree of page, to extract the desired elemets from
@@ -147,7 +154,7 @@ def _info_from_tree(product_page_url, tree_html, info_type_list):
 
 	for info in info_type_list:
 		try:
-			results = info_to_method[info](tree_html)
+			results = DATA_TYPES[info](tree_html)
 		except IndexError, e:
 			sys.stderr.write("ERROR: No " + info + " for " + product_page_url + ":\n" + str(e) + "\n")
 			results = None
@@ -224,16 +231,29 @@ def main(args):
 
 # TODO:
 #      figure out how to declare this in the beginning?
-# dictionary mapping type of info to be extracted to the method that does it
+# dictionaries mapping type of info to be extracted to the method that does it
 # also used to define types of data that can be requested to the REST service
-info_to_method = { \
+# 
+# data extracted from product page
+# their associated methods return the raw data
+DATA_TYPES = { \
+	# Info extracted from product page
 	"name" : _product_name_from_tree, \
 	"keywords" : _meta_keywords_from_tree, \
 	"short_desc" : _short_description_from_tree, \
 	"long_desc" : _long_description_from_tree, \
 	"price" : _price_from_tree, \
 	"anchors" : _anchors_from_tree, \
-	"load_time": None,
+
+	"load_time": None \
+	}
+
+# special data that can't be extracted from the product page
+# associated methods return already built dictionary containing the data
+DATA_TYPES_SPECIAL = { \
+	"video_url" : video_for_url, \
+	"pdf_url" : pdf_for_url, \
+	"reviews" : reviews_for_url \
 }
 
 
