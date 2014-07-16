@@ -196,7 +196,7 @@ def _long_description_from_tree(tree_html):
 # TODO:
 #      - test this for many products. xpath might not be general enough
 def _price_from_tree(tree_html):
-	return "".join(tree_html.xpath("//span[@class='clearfix camelPrice priceInfoOOS']//text()")).strip()
+	return "".join(tree_html.xpath("//*[contains(@class, 'camelPrice')]//text()")).strip()
 
 # extract product price from its product product page tree
 # ! may throw exception if not found
