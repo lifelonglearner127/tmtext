@@ -100,24 +100,35 @@ def reviews_for_url(product_page_url):
 # extract product info from walmart product page.
 # (note: this is for info that can be extracted directly from the product page, not content generated through javascript)
 # Additionally from _info_from_tree(), this method extracts page load time.
-# parameter: types of info to be extracted as a list of strings
+# parameter: types of info to be extracted as a list of strings, or None for all info
 # return: dictionary with type of info as key and extracted info as value
-def product_info(product_page_url, info_type_list):
+def product_info(product_page_url, info_type_list = None):
+
+	if not info_type_list:
+		info_type_list_copy = info_to_method.keys()
+
+	info_type_list_copy = list(info_type_list)
+
 	# build page xml tree. also measure time it took and assume it's page load time (the rest is neglijable)
-	time_start = time.clock()
+	time_start = time.time()
 	tree = page_tree(product_page_url)
-	time_end = time.clock()
+	time_end = time.time()
 	# don't pass load time as info to be extracted by _info_from_tree
-	return_load_time = "load_time" in info_type_list
+	return_load_time = "load_time" in info_type_list_copy
 	if return_load_time:
-		info_type_list.remove("load_time")
-	ret_dict = _info_from_tree(product_page_url, tree, info_type_list)
+		info_type_list_copy.remove("load_time")
+
+	# remove special info that is not to be extracted from the product page (and handled separately)
+	for special_info in ['video', 'pdf', 'reviews']:
+		if special_info in info_type_list_copy:
+			info_type_list_copy.remove(special_info)
+	ret_dict = _info_from_tree(product_page_url, tree, info_type_list_copy)
 	# add load time to dictionary -- if it's in the list
 	# TODO:
 	#      - format for load_time?
 	#      - what happens if there are requests to js info too? count that load time as well?
 	if return_load_time:
-		ret_dict["load_time"] = time_end - time_start
+		ret_dict["load_time"] = round(time_end - time_start, 2)
 	return ret_dict
 
 # method that returns xml tree of page, to extract the desired elemets from
@@ -167,7 +178,6 @@ def _short_description_from_tree(tree_html):
 # extract product long description from its product product page tree
 # ! may throw exception if not found
 # TODO:
-#      - this includes the short description -- is this what we want?
 #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
 def _long_description_from_tree(tree_html):
 	full_description = " ".join(tree_html.xpath("//div[@itemprop='description']//text()")).strip()
@@ -177,7 +187,6 @@ def _long_description_from_tree(tree_html):
 # extract product price from its product product page tree
 # ! may throw exception if not found
 # TODO:
-#      - what data type should this be? string like "$500"? or integer/float?
 #      - test this for many products. xpath might not be general enough
 def _price_from_tree(tree_html):
 	return "".join(tree_html.xpath("//span[@class='clearfix camelPrice priceInfoOOS']//text()")).strip()
@@ -223,7 +232,8 @@ info_to_method = { \
 	"short_desc" : _short_description_from_tree, \
 	"long_desc" : _long_description_from_tree, \
 	"price" : _price_from_tree, \
-	"anchors" : _anchors_from_tree \
+	"anchors" : _anchors_from_tree, \
+	"load_time": None,
 }
 
 

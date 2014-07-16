@@ -38,16 +38,15 @@ def validate_args(arguments):
 
 	# also flatten list of lists arguments
 	argument_values = map(lambda s: unicode(s), sum(arguments.values(), []))
-	permitted_values = map(lambda s: unicode(s), info_to_method.keys())
+	permitted_values = map(lambda s: unicode(s), info_to_method.keys() + ['video', 'pdf', 'reviews'])
 	permitted_keys = [u'data']
 
-	print "ARG VALUES", argument_values, "PERMITTED VALUES", permitted_values
 	# if there are other keys besides "data" or other values outside of the predefined data types (info_to_method), return invalid usage
 	if argument_keys != permitted_keys or set(argument_values).difference(set(permitted_values)):
 		# TODO:
 		#      improve formatting of this message
 		raise InvalidUsage("Invalid usage: Request arguments must be of the form '?data=<data_1>&data=<data_2>&data=<data_2>...,\n \
-			with the <data_i> values among the following keywords: \n" + str(permitted_values) + str(set(argument_values).difference(set(permitted_values))))
+			with the <data_i> values among the following keywords: \n" + str(permitted_values))
 
 
 # general resource for getting walmart data.
@@ -69,20 +68,25 @@ def get_data(url):
 	if not request_arguments:
 		media_data = media_for_url(url)
 		reviews_data = reviews_for_url(url)
+		product_page_data = product_info(url)
 		# TODO:
 		#      add missing info
-		ret = dict(media_data.items() + reviews_data.items())
+		ret = dict(media_data.items() + reviews_data.items() + product_page_data.items())
 
 		return jsonify(ret)
 
 	# there are request arguments, validate them
-	# TODO:
-	#      add implementation of validate_args
 	validate_args(request_arguments)
-	# TODO:
-	#      support special data here, like video, PDF, reviews... (not just product info = extracted from the product page)
-	print "ARGS", dict(request_arguments)
+
+	# info extracted from product page
 	ret = product_info(url, request_arguments['data'])
+	# special info (not from product page):
+	if 'video' in request_arguments['data']:
+		ret.update(video_for_url(url))
+	if 'pdf' in request_arguments['data']:
+		ret.update(pdf_for_url['data'])
+	if 'reviews' in request_arguments['data']:
+		ret.update(reviews_for_url['data'])
 	return jsonify(ret)
 
 
@@ -131,4 +135,4 @@ def handle_not_found(error):
 	return response
 
 if __name__ == '__main__':
-    app.run('0.0.0.0', port=80)
+    app.run('0.0.0.0', port=80, debug=True)
