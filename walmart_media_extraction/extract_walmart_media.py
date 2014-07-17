@@ -177,6 +177,12 @@ def _product_name_from_tree(tree_html):
 def _meta_keywords_from_tree(tree_html):
 	return tree_html.xpath("//meta[@name='Keywords']/@content")[0]
 
+# extract meta "brand" tag for a product from its product page tree
+# ! may throw exception if not found
+def _meta_brand_from_tree(tree_html):
+	return tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
+
+
 # extract product short description from its product page tree
 # ! may throw exception if not found
 def _short_description_from_tree(tree_html):
@@ -278,6 +284,7 @@ DATA_TYPES = { \
 	# Info extracted from product page
 	"name" : _product_name_from_tree, \
 	"keywords" : _meta_keywords_from_tree, \
+	"brand" : _meta_brand_from_tree, \
 	"short_desc" : _short_description_from_tree, \
 	"long_desc" : _long_description_from_tree, \
 	"price" : _price_from_tree, \
@@ -316,6 +323,8 @@ if __name__=="__main__":
 ##  - number of reviews
 ##  - model
 ##  - list of features
+##  - meta brand tag
+
 ##  
 ## To implement:
 ## 	- number of images, URLs of images
@@ -324,5 +333,4 @@ if __name__=="__main__":
 ##  - number of features (?)
 ##  - category info (name, code, parents)
 ##  - minimum review value, maximum review value
-##  - meta brand tag
 ##  - sold by walmart / sold by marketplace sellers
