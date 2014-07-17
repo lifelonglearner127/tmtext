@@ -221,6 +221,11 @@ def _htags_from_tree(tree_html):
 
 	return htags_dict
 
+# extract product model from its product product page tree
+# ! may throw exception if not found
+def _model_from_tree(tree_html):
+	return tree_html.xpath("//table[@class='SpecTable']//td[contains(text(),'Model')]/following-sibling::*/text()")[0]
+
 # clean text inside html tags - remove html entities, trim spaces
 def _clean_text(text):
 	return re.sub("&nbsp;", " ", text).strip()
@@ -262,6 +267,7 @@ DATA_TYPES = { \
 	"price" : _price_from_tree, \
 	"anchors" : _anchors_from_tree, \
 	"htags" : _htags_from_tree, \
+	"model" : _model_from_tree, \
 
 	"load_time": None \
 	}
@@ -291,6 +297,7 @@ if __name__=="__main__":
 ##  - H tags 
 ##  - page load time (?)
 ##  - number of reviews
+##  - model
 ##  
 ## To implement:
 ## 	- number of images, URLs of images
