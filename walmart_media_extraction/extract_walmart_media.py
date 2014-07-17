@@ -248,6 +248,11 @@ def _features_from_tree(tree_html):
 
 	return all_features_text
 
+# extract page title from its product product page tree
+# ! may throw exception if not found
+def _title_from_tree(tree_html):
+	return tree_html.xpath("//title//text()")[0].strip()
+
 # clean text inside html tags - remove html entities, trim spaces
 def _clean_text(text):
 	return re.sub("&nbsp;", " ", text).strip()
@@ -292,6 +297,7 @@ DATA_TYPES = { \
 	"htags" : _htags_from_tree, \
 	"model" : _model_from_tree, \
 	"features" : _features_from_tree, \
+	"title" : _title_from_tree, \
 
 	"load_time": None \
 	}
@@ -324,6 +330,7 @@ if __name__=="__main__":
 ##  - model
 ##  - list of features
 ##  - meta brand tag
+##  - page title
 
 ##  
 ## To implement:
