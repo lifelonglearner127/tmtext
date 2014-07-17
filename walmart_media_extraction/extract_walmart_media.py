@@ -153,6 +153,7 @@ def _info_from_tree(product_page_url, tree_html, info_type_list):
 	results_dict = {}
 
 	for info in info_type_list:
+
 		try:
 			results = DATA_TYPES[info](tree_html)
 		except IndexError, e:
@@ -160,7 +161,7 @@ def _info_from_tree(product_page_url, tree_html, info_type_list):
 			results = None
 		except Exception, e:
 			sys.stderr.write("ERROR: Unknown error extracting " + info + " for " + product_page_url + ":\n" + str(e) + "\n")
-			retults = None
+			results = None
 
 		results_dict[info] = results
 
@@ -210,7 +211,6 @@ def _anchors_from_tree(tree_html):
 	return sum(filter(None, map(lambda s: re.findall("#.+", s), tree_html.xpath("//a/@href"))), [])
 
 # extract htags (h1, h2) from its product product page tree
-# ! may throw exception if not found
 def _htags_from_tree(tree_html):
 	htags_dict = {}
 
@@ -225,6 +225,22 @@ def _htags_from_tree(tree_html):
 # ! may throw exception if not found
 def _model_from_tree(tree_html):
 	return tree_html.xpath("//table[@class='SpecTable']//td[contains(text(),'Model')]/following-sibling::*/text()")[0]
+
+# extract product features list from its product product page tree, return as string
+def _features_from_tree(tree_html):
+	# join all text in spec table; separate rows by newlines and eliminate spaces between cells
+	rows = tree_html.xpath("//table[@class='SpecTable']//tr")
+	# list of lists of cells (by rows)
+	cells = map(lambda row: row.xpath(".//td//text()"), rows)
+	# list of text in each row
+	rows_text = map(\
+		lambda row: "".join(\
+			map(lambda cell: cell.strip(), row)\
+			), \
+		cells)
+	all_features_text = "\n".join(rows_text)
+
+	return all_features_text
 
 # clean text inside html tags - remove html entities, trim spaces
 def _clean_text(text):
@@ -268,6 +284,7 @@ DATA_TYPES = { \
 	"anchors" : _anchors_from_tree, \
 	"htags" : _htags_from_tree, \
 	"model" : _model_from_tree, \
+	"features" : _features_from_tree, \
 
 	"load_time": None \
 	}
@@ -298,6 +315,7 @@ if __name__=="__main__":
 ##  - page load time (?)
 ##  - number of reviews
 ##  - model
+##  - list of features
 ##  
 ## To implement:
 ## 	- number of images, URLs of images
@@ -308,4 +326,3 @@ if __name__=="__main__":
 ##  - minimum review value, maximum review value
 ##  - meta brand tag
 ##  - sold by walmart / sold by marketplace sellers
-##  - list of features
