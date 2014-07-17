@@ -209,6 +209,23 @@ def _anchors_from_tree(tree_html):
 	# flatten list with sum()
 	return sum(filter(None, map(lambda s: re.findall("#.+", s), tree_html.xpath("//a/@href"))), [])
 
+# extract htags (h1, h2) from its product product page tree
+# ! may throw exception if not found
+def _htags_from_tree(tree_html):
+	htags_dict = {}
+
+	# add h1 tags text to the list corresponding to the "h1" key in the dict
+	htags_dict["h1"] = map(lambda t: _clean_text(t), tree_html.xpath("//h1//text()[normalize-space()!='']"))
+	# add h2 tags text to the list corresponding to the "h2" key in the dict
+	htags_dict["h2"] = map(lambda t: _clean_text(t), tree_html.xpath("//h2//text()[normalize-space()!='']"))
+
+	return htags_dict
+
+# clean text inside html tags - remove html entities, trim spaces
+def _clean_text(text):
+	return re.sub("&nbsp;", " ", text).strip()
+
+
 def main(args):
 	# check if there is an argument
 	if len(args) <= 1:
@@ -244,6 +261,7 @@ DATA_TYPES = { \
 	"long_desc" : _long_description_from_tree, \
 	"price" : _price_from_tree, \
 	"anchors" : _anchors_from_tree, \
+	"htags" : _htags_from_tree, \
 
 	"load_time": None \
 	}
@@ -269,7 +287,8 @@ if __name__=="__main__":
 ##  - price
 ##  - url of video
 ##  - url of pdf
-##  - anchors
+##  - anchors (?)
+##  - H tags 
 ##  - page load time (?)
 ##  - number of reviews
 ##  
@@ -278,5 +297,8 @@ if __name__=="__main__":
 ##  - number of videos, URLs of videos if more than 1
 ##  - number of pdfs
 ##  - number of features (?)
-##  - H tags (?)
 ##  - category info (name, code, parents)
+##  - minimum review value, maximum review value
+##  - meta brand tag
+##  - sold by walmart / sold by marketplace sellers
+##  - list of features
