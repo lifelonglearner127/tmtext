@@ -14,6 +14,7 @@ from web_runner.config_util import find_command_config_from_name, \
     render_spider_config
 from web_runner.scrapyd import ScrapydMediator, ScrapydInterface
 from web_runner.util import encode_ids, decode_ids
+import web_runner.db
 
 
 LOG = logging.getLogger(__name__)
@@ -51,6 +52,14 @@ def command_start_view(request):
         spider_job_ids.append(response['jobid'])
         LOG.info("For command at '%s', started crawl job with id '%s'.",
                  cfg_template.name, response['jobid'])
+
+    # Storing the request in the internal DB
+    dbinterf = web_runner.db.DbInterface(settings['db_filename'], 
+      recreate=False)
+    command_name = request.path.strip('/')
+    dbinterf.new_command(command_name, dict(request.params), spider_job_ids)
+    dbinterf.close()
+    
 
     raise exc.HTTPFound(
         location=request.route_path(
