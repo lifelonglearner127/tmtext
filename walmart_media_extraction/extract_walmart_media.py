@@ -248,6 +248,12 @@ def _features_from_tree(tree_html):
 
 	return all_features_text
 
+# extract number of features from tree
+# ! may throw exception if not found
+def _nr_features_from_tree(tree_html):
+	# select table rows with more than 2 cells (the others are just headers), count them
+	return len(filter(lambda row: len(row.xpath(".//td"))>1, tree_html.xpath("//table[@class='SpecTable']//tr")))
+
 # extract page title from its product product page tree
 # ! may throw exception if not found
 def _title_from_tree(tree_html):
@@ -297,6 +303,7 @@ DATA_TYPES = { \
 	"htags" : _htags_from_tree, \
 	"model" : _model_from_tree, \
 	"features" : _features_from_tree, \
+	"nr_features" : _nr_features_from_tree, \
 	"title" : _title_from_tree, \
 
 	"load_time": None \
@@ -331,13 +338,13 @@ if __name__=="__main__":
 ##  - list of features
 ##  - meta brand tag
 ##  - page title
+##  - number of features
 
 ##  
 ## To implement:
 ## 	- number of images, URLs of images
 ##  - number of videos, URLs of videos if more than 1
 ##  - number of pdfs
-##  - number of features (?)
 ##  - category info (name, code, parents)
 ##  - minimum review value, maximum review value
 ##  - sold by walmart / sold by marketplace sellers
