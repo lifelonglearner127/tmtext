@@ -259,6 +259,22 @@ def _nr_features_from_tree(tree_html):
 def _title_from_tree(tree_html):
 	return tree_html.xpath("//title//text()")[0].strip()
 
+# extract product seller meta keyword from its product product page tree
+# ! may throw exception if not found
+def _seller_meta_from_tree(tree_html):
+	return tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
+
+# extract product seller information from its product product page tree (using h2 visible tags)
+# TODO:
+#      test this in conjuction with _seller_meta_from_tree; also test at least one of the values is 1
+def _seller_from_tree(tree_html):
+	seller_info = {}
+	h2_tags = map(lambda text: _clean_text(text), tree_html.xpath("//h2//text()"))
+	seller_info['owned'] = 1 if "Buy from Walmart" in h2_tags else 0
+	seller_info['marketplace'] = 1 if "Buy from Marketplace" in h2_tags else 0
+
+	return seller_info
+
 # clean text inside html tags - remove html entities, trim spaces
 def _clean_text(text):
 	return re.sub("&nbsp;", " ", text).strip()
@@ -305,6 +321,7 @@ DATA_TYPES = { \
 	"features" : _features_from_tree, \
 	"nr_features" : _nr_features_from_tree, \
 	"title" : _title_from_tree, \
+	"seller": _seller_from_tree, \
 
 	"load_time": None \
 	}
@@ -339,6 +356,7 @@ if __name__=="__main__":
 ##  - meta brand tag
 ##  - page title
 ##  - number of features
+##  - sold by walmart / sold by marketplace sellers
 
 ##  
 ## To implement:
@@ -347,4 +365,3 @@ if __name__=="__main__":
 ##  - number of pdfs
 ##  - category info (name, code, parents)
 ##  - minimum review value, maximum review value
-##  - sold by walmart / sold by marketplace sellers
