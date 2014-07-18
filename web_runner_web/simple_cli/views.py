@@ -63,6 +63,30 @@ def web_runner_logs_view(request, logfile_id):
     response.write(fh.read())
 
     return response
+
+
+def web_runner_lastrequests(request, n=None):
+    """Display a table with the last n requests"""
+ 
+    # TODO: Method with a lot of things to improve:
+    # * manage max lines
+    # * max lines should be in simple_cli
+    # * handle errors calling the REST API
+    # * None fields should be displayed empty
+    # * Creation date format
+    # * TZ in creation date
+    try:
+        base_url = settings.WEB_RUNNER_BASE_URL
+        url = '%slast_requests' % base_url
+        req = requests.get(url)
+        error = False
+    except requests.exceptions.RequestException as e:
+        error = True
+
+    context = {'last_requests': req.json()}
+    return render(request, 'simple_cli/last_requests.html', context)
+    
+    return HttpResponse("Hola")
     
 
 # vim: set expandtab ts=4 sw=2:
