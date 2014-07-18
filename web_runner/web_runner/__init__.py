@@ -57,6 +57,7 @@ def main(global_config, **settings):
     config.add_route("command pending jobs", '/command/{name}/pending/{jobid}/')
     config.add_route("command job results", '/command/{name}/result/{jobid}/')
     config.add_route("status", '/status/')
+    config.add_route("last request status", '/last_requests')
 
     add_routes(settings, config)
 

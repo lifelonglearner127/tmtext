@@ -170,6 +170,35 @@ class DbInterface(object):
         """
         return self._new_request(name, COMMAND, params, jobids)
 
+ 
+    def get_last_requests(self, size):
+        """Returns the last 'size' requests within the DB
+
+        The output is a list of dictionary, each one representing a request.
+        The dict keys are:
+          * name, type, group_name, site, params(type: json), creation
+        """
+
+        cursor = self._conn.cursor()
+        sql = '''SELECT id, name, type, group_name, site, params, creation 
+          FROM requests 
+          ORDER BY creation DESC 
+          LIMIT %d''' % size;
+        cursor.execute(sql)
+
+        output = []
+        for row in cursor.fetchall():
+            (id, name, type, group_name, site, params, creation) = row
+            row_dict = {
+              'name': name,
+              'type': type,
+              'group_name': group_name,
+              'site': site,
+              'params': params,
+              'creation': creation}
+            output.append(row_dict)
+        
+        return output
 
 if __name__ == '__main__':
     dbinterf = DbInterface('/tmp/web_runner.db', recreate=False)
@@ -178,7 +207,9 @@ if __name__ == '__main__':
         "searchterms_str": "laundry detergent", 
         "site": "walmart", 
         "quantity": "100"}
-    dbinterf.new_command('gabo name', params, None)
+    #dbinterf.new_command('gabo name', params, None)
+    last_reqs = dbinterf.get_last_requests(2)
+    print(last_reqs)
     dbinterf.close()
     
 
