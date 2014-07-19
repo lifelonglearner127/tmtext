@@ -202,13 +202,11 @@ def _long_description_from_tree(tree_html):
 
 
 # extract product price from its product product page tree
-# ! may throw exception if not found
-# TODO:
-#      - test this for many products. xpath might not be general enough
 def _price_from_tree(tree_html):
-	price = "".join(tree_html.xpath("//*[contains(@class, 'camelPrice')]//text()")).strip()
-	# don't return the empty string
-	if not price:
+	meta_price = tree_html.xpath("//meta[@itemprop='price']/@content")
+	if meta_price:
+		return meta_price[0]
+	else:
 		return None
 
 # extract product price from its product product page tree
