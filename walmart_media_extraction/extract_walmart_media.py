@@ -20,6 +20,9 @@ def check_url_format(product_page_url):
 	m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+$", product_page_url)
 	return not not m
 
+# TODO:
+#      better way of extracting id now that URL format is more permissive
+#      though this method still seems to work...
 def _extract_product_id(product_page_url):
 	product_id = product_page_url.split('/')[-1]
 	return product_id
