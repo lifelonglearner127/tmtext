@@ -97,8 +97,8 @@ def reviews_for_url(product_page_url):
 		average_review = re.findall(r"class=\\\"BVRRRatingNormalOutOf\\\"> <span class=\\\"BVRRNumber BVRRRatingNumber\\\">([0-9\.]+)<", content)[0]
 	except Exception, e:
 		sys.stderr.write("Error extracting reviews info: No reviews info found for product " + product_page_url + "\n")
-		return {"total_reviews": None, "average_review": None}
-	return {"total_reviews": reviews_count, "average_review": average_review}
+		return {"reviews" : {"total_reviews": None, "average_review": None}}
+	return {"reviews" : {"total_reviews": reviews_count, "average_review": average_review}}
 
 # extract product info from walmart product page.
 # (note: this is for info that can be extracted directly from the product page, not content generated through javascript)
@@ -252,7 +252,8 @@ def _features_from_tree(tree_html):
 		cells)
 	all_features_text = "\n".join(rows_text)
 
-	return all_features_text
+	# return dict with all features info
+	return {"features_list": all_features_text, "nr_features": _nr_features_from_tree(tree_html)}
 
 # extract number of features from tree
 # ! may throw exception if not found
@@ -325,7 +326,6 @@ DATA_TYPES = { \
 	"htags" : _htags_from_tree, \
 	"model" : _model_from_tree, \
 	"features" : _features_from_tree, \
-	"nr_features" : _nr_features_from_tree, \
 	"title" : _title_from_tree, \
 	"seller": _seller_from_tree, \
 
