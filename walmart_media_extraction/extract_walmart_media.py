@@ -190,6 +190,7 @@ def _meta_brand_from_tree(tree_html):
 # ! may throw exception if not found
 def _short_description_from_tree(tree_html):
 	short_description = " ".join(tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
+	# TODO: return None if no description
 	return short_description
 
 # extract product long description from its product product page tree
@@ -198,6 +199,7 @@ def _short_description_from_tree(tree_html):
 #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
 def _long_description_from_tree(tree_html):
 	full_description = " ".join(tree_html.xpath("//div[@itemprop='description']//text()")).strip()
+	# TODO: return None if no description
 	return full_description
 
 
@@ -215,10 +217,23 @@ def _price_from_tree(tree_html):
 #      - test
 #      - is format ok?
 def _anchors_from_tree(tree_html):
-	# get all links that match "#.+" (return part after #)
-	# filter empty matches with filter()
-	# flatten list with sum()
-	return sum(filter(None, map(lambda s: re.findall("#.+", s), tree_html.xpath("//a/@href"))), [])
+	# get all links found in the description text
+	description_node = tree_html.xpath("//div[@itemprop='description']")[0]
+	links = description_node.xpath(".//a")
+	nr_links = len(links)
+
+	links_dicts = []
+
+	for link in links:
+		# TODO: 
+		#       extract text even if nested in something?
+		#       better error handling (on a per link basis)
+		links_dicts.append({"href" : link.xpath("@href")[0], "text" : link.xpath("text()")[0]})
+
+	ret = {"quantity" : nr_links, "links" : links_dicts}
+
+	return ret
+
 
 # extract htags (h1, h2) from its product product page tree
 def _htags_from_tree(tree_html):
