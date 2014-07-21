@@ -108,7 +108,7 @@ def reviews_for_url(product_page_url):
 def product_info(product_page_url, info_type_list = None):
 
 	if not info_type_list:
-		info_type_list = DATA_TYPES.keys()
+		info_type_list = DATA_TYPES.keys() + DATA_TYPES_SPECIAL.keys()
 	
 	# copy of info list to send to _info_from_tree
 	info_type_list_copy = list(info_type_list)
