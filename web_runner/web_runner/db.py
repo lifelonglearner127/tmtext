@@ -67,7 +67,7 @@ class DbInterface(object):
           group_name VARCHAR,
           site VARCHAR,
           params TEXT,
-          creation DATETIME
+          creation TIMESTAMP
           )'''
 
         table2 = '''CREATE TABLE IF NOT EXISTS scrapy_jobs(
