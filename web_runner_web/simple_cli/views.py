@@ -110,7 +110,7 @@ def _process_request_to_display(reqList):
             try:
                 date = datetime.datetime.strptime(req['creation'], '%Y-%m-%d %H:%M:%S.%f')
                 dateStr = date.strftime('%x %X')
-                reqList[index]['creation'] = dateStr
+                reqList[index]['creation'] = dateStr + " (UTC)"
             except ValueError:
                 pass
     return
