@@ -13,6 +13,7 @@
     <th> Group Name </th>
     <th> Site Name </th>
     <th> Creation Date </th>
+    <th> IP </th>
     <th> Status </th>
   </tr>
 
@@ -21,7 +22,8 @@
     <td> {{ req.group_name}} </td>
     <td> {{ req.site}} </td>
     <td> {{ req.creation }} </td>
-    <td> N/A (yet) </td>
+    <td> {{ req.remote_ip }} </td>
+    <td> {{ req.status }} </td>
   </tr>
   {% endfor %}
 </table>
