@@ -14,6 +14,7 @@ from web_runner.config_util import find_command_config_from_name, \
     render_spider_config
 from web_runner.scrapyd import ScrapydMediator, ScrapydInterface
 from web_runner.util import encode_ids, decode_ids
+import web_runner.db
 
 
 LOG = logging.getLogger(__name__)
@@ -51,6 +52,14 @@ def command_start_view(request):
         spider_job_ids.append(response['jobid'])
         LOG.info("For command at '%s', started crawl job with id '%s'.",
                  cfg_template.name, response['jobid'])
+
+    # Storing the request in the internal DB
+    dbinterf = web_runner.db.DbInterface(settings['db_filename'], 
+      recreate=False)
+    command_name = request.path.strip('/')
+    dbinterf.new_command(command_name, dict(request.params), spider_job_ids)
+    dbinterf.close()
+    
 
     raise exc.HTTPFound(
         location=request.route_path(
@@ -178,6 +187,14 @@ def spider_start_view(request):
         raise exc.HTTPBadGateway(
             "Scrapyd was not OK, it was '{status}': {message}".format(
                 **response))
+
+    # Storing the request in the internal DB
+    dbinterf = web_runner.db.DbInterface(settings['db_filename'], 
+      recreate=False)
+    spider_name = request.path.strip('/')
+    dbinterf.new_spider(spider_name, dict(request.params), response['jobid'])
+    dbinterf.close()
+
     raise exc.HTTPFound(
         location=request.route_path("spider pending jobs",
                                     project=mediator.config.project_name,
@@ -254,4 +271,33 @@ def status(request):
       'webRunner': True}
 
     return output
+
+
+@view_config(route_name='last request status', request_method='GET', 
+  renderer='json')
+def last_request_status(request):
+    """Returns the last requests resquested
+
+    The request accepts an optional parameter size, which is the maxium
+    items returned.
+    """ 
+    settings = request.registry.settings
+
+    default_size = 10
+    size_str = request.params.get('size',default_size)
+    try:
+        size = int(size_str)
+    except ValueError:
+        size = default_size
+
+    dbinterf = web_runner.db.DbInterface(settings['db_filename'], 
+      recreate=False)
+    reqs = dbinterf.get_last_requests(size)
+    dbinterf.close()
+
+    return reqs
+
+
+
+
 # vim: set expandtab ts=4 sw=4:

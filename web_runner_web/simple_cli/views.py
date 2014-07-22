@@ -3,6 +3,7 @@ from django.http import HttpResponse, Http404
 from django.conf import settings
 
 import requests
+import datetime
 
 def index(request):
 #    return HttpResponse("Here will be the main page")
@@ -63,6 +64,55 @@ def web_runner_logs_view(request, logfile_id):
     response.write(fh.read())
 
     return response
-    
+
+
+def web_runner_lastrequests(request, n=None):
+    """Display a table with the last n requests"""
+ 
+    try:
+        base_url = settings.WEB_RUNNER_BASE_URL
+        url = '%slast_requests' % base_url
+        if n:
+            url += '?size=' + str(n)
+        req = requests.get(url)
+        error = False
+    except requests.exceptions.RequestException as e:
+        error = True
+        return HttpResponse("There are issues connecting with Web Runner", status=502)
+
+    req_info = req.json()
+    _process_request_to_display(req_info)
+    context = {'last_requests': req_info}
+    return render(request, 'simple_cli/last_requests.html', context)
+
+
+
+def _process_request_to_display(reqList):
+    """Transform an historic request list to be displayed 
+
+    reqList is the output of /last_requests/ REST service
+    This methods update the reqList list structure to;
+     a) Replace the None objects to empty strings
+     b) display the dates with the proper format
+    """
+    if reqList == None:
+        return
+
+    for index, req in enumerate(reqList):
+        # Replace the None for empty string
+        for key, value in req.items():
+            if value==None:
+                reqList[index][key] = ' '
+
+
+        # Print the date in correct format:
+        if 'creation' in req:
+            try:
+                date = datetime.datetime.strptime(req['creation'], '%Y-%m-%d %H:%M:%S.%f')
+                dateStr = date.strftime('%x %X')
+                reqList[index]['creation'] = dateStr
+            except ValueError:
+                pass
+    return
 
 # vim: set expandtab ts=4 sw=2:
