@@ -1,0 +1,31 @@
+{% load dictionary_extras %}
+
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stdstyle.css" />
+
+<h1>Last requests report</h1>
+
+<!--
+<table border="1" style="width:300px">
+<table class="reference notranslate">
+-->
+<table class="reference" style="width:60%">
+  <tr>
+    <th> Group Name </th>
+    <th> Site Name </th>
+    <th> Creation Data </th>
+    <th> Status </th>
+  </tr>
+
+  {% for req in last_requests %}
+  <tr>
+    <td> {{ req.group_name}} </td>
+    <td> {{ req.site}} </td>
+    <td> {{ req.creation }} </td>
+    <td> N/A (yet) </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<!--
+{{ last_requests}}
+-->
