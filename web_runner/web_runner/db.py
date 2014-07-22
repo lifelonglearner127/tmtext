@@ -67,7 +67,8 @@ class DbInterface(object):
           group_name VARCHAR,
           site VARCHAR,
           params TEXT,
-          creation TIMESTAMP
+          creation TIMESTAMP,
+          remote_ip VARCHAR
           )'''
 
         table2 = '''CREATE TABLE IF NOT EXISTS scrapy_jobs(
@@ -93,7 +94,7 @@ class DbInterface(object):
         return ret
 
 
-    def _new_request(self, name, command_type, params, jobids):
+    def _new_request(self, name, command_type, params, jobids, ip=None):
         """Add a new request to the DB:
 
         Input parameters:
@@ -115,8 +116,9 @@ class DbInterface(object):
         
         # Insert the main request
         insert_sql = '''INSERT INTO requests(name, type, group_name, site, 
-          params, creation) values(?,?,?,?,?,?)'''
-        sql_values= (name, command_type, group_name, site, params_json, creation)
+          params, creation, remote_ip) values(?,?,?,?,?,?,?)'''
+        sql_values= (name, command_type, group_name, site, params_json, 
+          creation, ip)
 
         try:        
             cursor = self._conn.cursor()
@@ -144,7 +146,7 @@ class DbInterface(object):
         return ret
 
 
-    def new_spider(self, name, params, jobid):
+    def new_spider(self, name, params, jobid, ip=None):
         """Insert a new spider into the DB
 
         Input parameters:
@@ -155,10 +157,10 @@ class DbInterface(object):
         Return: boolean with the operation success
         """
         jobids = [jobid] if jobid else None
-        return self._new_request(name, SPIDER, params, jobids)
+        return self._new_request(name, SPIDER, params, jobids, ip)
 
 
-    def new_command(self, name, params, jobids):
+    def new_command(self, name, params, jobids, ip=None):
         """Add a new command to the DB:
 
         Input parameters:
@@ -168,7 +170,7 @@ class DbInterface(object):
 
         Return: boolean with the operation success
         """
-        return self._new_request(name, COMMAND, params, jobids)
+        return self._new_request(name, COMMAND, params, jobids, ip)
 
  
     def get_last_requests(self, size):
@@ -180,7 +182,8 @@ class DbInterface(object):
         """
 
         cursor = self._conn.cursor()
-        sql = '''SELECT id, name, type, group_name, site, params, creation 
+        sql = '''SELECT id, name, type, group_name, site, params, creation,
+          remote_ip 
           FROM requests 
           ORDER BY creation DESC 
           LIMIT %d''' % size;
@@ -188,17 +191,32 @@ class DbInterface(object):
 
         output = []
         for row in cursor.fetchall():
-            (id, name, type, group_name, site, params, creation) = row
+            (id, name, type, group_name, site, params, creation, ip) = row
             row_dict = {
               'name': name,
               'type': type,
               'group_name': group_name,
               'site': site,
               'params': params,
-              'creation': creation}
+              'creation': creation,
+              'remote_ip': ip,
+              'jobids': self._get_jobids(id) }
             output.append(row_dict)
         
         return output
+
+
+
+    def _get_jobids(self, request_id):
+        """Return a tuple with all jobids asociated to a request id"""
+        
+        cursor = self._conn.cursor()
+        sql = 'SELECT scrapy_jobid FROM scrapy_jobs where request_id=?'
+        cursor.execute(sql, (request_id,))
+        output = tuple( jobid for jobid in cursor.fetchone() or () )
+
+        return output
+        
 
 if __name__ == '__main__':
     dbinterf = DbInterface('/tmp/web_runner.db', recreate=False)

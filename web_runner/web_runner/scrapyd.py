@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import logging
 import urlparse
 import json
@@ -163,5 +164,53 @@ class ScrapydInterface(object):
 
         return spiders
 
+
+    def get_jobids_status(self, projects=None):
+        """Return the status of the jobids associated to a project
+
+        The function returns a dictionary whose key is a jobid and the value
+        is a dictionary of Scrapyd's listjobs request structure
+
+        projects parameter is the list of project to query. If it is None,
+        get_jobids_status will query all projects
+        """
+
+        if not projects:
+            (status, projects) = self.get_projects()
+            if not status:
+                return None
+
+        ret = {}
+        for project in projects:
+            url = '%slistjobs.json?project=%s' % (self.scrapyd_url,
+              project)
+            try:
+                req = requests.get(url)
+            except requests.exceptions.RequestException, e:
+                return None
+
+            req_output = req.json()
+            if req_output['status'].lower() == 'ok':
+                for status in ('running', 'finished', 'pending'):
+                    for job_dict in req_output[status]:
+                        id = job_dict['id']
+                        ret[id] = job_dict
+                        ret[id]['status'] = status
+        
+        return ret
+
+
+
+if __name__ == '__main__':
+    si = ScrapydInterface('http://localhost:6800/')
+
+    (status, projects) = si.get_projects()
+    print('projects: %s' % projects)
+
+    spiders = {project: si.get_spiders(project) for project in projects}
+    print('spiders: %s' % spiders)
+
+    jobidsDict = si.get_jobids_status()
+    print("jobids: %s" % jobidsDict)
 
 # vim: set expandtab ts=4 sw=4:

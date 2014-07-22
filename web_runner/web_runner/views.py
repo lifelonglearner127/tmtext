@@ -18,6 +18,11 @@ import web_runner.db
 
 
 LOG = logging.getLogger(__name__)
+FINISH = 'finished'
+UNAVAILABLE = 'unavailable'
+RUNNING = 'running'
+PENDING = 'pending'
+
 
 
 # TODO Move command handling logic to a CommandMediator.
@@ -57,7 +62,8 @@ def command_start_view(request):
     dbinterf = web_runner.db.DbInterface(settings['db_filename'], 
       recreate=False)
     command_name = request.path.strip('/')
-    dbinterf.new_command(command_name, dict(request.params), spider_job_ids)
+    dbinterf.new_command(command_name, dict(request.params), spider_job_ids,
+      request.remote_addr)
     dbinterf.close()
     
 
@@ -192,7 +198,8 @@ def spider_start_view(request):
     dbinterf = web_runner.db.DbInterface(settings['db_filename'], 
       recreate=False)
     spider_name = request.path.strip('/')
-    dbinterf.new_spider(spider_name, dict(request.params), response['jobid'])
+    dbinterf.new_spider(spider_name, dict(request.params), response['jobid'],
+      request.remote_addr)
     dbinterf.close()
 
     raise exc.HTTPFound(
@@ -290,10 +297,38 @@ def last_request_status(request):
     except ValueError:
         raise exc.HTTPBadGateway(detail="Size parameter has incorrect value")
 
+    # Get last requests
     dbinterf = web_runner.db.DbInterface(settings['db_filename'], 
       recreate=False)
     reqs = dbinterf.get_last_requests(size)
     dbinterf.close()
+
+    # get The the jobid status dictionary
+    scrapyd_baseurl = settings['spider._scrapyd.base_url']
+    scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
+    jobids_status = scrapyd_interf.get_jobids_status()
+    
+    # For each request, determine the request status gathering 
+    # the information from all jobids related to it
+    for req in reqs:
+        final_status = FINISH
+        for jobid in req['jobids']:
+            # Set the final status
+            if not jobid in jobids_status:
+                final_status = UNAVAILABLE
+            else:
+                current_status = jobids_status[jobid]['status']
+                if current_status == RUNNING:
+                    if final_status != UNAVAILABLE:
+                        final_status = RUNNING
+                elif current_status == PENDING:
+                    if final_status not in (UNAVAILABLE, RUNNING):
+                        final_status = PENDING
+                elif current_status == FINISH:
+                    pass    # Default option
+
+        
+        req['status'] = final_status   # request final status
 
     return reqs
 
