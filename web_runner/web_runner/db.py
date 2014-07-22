@@ -111,7 +111,7 @@ class DbInterface(object):
         params_json = json.dumps(params)
         group_name = params.get('group_name')
         site =  params.get('site')
-        creation = datetime.datetime.today()
+        creation = datetime.datetime.utcnow()
         
         # Insert the main request
         insert_sql = '''INSERT INTO requests(name, type, group_name, site, 
