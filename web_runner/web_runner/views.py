@@ -288,7 +288,7 @@ def last_request_status(request):
     try:
         size = int(size_str)
     except ValueError:
-        size = default_size
+        raise exc.HTTPBadGateway(detail="Size parameter has incorrect value")
 
     dbinterf = web_runner.db.DbInterface(settings['db_filename'], 
       recreate=False)
