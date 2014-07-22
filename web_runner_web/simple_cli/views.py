@@ -69,21 +69,16 @@ def web_runner_logs_view(request, logfile_id):
 def web_runner_lastrequests(request, n=None):
     """Display a table with the last n requests"""
  
-    # TODO: Method with a lot of things to improve:
-    # * manage max lines
-    # * max lines should be in simple_cli
-    # * handle errors calling the REST API
-    # * None fields should be displayed empty
-    # * Creation date format
-    # * TZ in creation date
-    # * Path to store the DB
     try:
         base_url = settings.WEB_RUNNER_BASE_URL
         url = '%slast_requests' % base_url
+        if n:
+            url += '?size=' + str(n)
         req = requests.get(url)
         error = False
     except requests.exceptions.RequestException as e:
         error = True
+        return HttpResponse("There are issues connecting with Web Runner", status=502)
 
     req_info = req.json()
     _process_request_to_display(req_info)
@@ -91,7 +86,7 @@ def web_runner_lastrequests(request, n=None):
     return render(request, 'simple_cli/last_requests.html', context)
 
 
-    
+
 def _process_request_to_display(reqList):
     """Transform an historic request list to be displayed 
 
