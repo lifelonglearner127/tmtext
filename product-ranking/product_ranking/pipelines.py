@@ -8,7 +8,7 @@ import unittest
 import string
 
 
-class AddCalculatedFields(object):
+class AddSearchTermInTitleFields(object):
 
     _TRANSLATE_TABLE = string.maketrans('', '')
 
@@ -16,7 +16,7 @@ class AddCalculatedFields(object):
     def _normalize(s):
         try:
             return str(s).translate(
-                AddCalculatedFields._TRANSLATE_TABLE,
+                AddSearchTermInTitleFields._TRANSLATE_TABLE,
                 string.punctuation
             ).lower()
         except UnicodeEncodeError:
@@ -32,13 +32,14 @@ class AddCalculatedFields(object):
         product['search_term_in_title_interleaved'] = False
 
         try:
-            title = AddCalculatedFields._normalize(product['title'])
-            search_term = AddCalculatedFields._normalize(product['search_term'])
+            title = AddSearchTermInTitleFields._normalize(product['title'])
+            search_term = AddSearchTermInTitleFields._normalize(
+                product['search_term'])
             search_term_words = search_term.split()
 
             if search_term in title:
                 product['search_term_in_title_exactly'] = True
-            elif AddCalculatedFields._is_title_interleaved(
+            elif AddSearchTermInTitleFields._is_title_interleaved(
                     title, search_term_words):
                 product['search_term_in_title_interleaved'] = True
             else:
@@ -69,13 +70,13 @@ class AddCalculatedFields(object):
         return result
 
 
-class AddCalculatedFieldsTest(unittest.TestCase):
+class AddSearchTermInTitleFieldsTest(unittest.TestCase):
 
     def test_search_term_in_title_interleaved(self):
         item = dict(title="My Mary has a little Pony!",
                     search_term="Mary, a pony")
 
-        result = AddCalculatedFields.process_item(item, None)
+        result = AddSearchTermInTitleFields.process_item(item, None)
 
         assert result['search_term_in_title_interleaved']
         assert not result['search_term_in_title_partial']
