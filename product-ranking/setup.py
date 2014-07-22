@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import os
 
 setup(
-    name='project',
+    name='product-ranking',
     version='1.0',
     packages=find_packages(),
     entry_points={'scrapy': ['settings = product_ranking.settings']},
