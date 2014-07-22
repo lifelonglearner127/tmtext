@@ -220,7 +220,7 @@ class BaseProductsSpider(Spider):
         Sometimes an error status code is not returned and an error page is
         displayed. This methods detects that case for the search page.
         """
-        # Defaul implementation for sites that send proper status codes.
+        # Default implementation for sites that send proper status codes.
         return False
 
     def _scrape_total_matches(self, sel):
