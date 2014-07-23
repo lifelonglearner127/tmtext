@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 import unittest
-from extract_walmart_media import DATA_TYPES, DATA_TYPES_SPECIAL, page_tree
+from extract_walmart_media import DATA_TYPES, DATA_TYPES_SPECIAL, page_tree, reviews_for_url
 import requests
 import sys
 from lxml import html
@@ -205,6 +205,36 @@ class WalmartData_test(unittest.TestCase):
 			except AssertionError, e:
 				raise AssertionError(str(e) + " -- on url " + url)
 
+	# test if extraction of reviews from product page (new version)
+	# is consistent with extraction of reviews from separate request (old version)
+	def test_reviews_correct(self):
+		for url in self.urls:
+			print "On url ", url
+			response = requests.get(self.address % url + "?data=" + "reviews").json()
+			response2 = reviews_for_url(url)
+
+			try:
+				self.assertEqual(not not response[u'reviews'], not not response2['reviews']['total_reviews'])
+			except AssertionError, e:
+				raise AssertionError(str(e) + " -- on url " + url)
+
+
+			if not not response[u'reviews']:
+
+				nr_reviews = str(response[u'reviews']['total_reviews'])
+				average_review = str(response[u'reviews']['average_review'])
+
+				nr_reviews2 = re.sub(",", "", str(response2['reviews']['total_reviews']))
+				average_review2 = str(response2['reviews']['average_review'])
+				if "." not in average_review2:
+					average_review2 += '.0'
+
+				try:
+					self.assertEqual(nr_reviews, nr_reviews2)
+					self.assertEqual(average_review, average_review2)
+				except AssertionError, e:
+					raise AssertionError(str(e) + " -- on url " + url \
+						+ "\nReviews old: " + str(response2) + ";\nReviews new: " + str(response))
 
 	# def test_anchors_notnull(self)
 
