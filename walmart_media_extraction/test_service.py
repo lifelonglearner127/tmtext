@@ -84,7 +84,7 @@ class WalmartData_test(unittest.TestCase):
 			price = response["price"]
 			if price:
 				try:
-					self.assertTrue(not not re.match("\$[0-9]+\.?[0-9]+", price))
+					self.assertTrue(not not re.match("[0-9]+\.?[0-9]+", price))
 				except AssertionError, e:
 					raise AssertionError(str(e) + " -- on url " + url)
 
@@ -96,17 +96,25 @@ class WalmartData_test(unittest.TestCase):
 		else:
 			return None
 
+	def extract_page_price(self, url):
+		tree = page_tree(url)
+		page_price = "".join(tree.xpath("//*[contains(@class, 'camelPrice')]//text()")).strip()
+		if page_price:
+			return page_price
+		else:
+			return None
 
 	# test extracted price matches the one in the meta tags
 	def test_price_correct(self):
 		for url in self.urls:
+			print "On url ", url
 			response = requests.get(self.address % url + "?data=" + "price").json()
-			price = response["price"]
+			meta_price = response["price"]
 			# remove $ sign and reduntant zeroes after .
-			price_clean = re.sub("\.[0]+", ".0", price[1:])
-			meta_price = self.extract_meta_price(url)
-			if price:
+			page_price = self.extract_page_price(url)
+			if page_price:
 				try:
+					price_clean = re.sub("\.[0]+", ".0", page_price[1:])
 					self.assertEqual(price_clean, meta_price)
 				except AssertionError, e:
 					raise AssertionError(str(e) + " -- on url " + url)
@@ -118,16 +126,16 @@ class WalmartData_test(unittest.TestCase):
 	def test_pageload_notnull(self):
 		self.notnull_template("load_time")
 
-	def test_reviews_notnull(self):
-		# it can be empty or null
-		for url in self.urls:
-			print "On url ", url
-			response = requests.get(self.address % url + "?data=" + "reviews").json()
-			try:
-				self.assertTrue("average_review" in response)
-				self.assertTrue("total_reviews" in response)
-			except AssertionError, e:
-				raise AssertionError(str(e) + " -- on url " + url)
+	# def test_reviews_notnull(self):
+	# 	# it can be empty or null
+	# 	for url in self.urls:
+	# 		print "On url ", url
+	# 		response = requests.get(self.address % url + "?data=" + "reviews").json()
+	# 		try:
+	# 			self.assertTrue("average_review" in response)
+	# 			self.assertTrue("total_reviews" in response)
+	# 		except AssertionError, e:
+	# 			raise AssertionError(str(e) + " -- on url " + url)
 
 	def test_model_notnull(self):
 		exceptions = ["http://www.walmart.com/ip/5027010"]
@@ -162,9 +170,6 @@ class WalmartData_test(unittest.TestCase):
 
 	def test_title_notnull(self):
 		self.notnull_template("title")
-
-	def test_nrfeatures_notnull(self):
-		self.notnull_template("nr_features")
 
 	def test_seller_notnull(self):
 		for url in self.urls:
