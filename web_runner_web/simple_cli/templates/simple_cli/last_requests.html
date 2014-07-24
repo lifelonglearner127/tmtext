@@ -1,19 +1,33 @@
 {% load dictionary_extras %}
 
+<!DOCTYPE html>
+<html>
+
+<head>
 <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stdstyle.css" />
+</head>
 
+
+
+<body>
 <h1>Last requests report</h1>
-
 <!--
 <table border="1" style="width:300px">
 <table class="reference notranslate">
 -->
+
+
+<p align="right" class="reference" style="width:60%">
+    <iframe src="http://free.timeanddate.com/clock/i4956od3/fs12/tct/pct/ahr/tt0/th1/ta1" frameborder="0" width="276" height="16" allowTransparency="true"></iframe>
+</p>
+
 <table class="reference" style="width:60%">
   <tr>
     <th> Group Name </th>
     <th> Site Name </th>
     <th> Creation Date </th>
     <th> IP </th>
+    <th> Params </th>
     <th> Status </th>
   </tr>
 
@@ -23,6 +37,12 @@
     <td> {{ req.site}} </td>
     <td> {{ req.creation }} </td>
     <td> {{ req.remote_ip }} </td>
+    <td> 
+        {% for param_key, param_value in req.params.items %}
+            {{ param_key }}: {{ param_value }}
+            </br>
+        {% endfor %}
+    </td>
     <td> {{ req.status }} </td>
   </tr>
   {% endfor %}
@@ -31,3 +51,7 @@
 <!--
 {{ last_requests}}
 -->
+
+</body>
+</html>
+

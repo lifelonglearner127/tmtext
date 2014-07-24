@@ -4,6 +4,7 @@ from django.conf import settings
 
 import requests
 import datetime
+import json
 
 def index(request):
 #    return HttpResponse("Here will be the main page")
@@ -82,7 +83,8 @@ def web_runner_lastrequests(request, n=None):
 
     req_info = req.json()
     _process_request_to_display(req_info)
-    context = {'last_requests': req_info}
+    context = {'last_requests': req_info,
+      'now': datetime.datetime.utcnow()}
     return render(request, 'simple_cli/last_requests.html', context)
 
 
@@ -113,6 +115,14 @@ def _process_request_to_display(reqList):
                 reqList[index]['creation'] = dateStr + " (UTC)"
             except ValueError:
                 pass
+
+        # Converting params json to dictionary
+        if 'params' in req:
+            try:
+                reqList[index]['params'] = json.loads(req['params'])
+            except:
+                pass
+        
     return
 
 # vim: set expandtab ts=4 sw=2:
