@@ -59,7 +59,6 @@ class ScrapydMediator(object):
         url = urlparse.urljoin(self.scrapyd_base_url, 'listjobs.json') \
             + '?' + urllib.urlencode({'project': self.config.project_name})
         response = self._fetch_json(url)
-
         if response['status'] != "ok":
             LOG.error("Scrapyd was not OK: %s", json.dumps(response))
             raise exc.HTTPBadGateway(
@@ -72,6 +71,9 @@ class ScrapydMediator(object):
             status = ScrapydMediator.JobStatus.pending
         elif any(job_desc['id'] == jobid for job_desc in response['running']):
             status = ScrapydMediator.JobStatus.running
+        elif os.path.exists(self.retrieve_job_data_fn(jobid)):
+            LOG.warn("Scrapyd doesn't know the job but the file is present.")
+            status = ScrapydMediator.JobStatus.finished
         else:
             status = ScrapydMediator.JobStatus.unknown
 
