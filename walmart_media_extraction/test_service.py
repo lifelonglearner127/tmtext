@@ -2,10 +2,12 @@
 #
 import unittest
 from extract_walmart_media import DATA_TYPES, DATA_TYPES_SPECIAL, page_tree, reviews_for_url
+from tests_utils import StoreLogs
 import requests
 import sys
 from lxml import html
 import re
+import json
 
 class WalmartData_test(unittest.TestCase):
 
@@ -30,7 +32,7 @@ class WalmartData_test(unittest.TestCase):
 		
 	# this is called before every test?
 	def setUp(self):
-		pass
+		self.storage = StoreLogs()
 
 	# test a requested data type was not null
 	# for a request for a certain datatype
@@ -208,7 +210,8 @@ class WalmartData_test(unittest.TestCase):
 			try:
 				self.assertEqual(owned==1, extract_meta_seller=="Walmart.com")
 			except AssertionError, e:
-				raise AssertionError(str(e) + " -- on url " + url)
+				raise AssertionError(str(e) + " -- on url " + url)		
+
 
 	# test if extraction of reviews from product page (new version)
 	# is consistent with extraction of reviews from separate request (old version)
@@ -219,12 +222,14 @@ class WalmartData_test(unittest.TestCase):
 			response2 = reviews_for_url(url)
 
 			try:
-				self.assertEqual(not not response[u'reviews'], not not response2['reviews']['total_reviews'])
+				self.assertEqual(u'reviews' in response and response[u'reviews'], 'total_reviews' in response2['reviews'] and response2['reviews']['total_reviews'])
 			except AssertionError, e:
-				raise AssertionError(str(e) + " -- on url " + url)
+				self.storage.store_reviews_logs(url=url, error_message=str(e), reviews_source=json.dumps(response), reviews_js=json.dumps(response2))
+				# raise AssertionError(str(e) + " -- on url " + url)
 
 
-			if not not response[u'reviews']:
+
+			if u'reviews' in response and response[u'reviews']:
 
 				nr_reviews = str(response[u'reviews']['total_reviews'])
 				average_review = str(response[u'reviews']['average_review'])
@@ -238,10 +243,14 @@ class WalmartData_test(unittest.TestCase):
 					self.assertEqual(nr_reviews, nr_reviews2)
 					self.assertEqual(average_review, average_review2)
 				except AssertionError, e:
-					raise AssertionError(str(e) + " -- on url " + url \
-						+ "\nReviews old: " + str(response2) + ";\nReviews new: " + str(response))
+					self.storage.store_reviews_logs(url=url, error_message=str(e),\
+					reviews_source=json.dumps(response), reviews_js=json.dumps(response2),\
+					average_source=float(average_review), average_js=float(average_review2), \
+					nr_reviews_source=float(nr_reviews), nr_reviews_js=float(nr_reviews2))
+					# raise AssertionError(str(e) + " -- on url " + url \
+					# 	+ "\nReviews old: " + str(response2) + ";\nReviews new: " + str(response) + "\n")
 
-	# def test_anchors_notnull(self)
+	# # def test_anchors_notnull(self)
 
 
 if __name__=='__main__':
