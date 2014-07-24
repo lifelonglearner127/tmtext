@@ -16,6 +16,7 @@
     <th> Site Name </th>
     <th> Creation Date </th>
     <th> IP </th>
+    <th> Params </th>
     <th> Status </th>
   </tr>
 
@@ -25,6 +26,12 @@
     <td> {{ req.site}} </td>
     <td> {{ req.creation }} </td>
     <td> {{ req.remote_ip }} </td>
+    <td> 
+        {% for param_key, param_value in req.params.items %}
+            {{ param_key }}: {{ param_value }}
+            </br>
+        {% endfor %}
+    </td>
     <td> {{ req.status }} </td>
   </tr>
   {% endfor %}

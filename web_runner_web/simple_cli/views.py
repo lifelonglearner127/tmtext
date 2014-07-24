@@ -4,6 +4,7 @@ from django.conf import settings
 
 import requests
 import datetime
+import json
 
 def index(request):
 #    return HttpResponse("Here will be the main page")
@@ -114,6 +115,14 @@ def _process_request_to_display(reqList):
                 reqList[index]['creation'] = dateStr + " (UTC)"
             except ValueError:
                 pass
+
+        # Converting params json to dictionary
+        if 'params' in req:
+            try:
+                reqList[index]['params'] = json.loads(req['params'])
+            except:
+                pass
+        
     return
 
 # vim: set expandtab ts=4 sw=2:
