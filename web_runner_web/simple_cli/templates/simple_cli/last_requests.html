@@ -3,11 +3,13 @@
 <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}stdstyle.css" />
 
 <h1>Last requests report</h1>
-
 <!--
 <table border="1" style="width:300px">
 <table class="reference notranslate">
 -->
+
+<p align="right" class="reference" style="width:60%">{{ now|date:"r" }} (UTC)</p>
+
 <table class="reference" style="width:60%">
   <tr>
     <th> Group Name </th>

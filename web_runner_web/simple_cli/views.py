@@ -82,7 +82,8 @@ def web_runner_lastrequests(request, n=None):
 
     req_info = req.json()
     _process_request_to_display(req_info)
-    context = {'last_requests': req_info}
+    context = {'last_requests': req_info,
+      'now': datetime.datetime.utcnow()}
     return render(request, 'simple_cli/last_requests.html', context)
 
 
