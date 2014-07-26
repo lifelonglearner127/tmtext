@@ -1,11 +1,13 @@
 #!/usr/bin/python
 #
 import unittest
-from extract_walmart_media import DATA_TYPES, DATA_TYPES_SPECIAL, page_tree
+from extract_walmart_media import DATA_TYPES, DATA_TYPES_SPECIAL, page_tree, reviews_for_url
+from tests_utils import StoreLogs
 import requests
 import sys
 from lxml import html
 import re
+import json
 
 class WalmartData_test(unittest.TestCase):
 
@@ -30,7 +32,7 @@ class WalmartData_test(unittest.TestCase):
 		
 	# this is called before every test?
 	def setUp(self):
-		pass
+		self.storage = StoreLogs()
 
 	# test a requested data type was not null
 	# for a request for a certain datatype
@@ -84,7 +86,7 @@ class WalmartData_test(unittest.TestCase):
 			price = response["price"]
 			if price:
 				try:
-					self.assertTrue(not not re.match("\$[0-9]+\.?[0-9]+", price))
+					self.assertTrue(not not re.match("[0-9]+\.?[0-9]+", price))
 				except AssertionError, e:
 					raise AssertionError(str(e) + " -- on url " + url)
 
@@ -96,17 +98,25 @@ class WalmartData_test(unittest.TestCase):
 		else:
 			return None
 
+	def extract_page_price(self, url):
+		tree = page_tree(url)
+		page_price = "".join(tree.xpath("//*[contains(@class, 'camelPrice')]//text()")).strip()
+		if page_price:
+			return page_price
+		else:
+			return None
 
 	# test extracted price matches the one in the meta tags
 	def test_price_correct(self):
 		for url in self.urls:
+			print "On url ", url
 			response = requests.get(self.address % url + "?data=" + "price").json()
-			price = response["price"]
+			meta_price = response["price"]
 			# remove $ sign and reduntant zeroes after .
-			price_clean = re.sub("\.[0]+", ".0", price[1:])
-			meta_price = self.extract_meta_price(url)
-			if price:
+			page_price = self.extract_page_price(url)
+			if page_price:
 				try:
+					price_clean = re.sub("\.[0]+", ".0", page_price[1:])
 					self.assertEqual(price_clean, meta_price)
 				except AssertionError, e:
 					raise AssertionError(str(e) + " -- on url " + url)
@@ -118,16 +128,16 @@ class WalmartData_test(unittest.TestCase):
 	def test_pageload_notnull(self):
 		self.notnull_template("load_time")
 
-	def test_reviews_notnull(self):
-		# it can be empty or null
-		for url in self.urls:
-			print "On url ", url
-			response = requests.get(self.address % url + "?data=" + "reviews").json()
-			try:
-				self.assertTrue("average_review" in response)
-				self.assertTrue("total_reviews" in response)
-			except AssertionError, e:
-				raise AssertionError(str(e) + " -- on url " + url)
+	# def test_reviews_notnull(self):
+	# 	# it can be empty or null
+	# 	for url in self.urls:
+	# 		print "On url ", url
+	# 		response = requests.get(self.address % url + "?data=" + "reviews").json()
+	# 		try:
+	# 			self.assertTrue("average_review" in response)
+	# 			self.assertTrue("total_reviews" in response)
+	# 		except AssertionError, e:
+	# 			raise AssertionError(str(e) + " -- on url " + url)
 
 	def test_model_notnull(self):
 		exceptions = ["http://www.walmart.com/ip/5027010"]
@@ -162,9 +172,6 @@ class WalmartData_test(unittest.TestCase):
 
 	def test_title_notnull(self):
 		self.notnull_template("title")
-
-	def test_nrfeatures_notnull(self):
-		self.notnull_template("nr_features")
 
 	def test_seller_notnull(self):
 		for url in self.urls:
@@ -203,10 +210,47 @@ class WalmartData_test(unittest.TestCase):
 			try:
 				self.assertEqual(owned==1, extract_meta_seller=="Walmart.com")
 			except AssertionError, e:
-				raise AssertionError(str(e) + " -- on url " + url)
+				raise AssertionError(str(e) + " -- on url " + url)		
 
 
-	# def test_anchors_notnull(self)
+	# test if extraction of reviews from product page (new version)
+	# is consistent with extraction of reviews from separate request (old version)
+	def test_reviews_correct(self):
+		for url in self.urls:
+			print "On url ", url
+			response = requests.get(self.address % url + "?data=" + "reviews").json()
+			response2 = reviews_for_url(url)
+
+			try:
+				self.assertEqual(u'reviews' in response and response[u'reviews'], 'total_reviews' in response2['reviews'] and response2['reviews']['total_reviews'])
+			except AssertionError, e:
+				self.storage.store_reviews_logs(url=url, error_message=str(e), reviews_source=json.dumps(response), reviews_js=json.dumps(response2))
+				# raise AssertionError(str(e) + " -- on url " + url)
+
+
+
+			if u'reviews' in response and response[u'reviews']:
+
+				nr_reviews = str(response[u'reviews']['total_reviews'])
+				average_review = str(response[u'reviews']['average_review'])
+
+				nr_reviews2 = re.sub(",", "", str(response2['reviews']['total_reviews']))
+				average_review2 = str(response2['reviews']['average_review'])
+				if "." not in average_review2:
+					average_review2 += '.0'
+
+				try:
+					self.assertEqual(nr_reviews, nr_reviews2)
+					self.assertEqual(average_review, average_review2)
+				except AssertionError, e:
+					self.storage.store_reviews_logs(url=url, error_message=str(e),\
+					reviews_source=json.dumps(response), reviews_js=json.dumps(response2),\
+					average_source=float(average_review), average_js=float(average_review2), \
+					nr_reviews_source=float(nr_reviews), nr_reviews_js=float(nr_reviews2))
+					# raise AssertionError(str(e) + " -- on url " + url \
+					# 	+ "\nReviews old: " + str(response2) + ";\nReviews new: " + str(response) + "\n")
+
+	# # def test_anchors_notnull(self)
 
 
 if __name__=='__main__':

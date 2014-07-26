@@ -16,11 +16,14 @@ with given.a_configuration_with_one_spider:
         'spider.spider_cfg.resource': 'spider_resource',
         'spider.spider_cfg.spider_name': 'spider_name',
         'spider.spider_cfg.project_name': 'spider_project_name',
+
+        'db_filename': ":memory:",
     }
 
     request = testing.DummyRequest(
         path="/spider_resource/",
-        post=dict(site='example', searchterms_str='a search terms')
+        post=dict(site='example', searchterms_str='a search terms'),
+        remote_addr="127.0.0.1",
     )
 
     with testing.testConfig(request=request, settings=settings) as config:
@@ -55,11 +58,14 @@ with given.a_configuration_with_one_command_and_spider:
         'spider.spider_cfg.resource': 'spider_resource',
         'spider.spider_cfg.spider_name': 'spider_name',
         'spider.spider_cfg.project_name': 'spider_project_name',
+
+        'db_filename': ":memory:",
     }
 
     request = testing.DummyRequest(
         path="/command_resource/",
-        post=dict(site='example', searchterms_str='a search terms')
+        post=dict(site='example', searchterms_str='a search terms'),
+        remote_addr="127.0.0.1",
     )
 
     with testing.testConfig(request=request, settings=settings) as config:

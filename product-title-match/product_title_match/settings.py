@@ -6,13 +6,13 @@
 #     http://doc.scrapy.org/en/latest/topics/settings.html
 #
 
-BOT_NAME = 'product_ranking'
+BOT_NAME = 'product_title_match'
 
 SPIDER_MODULES = ['product_ranking.spiders']
 NEWSPIDER_MODULE = 'product_ranking.spiders'
 
 ITEM_PIPELINES = {
-    'product_ranking.pipelines.AddSearchTermInTitleFields': 300,
+    'product_ranking.pipelines.FilterNonPartialSearchTermInTitle': 300,
 }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
