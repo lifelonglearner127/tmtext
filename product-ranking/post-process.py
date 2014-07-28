@@ -7,7 +7,7 @@ from future_builtins import *
 
 import json
 
-from product_ranking.pipelines import AddCalculatedFields
+from product_ranking.pipelines import AddSearchTermInTitleFields
 
 
 def parse_arguments():
@@ -26,7 +26,7 @@ def main():
     for line in sys.stdin:
         product = json.loads(line)
 
-        product = AddCalculatedFields.process_item(product, None)
+        product = AddSearchTermInTitleFields.process_item(product, None)
 
         json.dump(product, sys.stdout)
         sys.stdout.write(b'\n')

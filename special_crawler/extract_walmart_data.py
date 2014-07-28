@@ -108,7 +108,7 @@ def reviews_for_url(product_page_url):
 def product_info(product_page_url, info_type_list = None):
 
 	if not info_type_list:
-		info_type_list = DATA_TYPES.keys()
+		info_type_list = DATA_TYPES.keys() + DATA_TYPES_SPECIAL.keys()
 	
 	# copy of info list to send to _info_from_tree
 	info_type_list_copy = list(info_type_list)
@@ -295,6 +295,17 @@ def _seller_from_tree(tree_html):
 
 	return seller_info
 
+# extract product reviews information from its product page
+# ! may throw exception if not found
+def _reviews_from_tree(tree_html):
+	reviews_info_node = tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
+	average_review = float(reviews_info_node.xpath("span[@itemprop='ratingValue']/text()")[0])
+	nr_reviews = int(reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")[0])
+
+	return {'total_reviews' : nr_reviews,
+			'average_review' : average_review}
+
+
 # clean text inside html tags - remove html entities, trim spaces
 def _clean_text(text):
 	return re.sub("&nbsp;", " ", text).strip()
@@ -341,6 +352,7 @@ DATA_TYPES = { \
 	"features" : _features_from_tree, \
 	"title" : _title_from_tree, \
 	"seller": _seller_from_tree, \
+	"reviews": _reviews_from_tree, \
 
 	"load_time": None \
 	}
@@ -350,7 +362,7 @@ DATA_TYPES = { \
 DATA_TYPES_SPECIAL = { \
 	"video_url" : video_for_url, \
 	"pdf_url" : pdf_for_url, \
-	"reviews" : reviews_for_url \
+#	"reviews" : reviews_for_url \
 }
 
 

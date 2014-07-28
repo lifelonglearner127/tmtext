@@ -4,11 +4,17 @@
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 from __future__ import division, absolute_import, unicode_literals
 
-import unittest
 import string
+import unittest
+
+from scrapy.exceptions import DropItem
+try:
+    import mock
+except ImportError:
+    pass  # Optional import for test.
 
 
-class AddCalculatedFields(object):
+class AddSearchTermInTitleFields(object):
 
     _TRANSLATE_TABLE = string.maketrans('', '')
 
@@ -16,7 +22,7 @@ class AddCalculatedFields(object):
     def _normalize(s):
         try:
             return str(s).translate(
-                AddCalculatedFields._TRANSLATE_TABLE,
+                AddSearchTermInTitleFields._TRANSLATE_TABLE,
                 string.punctuation
             ).lower()
         except UnicodeEncodeError:
@@ -26,34 +32,45 @@ class AddCalculatedFields(object):
             return s
 
     @staticmethod
-    def process_item(product, spider):
+    def process_item(item, spider):
+        AddSearchTermInTitleFields.add_search_term_in_title_fields(
+            item, item['search_term'])
+
+        return item
+
+    @staticmethod
+    def is_a_partial_match(title_words, words):
+        return any(word in title_words for word in words)
+
+    @staticmethod
+    def add_search_term_in_title_fields(product, keywords):
         product['search_term_in_title_exactly'] = False
         product['search_term_in_title_partial'] = False
         product['search_term_in_title_interleaved'] = False
-
         try:
-            title = AddCalculatedFields._normalize(product['title'])
-            search_term = AddCalculatedFields._normalize(product['search_term'])
+            title_words = AddSearchTermInTitleFields._normalize(
+                product['title']
+            ).split()
+            search_term = AddSearchTermInTitleFields._normalize(
+                keywords)
             search_term_words = search_term.split()
 
-            if search_term in title:
+            if search_term in title_words:
                 product['search_term_in_title_exactly'] = True
-            elif AddCalculatedFields._is_title_interleaved(
-                    title, search_term_words):
+            elif AddSearchTermInTitleFields._is_title_interleaved(
+                    title_words, search_term_words):
                 product['search_term_in_title_interleaved'] = True
             else:
-                product['search_term_in_title_partial'] = any(
-                    word in title for word in search_term_words)
+                product['search_term_in_title_partial'] \
+                    = AddSearchTermInTitleFields.is_a_partial_match(
+                        title_words, search_term_words)
         except KeyError:
             pass
 
-        return product
-
     @staticmethod
-    def _is_title_interleaved(title, search_term_words):
+    def _is_title_interleaved(title_words, search_term_words):
         result = False
 
-        title_words = title.split()
         offset = 0
         for st_word in search_term_words:
             for i, title_word in enumerate(title_words[offset:]):
@@ -69,17 +86,66 @@ class AddCalculatedFields(object):
         return result
 
 
-class AddCalculatedFieldsTest(unittest.TestCase):
+class FilterNonPartialSearchTermInTitle(object):
+    """Filters Items where the title doesn't contain any of the
+     required_keywords.
+
+     This pipeline stage will override AddSearchTermInTitleFields as if the
+     required_keywords where the search_term.
+     """
+
+    @staticmethod
+    def process_item(item, spider):
+        title_words = AddSearchTermInTitleFields._normalize(
+            item['title']
+        ).split()
+        required_words = spider.required_keywords.lower().split()
+        if not AddSearchTermInTitleFields.is_a_partial_match(
+                title_words, required_words):
+            raise DropItem(
+                "Does not match title partially: %s" % item['title'])
+
+        AddSearchTermInTitleFields.add_search_term_in_title_fields(
+            item, spider.required_keywords)
+
+        return item
+
+
+class AddSearchTermInTitleFieldsTest(unittest.TestCase):
 
     def test_search_term_in_title_interleaved(self):
         item = dict(title="My Mary has a little Pony!",
                     search_term="Mary, a pony")
 
-        result = AddCalculatedFields.process_item(item, None)
+        result = AddSearchTermInTitleFields.process_item(item, None)
 
         assert result['search_term_in_title_interleaved']
         assert not result['search_term_in_title_partial']
         assert not result['search_term_in_title_exactly']
+
+
+class FilterNonPartialSearchTermInTitleTest(unittest.TestCase):
+
+    def test_when_an_item_does_not_match_partially_then_it_should_be_filtered(self):
+        item = dict(title="one two three")
+        spider = mock.MagicMock()
+        spider.required_keywords = "none of the ones in the title"
+        self.assertRaises(
+            DropItem,
+            FilterNonPartialSearchTermInTitle.process_item,
+            item,
+            spider,
+        )
+
+    def test_when_an_item_matches_partially_then_it_should_have_the_title_match_fields(self):
+        item = dict(title="one two three")
+        spider = mock.MagicMock()
+        spider.required_keywords = "has one word in the title"
+        FilterNonPartialSearchTermInTitle.process_item(item, spider)
+
+        assert item['search_term_in_title_partial']
+        assert not item['search_term_in_title_interleaved']
+        assert not item['search_term_in_title_exactly']
 
 
 if __name__ == '__main__':

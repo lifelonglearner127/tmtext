@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from flask import Flask, jsonify, abort, request
-from extract_walmart_media import media_for_url, check_url_format, reviews_for_url, \
+from extract_walmart_data import media_for_url, check_url_format, reviews_for_url, \
 pdf_for_url, video_for_url, product_info, DATA_TYPES, DATA_TYPES_SPECIAL
 
 app = Flask(__name__)
