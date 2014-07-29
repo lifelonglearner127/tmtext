@@ -1,3 +1,7 @@
+from __future__ import division, absolute_import, unicode_literals
+from __future__ import print_function
+from future_builtins import *
+
 import urlparse
 from scrapy.log import ERROR, WARNING
 
@@ -18,24 +22,21 @@ class AmazonFreshSCProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
-        title = response.xpath('//div[@class="buying"]/h1/text()').extract()
-        brand = response.xpath('//div[@class="byline"]/a/text()').extract()
-        price = response.xpath('//div[@class="price"]/span[@class="value"]/text()').extract()
-        des = response.xpath('//*[@id="productDescription"]/p/text()').extract()
-        img_url = response.xpath('//div[@id="mainImgWrapper"]/img/@src').extract()
-        prod['title'] = title[0].strip() if title else ''
-        prod['brand'] = brand[0].strip() if brand else ''
-        prod['price'] = price[0].strip() if price else  ''
-        prod['description'] = des[0].strip() if des else ''
-        prod['image_url'] = img_url[0].strip() if img_url else ''
-        prod['url'] = response.url
-        # GET ASIN instead of model
         paras = urlparse.parse_qs(urlparse.urlsplit(response.url).query)
-        prod['model'] = paras['asin'][0] if paras.has_key('asin') else ''
-        if prod['title']:
-            cond_set(prod, 'locale', ['en-US'])
-            return prod
-        return None
+        cond_set(prod, 'model', paras['asin'])
+        title = response.xpath('//div[@class="buying"]/h1/text()').extract()
+        cond_set(prod, 'title', title)
+        brand = response.xpath('//div[@class="byline"]/a/text()').extract()
+        cond_set(prod, 'brand', brand)
+        price = response.xpath('//div[@class="price"]/span[@class="value"]/text()').extract()
+        cond_set(prod, 'price', price)
+        des = response.xpath('//*[@id="productDescription"]/p/text()').extract()
+        cond_set(prod, 'description', des)
+        img_url = response.xpath('//div[@id="mainImgWrapper"]/img/@src').extract()
+        cond_set(prod, 'image_url', img_url)
+        cond_set(prod, 'locale', ['en-US'])
+        prod['url'] = response.url
+        return prod
 
 
     def _search_page_error(self, response):
@@ -47,7 +48,7 @@ class AmazonFreshSCProductsSpider(BaseProductsSpider):
                 self.log(found, ERROR)
                 return True
             return False
-        except:
+        except IndexError:
             return False
 
 
@@ -64,9 +65,5 @@ class AmazonFreshSCProductsSpider(BaseProductsSpider):
 
 
     def _scrape_next_results_page_link(self, sel):
-        try:
-            link = sel.xpath('//div[@class="pagination"]/a/@href').extract()[-1]
-            return link
-        except:
-            self.log("AmazoFresh crawler error: Can't get the next page", ERROR)
-            return None
+        link = sel.xpath('//div[@class="pagination"]/a/@href').extract()[-1]
+        return link
