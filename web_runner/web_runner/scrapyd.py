@@ -92,7 +92,7 @@ class ScrapydMediator(object):
             if self.report_on_job(jobid) != ScrapydMediator.JobStatus.unknown:
                 break  # It appears.
             LOG.debug(
-                "Job %s not ready. Waiting %d before retrying.",
+                "Job %s not ready. Waiting %g before retrying.",
                 jobid,
                 ScrapydMediator._VERIFICATION_DELAY,
             )
