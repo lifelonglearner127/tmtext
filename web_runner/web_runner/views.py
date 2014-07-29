@@ -18,11 +18,12 @@ import web_runner.db
 
 
 LOG = logging.getLogger(__name__)
+
+
 FINISH = 'finished'
 UNAVAILABLE = 'unavailable'
 RUNNING = 'running'
 PENDING = 'pending'
-
 
 
 # TODO Move command handling logic to a CommandMediator.
@@ -59,13 +60,12 @@ def command_start_view(request):
                  cfg_template.name, response['jobid'])
 
     # Storing the request in the internal DB
-    dbinterf = web_runner.db.DbInterface(settings['db_filename'], 
-      recreate=False)
+    dbinterf = web_runner.db.DbInterface(
+        settings['db_filename'], recreate=False)
     command_name = request.path.strip('/')
-    dbinterf.new_command(command_name, dict(request.params), spider_job_ids,
-      request.remote_addr)
+    dbinterf.new_command(
+        command_name, dict(request.params), spider_job_ids, request.remote_addr)
     dbinterf.close()
-    
 
     raise exc.HTTPFound(
         location=request.route_path(
@@ -195,11 +195,15 @@ def spider_start_view(request):
                 **response))
 
     # Storing the request in the internal DB
-    dbinterf = web_runner.db.DbInterface(settings['db_filename'], 
-      recreate=False)
+    dbinterf = web_runner.db.DbInterface(
+        settings['db_filename'], recreate=False)
     spider_name = request.path.strip('/')
-    dbinterf.new_spider(spider_name, dict(request.params), response['jobid'],
-      request.remote_addr)
+    dbinterf.new_spider(
+        spider_name,
+        dict(request.params),
+        response['jobid'],
+        request.remote_addr,
+    )
     dbinterf.close()
 
     raise exc.HTTPFound(
@@ -271,17 +275,19 @@ def status(request):
     else:
         spiders = None
 
-    output = {'scrapyd_alive': alive, 
-      'scrapyd_operational': operational,
-      'scrapyd_projects': projects,
-      'spiders': spiders,
-      'webRunner': True}
+    output = {
+        'scrapyd_alive': alive,
+        'scrapyd_operational': operational,
+        'scrapyd_projects': projects,
+        'spiders': spiders,
+        'webRunner': True,
+    }
 
     return output
 
 
-@view_config(route_name='last request status', request_method='GET', 
-  renderer='json')
+@view_config(route_name='last request status', request_method='GET',
+             renderer='json')
 def last_request_status(request):
     """Returns the last requests resquested
 
@@ -291,15 +297,15 @@ def last_request_status(request):
     settings = request.registry.settings
 
     default_size = 10
-    size_str = request.params.get('size',default_size)
+    size_str = request.params.get('size', default_size)
     try:
         size = int(size_str)
     except ValueError:
         raise exc.HTTPBadGateway(detail="Size parameter has incorrect value")
 
     # Get last requests
-    dbinterf = web_runner.db.DbInterface(settings['db_filename'], 
-      recreate=False)
+    dbinterf = web_runner.db.DbInterface(
+        settings['db_filename'], recreate=False)
     reqs = dbinterf.get_last_requests(size)
     dbinterf.close()
 
@@ -327,12 +333,9 @@ def last_request_status(request):
                 elif current_status == FINISH:
                     pass    # Default option
 
-        
         req['status'] = final_status   # request final status
 
     return reqs
-
-
 
 
 # vim: set expandtab ts=4 sw=4:
