@@ -4,19 +4,28 @@ from future_builtins import *
 
 import urlparse
 from scrapy.log import ERROR, WARNING
+from scrapy.utils.project import get_project_settings
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, FormatterWithDefaults
 
 
-class AmazonFreshSCProductsSpider(BaseProductsSpider):
-    name = "amazonfresh_southerncalifornia_products"
+class AmazonFreshProductsSpider(BaseProductsSpider):
+    name = "amazonfresh_products"
     allowed_domains = ["fresh.amazon.com"]
     start_urls = []
-    SEARCH_URL = "https://fresh.amazon.com/Search?browseMP=A241IQ0793UAL2" \
+    SEARCH_URL = "https://fresh.amazon.com/Search?browseMP={market_place_id}" \
                  "&resultsPerPage=50" \
                  "&predictiveSearchFlag=false&recipeSearchFlag=false" \
                  "&comNow=&input={search_term}"
+
+
+    def __init__(self, location='southern_cali', *args, **kwargs):
+        settings = get_project_settings()
+        locations = settings.get('AMAZONFRESH_LOCATION')
+        loc = locations.get(location, '')
+        super(AmazonFreshProductsSpider, self).__init__(
+            url_formatter=FormatterWithDefaults( market_place_id=loc), *args, **kwargs)
 
 
     def parse_product(self, response):

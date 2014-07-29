@@ -20,3 +20,10 @@ ITEM_PIPELINES = {
 
 # Delay between requests not to be blocked (seconds).
 DOWNLOAD_DELAY = 0.5
+
+#AmazonFresh mapping locations and market place id
+AMAZONFRESH_LOCATION = {
+    "southern_cali": "A241IQ0793UAL2",
+    "northern_cali": "A3FX2TOAMS7SFL",
+    "seattle": "A83PXQN2224PA"
+}
