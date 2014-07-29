@@ -229,7 +229,6 @@ def spider_start_view(request):
                 e.message))
 
 
-
 @view_config(route_name='spider pending jobs', request_method='GET')
 def spider_pending_view(request):
     project_name = request.matchdict['project']
