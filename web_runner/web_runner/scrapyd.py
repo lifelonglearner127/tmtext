@@ -9,6 +9,7 @@ import urllib2
 import enum
 import pyramid.httpexceptions as exc
 import requests
+import requests.exceptions
 
 
 LOG = logging.getLogger(__name__)
@@ -137,49 +138,42 @@ class ScrapydInterface(object):
     def __init__(self, url):
         self.scrapyd_url = url
 
-
     def is_alive(self):
-        """Return if scrapyd is alive"""
-
+        """Returns whether scrapyd is alive."""
         try:
             req = requests.get(self.scrapyd_url)
-        except requests.exceptions.RequestException, e:
+        except requests.exceptions.RequestException:
             return False
 
         return req.status_code == 200
 
-
     def get_projects(self):
-        """Get the list of scrapyd project
+        """Get the list of scrapyd projects.
 
-        returns a tuple with:
+        :returns: A tuple with:
          * 0: boolean with Scrapyd operational status
          * 1: list of scrapyd projects
         """
         url = self.scrapyd_url + 'listprojects.json'
         try:
             req = requests.get(url)
-        except requests.exceptions.RequestException, e:
-            return (False, None)
+        except requests.exceptions.RequestException:
+            return False, None
        
         output = json.loads(req.text)
         status = output['status'].lower() == 'ok'
         projects = output['projects']
 
-        return (status, projects)
-
+        return status, projects
 
     def get_spiders(self, project):
-        """
-        """
         if not project:
             return None
 
-        url = "%slistspiders.json?project=%s" % (self.scrapyd_url, 
-          project)
+        url = "%slistspiders.json?project=%s" % (self.scrapyd_url, project)
         try:
             req = requests.get(url)
-        except requests.exceptions.RequestException, e:
+        except requests.exceptions.RequestException:
             return None
 
         output = json.loads(req.text)
@@ -190,29 +184,27 @@ class ScrapydInterface(object):
 
         return spiders
 
-
     def get_jobids_status(self, projects=None):
-        """Return the status of the jobids associated to a project
+        """Return the status of the jobids associated to a project.
 
         The function returns a dictionary whose key is a jobid and the value
-        is a dictionary of Scrapyd's listjobs request structure
+        is a dictionary of Scrapyd's listjobs request structure.
 
-        projects parameter is the list of project to query. If it is None,
-        get_jobids_status will query all projects
+        :param projects: The list of project to query. If it is None, all
+                         projects will be queried.
         """
 
         if not projects:
-            (status, projects) = self.get_projects()
+            status, projects = self.get_projects()
             if not status:
                 return None
 
         ret = {}
         for project in projects:
-            url = '%slistjobs.json?project=%s' % (self.scrapyd_url,
-              project)
+            url = '%slistjobs.json?project=%s' % (self.scrapyd_url, project)
             try:
                 req = requests.get(url)
-            except requests.exceptions.RequestException, e:
+            except requests.exceptions.RequestException as e:
                 return None
 
             req_output = req.json()
@@ -226,17 +218,16 @@ class ScrapydInterface(object):
         return ret
 
 
-
 if __name__ == '__main__':
     si = ScrapydInterface('http://localhost:6800/')
 
-    (status, projects) = si.get_projects()
+    status, projects = si.get_projects()
     print('projects: %s' % projects)
 
     spiders = {project: si.get_spiders(project) for project in projects}
-    print('spiders: %s' % spiders)
+    print('spiders:', spiders)
 
     jobidsDict = si.get_jobids_status()
-    print("jobids: %s" % jobidsDict)
+    print("jobids:", jobidsDict)
 
 # vim: set expandtab ts=4 sw=4:
