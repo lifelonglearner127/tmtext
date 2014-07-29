@@ -229,7 +229,7 @@ class ScrapydInterface(object):
             url = '%slistjobs.json?project=%s' % (self.scrapyd_url, project)
             try:
                 req = requests.get(url)
-            except requests.exceptions.RequestException as e:
+            except requests.exceptions.RequestException:
                 return None
 
             req_output = req.json()
