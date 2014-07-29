@@ -289,10 +289,10 @@ def status(request):
 @view_config(route_name='last request status', request_method='GET',
              renderer='json')
 def last_request_status(request):
-    """Returns the last requests resquested
+    """Returns the last requests requested.
 
-    The request accepts an optional parameter size, which is the maxium
-    items returned.
+    The request accepts an optional parameter size, which is the maximum number
+    of items returned.
     """ 
     settings = request.registry.settings
 
@@ -309,7 +309,7 @@ def last_request_status(request):
     reqs = dbinterf.get_last_requests(size)
     dbinterf.close()
 
-    # get The the jobid status dictionary
+    # Get the jobid status dictionary.
     scrapyd_baseurl = settings['spider._scrapyd.base_url']
     scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
     jobids_status = scrapyd_interf.get_jobids_status()
