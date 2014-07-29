@@ -3,6 +3,7 @@ import logging
 import urlparse
 import json
 import os.path
+import time
 import urllib
 import urllib2
 
@@ -39,6 +40,8 @@ class ScrapydMediator(object):
 
     SCRAPYD_ITEMS_PATH = 'spider._scrapyd.items_path'
 
+    _VERIFICATION_DELAY = 0.1
+
     class JobStatus(enum.Enum):
         unknown = 0
         running = 1
@@ -54,8 +57,12 @@ class ScrapydMediator(object):
 
         self.config = spider_config
 
-    def start_job(self, params):
-        """Returns the job ID of the started Scrapyd job."""
+    def start_job(self, params, timeout=1.0):
+        """Returns the job ID of the started Scrapyd job.
+
+        :param params: Parameters for the job to be started.
+        :param timeout: Seconds to wait for Scrapy to show the job.
+        """
         try:
             spider_name = self.config.spider_name.format(**params)
             project_name = self.config.project_name.format(**params)
@@ -77,8 +84,26 @@ class ScrapydMediator(object):
                 result['status'],
                 "Failed to start job with parameters: %r" % data,
             )
+        jobid = result['jobid']
 
-        return result['jobid']
+        # Wait until the job appears in the list of jobs.
+        retry_count = 1 + int(timeout / ScrapydMediator._VERIFICATION_DELAY)
+        for _ in range(retry_count):
+            if self.report_on_job(jobid) != ScrapydMediator.JobStatus.unknown:
+                break  # It appears.
+            LOG.debug(
+                "Job %s not ready. Waiting %d before retrying.",
+                jobid,
+                ScrapydMediator._VERIFICATION_DELAY,
+            )
+            time.sleep(ScrapydMediator._VERIFICATION_DELAY)
+        else:
+            raise ScrapydJobStartError(
+                "ok",
+                "Timeout on waiting for Scrapyd to list job '%s'." % jobid,
+            )
+
+        return jobid
 
     def report_on_job(self, jobid):
         url = urlparse.urljoin(self.scrapyd_base_url, 'listjobs.json') \
