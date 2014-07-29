@@ -37,9 +37,6 @@ class BestBuyProductSpider(BaseProductsSpider):
                  sel.xpath("//*[@itemprop='description']/text()").extract())
         cond_set(product, 'locale', ['en-US'])  # Default locale.
 
-        print 'Title:' % sel.xpath("//*[@itemprop='name']/a/text()").extract()
-        print 'Model:' % sel.xpath("//*[@class='hproduct']/div[3]/div[1]/h5[1]/strong/text()").extract()
-        print 'Description:' % sel.xpath("//*[@itemprop='description']/text()").extract()
 
     def _scrape_product_links(self, sel):
         links = sel.xpath("//*[@itemprop='name']/a/@href").extract()
