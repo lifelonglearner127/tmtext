@@ -194,24 +194,24 @@ def spider_start_view(request):
             "Scrapyd was not OK, it was '{status}': {message}".format(
                 **response))
 
-    # Storing the request in the internal DB
+    # Storing the request in the internal DB.
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
-    spider_name = request.path.strip('/')
+    jobid = response['jobid']
     dbinterf.new_spider(
-        spider_name,
+        cfg.spider_name,
         dict(request.params),
-        response['jobid'],
+        jobid,
         request.remote_addr,
     )
     dbinterf.close()
 
     raise exc.HTTPFound(
         location=request.route_path("spider pending jobs",
-                                    project=mediator.config.project_name,
-                                    spider=mediator.config.spider_name,
-                                    jobid=response['jobid']),
-        detail="Job '%s' started." % response['jobid'])
+                                    project=cfg.project_name,
+                                    spider=cfg.spider_name,
+                                    jobid=jobid),
+        detail="Job '%s' started." % jobid)
 
 
 @view_config(route_name='spider pending jobs', request_method='GET')
