@@ -119,7 +119,7 @@ class TescoProductsSpider(BaseProductsSpider):
     def _scrape_product_links(self, sel):
         # JS and locale of the products is available at this point.
         # If HTML parsing were not necessary, fetching product pages could be
-        # skipped. Currently only the desciption needs the product page.
+        # skipped. Currently only the description needs the product page.
 
         links = sel.css('h3.inBasketInfoContainer > a ::attr(href)').extract()
         if not links:
