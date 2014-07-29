@@ -20,15 +20,15 @@ with given.a_configured_scrapyd_mediator:
         conn = urllib2_mock.urlopen.return_value
 
         with when.starting_a_job:
-            conn.read.return_value = '["a json response"]'
+            conn.read.return_value = '{"status": "ok", "jobid": "XXX"}'
 
-            response = mediator.start_job({})
+            job_id = mediator.start_job({})
 
             with then.it_should_post_a_request:
                 pass  # FIXME: Assert!
 
             with and_.it_should_return_the_parsed_response:
-                the(response).should.equal(["a json response"])
+                the(job_id).should.equal("XXX")
 
         with when.reporting_on_a_job:
             conn.read.return_value = """{"status": "ok",

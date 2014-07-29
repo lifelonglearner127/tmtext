@@ -12,7 +12,8 @@ import subprocess32 as subprocess
 from web_runner.config_util import find_command_config_from_name, \
     find_command_config_from_path, find_spider_config_from_path, SpiderConfig, \
     render_spider_config
-from web_runner.scrapyd import ScrapydMediator, ScrapydInterface
+from web_runner.scrapyd import ScrapydMediator, ScrapydInterface, \
+    ScrapydJobStartError, ScrapydJobException
 from web_runner.util import encode_ids, decode_ids
 import web_runner.db
 
@@ -46,18 +47,27 @@ def command_start_view(request):
     )
 
     spider_job_ids = []
-    for spider_cfg in spider_cfgs:
-        response = ScrapydMediator(settings, spider_cfg).start_job(
-            request.params)
-        if response['status'] != "ok":
-            raise exc.HTTPBadGateway(
-                "Failed to start a required crawl for command '{}'."
-                " Scrapyd was not OK, it was '{status}': {message}".format(
-                    cfg_template.name, **response)
+    try:
+        for spider_cfg in spider_cfgs:
+            jobid = ScrapydMediator(settings, spider_cfg).start_job(
+                request.params)
+            spider_job_ids.append(jobid)
+            LOG.info(
+                "For command at '%s', started crawl job with id '%s'.",
+                cfg_template.name,
+                jobid,
             )
-        spider_job_ids.append(response['jobid'])
-        LOG.info("For command at '%s', started crawl job with id '%s'.",
-                 cfg_template.name, response['jobid'])
+    except ScrapydJobStartError as e:
+        raise exc.HTTPBadGateway(
+            "Failed to start a required crawl for command '{}'."
+            " Scrapyd was not OK, it was '{}': {}".format(
+                cfg_template.name, e.status, e.message)
+        )
+    except ScrapydJobException as e:
+        raise exc.HTTPBadGateway(
+            "For command {}, unexpected error when contacting Scrapyd:"
+            " {}".format(cfg_template.name, e.message)
+        )
 
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
@@ -186,32 +196,38 @@ def spider_start_view(request):
     cfg_template = find_spider_config_from_path(settings, request.path)
     cfg = render_spider_config(cfg_template, request.params)
 
-    mediator = ScrapydMediator(settings, cfg)
-    response = mediator.start_job(request.params)
+    try:
+        mediator = ScrapydMediator(settings, cfg)
+        jobid = mediator.start_job(request.params)
 
-    if response['status'] != "ok":
+        # Storing the request in the internal DB.
+        dbinterf = web_runner.db.DbInterface(
+            settings['db_filename'], recreate=False)
+        dbinterf.new_spider(
+            cfg.spider_name,
+            dict(request.params),
+            jobid,
+            request.remote_addr,
+        )
+        dbinterf.close()
+
+        raise exc.HTTPFound(
+            location=request.route_path(
+                "spider pending jobs",
+                project=cfg.project_name,
+                spider=cfg.spider_name,
+                jobid=jobid,
+            ),
+            detail="Job '%s' started." % jobid)
+    except ScrapydJobStartError as e:
         raise exc.HTTPBadGateway(
-            "Scrapyd was not OK, it was '{status}': {message}".format(
-                **response))
+            "Scrapyd error when starting job. Status '{}': {}".format(
+                e.status, e.message))
+    except ScrapydJobException as e:
+        raise exc.HTTPBadGateway(
+            "When contacting Scrapyd there was an unexpected error: {}".format(
+                e.message))
 
-    # Storing the request in the internal DB.
-    dbinterf = web_runner.db.DbInterface(
-        settings['db_filename'], recreate=False)
-    jobid = response['jobid']
-    dbinterf.new_spider(
-        cfg.spider_name,
-        dict(request.params),
-        jobid,
-        request.remote_addr,
-    )
-    dbinterf.close()
-
-    raise exc.HTTPFound(
-        location=request.route_path("spider pending jobs",
-                                    project=cfg.project_name,
-                                    spider=cfg.spider_name,
-                                    jobid=jobid),
-        detail="Job '%s' started." % jobid)
 
 
 @view_config(route_name='spider pending jobs', request_method='GET')

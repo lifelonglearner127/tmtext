@@ -15,6 +15,24 @@ import json
 LOG = logging.getLogger(__name__)
 
 
+class ScrapydJobException(Exception):
+    """Base ScrapydMediator exception."""
+
+    def __init__(self, message):
+        super(ScrapydJobException, self).__init__()
+
+        self.message = message
+
+
+class ScrapydJobStartError(ScrapydJobException):
+    """The job failed to start."""
+
+    def __init__(self, status, message):
+        super(ScrapydJobException, self).__init__(message)
+
+        self.status = status
+
+
 class ScrapydMediator(object):
 
     SCRAPYD_BASE_URL = 'spider._scrapyd.base_url'
@@ -37,12 +55,12 @@ class ScrapydMediator(object):
         self.config = spider_config
 
     def start_job(self, params):
+        """Returns the job ID of the started Scrapyd job."""
         try:
             spider_name = self.config.spider_name.format(**params)
             project_name = self.config.project_name.format(**params)
         except KeyError as e:
-            raise exc.HTTPBadRequest(
-                detail="Query parameter %s is required." % e)
+            raise ScrapydJobException("Parameter %s is required." % e)
 
         url = urlparse.urljoin(self.scrapyd_base_url, 'schedule.json')
         # FIXME Handle multivalued setting as in setting.
@@ -53,7 +71,14 @@ class ScrapydMediator(object):
         })
         LOG.info("Calling Scrapyd on '%s' with parameters: %s", url, data)
 
-        return self._fetch_json(url, urllib.urlencode(data))
+        result = self._fetch_json(url, urllib.urlencode(data))
+        if result['status'] != "ok":
+            raise ScrapydJobStartError(
+                result['status'],
+                "Failed to start job with parameters: %r" % data,
+            )
+
+        return result['jobid']
 
     def report_on_job(self, jobid):
         url = urlparse.urljoin(self.scrapyd_base_url, 'listjobs.json') \
