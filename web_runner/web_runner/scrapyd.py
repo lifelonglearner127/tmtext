@@ -9,7 +9,6 @@ import urllib2
 import enum
 import pyramid.httpexceptions as exc
 import requests
-import json
 
 
 LOG = logging.getLogger(__name__)
