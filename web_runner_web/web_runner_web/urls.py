@@ -10,4 +10,8 @@ urlpatterns = patterns('',
 
 #    url(r'^admin/', include(admin.site.urls)),
     url(r'^simple_cli/', include('simple_cli.urls')),
+    url(r'^login/$', 'django.contrib.auth.views.login'),
+#    url(r'^logout/$', 'django.contrib.auth.views.logout'),
+    url(r'^logout/$', 'django.contrib.auth.views.logout', {'template_name': 'registration/logout.html'}),
+    
 )

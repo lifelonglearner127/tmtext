@@ -1,16 +1,21 @@
 from django.shortcuts import render
 from django.http import HttpResponse, Http404
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 
 import requests
 import datetime
 import json
 
+
+@login_required
 def index(request):
 #    return HttpResponse("Here will be the main page")
     return render(request, 'simple_cli/index.html')
 
 
+@login_required
 def web_runner_status(request):
     """Display the status of Web Runner and Scrapyd"""
 
@@ -39,6 +44,7 @@ def web_runner_status(request):
             status = error
     return render(request, 'simple_cli/web_runner_status.html', status)
 
+@login_required
 def web_runner_logs(request):
     """Display web runner logs"""
 
@@ -46,6 +52,7 @@ def web_runner_logs(request):
     return render(request, 'simple_cli/show_logs.html', context)
 
 
+@login_required
 def web_runner_logs_view(request, logfile_id):
     """Return the log files as files"""
     
@@ -67,6 +74,7 @@ def web_runner_logs_view(request, logfile_id):
     return response
 
 
+@login_required
 def web_runner_lastrequests(request, n=None):
     """Display a table with the last n requests"""
  
