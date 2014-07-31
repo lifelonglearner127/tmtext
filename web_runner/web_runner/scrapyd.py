@@ -11,6 +11,7 @@ import enum
 import pyramid.httpexceptions as exc
 import requests
 import requests.exceptions
+from util import string_from_local2utc as local2utc
 
 
 LOG = logging.getLogger(__name__)
@@ -237,6 +238,11 @@ class ScrapydInterface(object):
                 for status in ('running', 'finished', 'pending'):
                     for job_dict in req_output[status]:
                         id = job_dict['id']
+                        # Convert the date from local to UTC
+                        if 'start_time' in job_dict:
+                            job_dict['start_time'] = local2utc(job_dict['start_time'])
+                        if 'end_time' in job_dict:
+                            job_dict['end_time'] = local2utc(job_dict['end_time'])
                         ret[id] = job_dict
                         ret[id]['status'] = status
         

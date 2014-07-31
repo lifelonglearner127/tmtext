@@ -14,17 +14,19 @@ from web_runner.config_util import find_command_config_from_name, \
     render_spider_config
 from web_runner.scrapyd import ScrapydMediator, ScrapydInterface, \
     ScrapydJobStartError, ScrapydJobException
-from web_runner.util import encode_ids, decode_ids
+from web_runner.util import encode_ids, decode_ids, get_request_status, \
+    string2datetime
 import web_runner.db
+import datetime
 
 
 LOG = logging.getLogger(__name__)
 
 
-FINISH = 'finished'
-UNAVAILABLE = 'unavailable'
-RUNNING = 'running'
-PENDING = 'pending'
+FINISH = web_runner.util.FINISH
+UNAVAILABLE = web_runner.util.UNAVAILABLE
+RUNNING = web_runner.util.RUNNING
+PENDING = web_runner.util.PENDING
 
 
 # TODO Move command handling logic to a CommandMediator.
@@ -332,25 +334,126 @@ def last_request_status(request):
     # For each request, determine the request status gathering 
     # the information from all jobids related to it
     for req in reqs:
-        final_status = FINISH
-        for jobid in req['jobids']:
-            # Set the final status
-            if not jobid in jobids_status:
-                final_status = UNAVAILABLE
-            else:
-                current_status = jobids_status[jobid]['status']
-                if current_status == RUNNING:
-                    if final_status != UNAVAILABLE:
-                        final_status = RUNNING
-                elif current_status == PENDING:
-                    if final_status not in (UNAVAILABLE, RUNNING):
-                        final_status = PENDING
-                elif current_status == FINISH:
-                    pass    # Default option
-
-        req['status'] = final_status   # request final status
+        req['status'] = get_request_status(req, jobids_status)
 
     return reqs
+
+
+
+@view_config(route_name='request history', request_method='GET',
+             renderer='json')
+def request_history(request):
+    """Returns the history of a request"""
+    settings = request.registry.settings
+
+    try:
+        requestid = int(request.matchdict['requestid'])
+    except ValueError:
+        raise exc.HTTPBadGateway(detail="Request id is not valid")
+
+    # Get request info
+    dbinterf = web_runner.db.DbInterface(
+        settings['db_filename'], recreate=False)
+    request_info = dbinterf.get_request(requestid)
+    dbinterf.close()
+
+    if not request_info:
+        # The requestid is not recognized
+        raise exc.HTTPBadGateway(detail="No info from Request id")
+
+    # Get the jobid status dictionary.
+    scrapyd_baseurl = settings['spider._scrapyd.base_url']
+    scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
+    jobids_status = scrapyd_interf.get_jobids_status()
+
+    try:   
+        jobids_info = {jobid: jobids_status[jobid]  # Get only the jobids of 
+          for jobid in request_info['jobids']}      # the current request
+    except KeyError:
+        jobids_info = None
+
+    if jobids_info:
+        history = _get_history(requestid, request_info, jobids_info)
+        status = get_request_status(request_info, jobids_status)
+    else:
+        history = None
+
+    info = {'request': request_info,
+            'jobids_info': jobids_info,
+            'history': history,
+            'status': status }
+
+    return info
+
+
+def _get_history(requestid, request_info, jobids_info):
+    class Log:
+        def __init__(self):
+            self.date = None
+            self.delta = None
+            self.comment = None
+
+        def __repr__(self):
+            now = datetime.datetime.utcnow()
+            self.delta = now - self.date
+            # Erase the microseconds
+            self.delta -= datetime.timedelta(microseconds=self.delta.microseconds)
+            return [str(self.date), str(self.delta), self.comment]
+
+        def setDate(self, dateStr):
+            self.date = string2datetime(dateStr)
+    
+
+    history = []
+    # Insert starting log
+    creation = Log()
+    creation.setDate(request_info['creation'])
+    creation.comment = 'Request arrived from %s.' % request_info['remote_ip']
+    history.append(creation)
+ 
+    request_finished = True
+    date_last_finished_spider = None
+    for jobid in request_info['jobids']:
+        status = jobids_info[jobid]['status']
+        if status == FINISH:    
+            # Note: I'm not able to know when the spider started if it has
+            # not finished. Scrapyd does not provide that info.
+            # Log when the spider started
+            start_log = Log()
+            start_log.setDate(jobids_info[jobid]['start_time'])
+            start_log.comment = 'Spider %s started.' % jobids_info[jobid]['spider']
+            history.append(start_log)
+
+            # Log when spider finished
+            finish_log = Log()
+            finish_log.setDate(jobids_info[jobid]['end_time'])
+            spider_time = finish_log.date - start_log.date
+            spider_time -= datetime.timedelta(
+                           microseconds=spider_time.microseconds)
+            finish_log.comment = 'Spider %s finished. Took %s.' % (
+              jobids_info[jobid]['spider'], spider_time)
+            history.append(finish_log)
+
+            # set what is the date of the last finished spider
+            if ( date_last_finished_spider == None or 
+              date_last_finished_spider < finish_log.date):
+                date_last_finished_spider = finish_log.date
+        else:
+            request_finished = False
+
+    # Add the request finish status
+    if request_finished:
+        finish = Log()
+        finish.date = date_last_finished_spider
+        request_time = finish.date - creation.date
+        request_time -= datetime.timedelta(
+                        microseconds=request_time.microseconds)
+        finish.comment = 'Request finished. Took %s since created.' % request_time
+        history.append(finish)
+
+    # Sort the history by date
+    sort_history = sorted(history, key=lambda x: x.date)
+    return map((lambda x: x.__repr__()), sort_history)
 
 
 # vim: set expandtab ts=4 sw=4:
