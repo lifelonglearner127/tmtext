@@ -97,6 +97,43 @@ def web_runner_lastrequests(request, n=None):
 
 
 
+@login_required
+def web_runner_request_history(request, requestid):
+    
+ 
+    try:
+        base_url = settings.WEB_RUNNER_BASE_URL
+        url = '%srequest/%s/history/' % (base_url, requestid)
+        req = requests.get(url)
+        error = False
+    except requests.exceptions.RequestException as e:
+        error = True
+        return HttpResponse("There are issues connecting with Web Runner", status=502)
+
+    req_info = req.json()
+    _process_history_to_display(req_info['history'])
+    #context = {'last_requests': req_info,
+    #  'now': datetime.datetime.utcnow()}
+    return render(request, 'simple_cli/request_history.html', req_info)
+
+
+
+def _process_history_to_display(history):
+    """Transform history information to be displayed"""
+
+    for index in range(len(history)):
+        try:
+            date = datetime.datetime.strptime(history[index][0], 
+                                              '%Y-%m-%d %H:%M:%S.%f')
+            dateStr = date.strftime('%x %X')
+            history[index][0] = dateStr + " (UTC)"
+        except ValueError:
+            pass
+
+    return
+
+
+
 def _process_request_to_display(reqList):
     """Transform an historic request list to be displayed 
 
@@ -132,5 +169,8 @@ def _process_request_to_display(reqList):
                 pass
         
     return
+
+
+
 
 # vim: set expandtab ts=4 sw=2:
