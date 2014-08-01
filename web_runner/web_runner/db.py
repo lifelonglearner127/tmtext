@@ -80,10 +80,24 @@ class DbInterface(object):
             ON UPDATE CASCADE
           )'''
 
+        table3 = '''CREATE TABLE request_ops(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          request_id INTEGER,
+          date TIMESTAMP,
+          type VARCHAR,
+          description TEXT,
+          FOREIGN KEY(request_id) REFERENCES requests(id) 
+            ON DELETE CASCADE 
+            ON UPDATE CASCADE
+          );
+          '''
+
+
         try:
             cursor = self._conn.cursor()
             cursor.execute(table1)
             cursor.execute(table2)
+            cursor.execute(table3)
             self._conn.commit()
             cursor.close()
             ret = True
