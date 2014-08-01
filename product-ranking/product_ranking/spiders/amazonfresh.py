@@ -5,6 +5,7 @@ from future_builtins import *
 import urlparse
 
 from scrapy.log import ERROR
+from scrapy.selector import Selector
 from scrapy.utils.project import get_project_settings
 
 from product_ranking.items import SiteProductItem
@@ -33,34 +34,34 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
         )
 
     def parse_product(self, response):
+        sel = Selector(response)
+
         prod = response.meta['product']
 
         paras = urlparse.parse_qs(urlparse.urlsplit(response.url).query)
         cond_set(prod, 'model', paras['asin'])
-        title = response.xpath('//div[@class="buying"]/h1/text()').extract()
+        title = sel.xpath('//div[@class="buying"]/h1/text()').extract()
         cond_set(prod, 'title', title)
-        brand = response.xpath('//div[@class="byline"]/a/text()').extract()
+        brand = sel.xpath('//div[@class="byline"]/a/text()').extract()
         cond_set(prod, 'brand', brand)
-        price = response.xpath(
+        price = sel.xpath(
             '//div[@class="price"]/span[@class="value"]/text()'
         ).extract()
         cond_set(prod, 'price', price)
-        des = response.xpath('//*[@id="productDescription"]/p/text()').extract()
+        des = sel.xpath('//*[@id="productDescription"]/p/text()').extract()
         cond_set(prod, 'description', des)
-        img_url = response.xpath(
-            '//div[@id="mainImgWrapper"]/img/@src'
-        ).extract()
+        img_url = sel.xpath('//div[@id="mainImgWrapper"]/img/@src').extract()
         cond_set(prod, 'image_url', img_url)
         cond_set(prod, 'locale', ['en-US'])
         prod['url'] = response.url
         return prod
 
     def _search_page_error(self, response):
+        sel = Selector(response)
+
         try:
-            found1 = response.xpath(
-                '//div[@class="warning"]/p/text()'
-            ).extract()[0]
-            found2 = response.xpath(
+            found1 = sel.xpath('//div[@class="warning"]/p/text()').extract()[0]
+            found2 = sel.xpath(
                 '//div[@class="warning"]/p/strong/text()'
             ).extract()[0]
             found = found1 + " " + found2
