@@ -38,8 +38,8 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
 
         prod = response.meta['product']
 
-        paras = urlparse.parse_qs(urlparse.urlsplit(response.url).query)
-        cond_set(prod, 'model', paras['asin'])
+        query_string = urlparse.parse_qs(urlparse.urlsplit(response.url).query)
+        cond_set(prod, 'model', query_string['asin'])
         title = sel.xpath('//div[@class="buying"]/h1/text()').extract()
         cond_set(prod, 'title', title)
         brand = sel.xpath('//div[@class="byline"]/a/text()').extract()
