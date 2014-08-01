@@ -17,6 +17,7 @@ class CostcoProductsSpider(BaseProductsSpider):
     name = "costco_products"
     allowed_domains = ["costco.com"]
     start_urls = []
+
     SEARCH_URL = "http://www.costco.com/CatalogSearch?pageSize=96" \
                  "&catalogId=10701&langId=-1&storeId=10301" \
                  "&currentPage=1&keyword={search_term}"
@@ -97,6 +98,7 @@ class CostcoProductsSpider(BaseProductsSpider):
             # Found no product links. Probably a transient error, lets retry.
             new_meta = dict(response.meta)
             new_meta['link_page_attempt'] = link_page_attempt + 1
+            # FIXME Why are we making duplicate requests?
             # Add an attribute so that Scrapy doesn't discard as duplicate.
             url = response.url + "&_=%d" % link_page_attempt
             result = Request(url, self.parse, meta=new_meta, priority=1)
@@ -128,17 +130,19 @@ class CostcoProductsSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
+        """Increases the currentPage query string parameter."""
+        # FIXME: How does it know when it has reached the last page?
         url_parse = urlparse.urlsplit(response.url)
-        paras = urlparse.parse_qs(url_parse.query)
-        new_paras = {}
-        for key in paras:
-            new_paras[key] = paras[key][0]
-        new_paras['currentPage'] = int(new_paras.get("currentPage", 1)) + 1
+        query_string = urlparse.parse_qs(url_parse.query)
+        # This code discards repeated parameters!
+        # FIXME: Why discard parameters?
+        new_qs = {key: values[0] for key, values in query_string.items()}
+        new_qs['currentPage'] = int(new_qs.get("currentPage", 1)) + 1
         link = urlparse.urlunsplit((
             url_parse.scheme,
             url_parse.netloc,
             url_parse.path,
-            urllib.urlencode(new_paras),
+            urllib.urlencode(new_qs),
             url_parse.fragment,
         ))
         return link
