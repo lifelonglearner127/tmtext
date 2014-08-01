@@ -9,6 +9,10 @@ LOG = logging.getLogger(__name__)
 
 COMMAND = 'command'
 SPIDER = 'spider'
+SPIDER_STATUS = 'spider_status'
+COMMAND_STATUS = 'command_status'
+SPIDER_RESULT = 'spider_result'
+COMMAND_RESULT = 'command_result'
 
 class DbInterface(object):
     """Class to handle requests persistency
@@ -156,6 +160,54 @@ class DbInterface(object):
                 LOG.error("Error inserting a new request. Detail= " + str(e))
                 ret = False
 
+
+        return ret
+
+
+
+    def new_request_event(self, event_type, jobids, ip=None):
+        """Add a new request to the DB:
+
+        Input parameters:
+          * event_type: valid values are SPIDER_STATUS, COMMAND_STATUS,
+              SPIDER_RESULT, COMMAND_RESULT
+          * params: request params
+          * jobids: list of scrapyd job associated to the command/spider
+
+        Return: boolean with the operation success
+        """
+        
+        if not jobids or len(jobids)==0:
+            return False
+
+        event_date = datetime.datetime.utcnow()
+        
+        #Get the requetid associated
+        sql = 'SELECT request_id FROM scrapy_jobs WHERE scrapy_jobid=?'
+        cursor = self._conn.cursor()
+        cursor.execute(sql, (jobids[0],))
+        (requestid,) = cursor.fetchone()
+
+        if not requestid:
+            return False
+
+        # Insert the event in the DB
+        insert_sql = '''INSERT INTO request_ops(request_id, 
+                        date, type, description)
+                        VALUES(?,?,?,?)'''
+
+        sql_values= (requestid, event_date, event_type, '')
+        print(sql_values)
+
+        try:        
+            cursor = self._conn.cursor()
+            cursor.execute(insert_sql, sql_values)
+            self._conn.commit()
+            ret = True
+        except sqlite3.Error as e:
+            LOG.error("Error inserting an request event. Detail= " + str(e))
+            self._conn.rollback()
+            ret = False
 
         return ret
 

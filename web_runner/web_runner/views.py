@@ -125,6 +125,14 @@ def command_pending(request):
         if status is not ScrapydMediator.JobStatus.finished:
             running += 1
 
+    # Storing the request in the internal DB
+    dbinterf = web_runner.db.DbInterface(
+        settings['db_filename'], recreate=False)
+    command_name = request.path.strip('/')
+    dbinterf.new_request_event(web_runner.db.COMMAND_STATUS, 
+                               job_ids, request.remote_addr)
+    dbinterf.close()
+
     if running:
         raise exc.HTTPAccepted(detail="Crawlers still running: %d" % running)
     else:
