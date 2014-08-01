@@ -1,3 +1,6 @@
+from __future__ import division, absolute_import, unicode_literals
+from future_builtins import *
+
 from scrapy.selector import Selector
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set
