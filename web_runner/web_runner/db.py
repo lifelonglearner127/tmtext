@@ -193,6 +193,7 @@ class DbInterface(object):
         for row in cursor.fetchall():
             (id, name, type, group_name, site, params, creation, ip) = row
             row_dict = {
+              'requestid': id,
               'name': name,
               'type': type,
               'group_name': group_name,
@@ -205,6 +206,37 @@ class DbInterface(object):
         
         return output
 
+
+    def get_request(self, requestid):
+        """Returns information about the requestid
+
+        The output is a dictionary whose keys are:
+          * name, type, group_name, site, params(type: json), creation
+        """
+
+        cursor = self._conn.cursor()
+        sql = '''SELECT id, name, type, group_name, site, params, creation,
+          remote_ip 
+          FROM requests 
+          WHERE id=? ''' ;
+        cursor.execute(sql, (requestid,))
+
+        row = cursor.fetchone()
+        row_dict = None
+        if row:
+            (id, name, type, group_name, site, params, creation, ip) = row
+            row_dict = {
+              'requestid': id,
+              'name': name,
+              'type': type,
+              'group_name': group_name,
+              'site': site,
+              'params': params,
+              'creation': creation,
+              'remote_ip': ip,
+              'jobids': self._get_jobids(id) }
+        
+        return row_dict
 
 
     def _get_jobids(self, request_id):

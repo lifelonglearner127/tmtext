@@ -52,6 +52,7 @@ ROOT_URLCONF = 'web_runner_web.urls'
 
 WSGI_APPLICATION = 'web_runner_web.wsgi.application'
 
+LOGIN_URL = 'django.contrib.auth.views.login'
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
@@ -62,6 +63,7 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
