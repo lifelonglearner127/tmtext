@@ -3,7 +3,7 @@ from __future__ import print_function
 from future_builtins import *
 
 import urlparse
-from scrapy.log import ERROR, WARNING
+from scrapy.log import ERROR
 from scrapy.utils.project import get_project_settings
 
 from product_ranking.items import SiteProductItem
