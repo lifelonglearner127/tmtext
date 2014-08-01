@@ -50,20 +50,17 @@ class BestBuyProductSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_total_matches(self, sel):
-        mynum = sel.css("#searchstate > b:nth-child(1)::text").extract()
-        mynum = mynum[0]
-        if mynum:
-            return int(mynum)
+        num_results = sel.css("#searchstate > b:nth-child(1)::text").extract()
+        if num_results and num_results[0]:
+            return int(num_results[0])
         else:
             self.log("Failed to parse total number of matches.", level=ERROR)
 
     def _scrape_next_results_page_link(self, sel):
-        next_pages = sel.css(".padbar ul.pagination a.next::attr(href)").extract()
+        next_pages = sel.css("a.next::attr(href)").extract()
         next_page = None
-        if len(next_pages) == 2:
+        if next_pages:
             next_page = next_pages[0]
-        elif len(next_pages) > 2:
-            self.log("Found more than two 'next page' link.", ERROR)
+            if len(next_pages) > 2:
+                self.log("Found more than two 'next page' links.", WARNING)
         return next_page
-
-
