@@ -425,6 +425,16 @@ def request_history(request):
 
 
 def _get_history(requestid, request_info, jobids_info):
+    """Build the history of a request
+
+    Given a requestid, a dictionary with request information
+    and a dictionary with the jobids status, _get_history builds
+    a generator of history structure.
+    history structure is a tuple of 3 possition:
+     * 1st is the date
+     * 2nd is the elapsed time sinse now
+     * 3rd: a description
+    """
     class Log:
         def __init__(self):
             self.date = None
