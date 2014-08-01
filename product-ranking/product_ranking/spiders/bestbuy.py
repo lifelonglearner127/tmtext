@@ -1,8 +1,10 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import re
+
 from scrapy.selector import Selector
-from scrapy.log import ERROR
+from scrapy.log import ERROR, WARNING
 
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set
@@ -20,30 +22,70 @@ class BestBuyProductSpider(BaseProductsSpider):
         sel = Selector(response)
         prod = response.meta['product']
 
+        self._populate_from_schemaorg(response.url, sel, prod)
+
         self._populate_from_html(response.url, sel, prod)
+
+        cond_set(prod, 'locale', ['en-US'])  # Default locale.
 
         return prod
 
-    def _populate_from_html(self, url, sel, product):
-        cond_set(product, 'title',
-                 sel.xpath("//*[@itemprop='name']/a/text()").extract())
-        cond_set(product, 'price',
-                 sel.xpath("//*[@itemprop='price']/text()").extract())
-        cond_set(product, 'upc',
-                 sel.xpath("//*[@class='hproduct']/div[3]/div[1]/h5[2]/strong/text()").extract())
-        cond_set(product, 'model',
-                 sel.xpath("//*[@class='hproduct']/div[3]/div[1]/h5[1]/strong/text()").extract())
-        cond_set(product, 'image_url',
-                 sel.xpath("//*[@itemprop='image']/@src").extract())
-        cond_set(product, 'brand',
-                 sel.xpath("//*[@itemprop='manufacturer']/span/@content").extract())
-        cond_set(product, 'description',
-                 sel.xpath("//*[@itemprop='description']/text()").extract())
-        cond_set(product, 'locale', ['en-US'])  # Default locale.
+    def _populate_from_schemaorg(self, url, sel, product):
+        product_tree = sel.xpath("//*[@itemtype='http://schema.org/Product']")
 
+        cond_set(product, 'title', product_tree.xpath(
+            "descendant::*[not (@itemtype)]/meta[@itemprop='name']/@content"
+        ).extract())
+        cond_set(product, 'image_url', product_tree.xpath(
+            "descendant::*[not (@itemtype)]/img[@itemprop='image']/@src"
+        ).extract())
+        cond_set(product, 'model', product_tree.xpath(
+            "descendant::*[not (@itemtype)]/*[@itemprop='model']/text()"
+        ).extract())
+        cond_set(product, 'upc', product_tree.xpath(
+            "descendant::*[not (@itemtype)]/*[@itemprop='productID']/text()"
+        ).extract())
+        cond_set(product, 'url', product_tree.xpath(
+            "descendant::*[not (@itemtype)]/*[@itemprop='url']/@content"
+        ).extract())
+        cond_set(
+            product,
+            'description',
+            product_tree.xpath(
+                "descendant::*[not (@itemtype)]/"
+                "*[@itemprop='description']/node()"
+            ).extract(),
+            conv=lambda desc_parts: ''.join(desc_parts).strip(),
+        )
+
+        offer_tree = product_tree.xpath(
+            ".//*[@itemtype='http://schema.org/Offer']"
+        )
+        cond_set(product, 'price', offer_tree.xpath(
+            "descendant::*[not (@itemtype) and @itemprop='price']/@content"
+        ).extract())
+
+        brand_tree = product_tree.xpath(
+            ".//*[@itemtype='http://schema.org/Brand']"
+        )
+        cond_set(product, 'brand', brand_tree.xpath(
+            "descendant::*[not (@itemtype) and @itemprop='name']/@content"
+        ).extract())
+
+    def _populate_from_html(self, url, sel, product):
+        title = sel.css("#sku-title ::text").extract()[0]
+        brand, _ = re.split(r'\s+-\s+', title, 1)
+        cond_set(product, 'title', [title])
+        cond_set(product, 'brand', [brand])
+
+        cond_set(product, 'upc', sel.css("#sku-value ::text").extract())
+        cond_set(product, 'model', sel.css("#model-value ::text").extract())
 
     def _scrape_product_links(self, sel):
-        links = sel.xpath("//*[@itemprop='name']/a/@href").extract()
+        links = sel.xpath(
+            "//*[@itemtype='http://schema.org/Product']"
+            "/descendant::*[not (@itemtype)]//a[@itemprop='url']/@href"
+        ).extract()
         if not links:
             self.log("Found no product links.", ERROR)
         for link in links:
