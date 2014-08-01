@@ -343,7 +343,45 @@ def last_request_status(request):
 @view_config(route_name='request history', request_method='GET',
              renderer='json')
 def request_history(request):
-    """Returns the history of a request"""
+    """Returns the history of a request
+
+    The view expects to receive a requestid.
+    The view returns a dictionary with the following keys:
+     * request: dictionary with main request infomation stored in the DB
+     * jobids_info: dictionary whose key are all jobids related to
+        requestid. The values is a dictionary with jobid information.
+     * history: List with history content.
+     * status: String with the requestid status
+
+    Example of request:
+        {'creation': u'2014-07-30 19:38:53.659982', 
+         'params': u'{"searchterms_str": "laundry detergent", "group_name": "Gabo test1", "site": "walmart", "quantity": "100"}', 
+         'requestid': 252, 
+         'jobids': (u'236c257c182111e4906150465d4bc079',), 
+         'remote_ip': u'127.0.0.1', 
+         'group_name': u'Gabo test1', 
+         'type': u'command', 
+         'site': u'walmart', 
+         'name': u'cat1'}
+
+    Example of jobids_info:
+        {u'17ae4f1c182111e4906150465d4bc079': {
+            'spider': u'walmart_products', 
+            'status': 'finished', 
+            'start_time': u'2014-07-30 16:38:34.218200', 
+            'end_time': u'2014-07-30 16:40:50.766396', 
+            'id': u'17ae4f1c182111e4906150465d4bc079'}, 
+         u'236c257c182111e4906150465d4bc079': {
+            'spider': u'walmart_products', 
+            'status': 'finished', 
+            'start_time': '2014-07-30 16:38:54.116999', 
+            'end_time': u'2014-07-30 16:41:06.851201', 
+            'id': u'236c257c182111e4906150465d4bc079'}}
+
+    Exanmple of history:
+        [["2014-07-30 21:13:02.829964", "1 hour", "Request arrived from 127.0.0.1."],
+        ["2014-07-30 21:16:02.829964", "1 hour", "Request Finished"]]
+    """
     settings = request.registry.settings
 
     try:
