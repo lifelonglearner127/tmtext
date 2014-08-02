@@ -1,9 +1,11 @@
-from scrapy.selector import Selector
-from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, cond_set
-from scrapy.log import ERROR
 import re
 
+from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.spiders import BaseProductsSpider, cond_set
+
+from scrapy.http import Request
+from scrapy.log import ERROR
+from scrapy.selector import Selector
 
 
 class PGEStoreProductSpider(BaseProductsSpider):
@@ -14,11 +16,19 @@ class PGEStoreProductSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         sel = Selector(response)
+
         prod = response.meta['product']
+
         self._populate_from_html(response.url, sel, prod)
 
-        result = prod
-        return result
+        related_product_link = sel.xpath(
+            "//*[@id='crossSell']/script[1]/@src").extract()[0]
+        new_meta = response.meta.copy()
+        return Request(
+            related_product_link,
+            self.parse_related_products,
+            meta=new_meta,
+        )
 
     def _populate_from_html(self, url, sel, product):
 
@@ -50,8 +60,6 @@ class PGEStoreProductSpider(BaseProductsSpider):
     def parse_related_products(self, response):
         sel = Selector(response)
         product = response.meta['product']
-
-        data = sel.xpath("//*[@id='crossSell']/script[1]/@src").extract()[0]
 
         otherproducts = sel.xpath("//*[@id='gmm']/div[1]/text()").extract()[0].strip()
         urls = sel.xpath("//*[@id='igdrec_2']/div[2]/div[1]/a[1]/@href").extract()
