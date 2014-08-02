@@ -1,3 +1,6 @@
+from __future__ import division, absolute_import, unicode_literals
+from future_builtins import *
+
 import re
 
 from product_ranking.items import SiteProductItem, RelatedProduct
