@@ -10,9 +10,30 @@ from scrapy.selector import Selector
 
 class PGEStoreProductSpider(BaseProductsSpider):
     name = 'pgestore_products'
-    allowed_domains = ["pgestore.com"]
+    allowed_domains = ["pgestore.com", "igodigital.com"]
 
-    SEARCH_URL = "http://www.pgestore.com/on/demandware.store/Sites-PG-Site/default/Search-Show?q={search_term}"
+    SEARCH_URL = "http://www.pgestore.com/on/demandware.store/Sites-PG-Site/" \
+                 "default/Search-Show?q={search_term}"
+
+    def __init__(
+            self,
+            url_formatter=None,
+            quantity=None,
+            searchterms_str=None,
+            searchterms_fn=None,
+            site_name=allowed_domains[0],
+            *args,
+            **kwargs):
+        # All this is to set the site_name since we have several
+        # allowed_domains.
+        super(PGEStoreProductSpider, self).__init__(
+            url_formatter,
+            quantity,
+            searchterms_str,
+            searchterms_fn,
+            site_name,
+            *args,
+            **kwargs)
 
     def parse_product(self, response):
         sel = Selector(response)
@@ -23,15 +44,13 @@ class PGEStoreProductSpider(BaseProductsSpider):
 
         related_product_link = sel.xpath(
             "//*[@id='crossSell']/script[1]/@src").extract()[0]
-        new_meta = response.meta.copy()
         return Request(
             related_product_link,
             self.parse_related_products,
-            meta=new_meta,
+            meta=response.meta.copy(),
         )
 
     def _populate_from_html(self, url, sel, product):
-
         re1 = '.*?(\'(.*\w))'
         rg = re.compile(re1, re.IGNORECASE | re.DOTALL)
         m = rg.search(sel.xpath("//*[@id='pdpMain']/div[1]/script[2]/text()").extract()[0])
@@ -99,6 +118,3 @@ class PGEStoreProductSpider(BaseProductsSpider):
         elif len(next_pages) == 0:
             self.log("Found no 'next page' link.", ERROR)
         return next_page
-
-
-
