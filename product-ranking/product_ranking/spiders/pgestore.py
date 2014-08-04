@@ -10,6 +10,8 @@ from scrapy.http import Request
 from scrapy.log import ERROR
 from scrapy.selector import Selector
 
+from bs4 import BeautifulSoup
+
 
 class PGEStoreProductSpider(BaseProductsSpider):
     name = 'pgestore_products'
@@ -77,21 +79,27 @@ class PGEStoreProductSpider(BaseProductsSpider):
                  description)
         cond_set(product, 'locale', ['en-US'])  # Default locale.
 
-        #self.parse_related_products(sel.response)
+        # self.parse_related_products(sel.response)
 
     def parse_related_products(self, response):
         sel = Selector(response)
         product = response.meta['product']
 
-        otherproducts = sel.xpath("//*[@id='gmm']/div[1]/text()").extract()[0].strip()
-        urls = sel.xpath("//*[@id='igdrec_2']/div[2]/div[1]/a[1]/@href").extract()
-        titles = sel.xpath("//*[@id='igdrec_2']/div[1]/h2/text()").extract()
-        if otherproducts == "Other Shoppers Purchased":
+        soup = BeautifulSoup(response.body)
+
+        igdrecs = soup.find_all('h2')
+        links = igdrecs[1].find_all_next("a", href=True)
+        urls = [links[1].attrs['href'], links[3].attrs['href'], links[5].attrs['href'],
+                links[7].attrs['href'], links[9].attrs['href']]
+        titles = [str(links[1].string), str(links[3].string), str(links[5].string),
+                  str(links[7].string), str(links[9].string)]
+
+        if len(urls) > 0:
             product['related_products'] = {
-                "Other Shoppers Purchased": list(
+                "buyers_also_bought": list(
                     RelatedProduct(title, url)
-                    for url in sel.xpath("//*[@id='igdrec_2']/div[2]/div[1]/a[2]/@href").extract()
-                    for title in sel.xpath("//*[@id='igdrec_2']/div[2]/div[1]/a[2]/text()").extract()
+                    for url in urls
+                    for title in titles
                 ),
             }
 
