@@ -88,18 +88,33 @@ class PGEStoreProductSpider(BaseProductsSpider):
         soup = BeautifulSoup(response.body)
 
         igdrecs = soup.find_all('h2')
+
         links = igdrecs[1].find_all_next("a", href=True)
         urls = [links[1].attrs['href'], links[3].attrs['href'], links[5].attrs['href'],
                 links[7].attrs['href'], links[9].attrs['href']]
         titles = [str(links[1].string), str(links[3].string), str(links[5].string),
                   str(links[7].string), str(links[9].string)]
+        rec_links = igdrecs[0].find_all_next("a", href=True)
+
+        rec_urls = [rec_links[0].attrs['href'], rec_links[2].attrs['href'], rec_links[4].attrs['href'],
+                    rec_links[6].attrs['href'], rec_links[8].attrs['href']]
+        rec_titles = [str(rec_links[0].next_element.next_element.next_element.next_element.string),
+                      str(rec_links[2].next_element.next_element.next_element.next_element.string),
+                      str(rec_links[4].next_element.next_element.next_element.next_element.string),
+                      str(rec_links[6].next_element.next_element.next_element.next_element.string),
+                      str(rec_links[8].next_element.next_element.next_element.next_element.string)]
 
         if len(urls) > 0:
             product['related_products'] = {
                 "buyers_also_bought": list(
                     RelatedProduct(title, url)
-                    for url in urls
                     for title in titles
+                    for url in urls
+                ),
+                "recommended": list(
+                    RelatedProduct(title, url)
+                    for title in rec_titles
+                    for url in rec_urls
                 ),
             }
 
