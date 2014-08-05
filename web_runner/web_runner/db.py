@@ -84,7 +84,7 @@ class DbInterface(object):
             ON UPDATE CASCADE
           )'''
 
-        table3 = '''CREATE TABLE request_ops(
+        table3 = '''CREATE TABLE IF NOT EXISTS request_ops(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           request_id INTEGER,
           date TIMESTAMP,
