@@ -196,7 +196,8 @@ class DbInterface(object):
                         date, type, description)
                         VALUES(?,?,?,?)'''
 
-        sql_values= (requestid, event_date, event_type, '')
+        desc =  json.dumps({'ip': ip}) if ip else ''
+        sql_values= (requestid, event_date, event_type, desc)
         print(sql_values)
 
         try:        
@@ -284,7 +285,7 @@ class DbInterface(object):
         sql = '''SELECT id, name, type, group_name, site, params, creation,
           remote_ip 
           FROM requests 
-          WHERE id=? ''' ;
+          WHERE id=? '''
         cursor.execute(sql, (requestid,))
 
         row = cursor.fetchone()
@@ -304,6 +305,38 @@ class DbInterface(object):
         
         return row_dict
 
+
+    def get_req_operations(self, requestid):
+        """
+        Load all request operations (status and result)
+
+        The function returns a list of tuple. The tuple position will have:
+          0: date
+          1: operation type (SPIDER_STATUS, COMMAND_STATUS, SPIDER_RESULT or
+                             COMMAND_RESULT)
+          2: ip
+        """
+        
+        cursor = self._conn.cursor()
+        sql = '''SELECT date, type, description
+          FROM request_ops
+          WHERE request_id = ? '''
+        cursor.execute(sql, (requestid,))
+
+        ret = []
+        for row in cursor.fetchall():
+            (date,  type, desc) = row
+
+            # Parse the IP if it exists
+            try:
+                ip = json.loads(desc)['ip']
+            except ValueError:
+                ip = ''
+
+            ret.append((date, type, ip))
+        cursor.close()
+
+        return ret
 
     def _get_jobids(self, request_id):
         """Return a tuple with all jobids asociated to a request id"""

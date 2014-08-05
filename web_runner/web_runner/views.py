@@ -425,6 +425,7 @@ def request_history(request):
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
     request_info = dbinterf.get_request(requestid)
+    operations_info = dbinterf.get_req_operations(requestid)
     dbinterf.close()
 
     if not request_info:
@@ -442,8 +443,10 @@ def request_history(request):
     except KeyError:
         jobids_info = None
 
+    
     if jobids_info:
-        history = _get_history(requestid, request_info, jobids_info)
+        history = _get_history(requestid, request_info, jobids_info, 
+                               operations_info)
         status = get_request_status(request_info, jobids_status)
     else:
         history = None
@@ -456,11 +459,12 @@ def request_history(request):
     return info
 
 
-def _get_history(requestid, request_info, jobids_info):
+def _get_history(requestid, request_info, jobids_info, operations_info):
     """Build the history of a request
 
-    Given a requestid, a dictionary with request information
-    and a dictionary with the jobids status, _get_history builds
+    Given a requestid, a dictionary with request information,
+    a dictionary with the jobids status and a list of operations
+    done over the request, _get_history builds
     a generator of history structure.
     history structure is a tuple of 3 possition:
      * 1st is the date
@@ -530,6 +534,26 @@ def _get_history(requestid, request_info, jobids_info):
                         microseconds=request_time.microseconds)
         finish.comment = 'Request finished. Took %s since created.' % request_time
         history.append(finish)
+
+    # Iterate over the operational information:
+    for op in operations_info:
+        (date, type, ip) = op
+        op_log = Log()
+        op_log.setDate(date)
+        
+        if type.find('status') >=0 :
+            op_log.comment = 'Requesting status'
+        elif type.find('result') >= 0:
+            op_log.comment = 'Requesting results'
+        else:
+            op_log.comment = type
+
+        if ip:
+            op_log.comment += (' from %s.' % ip)
+        else:
+            op_log.comment += '.'
+    
+        history.append(op_log)
 
     # Sort the history by date
     sort_history = sorted(history, key=lambda x: x.date)
