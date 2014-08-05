@@ -168,6 +168,14 @@ def command_result(request):
         )
     )
 
+    # Storing the request in the internal DB
+    dbinterf = web_runner.db.DbInterface(
+        settings['db_filename'], recreate=False)
+    command_name = request.path.strip('/')
+    dbinterf.new_request_event(web_runner.db.COMMAND_RESULT, 
+                               job_ids, request.remote_addr)
+    dbinterf.close()
+
     args = dict(request.params)
     for i, (job_id, spider_cfg) in enumerate(zip(job_ids, spider_cfgs)):
         fn = ScrapydMediator(settings, spider_cfg).retrieve_job_data_fn(job_id)
@@ -249,6 +257,14 @@ def spider_pending_view(request):
         request.registry.settings, SpiderConfig(spider_name, project_name))
     status = mediator.report_on_job(job_id)
 
+    # Storing the request in the internal DB
+    dbinterf = web_runner.db.DbInterface(
+        request.registry.settings['db_filename'], recreate=False)
+    command_name = request.path.strip('/')
+    dbinterf.new_request_event(web_runner.db.SPIDER_STATUS, 
+                               (job_id,), request.remote_addr)
+    dbinterf.close()
+
     if status is ScrapydMediator.JobStatus.finished:
         raise exc.HTTPFound(
             location=request.route_path("spider job results",
@@ -271,6 +287,14 @@ def spider_results_view(request):
     project_name = request.matchdict['project']
     spider_name = request.matchdict['spider']
     job_id = request.matchdict['jobid']
+
+    # Storing the request in the internal DB
+    dbinterf = web_runner.db.DbInterface(
+        request.registry.settings['db_filename'], recreate=False)
+    command_name = request.path.strip('/')
+    dbinterf.new_request_event(web_runner.db.SPIDER_RESULT, 
+                               (job_id,), request.remote_addr)
+    dbinterf.close()
 
     mediator = ScrapydMediator(
         request.registry.settings, SpiderConfig(spider_name, project_name))
