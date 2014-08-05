@@ -8,6 +8,7 @@ import urllib
 
 from scrapy.log import ERROR, WARNING
 from scrapy.http import Request
+from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set
@@ -131,18 +132,21 @@ class CostcoProductsSpider(BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         """Increases the currentPage query string parameter."""
-        # FIXME: How does it know when it has reached the last page?
+        max_page = self._scrape_total_matches(Selector(response))/96
         url_parse = urlparse.urlsplit(response.url)
         query_string = urlparse.parse_qs(url_parse.query)
-        # This code discards repeated parameters!
-        # FIXME: Why discard parameters?
-        new_qs = {key: values[0] for key, values in query_string.items()}
-        new_qs['currentPage'] = int(new_qs.get("currentPage", 1)) + 1
+
+        current_page = int(query_string.get("currentPage", [1])[0])
+        if current_page > max_page:
+            return None
+
+        query_string["currentPage"] = [current_page + 1]
         link = urlparse.urlunsplit((
             url_parse.scheme,
             url_parse.netloc,
             url_parse.path,
-            urllib.urlencode(new_qs),
+            urllib.urlencode(query_string, True),
             url_parse.fragment,
         ))
+
         return link
