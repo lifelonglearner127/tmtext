@@ -9,6 +9,10 @@ LOG = logging.getLogger(__name__)
 
 COMMAND = 'command'
 SPIDER = 'spider'
+SPIDER_STATUS = 'spider_status'
+COMMAND_STATUS = 'command_status'
+SPIDER_RESULT = 'spider_result'
+COMMAND_RESULT = 'command_result'
 
 class DbInterface(object):
     """Class to handle requests persistency
@@ -80,10 +84,24 @@ class DbInterface(object):
             ON UPDATE CASCADE
           )'''
 
+        table3 = '''CREATE TABLE IF NOT EXISTS request_ops(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          request_id INTEGER,
+          date TIMESTAMP,
+          type VARCHAR,
+          description TEXT,
+          FOREIGN KEY(request_id) REFERENCES requests(id) 
+            ON DELETE CASCADE 
+            ON UPDATE CASCADE
+          );
+          '''
+
+
         try:
             cursor = self._conn.cursor()
             cursor.execute(table1)
             cursor.execute(table2)
+            cursor.execute(table3)
             self._conn.commit()
             cursor.close()
             ret = True
@@ -142,6 +160,55 @@ class DbInterface(object):
                 LOG.error("Error inserting a new request. Detail= " + str(e))
                 ret = False
 
+
+        return ret
+
+
+
+    def new_request_event(self, event_type, jobids, ip=None):
+        """Add a new request to the DB:
+
+        Input parameters:
+          * event_type: valid values are SPIDER_STATUS, COMMAND_STATUS,
+              SPIDER_RESULT, COMMAND_RESULT
+          * params: request params
+          * jobids: list of scrapyd job associated to the command/spider
+
+        Return: boolean with the operation success
+        """
+        
+        if not jobids or len(jobids)==0:
+            return False
+
+        event_date = datetime.datetime.utcnow()
+        
+        #Get the requetid associated
+        sql = 'SELECT request_id FROM scrapy_jobs WHERE scrapy_jobid=?'
+        cursor = self._conn.cursor()
+        cursor.execute(sql, (jobids[0],))
+        (requestid,) = cursor.fetchone()
+
+        if not requestid:
+            return False
+
+        # Insert the event in the DB
+        insert_sql = '''INSERT INTO request_ops(request_id, 
+                        date, type, description)
+                        VALUES(?,?,?,?)'''
+
+        desc =  json.dumps({'ip': ip}) if ip else ''
+        sql_values= (requestid, event_date, event_type, desc)
+        print(sql_values)
+
+        try:        
+            cursor = self._conn.cursor()
+            cursor.execute(insert_sql, sql_values)
+            self._conn.commit()
+            ret = True
+        except sqlite3.Error as e:
+            LOG.error("Error inserting an request event. Detail= " + str(e))
+            self._conn.rollback()
+            ret = False
 
         return ret
 
@@ -218,7 +285,7 @@ class DbInterface(object):
         sql = '''SELECT id, name, type, group_name, site, params, creation,
           remote_ip 
           FROM requests 
-          WHERE id=? ''' ;
+          WHERE id=? '''
         cursor.execute(sql, (requestid,))
 
         row = cursor.fetchone()
@@ -238,6 +305,38 @@ class DbInterface(object):
         
         return row_dict
 
+
+    def get_req_operations(self, requestid):
+        """
+        Load all request operations (status and result)
+
+        The function returns a list of tuple. The tuple position will have:
+          0: date
+          1: operation type (SPIDER_STATUS, COMMAND_STATUS, SPIDER_RESULT or
+                             COMMAND_RESULT)
+          2: ip
+        """
+        
+        cursor = self._conn.cursor()
+        sql = '''SELECT date, type, description
+          FROM request_ops
+          WHERE request_id = ? '''
+        cursor.execute(sql, (requestid,))
+
+        ret = []
+        for row in cursor.fetchall():
+            (date,  type, desc) = row
+
+            # Parse the IP if it exists
+            try:
+                ip = json.loads(desc)['ip']
+            except ValueError:
+                ip = ''
+
+            ret.append((date, type, ip))
+        cursor.close()
+
+        return ret
 
     def _get_jobids(self, request_id):
         """Return a tuple with all jobids asociated to a request id"""

@@ -125,6 +125,14 @@ def command_pending(request):
         if status is not ScrapydMediator.JobStatus.finished:
             running += 1
 
+    # Storing the request in the internal DB
+    dbinterf = web_runner.db.DbInterface(
+        settings['db_filename'], recreate=False)
+    command_name = request.path.strip('/')
+    dbinterf.new_request_event(web_runner.db.COMMAND_STATUS, 
+                               job_ids, request.remote_addr)
+    dbinterf.close()
+
     if running:
         raise exc.HTTPAccepted(detail="Crawlers still running: %d" % running)
     else:
@@ -159,6 +167,14 @@ def command_result(request):
             repeat(request.params),
         )
     )
+
+    # Storing the request in the internal DB
+    dbinterf = web_runner.db.DbInterface(
+        settings['db_filename'], recreate=False)
+    command_name = request.path.strip('/')
+    dbinterf.new_request_event(web_runner.db.COMMAND_RESULT, 
+                               job_ids, request.remote_addr)
+    dbinterf.close()
 
     args = dict(request.params)
     for i, (job_id, spider_cfg) in enumerate(zip(job_ids, spider_cfgs)):
@@ -241,6 +257,14 @@ def spider_pending_view(request):
         request.registry.settings, SpiderConfig(spider_name, project_name))
     status = mediator.report_on_job(job_id)
 
+    # Storing the request in the internal DB
+    dbinterf = web_runner.db.DbInterface(
+        request.registry.settings['db_filename'], recreate=False)
+    command_name = request.path.strip('/')
+    dbinterf.new_request_event(web_runner.db.SPIDER_STATUS, 
+                               (job_id,), request.remote_addr)
+    dbinterf.close()
+
     if status is ScrapydMediator.JobStatus.finished:
         raise exc.HTTPFound(
             location=request.route_path("spider job results",
@@ -263,6 +287,14 @@ def spider_results_view(request):
     project_name = request.matchdict['project']
     spider_name = request.matchdict['spider']
     job_id = request.matchdict['jobid']
+
+    # Storing the request in the internal DB
+    dbinterf = web_runner.db.DbInterface(
+        request.registry.settings['db_filename'], recreate=False)
+    command_name = request.path.strip('/')
+    dbinterf.new_request_event(web_runner.db.SPIDER_RESULT, 
+                               (job_id,), request.remote_addr)
+    dbinterf.close()
 
     mediator = ScrapydMediator(
         request.registry.settings, SpiderConfig(spider_name, project_name))
@@ -343,7 +375,45 @@ def last_request_status(request):
 @view_config(route_name='request history', request_method='GET',
              renderer='json')
 def request_history(request):
-    """Returns the history of a request"""
+    """Returns the history of a request
+
+    The view expects to receive a requestid.
+    The view returns a dictionary with the following keys:
+     * request: dictionary with main request infomation stored in the DB
+     * jobids_info: dictionary whose key are all jobids related to
+        requestid. The values is a dictionary with jobid information.
+     * history: List with history content.
+     * status: String with the requestid status
+
+    Example of request:
+        {'creation': u'2014-07-30 19:38:53.659982', 
+         'params': u'{"searchterms_str": "laundry detergent", "group_name": "Gabo test1", "site": "walmart", "quantity": "100"}', 
+         'requestid': 252, 
+         'jobids': (u'236c257c182111e4906150465d4bc079',), 
+         'remote_ip': u'127.0.0.1', 
+         'group_name': u'Gabo test1', 
+         'type': u'command', 
+         'site': u'walmart', 
+         'name': u'cat1'}
+
+    Example of jobids_info:
+        {u'17ae4f1c182111e4906150465d4bc079': {
+            'spider': u'walmart_products', 
+            'status': 'finished', 
+            'start_time': u'2014-07-30 16:38:34.218200', 
+            'end_time': u'2014-07-30 16:40:50.766396', 
+            'id': u'17ae4f1c182111e4906150465d4bc079'}, 
+         u'236c257c182111e4906150465d4bc079': {
+            'spider': u'walmart_products', 
+            'status': 'finished', 
+            'start_time': '2014-07-30 16:38:54.116999', 
+            'end_time': u'2014-07-30 16:41:06.851201', 
+            'id': u'236c257c182111e4906150465d4bc079'}}
+
+    Exanmple of history:
+        [["2014-07-30 21:13:02.829964", "1 hour", "Request arrived from 127.0.0.1."],
+        ["2014-07-30 21:16:02.829964", "1 hour", "Request Finished"]]
+    """
     settings = request.registry.settings
 
     try:
@@ -355,6 +425,7 @@ def request_history(request):
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
     request_info = dbinterf.get_request(requestid)
+    operations_info = dbinterf.get_req_operations(requestid)
     dbinterf.close()
 
     if not request_info:
@@ -372,8 +443,10 @@ def request_history(request):
     except KeyError:
         jobids_info = None
 
+    
     if jobids_info:
-        history = _get_history(requestid, request_info, jobids_info)
+        history = _get_history(requestid, request_info, jobids_info, 
+                               operations_info)
         status = get_request_status(request_info, jobids_status)
     else:
         history = None
@@ -386,7 +459,18 @@ def request_history(request):
     return info
 
 
-def _get_history(requestid, request_info, jobids_info):
+def _get_history(requestid, request_info, jobids_info, operations_info):
+    """Build the history of a request
+
+    Given a requestid, a dictionary with request information,
+    a dictionary with the jobids status and a list of operations
+    done over the request, _get_history builds
+    a generator of history structure.
+    history structure is a tuple of 3 possition:
+     * 1st is the date
+     * 2nd is the elapsed time sinse now
+     * 3rd: a description
+    """
     class Log:
         def __init__(self):
             self.date = None
@@ -450,6 +534,26 @@ def _get_history(requestid, request_info, jobids_info):
                         microseconds=request_time.microseconds)
         finish.comment = 'Request finished. Took %s since created.' % request_time
         history.append(finish)
+
+    # Iterate over the operational information:
+    for op in operations_info:
+        (date, type, ip) = op
+        op_log = Log()
+        op_log.setDate(date)
+        
+        if type.find('status') >=0 :
+            op_log.comment = 'Requesting status'
+        elif type.find('result') >= 0:
+            op_log.comment = 'Requesting results'
+        else:
+            op_log.comment = type
+
+        if ip:
+            op_log.comment += (' from %s.' % ip)
+        else:
+            op_log.comment += '.'
+    
+        history.append(op_log)
 
     # Sort the history by date
     sort_history = sorted(history, key=lambda x: x.date)
