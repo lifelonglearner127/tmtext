@@ -68,16 +68,13 @@ class PGEStoreProductSpider(BaseProductsSpider):
             'image_url',
             sel.xpath("//*[@id='pdpMain']/div[1]/div[2]/img/@src").extract()
         )
-        # FIXME Can't this XPath be made more resilient by not depending on so much of the document's structure? For example, ''.join(sel.css('.price ::text').extract()).strip().
-        product['price'] = sel.xpath(
-            "//*[@id='pdpATCDivpdpMain']/div[1]/div[7]/div[1]/div/div/div/"
-            "text()"
-        ).extract()[0].strip()
+        product['price'] = ''.join(sel.css('.price ::text').extract()).strip()
 
         # FIXME The description look strange. Why not just take the node()?
         description = sel.xpath("//*[@id='pdpTab1']/div/text()").extract()
-        description.extend(
-            sel.xpath("//*[@id='pdpTab1']/div/ul/li/text()").extract())
+        # removing below to just grab the brief description
+        # description.extend(
+        #     sel.xpath("//*[@id='pdpTab1']/div/ul/li/text()").extract())
         cond_set(product, 'description', description)
 
         cond_set(product, 'locale', ['en-US'])  # Default locale.
@@ -123,10 +120,12 @@ class PGEStoreProductSpider(BaseProductsSpider):
 
     def _scrape_total_matches(self, sel):
         # FIXME Please review the changes on bestbuy and perform them here where they apply.
-        mynum = sel.xpath("//*[@id='deptmainheaderinfo']/text()").extract()
-        words = mynum[0].split(" ")
-        if words[2]:
-            return int(words[2])
+        # modified slightly based on bestbuy spider
+        num_results = sel.xpath("//*[@id='deptmainheaderinfo']/text()").extract()
+
+        if num_results and num_results[0]:
+            num_results = num_results[0].split(" ")
+            return int(num_results[2])
         else:
             self.log("Failed to parse total number of matches.", level=ERROR)
 
