@@ -66,14 +66,24 @@ class PGEStoreProductSpider(BaseProductsSpider):
                  sel.xpath("//*[@id='pdpMain']/div[2]/h1/text()").extract())
         cond_set(product, 'upc',
                  sel.xpath("//*[@id='prodSku']/text()").extract())
-        cond_set(product, 'image_url',
-                 sel.xpath("//*[@id='pdpMain']/div[1]/div[2]/img/@src").extract())
-        product['price'] = sel.xpath("//*[@id='pdpATCDivpdpMain']/div[1]/div[7]/div[1]/div/div/div/text()") \
-            .extract()[0].strip()
+        cond_set(
+            product,
+            'image_url',
+            sel.xpath("//*[@id='pdpMain']/div[1]/div[2]/img/@src").extract()
+        )
+        # FIXME Can't this XPath be made more resilient by not depending on so much of the document's structure? For example, ''.join(sel.css('.price ::text').extract()).strip().
+        import pdb;pdb.set_trace()
+        product['price'] = sel.xpath(
+            "//*[@id='pdpATCDivpdpMain']/div[1]/div[7]/div[1]/div/div/div/"
+            "text()"
+        ).extract()[0].strip()
+
+        # FIXME The description look strange. Why not just take the node()?
         description = sel.xpath("//*[@id='pdpTab1']/div/text()").extract()
-        description.extend(sel.xpath("//*[@id='pdpTab1']/div/ul/li/text()").extract())
-        cond_set(product, 'description',
-                 description)
+        description.extend(
+            sel.xpath("//*[@id='pdpTab1']/div/ul/li/text()").extract())
+        cond_set(product, 'description', description)
+
         cond_set(product, 'locale', ['en-US'])  # Default locale.
 
     def parse_related_products(self, response):
@@ -116,6 +126,7 @@ class PGEStoreProductSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_total_matches(self, sel):
+        # FIXME Please review the changes on bestbuy and perform them here where they apply.
         mynum = sel.xpath("//*[@id='deptmainheaderinfo']/text()").extract()
         words = mynum[0].split(" ")
         if words[2]:
@@ -124,8 +135,8 @@ class PGEStoreProductSpider(BaseProductsSpider):
             self.log("Failed to parse total number of matches.", level=ERROR)
 
     def _scrape_next_results_page_link(self, sel):
-        # next_pages = sel.css(".padbar ul.pagination a.next::attr(href)").extract()
-        next_pages = sel.xpath("//*[@id='pdpTab1']/div[3]/div[1]/ul/li[6]/a/@href").extract()
+        next_pages = sel.xpath(
+            "//*[@id='pdpTab1']/div[3]/div[1]/ul/li[6]/a/@href").extract()
         next_page = None
         if len(next_pages) == 1:
             next_page = next_pages[0]
