@@ -47,8 +47,7 @@ class CostcoProductsSpider(BaseProductsSpider):
             '//input[contains(@name,"price")]/@value'
         ).extract()
         cond_set(prod, 'price', price)
-        set_price = prod.get('price', '')
-        if not set_price or set_price == '$0.00':
+        if 'price' in prod and (not prod['price'] or prod['price'] == '$0.00'):
             del prod['price']
 
         des = response.xpath('//div[@id="product-tab1"]//text()').extract()
