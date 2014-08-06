@@ -58,7 +58,7 @@ class PGEStoreProductSpider(BaseProductsSpider):
         rg = re.compile(re1, re.IGNORECASE | re.DOTALL)
         m = rg.search(sel.xpath("//*[@id='pdpMain']/div[1]/script[2]/text()").extract()[0])
         if m:
-            brand = m.group(2)
+            product['brand'] = m.group(2)
         else:
             self.log("Found no brand name.", ERROR)
 
@@ -68,7 +68,6 @@ class PGEStoreProductSpider(BaseProductsSpider):
                  sel.xpath("//*[@id='prodSku']/text()").extract())
         cond_set(product, 'image_url',
                  sel.xpath("//*[@id='pdpMain']/div[1]/div[2]/img/@src").extract())
-        product['brand'] = brand
         product['price'] = sel.xpath("//*[@id='pdpATCDivpdpMain']/div[1]/div[7]/div[1]/div/div/div/text()") \
             .extract()[0].strip()
         description = sel.xpath("//*[@id='pdpTab1']/div/text()").extract()
