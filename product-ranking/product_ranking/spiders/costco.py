@@ -26,7 +26,7 @@ class CostcoProductsSpider(BaseProductsSpider):
             'Model[\W\w\s]*')
         if len(model) > 0:
             cond_set(prod, 'model', model)
-            if prod.has_key('model'):
+            if 'model' in prod:
                 prod['model'] = re.sub(r'Model\W*', '', prod['model'].strip())
 
         title = response.xpath('//h1[@itemprop="name"]/text()').extract()
