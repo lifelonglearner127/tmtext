@@ -3,12 +3,8 @@ from __future__ import print_function
 from future_builtins import *
 
 import re
-import urlparse
-import urllib
 
-from scrapy.log import ERROR, WARNING
-from scrapy.http import Request
-from scrapy.selector import Selector
+from scrapy.log import ERROR
 
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set
@@ -68,44 +64,6 @@ class CostcoProductsSpider(BaseProductsSpider):
 
         return prod
 
-    def _get_next_products_page(self, response, prods_found):
-        link_page_attempt = response.meta.get('link_page_attempt', 1)
-
-        result = None
-        if prods_found > 0:
-            # This was a real product listing page.
-            remaining = response.meta['remaining']
-            remaining -= prods_found
-            if remaining > 0:
-                next_page = self._scrape_next_results_page_link(response)
-                if next_page is not None:
-                    url = urlparse.urljoin(response.url, next_page)
-                    new_meta = dict(response.meta)
-                    new_meta['remaining'] = remaining
-                    result = Request(url, self.parse, meta=new_meta, priority=1)
-        elif link_page_attempt > 2:
-            self.log(
-                "Giving up on results page after %d attempts: %s" % (
-                    link_page_attempt, response.request.url),
-                ERROR
-            )
-        else:
-            self.log(
-                "Will retry to get results page (attempt %d): %s" % (
-                    link_page_attempt, response.request.url),
-                WARNING
-            )
-
-            # Found no product links. Probably a transient error, lets retry.
-            new_meta = dict(response.meta)
-            new_meta['link_page_attempt'] = link_page_attempt + 1
-            # FIXME Why are we making duplicate requests?
-            # Add an attribute so that Scrapy doesn't discard as duplicate.
-            url = response.url + "&_=%d" % link_page_attempt
-            result = Request(url, self.parse, meta=new_meta, priority=1)
-
-        return result
-
     def _search_page_error(self, response):
         if not self._scrape_total_matches(response):
             self.log("Costco: unable to find a match", ERROR)
@@ -130,23 +88,17 @@ class CostcoProductsSpider(BaseProductsSpider):
         for link in links:
             yield link, SiteProductItem()
 
-    def _scrape_next_results_page_link(self, response):
-        """Increases the currentPage query string parameter."""
-        max_page = self._scrape_total_matches(Selector(response))/96
-        url_parse = urlparse.urlsplit(response.url)
-        query_string = urlparse.parse_qs(url_parse.query)
-
-        current_page = int(query_string.get("currentPage", [1])[0])
-        if current_page > max_page:
-            return None
-
-        query_string["currentPage"] = [current_page + 1]
-        link = urlparse.urlunsplit((
-            url_parse.scheme,
-            url_parse.netloc,
-            url_parse.path,
-            urllib.urlencode(query_string, True),
-            url_parse.fragment,
-        ))
+    def _scrape_next_results_page_link(self, sel):
+        links = sel.xpath(
+            "//*[@class='pagination']"
+            "/ul[2]"  # [1] is for the Items Per Page section which has .active.
+            "/li[@class='active']"
+            "/following-sibling::li[1]"  # [1] is to get just the next sibling.
+            "/a/@href"
+        ).extract()
+        if links:
+            link = links[0]
+        else:
+            link = None
 
         return link
