@@ -57,7 +57,7 @@ class PGEStoreProductSpider(BaseProductsSpider):
         if brands:
             product['brand'] = brands[0]
         else:
-            self.log("Found no brand name.", ERROR)
+            self.log("Found no brand name in: %s" % url, ERROR)
 
         cond_set(product, 'title',
                  sel.xpath("//*[@id='pdpMain']/div[2]/h1/text()").extract())
