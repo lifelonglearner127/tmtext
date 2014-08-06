@@ -1,8 +1,6 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-import re
-
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set
 
@@ -54,11 +52,10 @@ class PGEStoreProductSpider(BaseProductsSpider):
         )
 
     def _populate_from_html(self, url, sel, product):
-        re1 = '.*?(\'(.*\w))'
-        rg = re.compile(re1, re.IGNORECASE | re.DOTALL)
-        m = rg.search(sel.xpath("//*[@id='pdpMain']/div[1]/script[2]/text()").extract()[0])
-        if m:
-            product['brand'] = m.group(2)
+        brands = sel.xpath("//*[@id='pdpMain']/div[1]/script[2]/text()").re(
+            '.*?(\'(.*\w))')
+        if brands:
+            product['brand'] = brands[0]
         else:
             self.log("Found no brand name.", ERROR)
 
