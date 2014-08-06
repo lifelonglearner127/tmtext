@@ -10,8 +10,6 @@ from scrapy.http import Request
 from scrapy.log import ERROR
 from scrapy.selector import Selector
 
-from bs4 import BeautifulSoup
-
 
 class PGEStoreProductSpider(BaseProductsSpider):
     name = 'pgestore_products'
@@ -79,44 +77,35 @@ class PGEStoreProductSpider(BaseProductsSpider):
                  description)
         cond_set(product, 'locale', ['en-US'])  # Default locale.
 
-        # self.parse_related_products(sel.response)
-
     def parse_related_products(self, response):
-        sel = Selector(response)
+        """The page parsed here is a JavaScript file with HTML in two variables.
+        """
         product = response.meta['product']
 
-        soup = BeautifulSoup(response.body)
-
-        igdrecs = soup.find_all('h2')
-
-        links = igdrecs[1].find_all_next("a", href=True)
-        urls = [links[1].attrs['href'], links[3].attrs['href'], links[5].attrs['href'],
-                links[7].attrs['href'], links[9].attrs['href']]
-        titles = [str(links[1].string), str(links[3].string), str(links[5].string),
-                  str(links[7].string), str(links[9].string)]
-        rec_links = igdrecs[0].find_all_next("a", href=True)
-
-        rec_urls = [rec_links[0].attrs['href'], rec_links[2].attrs['href'], rec_links[4].attrs['href'],
-                    rec_links[6].attrs['href'], rec_links[8].attrs['href']]
-        rec_titles = [str(rec_links[0].next_element.next_element.next_element.next_element.string),
-                      str(rec_links[2].next_element.next_element.next_element.next_element.string),
-                      str(rec_links[4].next_element.next_element.next_element.next_element.string),
-                      str(rec_links[6].next_element.next_element.next_element.next_element.string),
-                      str(rec_links[8].next_element.next_element.next_element.next_element.string)]
-
-        if len(urls) > 0:
+        others_purchased_html = Selector(text=response.selector.re(
+            r'if \(id == "igdrec_2"\)\s*{\s*div\.innerHTML = "(.*?)";')[0])
+        others_purchased_links = others_purchased_html.xpath(
+            "//*[@class='igo_product']/a[2]")
+        if others_purchased_links:
             product['related_products'] = {
                 "buyers_also_bought": list(
-                    RelatedProduct(title, url)
-                    for title in titles
-                    for url in urls
-                ),
-                "recommended": list(
-                    RelatedProduct(title, url)
-                    for title in rec_titles
-                    for url in rec_urls
-                ),
+                    RelatedProduct(
+                        link.xpath('text()').extract()[0],
+                        link.xpath('@href').extract()[0])
+                    for link in others_purchased_links
+                )
             }
+
+        also_like_html = Selector(text=response.selector.re(
+            r'if \(id == "igdrec_1"\)\s*{\s*div\.innerHTML = "(.*?)";')[0])
+        also_like_links = also_like_html.xpath("//*[@class='igo_product']/a[2]")
+        if also_like_links:
+            product.setdefault('related_products', {})["recommended"] = list(
+                RelatedProduct(
+                    link.xpath('text()').extract()[0],
+                    link.xpath('@href').extract()[0])
+                for link in also_like_links
+            )
 
         return product
 
