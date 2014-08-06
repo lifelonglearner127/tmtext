@@ -69,7 +69,6 @@ class PGEStoreProductSpider(BaseProductsSpider):
             sel.xpath("//*[@id='pdpMain']/div[1]/div[2]/img/@src").extract()
         )
         # FIXME Can't this XPath be made more resilient by not depending on so much of the document's structure? For example, ''.join(sel.css('.price ::text').extract()).strip().
-        import pdb;pdb.set_trace()
         product['price'] = sel.xpath(
             "//*[@id='pdpATCDivpdpMain']/div[1]/div[7]/div[1]/div/div/div/"
             "text()"
