@@ -224,8 +224,23 @@ class WalmartData_test(unittest.TestCase):
 			try:
 				self.assertEqual(u'reviews' in response and response[u'reviews'], 'total_reviews' in response2['reviews'] and response2['reviews']['total_reviews'])
 			except AssertionError, e:
-				self.storage.store_reviews_logs(url=url, error_message=str(e), reviews_source=json.dumps(response), reviews_js=json.dumps(response2))
-				# raise AssertionError(str(e) + " -- on url " + url)
+				try:
+					nr_reviews = float(str(response[u'reviews']['total_reviews']))
+					average_review = float(str(response[u'reviews']['average_review']))
+				except Exception:
+					nr_reviews = average_review = None
+
+				try:
+					nr_reviews2 = float(re.sub(",", "", str(response2['reviews']['total_reviews'])))
+					average_review2 = float(str(response2['reviews']['average_review']))
+				except Exception:
+					nr_reviews2 = average_review2 = None
+
+
+				self.storage.store_reviews_logs(url=url, error_message=str(e),\
+				reviews_source=json.dumps(response), reviews_js=json.dumps(response2),\
+				average_source=average_review, average_js=average_review2, \
+				nr_reviews_source=nr_reviews, nr_reviews_js=nr_reviews2)				# raise AssertionError(str(e) + " -- on url " + url)
 
 
 
