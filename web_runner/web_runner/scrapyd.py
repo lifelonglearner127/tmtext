@@ -73,10 +73,8 @@ class ScrapydMediator(object):
         url = urlparse.urljoin(self.scrapyd_base_url, 'schedule.json')
         # FIXME Handle multivalued setting as in setting.
         data = dict(params)
-        data.update({
-            'project': project_name,
-            'spider': spider_name,
-        })
+        data['project'] = project_name
+        data['spider'] = spider_name
         LOG.info("Calling Scrapyd on '%s' with parameters: %s", url, data)
 
         result = self._fetch_json(url, urllib.urlencode(data))
