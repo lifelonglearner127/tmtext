@@ -450,6 +450,7 @@ def request_history(request):
         status = get_request_status(request_info, jobids_status)
     else:
         history = None
+        status = UNAVAILABLE
 
     info = {'request': request_info,
             'jobids_info': jobids_info,
