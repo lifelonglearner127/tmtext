@@ -7,11 +7,12 @@ import time
 import urllib
 import urllib2
 
+from util import string_from_local2utc as local2utc
+
 import enum
 import pyramid.httpexceptions as exc
 import requests
 import requests.exceptions
-from util import string_from_local2utc as local2utc
 
 
 LOG = logging.getLogger(__name__)
