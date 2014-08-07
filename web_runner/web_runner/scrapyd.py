@@ -78,7 +78,7 @@ class ScrapydMediator(object):
         data['spider'] = spider_name
         LOG.info("Calling Scrapyd on '%s' with parameters: %s", url, data)
 
-        result = self._fetch_json(url, urllib.urlencode(data))
+        result = self._fetch_json(url, data)
         if result['status'] != "ok":
             raise ScrapydJobStartError(
                 result['status'],
@@ -145,7 +145,11 @@ class ScrapydMediator(object):
 
     @staticmethod
     def _fetch_json(url, data=None):
-        conn = urllib2.urlopen(url, data)
+        enc_data = None
+        if data is not None:
+            enc_data = urllib.urlencode(data)
+
+        conn = urllib2.urlopen(url, enc_data)
         response = json.load(conn)
         conn.close()
 
