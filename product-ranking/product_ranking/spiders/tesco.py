@@ -51,8 +51,6 @@ class TescoProductsSpider(BaseProductsSpider):
 
     @staticmethod
     def brand_from_title(title):
-        brand = None
-        new_title = None
         for recognize, parse_brand, clean_title \
                 in TescoProductsSpider.KNOWN_BRANDS:
             if recognize(title):
