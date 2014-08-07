@@ -121,6 +121,9 @@ def web_runner_request_history(request, requestid):
 def _process_history_to_display(history):
     """Transform history information to be displayed"""
 
+    if not history:
+        return
+
     for index in range(len(history)):
         try:
             date = datetime.datetime.strptime(history[index][0], 

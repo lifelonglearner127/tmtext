@@ -1,16 +1,12 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-import re
-
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set
 
 from scrapy.http import Request
 from scrapy.log import ERROR
 from scrapy.selector import Selector
-
-from bs4 import BeautifulSoup
 
 
 class PGEStoreProductSpider(BaseProductsSpider):
@@ -56,67 +52,62 @@ class PGEStoreProductSpider(BaseProductsSpider):
         )
 
     def _populate_from_html(self, url, sel, product):
-        re1 = '.*?(\'(.*\w))'
-        rg = re.compile(re1, re.IGNORECASE | re.DOTALL)
-        m = rg.search(sel.xpath("//*[@id='pdpMain']/div[1]/script[2]/text()").extract()[0])
-        if m:
-            brand = m.group(2)
+        brands = sel.xpath("//*[@id='pdpMain']/div[1]/script[2]/text()").re(
+            '.*?(\'(.*\w))')
+        if brands:
+            product['brand'] = brands[0]
         else:
-            self.log("Found no brand name.", ERROR)
+            self.log("Found no brand name in: %s" % url, ERROR)
 
         cond_set(product, 'title',
                  sel.xpath("//*[@id='pdpMain']/div[2]/h1/text()").extract())
         cond_set(product, 'upc',
                  sel.xpath("//*[@id='prodSku']/text()").extract())
-        cond_set(product, 'image_url',
-                 sel.xpath("//*[@id='pdpMain']/div[1]/div[2]/img/@src").extract())
-        product['brand'] = brand
-        product['price'] = sel.xpath("//*[@id='pdpATCDivpdpMain']/div[1]/div[7]/div[1]/div/div/div/text()") \
-            .extract()[0].strip()
+        cond_set(
+            product,
+            'image_url',
+            sel.xpath("//*[@id='pdpMain']/div[1]/div[2]/img/@src").extract()
+        )
+        product['price'] = ''.join(sel.css('.price ::text').extract()).strip()
+
+        # FIXME The description look strange. Why not just take the node()?
         description = sel.xpath("//*[@id='pdpTab1']/div/text()").extract()
-        description.extend(sel.xpath("//*[@id='pdpTab1']/div/ul/li/text()").extract())
-        cond_set(product, 'description',
-                 description)
+        # removing below to just grab the brief description
+        # description.extend(
+        #     sel.xpath("//*[@id='pdpTab1']/div/ul/li/text()").extract())
+        cond_set(product, 'description', description)
+
         cond_set(product, 'locale', ['en-US'])  # Default locale.
 
-        # self.parse_related_products(sel.response)
-
     def parse_related_products(self, response):
-        sel = Selector(response)
+        """The page parsed here is a JavaScript file with HTML in two variables.
+        """
         product = response.meta['product']
 
-        soup = BeautifulSoup(response.body)
-
-        igdrecs = soup.find_all('h2')
-
-        links = igdrecs[1].find_all_next("a", href=True)
-        urls = [links[1].attrs['href'], links[3].attrs['href'], links[5].attrs['href'],
-                links[7].attrs['href'], links[9].attrs['href']]
-        titles = [str(links[1].string), str(links[3].string), str(links[5].string),
-                  str(links[7].string), str(links[9].string)]
-        rec_links = igdrecs[0].find_all_next("a", href=True)
-
-        rec_urls = [rec_links[0].attrs['href'], rec_links[2].attrs['href'], rec_links[4].attrs['href'],
-                    rec_links[6].attrs['href'], rec_links[8].attrs['href']]
-        rec_titles = [str(rec_links[0].next_element.next_element.next_element.next_element.string),
-                      str(rec_links[2].next_element.next_element.next_element.next_element.string),
-                      str(rec_links[4].next_element.next_element.next_element.next_element.string),
-                      str(rec_links[6].next_element.next_element.next_element.next_element.string),
-                      str(rec_links[8].next_element.next_element.next_element.next_element.string)]
-
-        if len(urls) > 0:
+        others_purchased_html = Selector(text=response.selector.re(
+            r'if \(id == "igdrec_2"\)\s*{\s*div\.innerHTML = "(.*?)";')[0])
+        others_purchased_links = others_purchased_html.xpath(
+            "//*[@class='igo_product']/a[2]")
+        if others_purchased_links:
             product['related_products'] = {
                 "buyers_also_bought": list(
-                    RelatedProduct(title, url)
-                    for title in titles
-                    for url in urls
-                ),
-                "recommended": list(
-                    RelatedProduct(title, url)
-                    for title in rec_titles
-                    for url in rec_urls
-                ),
+                    RelatedProduct(
+                        link.xpath('text()').extract()[0],
+                        link.xpath('@href').extract()[0])
+                    for link in others_purchased_links
+                )
             }
+
+        also_like_html = Selector(text=response.selector.re(
+            r'if \(id == "igdrec_1"\)\s*{\s*div\.innerHTML = "(.*?)";')[0])
+        also_like_links = also_like_html.xpath("//*[@class='igo_product']/a[2]")
+        if also_like_links:
+            product.setdefault('related_products', {})["recommended"] = list(
+                RelatedProduct(
+                    link.xpath('text()').extract()[0],
+                    link.xpath('@href').extract()[0])
+                for link in also_like_links
+            )
 
         return product
 
@@ -128,16 +119,19 @@ class PGEStoreProductSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_total_matches(self, sel):
-        mynum = sel.xpath("//*[@id='deptmainheaderinfo']/text()").extract()
-        words = mynum[0].split(" ")
-        if words[2]:
-            return int(words[2])
+        # FIXME Please review the changes on bestbuy and perform them here where they apply.
+        # modified slightly based on bestbuy spider
+        num_results = sel.xpath("//*[@id='deptmainheaderinfo']/text()").extract()
+
+        if num_results and num_results[0]:
+            num_results = num_results[0].split(" ")
+            return int(num_results[2])
         else:
             self.log("Failed to parse total number of matches.", level=ERROR)
 
     def _scrape_next_results_page_link(self, sel):
-        # next_pages = sel.css(".padbar ul.pagination a.next::attr(href)").extract()
-        next_pages = sel.xpath("//*[@id='pdpTab1']/div[3]/div[1]/ul/li[6]/a/@href").extract()
+        next_pages = sel.xpath(
+            "//*[@id='pdpTab1']/div[3]/div[1]/ul/li[6]/a/@href").extract()
         next_page = None
         if len(next_pages) == 1:
             next_page = next_pages[0]

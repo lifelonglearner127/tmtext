@@ -24,12 +24,12 @@ class InvalidUsage(Exception):
 # validate URL parameter
 def check_input(url):
 	if not url:
-		raise InvalidUsage("No Walmart URL was provided. API must be called with URL like <host>/get_media/<walmart_url>"), 404
+		raise InvalidUsage("No Walmart URL was provided. API must be called with URL like <host>/get_media/<walmart_url>"), 400
 
 	if not check_url_format(url):
 		raise InvalidUsage(\
 			"Invalid parameter " + str(url) + " Parameter must be a Walmart URL of the form: http://www.walmart.com/ip/<product_id> or http://www.walmart.com/cp/<fraction_of_product_name>/<product_id>",\
-			404)
+			400)
 
 # validate request arguments
 def validate_args(arguments):
