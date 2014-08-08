@@ -3,6 +3,9 @@
 from flask import Flask, jsonify, abort, request
 from extract_walmart_data import media_for_url, check_url_format, reviews_for_url, \
 pdf_for_url, video_for_url, product_info, DATA_TYPES, DATA_TYPES_SPECIAL
+import datetime
+import logging
+from logging import FileHandler
 
 app = Flask(__name__)
 
@@ -122,5 +125,24 @@ def handle_not_found(error):
 	response.status_code = 404
 	return response
 
+@app.after_request
+def post_request_logging(response):
+    app.logger.info('\t'.join([
+        datetime.datetime.today().ctime(),
+        request.remote_addr,
+        request.method,
+        request.url,
+        str(response.status_code),
+        request.data,
+        ', '.join([': '.join(x) for x in request.headers])])
+    )
+    return response
+
 if __name__ == '__main__':
-    app.run('0.0.0.0', port=80)
+	
+	fh = FileHandler("special_crawler_log.txt")
+	fh.setLevel(logging.DEBUG)
+	app.logger.setLevel(logging.DEBUG)
+	app.logger.addHandler(fh)
+
+	app.run('0.0.0.0', port=80)
