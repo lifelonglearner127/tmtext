@@ -43,6 +43,8 @@ class PGEStoreProductSpider(BaseProductsSpider):
 
         self._populate_from_html(response.url, sel, prod)
 
+        cond_set(prod, 'locale', ['en-US'])  # Default locale.
+
         related_product_link = sel.xpath(
             "//*[@id='crossSell']/script[1]/@src").extract()[0]
         return Request(
@@ -76,8 +78,6 @@ class PGEStoreProductSpider(BaseProductsSpider):
         # description.extend(
         #     sel.xpath("//*[@id='pdpTab1']/div/ul/li/text()").extract())
         cond_set(product, 'description', description)
-
-        cond_set(product, 'locale', ['en-US'])  # Default locale.
 
     def parse_related_products(self, response):
         """The page parsed here is a JavaScript file with HTML in two variables.
