@@ -180,7 +180,7 @@ class BaseProductsSpider(Spider):
             else:
                 # Another request is necessary to complete the product.
                 url = urlparse.urljoin(response.url, prod_url)
-                prod_item['url'] = url  # Tentative.
+                cond_set_value(prod_item, 'url', url)  # Tentative.
                 yield Request(
                     url,
                     callback=self.parse_product,
