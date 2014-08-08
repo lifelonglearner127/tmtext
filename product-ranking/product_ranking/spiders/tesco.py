@@ -1,18 +1,13 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-import re
+import json
+import urlparse
 
 from scrapy.log import ERROR
-from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
-
-
-def cond_set_re(item, key, match, conv=lambda l: l[0]):
-    if match:
-        cond_set(item, key, match.groups(), conv=conv)
+from product_ranking.spiders import BaseProductsSpider, cond_set_value
 
 
 def brand_at_start(brand):
@@ -30,7 +25,7 @@ class TescoProductsSpider(BaseProductsSpider):
     allowed_domains = ["tesco.com"]
 
     SEARCH_URL = "http://www.tesco.com/groceries/product/search/default.aspx" \
-        "?searchBox={search_term}&icid=tescohp_sws-1_{search_term}&N=0&Nao=0"
+        "?searchBox={search_term}&newSort=true&search=Search"
 
     KNOWN_BRANDS = (
         brand_at_start('Dri Pak'),
@@ -51,8 +46,6 @@ class TescoProductsSpider(BaseProductsSpider):
 
     @staticmethod
     def brand_from_title(title):
-        brand = None
-        new_title = None
         for recognize, parse_brand, clean_title \
                 in TescoProductsSpider.KNOWN_BRANDS:
             if recognize(title):
@@ -65,73 +58,59 @@ class TescoProductsSpider(BaseProductsSpider):
         return brand, new_title
 
     def parse_product(self, response):
-        sel = Selector(response)
+        raise AssertionError("This method should never be called.")
 
-        p = response.meta['product']
+    def _scrape_total_matches(self, response):
+        return int(response.css("span.pageTotalItemCount ::text").extract()[0])
 
-        self._populate_from_js(response.url, sel, p)
+    def _scrape_product_links(self, response):
+        # To populate the description, fetching the product page is necessary.
 
-        self._populate_from_html(response.url, sel, p)
+        url = response.url
 
-        cond_set(p, 'locale', ['en-GB'])  # Default locale.
+        # This will contain everything except for the URL and description.
+        product_jsons = response.xpath(
+            "//script[@type='text/javascript']/text()"
+        ).re(
+            r"\s*tesco\.productData\.push\((\{.+?\})\);"
+        )
+        if not product_jsons:
+            self.log("Found no product data on: %s" % url, ERROR)
 
-        return p
+        product_links = response.css(
+            ".product > .desc > h2 > a ::attr('href')").extract()
+        if not product_links:
+            self.log("Found no product links on: %s" % url, ERROR)
 
-    def _populate_from_html(self, url, sel, product):
-        cond_set(product, 'title',
-                 sel.css('div.productDetails > h1 ::text').extract())
-        # XPath indexes are base 1, so the first div is selected.
-        cond_set(product, 'description',
-                 sel.xpath('//div[@class="content"][1]/node()').extract(),
-                 conv=lambda vals: ''.join(vals))
-        cond_set(product, 'locale', sel.xpath('/html/@lang').extract())
+        for product_json, product_link in zip(product_jsons, product_links):
+            prod = SiteProductItem()
+            cond_set_value(prod, 'url', urlparse.urljoin(url, product_link))
 
-    def _populate_from_js(self, url, sel, product):
-        js_data = sel.xpath("/html/head/script").re(
-            r"new TESCO\.sites\.UI\.entities\.Product\((\{.+\})\);")
-        if not js_data:
-            msg = "No JS matched in %s" % url
-            self.log(msg, ERROR)
-            raise AssertionError(msg)
-        if len(js_data) > 1:
-            msg = "Matched multiple script blocks in %s" % url
-            self.log(msg, ERROR)
-            raise AssertionError(msg)
-        js = js_data[0]
+            product_data = json.loads(product_json)
 
-        cond_set_re(product, 'model',
-                    re.search(r'[,{]productId:\s*"(.+?)",', js))
-        cond_set_re(product, 'price',
-                    re.search(r'[,{]price:\s*((\d*\.)?\d+),', js),
-                    conv=lambda gs: float(gs[0]))
-        cond_set_re(product, 'image_url',
-                    re.search(r'[,{]imageURL:\s*"(.+?)",', js))
+            cond_set_value(prod, 'price', product_data.get('price'))
+            cond_set_value(prod, 'image_url', product_data.get('mediumImage'))
 
-        m = re.search(r'[,{]name:\s*"(.+?)",', js)
-        if m:
-            brand, title = self.brand_from_title(m.group(1))
-            cond_set(product, 'brand', [brand])
-            cond_set(product, 'title', [title])
+            try:
+                brand, title = self.brand_from_title(product_data['name'])
+                cond_set_value(prod, 'brand', brand)
+                cond_set_value(prod, 'title', title)
+            except KeyError:
+                raise AssertionError(
+                    "Did not find title or brand from JS for product: %s"
+                    % product_link
+                )
 
-    def _scrape_total_matches(self, sel):
-        return int(sel.css("span.pageTotalItemCount ::text").extract()[0])
+            yield None, prod
 
-    def _scrape_product_links(self, sel):
-        # JS and locale of the products is available at this point.
-        # If HTML parsing were not necessary, fetching product pages could be
-        # skipped. Currently only the description needs the product page.
-
-        links = sel.css('h3.inBasketInfoContainer > a ::attr(href)').extract()
-        if not links:
-            self.log("Found no product links.", ERROR)
-        for link in links:
-            yield link, SiteProductItem()
-
-    def _scrape_next_results_page_link(self, sel):
-        next_pages = sel.css('p.next > a ::attr(href)').extract()
+    def _scrape_next_results_page_link(self, response):
+        next_pages = response.css('p.next > a ::attr(href)').extract()
         next_page = None
         if len(next_pages) == 2:
             next_page = next_pages[0]
         elif len(next_pages) > 2:
-            self.log("Found more than two 'next page' link.", ERROR)
+            self.log(
+                "Found more than two 'next page' link: %s" % response.url,
+                ERROR
+            )
         return next_page

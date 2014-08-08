@@ -7,11 +7,12 @@ import time
 import urllib
 import urllib2
 
+from util import string_from_local2utc as local2utc
+
 import enum
 import pyramid.httpexceptions as exc
 import requests
 import requests.exceptions
-from util import string_from_local2utc as local2utc
 
 
 LOG = logging.getLogger(__name__)
@@ -73,13 +74,11 @@ class ScrapydMediator(object):
         url = urlparse.urljoin(self.scrapyd_base_url, 'schedule.json')
         # FIXME Handle multivalued setting as in setting.
         data = dict(params)
-        data.update({
-            'project': project_name,
-            'spider': spider_name,
-        })
+        data['project'] = project_name
+        data['spider'] = spider_name
         LOG.info("Calling Scrapyd on '%s' with parameters: %s", url, data)
 
-        result = self._fetch_json(url, urllib.urlencode(data))
+        result = self._fetch_json(url, data)
         if result['status'] != "ok":
             raise ScrapydJobStartError(
                 result['status'],
@@ -146,7 +145,11 @@ class ScrapydMediator(object):
 
     @staticmethod
     def _fetch_json(url, data=None):
-        conn = urllib2.urlopen(url, data)
+        enc_data = None
+        if data is not None:
+            enc_data = urllib.urlencode(data)
+
+        conn = urllib2.urlopen(url, enc_data)
         response = json.load(conn)
         conn.close()
 

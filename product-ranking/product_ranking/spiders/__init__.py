@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import, unicode_literals
-from __future__ import print_function
+from future_builtins import *
 
 from itertools import islice
 import string
@@ -8,7 +8,6 @@ import urlparse
 
 from scrapy.log import ERROR, WARNING, INFO
 from scrapy.http import Request
-from scrapy.selector import Selector
 from scrapy.spider import Spider
 
 
@@ -25,11 +24,32 @@ def compose(*funcs):
     return _c
 
 
-def cond_set(item, key, values, conv=lambda l: l[0]):
-    """Helper function to ease conditionally setting a value in a dict."""
-    values = list(values)  # Copy and materialize values.
-    if not item.get(key) and values:
-        item[key] = conv(values)
+def identity(x):
+    return x
+
+
+def cond_set(item, key, values, conv=identity):
+    """Conditionally sets the first element of the given iterable to the given
+    dict.
+
+    The condition is that the key is not set, or the value in the dict None.
+    Also, the value to be set must not be None.
+    """
+    try:
+        value = next(iter(values))
+        cond_set_value(item, key, value, conv)
+    except StopIteration:
+        pass
+
+
+def cond_set_value(item, key, value, conv=identity):
+    """Conditionally sets the given value to the given dict.
+
+    The condition is that the key is not set, or the value in the dict None.
+    Also, the value to be set must not be None.
+    """
+    if item.get(key) is None and value is not None and conv(value) is not None:
+        item[key] = conv(value)
 
 
 class FormatterWithDefaults(string.Formatter):
@@ -51,6 +71,8 @@ class BaseProductsSpider(Spider):
     start_urls = []
 
     SEARCH_URL = None  # Override.
+
+    MAX_RETRIES = 3
 
     def __init__(self,
                  url_formatter=None,
@@ -127,14 +149,12 @@ class BaseProductsSpider(Spider):
                 yield request
 
     def _get_products(self, response):
-        sel = Selector(response)
-
         remaining = response.meta['remaining']
         search_term = response.meta['search_term']
         prods_per_page = response.meta.get('products_per_page')
         total_matches = response.meta.get('total_matches')
 
-        prods = self._scrape_product_links(sel)
+        prods = self._scrape_product_links(response)
 
         if prods_per_page is None:
             # Materialize prods to get its size.
@@ -142,7 +162,7 @@ class BaseProductsSpider(Spider):
             prods_per_page = len(prods)
 
         if total_matches is None:
-            total_matches = self._scrape_total_matches(sel)
+            total_matches = self._scrape_total_matches(response)
 
         for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
             # Initialize the product as much as possible.
@@ -160,7 +180,7 @@ class BaseProductsSpider(Spider):
             else:
                 # Another request is necessary to complete the product.
                 url = urlparse.urljoin(response.url, prod_url)
-                prod_item['url'] = url  # Tentative.
+                cond_set_value(prod_item, 'url', url)  # Tentative.
                 yield Request(
                     url,
                     callback=self.parse_product,
@@ -176,14 +196,13 @@ class BaseProductsSpider(Spider):
             remaining = response.meta['remaining']
             remaining -= prods_found
             if remaining > 0:
-                next_page = self._scrape_next_results_page_link(
-                    Selector(response))
+                next_page = self._scrape_next_results_page_link(response)
                 if next_page is not None:
                     url = urlparse.urljoin(response.url, next_page)
                     new_meta = dict(response.meta)
                     new_meta['remaining'] = remaining
                     result = Request(url, self.parse, meta=new_meta, priority=1)
-        elif link_page_attempt > 2:
+        elif link_page_attempt > self.MAX_RETRIES:
             self.log(
                 "Giving up on results page after %d attempts: %s" % (
                     link_page_attempt, response.request.url),
@@ -197,11 +216,10 @@ class BaseProductsSpider(Spider):
             )
 
             # Found no product links. Probably a transient error, lets retry.
-            new_meta = dict(response.meta)
+            new_meta = response.meta.copy()
             new_meta['link_page_attempt'] = link_page_attempt + 1
-            # Add an attribute so that Scrapy doesn't discard as duplicate.
-            url = response.request.url + "&_=%d" % link_page_attempt
-            result = Request(url, self.parse, meta=new_meta, priority=1)
+            result = response.request.replace(
+                meta=new_meta, cookies={}, dont_filter=True)
 
         return result
 
@@ -223,15 +241,15 @@ class BaseProductsSpider(Spider):
         # Default implementation for sites that send proper status codes.
         return False
 
-    def _scrape_total_matches(self, sel):
-        """_scrape_total_matches(sel:Selector):int
+    def _scrape_total_matches(self, response):
+        """_scrape_total_matches(response:Response):int
 
         Scrapes the total number of matches of the search term.
         """
         raise NotImplementedError
 
-    def _scrape_product_links(self, sel):
-        """_scrape_product_links(sel:Selector)
+    def _scrape_product_links(self, response):
+        """_scrape_product_links(response:Response)
                 :iter<tuple<str, SiteProductItem>>
 
         Returns the products in the current results page and a SiteProductItem
@@ -239,8 +257,8 @@ class BaseProductsSpider(Spider):
         """
         raise NotImplementedError
 
-    def _scrape_next_results_page_link(self, sel):
-        """_scrape_next_results_page_link(sel:Selector):str
+    def _scrape_next_results_page_link(self, response):
+        """_scrape_next_results_page_link(response:Response):str
 
         Scrapes the URL for the next results page.
         It should return None if no next page is available.

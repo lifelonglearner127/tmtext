@@ -2,21 +2,24 @@ from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 from future_builtins import *
 
-import sys
 import json
 
-from scrapy.log import ERROR, WARNING
-from scrapy.selector import Selector
+from scrapy.http.request.form import FormRequest
+from scrapy.log import ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
 except ImportError as e:
-    print("### Failed to import CaptchaBreaker.",
-          "Will continue without solving captchas:", e,
-          file=sys.stderr)
+    import sys
+    print(
+        "### Failed to import CaptchaBreaker.",
+        "Will continue without solving captchas:",
+        e,
+        file=sys.stderr,
+    )
 
     class FakeCaptchaBreaker(object):
         @staticmethod
@@ -57,33 +60,31 @@ class AmazonProductsSpider(BaseProductsSpider):
                      level=WARNING)
             result = None
         else:
-            sel = Selector(response)
+            self._populate_from_js(response, prod)
 
-            self._populate_from_js(response.url, sel, prod)
+            self._populate_from_html(response, prod)
 
-            self._populate_from_html(response.url, sel, prod)
-
-            cond_set(prod, 'locale', ['en-US'])  # Default locale.
+            cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
             result = prod
         return result
 
-    def _populate_from_html(self, url, sel, product):
-        cond_set(product, 'brand', sel.css('#brand ::text').extract())
+    def _populate_from_html(self, response, product):
+        cond_set(product, 'brand', response.css('#brand ::text').extract())
         cond_set(product, 'price',
-                 sel.css('#priceblock_ourprice ::text').extract())
+                 response.css('#priceblock_ourprice ::text').extract())
         cond_set(product, 'description',
-                 sel.css('.productDescriptionWrapper').xpath('node()')
+                 response.css('.productDescriptionWrapper').xpath('node()')
                  .extract(), lambda descs: descs[0].strip())
         cond_set(product, 'image_url',
-                 sel.css('#imgTagWrapperId > img ::attr(data-old-hires)')
+                 response.css('#imgTagWrapperId > img ::attr(data-old-hires)')
                  .extract())
         cond_set(product, 'title',
-                 sel.css('#productTitle ::text').extract())
+                 response.css('#productTitle ::text').extract())
 
         # Some data is in a list (ul element).
         model = None
-        for li in sel.css('td.bucket > .content > ul > li'):
+        for li in response.css('td.bucket > .content > ul > li'):
             raw_keys = li.xpath('b/text()').extract()
             if not raw_keys:
                 # This is something else, ignore.
@@ -100,43 +101,48 @@ class AmazonProductsSpider(BaseProductsSpider):
         if model is not None:
             cond_set(product, 'model', model)
 
-    def _populate_from_js(self, url, sel, product):
+    def _populate_from_js(self, response, product):
         # Images are not always on the same spot...
-        img_jsons = sel.css('#landingImage ::attr(data-a-dynamic-image)') \
-            .extract()
+        img_jsons = response.css(
+            '#landingImage ::attr(data-a-dynamic-image)').extract()
         if img_jsons:
             imgs = json.loads(img_jsons[0])
             cond_set(product, 'image_url',
                      max(imgs.items(), key=lambda (_, size): size[0]),
                      lambda (url, _): url)
 
-    def _scrape_total_matches(self, sel):
+    def _scrape_total_matches(self, response):
         # Where this value appears is a little weird and changes a bit so we
         # need two alternatives to capture it consistently.
 
         # The first possible place is where it normally is in a fully rendered
         # page.
-        values = sel.css('#resultCount > span ::text').re(
+        values = response.css('#resultCount > span ::text').re(
             '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults')
         if not values:
             # Otherwise, it appears within a comment.
-            values = sel.css('#result-count-only-next').xpath('comment()').re(
-                '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults\s+')
+            values = response.css(
+                '#result-count-only-next'
+            ).xpath(
+                'comment()'
+            ).re(
+                '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults\s+'
+            )
 
         if values:
             return int(values[0].replace(',', ''))
         else:
             self.log("Failed to parse total number of matches.", level=ERROR)
 
-    def _scrape_product_links(self, sel):
-        links = sel.css('.prod > h3 > a ::attr(href)').extract()
+    def _scrape_product_links(self, response):
+        links = response.css('.prod > h3 > a ::attr(href)').extract()
         if not links:
             self.log("Found no product links.", ERROR)
         for link in links:
             yield link, SiteProductItem()
 
-    def _scrape_next_results_page_link(self, sel):
-        next_pages = sel.css('#pagnNextLink ::attr(href)').extract()
+    def _scrape_next_results_page_link(self, response):
+        next_pages = response.css('#pagnNextLink ::attr(href)').extract()
         next_page_url = None
         if len(next_pages) == 1:
             next_page_url = next_pages[0]
@@ -150,7 +156,7 @@ class AmazonProductsSpider(BaseProductsSpider):
         return '.images-amazon.com/captcha/' in response.body_as_unicode()
 
     def _solve_captcha(self, response):
-        forms = Selector(response).xpath('//form')
+        forms = response.xpath('//form')
         assert len(forms) == 1, "More than one form found."
 
         captcha_img = forms[0].xpath(
@@ -160,21 +166,22 @@ class AmazonProductsSpider(BaseProductsSpider):
         return self._cbw.solve_captcha(captcha_img)
 
     def _handle_captcha(self, response, callback):
+        # FIXME This is untested and wrong.
         captcha_solve_try = response.meta.get('captcha_solve_try', 0)
         product = response.meta['product']
 
         self.log("Captcha challenge for %s (try %d)."
-                 % (product.url, captcha_solve_try),
+                 % (product['url'], captcha_solve_try),
                  level=INFO)
 
         captcha = self._solve_captcha(response)
 
         if captcha is None:
             self.log("Failed to guess captcha for '%s' (try: %d)."
-                     % (product.url, captcha_solve_try), level=ERROR)
+                     % (product['url'], captcha_solve_try), level=ERROR)
         else:
             self.log("On try %d, submitting captcha '%s' for '%s'."
-                     % (captcha_solve_try, captcha, captcha_img),
+                     % (captcha_solve_try, captcha, product['url']),
                      level=INFO)
             result = FormRequest.from_response(
                 response,

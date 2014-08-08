@@ -2,7 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 from scrapy.http import Request
 from scrapy.log import ERROR
@@ -14,7 +14,7 @@ class PGEStoreProductSpider(BaseProductsSpider):
     allowed_domains = ["pgestore.com", "igodigital.com"]
 
     SEARCH_URL = "http://www.pgestore.com/on/demandware.store/Sites-PG-Site/" \
-                 "default/Search-Show?q={search_term}"
+        "default/Search-Show?q={search_term}"
 
     def __init__(
             self,
@@ -37,47 +37,49 @@ class PGEStoreProductSpider(BaseProductsSpider):
             **kwargs)
 
     def parse_product(self, response):
-        sel = Selector(response)
-
         prod = response.meta['product']
 
-        self._populate_from_html(response.url, sel, prod)
+        self._populate_from_html(response, prod)
 
-        related_product_link = sel.xpath(
-            "//*[@id='crossSell']/script[1]/@src").extract()[0]
+        cond_set_value(prod, 'locale', 'en-US')  # Default locale.
+
+        related_product_link = response.xpath(
+            "//*[@id='crossSell']/script/@src").extract()[0]
         return Request(
             related_product_link,
             self.parse_related_products,
             meta=response.meta.copy(),
         )
 
-    def _populate_from_html(self, url, sel, product):
-        brands = sel.xpath("//*[@id='pdpMain']/div[1]/script[2]/text()").re(
-            '.*?(\'(.*\w))')
-        if brands:
-            product['brand'] = brands[0]
-        else:
-            self.log("Found no brand name in: %s" % url, ERROR)
+    def _populate_from_html(self, response, product):
+        brands = response.xpath(
+            "//*[@id='pdpMain']/div[1]/script[2]/text()").re('.*?(\'(.*\w))')
+        cond_set(product, 'brand', brands)
+        if 'brand' not in product:
+            self.log("Found no brand name in: %s" % response.url, ERROR)
 
-        cond_set(product, 'title',
-                 sel.xpath("//*[@id='pdpMain']/div[2]/h1/text()").extract())
+        cond_set(
+            product,
+            'title',
+            response.xpath("//*[@id='pdpMain']/div[2]/h1/text()").extract()
+        )
         cond_set(product, 'upc',
-                 sel.xpath("//*[@id='prodSku']/text()").extract())
+                 response.xpath("//*[@id='prodSku']/text()").extract())
         cond_set(
             product,
             'image_url',
-            sel.xpath("//*[@id='pdpMain']/div[1]/div[2]/img/@src").extract()
+            response.xpath(
+                "//*[@id='pdpMain']/div[1]/div[2]/img/@src").extract()
         )
-        product['price'] = ''.join(sel.css('.price ::text').extract()).strip()
+        cond_set_value(product, 'price',
+                       ''.join(response.css('.price ::text').extract()).strip())
 
-        # FIXME The description look strange. Why not just take the node()?
-        description = sel.xpath("//*[@id='pdpTab1']/div/text()").extract()
-        # removing below to just grab the brief description
-        # description.extend(
-        #     sel.xpath("//*[@id='pdpTab1']/div/ul/li/text()").extract())
-        cond_set(product, 'description', description)
-
-        cond_set(product, 'locale', ['en-US'])  # Default locale.
+        cond_set(
+            product,
+            'description',
+            response.xpath(
+                "//*[@id='pdpTab1']//*[@class='tabContent']").extract()
+        )
 
     def parse_related_products(self, response):
         """The page parsed here is a JavaScript file with HTML in two variables.
@@ -111,26 +113,24 @@ class PGEStoreProductSpider(BaseProductsSpider):
 
         return product
 
-    def _scrape_product_links(self, sel):
-        links = sel.xpath("//*[@class='description']/a/@href").extract()
+    def _scrape_product_links(self, response):
+        links = response.xpath("//*[@class='description']/a/@href").extract()
         if not links:
             self.log("Found no product links.", ERROR)
         for link in links:
             yield link, SiteProductItem()
 
-    def _scrape_total_matches(self, sel):
-        # FIXME Please review the changes on bestbuy and perform them here where they apply.
-        # modified slightly based on bestbuy spider
-        num_results = sel.xpath("//*[@id='deptmainheaderinfo']/text()").extract()
-
+    def _scrape_total_matches(self, response):
+        num_results = response.xpath(
+            "//*[@id='deptmainheaderinfo']/text()").extract()
         if num_results and num_results[0]:
             num_results = num_results[0].split(" ")
             return int(num_results[2])
         else:
             self.log("Failed to parse total number of matches.", level=ERROR)
 
-    def _scrape_next_results_page_link(self, sel):
-        next_pages = sel.xpath(
+    def _scrape_next_results_page_link(self, response):
+        next_pages = response.xpath(
             "//*[@id='pdpTab1']/div[3]/div[1]/ul/li[6]/a/@href").extract()
         next_page = None
         if len(next_pages) == 1:
