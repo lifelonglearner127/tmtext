@@ -43,10 +43,10 @@ class PGEStoreProductSpider(BaseProductsSpider):
 
         self._populate_from_html(response.url, sel, prod)
 
-        cond_set(prod, 'locale', ['en-US'])  # Default locale.
+        cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
         related_product_link = sel.xpath(
-            "//*[@id='crossSell']/script[1]/@src").extract()[0]
+            "//*[@id='crossSell']/script/@src").extract()[0]
         return Request(
             related_product_link,
             self.parse_related_products,
@@ -72,12 +72,11 @@ class PGEStoreProductSpider(BaseProductsSpider):
         cond_set_value(product, 'price',
                        ''.join(sel.css('.price ::text').extract()).strip())
 
-        # FIXME The description look strange. Why not just take the node()?
-        description = sel.xpath("//*[@id='pdpTab1']/div/text()").extract()
-        # removing below to just grab the brief description
-        # description.extend(
-        #     sel.xpath("//*[@id='pdpTab1']/div/ul/li/text()").extract())
-        cond_set(product, 'description', description)
+        cond_set(
+            product,
+            'description',
+            sel.xpath("//*[@id='pdpTab1']//*[@class='tabContent']").extract()
+        )
 
     def parse_related_products(self, response):
         """The page parsed here is a JavaScript file with HTML in two variables.
