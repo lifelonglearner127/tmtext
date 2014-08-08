@@ -125,6 +125,12 @@ def handle_not_found(error):
 	response.status_code = 404
 	return response
 
+@app.errorhandler(500)
+def handle_internal_error(error):
+	response = jsonify({"error" : "Internal server error"})
+	response.status_code = 500
+	return response
+
 @app.after_request
 def post_request_logging(response):
     app.logger.info('\t'.join([
