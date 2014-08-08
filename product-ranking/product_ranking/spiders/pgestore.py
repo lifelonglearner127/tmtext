@@ -14,7 +14,7 @@ class PGEStoreProductSpider(BaseProductsSpider):
     allowed_domains = ["pgestore.com", "igodigital.com"]
 
     SEARCH_URL = "http://www.pgestore.com/on/demandware.store/Sites-PG-Site/" \
-                 "default/Search-Show?q={search_term}"
+        "default/Search-Show?q={search_term}"
 
     def __init__(
             self,
@@ -119,10 +119,8 @@ class PGEStoreProductSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_total_matches(self, sel):
-        # FIXME Please review the changes on bestbuy and perform them here where they apply.
-        # modified slightly based on bestbuy spider
-        num_results = sel.xpath("//*[@id='deptmainheaderinfo']/text()").extract()
-
+        num_results = sel.xpath(
+            "//*[@id='deptmainheaderinfo']/text()").extract()
         if num_results and num_results[0]:
             num_results = num_results[0].split(" ")
             return int(num_results[2])
