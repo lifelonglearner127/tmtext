@@ -2,7 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 from scrapy.http import Request
 from scrapy.log import ERROR
@@ -56,9 +56,8 @@ class PGEStoreProductSpider(BaseProductsSpider):
     def _populate_from_html(self, url, sel, product):
         brands = sel.xpath("//*[@id='pdpMain']/div[1]/script[2]/text()").re(
             '.*?(\'(.*\w))')
-        if brands:
-            product['brand'] = brands[0]
-        else:
+        cond_set(product, 'brand', brands)
+        if 'brand' not in product:
             self.log("Found no brand name in: %s" % url, ERROR)
 
         cond_set(product, 'title',
@@ -70,7 +69,8 @@ class PGEStoreProductSpider(BaseProductsSpider):
             'image_url',
             sel.xpath("//*[@id='pdpMain']/div[1]/div[2]/img/@src").extract()
         )
-        product['price'] = ''.join(sel.css('.price ::text').extract()).strip()
+        cond_set_value(product, 'price',
+                       ''.join(sel.css('.price ::text').extract()).strip())
 
         # FIXME The description look strange. Why not just take the node()?
         description = sel.xpath("//*[@id='pdpTab1']/div/text()").extract()
