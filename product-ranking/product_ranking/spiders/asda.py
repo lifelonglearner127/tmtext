@@ -1,12 +1,10 @@
 from __future__ import division, absolute_import, unicode_literals
-from __future__ import print_function
 from future_builtins import *
 
 import json
 import urllib
 
-from scrapy.log import WARNING
-from scrapy.selector import Selector
+from scrapy.log import WARNING, ERROR
 
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
@@ -32,17 +30,25 @@ class AsdaProductsSpider(BaseProductsSpider):
         raise AssertionError("This method should never be called.")
 
     def _search_page_error(self, response):
-        sel = Selector(response)
-        data = json.loads(sel.xpath('//p/text()').extract()[0])
-        if data.get('statusCode') != '0':
-            self.log("Site reported error code '%s' and reason: %s"
-                     % (data.get('statusCode'), data.get('statusMessage')),
-                     WARNING)
-            return True
-        return False
+        try:
+            data = json.loads(response.body_as_unicode())
+            is_error = data.get('statusCode') != '0'
+            if is_error:
+                self.log("Site reported error code '%s' and reason: %s"
+                         % (data.get('statusCode'), data.get('statusMessage')),
+                         WARNING)
+
+            return is_error
+        except Exception as e:
+            self.log(
+                "Error '%s' when handling page '%s'. Content:\n%s"
+                % (e, response.url, response.body_as_unicode().strip()),
+                ERROR
+            )
+            raise
 
     def _scrape_total_matches(self, sel):
-        data = json.loads(sel.xpath('//p/text()').extract()[0])
+        data = json.loads(sel.response.body_as_unicode())
         return int(data['totalResult'])
 
     def _scrape_product_links(self, sel):
@@ -52,7 +58,7 @@ class AsdaProductsSpider(BaseProductsSpider):
         Returns the products in the current results page and a SiteProductItem
         which may be partially initialized.
         """
-        data = json.loads(sel.xpath('//p/text()').extract()[0])
+        data = json.loads(sel.response.body_as_unicode())
         for item in data['items']:
             prod = SiteProductItem()
             prod['title'] = item['itemName']
@@ -69,7 +75,7 @@ class AsdaProductsSpider(BaseProductsSpider):
             yield None, prod
 
     def _scrape_next_results_page_link(self, sel):
-        data = json.loads(sel.xpath('//p/text()').extract()[0])
+        data = json.loads(sel.response.body_as_unicode())
 
         max_pages = int(data['maxPages'])
         cur_page = int(data['currentPage'])
