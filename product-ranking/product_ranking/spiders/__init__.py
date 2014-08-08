@@ -24,11 +24,32 @@ def compose(*funcs):
     return _c
 
 
-def cond_set(item, key, values, conv=lambda l: l[0]):
-    """Helper function to ease conditionally setting a value in a dict."""
-    values = list(values)  # Copy and materialize values.
-    if not item.get(key) and values:
-        item[key] = conv(values)
+def identity(x):
+    return x
+
+
+def cond_set(item, key, values, conv=identity):
+    """Conditionally sets the first element of the given iterable to the given
+    dict.
+
+    The condition is that the key is not set, or the value in the dict None.
+    Also, the value to be set must not be None.
+    """
+    try:
+        value = next(iter(values))
+        cond_set_value(item, key, value, conv)
+    except StopIteration:
+        pass
+
+
+def cond_set_value(item, key, value, conv=identity):
+    """Conditionally sets the given value to the given dict.
+
+    The condition is that the key is not set, or the value in the dict None.
+    Also, the value to be set must not be None.
+    """
+    if item.get(key) is None and value is not None and conv(value) is not None:
+        item[key] = conv(value)
 
 
 class FormatterWithDefaults(string.Formatter):
