@@ -52,6 +52,8 @@ class BaseProductsSpider(Spider):
 
     SEARCH_URL = None  # Override.
 
+    self.MAX_RETRIES = 3
+
     def __init__(self,
                  url_formatter=None,
                  quantity=None,
@@ -177,13 +179,13 @@ class BaseProductsSpider(Spider):
             remaining -= prods_found
             if remaining > 0:
                 next_page = self._scrape_next_results_page_link(
-                    Selector(response))
+                    response.selector)
                 if next_page is not None:
                     url = urlparse.urljoin(response.url, next_page)
                     new_meta = dict(response.meta)
                     new_meta['remaining'] = remaining
                     result = Request(url, self.parse, meta=new_meta, priority=1)
-        elif link_page_attempt > 2:
+        elif link_page_attempt > self.MAX_RETRIES:
             self.log(
                 "Giving up on results page after %d attempts: %s" % (
                     link_page_attempt, response.request.url),
@@ -197,11 +199,10 @@ class BaseProductsSpider(Spider):
             )
 
             # Found no product links. Probably a transient error, lets retry.
-            new_meta = dict(response.meta)
+            new_meta = response.meta.copy()
             new_meta['link_page_attempt'] = link_page_attempt + 1
-            # Add an attribute so that Scrapy doesn't discard as duplicate.
-            url = response.request.url + "&_=%d" % link_page_attempt
-            result = Request(url, self.parse, meta=new_meta, priority=1)
+            result = response.request.replace(
+                meta=new_meta, cookies={}, dont_filter=True)
 
         return result
 
