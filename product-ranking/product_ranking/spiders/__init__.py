@@ -8,7 +8,6 @@ import urlparse
 
 from scrapy.log import ERROR, WARNING, INFO
 from scrapy.http import Request
-from scrapy.selector import Selector
 from scrapy.spider import Spider
 
 
@@ -52,7 +51,7 @@ class BaseProductsSpider(Spider):
 
     SEARCH_URL = None  # Override.
 
-    self.MAX_RETRIES = 3
+    MAX_RETRIES = 3
 
     def __init__(self,
                  url_formatter=None,
@@ -129,14 +128,12 @@ class BaseProductsSpider(Spider):
                 yield request
 
     def _get_products(self, response):
-        sel = Selector(response)
-
         remaining = response.meta['remaining']
         search_term = response.meta['search_term']
         prods_per_page = response.meta.get('products_per_page')
         total_matches = response.meta.get('total_matches')
 
-        prods = self._scrape_product_links(sel)
+        prods = self._scrape_product_links(response.selector)
 
         if prods_per_page is None:
             # Materialize prods to get its size.
@@ -144,7 +141,7 @@ class BaseProductsSpider(Spider):
             prods_per_page = len(prods)
 
         if total_matches is None:
-            total_matches = self._scrape_total_matches(sel)
+            total_matches = self._scrape_total_matches(response.selector)
 
         for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
             # Initialize the product as much as possible.
