@@ -47,18 +47,12 @@ class AsdaProductsSpider(BaseProductsSpider):
             )
             raise
 
-    def _scrape_total_matches(self, sel):
-        data = json.loads(sel.response.body_as_unicode())
+    def _scrape_total_matches(self, response):
+        data = json.loads(response.body_as_unicode())
         return int(data['totalResult'])
 
-    def _scrape_product_links(self, sel):
-        """_scrape_product_links(sel:Selector)
-                :iter<tuple<str, SiteProductItem>>
-
-        Returns the products in the current results page and a SiteProductItem
-        which may be partially initialized.
-        """
-        data = json.loads(sel.response.body_as_unicode())
+    def _scrape_product_links(self, response):
+        data = json.loads(response.body_as_unicode())
         for item in data['items']:
             prod = SiteProductItem()
             prod['title'] = item['itemName']
@@ -74,8 +68,8 @@ class AsdaProductsSpider(BaseProductsSpider):
 
             yield None, prod
 
-    def _scrape_next_results_page_link(self, sel):
-        data = json.loads(sel.response.body_as_unicode())
+    def _scrape_next_results_page_link(self, response):
+        data = json.loads(response.body_as_unicode())
 
         max_pages = int(data['maxPages'])
         cur_page = int(data['currentPage'])

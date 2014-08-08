@@ -1,13 +1,11 @@
 from __future__ import division, absolute_import, unicode_literals
-from __future__ import print_function
-#from future_builtins import *
+from future_builtins import *
 
 import re
 import urlparse
 import urllib
 
-from scrapy.selector import Selector
-from scrapy.log import ERROR
+from scrapy.log import ERROR, DEBUG
 
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set
@@ -21,29 +19,30 @@ class CvsProductsSpider(BaseProductsSpider):
     SEARCH_URL = "http://www.cvs.com/search/_/N-0?searchTerm={search_term}&pt=global&pageNum=1&sortBy=&navNum=20"
 
     def __init__(self, *args, **kwargs):
-        super(CvsProductsSpider, self).__init__(
-            #url_formatter=FormatterWithDefaults(pagenum=1, prods_per_page=32),
-            *args, **kwargs)
+        super(CvsProductsSpider, self).__init__(*args, **kwargs)
         self.pagenum = 1
 
     def parse_product(self, response):
         print ("parse_product for", response.url)
         product = response.meta['product']
-        sel = Selector(response)
 
         cond_set(product, 'title',
-                 sel.xpath("//h1[@class='prodName']/text()").extract())
+                 response.xpath("//h1[@class='prodName']/text()").extract())
 
-        image_url = sel.xpath("//div[@class='productImage']/img/@src").extract()[0]
+        image_url = response.xpath(
+            "//div[@class='productImage']/img/@src").extract()[0]
         product['image_url'] = image_url
 
-        size = sel.xpath("//form[@id='addCart']/table/tr/td[@class='col1']/text()[.='Size:']/../../td[2]/text()")
+        size = response.xpath(
+            "//form[@id='addCart']/table/tr/td[@class='col1']/"
+            "text()[.='Size:']/../../td[2]/text()"
+        )
         size = size.extract()[0].strip()
         product['model'] = size
 
-        addbasketbutton = sel.xpath('//a[@id="addBasketButton"]')
+        addbasketbutton = response.xpath('//a[@id="addBasketButton"]')
         if len(addbasketbutton) == 0:
-            addbasketbutton = sel.xpath('//div[@class="addBasket"]/a')
+            addbasketbutton = response.xpath('//div[@class="addBasket"]/a')
 
         if len(addbasketbutton) >0:
             upc = addbasketbutton.xpath('@data-upcnumber').extract()[0]
@@ -55,19 +54,16 @@ class CvsProductsSpider(BaseProductsSpider):
         product['upc'] = int(upc)
         product['price'] = price
 
-        desc = sel.xpath("//div[@id='prodDesc']/p/text()")
+        desc = response.xpath("//div[@id='prodDesc']/p/text()")
         desc = (" ".join(desc.extract())).strip()
         product['description'] = desc
 
-        product['brand'] = ""
         product['locale'] = "en-US"
-        product['related_products'] = {}
 
-        print ("prod=", product)
         return product
 
-    def _scrape_total_matches(self, sel):
-        total = sel.xpath("//form[@id='topForm']/strong/text()").extract()
+    def _scrape_total_matches(self, response):
+        total = response.xpath("//form[@id='topForm']/strong/text()").extract()
         if len(total) == 1:
             total = total[0].strip()
             re1 = r'Results.*of (\d+)'
@@ -77,28 +73,22 @@ class CvsProductsSpider(BaseProductsSpider):
                 n = m.group(1)
                 return int(n)
 
-    def _scrape_product_links(self, sel):
-        """_scrape_product_links(sel:Selector)
-                :iter<tuple<str, SiteProductItem>>
-
-        Returns the products in the current results page and a SiteProductItem
-        which may be partially initialized.
-        """
-        links = sel.xpath("//div[@class='product']/div[@class='innerBox']/div[@class='productSection1']/a/@href").extract()
+    def _scrape_product_links(self, response):
+        links = response.xpath(
+            "//div[@class='product']/div[@class='innerBox']/"
+            "div[@class='productSection1']/a/@href"
+        ).extract()
         if not links:
             self.log("Found no product links.", ERROR)
 
         for no, link in enumerate(links):
-            print ("debug. _scrape_product_links", no, link)
+            self.log("_scrape_product_links: %s | %s" % (no, link), DEBUG)
             # ovs DEBUG replace not pass url 
             yield link, SiteProductItem()
-            #yield None, SiteProductItem()
 
-    def _scrape_next_results_page_link(self, sel):
-        """  I don't know how to transfer here search_page_no to make url for next search page.
-        """
-        response = sel.response
-        max_page = int(self._scrape_total_matches(Selector(response))/20)
+    def _scrape_next_results_page_link(self, response):
+        # FIXME I don't know how to transfer here search_page_no to make url for next search page.
+        max_page = int(self._scrape_total_matches(response) / 20)
 
         url_parse = urlparse.urlsplit(response.url)
         query_string = urlparse.parse_qs(url_parse.query)

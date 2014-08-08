@@ -1,13 +1,10 @@
 from __future__ import division, absolute_import, unicode_literals
-from __future__ import print_function
 from future_builtins import *
 
-import re
-
-from scrapy.log import ERROR, WARNING
+from scrapy.log import ERROR
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
 def strip_cond_set(item, key, values, conv=lambda l: l[0].strip()):
@@ -24,8 +21,9 @@ class FreshDirectProductsSpider(BaseProductsSpider):
     name = "freshdirect_products"
     allowed_domains = ["freshdirect.com"]
     start_urls = []
+
     SEARCH_URL = "https://www.freshdirect.com/search.jsp?" \
-                 "searchParams={search_term}&view=grid&refinement=1"
+        "searchParams={search_term}&view=grid&refinement=1"
 
     def parse_product(self, response):
         prod = response.meta['product']
@@ -39,19 +37,22 @@ class FreshDirectProductsSpider(BaseProductsSpider):
             if price:
                 prod['price'] = price
             else:
-                price = response.xpath('//span[@class="save-price"]/text()').extract()
+                price = response.xpath(
+                    '//span[@class="save-price"]/text()').extract()
                 strip_cond_set(prod, 'price', price)
 
         des = response.xpath(
-            '//div[contains(@class,"pdp-accordion-description-description")]//text()'
+            '//div[contains(@class,"pdp-accordion-description-description")]'
+            '//text()'
         ).extract()
-        des = ''.join([i.strip() for i in des]).strip()
-        if des:
-             prod['description'] = des
+        des = ''.join(i.strip() for i in des)
+        cond_set_value(prod, 'description', des)
 
-        img_url = response.xpath('//div[@class="main-image"]/img/@src').extract()
+        img_url = response.xpath(
+            '//div[@class="main-image"]/img/@src').extract()
         if img_url:
-            img_url = "https://www.freshdirect.com%s" %img_url[0]
+            # FIXME join using the current URL.
+            img_url = "https://www.freshdirect.com%s" % img_url[0]
             prod['image_url'] = img_url
 
         model = response.xpath(
@@ -64,16 +65,19 @@ class FreshDirectProductsSpider(BaseProductsSpider):
 
         related_products = []
         for li in response.xpath(
-                '//div[@class="pdp-likethat"]//li[contains(@class,"portrait-item")]'
+                '//div[@class="pdp-likethat"]'
+                '//li[contains(@class,"portrait-item")]'
         ):
-
             url = None
-            urls = li.xpath('.//div[@class="portrait-item-header"]/a/@href').extract()
+            urls = li.xpath(
+                './/div[@class="portrait-item-header"]/a/@href').extract()
             if urls:
+                # FIXME join using the current URL.
                 url = "https://www.freshdirect.com%s" %urls[0].strip()
 
             title = None
-            titles = li.xpath('.//div[@class="portrait-item-header"]/a//text()').extract()
+            titles = li.xpath(
+                './/div[@class="portrait-item-header"]/a//text()').extract()
             if titles:
                 title = titles[0].strip()
 
@@ -81,6 +85,7 @@ class FreshDirectProductsSpider(BaseProductsSpider):
                 related_products.append((title, url))
 
         if related_products:
+            # FIXME The type of related_products items is not a tuple.
             prod['related_products'] = {'recommended': related_products}
 
         return prod
@@ -91,23 +96,28 @@ class FreshDirectProductsSpider(BaseProductsSpider):
             return True
         return False
 
-    def _scrape_total_matches(self, sel):
+    def _scrape_total_matches(self, response):
         try:
-            count = sel.xpath('//span[@class="itemcount"]/text()').extract()[0]
+            count = response.xpath(
+                '//span[@class="itemcount"]/text()').extract()[0]
             return int(count)
         except IndexError:
             return 0
 
-    def _scrape_product_links(self, sel):
-        for link in sel.xpath('//div[@class="items"]//div[@class="grid-item-name"]/a/@href').extract():
-            link = "https://www.freshdirect.com%s" %link
+    def _scrape_product_links(self, response):
+        for link in response.xpath(
+                '//div[@class="items"]//div[@class="grid-item-name"]/a/@href'
+        ).extract():
+            # FIXME join using the current URL.
+            link = "https://www.freshdirect.com%s" % link
             yield link, SiteProductItem()
 
-    def _scrape_next_results_page_link(self, sel):
-        links = sel.xpath('//span[@class="pager-next"]/a/@href').extract()
+    def _scrape_next_results_page_link(self, response):
+        links = response.xpath('//span[@class="pager-next"]/a/@href').extract()
 
         if links:
-            link = "https://www.freshdirect.com/search.jsp%s" %links[0]
+            # FIXME join using the current URL.
+            link = "https://www.freshdirect.com/search.jsp%s" % links[0]
         else:
             link = None
 

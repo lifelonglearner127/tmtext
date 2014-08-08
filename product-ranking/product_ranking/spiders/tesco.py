@@ -60,16 +60,16 @@ class TescoProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         raise AssertionError("This method should never be called.")
 
-    def _scrape_total_matches(self, sel):
-        return int(sel.css("span.pageTotalItemCount ::text").extract()[0])
+    def _scrape_total_matches(self, response):
+        return int(response.css("span.pageTotalItemCount ::text").extract()[0])
 
-    def _scrape_product_links(self, sel):
+    def _scrape_product_links(self, response):
         # To populate the description, fetching the product page is necessary.
 
-        url = sel.response.url
+        url = response.url
 
         # This will contain everything except for the URL and description.
-        product_jsons = sel.xpath(
+        product_jsons = response.xpath(
             "//script[@type='text/javascript']/text()"
         ).re(
             r"\s*tesco\.productData\.push\((\{.+?\})\);"
@@ -77,7 +77,7 @@ class TescoProductsSpider(BaseProductsSpider):
         if not product_jsons:
             self.log("Found no product data on: %s" % url, ERROR)
 
-        product_links = sel.css(
+        product_links = response.css(
             ".product > .desc > h2 > a ::attr('href')").extract()
         if not product_links:
             self.log("Found no product links on: %s" % url, ERROR)
@@ -103,14 +103,14 @@ class TescoProductsSpider(BaseProductsSpider):
 
             yield None, prod
 
-    def _scrape_next_results_page_link(self, sel):
-        next_pages = sel.css('p.next > a ::attr(href)').extract()
+    def _scrape_next_results_page_link(self, response):
+        next_pages = response.css('p.next > a ::attr(href)').extract()
         next_page = None
         if len(next_pages) == 2:
             next_page = next_pages[0]
         elif len(next_pages) > 2:
             self.log(
-                "Found more than two 'next page' link: %s" % sel.response.url,
+                "Found more than two 'next page' link: %s" % response.url,
                 ERROR
             )
         return next_page

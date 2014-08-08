@@ -19,9 +19,8 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
     start_urls = []
 
     SEARCH_URL = "https://fresh.amazon.com/Search?browseMP={market_place_id}" \
-                 "&resultsPerPage=50" \
-                 "&predictiveSearchFlag=false&recipeSearchFlag=false" \
-                 "&comNow=&input={search_term}"
+        "&resultsPerPage=50&predictiveSearchFlag=false&recipeSearchFlag=false" \
+        "&comNow=&input={search_term}"
 
     def __init__(self, location='southern_cali', *args, **kwargs):
         settings = get_project_settings()
@@ -34,23 +33,21 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
         )
 
     def parse_product(self, response):
-        sel = Selector(response)
-
         prod = response.meta['product']
 
         query_string = urlparse.parse_qs(urlparse.urlsplit(response.url).query)
         cond_set(prod, 'model', query_string['asin'])
-        title = sel.xpath('//div[@class="buying"]/h1/text()').extract()
+        title = response.xpath('//div[@class="buying"]/h1/text()').extract()
         cond_set(prod, 'title', title)
-        brand = sel.xpath('//div[@class="byline"]/a/text()').extract()
+        brand = response.xpath('//div[@class="byline"]/a/text()').extract()
         cond_set(prod, 'brand', brand)
-        price = sel.xpath(
-            '//div[@class="price"]/span[@class="value"]/text()'
-        ).extract()
+        price = response.xpath(
+            '//div[@class="price"]/span[@class="value"]/text()').extract()
         cond_set(prod, 'price', price)
-        des = sel.xpath('//*[@id="productDescription"]/p/text()').extract()
+        des = response.xpath('//*[@id="productDescription"]/p/text()').extract()
         cond_set(prod, 'description', des)
-        img_url = sel.xpath('//div[@id="mainImgWrapper"]/img/@src').extract()
+        img_url = response.xpath(
+            '//div[@id="mainImgWrapper"]/img/@src').extract()
         cond_set(prod, 'image_url', img_url)
         cond_set(prod, 'locale', ['en-US'])
         prod['url'] = response.url
@@ -72,18 +69,20 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
         except IndexError:
             return False
 
-    def _scrape_total_matches(self, sel):
-        count = sel.xpath('//div[@class="numberOfResults"]/text()').re(
+    def _scrape_total_matches(self, response):
+        count = response.xpath('//div[@class="numberOfResults"]/text()').re(
             '(\d+)')[-1]
         if count:
             return int(count)
         return 0
 
-    def _scrape_product_links(self, sel):
-        links = sel.xpath('//div[@class="itemDetails"]/h4/a/@href').extract()
+    def _scrape_product_links(self, response):
+        links = response.xpath(
+            '//div[@class="itemDetails"]/h4/a/@href').extract()
         for link in links:
             yield link, SiteProductItem()
 
-    def _scrape_next_results_page_link(self, sel):
-        link = sel.xpath('//div[@class="pagination"]/a/@href').extract()[-1]
+    def _scrape_next_results_page_link(self, response):
+        link = response.xpath(
+            '//div[@class="pagination"]/a/@href').extract()[-1]
         return link

@@ -7,7 +7,7 @@ from scrapy.selector import Selector
 from scrapy.log import ERROR, WARNING
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
 class BestBuyProductSpider(BaseProductsSpider):
@@ -15,23 +15,22 @@ class BestBuyProductSpider(BaseProductsSpider):
     allowed_domains = ["bestbuy.com"]
 
     SEARCH_URL = "http://www.bestbuy.com/site/searchpage.jsp?_dyncharset=UTF-" \
-                 "8&_dynSessConf=&id=pcat17071&type=page&sc=Global&cp=1&nrp=15&sp=&qp=" \
-                 "&list=n&iht=y&usc=All+Categories&ks=960&st={search_term}"
+        "8&_dynSessConf=&id=pcat17071&type=page&sc=Global&cp=1&nrp=15&sp=&qp=" \
+        "&list=n&iht=y&usc=All+Categories&ks=960&st={search_term}"
 
     def parse_product(self, response):
-        sel = Selector(response)
         prod = response.meta['product']
 
-        self._populate_from_schemaorg(response.url, sel, prod)
+        self._populate_from_schemaorg(response, prod)
 
-        self._populate_from_html(response.url, sel, prod)
+        self._populate_from_html(response, prod)
 
-        cond_set(prod, 'locale', ['en-US'])  # Default locale.
+        cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
         return prod
 
-    def _populate_from_schemaorg(self, url, sel, product):
-        product_tree = sel.xpath("//*[@itemtype='http://schema.org/Product']")
+    def _populate_from_schemaorg(self, response, product):
+        product_tree = response.xpath("//*[@itemtype='http://schema.org/Product']")
 
         cond_set(product, 'title', product_tree.xpath(
             "descendant::*[not (@itemtype)]/meta[@itemprop='name']/@content"
@@ -72,17 +71,18 @@ class BestBuyProductSpider(BaseProductsSpider):
             "descendant::*[not (@itemtype) and @itemprop='name']/@content"
         ).extract())
 
-    def _populate_from_html(self, url, sel, product):
-        title = sel.css("#sku-title ::text").extract()[0]
+    def _populate_from_html(self, response, product):
+        title = response.css("#sku-title ::text").extract()[0]
         brand, _ = re.split(r'\s+-\s+', title, 1)
         cond_set(product, 'title', [title])
         cond_set(product, 'brand', [brand])
 
-        cond_set(product, 'upc', sel.css("#sku-value ::text").extract())
-        cond_set(product, 'model', sel.css("#model-value ::text").extract())
+        cond_set(product, 'upc', response.css("#sku-value ::text").extract())
+        cond_set(product, 'model',
+                 response.css("#model-value ::text").extract())
 
-    def _scrape_product_links(self, sel):
-        links = sel.xpath(
+    def _scrape_product_links(self, response):
+        links = response.xpath(
             "//*[@itemtype='http://schema.org/Product']"
             "/descendant::*[not (@itemtype)]//a[@itemprop='url']/@href"
         ).extract()
@@ -91,15 +91,16 @@ class BestBuyProductSpider(BaseProductsSpider):
         for link in links:
             yield link, SiteProductItem()
 
-    def _scrape_total_matches(self, sel):
-        num_results = sel.css("#searchstate > b:nth-child(1)::text").extract()
+    def _scrape_total_matches(self, response):
+        num_results = response.css(
+            "#searchstate > b:nth-child(1)::text").extract()
         if num_results and num_results[0]:
             return int(num_results[0])
         else:
             self.log("Failed to parse total number of matches.", level=ERROR)
 
-    def _scrape_next_results_page_link(self, sel):
-        next_pages = sel.css("a.next::attr(href)").extract()
+    def _scrape_next_results_page_link(self, response):
+        next_pages = response.css("a.next::attr(href)").extract()
         next_page = None
         if next_pages:
             next_page = next_pages[0]

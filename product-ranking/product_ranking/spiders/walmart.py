@@ -13,7 +13,7 @@ from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import (BaseProductsSpider, FormatterWithDefaults,
-                                     cond_set, compose)
+                                     cond_set, compose, cond_set_value)
 
 
 class WalmartProductsSpider(BaseProductsSpider):
@@ -51,22 +51,20 @@ class WalmartProductsSpider(BaseProductsSpider):
             *args, **kwargs)
 
     def parse_product(self, response):
-        sel = Selector(response)
-
         if self._search_page_error(response):
-            self.log("Got 404 when coming from %s." % response.request.url,
-                     ERROR)
+            self.log(
+                "Got 404 when coming from %s." % response.request.url, ERROR)
             return
 
         p = response.meta['product']
 
-        self._populate_from_open_graph(response.url, sel, p)
+        self._populate_from_open_graph(response, p)
 
-        item_id, category_id = self._populate_from_js(response.url, sel, p)
+        item_id, category_id = self._populate_from_js(response, p)
 
-        self._populate_from_html(response.url, sel, p)
+        self._populate_from_html(response, p)
 
-        cond_set(p, 'locale', ['en-US'])  # Default locale.
+        cond_set_value(p, 'locale', 'en-US')  # Default locale.
 
         if item_id is None or category_id is None:
             result = p
@@ -88,17 +86,21 @@ class WalmartProductsSpider(BaseProductsSpider):
     def parse_related_products(self, response):
         product = response.meta['product']
 
-        m = re.match(r'.*?\((.+)\)', response.body)  # Extract JSON.
+        m = re.match(r'.*?\((.+)\)', response.body_as_unicode())
         if not m:
             self.log("Failed to parse related products.", WARNING)
         else:
             data = json.loads(m.group(1))
             module_list = data.get('result', {}).get('moduleList', [])
             for module in module_list:
-                if module['moduleTitle'] == "People who bought this item also bought":
+                if module['moduleTitle'] \
+                        == "People who bought this item also bought":
                     product['related_products'] = {
                         "buyers_also_bought": list(
-                            RelatedProduct(self._generate_title_from_url(url), url)
+                            RelatedProduct(
+                                self._generate_title_from_url(url),
+                                url
+                            )
                             for url in Selector(text=module['html']).css(
                                 'a.irs-title ::attr(href)').extract()
                         ),
@@ -115,33 +117,42 @@ class WalmartProductsSpider(BaseProductsSpider):
         path = urlparse.urlsplit(response.url)[2]
         return path == '/FileNotFound.aspx'
 
-    def _populate_from_html(self, url, sel, product):
+    def _populate_from_html(self, response, product):
         # Since different chunks of invalid HTML keep appearing in this
         # element, I'll just dump whatever is in there.
         cond_set(product, 'title',
-                 sel.xpath('//meta[@name="title"]/@content').extract())
+                 response.xpath('//meta[@name="title"]/@content').extract())
         # TODO This source for the description is not reliable.
-        cond_set(product, 'description',
-                 sel.xpath('//*[@class="ql-details-short-desc"]/*').extract(),
-                 conv=compose(string.strip, ''.join))
+        cond_set(
+            product,
+            'description',
+            response.xpath('//*[@class="ql-details-short-desc"]/*').extract(),
+            conv=compose(string.strip, ''.join)
+        )
         # Smaller but good description as fallback.
         cond_set(
             product,
             'description',
-            sel.xpath('//meta[@name="twitter:description"]/@content').extract()
+            response.xpath(
+                '//meta[@name="twitter:description"]/@content').extract(),
         )
         # Lower quality description as last resort.
-        cond_set(product, 'description',
-                 sel.xpath('//meta[@name="Description"]/@content').extract())
+        cond_set(
+            product,
+            'description',
+            response.xpath('//meta[@name="Description"]/@content').extract(),
+        )
 
-    def _populate_from_js(self, url, sel, product):
+    def _populate_from_js(self, response, product):
         # This fails with movies.
-        scripts = sel.xpath("//script[contains(text(), 'var DefaultItem =')]")
+        scripts = response.xpath(
+            "//script[contains(text(), 'var DefaultItem =')]")
         if not scripts:
-            self.log("No JS matched in %s" % url, WARNING)
+            self.log("No JS matched in %s" % response.url, WARNING)
             return None, None
         if len(scripts) > 1:
-            self.log("Matched multiple script blocks in %s" % url, WARNING)
+            self.log(
+                "Matched multiple script blocks in %s" % response.url, WARNING)
 
         cond_set(product, 'upc', map(int, scripts.re("upc:\s*'(\d+)',")))
         cond_set(product, 'brand',
@@ -160,10 +171,10 @@ class WalmartProductsSpider(BaseProductsSpider):
             category_id_list[0] if category_id_list else None,
         )
 
-    def _populate_from_open_graph(self, url, sel, product):
+    def _populate_from_open_graph(self, response, product):
         """See about the Open Graph Protocol at http://ogp.me/"""
         # Extract all the meta tags with an attribute called property.
-        metadata_dom = sel.xpath("/html/head/meta[@property]")
+        metadata_dom = response.xpath("/html/head/meta[@property]")
         props = metadata_dom.xpath("@property").extract()
         conts = metadata_dom.xpath("@content").extract()
 
@@ -187,23 +198,25 @@ class WalmartProductsSpider(BaseProductsSpider):
         product['description'] = metadata.get('description')
         product['locale'] = metadata.get('locale')
 
-    def _scrape_total_matches(self, sel):
-        return int(sel.css(".numResults ::text").extract()[0].split()[0])
+    def _scrape_total_matches(self, response):
+        return int(response.css(".numResults ::text").extract()[0].split()[0])
 
-    def _scrape_product_links(self, sel):
-        links = sel.css('a.prodLink.GridItemLink ::attr(href)').extract()
+    def _scrape_product_links(self, response):
+        links = response.css('a.prodLink.GridItemLink ::attr(href)').extract()
         if not links:
-            self.log("Found no product links in %r." % sel.response, WARNING)
+            self.log("Found no product links in %s." % response.url, WARNING)
         for link in links:
             yield link, SiteProductItem()
 
-    def _scrape_next_results_page_link(self, sel):
-        next_pages = sel.css('li.btn-nextResults > a ::attr(href)').extract()
+    def _scrape_next_results_page_link(self, response):
+        next_page = None
+        next_pages = response.css(
+            'li.btn-nextResults > a ::attr(href)').extract()
         if len(next_pages) == 1:
-            return next_pages[0]
+            next_page = next_pages[0]
         elif len(next_pages) > 1:
             self.log(
-                "Found more than one 'next page' link in %r." % sel.response,
+                "Found more than one 'next page' link in %s." % response.url,
                 ERROR
             )
-        return None
+        return next_page

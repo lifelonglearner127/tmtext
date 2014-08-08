@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from __future__ import print_function
 from future_builtins import *
 
 import re
@@ -7,7 +6,7 @@ import re
 from scrapy.log import ERROR
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
 class CostcoProductsSpider(BaseProductsSpider):
@@ -16,8 +15,8 @@ class CostcoProductsSpider(BaseProductsSpider):
     start_urls = []
 
     SEARCH_URL = "http://www.costco.com/CatalogSearch?pageSize=96" \
-                 "&catalogId=10701&langId=-1&storeId=10301" \
-                 "&currentPage=1&keyword={search_term}"
+        "&catalogId=10701&langId=-1&storeId=10301" \
+        "&currentPage=1&keyword={search_term}"
 
     def parse_product(self, response):
         prod = response.meta['product']
@@ -44,21 +43,20 @@ class CostcoProductsSpider(BaseProductsSpider):
             prod['brand'] = brand
 
         price = response.xpath(
-            '//input[contains(@name,"price")]/@value'
-        ).extract()
+            '//input[contains(@name,"price")]/@value').extract()
         cond_set(prod, 'price', price)
         if 'price' in prod and (not prod['price'] or prod['price'] == '$0.00'):
             del prod['price']
 
         des = response.xpath('//div[@id="product-tab1"]//text()').extract()
-        des = ' '.join([i.strip() for i in des])
+        des = ' '.join(i.strip() for i in des)
         if des.strip():
             prod['description'] = des.strip()
 
         img_url = response.xpath('//img[@itemprop="image"]/@src').extract()
         cond_set(prod, 'image_url', img_url)
 
-        cond_set(prod, 'locale', ['en-US'])
+        cond_set_value(prod, 'locale', 'en-US')
         prod['url'] = response.url
 
         return prod
@@ -69,9 +67,9 @@ class CostcoProductsSpider(BaseProductsSpider):
             return True
         return False
 
-    def _scrape_total_matches(self, sel):
+    def _scrape_total_matches(self, response):
         try:
-            count = sel.xpath(
+            count = response.xpath(
                 '//*[@id="secondary_content_wrapper"]/div/p/span/text()'
             ).re('(\d+)')[-1]
             if count:
@@ -80,15 +78,15 @@ class CostcoProductsSpider(BaseProductsSpider):
         except IndexError:
             return 0
 
-    def _scrape_product_links(self, sel):
-        links = sel.xpath(
+    def _scrape_product_links(self, response):
+        links = response.xpath(
             '//div[contains(@class,"product-tile-image-container")]/a/@href'
         ).extract()
         for link in links:
             yield link, SiteProductItem()
 
-    def _scrape_next_results_page_link(self, sel):
-        links = sel.xpath(
+    def _scrape_next_results_page_link(self, response):
+        links = response.xpath(
             "//*[@class='pagination']"
             "/ul[2]"  # [1] is for the Items Per Page section which has .active.
             "/li[@class='active']"

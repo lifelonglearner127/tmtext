@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import, unicode_literals
-from __future__ import print_function
+from future_builtins import *
 
 from itertools import islice
 import string
@@ -154,7 +154,7 @@ class BaseProductsSpider(Spider):
         prods_per_page = response.meta.get('products_per_page')
         total_matches = response.meta.get('total_matches')
 
-        prods = self._scrape_product_links(response.selector)
+        prods = self._scrape_product_links(response)
 
         if prods_per_page is None:
             # Materialize prods to get its size.
@@ -162,7 +162,7 @@ class BaseProductsSpider(Spider):
             prods_per_page = len(prods)
 
         if total_matches is None:
-            total_matches = self._scrape_total_matches(response.selector)
+            total_matches = self._scrape_total_matches(response)
 
         for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
             # Initialize the product as much as possible.
@@ -196,8 +196,7 @@ class BaseProductsSpider(Spider):
             remaining = response.meta['remaining']
             remaining -= prods_found
             if remaining > 0:
-                next_page = self._scrape_next_results_page_link(
-                    response.selector)
+                next_page = self._scrape_next_results_page_link(response)
                 if next_page is not None:
                     url = urlparse.urljoin(response.url, next_page)
                     new_meta = dict(response.meta)
@@ -242,15 +241,15 @@ class BaseProductsSpider(Spider):
         # Default implementation for sites that send proper status codes.
         return False
 
-    def _scrape_total_matches(self, sel):
-        """_scrape_total_matches(sel:Selector):int
+    def _scrape_total_matches(self, response):
+        """_scrape_total_matches(response:Response):int
 
         Scrapes the total number of matches of the search term.
         """
         raise NotImplementedError
 
-    def _scrape_product_links(self, sel):
-        """_scrape_product_links(sel:Selector)
+    def _scrape_product_links(self, response):
+        """_scrape_product_links(response:Response)
                 :iter<tuple<str, SiteProductItem>>
 
         Returns the products in the current results page and a SiteProductItem
@@ -258,8 +257,8 @@ class BaseProductsSpider(Spider):
         """
         raise NotImplementedError
 
-    def _scrape_next_results_page_link(self, sel):
-        """_scrape_next_results_page_link(sel:Selector):str
+    def _scrape_next_results_page_link(self, response):
+        """_scrape_next_results_page_link(response:Response):str
 
         Scrapes the URL for the next results page.
         It should return None if no next page is available.
