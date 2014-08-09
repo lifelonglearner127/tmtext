@@ -11,7 +11,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set
 import json
 
 
-class DiapersProductSpider(BaseProductsSpider):
+class SoapProductSpider(BaseProductsSpider):
     name = 'soap_products'
     allowed_domains = ["soap.com"]
 
