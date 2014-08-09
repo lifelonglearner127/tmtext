@@ -23,8 +23,10 @@
 
 <table class="reference" style="width:60%">
   <tr>
+    <th> ID </th>
     <th> Group Name </th>
     <th> Site Name </th>
+    <th> Keywords </th>
     <th> Creation Date </th>
     <th> IP </th>
     <th> Params </th>
@@ -33,8 +35,10 @@
 
   {% for req in last_requests %}
   <tr>
+    <td> {{ req.requestid }} </td>
     <td> {{ req.group_name}} </td>
     <td> {{ req.site}} </td>
+    <td> {{ req.params.searchterms_str }} </td>
     <td> {{ req.creation }} </td>
     <td> {{ req.remote_ip }} </td>
     <td> 
