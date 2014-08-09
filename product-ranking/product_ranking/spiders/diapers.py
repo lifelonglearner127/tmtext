@@ -115,10 +115,8 @@ class DiapersProductSpider(BaseProductsSpider):
             self.log("Failed to parse total number of matches.", level=ERROR)
 
     def _scrape_next_results_page_link(self, response):
-        # next_pages = sel.css("a.result-pageNum-iconWrap::attr(href)").extract()
-        next_pages = response.xpath(
-            '//span[contains(@class,"result-pageNum-link")]/a[2]/@href'
-        ).extract()
+
+        next_pages = response.css("a:nth-child(3).result-pageNum-iconWrap::attr(href)").extract()
 
         next_page = None
         if next_pages:
