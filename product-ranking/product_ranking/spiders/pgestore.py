@@ -53,8 +53,8 @@ class PGEStoreProductSpider(BaseProductsSpider):
 
     def _populate_from_html(self, response, product):
         brands = response.xpath(
-            "//*[@id='pdpMain']/div[1]/script[2]/text()").re('.*?(\'(.*\w))')
-        cond_set(product, 'brand', brands)
+            "//*[@id='pdpMain']/div[1]/script[2]/text()").re('.*?(\'(.*\w))')[1]
+        cond_set(product, 'brand', [brands])
         if 'brand' not in product:
             self.log("Found no brand name in: %s" % response.url, ERROR)
 
