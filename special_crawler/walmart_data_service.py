@@ -7,23 +7,24 @@ import datetime
 import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
+import json
 
 app = Flask(__name__)
 
 class InvalidUsage(Exception):
-    status_code = 400
+	status_code = 400
 
-    def __init__(self, message, status_code=None, payload=None):
-        Exception.__init__(self)
-        self.message = message
-        if status_code is not None:
-            self.status_code = status_code
-        self.payload = payload
+	def __init__(self, message, status_code=None, payload=None):
+		Exception.__init__(self)
+		self.message = message
+		if status_code is not None:
+			self.status_code = status_code
+		self.payload = payload
 
-    def to_dict(self):
-        rv = dict(self.payload or ())
-        rv['error'] = self.message
-        return rv
+	def to_dict(self):
+		rv = dict(self.payload or ())
+		rv['error'] = self.message
+		return rv
 
 # validate URL parameter
 def check_input(url):
@@ -116,9 +117,9 @@ def get_video_url(url):
 @app.errorhandler(InvalidUsage)
 def handle_invalid_usage(error):
 	#TODO: not leave this as json output? error format should be consistent
-    response = jsonify(error.to_dict())
-    response.status_code = error.status_code
-    return response
+	response = jsonify(error.to_dict())
+	response.status_code = error.status_code
+	return response
 
 @app.errorhandler(404)
 def handle_not_found(error):
@@ -134,22 +135,23 @@ def handle_internal_error(error):
 
 @app.after_request
 def post_request_logging(response):
-	# TODO: jsonify
-    app.logger.info('\t'.join([
-        datetime.datetime.today().ctime(),
-        request.remote_addr,
-        request.method,
-        request.url,
-        str(response.status_code),
-        request.data,
-        ', '.join([': '.join(x) for x in request.headers])])
-    )
-    return response
+
+	app.logger.info(json.dumps({
+		"date" : datetime.datetime.today().ctime(),
+		"remote_addr" : request.remote_addr,
+		"request_method" : request.method,
+		"request_url" : request.url,
+		"response_status_code" : str(response.status_code),
+		"request_headers" : ', '.join([': '.join(x) for x in request.headers])
+		})
+	)
+
+	return response
 
 if __name__ == '__main__':
 	# TODO: probably add these outside of main for them to work with wsgi as well
 
-	# create logs dir if it doesn't exist	
+	# create logs dir if it doesn't exist   
 	if not os.path.exists("logs"):
 		os.makedirs("logs")
 
