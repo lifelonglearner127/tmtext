@@ -63,7 +63,7 @@ class FormatterWithDefaults(string.Formatter):
             val = super(FormatterWithDefaults, self).get_field(
                 field_name, args, kwargs)
         except (KeyError, AttributeError):
-            val = self.defaults[field_name], field_name
+            val = urllib.quote_plus(str(self.defaults[field_name])), field_name
         return val
 
 
@@ -125,7 +125,7 @@ class BaseProductsSpider(Spider):
         for st in self.searchterms:
             yield Request(
                 self.url_formatter.format(self.SEARCH_URL,
-                                          search_term=urllib.quote(st)),
+                                          search_term=urllib.quote_plus(st)),
                 meta={'search_term': st, 'remaining': self.quantity})
 
     def parse(self, response):

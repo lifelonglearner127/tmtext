@@ -72,12 +72,15 @@ class ScrapydMediator(object):
             raise ScrapydJobException("Parameter %s is required." % e)
 
         url = urlparse.urljoin(self.scrapyd_base_url, 'schedule.json')
-        # FIXME Handle multivalued setting as in setting.
-        data = dict(params)
-        data['project'] = project_name
-        data['spider'] = spider_name
-        LOG.info("Calling Scrapyd on '%s' with parameters: %s", url, data)
+        # Convert to a list of pairs to handle multivalued parameters.
+        data = list(filter(
+            lambda (k, _): k not in {'project', 'spider'},
+            params.items()
+        ))
+        data.append(('project', project_name))
+        data.append(('spider', spider_name))
 
+        LOG.info("Calling Scrapyd on '%s' with parameters: %s", url, data)
         result = self._fetch_json(url, data)
         if result['status'] != "ok":
             raise ScrapydJobStartError(
