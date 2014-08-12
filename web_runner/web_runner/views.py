@@ -301,7 +301,7 @@ def spider_results_view(request):
         data_stream = mediator.retrieve_job_data(job_id)
         request.response.body_file = data_stream
         return request.response
-    except Exception as e:
+    except ScrapydJobException as e:
         raise exc.HTTPBadGateway(
             detail="The content could not be retrieved: %s" % e)
 

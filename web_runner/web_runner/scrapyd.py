@@ -134,7 +134,12 @@ class ScrapydMediator(object):
 
     def retrieve_job_data(self, jobid):
         """Returns a file like object with the job's result."""
-        return open(self.retrieve_job_data_fn(jobid))
+        try:
+            return open(self.retrieve_job_data_fn(jobid))
+        except IOError as e:
+            msg = "Failed to open data file: %s" % e
+            LOG.exception(msg)
+            raise ScrapydJobException(msg)
 
     def retrieve_job_data_fn(self, jobid):
         """Returns the path to the job's data file."""
