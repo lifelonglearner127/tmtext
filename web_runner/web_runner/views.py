@@ -291,9 +291,8 @@ def spider_results_view(request):
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         request.registry.settings['db_filename'], recreate=False)
-    command_name = request.path.strip('/')
-    dbinterf.new_request_event(web_runner.db.SPIDER_RESULT, 
-                               (job_id,), request.remote_addr)
+    dbinterf.new_request_event(
+        web_runner.db.SPIDER_RESULT,  (job_id,), request.remote_addr)
     dbinterf.close()
 
     mediator = ScrapydMediator(
@@ -302,9 +301,9 @@ def spider_results_view(request):
         data_stream = mediator.retrieve_job_data(job_id)
         request.response.body_file = data_stream
         return request.response
-    except urllib2.HTTPError as e:
+    except Exception as e:
         raise exc.HTTPBadGateway(
-            detail="The file server doesn't have the expected content: %s" % e)
+            detail="The content could not be retrieved: %s" % e)
 
 
 @view_config(route_name='status', request_method='GET', renderer='json')
