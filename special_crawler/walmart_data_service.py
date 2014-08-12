@@ -5,7 +5,8 @@ from extract_walmart_data import media_for_url, check_url_format, reviews_for_ur
 pdf_for_url, video_for_url, product_info, DATA_TYPES, DATA_TYPES_SPECIAL
 import datetime
 import logging
-from logging import FileHandler
+import os
+from logging.handlers import TimedRotatingFileHandler
 
 app = Flask(__name__)
 
@@ -133,6 +134,7 @@ def handle_internal_error(error):
 
 @app.after_request
 def post_request_logging(response):
+	# TODO: jsonify
     app.logger.info('\t'.join([
         datetime.datetime.today().ctime(),
         request.remote_addr,
@@ -145,8 +147,13 @@ def post_request_logging(response):
     return response
 
 if __name__ == '__main__':
-	
-	fh = FileHandler("special_crawler_log.txt")
+	# TODO: probably add these outside of main for them to work with wsgi as well
+
+	# create logs dir if it doesn't exist	
+	if not os.path.exists("logs"):
+		os.makedirs("logs")
+
+	fh = TimedRotatingFileHandler("logs/special_crawler_access.log", when='m', interval=1)
 	fh.setLevel(logging.DEBUG)
 	app.logger.setLevel(logging.DEBUG)
 	app.logger.addHandler(fh)
