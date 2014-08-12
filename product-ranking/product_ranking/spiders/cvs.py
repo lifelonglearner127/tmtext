@@ -16,14 +16,10 @@ class CvsProductsSpider(BaseProductsSpider):
     allowed_domains = ["cvs.com"]
     start_urls = []
 
-    SEARCH_URL = "http://www.cvs.com/search/_/N-0?searchTerm={search_term}&pt=global&pageNum=1&sortBy=&navNum=20"
-
-    def __init__(self, *args, **kwargs):
-        super(CvsProductsSpider, self).__init__(*args, **kwargs)
-        self.pagenum = 1
+    SEARCH_URL = "http://www.cvs.com/search/_/N-0?searchTerm={search_term}" \
+        "&pt=global&pageNum=1&sortBy=&navNum=20"
 
     def parse_product(self, response):
-        print ("parse_product for", response.url)
         product = response.meta['product']
 
         cond_set(product, 'title',
@@ -41,18 +37,14 @@ class CvsProductsSpider(BaseProductsSpider):
         product['model'] = size
 
         addbasketbutton = response.xpath('//a[@id="addBasketButton"]')
-        if len(addbasketbutton) == 0:
+        if not addbasketbutton:
             addbasketbutton = response.xpath('//div[@class="addBasket"]/a')
 
-        if len(addbasketbutton) >0:
-            upc = addbasketbutton.xpath('@data-upcnumber').extract()[0]
-            price = addbasketbutton.xpath('@data-listprice').extract()[0]
-        else:
-            upc = 0
-            price = ""
-
-        product['upc'] = int(upc)
-        product['price'] = price
+        if addbasketbutton:
+            product['upc'] = int(addbasketbutton.xpath(
+                '@data-upcnumber').extract()[0])
+            product['price'] = addbasketbutton.xpath(
+                '@data-listprice').extract()[0]
 
         desc = response.xpath("//div[@id='prodDesc']/p/text()")
         desc = (" ".join(desc.extract())).strip()
@@ -72,6 +64,7 @@ class CvsProductsSpider(BaseProductsSpider):
             if m:
                 n = m.group(1)
                 return int(n)
+        return None
 
     def _scrape_product_links(self, response):
         links = response.xpath(
