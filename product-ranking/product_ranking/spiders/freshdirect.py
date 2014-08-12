@@ -1,9 +1,11 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import urlparse
+
 from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
@@ -51,9 +53,7 @@ class FreshDirectProductsSpider(BaseProductsSpider):
         img_url = response.xpath(
             '//div[@class="main-image"]/img/@src').extract()
         if img_url:
-            # FIXME join using the current URL.
-            img_url = "https://www.freshdirect.com%s" % img_url[0]
-            prod['image_url'] = img_url
+            prod['image_url'] = urlparse.urljoin(response.url, img_url[0])
 
         model = response.xpath(
             '//div[@class="pdp-productconfig"]//input[@name="skuCode"]/@value'
@@ -72,8 +72,7 @@ class FreshDirectProductsSpider(BaseProductsSpider):
             urls = li.xpath(
                 './/div[@class="portrait-item-header"]/a/@href').extract()
             if urls:
-                # FIXME join using the current URL.
-                url = "https://www.freshdirect.com%s" %urls[0].strip()
+                url = urlparse.urljoin(response.url, urls[0])
 
             title = None
             titles = li.xpath(
@@ -82,10 +81,9 @@ class FreshDirectProductsSpider(BaseProductsSpider):
                 title = titles[0].strip()
 
             if url and title:
-                related_products.append((title, url))
+                related_products.append(RelatedProduct(title, url))
 
         if related_products:
-            # FIXME The type of related_products items is not a tuple.
             prod['related_products'] = {'recommended': related_products}
 
         return prod
@@ -108,16 +106,14 @@ class FreshDirectProductsSpider(BaseProductsSpider):
         for link in response.xpath(
                 '//div[@class="items"]//div[@class="grid-item-name"]/a/@href'
         ).extract():
-            # FIXME join using the current URL.
-            link = "https://www.freshdirect.com%s" % link
+            link = urlparse.urljoin(response.url, link)
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
         links = response.xpath('//span[@class="pager-next"]/a/@href').extract()
 
         if links:
-            # FIXME join using the current URL.
-            link = "https://www.freshdirect.com/search.jsp%s" % links[0]
+            link = urlparse.urljoin(response.url, links[0])
         else:
             link = None
 
