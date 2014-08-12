@@ -11,12 +11,10 @@ from product_ranking.spiders import BaseProductsSpider, cond_set_value
 
 
 def brand_at_start(brand):
-    words = len(brand.split())
-
     return (
         lambda t: t.lower().startswith(brand.lower()),
         lambda _: brand,
-        lambda t: ' '.join(t.split(' ', words + 1)[words:]),
+        lambda t: t,
     )
 
 
@@ -40,7 +38,7 @@ class TescoProductsSpider(BaseProductsSpider):
          ),
         (lambda t: t.lower().startswith('dr ') or t.lower().startswith('dr. '),
          lambda t: ' '.join(t.split()[:2]),
-         lambda t: ' '.join(t.split()[2:])
+         lambda t: t,
          ),
     )
 
@@ -54,7 +52,7 @@ class TescoProductsSpider(BaseProductsSpider):
                 break
         else:
             brand = title.split()[0]
-            new_title = ' '.join(title.split()[1:])
+            new_title = title
         return brand, new_title
 
     def parse_product(self, response):
