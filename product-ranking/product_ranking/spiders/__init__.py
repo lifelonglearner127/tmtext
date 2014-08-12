@@ -164,6 +164,11 @@ class BaseProductsSpider(Spider):
         if total_matches is None:
             total_matches = self._scrape_total_matches(response)
 
+        if not prods_per_page or not total_matches:
+            # Parsing the page failed. Give up.
+            self.log("Failed to get products for %s" % response.url, ERROR)
+            return
+
         for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
             # Initialize the product as much as possible.
             prod_item['site'] = self.site_name
