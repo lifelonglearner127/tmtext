@@ -1,7 +1,6 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-import re
 import urlparse
 import urllib
 
@@ -55,15 +54,21 @@ class CvsProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        total = response.xpath("//form[@id='topForm']/strong/text()").extract()
-        if len(total) == 1:
-            total = total[0].strip()
-            re1 = r'Results.*of (\d+)'
-            rg = re.compile(re1, re.IGNORECASE | re.DOTALL)
-            m = rg.search(total)
-            if m:
-                n = m.group(1)
-                return int(n)
+        totals = response.xpath("//form[@id='topForm']/strong/text()").re(
+            r'Results.*of (\d+)')
+        if len(totals) > 1:
+            self.log(
+                "Found more than one 'total matches' for %s" % response.url,
+                ERROR
+            )
+        elif totals:
+            total = totals[0].strip()
+            return int(total)
+        else:
+            self.log(
+                "Failed to find 'total matches' for %s" % response.url,
+                ERROR
+            )
         return None
 
     def _scrape_product_links(self, response):
