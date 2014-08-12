@@ -8,7 +8,7 @@ import urllib
 import urlparse
 
 from scrapy.http import Request
-from scrapy.log import ERROR, WARNING
+from scrapy.log import ERROR, WARNING, INFO
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, RelatedProduct
@@ -17,6 +17,16 @@ from product_ranking.spiders import (BaseProductsSpider, FormatterWithDefaults,
 
 
 class WalmartProductsSpider(BaseProductsSpider):
+    """Implements a spider for Walmart.com.
+
+    This spider has 2 very peculiar things.
+    First, it receives 2 types of pages so it need 2 rules for every action.
+    Second, the site sometimes redirects a request to the same URL so, by
+    default, Scrapy would discard it. Thus we override everything to handle
+    redirects.
+
+    FIXME: Currently we redirect infinitely, which could be a problem.
+    """
     name = 'walmart_products'
     allowed_domains = ["walmart.com"]
 
@@ -50,7 +60,57 @@ class WalmartProductsSpider(BaseProductsSpider):
                 search_sort=self.SEARCH_SORT[search_sort]),
             *args, **kwargs)
 
+    def start_requests(self):
+        for request in super(WalmartProductsSpider, self).start_requests():
+            request.meta['dont_redirect'] = True
+            request.meta['handle_httpstatus_list'] = [302]
+            yield request
+
+    def _create_from_redirect(self, response):
+        redirect_url = response.headers['Location']
+        redirect_url_split = urlparse.urlsplit(redirect_url)
+        redirect_url_split = redirect_url_split._replace(
+            query=urlparse.parse_qs(redirect_url_split.query))
+
+        original_url_split = urlparse.urlsplit(response.request.url)
+        original_url_split = original_url_split._replace(
+            query=urlparse.parse_qs(original_url_split.query))
+
+        if redirect_url_split == original_url_split:
+            self.log("Found identical redirect!", INFO)
+            request = response.request.replace(dont_filter=True)
+        else:
+            self.log("Found legit redirect!", INFO)
+            request = response.request.replace(url=redirect_url)
+        request.meta['dont_redirect'] = True
+        request.meta['handle_httpstatus_list'] = [302]
+
+        return request
+
+    def parse(self, response):
+        if response.status == 302:
+            yield self._create_from_redirect(response)
+        else:
+            for request in super(WalmartProductsSpider, self).parse(response):
+                request.meta['dont_redirect'] = True
+                request.meta['handle_httpstatus_list'] = [302]
+                yield request
+
+    def _get_products(self, response):
+        if response.status == 302:
+            yield self._create_from_redirect(response)
+        else:
+            for request_or_item in super(
+                    WalmartProductsSpider, self)._get_products(response):
+                if isinstance(request_or_item, Request):
+                    request_or_item.meta['dont_redirect'] = True
+                    request_or_item.meta['handle_httpstatus_list'] = [302]
+                yield request_or_item
+
     def parse_product(self, response):
+        if response.status == 302:
+            return self._create_from_redirect(response)
+
         if self._search_page_error(response):
             self.log(
                 "Got 404 when coming from %s." % response.request.url, ERROR)
@@ -69,6 +129,10 @@ class WalmartProductsSpider(BaseProductsSpider):
         if item_id is None or category_id is None:
             result = p
         else:
+            meta = response.meta.copy()
+            meta['dont_redirect'] = True
+            meta['handle_httpstatus_list'] = [302]
+
             result = Request(
                 self.RELATED_PRODUCTS_URL.format(
                     item_id=item_id,
@@ -78,12 +142,15 @@ class WalmartProductsSpider(BaseProductsSpider):
                     client_guid="f3f03064-bede-45f2-b2f1-7b35cdb5e5ed",
                 ),
                 self.parse_related_products,
-                meta=response.meta.copy(),
+                meta=meta,
                 priority=100,
             )
         return result
 
     def parse_related_products(self, response):
+        if response.status == 302:
+            return self._create_from_redirect(response)
+
         product = response.meta['product']
 
         m = re.match(r'.*?\((.+)\)', response.body_as_unicode())
@@ -199,24 +266,85 @@ class WalmartProductsSpider(BaseProductsSpider):
         product['locale'] = metadata.get('locale')
 
     def _scrape_total_matches(self, response):
-        return int(response.css(".numResults ::text").extract()[0].split()[0])
+        num_results = None
+
+        # We get two different types of pages.
+        multiple_matches = [
+            response.css(".numResults ::text").extract(),
+            response.css('.result-summary-container ::text').re(
+                'Showing \d+ of (\d+) results'),
+        ]
+        for i, matches in enumerate(multiple_matches):
+            if matches:
+                num_results = int(matches[0].split()[0])
+                break
+            else:
+                self.log(
+                    "Failed to extract total matches using method %d from %s"
+                    % (i, response.url),
+                    INFO
+                )
+        else:
+            self.log(
+                "Failed to extract total matches from: %s" % response.url,
+                ERROR
+            )
+        return num_results
 
     def _scrape_product_links(self, response):
-        links = response.css('a.prodLink.GridItemLink ::attr(href)').extract()
-        if not links:
-            self.log("Found no product links in %s." % response.url, WARNING)
+        links = []
+
+        # We get two different types of pages.
+        css_expressions = [
+            'a.prodLink.ListItemLink ::attr(href)',
+            'a.js-product-title ::attr(href)',
+        ]
+        for i, expr in enumerate(css_expressions):
+            links = response.css(expr).extract()
+            if links:
+                break
+            else:
+                self.log(
+                    "Found no product links using method %d in %s."
+                    % (i, response.url),
+                    INFO
+                )
+        else:
+            self.log("Found no product links %s." % response.url, ERROR)
+
         for link in links:
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
         next_page = None
-        next_pages = response.css(
-            'li.btn-nextResults > a ::attr(href)').extract()
-        if len(next_pages) == 1:
-            next_page = next_pages[0]
-        elif len(next_pages) > 1:
+
+        multiple_links = [
+            response.css('li.btn-nextResults > a ::attr(href)'),
+            response.xpath(
+                # [1] is to get just the next sibling.
+                "//a[@class='active']/../following-sibling::li[1]/a/@href"
+            ),
+        ]
+        for i, next_page_links in enumerate(multiple_links):
+            if len(next_page_links) == 1:
+                next_page = next_page_links.extract()[0]
+                break
+            elif len(next_page_links) > 1:
+                self.log(
+                    "Found more than one 'next page' link using method %d"
+                    " in %s." % (i, response.url),
+                    WARNING
+                )
+            else:
+                self.log(
+                    "Found no 'next page' link using method %d in %s"
+                    " (which could be OK)." % (i, response.url),
+                    INFO
+                )
+        else:
             self.log(
-                "Found more than one 'next page' link in %s." % response.url,
-                ERROR
+                "Found no 'next page' link in %s (which could be OK)."
+                % response.url,
+                INFO
             )
         return next_page
