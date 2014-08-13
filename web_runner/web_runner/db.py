@@ -344,7 +344,7 @@ class DbInterface(object):
         cursor = self._conn.cursor()
         sql = 'SELECT scrapy_jobid FROM scrapy_jobs where request_id=?'
         cursor.execute(sql, (request_id,))
-        output = tuple( jobid for jobid in cursor.fetchone() or () )
+        output = tuple( jobid[0] for jobid in cursor.fetchall() or () )
 
         return output
         
