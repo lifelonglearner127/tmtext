@@ -40,6 +40,12 @@ class WalGreensProductsSpider(BaseProductsSpider):
             img_url = urlparse.urljoin(response.url, img_url[0])
             prod['image_url'] = img_url
 
+        brand_text = response.xpath(
+            '//div[@id="vpd_shop_more_link"]//div[contains(@class,"mrgTop5px")]//a/text()').extract()
+        if brand_text:
+            brand_text = brand_text[0].replace('Shop all', '').replace('products', '')
+            prod['brand'] = brand_text.strip()
+
         prod['url'] = response.url
 
         prod['locale'] = 'en-US'

@@ -2,21 +2,12 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import urlparse
+import json
 
-from scrapy.log import ERROR
+from scrapy.log import ERROR, WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
-
-
-def strip_cond_set(item, key, values, conv=lambda l: l[0].strip()):
-    """
-    Helper function to ease conditionally setting a value in a dict.
-    Added strip()
-    """
-    values = list(values)  # Copy and materialize values.
-    if not item.get(key) and values:
-        item[key] = conv(values)
 
 
 class FreshDirectProductsSpider(BaseProductsSpider):
@@ -30,18 +21,7 @@ class FreshDirectProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
-        title = response.xpath('//h1[@class="pdpTitle"]/text()').extract()
-        strip_cond_set(prod, 'title', title)
-
-        price = response.xpath('//div[@class="pdp-price"]/text()').extract()
-        if price:
-            price = price[0].strip()
-            if price:
-                prod['price'] = price
-            else:
-                price = response.xpath(
-                    '//span[@class="save-price"]/text()').extract()
-                strip_cond_set(prod, 'price', price)
+        self._populate_from_js(response, prod)
 
         des = response.xpath(
             '//div[contains(@class,"pdp-accordion-description-description")]'
@@ -50,17 +30,8 @@ class FreshDirectProductsSpider(BaseProductsSpider):
         des = ''.join(i.strip() for i in des)
         cond_set_value(prod, 'description', des)
 
-        img_url = response.xpath(
-            '//div[@class="main-image"]/img/@src').extract()
-        if img_url:
-            prod['image_url'] = urlparse.urljoin(response.url, img_url[0])
-
-        model = response.xpath(
-            '//div[@class="pdp-productconfig"]//input[@name="skuCode"]/@value'
-        ).extract()
-        strip_cond_set(prod, 'model', model)
-
         cond_set(prod, 'locale', ['en-US'])
+
         prod['url'] = response.url
 
         related_products = []
@@ -87,6 +58,39 @@ class FreshDirectProductsSpider(BaseProductsSpider):
             prod['related_products'] = {'recommended': related_products}
 
         return prod
+
+    def _populate_from_js(self, response, product):
+        script = response.xpath('//script[contains(text(), "productData=")]')
+        if not script:
+            self.log("No JS matched in %s." % response.url, WARNING)
+            return
+
+        js_data = script.re("productData=\{.+\}")
+
+        if not js_data:
+            self.log("Could not get JSON match in %s" % response.url, WARNING)
+        else:
+            data = json.loads(js_data[0].replace('productData=',''))
+
+            brand = data.get('brandName', '')
+            if brand:
+                product['brand'] = brand
+
+            price = data.get('price', 0)
+            if price:
+                product['price'] = price
+
+            img_url = data.get('productZoomImage', '')
+            if img_url:
+                product['image_url'] = img_url
+
+            title = data.get('productName', '')
+            if title:
+                product['title'] = title
+
+            model = data.get('skuCode', '')
+            if model:
+                product['model'] = model
 
     def _search_page_error(self, response):
         if not self._scrape_total_matches(response):
