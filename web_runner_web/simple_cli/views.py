@@ -89,10 +89,12 @@ def web_runner_lastrequests(request, n=None):
         error = True
         return HttpResponse("There are issues connecting with Web Runner", status=502)
 
+    default_url = False if n else True
     req_info = req.json()
     _process_request_to_display(req_info)
     context = {'last_requests': req_info,
-      'now': datetime.datetime.utcnow()}
+      'now': datetime.datetime.utcnow(),
+      'default_url': default_url}
     return render(request, 'simple_cli/last_requests.html', context)
 
 
@@ -100,7 +102,6 @@ def web_runner_lastrequests(request, n=None):
 @login_required
 def web_runner_request_history(request, requestid):
     
- 
     try:
         base_url = settings.WEB_RUNNER_BASE_URL
         url = '%srequest/%s/history/' % (base_url, requestid)
@@ -109,6 +110,9 @@ def web_runner_request_history(request, requestid):
     except requests.exceptions.RequestException as e:
         error = True
         return HttpResponse("There are issues connecting with Web Runner", status=502)
+
+    if not req.ok:
+         return HttpResponse("There are issues getting the history", status=502)
 
     req_info = req.json()
     _process_history_to_display(req_info['history'])
