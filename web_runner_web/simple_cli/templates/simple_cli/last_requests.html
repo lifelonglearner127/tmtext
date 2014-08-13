@@ -51,7 +51,11 @@
         {% if req.status == "unavailable" %}
           {{ req.status }} 
         {% else %}
-            <a href="../history/{{ req.requestid }}">{{ req.status }}</a>
+            {% if default_url %}
+                <a href="history/{{ req.requestid }}">{{ req.status }}</a>
+            {% else %}
+                <a href="../history/{{ req.requestid }}">{{ req.status }}</a>
+            {% endif %}
         {% endif %}
     </td>
   </tr>
