@@ -83,6 +83,12 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
-        link = response.xpath(
-            '//div[@class="pagination"]/a/@href').extract()[-1]
-        return link
+        links = response.xpath('//div[@class="pagination"]/a')
+        if links:
+            link = links[-1]
+            text = link.xpath('.//text()').extract()
+            if text:
+                text = text[0].strip()
+                if "Next" in text:
+                    return link.xpath('.//@href').extract()[0].strip()
+        return None
