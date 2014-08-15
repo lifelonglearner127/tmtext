@@ -3,11 +3,12 @@ from future_builtins import *
 
 import urlparse
 import urllib
+import string
 
 from scrapy.log import ERROR, DEBUG
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set, compose
+from product_ranking.spiders import BaseProductsSpider, cond_set
 
 
 def is_num(s):
@@ -39,9 +40,8 @@ class CvsProductsSpider(BaseProductsSpider):
         size = response.xpath(
             "//form[@id='addCart']/table/tr/td[@class='col1']/"
             "text()[.='Size:']/../../td[2]/text()"
-        )
-        size = size.extract()[0].strip()
-        product['model'] = size
+        ).extract()
+        cond_set(product, 'model', size, conv=string.strip)
 
         addbasketbutton = response.xpath('//a[@id="addBasketButton"]')
         if not addbasketbutton:
