@@ -7,7 +7,15 @@ import urllib
 from scrapy.log import ERROR, DEBUG
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, compose
+
+
+def is_num(s):
+    try:
+        int(s.strip())
+        return True
+    except ValueError:
+        return False
 
 
 class CvsProductsSpider(BaseProductsSpider):
@@ -85,21 +93,23 @@ class CvsProductsSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
-        # FIXME I don't know how to transfer here search_page_no to make url for next search page.
-        max_page = int(self._scrape_total_matches(response) / 20)
+        url_parts = urlparse.urlsplit(response.url)
+        query_string = urlparse.parse_qs(url_parts.query)
 
-        url_parse = urlparse.urlsplit(response.url)
-        query_string = urlparse.parse_qs(url_parse.query)
-        current_page = int(query_string.get("pageNum", [1])[0])
-        if current_page > max_page:
-            return None
-        query_string["pageNum"] = [current_page + 1]
-        link = urlparse.urlunsplit((
-            url_parse.scheme,
-            url_parse.netloc,
-            url_parse.path,
-            urllib.urlencode(query_string, True),
-            url_parse.fragment,
-        ))
+        current_page_num = int(query_string.get("pageNum", [1])[0])
+
+        last_page_num = max(
+            int(value.strip())
+            for value in response.xpath(
+                '//form[@id="topForm"]/*/text()').extract()
+            if is_num(value)
+        )
+
+        if current_page_num == last_page_num:
+            link = None  # No next page.
+        else:
+            query_string["pageNum"] = [current_page_num + 1]
+            url_parts = url_parts._replace(
+                query=urllib.urlencode(query_string, True))
+            link = urlparse.urlunsplit(url_parts)
         return link
-
