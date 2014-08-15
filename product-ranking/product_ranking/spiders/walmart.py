@@ -163,14 +163,14 @@ class WalmartProductsSpider(BaseProductsSpider):
                 if module['moduleTitle'] \
                         == "People who bought this item also bought":
                     product['related_products'] = {
-                        "buyers_also_bought": list(
+                        "buyers_also_bought": [
                             RelatedProduct(
                                 self._generate_title_from_url(url),
-                                url
+                                urlparse.urljoin(response.url, url)
                             )
                             for url in Selector(text=module['html']).css(
                                 'a.irs-title ::attr(href)').extract()
-                        ),
+                        ],
                     }
                     break
         return product
