@@ -67,11 +67,11 @@ class WalmartProductsSpider(BaseProductsSpider):
             yield request
 
     def _create_from_redirect(self, response):
+        # Create comparable URL tuples.
         redirect_url = response.headers['Location']
         redirect_url_split = urlparse.urlsplit(redirect_url)
         redirect_url_split = redirect_url_split._replace(
             query=urlparse.parse_qs(redirect_url_split.query))
-
         original_url_split = urlparse.urlsplit(response.request.url)
         original_url_split = original_url_split._replace(
             query=urlparse.parse_qs(original_url_split.query))
