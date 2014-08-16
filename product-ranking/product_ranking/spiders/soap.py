@@ -18,24 +18,25 @@ class SoapProductSpider(BaseProductsSpider):
     SEARCH_URL = "http://www.soap.com/buy?s={search_term}"
 
     def parse_product(self, response):
-        sel = Selector(response)
         prod = response.meta['product']
 
-        self._populate_from_open_graph(response.url, sel, prod)
+        self._populate_from_open_graph(response, prod)
 
-        self._populate_from_html(response.url, sel, prod)
+        self._populate_from_html(response, prod)
 
         cond_set(prod, 'locale', ['en-US'])  # Default locale.
 
-        json_link = sel.xpath("//*[@id='soapcom']/head/link[@type='application/json+oembed']/@href").extract()[0]
+        json_link = response.xpath(
+            "//*[@id='soapcom']/head/link[@type='application/json+oembed']"
+            "/@href"
+        ).extract()[0]
 
-        return Request(json_link, self._parse_json, meta=response.meta.copy(), )
+        return Request(json_link, self._parse_json, meta=response.meta.copy())
 
     def _parse_json(self, response):
-
         product = response.meta['product']
 
-        data = json.loads(response.body)
+        data = json.loads(response.body_as_unicode())
 
         brand = data.get('brand')
         title = data.get('title')
@@ -45,26 +46,27 @@ class SoapProductSpider(BaseProductsSpider):
 
         return product
 
-    def _populate_from_html(self, url, sel, product):
-
-        price = sel.xpath("//*[@id='priceDivClass']/span/text()").extract()[0]
+    def _populate_from_html(self, response, product):
+        price = response.xpath("//*[@id='priceDivClass']/span/text()").extract()[0]
 
         # desc is a possible <p> or just the text of the class, each page is different
-        desc = sel.xpath(
-            "//*[@class='pIdDesContent']/p/text() | //*[@class='pIdDesContent']/text()"
+        desc = response.xpath(
+            "//*[@class='pIdDesContent']/p/text()"
+            "| //*[@class='pIdDesContent']/text()"
             "| //*[@class='pIdDesContent']/b/text()"
-            "| //*[@class='pIdDesContent']/p/strong/text()").extract()[0]
+            "| //*[@class='pIdDesContent']/p/strong/text()"
+        ).extract()[0]
 
-        upc = sel.xpath("//*[@class='skuHidden']/@value").extract()[0]
+        upc = response.xpath("//*[@class='skuHidden']/@value").extract()[0]
 
         cond_set(product, 'price', [price])
         cond_set(product, 'description', [desc])
         cond_set(product, 'upc', [upc])
 
-    def _populate_from_open_graph(self, url, sel, product):
+    def _populate_from_open_graph(self, response, product):
         """See about the Open Graph Protocol at http://ogp.me/"""
         # Extract all the meta tags with an attribute called property.
-        metadata_dom = sel.xpath("/html/head/meta[@property]")
+        metadata_dom = response.xpath("/html/head/meta[@property]")
         props = metadata_dom.xpath("@property").extract()
         conts = metadata_dom.xpath("@content").extract()
 
@@ -81,8 +83,8 @@ class SoapProductSpider(BaseProductsSpider):
         product['url'] = metadata['url']  # Canonical URL for the product.
         product['image_url'] = metadata['image']
 
-    def _scrape_product_links(self, sel):
-        links = sel.xpath(
+    def _scrape_product_links(self, response):
+        links = response.xpath(
             "//*[contains(concat( ' ', @class, ' ' ), concat( ' ', 'pdpLinkable', ' '))]/a/@href"
         ).extract()
         if not links:
@@ -90,17 +92,17 @@ class SoapProductSpider(BaseProductsSpider):
         for link in links:
             yield link, SiteProductItem()
 
-    def _scrape_total_matches(self, sel):
-
-        num_results = sel.xpath("//*[@class='result-pageNum-info']/span/text()").extract()
+    def _scrape_total_matches(self, response):
+        num_results = response.xpath(
+            "//*[@class='result-pageNum-info']/span/text()").extract()
         if num_results and num_results[0]:
             return int(num_results[0])
         else:
             self.log("Failed to parse total number of matches.", level=ERROR)
 
-    def _scrape_next_results_page_link(self, sel):
-
-        next_pages = sel.css("a:nth-child(3).result-pageNum-iconWrap::attr(href)").extract()
+    def _scrape_next_results_page_link(self, response):
+        next_pages = response.css(
+            "a:nth-child(3).result-pageNum-iconWrap::attr(href)").extract()
 
         next_page = None
         if next_pages:
