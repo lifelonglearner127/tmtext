@@ -70,7 +70,7 @@ class FreshDirectProductsSpider(BaseProductsSpider):
         if not js_data:
             self.log("Could not get JSON match in %s" % response.url, WARNING)
         else:
-            data = json.loads(js_data[0].replace('productData=',''))
+            data = json.loads(js_data[0].replace('productData=', ''))
 
             brand = data.get('brandName', '')
             if brand:
@@ -80,15 +80,15 @@ class FreshDirectProductsSpider(BaseProductsSpider):
             if price:
                 product['price'] = price
 
-            img_url = data.get('productZoomImage', '')
+            img_url = data.get('productZoomImage')
             if img_url:
                 product['image_url'] = img_url
 
-            title = data.get('productName', '')
+            title = data.get('productName')
             if title:
                 product['title'] = title
 
-            model = data.get('skuCode', '')
+            model = data.get('skuCode')
             if model:
                 product['model'] = model
 
