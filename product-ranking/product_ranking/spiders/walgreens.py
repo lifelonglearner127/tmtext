@@ -4,7 +4,7 @@ from future_builtins import *
 import urlparse
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
 class WalGreensProductsSpider(BaseProductsSpider):
@@ -47,10 +47,12 @@ class WalGreensProductsSpider(BaseProductsSpider):
 
         prod['locale'] = 'en-US'
 
-        des = response.xpath(
-            '//div[@id="description-content"]//text()').extract()
-        if des:
-            prod['description'] = ''.join(i.strip() for i in des)
+        cond_set_value(
+            prod,
+            'description',
+            ''.join(
+                response.xpath('//div[@id="description-content"]').extract()),
+        )
 
         return prod
 
