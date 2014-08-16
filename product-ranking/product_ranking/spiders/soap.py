@@ -3,12 +3,11 @@ from future_builtins import *
 
 import json
 
-from scrapy.selector import Selector
 from scrapy.log import ERROR, WARNING
 from scrapy import Request
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
 class SoapProductSpider(BaseProductsSpider):
@@ -24,7 +23,7 @@ class SoapProductSpider(BaseProductsSpider):
 
         self._populate_from_html(response, prod)
 
-        cond_set(prod, 'locale', ['en-US'])  # Default locale.
+        cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
         json_link = response.xpath(
             "//*[@id='soapcom']/head/link[@type='application/json+oembed']"
@@ -41,14 +40,16 @@ class SoapProductSpider(BaseProductsSpider):
         brand = data.get('brand')
         title = data.get('title')
 
-        cond_set(product, 'brand', [brand])
-        cond_set(product, 'title', [title])
+        cond_set_value(product, 'brand', brand)
+        cond_set_value(product, 'title', title)
 
         return product
 
     def _populate_from_html(self, response, product):
-        price = response.xpath("//*[@id='priceDivClass']/span/text()").extract()[0]
+        price = response.xpath(
+            "//*[@id='priceDivClass']/span/text()").extract()[0]
 
+        # FIXME: Just take the node().
         # desc is a possible <p> or just the text of the class, each page is different
         desc = response.xpath(
             "//*[@class='pIdDesContent']/p/text()"
@@ -63,6 +64,7 @@ class SoapProductSpider(BaseProductsSpider):
         cond_set(product, 'description', [desc])
         cond_set(product, 'upc', [upc])
 
+    # FIXME: OpenGraph is standard and will mean the same in all sites, pull up.
     def _populate_from_open_graph(self, response, product):
         """See about the Open Graph Protocol at http://ogp.me/"""
         # Extract all the meta tags with an attribute called property.
