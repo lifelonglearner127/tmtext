@@ -50,11 +50,8 @@ class FreshDirectProductsSpider(BaseProductsSpider):
             if urls:
                 url = urlparse.urljoin(response.url, urls[0])
 
-            title = None
-            titles = li.xpath(
-                './/div[@class="portrait-item-header"]/a//text()').extract()
-            if titles:
-                title = titles[0].strip()
+            title = ' '.join(s.strip() for s in li.xpath(
+                './/div[@class="portrait-item-header"]//text()').extract())
 
             if url and title:
                 related_products.append(RelatedProduct(title, url))
