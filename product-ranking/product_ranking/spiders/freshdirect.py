@@ -79,7 +79,7 @@ class FreshDirectProductsSpider(BaseProductsSpider):
 
             img_url = data.get('productZoomImage')
             if img_url:
-                product['image_url'] = img_url
+                product['image_url'] = urlparse.urljoin(response.url, img_url)
 
             title = data.get('productName')
             if title:
