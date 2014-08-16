@@ -23,17 +23,20 @@ class FreshDirectProductsSpider(BaseProductsSpider):
 
         self._populate_from_js(response, prod)
 
+        self._populate_from_html(response, prod)
+
+        cond_set_value(prod, 'locale', 'en-US')
+
+        return prod
+
+    def _populate_from_html(self, response, prod):
         des = response.xpath(
             '//div[contains(@class,"pdp-accordion-description-description")]'
             '//text()'
         ).extract()
         des = ''.join(i.strip() for i in des)
         cond_set_value(prod, 'description', des)
-
-        cond_set(prod, 'locale', ['en-US'])
-
         prod['url'] = response.url
-
         related_products = []
         for li in response.xpath(
                 '//div[@class="pdp-likethat"]'
@@ -53,11 +56,8 @@ class FreshDirectProductsSpider(BaseProductsSpider):
 
             if url and title:
                 related_products.append(RelatedProduct(title, url))
-
         if related_products:
             prod['related_products'] = {'recommended': related_products}
-
-        return prod
 
     def _populate_from_js(self, response, product):
         script = response.xpath('//script[contains(text(), "productData=")]')
