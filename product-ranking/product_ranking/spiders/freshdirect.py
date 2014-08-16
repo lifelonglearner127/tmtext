@@ -58,8 +58,11 @@ class FreshDirectProductsSpider(BaseProductsSpider):
 
             if url and title:
                 related_products.append(RelatedProduct(title, url))
-        if related_products:
-            prod['related_products'] = {'recommended': related_products}
+        cond_set_value(
+            prod.setdefault('related_products', {}),
+            'recommended',
+            related_products,
+        )
 
     def _populate_from_js(self, response, product):
         script = response.xpath('//script[contains(text(), "productData=")]')
