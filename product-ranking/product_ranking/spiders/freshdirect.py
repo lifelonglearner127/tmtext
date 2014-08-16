@@ -89,12 +89,6 @@ class FreshDirectProductsSpider(BaseProductsSpider):
             if model:
                 product['model'] = model
 
-    def _search_page_error(self, response):
-        if not self._scrape_total_matches(response):
-            self.log("Freshdirect: unable to find a match", ERROR)
-            return True
-        return False
-
     def _scrape_total_matches(self, response):
         try:
             count = response.xpath(
