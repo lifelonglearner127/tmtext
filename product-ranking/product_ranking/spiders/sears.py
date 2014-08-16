@@ -1,15 +1,12 @@
 from __future__ import division, absolute_import, unicode_literals
-from __future__ import print_function
 from future_builtins import *
 
-from scrapy.selector import Selector
+import json
 
 from scrapy.log import ERROR, WARNING
 
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set
-
-import json
 
 
 class SearsProductsSpider(BaseProductsSpider):
@@ -44,6 +41,7 @@ class SearsProductsSpider(BaseProductsSpider):
 
         data = json.loads(response.body)
 
+        # FIXME Use data['data'] as .get returning None would also fail but with a worse error.
         product = data.get('data').get('product')
 
         brand = product.get('brand').get('name')
@@ -83,20 +81,20 @@ class SearsProductsSpider(BaseProductsSpider):
         return 0
 
     def _scrape_product_links(self, sel):
-
         #links = sel.xpath("//h2[@itemprop='name']/a/@href").extract()
 
+        # FIXME price is not used.
         prices = sel.xpath("//span[@class='price']/text()").extract()
         for price in prices:
             price = price.strip()
-
 
         product_ids = sel.xpath("//input[@id='pId']/@value").extract()
 
         if not product_ids:
             self.log("Found no product ids.", ERROR)
         for prod_id in product_ids:
-            link = ("http://www.sears.com/content/pdp/config/products/v1/products/%s" % prod_id)
+            link = "http://www.sears.com/content/pdp/config/products" \
+                "/v1/products/%s" % prod_id
             yield link, SiteProductItem()
 
         # if not links:
@@ -105,8 +103,8 @@ class SearsProductsSpider(BaseProductsSpider):
         #     yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, sel):
-
-        next_pages = sel.xpath("//div[contains(@class,'srchPagination')]/a//@href").extract()
+        next_pages = sel.xpath(
+            "//div[contains(@class,'srchPagination')]/a//@href").extract()
         next_page = None
         if next_pages:
             next_page = 'http://www.target.com/%s' % next_pages[0]
