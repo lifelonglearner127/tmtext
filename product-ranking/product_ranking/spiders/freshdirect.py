@@ -62,17 +62,12 @@ class FreshDirectProductsSpider(BaseProductsSpider):
         )
 
     def _populate_from_js(self, response, product):
-        script = response.xpath('//script[contains(text(), "productData=")]')
-        if not script:
-            self.log("No JS matched in %s." % response.url, WARNING)
-            return
-
-        js_data = script.re("productData=(\{.+\})")
-
-        if not js_data:
+        data_jsons = response.xpath('//script/text()').re(
+            "productData=(\{.+\})")
+        if not data_jsons:
             self.log("Could not get JSON match in %s" % response.url, WARNING)
         else:
-            data = json.loads(js_data[0])
+            data = json.loads(data_jsons[0])
 
             brand = data.get('brandName')
             if brand:
