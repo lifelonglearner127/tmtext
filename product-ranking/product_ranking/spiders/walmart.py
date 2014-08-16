@@ -67,11 +67,11 @@ class WalmartProductsSpider(BaseProductsSpider):
             yield request
 
     def _create_from_redirect(self, response):
+        # Create comparable URL tuples.
         redirect_url = response.headers['Location']
         redirect_url_split = urlparse.urlsplit(redirect_url)
         redirect_url_split = redirect_url_split._replace(
             query=urlparse.parse_qs(redirect_url_split.query))
-
         original_url_split = urlparse.urlsplit(response.request.url)
         original_url_split = original_url_split._replace(
             query=urlparse.parse_qs(original_url_split.query))
@@ -163,14 +163,14 @@ class WalmartProductsSpider(BaseProductsSpider):
                 if module['moduleTitle'] \
                         == "People who bought this item also bought":
                     product['related_products'] = {
-                        "buyers_also_bought": list(
+                        "buyers_also_bought": [
                             RelatedProduct(
                                 self._generate_title_from_url(url),
-                                url
+                                urlparse.urljoin(response.url, url)
                             )
                             for url in Selector(text=module['html']).css(
                                 'a.irs-title ::attr(href)').extract()
-                        ),
+                        ],
                     }
                     break
         return product

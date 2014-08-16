@@ -21,18 +21,23 @@ class FreshDirectProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
+        prod['url'] = response.url
+
         self._populate_from_js(response, prod)
 
+        self._populate_from_html(response, prod)
+
+        cond_set_value(prod, 'locale', 'en-US')
+
+        return prod
+
+    def _populate_from_html(self, response, prod):
         des = response.xpath(
             '//div[contains(@class,"pdp-accordion-description-description")]'
             '//text()'
         ).extract()
         des = ''.join(i.strip() for i in des)
         cond_set_value(prod, 'description', des)
-
-        cond_set(prod, 'locale', ['en-US'])
-
-        prod['url'] = response.url
 
         related_products = []
         for li in response.xpath(
@@ -45,58 +50,44 @@ class FreshDirectProductsSpider(BaseProductsSpider):
             if urls:
                 url = urlparse.urljoin(response.url, urls[0])
 
-            title = None
-            titles = li.xpath(
-                './/div[@class="portrait-item-header"]/a//text()').extract()
-            if titles:
-                title = titles[0].strip()
+            title = ' '.join(s.strip() for s in li.xpath(
+                './/div[@class="portrait-item-header"]//text()').extract())
 
             if url and title:
                 related_products.append(RelatedProduct(title, url))
-
-        if related_products:
-            prod['related_products'] = {'recommended': related_products}
-
-        return prod
+        cond_set_value(
+            prod.setdefault('related_products', {}),
+            'recommended',
+            related_products,
+        )
 
     def _populate_from_js(self, response, product):
-        script = response.xpath('//script[contains(text(), "productData=")]')
-        if not script:
-            self.log("No JS matched in %s." % response.url, WARNING)
-            return
-
-        js_data = script.re("productData=\{.+\}")
-
-        if not js_data:
+        data_jsons = response.xpath('//script/text()').re(
+            "productData=(\{.+\})")
+        if not data_jsons:
             self.log("Could not get JSON match in %s" % response.url, WARNING)
         else:
-            data = json.loads(js_data[0].replace('productData=',''))
+            data = json.loads(data_jsons[0])
 
-            brand = data.get('brandName', '')
+            brand = data.get('brandName')
             if brand:
                 product['brand'] = brand
 
-            price = data.get('price', 0)
+            price = data.get('price')
             if price:
                 product['price'] = price
 
-            img_url = data.get('productZoomImage', '')
+            img_url = data.get('productZoomImage')
             if img_url:
-                product['image_url'] = img_url
+                product['image_url'] = urlparse.urljoin(response.url, img_url)
 
-            title = data.get('productName', '')
+            title = data.get('productName')
             if title:
                 product['title'] = title
 
-            model = data.get('skuCode', '')
+            model = data.get('skuCode')
             if model:
                 product['model'] = model
-
-    def _search_page_error(self, response):
-        if not self._scrape_total_matches(response):
-            self.log("Freshdirect: unable to find a match", ERROR)
-            return True
-        return False
 
     def _scrape_total_matches(self, response):
         try:

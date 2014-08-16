@@ -1,13 +1,10 @@
 from __future__ import division, absolute_import, unicode_literals
-from __future__ import print_function
 from future_builtins import *
 
 import urlparse
 
-from scrapy.log import ERROR
-
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
 class WalGreensProductsSpider(BaseProductsSpider):
@@ -30,42 +27,34 @@ class WalGreensProductsSpider(BaseProductsSpider):
         price = response.xpath('//b[@itemprop="price"]//text()').extract()
         if price:
             prod['price'] = price[0].strip()
-        else:
-            price = response.xpath('//span[@id="price_amount"]/b/text()').extract()
-            if price:
-                prod['price'] = 'Priced per store'
 
-        img_url = response.xpath('//img[@id="main-product-image"]/@src').extract()
+        img_url = response.xpath(
+            '//img[@id="main-product-image"]/@src').extract()
         if img_url:
             img_url = urlparse.urljoin(response.url, img_url[0])
             prod['image_url'] = img_url
 
         brand_text = response.xpath(
-            '//div[@id="vpd_shop_more_link"]//div[contains(@class,"mrgTop5px")]//a/text()').extract()
+            '//div[@id="vpd_shop_more_link"]'
+            '//div[contains(@class,"mrgTop5px")]//a/text()'
+        ).extract()
         if brand_text:
-            brand_text = brand_text[0].replace('Shop all', '').replace('products', '')
+            brand_text = brand_text[0].replace('Shop all', '').replace(
+                'products', '')
             prod['brand'] = brand_text.strip()
 
         prod['url'] = response.url
 
         prod['locale'] = 'en-US'
 
-        des = response.xpath('//div[@id="description-content"]//text()').extract()
-        if des:
-            prod['description'] = ''.join([i.strip() for i in des])
+        cond_set_value(
+            prod,
+            'description',
+            ''.join(
+                response.xpath('//div[@id="description-content"]').extract()),
+        )
 
         return prod
-
-    def _search_page_error(self, response):
-        if not self._scrape_total_matches(response):
-            self.log("WalGreens: has no matches", ERROR)
-            return True
-        else:
-            results = response.xpath('//div[@class="info"]//text()').extract()
-            result = ''.join(results).strip()
-            if 'has no matches' in result:
-                return True
-        return False
 
     def _scrape_total_matches(self, response):
         count = response.xpath(
@@ -77,11 +66,12 @@ class WalGreensProductsSpider(BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         links = response.xpath(
-            '//div[@class="prod-content-top"]/div[contains(@class,"product-name")]/a/@href'
+            '//div[@class="prod-content-top"]'
+            '/div[contains(@class,"product-name")]/a/@href'
         ).extract()
-        for i in links:
-            link = urlparse.urljoin(response.url, i)
-            yield link, SiteProductItem()
+        for link in links:
+            full_link = urlparse.urljoin(response.url, link)
+            yield full_link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
         links = response.xpath(

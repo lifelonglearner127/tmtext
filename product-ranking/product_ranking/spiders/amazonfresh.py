@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from __future__ import print_function
 from future_builtins import *
 
 import urlparse
@@ -83,6 +82,9 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
-        link = response.xpath(
-            '//div[@class="pagination"]/a/@href').extract()[-1]
-        return link
+        links = response.xpath(
+            '//div[@class="pagination"]/a[contains(text(), "Next")]/@href'
+        )
+        if links:
+            return links.extract()[0].strip()
+        return None
