@@ -85,9 +85,9 @@ class WalGreensProductsSpider(BaseProductsSpider):
             '//div[@class="prod-content-top"]'
             '/div[contains(@class,"product-name")]/a/@href'
         ).extract()
-        for i in links:
-            link = urlparse.urljoin(response.url, i)
-            yield link, SiteProductItem()
+        for link in links:
+            full_link = urlparse.urljoin(response.url, link)
+            yield full_link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
         links = response.xpath(
