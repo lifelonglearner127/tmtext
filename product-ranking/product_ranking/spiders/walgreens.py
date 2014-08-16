@@ -61,17 +61,6 @@ class WalGreensProductsSpider(BaseProductsSpider):
 
         return prod
 
-    def _search_page_error(self, response):
-        if not self._scrape_total_matches(response):
-            self.log("WalGreens: has no matches", ERROR)
-            return True
-        else:
-            results = response.xpath('//div[@class="info"]//text()').extract()
-            result = ''.join(results).strip()
-            if 'has no matches' in result:
-                return True
-        return False
-
     def _scrape_total_matches(self, response):
         count = response.xpath(
             '//a[@title="Products - Tab - Active"]/text()'
