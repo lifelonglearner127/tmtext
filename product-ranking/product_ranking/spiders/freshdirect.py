@@ -67,12 +67,12 @@ class FreshDirectProductsSpider(BaseProductsSpider):
             self.log("No JS matched in %s." % response.url, WARNING)
             return
 
-        js_data = script.re("productData=\{.+\}")
+        js_data = script.re("productData=(\{.+\})")
 
         if not js_data:
             self.log("Could not get JSON match in %s" % response.url, WARNING)
         else:
-            data = json.loads(js_data[0].replace('productData=', ''))
+            data = json.loads(js_data[0])
 
             brand = data.get('brandName', '')
             if brand:
