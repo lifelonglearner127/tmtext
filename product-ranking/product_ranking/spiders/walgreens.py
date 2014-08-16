@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from __future__ import print_function
 from future_builtins import *
 
 import urlparse
@@ -31,28 +30,34 @@ class WalGreensProductsSpider(BaseProductsSpider):
         if price:
             prod['price'] = price[0].strip()
         else:
-            price = response.xpath('//span[@id="price_amount"]/b/text()').extract()
+            price = response.xpath(
+                '//span[@id="price_amount"]/b/text()').extract()
             if price:
                 prod['price'] = 'Priced per store'
 
-        img_url = response.xpath('//img[@id="main-product-image"]/@src').extract()
+        img_url = response.xpath(
+            '//img[@id="main-product-image"]/@src').extract()
         if img_url:
             img_url = urlparse.urljoin(response.url, img_url[0])
             prod['image_url'] = img_url
 
         brand_text = response.xpath(
-            '//div[@id="vpd_shop_more_link"]//div[contains(@class,"mrgTop5px")]//a/text()').extract()
+            '//div[@id="vpd_shop_more_link"]'
+            '//div[contains(@class,"mrgTop5px")]//a/text()'
+        ).extract()
         if brand_text:
-            brand_text = brand_text[0].replace('Shop all', '').replace('products', '')
+            brand_text = brand_text[0].replace('Shop all', '').replace(
+                'products', '')
             prod['brand'] = brand_text.strip()
 
         prod['url'] = response.url
 
         prod['locale'] = 'en-US'
 
-        des = response.xpath('//div[@id="description-content"]//text()').extract()
+        des = response.xpath(
+            '//div[@id="description-content"]//text()').extract()
         if des:
-            prod['description'] = ''.join([i.strip() for i in des])
+            prod['description'] = ''.join(i.strip() for i in des)
 
         return prod
 
@@ -77,7 +82,8 @@ class WalGreensProductsSpider(BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         links = response.xpath(
-            '//div[@class="prod-content-top"]/div[contains(@class,"product-name")]/a/@href'
+            '//div[@class="prod-content-top"]'
+            '/div[contains(@class,"product-name")]/a/@href'
         ).extract()
         for i in links:
             link = urlparse.urljoin(response.url, i)
