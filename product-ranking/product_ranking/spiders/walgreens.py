@@ -29,11 +29,6 @@ class WalGreensProductsSpider(BaseProductsSpider):
         price = response.xpath('//b[@itemprop="price"]//text()').extract()
         if price:
             prod['price'] = price[0].strip()
-        else:
-            price = response.xpath(
-                '//span[@id="price_amount"]/b/text()').extract()
-            if price:
-                prod['price'] = 'Priced per store'
 
         img_url = response.xpath(
             '//img[@id="main-product-image"]/@src').extract()
