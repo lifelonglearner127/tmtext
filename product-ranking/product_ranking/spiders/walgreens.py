@@ -3,8 +3,6 @@ from future_builtins import *
 
 import urlparse
 
-from scrapy.log import ERROR
-
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set
 
