@@ -1,14 +1,14 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import json
+
 from scrapy.selector import Selector
 from scrapy.log import ERROR, WARNING
 from scrapy import Request
 
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set
-
-import json
 
 
 class SoapProductSpider(BaseProductsSpider):
