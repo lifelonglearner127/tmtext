@@ -21,6 +21,8 @@ class FreshDirectProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
+        prod['url'] = response.url
+
         self._populate_from_js(response, prod)
 
         self._populate_from_html(response, prod)
@@ -36,7 +38,7 @@ class FreshDirectProductsSpider(BaseProductsSpider):
         ).extract()
         des = ''.join(i.strip() for i in des)
         cond_set_value(prod, 'description', des)
-        prod['url'] = response.url
+
         related_products = []
         for li in response.xpath(
                 '//div[@class="pdp-likethat"]'
