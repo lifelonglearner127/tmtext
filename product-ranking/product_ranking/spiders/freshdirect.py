@@ -74,11 +74,11 @@ class FreshDirectProductsSpider(BaseProductsSpider):
         else:
             data = json.loads(js_data[0])
 
-            brand = data.get('brandName', '')
+            brand = data.get('brandName')
             if brand:
                 product['brand'] = brand
 
-            price = data.get('price', 0)
+            price = data.get('price')
             if price:
                 product['price'] = price
 
