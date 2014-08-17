@@ -22,7 +22,7 @@ DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 HTTPCACHE_STORAGE = 'scrapy.contrib.downloadermiddleware.httpcache.FilesystemCacheStorage'
 HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
 
-DOWNLOAD_DELAY = 0.05
+DOWNLOAD_DELAY = 0.25
 
 import os
 homedir = os.getenv("HOME")
@@ -39,6 +39,10 @@ HTTPCACHE_IGNORE_HTTP_CODES = ['302']
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
     'search.middlewares.ProxyMiddleware': 100,
+}
+
+EXTENSIONS = {
+	'search.Handle503_extension.SpiderLog503' : 500
 }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
