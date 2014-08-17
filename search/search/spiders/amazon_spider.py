@@ -156,8 +156,13 @@ class AmazonSpider(SearchSpider):
 		#product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
 		product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
 		if not product_name:
-			# print "NO PRODUCT NAME FOR", response.url
-			self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.ERROR)
+			# if it comes from a solved captcha page, then it's an error if it's still not found
+			if 'from_captcha' in response.meta:
+				self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.ERROR)
+				del response.meta['from_captcha']
+			else:
+				# otherwise it might just be a captcha page, not an insurmonutable error
+				self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.WARNING)
 
 			# assume there is a captcha to crack
 			# check if there is a form on the page - that means it's probably the captcha form
@@ -178,8 +183,11 @@ class AmazonSpider(SearchSpider):
 				# create a FormRequest to this same URL, with everything needed in meta
 				# items, cookies and search_urls not changed from previous response so no need to set them again
 	
-				# redo the entire request (no items will be lost)		
-				return [FormRequest.from_response(response, callback = self.parse_product_amazon, formdata={'field-keywords' : captcha_text}, meta = response.meta)]
+				# redo the entire request (no items will be lost)
+				meta = response.meta
+				# flag indicating this request came from a (solved) captcha page
+				meta['from_captcha'] = True
+				return [FormRequest.from_response(response, callback = self.parse_product_amazon, formdata={'field-keywords' : captcha_text}, meta = meta)]
 
 		else:
 			item['product_name'] = product_name[0].strip()

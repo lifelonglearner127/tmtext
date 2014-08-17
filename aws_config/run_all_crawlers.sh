@@ -1,6 +1,6 @@
 #!/bin/bash
 
-INPUT="walmart_urls_5.21.14"
+INPUT="Baby"
 SITE="amazon"
 
 for node in "$@"
