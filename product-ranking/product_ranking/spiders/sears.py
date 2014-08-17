@@ -41,8 +41,7 @@ class SearsProductsSpider(BaseProductsSpider):
 
         data = json.loads(response.body)
 
-        # FIXME Use data['data'] as .get returning None would also fail but with a worse error.
-        product = data.get('data').get('product')
+        product = data['data'].get('product')
 
         brand = product.get('brand').get('name')
         cond_set(prod, 'brand', brand)
@@ -58,9 +57,6 @@ class SearsProductsSpider(BaseProductsSpider):
 
         desc = product.get('desc')[1].get('val')
         cond_set(prod, 'description', desc)
-
-        # price = response.xpath("//li[@itemprop='price']/h4/text()").extract()
-        # prod['price'] = price
 
         img_url = product.get('assets').get('imgs')[0].get('vals')[0].get('src')
 
@@ -81,12 +77,6 @@ class SearsProductsSpider(BaseProductsSpider):
         return 0
 
     def _scrape_product_links(self, sel):
-        #links = sel.xpath("//h2[@itemprop='name']/a/@href").extract()
-
-        # FIXME price is not used.
-        prices = sel.xpath("//span[@class='price']/text()").extract()
-        for price in prices:
-            price = price.strip()
 
         product_ids = sel.xpath("//input[@id='pId']/@value").extract()
 
@@ -96,11 +86,6 @@ class SearsProductsSpider(BaseProductsSpider):
             link = "http://www.sears.com/content/pdp/config/products" \
                 "/v1/products/%s" % prod_id
             yield link, SiteProductItem()
-
-        # if not links:
-        #     self.log("Found no product links.", ERROR)
-        # for link in links:
-        #     yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, sel):
         next_pages = sel.xpath(
