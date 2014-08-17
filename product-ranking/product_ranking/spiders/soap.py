@@ -52,11 +52,8 @@ class SoapProductSpider(BaseProductsSpider):
         # FIXME: Just take the node().
         # desc is a possible <p> or just the text of the class, each page is different
         desc = response.xpath(
-            "//*[@class='pIdDesContent']/p/text()"
-            "| //*[@class='pIdDesContent']/text()"
-            "| //*[@class='pIdDesContent']/b/text()"
-            "| //*[@class='pIdDesContent']/p/strong/text()"
-        ).extract()[0]
+            "//*[@class='pIdDesContent']"
+        ).extract()
 
         upc = response.xpath("//*[@class='skuHidden']/@value").extract()[0]
 
