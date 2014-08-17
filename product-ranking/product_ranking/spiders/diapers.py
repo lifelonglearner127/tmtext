@@ -69,9 +69,7 @@ class DiapersProductSpider(BaseProductsSpider):
             "//*[@id='priceDivClass']/span/text()").extract()[0]
         desc = response.xpath(
             "//*[@id='Tab5DetailInfo']/div/div/p[2]/text()").extract()[0]
-        # FIXME I could not get either of the below to get a upc
-        #upc = sel.xpath("//*[@id='pdpUniversalOption']/@data-displayunitprice").extract()
-        #upc = sel.re('primarySku."(.+\d)"')
+
         product['price'] = price
         product['description'] = desc
 
