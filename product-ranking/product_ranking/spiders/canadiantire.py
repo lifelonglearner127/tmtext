@@ -4,11 +4,10 @@ from future_builtins import *
 import json
 import urlparse
 
-from scrapy.log import ERROR
-from scrapy import Request
-
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set
+from scrapy import Request
+from scrapy.log import ERROR
 
 
 class CanadiantireProductsSpider(BaseProductsSpider):
