@@ -65,7 +65,10 @@ class LondondrugsProductsSpider(BaseProductsSpider):
         if len(total) > 0:
             return int(total[0])
         total = response.xpath("//div[@class='resultshits']/strong/text()").re(r'.*- (\d+)')
-        return int(total[0])
+        if len(total) > 0:
+            return int(total[0])
+        else:
+            return 0    
 
     def _scrape_product_links(self, response):
         links = response.xpath("//div[@class='productlisting']/div[contains(@class,'product')]/div[@class='name']/a/@href")

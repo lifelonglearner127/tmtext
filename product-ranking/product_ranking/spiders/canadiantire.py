@@ -96,6 +96,11 @@ class CanadiantireProductsSpider(BaseProductsSpider):
 
     def _scrape_total_matches(self, response):
         total = response.xpath("//span[@class='search_results_filter__hilite-count']/text()")
+        if len(total) > 0:
+            return int(total.extract()[0])
+        else:
+            return 0
+
         total = total.extract()[0]
         return int(total)
 
