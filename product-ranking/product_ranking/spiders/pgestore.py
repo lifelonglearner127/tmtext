@@ -2,7 +2,8 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value, \
+    FormatterWithDefaults
 
 from scrapy.http import Request
 from scrapy.log import ERROR
@@ -14,38 +15,28 @@ class PGEStoreProductSpider(BaseProductsSpider):
     allowed_domains = ["pgestore.com", "igodigital.com"]
 
     SEARCH_URL = "http://www.pgestore.com/on/demandware.store/Sites-PG-Site/" \
-                 "default/Search-Show?q={search_term}&srule={search_sort}&brand=&start=0&sz=24"
+        "default/Search-Show?q={search_term}&srule={search_sort}&brand=" \
+        "&start=0&sz=24"
 
     SEARCH_SORT = {
-        'best_matches': 'best_matches',
-        'product-name-ascending': 'product-name-ascending',
-        'product-name-descending': 'product-name-descending',
-        'price-high-to-low': 'price-high-to-low',
-        'price-low-to-high': 'price-low-to-high',
-        'top-sellers': 'top-sellers',
-        'top-rated': 'top-rated',
-        'cat-placement-and-brand': 'cat-placement-and-brand',
+        'best_match': 'best_matches',
+        'product_name_ascending': 'product-name-ascending',
+        'product_name_descending': 'product-name-descending',
+        'high_price': 'price-high-to-low',
+        'low_price': 'price-low-to-high',
+        'best_sellers': 'top-sellers',
+        'rating': 'top-rated',
+        'category_placement_and_brand': 'cat-placement-and-brand',
     }
 
-    def __init__(
-            self,
-            url_formatter=None,
-            quantity=None,
-            searchterms_str=None,
-            search_sort='best_matches',
-            searchterms_fn=None,
-            site_name=allowed_domains[0],
-            *args,
-            **kwargs):
+    def __init__(self, search_sort='best_match', *args, **kwargs):
         # All this is to set the site_name since we have several
         # allowed_domains.
         super(PGEStoreProductSpider, self).__init__(
-            url_formatter,
-            quantity,
-            searchterms_str,
-            search_sort=self.SEARCH_SORT[search_sort],
-            searchterms_fn,
-            site_name,
+            url_formatter=FormatterWithDefaults(
+                search_sort=self.SEARCH_SORT[search_sort],
+            ),
+            site_name=self.allowed_domains[0],
             *args,
             **kwargs)
 
