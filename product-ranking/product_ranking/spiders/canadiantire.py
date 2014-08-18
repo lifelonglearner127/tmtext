@@ -3,7 +3,7 @@ from future_builtins import *
 
 import json
 import urlparse
-
+import string
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from scrapy import Request
@@ -25,31 +25,23 @@ class CanadiantireProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta['product']
 
-        title = response.xpath("//div[contains(@class,'product-title')]/div/h1/text()")
-        if title:
-            title = title.extract()[0]
-            product['title'] = title
+        cond_set(product, 'title', response.xpath(
+            "//div[contains(@class,'product-title')]/div/h1/text()").extract())
 
-        brand = response.xpath("//div[contains(@class,'product-title')]/img/@title")
-        try:
-            brand = brand.extract()[0]
-        except:
-            brand = 'NO BRAND'
-        product['brand'] = brand
+        cond_set(product, 'brand', response.xpath(
+            "//div[contains(@class,'product-title')]/img/@title").extract())
 
-        image_url = response.xpath("//link[@rel='image_src']/@href")
-        if image_url:
-            image_url = image_url.extract()[0]
-            product['image_url'] = image_url
+        cond_set(product, 'image_url', response.xpath(
+            "//link[@rel='image_src']/@href").extract())
 
         productid = response.xpath("//span[@class='displaySkuCode']/text()")
         if productid:
             productid = productid.extract()[0].strip().replace('#', '', 1).replace('-', '')
             product['upc'] = int(productid)
 
-        j = response.xpath("//div[@class='features_wrap']/descendant::*[text()]/text()")
-        if j:
-            info = " ".join(j.extract())
+        info = response.xpath("//div[@class='features_wrap']/descendant::*[text()]/text()")
+        if info:
+            info = "\n".join(map(string.strip,info.extract()))
             product['description'] = info
 
         related = response.xpath("//div[@class='sr-cross-sell__wrapper']/*/*/*/a")
@@ -81,7 +73,6 @@ class CanadiantireProductsSpider(BaseProductsSpider):
                 show_ad=load_params.get('showAdSkus'),
                 )
             json_link = urlparse.urljoin(response.url, json_link)
-
             return Request(json_link, self._parse_json, meta=response.meta.copy(), )
         else:
             return product
@@ -99,9 +90,6 @@ class CanadiantireProductsSpider(BaseProductsSpider):
             return int(total.extract()[0])
         else:
             return 0
-
-        total = total.extract()[0]
-        return int(total)
 
     def _scrape_product_links(self, response):
         links = response.xpath("//div[@id='search_results']/*/*/*/div[contains(@class,'product_result')]/a/@href")
