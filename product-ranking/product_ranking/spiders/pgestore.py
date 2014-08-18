@@ -14,13 +14,25 @@ class PGEStoreProductSpider(BaseProductsSpider):
     allowed_domains = ["pgestore.com", "igodigital.com"]
 
     SEARCH_URL = "http://www.pgestore.com/on/demandware.store/Sites-PG-Site/" \
-        "default/Search-Show?q={search_term}"
+                 "default/Search-Show?q={search_term}&srule={search_sort}&brand=&start=0&sz=24"
+
+    SEARCH_SORT = {
+        'best_matches': 'best_matches',
+        'product-name-ascending': 'product-name-ascending',
+        'product-name-descending': 'product-name-descending',
+        'price-high-to-low': 'price-high-to-low',
+        'price-low-to-high': 'price-low-to-high',
+        'top-sellers': 'top-sellers',
+        'top-rated': 'top-rated',
+        'cat-placement-and-brand': 'cat-placement-and-brand',
+    }
 
     def __init__(
             self,
             url_formatter=None,
             quantity=None,
             searchterms_str=None,
+            search_sort='best_matches',
             searchterms_fn=None,
             site_name=allowed_domains[0],
             *args,
@@ -31,6 +43,7 @@ class PGEStoreProductSpider(BaseProductsSpider):
             url_formatter,
             quantity,
             searchterms_str,
+            search_sort=self.SEARCH_SORT[search_sort],
             searchterms_fn,
             site_name,
             *args,
