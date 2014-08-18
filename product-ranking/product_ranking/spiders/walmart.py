@@ -57,7 +57,8 @@ class WalmartProductsSpider(BaseProductsSpider):
     def __init__(self, search_sort='best_match', *args, **kwargs):
         super(WalmartProductsSpider, self).__init__(
             url_formatter=FormatterWithDefaults(
-                search_sort=self.SEARCH_SORT[search_sort]),
+                search_sort=self.SEARCH_SORT[search_sort]
+            ),
             *args, **kwargs)
 
     def start_requests(self):
