@@ -17,8 +17,8 @@ class PGEStoreProductSpider(BaseProductsSpider):
     allowed_domains = ["pgestore.com", "igodigital.com"]
 
     SEARCH_URL = "http://www.pgestore.com/on/demandware.store/Sites-PG-Site/" \
-        "default/Search-Show?q={search_term}&srule={search_sort}&brand=" \
-        "&start=0&sz=24"
+                 "default/Search-Show?q={search_term}&srule={search_sort}&brand=" \
+                 "&start=0&sz=24"
 
     SEARCH_SORT = {
         'best_match': 'best_matches',
@@ -142,10 +142,16 @@ class PGEStoreProductSpider(BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         next_pages = response.xpath(
-            "//*[@id='pdpTab1']/div[3]/div[1]/ul/li[6]/a/@href").extract()
+            "//a[@class='pngFix pagenext']/@href").extract()
         next_page = None
-        if len(next_pages) == 1:
+        if len(next_pages) == 2:
             next_page = next_pages[0]
         elif len(next_pages) == 0:
-            self.log("Found no 'next page' link.", ERROR)
+            # likely to have only 2 pages for the search so let's grab that
+            next_pages = response.xpath(
+                "//a[@class='page-2']/@href").extract()
+            if len(next_pages) == 0:
+                self.log("Found no 'next page' link.", ERROR)
+            elif len(next_pages) == 2:
+                next_page = next_pages[0]
         return next_page
