@@ -60,9 +60,11 @@ class DiapersProductSpider(BaseProductsSpider):
             self.log("Could not get JSON match in %s" % response.url, WARNING)
         else:
             data = json.loads(json[0])
-            product['upc'] = data[0].get("Sku")  # first one in list is the product being scraped.
-            product['price'] = data[0].get("DisplayPrice")
-            product['description'] = data[0].get("Description")
+            # first one in list is the product being scraped.
+            prod_data = data[0]
+            product['upc'] = prod_data.get("Sku")
+            product['price'] = prod_data.get("DisplayPrice")
+            product['description'] = prod_data.get("Description")
 
     def _populate_from_html(self, response, product):
         price = response.xpath(
@@ -113,8 +115,8 @@ class DiapersProductSpider(BaseProductsSpider):
             self.log("Failed to parse total number of matches.", level=ERROR)
 
     def _scrape_next_results_page_link(self, response):
-
-        next_pages = response.css("a:nth-child(3).result-pageNum-iconWrap::attr(href)").extract()
+        next_pages = response.css(
+            "a:nth-child(3).result-pageNum-iconWrap::attr(href)").extract()
 
         next_page = None
         if next_pages:
