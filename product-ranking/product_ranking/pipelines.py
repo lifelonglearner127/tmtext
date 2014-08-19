@@ -43,19 +43,22 @@ class AddSearchTermInTitleFields(object):
         return any(word in title_words for word in words)
 
     @staticmethod
-    def add_search_term_in_title_fields(product, keywords):
+    def add_search_term_in_title_fields(product, search_term):
+        # Initialize item.
         product['search_term_in_title_exactly'] = False
         product['search_term_in_title_partial'] = False
         product['search_term_in_title_interleaved'] = False
-        try:
-            title_words = AddSearchTermInTitleFields._normalize(
-                product['title']
-            ).split()
-            search_term = AddSearchTermInTitleFields._normalize(
-                keywords)
-            search_term_words = search_term.split()
 
-            if search_term in title_words:
+        try:
+            # Normalize data to be compared.
+            title_norm = AddSearchTermInTitleFields._normalize(
+                product['title'])
+            title_words = title_norm.split()
+            search_term_norm = AddSearchTermInTitleFields._normalize(
+                search_term)
+            search_term_words = search_term_norm.split()
+
+            if search_term_norm in title_words:
                 product['search_term_in_title_exactly'] = True
             elif AddSearchTermInTitleFields._is_title_interleaved(
                     title_words, search_term_words):
