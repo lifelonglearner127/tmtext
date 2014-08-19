@@ -6,6 +6,7 @@ import string
 import urllib
 import urlparse
 
+import scrapy.log
 from scrapy.log import ERROR, WARNING, INFO
 from scrapy.http import Request
 from scrapy.spider import Spider
@@ -67,7 +68,7 @@ class FormatterWithDefaults(string.Formatter):
         return val
 
 
-def populate_from_open_graph(self, response, product):
+def populate_from_open_graph(response, product):
     """Helper function that populates a product using the OpenGraph vocabulary.
 
     See about the Open Graph Protocol at http://ogp.me/
@@ -83,7 +84,7 @@ def populate_from_open_graph(self, response, product):
 
     if metadata.get('type') != 'product':
         # This response is not a product?
-        self.log("Page of type '%s' found." % metadata.get('type'), ERROR)
+        scrapy.log.msg("Page of type '%s' found." % metadata.get('type'), ERROR)
         raise AssertionError("Type missing or not a product.")
 
     # Basic Open Graph metadata.
