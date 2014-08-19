@@ -66,21 +66,21 @@ class OcadoProductsSpider(BaseProductsSpider):
     def _scrape_total_matches(self, response):
         totals = response.xpath("string(//h3[@id='productCount'])").re(
             r'(\d+) products')
+        total = None
         if len(totals) > 1:
             self.log(
                 "Found more than one 'total matches' for %s" % response.url,
                 ERROR
             )
         elif totals:
-            total = totals[0].strip()
-            return int(total)
+            total = int(totals[0].strip())
         else:
             self.log(
                 "Failed to find 'total matches' for %s" % response.url,
                 ERROR
             )
 
-        return None
+        return total
 
     def _scrape_product_links(self, response):
         links = response.xpath('//h4[@class="productTitle"]/a/@href').extract()
