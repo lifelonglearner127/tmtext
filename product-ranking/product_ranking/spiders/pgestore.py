@@ -1,6 +1,8 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import urlparse
+
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
@@ -46,6 +48,11 @@ class PGEStoreProductSpider(BaseProductsSpider):
         self._populate_from_html(response, prod)
 
         cond_set_value(prod, 'locale', 'en-US')  # Default locale.
+
+        # Override the URL with one without the search parameters.
+        url_parts = urlparse.urlsplit(response.url, allow_fragments=False)
+        url_parts = url_parts._replace(query='')
+        prod['url'] = urlparse.urlunsplit(url_parts)
 
         related_product_link = response.xpath(
             "//*[@id='crossSell']/script/@src").extract()[0]
