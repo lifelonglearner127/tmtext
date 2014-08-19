@@ -1,8 +1,11 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import urlparse
+
 from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
+    cond_set, cond_set_value
 
 from scrapy.http import Request
 from scrapy.log import ERROR
@@ -14,25 +17,28 @@ class PGEStoreProductSpider(BaseProductsSpider):
     allowed_domains = ["pgestore.com", "igodigital.com"]
 
     SEARCH_URL = "http://www.pgestore.com/on/demandware.store/Sites-PG-Site/" \
-        "default/Search-Show?q={search_term}"
+        "default/Search-Show?q={search_term}&srule={search_sort}&brand=" \
+        "&start=0&sz=24"
 
-    def __init__(
-            self,
-            url_formatter=None,
-            quantity=None,
-            searchterms_str=None,
-            searchterms_fn=None,
-            site_name=allowed_domains[0],
-            *args,
-            **kwargs):
+    SEARCH_SORT = {
+        'best_match': 'best_matches',
+        'product_name_ascending': 'product-name-ascending',
+        'product_name_descending': 'product-name-descending',
+        'high_price': 'price-high-to-low',
+        'low_price': 'price-low-to-high',
+        'best_sellers': 'top-sellers',
+        'rating': 'top-rated',
+        'category_placement_and_brand': 'cat-placement-and-brand',
+    }
+
+    def __init__(self, search_sort='best_match', *args, **kwargs):
         # All this is to set the site_name since we have several
         # allowed_domains.
         super(PGEStoreProductSpider, self).__init__(
-            url_formatter,
-            quantity,
-            searchterms_str,
-            searchterms_fn,
-            site_name,
+            url_formatter=FormatterWithDefaults(
+                search_sort=self.SEARCH_SORT[search_sort],
+            ),
+            site_name=self.allowed_domains[0],
             *args,
             **kwargs)
 
@@ -42,6 +48,11 @@ class PGEStoreProductSpider(BaseProductsSpider):
         self._populate_from_html(response, prod)
 
         cond_set_value(prod, 'locale', 'en-US')  # Default locale.
+
+        # Override the URL with one without the search parameters.
+        url_parts = urlparse.urlsplit(response.url, allow_fragments=False)
+        url_parts = url_parts._replace(query='')
+        prod['url'] = urlparse.urlunsplit(url_parts)
 
         related_product_link = response.xpath(
             "//*[@id='crossSell']/script/@src").extract()[0]

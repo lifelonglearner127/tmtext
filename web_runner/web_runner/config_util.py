@@ -56,6 +56,7 @@ def find_command_config_from_name(settings, name):
 
     crawl_configs, crawl_params = list(zip(
         *find_command_crawls(settings, prefix + 'crawl.')))
+    assert len(crawl_configs) == len(crawl_params)
 
     return CommandConfig(
         name,
