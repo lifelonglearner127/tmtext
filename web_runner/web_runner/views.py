@@ -2,7 +2,6 @@ from __future__ import division, absolute_import, unicode_literals
 
 from itertools import repeat, starmap
 import logging
-import urllib2
 
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
@@ -131,8 +130,7 @@ def command_pending(request):
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
-    command_name = request.path.strip('/')
-    dbinterf.new_request_event(web_runner.db.COMMAND_STATUS, 
+    dbinterf.new_request_event(web_runner.db.COMMAND_STATUS,
                                job_ids, request.remote_addr)
     dbinterf.close()
 
@@ -174,8 +172,7 @@ def command_result(request):
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
-    command_name = request.path.strip('/')
-    dbinterf.new_request_event(web_runner.db.COMMAND_RESULT, 
+    dbinterf.new_request_event(web_runner.db.COMMAND_RESULT,
                                job_ids, request.remote_addr)
     dbinterf.close()
 
@@ -263,8 +260,7 @@ def spider_pending_view(request):
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         request.registry.settings['db_filename'], recreate=False)
-    command_name = request.path.strip('/')
-    dbinterf.new_request_event(web_runner.db.SPIDER_STATUS, 
+    dbinterf.new_request_event(web_runner.db.SPIDER_STATUS,
                                (job_id,), request.remote_addr)
     dbinterf.close()
 
@@ -441,10 +437,9 @@ def request_history(request):
 
     try:   
         jobids_info = {jobid: jobids_status[jobid]  # Get only the jobids of 
-          for jobid in request_info['jobids']}      # the current request
+            for jobid in request_info['jobids']}    # the current request
     except KeyError:
         jobids_info = None
-
     
     if jobids_info:
         history = _get_history(requestid, request_info, jobids_info, 
@@ -457,7 +452,7 @@ def request_history(request):
     info = {'request': request_info,
             'jobids_info': jobids_info,
             'history': history,
-            'status': status }
+            'status': status}
 
     return info
 
@@ -484,7 +479,8 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
             now = datetime.datetime.utcnow()
             self.delta = now - self.date
             # Erase the microseconds
-            self.delta -= datetime.timedelta(microseconds=self.delta.microseconds)
+            self.delta -= datetime.timedelta(
+                microseconds=self.delta.microseconds)
             return [str(self.date), str(self.delta), self.comment]
 
         def setDate(self, dateStr):
@@ -508,7 +504,8 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
             # Log when the spider started
             start_log = Log()
             start_log.setDate(jobids_info[jobid]['start_time'])
-            start_log.comment = 'Spider %s started.' % jobids_info[jobid]['spider']
+            start_log.comment = 'Spider %s started.' \
+                % jobids_info[jobid]['spider']
             history.append(start_log)
 
             # Log when spider finished
@@ -516,14 +513,14 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
             finish_log.setDate(jobids_info[jobid]['end_time'])
             spider_time = finish_log.date - start_log.date
             spider_time -= datetime.timedelta(
-                           microseconds=spider_time.microseconds)
+                microseconds=spider_time.microseconds)
             finish_log.comment = 'Spider %s finished. Took %s.' % (
-              jobids_info[jobid]['spider'], spider_time)
+                jobids_info[jobid]['spider'], spider_time)
             history.append(finish_log)
 
             # set what is the date of the last finished spider
-            if ( date_last_finished_spider == None or 
-              date_last_finished_spider < finish_log.date):
+            if (date_last_finished_spider == None or
+                        date_last_finished_spider < finish_log.date):
                 date_last_finished_spider = finish_log.date
         else:
             request_finished = False
@@ -534,8 +531,9 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
         finish.date = date_last_finished_spider
         request_time = finish.date - creation.date
         request_time -= datetime.timedelta(
-                        microseconds=request_time.microseconds)
-        finish.comment = 'Request finished. Took %s since created.' % request_time
+            microseconds=request_time.microseconds)
+        finish.comment = 'Request finished. Took %s since created.' \
+            % request_time
         history.append(finish)
 
     # Iterate over the operational information:
@@ -544,7 +542,7 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
         op_log = Log()
         op_log.setDate(date)
         
-        if type.find('status') >=0 :
+        if type.find('status') >= 0:
             op_log.comment = 'Requesting status'
         elif type.find('result') >= 0:
             op_log.comment = 'Requesting results'
