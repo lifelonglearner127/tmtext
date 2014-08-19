@@ -2,8 +2,8 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value, \
-    FormatterWithDefaults
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
+    cond_set, cond_set_value
 
 from scrapy.http import Request
 from scrapy.log import ERROR
