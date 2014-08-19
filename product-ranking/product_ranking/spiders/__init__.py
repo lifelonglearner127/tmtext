@@ -88,14 +88,13 @@ def populate_from_open_graph(response, product):
         raise AssertionError("Type missing or not a product.")
 
     # Basic Open Graph metadata.
-    product['url'] = metadata['url']  # Canonical URL for the product.
-    product['image_url'] = metadata['image']
+    cond_set_value(product, 'url', metadata.get('url'))  # Canonical URL.
+    cond_set_value(product, 'image_url', metadata.get('image'))
 
     # Optional Open Graph metadata.
-    if 'upc' in metadata:
-        product['upc'] = int(metadata['upc'])
-    product['description'] = metadata.get('description')
-    product['locale'] = metadata.get('locale')
+    cond_set_value(product, 'upc', metadata.get('upc'), conv=int)
+    cond_set_value(product, 'description', metadata.get('description'))
+    cond_set_value(product, 'locale', metadata.get('locale'))
 
 
 class BaseProductsSpider(Spider):
