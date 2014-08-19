@@ -88,7 +88,6 @@ def populate_from_open_graph(response, product):
         raise AssertionError("Type missing or not a product.")
 
     # Basic Open Graph metadata.
-    # The title is excluded as it contains a "Walmart: " prefix.
     product['url'] = metadata['url']  # Canonical URL for the product.
     product['image_url'] = metadata['image']
 
