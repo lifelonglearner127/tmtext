@@ -1,6 +1,7 @@
 from __future__ import division, absolute_import, unicode_literals
 
 from itertools import repeat, starmap
+import datetime
 import logging
 
 import pyramid.httpexceptions as exc
@@ -16,7 +17,6 @@ from web_runner.scrapyd import ScrapydMediator, ScrapydInterface, \
 from web_runner.util import encode_ids, decode_ids, get_request_status, \
     string2datetime
 import web_runner.db
-import datetime
 
 
 LOG = logging.getLogger(__name__)
