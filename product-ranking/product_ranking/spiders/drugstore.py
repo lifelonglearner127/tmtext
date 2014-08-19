@@ -18,12 +18,15 @@ class DrugstoreProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta['product']
 
-        cond_set(product, 'title',
-             response.xpath("string(//div[@id='divCaption']/h1[1])").extract())
+        cond_set(
+            product,
+            'title',
+            response.xpath("string(//div[@id='divCaption']/h1[1])").extract(),
+        )
 
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='divPImage']//img/@src").extract())
-            
+
         #TODO
         #cond_set(product, 'model',model) model not defined
 
@@ -36,11 +39,11 @@ class DrugstoreProductsSpider(BaseProductsSpider):
             " ".join(response.xpath(
                 "//div[@id='divPromosPDetail']//text()").extract()),
         )
-            
+
         product['locale'] = "en-US"
 
         return product
-        
+
     def _scrape_total_matches(self, response):
         totals = response.xpath("//div[@class='SrchMsgHeader']/text()").re(
             r'([\d,]+) results found')
