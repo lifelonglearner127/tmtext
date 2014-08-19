@@ -1,8 +1,11 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import urlparse
+
 from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
+    cond_set, cond_set_value
 
 from scrapy.http import Request
 from scrapy.log import ERROR
@@ -14,25 +17,28 @@ class PGEStoreProductSpider(BaseProductsSpider):
     allowed_domains = ["pgestore.com", "igodigital.com"]
 
     SEARCH_URL = "http://www.pgestore.com/on/demandware.store/Sites-PG-Site/" \
-        "default/Search-Show?q={search_term}"
+                 "default/Search-Show?q={search_term}&srule={search_sort}&brand=" \
+                 "&start=0&sz=24"
 
-    def __init__(
-            self,
-            url_formatter=None,
-            quantity=None,
-            searchterms_str=None,
-            searchterms_fn=None,
-            site_name=allowed_domains[0],
-            *args,
-            **kwargs):
+    SEARCH_SORT = {
+        'best_match': 'best_matches',
+        'product_name_ascending': 'product-name-ascending',
+        'product_name_descending': 'product-name-descending',
+        'high_price': 'price-high-to-low',
+        'low_price': 'price-low-to-high',
+        'best_sellers': 'top-sellers',
+        'rating': 'top-rated',
+        'category_placement_and_brand': 'cat-placement-and-brand',
+    }
+
+    def __init__(self, search_sort='best_match', *args, **kwargs):
         # All this is to set the site_name since we have several
         # allowed_domains.
         super(PGEStoreProductSpider, self).__init__(
-            url_formatter,
-            quantity,
-            searchterms_str,
-            searchterms_fn,
-            site_name,
+            url_formatter=FormatterWithDefaults(
+                search_sort=self.SEARCH_SORT[search_sort],
+            ),
+            site_name=self.allowed_domains[0],
             *args,
             **kwargs)
 
@@ -42,6 +48,11 @@ class PGEStoreProductSpider(BaseProductsSpider):
         self._populate_from_html(response, prod)
 
         cond_set_value(prod, 'locale', 'en-US')  # Default locale.
+
+        # Override the URL with one without the search parameters.
+        url_parts = urlparse.urlsplit(response.url, allow_fragments=False)
+        url_parts = url_parts._replace(query='')
+        prod['url'] = urlparse.urlunsplit(url_parts)
 
         related_product_link = response.xpath(
             "//*[@id='crossSell']/script/@src").extract()[0]
@@ -131,10 +142,16 @@ class PGEStoreProductSpider(BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         next_pages = response.xpath(
-            "//*[@id='pdpTab1']/div[3]/div[1]/ul/li[6]/a/@href").extract()
+            "//a[@class='pngFix pagenext']/@href").extract()
         next_page = None
-        if len(next_pages) == 1:
+        if len(next_pages) == 2:
             next_page = next_pages[0]
         elif len(next_pages) == 0:
-            self.log("Found no 'next page' link.", ERROR)
+            # likely to have only 2 pages for the search so let's grab that
+            next_pages = response.xpath(
+                "//a[@class='page-2']/@href").extract()
+            if len(next_pages) == 0:
+                self.log("Found no 'next page' link.", ERROR)
+            elif len(next_pages) == 2:
+                next_page = next_pages[0]
         return next_page

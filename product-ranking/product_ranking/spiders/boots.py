@@ -26,8 +26,6 @@ class BootsProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta['product']
 
-        product = response.meta['product']
-
         cond_set(product, 'title', map(string.strip, response.xpath(
             "//h1/span/text()").extract()))
 

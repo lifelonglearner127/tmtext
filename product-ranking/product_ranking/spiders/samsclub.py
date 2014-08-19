@@ -4,7 +4,7 @@ from future_builtins import *
 from scrapy.log import ERROR
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider
+from product_ranking.spiders import BaseProductsSpider, cond_set
 
 
 class SamsclubProductsSpider(BaseProductsSpider):
@@ -20,24 +20,18 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
-        brand = response.xpath("//div[contains(@class,'prodTitlePlus')]/span[@itemprop='brand']/text()")
-        brand = brand.extract()[0]
-        product['brand'] = brand
 
-        title = response.xpath("//div[contains(@class,'prodTitle')]/h1/span[@itemprop='name']/text()")
-        title = title.extract()[0]
-        product['title'] = title
+        cond_set(product, 'brand', response.xpath(
+            "//div[contains(@class,'prodTitlePlus')]/span[@itemprop='brand']/text()").extract())
 
-        image_url = response.xpath("//div[@id='plImageHolder']/img/@src")
-        image_url = image_url.extract()[0]
-        product['image_url'] = image_url
+        cond_set(product, 'title', response.xpath(
+            "//div[contains(@class,'prodTitle')]/h1/span[@itemprop='name']/text()").extract())
 
-        price = response.xpath("//div[@class='moneyBoxBtn']/a/span[contains(@class,'onlinePrice')]/text()")
-        if len(price) > 0:
-            price = price.extract()[0]
-        else:
-            price = ''
-        product['price'] = price
+        cond_set(product, 'image_url', response.xpath(
+            "//div[@id='plImageHolder']/img/@src").extract())
+
+        cond_set(product, 'price', response.xpath(
+            "//div[@class='moneyBoxBtn']/a/span[contains(@class,'onlinePrice')]/text()").extract())
 
         j = response.xpath("//div[@itemprop='description']/descendant::*[text()]/text()")
         info = " ".join(j.extract())
@@ -47,12 +41,8 @@ class SamsclubProductsSpider(BaseProductsSpider):
         productid = productid.extract()[0].strip().replace('#:', '', 1)
         product['upc'] = int(productid)
 
-        model = response.xpath("//span[@itemprop='model']/text()")
-        if model:
-            model = model.extract()[0]
-        else:
-            model = ""
-        product['model'] = model
+        cond_set(product, 'model', response.xpath(
+            "//span[@itemprop='model']/text()").extract())
 
         product['locale'] = "en-US"
         product['related_products'] = {}

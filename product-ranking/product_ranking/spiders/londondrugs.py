@@ -1,11 +1,12 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-import urlparse
 import string
-from scrapy.log import ERROR
+import urlparse
+
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set
+from scrapy.log import ERROR
 
 
 class LondondrugsProductsSpider(BaseProductsSpider):
@@ -68,7 +69,7 @@ class LondondrugsProductsSpider(BaseProductsSpider):
         if len(total) > 0:
             return int(total[0])
         else:
-            return 0    
+            return 0
 
     def _scrape_product_links(self, response):
         links = response.xpath("//div[@class='productlisting']/div[contains(@class,'product')]/div[@class='name']/a/@href")
