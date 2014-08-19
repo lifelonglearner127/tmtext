@@ -47,21 +47,21 @@ class DrugstoreProductsSpider(BaseProductsSpider):
     def _scrape_total_matches(self, response):
         totals = response.xpath("//div[@class='SrchMsgHeader']/text()").re(
             r'([\d,]+) results found')
+        total = None
         if len(totals) > 1:
             self.log(
                 "Found more than one 'total matches' for %s" % response.url,
                 ERROR
             )
         elif totals:
-            total = totals[0].strip()
-            return int(total.replace(',', ''))
+            total = int(totals[0].strip().replace(',', ''))
         elif not len(response.xpath("//div[@class='divZeroResult']")):
             self.log(
                 "Failed to find 'total matches' for %s" % response.url,
                 ERROR
             )
         
-        return None
+        return total
 
     def _scrape_product_links(self, response):
         items = response.css('div.itemGrid div.info')
