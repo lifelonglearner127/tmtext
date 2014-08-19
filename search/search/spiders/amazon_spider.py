@@ -37,6 +37,8 @@ class AmazonSpider(SearchSpider):
 		# captcha solver - will be used when encountering blocked page from amazon
 		self.CB = captcha_solver.CaptchaBreakerWrapper()
 
+		# maximum number of captcha retries
+		self.MAX_CAPTCHA_RETRIES = 3
 
 	# check if a certain URL is valid or gets a 404 response
 	def is_valid_url(self, URL):
@@ -156,38 +158,51 @@ class AmazonSpider(SearchSpider):
 		#product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
 		product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
 		if not product_name:
-			# if it comes from a solved captcha page, then it's an error if it's still not found
-			if 'from_captcha' in response.meta:
-				self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.ERROR)
-				del response.meta['from_captcha']
-			else:
-				# otherwise it might just be a captcha page, not an insurmonutable error
+
+			# log this error:
+			# if it doesn't come from a solved captcha page, it might just be a captcha page, not an insurmonutable error
+			if 'captcha_retries' not in response.meta:
 				self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.WARNING)
+			else:
+				# if it comes from a solved captcha page, then it's an error if it's still not found				
+				self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.ERROR)
 
-			# assume there is a captcha to crack
-			# check if there is a form on the page - that means it's probably the captcha form
-			forms = hxs.select("//form")
-			if forms:
-				
-				# solve captcha
-				captcha_text = None
-				image = hxs.select(".//img/@src").extract()
-				if image:
-					captcha_text = self.CB.solve_captcha(image[0])
-
-				# value to use if there was an exception
-				if not captcha_text:
-					captcha_text = ''
+				if response.meta['captcha_retries'] > self.MAX_CAPTCHA_RETRIES:
+					del response.meta['captcha_retries']
+			# if we have reached maximum number of retries, do nothing (item just won't be added to the "items" list)
 
 
-				# create a FormRequest to this same URL, with everything needed in meta
-				# items, cookies and search_urls not changed from previous response so no need to set them again
-	
-				# redo the entire request (no items will be lost)
-				meta = response.meta
-				# flag indicating this request came from a (solved) captcha page
-				meta['from_captcha'] = True
-				return [FormRequest.from_response(response, callback = self.parse_product_amazon, formdata={'field-keywords' : captcha_text}, meta = meta)]
+			# if we haven't reached maximum retries, try again
+			if 'captcha_retries' not in response.meta \
+				or 'captcha_retries' in response.meta and response.meta['captcha_retries'] <= self.MAX_CAPTCHA_RETRIES:
+
+				# assume there is a captcha to crack
+				# check if there is a form on the page - that means it's probably the captcha form
+				forms = hxs.select("//form")
+				if forms:
+					
+					# solve captcha
+					captcha_text = None
+					image = hxs.select(".//img/@src").extract()
+					if image:
+						captcha_text = self.CB.solve_captcha(image[0])
+
+					# value to use if there was an exception
+					if not captcha_text:
+						captcha_text = ''
+
+
+					# create a FormRequest to this same URL, with everything needed in meta
+					# items, cookies and search_urls not changed from previous response so no need to set them again
+		
+					# redo the entire request (no items will be lost)
+					meta = response.meta
+					# flag indicating how many times we already retried to solve captcha
+					if 'captcha_retries' in meta:
+						meta['captcha_retries'] += 1
+					else:
+						meta['captcha_retries'] = 1
+					return [FormRequest.from_response(response, callback = self.parse_product_amazon, formdata={'field-keywords' : captcha_text}, meta = meta)]
 
 		else:
 			item['product_name'] = product_name[0].strip()
