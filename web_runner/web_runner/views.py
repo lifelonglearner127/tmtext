@@ -50,9 +50,12 @@ def command_start_view(request):
 
     spider_job_ids = []
     try:
-        for spider_cfg in spider_cfgs:
-            jobid = ScrapydMediator(settings, spider_cfg).start_job(
-                request.params)
+        for spider_cfg, spider_params in zip(
+                spider_cfgs, cfg_template.spider_params):
+            all_params = dict(spider_params)
+            all_params.update(request.params)
+
+            jobid = ScrapydMediator(settings, spider_cfg).start_job(all_params)
             spider_job_ids.append(jobid)
             LOG.info(
                 "For command at '%s', started crawl job with id '%s'.",
