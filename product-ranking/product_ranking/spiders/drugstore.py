@@ -55,7 +55,7 @@ class DrugstoreProductsSpider(BaseProductsSpider):
             )
         elif totals:
             total = int(totals[0].strip().replace(',', ''))
-        elif not len(response.xpath("//div[@class='divZeroResult']")):
+        elif not response.xpath("//div[@class='divZeroResult']"):
             self.log(
                 "Failed to find 'total matches' for %s" % response.url,
                 ERROR
