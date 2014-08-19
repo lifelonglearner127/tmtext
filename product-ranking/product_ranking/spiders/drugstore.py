@@ -27,9 +27,6 @@ class DrugstoreProductsSpider(BaseProductsSpider):
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='divPImage']//img/@src").extract())
 
-        #TODO
-        #cond_set(product, 'model',model) model not defined
-
         cond_set(product, 'price', response.xpath(
             "//div[@id='productprice']/*[@class='price']/text()").extract())
 
