@@ -34,7 +34,7 @@ class OcadoProductsSpider(BaseProductsSpider):
         img_url = response.xpath(
             "//ul[@id='galleryImages']/li[1]/a/@href"
         ).extract()
-        if len(img_url):
+        if img_url:
             cond_set_value(product, 'image_url',
                            urlparse.urljoin(response.url, img_url[0]))
 
@@ -93,7 +93,7 @@ class OcadoProductsSpider(BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         link = response.css('ul.pages a.next::attr(href)').extract()
 
-        if not len(link):
+        if not link:
             self.log("Next page link not found.", DEBUG)
             return None
 
