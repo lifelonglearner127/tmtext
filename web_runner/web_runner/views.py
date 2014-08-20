@@ -71,21 +71,21 @@ def command_start_view(request):
             " {}".format(cfg_template.name, e.message)
         )
 
+    command_name = request.path.strip('/')
+    id = request.route_path("command pending jobs", name=cfg_template.name,
+                            jobid=encode_ids(spider_job_ids),
+                            _query=request.params)
+
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
-    command_name = request.path.strip('/')
     dbinterf.new_command(
-        command_name, dict(request.params), spider_job_ids, request.remote_addr)
+        command_name, dict(request.params), spider_job_ids, request.remote_addr,
+        id=id)
     dbinterf.close()
 
     raise exc.HTTPFound(
-        location=request.route_path(
-            "command pending jobs",
-            name=cfg_template.name,
-            jobid=encode_ids(spider_job_ids),
-            _query=request.params,
-        ),
+        location=id,
         detail="Command '{}' started with {} crawls.".format(
             cfg_template.name, len(spider_job_ids))
     )
@@ -217,6 +217,10 @@ def spider_start_view(request):
     try:
         mediator = ScrapydMediator(settings, cfg)
         jobid = mediator.start_job(request.params)
+        id = request.route_path("spider pending jobs", 
+                                project=cfg.project_name,
+                                spider=cfg.spider_name, jobid=jobid)
+        
 
         # Storing the request in the internal DB.
         dbinterf = web_runner.db.DbInterface(
@@ -226,16 +230,12 @@ def spider_start_view(request):
             dict(request.params),
             jobid,
             request.remote_addr,
+            id
         )
         dbinterf.close()
 
         raise exc.HTTPFound(
-            location=request.route_path(
-                "spider pending jobs",
-                project=cfg.project_name,
-                spider=cfg.spider_name,
-                jobid=jobid,
-            ),
+            location=id,
             detail="Job '%s' started." % jobid)
     except ScrapydJobStartError as e:
         raise exc.HTTPBadGateway(
@@ -505,7 +505,8 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
             # Log when the spider started
             start_log = Log()
             start_log.setDate(jobids_info[jobid]['start_time'])
-            start_log.comment = 'Spider %s started.' % jobids_info[jobid]['spider']
+            start_log.comment = 'Spider %s started. \nid=%s' % \
+              (jobids_info[jobid]['spider'], jobid)
             history.append(start_log)
 
             # Log when spider finished
