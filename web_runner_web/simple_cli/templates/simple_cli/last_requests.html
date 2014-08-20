@@ -36,6 +36,7 @@
           <th class="sort" data-sort="creation_date"> Creation Date &#8597;</th>
           <th class="sort" data-sort="ip"> IP &#8597;</th>
           <th class="sort" data-sort="params"> Params &#8597;</th>
+	  <th> ID2 </th>
           <th class="sort" data-sort="status"> Status &#8597;</th>
         </tr>
       </thead>
@@ -55,6 +56,7 @@
                   </br>
               {% endfor %}
           </td>
+          <td style=";max-width:250px ;word-wrap:break-word"> {{ req.details.id }} </td>
           <td class="status"> 
               {% if req.status == "unavailable" %}
                 {{ req.status }} 

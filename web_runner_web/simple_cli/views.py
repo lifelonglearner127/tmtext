@@ -91,6 +91,12 @@ def web_runner_lastrequests(request, n=None):
 
     default_url = False if n else True
     req_info = req.json()
+
+    # decode the details field
+    if req_info:
+        for req in req_info:
+            req['details'] = json.loads(req['details'])
+    
     _process_request_to_display(req_info)
     context = {'last_requests': req_info,
       'now': datetime.datetime.utcnow(),

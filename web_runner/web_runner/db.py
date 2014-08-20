@@ -72,7 +72,8 @@ class DbInterface(object):
           site VARCHAR,
           params TEXT,
           creation TIMESTAMP,
-          remote_ip VARCHAR
+          remote_ip VARCHAR,
+          details VARCHAR
           )'''
 
         table2 = '''CREATE TABLE IF NOT EXISTS scrapy_jobs(
@@ -112,7 +113,7 @@ class DbInterface(object):
         return ret
 
 
-    def _new_request(self, name, command_type, params, jobids, ip=None):
+    def _new_request(self, name, command_type, params, jobids, ip=None, id=None):
         """Add a new request to the DB:
 
         Input parameters:
@@ -131,12 +132,15 @@ class DbInterface(object):
         group_name = params.get('group_name')
         site =  params.get('site')
         creation = datetime.datetime.utcnow()
+        details = {'id': id} if id else {} 
+        details_json = json.dumps(details)
         
+
         # Insert the main request
         insert_sql = '''INSERT INTO requests(name, type, group_name, site, 
-          params, creation, remote_ip) values(?,?,?,?,?,?,?)'''
+          params, creation, remote_ip, details) values(?,?,?,?,?,?,?,?)'''
         sql_values= (name, command_type, group_name, site, params_json, 
-          creation, ip)
+          creation, ip, details_json)
 
         try:        
             cursor = self._conn.cursor()
@@ -213,7 +217,7 @@ class DbInterface(object):
         return ret
 
 
-    def new_spider(self, name, params, jobid, ip=None):
+    def new_spider(self, name, params, jobid, ip=None, id=None):
         """Insert a new spider into the DB
 
         Input parameters:
@@ -224,10 +228,10 @@ class DbInterface(object):
         Return: boolean with the operation success
         """
         jobids = [jobid] if jobid else None
-        return self._new_request(name, SPIDER, params, jobids, ip)
+        return self._new_request(name, SPIDER, params, jobids, ip, id)
 
 
-    def new_command(self, name, params, jobids, ip=None):
+    def new_command(self, name, params, jobids, ip=None, id=None):
         """Add a new command to the DB:
 
         Input parameters:
@@ -237,7 +241,7 @@ class DbInterface(object):
 
         Return: boolean with the operation success
         """
-        return self._new_request(name, COMMAND, params, jobids, ip)
+        return self._new_request(name, COMMAND, params, jobids, ip, id)
 
  
     def get_last_requests(self, size):
@@ -250,7 +254,7 @@ class DbInterface(object):
 
         cursor = self._conn.cursor()
         sql = '''SELECT id, name, type, group_name, site, params, creation,
-          remote_ip 
+          remote_ip, details
           FROM requests 
           ORDER BY creation DESC 
           LIMIT %d''' % size;
@@ -258,7 +262,8 @@ class DbInterface(object):
 
         output = []
         for row in cursor.fetchall():
-            (id, name, type, group_name, site, params, creation, ip) = row
+            (id, name, type, group_name, site, params, creation, ip,
+              details) = row
             row_dict = {
               'requestid': id,
               'name': name,
@@ -268,7 +273,8 @@ class DbInterface(object):
               'params': params,
               'creation': creation,
               'remote_ip': ip,
-              'jobids': self._get_jobids(id) }
+              'jobids': self._get_jobids(id),
+              'details': details }
             output.append(row_dict)
         
         return output
