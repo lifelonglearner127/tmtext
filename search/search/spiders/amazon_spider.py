@@ -160,8 +160,10 @@ class AmazonSpider(SearchSpider):
 		if not product_name:
 
 			# log this error:
-			# if it doesn't come from a solved captcha page, it might just be a captcha page, not an insurmonutable error
-			if 'captcha_retries' not in response.meta:
+			# if number of retries were not exhausted, it might just be a captcha page, not an insurmonutable error
+			if 'captcha_retries' not in response.meta \
+				or 'captcha_retries' in response.meta and response.meta['captcha_retries'] <= self.MAX_CAPTCHA_RETRIES:
+				
 				self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.WARNING)
 			else:
 				# if it comes from a solved captcha page, then it's an error if it's still not found				
