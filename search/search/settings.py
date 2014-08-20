@@ -22,7 +22,7 @@ DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 HTTPCACHE_STORAGE = 'scrapy.contrib.downloadermiddleware.httpcache.FilesystemCacheStorage'
 HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
 
-DOWNLOAD_DELAY = 0.05
+DOWNLOAD_DELAY = 0.25
 
 import os
 homedir = os.getenv("HOME")
