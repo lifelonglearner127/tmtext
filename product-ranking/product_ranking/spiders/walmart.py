@@ -12,8 +12,8 @@ from scrapy.log import ERROR, WARNING, INFO
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import (BaseProductsSpider, FormatterWithDefaults,
-                                     cond_set, compose, cond_set_value)
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
+    compose, cond_set, cond_set_value, populate_from_open_graph
 
 
 class WalmartProductsSpider(BaseProductsSpider):
@@ -240,31 +240,15 @@ class WalmartProductsSpider(BaseProductsSpider):
         )
 
     def _populate_from_open_graph(self, response, product):
-        """See about the Open Graph Protocol at http://ogp.me/"""
-        # Extract all the meta tags with an attribute called property.
-        metadata_dom = response.xpath("/html/head/meta[@property]")
-        props = metadata_dom.xpath("@property").extract()
-        conts = metadata_dom.xpath("@content").extract()
+        """Uses the generic function but removes some fields which are not good.
+        """
+        populate_from_open_graph(response, product)
 
-        # Create a dict of the Open Graph protocol.
-        metadata = {p[3:]: c for p, c in zip(props, conts)
-                    if p.startswith('og:')}
-
-        if metadata.get('type') != 'product':
-            # This response is not a product?
-            self.log("Page of type '%s' found." % metadata.get('type'), ERROR)
-            raise AssertionError("Type missing or not a product.")
-
-        # Basic Open Graph metadata.
         # The title is excluded as it contains a "Walmart: " prefix.
-        product['url'] = metadata['url']  # Canonical URL for the product.
-        product['image_url'] = metadata['image']
-
-        # Optional Open Graph metadata.
-        if 'upc' in metadata:
-            product['upc'] = int(metadata['upc'])
-        product['description'] = metadata.get('description')
-        product['locale'] = metadata.get('locale')
+        try:
+            del product['title']
+        except KeyError:
+            pass
 
     def _scrape_total_matches(self, response):
         num_results = None

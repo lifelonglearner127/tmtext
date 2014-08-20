@@ -6,6 +6,7 @@ import string
 import urllib
 import urlparse
 
+import scrapy.log
 from scrapy.log import ERROR, WARNING, INFO
 from scrapy.http import Request
 from scrapy.spider import Spider
@@ -65,6 +66,35 @@ class FormatterWithDefaults(string.Formatter):
         except (KeyError, AttributeError):
             val = urllib.quote_plus(str(self.defaults[field_name])), field_name
         return val
+
+
+def populate_from_open_graph(response, product):
+    """Helper function that populates a product using the OpenGraph vocabulary.
+
+    See about the Open Graph Protocol at http://ogp.me/
+    """
+    # Extract all the meta tags with an attribute called property.
+    metadata_dom = response.xpath("/html/head/meta[@property]")
+    props = metadata_dom.xpath("@property").extract()
+    conts = metadata_dom.xpath("@content").extract()
+
+    # Create a dict of the Open Graph protocol.
+    metadata = {p[3:]: c for p, c in zip(props, conts)
+                if p.startswith('og:')}
+
+    if metadata.get('type') != 'product':
+        # This response is not a product?
+        scrapy.log.msg("Page of type '%s' found." % metadata.get('type'), ERROR)
+        raise AssertionError("Type missing or not a product.")
+
+    # Basic Open Graph metadata.
+    cond_set_value(product, 'url', metadata.get('url'))  # Canonical URL.
+    cond_set_value(product, 'image_url', metadata.get('image'))
+
+    # Optional Open Graph metadata.
+    cond_set_value(product, 'upc', metadata.get('upc'), conv=int)
+    cond_set_value(product, 'description', metadata.get('description'))
+    cond_set_value(product, 'locale', metadata.get('locale'))
 
 
 class BaseProductsSpider(Spider):
