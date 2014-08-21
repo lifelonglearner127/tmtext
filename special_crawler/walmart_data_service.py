@@ -1,30 +1,32 @@
 #!/usr/bin/python
 
 from flask import Flask, jsonify, abort, request
-from extract_walmart_data import media_for_url, check_url_format, reviews_for_url, \
-pdf_for_url, video_for_url, product_info, DATA_TYPES, DATA_TYPES_SPECIAL
+from extract_walmart_data import WalmartScraper
 import datetime
 import logging
-import os
-from logging.handlers import TimedRotatingFileHandler
-import json
+from logging import FileHandler
+import re
 
 app = Flask(__name__)
 
 class InvalidUsage(Exception):
-	status_code = 400
+    status_code = 400
 
-	def __init__(self, message, status_code=None, payload=None):
-		Exception.__init__(self)
-		self.message = message
-		if status_code is not None:
-			self.status_code = status_code
-		self.payload = payload
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
 
-	def to_dict(self):
-		rv = dict(self.payload or ())
-		rv['error'] = self.message
-		return rv
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['error'] = self.message
+        return rv
+
+def check_url_format(url):
+	m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+$", url)
+	return not not m
 
 # validate URL parameter
 def check_input(url):
@@ -37,7 +39,7 @@ def check_input(url):
 			400)
 
 # validate request arguments
-def validate_args(arguments):
+def validate_args(arguments, DATA_TYPES, DATA_TYPES_SPECIAL):
 	# normalize all arguments to unicode (no str)
 	argument_keys = map(lambda s: unicode(s), arguments.keys())
 
@@ -61,6 +63,8 @@ def validate_args(arguments):
 @app.route('/get_walmart_data/<path:url>', methods=['GET'])
 def get_data(url):
 
+	WS = WalmartScraper(url)
+
 	# validate URL
 	check_input(url)
 
@@ -71,20 +75,22 @@ def get_data(url):
 
 	# return all data if there are no arguments
 	if not request_arguments:
-		ret = product_info(url)
+		ret = WS.product_info()
 
 		return jsonify(ret)
 
 	# there are request arguments, validate them
-	validate_args(request_arguments)
+	validate_args(request_arguments, WS.DATA_TYPES, WS.DATA_TYPES_SPECIAL)
 
-	ret = product_info(url, request_arguments['data'])
+	ret = WS.product_info(request_arguments['data'])
 	
 	return jsonify(ret)
 
 
 # The routes below are deprecated:
 # use /get_walmart_data/<URL>/data=... instead (see above - get_data method)
+# 
+# TODO: remove or fix to work with the restructured code
 
 @app.route('/get_walmart_data/reviews/<path:url>', methods=['GET'])
 def get_reviews(url):
@@ -117,9 +123,9 @@ def get_video_url(url):
 @app.errorhandler(InvalidUsage)
 def handle_invalid_usage(error):
 	#TODO: not leave this as json output? error format should be consistent
-	response = jsonify(error.to_dict())
-	response.status_code = error.status_code
-	return response
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
 
 @app.errorhandler(404)
 def handle_not_found(error):
@@ -135,29 +141,22 @@ def handle_internal_error(error):
 
 @app.after_request
 def post_request_logging(response):
-
-	app.logger.info(json.dumps({
-		"date" : datetime.datetime.today().ctime(),
-		"remote_addr" : request.remote_addr,
-		"request_method" : request.method,
-		"request_url" : request.url,
-		"response_status_code" : str(response.status_code),
-		"request_headers" : ', '.join([': '.join(x) for x in request.headers])
-		})
-	)
-
-	return response
+    app.logger.info('\t'.join([
+        datetime.datetime.today().ctime(),
+        request.remote_addr,
+        request.method,
+        request.url,
+        str(response.status_code),
+        request.data,
+        ', '.join([': '.join(x) for x in request.headers])])
+    )
+    return response
 
 if __name__ == '__main__':
-	# TODO: probably add these outside of main for them to work with wsgi as well
-
-	# create logs dir if it doesn't exist   
-	if not os.path.exists("logs"):
-		os.makedirs("logs")
-
-	fh = TimedRotatingFileHandler("logs/special_crawler_access.log", when='m', interval=1)
+	
+	fh = FileHandler("special_crawler_log.txt")
 	fh.setLevel(logging.DEBUG)
 	app.logger.setLevel(logging.DEBUG)
 	app.logger.addHandler(fh)
 
-	app.run('0.0.0.0', port=80)
+	app.run('0.0.0.0', port=80, debug=True)
