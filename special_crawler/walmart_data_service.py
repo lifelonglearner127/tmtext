@@ -25,35 +25,35 @@ class InvalidUsage(Exception):
         return rv
 
 def check_url_format(url):
-	m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+$", url)
-	return not not m
+    m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+$", url)
+    return not not m
 
 # validate URL parameter
 def check_input(url):
-	if not url:
-		raise InvalidUsage("No Walmart URL was provided. API must be called with URL like <host>/get_media/<walmart_url>"), 400
+    if not url:
+        raise InvalidUsage("No Walmart URL was provided. API must be called with URL like <host>/get_media/<walmart_url>"), 400
 
-	if not check_url_format(url):
-		raise InvalidUsage(\
-			"Invalid parameter " + str(url) + " Parameter must be a Walmart URL of the form: http://www.walmart.com/ip/<product_id> or http://www.walmart.com/cp/<fraction_of_product_name>/<product_id>",\
-			400)
+    if not check_url_format(url):
+        raise InvalidUsage(\
+            "Invalid parameter " + str(url) + " Parameter must be a Walmart URL of the form: http://www.walmart.com/ip/<product_id> or http://www.walmart.com/cp/<fraction_of_product_name>/<product_id>",\
+            400)
 
 # validate request arguments
 def validate_args(arguments, DATA_TYPES, DATA_TYPES_SPECIAL):
-	# normalize all arguments to unicode (no str)
-	argument_keys = map(lambda s: unicode(s), arguments.keys())
+    # normalize all arguments to unicode (no str)
+    argument_keys = map(lambda s: unicode(s), arguments.keys())
 
-	# also flatten list of lists arguments
-	argument_values = map(lambda s: unicode(s), sum(arguments.values(), []))
-	permitted_values = map(lambda s: unicode(s), DATA_TYPES.keys() + DATA_TYPES_SPECIAL.keys())
-	permitted_keys = [u'data']
+    # also flatten list of lists arguments
+    argument_values = map(lambda s: unicode(s), sum(arguments.values(), []))
+    permitted_values = map(lambda s: unicode(s), DATA_TYPES.keys() + DATA_TYPES_SPECIAL.keys())
+    permitted_keys = [u'data']
 
-	# if there are other keys besides "data" or other values outside of the predefined data types (DATA_TYPES), return invalid usage
-	if argument_keys != permitted_keys or set(argument_values).difference(set(permitted_values)):
-		# TODO:
-		#      improve formatting of this message
-		raise InvalidUsage("Invalid usage: Request arguments must be of the form '?data=<data_1>&data=<data_2>&data=<data_2>...,\n \
-			with the <data_i> values among the following keywords: \n" + str(permitted_values))
+    # if there are other keys besides "data" or other values outside of the predefined data types (DATA_TYPES), return invalid usage
+    if argument_keys != permitted_keys or set(argument_values).difference(set(permitted_values)):
+        # TODO:
+        #      improve formatting of this message
+        raise InvalidUsage("Invalid usage: Request arguments must be of the form '?data=<data_1>&data=<data_2>&data=<data_2>...,\n \
+            with the <data_i> values among the following keywords: \n" + str(permitted_values))
 
 
 # general resource for getting walmart data.
@@ -63,28 +63,28 @@ def validate_args(arguments, DATA_TYPES, DATA_TYPES_SPECIAL):
 @app.route('/get_walmart_data/<path:url>', methods=['GET'])
 def get_data(url):
 
-	WS = WalmartScraper(url)
+    WS = WalmartScraper(url)
 
-	# validate URL
-	check_input(url)
+    # validate URL
+    check_input(url)
 
-	# this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
-	# TODO:
-	#      test this
-	request_arguments = dict(request.args)
+    # this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
+    # TODO:
+    #      test this
+    request_arguments = dict(request.args)
 
-	# return all data if there are no arguments
-	if not request_arguments:
-		ret = WS.product_info()
+    # return all data if there are no arguments
+    if not request_arguments:
+        ret = WS.product_info()
 
-		return jsonify(ret)
+        return jsonify(ret)
 
-	# there are request arguments, validate them
-	validate_args(request_arguments, WS.DATA_TYPES, WS.DATA_TYPES_SPECIAL)
+    # there are request arguments, validate them
+    validate_args(request_arguments, WS.DATA_TYPES, WS.DATA_TYPES_SPECIAL)
 
-	ret = WS.product_info(request_arguments['data'])
-	
-	return jsonify(ret)
+    ret = WS.product_info(request_arguments['data'])
+    
+    return jsonify(ret)
 
 
 # The routes below are deprecated:
@@ -94,50 +94,50 @@ def get_data(url):
 
 @app.route('/get_walmart_data/reviews/<path:url>', methods=['GET'])
 def get_reviews(url):
-	check_input(url)
+    check_input(url)
 
-	ret = reviews_for_url(url)
-	return jsonify(ret)
+    ret = reviews_for_url(url)
+    return jsonify(ret)
 
 @app.route('/get_walmart_data/media/<path:url>', methods=['GET'])
 def get_media_urls(url):
-	check_input(url)
+    check_input(url)
 
-	ret = media_for_url(url)
-	return jsonify(ret)
+    ret = media_for_url(url)
+    return jsonify(ret)
 
 @app.route('/get_walmart_data/PDF/<path:url>', methods=['GET'])
 def get_pdf_url(url):
-	check_input(url)
+    check_input(url)
 
-	ret = pdf_for_url(url)
-	return jsonify(ret)
+    ret = pdf_for_url(url)
+    return jsonify(ret)
 
 @app.route('/get_walmart_data/video/<path:url>', methods=['GET'])
 def get_video_url(url):
-	check_input(url)
+    check_input(url)
 
-	ret = video_for_url(url)
-	return jsonify(ret)
+    ret = video_for_url(url)
+    return jsonify(ret)
 
 @app.errorhandler(InvalidUsage)
 def handle_invalid_usage(error):
-	#TODO: not leave this as json output? error format should be consistent
+    #TODO: not leave this as json output? error format should be consistent
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
 
 @app.errorhandler(404)
 def handle_not_found(error):
-	response = jsonify({"error" : "Not found"})
-	response.status_code = 404
-	return response
+    response = jsonify({"error" : "Not found"})
+    response.status_code = 404
+    return response
 
 @app.errorhandler(500)
 def handle_internal_error(error):
-	response = jsonify({"error" : "Internal server error"})
-	response.status_code = 500
-	return response
+    response = jsonify({"error" : "Internal server error"})
+    response.status_code = 500
+    return response
 
 @app.after_request
 def post_request_logging(response):
@@ -153,10 +153,10 @@ def post_request_logging(response):
     return response
 
 if __name__ == '__main__':
-	
-	fh = FileHandler("special_crawler_log.txt")
-	fh.setLevel(logging.DEBUG)
-	app.logger.setLevel(logging.DEBUG)
-	app.logger.addHandler(fh)
+    
+    fh = FileHandler("special_crawler_log.txt")
+    fh.setLevel(logging.DEBUG)
+    app.logger.setLevel(logging.DEBUG)
+    app.logger.addHandler(fh)
 
-	app.run('0.0.0.0', port=80, debug=True)
+    app.run('0.0.0.0', port=80)

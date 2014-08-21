@@ -25,6 +25,6 @@ class SearchItem(Item):
 
 # items used in walmart_fullurls spider to match walmart ids to their product pages full URLs
 class WalmartItem(Item):
-	walmart_id = Field()
-	walmart_short_url = Field() # like http://www/walmart.com/ip/<id>
-	walmart_full_url = Field()
+    walmart_id = Field()
+    walmart_short_url = Field() # like http://www/walmart.com/ip/<id>
+    walmart_full_url = Field()

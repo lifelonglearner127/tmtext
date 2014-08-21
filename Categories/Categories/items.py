@@ -40,15 +40,15 @@ class CategoryItem(Item):
 
 
 class ProductItem(Item):
-	url = Field() # url of product page
-	list_name = Field() # name of product - from bestsellers list
-	product_name = Field() # name of product - from product page
-	page_title = Field() # title (title tag text) of product page
-	department = Field() # department of product - its name
-	price = Field() # price of product - a string like "29.5$"
-	listprice = Field() # "list price" of product - a string like "29.5$"
-	rank = Field() # rank of the product in the bestsellers list
-	SKU = Field() # SKU code of product (where available)
-	UPC = Field() # UPC code of product (where available)
-	date = Field() # date when this was extracted
-	bspage_url = Field() # url of the bestsellers page the product was found on (for department-wise bestsellers)
+    url = Field() # url of product page
+    list_name = Field() # name of product - from bestsellers list
+    product_name = Field() # name of product - from product page
+    page_title = Field() # title (title tag text) of product page
+    department = Field() # department of product - its name
+    price = Field() # price of product - a string like "29.5$"
+    listprice = Field() # "list price" of product - a string like "29.5$"
+    rank = Field() # rank of the product in the bestsellers list
+    SKU = Field() # SKU code of product (where available)
+    UPC = Field() # UPC code of product (where available)
+    date = Field() # date when this was extracted
+    bspage_url = Field() # url of the bestsellers page the product was found on (for department-wise bestsellers)

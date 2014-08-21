@@ -19,10 +19,10 @@ class Utils():
     # separators must appear as they should appear in a regex (escaped if necessary)
     @staticmethod
     def clean_url(url, separators=['\?',';']):
-    	for separator in separators:
-	        m = re.match("([^%s]*)%s.*" % (separator, separator), url)
-	        if m:
-	            url = m.group(1)
+        for separator in separators:
+            m = re.match("([^%s]*)%s.*" % (separator, separator), url)
+            if m:
+                url = m.group(1)
 
         return url
 

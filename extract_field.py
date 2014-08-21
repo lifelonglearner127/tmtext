@@ -30,33 +30,33 @@ f = codecs.open(options.filename, "rb", "utf-8")
 fields = []
 
 for line in f:
-	# eliminate separator (comma), if any, and line break
-	line = line.strip()
-	if line[-1] == ",":
-		line = line[:-1]
+    # eliminate separator (comma), if any, and line break
+    line = line.strip()
+    if line[-1] == ",":
+        line = line[:-1]
 
-	item = json.loads(line)
+    item = json.loads(line)
 
-	if options.field in item:
-		if options.filter_field and options.filter_value:
-			# need to wrap value in unicode() for int items
-			if options.filter_field in item and unicode(item[options.filter_field]) == options.filter_value:
-				if options.field2 and options.field2 in item:
-					fields.append((item[options.field], item[options.field2]))
-				else:
-					fields.append(item[options.field])
+    if options.field in item:
+        if options.filter_field and options.filter_value:
+            # need to wrap value in unicode() for int items
+            if options.filter_field in item and unicode(item[options.filter_field]) == options.filter_value:
+                if options.field2 and options.field2 in item:
+                    fields.append((item[options.field], item[options.field2]))
+                else:
+                    fields.append(item[options.field])
 
-		else:
-			if options.field2 and options.field2 in item:
-				fields.append((item[options.field], item[options.field2]))
-			else:
-				fields.append(item[options.field])
+        else:
+            if options.field2 and options.field2 in item:
+                fields.append((item[options.field], item[options.field2]))
+            else:
+                fields.append(item[options.field])
 
 for el in sorted(fields):
-	if type(el) is tuple:
-		print map(lambda x: str(x) if type(x)==int else x.encode("utf-8"), el)
-	else:
-		print str(el) if type(el)==int else el.encode("utf-8")
+    if type(el) is tuple:
+        print map(lambda x: str(x) if type(x)==int else x.encode("utf-8"), el)
+    else:
+        print str(el) if type(el)==int else el.encode("utf-8")
 
 print len(fields), len(set(fields))
 

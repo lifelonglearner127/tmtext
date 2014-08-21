@@ -16,53 +16,53 @@ import sys
 
 class BestbuySpider(SearchSpider):
 
-	name = "bestbuy"
+    name = "bestbuy"
 
-	# initialize fields specific to this derived spider
-	def init_sub(self):
-		self.target_site = "bestbuy"
-		self.start_urls = [ "http://www.bestbuy.com" ]
+    # initialize fields specific to this derived spider
+    def init_sub(self):
+        self.target_site = "bestbuy"
+        self.start_urls = [ "http://www.bestbuy.com" ]
 
-	def parseResults(self, response):
+    def parseResults(self, response):
 
-		hxs = HtmlXPathSelector(response)
+        hxs = HtmlXPathSelector(response)
 
-		#site = response.meta['origin_site']
-		origin_name = response.meta['origin_name']
-		origin_model = response.meta['origin_model']
+        #site = response.meta['origin_site']
+        origin_name = response.meta['origin_name']
+        origin_model = response.meta['origin_model']
 
-		# if this comes from a previous request, get last request's items and add to them the results
+        # if this comes from a previous request, get last request's items and add to them the results
 
-		if 'items' in response.meta:
-			items = response.meta['items']
-		else:
-			items = set()
-
-
-		results = hxs.select("//div[@class='hproduct']/div[@class='info-main']/h3/a")
-
-		for result in results:
-			item = SearchItem()
-			#item['origin_site'] = site
-			item['product_name'] = result.select("text()").extract()[0].strip()
-			item['product_url'] = Utils.clean_url(Utils.add_domain(result.select("@href").extract()[0], "http://www.bestbuy.com"))
-
-			if 'origin_url' in response.meta:
-				item['origin_url'] = response.meta['origin_url']
-
-			if 'origin_id' in response.meta:
-				request.meta['origin_id'] = response.meta['origin_id']
-			# 	assert self.by_id
-			# else:
-			# 	assert not self.by_id
+        if 'items' in response.meta:
+            items = response.meta['items']
+        else:
+            items = set()
 
 
-			model_holder = result.select("parent::node()/parent::node()//strong[@itemprop='model']/text()").extract()
-			if model_holder:
-				item['product_model'] = model_holder[0]
+        results = hxs.select("//div[@class='hproduct']/div[@class='info-main']/h3/a")
 
-			items.add(item)
+        for result in results:
+            item = SearchItem()
+            #item['origin_site'] = site
+            item['product_name'] = result.select("text()").extract()[0].strip()
+            item['product_url'] = Utils.clean_url(Utils.add_domain(result.select("@href").extract()[0], "http://www.bestbuy.com"))
 
-		response.meta['items'] = items
-		response.meta['parsed'] = items
-		return self.reduceResults(response)
+            if 'origin_url' in response.meta:
+                item['origin_url'] = response.meta['origin_url']
+
+            if 'origin_id' in response.meta:
+                request.meta['origin_id'] = response.meta['origin_id']
+            #     assert self.by_id
+            # else:
+            #     assert not self.by_id
+
+
+            model_holder = result.select("parent::node()/parent::node()//strong[@itemprop='model']/text()").extract()
+            if model_holder:
+                item['product_model'] = model_holder[0]
+
+            items.add(item)
+
+        response.meta['items'] = items
+        response.meta['parsed'] = items
+        return self.reduceResults(response)

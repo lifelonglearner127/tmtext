@@ -8,8 +8,8 @@
 import sys
 
 with open(sys.argv[1], "r") as filein:
-	for line in filein:
-		if "," not in line:
-			print line.strip()
+    for line in filein:
+        if "," not in line:
+            print line.strip()
 
 

@@ -12,24 +12,24 @@ import sys
 from pprint import pprint
 
 def get_products(filename, category):
-	output_all = codecs.open(filename, "r", "utf-8")
+    output_all = codecs.open(filename, "r", "utf-8")
 
-	products = []
+    products = []
 
-	for line in output_all:
-		# print line
-		if line.strip():
-			item = json.loads(line.strip())
-			if 'department' in item:
-				if item['department'] == category:
-					products.append(item['product_name'])
-			if 'category' in item:
-				if item['category'] == category:
-					products.append(item['product_name'])
+    for line in output_all:
+        # print line
+        if line.strip():
+            item = json.loads(line.strip())
+            if 'department' in item:
+                if item['department'] == category:
+                    products.append(item['product_name'])
+            if 'category' in item:
+                if item['category'] == category:
+                    products.append(item['product_name'])
 
-	# close all opened files
-	output_all.close()
-	return products
+    # close all opened files
+    output_all.close()
+    return products
 
 site = sys.argv[1]
 category = sys.argv[2]

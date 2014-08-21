@@ -16,49 +16,49 @@ import sys
 
 class OverstockSpider(SearchSpider):
 
-	name = "overstock"
+    name = "overstock"
 
-	# initialize fields specific to this derived spider
-	def init_sub(self):
-		self.target_site = "overstock"
-		self.start_urls = [ "http://www.overstock.com" ]
+    # initialize fields specific to this derived spider
+    def init_sub(self):
+        self.target_site = "overstock"
+        self.start_urls = [ "http://www.overstock.com" ]
 
-	def parseResults(self, response):
+    def parseResults(self, response):
 
-		hxs = HtmlXPathSelector(response)
+        hxs = HtmlXPathSelector(response)
 
-		#site = response.meta['origin_site']
-		origin_name = response.meta['origin_name']
-		origin_model = response.meta['origin_model']
+        #site = response.meta['origin_site']
+        origin_name = response.meta['origin_name']
+        origin_model = response.meta['origin_model']
 
-		# if this comes from a previous request, get last request's items and add to them the results
+        # if this comes from a previous request, get last request's items and add to them the results
 
-		if 'items' in response.meta:
-			items = response.meta['items']
-		else:
-			items = set()
-
-
-
-		results = hxs.select("//li[@class='product']/div[@class='product-content']/a[@class='pro-thumb']")
-		for result in results:
-			item = SearchItem()
-			#item['origin_site'] = site
-			item['product_name'] = result.select("span[@class='pro-name']/text()").extract()[0]
-			item['product_url'] = result.select("@href").extract()[0]
-
-			if 'origin_url' in response.meta:
-				item['origin_url'] = response.meta['origin_url']
-
-			if 'origin_id' in response.meta:
-				request.meta['origin_id'] = response.meta['origin_id']
-				assert self.by_id
-			else:
-				assert not self.by_id
+        if 'items' in response.meta:
+            items = response.meta['items']
+        else:
+            items = set()
 
 
-			items.add(item)
 
-		response.meta['items'] = items
-		response.meta['parsed'] = items
-		return self.reduceResults(response)
+        results = hxs.select("//li[@class='product']/div[@class='product-content']/a[@class='pro-thumb']")
+        for result in results:
+            item = SearchItem()
+            #item['origin_site'] = site
+            item['product_name'] = result.select("span[@class='pro-name']/text()").extract()[0]
+            item['product_url'] = result.select("@href").extract()[0]
+
+            if 'origin_url' in response.meta:
+                item['origin_url'] = response.meta['origin_url']
+
+            if 'origin_id' in response.meta:
+                request.meta['origin_id'] = response.meta['origin_id']
+                assert self.by_id
+            else:
+                assert not self.by_id
+
+
+            items.add(item)
+
+        response.meta['items'] = items
+        response.meta['parsed'] = items
+        return self.reduceResults(response)

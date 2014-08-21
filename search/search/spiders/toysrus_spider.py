@@ -16,51 +16,51 @@ import sys
 
 class ToysrusSpider(SearchSpider):
 
-	name = "toysrus"
+    name = "toysrus"
 
-	# initialize fields specific to this derived spider
-	def init_sub(self):
-		self.target_site = "toysrus"
-		self.start_urls = [ "http://www.toysrus.com" ]
+    # initialize fields specific to this derived spider
+    def init_sub(self):
+        self.target_site = "toysrus"
+        self.start_urls = [ "http://www.toysrus.com" ]
 
-	def parseResults(self, response):
+    def parseResults(self, response):
 
-		hxs = HtmlXPathSelector(response)
+        hxs = HtmlXPathSelector(response)
 
-		#site = response.meta['origin_site']
-		origin_name = response.meta['origin_name']
-		origin_model = response.meta['origin_model']
+        #site = response.meta['origin_site']
+        origin_name = response.meta['origin_name']
+        origin_model = response.meta['origin_model']
 
-		# if this comes from a previous request, get last request's items and add to them the results
+        # if this comes from a previous request, get last request's items and add to them the results
 
-		if 'items' in response.meta:
-			items = response.meta['items']
-		else:
-			items = set()
-
-
-		# toysrus
-		results = hxs.select("//a[@class='prodtitle']")
-
-		for result in results:
-			item = SearchItem()
-			#item['origin_site'] = site
-			item['product_name'] = result.select("text()").extract()[0]
-			root_url = "http://www.toysrus.com"
-			item['product_url'] = root_url + result.select("@href").extract()[0]
-
-			if 'origin_url' in response.meta:
-				item['origin_url'] = response.meta['origin_url']
-
-			if 'origin_id' in response.meta:
-				request.meta['origin_id'] = response.meta['origin_id']
-				assert self.by_id
-			else:
-				assert not self.by_id
+        if 'items' in response.meta:
+            items = response.meta['items']
+        else:
+            items = set()
 
 
-			items.add(item)
+        # toysrus
+        results = hxs.select("//a[@class='prodtitle']")
 
-		response.meta['items'] = items
-		response.meta['parsed'] = items
-		return self.reduceResults(response)
+        for result in results:
+            item = SearchItem()
+            #item['origin_site'] = site
+            item['product_name'] = result.select("text()").extract()[0]
+            root_url = "http://www.toysrus.com"
+            item['product_url'] = root_url + result.select("@href").extract()[0]
+
+            if 'origin_url' in response.meta:
+                item['origin_url'] = response.meta['origin_url']
+
+            if 'origin_id' in response.meta:
+                request.meta['origin_id'] = response.meta['origin_id']
+                assert self.by_id
+            else:
+                assert not self.by_id
+
+
+            items.add(item)
+
+        response.meta['items'] = items
+        response.meta['parsed'] = items
+        return self.reduceResults(response)

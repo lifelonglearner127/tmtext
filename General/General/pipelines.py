@@ -5,10 +5,10 @@
 import json
 
 class GeneralPipeline(object):
-	def open_spider(self, spider):
-		self.file = open(spider.outfile, 'wb')
+    def open_spider(self, spider):
+        self.file = open(spider.outfile, 'wb')
 
-	def process_item(self, item, spider):
-		line = json.dumps(dict(item)) + "\n"
-		self.file.write(line)
-		return item
+    def process_item(self, item, spider):
+        line = json.dumps(dict(item)) + "\n"
+        self.file.write(line)
+        return item

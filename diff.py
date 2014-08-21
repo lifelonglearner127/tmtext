@@ -14,13 +14,13 @@ lines2 = set()
 # sys.argv.append("desc_titles_walmart_old.out")
 
 with open(sys.argv[1], "r") as file1:
-	with open(sys.argv[2], "r") as file2:
-		for line in file1:
-			lines1.add(line.strip())
-		for line in file2:
-			lines2.add(line.strip())
+    with open(sys.argv[2], "r") as file2:
+        for line in file1:
+            lines1.add(line.strip())
+        for line in file2:
+            lines2.add(line.strip())
 
 for line in lines1.difference(lines2):
-	print line
+    print line
 
 
