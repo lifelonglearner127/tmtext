@@ -78,9 +78,6 @@ class WehkampProductsSpider(BaseProductsSpider):
     def _scrape_product_links(self, response):
         links = response.xpath("//ul[@id='articleList']/li[contains(@class,'article-card')]/a/@href").extract()
 
-        # for no, link in enumerate(links):
-        #     print no, link
-
         if not links:
             self.log("Found no product links.", ERROR)
 
