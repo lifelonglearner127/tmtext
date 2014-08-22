@@ -11,9 +11,6 @@ class MorrisonsProductsSpider(BaseProductsSpider):
     allowed_domains = ["morrisons.com"]
     start_urls = []
 
-    # SEARCH_URL = "https://groceries.morrisons.com/webshop/getSearchProducts.do?clearTabs=yes" \
-    #              "&isFreshSearch=true&entry={search_term}"
-
     SEARCH_URL = "https://groceries.morrisons.com/webshop/getSearchProducts.do?" \
                  "groupSimilarProducts=y&sortBy={search_sort}&itemsPerPage=See+all&" \
                  "clearTabs=yes&entry={search_term}"
