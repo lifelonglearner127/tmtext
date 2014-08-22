@@ -57,7 +57,7 @@ def validate_args(arguments, DATA_TYPES, DATA_TYPES_SPECIAL):
 # or with arguments like "data=<data_type1>&data=<data_type2>..." in which case it will return the specified data
 # the <data_type> values must be among the keys of DATA_TYPES imported dictionary
 @app.route('/get_walmart_data/<path:url>', methods=['GET'])
-def get_data(url):
+def get_walmart_data(url):
 
     # create walmart scraper class
     WS = WalmartScraper(url)
@@ -80,6 +80,41 @@ def get_data(url):
     validate_args(request_arguments, WS.DATA_TYPES, WS.DATA_TYPES_SPECIAL)
 
     ret = WS.product_info(request_arguments['data'])
+    
+    return jsonify(ret)
+
+# TODO: deduplicate this code by adding <site> parameter to request
+# TODO: change url parameter to GET query string parameter
+
+# TODO: import TescoScraper after it is implemented
+# general resource for getting tesco data.
+# can be used without arguments, in which case it will return all data
+# or with arguments like "data=<data_type1>&data=<data_type2>..." in which case it will return the specified data
+# the <data_type> values must be among the keys of DATA_TYPES imported dictionary
+@app.route('/get_tesco_data/<path:url>', methods=['GET'])
+def get_tesco_data(url):
+
+    # create walmart scraper class
+    TS = TescoScraper(url)
+
+    is_valid_url = TS.check_url_format()
+
+    # validate input
+    check_input(url, is_valid_url)
+
+    # this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
+    request_arguments = dict(request.args)
+
+    # return all data if there are no arguments
+    if not request_arguments:
+        ret = TS.product_info()
+
+        return jsonify(ret)
+
+    # there are request arguments, validate them
+    validate_args(request_arguments, TS.DATA_TYPES, TS.DATA_TYPES_SPECIAL)
+
+    ret = TS.product_info(request_arguments['data'])
     
     return jsonify(ret)
 
