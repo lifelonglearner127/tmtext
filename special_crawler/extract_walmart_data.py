@@ -33,6 +33,17 @@ class WalmartScraper(Scraper):
     # base URL for request for product reviews - formatted string
     BASE_URL_REVIEWSREQ = 'http://walmart.ugc.bazaarvoice.com/1336a/%20{0}/reviews.djs?format=embeddedhtml'
 
+
+    # checks input format
+    def check_url_format(self):
+        """Checks product URL format for this scraper instance is valid.
+        Returns:
+            True if valid, False otherwise
+        """
+
+        m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+$", self.product_page_url)
+        return not not m
+
     # TODO:
     #      better way of extracting id now that URL format is more permissive
     #      though this method still seems to work...

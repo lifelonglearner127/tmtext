@@ -24,16 +24,12 @@ class InvalidUsage(Exception):
         rv['error'] = self.message
         return rv
 
-def check_url_format(url):
-    m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+$", url)
-    return not not m
-
-# validate URL parameter
-def check_input(url):
+# validate input and raise exception with message for client if necessary
+def check_input(url, is_valid_url):
     if not url:
         raise InvalidUsage("No Walmart URL was provided. API must be called with URL like <host>/get_media/<walmart_url>"), 400
 
-    if not check_url_format(url):
+    if not is_valid_url:
         raise InvalidUsage(\
             "Invalid parameter " + str(url) + " Parameter must be a Walmart URL of the form: http://www.walmart.com/ip/<product_id> or http://www.walmart.com/cp/<fraction_of_product_name>/<product_id>",\
             400)
@@ -63,14 +59,15 @@ def validate_args(arguments, DATA_TYPES, DATA_TYPES_SPECIAL):
 @app.route('/get_walmart_data/<path:url>', methods=['GET'])
 def get_data(url):
 
+    # create walmart scraper class
     WS = WalmartScraper(url)
 
-    # validate URL
-    check_input(url)
+    is_valid_url = WS.check_url_format()
+
+    # validate input
+    check_input(url, is_valid_url)
 
     # this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
-    # TODO:
-    #      test this
     request_arguments = dict(request.args)
 
     # return all data if there are no arguments
