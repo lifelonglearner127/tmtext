@@ -87,39 +87,6 @@ def get_data(url):
     return jsonify(ret)
 
 
-# The routes below are deprecated:
-# use /get_walmart_data/<URL>/data=... instead (see above - get_data method)
-# 
-# TODO: remove or fix to work with the restructured code
-
-@app.route('/get_walmart_data/reviews/<path:url>', methods=['GET'])
-def get_reviews(url):
-    check_input(url)
-
-    ret = reviews_for_url(url)
-    return jsonify(ret)
-
-@app.route('/get_walmart_data/media/<path:url>', methods=['GET'])
-def get_media_urls(url):
-    check_input(url)
-
-    ret = media_for_url(url)
-    return jsonify(ret)
-
-@app.route('/get_walmart_data/PDF/<path:url>', methods=['GET'])
-def get_pdf_url(url):
-    check_input(url)
-
-    ret = pdf_for_url(url)
-    return jsonify(ret)
-
-@app.route('/get_walmart_data/video/<path:url>', methods=['GET'])
-def get_video_url(url):
-    check_input(url)
-
-    ret = video_for_url(url)
-    return jsonify(ret)
-
 @app.errorhandler(InvalidUsage)
 def handle_invalid_usage(error):
     #TODO: not leave this as json output? error format should be consistent
