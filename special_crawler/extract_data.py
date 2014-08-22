@@ -50,7 +50,7 @@ class Scraper():
 
         # build page xml tree. also measure time it took and assume it's page load time (the rest is neglijable)
         time_start = time.time()
-        tree = self.page_tree()
+        self._extract_page_tree()
         time_end = time.time()
         # don't pass load time as info to be extracted by _info_from_tree
         return_load_time = "load_time" in info_type_list_copy
@@ -61,7 +61,7 @@ class Scraper():
         for special_info in self.DATA_TYPES_SPECIAL.keys():
             if special_info in info_type_list_copy:
                 info_type_list_copy.remove(special_info)
-        ret_dict = self._info_from_tree(tree, info_type_list_copy)
+        ret_dict = self._info_from_tree(info_type_list_copy)
         # add load time to dictionary -- if it's in the list
         # TODO:
         #      - format for load_time?
@@ -78,25 +78,23 @@ class Scraper():
         return ret_dict
 
     # method that returns xml tree of page, to extract the desired elemets from
-    def page_tree(self):
-        """Builds and returns the xml tree of the product page
+    def _extract_page_tree(self):
+        """Builds and sets as instance variable the xml tree of the product page
         Returns:
             lxml tree object
         """
 
         contents = urllib.urlopen(self.product_page_url).read()
-        tree_html = html.fromstring(contents)
-        return tree_html
+        self.tree_html = html.fromstring(contents)
 
     # Extract product info from its product page tree
     # given its tree and a list of the type of info needed.
     # Return dictionary containing type of info as keys and extracted info as values.
     # This method is intended to act as a unitary way of getting all data needed,
     # looking to avoid generating the html tree for each kind of data (if there is more than 1 requested).
-    def _info_from_tree(self, tree_html, info_type_list):
+    def _info_from_tree(self, info_type_list):
         """Extracts data from page source given its xml tree
         Args:
-            tree_html (lxml tree object): tree of source page
             info_type_list: list of strings containing the requested data
         Returns:
             dictionary containing the requested data types as keys
@@ -108,7 +106,7 @@ class Scraper():
         for info in info_type_list:
 
             try:
-                results = self.DATA_TYPES[info](self, tree_html)
+                results = self.DATA_TYPES[info](self)
             except IndexError, e:
                 sys.stderr.write("ERROR: No " + info + " for " + self.product_page_url + ":\n" + str(e) + "\n")
                 results = None

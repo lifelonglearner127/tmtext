@@ -170,52 +170,44 @@ class WalmartScraper(Scraper):
 
     # extract product name from its product page tree
     # ! may throw exception if not found
-    def _product_name_from_tree(self, tree_html):
+    def _product_name_from_tree(self):
         """Extracts product name
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             string containing product name, or None
         """
 
-        return tree_html.xpath("//h1")[0].text
+        return self.tree_html.xpath("//h1")[0].text
 
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
-    def _meta_keywords_from_tree(self, tree_html):
+    def _meta_keywords_from_tree(self):
         """Extracts meta 'kewyords' tag for a walmart product
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             string containing the tag's content, or None
         """
 
-        return tree_html.xpath("//meta[@name='Keywords']/@content")[0]
+        return self.tree_html.xpath("//meta[@name='Keywords']/@content")[0]
 
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
-    def _meta_brand_from_tree(self, tree_html):
+    def _meta_brand_from_tree(self):
         """Extracts meta 'brand' tag for a walmart product
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             string containing the tag's content, or None
         """
 
-        return tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
+        return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
 
 
     # extract product short description from its product page tree
     # ! may throw exception if not found
-    def _short_description_from_tree(self, tree_html):
+    def _short_description_from_tree(self):
         """Extracts product short description
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             string containing the text content of the product's description, or None
         """
 
-        short_description = " ".join(tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
+        short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
         # TODO: return None if no description
         return short_description
 
@@ -223,28 +215,24 @@ class WalmartScraper(Scraper):
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
-    def _long_description_from_tree(self, tree_html):
+    def _long_description_from_tree(self):
         """Extracts product long description
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             string containing the text content of the product's description, or None
         """
         
-        full_description = " ".join(tree_html.xpath("//div[@itemprop='description']//text()")).strip()
+        full_description = " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
         # TODO: return None if no description
         return full_description
 
     # extract product price from its product product page tree
-    def _price_from_tree(self, tree_html):
+    def _price_from_tree(self):
         """Extracts product price
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             string containing the product price, with decimals, no currency
         """
 
-        meta_price = tree_html.xpath("//meta[@itemprop='price']/@content")
+        meta_price = self.tree_html.xpath("//meta[@itemprop='price']/@content")
         if meta_price:
             return meta_price[0]
         else:
@@ -255,10 +243,8 @@ class WalmartScraper(Scraper):
     # TODO:
     #      - test
     #      - is format ok?
-    def _anchors_from_tree(self, tree_html):
+    def _anchors_from_tree(self):
         """Extracts 'a' tags found in the description text
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             nested dictionary with following first-level keys:
             'quantity' - value is int containing total number of links
@@ -266,7 +252,7 @@ class WalmartScraper(Scraper):
         """
 
         # get all links found in the description text
-        description_node = tree_html.xpath("//div[@itemprop='description']")[0]
+        description_node = self.tree_html.xpath("//div[@itemprop='description']")[0]
         links = description_node.xpath(".//a")
         nr_links = len(links)
 
@@ -284,10 +270,8 @@ class WalmartScraper(Scraper):
 
 
     # extract htags (h1, h2) from its product product page tree
-    def _htags_from_tree(self, tree_html):
+    def _htags_from_tree(self):
         """Extracts 'h' tags in product page
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             dictionary with 2 keys:
             h1 - value is list of strings containing text in each h1 tag on page
@@ -297,29 +281,25 @@ class WalmartScraper(Scraper):
         htags_dict = {}
 
         # add h1 tags text to the list corresponding to the "h1" key in the dict
-        htags_dict["h1"] = map(lambda t: self._clean_text(t), tree_html.xpath("//h1//text()[normalize-space()!='']"))
+        htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
         # add h2 tags text to the list corresponding to the "h2" key in the dict
-        htags_dict["h2"] = map(lambda t: self._clean_text(t), tree_html.xpath("//h2//text()[normalize-space()!='']"))
+        htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
 
         return htags_dict
 
     # extract product model from its product product page tree
     # ! may throw exception if not found
-    def _model_from_tree(self, tree_html):
+    def _model_from_tree(self):
         """Extracts product model
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             string containing the product model, or None
         """
 
-        return tree_html.xpath("//table[@class='SpecTable']//td[contains(text(),'Model')]/following-sibling::*/text()")[0]
+        return self.tree_html.xpath("//table[@class='SpecTable']//td[contains(text(),'Model')]/following-sibling::*/text()")[0]
 
     # extract product features list from its product product page tree, return as string
-    def _features_from_tree(self, tree_html):
+    def _features_from_tree(self):
         """Extracts product features
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             dictionary with 2 values:
             features_list - value is string containing text of product features
@@ -327,7 +307,7 @@ class WalmartScraper(Scraper):
         """
 
         # join all text in spec table; separate rows by newlines and eliminate spaces between cells
-        rows = tree_html.xpath("//table[@class='SpecTable']//tr")
+        rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
         # list of lists of cells (by rows)
         cells = map(lambda row: row.xpath(".//td//text()"), rows)
         # list of text in each row
@@ -339,52 +319,44 @@ class WalmartScraper(Scraper):
         all_features_text = "\n".join(rows_text)
 
         # return dict with all features info
-        return {"features_list": all_features_text, "nr_features": self._nr_features_from_tree(tree_html)}
+        return {"features_list": all_features_text, "nr_features": self._nr_features_from_tree()}
 
     # extract number of features from tree
     # ! may throw exception if not found
-    def _nr_features_from_tree(self, tree_html):
+    def _nr_features_from_tree(self):
         """Extracts number of product features
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             int containing number of features
         """
 
         # select table rows with more than 2 cells (the others are just headers), count them
-        return len(filter(lambda row: len(row.xpath(".//td"))>1, tree_html.xpath("//table[@class='SpecTable']//tr")))
+        return len(filter(lambda row: len(row.xpath(".//td"))>1, self.tree_html.xpath("//table[@class='SpecTable']//tr")))
 
     # extract page title from its product product page tree
     # ! may throw exception if not found
-    def _title_from_tree(self, tree_html):
+    def _title_from_tree(self):
         """Extracts page title
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             string containing page title, or None
         """
 
-        return tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath("//title//text()")[0].strip()
 
     # extract product seller meta keyword from its product product page tree
     # ! may throw exception if not found
-    def _seller_meta_from_tree(self, tree_html):
+    def _seller_meta_from_tree(self):
         """Extracts seller of product extracted from 'seller' meta tag
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             string with the contents of the tag, or None
         """
 
-        return tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
+        return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
 
     # extract product seller information from its product product page tree (using h2 visible tags)
     # TODO:
     #      test this in conjuction with _seller_meta_from_tree; also test at least one of the values is 1
-    def _seller_from_tree(self, tree_html):
+    def _seller_from_tree(self):
         """Extracts seller info of product extracted from 'Buy from ...' elements on page
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             dictionary with 2 values:
             owned - True if owned by walmart.com, False otherwise
@@ -392,7 +364,7 @@ class WalmartScraper(Scraper):
         """
 
         seller_info = {}
-        h2_tags = map(lambda text: self._clean_text(text), tree_html.xpath("//h2//text()"))
+        h2_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h2//text()"))
         seller_info['owned'] = 1 if "Buy from Walmart" in h2_tags else 0
         seller_info['marketplace'] = 1 if "Buy from Marketplace" in h2_tags else 0
 
@@ -400,17 +372,15 @@ class WalmartScraper(Scraper):
 
     # extract product reviews information from its product page
     # ! may throw exception if not found
-    def _reviews_from_tree(self, tree_html):
+    def _reviews_from_tree(self):
         """Extracts reviews info for walmart product using page source
-        Args:
-            tree_html (lxml tree object): the lxml tree of the product page source
         Returns:
             dictionary with 2 values:
             total_reviews - int containing total nr of reviews
             average_review - float containing average value of reviews
         """
 
-        reviews_info_node = tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
+        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
         average_review = float(reviews_info_node.xpath("span[@itemprop='ratingValue']/text()")[0])
         nr_reviews = int(reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")[0])
 
