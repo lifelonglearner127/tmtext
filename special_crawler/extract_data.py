@@ -41,6 +41,7 @@ class Scraper():
             and the scraped data as values
         """
 
+        # if no specific data types were requested, assume all data types were requested
         if not info_type_list:
             info_type_list = self.DATA_TYPES.keys() + self.DATA_TYPES_SPECIAL.keys()
         

@@ -26,12 +26,13 @@ class InvalidUsage(Exception):
 
 # validate input and raise exception with message for client if necessary
 def check_input(url, is_valid_url):
+    # TODO: complete these error messages with more details specific to the scraped site
     if not url:
-        raise InvalidUsage("No Walmart URL was provided. API must be called with URL like <host>/get_media/<walmart_url>"), 400
+        raise InvalidUsage("No input URL was provided."), 400
 
     if not is_valid_url:
         raise InvalidUsage(\
-            "Invalid parameter " + str(url) + " Parameter must be a Walmart URL of the form: http://www.walmart.com/ip/<product_id> or http://www.walmart.com/cp/<fraction_of_product_name>/<product_id>",\
+            "Invalid parameter " + str(url),\
             400)
 
 # validate request arguments
