@@ -114,6 +114,7 @@ class WalmartScraper(Scraper):
     # TODO: flatten returned object
     def reviews_for_url(self):
         """Extracts and returns reviews data for a walmart product
+        using additional requests (other than page source)
         Returns:
             nested dictionary with 'reviews' as first-level key,
             pointing to another dictionary with following keys:
@@ -281,8 +282,8 @@ class WalmartScraper(Scraper):
             cells)
         all_features_text = "\n".join(rows_text)
 
-        # return dict with all features info
-        return {"features_list": all_features_text, "nr_features": self._nr_features_from_tree()}
+        # return string with all features text
+        return all_features_text
 
     # extract number of features from tree
     # ! may throw exception if not found
@@ -333,22 +334,31 @@ class WalmartScraper(Scraper):
 
         return seller_info
 
-    # extract product reviews information from its product page
+    # extract nr of product reviews information from its product page
     # ! may throw exception if not found
-    def _reviews_from_tree(self):
-        """Extracts reviews info for walmart product using page source
+    def _nr_reviews_from_tree(self):
+        """Extracts total nr of reviews info for walmart product using page source
         Returns:
-            dictionary with 2 values:
-            total_reviews - int containing total nr of reviews
-            average_review - float containing average value of reviews
+            int containing total nr of reviews
+        """
+
+        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
+        nr_reviews = int(reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")[0])
+
+        return nr_reviews
+
+    # extract average product reviews information from its product page
+    # ! may throw exception if not found
+    def _avg_review_from_tree(self):
+        """Extracts average review info for walmart product using page source
+        Returns:
+            float containing average value of reviews
         """
 
         reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
         average_review = float(reviews_info_node.xpath("span[@itemprop='ratingValue']/text()")[0])
-        nr_reviews = int(reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")[0])
 
-        return {'total_reviews' : nr_reviews,
-                'average_review' : average_review}
+        return average_review
 
 
     # clean text inside html tags - remove html entities, trim spaces
@@ -409,10 +419,12 @@ class WalmartScraper(Scraper):
         "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
-        "features" : _features_from_tree, \
+        "features_list" : _features_from_tree, \
+        "nr_features" : _nr_features_from_tree, \
         "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
-        "reviews": _reviews_from_tree, \
+        "total_reviews": _nr_reviews_from_tree, \
+        "average_review": _avg_review_from_tree, \
 
         "load_time": None \
         }
