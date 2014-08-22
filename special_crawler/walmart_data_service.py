@@ -24,16 +24,12 @@ class InvalidUsage(Exception):
         rv['error'] = self.message
         return rv
 
-def check_url_format(url):
-    m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+$", url)
-    return not not m
-
-# validate URL parameter
-def check_input(url):
+# validate input and raise exception with message for client if necessary
+def check_input(url, is_valid_url):
     if not url:
         raise InvalidUsage("No Walmart URL was provided. API must be called with URL like <host>/get_media/<walmart_url>"), 400
 
-    if not check_url_format(url):
+    if not is_valid_url:
         raise InvalidUsage(\
             "Invalid parameter " + str(url) + " Parameter must be a Walmart URL of the form: http://www.walmart.com/ip/<product_id> or http://www.walmart.com/cp/<fraction_of_product_name>/<product_id>",\
             400)
@@ -61,16 +57,17 @@ def validate_args(arguments, DATA_TYPES, DATA_TYPES_SPECIAL):
 # or with arguments like "data=<data_type1>&data=<data_type2>..." in which case it will return the specified data
 # the <data_type> values must be among the keys of DATA_TYPES imported dictionary
 @app.route('/get_walmart_data/<path:url>', methods=['GET'])
-def get_data(url):
+def get_walmart_data(url):
 
+    # create walmart scraper class
     WS = WalmartScraper(url)
 
-    # validate URL
-    check_input(url)
+    is_valid_url = WS.check_url_format()
+
+    # validate input
+    check_input(url, is_valid_url)
 
     # this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
-    # TODO:
-    #      test this
     request_arguments = dict(request.args)
 
     # return all data if there are no arguments
@@ -86,39 +83,41 @@ def get_data(url):
     
     return jsonify(ret)
 
+# TODO: deduplicate this code by adding <site> parameter to request
+# TODO: change url parameter to GET query string parameter
 
-# The routes below are deprecated:
-# use /get_walmart_data/<URL>/data=... instead (see above - get_data method)
-# 
-# TODO: remove or fix to work with the restructured code
+# TODO: import TescoScraper after it is implemented
+# general resource for getting tesco data.
+# can be used without arguments, in which case it will return all data
+# or with arguments like "data=<data_type1>&data=<data_type2>..." in which case it will return the specified data
+# the <data_type> values must be among the keys of DATA_TYPES imported dictionary
+@app.route('/get_tesco_data/<path:url>', methods=['GET'])
+def get_tesco_data(url):
 
-@app.route('/get_walmart_data/reviews/<path:url>', methods=['GET'])
-def get_reviews(url):
-    check_input(url)
+    # create walmart scraper class
+    TS = TescoScraper(url)
 
-    ret = reviews_for_url(url)
+    is_valid_url = TS.check_url_format()
+
+    # validate input
+    check_input(url, is_valid_url)
+
+    # this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
+    request_arguments = dict(request.args)
+
+    # return all data if there are no arguments
+    if not request_arguments:
+        ret = TS.product_info()
+
+        return jsonify(ret)
+
+    # there are request arguments, validate them
+    validate_args(request_arguments, TS.DATA_TYPES, TS.DATA_TYPES_SPECIAL)
+
+    ret = TS.product_info(request_arguments['data'])
+    
     return jsonify(ret)
 
-@app.route('/get_walmart_data/media/<path:url>', methods=['GET'])
-def get_media_urls(url):
-    check_input(url)
-
-    ret = media_for_url(url)
-    return jsonify(ret)
-
-@app.route('/get_walmart_data/PDF/<path:url>', methods=['GET'])
-def get_pdf_url(url):
-    check_input(url)
-
-    ret = pdf_for_url(url)
-    return jsonify(ret)
-
-@app.route('/get_walmart_data/video/<path:url>', methods=['GET'])
-def get_video_url(url):
-    check_input(url)
-
-    ret = video_for_url(url)
-    return jsonify(ret)
 
 @app.errorhandler(InvalidUsage)
 def handle_invalid_usage(error):

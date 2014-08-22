@@ -18,6 +18,7 @@ class Scraper():
     Each subclass must implement:
     - define DATA_TYPES and DATA_TYPES_SPECIAL structures (see subclass docs)
     - implement each method found in the values of the structures above
+    - implement check_url_format()
 
     Attributes:
         product_page_url (string): URL of the page of the product being scraped
@@ -25,12 +26,6 @@ class Scraper():
 
     def __init__(self, product_page_url):
         self.product_page_url = product_page_url
-
-    # Inherited classes need to implement additionally:
-    # - [NO] check_url_format
-    # - [NO] check_url that will validate the input [after i move it]
-    # - [deprecated] media_for_url
-    # - methods defined as keys to self.DATA_TYPES and self.DATA_TYPES_SPECIAL (except for load_time)
 
     # extract product info from product page.
     # (note: this is for info that can be extracted directly from the product page, not content generated through javascript)
