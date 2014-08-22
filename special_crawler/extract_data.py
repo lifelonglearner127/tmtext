@@ -70,10 +70,8 @@ class Scraper():
             ret_dict["load_time"] = round(time_end - time_start, 2)
 
         # add special data
-        for special_info in self.DATA_TYPES_SPECIAL:
-            if special_info in info_type_list:
-                # TODO: do this differently
-                ret_dict.update(self.DATA_TYPES_SPECIAL[special_info](self))
+        info_type_list_special = list(set(self.DATA_TYPES_SPECIAL).intersection(set(info_type_list)))
+        ret_dict.update(self._special_info(info_type_list_special))
 
         return ret_dict
 
@@ -118,6 +116,33 @@ class Scraper():
 
         return results_dict
 
+    # Extract product "special" info - that needs additional requests 
+    # and can't be extracted using product page source
+    # Calls methods in subclass' DATA_TYPES_SPECIAL
+    # Return dictionary containing type of info as keys and extracted info as values.
+    def _special_info(self, info_type_list):
+        """Extracts data that can't be extracted from product page source
+        and needs additional requests.
+        Calls methods in subclass' DATA_TYPES_SPECIAL
+        Args:
+            info_type_list: list of strings containing the requested data
+        Returns:
+            dictionary containing the requested data types as keys
+            and the scraped data as values
+        """
+        results_dict = {}
+
+        for info in info_type_list:
+
+            try:
+                results = self.DATA_TYPES_SPECIAL[info](self)
+            except Exception, e:
+                sys.stderr.write("ERROR: Unknown error extracting " + info + " for " + self.product_page_url + ":\n" + str(e) + "\n")
+                results = None
+
+            results_dict[info] = results
+
+        return results_dict
     
 if __name__=="__main__":
     print main(sys.argv)

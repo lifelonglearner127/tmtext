@@ -58,7 +58,6 @@ class WalmartScraper(Scraper):
 
     def _video_url(self):
         """Extracts video URL for a given walmart product
-        (needed by video_for_url())
         Returns:
             string containing the video's URL
         """
@@ -93,21 +92,8 @@ class WalmartScraper(Scraper):
 
         return None
 
-    # return dictionary with one element containing the video url
-    def video_for_url(self):
-        """Extracts and returns the video URL for a walmart product
-        Returns:
-            dictionary with 'video_url' as key and the URL string (or None) as value
-        """
-
-        video_url = self._video_url()
-        results = {'video_url' : video_url}
-        return results
-
     def _pdf_url(self):
         """Extracts pdf URL for a given walmart product
-        (needed by pdf_for_url())
-        Returns:
             string containing the pdf's URL
         """
 
@@ -124,29 +110,6 @@ class WalmartScraper(Scraper):
 
         else:
             return None
-
-    # return dictionary with one element containing the PDF
-    def pdf_for_url(self):
-        """Extracts and returns the pdf for a walmart product
-        Returns:
-            dictionary with 'pdf_url' as key and the URL string (or None) as value
-        """
-
-        results = {"pdf_url" : self._pdf_url()}
-        return results
-
-    # Deprecated
-    def media_for_url(self):
-        """Deprecated.
-        Extracts and returns dictionary containing media data for a walmart product (video and pdf)
-        Returns:
-            dictionary containing 'video_url' and 'pdf_url' as keys and the respective URLs as values
-        """
-
-        # create json object with video and pdf urls
-        results = {'video_url' : _video_url(self.product_page_url), \
-                    'pdf_url' : _pdf_url(self.product_page_url)}
-        return results
 
     # TODO: flatten returned object
     def reviews_for_url(self):
@@ -465,8 +428,8 @@ class WalmartScraper(Scraper):
     """
 
     DATA_TYPES_SPECIAL = { \
-        "video_url" : video_for_url, \
-        "pdf_url" : pdf_for_url, \
+        "video_url" : _video_url, \
+        "pdf_url" : _pdf_url, \
     #    "reviews" : reviews_for_url \
     }
 
