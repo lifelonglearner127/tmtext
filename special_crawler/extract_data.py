@@ -22,6 +22,9 @@ class Scraper():
 
     Attributes:
         product_page_url (string): URL of the page of the product being scraped
+        tree_html (lxml tree object): html tree of page source. This variable is initialized
+        whenever a request is made for a piece of data in DATA_TYPES. So it can be used for methods
+        extracting these types of data.
     """
 
     def __init__(self, product_page_url):
