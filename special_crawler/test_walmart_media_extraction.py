@@ -6,7 +6,9 @@ import unittest
 import json
 import re
 import extract_walmart_media
-from extract_walmart_media import _extract_product_id, BASE_URL_VIDEOREQ
+from extract_walmart_data import WalmartScraper
+
+# TODO: fix to work with refactored service code
 
 class ProcessText_test(unittest.TestCase):
 

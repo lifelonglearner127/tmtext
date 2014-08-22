@@ -1,13 +1,15 @@
 #!/usr/bin/python
 #
 import unittest
-from extract_walmart_media import DATA_TYPES, DATA_TYPES_SPECIAL, page_tree, reviews_for_url
+from extract_walmart_data import WalmartScraper
 from tests_utils import StoreLogs
 import requests
 import sys
 from lxml import html
 import re
 import json
+
+# TODO: fix to work with refactored service code
 
 class WalmartData_test(unittest.TestCase):
 
@@ -91,7 +93,9 @@ class WalmartData_test(unittest.TestCase):
                     raise AssertionError(str(e) + " -- on url " + url)
 
     def extract_meta_price(self, url):
-        tree = page_tree(url)
+        WS = WalmartScraper(url)
+        WS._extract_page_tree()
+        tree = WS.tree_html
         meta_price = tree.xpath("//meta[@itemprop='price']/@content")
         if meta_price:
             return meta_price[0]
@@ -99,7 +103,9 @@ class WalmartData_test(unittest.TestCase):
             return None
 
     def extract_page_price(self, url):
-        tree = page_tree(url)
+        WS = WalmartScraper(url)
+        WS._extract_page_tree()
+        tree = WS.tree_html
         page_price = "".join(tree.xpath("//*[contains(@class, 'camelPrice')]//text()")).strip()
         if page_price:
             return page_price
@@ -144,7 +150,9 @@ class WalmartData_test(unittest.TestCase):
         self.notnull_template("model", exceptions)
 
     def extract_meta_model(self, url):
-        tree = page_tree(url)
+        WS = WalmartScraper(url)
+        WS._extract_page_tree()
+        tree = WS.tree_html
         meta_model = tree.xpath("//meta[@itemprop='model']/@content")
         if meta_model:
             return meta_model[0] if meta_model[0] else None
@@ -196,7 +204,9 @@ class WalmartData_test(unittest.TestCase):
 
     # extract seller value from meta tag
     def extract_meta_seller(self, url):
-        tree = page_tree(url)
+        WS = WalmartScraper(url)
+        WS._extract_page_tree()
+        tree = WS.tree_html
         meta_seller = tree.xpath("//meta[@itemprop='seller']/@content")[0]
         return meta_seller
 
@@ -217,9 +227,10 @@ class WalmartData_test(unittest.TestCase):
     # is consistent with extraction of reviews from separate request (old version)
     def test_reviews_correct(self):
         for url in self.urls:
+            WS = WalmartScraper(url)
             print "On url ", url
             response = requests.get(self.address % url + "?data=" + "reviews").json()
-            response2 = reviews_for_url(url)
+            response2 = WS.reviews_for_url()
 
             try:
                 self.assertEqual(u'reviews' in response and response[u'reviews'], 'total_reviews' in response2['reviews'] and response2['reviews']['total_reviews'])

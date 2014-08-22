@@ -1,7 +1,9 @@
 import unittest
 import sys
-from extract_walmart_media import reviews_for_url
+from extract_walmart_data import WalmartScraper
 import json
+
+# TODO: fix to work with refactored service code
 
 class ProcessText_test(unittest.TestCase):
 
