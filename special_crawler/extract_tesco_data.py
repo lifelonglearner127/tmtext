@@ -12,16 +12,6 @@ from extract_data import Scraper
 
 class TescoScraper(Scraper):
 
-    # base URL for request containing video URL
-    BASE_URL_VIDEOREQ = "http://json.webcollage.net/apps/json/walmart?callback=jsonCallback&environment-id=live&cpi="
-    # base URL for request containing pdf URL
-    BASE_URL_PDFREQ = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
-    # base URL for request for product reviews - formatted string
-    BASE_URL_REVIEWSREQ = 'http://walmart.ugc.bazaarvoice.com/1336a/%20{0}/reviews.djs?format=embeddedhtml'
-
-    # TODO:
-    #      better way of extracting id now that URL format is more permissive
-    #      though this method still seems to work...
     
     """
         DATA_TYPES = { \
