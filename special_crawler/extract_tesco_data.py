@@ -29,7 +29,7 @@ class TescoScraper(Scraper):
         "name" :         done
         "keywords" :     *Tesco does not seem to have meta name="Keywords"
         "brand" :        *Tesco does not seem to have meta name="Brand"
-        "short_desc" :   done, using 'features' as a short description
+        "short_desc" :   done
         "long_desc" :    done, using Product Details, and NOT Product Specifications
         "price" :        done, passes through currency symbol
         "anchors" :      done, *I couldn't find examples on Tesco where product descriptions had links, but if one does, the updated code should catch them
@@ -257,10 +257,12 @@ class TescoScraper(Scraper):
     def _reviews_from_tree(self, tree_html):
         reviews_info_node = tree_html.xpath("//div[@id='BVRRSummaryContainer']")[0]
         
+        '''
         print "--------"
         print html.tostring(tree_html.xpath("//div[@class='details-container']")[0])
         #print html.tostring(reviews_info_node)
         print "--------"
+        '''
         
         average_review = (reviews_info_node.xpath("//span[@itemprop='ratingValue']/text()")[0])
         nr_reviews = (reviews_info_node.xpath("//span[@itemprop='reviewCount']/text()")[0])
