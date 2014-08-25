@@ -146,6 +146,12 @@ class Scraper():
             results_dict[info] = results
 
         return results_dict
+
+    # base function to test input URL is valid.
+    # always returns True, to be used for subclasses where it is not implemented
+    # it should be implemented by subclasses with specific code to validate the URL for the specific site
+    def check_url_format(self):
+        return True
     
 if __name__=="__main__":
     print main(sys.argv)
