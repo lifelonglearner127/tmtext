@@ -11,7 +11,6 @@ import time
 from extract_data import Scraper
 
 class TescoScraper(Scraper):
-
     
     """
         DATA_TYPES = { \
