@@ -12,27 +12,18 @@ from extract_data import Scraper
 
 class TescoScraper(Scraper):
     
-    """
-        DATA_TYPES = { \
-        # Info extracted from product page
-        "name" :         done
-        "keywords" :     returns None, *Tesco does not seem to have meta name="Keywords"
-        "brand" :        done
-        "short_desc" :   done
-        "long_desc" :    done
-        "price" :        done
-        "anchors" :      done, *I couldn't find examples on Tesco where product descriptions had links, but if one does, the updated code should catch them
-        "htags" :        done
-        "model" :        returns None, *Tesco does not seem to include model numbers, I searched maybe 2 dozen different products, and they only have a Tesco ID #
-        "features" :     done
-        "title" :        done
-        "seller":        done
-        "reviews":       done
-        "load_time":     done
-        }
-    """
     
+    #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
     bazaarvoice = None
+    
+    def check_url_format(self):
+        """Checks product URL format for this scraper instance is valid.
+        Returns:
+            True if valid, False otherwise
+        """
+
+        m = re.match("^http://www.tesco.com/direct/[0-9a-zA-Z-]+/[0-9-]+\.prd$", self.product_page_url)
+        return not not m
     
     # TODO:
     #      better way of extracting id now that URL format is more permissive
@@ -49,14 +40,8 @@ class TescoScraper(Scraper):
     # return dictionary with one element containing the PDF
     def pdf_for_url(self):
         return None
-
-    # Deprecated
-    def media_for_url(self):
-        # create json object with video and pdf urls
-        results = {'video_url' : _video_url(self.product_page_url), \
-                    'pdf_url' : _pdf_url(self.product_page_url)}
-        return results
-
+    
+    #populate the bazaarvoice variable for use by other functions
     def load_bazaarvoice(self):
         url = "http://api.bazaarvoice.com/data/batch.json?passkey=asiwwvlu4jk00qyffn49sr7tb&apiversion=5.4&displaycode=1235-en_gb&resource.q0=products&filter.q0=id%3Aeq%3A" \
         + self._extract_product_id() + \
@@ -64,13 +49,8 @@ class TescoScraper(Scraper):
         
         self.bazaarvoice = requests.get(url).json()
         
+    #extract average review, and total reviews  
     def reviews_for_url(self):
-        '''
-        file = open("newfile222.txt", "w")
-        file.write(json.dumps(self.javascript_json, sort_keys=True, indent=4, separators=(',', ': ')))
-        file.close()
-        #'''
-
         if not self.bazaarvoice:
             self.load_bazaarvoice()
         average_review = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['AverageOverallRating']
@@ -161,7 +141,7 @@ class TescoScraper(Scraper):
     def _model_from_tree(self):
         if not self.bazaarvoice:
             self.load_bazaarvoice()
-        return self.bazaarvoice['BatchedResults']['q0']['Results'][0]['ModelNumbers']
+        return self.bazaarvoice['BatchedResults']['q0']['Results'][0]['ModelNumbers'][0]
 
     # extract product features list from its product product page tree, return as string
     def _features_from_tree(self):
@@ -208,49 +188,9 @@ class TescoScraper(Scraper):
 
         return seller_info
 
-    # extract product reviews information from its product page
-    # ! may throw exception if not found
-    #TODO: For Tesco, the BVRRSummaryContainer is coming up empty for some reason.
-    def _reviews_from_tree(self):
-        reviews_info_node = self.tree_html.xpath("//div[@id='BVRRSummaryContainer']")[0]
-        
-        print "--------"
-        print html.tostring(self.tree_html.xpath("//div[@class='details-container']")[0])
-        #print html.tostring(reviews_info_node)
-        print "--------"
-        
-        average_review = (reviews_info_node.xpath("//span[@itemprop='ratingValue']/text()")[0])
-        nr_reviews = (reviews_info_node.xpath("//span[@itemprop='reviewCount']/text()")[0])
-
-        return {'total_reviews' : nr_reviews, 'average_review' : average_review}
-
-
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
-
-
-    # TODO: fix to work with restructured code
-    def main(args):
-        print 'main'
-        # check if there is an argument
-        if len(args) <= 1:
-            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython extract_walmart_media.py <walmart_product_url>\n")
-            sys.exit(1)
-
-        product_page_url = args[1]
-
-        # check format of page url
-        if not check_url_format(product_page_url):
-            sys.stderr.write("ERROR: Invalid URL " + str(product_page_url) + "\nFormat of product URL should be\n\t http://www.walmart.com/ip/<product_id>\n")
-            sys.exit(1)
-
-        return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
-
-        # create json object with video and pdf urls
-        #return json.dumps(media_for_url(product_page_url))
-    #    return json.dumps(reviews_for_url(product_page_url))
-
 
 
     # dictionaries mapping type of info to be extracted to the method that does it
@@ -288,31 +228,3 @@ class TescoScraper(Scraper):
 if __name__=="__main__":
     WD = WalmartScraper()
     print WD.main(sys.argv)
-
-## TODO:
-## Implemented:
-##     - name
-##  - meta keywords
-##  - short description
-##  - long description
-##  - price
-##  - url of video
-##  - url of pdf
-##  - anchors (?)
-##  - H tags 
-##  - page load time (?)
-##  - number of reviews
-##  - model
-##  - list of features
-##  - meta brand tag
-##  - page title
-##  - number of features
-##  - sold by walmart / sold by marketplace sellers
-
-##  
-## To implement:
-##     - number of images, URLs of images
-##  - number of videos, URLs of videos if more than 1
-##  - number of pdfs
-##  - category info (name, code, parents)
-##  - minimum review value, maximum review value
