@@ -56,11 +56,38 @@ class WalmartScraper(Scraper):
         product_id = self.product_page_url.split('/')[-1]
         return product_id
 
+    # check if there is a "Video" button available on the product page
+    def _has_video_button(self):
+        """Checks if a certain product page has a visible 'Video' button,
+        using the page source tree.
+        Returns:
+            True if video button found (or if video button presence can't be determined)
+            False if video button not present
+        """
+
+        richMedia_elements = self.tree_html.xpath("//div[@id='richMedia']")
+        if richMedia_elements:
+            richMedia_element = richMedia_elements[0]
+            elements_onclick = richMedia_element.xpath(".//li/@onclick")
+            # any of the "onclick" attributes of the richMedia <li> tags contains "video')"
+            has_video =  any(map(lambda el: "video')" in el, elements_onclick))
+
+            return has_video
+
+        # if no rich media div found, assume a possible error in extraction and return True for further analysis
+        # TODO:
+        #      return false cause no rich media at all?
+        return True
+
     def _video_url(self):
         """Extracts video URL for a given walmart product
         Returns:
             string containing the video's URL
         """
+
+        # if there is no video button, return no video
+        if not self._has_video_button():
+            return None
 
         request_url = self.BASE_URL_VIDEOREQ + self._extract_product_id()
 
@@ -425,6 +452,9 @@ class WalmartScraper(Scraper):
         "seller": _seller_from_tree, \
         "total_reviews": _nr_reviews_from_tree, \
         "average_review": _avg_review_from_tree, \
+        # video needs both page source and separate requests
+        "video_url" : _video_url, \
+
 
         "load_time": None \
         }
@@ -440,7 +470,6 @@ class WalmartScraper(Scraper):
     """
 
     DATA_TYPES_SPECIAL = { \
-        "video_url" : _video_url, \
         "pdf_url" : _pdf_url, \
     #    "reviews" : reviews_for_url \
     }
