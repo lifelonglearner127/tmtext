@@ -128,7 +128,7 @@ class WalmartScraper(Scraper):
 
         response_text = urllib.urlopen(request_url).read().decode('string-escape')
 
-        pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.pdf(?=")', response_text)
+        pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
         if pdf_url_candidates:
             # remove escapes
             pdf_url = re.sub('\\\\', "", pdf_url_candidates[0])
