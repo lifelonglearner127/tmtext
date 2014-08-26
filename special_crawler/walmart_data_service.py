@@ -38,13 +38,13 @@ def check_input(url, is_valid_url):
 
 # validate request arguments
 def validate_args(arguments, DATA_TYPES, DATA_TYPES_SPECIAL):
-    # normalize all arguments to unicode (no str)
-    argument_keys = map(lambda s: unicode(s), arguments.keys())
+    # normalize all arguments to str
+    argument_keys = map(lambda s: str(s), arguments.keys())
 
     # also flatten list of lists arguments
-    argument_values = map(lambda s: unicode(s), sum(arguments.values(), []))
-    permitted_values = map(lambda s: unicode(s), DATA_TYPES.keys() + DATA_TYPES_SPECIAL.keys())
-    permitted_keys = [u'data']
+    argument_values = map(lambda s: str(s), sum(arguments.values(), []))
+    permitted_values = map(lambda s: str(s), DATA_TYPES.keys() + DATA_TYPES_SPECIAL.keys())
+    permitted_keys = ['data']
 
     # if there are other keys besides "data" or other values outside of the predefined data types (DATA_TYPES), return invalid usage
     if argument_keys != permitted_keys or set(argument_values).difference(set(permitted_values)):
