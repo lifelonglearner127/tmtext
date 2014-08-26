@@ -10,6 +10,11 @@ import re
 
 app = Flask(__name__)
 
+# dictionary containing supported sites as keys
+# and their respective scrapers as values
+SUPPORTED_SITES = {"walmart" : WalmartScraper,
+                   "tesco" : TescoScraper}
+
 class InvalidUsage(Exception):
     status_code = 400
 
@@ -29,94 +34,83 @@ class InvalidUsage(Exception):
 def check_input(url, is_valid_url):
     # TODO: complete these error messages with more details specific to the scraped site
     if not url:
-        raise InvalidUsage("No input URL was provided."), 400
+        raise InvalidUsage("No input URL was provided.", 400)
 
     if not is_valid_url:
         raise InvalidUsage(\
-            "Invalid parameter " + str(url),\
+            "Invalid URL: " + str(url),\
             400)
 
-# validate request arguments
-def validate_args(arguments, DATA_TYPES, DATA_TYPES_SPECIAL):
+# validate request mandatory arguments
+def validate_args(arguments):
     # normalize all arguments to str
     argument_keys = map(lambda s: str(s), arguments.keys())
 
-    # also flatten list of lists arguments
-    argument_values = map(lambda s: str(s), sum(arguments.values(), []))
-    permitted_values = map(lambda s: str(s), DATA_TYPES.keys() + DATA_TYPES_SPECIAL.keys())
-    permitted_keys = ['data']
+    mandatory_keys = ['url', 'site']
 
-    # if there are other keys besides "data" or other values outside of the predefined data types (DATA_TYPES), return invalid usage
-    if argument_keys != permitted_keys or set(argument_values).difference(set(permitted_values)):
-        # TODO:
-        #      improve formatting of this message
-        raise InvalidUsage("Invalid usage: Request arguments must be of the form '?data=<data_1>&data=<data_2>&data=<data_2>...,\n \
-            with the <data_i> values among the following keywords: \n" + str(permitted_values))
+    # If missing any of the needed arguments, throw exception
+    for argument in mandatory_keys:
+        if argument not in argument_keys:
+            raise InvalidUsage("Invalid usage: missing GET parameter: " + argument)
 
-
-# general resource for getting walmart data.
-# can be used without arguments, in which case it will return all data
-# or with arguments like "data=<data_type1>&data=<data_type2>..." in which case it will return the specified data
-# the <data_type> values must be among the keys of DATA_TYPES imported dictionary
-@app.route('/get_walmart_data/<path:url>', methods=['GET'])
-def get_walmart_data(url):
-
-    # create walmart scraper class
-    WS = WalmartScraper(url)
-
-    is_valid_url = WS.check_url_format()
-
-    # validate input
-    check_input(url, is_valid_url)
-
-    # this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
-    request_arguments = dict(request.args)
-
-    # return all data if there are no arguments
-    if not request_arguments:
-        ret = WS.product_info()
-
-        return jsonify(ret)
-
-    # there are request arguments, validate them
-    validate_args(request_arguments, WS.DATA_TYPES, WS.DATA_TYPES_SPECIAL)
-
-    ret = WS.product_info(request_arguments['data'])
+    # Validate site
+    site_argument = arguments['site'][0]
+    if site_argument not in SUPPORTED_SITES.keys():
+        raise InvalidUsage("Unsupported site: " + site_argument)
     
-    return jsonify(ret)
 
-# TODO: deduplicate this code by adding <site> parameter to request
-# TODO: change url parameter to GET query string parameter
+# validate request "data" parameters
+def validate_data_params(arguments, DATA_TYPES, DATA_TYPES_SPECIAL):
+    # Validate data
 
-# TODO: import TescoScraper after it is implemented
-# general resource for getting tesco data.
-# can be used without arguments, in which case it will return all data
+    if 'data' in arguments:
+        # TODO: do the arguments need to be flattened?
+        data_argument_values = map(lambda s: str(s), arguments['data'])
+        data_permitted_values = map(lambda s: str(s), DATA_TYPES.keys() + DATA_TYPES_SPECIAL.keys())
+
+        # if there are other keys besides "data" or other values outside of the predefined data types (DATA_TYPES), return invalid usage
+        if set(data_argument_values).difference(set(data_permitted_values)):
+            # TODO:
+            #      improve formatting of this message
+            raise InvalidUsage("Invalid usage: Request arguments must be of the form '?url=<url>?site=<site>?data=<data_1>&data=<data_2>&data=<data_2>...,\n \
+                with the <data_i> values among the following keywords: \n" + str(data_permitted_values))
+
+
+# general resource for getting data.
+# needs "url" and "site" parameters. optional parameter: "data"
+# can be used without "data" parameter, in which case it will return all data
 # or with arguments like "data=<data_type1>&data=<data_type2>..." in which case it will return the specified data
 # the <data_type> values must be among the keys of DATA_TYPES imported dictionary
-@app.route('/get_tesco_data/<path:url>', methods=['GET'])
-def get_tesco_data(url):
-
-    # create walmart scraper class
-    TS = TescoScraper(url)
-
-    is_valid_url = TS.check_url_format()
-
-    # validate input
-    check_input(url, is_valid_url)
+@app.route('/get_data', methods=['GET'])
+def get_data():
 
     # this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
     request_arguments = dict(request.args)
 
-    # return all data if there are no arguments
-    if not request_arguments:
-        ret = TS.product_info()
+    # validate request parameters
+    validate_args(request_arguments)
+
+    url = request_arguments['url'][0]
+    site = request_arguments['site'][0]
+    # create scraper class for requested site
+    site_scraper = SUPPORTED_SITES[site](url)
+
+    # validate parameter values
+    # url
+    is_valid_url = site_scraper.check_url_format()
+    check_input(url, is_valid_url)
+
+    # data
+    validate_data_params(request_arguments, site_scraper.DATA_TYPES, site_scraper.DATA_TYPES_SPECIAL)
+
+    # return all data if there are no "data" parameters
+    if 'data' not in request_arguments:
+        ret = site_scraper.product_info()
 
         return jsonify(ret)
 
-    # there are request arguments, validate them
-    validate_args(request_arguments, TS.DATA_TYPES, TS.DATA_TYPES_SPECIAL)
-
-    ret = TS.product_info(request_arguments['data'])
+    # return only requested data
+    ret = site_scraper.product_info(request_arguments['data'])
     
     return jsonify(ret)
 
