@@ -5,8 +5,9 @@ from extract_walmart_data import WalmartScraper
 from extract_tesco_data import TescoScraper
 import datetime
 import logging
-from logging import FileHandler
+from logging import StreamHandler
 import re
+import json
 
 app = Flask(__name__)
 
@@ -14,6 +15,13 @@ app = Flask(__name__)
 # and their respective scrapers as values
 SUPPORTED_SITES = {"walmart" : WalmartScraper,
                    "tesco" : TescoScraper}
+
+# add logger
+# using StreamHandler ensures that the log is sent to stderr to be picked up by uwsgi log
+fh = StreamHandler()
+fh.setLevel(logging.DEBUG)
+app.logger.setLevel(logging.DEBUG)
+app.logger.addHandler(fh)
 
 class InvalidUsage(Exception):
     status_code = 400
@@ -134,24 +142,22 @@ def handle_internal_error(error):
     response.status_code = 500
     return response
 
+# post request logger
 @app.after_request
 def post_request_logging(response):
-    app.logger.info('\t'.join([
-        datetime.datetime.today().ctime(),
-        request.remote_addr,
-        request.method,
-        request.url,
-        str(response.status_code),
-        request.data,
-        ', '.join([': '.join(x) for x in request.headers])])
+
+    app.logger.info(json.dumps({
+        "date" : datetime.datetime.today().ctime(),
+        "remote_addr" : request.remote_addr,
+        "request_method" : request.method,
+        "request_url" : request.url,
+        "response_status_code" : str(response.status_code),
+        "request_headers" : ', '.join([': '.join(x) for x in request.headers])
+        })
     )
+
     return response
 
 if __name__ == '__main__':
-    
-    fh = FileHandler("special_crawler_log.txt")
-    fh.setLevel(logging.DEBUG)
-    app.logger.setLevel(logging.DEBUG)
-    app.logger.addHandler(fh)
 
     app.run('0.0.0.0', port=80)
