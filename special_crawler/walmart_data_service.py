@@ -2,6 +2,7 @@
 
 from flask import Flask, jsonify, abort, request
 from extract_walmart_data import WalmartScraper
+from extract_tesco_data import TescoScraper
 import datetime
 import logging
 from logging import FileHandler
