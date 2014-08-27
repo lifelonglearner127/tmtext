@@ -9,7 +9,7 @@ do
 	LOGFILE=shared_sshfs/search_log_"$FILE"_"$NR".txt
 	if [ -f "$LOGFILE" ]
 		then
-		printf "$NR "; cat $LOGFILE | grep "503 Service Unavailable" | wc -l
+		printf "$NR "; ack "503 Service Unavailable" $LOGFILE | wc -l
 	fi
 done
 

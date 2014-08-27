@@ -9,7 +9,7 @@ do
 	LOGFILE=shared_sshfs/search_log_"$FILE"_"$NR".txt
 	if [ -f "$LOGFILE" ]
 		then
-		printf "$NR "; cat $LOGFILE | grep "ERROR" | wc -l
+		printf "$NR "; ack --lines "ERROR" $LOGFILE
 	fi
 done
 

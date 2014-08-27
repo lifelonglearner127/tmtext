@@ -10,7 +10,7 @@ do
 	LOGFILE=shared_sshfs/search_log_"$FILE"_"$NR".txt
 	if [ -f "$LOGFILE" ]
 		then
-		printf "$NR "; cat $LOGFILE | grep "<exception" | wc -l
+		printf "$NR "; ack "<exception" $LOGFILE |  wc -l
 	fi
 done
 
