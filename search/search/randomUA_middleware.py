@@ -17,4 +17,4 @@ class RandomUserAgentMiddleware(object):
         ua  = random.choice(USER_AGENT_LIST)
         if ua:
             request.headers.setdefault('User-Agent', ua)
-        log.msg('>>>> UA %s'%request.headers)
+        # log.msg('>>>> UA %s'%request.headers)
