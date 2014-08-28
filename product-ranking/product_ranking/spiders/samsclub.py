@@ -25,19 +25,36 @@ class SamsclubProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta['product']
 
-        cond_set(product, 'brand', response.xpath(
-            "//div[contains(@class,'prodTitlePlus')]/span[@itemprop='brand']/text()").extract())
+        # FIXME: This spider uses Schema.org data without considering the tree.
+        cond_set(
+            product,
+            'brand',
+            response.xpath(
+                "//div[contains(@class,'prodTitlePlus')]"
+                "/span[@itemprop='brand']/text()"
+            ).extract())
 
-        cond_set(product, 'title', response.xpath(
-            "//div[contains(@class,'prodTitle')]/h1/span[@itemprop='name']/text()").extract())
+        cond_set(
+            product,
+            'title',
+            response.xpath(
+                "//div[contains(@class,'prodTitle')]/h1/span[@itemprop='name']"
+                "/text()"
+            ).extract())
 
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='plImageHolder']/img/@src").extract())
 
-        cond_set(product, 'price', response.xpath(
-            "//div[@class='moneyBoxBtn']/a/span[contains(@class,'onlinePrice')]/text()").extract())
+        cond_set(
+            product,
+            'price',
+            response.xpath(
+                "//div[@class='moneyBoxBtn']/a"
+                "/span[contains(@class,'onlinePrice')]/text()"
+            ).extract())
 
-        j = response.xpath("//div[@itemprop='description']/descendant::*[text()]/text()")
+        j = response.xpath(
+            "//div[@itemprop='description']/descendant::*[text()]/text()")
         info = " ".join(j.extract())
         product['description'] = info
 
@@ -73,7 +90,10 @@ class SamsclubProductsSpider(BaseProductsSpider):
         if response.url.find('ajaxSearch') > 0:
             links = response.xpath("//body/li/a/@href").extract()
         else:
-            links = response.xpath("//ul[contains(@class,'shelfItems')]/li[contains(@class,'item')]/a/@href").extract()
+            links = response.xpath(
+                "//ul[contains(@class,'shelfItems')]"
+                "/li[contains(@class,'item')]/a/@href"
+            ).extract()
 
         if not links:
             self.log("Found no product links.", ERROR)
