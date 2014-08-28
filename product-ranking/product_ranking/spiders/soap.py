@@ -47,7 +47,6 @@ class SoapProductSpider(BaseProductsSpider):
         price = response.xpath(
             "//*[@id='priceDivClass']/span/text()").extract()[0]
 
-        # FIXME: Just take the node().
         # desc is a possible <p> or just the text of the class, each page is different
         desc = response.xpath(
             "//*[@class='pIdDesContent']"
@@ -56,7 +55,7 @@ class SoapProductSpider(BaseProductsSpider):
         upc = response.xpath("//*[@class='skuHidden']/@value").extract()[0]
 
         cond_set_value(product, 'price', price)
-        cond_set_value(product, 'description', desc)
+        cond_set_value(product, 'description', desc, conv=''.join)
         cond_set_value(product, 'upc', upc)
 
     def _scrape_product_links(self, response):
