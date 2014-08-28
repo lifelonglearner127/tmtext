@@ -79,17 +79,23 @@ class BolProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        total = response.xpath(
+        totals = response.xpath(
             "//h1[@itemprop='name']/span[@id='sab_header_results_size']/text()"
         ).extract()
-        if total:
-            total = total[0].replace(".", "")
+        if totals:
+            total = totals[0].replace(".", "")
             try:
-                return int(total)
+                total_matches = int(total)
             except ValueError:
-                pass
+                self.log(
+                    "Failed to parse number of matches: %r" % total, ERROR)
+                total_matches = None
+        elif "Geen zoekresultaat" in response.body_as_unicode():
+            total_matches = 0
+        else:
+            total_matches = None
 
-        return None
+        return total_matches
 
     def _scrape_product_links(self, response):
         links = response.xpath(
