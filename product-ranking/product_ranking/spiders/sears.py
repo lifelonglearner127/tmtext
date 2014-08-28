@@ -39,7 +39,7 @@ class SearsProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
-        data = json.loads(response.body)
+        data = json.loads(response.body_as_unicode())
 
         product = data['data'].get('product')
 
@@ -59,7 +59,6 @@ class SearsProductsSpider(BaseProductsSpider):
         cond_set(prod, 'description', desc)
 
         img_url = product.get('assets').get('imgs')[0].get('vals')[0].get('src')
-
         prod['image_url'] = img_url
 
         prod['url'] = response.url
