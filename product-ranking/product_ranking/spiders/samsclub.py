@@ -53,10 +53,12 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 "/span[contains(@class,'onlinePrice')]/text()"
             ).extract())
 
-        j = response.xpath(
-            "//div[@itemprop='description']/descendant::*[text()]/text()")
-        info = " ".join(j.extract())
-        product['description'] = info
+        cond_set(
+            product,
+            'description',
+            response.xpath("//div[@itemprop='description']").extract(),
+            conv=''.join,
+        )
 
         productid = response.xpath("//span[@itemprop='productID']/text()")
         productid = productid.extract()[0].strip().replace('#:', '', 1)
