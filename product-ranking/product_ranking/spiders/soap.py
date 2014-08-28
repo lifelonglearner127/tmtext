@@ -31,6 +31,7 @@ class SoapProductSpider(BaseProductsSpider):
             "/@href"
         ).extract()[0]
 
+        # This additional request is necessary to get the brand.
         return Request(json_link, self._parse_json, meta=response.meta.copy())
 
     def _parse_json(self, response):
@@ -39,7 +40,7 @@ class SoapProductSpider(BaseProductsSpider):
         data = json.loads(response.body_as_unicode())
 
         cond_set_value(product, 'brand', data.get('brand'))
-        cond_set_value(product, 'title', data.get('title'))
+        cond_set_value(product, 'model', data.get('title'))
 
         return product
 
@@ -55,6 +56,10 @@ class SoapProductSpider(BaseProductsSpider):
 
         upcs = response.xpath("//*[@class='skuHidden']/@value").extract()
         cond_set(product, 'upc', upcs)
+
+        # Override the title from other sources. This is the one we want.
+        cond_set(
+            product, 'title', response.css('.productTitle h1 ::text').extract())
 
     def _scrape_product_links(self, response):
         links = response.xpath(
