@@ -17,7 +17,8 @@
             ]);
 
             var options = {
-              title: '{{project}} queue'
+              title: '{{project}} queue',
+              pieSliceText: 'value',
             };
 
             var chart = new google.visualization.PieChart(document.getElementById('piechart_{{project}}'));
@@ -40,7 +41,8 @@
             ]);
 
             var options = {
-              title: 'Summary queue'
+              title: 'Summary queue',
+              pieSliceText: 'value',
             };
 
             var chart = new google.visualization.PieChart(document.getElementById('piechart_summary'));
