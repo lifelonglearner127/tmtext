@@ -87,7 +87,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
         if num_items:
             return SamsclubProductsSpider._NEXT_PAGE_URL.format(
                 search_term=response.meta['search_term'],
-                offset=response.meta['products_per_page'],
+                offset=response.meta['products_per_page'] + 1,
                 prods_per_page=num_items,
             )
         return None
