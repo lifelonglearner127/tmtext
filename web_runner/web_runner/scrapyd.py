@@ -260,6 +260,44 @@ class ScrapydInterface(object):
         return ret
 
 
+
+    def get_queues(self, projects=None):
+        """Returns the scrapyd queue status.
+
+        The function returns a dictionary whose key a project. The value
+        is another dictionary with 'running', 'finished' and 'pending' queues.
+        Also, there is another key called 'summary', with the total queues.
+
+        :param projects: The list of project to query. If it is None, all
+                         projects will be queried.
+        """
+        SUMMARY = 'summary'
+        if not projects:
+            status, projects = self.get_projects()
+            if not status:
+                return None
+
+        ret = {}
+        for project in projects:
+            url = '%slistjobs.json?project=%s' % (self.scrapyd_url, project)
+            try:
+                req = requests.get(url)
+            except requests.exceptions.RequestException:
+                return None
+
+            req_output = req.json()
+            ret[SUMMARY] = {'running':0, 'finished':0, 'pending':0}
+            if req_output['status'].lower() == 'ok':
+                ret[project] = {}
+                for status in ('running', 'finished', 'pending'):
+                    ret[project][status] = len(req_output[status])
+                    ret[SUMMARY][status] += len(req_output[status])
+                    
+        return ret
+
+
+
+
 if __name__ == '__main__':
     si = ScrapydInterface('http://localhost:6800/')
 
