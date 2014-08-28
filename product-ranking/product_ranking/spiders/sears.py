@@ -90,8 +90,7 @@ class SearsProductsSpider(BaseProductsSpider):
             "//div[contains(@class,'srchPagination')]/a//@href").extract()
         next_page = None
         if next_pages:
-            # FIXME This is clearly wrong.
-            next_page = 'http://www.target.com/%s' % next_pages[0]
+            next_page = 'http://www.sears.com/%s' % next_pages[0]
             if len(next_pages) > 2:
                 self.log("Found more than two 'next page' links.", WARNING)
         return next_page
