@@ -76,7 +76,6 @@ class SearsProductsSpider(BaseProductsSpider):
         return 0
 
     def _scrape_product_links(self, sel):
-
         product_ids = sel.xpath("//input[@id='pId']/@value").extract()
 
         if not product_ids:
@@ -91,6 +90,7 @@ class SearsProductsSpider(BaseProductsSpider):
             "//div[contains(@class,'srchPagination')]/a//@href").extract()
         next_page = None
         if next_pages:
+            # FIXME This is clearly wrong.
             next_page = 'http://www.target.com/%s' % next_pages[0]
             if len(next_pages) > 2:
                 self.log("Found more than two 'next page' links.", WARNING)
