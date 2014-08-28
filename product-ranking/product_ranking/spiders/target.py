@@ -7,6 +7,10 @@ from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value, populate_from_open_graph
 
+# FIXME: Needs brand.
+# FIXME Not all products are returned.
+# FIXME: There are filtered requests.
+
 
 class TargetProductSpider(BaseProductsSpider):
     name = 'target_products'
