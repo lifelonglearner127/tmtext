@@ -39,6 +39,7 @@ class WaitroseProductsSpider(BaseProductsSpider):
     def _scrape_product_links(self, response):
         total_pages = response.xpath(
             '//input[@id="number-of-pages"]/@value').extract()[0]
+        # FIXME This is not used, right?
         links = response.xpath(
             '//a[@class="m-product-open-modal"]/@href').extract()
 
