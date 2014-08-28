@@ -37,7 +37,9 @@ class BolProductsSpider(BaseProductsSpider):
             response.xpath(
                 "//div[contains(@class,'product_zoom_wrapper')]"
                 "/img[@itemprop='image']/@src"
-            ).extract())
+            ).extract(),
+            conv=string.strip,
+        )
 
         cond_set(
             product,
