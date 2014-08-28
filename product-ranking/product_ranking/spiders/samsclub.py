@@ -49,11 +49,13 @@ class SamsclubProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        if not response.url.find('ajaxSearch') > 0:
-            total = response.xpath("//div[contains(@class,'shelfSearchRelMsg2')]/span/span[@class='gray3']/text()").extract()[0]
-            return int(total)
-        total = response.xpath("//body/li[contains(@class,'item')]")
-        return len(total)
+        if response.url.find('ajaxSearch') > 0:
+            total = response.xpath("//body/li[contains(@class,'item')]")
+            return len(total)
+        total = response.xpath("//div[contains(@class,'shelfSearchRelMsg2')]/span/span[@class='gray3']/text()").extract()
+        if total:
+            return int(total[0])
+        return None
 
     def _scrape_product_links(self, response):
         if response.url.find('ajaxSearch') > 0:

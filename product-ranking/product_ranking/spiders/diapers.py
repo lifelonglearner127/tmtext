@@ -54,12 +54,12 @@ class DiapersProductSpider(BaseProductsSpider):
             self.log("No JS matched in %s." % response.url, WARNING)
             return
 
-        json = scripts.re("var pdpOptionsJson=\s(.+\])")
+        json_matches = scripts.re("var pdpOptionsJson=\s(.+\])")
 
-        if not json:
+        if not json_matches:
             self.log("Could not get JSON match in %s" % response.url, WARNING)
         else:
-            data = json.loads(json[0])
+            data = json.loads(json_matches[0])
             # first one in list is the product being scraped.
             prod_data = data[0]
             product['upc'] = prod_data.get("Sku")
