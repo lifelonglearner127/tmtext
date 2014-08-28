@@ -44,19 +44,17 @@ class SoapProductSpider(BaseProductsSpider):
         return product
 
     def _populate_from_html(self, response, product):
-        price = response.xpath(
-            "//*[@id='priceDivClass']/span/text()").extract()[0]
+        prices = response.xpath(
+            "//*[@id='priceDivClass']/span/text()").extract()
+        cond_set(product, 'price', prices)
 
-        # desc is a possible <p> or just the text of the class, each page is different
-        desc = response.xpath(
-            "//*[@class='pIdDesContent']"
-        ).extract()
-
-        upc = response.xpath("//*[@class='skuHidden']/@value").extract()[0]
-
-        cond_set_value(product, 'price', price)
+        # The description is a possible <p> or just the text of the class,
+        # each page is different.
+        desc = response.xpath("//*[@class='pIdDesContent']").extract()
         cond_set_value(product, 'description', desc, conv=''.join)
-        cond_set_value(product, 'upc', upc)
+
+        upcs = response.xpath("//*[@class='skuHidden']/@value").extract()
+        cond_set(product, 'upc', upcs)
 
     def _scrape_product_links(self, response):
         links = response.xpath(
