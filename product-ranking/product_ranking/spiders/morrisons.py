@@ -8,14 +8,18 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults, populate_from_open_graph
 
 
+# FIXME The default must be best_match.
+# FIXME Best_match and best_sellers cannot be the same.
+
+
 class MorrisonsProductsSpider(BaseProductsSpider):
     name = 'morrisons_products'
     allowed_domains = ["morrisons.com"]
     start_urls = []
 
-    SEARCH_URL = "https://groceries.morrisons.com/webshop/getSearchProducts.do?" \
-                 "groupSimilarProducts=y&sortBy={search_sort}&itemsPerPage=See+all&" \
-                 "clearTabs=yes&entry={search_term}"
+    SEARCH_URL = "https://groceries.morrisons.com/webshop" \
+        "/getSearchProducts.do?groupSimilarProducts=y&sortBy={search_sort}" \
+        "&itemsPerPage=See+all&clearTabs=yes&entry={search_term}"
 
     SEARCH_SORT = {
         'best_match': 'default',
@@ -25,7 +29,7 @@ class MorrisonsProductsSpider(BaseProductsSpider):
         'low_price': 'price_asc',
         'best_sellers': 'default',
         'rating': 'customer_rating',
-        'shelf_life': 'shelf_life',
+        'shortest_shelf_life': 'shelf_life',
     }
 
     def __init__(self, search_sort='best_sellers', *args, **kwargs):
