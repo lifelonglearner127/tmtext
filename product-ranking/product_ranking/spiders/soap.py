@@ -7,7 +7,8 @@ from scrapy.log import ERROR, WARNING
 from scrapy import Request
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value, \
+    populate_from_open_graph
 
 
 class SoapProductSpider(BaseProductsSpider):
@@ -19,7 +20,7 @@ class SoapProductSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
-        self._populate_from_open_graph(response, prod)
+        populate_from_open_graph(response, prod)
 
         self._populate_from_html(response, prod)
 
@@ -60,27 +61,6 @@ class SoapProductSpider(BaseProductsSpider):
         cond_set(product, 'price', [price])
         cond_set(product, 'description', [desc])
         cond_set(product, 'upc', [upc])
-
-    # FIXME: OpenGraph is standard and will mean the same in all sites, pull up.
-    def _populate_from_open_graph(self, response, product):
-        """See about the Open Graph Protocol at http://ogp.me/"""
-        # Extract all the meta tags with an attribute called property.
-        metadata_dom = response.xpath("/html/head/meta[@property]")
-        props = metadata_dom.xpath("@property").extract()
-        conts = metadata_dom.xpath("@content").extract()
-
-        # Create a dict of the Open Graph protocol.
-        metadata = {p[3:]: c for p, c in zip(props, conts)
-                    if p.startswith('og:')}
-
-        if metadata.get('type') != 'product':
-            # This response is not a product?
-            self.log("Page of type '%s' found." % metadata.get('type'), ERROR)
-            raise AssertionError("Type missing or not a product.")
-
-        # Basic Open Graph metadata.
-        product['url'] = metadata['url']  # Canonical URL for the product.
-        product['image_url'] = metadata['image']
 
     def _scrape_product_links(self, response):
         links = response.xpath(
