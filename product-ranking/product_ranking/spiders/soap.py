@@ -38,11 +38,8 @@ class SoapProductSpider(BaseProductsSpider):
 
         data = json.loads(response.body_as_unicode())
 
-        brand = data.get('brand')
-        title = data.get('title')
-
-        cond_set_value(product, 'brand', brand)
-        cond_set_value(product, 'title', title)
+        cond_set_value(product, 'brand', data.get('brand'))
+        cond_set_value(product, 'title', data.get('title'))
 
         return product
 
@@ -58,9 +55,9 @@ class SoapProductSpider(BaseProductsSpider):
 
         upc = response.xpath("//*[@class='skuHidden']/@value").extract()[0]
 
-        cond_set(product, 'price', [price])
-        cond_set(product, 'description', [desc])
-        cond_set(product, 'upc', [upc])
+        cond_set_value(product, 'price', price)
+        cond_set_value(product, 'description', desc)
+        cond_set_value(product, 'upc', upc)
 
     def _scrape_product_links(self, response):
         links = response.xpath(
