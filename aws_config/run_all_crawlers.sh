@@ -1,6 +1,6 @@
 #!/bin/bash
 
-INPUT="Baby"
+INPUT="Toys2_leftovers"
 SITE="amazon"
 
 for node in "$@"
