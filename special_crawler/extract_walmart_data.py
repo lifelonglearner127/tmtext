@@ -20,6 +20,10 @@ class WalmartScraper(Scraper):
             DATA_TYPES_SPECIAL (dict):  structures containing the supported data types to be extracted as keys
                                         and the methods that implement them as values
 
+            INVALID_URL_MESSAGE: string that will be used in the "InvalidUsage" error message,
+                                 should contain information on what the expected format for the
+                                 input URL is.
+
             BASE_URL_VIDEOREQ (string):
             BASE_URL_PDFREQ (string):
             BASE_URL_REVIEWSREQ (string):   strings containing necessary hardcoded URLs for extracting walmart
@@ -33,6 +37,8 @@ class WalmartScraper(Scraper):
     # base URL for request for product reviews - formatted string
     BASE_URL_REVIEWSREQ = 'http://walmart.ugc.bazaarvoice.com/1336a/%20{0}/reviews.djs?format=embeddedhtml'
 
+
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
     # checks input format
     def check_url_format(self):

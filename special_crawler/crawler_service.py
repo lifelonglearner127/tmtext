@@ -39,14 +39,14 @@ class InvalidUsage(Exception):
         return rv
 
 # validate input and raise exception with message for client if necessary
-def check_input(url, is_valid_url):
+def check_input(url, is_valid_url, invalid_url_message=""):
     # TODO: complete these error messages with more details specific to the scraped site
     if not url:
         raise InvalidUsage("No input URL was provided.", 400)
 
     if not is_valid_url:
         raise InvalidUsage(\
-            "Invalid URL: " + str(url),\
+            "Invalid URL: " + str(url) + " " + str(invalid_url_message),\
             400)
 
 # validate request mandatory arguments
@@ -106,7 +106,10 @@ def get_data():
     # validate parameter values
     # url
     is_valid_url = site_scraper.check_url_format()
-    check_input(url, is_valid_url)
+    if hasattr(site_scraper, "INVALID_URL_MESSAGE"):
+        check_input(url, is_valid_url, site_scraper.INVALID_URL_MESSAGE)
+    else:
+        check_input(url, is_valid_url)
 
     # data
     validate_data_params(request_arguments, site_scraper.DATA_TYPES, site_scraper.DATA_TYPES_SPECIAL)
