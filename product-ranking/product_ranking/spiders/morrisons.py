@@ -1,9 +1,12 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set, FormatterWithDefaults
 from scrapy.log import ERROR
+
+from product_ranking.items import SiteProductItem
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    FormatterWithDefaults, populate_from_open_graph
+
 
 
 class MorrisonsProductsSpider(BaseProductsSpider):
@@ -11,9 +14,9 @@ class MorrisonsProductsSpider(BaseProductsSpider):
     allowed_domains = ["morrisons.com"]
     start_urls = []
 
-    SEARCH_URL = "https://groceries.morrisons.com/webshop/getSearchProducts.do?" \
-                 "groupSimilarProducts=y&sortBy={search_sort}&itemsPerPage=See+all&" \
-                 "clearTabs=yes&entry={search_term}"
+    SEARCH_URL = "https://groceries.morrisons.com/webshop" \
+        "/getSearchProducts.do?groupSimilarProducts=y&sortBy={search_sort}" \
+        "&itemsPerPage=See+all&clearTabs=yes&entry={search_term}"
 
     SEARCH_SORT = {
         'best_match': 'default',
@@ -21,9 +24,8 @@ class MorrisonsProductsSpider(BaseProductsSpider):
         'product_name_descending': 'name_desc',
         'high_price': 'price_desc',
         'low_price': 'price_asc',
-        'best_sellers': 'default',
-        'rating': 'customer_rating',
-        'shelf_life': 'shelf_life',
+        'best_sellers': 'customer_rating',
+        'shortest_shelf_life': 'shelf_life',
     }
 
     def __init__(self, search_sort='best_sellers', *args, **kwargs):
@@ -37,7 +39,7 @@ class MorrisonsProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta['product']
 
-        self._populate_from_open_graph(response, product)
+        populate_from_open_graph(response, product)
 
         brand = response.xpath(
             "//span[@itemprop='name']/text()").extract()
@@ -54,28 +56,6 @@ class MorrisonsProductsSpider(BaseProductsSpider):
         product['locale'] = "en-GB"
 
         return product
-
-    def _populate_from_open_graph(self, response, product):
-        """See about the Open Graph Protocol at http://ogp.me/"""
-        # Extract all the meta tags with an attribute called property.
-        metadata_dom = response.xpath("/html/head/meta[@property]")
-        props = metadata_dom.xpath("@property").extract()
-        conts = metadata_dom.xpath("@content").extract()
-
-        # Create a dict of the Open Graph protocol.
-        metadata = {p[3:]: c for p, c in zip(props, conts)
-                    if p.startswith('og:')}
-
-        if metadata.get('type') != 'product':
-            # This response is not a product?
-            self.log("Page of type '%s' found." % metadata.get('type'), ERROR)
-            raise AssertionError("Type missing or not a product.")
-
-        # Basic Open Graph metadata.
-        product['url'] = metadata['url']  # Canonical URL for the product.
-        product['image_url'] = metadata['image']
-        product['description'] = metadata['description']
-        product['title'] = metadata['title']
 
     def _scrape_total_matches(self, response):
         num_results = response.xpath(

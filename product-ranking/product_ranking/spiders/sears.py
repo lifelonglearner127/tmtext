@@ -39,7 +39,7 @@ class SearsProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
-        data = json.loads(response.body)
+        data = json.loads(response.body_as_unicode())
 
         product = data['data'].get('product')
 
@@ -59,7 +59,6 @@ class SearsProductsSpider(BaseProductsSpider):
         cond_set(prod, 'description', desc)
 
         img_url = product.get('assets').get('imgs')[0].get('vals')[0].get('src')
-
         prod['image_url'] = img_url
 
         prod['url'] = response.url
@@ -77,7 +76,6 @@ class SearsProductsSpider(BaseProductsSpider):
         return 0
 
     def _scrape_product_links(self, sel):
-
         product_ids = sel.xpath("//input[@id='pId']/@value").extract()
 
         if not product_ids:
@@ -92,7 +90,7 @@ class SearsProductsSpider(BaseProductsSpider):
             "//div[contains(@class,'srchPagination')]/a//@href").extract()
         next_page = None
         if next_pages:
-            next_page = 'http://www.target.com/%s' % next_pages[0]
+            next_page = 'http://www.sears.com/%s' % next_pages[0]
             if len(next_pages) > 2:
                 self.log("Found more than two 'next page' links.", WARNING)
         return next_page

@@ -7,7 +7,8 @@ from scrapy.log import ERROR, WARNING
 from scrapy import Request
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value, \
+    populate_from_open_graph
 
 
 class SoapProductSpider(BaseProductsSpider):
@@ -19,7 +20,7 @@ class SoapProductSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
-        self._populate_from_open_graph(response, prod)
+        populate_from_open_graph(response, prod)
 
         self._populate_from_html(response, prod)
 
@@ -30,6 +31,7 @@ class SoapProductSpider(BaseProductsSpider):
             "/@href"
         ).extract()[0]
 
+        # This additional request is necessary to get the brand.
         return Request(json_link, self._parse_json, meta=response.meta.copy())
 
     def _parse_json(self, response):
@@ -37,50 +39,27 @@ class SoapProductSpider(BaseProductsSpider):
 
         data = json.loads(response.body_as_unicode())
 
-        brand = data.get('brand')
-        title = data.get('title')
-
-        cond_set_value(product, 'brand', brand)
-        cond_set_value(product, 'title', title)
+        cond_set_value(product, 'brand', data.get('brand'))
+        cond_set_value(product, 'model', data.get('title'))
 
         return product
 
     def _populate_from_html(self, response, product):
-        price = response.xpath(
-            "//*[@id='priceDivClass']/span/text()").extract()[0]
+        prices = response.xpath(
+            "//*[@id='priceDivClass']/span/text()").extract()
+        cond_set(product, 'price', prices)
 
-        # FIXME: Just take the node().
-        # desc is a possible <p> or just the text of the class, each page is different
-        desc = response.xpath(
-            "//*[@class='pIdDesContent']"
-        ).extract()
+        # The description is a possible <p> or just the text of the class,
+        # each page is different.
+        desc = response.xpath("//*[@class='pIdDesContent']").extract()
+        cond_set_value(product, 'description', desc, conv=''.join)
 
-        upc = response.xpath("//*[@class='skuHidden']/@value").extract()[0]
+        upcs = response.xpath("//*[@class='skuHidden']/@value").extract()
+        cond_set(product, 'upc', upcs)
 
-        cond_set(product, 'price', [price])
-        cond_set(product, 'description', [desc])
-        cond_set(product, 'upc', [upc])
-
-    # FIXME: OpenGraph is standard and will mean the same in all sites, pull up.
-    def _populate_from_open_graph(self, response, product):
-        """See about the Open Graph Protocol at http://ogp.me/"""
-        # Extract all the meta tags with an attribute called property.
-        metadata_dom = response.xpath("/html/head/meta[@property]")
-        props = metadata_dom.xpath("@property").extract()
-        conts = metadata_dom.xpath("@content").extract()
-
-        # Create a dict of the Open Graph protocol.
-        metadata = {p[3:]: c for p, c in zip(props, conts)
-                    if p.startswith('og:')}
-
-        if metadata.get('type') != 'product':
-            # This response is not a product?
-            self.log("Page of type '%s' found." % metadata.get('type'), ERROR)
-            raise AssertionError("Type missing or not a product.")
-
-        # Basic Open Graph metadata.
-        product['url'] = metadata['url']  # Canonical URL for the product.
-        product['image_url'] = metadata['image']
+        # Override the title from other sources. This is the one we want.
+        cond_set(
+            product, 'title', response.css('.productTitle h1 ::text').extract())
 
     def _scrape_product_links(self, response):
         links = response.xpath(

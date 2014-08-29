@@ -33,6 +33,7 @@ def web_runner_status(request):
           "spiders": "Don't know", 
           "scrapyd_projects": None, 
           "scrapyd_alive": "Don't know",
+          "queue_status": "Don't know",
         }
 
     if web_runner_error:
@@ -40,6 +41,14 @@ def web_runner_status(request):
     else:
         if req.status_code == 200:
             status = req.json()
+            
+            # Decide the queue status accordin running, finished and pending 
+            # tasks on summary queue
+            summary_queue = status['queues']['summary']
+            if summary_queue['pending'] > 0 and summary_queue['running'] == 0:
+                status['queue_status'] = 'WARNING'
+            else:
+                status['queue_status'] = 'ok'
         else:
             status = error
     return render(request, 'simple_cli/web_runner_status.html', status)

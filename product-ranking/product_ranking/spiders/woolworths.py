@@ -1,17 +1,25 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set, FormatterWithDefaults
+import string
+
 from scrapy.log import ERROR
 
+from product_ranking.items import SiteProductItem
+from product_ranking.spiders import BaseProductsSpider, cond_set
+
+
+# FIXME Lacks the brand.
+# FIXME Fails when there are no matches.
+# FIXME Some duplicates are filtered.
 
 class WoolworthsProductsSpider(BaseProductsSpider):
     name = 'woolworths_products'
     allowed_domains = ["woolworthsonline.com.au"]
     start_urls = []
 
-    SEARCH_URL = "http://www2.woolworthsonline.com.au/Shop/SearchProducts?search={search_term}"
+    SEARCH_URL = "http://www2.woolworthsonline.com.au/Shop/SearchProducts" \
+        "?search={search_term}"
 
     def parse_product(self, response):
         product = response.meta['product']
@@ -19,13 +27,13 @@ class WoolworthsProductsSpider(BaseProductsSpider):
         self._populate_from_open_graph(response, product)
 
         price = response.xpath(
-            "//span[@class='price']/text() | //span[@class='price special-price']/text()").extract()
-        price = price[0].strip()
-        cond_set(product, 'price', [price])
+            "//span[@class='price']/text()"
+            "| //span[@class='price special-price']/text()"
+        ).extract()
+        cond_set(product, 'price', price, string.strip)
 
-        upc = response.xpath(
-            "//input[@id='stockcode']/@value").extract()
-        cond_set(product, 'upc', upc)
+        cond_set(product, 'upc', response.xpath(
+            "//input[@id='stockcode']/@value").extract())
 
         product['locale'] = "en-AU"
 
@@ -44,6 +52,9 @@ class WoolworthsProductsSpider(BaseProductsSpider):
 
         # the following type for every page I checked was a website and not a product
         # even though every item was for a product, removed raise assertion for now
+        # JR: This is because the Open Graph vocabulary to describe a website is
+        #     used, not the prod.
+        # FIXME Implement OpenGraph for type website in parent class. Is it useful?
         if metadata.get('type') != 'product':
             # This response is not a product?
             self.log("Page of type '%s' found." % metadata.get('type'), ERROR)
@@ -82,5 +93,3 @@ class WoolworthsProductsSpider(BaseProductsSpider):
         elif len(next_pages) == 0:
             self.log("Found no 'next page' link.", ERROR)
         return next_page
-
-

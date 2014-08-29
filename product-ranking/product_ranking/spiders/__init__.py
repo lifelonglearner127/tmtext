@@ -190,9 +190,12 @@ class BaseProductsSpider(Spider):
             # Materialize prods to get its size.
             prods = list(prods)
             prods_per_page = len(prods)
+            response.meta['products_per_page'] = prods_per_page
 
         if total_matches is None:
             total_matches = self._scrape_total_matches(response)
+            if total_matches is not None:
+                response.meta['total_matches'] = total_matches
 
         if not prods_per_page or not total_matches:
             # Parsing the page failed. Give up.
@@ -226,7 +229,7 @@ class BaseProductsSpider(Spider):
         link_page_attempt = response.meta.get('link_page_attempt', 1)
 
         result = None
-        if prods_found > 0:
+        if prods_found is not None:
             # This was a real product listing page.
             remaining = response.meta['remaining']
             remaining -= prods_found
