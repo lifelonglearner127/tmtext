@@ -65,7 +65,7 @@ class TescoScraper(Scraper):
     
     
     '''
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd"
     
     #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
     bazaarvoice = None
