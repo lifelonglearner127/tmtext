@@ -65,6 +65,7 @@ class TescoScraper(Scraper):
     
     
     '''
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
     
     #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
     bazaarvoice = None
@@ -124,11 +125,16 @@ class TescoScraper(Scraper):
         if not self.bazaarvoice:
             self.load_bazaarvoice()
         average_review = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['AverageOverallRating']
-        nr_reviews = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['TotalReviewCount']
     
-        return {'average_review' : average_review, 'nr_reviews' : nr_reviews}
+        return average_review
 
+    def nr_reviews(self):
+        if not self.bazaarvoice:
+            self.load_bazaarvoice()
 
+        nr_reviews = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['TotalReviewCount']
+        return nr_reviews
+        
     # extract product name from its product page tree
     # ! may throw exception if not found
     def _product_name_from_tree(self):
@@ -235,7 +241,7 @@ class TescoScraper(Scraper):
         all_features_text = "\n".join(rows_text)
 
         # return dict with all features info
-        return {"features_list": all_features_text, "nr_features": self._nr_features_from_tree()}
+        return all_features_text
 
     # extract number of features from tree
     # ! may throw exception if not found
@@ -269,6 +275,29 @@ class TescoScraper(Scraper):
         return re.sub("&nbsp;", " ", text).strip()
 
 
+
+
+    def main(args):
+        # check if there is an argument
+        if len(args) <= 1:
+            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython crawler_service.py <tesco_product_url>\n")
+            sys.exit(1)
+    
+        product_page_url = args[1]
+    
+        # check format of page url
+        if not check_url_format(product_page_url):
+            sys.stderr.write("ERROR: Invalid URL " + str(product_page_url) + "\nFormat of product URL should be\n\t http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd\n")
+            sys.exit(1)
+    
+        return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
+
+
+
+
+
+
+
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
     # 
@@ -284,6 +313,7 @@ class TescoScraper(Scraper):
         "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
         "features" : _features_from_tree, \
+        "nr_features" : _nr_features_from_tree, \
         "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
         "product_id" : _extract_product_id, \
@@ -299,10 +329,15 @@ class TescoScraper(Scraper):
         "model" : _model_from_tree, \
         "manufacturer_content_body" : manufacturer_content_body, \
         "pdf_url" : pdf_for_url, \
-        "reviews" : reviews_for_url \
+        "average_review" : reviews_for_url, \
+        "total_reviews" : nr_reviews\
     }
 
 
+
+
+
+
 if __name__=="__main__":
-    WD = WalmartScraper()
-    print WD.main(sys.argv)
+    TS = TescoScraper()
+    print TS.main(sys.argv)
