@@ -3,7 +3,6 @@ from future_builtins import *
 
 import json
 import urlparse
-import string
 
 from scrapy import Request
 from scrapy.log import ERROR
@@ -42,11 +41,8 @@ class CanadiantireProductsSpider(BaseProductsSpider):
             ).replace('-', '')
             product['upc'] = int(productid)
 
-        info = response.xpath(
-            "//div[@class='features_wrap']/descendant::*[text()]/text()")
-        if info:
-            info = "\n".join(map(string.strip, info.extract()))
-            product['description'] = info
+        info = response.xpath("//div[@class='features_wrap']")
+        cond_set_value(product, 'description', info.extract(), conv=''.join)
 
         related = response.xpath(
             "//div[@class='sr-cross-sell__wrapper']/*/*/*/a")
