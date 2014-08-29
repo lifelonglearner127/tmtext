@@ -90,6 +90,7 @@ class CanadiantireProductsSpider(BaseProductsSpider):
         prod_data = data[0]
 
         cond_set_value(product, 'price', prod_data.get('regularPrice'))
+        cond_set_value(product, 'title', prod_data.get('name'))
 
         return product
 
