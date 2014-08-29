@@ -12,6 +12,7 @@ from extract_data import Scraper
 
 class TescoScraper(Scraper):
     
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd"
     
     #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
     bazaarvoice = None
@@ -35,7 +36,10 @@ class TescoScraper(Scraper):
 
     # return dictionary with one element containing the video url
     def video_for_url(self):
-        return None
+        video_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
+        video_url = re.search("\['http://embed\.flixfacts\.com/.*\]", video_url.strip()).group()
+        video_url = re.findall("'(.*?)'", video_url)
+        return video_url
 
     # return dictionary with one element containing the PDF
     def pdf_for_url(self):
@@ -46,19 +50,38 @@ class TescoScraper(Scraper):
         url = "http://api.bazaarvoice.com/data/batch.json?passkey=asiwwvlu4jk00qyffn49sr7tb&apiversion=5.4&displaycode=1235-en_gb&resource.q0=products&filter.q0=id%3Aeq%3A" \
         + self._extract_product_id() + \
         "&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US"
+        req = requests.get(url)
+        self.bazaarvoice = req.json()
         
-        self.bazaarvoice = requests.get(url).json()
+    def _image_url(self):
+        head = 'http://tesco.scene7.com/is/image/'
+        image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
+        image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url)[0]
+        image_url = image_url.split(',')
+        image_url = [head+link for link in image_url]
+        return image_url
         
+    def manufacturer_content_body(self):
+        if not self.bazaarvoice:
+            self.load_bazaarvoice()
+        content = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['Description']
+        return content
+    
     #extract average review, and total reviews  
     def reviews_for_url(self):
         if not self.bazaarvoice:
             self.load_bazaarvoice()
         average_review = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['AverageOverallRating']
-        nr_reviews = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['TotalReviewCount']
     
-        return {'average_review' : average_review, 'nr_reviews' : nr_reviews}
+        return average_review
 
+    def nr_reviews(self):
+        if not self.bazaarvoice:
+            self.load_bazaarvoice()
 
+        nr_reviews = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['TotalReviewCount']
+        return nr_reviews
+        
     # extract product name from its product page tree
     # ! may throw exception if not found
     def _product_name_from_tree(self):
@@ -88,8 +111,10 @@ class TescoScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
-        full_description = " ".join(self.tree_html.xpath("//section[@id='product-details-link']/section[@class='detailWrapper']//text()")).strip()
-        # TODO: return None if no description
+        #TODO: Needs some logic for deciding when Tesco is displaying one format or the other, the following 2 lines are the currently encountered versions
+        #full_description = " ".join(self.tree_html.xpath("//section[@id='product-details-link']/section[@class='detailWrapper']//text()")).strip()
+        full_description = " ".join(self.tree_html.xpath('//section[@id="product-details"]//text()')).strip()
+        
         return full_description
 
 
@@ -144,9 +169,13 @@ class TescoScraper(Scraper):
         return self.bazaarvoice['BatchedResults']['q0']['Results'][0]['ModelNumbers'][0]
 
     # extract product features list from its product product page tree, return as string
+    # join all text in spec table; separate rows by newlines and eliminate spaces between cells
     def _features_from_tree(self):
-        # join all text in spec table; separate rows by newlines and eliminate spaces between cells
-        rows = self.tree_html.xpath("//section[@class='detailWrapper']//tr")
+        
+        #TODO: Needs some logic for deciding when Tesco is displaying one format or the other, the following 2 lines are the currently encountered versions
+        #rows = self.tree_html.xpath("//section[@class='detailWrapper']//tr")
+        rows = self.tree_html.xpath("//div[@class='product-spec-container']//tr")
+        
         # list of lists of cells (by rows)
         cells = map(lambda row: row.xpath(".//*//text()"), rows)
         # list of text in each row
@@ -159,13 +188,13 @@ class TescoScraper(Scraper):
         all_features_text = "\n".join(rows_text)
 
         # return dict with all features info
-        return {"features_list": all_features_text, "nr_features": self._nr_features_from_tree()}
+        return all_features_text
 
     # extract number of features from tree
     # ! may throw exception if not found
     def _nr_features_from_tree(self):
         # select table rows with more than 2 cells (the others are just headers), count them
-        return len(filter(lambda row: len(row.xpath(".//td"))>0, self.tree_html.xpath("//section[@class='detailWrapper']//tr")))
+        return len(filter(lambda row: len(row.xpath(".//td"))>0, self.tree_html.xpath("//div[@class='product-spec-container']//tr")))
 
     # extract page title from its product product page tree
     # ! may throw exception if not found
@@ -193,6 +222,29 @@ class TescoScraper(Scraper):
         return re.sub("&nbsp;", " ", text).strip()
 
 
+
+
+    def main(args):
+        # check if there is an argument
+        if len(args) <= 1:
+            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython crawler_service.py <tesco_product_url>\n")
+            sys.exit(1)
+    
+        product_page_url = args[1]
+    
+        # check format of page url
+        if not check_url_format(product_page_url):
+            sys.stderr.write("ERROR: Invalid URL " + str(product_page_url) + "\nFormat of product URL should be\n\t http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd\n")
+            sys.exit(1)
+    
+        return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
+
+
+
+
+
+
+
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
     # 
@@ -208,10 +260,13 @@ class TescoScraper(Scraper):
         "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
         "features" : _features_from_tree, \
+        "nr_features" : _nr_features_from_tree, \
         "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
         "product_id" : _extract_product_id, \
-        "load_time": None \
+        "load_time": None, \
+        "image_url" : _image_url, \
+        "video_url" : video_for_url \
         }
 
     # special data that can't be extracted from the product page
@@ -219,12 +274,17 @@ class TescoScraper(Scraper):
     DATA_TYPES_SPECIAL = { \
         "brand" : _meta_brand_from_tree, \
         "model" : _model_from_tree, \
-        "video_url" : video_for_url, \
+        "manufacturer_content_body" : manufacturer_content_body, \
         "pdf_url" : pdf_for_url, \
-        "reviews" : reviews_for_url \
+        "average_review" : reviews_for_url, \
+        "total_reviews" : nr_reviews\
     }
 
 
+
+
+
+
 if __name__=="__main__":
-    WD = WalmartScraper()
-    print WD.main(sys.argv)
+    TS = TescoScraper()
+    print TS.main(sys.argv)
