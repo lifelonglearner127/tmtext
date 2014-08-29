@@ -8,9 +8,6 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults, populate_from_open_graph
 
 
-# FIXME The default must be best_match.
-# FIXME Best_match and best_sellers cannot be the same.
-
 
 class MorrisonsProductsSpider(BaseProductsSpider):
     name = 'morrisons_products'
@@ -27,8 +24,7 @@ class MorrisonsProductsSpider(BaseProductsSpider):
         'product_name_descending': 'name_desc',
         'high_price': 'price_desc',
         'low_price': 'price_asc',
-        'best_sellers': 'default',
-        'rating': 'customer_rating',
+        'best_sellers': 'customer_rating',
         'shortest_shelf_life': 'shelf_life',
     }
 
