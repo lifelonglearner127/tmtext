@@ -452,7 +452,7 @@ class WalmartScraper(Scraper):
         "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
-        "features_list" : _features_from_tree, \
+        "features" : _features_from_tree, \
         "nr_features" : _nr_features_from_tree, \
         "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
