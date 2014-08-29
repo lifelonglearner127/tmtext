@@ -64,24 +64,27 @@ class CanadiantireProductsSpider(BaseProductsSpider):
 
         price = response.xpath(
             "//div[contains(@class,'product-price')]/@data-load-params")
-        if price:
+        if not price:
+            ret = product
+        else:
             load_params = json.loads(price.extract()[0])
 
-            cond_set_value(product, 'locale', load_params.get('lang'))
+            locale = load_params.get('lang')
+            cond_set_value(product, 'locale', locale)
 
             prod_data_rel_url = self._PROD_DATA_RELATIVE_URL.format(
                 load_url=load_params.get('loadUrl'),
                 product_code=load_params.get('productCode'),
-                locale=load_params.get('lang'),
+                locale=locale,
                 show_ad="false",  # Fetch only what's necessary.
             )
             prod_data_url = urlparse.urljoin(response.url, prod_data_rel_url)
-            return Request(
+            ret = Request(
                 prod_data_url, self._parse_json, meta=response.meta.copy())
-        else:
-            cond_set_value(product, 'locale', "en-US")
 
-            return product
+        cond_set_value(product, 'locale', "en-US")
+
+        return ret
 
     def _parse_json(self, response):
         product = response.meta['product']
