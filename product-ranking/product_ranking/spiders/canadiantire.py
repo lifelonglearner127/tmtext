@@ -62,30 +62,34 @@ class CanadiantireProductsSpider(BaseProductsSpider):
             lrelated.append(RelatedProduct(ltitle, link))
         product['related_products'] = {"recommended": lrelated}
 
-        product['locale'] = "en-US"
-
         price = response.xpath(
             "//div[contains(@class,'product-price')]/@data-load-params")
         if price:
             load_params = json.loads(price.extract()[0])
-            json_link = self._PROD_DATA_RELATIVE_URL.format(
+
+            cond_set_value(product, 'locale', load_params.get('lang'))
+
+            prod_data_rel_url = self._PROD_DATA_RELATIVE_URL.format(
                 load_url=load_params.get('loadUrl'),
                 product_code=load_params.get('productCode'),
                 locale=load_params.get('lang'),
-                show_ad=load_params.get('showAdSkus'),
+                show_ad="false",  # Fetch only what's necessary.
             )
-            json_link = urlparse.urljoin(response.url, json_link)
+            prod_data_url = urlparse.urljoin(response.url, prod_data_rel_url)
             return Request(
-                json_link, self._parse_json, meta=response.meta.copy())
+                prod_data_url, self._parse_json, meta=response.meta.copy())
         else:
+            cond_set_value(product, 'locale', "en-US")
+
             return product
 
     def _parse_json(self, response):
         product = response.meta['product']
 
         data = json.loads(response.body_as_unicode())
-        price = data[0].get('regularPrice')
-        cond_set_value(product, 'price', price)
+        prod_data = data[0]
+
+        cond_set_value(product, 'price', prod_data.get('regularPrice'))
 
         return product
 
