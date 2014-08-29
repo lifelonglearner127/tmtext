@@ -11,60 +11,7 @@ import requests
 from extract_data import Scraper
 
 class TescoScraper(Scraper):
-    '''Josh's TODO
-    PDF & VIDEO------------------------------------------------------------
-    For PDFs and Videos, what you're really looking for is "content provided by manufacturer
-    PDFs and Videos as their own items are of value, but the higher level tag is good too.
     
-    pdf example   -
-    video example - http://www.tesco.com/direct/hudl-7-16gb-wi-fi-android-tablet-purple/275-3055.prd?skuId=275-3055
-                    http://www.tesco.com/direct/kindle-fire-hd-7-16gb-wifi-2013/157-2058.prd
-                    http://www.tesco.com/direct/kindle-paperwhite-2013-wi-fi/538-8448.prd
-    link example  - http://www.tesco.com/direct/hudl-7-16gb-wi-fi-android-tablet-purple/275-3055.prd?skuId=275-3055
-    no image example -  the following are probably not really no-image examples
-                        ??? http://www.tesco.com/direct/canford-card-a1/228-1822.prd
-                        ??? http://www.tesco.com/direct/nvidia-quadro-410-graphics-card-512mb/538-8755.prd
-                        ??? http://www.tesco.com/direct/canford-card-a1/228-1822.prd
-    
-    PRODUCT DESCRIPTION------------------------------------------------------------
-    separating the product description into description (as we have now) and "manufacturer provided description"?
-    The former is the stuff obviously native to the site, the latter is the stuff dynamically loaded and provided 
-    by manufacturer. Give it a name like "manufacturer_content" binary, and if there is text, send it back as 
-    "manufacturer_content_body" if easy.
-    
-    GENERIC TODO---------------------------------------------------------------
-    1) Finish tesco crawler. Which means we need to talk about image detection.
-        x video
-        x image
-        - pdf
-        x description / manufacturer description
-    
-    2) Amazon Crawler.
-    
-    3) How to guide
-    
-    4) Other crawlers
-    
-    IMAGE DETECTION------------------------------------------------------------
-    OK, so, here's what we found.
-    
-    You need to find a page with no product image.
-    
-    You need to take that image, and when you do the comparison, you actually have to hash the image data itself after loading it. If you hash the file information they all show up different because of meta-data. 
-    
-    Does that make sense?
-    [3:47:44 PM] Josh Freckleton: not quite. Am i scraping image hashes to compare the hashes just to see if it's the same picture? or what exactly? I'd imagine you'd want image urls at least
-    [3:49:41 PM] jeff green: So, if the site uses a single URL, that's great. You can just check if it's the no image url.
-    
-    But most seem to be somewhat dynamic and generate different urls. 
-    
-    When this happens, the picture loaded is created at a different time.
-    [3:50:02 PM] jeff green: So, you have to load the image into memory, and hash the image data, rather than just check location, or hash file data after crawl before load.
-    [3:50:12 PM] jeff green: Let's continue this chat tomorrow.
-    
-    
-    
-    '''
     INVALID_URL_MESSAGE = "Expected URL format is http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd"
     
     #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
