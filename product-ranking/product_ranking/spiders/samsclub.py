@@ -55,14 +55,19 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
         cond_set(
             product,
-            'description',
-            response.xpath("//div[@itemprop='description']").extract(),
+            'description', [' '.join(
+                response.xpath("//div[@itemprop='description']/descendant::*[text()]/text()").extract())
+            ],
             conv=''.join,
         )
 
-        productid = response.xpath("//span[@itemprop='productID']/text()")
-        productid = productid.extract()[0].strip().replace('#:', '', 1)
-        product['upc'] = int(productid)
+        productid = response.xpath("//span[@itemprop='productID']/text()").extract()
+        if productid:
+            productid = productid[0].strip().replace('#:', '', 1)
+            try:
+                product['upc'] = int(productid)
+            except ValueError:
+                self.log("Failed to parse upc number of matches: %r" % productid, ERROR)
 
         cond_set(product, 'model', response.xpath(
             "//span[@itemprop='model']/text()").extract())
