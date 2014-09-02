@@ -3,6 +3,7 @@
 from flask import Flask, jsonify, abort, request
 from extract_walmart_data import WalmartScraper
 from extract_tesco_data import TescoScraper
+from extract_amazon_data import AmazonScraper
 import datetime
 import logging
 from logging import StreamHandler
@@ -14,7 +15,8 @@ app = Flask(__name__)
 # dictionary containing supported sites as keys
 # and their respective scrapers as values
 SUPPORTED_SITES = {"walmart" : WalmartScraper,
-                   "tesco" : TescoScraper}
+                   "tesco" : TescoScraper,
+                   "amazon" : AmazonScraper}
 
 # add logger
 # using StreamHandler ensures that the log is sent to stderr to be picked up by uwsgi log
