@@ -12,7 +12,7 @@ from extract_data import Scraper
 
 class AmazonScraper(Scraper):
     
-    #http://www.amazon.com/dp/B000JMAVYO
+#    http://www.amazon.com/dp/B000JMAVYO
     
     INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id>"
     
@@ -59,24 +59,19 @@ class AmazonScraper(Scraper):
         return image_url
         
     def manufacturer_content_body(self):
-        if not self.bazaarvoice:
-            self.load_bazaarvoice()
-        content = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['Description']
-        return content
+        full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
+        return full_description
     
     #extract average review, and total reviews  
     def reviews_for_url(self):
-        if not self.bazaarvoice:
-            self.load_bazaarvoice()
-        average_review = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['AverageOverallRating']
-    
+        average_review = self.tree_html.xpath("//span[@id='acrPopover']/@title")[0]
+        average_review = re.findall("([0-9]\.?[0-9]?) out of 5 stars", average_review)[0]
+
         return average_review
 
     def nr_reviews(self):
-        if not self.bazaarvoice:
-            self.load_bazaarvoice()
-
-        nr_reviews = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['TotalReviewCount']
+        nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")[0]
+        nr_reviews = re.findall("([0-9]+) customer reviews", nr_reviews)[0]
         return nr_reviews
         
     # extract product name from its product page tree
@@ -163,9 +158,8 @@ class AmazonScraper(Scraper):
     # extract product model from its product product page tree
     # ! may throw exception if not found
     def _model_from_tree(self):
-        if not self.bazaarvoice:
-            self.load_bazaarvoice()
-        return self.bazaarvoice['BatchedResults']['q0']['Results'][0]['ModelNumbers'][0]
+        model = self.tree_html.xpath("//tr[@class='item-model-number']/td[@class='value']//text()")[0]
+        return model
 
     # extract product features list from its product product page tree, return as string
     # join all text in spec table; separate rows by newlines and eliminate spaces between cells
@@ -210,10 +204,9 @@ class AmazonScraper(Scraper):
     def _seller_from_tree(self):
         seller_info = {}
         h5_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h5//text()[normalize-space()!='']"))
+        acheckboxlabel = map(lambda text: self._clean_text(text), self.tree_html.xpath("//span[@class='a-checkbox-label']//text()[normalize-space()!='']"))
         
-        print 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n\n'
-        print h5_tags
-        seller_info['owned'] = 1 if "fghjg" in h5_tags else 0
+        seller_info['owned'] = 1 if "FREE Two-Day" in acheckboxlabel else 0
         seller_info['marketplace'] = 1 if "Other Sellers on Amazon" in h5_tags else 0
 
         return seller_info
@@ -255,22 +248,18 @@ class AmazonScraper(Scraper):
     x    features
     x    nr_features
     x    title
-        seller
+    ?    seller  <-  Not sure, There are a lot of versions of owned vs merchant, I'll need to look into this more
     x    product_id
     x    load_time
     x    image_url
         video_url
         
     x    brand
-        model
-        manufacturer_content_body
+    x    model
+    x    manufacturer_content_body
         pdf_url
-        average_review
-        total_reviews
-    
-    retail 40%
-    licensors 3-10%
-    liscensee 97%
+    x    average_review
+    x    total_reviews
     
     
     '''
@@ -288,6 +277,7 @@ class AmazonScraper(Scraper):
         "keywords" : _meta_keywords_from_tree, \
         "short_desc" : _short_description_from_tree, \
         "long_desc" : _long_description_from_tree, \
+        "manufacturer_content_body" : manufacturer_content_body, \
         "price" : _price_from_tree, \
         "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
@@ -306,7 +296,6 @@ class AmazonScraper(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         "model" : _model_from_tree, \
-        "manufacturer_content_body" : manufacturer_content_body, \
         "pdf_url" : pdf_for_url, \
         "average_review" : reviews_for_url, \
         "total_reviews" : nr_reviews\
