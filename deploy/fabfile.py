@@ -10,6 +10,15 @@ import re
 from contextlib import contextmanager
 
 '''
+Fabric deployment script for Web Runner
+
+This script will help to deploy:
+. Scrapyd
+. Web Runner REST Server
+. Web Runner Web
+'''
+
+'''
 TODO:
 1) deploy users and permissions
 2) deploy keys 
@@ -23,15 +32,6 @@ TODO:
 11) Configure supervisord
 12) configure nginx 
 13) work on updates.
-'''
-
-'''TODO: There is a lot of calls like:
-    venv_scrapyd = VENV_PREFIX + os.sep + VENV_SCRAPYD
-    venv_webrunner = VENV_PREFIX + os.sep + VENV_WEB_RUNNER
-    venv_webrunner_web = VENV_PREFIX + os.sep + VENV_WEB_RUNNER_WEB
-    repo_path = REPO_BASE_PATH + os.sep + re.search('.+\/([^\s]+?)\.git$',REPO_URL).group(1)
-
-Those invocation are repeted in the code and must be replaced by 1 function
 '''
 
 # For the moment the configuration will be constant defined here.
@@ -56,46 +56,65 @@ SSH_SUDO_PASSWORD = 'vagrant'
 REPO_BASE_PATH = '~/repos/'
 REPO_URL = 'https://ContentSolutionsDeploy:Content2020@bitbucket.org/dfeinleib/tmtext.git'
 
-def host_type():
-    local('uname -a')
 
-def hello(name='world'):
-    print("Hello %s!" % name)
+@contextmanager
+def virtualenv(environment):
+    '''Define the virtual environment to use.
 
+    This function is useful for fabric.api.run commands, because all run 
+    invocation will be called within the virtual environemnt. Example:
 
-def ls():
-    run('ls')
+      with virtualenv(VENV_SCRAPYD):
+        run('pip install scrapyd')
+        run('pip install simplejson')
 
+    The parameter environment is the name of the virtual environment
+    followed by VENV_PREFIX
+    '''
+    
+    venv_path = VENV_PREFIX + os.sep + environment
+    venv_activate = 'source %s%sbin%sactivate' % (venv_path, os.sep, os.sep)
+
+    with cuisine.cd(venv_path):
+        with prefix(venv_activate):
+            yield
 
 
 
 def set_environment_vagrant():
+    '''Define Vagrant's environment'''
+
     puts(red('Using Vagrant settings'))
 #    env.hosts = ['vagrant@127.0.0.1:2222']
     env.hosts = ['127.0.0.1']
     env.port = 2222
-    env.user = SSH_SUDO_USER
-    env.password = SSH_SUDO_PASSWORD
+    env.user = WEB_RUNNER_USER
+    env.password = WEB_RUNNER_PASSWORD
+
 
 def setup_users():
+    '''Add web runner group and users'''
+
     puts(green('Creating users and groups'))
+
+    orig_user, orig_passw = env.user, env.password
+    env.user, env.password = SSH_SUDO_USER , SSH_SUDO_PASSWORD
+
     cuisine.group_ensure(WEB_RUNNER_GROUP)
-    
-    #if not cuisine.user_check(WEB_RUNNER_USER):
-    #    cuisine.user_create(name=)
     cuisine.user_ensure(WEB_RUNNER_USER, gid=WEB_RUNNER_GROUP, 
       shell='/bin/bash', passwd=WEB_RUNNER_PASSWORD, encrypted_passwd=False)
-    #sudo('su web_runner')
-    #cuisine.ssh_keygen(WEB_RUNNER_USER)
-    #with settings(sudo_prefix='su web_runner -c '):
-    #    cuisine.ssh_keygen(WEB_RUNNER_USER)
-    #cuisine.sudo(cuisine.ssh_keygen(WEB_RUNNER_USER), user=WEB_RUNNER_USER)
+    
+    env.user, env.password = orig_user, orig_passw
+
 
 def setup_packages():
+    '''Install all packages prerequirements'''
+
     puts(green('Installing packages'))
 
-    env.user = SSH_SUDO_USER
-    env.password = SSH_SUDO_PASSWORD
+    orig_user, orig_passw = env.user, env.password
+    env.user, env.password = SSH_SUDO_USER , SSH_SUDO_PASSWORD
+
     cuisine.package_ensure('python-software-properties')
     # TODO: verify if the repo must be added
     cuisine.repository_ensure_apt('ppa:fkrull/deadsnakes')
@@ -110,68 +129,72 @@ def setup_packages():
     cuisine.package_ensure('tmux')
     sudo('pip install virtualenv --upgrade')
     
+    env.user, env.password = orig_user, orig_passw
 
 
-@contextmanager
-def virtualenv(environment):
-    venv_path = VENV_PREFIX + os.sep + environment
-    venv_activate = 'source %s%sbin%sactivate' % (venv_path, os.sep, os.sep)
-
-    with cuisine.cd(venv_path):
-        with prefix(venv_activate):
-            yield
+def _get_venv_path(venv):
+    return VENV_PREFIX + os.sep + VENV_SCRAPYD
 
 
-def setup_virtual_env():
-    puts(green('Installing virtual environments'))
-    env.user = WEB_RUNNER_USER
-    env.password = WEB_RUNNER_PASSWORD
+def _get_repo_path():
+    return REPO_BASE_PATH + os.sep + \
+      re.search('.+\/([^\s]+?)\.git$',REPO_URL).group(1)
 
-    venv_scrapyd = VENV_PREFIX + os.sep + VENV_SCRAPYD
-    venv_webrunner = VENV_PREFIX + os.sep + VENV_WEB_RUNNER
-    venv_webrunner_web = VENV_PREFIX + os.sep + VENV_WEB_RUNNER_WEB
-    run('mkdir -p ' + VENV_PREFIX)
-    
-    # Create scrapyd virtual enrironment
+
+def _setup_virtual_env_scrapyd():
+    '''Handle scrapyd virtual environment'''
+
+    venv_scrapyd = _get_venv_path(VENV_SCRAPYD)
     if not cuisine.dir_exists(venv_scrapyd):
         run('virtualenv -p python2.7 ' + venv_scrapyd)
+
     with virtualenv(VENV_SCRAPYD):
         run('pip install scrapyd')
         run('pip install simplejson')
 
+    
+
+def setup_virtual_env():
+    '''Handle virtual envrironment installation'''
+    puts(green('Installing virtual environments'))
+
+    venv_webrunner = _get_venv_path(VENV_WEB_RUNNER)
+    venv_webrunner_web = _get_venv_path(VENV_WEB_RUNNER_WEB)
+
+    run('mkdir -p ' + VENV_PREFIX)
+    _setup_virtual_env_scrapyd()
+    
+
 
 def get_repos():
-    puts(green('Updating repositories'))
-    env.user = WEB_RUNNER_USER
-    env.password = WEB_RUNNER_PASSWORD
+    '''Download and install the main source repository'''
 
-    repo_path = REPO_BASE_PATH + os.sep + re.search('.+\/([^\s]+?)\.git$',REPO_URL).group(1)
+    puts(green('Updating repositories'))
+
+    repo_path = _get_repo_path()
     if not cuisine.dir_exists(repo_path):
         run('mkdir -p ' + REPO_BASE_PATH)
         run('cd %s && git clone %s' % (REPO_BASE_PATH, REPO_URL)) 
     else:
         run('cd %s && git pull' % repo_path)
-    
+ 
+
+def _configure_scrapyd():
+    venv_scrapyd = _get_venv_path(VENV_SCRAPYD)
+    repo_path = _get_repo_path()
+
+    run('cp %s/web_runner/conf/instance_two/scrapyd.conf %s'
+      % (repo_path, venv_scrapyd))
+
 
 def configure():
     puts(green('Configuring the servers'))
-    env.user = WEB_RUNNER_USER
-    env.password = WEB_RUNNER_PASSWORD
 
-    venv_scrapyd = VENV_PREFIX + os.sep + VENV_SCRAPYD
-    venv_webrunner = VENV_PREFIX + os.sep + VENV_WEB_RUNNER
-    venv_webrunner_web = VENV_PREFIX + os.sep + VENV_WEB_RUNNER_WEB
-    repo_path = REPO_BASE_PATH + os.sep + re.search('.+\/([^\s]+?)\.git$',REPO_URL).group(1)
-   
-    run('cp %s/web_runner/conf/instance_two/scrapyd.conf %s'
-      % (repo_path, venv_scrapyd))
- 
+    _configure_scrapyd()
 
-   
+
 def _restart_scrapyd():
     puts(green('Stoping scrapyd'))
-    env.user = WEB_RUNNER_USER
-    env.password = WEB_RUNNER_PASSWORD
 
     try:
         run("tmux send-keys -t webrunner:0 C-c")
@@ -179,12 +202,11 @@ def _restart_scrapyd():
         pass
 
 
-
 def _configure_scrapyd():
-    venv_scrapyd = VENV_PREFIX + os.sep + VENV_SCRAPYD
+    venv_scrapyd = _get_venv_path(VENV_SCRAPYD)
     venv_scrapyd_activate = '%s%sbin%sactivate' \
       % (venv_scrapyd, os.sep, os.sep)
-    repo_path = REPO_BASE_PATH + os.sep + re.search('.+\/([^\s]+?)\.git$',REPO_URL).group(1)
+    repo_path = _get_repo_path()
 
     run('tmux new-window -k -t webrunner:4 -n scrapyd_deploy')
     run("tmux send-keys -t webrunner:4 'source %s' C-m" % venv_scrapyd_activate)
@@ -192,26 +214,24 @@ def _configure_scrapyd():
     run("tmux send-keys -t webrunner:4 'cd product-ranking' C-m")
     run("tmux send-keys -t webrunner:4 'scrapyd-deploy' C-m")
     run("tmux send-keys -t webrunner:4 'exit' C-m")
-    
-    
 
+
+def _run_scrapyd():
+    venv_scrapyd = _get_venv_path(VENV_SCRAPYD)
+    venv_scrapyd_activate = '%s%sbin%sactivate' \
+      % (venv_scrapyd, os.sep, os.sep)
+
+    run("tmux send-keys -t webrunner:0 'source %s' C-m" % venv_scrapyd_activate)
+    run("tmux send-keys -t webrunner:0 'cd %s' C-m" % venv_scrapyd)
+    run("tmux send-keys -t webrunner:0 'scrapyd' C-m")
+    _configure_scrapyd()
+    
 
 def run_servers(restart_scrapyd=False):
     puts(green('Starting/restaring servers'))
 
     if restart_scrapyd:
         _restart_scrapyd()
-
-    env.user = WEB_RUNNER_USER
-    env.password = WEB_RUNNER_PASSWORD
-
-
-    venv_scrapyd = VENV_PREFIX + os.sep + VENV_SCRAPYD
-    venv_webrunner = VENV_PREFIX + os.sep + VENV_WEB_RUNNER
-    venv_webrunner_web = VENV_PREFIX + os.sep + VENV_WEB_RUNNER_WEB
-    
-    venv_scrapyd_activate = '%s%sbin%sactivate' \
-      % (venv_scrapyd, os.sep, os.sep)
 
     try:
         tmux_ls = run('tmux ls')
@@ -228,10 +248,9 @@ def run_servers(restart_scrapyd=False):
         run('tmux new-window -k -t webrunner:2 -n web_runner_web')
         run('tmux new-window -k -t webrunner:3 -n misc')
 
-    run("tmux send-keys -t webrunner:0 'source %s' C-m" % venv_scrapyd_activate)
-    run("tmux send-keys -t webrunner:0 'cd %s' C-m" % venv_scrapyd)
-    run("tmux send-keys -t webrunner:0 'scrapyd' C-m")
-    _configure_scrapyd()
+    _run_scrapyd()
+
+
 
 
 
