@@ -233,6 +233,7 @@ def run_servers(restart_scrapyd=False):
     if restart_scrapyd:
         _restart_scrapyd()
 
+    # Verify if a new tmux session must be created
     try:
         tmux_ls = run('tmux ls')
         if re.search('webrunner', tmux_ls):
@@ -244,9 +245,10 @@ def run_servers(restart_scrapyd=False):
 
     if tmux_create:
         run('tmux new-session -d -s webrunner -n scrapyd')
-        run('tmux new-window -k -t webrunner:1 -n web_runner')
-        run('tmux new-window -k -t webrunner:2 -n web_runner_web')
-        run('tmux new-window -k -t webrunner:3 -n misc')
+
+    run('tmux new-window -k -t webrunner:1 -n web_runner')
+    run('tmux new-window -k -t webrunner:2 -n web_runner_web')
+    run('tmux new-window -k -t webrunner:3 -n misc')
 
     _run_scrapyd()
 
