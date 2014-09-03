@@ -5,27 +5,26 @@ import json
 import string
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 from scrapy.log import ERROR
+
 
 class LazadaProductsSpider(BaseProductsSpider):
     name = 'lazada_products'
     allowed_domains = ["lazada.com.ph"]
     start_urls = []
     SEARCH_URL = "http://www.lazada.com.ph/catalog/?q={search_term}"
-    # NEED USER_AGENT="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36"
-    # scrapy crawl myproject.com -o output.csv -t csv -s USER_AGENT="Mozilla...."
-    # or
-    # Move your USER_AGENT line to the settings.py file, and not in your scrapy.cfg file.
-    # settings.py should be at same level as items.py if you use scrapy startproject command,
-    # in your case it should be something like myproject/settings.py
+    # FIXME: Overrides USER AGENT unconditionally.
+    _USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " \
+        "(KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36"
+    # scrapy crawl lazada_products -a searchterms_str="bath" -a quantity=1 -s USER_AGENT="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36"
 
-    def __init__(self, *args, **kwargs):
-        super(LazadaProductsSpider, self).__init__(
-            #url_formatter=FormatterWithDefaults(pagenum=1, prods_per_page=32),
-            *args, **kwargs)
+    def start_requests(self):
+        for request in super(LazadaProductsSpider, self).start_requests():
+            yield request.replace(headers={'User-Agent': self._USER_AGENT})
 
     def parse_product(self, response):
+        print "PARSE_PRODUCT response.request.headers=",response.request.headers
         product = response.meta['product']
 
         cond_set(product, 'title', map(string.strip, response.xpath(
@@ -37,7 +36,7 @@ class LazadaProductsSpider(BaseProductsSpider):
         desc = response.xpath(
             "//div[@id='productDetails']/descendant::*[text()]/text()").extract()
         info = ". ".join([x.strip() for x in desc if len(x.strip()) > 0])
-        product['description'] = info
+        cond_set_value(product, 'description', info)
 
         self._populate_from_js(response, product)
         return product
