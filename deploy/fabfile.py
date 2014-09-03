@@ -25,6 +25,15 @@ TODO:
 13) work on updates.
 '''
 
+'''TODO: There is a lot of calls like:
+    venv_scrapyd = VENV_PREFIX + os.sep + VENV_SCRAPYD
+    venv_webrunner = VENV_PREFIX + os.sep + VENV_WEB_RUNNER
+    venv_webrunner_web = VENV_PREFIX + os.sep + VENV_WEB_RUNNER_WEB
+    repo_path = REPO_BASE_PATH + os.sep + re.search('.+\/([^\s]+?)\.git$',REPO_URL).group(1)
+
+Those invocation are repeted in the code and must be replaced by 1 function
+'''
+
 # For the moment the configuration will be constant defined here.
 # Leter this info will be added to a configuration file.
 #SSH_USER = 'vagrant'
@@ -88,6 +97,7 @@ def setup_packages():
     env.user = SSH_SUDO_USER
     env.password = SSH_SUDO_PASSWORD
     cuisine.package_ensure('python-software-properties')
+    # TODO: verify if the repo must be added
     cuisine.repository_ensure_apt('ppa:fkrull/deadsnakes')
     #sudo('apt-get update')
     cuisine.package_ensure('python3.4 python3.4-dev')
@@ -127,6 +137,7 @@ def setup_virtual_env():
         run('virtualenv -p python2.7 ' + venv_scrapyd)
     with virtualenv(VENV_SCRAPYD):
         run('pip install scrapyd')
+        run('pip install simplejson')
 
 
 def get_repos():
@@ -142,12 +153,58 @@ def get_repos():
         run('cd %s && git pull' % repo_path)
     
 
-    
-
-def run_servers():
-    puts(green('Starting/restaring servers'))
+def configure():
+    puts(green('Configuring the servers'))
     env.user = WEB_RUNNER_USER
     env.password = WEB_RUNNER_PASSWORD
+
+    venv_scrapyd = VENV_PREFIX + os.sep + VENV_SCRAPYD
+    venv_webrunner = VENV_PREFIX + os.sep + VENV_WEB_RUNNER
+    venv_webrunner_web = VENV_PREFIX + os.sep + VENV_WEB_RUNNER_WEB
+    repo_path = REPO_BASE_PATH + os.sep + re.search('.+\/([^\s]+?)\.git$',REPO_URL).group(1)
+   
+    run('cp %s/web_runner/conf/instance_two/scrapyd.conf %s'
+      % (repo_path, venv_scrapyd))
+ 
+
+   
+def _restart_scrapyd():
+    puts(green('Stoping scrapyd'))
+    env.user = WEB_RUNNER_USER
+    env.password = WEB_RUNNER_PASSWORD
+
+    try:
+        run("tmux send-keys -t webrunner:0 C-c")
+    except:
+        pass
+
+
+
+def _configure_scrapyd():
+    venv_scrapyd = VENV_PREFIX + os.sep + VENV_SCRAPYD
+    venv_scrapyd_activate = '%s%sbin%sactivate' \
+      % (venv_scrapyd, os.sep, os.sep)
+    repo_path = REPO_BASE_PATH + os.sep + re.search('.+\/([^\s]+?)\.git$',REPO_URL).group(1)
+
+    run('tmux new-window -k -t webrunner:4 -n scrapyd_deploy')
+    run("tmux send-keys -t webrunner:4 'source %s' C-m" % venv_scrapyd_activate)
+    run("tmux send-keys -t webrunner:4 'cd %s' C-m" % repo_path)
+    run("tmux send-keys -t webrunner:4 'cd product-ranking' C-m")
+    run("tmux send-keys -t webrunner:4 'scrapyd-deploy' C-m")
+    run("tmux send-keys -t webrunner:4 'exit' C-m")
+    
+    
+
+
+def run_servers(restart_scrapyd=False):
+    puts(green('Starting/restaring servers'))
+
+    if restart_scrapyd:
+        _restart_scrapyd()
+
+    env.user = WEB_RUNNER_USER
+    env.password = WEB_RUNNER_PASSWORD
+
 
     venv_scrapyd = VENV_PREFIX + os.sep + VENV_SCRAPYD
     venv_webrunner = VENV_PREFIX + os.sep + VENV_WEB_RUNNER
@@ -167,20 +224,23 @@ def run_servers():
 
     if tmux_create:
         run('tmux new-session -d -s webrunner -n scrapyd')
-        run('tmux new-window -t webrunner:1 -n web_runner')
-        run('tmux new-window -t webrunner:2 -n web_runner_web')
+        run('tmux new-window -k -t webrunner:1 -n web_runner')
+        run('tmux new-window -k -t webrunner:2 -n web_runner_web')
+        run('tmux new-window -k -t webrunner:3 -n misc')
 
     run("tmux send-keys -t webrunner:0 'source %s' C-m" % venv_scrapyd_activate)
-    #run("tmux send-keys -t webrunner:0 C-c")
     run("tmux send-keys -t webrunner:0 'cd %s' C-m" % venv_scrapyd)
     run("tmux send-keys -t webrunner:0 'scrapyd' C-m")
+    _configure_scrapyd()
 
 
-def deploy():
+
+def deploy(restart_scrapyd=False):
     setup_users()
     setup_packages()
     setup_virtual_env()
     get_repos()
-    run_servers()
+    configure()
+    run_servers(restart_scrapyd)
 
 # vim: set expandtab ts=4 sw=4:
