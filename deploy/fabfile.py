@@ -133,7 +133,7 @@ def setup_packages():
 
 
 def _get_venv_path(venv):
-    return VENV_PREFIX + os.sep + VENV_SCRAPYD
+    return VENV_PREFIX + os.sep + venv
 
 
 def _get_repo_path():
@@ -152,7 +152,18 @@ def _setup_virtual_env_scrapyd():
         run('pip install scrapyd')
         run('pip install simplejson')
 
-    
+
+def _setup_virtual_env_web_runner():
+    venv_webrunner = _get_venv_path(VENV_WEB_RUNNER)
+    if not cuisine.dir_exists(venv_webrunner):
+        run('virtualenv -p python2.7 ' + venv_webrunner)
+
+    with virtualenv(VENV_WEB_RUNNER):
+        run('pip install wheel')
+        run('pip install Paste')
+
+
+
 
 def setup_virtual_env():
     '''Handle virtual envrironment installation'''
@@ -163,6 +174,7 @@ def setup_virtual_env():
 
     run('mkdir -p ' + VENV_PREFIX)
     _setup_virtual_env_scrapyd()
+    _setup_virtual_env_web_runner()
     
 
 
@@ -187,10 +199,41 @@ def _configure_scrapyd():
       % (repo_path, venv_scrapyd))
 
 
+def _configure_web_runner():
+    venv_webrunner = _get_venv_path(VENV_WEB_RUNNER)
+    repo_path = _get_repo_path()
+
+    run('cp %s/web_runner/conf/instance_two/instance_two.ini %s'
+      % (repo_path, venv_webrunner))
+
+
 def configure():
     puts(green('Configuring the servers'))
 
     _configure_scrapyd()
+    _configure_web_runner()
+
+
+def _install_web_runner():
+    venv_webrunner = _get_venv_path(VENV_WEB_RUNNER)
+    venv_webrunner_activate = '%s%sbin%sactivate' \
+      % (venv_webrunner, os.sep, os.sep)
+    repo_path = _get_repo_path()
+
+    run("tmux send-keys -t webrunner:1 'source %s' C-m" % 
+        venv_webrunner_activate)
+    run("tmux send-keys -t webrunner:1 'cd %s' C-m" % repo_path)
+    run("tmux send-keys -t webrunner:1 'cd web_runner' C-m")
+    run("tmux send-keys -t webrunner:1 'python setup.py bdist_wheel' C-m")
+    run("tmux send-keys -t webrunner:1 '/usr/bin/yes | pip uninstall web-runner' C-m")
+
+    with virtualenv(VENV_WEB_RUNNER):
+        run('cd %s/web_runner && python setup.py bdist_wheel' % repo_path)
+        run('cd %s/web_runner && pip install dist/web_runner-*.whl' % repo_path)
+
+
+def install():
+    _install_web_runner()
 
 
 def _restart_scrapyd():
@@ -225,7 +268,26 @@ def _run_scrapyd():
     run("tmux send-keys -t webrunner:0 'cd %s' C-m" % venv_scrapyd)
     run("tmux send-keys -t webrunner:0 'scrapyd' C-m")
     _configure_scrapyd()
-    
+ 
+
+def _run_web_runner():
+    venv_webrunner = _get_venv_path(VENV_WEB_RUNNER)
+    venv_webrunner_activate = '%s%sbin%sactivate' \
+      % (venv_webrunner, os.sep, os.sep)
+
+    run("tmux send-keys -t webrunner:1 'source %s' C-m" % venv_webrunner_activate)
+    run("tmux send-keys -t webrunner:1 'cd %s' C-m" % venv_webrunner)
+    run("tmux send-keys -t webrunner:1 'pserve instance_two.ini --stop-daemon' C-m")
+    run("tmux send-keys -t webrunner:1 'pserve instance_two.ini start' C-m")
+
+#    with virtualenv(VENV_WEB_RUNNER):
+#        if cuisine.file_exists('pyramid.pid'):
+#            try:
+#                run('pserve  instance_two.ini restart')
+#            except:
+#                run('pserve  instance_two.ini start')
+#        else:
+#            run('pserve  instance_two.ini start')
 
 def run_servers(restart_scrapyd=False):
     puts(green('Starting/restaring servers'))
@@ -251,6 +313,7 @@ def run_servers(restart_scrapyd=False):
     run('tmux new-window -k -t webrunner:3 -n misc')
 
     _run_scrapyd()
+    _run_web_runner()
 
 
 
@@ -262,6 +325,7 @@ def deploy(restart_scrapyd=False):
     setup_virtual_env()
     get_repos()
     configure()
+    install()
     run_servers(restart_scrapyd)
 
 # vim: set expandtab ts=4 sw=4:
