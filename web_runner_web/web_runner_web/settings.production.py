@@ -5,6 +5,6 @@ except ImportError as e:
 
 # WEB_RUNNER_WEB settings
 WEB_RUNNER_LOG_FILES = (
-    '/home/javier/virtual-environments/web-runner/pyramid.log',
-    '/home/javier/virtual-environments/web-runner/access.log',
+    '/home/web_runner/virtual-environments/web-runner/pyramid.log',
+    '/home/web_runner/virtual-environments/web-runner/access.log',
 )
