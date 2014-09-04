@@ -5,6 +5,7 @@ import json
 import string
 import urllib
 import urlparse
+import re
 
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
@@ -136,10 +137,12 @@ class CanadiantireProductsSpider(BaseProductsSpider):
             "//div[@class='bigImage']/img[@id='mainProductImage']/@src").extract())
 
         price = response.xpath(
-            "//div[contains(@class,'bigPrice')]/descendant::*[text()]/text()")
+            "//div[contains(@class,'bigPrice')]/div[@class='price']/descendant::*[text()]/text()")
         price = [x.strip() for x in price.extract()]
-        price = " ".join(price)
-        price = " ".join(price.split())
+        price = "".join(price)
+        m = re.match(r'\$(.*)\*.*', price)
+        if m:
+            price = m.group(1)
         cond_set_value(product, 'price', price)
 
         info = response.xpath("//div[@id='features']/div[@class='tabContent']/descendant::*[text()]/text()")
