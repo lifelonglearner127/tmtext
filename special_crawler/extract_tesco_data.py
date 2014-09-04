@@ -4,14 +4,25 @@ import urllib
 import re
 import sys
 import json
-
+import os.path
+import urllib, cStringIO
+from io import BytesIO
+from PIL import Image
+import mmh3 as MurmurHash
 from lxml import html
 import time
 import requests
 from extract_data import Scraper
 
 class TescoScraper(Scraper):
+    '''
+    no/broken image example:
+        http://www.tesco.com/direct/torch-keychain-1-led/592-8399.prd
+        
+    hp no image: 
+        http://www.tesco.com/direct/nvidia-nvs-310-graphics-card-512mb/436-0793.prd
     
+    '''
     INVALID_URL_MESSAGE = "Expected URL format is http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd"
     
     #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
@@ -217,13 +228,67 @@ class TescoScraper(Scraper):
 
         return seller_info
 
+    def _upc(self):
+        return self.tree_html.xpath('//meta[@property="og:upc"]/@content')[0]
+    
+    def _product_images(self):
+        head = 'http://tesco.scene7.com/is/image/'
+        image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
+        image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url)[0]
+        image_url = image_url.split(',')
+        return len(image_url)
+
+    def _dept(self):
+        dept = " ".join(self.tree_html.xpath("//div[@id='breadcrumb']//li[3]//text()")).strip()
+        return dept
+    
+    def _super_dept(self):
+        dept = " ".join(self.tree_html.xpath("//div[@id='breadcrumb']//li[2]//text()")).strip()
+        return dept
+    
+    def _all_depts(self):
+        all = self.tree_html.xpath("//div[@id='breadcrumb']//li//span//text()")
+        return all
+    
+    def _no_image(self):
+        #get image urls
+        head = 'http://tesco.scene7.com/is/image/'
+        image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
+        image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url)[0]
+        image_url = image_url.split(',')
+        image_url = [head+link for link in image_url]
+        
+        path = 'no_img_list.json'
+        no_img_list = []
+        
+        if os.path.isfile(path):
+            f = open(path, 'r')
+            s = f.read()
+            if len(s) > 1:
+                no_img_list = json.loads(s)    
+            f.close()
+            
+        first_hash = str(MurmurHash.hash(self.fetch_bytes(image_url[0])))
+        print '-----------------\nfirst_hash = %s\n------------------'%(first_hash)
+        if first_hash in no_img_list:
+            return True
+        else:
+            return False
+        
+    
+    def fetch_bytes(self, url):
+        file = cStringIO.StringIO(urllib.urlopen(url).read())
+        img = Image.open(file)
+        
+        b = BytesIO()
+        img.save(b, format='png')
+        data = b.getvalue()
+    
+        return data
+
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
-
-
-
-
     def main(args):
         # check if there is an argument
         if len(args) <= 1:
@@ -241,7 +306,20 @@ class TescoScraper(Scraper):
 
 
 
+    '''
+    x extra : all_depts = since dept/super_dept were deprecated and you wanted the whole breadcrumb, I added all_depts which is ordered in a hierarchy
+    x UPC/EAN/ISBN - found UPC
+    x product_images
+    x super_dept - scraped from the breadcrumbs
+    x dept - scraped from the breadcrumbs
+    x model_title -  exists as "title_from_tree", no other meta title
+    x review_count - exists as "total_reviews"
+    x meta description - doesn't exist in meta, but this is being pulled from the bazarr json file as "manufacturer_content_body"
+    x model_meta  -  there's no meta for model, but there is a model that could (but usually doesn't) exist in the bazaar json file
 
+    meta keywords - doesn't exist in html source, or in the bazaar json
+    
+    '''
 
 
 
@@ -264,9 +342,17 @@ class TescoScraper(Scraper):
         "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
         "product_id" : _extract_product_id, \
-        "load_time": None, \
         "image_url" : _image_url, \
-        "video_url" : video_for_url \
+        "video_url" : video_for_url, \
+        
+        "upc" : _upc,\
+        "product_images" : _product_images, \
+        "dept" : _dept,\
+        "super_dept" : _super_dept,\
+        "all_depts" : _all_depts,\
+        "no_image" : _no_image,\
+        
+        "load_time": None\
         }
 
     # special data that can't be extracted from the product page

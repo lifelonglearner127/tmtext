@@ -114,11 +114,15 @@ class AmazonScraper(Scraper):
     # extract product price from its product product page tree
     def _price_from_tree(self):
         
-        meta_price = self.tree_html.xpath("//*[@id='priceblock_ourprice']//text()")
-        if meta_price:
-            return meta_price[0].strip()
-        else:
-            return None
+        price = self.tree_html.xpath("//*[@id='priceblock_ourprice']//text()")
+        if price:
+            return price[0].strip()
+        
+        price = self.tree_html.xpath("//*[contains(@class, 'offer-price')]//text()")
+        if price:
+            return price[0].strip()
+        
+        return None
 
     # extract product price from its product product page tree
     # ! may throw exception if not found
@@ -211,13 +215,38 @@ class AmazonScraper(Scraper):
 
         return seller_info
 
+    def _product_images(self):
+        return len(self.tree_html.xpath("//span[@class='a-button-text']//img/@src"))
+
+
+    def _dept(self):
+        all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
+        all = map(lambda t: self._clean_text(t), all)
+        return all[1]
+    
+    def _super_dept(self):
+        all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
+        all = map(lambda t: self._clean_text(t), all)
+        return all[0]
+    
+    def _all_depts(self):
+        all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
+        all = map(lambda t: self._clean_text(t), all)
+        return all
+    
+    def _meta_description(self):
+        return self.tree_html.xpath("//meta[@name='description']/@content")[0]
+    
+    def _meta_keywords(self):
+        return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
+    
+    def _asin(self):
+        #<input type="hidden" id="ASIN" name="ASIN" value="B00G2Y4WNY"
+        return self.tree_html.xpath("//input[@name='ASIN']/@value")[0]
+
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
-
-
-
-
     def main(args):
         # check if there is an argument
         if len(args) <= 1:
@@ -234,6 +263,21 @@ class AmazonScraper(Scraper):
         return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
 
 
+    '''
+    
+    x extra : all_depts = since dept/super_dept were deprecated and you wanted the whole breadcrumb, I added all_depts which is ordered in a hierarchy
+    x UPC/EAN/ISBN - returns ASIN
+    x product_images -  for given  url  it should be 1
+    x super_dept - scraped from the breadcrumbs
+    x dept - scraped from the breadcrumbs
+    x model_title -  exists as "title_from_tree"
+    x review_count - exists as "total_reviews"
+    x meta description - doesn't exist in meta, but this is being pulled from the bazarr json file as "manufacturer_content_body"
+    x meta keywords - doesn't exist in html source, or in the bazaar json
+    x model_meta  -  there's no meta for model, but there is a model in the source
+    
+    '''
+
 
     '''
     http://www.amazon.com/Dell-Inspiron-i3531-1200BK-15-6-Inch-Laptop/dp/B00KMRGF28/ref=sr_1_1?ie=UTF8&qid=1409586411&sr=8-1&keywords=dell
@@ -248,7 +292,7 @@ class AmazonScraper(Scraper):
     x    features
     x    nr_features
     x    title
-    ?    seller  <-  Not sure, There are a lot of versions of owned vs merchant, I'll need to look into this more
+        seller  <-  Not sure, There are a lot of versions of owned vs merchant, I'll need to look into this more
     x    product_id
     x    load_time
     x    image_url
@@ -261,7 +305,7 @@ class AmazonScraper(Scraper):
     x    average_review
     x    total_reviews
     
-    
+
     '''
 
 
@@ -286,10 +330,19 @@ class AmazonScraper(Scraper):
         "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
         "product_id" : _extract_product_id, \
-        "load_time": None, \
         "brand" : _meta_brand_from_tree, \
         "image_url" : _image_url, \
-        "video_url" : video_for_url \
+        "video_url" : video_for_url, \
+        
+        "product_images" : _product_images,\
+        "all_depts" : _all_depts,\
+        "dept" : _dept,\
+        "super_dept" : _super_dept,\
+        "meta_description" : _meta_description,\
+        "meta_keywords" : _meta_keywords,\
+        "asin" : _asin,\
+        
+        "load_time": None \
         }
 
     # special data that can't be extracted from the product page
@@ -300,10 +353,6 @@ class AmazonScraper(Scraper):
         "average_review" : reviews_for_url, \
         "total_reviews" : nr_reviews\
     }
-
-
-
-
 
 
 if __name__=="__main__":
