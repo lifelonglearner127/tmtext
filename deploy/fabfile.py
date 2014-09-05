@@ -50,11 +50,14 @@ VENV_SCRAPYD = 'scrapyd'
 VENV_WEB_RUNNER = 'web-runner'
 VENV_WEB_RUNNER_WEB = 'web-runner-web'
 
-SSH_SUDO_USER = 'vagrant'
-SSH_SUDO_PASSWORD = 'vagrant'
+SSH_SUDO_USER = 'gabriel'
+SSH_SUDO_PASSWORD = None
 
 REPO_BASE_PATH = '~/repos/'
 REPO_URL = 'https://ContentSolutionsDeploy:Content2020@bitbucket.org/dfeinleib/tmtext.git'
+
+    
+
 
 
 @contextmanager
@@ -85,11 +88,14 @@ def set_environment_vagrant():
     '''Define Vagrant's environment'''
 
     puts(red('Using Vagrant settings'))
+    global SSH_SUDO_USER
+    global SSH_SUDO_PASSWORD
+
 #    env.hosts = ['vagrant@127.0.0.1:2222']
+    SSH_SUDO_USER = 'vagrant'
+    SSH_SUDO_PASSWORD = 'vagrant'
     env.hosts = ['127.0.0.1']
     env.port = 2222
-    env.user = WEB_RUNNER_USER
-    env.password = WEB_RUNNER_PASSWORD
 
 
 def setup_users():
@@ -267,6 +273,7 @@ def _configure_web_runner_web():
         with virtualenv(VENV_WEB_RUNNER_WEB):
             run("cd %s/web_runner_web && ./manage.py syncdb --noinput" % repo_path)
 
+        run('tmux new-window -k -t webrunner:4 -n django_config')
         run("tmux send-keys -t webrunner:4 'source %s' C-m" % 
             venv_webrunner_web_activate)
         run("tmux send-keys -t webrunner:4 'cd %s' C-m" % repo_path)
@@ -391,8 +398,13 @@ def run_servers(restart_scrapyd=False):
     _run_web_runner_web()
 
 
+   
+
 
 def deploy(restart_scrapyd=False):
+    env.user = WEB_RUNNER_USER
+    env.password = WEB_RUNNER_PASSWORD
+
     setup_users()
     setup_packages()
     setup_tmux()
