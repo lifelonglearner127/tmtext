@@ -132,6 +132,26 @@ def setup_packages():
     env.user, env.password = orig_user, orig_passw
 
 
+def setup_tmux():
+    # Verify if a new tmux session must be created
+    try:
+        tmux_ls = run('tmux ls')
+        if re.search('webrunner', tmux_ls):
+            tmux_create = False
+        else:
+            tmux_create = True
+    except:
+        tmux_create = True
+
+    if tmux_create:
+        run('tmux new-session -d -s webrunner -n scrapyd')
+
+    run('tmux new-window -k -t webrunner:1 -n web_runner')
+    run('tmux new-window -k -t webrunner:2 -n web_runner_web')
+    run('tmux new-window -k -t webrunner:3 -n misc')
+
+
+
 def _get_venv_path(venv):
     return VENV_PREFIX + os.sep + venv
 
@@ -163,6 +183,24 @@ def _setup_virtual_env_web_runner():
         run('pip install Paste')
 
 
+def _setup_virtual_env_web_runner():
+    venv_webrunner = _get_venv_path(VENV_WEB_RUNNER)
+    if not cuisine.dir_exists(venv_webrunner):
+        run('virtualenv -p python2.7 ' + venv_webrunner)
+
+    with virtualenv(VENV_WEB_RUNNER):
+        run('pip install wheel')
+        run('pip install Paste')
+
+
+def _setup_virtual_env_web_runner_web():
+    venv_webrunner_web = _get_venv_path(VENV_WEB_RUNNER_WEB)
+    if not cuisine.dir_exists(venv_webrunner_web):
+        run('virtualenv -p python3.4 ' + venv_webrunner_web)
+
+    with virtualenv(VENV_WEB_RUNNER_WEB):
+        run('pip install django')
+        run('pip install requests')
 
 
 def setup_virtual_env():
@@ -175,6 +213,7 @@ def setup_virtual_env():
     run('mkdir -p ' + VENV_PREFIX)
     _setup_virtual_env_scrapyd()
     _setup_virtual_env_web_runner()
+    _setup_virtual_env_web_runner_web()
     
 
 
@@ -207,11 +246,44 @@ def _configure_web_runner():
       % (repo_path, venv_webrunner))
 
 
+def _configure_web_runner_web():
+    venv_webrunner_web = _get_venv_path(VENV_WEB_RUNNER_WEB)
+    venv_webrunner_web_activate = '%s%sbin%sactivate' \
+      % (venv_webrunner_web, os.sep, os.sep)
+    repo_path = _get_repo_path()
+
+    settings_prod = repo_path + '/web_runner_web/web_runner_web/' \
+      + 'settings.production.py'
+    settings_link = repo_path + '/web_runner_web/web_runner_web/settings.py'
+
+    # Create the settings.py
+    if not cuisine.file_exists(settings_link):
+        run('ln -s %s %s' % (settings_prod, settings_link))
+
+    # Create the Django DB and Django users
+    django_db = repo_path + '/web_runner_web/db.sqlite3'
+    if not cuisine.file_exists(django_db):
+        with virtualenv(VENV_WEB_RUNNER_WEB):
+            run("cd %s/web_runner_web && ./manage.py syncdb --noinput" % repo_path)
+
+        run("tmux send-keys -t webrunner:4 'source %s' C-m" % 
+            venv_webrunner_web_activate)
+        run("tmux send-keys -t webrunner:4 'cd %s' C-m" % repo_path)
+        run("tmux send-keys -t webrunner:4 'cd web_runner_web' C-m")
+        run("tmux send-keys -t webrunner:4 './manage.py shell' C-m")
+        run("tmux send-keys -t webrunner:4 'from django.contrib.auth.models import User' C-m")
+        run("tmux send-keys -t webrunner:4 'user = User.objects.create_user(username=\"admin\", password=\"Content\")' C-m")
+        run("tmux send-keys -t webrunner:4 'exit()' C-m")
+
+
+    
+
 def configure():
     puts(green('Configuring the servers'))
 
     _configure_scrapyd()
     _configure_web_runner()
+    _configure_web_runner_web()
 
 
 def _install_web_runner():
@@ -289,39 +361,40 @@ def _run_web_runner():
 #        else:
 #            run('pserve  instance_two.ini start')
 
+
+def _is_django_running():
+    '''Return boolean representing if django is running or not'''
+    process = processes = run("ps -ef | grep python | grep manage | grep runserver; true")
+    return process.stdout.find('\n')>0
+
+def _run_web_runner_web():
+    venv_webrunner_web = _get_venv_path(VENV_WEB_RUNNER_WEB)
+    venv_webrunner_web_activate = '%s%sbin%sactivate' \
+      % (venv_webrunner_web, os.sep, os.sep)
+    repo_path = _get_repo_path()
+
+    if not _is_django_running():
+        run("tmux send-keys -t webrunner:2 'source %s' C-m" % venv_webrunner_web_activate)
+        run("tmux send-keys -t webrunner:2 'cd %s/web_runner_web' C-m" % repo_path)
+        run("tmux send-keys -t webrunner:2 './manage.py runserver 0.0.0.0:8000' C-m")
+
+
 def run_servers(restart_scrapyd=False):
     puts(green('Starting/restaring servers'))
 
     if restart_scrapyd:
         _restart_scrapyd()
 
-    # Verify if a new tmux session must be created
-    try:
-        tmux_ls = run('tmux ls')
-        if re.search('webrunner', tmux_ls):
-            tmux_create = False
-        else:
-            tmux_create = True
-    except:
-        tmux_create = True
-
-    if tmux_create:
-        run('tmux new-session -d -s webrunner -n scrapyd')
-
-    run('tmux new-window -k -t webrunner:1 -n web_runner')
-    run('tmux new-window -k -t webrunner:2 -n web_runner_web')
-    run('tmux new-window -k -t webrunner:3 -n misc')
-
     _run_scrapyd()
     _run_web_runner()
-
-
+    _run_web_runner_web()
 
 
 
 def deploy(restart_scrapyd=False):
     setup_users()
     setup_packages()
+    setup_tmux()
     setup_virtual_env()
     get_repos()
     configure()
