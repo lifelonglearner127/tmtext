@@ -117,7 +117,7 @@ def setup_packages():
 
     cuisine.package_ensure('python-software-properties')
     # TODO: verify if the repo must be added
-    cuisine.repository_ensure_apt('ppa:fkrull/deadsnakes')
+    #cuisine.repository_ensure_apt('ppa:fkrull/deadsnakes')
     #sudo('apt-get update')
     cuisine.package_ensure('python3.4 python3.4-dev')
     cuisine.package_ensure('python-dev')
@@ -135,21 +135,22 @@ def setup_packages():
 def setup_tmux():
     # Verify if a new tmux session must be created
     try:
-        tmux_ls = run('tmux ls')
-        if re.search('webrunner', tmux_ls):
-            tmux_create = False
-        else:
-            tmux_create = True
+        tmux_ls = run('tmux list-windows -t webrunner')
+        
+        if not re.search('0: scrapyd', tmux_ls.stdout):
+            run('tmux new-window -k -t webrunner:0 -n scrapyd')
+        if not re.search('1: web_runner', tmux_ls.stdout):
+            run('tmux new-window -k -t webrunner:1 -n web_runner')
+        if not re.search('2: web_runner_web', tmux_ls.stdout):
+            run('tmux new-window -k -t webrunner:2 -n web_runner_web')
+        if not re.search('3: misc', tmux_ls.stdout):
+            run('tmux new-window -k -t webrunner:3 -n misc')
     except:
-        tmux_create = True
-
-    if tmux_create:
+        # The tmux session does not exists. Create everything
         run('tmux new-session -d -s webrunner -n scrapyd')
-
-    run('tmux new-window -k -t webrunner:1 -n web_runner')
-    run('tmux new-window -k -t webrunner:2 -n web_runner_web')
-    run('tmux new-window -k -t webrunner:3 -n misc')
-
+        run('tmux new-window -k -t webrunner:1 -n web_runner')
+        run('tmux new-window -k -t webrunner:2 -n web_runner_web')
+        run('tmux new-window -k -t webrunner:3 -n misc')
 
 
 def _get_venv_path(venv):
