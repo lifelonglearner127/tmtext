@@ -4,7 +4,8 @@ from future_builtins import *
 from scrapy.log import ERROR
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.spiders import BaseProductsSpider,FormatterWithDefaults, \
+    cond_set, cond_set_value
 
 
 class DrugstoreProductsSpider(BaseProductsSpider):
@@ -13,7 +14,27 @@ class DrugstoreProductsSpider(BaseProductsSpider):
     start_urls = []
 
     SEARCH_URL = "http://www.drugstore.com/search/search_results.asp?"\
-        "N=0&Ntx=mode%2Bmatchallpartial&Ntk=All&srchtree=5&Ntt={search_term}"
+        "Ns={search_sort}&N=0&Ntx=mode%2Bmatchallpartial&Ntk=All&srchtree=5&Ntt={search_term}"
+
+    SEARCH_SORT = {
+        'best_match': '',
+        'best_sellers': 'performanceRank%7c0',
+        'new_to_store': 'newToStoreDate%7c1',
+        'a-z': 'Brand+Line%7c0%7c%7cname%7c0%7c%7cgroupDistinction%7c0',
+        'z-a' : 'Brand+Line%7c1%7c%7cname%7c1%7c%7cgroupDistinction%7c1',
+        'customer_rating': 'avgRating%7c1%7c%7cratingCount%7c1',
+        'price_low': 'price%7c0',
+        'price_high': 'price%7c1',
+        'saving_dollars': 'savingsAmount%7c1',
+        'saving_percent': 'savingsPercent%7c1',
+    }
+
+    def __init__(self, search_sort='best_match', *args, **kwargs):
+        super(DrugstoreProductsSpider, self).__init__(
+            url_formatter=FormatterWithDefaults(
+                search_sort=self.SEARCH_SORT[search_sort]
+            ),
+            *args, **kwargs)
 
     def parse_product(self, response):
         product = response.meta['product']
