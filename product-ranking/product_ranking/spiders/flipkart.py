@@ -47,7 +47,11 @@ class FlipkartProductsSpider(BaseProductsSpider):
                 search_sort=self.SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-            
+    
+    def clear_desc(self, l):
+        return " ".join(
+            [it for it in map(string.strip, l) if it])
+              
     def parse_product(self, response):
         product = response.meta['product']
         
@@ -64,11 +68,10 @@ class FlipkartProductsSpider(BaseProductsSpider):
         if price and currency:
             cond_set_value(product, 'price', '{} {}'.format(price[0], currency[0]))
         
-        cond_set_value(product, 'description', " ".join(map(
-            string.strip, 
+        cond_set_value(product, 'description', self.clear_desc(
             response.xpath(
                 '//div[@id="description"]/div[contains(@class,"item_desc_text")]//text()'
-            ).extract())), string.strip)
+            ).extract()))
              
         cond_set_value(product, 'locale', 'en-IN')
         
