@@ -7,7 +7,8 @@ import urlparse
 from scrapy.log import ERROR, DEBUG
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
+     cond_set, cond_set_value
 
 
 class OcadoProductsSpider(BaseProductsSpider):
@@ -16,8 +17,24 @@ class OcadoProductsSpider(BaseProductsSpider):
     start_urls = []
 
     SEARCH_URL = "https://www.ocado.com/webshop/getSearchProducts.do?" \
-        "clearTabs=yes&isFreshSearch=true&entry={search_term}"
+        "clearTabs=yes&isFreshSearch=true&entry={search_term}&sortBy={search_sort}"
+        
+    SEARCH_SORT = {
+        "default" :"default",
+        "price_asc": "price_asc",
+        "price_desc": "price_desc",
+        "name_asc": "name_asc",
+        "name_desc":"name_desc",
+        "shelf_life":"shelf_life",
+        "customer_rating": "customer_rating", 
+    }
 
+    def __init__(self, search_sort="default", *args, **kwargs):
+        super(OcadoProductsSpider, self).__init__(
+            url_formatter=FormatterWithDefaults(
+                search_sort=self.SEARCH_SORT[search_sort]
+            ),
+            *args, **kwargs)
     def parse_product(self, response):
         product = response.meta['product']
 
@@ -45,7 +62,9 @@ class OcadoProductsSpider(BaseProductsSpider):
                 map(
                     string.strip,
                     response.xpath(
-                        "//div[@id='bopBottom']//*[@itemprop='description']"
+                        "//div[@id='bopBottom']"
+                        "//h2[@class='bopSectionHeader' and text()[1]='Product Description'][1]"
+                        "/following-sibling::*[@class='bopSection']"
                         "//text()"
                     ).extract()
                 )))
