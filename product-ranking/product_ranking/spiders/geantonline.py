@@ -12,7 +12,7 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
 
 
 class GeantonlineProductsSpider(BaseProductsSpider):
-    name = 'geantonlines_products'
+    name = 'geantonline_products'
     allowed_domains = ["geantonline.ae"]
     start_urls = []
 
