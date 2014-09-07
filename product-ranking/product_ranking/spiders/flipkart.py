@@ -9,7 +9,8 @@ from scrapy.log import ERROR, DEBUG
 from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
+    cond_set, cond_set_value
 
 
 class FlipkartProductsSpider(BaseProductsSpider):
@@ -17,7 +18,15 @@ class FlipkartProductsSpider(BaseProductsSpider):
     allowed_domains = ["flipkart.com"]
     start_urls = []
 
-    SEARCH_URL = "http://www.flipkart.com/search?q={search_term}&as=off&as-show=on&otracker=start"
+    SEARCH_URL = "http://www.flipkart.com/search?q={search_term}&as=off&as-show=on&otracker=start" \
+        "&p%5B%5D=sort%3D{search_sort}"
+    
+    SEARCH_SORT = {
+        'best_match': 'relevance',
+        'price_asc': 'price_asc',
+        'price_desc': 'price_desc',
+        'best_sellers': 'popularity',
+    }
     
     related_links = [
          ('buyers_also_bought',
@@ -32,7 +41,13 @@ class FlipkartProductsSpider(BaseProductsSpider):
          ('recommended',
           '/dynamic/recommendation/bullseye/getHorizontallyOrientedSameVerticalRecommendationsForProductPage'),
     ]     
-    
+    def __init__(self, search_sort='best_match', *args, **kwargs):
+        super(FlipkartProductsSpider, self).__init__(
+            url_formatter=FormatterWithDefaults(
+                search_sort=self.SEARCH_SORT[search_sort]
+            ),
+            *args, **kwargs)
+            
     def parse_product(self, response):
         product = response.meta['product']
         
