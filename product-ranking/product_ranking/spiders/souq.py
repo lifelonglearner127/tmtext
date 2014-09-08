@@ -1,6 +1,7 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import json
 import string
 import urlparse
 
@@ -10,10 +11,16 @@ from product_ranking.spiders import BaseProductsSpider, cond_set
 from scrapy.http import FormRequest
 from scrapy.log import DEBUG, ERROR
 from scrapy.selector import Selector
-import simplejson
 
 
 class ConvertBadJson(ast.NodeVisitor):
+    """ Convert bad json text like
+        [{sBoxName : 'relatedByCommonViewers',bShowPorn : '',...
+
+        to array of tupples
+        [(u'[0][sBoxName]', 'relatedByCommonViewers'),
+         (u'[0][bShowPorn]', ''), (u'[0][bShowBPJM]', ''), ...
+    """
     def __init__(self):
         self.indexes = list()
         self.result = list()
@@ -61,11 +68,7 @@ class SouqProductsSpider(BaseProductsSpider):
     allowed_domains = ["souq.com"]
     start_urls = []
     SEARCH_URL = "http://uae.souq.com/ae-en/{search_term}/s/"
-
-    def __init__(self, *args, **kwargs):
-        super(SouqProductsSpider, self).__init__(
-            #url_formatter=FormatterWithDefaults(pagenum=1, prods_per_page=32),
-            *args, **kwargs)
+    _recom_url = "http://uae.souq.com/ae-en/Action.php"
 
     def parse_product(self, response):
         product = response.meta['product']
@@ -79,7 +82,8 @@ class SouqProductsSpider(BaseProductsSpider):
             "//h1[@id='item_title']/text()").extract()))
 
         cond_set(product, 'brand', response.xpath(
-            "//div[contains(@class,'product_middle')]/div/a[@id='brand']/text()").extract())
+            "//div[contains(@class,'product_middle')]"
+            "/div/a[@id='brand']/text()").extract())
 
         cond_set(product, 'price', map(string.strip, response.xpath(
             "//div[@id='item_price']/div/text()").extract()))
@@ -91,17 +95,21 @@ class SouqProductsSpider(BaseProductsSpider):
             "//meta[@property='og:locale']/@content").extract())
 
         cond_set(product, 'upc', map(int, response.xpath(
-            "//form[@id='addItemToCart']/input[@id='id_unit']/@value").extract()))
+            "//form[@id='addItemToCart']"
+            "/input[@id='id_unit']/@value").extract()))
 
         desc = response.xpath(
-            "//div[contains(@class,'item-desc')]/../descendant::*[text()]/text()").extract()
+            "//div[contains(@class,'item-desc')]"
+            "/../descendant::*[text()]/text()").extract()
         info = " ".join([x.strip() for x in desc if len(x.strip()) > 0])
         product['description'] = info
 
         product['related_products'] = {}
 
         # internal related-products
-        res = response.xpath("//section[contains(@class,'gallery-container')]/ul/li[not(contains(@class,'hide'))]/a")
+        res = response.xpath(
+            "//section[contains(@class,'gallery-container')]"
+            "/ul/li[not(contains(@class,'hide'))]/a")
         if len(res) > 0:
             prodlist = []
             for r in res:
@@ -109,7 +117,10 @@ class SouqProductsSpider(BaseProductsSpider):
                     url = r.xpath("@href").extract()[0]
                     if url.startswith("/"):
                         url = full_url(url)
-                    title = r.xpath("span[contains(@class,'item-name')]/text()").extract()[0].strip()
+                    title = r.xpath(
+                        "span[contains(@class,'item-name')]"
+                        "/text()").extract()[0].strip()
+
                     prodlist.append(RelatedProduct(title, url))
                 except:
                     pass
@@ -117,7 +128,8 @@ class SouqProductsSpider(BaseProductsSpider):
 
         # Extrenal
         product_or_request = product
-        res = response.xpath("//script[contains(text(),'aBoxes')]").re(r'.*aBoxes = (.*);')
+        res = response.xpath(
+            "//script[contains(text(),'aBoxes')]").re(r'.*aBoxes = (.*);')
 
         if len(res) > 0:
             text = res[0]
@@ -135,12 +147,11 @@ class SouqProductsSpider(BaseProductsSpider):
             for k, v in boxes:
                 data['aBoxes' + k] = v
 
-            recom_url = "http://uae.souq.com/ae-en/Action.php"
             new_meta = response.meta.copy()
 
             product_or_request = FormRequest.from_response(
                 response=response,
-                url=recom_url,
+                url=self._recom_url,
                 method='POST',
                 formdata=data,
                 callback=self._parse_recomendar,
@@ -155,7 +166,7 @@ class SouqProductsSpider(BaseProductsSpider):
 
         product = response.meta['product']
         try:
-            jdata = simplejson.loads(response.body)
+            jdata = json.loads(response.body)
         except:
             return product
 
@@ -167,7 +178,7 @@ class SouqProductsSpider(BaseProductsSpider):
             return product
 
         res = hxs.xpath("//section/ul/li/a")
-        self.log('AJAX_VIP_INTERESTS_LIST %s' % len(res), DEBUG)
+        self.log('AJAX_VIP_INTERESTS_LIST %s elements' % len(res), DEBUG)
         if len(res) > 0:
             prodlist = []
             for r in res:
@@ -181,8 +192,11 @@ class SouqProductsSpider(BaseProductsSpider):
                     pass
             product['related_products']["vip_interests"] = prodlist
 
-        res = hxs.xpath("//div[contains(@class,'box-style-featuerd')]/div[contains(@class,'feature-items-box')]/a")
-        self.log('AJAX_RELATED_PRODUCTS_LIST %s' % len(res), DEBUG)
+        res = hxs.xpath(
+            "//div[contains(@class,'box-style-featuerd')]"
+            "/div[contains(@class,'feature-items-box')]/a")
+
+        self.log('AJAX_RELATED_PRODUCTS_LIST %s elements' % len(res), DEBUG)
         if len(res) > 0:
             prodlist = []
             for r in res:
@@ -199,20 +213,23 @@ class SouqProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        total = response.xpath("//div[@id='search-results-title']/b/text()").extract()
+        total = response.xpath(
+            "//div[@id='search-results-title']"
+            "/b/text()").extract()
         if len(total) > 0:
             total = total[-1]
             try:
                 return int(total)
-            except:
+            except ValueError:
                 return 0
         else:
             return 0
 
     def _scrape_product_links(self, response):
         links = response.xpath(
-            "//div[@id='ItemResultList']/div[contains(@class,'single-item-browse')]/table/tr/td/a/@href"
-            ).extract()
+            "//div[@id='ItemResultList']"
+            "/div[contains(@class,'single-item-browse')]"
+            "/table/tr/td/a/@href").extract()
 
         if not links:
             self.log("Found no product links.", ERROR)
@@ -221,7 +238,8 @@ class SouqProductsSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
-        next = response.xpath("//ul[contains(@class,'paginator')]/li/a[@class='paginator-next']/@href")
-        #print "NEXT=", next.extract()[0]
+        next = response.xpath(
+            "//ul[contains(@class,'paginator')]"
+            "/li/a[@class='paginator-next']/@href")
         if len(next) > 0:
             return next.extract()[0]
