@@ -35,14 +35,19 @@ class OcadoProductsSpider(BaseProductsSpider):
                 search_sort=self.SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
+
+    def clear_desc(self, l):
+        return " ".join(
+            [it for it in map(string.strip, l) if it])
+      
     def parse_product(self, response):
         product = response.meta['product']
 
         title_list = response.xpath(
             "//h1[@class='productTitle'][1]//text()").extract()
         if len(title_list) >= 2:
-            cond_set_value(product, 'title',
-                           " ".join(map(string.strip, title_list[-2:])))
+            cond_set_value(product, 'title', self.clear_desc(
+               title_list[-2:]))
 
         cond_set(product, 'price', response.xpath(
             "//div[@id='bopRight']//meta[@itemprop='price']/@content"
@@ -58,16 +63,14 @@ class OcadoProductsSpider(BaseProductsSpider):
         cond_set_value(
             product,
             'description',
-            " ".join(
-                map(
-                    string.strip,
-                    response.xpath(
-                        "//div[@id='bopBottom']"
-                        "//h2[@class='bopSectionHeader' and text()[1]='Product Description'][1]"
-                        "/following-sibling::*[@class='bopSection']"
-                        "//text()"
-                    ).extract()
-                )))
+            self.clear_desc(
+                response.xpath(
+                    "//div[@id='bopBottom']"
+                    "//h2[@class='bopSectionHeader' and text()[1]='Product Description'][1]"
+                    "/following-sibling::*[@class='bopSection']"
+                    "//text()"
+                ).extract()
+            ))
 
         cond_set_value(product, 'locale', "en_GB")
 
