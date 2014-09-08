@@ -70,13 +70,13 @@ class WehkampProductsSpider(BaseProductsSpider):
 
     def _scrape_total_matches(self, response):
         total = response.xpath(
-            "//div[@class='resultsHeader']/p/text()"
-            ).re(r'" geeft (\d+) resultaten.')
+            "//div[@class='resultsHeader']/p"
+            "/text()").re(r'" geeft (\d+) resultaten.')
         if len(total) > 0:
             total = total[0].replace(".", "")
             try:
                 return int(total)
-            except:
+            except ValueError:
                 return 0
         else:
             return 0

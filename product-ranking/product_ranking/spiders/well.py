@@ -76,8 +76,7 @@ class LondondrugsProductsSpider(BaseProductsSpider):
         links = response.xpath(
             "//div[@class='main_search_result']"
             "/div[@id='categories_main_content']"
-            "/div[@class='product_grid_full_categories']/a/@href")
-        links = links.extract()
+            "/div[@class='product_grid_full_categories']/a/@href").extract()
 
         if not links:
             self.log("Found no product links.", ERROR)
