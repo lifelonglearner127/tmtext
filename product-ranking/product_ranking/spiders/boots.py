@@ -5,9 +5,11 @@ import string
 import urllib
 import urlparse
 
-from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
 from scrapy.log import ERROR
+
+from product_ranking.items import SiteProductItem
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    populate_from_open_graph
 
 
 class BootsProductsSpider(BaseProductsSpider):
@@ -23,20 +25,46 @@ class BootsProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta['product']
 
-        cond_set(product, 'title', map(string.strip, response.xpath(
-            "//h1/span/text()").extract()))
+        populate_from_open_graph(response, product)
 
-        cond_set(product, 'upc', map(int, response.xpath(
-            "//p[@class='itemNumber']/span/text()").extract()))
+        cond_set(
+            product,
+            'title',
+            response.xpath("//h1/span/text()").extract(),
+            conv=string.strip,
+        )
 
-        cond_set(product, 'price', map(string.strip, response.xpath(
-            "//p[@class='productOfferPrice']/text()").extract()))
+        cond_set(
+            product,
+            'upc',
+            response.xpath("//p[@class='itemNumber']/span/text()").extract(),
+            conv=int,
+        )
 
-        cond_set(product, 'brand', response.xpath(
-            "//div[@class='brandLogo']/a/img/@alt").extract())
+        cond_set(
+            product,
+            'price',
+            response.xpath("//p[@class='productOfferPrice']/text()").extract(),
+            conv=string.strip,
+        )
 
-        cond_set(product, 'image_url', response.xpath(
-            "//meta[@property='og:image']/@content").extract())
+        cond_set(
+            product,
+            'brand',
+            response.xpath("//div[@class='brandLogo']/a/img/@alt").extract(),
+            conv=lambda s: None if not s.strip() else s,
+        )
+        # The following is a low quality source that uses an internal name
+        # which sometimes includes extraneous words or numbers.
+        # "div#brandHeader > a > img::attr(src)" also contains this ID.
+        cond_set(
+            product,
+            'brand',
+            response.xpath(
+                "//form[@name='TMS_RR_PD']/input[@name='page_brand']/@value"
+            ).extract(),
+            conv=lambda s: s.replace('_', ' '),
+        )
 
         content = response.xpath(
             "//div[@id='tab1content']"
@@ -45,8 +73,8 @@ class BootsProductsSpider(BaseProductsSpider):
         if content:
             product['description'] = "\n".join(content.extract())
 
-        product['model'] = ""
-        product['locale'] = "en-US"
+        product['locale'] = "en-GB"
+
         return product
 
     def _scrape_total_matches(self, response):
@@ -68,14 +96,15 @@ class BootsProductsSpider(BaseProductsSpider):
         if not links:
             self.log("Found no product links.", ERROR)
 
-        for no, link in enumerate(links):
+        for link in links:
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
         next = response.xpath(
             "//li[contains(@class,'paginationTop')]/ul"
-            "/li[@class='next']/a/@href").re(r'javascript:.*setPageNumber\((.*)\);')
-        if len(next) > 0:
+            "/li[@class='next']/a/@href"
+        ).re(r'javascript:.*setPageNumber\((.*)\);')
+        if next:
             x = next[0]
             x = x.split(',')
             x = [e.replace("'", '').strip() for e in x]
