@@ -280,8 +280,8 @@ def get_repos(branch='master'):
     repo_path = _get_repo_path()
     if not cuisine.dir_exists(repo_path):
         run('mkdir -p ' + REPO_BASE_PATH)
-        run('cd %s && git clone %s && git checkout %s' % 
-          (REPO_BASE_PATH, REPO_URL, branch)) 
+        run('cd %s && git clone %s && cd %s && git checkout %s' % 
+          (REPO_BASE_PATH, REPO_URL, repo_path, branch)) 
     else:
         run('cd %s && git checkout %s && git pull' % 
           (repo_path, branch) )
