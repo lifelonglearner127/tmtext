@@ -55,7 +55,7 @@ class SearsProductsSpider(BaseProductsSpider):
         upc = product.get('id')
         cond_set(prod, 'upc', upc)
 
-        desc = product.get('desc')[1].get('val')
+        desc = product.get('desc')[0].get('val')
         cond_set(prod, 'description', desc)
 
         img_url = product.get('assets').get('imgs')[0].get('vals')[0].get('src')
