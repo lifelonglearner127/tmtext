@@ -27,7 +27,8 @@ class LazadaProductsSpider(BaseProductsSpider):
     def _get_products(self, response):
         for request in super(LazadaProductsSpider, self)._get_products(response):
             if isinstance(request, Request):
-                request = request.replace(headers={'User-Agent': self._USER_AGENT})
+                request = request.replace(
+                    headers={'User-Agent': self._USER_AGENT})
             yield request
 
     def _get_next_products_page(self, response, prods_found):
@@ -95,7 +96,6 @@ class LazadaProductsSpider(BaseProductsSpider):
 
         for no, link in enumerate(links):
             yield link, SiteProductItem()
-            #yield None, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
         next = response.xpath(
