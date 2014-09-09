@@ -69,8 +69,8 @@ class DiapersProductSpider(BaseProductsSpider):
     def _populate_from_html(self, response, product):
         price = response.xpath(
             "//*[@id='priceDivClass']/span/text()").extract()[0]
-        desc = response.xpath(
-            "//*[@id='Tab5DetailInfo']/div/div/p[2]/text()").extract()[0]
+
+        desc = response.xpath("//div[@class='pIdDesContent']/node()").extract()
 
         product['price'] = price
         product['description'] = desc
