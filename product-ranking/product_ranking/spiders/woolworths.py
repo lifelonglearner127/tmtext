@@ -2,15 +2,14 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import string
+import urlparse
 
 from scrapy.log import ERROR
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, populate_from_open_graph
 
 
-# FIXME Lacks the brand.
-# FIXME Fails when there are no matches.
 # FIXME Some duplicates are filtered.
 
 class WoolworthsProductsSpider(BaseProductsSpider):
@@ -19,12 +18,18 @@ class WoolworthsProductsSpider(BaseProductsSpider):
     start_urls = []
 
     SEARCH_URL = "http://www2.woolworthsonline.com.au/Shop/SearchProducts" \
-        "?search={search_term}"
+                 "?search={search_term}"
 
     def parse_product(self, response):
+
+        if self._search_page_error(response):
+            self.log(
+                "Got 404 when coming from %s." % response.request.url, ERROR)
+            return
+
         product = response.meta['product']
 
-        self._populate_from_open_graph(response, product)
+        populate_from_open_graph(response, product)
 
         price = response.xpath(
             "//span[@class='price']/text()"
@@ -35,36 +40,18 @@ class WoolworthsProductsSpider(BaseProductsSpider):
         cond_set(product, 'upc', response.xpath(
             "//input[@id='stockcode']/@value").extract())
 
+        title = response.xpath("//h2[@class='description']/text()").extract()
+
+        cond_set(product, 'title', [title])
+
         product['locale'] = "en-AU"
 
         return product
 
-    def _populate_from_open_graph(self, response, product):
-        """See about the Open Graph Protocol at http://ogp.me/"""
-        # Extract all the meta tags with an attribute called property.
-        metadata_dom = response.xpath("/html/head/meta[@property]")
-        props = metadata_dom.xpath("@property").extract()
-        conts = metadata_dom.xpath("@content").extract()
-
-        # Create a dict of the Open Graph protocol.
-        metadata = {p[3:]: c for p, c in zip(props, conts)
-                    if p.startswith('og:')}
-
-        # the following type for every page I checked was a website and not a product
-        # even though every item was for a product, removed raise assertion for now
-        # JR: This is because the Open Graph vocabulary to describe a website is
-        #     used, not the prod.
-        # FIXME Implement OpenGraph for type website in parent class. Is it useful?
-        if metadata.get('type') != 'product':
-            # This response is not a product?
-            self.log("Page of type '%s' found." % metadata.get('type'), ERROR)
-        #   raise AssertionError("Type missing or not a product.")
-
-        # Basic Open Graph metadata.
-        product['url'] = metadata['url']  # Canonical URL for the product.
-        product['image_url'] = metadata['image']
-        product['description'] = metadata['description']
-        product['title'] = metadata['title']
+    def _search_page_error(self, response):
+        check_result = response.xpath("//div[@class='light-green-box-middle']/h3/text()").extract()
+        if check_result[0] == 'Quickfix':
+            return True
 
     def _scrape_total_matches(self, response):
         num_results = response.xpath(
