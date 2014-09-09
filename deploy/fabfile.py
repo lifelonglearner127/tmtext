@@ -272,7 +272,7 @@ def setup_virtual_env():
     
 
 
-def get_repos():
+def get_repos(branch='master'):
     '''Download and install the main source repository'''
 
     puts(green('Updating repositories'))
@@ -280,9 +280,11 @@ def get_repos():
     repo_path = _get_repo_path()
     if not cuisine.dir_exists(repo_path):
         run('mkdir -p ' + REPO_BASE_PATH)
-        run('cd %s && git clone %s' % (REPO_BASE_PATH, REPO_URL)) 
+        run('cd %s && git clone %s && git checkout %s' % 
+          (REPO_BASE_PATH, REPO_URL, branch)) 
     else:
-        run('cd %s && git pull' % repo_path)
+        run('cd %s && git checkout %s && git pull' % 
+          (repo_path, branch) )
  
 
 def _configure_scrapyd():
@@ -373,7 +375,7 @@ def _restart_scrapyd():
         pass
 
 
-def _configure_scrapyd():
+def _run_scrapyd_deploy():
     venv_scrapyd = _get_venv_path(VENV_SCRAPYD)
     venv_scrapyd_activate = '%s%sbin%sactivate' \
       % (venv_scrapyd, os.sep, os.sep)
@@ -395,7 +397,7 @@ def _run_scrapyd():
     run("tmux send-keys -t webrunner:0 'source %s' C-m" % venv_scrapyd_activate)
     run("tmux send-keys -t webrunner:0 'cd %s' C-m" % venv_scrapyd)
     run("tmux send-keys -t webrunner:0 'scrapyd' C-m")
-    _configure_scrapyd()
+    _run_scrapyd_deploy()
  
 
 def _run_web_runner():
@@ -447,12 +449,12 @@ def run_servers(restart_scrapyd=False):
 
 
 
-def deploy(restart_scrapyd=False):
+def deploy(restart_scrapyd=False, branch='master'):
     setup_users()
     setup_packages()
     setup_tmux()
     setup_virtual_env()
-    get_repos()
+    get_repos(branch=branch)
     configure()
     install()
     run_servers(restart_scrapyd)
