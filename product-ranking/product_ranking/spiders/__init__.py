@@ -68,23 +68,27 @@ class FormatterWithDefaults(string.Formatter):
         return val
 
 
-def populate_from_open_graph(response, product):
-    """Helper function that populates a product using the OpenGraph vocabulary.
-
-    See about the Open Graph Protocol at http://ogp.me/
-    """
+def _extract_open_graph_metadata(response):
     # Extract all the meta tags with an attribute called property.
     metadata_dom = response.xpath("/html/head/meta[@property]")
     props = metadata_dom.xpath("@property").extract()
     conts = metadata_dom.xpath("@content").extract()
 
     # Create a dict of the Open Graph protocol.
-    metadata = {p[3:]: c for p, c in zip(props, conts)
-                if p.startswith('og:')}
+    return {p[3:]: c for p, c in zip(props, conts) if p.startswith('og:')}
+
+
+def _populate_from_open_graph_product(response, product, metadata=None):
+    """Helper function that populates a product using the OpenGraph vocabulary
+    for products.
+
+    See about the Open Graph Protocol at http://ogp.me/
+    """
+    if metadata is None:
+        metadata = _extract_open_graph_metadata(response)
 
     if metadata.get('type') != 'product':
-        # This response is not a product?
-        scrapy.log.msg("Page of type '%s' found." % metadata.get('type'), ERROR)
+        # This response is not a product.
         raise AssertionError("Type missing or not a product.")
 
     # Basic Open Graph metadata.
@@ -95,6 +99,24 @@ def populate_from_open_graph(response, product):
     cond_set_value(product, 'upc', metadata.get('upc'), conv=int)
     cond_set_value(product, 'description', metadata.get('description'))
     cond_set_value(product, 'locale', metadata.get('locale'))
+
+
+def populate_from_open_graph(response, product):
+    """Helper function that populates a product using the OpenGraph vocabulary.
+
+    See about the Open Graph Protocol at http://ogp.me/
+    """
+    metadata = _extract_open_graph_metadata(response)
+
+    if 'type' not in metadata:
+        scrapy.log.msg("No Open Graph metadata: %s" % response.url, WARNING)
+    elif metadata['type'] == 'product':
+        _populate_from_open_graph_product(response, product, metadata)
+    else:
+        scrapy.log.msg(
+            "Unknown Open Graph type: %s" % metadata['type'],
+            WARNING,
+        )
 
 
 class BaseProductsSpider(Spider):
