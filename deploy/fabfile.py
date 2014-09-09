@@ -397,7 +397,7 @@ def _run_scrapyd():
     run("tmux send-keys -t webrunner:0 'source %s' C-m" % venv_scrapyd_activate)
     run("tmux send-keys -t webrunner:0 'cd %s' C-m" % venv_scrapyd)
     run("tmux send-keys -t webrunner:0 'scrapyd' C-m")
-    _run_scrapyd_deploy()
+    #_run_scrapyd_deploy()
  
 
 def _run_web_runner():
