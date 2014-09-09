@@ -1,16 +1,18 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import ast
 import json
 import string
 import urlparse
 
-import ast
-from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, cond_set
 from scrapy.http import FormRequest
 from scrapy.log import DEBUG, ERROR
 from scrapy.selector import Selector
+
+from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    populate_from_open_graph, cond_set_value
 
 
 class ConvertBadJson(ast.NodeVisitor):
@@ -68,15 +70,20 @@ class SouqProductsSpider(BaseProductsSpider):
     allowed_domains = ["souq.com"]
     start_urls = []
     SEARCH_URL = "http://uae.souq.com/ae-en/{search_term}/s/"
-    _recom_url = "http://uae.souq.com/ae-en/Action.php"
+    _RECOM_URL = "http://uae.souq.com/ae-en/Action.php"
+
+    def _populate_from_open_graph(self, response, product):
+        """Populates from Open Graph and discards description, which is fake.
+        """
+        populate_from_open_graph(response, product)
+
+        if 'description' in product:
+            del product['description']
 
     def parse_product(self, response):
         product = response.meta['product']
 
-        def full_url(url):
-            return urlparse.urljoin(response.url, url)
-
-        product = response.meta['product']
+        self._populate_from_open_graph(response, product)
 
         cond_set(product, 'title', map(string.strip, response.xpath(
             "//h1[@id='item_title']/text()").extract()))
@@ -88,21 +95,13 @@ class SouqProductsSpider(BaseProductsSpider):
         cond_set(product, 'price', map(string.strip, response.xpath(
             "//div[@id='item_price']/div/text()").extract()))
 
-        cond_set(product, 'image_url', response.xpath(
-            "//meta[@property='og:image']/@content").extract())
-
-        cond_set(product, 'locale', response.xpath(
-            "//meta[@property='og:locale']/@content").extract())
-
         cond_set(product, 'upc', map(int, response.xpath(
             "//form[@id='addItemToCart']"
             "/input[@id='id_unit']/@value").extract()))
 
-        desc = response.xpath(
-            "//div[contains(@class,'item-desc')]"
-            "/../descendant::*[text()]/text()").extract()
-        info = " ".join([x.strip() for x in desc if len(x.strip()) > 0])
-        product['description'] = info
+        desc = response.xpath("//div[contains(@class,'item-desc')]").extract()
+        if desc:
+            cond_set_value(product, 'description', desc, conv=''.join)
 
         product['related_products'] = {}
 
@@ -116,7 +115,7 @@ class SouqProductsSpider(BaseProductsSpider):
                 try:
                     url = r.xpath("@href").extract()[0]
                     if url.startswith("/"):
-                        url = full_url(url)
+                        url = urlparse.urljoin(response.url, url)
                     title = r.xpath(
                         "span[contains(@class,'item-name')]"
                         "/text()").extract()[0].strip()
@@ -138,12 +137,13 @@ class SouqProductsSpider(BaseProductsSpider):
             badjson.visit(nodes)
             boxes = badjson.get_result()
 
-            data = {'action': 'ajaxRemote',
-                    'type': 'getItemsBoxes',
-                    'sItemType': '',
-                    'sItemTitle': '',
-                    'sRef': ''
-                    }
+            data = {
+                'action': 'ajaxRemote',
+                'type': 'getItemsBoxes',
+                'sItemType': '',
+                'sItemTitle': '',
+                'sRef': ''
+            }
             for k, v in boxes:
                 data['aBoxes' + k] = v
 
@@ -151,7 +151,7 @@ class SouqProductsSpider(BaseProductsSpider):
 
             product_or_request = FormRequest.from_response(
                 response=response,
-                url=self._recom_url,
+                url=self._RECOM_URL,
                 method='POST',
                 formdata=data,
                 callback=self._parse_recomendar,

@@ -66,15 +66,13 @@ class KruidvatProductsSpider(BaseProductsSpider):
         cond_set(
             product,
             'locale',
-            response.xpath(
-                "//html/@lang").extract()
+            response.xpath("//html/@lang").extract(),
         )
 
         cond_set(
             product,
             'brand',
-            response.xpath(
-                "//var[@itemprop='brand']/text()").extract()
+            response.xpath("//var[@itemprop='brand']/text()").extract(),
         )
 
         res = response.xpath(
@@ -91,7 +89,9 @@ class KruidvatProductsSpider(BaseProductsSpider):
             except IndexError:
                 pass
 
-        product['related_products'] = {"recommended": prodlist}
+        if prodlist:
+            product['related_products'] = {"recommended": prodlist}
+
         return product
 
     def _scrape_total_matches(self, response):

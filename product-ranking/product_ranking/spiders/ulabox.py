@@ -98,21 +98,12 @@ class UlaboxProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        total = response.xpath(
-            "//section[@class='product-list']"
-            "/div/h4/text()").re(r'(\d+)')
-        if len(total) > 0:
-            total = total[0].replace(".", "")
-            try:
-                return int(total)
-            except ValueError:
-                return 0
+        totals = response.css("ul.nav.nav--banner > li > div::text").re(
+            r"(\d+)")
+        if totals:
+            return int(totals[0])
         else:
-            total = response.xpath(
-                "//div[@class='grid']"
-                "/div[contains(@class,'grid__item')]"
-                "/article[contains(@class,'product-item')]")
-            return len(total)
+            return None
 
     def _scrape_product_links(self, response):
         links = response.xpath(
