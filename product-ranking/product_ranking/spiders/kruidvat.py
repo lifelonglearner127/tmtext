@@ -16,46 +16,80 @@ class KruidvatProductsSpider(BaseProductsSpider):
     SEARCH_URL = "http://www.kruidvat.nl/search?text={search_term}"
 
     def parse_product(self, response):
-
         product = response.meta['product']
-        cond_set(product, 'title', map(string.strip, response.xpath(
-            "//section[@class='product-details']"
-            "/div[@id='product-title']/h1/text()").extract()))
 
         def full_url(url):
             return urlparse.urljoin(response.url, url)
 
-        cond_set(product, 'image_url', map(full_url, response.xpath(
-            "//section[contains(@class,'product-imgviewer')]"
-            "/div/img/@src").extract()))
+        cond_set(
+            product,
+            'title',
+            response.xpath(
+                "//section[@class='product-details']"
+                "/div[@id='product-title']/h1/text()").extract(),
+            conv=string.strip,
+        )
 
-        cond_set(product, 'price', response.xpath(
-            "//p[@class='product-price']"
-            "/meta[@itemprop='price']/@content").extract())
+        cond_set(
+            product,
+            'image_url',
+            response.xpath(
+                "//section[contains(@class,'product-imgviewer')]"
+                "/div/img/@src").extract(),
+            conv=full_url
+        )
 
-        cond_set(product, 'upc', map(int, response.xpath(
-            "//section[@class='product-details']"
-            "/meta[@itemprop='productID']/@content").extract()))
+        cond_set(
+            product,
+            'price',
+            response.xpath(
+                "//p[@class='product-price']"
+                "/meta[@itemprop='price']/@content").extract()
+        )
 
-        cond_set(product, 'description', response.xpath(
-            "//section[@class='product-details']/p/text()").extract())
+        cond_set(
+            product,
+            'upc',
+            response.xpath(
+                "//section[@class='product-details']"
+                "/meta[@itemprop='productID']/@content").extract(),
+            conv=int,
+        )
 
-        cond_set(product, 'locale', response.xpath(
-            "//html/@lang").extract())
+        cond_set(
+            product,
+            'description',
+            response.xpath(
+                "//section[@class='product-details']/p/text()").extract()
+        )
 
-        cond_set(product, 'brand', response.xpath(
-            "//var[@itemprop='brand']/text()").extract())
+        cond_set(
+            product,
+            'locale',
+            response.xpath(
+                "//html/@lang").extract()
+        )
+
+        cond_set(
+            product,
+            'brand',
+            response.xpath(
+                "//var[@itemprop='brand']/text()").extract()
+        )
 
         res = response.xpath(
             "//div[contains(@class,'component') "
             "and contains(@class,'grid-unit-beta') ][1]/*/*/div/article")
         prodlist = []
         for r in res:
-            title = r.xpath(
-                "div/p[@class='product-info']/a/text()").extract()[0]
-            href = r.xpath(
-                "div/p[@class='product-info']/a/@href").extract()[0]
-            prodlist.append(RelatedProduct(title, full_url(href)))
+            try:
+                title = r.xpath(
+                    "div/p[@class='product-info']/a/text()").extract()[0]
+                href = r.xpath(
+                    "div/p[@class='product-info']/a/@href").extract()[0]
+                prodlist.append(RelatedProduct(title, full_url(href)))
+            except IndexError:
+                pass
 
         product['related_products'] = {"recommended": prodlist}
         return product
@@ -64,7 +98,7 @@ class KruidvatProductsSpider(BaseProductsSpider):
         total = response.xpath(
             "//section[contains(@class,'search-title')]"
             "/p/span/text()").extract()
-        if len(total) > 0:
+        if total:
             total = total[0].replace(".", "")
             try:
                 return int(total)
@@ -88,5 +122,5 @@ class KruidvatProductsSpider(BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         next = response.xpath(
             "//ul[@class='pages']/li[@class='next-page']/a/@href")
-        if len(next) > 0:
+        if next:
             return next.extract()[0]
