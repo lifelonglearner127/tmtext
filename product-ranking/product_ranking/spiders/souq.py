@@ -1,17 +1,18 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import ast
 import json
 import string
 import urlparse
 
-import ast
-from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    populate_from_open_graph, cond_set_value
 from scrapy.http import FormRequest
 from scrapy.log import DEBUG, ERROR
 from scrapy.selector import Selector
+
+from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    populate_from_open_graph, cond_set_value
 
 
 class ConvertBadJson(ast.NodeVisitor):
@@ -136,12 +137,13 @@ class SouqProductsSpider(BaseProductsSpider):
             badjson.visit(nodes)
             boxes = badjson.get_result()
 
-            data = {'action': 'ajaxRemote',
-                    'type': 'getItemsBoxes',
-                    'sItemType': '',
-                    'sItemTitle': '',
-                    'sRef': ''
-                    }
+            data = {
+                'action': 'ajaxRemote',
+                'type': 'getItemsBoxes',
+                'sItemType': '',
+                'sItemTitle': '',
+                'sRef': ''
+            }
             for k, v in boxes:
                 data['aBoxes' + k] = v
 
