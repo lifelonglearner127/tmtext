@@ -3,9 +3,10 @@ from future_builtins import *
 
 import string
 
+from scrapy.log import ERROR
+
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set
-from scrapy.log import ERROR
 
 
 class LondondrugsProductsSpider(BaseProductsSpider):
@@ -17,24 +18,48 @@ class LondondrugsProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta['product']
 
-        cond_set(product, 'title', map(string.strip, response.xpath(
-            "//div[@class='product_info_header']"
-            "/div[contains(@class,'product_text_product_name')]"
-            "/text()").extract()))
+        cond_set(
+            product,
+            'title',
+            response.xpath(
+                "//div[@class='product_info_header']"
+                "/div[contains(@class,'product_text_product_name')]/text()"
+            ).extract(),
+            conv=string.strip,
+        )
 
-        cond_set(product, 'price', map(string.strip, response.xpath(
-            "//div[@class='product_text_price']/text()").extract()))
+        cond_set(
+            product,
+            'price',
+            response.xpath(
+                "//div[@class='product_text_price']/text()"
+            ).extract(),
+            conv=string.strip,
+        )
 
-        cond_set(product, 'brand', response.xpath(
-            "//div[@class='product_info_header']/div"
-            "/a/text()").re(r'View all (.*) products'))
+        cond_set(
+            product,
+            'brand',
+            response.xpath(
+                "//div[@class='product_info_header']/div/a/text()"
+            ).re(r'View all (.*) products'),
+        )
 
-        cond_set(product, 'image_url', response.xpath(
-            "//div[@class='product_main_image']/img/@src").extract())
+        cond_set(
+            product,
+            'image_url',
+            response.xpath(
+                "//div[@class='product_main_image']/img/@src"
+            ).extract(),
+        )
 
-        cond_set(product, 'description', response.xpath(
-            "//div[@class='products_description_container']"
-            "/div/text()").extract())
+        cond_set(
+            product,
+            'description',
+            response.xpath(
+                "//div[@class='products_description_container']/div/text()"
+            ).extract(),
+        )
 
         def make_list(rlist):
             prodlist = []
@@ -54,21 +79,29 @@ class LondondrugsProductsSpider(BaseProductsSpider):
         alsob_list = make_list(rlist)
 
         product['related_products'] = {
-            "recomended": related_list,
-            "also_bought": alsob_list}
+            "recommended": related_list,
+            "also_bought": alsob_list,
+        }
 
-        cond_set(product, 'upc', map(int, response.xpath(
-            "//form[@name='cart_quantity']/div"
-            "/input[@name='products_id']/@value").extract()))
-        product['model'] = ""
-        product['locale'] = "en-US"
+        cond_set(
+            product,
+            'upc',
+            response.xpath(
+                "//form[@name='cart_quantity']/div/input[@name='products_id']"
+                "/@value"
+            ).extract(),
+            conv=int,
+        )
+
+        product['locale'] = "en-CA"
+
         return product
 
     def _scrape_total_matches(self, response):
         total = response.xpath(
             "//div[@class='title']/h3/small"
             "/text()").re(r'\((\d+) Products\)')
-        if len(total) > 0:
+        if total:
             return int(total[0])
         return 0
 
@@ -81,12 +114,13 @@ class LondondrugsProductsSpider(BaseProductsSpider):
         if not links:
             self.log("Found no product links.", ERROR)
 
-        for no, link in enumerate(links):
+        for link in links:
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
-        next = response.xpath(
+        links = response.xpath(
             "//div[@class='main_search_result']/a[@id='next']/@href")
-        if next:
-            next = next.extract()[0]
-        return next
+        next_page = None
+        if links:
+            next_page = links.extract()[0]
+        return next_page
