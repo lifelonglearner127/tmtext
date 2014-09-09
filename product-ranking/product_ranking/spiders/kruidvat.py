@@ -33,12 +33,9 @@ class KruidvatProductsSpider(BaseProductsSpider):
             "//p[@class='product-price']"
             "/meta[@itemprop='price']/@content").extract())
 
-        try:
-            cond_set(product, 'upc', map(int, response.xpath(
-                "//section[@class='product-details']"
-                "/meta[@itemprop='productID']/@content").extract()))
-        except:
-            pass
+        cond_set(product, 'upc', map(int, response.xpath(
+            "//section[@class='product-details']"
+            "/meta[@itemprop='productID']/@content").extract()))
 
         cond_set(product, 'description', response.xpath(
             "//section[@class='product-details']/p/text()").extract())
@@ -60,7 +57,7 @@ class KruidvatProductsSpider(BaseProductsSpider):
                 "div/p[@class='product-info']/a/@href").extract()[0]
             prodlist.append(RelatedProduct(title, full_url(href)))
 
-        product['related_products'] = {"recomended": prodlist}
+        product['related_products'] = {"recommended": prodlist}
         return product
 
     def _scrape_total_matches(self, response):
@@ -71,7 +68,7 @@ class KruidvatProductsSpider(BaseProductsSpider):
             total = total[0].replace(".", "")
             try:
                 return int(total)
-            except:
+            except ValueError:
                 return 0
         else:
             return 0
