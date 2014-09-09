@@ -44,14 +44,16 @@ TODO:
 WEB_RUNNER_GROUP = 'web_runner'
 WEB_RUNNER_USER = 'web_runner'
 WEB_RUNNER_PASSWORD = 'web_runner'
+WEB_RUNNER_CERT = None
 
 VENV_PREFIX = '~/virtual-environments/'
 VENV_SCRAPYD = 'scrapyd'
 VENV_WEB_RUNNER = 'web-runner'
 VENV_WEB_RUNNER_WEB = 'web-runner-web'
 
-SSH_SUDO_USER = 'gabriel'
+SSH_SUDO_USER = None
 SSH_SUDO_PASSWORD = None
+SSH_SUDO_CERT = None
 
 REPO_BASE_PATH = '~/repos/'
 REPO_URL = 'https://ContentSolutionsDeploy:Content2020@bitbucket.org/dfeinleib/tmtext.git'
@@ -87,30 +89,74 @@ def virtualenv(environment):
 def set_environment_vagrant():
     '''Define Vagrant's environment'''
 
-    puts(red('Using Vagrant settings'))
+    puts(green('Using Vagrant settings'))
     global SSH_SUDO_USER
     global SSH_SUDO_PASSWORD
+    global SSH_SUDO_CERT
+    global WEB_RUNNER_CERT
 
 #    env.hosts = ['vagrant@127.0.0.1:2222']
+    #SSH_SUDO_USER = 'vagrant'
+    #SSH_SUDO_PASSWORD = 'vagrant'
     SSH_SUDO_USER = 'vagrant'
     SSH_SUDO_PASSWORD = 'vagrant'
+    WEB_RUNNER_CERT = 'web_runner_rsa'
+
     env.hosts = ['127.0.0.1']
     env.port = 2222
 
+    env.user = WEB_RUNNER_USER
+    env.password = WEB_RUNNER_PASSWORD
+    env.key_filename = WEB_RUNNER_CERT
+
+
+def set_production():
+    puts(red('Using production credentials'))
+
+    global SSH_SUDO_USER
+    global SSH_SUDO_PASSWORD
+    global SSH_SUDO_CERT
+    global WEB_RUNNER_CERT
+
+    SSH_SUDO_USER = 'ubuntu'
+    SSH_SUDO_PASSWORD = None
+    SSH_SUDO_CERT = 'ubuntu_id_rsa'
+    WEB_RUNNER_CERT = 'web_runner_rsa'
+
+    env.user = WEB_RUNNER_USER
+    env.password = WEB_RUNNER_PASSWORD
+    env.key_filename = WEB_RUNNER_CERT
+   
 
 def setup_users():
     '''Add web runner group and users'''
 
     puts(green('Creating users and groups'))
 
-    orig_user, orig_passw = env.user, env.password
-    env.user, env.password = SSH_SUDO_USER , SSH_SUDO_PASSWORD
+    orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
+    env.user, env.password, env.key_filename = \
+      SSH_SUDO_USER , SSH_SUDO_PASSWORD, SSH_SUDO_CERT
 
     cuisine.group_ensure(WEB_RUNNER_GROUP)
     cuisine.user_ensure(WEB_RUNNER_USER, gid=WEB_RUNNER_GROUP, 
       shell='/bin/bash', passwd=WEB_RUNNER_PASSWORD, encrypted_passwd=False)
     
-    env.user, env.password = orig_user, orig_passw
+    # Create the ssh certificate for web_runner user
+    rem_ssh_cert_file = '~%s/.ssh/authorized_keys' % WEB_RUNNER_USER
+    if orig_cert and not sudo('test -e %s && echo OK ; true' 
+                             % (rem_ssh_cert_file)).endswith("OK"):
+        sudo('mkdir -p ~%s/.ssh' % WEB_RUNNER_USER)
+        sudo('chmod 700  ~%s/.ssh' % WEB_RUNNER_USER)
+        
+        cert_content = open('web_runner_rsa.pub', 'r').read()
+        cuisine.file_write('/tmp/inst_cert', cert_content)
+        sudo('mv /tmp/inst_cert ' + rem_ssh_cert_file)
+        sudo('chmod 600 %s' % rem_ssh_cert_file)
+        sudo('chown -R %s:%s ~%s/.ssh/' % 
+          (WEB_RUNNER_USER, WEB_RUNNER_GROUP, WEB_RUNNER_USER))
+    
+    env.user, env.password, env.key_filename = \
+      orig_user, orig_passw, orig_cert
 
 
 def setup_packages():
@@ -118,8 +164,9 @@ def setup_packages():
 
     puts(green('Installing packages'))
 
-    orig_user, orig_passw = env.user, env.password
-    env.user, env.password = SSH_SUDO_USER , SSH_SUDO_PASSWORD
+    orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
+    env.user, env.password, env.key_filename = \
+      SSH_SUDO_USER , SSH_SUDO_PASSWORD, SSH_SUDO_CERT
 
     cuisine.package_ensure('python-software-properties')
     # TODO: verify if the repo must be added
@@ -135,7 +182,8 @@ def setup_packages():
     cuisine.package_ensure('tmux')
     sudo('pip install virtualenv --upgrade')
     
-    env.user, env.password = orig_user, orig_passw
+    env.user, env.password, env.key_filename = \
+      orig_user, orig_passw, orig_cert
 
 
 def setup_tmux():
@@ -224,7 +272,7 @@ def setup_virtual_env():
     
 
 
-def get_repos():
+def get_repos(branch='master'):
     '''Download and install the main source repository'''
 
     puts(green('Updating repositories'))
@@ -232,9 +280,11 @@ def get_repos():
     repo_path = _get_repo_path()
     if not cuisine.dir_exists(repo_path):
         run('mkdir -p ' + REPO_BASE_PATH)
-        run('cd %s && git clone %s' % (REPO_BASE_PATH, REPO_URL)) 
+        run('cd %s && git clone %s && git checkout %s' % 
+          (REPO_BASE_PATH, REPO_URL, branch)) 
     else:
-        run('cd %s && git pull' % repo_path)
+        run('cd %s && git checkout %s && git pull' % 
+          (repo_path, branch) )
  
 
 def _configure_scrapyd():
@@ -325,7 +375,7 @@ def _restart_scrapyd():
         pass
 
 
-def _configure_scrapyd():
+def _run_scrapyd_deploy():
     venv_scrapyd = _get_venv_path(VENV_SCRAPYD)
     venv_scrapyd_activate = '%s%sbin%sactivate' \
       % (venv_scrapyd, os.sep, os.sep)
@@ -347,7 +397,7 @@ def _run_scrapyd():
     run("tmux send-keys -t webrunner:0 'source %s' C-m" % venv_scrapyd_activate)
     run("tmux send-keys -t webrunner:0 'cd %s' C-m" % venv_scrapyd)
     run("tmux send-keys -t webrunner:0 'scrapyd' C-m")
-    _configure_scrapyd()
+    _run_scrapyd_deploy()
  
 
 def _run_web_runner():
@@ -398,18 +448,13 @@ def run_servers(restart_scrapyd=False):
     _run_web_runner_web()
 
 
-   
 
-
-def deploy(restart_scrapyd=False):
-    env.user = WEB_RUNNER_USER
-    env.password = WEB_RUNNER_PASSWORD
-
+def deploy(restart_scrapyd=False, branch='master'):
     setup_users()
     setup_packages()
     setup_tmux()
     setup_virtual_env()
-    get_repos()
+    get_repos(branch=branch)
     configure()
     install()
     run_servers(restart_scrapyd)
