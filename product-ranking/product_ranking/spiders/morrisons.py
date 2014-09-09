@@ -8,7 +8,6 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults, populate_from_open_graph
 
 
-
 class MorrisonsProductsSpider(BaseProductsSpider):
     name = 'morrisons_products'
     allowed_domains = ["morrisons.com"]
@@ -41,17 +40,14 @@ class MorrisonsProductsSpider(BaseProductsSpider):
 
         populate_from_open_graph(response, product)
 
-        brand = response.xpath(
-            "//span[@itemprop='name']/text()").extract()
+        brand = response.xpath("//span[@itemprop='name']/text()").extract()
         cond_set(product, 'brand', brand)
 
-        price = response.xpath(
-            "//meta[@itemprop='price']/@content").extract()
+        price = response.xpath("//meta[@itemprop='price']/@content").extract()
         cond_set(product, 'price', price)
 
-        upc = response.xpath(
-            "//meta[@itemprop='sku']/@content").extract()
-        cond_set(product, 'upc', upc)
+        upc = response.xpath("//meta[@itemprop='sku']/@content").extract()
+        cond_set(product, 'upc', upc, conv=int)
 
         product['locale'] = "en-GB"
 
@@ -84,4 +80,3 @@ class MorrisonsProductsSpider(BaseProductsSpider):
         elif len(next_pages) == 0:
             self.log("Found no 'next page' link.", ERROR)
         return next_page
-
