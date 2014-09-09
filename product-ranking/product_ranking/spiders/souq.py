@@ -69,7 +69,7 @@ class SouqProductsSpider(BaseProductsSpider):
     allowed_domains = ["souq.com"]
     start_urls = []
     SEARCH_URL = "http://uae.souq.com/ae-en/{search_term}/s/"
-    _recom_url = "http://uae.souq.com/ae-en/Action.php"
+    _RECOM_URL = "http://uae.souq.com/ae-en/Action.php"
 
     def _populate_from_open_graph(self, response, product):
         """Populates from Open Graph and discards description, which is fake.
@@ -149,7 +149,7 @@ class SouqProductsSpider(BaseProductsSpider):
 
             product_or_request = FormRequest.from_response(
                 response=response,
-                url=self._recom_url,
+                url=self._RECOM_URL,
                 method='POST',
                 formdata=data,
                 callback=self._parse_recomendar,
