@@ -258,7 +258,7 @@ def _setup_virtual_env_web_runner_web():
         run('pip install requests')
 
 
-def setup_virtual_env():
+def setup_virtual_env(scrapyd=True, web_runner=True, web_runner_web=True):
     '''Handle virtual envrironment installation'''
     puts(green('Installing virtual environments'))
 
@@ -266,9 +266,12 @@ def setup_virtual_env():
     venv_webrunner_web = _get_venv_path(VENV_WEB_RUNNER_WEB)
 
     run('mkdir -p ' + VENV_PREFIX)
-    _setup_virtual_env_scrapyd()
-    _setup_virtual_env_web_runner()
-    _setup_virtual_env_web_runner_web()
+    if scrapyd:
+        _setup_virtual_env_scrapyd()
+    if web_runner:
+        _setup_virtual_env_web_runner()
+    if web_runner_web:
+        _setup_virtual_env_web_runner_web()
     
 
 
@@ -280,8 +283,8 @@ def get_repos(branch='master'):
     repo_path = _get_repo_path()
     if not cuisine.dir_exists(repo_path):
         run('mkdir -p ' + REPO_BASE_PATH)
-        run('cd %s && git clone %s && git checkout %s' % 
-          (REPO_BASE_PATH, REPO_URL, branch)) 
+        run('cd %s && git clone %s && cd %s && git checkout %s' % 
+          (REPO_BASE_PATH, REPO_URL, repo_path, branch)) 
     else:
         run('cd %s && git checkout %s && git pull' % 
           (repo_path, branch) )
@@ -397,7 +400,7 @@ def _run_scrapyd():
     run("tmux send-keys -t webrunner:0 'source %s' C-m" % venv_scrapyd_activate)
     run("tmux send-keys -t webrunner:0 'cd %s' C-m" % venv_scrapyd)
     run("tmux send-keys -t webrunner:0 'scrapyd' C-m")
-    _run_scrapyd_deploy()
+    #_run_scrapyd_deploy()
  
 
 def _run_web_runner():
@@ -449,14 +452,51 @@ def run_servers(restart_scrapyd=False):
 
 
 
-def deploy(restart_scrapyd=False, branch='master'):
+def _common_tasks():
     setup_users()
     setup_packages()
     setup_tmux()
+
+
+def deploy_scrapyd(restart_scrapyd=False, branch='master'):
+
+    _common_tasks()
+    setup_virtual_env(web_runner=False, web_runner_web=False)
+    get_repos(branch=branch)
+    _configure_scrapyd()
+
+    if restart_scrapyd:
+        _restart_scrapyd()
+    _run_scrapyd()
+
+
+
+def deploy_web_runner(branch='master'):
+    _common_tasks()
+    setup_virtual_env(scrapyd=False, web_runner_web=False)
+    get_repos(branch=branch)
+    _configure_web_runner()
+    _install_web_runner()
+    _run_web_runner()
+
+
+def deploy_web_runner_web(branch='master'):
+    _common_tasks()
+    setup_virtual_env(scrapyd=False, web_runner=False)
+    get_repos(branch=branch)
+    _configure_web_runner_web()
+    _run_web_runner_web()
+
+
+
+def deploy(restart_scrapyd=False, branch='master'):
+    _common_tasks()
     setup_virtual_env()
     get_repos(branch=branch)
     configure()
     install()
     run_servers(restart_scrapyd)
+
+
 
 # vim: set expandtab ts=4 sw=4:
