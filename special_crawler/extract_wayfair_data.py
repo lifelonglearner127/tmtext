@@ -14,16 +14,11 @@ import time
 import requests
 from extract_data import Scraper
 
-class TescoScraper(Scraper):
+class WayfairScraper(Scraper):
     '''
-    no/broken image example:
-        http://www.tesco.com/direct/torch-keychain-1-led/592-8399.prd
-        
-    hp no image: 
-        http://www.tesco.com/direct/nvidia-nvs-310-graphics-card-512mb/436-0793.prd
     
     '''
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.wayfair.com/<product-name>.html"
     
     #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
     bazaarvoice = None
@@ -33,8 +28,8 @@ class TescoScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
+        m = re.match("^http://www.wayfair.com/[0-9a-zA-Z-]+\.html$", self.product_page_url)
 
-        m = re.match("^http://www.tesco.com/direct/[0-9a-zA-Z-]+/[0-9-]+\.prd$", self.product_page_url)
         return not not m
     
     # TODO:
@@ -96,7 +91,7 @@ class TescoScraper(Scraper):
     # extract product name from its product page tree
     # ! may throw exception if not found
     def _product_name_from_tree(self):
-        return self.tree_html.xpath("//h1")[0].text
+        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
 
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
@@ -114,7 +109,7 @@ class TescoScraper(Scraper):
     # extract product short description from its product page tree
     # ! may throw exception if not found
     def _short_description_from_tree(self):
-        short_description = " ".join(self.tree_html.xpath("//ul[@class='features']/li//text()")).strip()
+        short_description = " ".join(self.tree_html.xpath('//div[contains(@class, "prod_features")]//li//text()')).strip()
         return short_description
 
     # extract product long description from its product product page tree
@@ -122,16 +117,13 @@ class TescoScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
-        #TODO: Needs some logic for deciding when Tesco is displaying one format or the other, the following 2 lines are the currently encountered versions
-        #full_description = " ".join(self.tree_html.xpath("//section[@id='product-details-link']/section[@class='detailWrapper']//text()")).strip()
-        full_description = " ".join(self.tree_html.xpath('//section[@id="product-details"]//text()')).strip()
-        
+        full_description = self.tree_html.xpath('//p[contains(@class,"prod_romance_copy")]//text()')[0]
         return full_description
 
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
-        meta_price = self.tree_html.xpath("//p[@class='current-price']//text()")
+        meta_price = self.tree_html.xpath('//meta[@itemprop="price"]//@content')
         if meta_price:
             return meta_price[0].strip()
         else:
@@ -306,19 +298,44 @@ class TescoScraper(Scraper):
 
 
 
-    '''
-    x extra : all_depts = since dept/super_dept were deprecated and you wanted the whole breadcrumb, I added all_depts which is ordered in a hierarchy
-    x UPC/EAN/ISBN - found UPC
-    x product_images
-    x super_dept - scraped from the breadcrumbs
-    x dept - scraped from the breadcrumbs
-    x model_title -  exists as "title_from_tree", no other meta title
-    x review_count - exists as "total_reviews"
-    x meta description - doesn't exist in meta, but this is being pulled from the bazarr json file as "manufacturer_content_body"
-    x model_meta  -  there's no meta for model, but there is a model that could (but usually doesn't) exist in the bazaar json file
+    '''#toggle printer
+    x = self.tree_html.xpath('//div[contains(@class, "prod_features")]//li//text()')
+    print "\n\nXXXXXXXXXXXXXXXXXXXXXXXX\n\n%s\n\nXXXXXXXXXXXXXXXXXXXXXXXX\n\n" % (x)
+    #'''
 
-    meta keywords - doesn't exist in html source, or in the bazaar json
+
+    '''
+  
+        x   "name" 
+        x    "keywords"  - no meta keywords exist
+        x    "short_desc" 
+        x    "long_desc" 
+        x    "price" 
+            "anchors" 
+        x    "htags" 
+            "features" 
+            "nr_features" 
+            "title" 
+            "seller"
+            "product_id" 
+            "image_url" 
+            "video_url"
+            "upc" 
+            "product_images" 
+            "dept" 
+            "super_dept" 
+            "all_depts" 
+            "no_image" 
+            "load_time"
+         
+            "brand" 
+            "model" 
+            "manufacturer_content_body"
+            "pdf_url" 
+            "average_review" 
+            "total_reviews" 
     
+
     '''
 
 
