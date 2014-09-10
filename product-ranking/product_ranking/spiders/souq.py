@@ -85,23 +85,46 @@ class SouqProductsSpider(BaseProductsSpider):
 
         self._populate_from_open_graph(response, product)
 
-        cond_set(product, 'title', map(string.strip, response.xpath(
-            "//h1[@id='item_title']/text()").extract()))
+        cond_set(
+            product,
+            'title',
+            response.xpath(
+                "//h1[@id='item_title']/text()").extract(),
+            conv=string.strip
+        )
 
-        cond_set(product, 'brand', response.xpath(
-            "//div[contains(@class,'product_middle')]"
-            "/div/a[@id='brand']/text()").extract())
+        cond_set(
+            product,
+            'brand',
+            response.xpath(
+                "//div[contains(@class,'product_middle')]"
+                "/div/a[@id='brand']/text()").extract()
+        )
 
-        cond_set(product, 'price', map(string.strip, response.xpath(
-            "//div[@id='item_price']/div/text()").extract()))
+        cond_set(
+            product,
+            'price',
+            response.xpath(
+                "//div[@id='item_price']/div/text()").extract(),
+            conv=string.strip
 
-        cond_set(product, 'upc', map(int, response.xpath(
-            "//form[@id='addItemToCart']"
-            "/input[@id='id_unit']/@value").extract()))
+        )
 
-        desc = response.xpath("//div[contains(@class,'item-desc')]").extract()
+        cond_set(
+            product,
+            'upc',
+            response.xpath(
+                "//form[@id='addItemToCart']"
+                "/input[@id='id_unit']/@value").extract(),
+            conv=int
+        )
+
+        desc = response.xpath(
+            "//div[@class='ui-tabs-panel']"
+            "/div[contains(@class,'item-desc')]"
+            "/descendant::*[text()]/text()").extract()
         if desc:
-            cond_set_value(product, 'description', desc, conv=''.join)
+            cond_set_value(product, 'description', desc, conv=' '.join)
 
         product['related_products'] = {}
 
@@ -109,7 +132,7 @@ class SouqProductsSpider(BaseProductsSpider):
         res = response.xpath(
             "//section[contains(@class,'gallery-container')]"
             "/ul/li[not(contains(@class,'hide'))]/a")
-        if len(res) > 0:
+        if res:
             prodlist = []
             for r in res:
                 try:
@@ -121,7 +144,7 @@ class SouqProductsSpider(BaseProductsSpider):
                         "/text()").extract()[0].strip()
 
                     prodlist.append(RelatedProduct(title, url))
-                except:
+                except (ValueError, KeyError, IndexError):
                     pass
             if prodlist:
                 product['related_products']["recommended"] = prodlist
@@ -131,7 +154,7 @@ class SouqProductsSpider(BaseProductsSpider):
         res = response.xpath(
             "//script[contains(text(),'aBoxes')]").re(r'.*aBoxes = (.*);')
 
-        if len(res) > 0:
+        if res:
             text = res[0]
             badjson = ConvertBadJson()
             nodes = ast.parse(text)
@@ -168,7 +191,7 @@ class SouqProductsSpider(BaseProductsSpider):
         product = response.meta['product']
         try:
             jdata = json.loads(response.body)
-        except:
+        except ValueError:
             return product
 
         htmldata = jdata['html']
@@ -180,7 +203,7 @@ class SouqProductsSpider(BaseProductsSpider):
 
         res = hxs.xpath("//section/ul/li/a")
         self.log('AJAX_VIP_INTERESTS_LIST %s elements' % len(res), DEBUG)
-        if len(res) > 0:
+        if res:
             prodlist = []
             for r in res:
                 try:
@@ -189,16 +212,17 @@ class SouqProductsSpider(BaseProductsSpider):
                     if url.startswith("/"):
                         url = full_url(url)
                     prodlist.append(RelatedProduct(title, url))
-                except:
+                except (ValueError, KeyError, IndexError):
                     pass
-            product['related_products']["vip_interests"] = prodlist
+            if prodlist:
+                product['related_products']["vip_interests"] = prodlist
 
         res = hxs.xpath(
             "//div[contains(@class,'box-style-featuerd')]"
             "/div[contains(@class,'feature-items-box')]/a")
 
         self.log('AJAX_RELATED_PRODUCTS_LIST %s elements' % len(res), DEBUG)
-        if len(res) > 0:
+        if res:
             prodlist = []
             for r in res:
                 try:
@@ -208,16 +232,17 @@ class SouqProductsSpider(BaseProductsSpider):
                     rr = r.xpath("../text()")
                     text = rr.extract()[-1].strip()
                     prodlist.append(RelatedProduct(text, url))
-                except:
+                except (ValueError, KeyError, IndexError):
                     pass
-            product['related_products']["featured"] = prodlist
+            if prodlist:
+                product['related_products']["featured"] = prodlist
         return product
 
     def _scrape_total_matches(self, response):
         total = response.xpath(
             "//div[@id='search-results-title']"
             "/b/text()").extract()
-        if len(total) > 0:
+        if total:
             total = total[-1]
             try:
                 return int(total)
@@ -242,5 +267,5 @@ class SouqProductsSpider(BaseProductsSpider):
         next = response.xpath(
             "//ul[contains(@class,'paginator')]"
             "/li/a[@class='paginator-next']/@href")
-        if len(next) > 0:
+        if next:
             return next.extract()[0]
