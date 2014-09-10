@@ -22,25 +22,48 @@ class LondondrugsProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta['product']
 
-        cond_set(product, 'brand', response.xpath(
-            "//div[@id='product-title-bar']"
-            "/h2[@itemprop='brand']/text()").extract())
+        cond_set(
+            product,
+            'brand',
+            response.xpath(
+                "//div[@id='product-title-bar']"
+                "/h2[@itemprop='brand']/text()").extract()
+        )
 
-        cond_set(product, 'title', map(string.strip, response.xpath(
-            "//div[@id='product-title-bar']"
-            "/h1[@itemprop='name']/text()").extract()))
+        cond_set(
+            product,
+            'title',
+            response.xpath(
+                "//div[@id='product-title-bar']"
+                "/h1[@itemprop='name']/text()").extract(),
+            conv=string.strip
+        )
 
-        cond_set(product, 'price', map(string.strip, response.xpath(
-            "//div[contains(@class,'price')]"
-            "/div[@itemprop='price']/text()").extract()))
+        cond_set(
+            product,
+            'price',
+            response.xpath(
+                "//div[contains(@class,'price')]"
+                "/div[@itemprop='price']/text()").extract(),
+            conv=string.strip
+        )
 
-        cond_set(product, 'image_url', response.xpath(
-            "//div[contains(@class,'productimages')]"
-            "/div[@class='productimage']/img/@src").extract())
+        cond_set(
+            product,
+            'image_url',
+            response.xpath(
+                "//div[contains(@class,'productimages')]"
+                "/div[@class='productimage']/img/@src").extract()
+        )
 
-        cond_set(product, 'upc', map(int, response.xpath(
-            "//div[@id='product-title-bar']"
-            "/div[contains(@class,'productid')]/text()").re(r' L(\d*)')))
+        cond_set(
+            product,
+            'upc',
+            response.xpath(
+                "//div[@id='product-title-bar']"
+                "/div[contains(@class,'productid')]/text()").re(r' L(\d*)'),
+            conv=int
+        )
 
         j = response.xpath(
             "//div[@id='product-details-info']"
@@ -60,12 +83,18 @@ class LondondrugsProductsSpider(BaseProductsSpider):
             link = a.xpath('@href').extract()[0]
             ltitle = a.xpath('img/@title').extract()[0]
             lrelated.append(RelatedProduct(ltitle, link))
-        product['related_products'] = {"recomended": lrelated}
 
-        cond_set(product, 'model', response.xpath(
-            "//div[@class='pdp-features']/div[@class='attribute']"
-            "/div[@class='label']/text()[contains(.,'Model')]"
-            "/../../div[@class='value']/text()").extract())
+        if lrelated:
+            product['related_products'] = {"recommended": lrelated}
+
+        cond_set(
+            product,
+            'model',
+            response.xpath(
+                "//div[@class='pdp-features']/div[@class='attribute']"
+                "/div[@class='label']/text()[contains(.,'Model')]"
+                "/../../div[@class='value']/text()").extract()
+        )
 
         product['locale'] = "en-US"
         return product
@@ -73,15 +102,20 @@ class LondondrugsProductsSpider(BaseProductsSpider):
     def _scrape_total_matches(self, response):
         total = response.xpath(
             "//div[@class='resultshits']"
-            "/text()[contains(.,'matches')]").re(r'.*of (\d+)')
-        if len(total) > 0:
-            return int(total[0])
+            "/text()[contains(.,'matches')]").re(r'.*of ([\d,]+)')
+        if total:
+            total = total[0].replace(",", "")
+            return int(total)
+
         total = response.xpath(
-            "//div[@class='resultshits']/strong/text()").re(r'.*- (\d+)')
-        if len(total) > 0:
-            return int(total[0])
-        else:
-            return 0
+            "//div[@class='resultshits']/strong/text()").re(r'.*- ([\d,]+)')
+        if total:
+            total = total[0].replace(",", "")
+            try:
+                return int(total)
+            except ValueError:
+                pass
+        return 0
 
     def parse(self, response):
         redirect_urls = response.meta.get('redirect_urls')
@@ -114,4 +148,4 @@ class LondondrugsProductsSpider(BaseProductsSpider):
         if next:
             next = next.extract()[0]
             next = urlparse.urljoin(response.url, next)
-        return next
+            return next
