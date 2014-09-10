@@ -23,25 +23,52 @@ class UlaboxProductsSpider(BaseProductsSpider):
 
         product = response.meta['product']
 
-        cond_set(product, 'title', map(string.strip, response.xpath(
-            "//div[@class='product-name__titles']"
-            "/div[@class='grid']/div/h1/text()").extract()))
+        cond_set(
+            product,
+            'title',
+            response.xpath(
+                "//div[@class='product-name__titles']"
+                "/div[@class='grid']/div/h1/text()").extract(),
+            conv=string.strip
+        )
 
-        cond_set(product, 'brand', response.xpath(
-            "//div[@class='product-name__titles']/h2/a/text()").extract())
+        cond_set(
+            product,
+            'brand',
+            response.xpath(
+                "//div[@class='product-name__titles']/h2/a/text()").extract()
+        )
 
-        cond_set(product, 'price', response.xpath(
-            "//form/strong[@itemprop='price']/text()").extract())
+        cond_set(
+            product,
+            'price',
+            response.xpath(
+                "//form/strong[@itemprop='price']/text()").extract()
+        )
 
-        cond_set(product, 'image_url', map(full_url, response.xpath(
-            "//div[@class='js-image-zoom']/img/@src").extract()))
+        cond_set(
+            product,
+            'image_url',
+            response.xpath(
+                "//div[@class='js-image-zoom']/img/@src").extract(),
+            conv=full_url
+        )
 
-        cond_set(product, 'upc', map(int, response.xpath(
-            "//div[@class='grid']/div"
-            "/div[@class='product-info']/../@data-product-id").extract()))
+        cond_set(
+            product,
+            'upc',
+            response.xpath(
+                "//div[@class='grid']/div"
+                "/div[@class='product-info']/../@data-product-id").extract(),
+            conv=int
+        )
 
-        cond_set(product, 'locale', response.xpath(
-            "//html/@lang").extract())
+        cond_set(
+            product,
+            'locale',
+            response.xpath(
+                "//html/@lang").extract()
+        )
 
         desc = response.xpath(
             "//section[@itemprop='description']"
@@ -54,7 +81,7 @@ class UlaboxProductsSpider(BaseProductsSpider):
         product_or_request = product
 
         recom = response.xpath("//include[contains(@src,'recomendar')]/@src")
-        if len(recom) > 0:
+        if recom:
             recom_url = recom.extract()[0] + '&device=desktop-wide'
             new_meta = response.meta.copy()
             product_or_request = Request(
