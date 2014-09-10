@@ -73,9 +73,10 @@ class UlaboxProductsSpider(BaseProductsSpider):
                 title = r.xpath("@data-product-name").extract()[0]
                 url = r.xpath("@data-product-url").extract()[0]
                 prodlist.append(RelatedProduct(title, full_url(url)))
-            except:
+            except (ValueError, KeyError, IndexError):
                 pass
-        product['related_products']["recomended"] = prodlist
+        if prodlist:
+            product['related_products']["recommended"] = prodlist
         return product_or_request
 
     def _parse_recomendar(self, response):
@@ -92,9 +93,10 @@ class UlaboxProductsSpider(BaseProductsSpider):
                 title = r.xpath("@data-product-name").extract()[0]
                 url = r.xpath("@data-product-url").extract()[0]
                 prodlist.append(RelatedProduct(title, full_url(url)))
-            except:
+            except (ValueError, KeyError, IndexError):
                 pass
-        product['related_products']["other_bought"] = prodlist
+        if prodlist:
+            product['related_products']["buyers_also_bought"] = prodlist
         return product
 
     def _scrape_total_matches(self, response):
@@ -103,7 +105,14 @@ class UlaboxProductsSpider(BaseProductsSpider):
         if totals:
             return int(totals[0])
         else:
-            return None
+            # FIXME: search 'nivea' not found count on the page.
+            # need 'product-item' counting.
+            # don't delete this!
+            total = response.xpath(
+                "//div[@class='grid']"
+                "/div[contains(@class,'grid__item')]"
+                "/article[contains(@class,'product-item')]")
+            return len(total)
 
     def _scrape_product_links(self, response):
         links = response.xpath(
@@ -120,5 +129,5 @@ class UlaboxProductsSpider(BaseProductsSpider):
         next = response.xpath(
             "//ul[contains(@class,'pagination')]"
             "/li[contains(@class,'pagination-item--next')]/a/@href")
-        if len(next) > 0:
+        if next:
             return next.extract()[0]
