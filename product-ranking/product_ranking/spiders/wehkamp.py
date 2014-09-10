@@ -20,25 +20,52 @@ class WehkampProductsSpider(BaseProductsSpider):
 
         product = response.meta['product']
 
-        cond_set(product, 'title', map(string.strip, response.xpath(
-            "//div[@class='pdp-topmatter']"
-            "/h1[@itemprop='name']/text()").extract()))
+        cond_set(
+            product,
+            'title',
+            response.xpath(
+                "//div[@class='pdp-topmatter']"
+                "/h1[@itemprop='name']/text()").extract(),
+            conv=string.strip
+        )
 
-        cond_set(product, 'brand', response.xpath(
-            "//div[@class='merk']/a/img[@class='brandLogo']/@title").extract())
+        cond_set(
+            product,
+            'brand',
+            response.xpath(
+                "//div[@class='merk']/a"
+                "/img[@class='brandLogo']/@title").extract()
+        )
 
-        cond_set(product, 'image_url', response.xpath(
-            "//img[@id='mainImage']/@src").extract())
+        cond_set(
+            product,
+            'image_url',
+            response.xpath(
+                "//img[@id='mainImage']/@src").extract()
+        )
 
-        cond_set(product, 'price', response.xpath(
-            "//div[@class='priceblock']"
-            "/span[@class='price']/text()").extract())
+        cond_set(
+            product,
+            'price',
+            response.xpath(
+                "//div[@class='priceblock']"
+                "/span[@class='price']/text()").extract()
+        )
 
-        cond_set(product, 'upc', map(int, response.xpath(
-            "//input[@id='EanCode']/@value").extract()))
+        cond_set(
+            product,
+            'upc',
+            response.xpath(
+                "//input[@id='EanCode']/@value").extract(),
+            conv=int
+        )
 
-        cond_set(product, 'locale', response.xpath(
-            "//html/@lang").extract())
+        cond_set(
+            product,
+            'locale',
+            response.xpath(
+                "//html/@lang").extract()
+        )
 
         j = response.xpath(
             "//div[@id='extraInformatie']/"
@@ -64,7 +91,7 @@ class WehkampProductsSpider(BaseProductsSpider):
                 prodlist.append(RelatedProduct(title, href))
             except (ValueError, KeyError, IndexError):
                 pass
-        if prodlist:        
+        if prodlist:
             product['related_products'] = {"recommended": prodlist}
 
         return product
@@ -73,7 +100,7 @@ class WehkampProductsSpider(BaseProductsSpider):
         total = response.xpath(
             "//div[@class='resultsHeader']/p"
             "/text()").re(r'" geeft (\d+) resultaten.')
-        if len(total) > 0:
+        if total:
             total = total[0].replace(".", "")
             try:
                 return int(total)
