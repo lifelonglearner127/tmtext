@@ -120,6 +120,14 @@ class LondondrugsProductsSpider(BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         links = response.xpath(
             "//div[@class='main_search_result']/a[@id='next']/@href")
+        lastnav = response.xpath(
+            "//div[@class='gridNav']/a[contains(@class,'last')]/@href").extract()
+        if lastnav:
+            lastnav = lastnav[0]
+        
+        if response.url == lastnav:
+            return None
+
         next_page = None
         if links:
             next_page = links.extract()[0]
