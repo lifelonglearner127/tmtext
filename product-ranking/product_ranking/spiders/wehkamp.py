@@ -64,7 +64,8 @@ class WehkampProductsSpider(BaseProductsSpider):
                 prodlist.append(RelatedProduct(title, href))
             except (ValueError, KeyError, IndexError):
                 pass
-        product['related_products'] = {"recomended": prodlist}
+        if prodlist:        
+            product['related_products'] = {"recommended": prodlist}
 
         return product
 

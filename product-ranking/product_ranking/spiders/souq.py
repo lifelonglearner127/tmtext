@@ -123,7 +123,7 @@ class SouqProductsSpider(BaseProductsSpider):
                     prodlist.append(RelatedProduct(title, url))
                 except:
                     pass
-            if prodlist:        
+            if prodlist:
                 product['related_products']["recommended"] = prodlist
 
         # Extrenal
