@@ -121,4 +121,8 @@ class WehkampProductsSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
-        pass
+        next = response.xpath(
+            "//ul[contains(@class,'js-pagination')]"
+            "/li[contains(@class,'pagination-page-next')]/a/@href")
+        if next:
+            return next.extract()[0]
