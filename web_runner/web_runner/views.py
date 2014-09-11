@@ -319,7 +319,7 @@ def status(request):
     # Get the spiders for all projects
     if alive and operational:
         spiders = {proj: scrapyd_interf.get_spiders(proj) for proj in projects}
-        queues = scrapyd_interf.get_queues(projects)
+        (queues, summary_queues) = scrapyd_interf.get_queues(projects)
     else:
         spiders = None
 
@@ -329,6 +329,7 @@ def status(request):
         'scrapyd_projects': projects,
         'spiders': spiders,
         'queues': queues,
+        'summarized_queue': summary_queues,
         'webRunner': True,
     }
 

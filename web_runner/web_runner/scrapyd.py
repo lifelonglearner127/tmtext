@@ -271,13 +271,12 @@ class ScrapydInterface(object):
         :param projects: The list of project to query. If it is None, all
                          projects will be queried.
         """
-        SUMMARY = 'summary'
         if not projects:
             status, projects = self.get_projects()
             if not status:
                 return None
 
-        ret = {}
+        queues = {}
         for project in projects:
             url = '%slistjobs.json?project=%s' % (self.scrapyd_url, project)
             try:
@@ -286,14 +285,14 @@ class ScrapydInterface(object):
                 return None
 
             req_output = req.json()
-            ret[SUMMARY] = {'running':0, 'finished':0, 'pending':0}
+            summary = {'running':0, 'finished':0, 'pending':0}
             if req_output['status'].lower() == 'ok':
-                ret[project] = {}
+                queues[project] = {}
                 for status in ('running', 'finished', 'pending'):
-                    ret[project][status] = len(req_output[status])
-                    ret[SUMMARY][status] += len(req_output[status])
+                    queues[project][status] = len(req_output[status])
+                    summary[status] += len(req_output[status])
                     
-        return ret
+        return (queues, summary)
 
 
 

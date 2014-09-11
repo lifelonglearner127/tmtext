@@ -35,8 +35,8 @@
 
             var data = google.visualization.arrayToDataTable([
               ['Queue', 'tasks'],
-              {% for total_queue in queues.summary %}
-              ['{{total_queue}}', {{queues.summary|access:total_queue}}],
+              {% for total_queue in summarized_queue %}
+              ['{{total_queue}}', {{summarized_queue|access:total_queue}}],
               {% endfor %}
             ]);
 

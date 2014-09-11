@@ -44,7 +44,7 @@ def web_runner_status(request):
             
             # Decide the queue status accordin running, finished and pending 
             # tasks on summary queue
-            summary_queue = status['queues']['summary']
+            summary_queue = status['summarized_queue']
             if summary_queue['pending'] > 0 and summary_queue['running'] == 0:
                 status['queue_status'] = 'WARNING'
             else:
