@@ -11,6 +11,8 @@ from scrapy.http import Request
 from scrapy.log import ERROR
 
 
+#from scrapy.utils.project import get_project_settings
+
 class LazadaProductsSpider(BaseProductsSpider):
     name = 'lazada_products'
     allowed_domains = ["lazada.com.ph"]
@@ -19,6 +21,13 @@ class LazadaProductsSpider(BaseProductsSpider):
 
     _USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " \
         "(KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36"
+
+    # FIXME: setting USER_AGENT not worked!
+    # def __init__(self,  *args, **kwargs):
+    #     super(LazadaProductsSpider, self).__init__(*args, **kwargs)
+    #     settings = get_project_settings()
+    #     print "Your USER_AGENT is:\n%s" % (settings.get('USER_AGENT'))
+    #     settings.set('USER_AGENT', self._USER_AGENT, priority='cmdline')
 
     def start_requests(self):
         for request in super(LazadaProductsSpider, self).start_requests():
