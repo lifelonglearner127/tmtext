@@ -124,7 +124,7 @@ class LondondrugsProductsSpider(BaseProductsSpider):
             "//div[@class='gridNav']/a[contains(@class,'last')]/@href").extract()
         if lastnav:
             lastnav = lastnav[0]
-        
+
         if response.url == lastnav:
             return None
 

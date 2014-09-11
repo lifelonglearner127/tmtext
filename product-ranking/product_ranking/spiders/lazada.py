@@ -40,12 +40,21 @@ class LazadaProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta['product']
 
-        cond_set(product, 'title', map(string.strip, response.xpath(
-            "//div[@class='prod_content']"
-            "/h1[@id='prod_title']/text()").extract()))
+        cond_set(
+            product,
+            'title',
+            response.xpath(
+                "//div[@class='prod_content']"
+                "/h1[@id='prod_title']/text()").extract(),
+            conv=string.strip
+        )
 
-        cond_set(product, 'locale', response.xpath(
-            "//html/@lang").extract())
+        cond_set(
+            product,
+            'locale',
+            response.xpath(
+                "//html/@lang").extract()
+        )
 
         desc = response.xpath(
             "//div[@id='productDetails']"
@@ -61,23 +70,24 @@ class LazadaProductsSpider(BaseProductsSpider):
             "//script[contains(text(),"
             "'var dataLayer')]").re(r'\svar dataLayer = (.*);')
 
-        if len(jstext) > 0:
+        if jstext:
             try:
                 jsdata = json.loads(jstext[0])
-                if len(jsdata) > 0:
-                    product['brand'] = jsdata[0].get('pdt_brand')
-                    product['upc'] = jsdata[0].get('pdt_sku')
-                    product['price'] = jsdata[0].get('pdt_amount')
-                    product['image_url'] = jsdata[0].get('pdt_photo')
-            except:
-                pass
+            except ValueError:
+                jsdata = None
+
+            if jsdata:
+                cond_set_value(product, 'brand', jsdata[0].get('pdt_brand'))
+                cond_set_value(product, 'upc', jsdata[0].get('pdt_sku'))
+                cond_set_value(product, 'price', jsdata[0].get('pdt_amount'))
+                cond_set_value(product, 'image_url', jsdata[0].get('pdt_photo'))
         return product
 
     def _scrape_total_matches(self, response):
         total = response.xpath(
             "//span[@class='catalog__quantity']"
             "/text()").re(r'(\d+)')
-        if len(total) > 0:
+        if total:
             total = total[0].replace(".", "")
             try:
                 return int(total)
@@ -101,5 +111,5 @@ class LazadaProductsSpider(BaseProductsSpider):
         next = response.xpath(
             "//span[contains(@class,'paging')]"
             "/a[@class='next_link']/@href")
-        if len(next) > 0:
+        if next:
             return next.extract()[0].strip()
