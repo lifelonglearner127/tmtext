@@ -37,10 +37,14 @@ class AmazonScraper(Scraper):
 
     # return dictionary with one element containing the video url
     def video_for_url(self):
-        video_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
-        video_url = re.search("\['http://embed\.flixfacts\.com/.*\]", video_url.strip()).group()
-        video_url = re.findall("'(.*?)'", video_url)
-        return video_url
+        #"url":"http://ecx.images-amazon.com/images/I/B1d2rrt0oJS.mp4"
+        video_url = self.tree_html.xpath('//script[@type="text/javascript"]') 
+        temp = []
+        for v in video_url:
+            r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", str(v.xpath('.//text()')))
+            if r:
+                temp.extend(r)
+        return temp
 
     # return dictionary with one element containing the PDF
     def pdf_for_url(self):
@@ -292,12 +296,11 @@ class AmazonScraper(Scraper):
     x    features
     x    nr_features
     x    title
-        seller  <-  Not sure, There are a lot of versions of owned vs merchant, I'll need to look into this more
+    x    seller  <-  Not sure, There are a lot of versions of owned vs merchant, I'll need to look into this more
     x    product_id
     x    load_time
     x    image_url
-        video_url
-        
+    x    video_url
     x    brand
     x    model
     x    manufacturer_content_body
