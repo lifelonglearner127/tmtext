@@ -49,12 +49,21 @@ def check_input(url, is_valid_url, invalid_url_message=""):
             "Invalid URL: " + str(url) + " " + str(invalid_url_message),\
             400)
 
+# infer domain from input URL
+def extract_domain(url):
+    m = re.match("^http://www\.([^/\.]+)\..*$", url)
+    if m:
+        return m.group(1)
+    # TODO: return error message about bad URL if it does not match the regex
+
+
+
 # validate request mandatory arguments
 def validate_args(arguments):
     # normalize all arguments to str
     argument_keys = map(lambda s: str(s), arguments.keys())
 
-    mandatory_keys = ['url', 'site']
+    mandatory_keys = ['url']
 
     # If missing any of the needed arguments, throw exception
     for argument in mandatory_keys:
@@ -62,9 +71,21 @@ def validate_args(arguments):
             raise InvalidUsage("Invalid usage: missing GET parameter: " + argument)
 
     # Validate site
-    site_argument = arguments['site'][0]
+    # If no "site" argument was provided, infer it from the URL
+    if 'site' in arguments:
+        site_argument = arguments['site'][0]
+    else:
+        site_argument = extract_domain(arguments['url'][0])
+    
+        # If site could not be extracted the URL was invalid
+        if not site_argument:
+            raise InvalidUsage("Invalid input URL: " + arguments['url'][0] + ". Domain could not be extracted")
+
+        # Add the extracted site to the arguments list (to be used in get_data)
+        arguments['site'] = [site_argument]
+
     if site_argument not in SUPPORTED_SITES.keys():
-        raise InvalidUsage("Unsupported site: " + site_argument)
+        raise InvalidUsage("Unsupported site: " + str(site_argument))
     
 
 # validate request "data" parameters
