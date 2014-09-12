@@ -21,7 +21,7 @@ class PGEStore(Scraper):
     INVALID_URL_MESSAGE = "Expected URL format is http://www.pgestore.com/[0-9a-zA-Z,/-]+\.html"
     
     #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
-    bazaarvoice = None
+    reviews_tree = None
     
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -43,52 +43,54 @@ class PGEStore(Scraper):
 
     # return dictionary with one element containing the video url
     def video_for_url(self):
-        video_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
-        video_url = re.search("\['http://embed\.flixfacts\.com/.*\]", video_url.strip()).group()
-        video_url = re.findall("'(.*?)'", video_url)
-        return video_url
+        base = 'http://www.pgestore.com'
+        video_url = self.tree_html.xpath('//img[contains(@class, "productaltvideo")]/following-sibling::script//text()')[0]
+        video_url = re.findall('showProductVideo\(\"(.+?)\"\)', video_url)
+        return base+video_url[0]
 
     # return dictionary with one element containing the PDF
     def pdf_for_url(self):
-        return None
-    
-    #populate the bazaarvoice variable for use by other functions
-    def load_bazaarvoice(self):
-        url = "http://api.bazaarvoice.com/data/batch.json?passkey=asiwwvlu4jk00qyffn49sr7tb&apiversion=5.4&displaycode=1235-en_gb&resource.q0=products&filter.q0=id%3Aeq%3A" \
-        + self._extract_product_id() + \
-        "&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US"
-        req = requests.get(url)
-        self.bazaarvoice = req.json()
+        url = "http://content.webcollage.net/pgstore/smart-button?ird=true&channel-product-id=%s"%(self._extract_product_id())
+        contents = urllib.urlopen(url).read()
+        pdf = re.findall(r'wcobj=\\\"(http:\\/\\/.+?\.pdf)\\\"', str(contents))
+        
+        if pdf:
+            return re.sub(r'\\', '', pdf[0])
+        else:
+            return None
+    #populate the reviews_tree variable for use by other functions
+    def load_reviews(self, url):
+        try:
+            contents = urllib.urlopen(url).read()
+            self.reviews_tree = html.fromstring(contents)
+        except:
+            pass
         
     def _image_url(self):
-        head = 'http://tesco.scene7.com/is/image/'
-        image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
-        image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url)[0]
-        image_url = image_url.split(',')
-        image_url = [head+link for link in image_url]
+        image_url = self.tree_html.xpath("//img[contains(@class, 'productaltimage')]/@fullsizesrc")
+
         return image_url
         
     def manufacturer_content_body(self):
-        if not self.bazaarvoice:
-            self.load_bazaarvoice()
-        content = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['Description']
-        return content
+        full_description = " ".join(self.tree_html.xpath("//div[@class='tabContent']//text()")).strip()
+
+        return full_description
     
     #extract average review, and total reviews  
     def reviews_for_url(self):
-        if not self.bazaarvoice:
-            self.load_bazaarvoice()
-        average_review = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['AverageOverallRating']
-    
-        return average_review
+        if not self.reviews_tree:
+            url = "http://reviews.pgestore.com/3300/PG_00%s/reviews.htm?format=embedded"
+            self.load_reviews(url%(self._extract_product_id()))
+        rating = self.reviews_tree.xpath('//span[@class="BVRRNumber BVRRRatingNumber"]/text()')[0]
+        return rating
 
     def nr_reviews(self):
-        if not self.bazaarvoice:
-            self.load_bazaarvoice()
-
-        nr_reviews = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['TotalReviewCount']
-        return nr_reviews
-        
+        if not self.reviews_tree:
+            url = "http://reviews.pgestore.com/3300/PG_00%s/reviews.htm?format=embedded"
+            self.load_reviews(url%(self._extract_product_id()))
+        nr = self.reviews_tree.xpath('//span[@class="BVRRCount BVRRNonZeroCount"]/span[@class="BVRRNumber"]/text()')[0]
+        return nr        
+    
     # extract product name from its product page tree
     # ! may throw exception if not found
     def _product_name_from_tree(self):
@@ -116,8 +118,6 @@ class PGEStore(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
-        #TODO: Needs some logic for deciding when Tesco is displaying one format or the other, the following 2 lines are the currently encountered versions
-        #full_description = " ".join(self.tree_html.xpath("//section[@id='product-details-link']/section[@class='detailWrapper']//text()")).strip()
         full_description = " ".join(self.tree_html.xpath("//div[@class='tabContent']//text()")).strip()
         
         return full_description
@@ -138,7 +138,7 @@ class PGEStore(Scraper):
     #      - is format ok?
     def _anchors_from_tree(self):
         # get all links found in the description text
-        description_node = self.tree_html.xpath("//section[@class='detailWrapper']")[0]
+        description_node = self.tree_html.xpath("//div[@class='tabContent']")[0]
         links = description_node.xpath(".//a")
         nr_links = len(links)
 
@@ -169,10 +169,7 @@ class PGEStore(Scraper):
     # extract product model from its product product page tree
     # ! may throw exception if not found
     def _model_from_tree(self):
-        if not self.bazaarvoice:
-            self.load_bazaarvoice()
-        return self.bazaarvoice['BatchedResults']['q0']['Results'][0]['ModelNumbers'][0]
-
+        return None
     # extract product features list from its product product page tree, return as string
     # join all text in spec table; separate rows by newlines and eliminate spaces between cells
     def _features_from_tree(self):
@@ -206,10 +203,8 @@ class PGEStore(Scraper):
         return self.tree_html.xpath('//div[@id="prodSku"]//text()')[0]
     
     def _product_images(self):
-        head = 'http://tesco.scene7.com/is/image/'
-        image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
-        image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url)[0]
-        image_url = image_url.split(',')
+        image_url = self.tree_html.xpath("//img[contains(@class, 'productaltimage')]/@fullsizesrc")
+
         return len(image_url)
 
     def _dept(self):
@@ -285,40 +280,43 @@ class PGEStore(Scraper):
     print "\n\nXXXXXXXXXXXXXXXXXXXXXXXX\n\n%s\n\nXXXXXXXXXXXXXXXXXXXXXXXX\n\n" % (x)
     #'''
 
-    '''
+    '''PGEStore
+    pdf example
+        http://www.pgestore.com/health/oral-care/replacement-brush-heads/oral-b-flossaction-refills-3-ct/069055842010,default,pd.html
+    video example
+        http://www.pgestore.com/men/shaving/electric-shavers/braun-series-5-590-system/069055853139,default,pd.html?start=1&cgid=braun-electric-shavers-1
+        
                 x "name" 
                 x "keywords"
                 x "short_desc" - same as long_desc, there's no apparent separate long and short desc
                 x "long_desc" - same as short_desc, there's no apparent separate long and short desc
                 x "price" 
-            "anchors" 
+                x "anchors" 
                 x "htags" 
                 x "features"  - None
                 x "nr_features" - None
                 x "title" 
                 x "seller"
                 x "product_id"
-            "image_url" 
-            "video_url"
+                x "image_url" 
+                x "video_url"
                 x "upc" - getting the product sku 
-            "product_images" 
+                x "product_images" 
                 x "dept" 
                 x "super_dept" 
                 x "all_depts" 
-            "no_image" 
+                x "no_image"  - no "no images" found
                 x "load_time"
          
                 x "brand" 
-            "model" 
-            "manufacturer_content_body"
-            "pdf_url" 
-            "average_review" 
-            "total_reviews" 
+                x "model"  - no models found on PGEStore
+                x "manufacturer_content_body" - same as the other descriptions
+                x "pdf_url" 
+                x "average_review" 
+                x "total_reviews" 
     
 
 
-    pdf example - 
-        http://www.pgestore.com/health/oral-care/replacement-brush-heads/oral-b-flossaction-refills-3-ct/069055842010,default,pd.html
         
     '''
 
@@ -334,6 +332,7 @@ class PGEStore(Scraper):
         "keywords" : _meta_keywords_from_tree, \
         "short_desc" : _short_description_from_tree, \
         "long_desc" : _long_description_from_tree, \
+        "manufacturer_content_body" : manufacturer_content_body, \
         "price" : _price_from_tree, \
         "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
@@ -362,7 +361,6 @@ class PGEStore(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         "model" : _model_from_tree, \
-        "manufacturer_content_body" : manufacturer_content_body, \
         "pdf_url" : pdf_for_url, \
         "average_review" : reviews_for_url, \
         "total_reviews" : nr_reviews\

@@ -221,6 +221,9 @@ class AmazonScraper(Scraper):
 
     def _product_images(self):
         return len(self.tree_html.xpath("//span[@class='a-button-text']//img/@src"))
+    
+    def _no_image(self):
+        return None
 
 
     def _dept(self):
@@ -305,6 +308,7 @@ class AmazonScraper(Scraper):
     x    model
     x    manufacturer_content_body
         pdf_url
+        no_image
     x    average_review
     x    total_reviews
     
@@ -336,6 +340,7 @@ class AmazonScraper(Scraper):
         "brand" : _meta_brand_from_tree, \
         "image_url" : _image_url, \
         "video_url" : video_for_url, \
+        "no_image" : _no_image, \
         
         "product_images" : _product_images,\
         "all_depts" : _all_depts,\
