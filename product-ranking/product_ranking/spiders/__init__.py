@@ -177,9 +177,10 @@ class BaseProductsSpider(Spider):
         """Generate Requests from the SEARCH_URL and the search terms."""
         for st in self.searchterms:
             yield Request(
-                self.url_formatter.format(self.SEARCH_URL,
-                                          search_term=urllib.quote_plus(st)),
-                meta={'search_term': st, 'remaining': self.quantity})
+                self.url_formatter.format(
+                    self.SEARCH_URL, search_term=urllib.quote_plus(st)),
+                meta={'search_term': st, 'remaining': self.quantity},
+            )
 
     def parse(self, response):
         if self._search_page_error(response):
