@@ -177,9 +177,10 @@ class BaseProductsSpider(Spider):
         """Generate Requests from the SEARCH_URL and the search terms."""
         for st in self.searchterms:
             yield Request(
-                self.url_formatter.format(self.SEARCH_URL,
-                                          search_term=urllib.quote_plus(st)),
-                meta={'search_term': st, 'remaining': self.quantity})
+                self.url_formatter.format(
+                    self.SEARCH_URL, search_term=urllib.quote_plus(st)),
+                meta={'search_term': st, 'remaining': self.quantity},
+            )
 
     def parse(self, response):
         if self._search_page_error(response):
@@ -238,6 +239,8 @@ class BaseProductsSpider(Spider):
             if prod_url is None:
                 # The product is complete, no need for another request.
                 yield prod_item
+            elif isinstance(prod_url, Request):
+                yield prod_url
             else:
                 # Another request is necessary to complete the product.
                 url = urlparse.urljoin(response.url, prod_url)
@@ -258,7 +261,12 @@ class BaseProductsSpider(Spider):
             remaining -= prods_found
             if remaining > 0:
                 next_page = self._scrape_next_results_page_link(response)
-                if next_page is not None:
+                if next_page is None:
+                    pass
+                elif isinstance(next_page, Request):
+                    next_page.meta['remaining'] = remaining
+                    result = next_page
+                else:
                     url = urlparse.urljoin(response.url, next_page)
                     new_meta = dict(response.meta)
                     new_meta['remaining'] = remaining

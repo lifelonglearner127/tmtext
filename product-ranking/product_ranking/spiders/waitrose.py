@@ -2,92 +2,93 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import json
-import urllib
-import urllib2
-import urlparse
-import re
+
+from scrapy.http.request.form import FormRequest
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set_value
+from product_ranking.spiders import BaseProductsSpider
 
-
-# FIXME Overrides USER AGENT unconditionally.
-# FIXME Makes a request using urllib.
 
 class WaitroseProductsSpider(BaseProductsSpider):
     name = "waitrose_products"
     allowed_domains = ["waitrose.com"]
     start_urls = []
 
-    SEARCH_URL = "http://www.waitrose.com/shop/HeaderSearchCmd" \
-        "?searchTerm={search_term}&defaultSearch=GR&search="
+    SEARCH_URL = "http://www.waitrose.com/shop/BrowseAjaxCmd"
+    _DATA = "Groceries/refined_by/search_term/{search_term}/sort_by/NONE" \
+        "/sort_direction/descending/page/{page}"
 
-    _USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ' \
-        '(KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36'
+    _PRODUCT_TO_DATA_KEYS = {
+        'title': 'name',
+        'image_url': 'image',
+        'url': 'url',
+        'price': 'price',
+        'description': 'summary',
+    }
+
+    @staticmethod
+    def _get_data(response):
+        """Helper function that parses JSON data from the response's body using
+        a cache.
+        """
+        try:
+            data = response.meta['parsed_data']
+        except KeyError:
+            data = json.loads(response.body_as_unicode())
+            # Cache the parsed data.
+            response.meta['parsed_data'] = data
+
+        return data
+
+    @staticmethod
+    def _create_request(meta):
+        return FormRequest(
+            url=WaitroseProductsSpider.SEARCH_URL,
+            formdata={
+                'browse': WaitroseProductsSpider._DATA.format(
+                    search_term=meta['search_term'], page=meta['current_page']),
+            },
+            meta=meta,
+        )
+
+    def start_requests(self):
+        """Generates POSTs instead of GETs."""
+        for st in self.searchterms:
+            yield self._create_request(
+                meta={
+                    'search_term': st,
+                    'remaining': self.quantity,
+                    'current_page': 1,
+                },
+            )
 
     def parse_product(self, response):
         raise AssertionError("This method should never be called.")
 
     def _scrape_total_matches(self, response):
-        count = response.xpath(
-            '//span[@id="current-breadcrumb"]/text()'
-        ).re('(\d+)')
-        if count:
-            return int(count[0])
-        return 0
+        data = WaitroseProductsSpider._get_data(response)
+        return data['totalCount']
 
     def _scrape_product_links(self, response):
-        total_pages = response.xpath(
-            '//input[@id="number-of-pages"]/@value').extract()[0]
-        # FIXME This is not used, right?
-        links = response.xpath(
-            '//a[@class="m-product-open-modal"]/@href').extract()
+        data = WaitroseProductsSpider._get_data(response)
+        for product_data in data['products']:
+            product = SiteProductItem()
 
-        # FIXME Only use a hardcoded user agent if the default wasn't overrided.
-        url = 'http://www.waitrose.com/shop/BrowseAjaxCmd'
-        headers = {'User-Agent': WaitroseProductsSpider._USER_AGENT}
+            for product_key, data_key in self._PRODUCT_TO_DATA_KEYS.items():
+                product[product_key] = product_data[data_key]
 
-        browse_url = response.xpath('//input[@id="browse-url"]/@value').extract()[0]
-        for page in range(1, int(total_pages)):
-            values = {
-                'browse': urlparse.urljoin(
-                    browse_url,
-                    '/sort_by/NONE/sort_direction/descending/page/' + str(page)
-                ),
-            }
-            data = urllib.urlencode(values)
-            req = urllib2.Request(url, data, headers)
-            # FIXME: Why do this? Return a Request for Scrapy to make the request.
-            resp = urllib2.urlopen(req)
-            json_data = json.load(resp)
+            # This one is not in the mapping since it requires transformation.
+            product['upc'] = int(product_data['productid'])
 
-            for prod_data in json_data['products']:
-                import pdb; pdb.set_trace()
-                prod = SiteProductItem()
-                regex = re.compile("(\d+.\d+)")
-                p = regex.search(prod_data['price'])
-                if p:
-                    price = p.group(1)
-                else:
-                    # FIXME: Don't!
-                    price = '0.00'
-                cond_set_value(prod, 'title', prod_data['name'])
-                cond_set_value(prod, 'price', price)
-                cond_set_value(prod, 'upc', int(prod_data['id']))
-                cond_set_value(prod, 'model', prod_data['productid'])
-                cond_set_value(prod, 'image_url', prod_data['image'])
-                cond_set_value(
-                    prod,
-                    'url',
-                    urlparse.urljoin(response.url, prod_data['url']),
-                )
-
-                # Some products do not have a summary.
-                cond_set_value(prod, 'description', prod_data.get('summary'))
-
-                prod['locale'] = "en-GB"
-
-                yield None, prod
+            yield None, product
 
     def _scrape_next_results_page_link(self, response):
-        raise AssertionError("This method should never be called.")
+        data = WaitroseProductsSpider._get_data(response)
+        if response.meta['current_page'] >= data['numberOfPages']:
+            request = None
+        else:
+            meta = response.meta.copy()
+            meta['current_page'] += 1
+            request = self._create_request(meta)
+
+        return request
