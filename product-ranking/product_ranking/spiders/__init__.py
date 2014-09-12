@@ -261,7 +261,12 @@ class BaseProductsSpider(Spider):
             remaining -= prods_found
             if remaining > 0:
                 next_page = self._scrape_next_results_page_link(response)
-                if next_page is not None:
+                if next_page is None:
+                    pass
+                elif isinstance(next_page, Request):
+                    next_page.meta['remaining'] = remaining
+                    result = next_page
+                else:
                     url = urlparse.urljoin(response.url, next_page)
                     new_meta = dict(response.meta)
                     new_meta['remaining'] = remaining
