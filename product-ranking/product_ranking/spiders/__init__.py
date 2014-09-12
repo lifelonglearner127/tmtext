@@ -238,6 +238,8 @@ class BaseProductsSpider(Spider):
             if prod_url is None:
                 # The product is complete, no need for another request.
                 yield prod_item
+            elif isinstance(prod_url, Request):
+                yield prod_url
             else:
                 # Another request is necessary to complete the product.
                 url = urlparse.urljoin(response.url, prod_url)
