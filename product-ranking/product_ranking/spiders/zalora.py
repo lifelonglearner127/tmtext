@@ -9,7 +9,7 @@ from scrapy.log import ERROR, DEBUG
 from scrapy.selector import Selector
 from scrapy.http import Request
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
      cond_set, cond_set_value, _extract_open_graph_metadata
 
@@ -72,12 +72,14 @@ class ZaloraProductsSpider(BaseProductsSpider):
 
         cond_set_value(product, 'locale', 'en-PH')
         
-        r = {}
+        r = []
         bundles = response.xpath('//a[@class="prd-bundle-item-name"]')
         for bundle in bundles:
-            r[self.clear_desc(bundle.xpath('.//text()').extract())] = \
-                 urlparse.urljoin(response.url, 
-                                  bundle.xpath('@href').extract()[0])
+            r.append(RelatedProduct(
+                self.clear_desc(bundle.xpath('.//text()').extract()),
+                urlparse.urljoin(response.url, 
+                                  bundle.xpath('@href').extract()[0])))
+                                  
         related_products = {'recommended': r }
         
         cond_set_value(product, 'related_products', related_products)          
@@ -96,7 +98,7 @@ class ZaloraProductsSpider(BaseProductsSpider):
         product = response.meta['product']
         
         sel = Selector(text=json.loads(response.body).get('html'))
-        r = {}
+        r = []
         for a in sel.css('.rec-item-link'):
             brand = a.css('.rec-item-brand::text')
             title = a.css('.rec-item-title::text')
@@ -105,10 +107,12 @@ class ZaloraProductsSpider(BaseProductsSpider):
                 title = brand[0].extract().strip() + \
                 ' ' + title[0].extract().strip()
              
-                r[title] = urlparse.urljoin(response.url, 
-                                  a.xpath('@href').extract()[0])
+                r.append(RelatedProduct(
+                    title,
+                    urlparse.urljoin(response.url, 
+                                  a.xpath('@href').extract()[0])))
                                   
-        product['related_products']['recommended'].update(r)
+        product['related_products']['recommended'] += r
         
         return product
         

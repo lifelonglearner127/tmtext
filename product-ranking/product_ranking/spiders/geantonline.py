@@ -6,7 +6,7 @@ import urlparse
 
 from scrapy.log import ERROR, DEBUG
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
      cond_set, cond_set_value
 
@@ -52,10 +52,12 @@ class GeantonlineProductsSpider(BaseProductsSpider):
 
         rel_links = response.css('.BoughtItems p.BoughtProductName a')
         
-        buyers_also_bought = {} 
+        buyers_also_bought = [] 
         for rl in rel_links:
-            buyers_also_bought[rl.xpath('./text()').extract()[0]] = \
-                urlparse.urljoin(response.url, rl.xpath('./@href').extract()[0])
+            buyers_also_bought.append(RelatedProduct(
+                rl.xpath('./text()').extract()[0],
+                urlparse.urljoin(response.url, 
+                                 rl.xpath('./@href').extract()[0])))
                 
         cond_set_value(product, 'related_products', 
                        {'buyers_also_bought':buyers_also_bought})        
