@@ -165,7 +165,10 @@ class JohnlewisProductsSpider(BaseProductsSpider):
                 "/strong/text()").extract(),
             conv=string.strip
         )
-
+        price = product['price']
+        mprice = re.match(r'.*\s(\S*)$', price, re.S)
+        if mprice:
+            product['price'] = mprice.group(1)
         cond_set(
             product,
             'upc',
