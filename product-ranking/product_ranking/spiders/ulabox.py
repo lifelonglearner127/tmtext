@@ -4,10 +4,11 @@ from future_builtins import *
 import string
 import urlparse
 
+from scrapy import Request
+from scrapy.log import WARNING
+
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set
-from scrapy import Request
-from scrapy.log import ERROR
 
 
 class UlaboxProductsSpider(BaseProductsSpider):
@@ -147,7 +148,7 @@ class UlaboxProductsSpider(BaseProductsSpider):
             "/a[contains(@class,'product-item')]/@href").extract()
 
         if not links:
-            self.log("Found no product links.", ERROR)
+            self.log("Found no product links.", WARNING)
 
         for no, link in enumerate(links):
             yield link, SiteProductItem()
