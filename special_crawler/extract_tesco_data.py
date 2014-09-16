@@ -72,11 +72,7 @@ class TescoScraper(Scraper):
         image_url = [head+link for link in image_url]
         return image_url
         
-    def manufacturer_content_body(self):
-        if not self.bazaarvoice:
-            self.load_bazaarvoice()
-        content = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['Description']
-        return content
+   
     
     #extract average review, and total reviews  
     def reviews_for_url(self):
@@ -122,11 +118,13 @@ class TescoScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
-        #TODO: Needs some logic for deciding when Tesco is displaying one format or the other, the following 2 lines are the currently encountered versions
-        #full_description = " ".join(self.tree_html.xpath("//section[@id='product-details-link']/section[@class='detailWrapper']//text()")).strip()
-        full_description = " ".join(self.tree_html.xpath('//section[@id="product-details"]//text()')).strip()
-        
-        return full_description
+        if not self.bazaarvoice:
+           self.load_bazaarvoice()
+        content = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['Description']
+        return content
+    
+    def manufacturer_content_body(self):
+       return None
 
 
     # extract product price from its product product page tree
@@ -227,10 +225,12 @@ class TescoScraper(Scraper):
         seller_info['marketplace'] = 1 if "more buying option(s) from:" in h2_tags else 0
 
         return seller_info
-
+    
+    # extract the UPC number
     def _upc(self):
         return self.tree_html.xpath('//meta[@property="og:upc"]/@content')[0]
     
+    #extract links for all images
     def _product_images(self):
         head = 'http://tesco.scene7.com/is/image/'
         image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
@@ -238,18 +238,25 @@ class TescoScraper(Scraper):
         image_url = image_url.split(',')
         return len(image_url)
 
+    # extract the department which the product belongs to
     def _dept(self):
-        dept = " ".join(self.tree_html.xpath("//div[@id='breadcrumb']//li[3]//text()")).strip()
-        return dept
-    
-    def _super_dept(self):
         dept = " ".join(self.tree_html.xpath("//div[@id='breadcrumb']//li[2]//text()")).strip()
         return dept
     
-    def _all_depts(self):
-        all = self.tree_html.xpath("//div[@id='breadcrumb']//li//span//text()")
-        return all
+    # extract the department's department, or super department
+    def _super_dept(self):
+        dept = " ".join(self.tree_html.xpath("//div[@id='breadcrumb']//li[1]//text()")).strip()
+        return dept
     
+    # extract a hierarchical list of all the departments the product belongs to
+    def _all_depts(self):
+        all = self.tree_html.xpath("//div[@id='breadcrumb']//li//span/text()")
+        #the last value is the product itself
+        return all[:-1]
+    
+    # return True if there is a no-image image and False otherwise
+    # Certain products have an image that indicates "there is no image available"
+    # a hash of these "no-images" is saved to a json file and new images are compared to see if they're the same
     def _no_image(self):
         #get image urls
         head = 'http://tesco.scene7.com/is/image/'
@@ -275,6 +282,20 @@ class TescoScraper(Scraper):
         else:
             return False
         
+    
+    # returns 1 if the product is in stock, 0 otherwise
+    def product_in_stock(self):
+        return None
+    
+    #returns 1 if the mobile version is the same, 0 otherwise
+    def mobile_image_same(self):
+        return None
+    
+    #returns 1 if it's in stores only, 0 otherwise
+    def in_stores_only(self):
+        return None
+    
+    
     
     def fetch_bytes(self, url):
         file = cStringIO.StringIO(urllib.urlopen(url).read())
@@ -351,6 +372,10 @@ class TescoScraper(Scraper):
         "super_dept" : _super_dept,\
         "all_depts" : _all_depts,\
         "no_image" : _no_image,\
+        
+        "product_in_stock" : product_in_stock, \
+        "in_stores_only" : in_stores_only, \
+        "mobile_image_same" : mobile_image_same, \
         
         "load_time": None\
         }

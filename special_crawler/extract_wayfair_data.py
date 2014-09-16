@@ -305,7 +305,6 @@ class WayfairScraper(Scraper):
 
 
     '''
-  
         x   "name" 
         x    "keywords"  - no meta keywords exist
         x    "short_desc" 

@@ -16,8 +16,6 @@ class AmazonScraper(Scraper):
     
     INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id>"
     
-    #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
-    bazaarvoice = None
     
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -25,14 +23,18 @@ class AmazonScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match("^http://www.amazon.com/dp/[a-zA-Z0-9]+$", self.product_page_url)
+        #m = re.match("^http://www.amazon.com/dp/[a-zA-Z0-9]+$", self.product_page_url)
+        m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+
         return not not m
     
     # TODO:
     #      better way of extracting id now that URL format is more permissive
     #      though this method still seems to work...
     def _extract_product_id(self):
-        product_id = self.product_page_url.split('/')[-1]
+        #product_id = self.product_page_url.split('/')[-1]
+        product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+
         return product_id
 
     # return dictionary with one element containing the video url
@@ -50,14 +52,7 @@ class AmazonScraper(Scraper):
     def pdf_for_url(self):
         return None
     
-    #populate the bazaarvoice variable for use by other functions
-    def load_bazaarvoice(self):
-        url = "http://api.bazaarvoice.com/data/batch.json?passkey=asiwwvlu4jk00qyffn49sr7tb&apiversion=5.4&displaycode=1235-en_gb&resource.q0=products&filter.q0=id%3Aeq%3A" \
-        + self._extract_product_id() + \
-        "&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US"
-        req = requests.get(url)
-        self.bazaarvoice = req.json()
-        
+
     def _image_url(self):
         image_url = self.tree_html.xpath("//span[@class='a-button-text']//img/@src")
         return image_url
@@ -108,8 +103,6 @@ class AmazonScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
-        #TODO: Needs some logic for deciding when Tesco is displaying one format or the other, the following 2 lines are the currently encountered versions
-        #full_description = " ".join(self.tree_html.xpath("//section[@id='product-details-link']/section[@class='detailWrapper']//text()")).strip()
         full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
         
         return full_description
@@ -172,8 +165,6 @@ class AmazonScraper(Scraper):
     # extract product features list from its product product page tree, return as string
     # join all text in spec table; separate rows by newlines and eliminate spaces between cells
     def _features_from_tree(self):
-        #TODO: Needs some logic for deciding when Tesco is displaying one format or the other, the following 2 lines are the currently encountered versions
-        #rows = self.tree_html.xpath("//section[@class='detailWrapper']//tr")
         rows = self.tree_html.xpath("//div[@class='content pdClearfix']//tbody//tr")
         
         # list of lists of cells (by rows)
@@ -257,14 +248,14 @@ class AmazonScraper(Scraper):
     def main(args):
         # check if there is an argument
         if len(args) <= 1:
-            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython crawler_service.py <tesco_product_url>\n")
+            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython crawler_service.py <amazon_product_url>\n")
             sys.exit(1)
     
         product_page_url = args[1]
     
         # check format of page url
         if not check_url_format(product_page_url):
-            sys.stderr.write("ERROR: Invalid URL " + str(product_page_url) + "\nFormat of product URL should be\n\t http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd\n")
+            sys.stderr.write(INVALID_URL_MESSAGE)
             sys.exit(1)
     
         return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
@@ -279,8 +270,8 @@ class AmazonScraper(Scraper):
     x dept - scraped from the breadcrumbs
     x model_title -  exists as "title_from_tree"
     x review_count - exists as "total_reviews"
-    x meta description - doesn't exist in meta, but this is being pulled from the bazarr json file as "manufacturer_content_body"
-    x meta keywords - doesn't exist in html source, or in the bazaar json
+    x meta description - 
+    x meta keywords - 
     x model_meta  -  there's no meta for model, but there is a model in the source
     
     '''
