@@ -90,17 +90,8 @@ class ScrapydMediator(object):
         jobid = result['jobid']
 
         # Wait until the job appears in the list of jobs.
-        retry_count = 1 + int(timeout / ScrapydMediator._VERIFICATION_DELAY)
-        for _ in range(retry_count):
-            if self.report_on_job(jobid) != ScrapydMediator.JobStatus.unknown:
-                break  # It appears.
-            LOG.debug(
-                "Job %s not ready. Waiting %g before retrying.",
-                jobid,
-                ScrapydMediator._VERIFICATION_DELAY,
-            )
-            time.sleep(ScrapydMediator._VERIFICATION_DELAY)
-        else:
+        queue_status = self.report_on_job_with_retry(jobid, timeout=timeout)
+        if queue_status == ScrapydMediator.JobStatus.unknown:
             raise ScrapydJobStartError(
                 "ok",
                 "Timeout on waiting for Scrapyd to list job '%s'." % jobid,
@@ -108,7 +99,7 @@ class ScrapydMediator(object):
 
         return jobid
 
-    def report_on_job(self, jobid):
+    def report_on_job(self, jobid, timeout=1.0):
         url = urlparse.urljoin(self.scrapyd_base_url, 'listjobs.json') \
             + '?' + urllib.urlencode({'project': self.config.project_name})
         response = self._fetch_json(url)
@@ -131,6 +122,27 @@ class ScrapydMediator(object):
             status = ScrapydMediator.JobStatus.unknown
 
         return status
+
+    def report_on_job_with_retry(self, jobid, timeout=1.0):
+        """Waits that a jobid appears in a valid scrapyd queue
+
+        :returns False if it does not appears after retries
+        """
+        retry_count = 1 + int(timeout / ScrapydMediator._VERIFICATION_DELAY)
+        for _ in range(retry_count):
+            status = self.report_on_job(jobid)
+            if status != ScrapydMediator.JobStatus.unknown:
+                break
+            LOG.debug(
+                "Job %s not ready. Waiting %g before retrying.",
+                jobid,
+                ScrapydMediator._VERIFICATION_DELAY,
+            )
+            time.sleep(ScrapydMediator._VERIFICATION_DELAY)
+
+        return status
+
+
 
     def retrieve_job_data(self, jobid):
         """Returns a file like object with the job's result."""
