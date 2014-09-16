@@ -73,9 +73,11 @@ class AmazonProductsSpider(BaseProductsSpider):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         cond_set(product, 'price',
                  response.css('#priceblock_ourprice ::text').extract())
-        cond_set(product, 'description',
-                 response.css('.productDescriptionWrapper').xpath('node()')
-                 .extract(), lambda descs: descs[0].strip())
+        cond_set(
+            product,
+            'description',
+            response.css('.productDescriptionWrapper').extract()
+        )
         cond_set(product, 'image_url',
                  response.css('#imgTagWrapperId > img ::attr(data-old-hires)')
                  .extract())
