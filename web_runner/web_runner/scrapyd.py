@@ -99,7 +99,8 @@ class ScrapydMediator(object):
 
         return jobid
 
-    def report_on_job(self, jobid, timeout=1.0):
+    def report_on_job(self, jobid):
+        """Returns the status of a job."""
         url = urlparse.urljoin(self.scrapyd_base_url, 'listjobs.json') \
             + '?' + urllib.urlencode({'project': self.config.project_name})
         response = self._fetch_json(url)
@@ -124,15 +125,13 @@ class ScrapydMediator(object):
         return status
 
     def report_on_job_with_retry(self, jobid, timeout=1.0):
-        """Waits that a jobid appears in a valid scrapyd queue
-
-        :returns False if it does not appears after retries
-        """
-        retry_count = 1 + int(timeout / ScrapydMediator._VERIFICATION_DELAY)
+        """Returns the status of a job."""
+        retry_count = 1 + timeout // ScrapydMediator._VERIFICATION_DELAY
         for _ in range(retry_count):
             status = self.report_on_job(jobid)
             if status != ScrapydMediator.JobStatus.unknown:
                 break
+
             LOG.debug(
                 "Job %s not ready. Waiting %g before retrying.",
                 jobid,
