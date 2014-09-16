@@ -6,7 +6,7 @@ import json
 import string
 
 from scrapy.http.request.form import FormRequest
-from scrapy.log import, msg, ERROR, WARNING, INFO, DEBUG
+from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
@@ -129,6 +129,9 @@ class AmazonProductsSpider(BaseProductsSpider):
         # Where this value appears is a little weird and changes a bit so we
         # need two alternatives to capture it consistently.
 
+        if response.css('#noResultsTitle'):
+            return 0
+
         # The first possible place is where it normally is in a fully rendered
         # page.
         values = response.css('#resultCount > span ::text').re(
@@ -157,7 +160,7 @@ class AmazonProductsSpider(BaseProductsSpider):
     def _scrape_product_links(self, response):
         links = response.css('.prod > h3 > a ::attr(href)').extract()
         if not links:
-            self.log("Found no product links.", ERROR)
+            self.log("Found no product links.", WARNING)
         for link in links:
             yield link, SiteProductItem()
 
