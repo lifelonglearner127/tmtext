@@ -6,7 +6,7 @@ import json
 import string
 
 from scrapy.http.request.form import FormRequest
-from scrapy.log import ERROR, WARNING, INFO, DEBUG
+from scrapy.log import, msg, ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
@@ -53,14 +53,7 @@ class AmazonProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
-        if self._has_captcha(response):
-            result = self._handle_captcha(response, self.parse_product)
-        elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
-            self.log("Giving up on trying to solve the captcha challenge after"
-                     " %s tries for: %s" % (self.captcha_retries, prod['url']),
-                     level=WARNING)
-            result = None
-        else:
+        if not self._has_captcha(response):
             self._populate_from_js(response, prod)
 
             self._populate_from_html(response, prod)
@@ -68,6 +61,13 @@ class AmazonProductsSpider(BaseProductsSpider):
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
             result = prod
+        elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
+            self.log("Giving up on trying to solve the captcha challenge after"
+                     " %s tries for: %s" % (self.captcha_retries, prod['url']),
+                     level=WARNING)
+            result = None
+        else:
+            result = self._handle_captcha(response, self.parse_product)
         return result
 
     def _populate_from_html(self, response, product):
