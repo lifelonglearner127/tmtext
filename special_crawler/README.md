@@ -1,4 +1,4 @@
-This directory contains a python module for a REST service that extracts and provides info on walmart.com products media - video, PDFs and product reviews.
+This directory contains a python module for a REST service that extracts and provides info on products from various sites.
 
 The service is implemented in python 2.7.
 
@@ -6,7 +6,9 @@ The service is implemented in python 2.7.
 
 - Flask
 - lxml
-- requests (only needed for tests)
+- requests
+- mmh3
+- PIL (Pillow)
 
 The list of dependencies can be found in the `requirements.txt` file.
 
