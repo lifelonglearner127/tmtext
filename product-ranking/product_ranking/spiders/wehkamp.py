@@ -118,7 +118,7 @@ class WehkampProductsSpider(BaseProductsSpider):
         if not links:
             self.log("Found no product links.", WARNING)
 
-        for no, link in enumerate(links):
+        for link in links:
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
