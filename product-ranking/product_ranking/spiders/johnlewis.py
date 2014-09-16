@@ -7,6 +7,7 @@ import re
 import string
 import urllib
 import urlparse
+import requests
 
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider
@@ -15,7 +16,7 @@ from product_ranking.spiders import _populate_from_open_graph_product
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy import Request
 from scrapy import Selector
-from scrapy.log import ERROR
+from scrapy.log import ERROR, DEBUG
 
 
 class RRSpider(object):
@@ -126,12 +127,14 @@ class JohnlewisProductsSpider(BaseProductsSpider):
     allowed_domains = ["www.johnlewis.com", "recs.richrelevance.com"]
     start_urls = []
     SEARCH_URL = "http://www.johnlewis.com/search/{search_term}"
+    # _USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " \
+    #     "(KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36"
 
     def __init__(self, *args, **kwargs):
         # All this is to set the site_name since we have several
         # allowed_domains.
-        super(JohnlewisProductsSpider, self).__init__(
-            site_name=self.allowed_domains[0],
+
+        super(JohnlewisProductsSpider, self).__init__(            site_name=self.allowed_domains[0],
             *args,
             **kwargs)
 
@@ -193,9 +196,9 @@ class JohnlewisProductsSpider(BaseProductsSpider):
         result = rrs.razbor(response.body)
 
         lists_names = {'item_page.PD_20': "recommended",
-                      'item_page.PD_28': 'buyers_also_bought',
-                      # 'item_page.WF_HF': 'R3'
-                      }
+                       'item_page.PD_28': 'buyers_also_bought',
+                       # 'item_page.WF_HF': 'R3'
+                       }
         product['related_products'] = {}
 
         for name, strategy_list in result.items():
@@ -212,10 +215,14 @@ class JohnlewisProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
+        tm = self.__dict__.get('total_matched')
+        if tm:
+            return tm
+
         total = response.xpath(
             "//section[@class='search-results']/header/h1/span/text()"
         ).extract()
-        # print "TOTAL=", total
+        print "TOTAL=", total
         if total:
             total = total[0]
             try:
@@ -225,17 +232,79 @@ class JohnlewisProductsSpider(BaseProductsSpider):
         else:
             return 0
 
+    def get_all_department_prod_links(self, url, linksession):
+        page_number = 1
+        all_links = []
+        run_again = True
+        extracted_count = 0
+
+        while run_again:
+            run_again = False
+
+            # linksession.headers.update({'User-Agent': self._USER_AGENT})
+            rurl = url.format(page_number=page_number)
+            r = linksession.get(rurl)
+            self.log("Request %s" % rurl, DEBUG)
+            if not r.status_code == 200:
+                break
+
+            body = r.text
+            if len(body) < 1:
+                break
+
+            response = Selector(text=body)
+            links = response.xpath(
+                "//div[@class='result-row']"
+                "/article/a[@class='product-link']/@href").extract()
+
+            extracted_count += len(links)
+
+            if not links:
+                break
+
+            all_links.extend(links)
+
+            total = response.xpath(
+                "//section[@class='search-results']/header/h1/text()"
+            ).re(r'.*\((\d+)\)')
+
+            if total:
+                total = int(total[0])
+
+            if total > extracted_count:
+                run_again = True
+                page_number += 1
+
+        return all_links
+
     def _scrape_product_links(self, response):
-        links = response.xpath(
-            "//div[@class='result-row']"
-            "/article/a[@class='product-link']/@href").extract()
-        # print "LINKS=", len(links)
 
         def full_url(url):
             return urlparse.urljoin(response.url, url)
 
-        # for no, link in enumerate(links):
-        #     print no, full_url(link)
+        self.total_matched = 0
+
+        links = response.xpath(
+            "//div[@class='result-row']"
+            "/article/a[@class='product-link']/@href").extract()
+
+        if not links:
+            links = response.xpath(
+                "//div[@id='content']/div/div/div/section/section"
+                "/div/ul/li/a/@href").extract()
+
+            linksession = requests.Session()
+            linksession.get(response.url)
+            product_links = []
+
+            for no, link in enumerate(links):
+                link = full_url(link) + "/pg{page_number}"
+                response_links = self.get_all_department_prod_links(
+                    link, linksession)
+                product_links.extend(response_links)
+
+            links = product_links
+            self.total_matched = len(links)
 
         if not links:
             self.log("Found no product links.", ERROR)
