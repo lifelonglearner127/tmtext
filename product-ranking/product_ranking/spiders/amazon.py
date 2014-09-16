@@ -107,9 +107,11 @@ class AmazonProductsSpider(BaseProductsSpider):
             '#landingImage ::attr(data-a-dynamic-image)').extract()
         if img_jsons:
             imgs = json.loads(img_jsons[0])
-            cond_set(product, 'image_url',
-                     max(imgs.items(), key=lambda (_, size): size[0]),
-                     lambda (url, _): url)
+            cond_set_value(
+                product,
+                'image_url',
+                max(imgs.items(), key=lambda (_, size): size[0]),
+                conv=lambda (url, _): url)
 
     def _scrape_total_matches(self, response):
         # Where this value appears is a little weird and changes a bit so we
