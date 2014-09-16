@@ -96,11 +96,11 @@ class AmazonProductsSpider(BaseProductsSpider):
             if key == 'UPC':
                 # Some products have several UPCs. The first one is used.
                 raw_upc = li.xpath('text()').extract()[0]
-                cond_set_value(
+                cond_set(
                     product,
                     'upc',
                     raw_upc.strip().split(' '),
-                    conv=lambda upcs: int(upcs[0])
+                    conv=int
                 )
             elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
                 model = li.xpath('text()').extract()
