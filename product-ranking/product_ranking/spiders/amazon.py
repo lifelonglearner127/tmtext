@@ -72,18 +72,24 @@ class AmazonProductsSpider(BaseProductsSpider):
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
-        cond_set(product, 'price',
-                 response.css('#priceblock_ourprice ::text').extract())
+        cond_set(
+            product,
+            'price',
+            response.css('#priceblock_ourprice ::text').extract(),
+        )
         cond_set(
             product,
             'description',
-            response.css('.productDescriptionWrapper').extract()
+            response.css('.productDescriptionWrapper').extract(),
         )
-        cond_set(product, 'image_url',
-                 response.css('#imgTagWrapperId > img ::attr(data-old-hires)')
-                 .extract())
-        cond_set(product, 'title',
-                 response.css('#productTitle ::text').extract())
+        cond_set(
+            product,
+            'image_url',
+            response.css(
+                '#imgTagWrapperId > img ::attr(data-old-hires)').extract()
+        )
+        cond_set(
+            product, 'title', response.css('#productTitle ::text').extract())
 
         # Some data is in a list (ul element).
         model = None
@@ -112,11 +118,11 @@ class AmazonProductsSpider(BaseProductsSpider):
         img_jsons = response.css(
             '#landingImage ::attr(data-a-dynamic-image)').extract()
         if img_jsons:
-            imgs = json.loads(img_jsons[0])
+            img_data = json.loads(img_jsons[0])
             cond_set_value(
                 product,
                 'image_url',
-                max(imgs.items(), key=lambda (_, size): size[0]),
+                max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
 
     def _scrape_total_matches(self, response):
@@ -138,9 +144,15 @@ class AmazonProductsSpider(BaseProductsSpider):
             )
 
         if values:
-            return int(values[0].replace(',', ''))
+            total_matches = int(values[0].replace(',', ''))
         else:
-            self.log("Failed to parse total number of matches.", level=ERROR)
+            self.log(
+                "Failed to parse total number of matches for: %s"
+                % response.url,
+                level=ERROR
+            )
+            total_matches = None
+        return total_matches
 
     def _scrape_product_links(self, response):
         links = response.css('.prod > h3 > a ::attr(href)').extract()
@@ -185,12 +197,18 @@ class AmazonProductsSpider(BaseProductsSpider):
         captcha = self._solve_captcha(response)
 
         if captcha is None:
-            self.log("Failed to guess captcha for '%s' (try: %d)."
-                     % (product['url'], captcha_solve_try), level=ERROR)
+            self.log(
+                "Failed to guess captcha for '%s' (try: %d)." % (
+                    product['url'], captcha_solve_try),
+                level=ERROR
+            )
+            result = None
         else:
-            self.log("On try %d, submitting captcha '%s' for '%s'."
-                     % (captcha_solve_try, captcha, product['url']),
-                     level=INFO)
+            self.log(
+                "On try %d, submitting captcha '%s' for '%s'." % (
+                    captcha_solve_try, captcha, product['url']),
+                level=INFO
+            )
             result = FormRequest.from_response(
                 response,
                 formname='',
