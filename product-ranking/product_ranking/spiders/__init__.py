@@ -220,6 +220,12 @@ class BaseProductsSpider(Spider):
             total_matches = self._scrape_total_matches(response)
             if total_matches is not None:
                 response.meta['total_matches'] = total_matches
+                self.log("Found %d total matches." % total_matches, INFO)
+            else:
+                self.log(
+                    "Failed to parse total matches for %s" % response.url,
+                    ERROR
+                )
 
         if total_matches and not prods_per_page:
             # Parsing the page failed. Give up.
