@@ -10,9 +10,7 @@ import urlparse
 #import requests
 
 from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider
-from product_ranking.spiders import _extract_open_graph_metadata
-from product_ranking.spiders import _populate_from_open_graph_product
+from product_ranking.spiders import BaseProductsSpider, populate_from_open_graph
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy import Request
 from scrapy import Selector
@@ -134,21 +132,15 @@ class JohnlewisProductsSpider(BaseProductsSpider):
         # All this is to set the site_name since we have several
         # allowed_domains.
 
-        super(JohnlewisProductsSpider, self).__init__(            site_name=self.allowed_domains[0],
+        super(JohnlewisProductsSpider, self).__init__(
+            site_name=self.allowed_domains[0],
             *args,
             **kwargs)
-
-    def _populate_from_open_graph(self, response, product):
-        metadata = _extract_open_graph_metadata(response)
-        if metadata.get('type') == 'Product':
-            metadata['type'] = 'product'
-        _populate_from_open_graph_product(response, product, metadata=metadata)
-        cond_set_value(product, 'title', metadata.get('title'))
 
     def parse_product(self, response):
         product = response.meta['product']
 
-        self._populate_from_open_graph(response, product)
+        populate_from_open_graph(response, product)
 
         cond_set(
             product,
