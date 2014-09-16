@@ -69,11 +69,16 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
             return False
 
     def _scrape_total_matches(self, response):
-        count = response.xpath('//div[@class="numberOfResults"]/text()').re(
-            '(\d+)')[-1]
-        if count:
-            return int(count)
-        return 0
+        if 'did not match any products.' in response.body_as_unicode():
+            total_matches = 0
+        else:
+            count_matches = response.xpath(
+                '//div[@class="numberOfResults"]/text()').re('(\d+)')
+            if count_matches and count_matches[-1]:
+                total_matches = int(count_matches[-1])
+            else:
+                total_matches = None
+        return total_matches
 
     def _scrape_product_links(self, response):
         links = response.xpath(
