@@ -2,15 +2,12 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import string
-import urlparse
 
 from scrapy.log import ERROR
 
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set, populate_from_open_graph
 
-
-# FIXME Some duplicates are filtered.
 
 class WoolworthsProductsSpider(BaseProductsSpider):
     name = 'woolworths_products'
@@ -52,6 +49,8 @@ class WoolworthsProductsSpider(BaseProductsSpider):
         check_result = response.xpath("//div[@class='light-green-box-middle']/h3/text()").extract()
         if check_result[0] == 'Quickfix':
             return True
+        elif check_result is None:
+            return None
 
     def _scrape_total_matches(self, response):
         num_results = response.xpath(

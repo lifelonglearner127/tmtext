@@ -8,7 +8,7 @@ import string
 from scrapy.log import ERROR, DEBUG
 from scrapy.http import Request
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
 
@@ -104,14 +104,14 @@ class FlipkartProductsSpider(BaseProductsSpider):
             title = a.xpath('./img/@alt').extract()
             link = a.xpath('./@href').extract()
             if title and link:
-                related_products.append((title[0], link[0]))
+                related_products.append(RelatedProduct(title[0], link[0]))
                 
         aa = response.css('div.recom-mini-item a.image-wrapper')
         for a in aa:
             title = a.xpath('./@title').extract()
             link = a.xpath('./@href').extract()
             if title and link:
-                related_products.append((title[0], link[0]))
+                related_products.append(RelatedProduct(title[0], link[0]))
             
         if  product['related_products'].get(key):
             product['related_products'][key] += related_products
