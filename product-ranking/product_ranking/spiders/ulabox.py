@@ -128,6 +128,9 @@ class UlaboxProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
+        if 'ulaUps' in response.body_as_unicode():
+            return 0
+
         totals = response.css("ul.nav.nav--banner > li > div::text").re(
             r"(\d+)")
         if totals:
