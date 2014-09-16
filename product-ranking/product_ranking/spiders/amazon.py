@@ -3,6 +3,7 @@ from __future__ import print_function
 from future_builtins import *
 
 import json
+import string
 
 from scrapy.http.request.form import FormRequest
 from scrapy.log import ERROR, WARNING, INFO, DEBUG
@@ -105,7 +106,7 @@ class AmazonProductsSpider(BaseProductsSpider):
             elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
                 model = li.xpath('text()').extract()
         if model is not None:
-            cond_set(product, 'model', model)
+            cond_set(product, 'model', model, conv=string.strip)
 
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...
