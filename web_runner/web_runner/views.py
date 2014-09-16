@@ -117,7 +117,8 @@ def command_pending(request):
 
     running = 0
     for job_id, spider_cfg in zip(job_ids, spider_cfgs):
-        status = ScrapydMediator(settings, spider_cfg).report_on_job(job_id)
+        mediator = ScrapydMediator(settings, spider_cfg)
+        status = mediator.report_on_job_with_retry(job_id)
         if status is ScrapydMediator.JobStatus.unknown:
             msg = "Job for spider '{}' with id '{}' has an unknown status." \
                 " Aborting command run.".format(spider_cfg.spider_name, job_id)
@@ -255,7 +256,7 @@ def spider_pending_view(request):
 
     mediator = ScrapydMediator(
         request.registry.settings, SpiderConfig(spider_name, project_name))
-    status = mediator.report_on_job(job_id)
+    status = mediator.report_on_job_with_retry(job_id)
 
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
