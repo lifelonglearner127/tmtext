@@ -6,10 +6,10 @@ import urllib
 import re
 # Please $ pip install python-cjson
 # https://pypi.python.org/pypi/python-cjson
-import cjson as json
+#import cjson as json
 
 
-import requests
+#import requests
 from scrapy.http import Request
 from scrapy.selector import Selector
 
