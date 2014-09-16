@@ -7,7 +7,7 @@ import re
 import string
 import urllib
 import urlparse
-import requests
+#import requests
 
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider
