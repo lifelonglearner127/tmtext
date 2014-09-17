@@ -4,10 +4,11 @@ from future_builtins import *
 import string
 import urlparse
 
+from scrapy import Request
+from scrapy.log import WARNING
+
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set
-from scrapy import Request
-from scrapy.log import ERROR
 
 
 class UlaboxProductsSpider(BaseProductsSpider):
@@ -127,6 +128,9 @@ class UlaboxProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
+        if 'ulaUps' in response.body_as_unicode():
+            return 0
+
         totals = response.css("ul.nav.nav--banner > li > div::text").re(
             r"(\d+)")
         if totals:
@@ -147,9 +151,9 @@ class UlaboxProductsSpider(BaseProductsSpider):
             "/a[contains(@class,'product-item')]/@href").extract()
 
         if not links:
-            self.log("Found no product links.", ERROR)
+            self.log("Found no product links.", WARNING)
 
-        for no, link in enumerate(links):
+        for link in links:
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):

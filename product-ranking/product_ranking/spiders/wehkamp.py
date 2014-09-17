@@ -3,9 +3,10 @@ from future_builtins import *
 
 import string
 
+from scrapy.log import WARNING
+
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set
-from scrapy.log import ERROR
 
 
 class WehkampProductsSpider(BaseProductsSpider):
@@ -115,9 +116,9 @@ class WehkampProductsSpider(BaseProductsSpider):
             "/a/@href").extract()
 
         if not links:
-            self.log("Found no product links.", ERROR)
+            self.log("Found no product links.", WARNING)
 
-        for no, link in enumerate(links):
+        for link in links:
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
