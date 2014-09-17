@@ -20,7 +20,6 @@ class PGEStore(Scraper):
     
     INVALID_URL_MESSAGE = "Expected URL format is http://www.pgestore.com/[0-9a-zA-Z,/-]+\.html"
     
-    #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
     reviews_tree = None
     
     def check_url_format(self):
@@ -29,7 +28,7 @@ class PGEStore(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match("^http://www.pgestore.com/[0-9a-zA-Z,/-]+\.html$", self.product_page_url)
+        m = re.match(r"^http://www.pgestore.com/[0-9a-zA-Z,/\-\.\_]+\.html$", self.product_page_url)
         return not not m
     
     # TODO:
@@ -204,46 +203,25 @@ class PGEStore(Scraper):
     
     def _product_images(self):
         image_url = self.tree_html.xpath("//img[contains(@class, 'productaltimage')]/@fullsizesrc")
-
         return len(image_url)
 
+    # extract the department which the product belongs to
     def _dept(self):
         dept = " ".join(self.tree_html.xpath("//div[@id='breadcrumb']//a[3]//text()")).strip()
         return dept
     
+    # extract the department's department, or super department
     def _super_dept(self):
         dept = " ".join(self.tree_html.xpath("//div[@id='breadcrumb']//a[2]//text()")).strip()
         return dept
     
+    # extract a hierarchical list of all the departments the product belongs to
     def _all_depts(self):
         all = self.tree_html.xpath("//div[@id='breadcrumb']//a//text()")
         return all
-    
+        
     def _no_image(self):
-        #get image urls
-        head = 'http://tesco.scene7.com/is/image/'
-        image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
-        image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url)[0]
-        image_url = image_url.split(',')
-        image_url = [head+link for link in image_url]
-        
-        path = 'no_img_list.json'
-        no_img_list = []
-        
-        if os.path.isfile(path):
-            f = open(path, 'r')
-            s = f.read()
-            if len(s) > 1:
-                no_img_list = json.loads(s)    
-            f.close()
-            
-        first_hash = str(MurmurHash.hash(self.fetch_bytes(image_url[0])))
-
-        if first_hash in no_img_list:
-            return True
-        else:
-            return False
-        
+        return None
     
     def fetch_bytes(self, url):
         file = cStringIO.StringIO(urllib.urlopen(url).read())
@@ -258,17 +236,18 @@ class PGEStore(Scraper):
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
+    
     def main(args):
         # check if there is an argument
         if len(args) <= 1:
-            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython crawler_service.py <tesco_product_url>\n")
+            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython crawler_service.py <product_url>\n")
             sys.exit(1)
     
         product_page_url = args[1]
     
         # check format of page url
         if not check_url_format(product_page_url):
-            sys.stderr.write("ERROR: Invalid URL " + str(product_page_url) + "\nFormat of product URL should be\n\t http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd\n")
+            sys.stderr.write(INVALID_URL_MESSAGE)
             sys.exit(1)
     
         return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
@@ -366,11 +345,3 @@ class PGEStore(Scraper):
         "total_reviews" : nr_reviews\
     }
 
-
-
-
-
-
-if __name__=="__main__":
-    TS = TescoScraper()
-    print TS.main(sys.argv)

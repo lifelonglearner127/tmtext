@@ -10,6 +10,7 @@ from io import BytesIO
 from PIL import Image
 import mmh3 as MurmurHash
 from lxml import html
+from lxml import etree
 import time
 import requests
 from extract_data import Scraper
@@ -45,16 +46,17 @@ class TescoScraper(Scraper):
         product_id = product_id.split('.')[0]
         return product_id
 
-    # return dictionary with one element containing the video url
+    # return video urls
     def video_for_url(self):
         video_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
-        video_url = re.search("\['http://embed\.flixfacts\.com/.*\]", video_url.strip()).group()
+        video_url = re.search("\['http.*\.flv\']", video_url.strip()).group()
         video_url = re.findall("'(.*?)'", video_url)
         return video_url
 
     # return dictionary with one element containing the PDF
     def pdf_for_url(self):
-        return None
+        string = etree.tostring(self.tree_html)
+        return re.findall(r"(http.*\.pdf)", string)
     
     #populate the bazaarvoice variable for use by other functions
     def load_bazaarvoice(self):
@@ -226,6 +228,15 @@ class TescoScraper(Scraper):
 
         return seller_info
     
+    def _owned(self):
+        h2_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h2//text()"))
+        return 1 if "Buy on Tesco Direct from:" in h2_tags else 0
+    
+    def _marketplace(self):
+        h2_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h2//text()"))
+        return 1 if "more buying option(s) from:" in h2_tags else 0
+    
+    
     # extract the UPC number
     def _upc(self):
         return self.tree_html.xpath('//meta[@property="og:upc"]/@content')[0]
@@ -291,7 +302,7 @@ class TescoScraper(Scraper):
     def mobile_image_same(self):
         return None
     
-    #returns 1 if it's in stores only, 0 otherwise
+    #returns 1 if it's in stores only, 0 otherwise 
     def in_stores_only(self):
         return None
     
@@ -362,6 +373,9 @@ class TescoScraper(Scraper):
         "nr_features" : _nr_features_from_tree, \
         "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
+        "marketplace": _marketplace, \
+        "owned" : _owned, \
+        
         "product_id" : _extract_product_id, \
         "image_url" : _image_url, \
         "video_url" : video_for_url, \
@@ -392,10 +406,3 @@ class TescoScraper(Scraper):
     }
 
 
-
-
-
-
-if __name__=="__main__":
-    TS = TescoScraper()
-    print TS.main(sys.argv)

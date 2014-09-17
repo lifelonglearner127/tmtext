@@ -216,17 +216,19 @@ class AmazonScraper(Scraper):
     def _no_image(self):
         return None
 
-
+    # extract the department which the product belongs to
     def _dept(self):
         all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
         all = map(lambda t: self._clean_text(t), all)
         return all[1]
     
+    # extract the department's department, or super department
     def _super_dept(self):
         all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
         all = map(lambda t: self._clean_text(t), all)
         return all[0]
     
+    # extract a hierarchical list of all the departments the product belongs to
     def _all_depts(self):
         all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
         all = map(lambda t: self._clean_text(t), all)
@@ -353,7 +355,3 @@ class AmazonScraper(Scraper):
         "total_reviews" : nr_reviews\
     }
 
-
-if __name__=="__main__":
-    AS = AmazonScraper()
-    print AS.main(sys.argv)
