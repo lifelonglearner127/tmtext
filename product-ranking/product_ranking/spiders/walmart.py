@@ -232,6 +232,33 @@ class WalmartProductsSpider(BaseProductsSpider):
         cond_set(product, 'rating',
                  map(float, scripts.re("currentRating:\s*'(.+)',")))
 
+        is_on_wwws = scripts.re("isBuyableOnWWW:\s*(.+),")
+        is_on_www = "true"
+        if is_on_wwws:
+            is_on_www = is_on_wwws[0].lower().strip()
+
+        is_in_stores = scripts.re("isBuyableInStore:\s*(.+),")
+        is_in_store = "true"
+        if is_in_stores:
+            is_in_store = is_in_stores[0].lower().strip()
+
+        in_store_only = False
+        if is_on_www == "false":
+            if is_in_store == "true":
+                in_store_only = True
+
+        product["is_in_store_only"] = in_store_only
+
+        in_stocks = scripts.re("isInStock:\s*(.+),")
+        out_stock = True
+        if in_stocks:
+            in_stock = in_stocks[0].strip()
+            if in_stock == "false":
+                out_stock = True
+            else:
+                out_stock = False
+        product['is_out_of_stock'] = out_stock
+
         item_id_list = scripts.re("itemId:\s*(\d+),")
         category_id_list = scripts.re("primaryCategoryPath:\s*'([\d:]+)',")
         return (
