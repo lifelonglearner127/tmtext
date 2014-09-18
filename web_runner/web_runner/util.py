@@ -162,3 +162,20 @@ def string_from_local2utc(string, format='%Y-%m-%d %H:%M:%S.%f'):
         ret = None
 
     return ret
+
+
+def dict_filter(source, items):
+    '''TODO: Write pydoc'''
+
+    ret = {}
+
+    for item in items:
+        if len(item) <> 2:
+            continue
+        [name, props] = item
+        try:
+            ret[name] = reduce((lambda x, y: x.get(y)), props.split('.'), source)
+        except:
+            continue
+
+    return ret
