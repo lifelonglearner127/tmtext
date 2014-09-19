@@ -36,7 +36,8 @@ class RichRelevanceHelper(object):
         else:
             raise AssertionError("setApiKey not found in \n%s\n" % script)
 
-        m = re.match(r"^.*R3_COMMON.setSessionId\('(\S*)'\);", script, re.DOTALL)
+        m = re.match(
+            r"^.*R3_COMMON.setSessionId\('(\S*)'\);", script, re.DOTALL)
         if m:
             self.rr_sessionid = m.group(1)
         else:
@@ -83,7 +84,8 @@ class RichRelevanceHelper(object):
 
         for parm in need_parms:
             if not hasattr(self, parm):
-                raise AssertionError("RicheRelevanceHelper need %s parm." % parm)
+                raise AssertionError(
+                    "RicheRelevanceHelper need %s parm." % parm)
 
     def make_url(self, payload):
         return urlparse.urljoin(self.SCRIPT_URL,
@@ -110,9 +112,11 @@ class RichRelevanceHelper(object):
                     original_url = query.get('ct')
                     if original_url:
                         items.append((name, original_url[0]))
-                results[placement_type] = {'strategy': strategy, 'items': items}
+                results[placement_type] = {'strategy': strategy,
+                                           'items': items}
         else:
-            raise AssertionError("rr_recs = Not found in \n%s\n" % text.encode('utf-8'))
+            raise AssertionError(
+                "rr_recs = Not found in \n%s\n" % text.encode('utf-8'))
         return results
 
 
@@ -138,7 +142,8 @@ class JohnlewisProductsSpider(BaseProductsSpider):
             product,
             'title',
             response.xpath(
-                "//section/h1[@id='prod-title']/span[@itemprop='name']/text()").extract()
+                "//section/h1[@id='prod-title']"
+                "/span[@itemprop='name']/text()").extract()
         )
 
         cond_set(
@@ -189,7 +194,8 @@ class JohnlewisProductsSpider(BaseProductsSpider):
         cond_set_value(
             product,
             'description',
-            " ".join(line.strip() for line in description if len(line.strip()) > 0)
+            " ".join(line.strip()
+                     for line in description if len(line.strip()) > 0)
         )
 
         product['locale'] = "en-US"
@@ -200,7 +206,10 @@ class JohnlewisProductsSpider(BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['rrs'] = rrhelper
 
-        return Request(rrhelper.make_url(payload), self._parse_json, meta=new_meta)
+        return Request(
+            rrhelper.make_url(payload),
+            self._parse_json,
+            meta=new_meta)
 
     def _parse_json(self, response):
         product = response.meta['product']
@@ -277,7 +286,11 @@ class JohnlewisProductsSpider(BaseProductsSpider):
             new_meta = response.meta.copy()
             new_meta['product'] = prod_item
 
-            gen_list.append(Request(full_url(link), callback=self.parse_product, meta=new_meta))
+            gen_list.append(
+                Request(
+                    full_url(link),
+                    callback=self.parse_product,
+                    meta=new_meta))
 
             stop_count -= 1
             if stop_count < 1:
@@ -345,7 +358,8 @@ class JohnlewisProductsSpider(BaseProductsSpider):
             "/article/a[@class='product-link']/@href").extract()
 
         if not links:
-            no_results = response.xpath("//div[@class='mod-important']/h1/text()").re(r'No results.*')
+            no_results = response.xpath(
+                "//div[@class='mod-important']/h1/text()").re(r'No results.*')
             if not no_results:
                 # Exctract links form brand-page
                 links = response.xpath(
