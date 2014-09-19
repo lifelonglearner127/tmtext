@@ -44,6 +44,9 @@ class Scraper():
             and the scraped data as values
         """
 
+        #TODO: does this make sure page source is not extracted if not necessary?
+        #      if so, should all functions returning null (in every case) be in DATA_TYPES_SPECIAL?
+
         # if no specific data types were requested, assume all data types were requested
         if not info_type_list:
             info_type_list = self.DATA_TYPES.keys() + self.DATA_TYPES_SPECIAL.keys()

@@ -88,7 +88,7 @@ class WalmartScraper(Scraper):
     def _video_url(self):
         """Extracts video URL for a given walmart product
         Returns:
-            string containing the video's URL
+            list containing the video's URLs
         """
 
         # if there is no video button, return no video
@@ -109,7 +109,7 @@ class WalmartScraper(Scraper):
 
             # if it ends in flv, it's a video, ok
             if video_url_candidate.endswith(".flv"):
-                return video_url_candidate
+                return [video_url_candidate]
 
             # if it doesn't, it may be a url to make another request to, to get customer reviews video
             new_response = urllib.urlopen(video_url_candidate).read()
@@ -121,13 +121,14 @@ class WalmartScraper(Scraper):
                 video_url_req = "http://client.expotv.com/vurl/%s?output=mp4" % video_id
                 video_url = urllib.urlopen(video_url_req).url
 
-                return video_url
+                return [video_url]
 
         return None
 
     def _pdf_url(self):
         """Extracts pdf URL for a given walmart product
-            string containing the pdf's URL
+        Returns:
+            list containing the pdf's URLs
         """
 
         request_url = self.BASE_URL_PDFREQ + self._extract_product_id()
@@ -139,7 +140,7 @@ class WalmartScraper(Scraper):
             # remove escapes
             pdf_url = re.sub('\\\\', "", pdf_url_candidates[0])
 
-            return pdf_url
+            return [pdf_url]
 
         else:
             return None
