@@ -15,7 +15,7 @@ from web_runner.config_util import find_command_config_from_name, \
 from web_runner.scrapyd import ScrapydMediator, ScrapydInterface, \
     ScrapydJobStartError, ScrapydJobException
 from web_runner.util import encode_ids, decode_ids, get_request_status, \
-    string2datetime
+    string2datetime, dict_filter
 import web_runner.db
 
 
@@ -305,7 +305,6 @@ def spider_results_view(request):
         raise exc.HTTPBadGateway(
             detail="The content could not be retrieved: %s" % e)
 
-
 @view_config(route_name='status', request_method='GET', renderer='json')
 def status(request):
     """Check the Web Runner and Scrapyd Status"""
@@ -333,6 +332,10 @@ def status(request):
         'summarized_queue': summary_queues,
         'webRunner': True,
     }
+
+    if request.params:
+        items = [ x.split(':') for x in request.params.getall('return') ]
+        output = dict_filter(output, items)
 
     return output
 

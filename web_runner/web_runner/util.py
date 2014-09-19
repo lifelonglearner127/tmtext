@@ -162,3 +162,50 @@ def string_from_local2utc(string, format='%Y-%m-%d %H:%M:%S.%f'):
         ret = None
 
     return ret
+
+
+def dict_filter(source, items):
+    '''Given a source dictionary, returns a new one with a subset of the original
+
+    items is a list of list than conteins the info of the new dictionary 
+    structure to be returned.  For example:
+    source = {"queues": {
+                        "product_ranking": {"running": 0, 
+                                            "finished": 0, 
+                                            "pending": 0
+                                            }
+                        }, 
+              "scrapyd_projects": ["product_ranking"], 
+              "scrapyd_alive": true,
+            }
+    items = [ ['name1', 'queues'], 
+              ['name2', 'queues.product_ranking],
+              ['name3', 'queues.product_ranking.running]
+            ]
+
+    The returned dictionary should be:
+    {"name2": {"running": 0, 
+               "finished": 0, 
+               "pending": 0}, 
+     "name3": 0, 
+     "name1": { "product_ranking": {"running": 0, 
+                                    "finished": 0, 
+                                    "pending": 0}
+              }
+    }
+    '''
+
+    ret = {}
+
+    for item in items:
+        if len(item) <> 2:
+            continue
+        [name, props] = item
+        try:
+            ret[name] = reduce((lambda x, y: x.get(y)), props.split('.'), source)
+        except:
+            continue
+
+    return ret
+
+# vim: set expandtab ts=4 sw=4:

@@ -28,6 +28,10 @@ class SiteProductItem(Item):
     locale = Field()        # String.
     # Dict of RelatedProducts. The key is the relation name.
     related_products = Field()
+    # Available in-store only
+    is_in_store_only = Field()
+    # Out of stock
+    is_out_of_stock = Field()
 
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
