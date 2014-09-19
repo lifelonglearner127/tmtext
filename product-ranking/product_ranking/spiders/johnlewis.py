@@ -6,13 +6,11 @@ import re
 import string
 import urllib
 import urlparse
-# Uncomment this line! import requests
 
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy import Request
-from scrapy import Selector
 from scrapy.log import DEBUG
 
 
@@ -66,7 +64,7 @@ class RichRelevanceHelper(object):
             "/@data-jl-rr-placement").extract()
         self.rr_pt = "".join("|" + x for x in pt)
         self.rr_recommendable = True
-        self._check_rr_parms()                
+        self._check_rr_parms()
 
         payload = {"a": self.rr_apikey,
                    "cs": urllib.quote(self.rr_cs),
@@ -229,13 +227,13 @@ class JohnlewisProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        tm = getattr(self, 'total_matched')
-        if tm:
-            return tm
-
         total = response.xpath(
             "//section[@class='search-results']/header/h1/span/text()"
         ).extract()
+        if not total:
+            total = response.xpath(
+                "//section[@class='search-results']/header/h1/text()"
+            ).re(r'.*\((\d+)\)')
         if total:
             total = total[0]
             try:
@@ -245,50 +243,95 @@ class JohnlewisProductsSpider(BaseProductsSpider):
         else:
             return 0
 
-    def get_all_prod_brand_links(self, url, linksession):
-        page_number = 1
-        all_links = []
-        run_again = True
-        extracted_count = 0
+    def _scrape_brand_links(self, response):
 
-        while run_again:
-            run_again = False
+        def full_url(url):
+            return urlparse.urljoin(response.url, url)
 
-            # linksession.headers.update({'User-Agent': self._USER_AGENT})
-            rurl = url.format(page_number=page_number)
-            r = linksession.get(rurl)
-            self.log("Request %s" % rurl, DEBUG)
-            if not r.status_code == 200:
+        gen_list = []
+        count = response.meta.get('count')
+        remaining = response.meta.get('remaining')
+
+        links = response.xpath(
+            "//div[@class='result-row']"
+            "/article/a[@class='product-link']/@href").extract()
+
+        pages_w_links = response.xpath(
+            "//div[@id='content']/div/div/div/section/section"
+            "/div/ul/li/a/@href").extract()
+
+        stop_count = remaining
+
+        for no, link in enumerate(links, start=count + 1):
+            prod_item = SiteProductItem()
+
+            prod_item['site'] = self.site_name
+            prod_item['url'] = full_url(link)
+            prod_item['search_term'] = response.meta['search_term']
+            prod_item['total_matches'] = no + 1
+            prod_item['results_per_page'] = no + 1
+
+            # The ranking is the position
+            prod_item['ranking'] = no
+
+            new_meta = response.meta.copy()
+            new_meta['product'] = prod_item
+
+            gen_list.append(Request(full_url(link), callback=self.parse_product, meta=new_meta))
+
+            stop_count -= 1
+            if stop_count < 1:
                 break
 
-            body = r.text
-            if not body:
-                break
+        remaining = remaining - len(links)
+        if remaining <= 0:
+            return gen_list
 
-            response = Selector(text=body)
-            links = response.xpath(
-                "//div[@class='result-row']"
-                "/article/a[@class='product-link']/@href").extract()
+        new_meta = response.meta.copy()
+        new_meta['remaining'] = remaining
+        new_meta['count'] += len(links)
+        count = new_meta['count']
+        total = self._scrape_total_matches(response)
 
-            extracted_count += len(links)
+        if len(links) == 0 and len(pages_w_links) > 0:
+            pages_wlinks = response.meta['pages_wlinks'][:]
 
-            if not links:
-                break
+            for link in pages_w_links:
+                pages_wlinks.insert(0, link)
+            response.meta['pages_wlinks'] = pages_wlinks
 
-            all_links.extend(links)
+        if total > len(links):
+            # move to next  page
+            next = self._scrape_next_results_page_link(response)
+            if next:
+                gen_list.append(
+                    Request(
+                        full_url(next),
+                        self._scrape_brand_links,
+                        meta=new_meta
+                    )
+                )
+                return gen_list
 
-            total = response.xpath(
-                "//section[@class='search-results']/header/h1/text()"
-            ).re(r'.*\((\d+)\)')
+        # move to next page_wlink
+        if remaining > 0:
+            # next
+            pages_wlinks = response.meta['pages_wlinks']
 
-            if total:
-                total = int(total[0])
+            if not pages_wlinks:
+                return gen_list
 
-            if total > extracted_count:
-                run_again = True
-                page_number += 1
-
-        return all_links
+            new_pages_wlinks = pages_wlinks[:]
+            url = new_pages_wlinks.pop(0)
+            new_meta['pages_wlinks'] = new_pages_wlinks
+            gen_list.append(
+                Request(
+                    full_url(url),
+                    self._scrape_brand_links,
+                    meta=new_meta
+                )
+            )
+        return gen_list
 
     def _scrape_product_links(self, response):
 
@@ -309,20 +352,16 @@ class JohnlewisProductsSpider(BaseProductsSpider):
                     "//div[@id='content']/div/div/div/section/section"
                     "/div/ul/li/a/@href").extract()
 
-                linksession = requests.Session()
-                linksession.get(response.url)
-                product_links = []
-
-                for link in links:
-                    link = full_url(link) + "/pg{page_number}"
-                    response_links = self.get_all_prod_brand_links(
-                        link, linksession)
-                    product_links.extend(response_links)
-
-                links = product_links
-                self.total_matched = len(links)
-                print "self.total_matched=", self.total_matched
-                yield None, SiteProductItem()
+                url = full_url(links.pop(0))
+                new_meta = response.meta.copy()
+                new_meta['pages_wlinks'] = links
+                new_meta['ranking'] = 1
+                new_meta['count'] = 0
+                new_meta['links'] = []
+                yield Request(
+                    url,
+                    self._scrape_brand_links,
+                    meta=new_meta), SiteProductItem()
                 return
         if not links:
             self.log("Found no product links.", DEBUG)
