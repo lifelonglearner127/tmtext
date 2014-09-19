@@ -49,6 +49,9 @@ class MorrisonsProductsSpider(BaseProductsSpider):
         upc = response.xpath("//meta[@itemprop='sku']/@content").extract()
         cond_set(product, 'upc', upc, conv=int)
 
+        title = response.xpath("//strong[@itemprop='name']/text()").extract()
+        cond_set(product, 'title', title)
+
         product['locale'] = "en-GB"
 
         return product
