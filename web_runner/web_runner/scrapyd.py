@@ -127,7 +127,7 @@ class ScrapydMediator(object):
     def report_on_job_with_retry(self, jobid, timeout=1.0):
         """Returns the status of a job."""
         retry_count = 1 + timeout // ScrapydMediator._VERIFICATION_DELAY
-        for _ in range(retry_count):
+        for _ in range(int(retry_count)):
             status = self.report_on_job(jobid)
             if status != ScrapydMediator.JobStatus.unknown:
                 break
