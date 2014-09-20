@@ -1,14 +1,15 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-import urlparse
-import urllib
 import string
-
-from scrapy.log import ERROR, DEBUG
+import urllib
+import urlparse
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider
+from product_ranking.spiders import cond_set, cond_set_value
+from scrapy import Request
+from scrapy.log import ERROR
 
 
 def is_num(s):
@@ -28,10 +29,19 @@ class CvsProductsSpider(BaseProductsSpider):
         "&pt=global&pageNum=1&sortBy=&navNum=20"
 
     def parse_product(self, response):
+        brands = response.meta.get('brands')
         product = response.meta['product']
 
         cond_set(product, 'title',
                  response.xpath("//h1[@class='prodName']/text()").extract())
+
+        brand = None
+        title = product['title']
+        for test_brand in brands:
+            if test_brand in title:
+                brand = test_brand
+
+        cond_set_value(product, 'brand', brand)
 
         image_url = response.xpath(
             "//div[@class='productImage']/img/@src").extract()[0]
@@ -80,17 +90,31 @@ class CvsProductsSpider(BaseProductsSpider):
         return None
 
     def _scrape_product_links(self, response):
+
+        def full_url(url):
+            return urlparse.urljoin(response.url, url)
+
         links = response.xpath(
             "//div[@class='product']/div[@class='innerBox']/"
             "div[@class='productSection1']/a/@href"
         ).extract()
+
+        brands = response.xpath(
+            "//ul[@id='Brand']/li/label/span"
+            "/a/text()").re(r'\s+(.*)\s\(.*\)')
+
         if not links:
             self.log("Found no product links.", ERROR)
 
-        for no, link in enumerate(links):
-            self.log("_scrape_product_links: %s | %s" % (no, link), DEBUG)
-            # ovs DEBUG replace not pass url 
-            yield link, SiteProductItem()
+        for link in links:
+            prod_item = SiteProductItem()
+            new_meta = response.meta.copy()
+            new_meta['brands'] = brands[:]
+            new_meta['product'] = prod_item
+            yield Request(
+                full_url(link),
+                self.parse_product,
+                meta=new_meta), prod_item
 
     def _scrape_next_results_page_link(self, response):
         url_parts = urlparse.urlsplit(response.url)
