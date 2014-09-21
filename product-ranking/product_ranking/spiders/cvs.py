@@ -66,7 +66,7 @@ class CvsProductsSpider(BaseProductsSpider):
 
         image_url = response.xpath(
             "//div[@class='productImage']/img/@src").extract()[0]
-        product['image_url'] = image_url
+        product['image_url'] = urlparse.urljoin(response.url, image_url)
 
         size = response.xpath(
             "//form[@id='addCart']/table/tr/td[@class='col1']/"
