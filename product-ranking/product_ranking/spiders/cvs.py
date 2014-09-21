@@ -21,6 +21,28 @@ def is_num(s):
         return False
 
 
+_TRANSLATE_TABLE = string.maketrans('', '')
+
+
+def _normalize(s):
+    """Returns a representation of a string useful for comparing words and
+    disregarding punctuation.
+
+    :param s: The string to normalize.
+    :type s: unicode
+    :return: Normalized string.
+    :rtype: unicode
+    """
+    try:
+        return s.lower().encode('utf-8').translate(
+            _TRANSLATE_TABLE, string.punctuation).decode('utf-8')
+    except UnicodeEncodeError:
+        # Less efficient version.
+        for c in string.punctuation:
+            s = s.replace(c, '')
+        return s
+
+
 class CvsProductsSpider(BaseProductsSpider):
     name = 'cvs_products'
     allowed_domains = ["cvs.com"]
@@ -30,19 +52,17 @@ class CvsProductsSpider(BaseProductsSpider):
         "&pt=global&pageNum=1&sortBy=&navNum=20"
 
     def parse_product(self, response):
-        brands = response.meta.get('brands')
+        brands = response.meta.get('brands', frozenset())
         product = response.meta['product']
 
         cond_set(product, 'title',
                  response.xpath("//h1[@class='prodName']/text()").extract())
 
-        brand = None
-        title = product['title']
-        for test_brand in brands:
-            if test_brand in title:
-                brand = test_brand
-
-        cond_set_value(product, 'brand', brand)
+        title = _normalize(product['title'])
+        for brand in sorted(brands, key=len, reverse=True):
+            if _normalize(brand) in title:
+                cond_set_value(product, 'brand', brand)
+                break
 
         image_url = response.xpath(
             "//div[@class='productImage']/img/@src").extract()[0]
@@ -100,9 +120,9 @@ class CvsProductsSpider(BaseProductsSpider):
             "div[@class='productSection1']/a/@href"
         ).extract()
 
-        brands = response.xpath(
-            "//ul[@id='Brand']/li/label/span"
-            "/a/text()").re(r'\s+(.*)\s\(.*\)')
+        brands = response.meta.get('brands', set())
+        brands.update(response.xpath(
+            "//ul[@id='Brand']/li/label/span/a/text()").re(r'\s+(.*)\s\(.*\)'))
 
         if not links:
             self.log("Found no product links.", ERROR)
@@ -110,12 +130,12 @@ class CvsProductsSpider(BaseProductsSpider):
         for link in links:
             prod_item = SiteProductItem()
             new_meta = response.meta.copy()
-            new_meta['brands'] = brands[:]
+            new_meta['brands'] = brands
             new_meta['product'] = prod_item
-            yield Request(
-                full_url(link),
-                self.parse_product,
-                meta=new_meta), prod_item
+            yield (
+                Request(full_url(link), self.parse_product, meta=new_meta),
+                prod_item,
+            )
 
     def _scrape_next_results_page_link(self, response):
         url_parts = urlparse.urlsplit(response.url)
