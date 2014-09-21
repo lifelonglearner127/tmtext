@@ -51,6 +51,13 @@ class CvsProductsSpider(BaseProductsSpider):
     SEARCH_URL = "http://www.cvs.com/search/_/N-0?searchTerm={search_term}" \
         "&pt=global&pageNum=1&sortBy=&navNum=20"
 
+    def _set_brand(self, product, phrase, brands):
+        phrase = _normalize(phrase)
+        for brand in sorted(brands, key=len, reverse=True):
+            if _normalize(brand) in phrase:
+                cond_set_value(product, 'brand', brand)
+                break
+
     def parse_product(self, response):
         brands = response.meta.get('brands', frozenset())
         product = response.meta['product']
@@ -58,11 +65,12 @@ class CvsProductsSpider(BaseProductsSpider):
         cond_set(product, 'title',
                  response.xpath("//h1[@class='prodName']/text()").extract())
 
-        title = _normalize(product['title'])
-        for brand in sorted(brands, key=len, reverse=True):
-            if _normalize(brand) in title:
-                cond_set_value(product, 'brand', brand)
-                break
+        self._set_brand(product, product['title'], brands)
+        if 'brand' not in product:
+            descs = response.css('.brandBanner > a ::attr(title)')
+            if descs:
+                desc, = descs.extract()
+                self._set_brand(product, desc, brands)
 
         image_url = response.xpath(
             "//div[@class='productImage']/img/@src").extract()[0]
