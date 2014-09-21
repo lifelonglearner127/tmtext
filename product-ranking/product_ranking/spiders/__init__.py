@@ -246,6 +246,7 @@ class BaseProductsSpider(Spider):
                 # The product is complete, no need for another request.
                 yield prod_item
             elif isinstance(prod_url, Request):
+                cond_set_value(prod_item, 'url', prod_url.url)  # Tentative.
                 yield prod_url
             else:
                 # Another request is necessary to complete the product.
