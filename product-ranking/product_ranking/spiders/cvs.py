@@ -5,11 +5,12 @@ import string
 import urllib
 import urlparse
 
+from scrapy import Request
+from scrapy.log import ERROR
+
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import cond_set, cond_set_value
-from scrapy import Request
-from scrapy.log import ERROR
 
 
 def is_num(s):
