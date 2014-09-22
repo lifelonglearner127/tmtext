@@ -6,6 +6,12 @@ from extract_tesco_data import TescoScraper
 from extract_amazon_data import AmazonScraper
 from extract_pgestore_data import PGEStore
 from extract_wayfair_data import WayfairScraper
+from extract_bestbuy_data import BestBuyScraper
+from extract_kmart_data import KMartScraper
+from extract_target_data import TargetScraper
+
+
+
 
 import datetime
 import logging
@@ -21,7 +27,10 @@ SUPPORTED_SITES = {"walmart" : WalmartScraper,
                    "tesco" : TescoScraper,
                    "amazon" : AmazonScraper,
                    "pgestore" : PGEStore,
-                   "wayfair" : WayfairScraper
+                   "wayfair" : WayfairScraper,
+                   "bestbuy" : BestBuyScraper,
+                   "kmart" : KMartScraper,
+                   "target" : TargetScraper
                    }
 
 # add logger

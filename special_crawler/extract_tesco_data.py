@@ -295,19 +295,38 @@ class TescoScraper(Scraper):
         
     
     # returns 1 if the product is in stock, 0 otherwise
-    def product_in_stock(self):
+    def _product_in_stock(self):
         return None
     
     #returns 1 if the mobile version is the same, 0 otherwise
-    def mobile_image_same(self):
+    def _mobile_image_same(self):
+        url = self.product_page_url
+        mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
+        pc_headers = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        
+        img_list = []
+        for h in [mobile_headers, pc_headers]:
+            contents = requests.get(url, headers=h).text
+            tree = html.fromstring(contents)
+            
+            head = 'http://tesco.scene7.com/is/image/'
+            image_url = tree.xpath("//section[@class='main-details']//script//text()")[1]
+            image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url)[0]
+            image_url = image_url.split(',')
+            image_url = [head+link for link in image_url]
+            image_url = image_url[0]
+            img_list.append(image_url)
+        
+        if len(img_list) == 2:
+            return img_list[0] == img_list[1]
         return None
     
     #returns 1 if it's in stores only, 0 otherwise 
-    def in_stores_only(self):
+    def _in_stores_only(self):
         return None
     
     
-    
+    #read the bytes of an image
     def fetch_bytes(self, url):
         file = cStringIO.StringIO(urllib.urlopen(url).read())
         img = Image.open(file)
@@ -337,22 +356,11 @@ class TescoScraper(Scraper):
         return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
 
 
-
     '''
-    x extra : all_depts = since dept/super_dept were deprecated and you wanted the whole breadcrumb, I added all_depts which is ordered in a hierarchy
-    x UPC/EAN/ISBN - found UPC
-    x product_images
-    x super_dept - scraped from the breadcrumbs
-    x dept - scraped from the breadcrumbs
-    x model_title -  exists as "title_from_tree", no other meta title
-    x review_count - exists as "total_reviews"
-    x meta description - doesn't exist in meta, but this is being pulled from the bazarr json file as "manufacturer_content_body"
-    x model_meta  -  there's no meta for model, but there is a model that could (but usually doesn't) exist in the bazaar json file
-
-    meta keywords - doesn't exist in html source, or in the bazaar json
-    
+    * product_in_stock : cannot find for Tesco
+    * mobile_image_same : 
+    * in stores only : cannot find for Tesco
     '''
-
 
 
     # dictionaries mapping type of info to be extracted to the method that does it
@@ -387,9 +395,8 @@ class TescoScraper(Scraper):
         "all_depts" : _all_depts,\
         "no_image" : _no_image,\
         
-        "product_in_stock" : product_in_stock, \
-        "in_stores_only" : in_stores_only, \
-        "mobile_image_same" : mobile_image_same, \
+        "product_in_stock" : _product_in_stock, \
+        "in_stores_only" : _in_stores_only, \
         
         "load_time": None\
         }
@@ -397,6 +404,7 @@ class TescoScraper(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
+        "mobile_image_same" : _mobile_image_same, \
         "brand" : _meta_brand_from_tree, \
         "model" : _model_from_tree, \
         "manufacturer_content_body" : manufacturer_content_body, \
