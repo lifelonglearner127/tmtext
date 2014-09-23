@@ -119,7 +119,7 @@ def get_request_status(req, jobids_status):
         db.get_last_requests
       . jobids_status: Dictionary containing the status of each
         request as it is returned by 
-        scrapyd.ScrapydInterface.scrapyd_interf.get_jobids_status
+        scrapyd.ScrapydInterface.scrapyd_interf.get_jobs
     """
     final_status = FINISH
     for jobid in req['jobids']:

@@ -383,7 +383,7 @@ def last_request_status(request):
     # Get the jobid status dictionary.
     scrapyd_baseurl = settings['spider._scrapyd.base_url']
     scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
-    jobids_status = scrapyd_interf.get_jobids_status()
+    jobids_status = scrapyd_interf.get_jobs()
     
     # For each request, determine the request status gathering 
     # the information from all jobids related to it
@@ -457,7 +457,7 @@ def request_history(request):
     # Get the jobid status dictionary.
     scrapyd_baseurl = settings['spider._scrapyd.base_url']
     scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
-    jobids_status = scrapyd_interf.get_jobids_status()
+    jobids_status = scrapyd_interf.get_jobs()
 
     try:   
         jobids_info = {jobid: jobids_status[jobid]  # Get only the jobids of 

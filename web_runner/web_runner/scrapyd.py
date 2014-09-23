@@ -221,42 +221,48 @@ class ScrapydInterface(object):
 
         return spiders
 
-    def get_jobids_status(self, projects=None):
-        """Return the status of the jobids associated to a project.
+    def get_jobs(self, projects=None):
+        """Return jobs associated to a project.
 
-        The function returns a dictionary whose key is a jobid and the value
-        is a dictionary of Scrapyd's listjobs request structure.
+        The function returns a dictionary whose key is a job's ID and the value
+        is a dictionary of Scrapyd's listjobs request structure with the
+        addition of the `status` key. For a finished  job, it looks like this:
+
+        {
+            "status": "finished",
+            "id": "2f16646cfcaf11e1b0090800272a6d06",
+            "spider": "spider3",
+            "start_time": "2012-09-12 10:14:03.594664",
+            "end_time": "2012-09-12 10:24:03.594664"
+        }
 
         :param projects: The list of project to query. If it is None, all
                          projects will be queried.
+        :rtype: dict
         """
         if not projects:
             projects = self.get_projects()
 
-        ret = {}
+        jobs_by_id = {}
         for project in projects:
-            url = '%slistjobs.json?project=%s' % (self.scrapyd_url, project)
-            try:
-                req = requests.get(url)
-            except requests.exceptions.RequestException:
-                return None
+            jobs_by_status = self._make_request(
+                'listjobs.json', project=project)
 
-            req_output = req.json()
-            if req_output['status'].lower() == 'ok':
-                for status in ('running', 'finished', 'pending'):
-                    for job_dict in req_output[status]:
-                        id = job_dict['id']
-                        # Convert the date from local to UTC
-                        if 'start_time' in job_dict:
-                            job_dict['start_time'] = local2utc(
-                                job_dict['start_time'])
-                        if 'end_time' in job_dict:
-                            job_dict['end_time'] = local2utc(
-                                job_dict['end_time'])
-                        ret[id] = job_dict
-                        ret[id]['status'] = status
-        
-        return ret
+            for job_status, jobs in jobs_by_status.items():
+                if job_status == "status":
+                    continue  # This is not a real status, ironically.
+
+                for job in jobs:
+                    job_id = job['id']
+                    # Convert the date from local to UTC
+                    if 'start_time' in job:
+                        job['start_time'] = local2utc(job['start_time'])
+                    if 'end_time' in job:
+                        job['end_time'] = local2utc(job['end_time'])
+                    jobs_by_id[job_id] = job
+                    jobs_by_id[job_id]['status'] = job_status
+
+        return jobs_by_id
 
     def _make_request(self, resource, fresh=False, cache_time=None, **query):
         """Makes a request to the configured Scrapyd instance for the resource

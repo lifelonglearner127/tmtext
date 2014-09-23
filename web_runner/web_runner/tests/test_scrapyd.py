@@ -17,6 +17,8 @@ logging.basicConfig(level=logging.FATAL)
 
 class ScrapydInterfaceTest(unittest.TestCase):
 
+    maxDiff = None
+
     URL = 'http://example.com'
 
     EXPECTED_LIST_JOBS_URL = URL + '/listjobs.json?project=test'
@@ -134,5 +136,59 @@ class ScrapydInterfaceTest(unittest.TestCase):
             mock_requests.get.assert_called_once_with(
                 self.EXPECTED_LIST_PROJECTS_URL)
 
+    def test_when_there_are_no_jobs_then_it_should_get_an_empty_dict(self):
+        with mock.patch('web_runner.scrapyd.requests') as mock_requests:
+            response = mock_requests.get.return_value
+            response.json.return_value = {
+                "status": "ok", "pending": [], "running": [], "finished": [],
+            }
 
-#{"status": "ok", "projects": ["myproject", "otherproject"]}
+            jobs = self.subject.get_jobs(['test'])
+
+            self.assertEqual({}, jobs)
+
+            mock_requests.get.assert_called_once_with(
+                self.EXPECTED_LIST_JOBS_URL)
+
+    def test_when_there_are_jobs_then_it_should_return_them(self):
+        with mock.patch('web_runner.scrapyd.requests') as mock_requests:
+            response = mock_requests.get.return_value
+            response.json.return_value = {
+                "status": "ok",
+                "pending": [
+                    {
+                        "id": "78391cc0fcaf11e1b0090800272a6d06",
+                        "project_name": "spider1",
+                    }
+                ],
+                "running": [],
+                "finished": [
+                    {
+                        "id": "2f16646cfcaf11e1b0090800272a6d06",
+                        "spider": "spider3",
+                        "start_time": "2012-09-12 10:14:03.594664",
+                        "end_time": "2012-09-12 10:24:03.594664"
+                    }
+                ],
+            }
+
+            jobs = self.subject.get_jobs(['test'])
+
+            expected = {
+                '2f16646cfcaf11e1b0090800272a6d06': {
+                    'end_time': '2012-09-12 13:24:03.594662',
+                    'id': '2f16646cfcaf11e1b0090800272a6d06',
+                    'spider': 'spider3',
+                    'start_time': '2012-09-12 13:14:03.594658',
+                    'status': 'finished',
+                },
+                '78391cc0fcaf11e1b0090800272a6d06': {
+                    'id': '78391cc0fcaf11e1b0090800272a6d06',
+                    'project_name': 'spider1',
+                    'status': 'pending',
+                },
+            }
+            self.assertEqual(expected, jobs)
+
+            mock_requests.get.assert_called_once_with(
+                self.EXPECTED_LIST_JOBS_URL)
