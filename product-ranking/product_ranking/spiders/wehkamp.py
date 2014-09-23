@@ -98,6 +98,10 @@ class WehkampProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
+        if response.css(
+                '#cphMain_cphMain_cphMainChild_overviewHeader_pnlNoResults'):
+            return 0
+
         total = response.xpath(
             "//div[@class='resultsHeader']/p"
             "/text()").re(r'" geeft (\d+) resultaten.')
@@ -106,9 +110,8 @@ class WehkampProductsSpider(BaseProductsSpider):
             try:
                 return int(total)
             except ValueError:
-                return 0
-        else:
-            return 0
+                pass
+        return None
 
     def _scrape_product_links(self, response):
         links = response.xpath(

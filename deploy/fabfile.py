@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 from __future__ import with_statement
 from  fabric.api import env, run, local, sudo, settings, prefix
 from fabric.contrib.console import confirm
@@ -21,7 +21,7 @@ This script will help to deploy:
 '''
 TODO:
 1) deploy users and permissions
-2) deploy keys 
+2) deploy keys
 3) deploy dependencies
 4) virtual environment creation
 5) download repos on target machine
@@ -30,7 +30,7 @@ TODO:
 8) create web-runner-web wheel package
 9) deploy web-runner-web
 11) Configure supervisord
-12) configure nginx 
+12) configure nginx
 13) work on updates.
 '''
 
@@ -58,7 +58,7 @@ SSH_SUDO_CERT = None
 REPO_BASE_PATH = '~/repos/'
 REPO_URL = 'https://ContentSolutionsDeploy:Content2020@bitbucket.org/dfeinleib/tmtext.git'
 
-    
+
 
 
 
@@ -66,7 +66,7 @@ REPO_URL = 'https://ContentSolutionsDeploy:Content2020@bitbucket.org/dfeinleib/t
 def virtualenv(environment):
     '''Define the virtual environment to use.
 
-    This function is useful for fabric.api.run commands, because all run 
+    This function is useful for fabric.api.run commands, because all run
     invocation will be called within the virtual environemnt. Example:
 
       with virtualenv(VENV_SCRAPYD):
@@ -76,7 +76,7 @@ def virtualenv(environment):
     The parameter environment is the name of the virtual environment
     followed by VENV_PREFIX
     '''
-    
+
     venv_path = VENV_PREFIX + os.sep + environment
     venv_activate = 'source %s%sbin%sactivate' % (venv_path, os.sep, os.sep)
 
@@ -126,7 +126,7 @@ def set_production():
     env.user = WEB_RUNNER_USER
     env.password = WEB_RUNNER_PASSWORD
     env.key_filename = WEB_RUNNER_CERT
-   
+
 
 def setup_users():
     '''Add web runner group and users'''
@@ -138,23 +138,23 @@ def setup_users():
       SSH_SUDO_USER , SSH_SUDO_PASSWORD, SSH_SUDO_CERT
 
     cuisine.group_ensure(WEB_RUNNER_GROUP)
-    cuisine.user_ensure(WEB_RUNNER_USER, gid=WEB_RUNNER_GROUP, 
+    cuisine.user_ensure(WEB_RUNNER_USER, gid=WEB_RUNNER_GROUP,
       shell='/bin/bash', passwd=WEB_RUNNER_PASSWORD, encrypted_passwd=False)
-    
+
     # Create the ssh certificate for web_runner user
     rem_ssh_cert_file = '~%s/.ssh/authorized_keys' % WEB_RUNNER_USER
-    if orig_cert and not sudo('test -e %s && echo OK ; true' 
+    if orig_cert and not sudo('test -e %s && echo OK ; true'
                              % (rem_ssh_cert_file)).endswith("OK"):
         sudo('mkdir -p ~%s/.ssh' % WEB_RUNNER_USER)
         sudo('chmod 700  ~%s/.ssh' % WEB_RUNNER_USER)
-        
+
         cert_content = open('web_runner_rsa.pub', 'r').read()
         cuisine.file_write('/tmp/inst_cert', cert_content)
         sudo('mv /tmp/inst_cert ' + rem_ssh_cert_file)
         sudo('chmod 600 %s' % rem_ssh_cert_file)
-        sudo('chown -R %s:%s ~%s/.ssh/' % 
+        sudo('chown -R %s:%s ~%s/.ssh/' %
           (WEB_RUNNER_USER, WEB_RUNNER_GROUP, WEB_RUNNER_USER))
-    
+
     env.user, env.password, env.key_filename = \
       orig_user, orig_passw, orig_cert
 
@@ -171,7 +171,7 @@ def setup_packages():
     cuisine.package_ensure('python-software-properties')
     # TODO: verify if the repo must be added
     #cuisine.repository_ensure_apt('ppa:fkrull/deadsnakes')
-    #sudo('apt-get update')
+    sudo('apt-get update')
     cuisine.package_ensure('python3.4 python3.4-dev')
     cuisine.package_ensure('python-dev')
     cuisine.package_ensure('python-pip python3-pip')
@@ -181,7 +181,7 @@ def setup_packages():
     cuisine.package_ensure('git')
     cuisine.package_ensure('tmux')
     sudo('pip install virtualenv --upgrade')
-    
+
     env.user, env.password, env.key_filename = \
       orig_user, orig_passw, orig_cert
 
@@ -190,7 +190,7 @@ def setup_tmux():
     # Verify if a new tmux session must be created
     try:
         tmux_ls = run('tmux list-windows -t webrunner')
-        
+
         if not re.search('0: scrapyd', tmux_ls.stdout):
             run('tmux new-window -k -t webrunner:0 -n scrapyd')
         if not re.search('1: web_runner', tmux_ls.stdout):
@@ -272,7 +272,7 @@ def setup_virtual_env(scrapyd=True, web_runner=True, web_runner_web=True):
         _setup_virtual_env_web_runner()
     if web_runner_web:
         _setup_virtual_env_web_runner_web()
-    
+
 
 
 def get_repos(branch='master'):
@@ -283,12 +283,12 @@ def get_repos(branch='master'):
     repo_path = _get_repo_path()
     if not cuisine.dir_exists(repo_path):
         run('mkdir -p ' + REPO_BASE_PATH)
-        run('cd %s && git clone %s && cd %s && git checkout %s' % 
-          (REPO_BASE_PATH, REPO_URL, repo_path, branch)) 
+        run('cd %s && git clone %s && cd %s && git checkout %s' %
+          (REPO_BASE_PATH, REPO_URL, repo_path, branch))
     else:
-        run('cd %s && git checkout %s && git pull' % 
+        run('cd %s && git checkout %s && git pull' %
           (repo_path, branch) )
- 
+
 
 def _configure_scrapyd():
     venv_scrapyd = _get_venv_path(VENV_SCRAPYD)
@@ -327,7 +327,7 @@ def _configure_web_runner_web():
             run("cd %s/web_runner_web && ./manage.py syncdb --noinput" % repo_path)
 
         run('tmux new-window -k -t webrunner:4 -n django_config')
-        run("tmux send-keys -t webrunner:4 'source %s' C-m" % 
+        run("tmux send-keys -t webrunner:4 'source %s' C-m" %
             venv_webrunner_web_activate)
         run("tmux send-keys -t webrunner:4 'cd %s' C-m" % repo_path)
         run("tmux send-keys -t webrunner:4 'cd web_runner_web' C-m")
@@ -337,7 +337,7 @@ def _configure_web_runner_web():
         run("tmux send-keys -t webrunner:4 'exit()' C-m")
 
 
-    
+
 
 def configure():
     puts(green('Configuring the servers'))
@@ -353,7 +353,7 @@ def _install_web_runner():
       % (venv_webrunner, os.sep, os.sep)
     repo_path = _get_repo_path()
 
-    run("tmux send-keys -t webrunner:1 'source %s' C-m" % 
+    run("tmux send-keys -t webrunner:1 'source %s' C-m" %
         venv_webrunner_activate)
     run("tmux send-keys -t webrunner:1 'cd %s' C-m" % repo_path)
     run("tmux send-keys -t webrunner:1 'cd web_runner' C-m")
@@ -400,8 +400,8 @@ def _run_scrapyd():
     run("tmux send-keys -t webrunner:0 'source %s' C-m" % venv_scrapyd_activate)
     run("tmux send-keys -t webrunner:0 'cd %s' C-m" % venv_scrapyd)
     run("tmux send-keys -t webrunner:0 'scrapyd' C-m")
-    #_run_scrapyd_deploy()
- 
+    _run_scrapyd_deploy()
+
 
 def _run_web_runner():
     venv_webrunner = _get_venv_path(VENV_WEB_RUNNER)
