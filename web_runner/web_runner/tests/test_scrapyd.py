@@ -3,20 +3,36 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import logging
 import unittest
 
 import mock
+import pyramid.httpexceptions as exc
 
 from web_runner.scrapyd import ScrapydInterface
+
+
+logging.basicConfig(level=logging.WARNING)
 
 
 class ScrapydInterfaceTest(unittest.TestCase):
 
     URL = 'http://example.com'
 
-    EXPECTED_URL = URL + 'listjobs.json?project=test'
+    EXPECTED_URL = URL + '/listjobs.json?project=test'
 
     EMPTY_QUEUE = {'running': 0, 'finished': 0, 'pending': 0}
+
+    def test_when_status_is_not_ok_then_it_should_report_an_error(self):
+        subject = ScrapydInterface(ScrapydInterfaceTest.URL)
+
+        with mock.patch('web_runner.scrapyd.requests') as mock_requests:
+            response = mock_requests.get.return_value
+            response.json.return_value = {"status": "ERROR", "message": "Test"}
+
+            self.assertRaises(exc.HTTPBadGateway, subject.get_queues, ['test'])
+
+            mock_requests.get.assert_called_once_with(self.EXPECTED_URL)
 
     def test_when_queues_are_empty_then_it_should_return_empty_queues(self):
         subject = ScrapydInterface(ScrapydInterfaceTest.URL)

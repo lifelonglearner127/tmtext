@@ -274,15 +274,38 @@ class ScrapydInterface(object):
         return ret
 
     def _make_request(self, resource, **query):
+        """Makes a request to the configured Scrapyd instance for the resource
+        passing the given query string.
+
+        :param resource: The resource to request.
+        :type resource: unicode
+        :param query: The query string parameters.
+        :return: The structure from the decoded JSON.
+        """
         url = urlparse.urljoin(self.scrapyd_url, resource)
         if query:
             url += '?' + urllib.urlencode(query)
 
         try:
             req = requests.get(url)
+            LOG.debug(
+                "Requested from scrapyd resource %s and got: %s",
+                resource,
+                req.content,
+            )
         except requests.exceptions.RequestException as e:
-            raise exc.HTTPBadGateway("Error contacting Scrapyd: %s" % e)
-        return req.json()
+            msg = "Error contacting Scrapyd: %s" % e
+            LOG.error(msg)
+            raise exc.HTTPBadGateway(msg)
+
+        result = req.json()
+        if result['status'].lower() != "ok":
+            LOG.error("Scrapyd was not OK: %s", req.content)
+            raise exc.HTTPBadGateway(
+                "Scrapyd was not OK, it was '{status}': {message}".format(
+                    **result))
+
+        return result
 
     def get_queues(self, projects=None):
         """Returns the scrapyd queue status.
@@ -304,14 +327,14 @@ class ScrapydInterface(object):
 
         queues = {}
         for project in projects:
-            req_output = self._make_request('listjobs.json', project=project)
+            jobs_data = self._make_request('listjobs.json', project=project)
+
             summary = {'running': 0, 'finished': 0, 'pending': 0}
-            if req_output['status'].lower() == 'ok':
-                queues[project] = {}
-                for status in ('running', 'finished', 'pending'):
-                    queues[project][status] = len(req_output[status])
-                    summary[status] += len(req_output[status])
-                    
+            queues[project] = {}
+            for status in ('running', 'finished', 'pending'):
+                queues[project][status] = len(jobs_data[status])
+                summary[status] += len(jobs_data[status])
+
         return queues, summary
 
 
