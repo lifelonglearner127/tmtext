@@ -1,4 +1,8 @@
-#!/usr/bin/env python
+# vim:fileencoding=UTF-8
+
+from __future__ import division, absolute_import, unicode_literals
+from future_builtins import *
+
 import logging
 import urlparse
 import json
@@ -12,7 +16,7 @@ import pyramid.httpexceptions as exc
 import requests
 import requests.exceptions
 
-from util import string_from_local2utc as local2utc
+from .util import string_from_local2utc as local2utc
 
 
 LOG = logging.getLogger(__name__)
@@ -276,6 +280,9 @@ class ScrapydInterface(object):
 
         :param projects: The list of project to query. If it is None, all
                          projects will be queried.
+        :return: A list with the requested queues and the aggregate of the
+                 states of all queues.
+        :rtype: tuple
         """
         if not projects:
             status, projects = self.get_projects()
@@ -298,19 +305,7 @@ class ScrapydInterface(object):
                     queues[project][status] = len(req_output[status])
                     summary[status] += len(req_output[status])
                     
-        return (queues, summary)
+        return queues, summary
 
-
-if __name__ == '__main__':
-    si = ScrapydInterface('http://localhost:6800/')
-
-    status, projects = si.get_projects()
-    print('projects: %s' % projects)
-
-    spiders = {project: si.get_spiders(project) for project in projects}
-    print('spiders:', spiders)
-
-    jobidsDict = si.get_jobids_status()
-    print("jobids:", jobidsDict)
 
 # vim: set expandtab ts=4 sw=4:
