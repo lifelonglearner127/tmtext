@@ -18,7 +18,7 @@ DESC_PAR_LEN = 30
 ################################
 # Run with 
 #
-# scrapy crawl walmart
+# scrapy crawl walmart.ca
 #
 ################################
 
@@ -60,51 +60,12 @@ class WalmartCaSpider(BaseSpider):
 
         parent_links = hxs.select("//div[@class='linkGroup']/div[not (@class)]/a[@class='NavXLBold'][@href]")
 
-        # for link in links:
-        #     item = CategoryItem()
-
-        #     # search for the category's parent
-        #     parents = []
-
-        #     # select the preceding siblings that are a category title (have a child that is an a tag with a certain class)
-        #     parents = link.select('parent::node()').select('preceding-sibling::node()').select('child::a[@class=\'NavXLBold\']')
-
-        #     # if we found such siblings, get the last one to be the parent
-        #     if parents:
-        #         item['parent_text'] = parents[-1].select('text()').extract()[0]
-        #         item['parent_url'] = parents[-1].select('@href').extract()[0]
-
-        #         item['parent_url'] = Utils.add_domain(item['parent_url'], self.root_url)
-
-        #     item['text'] = link.select('text()').extract()[0]
-        #     item['url'] = link.select('@href').extract()[0]
-
-        #     # add domain if relative URL
-        #     item['url'] = Utils.add_domain(item['url'], self.root_url)
-
-        #     item['level'] = 0
-
-            # to avoid duplicates, only extract highest level categories in this function (so don't return if level 0)
-            #yield item
-
-            
             # #TODO: check this
             # item['nr_products'] = -1
             # yield item
             #yield Request(item['url'], callback = self.parseCategory, meta = {'item' : item})
 
         department_id = 0
-
-        #TO remove:
-        # # artificial category - parent to all departments (root of entire sitemap tree). used to get total walmart product count
-        # sitemap_root = CategoryItem()
-        # sitemap_root['url'] = "http://www.walmart.com"
-        # sitemap_root['text'] = "Walmart"
-        # sitemap_root['department_id'] = 0
-        # sitemap_root['level'] = 2
-        # sitemap_root['catid'] = 0
-        # self.id_count += 1
-        # yield sitemap_root
 
         for link in parent_links:
             item = CategoryItem()
@@ -202,23 +163,6 @@ class WalmartCaSpider(BaseSpider):
 
         ###########################################
         #TODO:
-        # Exceptions: 
-        #   http://www.walmart.com/cp/5431?povid=cat1078944-env506746-moduleA030213-lLinkLHNRelatedCategories2Pharmacy - finds wrong title (also wrong description holder - too high level)
-        #   http://www.walmart.com/cp/1102793?povid=cat1094926-env999999-moduleA030713-lLinkLHNLearnmoreAbouttheprogram - finds description, actually no description, CustomPOV... with large text inside, hard to fix
-        #   http://brands.walmart.com/fishing/essential-rods-and-reels/ - finds description, actually no description. Just an element with much text
-        #   http://brands.walmart.com/fishing/get-salty-with-your-bass-skills/ - finds description, actually no description. Just an element with much text
-        #   http://instoresnow.walmart.com/article.aspx?Center=Pets&id=104225 - finds description, actually no description. Just an element with much text
-        #   http://brands.walmart.com/fishing/turn-a-kid-on-to-flyfishing/ - finds description, actually no description. Just an element with much text
-        #   http://www.walmart.com/cp/1094926?povid=cat121828-env999999-moduleA030713-lLinkGNAV1_Campaign_EmpoweringWomenTogether - finds description, actually no description. Just an element with much text
-        #   http://www.walmart.com/ip/Straight-Talk-Samsung-Galaxy-S-III/23573710?povid=cat1105910-env542259-moduleA092613-lLinkLHNWhatsNewSamsungSIIIStraightTalk - finds description, actually no description. Just an element with much text
-        #   http://www.walmart.com/cp/Bakery/120764 - finds description, actually no description. Just an element with much text, also title problem
-        #   http://www.walmart.com/cp/1078665 - not a description, also imperfect title extraction
-        #   http://www.walmart.com/cp/1101244?povid=cat1100706-env999999-module122012-LHN_HealthyLivingTips - wrong title extraction, extracts too much as a description holder
-        #   http://www.walmart.com/cp/flexible-spending-account/555326 - finds description though no description, just large text (also bad title extraction)
-
-
-        # Idea for excluding elements with much text that are false positives: check if element is composed of many sibling paragraphs or so
-        ###########################################
 
         # first search for the description id they usually use,
         # second one is used more rarely and also with some false positives so needs to be checked for text length as well
