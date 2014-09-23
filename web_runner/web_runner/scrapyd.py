@@ -8,6 +8,7 @@ import urlparse
 import json
 import os.path
 import time
+import thread
 import urllib
 import urllib2
 
@@ -15,6 +16,7 @@ import enum
 import pyramid.httpexceptions as exc
 import requests
 import requests.exceptions
+import repoze.lru
 
 from .util import string_from_local2utc as local2utc
 
@@ -178,12 +180,10 @@ class ScrapydMediator(object):
 
 
 class ScrapydInterface(object):
-    """Interface to Scrapyd
+    """Interface to Scrapyd."""
 
-    The main difference with ScrapydMediator, is that this class is not
-    oriented to have a spider.
-    This class is useful to return status and information about ScrapyD
-    """
+    _CACHE = repoze.lru.ExpiringLRUCache(100, 10)
+    _CACHE_LOCK = thread.allocate_lock()
 
     def __init__(self, url):
         self.scrapyd_url = url
@@ -273,12 +273,16 @@ class ScrapydInterface(object):
         
         return ret
 
-    def _make_request(self, resource, **query):
+    def _make_request(self, resource, fresh=False, cache_time=None, **query):
         """Makes a request to the configured Scrapyd instance for the resource
         passing the given query string.
 
         :param resource: The resource to request.
         :type resource: unicode
+        :param fresh: Whether to invalidate the cache.
+        :type fresh: bool
+        :param cache_time: For how many seconds a fresh response would be valid.
+        :type cache_time: int
         :param query: The query string parameters.
         :return: The structure from the decoded JSON.
         """
@@ -286,21 +290,42 @@ class ScrapydInterface(object):
         if query:
             url += '?' + urllib.urlencode(query)
 
-        try:
-            req = requests.get(url)
-            LOG.debug(
-                "Requested from scrapyd resource %s and got: %s",
-                resource,
-                req.content,
-            )
-        except requests.exceptions.RequestException as e:
-            msg = "Error contacting Scrapyd: %s" % e
-            LOG.error(msg)
-            raise exc.HTTPBadGateway(msg)
+        if fresh:
+            LOG.debug("Invalidated cache for %r.", url)
+            ScrapydInterface._CACHE.invalidate(url)
+            result = None
+        else:
+            result = ScrapydInterface._CACHE.get(url)
 
-        result = req.json()
+        if result is not None:
+            LOG.debug("Cache hit for %r.", url)
+        else:
+            LOG.debug("Cache miss for %r.", url)
+            # Will get exclusive access to the cache.
+            with ScrapydInterface._CACHE_LOCK:
+                # Before we got access, it may have been populated.
+                result = ScrapydInterface._CACHE.get(url)
+                if result is not None:
+                    LOG.debug("Cache hit after locking for %r.", url)
+                else:
+                    try:
+                        req = requests.get(url)
+                        LOG.debug(
+                            "Requested from scrapyd resource %s and got: %s",
+                            resource,
+                            req.content,
+                        )
+                    except requests.exceptions.RequestException as e:
+                        msg = "Error contacting Scrapyd: %s" % e
+                        LOG.error(msg)
+                        raise exc.HTTPBadGateway(msg)
+
+                    result = req.json()
+                    ScrapydInterface._CACHE.put(url, result, timeout=cache_time)
+
+        # Check result response is successful.
         if result['status'].lower() != "ok":
-            LOG.error("Scrapyd was not OK: %s", req.content)
+            LOG.error("Scrapyd was not OK: %r", result)
             raise exc.HTTPBadGateway(
                 "Scrapyd was not OK, it was '{status}': {message}".format(
                     **result))
