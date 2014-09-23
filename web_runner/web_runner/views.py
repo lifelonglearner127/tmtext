@@ -311,31 +311,14 @@ def status(request):
     """Check the Web Runner and Scrapyd Status"""
 
     settings = request.registry.settings
+
     scrapyd_baseurl = settings['spider._scrapyd.base_url']
-
     scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
-    alive = scrapyd_interf.is_alive()
-    (operational, projects) = scrapyd_interf.get_projects()
 
-    # Get the spiders for all projects
-    if alive and operational:
-        spiders = {proj: scrapyd_interf.get_spiders(proj) for proj in projects}
-        (queues, summary_queues) = scrapyd_interf.get_queues(projects)
-    else:
-        spiders = None
-
-    output = {
-        'scrapyd_alive': alive,
-        'scrapyd_operational': operational,
-        'scrapyd_projects': projects,
-        'spiders': spiders,
-        'queues': queues,
-        'summarized_queue': summary_queues,
-        'webRunner': True,
-    }
+    output = scrapyd_interf.get_operational_status()
 
     if request.params:
-        items = [ x.split(':') for x in request.params.getall('return') ]
+        items = [x.split(':', 1) for x in request.params.getall('return')]
         output = dict_filter(output, items)
 
         if 'application/json' in request.accept:
@@ -346,13 +329,12 @@ def status(request):
                 raise exc.exception_response(406)
             else:
                 output = output.values()[0]
-                if not isinstance(output, numbers.Number) and \
-                  type(output) != type('a'):
+                if not isinstance(output, numbers.Number) \
+                        and type(output) != type('a'):
                     raise exc.exception_response(406)
                 
         else:
             raise exc.exception_response(406)
-        
 
     return output
 

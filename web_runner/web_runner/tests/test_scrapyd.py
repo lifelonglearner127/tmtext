@@ -222,3 +222,158 @@ class ScrapydInterfaceTest(unittest.TestCase):
 
             mock_requests.get.assert_called_once_with(
                 self.EXPECTED_LIST_SPIDERS_URL)
+
+    def test_when_scrapyd_is_down_then_it_should_make_no_further_reqs(self):
+        with mock.patch('web_runner.scrapyd.requests.get') as mock_requests_get:
+            response = mock_requests_get.return_value
+            response.status_code = 500
+
+            status = self.subject.get_operational_status()
+
+            self.assertEqual(
+                {
+                    'scrapyd_alive': False,
+                    'scrapyd_operational': False,
+                    'scrapyd_projects': None,
+                    'spiders': None,
+                    'queues': None,
+                    'summarized_queue': None,
+                },
+                status,
+            )
+
+            mock_requests_get.assert_called_once_with(self.URL)
+
+    def test_when_scrapyd_fails_then_it_should_not_be_operational(self):
+        with mock.patch('web_runner.scrapyd.requests.get') as mock_requests_get:
+            alive_response = mock.MagicMock()
+            alive_response.status_code = 200
+
+            mock_requests_get.side_effect = [
+                alive_response,
+                exc.HTTPBadGateway(detail="Test"),
+            ]
+
+            status = self.subject.get_operational_status()
+
+            self.assertEqual(
+                {
+                    'scrapyd_alive': True,
+                    'scrapyd_operational': False,
+                    'scrapyd_projects': None,
+                    'spiders': None,
+                    'queues': None,
+                    'summarized_queue': None,
+                },
+                status,
+            )
+
+            mock_requests_get.assert_any_call(self.URL)
+            mock_requests_get.assert_called_with(
+                self.EXPECTED_LIST_PROJECTS_URL)
+
+    def test_when_scrapyd_responds_then_it_should_provide_an_ok_status(self):
+        with mock.patch('web_runner.scrapyd.requests.get') as mock_requests_get:
+            alive_resp = mock.MagicMock()
+            alive_resp.status_code = 200
+
+            projects_resp = mock.MagicMock()
+            projects_resp.status_code = 200
+            projects_resp.json.return_value = {
+                'status': 'ok',
+                'projects': ['test', 'p2'],
+            }
+
+            spiders1_resp = mock.MagicMock()
+            spiders1_resp.status_code = 200
+            spiders1_resp.json.return_value = {
+                'status': 'ok',
+                'spiders': ['p1_sp1', 'p1_sp2'],
+            }
+
+            spiders2_resp = mock.MagicMock()
+            spiders2_resp.status_code = 200
+            spiders2_resp.json.return_value = {
+                'status': 'ok',
+                'spiders': ['p2_sp1', 'p2_sp2'],
+            }
+
+            jobs1_resp = mock.MagicMock()
+            jobs1_resp.status_code = 200
+            jobs1_resp.json.return_value = {
+                'status': 'ok',
+                "pending": [
+                    {
+                        "id": "78391cc0fcaf11e1b0090800272a6d06",
+                        "project_name": "spider1",
+                    }
+                ],
+                "running": [],
+                "finished": [
+                    {
+                        "id": "2f16646cfcaf11e1b0090800272a6d06",
+                        "spider": "spider3",
+                    }
+                ],
+
+            }
+
+            jobs2_resp = mock.MagicMock()
+            jobs2_resp.status_code = 200
+            jobs2_resp.json.return_value = {
+                'status': 'ok',
+                "pending": [
+                    {
+                        "id": "XXXX1cc0fcaf11e1b0090800272a6d06",
+                        "project_name": "spider10",
+                    }
+                ],
+                "finished": [],
+                "running": [
+                    {
+                        "id": "XXXX646cfcaf11e1b0090800272a6d06",
+                        "spider": "spider30",
+                    }
+                ],
+
+            }
+
+            mock_requests_get.side_effect = [
+                alive_resp,
+                projects_resp,
+                spiders1_resp,
+                spiders2_resp,
+                jobs1_resp,
+                jobs2_resp,
+            ]
+
+            status = self.subject.get_operational_status()
+
+            self.assertEqual(
+                {
+                    'scrapyd_alive': True,
+                    'scrapyd_operational': True,
+                    'scrapyd_projects': ['test', 'p2'],
+                    'spiders': {
+                        'test': ['p1_sp1', 'p1_sp2'],
+                        'p2': ['p2_sp1', 'p2_sp2'],
+                    },
+                    'queues': {
+                        'test': {'finished': 1, 'pending': 1, 'running': 0},
+                        'p2': {'finished': 0, 'pending': 1, 'running': 1},
+                    },
+                    'summarized_queue': {
+                        'finished': 1,
+                        'pending': 2,
+                        'running': 1,
+                    },
+                },
+                status,
+            )
+
+            # More requests than these are actually performed.
+            mock_requests_get.assert_any_call(self.URL)
+            mock_requests_get.assert_any_call(self.EXPECTED_LIST_SPIDERS_URL)
+            mock_requests_get.assert_any_call(self.EXPECTED_LIST_JOBS_URL)
+            mock_requests_get.assert_any_with(
+                self.EXPECTED_LIST_PROJECTS_URL)
