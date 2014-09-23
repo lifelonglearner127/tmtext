@@ -263,9 +263,11 @@ class ScrapydInterface(object):
                         id = job_dict['id']
                         # Convert the date from local to UTC
                         if 'start_time' in job_dict:
-                            job_dict['start_time'] = local2utc(job_dict['start_time'])
+                            job_dict['start_time'] = local2utc(
+                                job_dict['start_time'])
                         if 'end_time' in job_dict:
-                            job_dict['end_time'] = local2utc(job_dict['end_time'])
+                            job_dict['end_time'] = local2utc(
+                                job_dict['end_time'])
                         ret[id] = job_dict
                         ret[id]['status'] = status
         
