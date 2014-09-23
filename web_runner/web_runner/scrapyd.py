@@ -266,22 +266,12 @@ class ScrapydInterface(object):
         return projects_data['projects']
 
     def get_spiders(self, project):
-        if not project:
-            return None
+        assert project, "A project is required."
 
-        url = "%slistspiders.json?project=%s" % (self.scrapyd_url, project)
-        try:
-            req = requests.get(url)
-        except requests.exceptions.RequestException:
-            return None
+        spiders_data = self._make_request(
+            "listspiders.json", cache_time=120, project=project)
 
-        output = json.loads(req.text)
-        if output['status'].lower() == 'ok':
-            spiders = output['spiders']
-        else:
-            spiders = None
-
-        return spiders
+        return spiders_data['spiders']
 
     def get_jobs(self, projects=None):
         """Return jobs associated to a project.

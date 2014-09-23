@@ -23,6 +23,7 @@ class ScrapydInterfaceTest(unittest.TestCase):
 
     EXPECTED_LIST_JOBS_URL = URL + '/listjobs.json?project=test'
     EXPECTED_LIST_PROJECTS_URL = URL + '/listprojects.json'
+    EXPECTED_LIST_SPIDERS_URL = URL + '/listspiders.json?project=test'
 
     EMPTY_QUEUE = {'running': 0, 'finished': 0, 'pending': 0}
 
@@ -191,3 +192,33 @@ class ScrapydInterfaceTest(unittest.TestCase):
 
             mock_requests.get.assert_called_once_with(
                 self.EXPECTED_LIST_JOBS_URL)
+
+    def test_when_there_are_no_spiders_then_it_should_get_an_empty_list(self):
+        with mock.patch('web_runner.scrapyd.requests') as mock_requests:
+            response = mock_requests.get.return_value
+            response.json.return_value = {"status": "ok", "spiders": []}
+
+            jobs = self.subject.get_spiders('test')
+
+            self.assertEqual([], jobs)
+
+            mock_requests.get.assert_called_once_with(
+                self.EXPECTED_LIST_SPIDERS_URL)
+
+    def test_when_there_are_spiders_then_it_should_return_them(self):
+        # Had to remove dates from jobs to make tests reliable.
+        # The time conversion that's performed adds a configuration dependent
+        # offset and a small, millisecond, error.
+        with mock.patch('web_runner.scrapyd.requests') as mock_requests:
+            response = mock_requests.get.return_value
+            response.json.return_value = {
+                "status": "ok",
+                "spiders": ["spider1", "spider2", "spider3"],
+            }
+
+            jobs = self.subject.get_spiders('test')
+
+            self.assertEqual(["spider1", "spider2", "spider3"], jobs)
+
+            mock_requests.get.assert_called_once_with(
+                self.EXPECTED_LIST_SPIDERS_URL)
