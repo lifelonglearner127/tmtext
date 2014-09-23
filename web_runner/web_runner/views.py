@@ -17,6 +17,7 @@ from web_runner.scrapyd import ScrapydMediator, ScrapydInterface, \
 from web_runner.util import encode_ids, decode_ids, get_request_status, \
     string2datetime, dict_filter
 import web_runner.db
+import numbers
 
 
 LOG = logging.getLogger(__name__)
@@ -336,6 +337,22 @@ def status(request):
     if request.params:
         items = [ x.split(':') for x in request.params.getall('return') ]
         output = dict_filter(output, items)
+
+        if 'application/json' in request.accept:
+            pass
+        elif 'text/plain' in request.accept:
+            request.override_renderer = 'string'
+            if len(output) != 1:
+                raise exc.exception_response(406)
+            else:
+                output = output.values()[0]
+                if not isinstance(output, numbers.Number) and \
+                  type(output) != type('a'):
+                    raise exc.exception_response(406)
+                
+        else:
+            raise exc.exception_response(406)
+        
 
     return output
 
