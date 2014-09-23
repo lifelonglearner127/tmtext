@@ -291,7 +291,7 @@ class ScrapydInterface(object):
                 return None
 
             req_output = req.json()
-            summary = {'running':0, 'finished':0, 'pending':0}
+            summary = {'running': 0, 'finished': 0, 'pending': 0}
             if req_output['status'].lower() == 'ok':
                 queues[project] = {}
                 for status in ('running', 'finished', 'pending'):
