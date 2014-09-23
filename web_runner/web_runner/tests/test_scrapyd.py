@@ -19,7 +19,8 @@ class ScrapydInterfaceTest(unittest.TestCase):
 
     URL = 'http://example.com'
 
-    EXPECTED_URL = URL + '/listjobs.json?project=test'
+    EXPECTED_LIST_JOBS_URL = URL + '/listjobs.json?project=test'
+    EXPECTED_LIST_PROJECTS_URL = URL + '/listprojects.json'
 
     EMPTY_QUEUE = {'running': 0, 'finished': 0, 'pending': 0}
 
@@ -27,36 +28,35 @@ class ScrapydInterfaceTest(unittest.TestCase):
         # Always clear the cache so that tests are independent.
         ScrapydInterface._CACHE.clear()
 
-    def test_when_status_is_not_ok_then_it_should_report_an_error(self):
-        subject = ScrapydInterface(ScrapydInterfaceTest.URL)
+        self.subject = ScrapydInterface(ScrapydInterfaceTest.URL)
 
+    def test_when_status_is_not_ok_then_it_should_report_an_error(self):
         with mock.patch('web_runner.scrapyd.requests') as mock_requests:
             response = mock_requests.get.return_value
             response.json.return_value = {"status": "ERROR", "message": "Test"}
 
-            self.assertRaises(exc.HTTPBadGateway, subject.get_queues, ['test'])
+            self.assertRaises(
+                exc.HTTPBadGateway, self.subject.get_queues, ['test'])
 
-            mock_requests.get.assert_called_once_with(self.EXPECTED_URL)
+            mock_requests.get.assert_called_once_with(
+                self.EXPECTED_LIST_JOBS_URL)
 
     def test_when_queues_are_empty_then_it_should_return_empty_queues(self):
-        subject = ScrapydInterface(ScrapydInterfaceTest.URL)
-
         with mock.patch('web_runner.scrapyd.requests') as mock_requests:
             response = mock_requests.get.return_value
             response.json.return_value = {
                 "status": "ok", "pending": [], "running": [], "finished": [],
             }
 
-            queues, summary = subject.get_queues(['test'])
+            queues, summary = self.subject.get_queues(['test'])
 
             self.assertEqual({'test': self.EMPTY_QUEUE}, queues)
             self.assertEqual(self.EMPTY_QUEUE, summary)
 
-            mock_requests.get.assert_called_once_with(self.EXPECTED_URL)
+            mock_requests.get.assert_called_once_with(
+                self.EXPECTED_LIST_JOBS_URL)
 
     def test_when_queues_have_jobs_then_it_should_return_their_state(self):
-        subject = ScrapydInterface(ScrapydInterfaceTest.URL)
-
         with mock.patch('web_runner.scrapyd.requests') as mock_requests:
             response = mock_requests.get.return_value
             response.json.return_value = {
@@ -78,30 +78,61 @@ class ScrapydInterfaceTest(unittest.TestCase):
                 ],
             }
 
-            queues, summary = subject.get_queues(['test'])
+            queues, summary = self.subject.get_queues(['test'])
 
             expected_queue = {'running': 0, 'finished': 1, 'pending': 1}
 
             self.assertEqual({'test': expected_queue}, queues)
             self.assertEqual(expected_queue, summary)
 
-            mock_requests.get.assert_called_once_with(self.EXPECTED_URL)
+            mock_requests.get.assert_called_once_with(
+                self.EXPECTED_LIST_JOBS_URL)
 
     def test_when_a_request_is_repeated_then_it_should_query_just_once(self):
-        subject = ScrapydInterface(ScrapydInterfaceTest.URL)
-
         with mock.patch('web_runner.scrapyd.requests') as mock_requests:
             response = mock_requests.get.return_value
             response.json.return_value = {
                 "status": "ok", "pending": [], "running": [], "finished": [],
             }
 
-            queues, summary = subject.get_queues(['test'])
+            queues, summary = self.subject.get_queues(['test'])
             self.assertEqual({'test': self.EMPTY_QUEUE}, queues)
             self.assertEqual(self.EMPTY_QUEUE, summary)
 
-            queues, summary = subject.get_queues(['test'])
+            queues, summary = self.subject.get_queues(['test'])
             self.assertEqual({'test': self.EMPTY_QUEUE}, queues)
             self.assertEqual(self.EMPTY_QUEUE, summary)
 
-            mock_requests.get.assert_called_once_with(self.EXPECTED_URL)
+            mock_requests.get.assert_called_once_with(
+                self.EXPECTED_LIST_JOBS_URL)
+
+    def test_when_there_are_no_project_then_it_should_get_an_empty_list(self):
+        with mock.patch('web_runner.scrapyd.requests') as mock_requests:
+            response = mock_requests.get.return_value
+            response.json.return_value = {"status": "ok", "projects": []}
+
+            projects = self.subject.get_projects()
+            self.assertEqual([], projects)
+
+            mock_requests.get.assert_called_once_with(
+                self.EXPECTED_LIST_PROJECTS_URL)
+
+    def test_when_there_are_projects_then_it_should_get_a_list(self):
+        with mock.patch('web_runner.scrapyd.requests') as mock_requests:
+            response = mock_requests.get.return_value
+            response.json.return_value = {
+                "status": "ok",
+                "projects": [
+                    "proj1",
+                    "proj2",
+                ],
+            }
+
+            projects = self.subject.get_projects()
+            self.assertEqual(["proj1", "proj2"], projects)
+
+            mock_requests.get.assert_called_once_with(
+                self.EXPECTED_LIST_PROJECTS_URL)
+
+
+#{"status": "ok", "projects": ["myproject", "otherproject"]}

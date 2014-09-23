@@ -198,23 +198,10 @@ class ScrapydInterface(object):
         return req.status_code == 200
 
     def get_projects(self):
-        """Get the list of scrapyd projects.
+        """Returns a list of Scrapyd projects."""
+        projects_data = self._make_request('listprojects.json', cache_time=120)
 
-        :returns: A tuple with:
-         * 0: boolean with Scrapyd operational status
-         * 1: list of scrapyd projects
-        """
-        url = self.scrapyd_url + 'listprojects.json'
-        try:
-            req = requests.get(url)
-        except requests.exceptions.RequestException:
-            return False, None
-       
-        output = json.loads(req.text)
-        status = output['status'].lower() == 'ok'
-        projects = output['projects']
-
-        return status, projects
+        return projects_data['projects']
 
     def get_spiders(self, project):
         if not project:
@@ -244,9 +231,7 @@ class ScrapydInterface(object):
                          projects will be queried.
         """
         if not projects:
-            status, projects = self.get_projects()
-            if not status:
-                return None
+            projects = self.get_projects()
 
         ret = {}
         for project in projects:
@@ -346,9 +331,7 @@ class ScrapydInterface(object):
         :rtype: tuple
         """
         if not projects:
-            status, projects = self.get_projects()
-            if not status:
-                return None
+            projects = self.get_projects()
 
         queues = {}
         for project in projects:
