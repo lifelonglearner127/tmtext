@@ -188,6 +188,20 @@ class ScrapydInterface(object):
     def __init__(self, url):
         self.scrapyd_url = url
 
+    def _make_uncached_request(self, url):
+        try:
+            response = requests.get(url)
+            LOG.debug(
+                "Requested from scrapyd resource %s and got: %s",
+                url,
+                response.content,
+            )
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            msg = "Error contacting Scrapyd: %s" % e
+            LOG.error(msg)
+            raise exc.HTTPBadGateway(msg)
+
     def _make_request(self, resource, fresh=False, cache_time=None, **query):
         """Makes a request to the configured Scrapyd instance for the resource
         passing the given query string.
@@ -223,19 +237,8 @@ class ScrapydInterface(object):
                 if result is not None:
                     LOG.debug("Cache hit after locking for %r.", url)
                 else:
-                    try:
-                        req = requests.get(url)
-                        LOG.debug(
-                            "Requested from scrapyd resource %s and got: %s",
-                            resource,
-                            req.content,
-                        )
-                    except requests.exceptions.RequestException as e:
-                        msg = "Error contacting Scrapyd: %s" % e
-                        LOG.error(msg)
-                        raise exc.HTTPBadGateway(msg)
+                    result = self._make_uncached_request(url)
 
-                    result = req.json()
                     ScrapydInterface._CACHE.put(url, result, timeout=cache_time)
 
         # Check result response is successful.
