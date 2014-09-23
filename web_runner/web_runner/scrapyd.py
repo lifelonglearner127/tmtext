@@ -7,12 +7,12 @@ import time
 import urllib
 import urllib2
 
-from util import string_from_local2utc as local2utc
-
 import enum
 import pyramid.httpexceptions as exc
 import requests
 import requests.exceptions
+
+from util import string_from_local2utc as local2utc
 
 
 LOG = logging.getLogger(__name__)
@@ -141,8 +141,6 @@ class ScrapydMediator(object):
 
         return status
 
-
-
     def retrieve_job_data(self, jobid):
         """Returns a file like object with the job's result."""
         try:
@@ -241,7 +239,6 @@ class ScrapydInterface(object):
         :param projects: The list of project to query. If it is None, all
                          projects will be queried.
         """
-
         if not projects:
             status, projects = self.get_projects()
             if not status:
@@ -269,8 +266,6 @@ class ScrapydInterface(object):
                         ret[id]['status'] = status
         
         return ret
-
-
 
     def get_queues(self, projects=None):
         """Returns the scrapyd queue status.
@@ -304,8 +299,6 @@ class ScrapydInterface(object):
                     summary[status] += len(req_output[status])
                     
         return (queues, summary)
-
-
 
 
 if __name__ == '__main__':
