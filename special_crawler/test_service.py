@@ -2,6 +2,11 @@
 #
 import unittest
 from extract_walmart_data import WalmartScraper
+from extract_tesco_data import TescoScraper
+from extract_amazon_data import AmazonScraper
+from extract_wayfair_data import WayfairScraper
+from extract_pgestore_data import PGEStore
+from extract_target_data import TargetScraper
 from tests_utils import StoreLogs
 import requests
 import sys
@@ -11,6 +16,7 @@ import json
 
 # TODO: fix to work with refactored service code
 
+# Test suite that thoroughly tests returned walmart data, its integrity and correctness
 class WalmartData_test(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
@@ -277,6 +283,84 @@ class WalmartData_test(unittest.TestCase):
                     #     + "\nReviews old: " + str(response2) + ";\nReviews new: " + str(response) + "\n")
 
     # # def test_anchors_notnull(self)
+    
+# Generally test the service, for all available sites
+class ServiceSimpleTest(unittest.TestCase):
+
+    def __init__(self, *args, **kwargs):
+        super(ServiceSimpleTest, self).__init__(*args, **kwargs)
+
+        # service address
+        self.address = "http://localhost/get_data?url=%s"
+
+    # test all keys are in the response for simple (all-data) request for walmart
+    def test_walmart_alldata(self):
+        url = "http://www.walmart.com/ip/34335838"
+        response = requests.get(self.address % url).json()
+        print response
+
+        DATA_TYPES = WalmartScraper.DATA_TYPES.keys() + WalmartScraper.DATA_TYPES_SPECIAL.keys()
+
+        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))
+
+    # test all keys are in the response for simple (all-data) request for tesco
+    def test_tesco_alldata(self):
+        url = "http://www.tesco.com/direct/lindam-adjustable-back-seat-mirror/211-3189.prd"
+        response = requests.get(self.address % url).json()
+        print response
+
+        DATA_TYPES = TescoScraper.DATA_TYPES.keys() + TescoScraper.DATA_TYPES_SPECIAL.keys()
+
+        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))
+
+    # test all keys are in the response for simple (all-data) request for amazon
+    def test_amazon_alldata(self):
+        url = "http://www.amazon.com/dp/product/B0000AUWQ4"
+        response = requests.get(self.address % url).json()
+        print response
+
+        DATA_TYPES = AmazonScraper.DATA_TYPES.keys() + AmazonScraper.DATA_TYPES_SPECIAL.keys()
+
+        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
+
+    # test all keys are in the response for simple (all-data) request for wayfair
+    def test_wayfair_alldata(self):
+        url = "http://www.wayfair.com/daily-sales/p/Yard-Clean-Up-Essentials-Eden-Storage-Bench-in-Beige~KTR1108~E13616.html"
+        response = requests.get(self.address % url).json()
+        print response
+
+        DATA_TYPES = WayfairScraper.DATA_TYPES.keys() + WayfairScraper.DATA_TYPES_SPECIAL.keys()
+
+        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
+
+    # test all keys are in the response for simple (all-data) request for pgestore
+    def test_pgestore_alldata(self):
+        url = "http://www.pgestore.com/health/oral-care/toothpaste/crest-pro-health-cinnamon-toothpaste-6-oz/037000062240,default,pd.html"
+        response = requests.get(self.address % url).json()
+        print response
+
+        DATA_TYPES = PGEStore.DATA_TYPES.keys() + PGEStore.DATA_TYPES_SPECIAL.keys()
+
+        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
+
+    # # test all keys are in the response for simple (all-data) request for target
+    # def test_target_alldata(self):
+    #     url = "http://www.target.com/p/iphone-6-plus-16gb-gold-verizon-with-2-year-contract/-/A-16481467#prodSlot=_1_1"
+    #     response = requests.get(self.address % url).json()
+    #     print response
+
+    #     DATA_TYPES = TargetScraper.DATA_TYPES.keys() + TargetScraper.DATA_TYPES_SPECIAL.keys()
+
+    #     self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
+
+    def test_pgestore_alldata(self):
+        url = "http://www.pgestore.com/health/oral-care/toothpaste/crest-pro-health-cinnamon-toothpaste-6-oz/037000062240,default,pd.html"
+        response = requests.get(self.address % url).json()
+        print response
+
+        DATA_TYPES = PGEStore.DATA_TYPES.keys() + PGEStore.DATA_TYPES_SPECIAL.keys()
+
+        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
 
 
 if __name__=='__main__':
