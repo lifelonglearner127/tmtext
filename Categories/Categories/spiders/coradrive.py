@@ -77,7 +77,7 @@ class SearsSpider(BaseSpider):
 
         # get partial list from previous function (containing departments)
         items = response.meta['items']
-        root_url = "http://www.sears.com"
+        root_url = "http://www.coradrive.fr/"
 
         for link in links:
             item = CategoryItem()
