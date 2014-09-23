@@ -75,16 +75,23 @@ def command_start_view(request):
         )
 
     command_name = request.path.strip('/')
-    id = request.route_path("command pending jobs", name=cfg_template.name,
-                            jobid=encode_ids(spider_job_ids),
-                            _query=request.params)
+    id = request.route_path(
+        "command pending jobs",
+        name=cfg_template.name,
+        jobid=encode_ids(spider_job_ids),
+        _query=request.params,
+    )
 
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
     dbinterf.new_command(
-        command_name, dict(request.params), spider_job_ids, request.remote_addr,
-        id=id)
+        command_name,
+        dict(request.params),
+        spider_job_ids,
+        request.remote_addr,
+        id=id,
+    )
     dbinterf.close()
 
     raise exc.HTTPFound(
@@ -132,8 +139,8 @@ def command_pending(request):
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
-    dbinterf.new_request_event(web_runner.db.COMMAND_STATUS,
-                               job_ids, request.remote_addr)
+    dbinterf.new_request_event(
+        web_runner.db.COMMAND_STATUS, job_ids, request.remote_addr)
     dbinterf.close()
 
     if running:
@@ -174,8 +181,8 @@ def command_result(request):
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
-    dbinterf.new_request_event(web_runner.db.COMMAND_RESULT,
-                               job_ids, request.remote_addr)
+    dbinterf.new_request_event(
+        web_runner.db.COMMAND_RESULT, job_ids, request.remote_addr)
     dbinterf.close()
 
     args = dict(request.params)
@@ -222,7 +229,6 @@ def spider_start_view(request):
         id = request.route_path("spider pending jobs", 
                                 project=cfg.project_name,
                                 spider=cfg.spider_name, jobid=jobid)
-        
 
         # Storing the request in the internal DB.
         dbinterf = web_runner.db.DbInterface(
@@ -262,16 +268,18 @@ def spider_pending_view(request):
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         request.registry.settings['db_filename'], recreate=False)
-    dbinterf.new_request_event(web_runner.db.SPIDER_STATUS,
-                               (job_id,), request.remote_addr)
+    dbinterf.new_request_event(
+        web_runner.db.SPIDER_STATUS, (job_id,), request.remote_addr)
     dbinterf.close()
 
     if status is ScrapydMediator.JobStatus.finished:
         raise exc.HTTPFound(
-            location=request.route_path("spider job results",
-                                        project=project_name,
-                                        spider=spider_name,
-                                        jobid=job_id),
+            location=request.route_path(
+                "spider job results",
+                project=project_name,
+                spider=spider_name,
+                jobid=job_id,
+            ),
             detail="Job finished.")
 
     state = 'Job state unknown.'
@@ -305,6 +313,7 @@ def spider_results_view(request):
     except ScrapydJobException as e:
         raise exc.HTTPBadGateway(
             detail="The content could not be retrieved: %s" % e)
+
 
 @view_config(route_name='status', request_method='GET', renderer='json')
 def status(request):
@@ -375,7 +384,6 @@ def last_request_status(request):
     return reqs
 
 
-
 @view_config(route_name='request history', request_method='GET',
              renderer='json')
 def request_history(request):
@@ -441,9 +449,10 @@ def request_history(request):
     scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
     jobids_status = scrapyd_interf.get_jobs()
 
-    try:   
-        jobids_info = {jobid: jobids_status[jobid]  # Get only the jobids of 
-            for jobid in request_info['jobids']}    # the current request
+    try:
+        # Get only the jobids of the current request.
+        jobids_info = {jobid: jobids_status[jobid]
+                       for jobid in request_info['jobids']}
     except KeyError:
         jobids_info = None
     
@@ -455,11 +464,12 @@ def request_history(request):
         history = None
         status = UNAVAILABLE
 
-    info = {'request': request_info,
-            'jobids_info': jobids_info,
-            'history': history,
-            'status': status}
-
+    info = {
+        'request': request_info,
+        'jobids_info': jobids_info,
+        'history': history,
+        'status': status,
+    }
     return info
 
 
@@ -491,7 +501,6 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
 
         def setDate(self, dateStr):
             self.date = string2datetime(dateStr)
-    
 
     history = []
     # Insert starting log
@@ -511,7 +520,7 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
             start_log = Log()
             start_log.setDate(jobids_info[jobid]['start_time'])
             start_log.comment = 'Spider %s started. \nid=%s' % \
-              (jobids_info[jobid]['spider'], jobid)
+                (jobids_info[jobid]['spider'], jobid)
             history.append(start_log)
 
             # Log when spider finished
@@ -525,7 +534,7 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
             history.append(finish_log)
 
             # set what is the date of the last finished spider
-            if (date_last_finished_spider == None or
+            if (date_last_finished_spider is None or
                         date_last_finished_spider < finish_log.date):
                 date_last_finished_spider = finish_log.date
         else:
