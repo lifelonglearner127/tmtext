@@ -188,6 +188,65 @@ class ScrapydInterface(object):
     def __init__(self, url):
         self.scrapyd_url = url
 
+    def _make_request(self, resource, fresh=False, cache_time=None, **query):
+        """Makes a request to the configured Scrapyd instance for the resource
+        passing the given query string.
+
+        :param resource: The resource to request.
+        :type resource: unicode
+        :param fresh: Whether to invalidate the cache.
+        :type fresh: bool
+        :param cache_time: For how many seconds a fresh response would be valid.
+        :type cache_time: int
+        :param query: The query string parameters.
+        :return: The structure from the decoded JSON.
+        """
+        url = urlparse.urljoin(self.scrapyd_url, resource)
+        if query:
+            url += '?' + urllib.urlencode(query)
+
+        if fresh:
+            LOG.debug("Invalidated cache for %r.", url)
+            ScrapydInterface._CACHE.invalidate(url)
+            result = None
+        else:
+            result = ScrapydInterface._CACHE.get(url)
+
+        if result is not None:
+            LOG.debug("Cache hit for %r.", url)
+        else:
+            LOG.debug("Cache miss for %r.", url)
+            # Will get exclusive access to the cache.
+            with ScrapydInterface._CACHE_LOCK:
+                # Before we got access, it may have been populated.
+                result = ScrapydInterface._CACHE.get(url)
+                if result is not None:
+                    LOG.debug("Cache hit after locking for %r.", url)
+                else:
+                    try:
+                        req = requests.get(url)
+                        LOG.debug(
+                            "Requested from scrapyd resource %s and got: %s",
+                            resource,
+                            req.content,
+                        )
+                    except requests.exceptions.RequestException as e:
+                        msg = "Error contacting Scrapyd: %s" % e
+                        LOG.error(msg)
+                        raise exc.HTTPBadGateway(msg)
+
+                    result = req.json()
+                    ScrapydInterface._CACHE.put(url, result, timeout=cache_time)
+
+        # Check result response is successful.
+        if result['status'].lower() != "ok":
+            LOG.error("Scrapyd was not OK: %r", result)
+            raise exc.HTTPBadGateway(
+                "Scrapyd was not OK, it was '{status}': {message}".format(
+                    **result))
+
+        return result
+
     def is_alive(self):
         """Returns whether scrapyd is alive."""
         try:
@@ -263,65 +322,6 @@ class ScrapydInterface(object):
                     jobs_by_id[job_id]['status'] = job_status
 
         return jobs_by_id
-
-    def _make_request(self, resource, fresh=False, cache_time=None, **query):
-        """Makes a request to the configured Scrapyd instance for the resource
-        passing the given query string.
-
-        :param resource: The resource to request.
-        :type resource: unicode
-        :param fresh: Whether to invalidate the cache.
-        :type fresh: bool
-        :param cache_time: For how many seconds a fresh response would be valid.
-        :type cache_time: int
-        :param query: The query string parameters.
-        :return: The structure from the decoded JSON.
-        """
-        url = urlparse.urljoin(self.scrapyd_url, resource)
-        if query:
-            url += '?' + urllib.urlencode(query)
-
-        if fresh:
-            LOG.debug("Invalidated cache for %r.", url)
-            ScrapydInterface._CACHE.invalidate(url)
-            result = None
-        else:
-            result = ScrapydInterface._CACHE.get(url)
-
-        if result is not None:
-            LOG.debug("Cache hit for %r.", url)
-        else:
-            LOG.debug("Cache miss for %r.", url)
-            # Will get exclusive access to the cache.
-            with ScrapydInterface._CACHE_LOCK:
-                # Before we got access, it may have been populated.
-                result = ScrapydInterface._CACHE.get(url)
-                if result is not None:
-                    LOG.debug("Cache hit after locking for %r.", url)
-                else:
-                    try:
-                        req = requests.get(url)
-                        LOG.debug(
-                            "Requested from scrapyd resource %s and got: %s",
-                            resource,
-                            req.content,
-                        )
-                    except requests.exceptions.RequestException as e:
-                        msg = "Error contacting Scrapyd: %s" % e
-                        LOG.error(msg)
-                        raise exc.HTTPBadGateway(msg)
-
-                    result = req.json()
-                    ScrapydInterface._CACHE.put(url, result, timeout=cache_time)
-
-        # Check result response is successful.
-        if result['status'].lower() != "ok":
-            LOG.error("Scrapyd was not OK: %r", result)
-            raise exc.HTTPBadGateway(
-                "Scrapyd was not OK, it was '{status}': {message}".format(
-                    **result))
-
-        return result
 
     def get_queues(self, projects=None):
         """Returns the scrapyd queue status.
