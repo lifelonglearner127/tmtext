@@ -273,6 +273,17 @@ class ScrapydInterface(object):
         
         return ret
 
+    def _make_request(self, resource, **query):
+        url = urlparse.urljoin(self.scrapyd_url, resource)
+        if query:
+            url += '?' + urllib.urlencode(query)
+
+        try:
+            req = requests.get(url)
+        except requests.exceptions.RequestException as e:
+            raise exc.HTTPBadGateway("Error contacting Scrapyd: %s" % e)
+        return req.json()
+
     def get_queues(self, projects=None):
         """Returns the scrapyd queue status.
 
@@ -293,13 +304,7 @@ class ScrapydInterface(object):
 
         queues = {}
         for project in projects:
-            url = '%slistjobs.json?project=%s' % (self.scrapyd_url, project)
-            try:
-                req = requests.get(url)
-            except requests.exceptions.RequestException:
-                return None
-
-            req_output = req.json()
+            req_output = self._make_request('listjobs.json', project=project)
             summary = {'running': 0, 'finished': 0, 'pending': 0}
             if req_output['status'].lower() == 'ok':
                 queues[project] = {}
