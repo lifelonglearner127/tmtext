@@ -19,6 +19,12 @@ from web_runner.util import encode_ids, decode_ids, get_request_status, \
 import web_runner.db
 import numbers
 
+# Minimum number of seconds responses are considered fresh.
+# This will be used liberally so that clients with cache will behave better.
+MIN_CACHE_FRESHNESS = 30
+
+# Cache freshness for results.
+RESULT_CACHE_FRESHNESS = 3600
 
 LOG = logging.getLogger(__name__)
 
@@ -102,7 +108,7 @@ def command_start_view(request):
 
 
 @view_config(route_name='command pending jobs', request_method='GET',
-             http_cache=1)  # Not to get hammered.
+             http_cache=MIN_CACHE_FRESHNESS)
 def command_pending(request):
     """Report on running job status."""
     name = request.matchdict['name']
@@ -157,7 +163,7 @@ def command_pending(request):
 
 
 @view_config(route_name='command job results', request_method='GET',
-             http_cache=3600)
+             http_cache=RESULT_CACHE_FRESHNESS)
 def command_result(request):
     """Report result of job."""
     name = request.matchdict['name']
@@ -255,7 +261,8 @@ def spider_start_view(request):
                 e.message))
 
 
-@view_config(route_name='spider pending jobs', request_method='GET')
+@view_config(route_name='spider pending jobs', request_method='GET',
+             http_cache=MIN_CACHE_FRESHNESS)
 def spider_pending_view(request):
     project_name = request.matchdict['project']
     spider_name = request.matchdict['spider']
@@ -291,7 +298,7 @@ def spider_pending_view(request):
 
 
 @view_config(route_name='spider job results', request_method='GET',
-             http_cache=3600)
+             http_cache=RESULT_CACHE_FRESHNESS)
 def spider_results_view(request):
     project_name = request.matchdict['project']
     spider_name = request.matchdict['spider']
@@ -315,7 +322,8 @@ def spider_results_view(request):
             detail="The content could not be retrieved: %s" % e)
 
 
-@view_config(route_name='status', request_method='GET', renderer='json')
+@view_config(route_name='status', request_method='GET', renderer='json',
+             http_cache=MIN_CACHE_FRESHNESS)
 def status(request):
     """Check the Web Runner and Scrapyd Status"""
 
@@ -349,7 +357,7 @@ def status(request):
 
 
 @view_config(route_name='last request status', request_method='GET',
-             renderer='json')
+             renderer='json', http_cache=MIN_CACHE_FRESHNESS)
 def last_request_status(request):
     """Returns the last requests requested.
 
@@ -385,7 +393,7 @@ def last_request_status(request):
 
 
 @view_config(route_name='request history', request_method='GET',
-             renderer='json')
+             renderer='json', http_cache=MIN_CACHE_FRESHNESS)
 def request_history(request):
     """Returns the history of a request
 
