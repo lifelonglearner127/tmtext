@@ -3,10 +3,10 @@ from __future__ import division, absolute_import, unicode_literals
 from itertools import repeat, starmap
 import datetime
 import logging
+import numbers
 
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
-
 import subprocess32 as subprocess
 
 from web_runner.config_util import find_command_config_from_name, \
@@ -17,7 +17,6 @@ from web_runner.scrapyd import ScrapydMediator, ScrapydInterface, \
 from web_runner.util import encode_ids, decode_ids, get_request_status, \
     string2datetime, dict_filter
 import web_runner.db
-import numbers
 
 # Minimum number of seconds responses are considered fresh.
 # This will be used liberally so that clients with cache will behave better.
