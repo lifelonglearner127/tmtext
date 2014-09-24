@@ -7,6 +7,7 @@ from extract_amazon_data import AmazonScraper
 from extract_wayfair_data import WayfairScraper
 from extract_pgestore_data import PGEStore
 from extract_target_data import TargetScraper
+from extract_bestbuy_data import BestBuyScraper
 from tests_utils import StoreLogs
 import requests
 import sys
@@ -353,12 +354,12 @@ class ServiceSimpleTest(unittest.TestCase):
 
     #     self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
 
-    def test_pgestore_alldata(self):
-        url = "http://www.pgestore.com/health/oral-care/toothpaste/crest-pro-health-cinnamon-toothpaste-6-oz/037000062240,default,pd.html"
+    def test_bestbuy_alldata(self):
+        url = "http://www.bestbuy.com/site/insignia-48-class-47-5-8-diag--led-1080p-60hz-hdtv/2563138.p?id=1219074400922&skuId=2563138"
         response = requests.get(self.address % url).json()
         print response
 
-        DATA_TYPES = PGEStore.DATA_TYPES.keys() + PGEStore.DATA_TYPES_SPECIAL.keys()
+        DATA_TYPES = BestBuyScraper.DATA_TYPES.keys() + BestBuyScraper.DATA_TYPES_SPECIAL.keys()
 
         self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
 
