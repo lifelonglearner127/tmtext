@@ -463,7 +463,7 @@ def request_history(request):
                        for jobid in request_info['jobids']}
     except KeyError:
         jobids_info = None
-    
+
     if jobids_info:
         history = _get_history(requestid, request_info, jobids_info, 
                                operations_info)
@@ -481,6 +481,7 @@ def request_history(request):
     return info
 
 
+# FIXME Move this logic to a Repository in the model.
 def _get_history(requestid, request_info, jobids_info, operations_info):
     """Build the history of a request
 
