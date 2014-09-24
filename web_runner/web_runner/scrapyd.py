@@ -332,17 +332,52 @@ class ScrapydInterface(object):
         if not projects:
             projects = self.get_projects()
 
+        summary = {'running': 0, 'finished': 0, 'pending': 0}
         queues = {}
         for project in projects:
             jobs_data = self._make_request('listjobs.json', project=project)
 
-            summary = {'running': 0, 'finished': 0, 'pending': 0}
             queues[project] = {}
             for status in ('running', 'finished', 'pending'):
                 queues[project][status] = len(jobs_data[status])
                 summary[status] += len(jobs_data[status])
 
         return queues, summary
+
+    def get_operational_status(self):
+        """Returns a structure with a operational status summary for the
+        Scrapyd instance as a dict.
+        """
+        alive = self.is_alive()
+        if not alive:
+            operational = False
+            projects = None
+            spiders = None
+            queues = None
+            summary_queues = None
+        else:
+            try:
+                operational = True
+                projects = self.get_projects()
+                spiders = {proj: self.get_spiders(proj) for proj in projects}
+                queues, summary_queues = self.get_queues(projects)
+            except exc.HTTPError:
+                operational = False
+                projects = None
+                spiders = None
+                queues = None
+                summary_queues = None
+
+        status = {
+            'scrapyd_alive': alive,
+            'scrapyd_operational': operational,
+            'scrapyd_projects': projects,
+            'spiders': spiders,
+            'queues': queues,
+            'summarized_queue': summary_queues,
+        }
+
+        return status
 
 
 # vim: set expandtab ts=4 sw=4:

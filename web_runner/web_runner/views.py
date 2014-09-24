@@ -3,10 +3,10 @@ from __future__ import division, absolute_import, unicode_literals
 from itertools import repeat, starmap
 import datetime
 import logging
+import numbers
 
 import pyramid.httpexceptions as exc
 from pyramid.view import view_config
-
 import subprocess32 as subprocess
 
 from web_runner.config_util import find_command_config_from_name, \
@@ -17,8 +17,13 @@ from web_runner.scrapyd import ScrapydMediator, ScrapydInterface, \
 from web_runner.util import encode_ids, decode_ids, get_request_status, \
     string2datetime, dict_filter
 import web_runner.db
-import numbers
 
+# Minimum number of seconds responses are considered fresh.
+# This will be used liberally so that clients with cache will behave better.
+MIN_CACHE_FRESHNESS = 30
+
+# Cache freshness for results.
+RESULT_CACHE_FRESHNESS = 3600
 
 LOG = logging.getLogger(__name__)
 
@@ -75,16 +80,23 @@ def command_start_view(request):
         )
 
     command_name = request.path.strip('/')
-    id = request.route_path("command pending jobs", name=cfg_template.name,
-                            jobid=encode_ids(spider_job_ids),
-                            _query=request.params)
+    id = request.route_path(
+        "command pending jobs",
+        name=cfg_template.name,
+        jobid=encode_ids(spider_job_ids),
+        _query=request.params,
+    )
 
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
     dbinterf.new_command(
-        command_name, dict(request.params), spider_job_ids, request.remote_addr,
-        id=id)
+        command_name,
+        dict(request.params),
+        spider_job_ids,
+        request.remote_addr,
+        id=id,
+    )
     dbinterf.close()
 
     raise exc.HTTPFound(
@@ -95,7 +107,7 @@ def command_start_view(request):
 
 
 @view_config(route_name='command pending jobs', request_method='GET',
-             http_cache=1)  # Not to get hammered.
+             http_cache=MIN_CACHE_FRESHNESS)
 def command_pending(request):
     """Report on running job status."""
     name = request.matchdict['name']
@@ -132,8 +144,8 @@ def command_pending(request):
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
-    dbinterf.new_request_event(web_runner.db.COMMAND_STATUS,
-                               job_ids, request.remote_addr)
+    dbinterf.new_request_event(
+        web_runner.db.COMMAND_STATUS, job_ids, request.remote_addr)
     dbinterf.close()
 
     if running:
@@ -150,7 +162,7 @@ def command_pending(request):
 
 
 @view_config(route_name='command job results', request_method='GET',
-             http_cache=3600)
+             http_cache=RESULT_CACHE_FRESHNESS)
 def command_result(request):
     """Report result of job."""
     name = request.matchdict['name']
@@ -174,8 +186,8 @@ def command_result(request):
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         settings['db_filename'], recreate=False)
-    dbinterf.new_request_event(web_runner.db.COMMAND_RESULT,
-                               job_ids, request.remote_addr)
+    dbinterf.new_request_event(
+        web_runner.db.COMMAND_RESULT, job_ids, request.remote_addr)
     dbinterf.close()
 
     args = dict(request.params)
@@ -222,7 +234,6 @@ def spider_start_view(request):
         id = request.route_path("spider pending jobs", 
                                 project=cfg.project_name,
                                 spider=cfg.spider_name, jobid=jobid)
-        
 
         # Storing the request in the internal DB.
         dbinterf = web_runner.db.DbInterface(
@@ -249,7 +260,8 @@ def spider_start_view(request):
                 e.message))
 
 
-@view_config(route_name='spider pending jobs', request_method='GET')
+@view_config(route_name='spider pending jobs', request_method='GET',
+             http_cache=MIN_CACHE_FRESHNESS)
 def spider_pending_view(request):
     project_name = request.matchdict['project']
     spider_name = request.matchdict['spider']
@@ -262,16 +274,18 @@ def spider_pending_view(request):
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
         request.registry.settings['db_filename'], recreate=False)
-    dbinterf.new_request_event(web_runner.db.SPIDER_STATUS,
-                               (job_id,), request.remote_addr)
+    dbinterf.new_request_event(
+        web_runner.db.SPIDER_STATUS, (job_id,), request.remote_addr)
     dbinterf.close()
 
     if status is ScrapydMediator.JobStatus.finished:
         raise exc.HTTPFound(
-            location=request.route_path("spider job results",
-                                        project=project_name,
-                                        spider=spider_name,
-                                        jobid=job_id),
+            location=request.route_path(
+                "spider job results",
+                project=project_name,
+                spider=spider_name,
+                jobid=job_id,
+            ),
             detail="Job finished.")
 
     state = 'Job state unknown.'
@@ -283,7 +297,7 @@ def spider_pending_view(request):
 
 
 @view_config(route_name='spider job results', request_method='GET',
-             http_cache=3600)
+             http_cache=RESULT_CACHE_FRESHNESS)
 def spider_results_view(request):
     project_name = request.matchdict['project']
     spider_name = request.matchdict['spider']
@@ -306,36 +320,21 @@ def spider_results_view(request):
         raise exc.HTTPBadGateway(
             detail="The content could not be retrieved: %s" % e)
 
-@view_config(route_name='status', request_method='GET', renderer='json')
+
+@view_config(route_name='status', request_method='GET', renderer='json',
+             http_cache=MIN_CACHE_FRESHNESS)
 def status(request):
     """Check the Web Runner and Scrapyd Status"""
 
     settings = request.registry.settings
+
     scrapyd_baseurl = settings['spider._scrapyd.base_url']
-
     scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
-    alive = scrapyd_interf.is_alive()
-    (operational, projects) = scrapyd_interf.get_projects()
 
-    # Get the spiders for all projects
-    if alive and operational:
-        spiders = {proj: scrapyd_interf.get_spiders(proj) for proj in projects}
-        (queues, summary_queues) = scrapyd_interf.get_queues(projects)
-    else:
-        spiders = None
-
-    output = {
-        'scrapyd_alive': alive,
-        'scrapyd_operational': operational,
-        'scrapyd_projects': projects,
-        'spiders': spiders,
-        'queues': queues,
-        'summarized_queue': summary_queues,
-        'webRunner': True,
-    }
+    output = scrapyd_interf.get_operational_status()
 
     if request.params:
-        items = [ x.split(':') for x in request.params.getall('return') ]
+        items = [x.split(':', 1) for x in request.params.getall('return')]
         output = dict_filter(output, items)
 
         if 'application/json' in request.accept:
@@ -346,19 +345,18 @@ def status(request):
                 raise exc.exception_response(406)
             else:
                 output = output.values()[0]
-                if not isinstance(output, numbers.Number) and \
-                  type(output) != type('a'):
+                if not isinstance(output, numbers.Number) \
+                        and type(output) != type('a'):
                     raise exc.exception_response(406)
                 
         else:
             raise exc.exception_response(406)
-        
 
     return output
 
 
 @view_config(route_name='last request status', request_method='GET',
-             renderer='json')
+             renderer='json', http_cache=MIN_CACHE_FRESHNESS)
 def last_request_status(request):
     """Returns the last requests requested.
 
@@ -393,9 +391,8 @@ def last_request_status(request):
     return reqs
 
 
-
 @view_config(route_name='request history', request_method='GET',
-             renderer='json')
+             renderer='json', http_cache=MIN_CACHE_FRESHNESS)
 def request_history(request):
     """Returns the history of a request
 
@@ -459,12 +456,13 @@ def request_history(request):
     scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
     jobids_status = scrapyd_interf.get_jobs()
 
-    try:   
-        jobids_info = {jobid: jobids_status[jobid]  # Get only the jobids of 
-            for jobid in request_info['jobids']}    # the current request
+    try:
+        # Get only the jobids of the current request.
+        jobids_info = {jobid: jobids_status[jobid]
+                       for jobid in request_info['jobids']}
     except KeyError:
         jobids_info = None
-    
+
     if jobids_info:
         history = _get_history(requestid, request_info, jobids_info, 
                                operations_info)
@@ -473,14 +471,16 @@ def request_history(request):
         history = None
         status = UNAVAILABLE
 
-    info = {'request': request_info,
-            'jobids_info': jobids_info,
-            'history': history,
-            'status': status}
-
+    info = {
+        'request': request_info,
+        'jobids_info': jobids_info,
+        'history': history,
+        'status': status,
+    }
     return info
 
 
+# FIXME Move this logic to a Repository in the model.
 def _get_history(requestid, request_info, jobids_info, operations_info):
     """Build the history of a request
 
@@ -509,7 +509,6 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
 
         def setDate(self, dateStr):
             self.date = string2datetime(dateStr)
-    
 
     history = []
     # Insert starting log
@@ -529,7 +528,7 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
             start_log = Log()
             start_log.setDate(jobids_info[jobid]['start_time'])
             start_log.comment = 'Spider %s started. \nid=%s' % \
-              (jobids_info[jobid]['spider'], jobid)
+                (jobids_info[jobid]['spider'], jobid)
             history.append(start_log)
 
             # Log when spider finished
@@ -543,7 +542,7 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
             history.append(finish_log)
 
             # set what is the date of the last finished spider
-            if (date_last_finished_spider == None or
+            if (date_last_finished_spider is None or
                         date_last_finished_spider < finish_log.date):
                 date_last_finished_spider = finish_log.date
         else:
