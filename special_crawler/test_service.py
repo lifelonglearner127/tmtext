@@ -311,30 +311,74 @@ class ServiceSimpleTest(unittest.TestCase):
         # verify all keys are in the output structure
         self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))
 
+    # template function:
+    # test requests for specific data (one type at once):
+    # test the expected key is in the returned object (instead of an error message for example)
+    def _test_specificdata(self, site, url):
+        # initialize the scraper object for this specific site
+        scraper = SUPPORTED_SITES[site]
+
+        # all data types (keys) for this scraper
+        DATA_TYPES = scraper.DATA_TYPES.keys() + scraper.DATA_TYPES_SPECIAL.keys()
+
+        for data_type in DATA_TYPES:
+            request_url = (self.address % url) + ("&data=%s" % data_type)
+            print request_url
+            response = requests.get(request_url).json()
+
+            print response
+
+            self.assertEqual(response.keys(), [data_type])
+
     # test all keys are in the response for simple (all-data) request for walmart
     # (using template function)
     def test_walmart_alldata(self):
         self._test_alldata("walmart", "http://www.walmart.com/ip/34335838")
+
+    # test requests for each specific type of data for walmart
+    # (using template function)
+    def test_walmart_specificdata(self):
+        self._test_specificdata("walmart", "http://www.walmart.com/ip/34335838")
 
     # test all keys are in the response for simple (all-data) request for tesco
     # (using template function)
     def test_tesco_alldata(self):
         self._test_alldata("tesco", "http://www.tesco.com/direct/lindam-adjustable-back-seat-mirror/211-3189.prd")
 
+    # test requests for each specific type of data for tesco
+    # (using template function)
+    def test_tesco_specificdata(self):
+        self._test_specificdata("tesco", "http://www.tesco.com/direct/lindam-adjustable-back-seat-mirror/211-3189.prd")
+
     # test all keys are in the response for simple (all-data) request for amazon
     # (using template function)
     def test_amazon_alldata(self):
         self._test_alldata("amazon", "http://www.amazon.com/dp/product/B0000AUWQ4")
+
+    # test requests for each specific type of data for amazon
+    # (using template function)
+    def test_amazon_specificdata(self):
+        self._test_specificdata("amazon", "http://www.amazon.com/dp/product/B0000AUWQ4")
 
     # test all keys are in the response for simple (all-data) request for wayfair
     # (using template function)
     def test_wayfair_alldata(self):
         self._test_alldata("wayfair", "http://www.wayfair.com/daily-sales/p/Yard-Clean-Up-Essentials-Eden-Storage-Bench-in-Beige~KTR1108~E13616.html")
 
+    # test requests for each specific type of data for wayfair
+    # (using template function)
+    def test_wayfair_specificdata(self):
+        self._test_specificdata("wayfair", "http://www.wayfair.com/daily-sales/p/Yard-Clean-Up-Essentials-Eden-Storage-Bench-in-Beige~KTR1108~E13616.html")
+
     # test all keys are in the response for simple (all-data) request for pgestore
     # (using template function)
     def test_pgestore_alldata(self):
         self._test_alldata("pgestore", "http://www.pgestore.com/health/oral-care/toothpaste/crest-pro-health-cinnamon-toothpaste-6-oz/037000062240,default,pd.html")
+
+    # test requests for each specific type of data for pgestore
+    # (using template function)
+    def test_pgestore_specificdata(self):
+        self._test_specificdata("pgestore", "http://www.pgestore.com/health/oral-care/toothpaste/crest-pro-health-cinnamon-toothpaste-6-oz/037000062240,default,pd.html")
 
     # # test all keys are in the response for simple (all-data) request for target
     # # (using template function)
@@ -346,10 +390,10 @@ class ServiceSimpleTest(unittest.TestCase):
     def test_bestbuy_alldata(self):
         self._test_alldata("bestbuy", "http://www.bestbuy.com/site/insignia-48-class-47-5-8-diag--led-1080p-60hz-hdtv/2563138.p?id=1219074400922&skuId=2563138")
 
-    # # test requests for specific data for walmart (one or many types combined):
-    # # test the expected key is in the returned object (instead of an error message for example)
-    # def test_walmart_specificdata(self):
-
+    # test requests for each specific type of data for bestbuy
+    # (using template function)
+    def test_bestbuy_specificdata(self):
+        self._test_specificdata("bestbuy", "http://www.bestbuy.com/site/insignia-48-class-47-5-8-diag--led-1080p-60hz-hdtv/2563138.p?id=1219074400922&skuId=2563138")
 
 if __name__=='__main__':
     unittest.main()
