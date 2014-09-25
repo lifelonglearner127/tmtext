@@ -100,10 +100,14 @@ class Scraper():
 
         results_dict = {}
 
+        ALL_DATA_TYPES = {}
+        ALL_DATA_TYPES.update(self.DATA_TYPES)
+        ALL_DATA_TYPES.update(self.DATA_TYPES_SPECIAL)
+
         for info in info_type_list:
 
             try:
-                results = self.DATA_TYPES[info](self)
+                results = ALL_DATA_TYPES[info](self)
             except IndexError, e:
                 sys.stderr.write("ERROR: No " + info + " for " + self.product_page_url + ":\n" + str(e) + "\n")
                 results = None
