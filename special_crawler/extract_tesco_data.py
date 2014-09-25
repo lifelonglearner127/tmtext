@@ -36,7 +36,9 @@ class TescoScraper(Scraper):
         """
 
         m = re.match("^http://www.tesco.com/direct/[0-9a-zA-Z-]+/[0-9-]+\.prd$", self.product_page_url)
-        return not not m
+        n = re.match("^http://www.tesco.com/.*$", self.product_page_url)
+        
+        return (not not m) or (not not n)
     
     # TODO:
     #      better way of extracting id now that URL format is more permissive
@@ -265,6 +267,17 @@ class TescoScraper(Scraper):
         #the last value is the product itself
         return all[:-1]
     
+    # returns departments encapsulated in a categories object
+    def _categories(self):
+        categories = {}
+        categories["super_dept"] = self._super_dept()
+        categories["dept"] = self._dept()
+        categories["full"] = self._all_depts()
+        categories["hostname"] = 'Tesco'
+        
+        return categories
+    
+    
     # return True if there is a no-image image and False otherwise
     # Certain products have an image that indicates "there is no image available"
     # a hash of these "no-images" is saved to a json file and new images are compared to see if they're the same
@@ -390,16 +403,21 @@ class TescoScraper(Scraper):
         
         "upc" : _upc,\
         "product_images" : _product_images, \
+        
+        "categories" : _categories, \
         "dept" : _dept,\
         "super_dept" : _super_dept,\
         "all_depts" : _all_depts,\
+        
         "no_image" : _no_image,\
         
         "product_in_stock" : _product_in_stock, \
         "in_stores_only" : _in_stores_only, \
         
+        
         "load_time": None\
         }
+
 
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data

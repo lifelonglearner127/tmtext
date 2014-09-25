@@ -3,7 +3,7 @@ import unittest
 from pyramid import testing
 import pyramid.httpexceptions as exc
 
-from .views import spider_start_view
+from web_runner.views import spider_start_view
 
 
 class SpiderViewTests(unittest.TestCase):
