@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import with_statement
-from  fabric.api import env, run, local, sudo, settings, prefix
+from  fabric.api import cd, env, run, local, sudo, settings, prefix
 from fabric.contrib.console import confirm
 from fabric.utils import puts
 from fabric.colors import red, green
@@ -337,8 +337,6 @@ def _configure_web_runner_web():
         run("tmux send-keys -t webrunner:4 'exit()' C-m")
 
 
-
-
 def configure():
     puts(green('Configuring the servers'))
 
@@ -357,12 +355,17 @@ def _install_web_runner():
         venv_webrunner_activate)
     run("tmux send-keys -t webrunner:1 'cd %s' C-m" % repo_path)
     run("tmux send-keys -t webrunner:1 'cd web_runner' C-m")
+    run("tmux send-keys -t webrunner:1 'rm -fr build dist' C-m")
     run("tmux send-keys -t webrunner:1 'python setup.py bdist_wheel' C-m")
     run("tmux send-keys -t webrunner:1 '/usr/bin/yes | pip uninstall web-runner' C-m")
 
     with virtualenv(VENV_WEB_RUNNER):
-        run('cd %s/web_runner && python setup.py bdist_wheel' % repo_path)
-        run('cd %s/web_runner && pip install dist/web_runner-*.whl' % repo_path)
+        with cd("%s/web_runner" % repo_path):
+            # "build" has to be removed since it accumulates files.
+            # "dist" has to be removed as it accumulates versions.
+            run("rm -fr build dist")
+            run('python setup.py bdist_wheel')
+            run('pip install dist/web_runner-*.whl')
 
 
 def install():

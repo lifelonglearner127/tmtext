@@ -5,14 +5,14 @@ import mock
 from pyspecs import given, when, then, and_, the, finish
 
 from web_runner.config_util import SpiderConfig
-from web_runner.scrapyd import ScrapydMediator
+from web_runner.scrapyd import ScrapydJobHelper
 
 
 with given.a_configured_scrapyd_mediator:
-    mediator = ScrapydMediator(
+    mediator = ScrapydJobHelper(
         {
-            ScrapydMediator.SCRAPYD_BASE_URL: 'scrapyd url',
-            ScrapydMediator.SCRAPYD_ITEMS_PATH: 'scrapyd items path',
+            ScrapydJobHelper.SCRAPYD_BASE_URL: 'scrapyd url',
+            ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path',
         },
         SpiderConfig('spider name', 'spider project')
     )
@@ -77,7 +77,7 @@ with given.a_configured_scrapyd_mediator:
                 )
 
             with and_.it_should_return_status_of_correct_job:
-                the(status).should.be(ScrapydMediator.JobStatus.running)
+                the(status).should.be(ScrapydJobHelper.JobStatus.running)
 
 
 if __name__ == '__main__':

@@ -42,7 +42,7 @@ class ScrapydJobStartError(ScrapydJobException):
         self.status = status
 
 
-class ScrapydMediator(object):
+class ScrapydJobHelper(object):
 
     SCRAPYD_BASE_URL = 'spider._scrapyd.base_url'
 
@@ -60,8 +60,8 @@ class ScrapydMediator(object):
         if spider_config is None:
             raise exc.HTTPNotFound("Unknown resource.")
 
-        self.scrapyd_base_url = settings[ScrapydMediator.SCRAPYD_BASE_URL]
-        self.scrapyd_items_path = settings[ScrapydMediator.SCRAPYD_ITEMS_PATH]
+        self.scrapyd_base_url = settings[ScrapydJobHelper.SCRAPYD_BASE_URL]
+        self.scrapyd_items_path = settings[ScrapydJobHelper.SCRAPYD_ITEMS_PATH]
 
         self.config = spider_config
 
@@ -97,7 +97,7 @@ class ScrapydMediator(object):
 
         # Wait until the job appears in the list of jobs.
         queue_status = self.report_on_job_with_retry(jobid, timeout=timeout)
-        if queue_status == ScrapydMediator.JobStatus.unknown:
+        if queue_status == ScrapydJobHelper.JobStatus.unknown:
             raise ScrapydJobStartError(
                 "ok",
                 "Timeout on waiting for Scrapyd to list job '%s'." % jobid,
@@ -117,33 +117,33 @@ class ScrapydMediator(object):
                     **response))
 
         if any(job_desc['id'] == jobid for job_desc in response['finished']):
-            status = ScrapydMediator.JobStatus.finished
+            status = ScrapydJobHelper.JobStatus.finished
         elif any(job_desc['id'] == jobid for job_desc in response['pending']):
-            status = ScrapydMediator.JobStatus.pending
+            status = ScrapydJobHelper.JobStatus.pending
         elif any(job_desc['id'] == jobid for job_desc in response['running']):
-            status = ScrapydMediator.JobStatus.running
+            status = ScrapydJobHelper.JobStatus.running
         elif os.path.exists(self.retrieve_job_data_fn(jobid)):
             LOG.warn("Scrapyd doesn't know the job but the file is present.")
-            status = ScrapydMediator.JobStatus.finished
+            status = ScrapydJobHelper.JobStatus.finished
         else:
-            status = ScrapydMediator.JobStatus.unknown
+            status = ScrapydJobHelper.JobStatus.unknown
 
         return status
 
     def report_on_job_with_retry(self, jobid, timeout=1.0):
         """Returns the status of a job."""
-        retry_count = 1 + timeout // ScrapydMediator._VERIFICATION_DELAY
+        retry_count = 1 + timeout // ScrapydJobHelper._VERIFICATION_DELAY
         for _ in range(int(retry_count)):
             status = self.report_on_job(jobid)
-            if status != ScrapydMediator.JobStatus.unknown:
+            if status != ScrapydJobHelper.JobStatus.unknown:
                 break
 
             LOG.debug(
                 "Job %s not ready. Waiting %g before retrying.",
                 jobid,
-                ScrapydMediator._VERIFICATION_DELAY,
+                ScrapydJobHelper._VERIFICATION_DELAY,
             )
-            time.sleep(ScrapydMediator._VERIFICATION_DELAY)
+            time.sleep(ScrapydJobHelper._VERIFICATION_DELAY)
 
         return status
 
@@ -179,8 +179,8 @@ class ScrapydMediator(object):
         return response
 
 
-class ScrapydInterface(object):
-    """Interface to Scrapyd."""
+class Scrapyd(object):
+    """Class to interact with Scrapyd."""
 
     _CACHE = repoze.lru.ExpiringLRUCache(100, 10)
     _CACHE_LOCK = thread.allocate_lock()
@@ -221,25 +221,25 @@ class ScrapydInterface(object):
 
         if fresh:
             LOG.debug("Invalidated cache for %r.", url)
-            ScrapydInterface._CACHE.invalidate(url)
+            Scrapyd._CACHE.invalidate(url)
             result = None
         else:
-            result = ScrapydInterface._CACHE.get(url)
+            result = Scrapyd._CACHE.get(url)
 
         if result is not None:
             LOG.debug("Cache hit for %r.", url)
         else:
             LOG.debug("Cache miss for %r.", url)
             # Will get exclusive access to the cache.
-            with ScrapydInterface._CACHE_LOCK:
+            with Scrapyd._CACHE_LOCK:
                 # Before we got access, it may have been populated.
-                result = ScrapydInterface._CACHE.get(url)
+                result = Scrapyd._CACHE.get(url)
                 if result is not None:
                     LOG.debug("Cache hit after locking for %r.", url)
                 else:
                     result = self._make_uncached_request(url)
 
-                    ScrapydInterface._CACHE.put(url, result, timeout=cache_time)
+                    Scrapyd._CACHE.put(url, result, timeout=cache_time)
 
         # Check result response is successful.
         if result['status'].lower() != "ok":
