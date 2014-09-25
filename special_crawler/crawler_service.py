@@ -9,7 +9,7 @@ from extract_wayfair_data import WayfairScraper
 from extract_bestbuy_data import BestBuyScraper
 from extract_kmart_data import KMartScraper
 from extract_target_data import TargetScraper
-
+from extract_ozon_data import OzonScraper
 
 
 
@@ -30,7 +30,8 @@ SUPPORTED_SITES = {"walmart" : WalmartScraper,
                    "wayfair" : WayfairScraper,
                    "bestbuy" : BestBuyScraper,
                    # "kmart" : KMartScraper,
-                   # "target" : TargetScraper
+                   # "target" : TargetScraper,
+                   "ozon" : OzonScraper
                    }
 
 # add logger
