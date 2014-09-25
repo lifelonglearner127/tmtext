@@ -9,7 +9,7 @@ import unittest
 import mock
 import pyramid.httpexceptions as exc
 
-from web_runner.scrapyd import ScrapydInterface
+from web_runner.scrapyd import Scrapyd
 
 
 logging.basicConfig(level=logging.FATAL)
@@ -29,9 +29,9 @@ class ScrapydInterfaceTest(unittest.TestCase):
 
     def setUp(self):
         # Always clear the cache so that tests are independent.
-        ScrapydInterface._CACHE.clear()
+        Scrapyd._CACHE.clear()
 
-        self.subject = ScrapydInterface(ScrapydInterfaceTest.URL)
+        self.subject = Scrapyd(ScrapydInterfaceTest.URL)
 
     def test_when_status_is_not_ok_then_it_should_report_an_error(self):
         with mock.patch('web_runner.scrapyd.requests') as mock_requests:

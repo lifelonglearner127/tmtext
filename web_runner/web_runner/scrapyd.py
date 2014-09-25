@@ -179,7 +179,7 @@ class ScrapydJobHelper(object):
         return response
 
 
-class ScrapydInterface(object):
+class Scrapyd(object):
     """Interface to Scrapyd."""
 
     _CACHE = repoze.lru.ExpiringLRUCache(100, 10)
@@ -221,25 +221,25 @@ class ScrapydInterface(object):
 
         if fresh:
             LOG.debug("Invalidated cache for %r.", url)
-            ScrapydInterface._CACHE.invalidate(url)
+            Scrapyd._CACHE.invalidate(url)
             result = None
         else:
-            result = ScrapydInterface._CACHE.get(url)
+            result = Scrapyd._CACHE.get(url)
 
         if result is not None:
             LOG.debug("Cache hit for %r.", url)
         else:
             LOG.debug("Cache miss for %r.", url)
             # Will get exclusive access to the cache.
-            with ScrapydInterface._CACHE_LOCK:
+            with Scrapyd._CACHE_LOCK:
                 # Before we got access, it may have been populated.
-                result = ScrapydInterface._CACHE.get(url)
+                result = Scrapyd._CACHE.get(url)
                 if result is not None:
                     LOG.debug("Cache hit after locking for %r.", url)
                 else:
                     result = self._make_uncached_request(url)
 
-                    ScrapydInterface._CACHE.put(url, result, timeout=cache_time)
+                    Scrapyd._CACHE.put(url, result, timeout=cache_time)
 
         # Check result response is successful.
         if result['status'].lower() != "ok":

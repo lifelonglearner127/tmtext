@@ -12,7 +12,7 @@ import subprocess32 as subprocess
 from web_runner.config_util import find_command_config_from_name, \
     find_command_config_from_path, find_spider_config_from_path, SpiderConfig, \
     render_spider_config
-from web_runner.scrapyd import ScrapydJobHelper, ScrapydInterface, \
+from web_runner.scrapyd import ScrapydJobHelper, Scrapyd, \
     ScrapydJobStartError, ScrapydJobException
 from web_runner.util import encode_ids, decode_ids, get_request_status, \
     string2datetime, dict_filter
@@ -329,7 +329,7 @@ def status(request):
     settings = request.registry.settings
 
     scrapyd_baseurl = settings['spider._scrapyd.base_url']
-    scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
+    scrapyd_interf = Scrapyd(scrapyd_baseurl)
 
     output = scrapyd_interf.get_operational_status()
 
@@ -380,7 +380,7 @@ def last_request_status(request):
 
     # Get the jobid status dictionary.
     scrapyd_baseurl = settings['spider._scrapyd.base_url']
-    scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
+    scrapyd_interf = Scrapyd(scrapyd_baseurl)
     jobids_status = scrapyd_interf.get_jobs()
     
     # For each request, determine the request status gathering 
@@ -453,7 +453,7 @@ def request_history(request):
 
     # Get the jobid status dictionary.
     scrapyd_baseurl = settings['spider._scrapyd.base_url']
-    scrapyd_interf = ScrapydInterface(scrapyd_baseurl)
+    scrapyd_interf = Scrapyd(scrapyd_baseurl)
     jobids_status = scrapyd_interf.get_jobs()
 
     try:
