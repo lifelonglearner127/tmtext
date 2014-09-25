@@ -12,7 +12,7 @@ from extract_data import Scraper
 
 class BestBuyScraper(Scraper):
     
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.wayfair.com/<product-name>.html"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.bestbuy.com/site/<product-name>/<product-id>.*"
     
     
     def check_url_format(self):
@@ -324,6 +324,9 @@ class BestBuyScraper(Scraper):
         "no_image" : _no_image,\
         "brand" : _meta_brand_from_tree, \
         "model" : _model_from_tree, \
+        
+        "average_review" : reviews_for_url, \
+        "total_reviews" : nr_reviews, \
 
         
         "load_time": None\
@@ -333,9 +336,7 @@ class BestBuyScraper(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         "manufacturer_content_body" : manufacturer_content_body, \
-        "pdf_url" : pdf_for_url, \
-        "average_review" : reviews_for_url, \
-        "total_reviews" : nr_reviews\
+        "pdf_url" : pdf_for_url
     }
 
 
