@@ -395,5 +395,28 @@ class ServiceSimpleTest(unittest.TestCase):
     def test_bestbuy_specificdata(self):
         self._test_specificdata("bestbuy", "http://www.bestbuy.com/site/insignia-48-class-47-5-8-diag--led-1080p-60hz-hdtv/2563138.p?id=1219074400922&skuId=2563138")
 
+    # test all keys are in the response for simple (all-data) request for ozon
+    def test_ozon_alldata(self):
+        url = "http://www.ozon.ru/context/detail/id/26610761/"
+        response = requests.get(self.address % url).json()
+        
+        print json.dumps(response, ensure_ascii=False).encode("utf-8")
+
+        # initialize the scraper object for this specific site
+        scraper = SUPPORTED_SITES["ozon"]
+
+        # all data types (keys) for this scraper
+        DATA_TYPES = scraper.DATA_TYPES.keys() + scraper.DATA_TYPES_SPECIAL.keys()
+
+        # verify all keys are in the output structure
+        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))
+
+    # test requests for each specific type of data for ozon
+    # (using template function)
+    def test_ozon_specificdata(self):
+        self._test_specificdata("ozon", "http://www.ozon.ru/context/detail/id/26610761/")
+
+
+
 if __name__=='__main__':
     unittest.main()
