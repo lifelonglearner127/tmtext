@@ -333,12 +333,12 @@ class ServiceSimpleTest(unittest.TestCase):
     # test all keys are in the response for simple (all-data) request for walmart
     # (using template function)
     def test_walmart_alldata(self):
-        self._test_alldata("walmart", "http://www.walmart.com/ip/34335838")
+        self._test_alldata("walmart", "http://www.walmart.com/ip/14245213")
 
     # test requests for each specific type of data for walmart
     # (using template function)
     def test_walmart_specificdata(self):
-        self._test_specificdata("walmart", "http://www.walmart.com/ip/34335838")
+        self._test_specificdata("walmart", "http://www.walmart.com/ip/14245213")
 
     # test all keys are in the response for simple (all-data) request for tesco
     # (using template function)
