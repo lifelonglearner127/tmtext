@@ -180,7 +180,7 @@ class ScrapydJobHelper(object):
 
 
 class Scrapyd(object):
-    """Interface to Scrapyd."""
+    """Class to interact with Scrapyd."""
 
     _CACHE = repoze.lru.ExpiringLRUCache(100, 10)
     _CACHE_LOCK = thread.allocate_lock()
