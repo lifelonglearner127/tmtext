@@ -12,7 +12,7 @@ import subprocess32 as subprocess
 from web_runner.config_util import find_command_config_from_name, \
     find_command_config_from_path, find_spider_config_from_path, SpiderConfig, \
     render_spider_config
-from web_runner.scrapyd import ScrapydMediator, ScrapydInterface, \
+from web_runner.scrapyd import ScrapydJobHelper, ScrapydInterface, \
     ScrapydJobStartError, ScrapydJobException
 from web_runner.util import encode_ids, decode_ids, get_request_status, \
     string2datetime, dict_filter
@@ -60,7 +60,7 @@ def command_start_view(request):
             all_params = dict(spider_params)
             all_params.update(request.params)
 
-            jobid = ScrapydMediator(settings, spider_cfg).start_job(all_params)
+            jobid = ScrapydJobHelper(settings, spider_cfg).start_job(all_params)
             spider_job_ids.append(jobid)
             LOG.info(
                 "For command at '%s', started crawl job with id '%s'.",
@@ -130,15 +130,15 @@ def command_pending(request):
 
     running = 0
     for job_id, spider_cfg in zip(job_ids, spider_cfgs):
-        mediator = ScrapydMediator(settings, spider_cfg)
+        mediator = ScrapydJobHelper(settings, spider_cfg)
         status = mediator.report_on_job_with_retry(job_id)
-        if status is ScrapydMediator.JobStatus.unknown:
+        if status is ScrapydJobHelper.JobStatus.unknown:
             msg = "Job for spider '{}' with id '{}' has an unknown status." \
                 " Aborting command run.".format(spider_cfg.spider_name, job_id)
             LOG.error(msg)
             raise exc.HTTPNotFound(msg)
 
-        if status is not ScrapydMediator.JobStatus.finished:
+        if status is not ScrapydJobHelper.JobStatus.finished:
             running += 1
 
     # Storing the request in the internal DB
@@ -192,7 +192,7 @@ def command_result(request):
 
     args = dict(request.params)
     for i, (job_id, spider_cfg) in enumerate(zip(job_ids, spider_cfgs)):
-        fn = ScrapydMediator(settings, spider_cfg).retrieve_job_data_fn(job_id)
+        fn = ScrapydJobHelper(settings, spider_cfg).retrieve_job_data_fn(job_id)
         args['spider %d' % i] = fn
 
     cmd_line = cfg_template.cmd.format(**args)
@@ -229,7 +229,7 @@ def spider_start_view(request):
     cfg = render_spider_config(cfg_template, request.params)
 
     try:
-        mediator = ScrapydMediator(settings, cfg)
+        mediator = ScrapydJobHelper(settings, cfg)
         jobid = mediator.start_job(request.params)
         id = request.route_path("spider pending jobs", 
                                 project=cfg.project_name,
@@ -267,7 +267,7 @@ def spider_pending_view(request):
     spider_name = request.matchdict['spider']
     job_id = request.matchdict['jobid']
 
-    mediator = ScrapydMediator(
+    mediator = ScrapydJobHelper(
         request.registry.settings, SpiderConfig(spider_name, project_name))
     status = mediator.report_on_job_with_retry(job_id)
 
@@ -278,7 +278,7 @@ def spider_pending_view(request):
         web_runner.db.SPIDER_STATUS, (job_id,), request.remote_addr)
     dbinterf.close()
 
-    if status is ScrapydMediator.JobStatus.finished:
+    if status is ScrapydJobHelper.JobStatus.finished:
         raise exc.HTTPFound(
             location=request.route_path(
                 "spider job results",
@@ -289,9 +289,9 @@ def spider_pending_view(request):
             detail="Job finished.")
 
     state = 'Job state unknown.'
-    if status is ScrapydMediator.JobStatus.pending:
+    if status is ScrapydJobHelper.JobStatus.pending:
         state = "Job still waiting to run"
-    elif status is ScrapydMediator.JobStatus.running:
+    elif status is ScrapydJobHelper.JobStatus.running:
         state = "Job running."
     raise exc.HTTPAccepted(detail=state)
 
@@ -310,7 +310,7 @@ def spider_results_view(request):
         web_runner.db.SPIDER_RESULT,  (job_id,), request.remote_addr)
     dbinterf.close()
 
-    mediator = ScrapydMediator(
+    mediator = ScrapydJobHelper(
         request.registry.settings, SpiderConfig(spider_name, project_name))
     try:
         data_stream = mediator.retrieve_job_data(job_id)
