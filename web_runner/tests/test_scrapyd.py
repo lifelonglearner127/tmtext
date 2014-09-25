@@ -15,7 +15,7 @@ from web_runner.scrapyd import Scrapyd
 logging.basicConfig(level=logging.FATAL)
 
 
-class ScrapydInterfaceTest(unittest.TestCase):
+class ScrapydTest(unittest.TestCase):
 
     maxDiff = None
 
@@ -31,7 +31,7 @@ class ScrapydInterfaceTest(unittest.TestCase):
         # Always clear the cache so that tests are independent.
         Scrapyd._CACHE.clear()
 
-        self.subject = Scrapyd(ScrapydInterfaceTest.URL)
+        self.subject = Scrapyd(ScrapydTest.URL)
 
     def test_when_status_is_not_ok_then_it_should_report_an_error(self):
         with mock.patch('web_runner.scrapyd.requests') as mock_requests:
