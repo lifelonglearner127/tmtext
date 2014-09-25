@@ -30,7 +30,7 @@ with given.a_configured_scrapyd_mediator:
                 '''),
             ]
 
-            job_id = mediator.start_job({}, timeout=0)
+            job_id = mediator.start_job({})
 
             with and_.it_should_return_the_parsed_response:
                 the(job_id).should.equal("XXX")
