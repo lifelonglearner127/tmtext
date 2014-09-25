@@ -65,11 +65,10 @@ class ScrapydJobHelper(object):
 
         self.config = spider_config
 
-    def start_job(self, params, timeout=1.0):
+    def start_job(self, params):
         """Returns the job ID of the started Scrapyd job.
 
         :param params: Parameters for the job to be started.
-        :param timeout: Seconds to wait for Scrapy to show the job.
         """
         try:
             spider_name = self.config.spider_name.format(**params)
@@ -93,17 +92,7 @@ class ScrapydJobHelper(object):
                 result['status'],
                 "Failed to start job with parameters: %r" % data,
             )
-        jobid = result['jobid']
-
-        # Wait until the job appears in the list of jobs.
-        queue_status = self.report_on_job_with_retry(jobid, timeout=timeout)
-        if queue_status == ScrapydJobHelper.JobStatus.unknown:
-            raise ScrapydJobStartError(
-                "ok",
-                "Timeout on waiting for Scrapyd to list job '%s'." % jobid,
-            )
-
-        return jobid
+        return result['jobid']
 
     def report_on_job(self, jobid):
         """Returns the status of a job."""
