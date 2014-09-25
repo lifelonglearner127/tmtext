@@ -1,6 +1,8 @@
 import collections
 from itertools import count
 
+import pyramid.httpexceptions as exc
+
 
 SpiderConfig = collections.namedtuple('SpiderConfig',
                                       ['spider_name', 'project_name'])
@@ -21,7 +23,7 @@ def find_spider_config_from_path(settings, path):
         resource = settings[prefix + 'resource']
         if resource.strip('/') == path:
             return find_spider_config_from_name(settings, name)
-    return None
+    raise exc.HTTPNotFound("Resource '%s' is unknown." % path)
 
 
 def find_spider_config_from_name(settings, name):
@@ -33,22 +35,20 @@ def find_spider_config_from_name(settings, name):
             settings[prefix + 'project_name'],
         )
     except KeyError:
-        return None
+        raise exc.HTTPNotFound("Spider with name '%s' not found." % name)
 
 
 def find_command_config_from_path(settings, path):
     path = path.strip('/')
 
-    cfg = None
-    for name in settings['command._names'].split():
+    for name in settings.get('command._names', '').split():
         prefix = 'command.{}.'.format(name)
 
         resource = settings[prefix + 'resource']
         if resource.strip('/') == path:
-            cfg = find_command_config_from_name(settings, name)
-            break
+            return find_command_config_from_name(settings, name)
 
-    return cfg
+    raise exc.HTTPNotFound("Command for '%s' not found." % path)
 
 
 def find_command_config_from_name(settings, name):

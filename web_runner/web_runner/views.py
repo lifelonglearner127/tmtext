@@ -41,8 +41,6 @@ def command_start_view(request):
     """Schedules running a command plus spiders."""
     settings = request.registry.settings
     cfg_template = find_command_config_from_path(settings, request.path)
-    if cfg_template is None:
-        raise exc.HTTPNotFound("Unknown resource.")
 
     spider_cfgs = starmap(
         render_spider_config,
@@ -116,8 +114,6 @@ def command_pending(request):
 
     settings = request.registry.settings
     cfg_template = find_command_config_from_name(settings, name)
-    if cfg_template is None:
-        raise exc.HTTPNotFound("Unknown resource.")
 
     spider_cfgs = starmap(
         render_spider_config,
@@ -171,8 +167,6 @@ def command_result(request):
 
     settings = request.registry.settings
     cfg_template = find_command_config_from_name(settings, name)
-    if cfg_template is None:
-        raise exc.HTTPNotFound("Unknown resource.")
 
     spider_cfgs = starmap(
         render_spider_config,
