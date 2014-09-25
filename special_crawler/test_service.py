@@ -8,6 +8,7 @@ from extract_wayfair_data import WayfairScraper
 from extract_pgestore_data import PGEStore
 from extract_target_data import TargetScraper
 from extract_bestbuy_data import BestBuyScraper
+from crawler_service import SUPPORTED_SITES
 from tests_utils import StoreLogs
 import requests
 import sys
@@ -294,75 +295,105 @@ class ServiceSimpleTest(unittest.TestCase):
         # service address
         self.address = "http://localhost/get_data?url=%s"
 
-    # test all keys are in the response for simple (all-data) request for walmart
-    def test_walmart_alldata(self):
-        url = "http://www.walmart.com/ip/34335838"
+    # template function:
+    # test all keys are in the response for simple (all-data) request
+    # for given input site
+    def _test_alldata(self, site, url):
         response = requests.get(self.address % url).json()
         print response
 
-        DATA_TYPES = WalmartScraper.DATA_TYPES.keys() + WalmartScraper.DATA_TYPES_SPECIAL.keys()
+        # initialize the scraper object for this specific site
+        scraper = SUPPORTED_SITES[site]
 
+        # all data types (keys) for this scraper
+        DATA_TYPES = scraper.DATA_TYPES.keys() + scraper.DATA_TYPES_SPECIAL.keys()
+
+        # verify all keys are in the output structure
         self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))
+
+    # template function:
+    # test requests for specific data (one type at once):
+    # test the expected key is in the returned object (instead of an error message for example)
+    def _test_specificdata(self, site, url):
+        # initialize the scraper object for this specific site
+        scraper = SUPPORTED_SITES[site]
+
+        # all data types (keys) for this scraper
+        DATA_TYPES = scraper.DATA_TYPES.keys() + scraper.DATA_TYPES_SPECIAL.keys()
+
+        for data_type in DATA_TYPES:
+            request_url = (self.address % url) + ("&data=%s" % data_type)
+            print request_url
+            response = requests.get(request_url).json()
+
+            print response
+
+            self.assertEqual(response.keys(), [data_type])
+
+    # test all keys are in the response for simple (all-data) request for walmart
+    # (using template function)
+    def test_walmart_alldata(self):
+        self._test_alldata("walmart", "http://www.walmart.com/ip/14245213")
+
+    # test requests for each specific type of data for walmart
+    # (using template function)
+    def test_walmart_specificdata(self):
+        self._test_specificdata("walmart", "http://www.walmart.com/ip/14245213")
 
     # test all keys are in the response for simple (all-data) request for tesco
+    # (using template function)
     def test_tesco_alldata(self):
-        url = "http://www.tesco.com/direct/lindam-adjustable-back-seat-mirror/211-3189.prd"
-        response = requests.get(self.address % url).json()
-        print response
+        self._test_alldata("tesco", "http://www.tesco.com/direct/lindam-adjustable-back-seat-mirror/211-3189.prd")
 
-        DATA_TYPES = TescoScraper.DATA_TYPES.keys() + TescoScraper.DATA_TYPES_SPECIAL.keys()
-
-        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))
+    # test requests for each specific type of data for tesco
+    # (using template function)
+    def test_tesco_specificdata(self):
+        self._test_specificdata("tesco", "http://www.tesco.com/direct/lindam-adjustable-back-seat-mirror/211-3189.prd")
 
     # test all keys are in the response for simple (all-data) request for amazon
+    # (using template function)
     def test_amazon_alldata(self):
-        url = "http://www.amazon.com/dp/product/B0000AUWQ4"
-        response = requests.get(self.address % url).json()
-        print response
+        self._test_alldata("amazon", "http://www.amazon.com/dp/product/B0000AUWQ4")
 
-        DATA_TYPES = AmazonScraper.DATA_TYPES.keys() + AmazonScraper.DATA_TYPES_SPECIAL.keys()
-
-        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
+    # test requests for each specific type of data for amazon
+    # (using template function)
+    def test_amazon_specificdata(self):
+        self._test_specificdata("amazon", "http://www.amazon.com/dp/product/B0000AUWQ4")
 
     # test all keys are in the response for simple (all-data) request for wayfair
+    # (using template function)
     def test_wayfair_alldata(self):
-        url = "http://www.wayfair.com/daily-sales/p/Yard-Clean-Up-Essentials-Eden-Storage-Bench-in-Beige~KTR1108~E13616.html"
-        response = requests.get(self.address % url).json()
-        print response
+        self._test_alldata("wayfair", "http://www.wayfair.com/daily-sales/p/Yard-Clean-Up-Essentials-Eden-Storage-Bench-in-Beige~KTR1108~E13616.html")
 
-        DATA_TYPES = WayfairScraper.DATA_TYPES.keys() + WayfairScraper.DATA_TYPES_SPECIAL.keys()
-
-        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
+    # test requests for each specific type of data for wayfair
+    # (using template function)
+    def test_wayfair_specificdata(self):
+        self._test_specificdata("wayfair", "http://www.wayfair.com/daily-sales/p/Yard-Clean-Up-Essentials-Eden-Storage-Bench-in-Beige~KTR1108~E13616.html")
 
     # test all keys are in the response for simple (all-data) request for pgestore
+    # (using template function)
     def test_pgestore_alldata(self):
-        url = "http://www.pgestore.com/health/oral-care/toothpaste/crest-pro-health-cinnamon-toothpaste-6-oz/037000062240,default,pd.html"
-        response = requests.get(self.address % url).json()
-        print response
+        self._test_alldata("pgestore", "http://www.pgestore.com/health/oral-care/toothpaste/crest-pro-health-cinnamon-toothpaste-6-oz/037000062240,default,pd.html")
 
-        DATA_TYPES = PGEStore.DATA_TYPES.keys() + PGEStore.DATA_TYPES_SPECIAL.keys()
-
-        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
+    # test requests for each specific type of data for pgestore
+    # (using template function)
+    def test_pgestore_specificdata(self):
+        self._test_specificdata("pgestore", "http://www.pgestore.com/health/oral-care/toothpaste/crest-pro-health-cinnamon-toothpaste-6-oz/037000062240,default,pd.html")
 
     # # test all keys are in the response for simple (all-data) request for target
+    # # (using template function)
     # def test_target_alldata(self):
-    #     url = "http://www.target.com/p/iphone-6-plus-16gb-gold-verizon-with-2-year-contract/-/A-16481467#prodSlot=_1_1"
-    #     response = requests.get(self.address % url).json()
-    #     print response
+    #     self._test_alldata("target", "http://www.target.com/p/iphone-6-plus-16gb-gold-verizon-with-2-year-contract/-/A-16481467#prodSlot=_1_1")
 
-    #     DATA_TYPES = TargetScraper.DATA_TYPES.keys() + TargetScraper.DATA_TYPES_SPECIAL.keys()
-
-    #     self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
-
+    # test all keys are in the response for simple (all-data) request for bestbuy
+    # (using template function)
     def test_bestbuy_alldata(self):
-        url = "http://www.bestbuy.com/site/insignia-48-class-47-5-8-diag--led-1080p-60hz-hdtv/2563138.p?id=1219074400922&skuId=2563138"
-        response = requests.get(self.address % url).json()
-        print response
+        self._test_alldata("bestbuy", "http://www.bestbuy.com/site/insignia-48-class-47-5-8-diag--led-1080p-60hz-hdtv/2563138.p?id=1219074400922&skuId=2563138")
 
-        DATA_TYPES = BestBuyScraper.DATA_TYPES.keys() + BestBuyScraper.DATA_TYPES_SPECIAL.keys()
-
-        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))        
-
+    # test requests for each specific type of data for bestbuy
+    # (using template function)
+    def test_bestbuy_specificdata(self):
+        self._test_specificdata("bestbuy", "http://www.bestbuy.com/site/insignia-48-class-47-5-8-diag--led-1080p-60hz-hdtv/2563138.p?id=1219074400922&skuId=2563138")
 
 if __name__=='__main__':
     unittest.main()
