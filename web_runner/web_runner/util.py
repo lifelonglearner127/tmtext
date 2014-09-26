@@ -1,7 +1,3 @@
-import fcntl
-import logging
-import os
-import select
 import pickle
 import zlib
 import base64
@@ -35,8 +31,7 @@ def get_request_status(req, jobids_status):
         The structure is the one returned by db.get_request and
         db.get_last_requests
       . jobids_status: Dictionary containing the status of each
-        request as it is returned by 
-        scrapyd.ScrapydInterface.scrapyd_interf.get_jobs
+        request as it is returned by scrapyd.Scrapyd.get_jobs.
     """
     final_status = FINISH
     for jobid in req['jobids']:
@@ -59,7 +54,6 @@ def get_request_status(req, jobids_status):
 
 def string2datetime(string, format='%Y-%m-%d %H:%M:%S.%f'):
     """Convert a string to datetime.datetime"""
-
     try:
         date = datetime.datetime.strptime(string, format)
     except ValueError:
@@ -82,9 +76,10 @@ def string_from_local2utc(string, format='%Y-%m-%d %H:%M:%S.%f'):
 
 
 def dict_filter(source, items):
-    '''Given a source dictionary, returns a new one with a subset of the original
+    '''Given a source dictionary, returns a new one with a subset of the
+    original.
 
-    items is a list of list than conteins the info of the new dictionary 
+    items is a list of list than contains the info of the new dictionary
     structure to be returned.  For example:
     source = {"queues": {
                         "product_ranking": {"running": 0, 
