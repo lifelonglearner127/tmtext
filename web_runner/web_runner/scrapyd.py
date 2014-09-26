@@ -299,14 +299,16 @@ class Scrapyd(object):
                     continue  # This is not a real status, ironically.
 
                 for job in jobs:
-                    job_id = job['id']
                     # Convert the date from local to UTC
                     if 'start_time' in job:
                         job['start_time'] = local2utc(job['start_time'])
                     if 'end_time' in job:
                         job['end_time'] = local2utc(job['end_time'])
+
+                    job['status'] = job_status
+
+                    job_id = job['id']
                     jobs_by_id[job_id] = job
-                    jobs_by_id[job_id]['status'] = job_status
 
         return jobs_by_id
 
