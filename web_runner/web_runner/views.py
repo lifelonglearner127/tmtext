@@ -294,6 +294,12 @@ def spider_pending_view(request):
             ),
             detail="Job finished.")
 
+    if status is ScrapydJobHelper.JobStatus.unknown:
+        msg = "Job for spider '{}/{}' with id '{}' has an unknown status." \
+            " Aborting command run.".format(project_name, spider_name, job_id)
+        LOG.error(msg)
+        raise exc.HTTPNotFound(msg)
+
     state = 'Job state unknown.'
     if status is ScrapydJobHelper.JobStatus.pending:
         state = "Job still waiting to run"

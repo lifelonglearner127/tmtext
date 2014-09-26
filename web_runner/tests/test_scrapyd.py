@@ -398,10 +398,7 @@ class ScrapydJobsHelperTest(unittest.TestCase):
         scrapyd.schedule_job.return_value = "XXX"
 
         helper = ScrapydJobHelper(
-            {
-                ScrapydJobHelper.SCRAPYD_BASE_URL: 'scrapyd url',
-                ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path',
-            },
+            {ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path'},
             SpiderConfig('spider name', 'spider project'),
             scrapyd,
         )
@@ -426,10 +423,7 @@ class ScrapydJobsHelperTest(unittest.TestCase):
         }
 
         helper = ScrapydJobHelper(
-            {
-                ScrapydJobHelper.SCRAPYD_BASE_URL: 'scrapyd url',
-                ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path',
-            },
+            {ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path'},
             SpiderConfig('spider name', 'spider project'),
             scrapyd,
         )
@@ -460,10 +454,7 @@ class ScrapydJobsHelperTest(unittest.TestCase):
         ]
 
         helper = ScrapydJobHelper(
-            {
-                ScrapydJobHelper.SCRAPYD_BASE_URL: 'scrapyd url',
-                ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path',
-            },
+            {ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path'},
             SpiderConfig('spider name', 'spider project'),
             scrapyd,
         )
@@ -494,10 +485,7 @@ class ScrapydJobsHelperTest(unittest.TestCase):
         ]
 
         helper = ScrapydJobHelper(
-            {
-                ScrapydJobHelper.SCRAPYD_BASE_URL: 'scrapyd url',
-                ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path',
-            },
+            {ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path'},
             SpiderConfig('spider name', 'spider project'),
             scrapyd,
         )

@@ -42,8 +42,6 @@ class ScrapydJobStartError(ScrapydJobException):
 
 class ScrapydJobHelper(object):
 
-    SCRAPYD_BASE_URL = 'spider._scrapyd.base_url'
-
     SCRAPYD_ITEMS_PATH = 'spider._scrapyd.items_path'
 
     _VERIFICATION_DELAY = 1
@@ -59,7 +57,6 @@ class ScrapydJobHelper(object):
             raise exc.HTTPNotFound("Unknown resource.")
 
         self.scrapyd = scrapyd
-        self.scrapyd_base_url = settings[ScrapydJobHelper.SCRAPYD_BASE_URL]
         self.scrapyd_items_path = settings[ScrapydJobHelper.SCRAPYD_ITEMS_PATH]
 
         self.config = spider_config
