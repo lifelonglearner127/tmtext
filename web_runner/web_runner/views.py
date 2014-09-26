@@ -25,6 +25,9 @@ MIN_CACHE_FRESHNESS = 30
 # Cache freshness for results.
 RESULT_CACHE_FRESHNESS = 3600
 
+SCRAPYD_BASE_URL_KEY = 'spider._scrapyd.base_url'
+
+
 LOG = logging.getLogger(__name__)
 
 
@@ -51,7 +54,7 @@ def command_start_view(request):
         )
     )
 
-    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
+    scrapyd = Scrapyd(settings[SCRAPYD_BASE_URL_KEY])
 
     spider_job_ids = []
     try:
@@ -127,7 +130,7 @@ def command_pending(request):
         )
     )
 
-    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
+    scrapyd = Scrapyd(settings[SCRAPYD_BASE_URL_KEY])
 
     running = 0
     for job_id, spider_cfg in zip(job_ids, spider_cfgs):
@@ -189,7 +192,7 @@ def command_result(request):
         web_runner.db.COMMAND_RESULT, job_ids, request.remote_addr)
     dbinterf.close()
 
-    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
+    scrapyd = Scrapyd(settings[SCRAPYD_BASE_URL_KEY])
 
     args = dict(request.params)
     for i, (job_id, spider_cfg) in enumerate(zip(job_ids, spider_cfgs)):
@@ -230,7 +233,7 @@ def spider_start_view(request):
     cfg_template = find_spider_config_from_path(settings, request.path)
     cfg = render_spider_config(cfg_template, request.params)
 
-    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
+    scrapyd = Scrapyd(settings[SCRAPYD_BASE_URL_KEY])
     try:
         jobid = ScrapydJobHelper(settings, cfg, scrapyd).start_job(
             request.params)
@@ -272,7 +275,7 @@ def spider_pending_view(request):
 
     settings = request.registry.settings
 
-    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
+    scrapyd = Scrapyd(settings[SCRAPYD_BASE_URL_KEY])
     status = ScrapydJobHelper(
         settings, SpiderConfig(spider_name, project_name), scrapyd
     ).report_on_job(job_id)
@@ -324,7 +327,7 @@ def spider_results_view(request):
         web_runner.db.SPIDER_RESULT,  (job_id,), request.remote_addr)
     dbinterf.close()
 
-    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
+    scrapyd = Scrapyd(settings[SCRAPYD_BASE_URL_KEY])
     try:
         data_stream = ScrapydJobHelper(
             settings, SpiderConfig(spider_name, project_name), scrapyd
@@ -343,7 +346,7 @@ def status(request):
 
     settings = request.registry.settings
 
-    scrapyd_baseurl = settings['spider._scrapyd.base_url']
+    scrapyd_baseurl = settings[SCRAPYD_BASE_URL_KEY]
     scrapyd_interf = Scrapyd(scrapyd_baseurl)
 
     output = scrapyd_interf.get_operational_status()
@@ -394,7 +397,7 @@ def last_request_status(request):
     dbinterf.close()
 
     # Get the jobid status dictionary.
-    scrapyd_baseurl = settings['spider._scrapyd.base_url']
+    scrapyd_baseurl = settings[SCRAPYD_BASE_URL_KEY]
     scrapyd_interf = Scrapyd(scrapyd_baseurl)
     jobids_status = scrapyd_interf.get_jobs()
     
@@ -467,7 +470,7 @@ def request_history(request):
         raise exc.HTTPBadGateway(detail="No info from Request id")
 
     # Get the jobid status dictionary.
-    scrapyd_baseurl = settings['spider._scrapyd.base_url']
+    scrapyd_baseurl = settings[SCRAPYD_BASE_URL_KEY]
     scrapyd_interf = Scrapyd(scrapyd_baseurl)
     jobids_status = scrapyd_interf.get_jobs()
 
