@@ -5,12 +5,10 @@ from future_builtins import *
 
 import logging
 import urlparse
-import json
 import os.path
 import time
 import thread
 import urllib
-import urllib2
 
 import enum
 import pyramid.httpexceptions as exc
@@ -140,18 +138,6 @@ class ScrapydJobHelper(object):
             )
         ))
         return os.path.join(path, "%s.jl" % jobid)
-
-    @staticmethod
-    def _fetch_json(url, data=None):
-        enc_data = None
-        if data is not None:
-            enc_data = urllib.urlencode(data)
-
-        conn = urllib2.urlopen(url, enc_data)
-        response = json.load(conn)
-        conn.close()
-
-        return response
 
 
 class Scrapyd(object):
