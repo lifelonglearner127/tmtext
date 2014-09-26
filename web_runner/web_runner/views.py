@@ -51,6 +51,8 @@ def command_start_view(request):
         )
     )
 
+    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
+
     spider_job_ids = []
     try:
         for spider_cfg, spider_params in zip(
@@ -58,7 +60,8 @@ def command_start_view(request):
             all_params = dict(spider_params)
             all_params.update(request.params)
 
-            jobid = ScrapydJobHelper(settings, spider_cfg).start_job(all_params)
+            jobid = ScrapydJobHelper(settings, spider_cfg, scrapyd).start_job(
+                all_params)
             spider_job_ids.append(jobid)
             LOG.info(
                 "For command at '%s', started crawl job with id '%s'.",
@@ -124,10 +127,12 @@ def command_pending(request):
         )
     )
 
+    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
+
     running = 0
     for job_id, spider_cfg in zip(job_ids, spider_cfgs):
-        mediator = ScrapydJobHelper(settings, spider_cfg)
-        status = mediator.report_on_job_with_retry(job_id)
+        scrapyd_helper = ScrapydJobHelper(settings, spider_cfg, scrapyd)
+        status = scrapyd_helper.report_on_job_with_retry(job_id)
         if status is ScrapydJobHelper.JobStatus.unknown:
             msg = "Job for spider '{}' with id '{}' has an unknown status." \
                 " Aborting command run.".format(spider_cfg.spider_name, job_id)
@@ -184,9 +189,12 @@ def command_result(request):
         web_runner.db.COMMAND_RESULT, job_ids, request.remote_addr)
     dbinterf.close()
 
+    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
+
     args = dict(request.params)
     for i, (job_id, spider_cfg) in enumerate(zip(job_ids, spider_cfgs)):
-        fn = ScrapydJobHelper(settings, spider_cfg).retrieve_job_data_fn(job_id)
+        fn = ScrapydJobHelper(
+            settings, spider_cfg, scrapyd).retrieve_job_data_fn(job_id)
         args['spider %d' % i] = fn
 
     cmd_line = cfg_template.cmd.format(**args)
@@ -222,9 +230,10 @@ def spider_start_view(request):
     cfg_template = find_spider_config_from_path(settings, request.path)
     cfg = render_spider_config(cfg_template, request.params)
 
+    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
     try:
-        mediator = ScrapydJobHelper(settings, cfg)
-        jobid = mediator.start_job(request.params)
+        jobid = ScrapydJobHelper(settings, cfg, scrapyd).start_job(
+            request.params)
         id = request.route_path("spider pending jobs", 
                                 project=cfg.project_name,
                                 spider=cfg.spider_name, jobid=jobid)
@@ -261,13 +270,16 @@ def spider_pending_view(request):
     spider_name = request.matchdict['spider']
     job_id = request.matchdict['jobid']
 
-    mediator = ScrapydJobHelper(
-        request.registry.settings, SpiderConfig(spider_name, project_name))
-    status = mediator.report_on_job_with_retry(job_id)
+    settings = request.registry.settings
+
+    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
+    status = ScrapydJobHelper(
+        settings, SpiderConfig(spider_name, project_name), scrapyd
+    ).report_on_job_with_retry(job_id)
 
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
-        request.registry.settings['db_filename'], recreate=False)
+        settings['db_filename'], recreate=False)
     dbinterf.new_request_event(
         web_runner.db.SPIDER_STATUS, (job_id,), request.remote_addr)
     dbinterf.close()
@@ -293,21 +305,24 @@ def spider_pending_view(request):
 @view_config(route_name='spider job results', request_method='GET',
              http_cache=RESULT_CACHE_FRESHNESS)
 def spider_results_view(request):
+    settings = request.registry.settings
+
     project_name = request.matchdict['project']
     spider_name = request.matchdict['spider']
     job_id = request.matchdict['jobid']
 
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(
-        request.registry.settings['db_filename'], recreate=False)
+        settings['db_filename'], recreate=False)
     dbinterf.new_request_event(
         web_runner.db.SPIDER_RESULT,  (job_id,), request.remote_addr)
     dbinterf.close()
 
-    mediator = ScrapydJobHelper(
-        request.registry.settings, SpiderConfig(spider_name, project_name))
+    scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
     try:
-        data_stream = mediator.retrieve_job_data(job_id)
+        data_stream = ScrapydJobHelper(
+            settings, SpiderConfig(spider_name, project_name), scrapyd
+        ).retrieve_job_data(job_id)
         request.response.body_file = data_stream
         return request.response
     except ScrapydJobException as e:

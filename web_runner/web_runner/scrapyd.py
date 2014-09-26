@@ -56,10 +56,11 @@ class ScrapydJobHelper(object):
         finished = 2
         pending = 3
 
-    def __init__(self, settings, spider_config):
+    def __init__(self, settings, spider_config, scrapyd):
         if spider_config is None:
             raise exc.HTTPNotFound("Unknown resource.")
 
+        self.scrapyd = scrapyd
         self.scrapyd_base_url = settings[ScrapydJobHelper.SCRAPYD_BASE_URL]
         self.scrapyd_items_path = settings[ScrapydJobHelper.SCRAPYD_ITEMS_PATH]
 
@@ -96,26 +97,19 @@ class ScrapydJobHelper(object):
 
     def report_on_job(self, jobid):
         """Returns the status of a job."""
-        url = urlparse.urljoin(self.scrapyd_base_url, 'listjobs.json') \
-            + '?' + urllib.urlencode({'project': self.config.project_name})
-        response = self._fetch_json(url)
-        if response['status'] != "ok":
-            LOG.error("Scrapyd was not OK: %s", json.dumps(response))
-            raise exc.HTTPBadGateway(
-                "Scrapyd was not OK, it was '{status}': {message}".format(
-                    **response))
+        jobs = self.scrapyd.get_jobs([self.config.project_name])
 
-        if any(job_desc['id'] == jobid for job_desc in response['finished']):
-            status = ScrapydJobHelper.JobStatus.finished
-        elif any(job_desc['id'] == jobid for job_desc in response['pending']):
-            status = ScrapydJobHelper.JobStatus.pending
-        elif any(job_desc['id'] == jobid for job_desc in response['running']):
-            status = ScrapydJobHelper.JobStatus.running
-        elif os.path.exists(self.retrieve_job_data_fn(jobid)):
-            LOG.warn("Scrapyd doesn't know the job but the file is present.")
-            status = ScrapydJobHelper.JobStatus.finished
-        else:
-            status = ScrapydJobHelper.JobStatus.unknown
+        try:
+            job = jobs[jobid]
+
+            status = ScrapydJobHelper.JobStatus[job['status']]
+        except KeyError:
+            if os.path.exists(self.retrieve_job_data_fn(jobid)):
+                LOG.warn(
+                    "Scrapyd doesn't know the job but the file is present.")
+                status = ScrapydJobHelper.JobStatus.finished
+            else:
+                status = ScrapydJobHelper.JobStatus.unknown
 
         return status
 
@@ -177,7 +171,8 @@ class Scrapyd(object):
     def __init__(self, url):
         self.scrapyd_url = url
 
-    def _make_uncached_request(self, url):
+    @staticmethod
+    def _make_uncached_request(url):
         try:
             response = requests.get(url)
             LOG.debug(
@@ -226,7 +221,7 @@ class Scrapyd(object):
                 if result is not None:
                     LOG.debug("Cache hit after locking for %r.", url)
                 else:
-                    result = self._make_uncached_request(url)
+                    result = Scrapyd._make_uncached_request(url)
 
                     Scrapyd._CACHE.put(url, result, timeout=cache_time)
 

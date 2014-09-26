@@ -3,13 +3,15 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+from io import StringIO
 import logging
 import unittest
 
 import mock
 import pyramid.httpexceptions as exc
 
-from web_runner.scrapyd import Scrapyd
+from web_runner.config_util import SpiderConfig
+from web_runner.scrapyd import Scrapyd, ScrapydJobHelper
 
 
 logging.basicConfig(level=logging.FATAL)
@@ -377,3 +379,56 @@ class ScrapydTest(unittest.TestCase):
             mock_requests_get.assert_any_call(self.EXPECTED_LIST_JOBS_URL)
             mock_requests_get.assert_any_with(
                 self.EXPECTED_LIST_PROJECTS_URL)
+
+
+class ScrapydJobsHelperTest(unittest.TestCase):
+
+    def test_when_starting_a_job_then_it_should_return_the_job_id(self):
+        scrapyd = mock.MagicMock()
+        helper = ScrapydJobHelper(
+            {
+                ScrapydJobHelper.SCRAPYD_BASE_URL: 'scrapyd url',
+                ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path',
+            },
+            SpiderConfig('spider name', 'spider project'),
+            scrapyd,
+        )
+
+        with mock.patch('web_runner.scrapyd.urllib2') as urllib2_mock:
+            urllib2_mock.urlopen.side_effect = [
+                StringIO('{"status": "ok", "jobid": "XXX"}'),
+            ]
+
+            job_id = helper.start_job({})
+
+            self.assertEqual("XXX", job_id)
+
+    def test_when_a_job_exists_then_it_should_report_its_status(self):
+        scrapyd = mock.MagicMock(spec=Scrapyd)
+        scrapyd.get_jobs.return_value = {
+            '2f16646cfcaf11e1b0090800272a6d06': {
+                'id': '2f16646cfcaf11e1b0090800272a6d06',
+                'spider': 'spider3',
+                'status': 'finished',
+            },
+            '78391cc0fcaf11e1b0090800272a6d06': {
+                'id': '78391cc0fcaf11e1b0090800272a6d06',
+                'project_name': 'spider1',
+                'status': 'pending',
+            },
+        }
+
+        helper = ScrapydJobHelper(
+            {
+                ScrapydJobHelper.SCRAPYD_BASE_URL: 'scrapyd url',
+                ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path',
+            },
+            SpiderConfig('spider name', 'spider project'),
+            scrapyd,
+        )
+
+        status = helper.report_on_job("2f16646cfcaf11e1b0090800272a6d06")
+
+        self.assertEqual(ScrapydJobHelper.JobStatus.finished, status)
+
+        scrapyd.get_jobs.assert_called_once_with(['spider project'])
