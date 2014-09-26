@@ -77,9 +77,9 @@ class ScrapydJobHelper(object):
 
         return self.scrapyd.schedule_job(project_name, spider_name, params)
 
-    def _report_on_job_without_retry(self, jobid):
+    def _report_on_job_without_retry(self, jobid, fresh=False):
         """Returns the status of a job."""
-        jobs = self.scrapyd.get_jobs([self.config.project_name])
+        jobs = self.scrapyd.get_jobs([self.config.project_name], fresh)
 
         try:
             job = jobs[jobid]
@@ -101,7 +101,9 @@ class ScrapydJobHelper(object):
         end_time = time.time() + timeout
         status = None
         while True:
-            status = self._report_on_job_without_retry(jobid)
+            # Ask for a fresh response if it's not the first iteration.
+            status = self._report_on_job_without_retry(
+                jobid, fresh=current_try != 0)
             if status is ScrapydJobHelper.JobStatus.unknown \
                     and current_try < max_retries \
                     and end_time > time.time():
@@ -267,7 +269,7 @@ class Scrapyd(object):
 
         return spiders_data['spiders']
 
-    def get_jobs(self, projects=None):
+    def get_jobs(self, projects=None, fresh=False):
         """Return jobs associated to a project.
 
         The function returns a dictionary whose key is a job's ID and the value
@@ -284,6 +286,10 @@ class Scrapyd(object):
 
         :param projects: The list of project to query. If it is None, all
                          projects will be queried.
+        :type projects: list
+        :param fresh: If cached entries should not be used. This parameter will
+                      not cause to fetch fresh projects.
+        :type fresh: bool
         :rtype: dict
         """
         if not projects:
@@ -292,7 +298,7 @@ class Scrapyd(object):
         jobs_by_id = {}
         for project in projects:
             jobs_by_status = self._make_request(
-                'listjobs.json', project=project)
+                'listjobs.json', fresh, project=project)
 
             for job_status, jobs in jobs_by_status.items():
                 if job_status == "status":

@@ -3,7 +3,6 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-from io import StringIO
 import logging
 import unittest
 
@@ -389,6 +388,9 @@ class ScrapydTest(unittest.TestCase):
             self.assertEqual('XXX', job_id)
 
 
+ScrapydJobHelper._VERIFICATION_DELAY = 0  # Not to waste time.
+
+
 class ScrapydJobsHelperTest(unittest.TestCase):
 
     def test_when_starting_a_job_then_it_should_return_the_job_id(self):
@@ -436,7 +438,7 @@ class ScrapydJobsHelperTest(unittest.TestCase):
 
         self.assertEqual(ScrapydJobHelper.JobStatus.finished, status)
 
-        scrapyd.get_jobs.assert_called_once_with(['spider project'])
+        scrapyd.get_jobs.assert_called_once_with(['spider project'], False)
 
     def test_when_a_job_is_unknown_then_it_should_retry(self):
         scrapyd = mock.MagicMock(spec=Scrapyd)
@@ -470,7 +472,7 @@ class ScrapydJobsHelperTest(unittest.TestCase):
 
         self.assertEqual(ScrapydJobHelper.JobStatus.finished, status)
 
-        scrapyd.get_jobs.assert_called_with(['spider project'])
+        scrapyd.get_jobs.assert_called_with(['spider project'], True)
 
     def test_when_a_job_is_unknown_consistently_then_it_should_consider_it_unknonw(
             self):
@@ -505,4 +507,4 @@ class ScrapydJobsHelperTest(unittest.TestCase):
 
         self.assertEqual(ScrapydJobHelper.JobStatus.unknown, status)
 
-        scrapyd.get_jobs.assert_called_once_with(['spider project'])
+        scrapyd.get_jobs.assert_called_once_with(['spider project'], False)
