@@ -186,10 +186,11 @@ class DbInterface(object):
         sql = 'SELECT request_id FROM scrapy_jobs WHERE scrapy_jobid=?'
         cursor = self._conn.cursor()
         cursor.execute(sql, (jobids[0],))
-        (requestid,) = cursor.fetchone()
-
-        if not requestid:
+        row = cursor.fetchone()
+        if row is None:
             return False
+
+        (requestid,) = row
 
         # Insert the event in the DB
         insert_sql = '''INSERT INTO request_ops(request_id, 
