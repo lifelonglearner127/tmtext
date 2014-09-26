@@ -437,3 +437,72 @@ class ScrapydJobsHelperTest(unittest.TestCase):
         self.assertEqual(ScrapydJobHelper.JobStatus.finished, status)
 
         scrapyd.get_jobs.assert_called_once_with(['spider project'])
+
+    def test_when_a_job_is_unknown_then_it_should_retry(self):
+        scrapyd = mock.MagicMock(spec=Scrapyd)
+        scrapyd.get_jobs.side_effect = [
+            {},
+            {},
+            {
+                '2f16646cfcaf11e1b0090800272a6d06': {
+                    'id': '2f16646cfcaf11e1b0090800272a6d06',
+                    'spider': 'spider3',
+                    'status': 'finished',
+                },
+                '78391cc0fcaf11e1b0090800272a6d06': {
+                    'id': '78391cc0fcaf11e1b0090800272a6d06',
+                    'project_name': 'spider1',
+                    'status': 'pending',
+                },
+            },
+        ]
+
+        helper = ScrapydJobHelper(
+            {
+                ScrapydJobHelper.SCRAPYD_BASE_URL: 'scrapyd url',
+                ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path',
+            },
+            SpiderConfig('spider name', 'spider project'),
+            scrapyd,
+        )
+
+        status = helper.report_on_job("2f16646cfcaf11e1b0090800272a6d06")
+
+        self.assertEqual(ScrapydJobHelper.JobStatus.finished, status)
+
+        scrapyd.get_jobs.assert_called_with(['spider project'])
+
+    def test_when_a_job_is_unknown_consistently_then_it_should_consider_it_unknonw(
+            self):
+        scrapyd = mock.MagicMock(spec=Scrapyd)
+        scrapyd.get_jobs.side_effect = [
+            {},
+            {
+                '2f16646cfcaf11e1b0090800272a6d06': {
+                    'id': '2f16646cfcaf11e1b0090800272a6d06',
+                    'spider': 'spider3',
+                    'status': 'finished',
+                },
+                '78391cc0fcaf11e1b0090800272a6d06': {
+                    'id': '78391cc0fcaf11e1b0090800272a6d06',
+                    'project_name': 'spider1',
+                    'status': 'pending',
+                },
+            },
+        ]
+
+        helper = ScrapydJobHelper(
+            {
+                ScrapydJobHelper.SCRAPYD_BASE_URL: 'scrapyd url',
+                ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path',
+            },
+            SpiderConfig('spider name', 'spider project'),
+            scrapyd,
+        )
+
+        status = helper.report_on_job(
+            "2f16646cfcaf11e1b0090800272a6d06", max_retries=0)
+
+        self.assertEqual(ScrapydJobHelper.JobStatus.unknown, status)
+
+        scrapyd.get_jobs.assert_called_once_with(['spider project'])

@@ -132,7 +132,7 @@ def command_pending(request):
     running = 0
     for job_id, spider_cfg in zip(job_ids, spider_cfgs):
         scrapyd_helper = ScrapydJobHelper(settings, spider_cfg, scrapyd)
-        status = scrapyd_helper.report_on_job_with_retry(job_id)
+        status = scrapyd_helper.report_on_job(job_id)
         if status is ScrapydJobHelper.JobStatus.unknown:
             msg = "Job for spider '{}' with id '{}' has an unknown status." \
                 " Aborting command run.".format(spider_cfg.spider_name, job_id)
@@ -275,7 +275,7 @@ def spider_pending_view(request):
     scrapyd = Scrapyd(settings['spider._scrapyd.base_url'])
     status = ScrapydJobHelper(
         settings, SpiderConfig(spider_name, project_name), scrapyd
-    ).report_on_job_with_retry(job_id)
+    ).report_on_job(job_id)
 
     # Storing the request in the internal DB
     dbinterf = web_runner.db.DbInterface(

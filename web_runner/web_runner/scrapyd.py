@@ -48,7 +48,7 @@ class ScrapydJobHelper(object):
 
     SCRAPYD_ITEMS_PATH = 'spider._scrapyd.items_path'
 
-    _VERIFICATION_DELAY = 0.1
+    _VERIFICATION_DELAY = 1
 
     class JobStatus(enum.Enum):
         unknown = 0
@@ -79,7 +79,7 @@ class ScrapydJobHelper(object):
 
         return self.scrapyd.schedule_job(project_name, spider_name, params)
 
-    def report_on_job(self, jobid):
+    def _report_on_job_without_retry(self, jobid):
         """Returns the status of a job."""
         jobs = self.scrapyd.get_jobs([self.config.project_name])
 
@@ -97,20 +97,28 @@ class ScrapydJobHelper(object):
 
         return status
 
-    def report_on_job_with_retry(self, jobid, timeout=1.0):
+    def report_on_job(self, jobid, timeout=30, max_retries=2):
         """Returns the status of a job."""
-        retry_count = 1 + timeout // ScrapydJobHelper._VERIFICATION_DELAY
-        for _ in range(int(retry_count)):
-            status = self.report_on_job(jobid)
-            if status != ScrapydJobHelper.JobStatus.unknown:
+        current_try = 0
+        end_time = time.time() + timeout
+        status = None
+        while True:
+            status = self._report_on_job_without_retry(jobid)
+            if status is ScrapydJobHelper.JobStatus.unknown \
+                    and current_try < max_retries \
+                    and end_time > time.time():
+                LOG.info(
+                    "Waiting %gs before retrying to get job status for '%s'."
+                    " (%d)",
+                    ScrapydJobHelper._VERIFICATION_DELAY,
+                    jobid,
+                    current_try,
+                )
+                time.sleep(ScrapydJobHelper._VERIFICATION_DELAY)
+            else:
                 break
 
-            LOG.debug(
-                "Job %s not ready. Waiting %g before retrying.",
-                jobid,
-                ScrapydJobHelper._VERIFICATION_DELAY,
-            )
-            time.sleep(ScrapydJobHelper._VERIFICATION_DELAY)
+            current_try += 1
 
         return status
 
