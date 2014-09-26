@@ -116,7 +116,11 @@ def command_pending(request):
     """Report on running job status."""
     name = request.matchdict['name']
     encoded_job_ids = request.matchdict['jobid']
-    job_ids = decode_ids(encoded_job_ids)
+    try:
+        job_ids = decode_ids(encoded_job_ids)
+    except TypeError:
+        # Malformed Job ID.
+        raise exc.HTTPBadRequest("The job ID is invalid.")
 
     settings = request.registry.settings
     cfg_template = find_command_config_from_name(settings, name)
@@ -171,7 +175,11 @@ def command_result(request):
     """Report result of job."""
     name = request.matchdict['name']
     encoded_job_ids = request.matchdict['jobid']
-    job_ids = decode_ids(encoded_job_ids)
+    try:
+        job_ids = decode_ids(encoded_job_ids)
+    except TypeError:
+        # Malformed Job ID.
+        raise exc.HTTPBadRequest("The job ID is invalid.")
 
     settings = request.registry.settings
     cfg_template = find_command_config_from_name(settings, name)
