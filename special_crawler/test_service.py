@@ -306,7 +306,7 @@ class ServiceSimpleTest(unittest.TestCase):
         scraper = SUPPORTED_SITES[site]
 
         # all data types (keys) for this scraper
-        DATA_TYPES = scraper.DATA_TYPES.keys() + scraper.DATA_TYPES_SPECIAL.keys()
+        DATA_TYPES = scraper.BASE_DATA_TYPES.keys()
 
         # verify all keys are in the output structure
         self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))
@@ -319,7 +319,7 @@ class ServiceSimpleTest(unittest.TestCase):
         scraper = SUPPORTED_SITES[site]
 
         # all data types (keys) for this scraper
-        DATA_TYPES = scraper.DATA_TYPES.keys() + scraper.DATA_TYPES_SPECIAL.keys()
+        DATA_TYPES = scraper.BASE_DATA_TYPES.keys()
 
         for data_type in DATA_TYPES:
             request_url = (self.address % url) + ("&data=%s" % data_type)
