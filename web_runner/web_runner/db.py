@@ -182,7 +182,7 @@ class DbInterface(object):
 
         event_date = datetime.datetime.utcnow()
 
-        # Get the requetid associated.
+        # Get the requestid associated.
         sql = 'SELECT request_id FROM scrapy_jobs WHERE scrapy_jobid=?'
         cursor = self._conn.cursor()
         cursor.execute(sql, (jobids[0],))
