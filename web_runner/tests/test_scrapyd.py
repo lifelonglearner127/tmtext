@@ -377,14 +377,24 @@ class ScrapydTest(unittest.TestCase):
             mock_requests_get.assert_any_call(self.URL)
             mock_requests_get.assert_any_call(self.EXPECTED_LIST_SPIDERS_URL)
             mock_requests_get.assert_any_call(self.EXPECTED_LIST_JOBS_URL)
-            mock_requests_get.assert_any_with(
-                self.EXPECTED_LIST_PROJECTS_URL)
+            mock_requests_get.assert_any_call(self.EXPECTED_LIST_PROJECTS_URL)
+
+    def test_when_a_job_is_started_ok_then_we_return_its_id(self):
+        with mock.patch('web_runner.scrapyd.requests.post') as mock_post:
+            response = mock_post.return_value
+            response.json.return_value = {"status": "ok", "jobid": "XXX"}
+
+            job_id = self.subject.schedule_job('project', 'spider', {})
+
+            self.assertEqual('XXX', job_id)
 
 
 class ScrapydJobsHelperTest(unittest.TestCase):
 
     def test_when_starting_a_job_then_it_should_return_the_job_id(self):
-        scrapyd = mock.MagicMock()
+        scrapyd = mock.MagicMock(spec=Scrapyd)
+        scrapyd.schedule_job.return_value = "XXX"
+
         helper = ScrapydJobHelper(
             {
                 ScrapydJobHelper.SCRAPYD_BASE_URL: 'scrapyd url',
@@ -394,14 +404,9 @@ class ScrapydJobsHelperTest(unittest.TestCase):
             scrapyd,
         )
 
-        with mock.patch('web_runner.scrapyd.urllib2') as urllib2_mock:
-            urllib2_mock.urlopen.side_effect = [
-                StringIO('{"status": "ok", "jobid": "XXX"}'),
-            ]
+        job_id = helper.start_job({})
 
-            job_id = helper.start_job({})
-
-            self.assertEqual("XXX", job_id)
+        self.assertEqual("XXX", job_id)
 
     def test_when_a_job_exists_then_it_should_report_its_status(self):
         scrapyd = mock.MagicMock(spec=Scrapyd)

@@ -77,23 +77,7 @@ class ScrapydJobHelper(object):
         except KeyError as e:
             raise ScrapydJobException("Parameter %s is required." % e)
 
-        url = urlparse.urljoin(self.scrapyd_base_url, 'schedule.json')
-        # Convert to a list of pairs to handle multivalued parameters.
-        data = list(filter(
-            lambda (k, _): k not in {'project', 'spider'},
-            params.items()
-        ))
-        data.append(('project', project_name))
-        data.append(('spider', spider_name))
-
-        LOG.info("Calling Scrapyd on '%s' with parameters: %s", url, data)
-        result = self._fetch_json(url, data)
-        if result['status'] != "ok":
-            raise ScrapydJobStartError(
-                result['status'],
-                "Failed to start job with parameters: %r" % data,
-            )
-        return result['jobid']
+        return self.scrapyd.schedule_job(project_name, spider_name, params)
 
     def report_on_job(self, jobid):
         """Returns the status of a job."""
@@ -170,6 +154,38 @@ class Scrapyd(object):
 
     def __init__(self, url):
         self.scrapyd_url = url
+
+    def _post(self, resource, data):
+        url = urlparse.urljoin(self.scrapyd_url, resource)
+
+        try:
+            response = requests.post(url, data)
+            LOG.debug(
+                "POST to scrapyd resource %s got: %s",
+                url,
+                response.content,
+            )
+
+            result = response.json()
+
+            # Check result response is successful.
+            if result['status'].lower() != "ok":
+                LOG.error("Scrapyd was not OK: %r", result)
+                raise exc.HTTPBadGateway(
+                    "Scrapyd was not OK, it was '{status}': {message}".format(
+                        **result))
+
+            # If the job was created, before returning the cache must be
+            # invalidated.
+            # There is no need to get _CACHE_LOCK as clearing it does not
+            # introduce a race condition.
+            self._CACHE.clear()
+
+            return result
+        except requests.exceptions.RequestException as e:
+            msg = "Error contacting Scrapyd: %s" % e
+            LOG.error(msg)
+            raise exc.HTTPBadGateway(msg)
 
     @staticmethod
     def _make_uncached_request(url):
@@ -299,6 +315,29 @@ class Scrapyd(object):
                     jobs_by_id[job_id]['status'] = job_status
 
         return jobs_by_id
+
+    def schedule_job(self, project, spider, params):
+        """Schedules a spider and returns its job ID.
+
+        :param project: Project where to find the spider.
+        :type project: str
+        :param spider: Name of the spider for which to start a job.
+        :type spider: str
+        :param params: Parameters for the job to be started.
+        :type params: dict
+        :rtype: str
+        """
+        # Convert to a list of pairs to handle multivalued parameters.
+        data = list(filter(
+            lambda (k, _): k not in {'project', 'spider'},
+            params.items()
+        ))
+        data.append(('project', project))
+        data.append(('spider', spider))
+
+        result = self._post('schedule.json', data)
+
+        return result['jobid']
 
     def get_queues(self, projects=None):
         """Returns the scrapyd queue status.
