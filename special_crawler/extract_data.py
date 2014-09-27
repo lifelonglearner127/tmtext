@@ -34,15 +34,15 @@ class Scraper():
     # using the declarations in the subclasses (for data types that have support in each subclass)
 
     BASE_DATA_TYPES_LIST = {
-            "name", # name of product, string
+            "product_name", # name of product, string
             "keywords", # keywords associated with product (usually from "meta" tag), string
             "short_desc", # short description, string
-            "long_desc", # long description, string
+            "description", # long description, string
             "price", # price (string, with or without currency)
             "anchors", # links found in the description, dictionary like {"links" : [], quantity: 0}
             "htags", # h1 and h2 tags, dictionary like: {"h1" : [], "h2": ["text in tag"]}
             "features", # features of product, string
-            "nr_features", # number of features of product, int
+            "feature_count", # number of features of product, int
             "title", # page title, string
             "seller", # seller of product, dictionary like: {"owned" : 1, "marketplace": 0}
             "marketplace", # whether product can be found on marketplace, 1/0
@@ -59,17 +59,23 @@ class Scraper():
             "no_image", # whether product image is a "there is no image" image: true/false
             "product_in_stock", # whether product is in stock: true/false
             "in_stores_only", # whether product can be found in stores only: true/false
-            "load_time", # load time of product page in seconds, float
+            "loaded_in_seconds", # load time of product page in seconds, float
             "mobile_image_same", # whether mobile image is same as desktop image: true/false
             "brand", # brand of product, string
             "model", # model of product, string
             "manufacturer_content_body", # special section of description by the manufacturer, string
             "pdf_url", # urls of product pdfs, list of strings
             "average_review", # average value of review, float?
-            "total_reviews", # total number of reviews, int
-            "meta_keywords", # "keywords" meta tag, string
+            "review_count", # total number of reviews, int
             "meta_description", # description in meta tag, string
-            "asin", 
+            "asin",
+            # ^^ above: all collected fields from all subscrapers
+            # below: extra fields taken from PHP crawler returned object
+            "manufacturer",
+            "UPC/EAN/ISBN",
+            "pdf_count",
+            "video_count",
+            "date"
     }
 
     # Structure containing data types returned by the crawler as keys
@@ -79,7 +85,7 @@ class Scraper():
     # and their definition will be overwritten in subclasses where the extraction is implemented;
     # or data types will be added to the structure below
     # 
-    # "load_time" needs to always have a value of None (no need to implement extraction)
+    # "loaded_in_seconds" needs to always have a value of None (no need to implement extraction)
     BASE_DATA_TYPES = {
         data_type : lambda x: None for data_type in BASE_DATA_TYPES_LIST # using argument for lambda because it will be used with "self"
     }
@@ -129,19 +135,23 @@ class Scraper():
         self._extract_page_tree()
         time_end = time.time()
         # don't pass load time as info to be extracted by _extract_product_data
-        return_load_time = "load_time" in info_type_list_copy
+        return_load_time = "loaded_in_seconds" in info_type_list_copy
         if return_load_time:
-            info_type_list_copy.remove("load_time")
+            info_type_list_copy.remove("loaded_in_seconds")
 
         ret_dict = self._extract_product_data(info_type_list_copy)
         # add load time to dictionary -- if it's in the list
         # TODO:
-        #      - format for load_time?
+        #      - format for loaded_in_seconds?
         #      - what happens if there are requests to js info too? count that load time as well?
         if return_load_time:
-            ret_dict["load_time"] = round(time_end - time_start, 2)
+            ret_dict["loaded_in_seconds"] = round(time_end - time_start, 2)
 
-        return ret_dict
+        # pack results into nested structure
+        nested_results_dict = self._pack_returned_object(ret_dict)
+
+        return nested_results_dict
+
 
     # method that returns xml tree of page, to extract the desired elemets from
     def _extract_page_tree(self):
@@ -184,6 +194,41 @@ class Scraper():
             results_dict[info] = results
 
         return results_dict
+
+    # pack returned object data types into nested dictionary according to specific format
+    # arguments: data_types_dict - contains original flat response dictionary
+    # returns: result nested response dictionary
+    def _pack_returned_object(self, data_types_dict):
+        # structure containing subdictionaries of returned object
+        # and how they should be grouped.
+        # keys are root object keys, values are lists of result object keys that should be nested
+        # into these root keys
+        # keys that should be left in the root are not included in this structure
+        # TODO: make sure this is synchronized somehow with BASE_DATA_TYPES? like there should be no extra data types here
+        #       maybe put it as an instance variable
+        # TODO: what if only specific data was requested? will this still work?
+        DICT_STRUCTURE = {
+            "processed" : ["product_name", "description", "price", "features", "htags", "date"], \
+            "attributes" : ["model", "manufacturer", "UPC/EAN/ISBN", "feature_count",
+                            "product_images", "owned", "pdf_url", "pdf_count", "video_url", "video_count", \
+                            "loaded_in_seconds", "title", "review_count"], \
+            "categories" : ["super_dept", "dept"],
+            # TODO: for now naming "description" "short_desc" because of duplicate issue. To change back...
+            "meta" : ["short_desc", "keywords"],
+        }
+
+        # pack input object into nested structure according to structure above
+        nested_object = {key : {} for key in DICT_STRUCTURE.keys()}
+        for root_key in DICT_STRUCTURE.keys():
+            for subkey in DICT_STRUCTURE[root_key]:
+                nested_object[root_key][subkey] = data_types_dict[subkey]
+                print subkey
+                print data_types_dict.keys()
+                del data_types_dict[subkey]
+        # now add leftover keys to root level
+        nested_object.update(data_types_dict)
+
+        return nested_object
 
     # base function to test input URL is valid.
     # always returns True, to be used for subclasses where it is not implemented

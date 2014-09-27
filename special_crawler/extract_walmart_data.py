@@ -444,11 +444,11 @@ class WalmartScraper(Scraper):
 
     DATA_TYPES = { \
         # Info extracted from product page
-        "name" : _product_name_from_tree, \
+        "product_name" : _product_name_from_tree, \
         "keywords" : _meta_keywords_from_tree, \
         "brand" : _meta_brand_from_tree, \
         "short_desc" : _short_description_from_tree, \
-        "long_desc" : _long_description_from_tree, \
+        "description" : _long_description_from_tree, \
         "price" : _price_from_tree, \
         "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
@@ -457,13 +457,13 @@ class WalmartScraper(Scraper):
         "nr_features" : _nr_features_from_tree, \
         "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
-        "total_reviews": _nr_reviews_from_tree, \
+        "review_count": _nr_reviews_from_tree, \
         "average_review": _avg_review_from_tree, \
         # video needs both page source and separate requests
         "video_url" : _video_url, \
 
 
-        "load_time": None \
+        "loaded_in_seconds": None \
         }
 
     # special data that can't be extracted from the product page
