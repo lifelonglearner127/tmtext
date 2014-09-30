@@ -163,16 +163,17 @@ class HomedepotProductsSpider(BaseProductsSpider):
             # No further pages were found.
             return product
 
-        # FIXME If it doesn't match, "js" is undefined.
-        m = re.match(r'None\((.*)\);', response.body)
+        m = re.match(r'None\((.*)\);', response.body_as_unicode())
         if m:
             js = m.group(1)
-        jsdata = json.loads(js)
+            jsdata = json.loads(js)
 
-        try:
-            html = jsdata['Resonance']['Response'][0]['output']
-        except (KeyError, IndexError):
-            html = None
+            try:
+                html = jsdata['Resonance']['Response'][0]['output']
+            except (KeyError, IndexError):
+                html = None
+        else:
+            html = response.body_as_unicode()
 
         if html:
             sel = Selector(text=html)
