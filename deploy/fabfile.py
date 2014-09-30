@@ -36,8 +36,8 @@ TODO:
 13) work on updates.
 '''
 
-# For the moment the configuration will be constant defined here.
-# Leter this info will be added to a configuration file.
+# FIXME: For the moment the configuration will be constant defined here.
+# Later this info will be added to a configuration file.
 #SSH_USER = 'vagrant'
 #SSH_PASSWORD = 'vagrant'
 #SSH_SERVER = '127.0.0.1'
@@ -85,7 +85,6 @@ def virtualenv(environment):
 
 def set_environment_vagrant():
     '''Define Vagrant's environment'''
-
     puts(green('Using Vagrant settings'))
     global SSH_SUDO_USER
     global SSH_SUDO_PASSWORD
@@ -240,16 +239,6 @@ def _setup_virtual_env_web_runner():
         run('pip install Paste')
 
 
-def _setup_virtual_env_web_runner():
-    venv_webrunner = _get_venv_path(VENV_WEB_RUNNER)
-    if not cuisine.dir_exists(venv_webrunner):
-        run('virtualenv -p python2.7 ' + venv_webrunner)
-
-    with virtualenv(VENV_WEB_RUNNER):
-        run('pip install wheel')
-        run('pip install Paste')
-
-
 def _setup_virtual_env_web_runner_web():
     venv_webrunner_web = _get_venv_path(VENV_WEB_RUNNER_WEB)
     if not cuisine.dir_exists(venv_webrunner_web):
@@ -263,9 +252,6 @@ def _setup_virtual_env_web_runner_web():
 def setup_virtual_env(scrapyd=True, web_runner=True, web_runner_web=True):
     '''Handle virtual envrironment installation'''
     puts(green('Installing virtual environments'))
-
-    venv_webrunner = _get_venv_path(VENV_WEB_RUNNER)
-    venv_webrunner_web = _get_venv_path(VENV_WEB_RUNNER_WEB)
 
     run('mkdir -p ' + VENV_PREFIX)
     if scrapyd:
@@ -427,8 +413,7 @@ def _run_web_runner():
 
 def _is_django_running():
     '''Return boolean representing if django is running or not'''
-    process = processes = run(
-        "ps -ef | grep python | grep manage | grep runserver; true")
+    process = run("ps -ef | grep python | grep manage | grep runserver; true")
     return process.stdout.find('\n') > 0
 
 
