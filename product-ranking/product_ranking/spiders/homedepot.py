@@ -151,7 +151,7 @@ class HomedepotProductsSpider(BaseProductsSpider):
             "ev": "product",
             "ei": critemid[0],
             "storenum": "121",
-            "cb": "",
+            "cb": "None",
         }
         return urlparse.urljoin(
             self.SCRIPT_URL, "?" + urllib.urlencode(payload))
