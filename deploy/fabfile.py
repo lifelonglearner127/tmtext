@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 from __future__ import with_statement
-from  fabric.api import cd, env, run, local, sudo, settings, prefix
+
+import os
+import re
+from contextlib import contextmanager
+
+from fabric.api import cd, env, run, local, sudo, settings, prefix
 from fabric.contrib.console import confirm
 from fabric.utils import puts
 from fabric.colors import red, green
 import cuisine
-import os
-import re
-from contextlib import contextmanager
 
 '''
 Fabric deployment script for Web Runner
@@ -59,9 +61,6 @@ REPO_BASE_PATH = '~/repos/'
 REPO_URL = 'https://ContentSolutionsDeploy:Content2020@bitbucket.org/dfeinleib/tmtext.git'
 
 
-
-
-
 @contextmanager
 def virtualenv(environment):
     '''Define the virtual environment to use.
@@ -76,14 +75,12 @@ def virtualenv(environment):
     The parameter environment is the name of the virtual environment
     followed by VENV_PREFIX
     '''
-
     venv_path = VENV_PREFIX + os.sep + environment
     venv_activate = 'source %s%sbin%sactivate' % (venv_path, os.sep, os.sep)
 
     with cuisine.cd(venv_path):
         with prefix(venv_activate):
             yield
-
 
 
 def set_environment_vagrant():
@@ -135,16 +132,22 @@ def setup_users():
 
     orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
     env.user, env.password, env.key_filename = \
-      SSH_SUDO_USER , SSH_SUDO_PASSWORD, SSH_SUDO_CERT
+        SSH_SUDO_USER , SSH_SUDO_PASSWORD, SSH_SUDO_CERT
 
     cuisine.group_ensure(WEB_RUNNER_GROUP)
-    cuisine.user_ensure(WEB_RUNNER_USER, gid=WEB_RUNNER_GROUP,
-      shell='/bin/bash', passwd=WEB_RUNNER_PASSWORD, encrypted_passwd=False)
+    cuisine.user_ensure(
+        WEB_RUNNER_USER,
+        gid=WEB_RUNNER_GROUP,
+        shell='/bin/bash',
+        passwd=WEB_RUNNER_PASSWORD,
+        encrypted_passwd=False,
+    )
 
     # Create the ssh certificate for web_runner user
     rem_ssh_cert_file = '~%s/.ssh/authorized_keys' % WEB_RUNNER_USER
-    if orig_cert and not sudo('test -e %s && echo OK ; true'
-                             % (rem_ssh_cert_file)).endswith("OK"):
+    if orig_cert and not sudo(
+            'test -e %s && echo OK ; true' % (rem_ssh_cert_file,)
+    ).endswith("OK"):
         sudo('mkdir -p ~%s/.ssh' % WEB_RUNNER_USER)
         sudo('chmod 700  ~%s/.ssh' % WEB_RUNNER_USER)
 
@@ -152,21 +155,21 @@ def setup_users():
         cuisine.file_write('/tmp/inst_cert', cert_content)
         sudo('mv /tmp/inst_cert ' + rem_ssh_cert_file)
         sudo('chmod 600 %s' % rem_ssh_cert_file)
-        sudo('chown -R %s:%s ~%s/.ssh/' %
-          (WEB_RUNNER_USER, WEB_RUNNER_GROUP, WEB_RUNNER_USER))
+        sudo(
+            'chown -R %s:%s ~%s/.ssh/'
+            % (WEB_RUNNER_USER, WEB_RUNNER_GROUP, WEB_RUNNER_USER))
 
     env.user, env.password, env.key_filename = \
-      orig_user, orig_passw, orig_cert
+        orig_user, orig_passw, orig_cert
 
 
 def setup_packages():
     '''Install all packages prerequirements'''
-
     puts(green('Installing packages'))
 
     orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
     env.user, env.password, env.key_filename = \
-      SSH_SUDO_USER , SSH_SUDO_PASSWORD, SSH_SUDO_CERT
+        SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
 
     cuisine.package_ensure('python-software-properties')
     # TODO: verify if the repo must be added
@@ -183,7 +186,7 @@ def setup_packages():
     sudo('pip install virtualenv --upgrade')
 
     env.user, env.password, env.key_filename = \
-      orig_user, orig_passw, orig_cert
+        orig_user, orig_passw, orig_cert
 
 
 def setup_tmux():
@@ -212,13 +215,12 @@ def _get_venv_path(venv):
 
 
 def _get_repo_path():
-    return REPO_BASE_PATH + os.sep + \
-      re.search('.+\/([^\s]+?)\.git$',REPO_URL).group(1)
+    return REPO_BASE_PATH + os.sep + re.search(
+        '.+\/([^\s]+?)\.git$', REPO_URL).group(1)
 
 
 def _setup_virtual_env_scrapyd():
     '''Handle scrapyd virtual environment'''
-
     venv_scrapyd = _get_venv_path(VENV_SCRAPYD)
     if not cuisine.dir_exists(venv_scrapyd):
         run('virtualenv -p python2.7 ' + venv_scrapyd)
@@ -274,20 +276,17 @@ def setup_virtual_env(scrapyd=True, web_runner=True, web_runner_web=True):
         _setup_virtual_env_web_runner_web()
 
 
-
 def get_repos(branch='master'):
     '''Download and install the main source repository'''
-
     puts(green('Updating repositories'))
 
     repo_path = _get_repo_path()
     if not cuisine.dir_exists(repo_path):
         run('mkdir -p ' + REPO_BASE_PATH)
-        run('cd %s && git clone %s && cd %s && git checkout %s' %
-          (REPO_BASE_PATH, REPO_URL, repo_path, branch))
+        run('cd %s && git clone %s && cd %s && git checkout %s'
+            % (REPO_BASE_PATH, REPO_URL, repo_path, branch))
     else:
-        run('cd %s && git checkout %s && git pull' %
-          (repo_path, branch) )
+        run('cd %s && git checkout %s && git pull' % (repo_path, branch))
 
 
 def _configure_scrapyd():
@@ -295,7 +294,7 @@ def _configure_scrapyd():
     repo_path = _get_repo_path()
 
     run('cp %s/web_runner/conf/instance_two/scrapyd.conf %s'
-      % (repo_path, venv_scrapyd))
+        % (repo_path, venv_scrapyd))
 
 
 def _configure_web_runner():
@@ -303,17 +302,17 @@ def _configure_web_runner():
     repo_path = _get_repo_path()
 
     run('cp %s/web_runner/conf/instance_two/instance_two.ini %s'
-      % (repo_path, venv_webrunner))
+        % (repo_path, venv_webrunner))
 
 
 def _configure_web_runner_web():
     venv_webrunner_web = _get_venv_path(VENV_WEB_RUNNER_WEB)
-    venv_webrunner_web_activate = '%s%sbin%sactivate' \
-      % (venv_webrunner_web, os.sep, os.sep)
+    venv_webrunner_web_activate = '%s%sbin%sactivate' % (
+        venv_webrunner_web, os.sep, os.sep)
     repo_path = _get_repo_path()
 
     settings_prod = repo_path + '/web_runner_web/web_runner_web/' \
-      + 'settings.production.py'
+        'settings.production.py'
     settings_link = repo_path + '/web_runner_web/web_runner_web/settings.py'
 
     # Create the settings.py
@@ -324,7 +323,8 @@ def _configure_web_runner_web():
     django_db = repo_path + '/web_runner_web/db.sqlite3'
     if not cuisine.file_exists(django_db):
         with virtualenv(VENV_WEB_RUNNER_WEB):
-            run("cd %s/web_runner_web && ./manage.py syncdb --noinput" % repo_path)
+            run("cd %s/web_runner_web && ./manage.py syncdb --noinput"
+                % repo_path)
 
         run('tmux new-window -k -t webrunner:4 -n django_config')
         run("tmux send-keys -t webrunner:4 'source %s' C-m" %
@@ -348,7 +348,7 @@ def configure():
 def _install_web_runner():
     venv_webrunner = _get_venv_path(VENV_WEB_RUNNER)
     venv_webrunner_activate = '%s%sbin%sactivate' \
-      % (venv_webrunner, os.sep, os.sep)
+        % (venv_webrunner, os.sep, os.sep)
     repo_path = _get_repo_path()
 
     run("tmux send-keys -t webrunner:1 'source %s' C-m" %
@@ -383,8 +383,7 @@ def _restart_scrapyd():
 
 def _run_scrapyd_deploy():
     venv_scrapyd = _get_venv_path(VENV_SCRAPYD)
-    venv_scrapyd_activate = '%s%sbin%sactivate' \
-      % (venv_scrapyd, os.sep, os.sep)
+    venv_scrapyd_activate = '%s%sbin%sactivate' % (venv_scrapyd, os.sep, os.sep)
     repo_path = _get_repo_path()
 
     run('tmux new-window -k -t webrunner:4 -n scrapyd_deploy')
@@ -397,8 +396,7 @@ def _run_scrapyd_deploy():
 
 def _run_scrapyd():
     venv_scrapyd = _get_venv_path(VENV_SCRAPYD)
-    venv_scrapyd_activate = '%s%sbin%sactivate' \
-      % (venv_scrapyd, os.sep, os.sep)
+    venv_scrapyd_activate = '%s%sbin%sactivate' % (venv_scrapyd, os.sep, os.sep)
 
     run("tmux send-keys -t webrunner:0 'source %s' C-m" % venv_scrapyd_activate)
     run("tmux send-keys -t webrunner:0 'cd %s' C-m" % venv_scrapyd)
@@ -409,9 +407,10 @@ def _run_scrapyd():
 def _run_web_runner():
     venv_webrunner = _get_venv_path(VENV_WEB_RUNNER)
     venv_webrunner_activate = '%s%sbin%sactivate' \
-      % (venv_webrunner, os.sep, os.sep)
+        % (venv_webrunner, os.sep, os.sep)
 
-    run("tmux send-keys -t webrunner:1 'source %s' C-m" % venv_webrunner_activate)
+    run("tmux send-keys -t webrunner:1 'source %s' C-m"
+        % venv_webrunner_activate)
     run("tmux send-keys -t webrunner:1 'cd %s' C-m" % venv_webrunner)
     run("tmux send-keys -t webrunner:1 'pserve instance_two.ini --stop-daemon' C-m")
     run("tmux send-keys -t webrunner:1 'pserve instance_two.ini start' C-m")
@@ -428,18 +427,22 @@ def _run_web_runner():
 
 def _is_django_running():
     '''Return boolean representing if django is running or not'''
-    process = processes = run("ps -ef | grep python | grep manage | grep runserver; true")
-    return process.stdout.find('\n')>0
+    process = processes = run(
+        "ps -ef | grep python | grep manage | grep runserver; true")
+    return process.stdout.find('\n') > 0
+
 
 def _run_web_runner_web():
     venv_webrunner_web = _get_venv_path(VENV_WEB_RUNNER_WEB)
     venv_webrunner_web_activate = '%s%sbin%sactivate' \
-      % (venv_webrunner_web, os.sep, os.sep)
+        % (venv_webrunner_web, os.sep, os.sep)
     repo_path = _get_repo_path()
 
     if not _is_django_running():
-        run("tmux send-keys -t webrunner:2 'source %s' C-m" % venv_webrunner_web_activate)
-        run("tmux send-keys -t webrunner:2 'cd %s/web_runner_web' C-m" % repo_path)
+        run("tmux send-keys -t webrunner:2 'source %s' C-m"
+            % venv_webrunner_web_activate)
+        run("tmux send-keys -t webrunner:2 'cd %s/web_runner_web' C-m"
+            % repo_path)
         run("tmux send-keys -t webrunner:2 './manage.py runserver 0.0.0.0:8000' C-m")
 
 
@@ -454,7 +457,6 @@ def run_servers(restart_scrapyd=False):
     _run_web_runner_web()
 
 
-
 def _common_tasks():
     setup_users()
     setup_packages()
@@ -462,7 +464,6 @@ def _common_tasks():
 
 
 def deploy_scrapyd(restart_scrapyd=False, branch='master'):
-
     _common_tasks()
     setup_virtual_env(web_runner=False, web_runner_web=False)
     get_repos(branch=branch)
@@ -471,7 +472,6 @@ def deploy_scrapyd(restart_scrapyd=False, branch='master'):
     if restart_scrapyd:
         _restart_scrapyd()
     _run_scrapyd()
-
 
 
 def deploy_web_runner(branch='master'):
@@ -491,7 +491,6 @@ def deploy_web_runner_web(branch='master'):
     _run_web_runner_web()
 
 
-
 def deploy(restart_scrapyd=False, branch='master'):
     _common_tasks()
     setup_virtual_env()
@@ -499,7 +498,5 @@ def deploy(restart_scrapyd=False, branch='master'):
     configure()
     install()
     run_servers(restart_scrapyd)
-
-
 
 # vim: set expandtab ts=4 sw=4:
