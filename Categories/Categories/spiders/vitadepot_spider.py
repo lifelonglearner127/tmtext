@@ -12,6 +12,8 @@ from spiders_utils import Utils
 
 
 class VitadepotBase(object):
+    """Helpers for vitadepot spiders to use"""
+
     EXCLUDED_DEPARTMENTS = [
         "/shop-by-brand.html",
         "/shop-by-health-concern.html",
@@ -22,19 +24,32 @@ class VitadepotBase(object):
         super(VitadepotBase, self).__init__()
 
     def _is_excluded(self, url):
+        """Return True if url is listed in self.EXCLUDED_DEPARTMENTS"""
         scheme, netloc, path, query, fragment = urlparse.urlsplit(url)
         return path in self.EXCLUDED_DEPARTMENTS
 
     def _get_id(self):
+        """Return an integer spider-wise uid"""
         self.id_counter += 1
         return self.id_counter
 
-    def _set_value(self, item, key, value, convert=lambda val: val):
+    def _set_value(self, item, key, value, convert=lambda val: val)
         """Set item["key"] to value if value is not None"""
         if value is not None:
             item[key] = convert(value)
 
     def _scrape_classifications(self, response):
+        """Scrape categories listed on the page.
+
+        Returns:
+           {classification: [(url, text, nr_products), ...]}
+
+        where:
+           classification - a classification name
+           url - link to the category page
+           text - name of category
+           nr_products - number of products in that category
+        """
         names = response.css('dl#narrow-by-list dt::text').extract()
         fields = response.css('dl#narrow-by-list dd')
         result = {}
@@ -55,6 +70,7 @@ class VitadepotBase(object):
         return result
 
     def _scrape_department_links(self, response):
+        """Scrape all links to departments on the page, excluding urls listed in self.EXCLUDED_DEPARTMENTS"""
         top_level_links = response.css('li.level0')
         for link in top_level_links:
             url = link.css('::attr(href)').extract()[0]
@@ -93,6 +109,7 @@ class VitadepotSpider(BaseSpider, VitadepotBase):
         yield category
 
     def _populate_category(self, response):
+        """Set html-independent fields"""
         category = response.meta['category']
         parent = response.meta.get('parent', {})
         category['url'] = response.url
@@ -109,6 +126,7 @@ class VitadepotSpider(BaseSpider, VitadepotBase):
         self._populate_from_html(response)
 
     def _populate_from_html(self, response):
+        """Set html-dependant fields"""
         category = response.meta['category']
         #description = response.xpath('//div[@class="category-description std"]/*[not(a[@class="viewAllCats"])]')
         description = response.xpath('//div[@class="category-description std"]/node()')
@@ -138,18 +156,22 @@ class VitadepotBestsellerSpider(BaseSpider, VitadepotBase):
             product['department'] = department
             product['rank'] = rank
             yield Request(url, self.parse_product, meta={'product': product})
-        if department is None:
+        if department is None:  # This is a starting page
             for url, text in self._scrape_department_links(response):
                 yield Request(url, callback=self.parse, meta={"department": text})
 
     def parse_product(self, response):
         product = response.meta['product']
+
+        # Searching for SKU
         extras = response.css('.extratributes ul li span::text').extract()
         for extra in extras:
             match = re.search('SKU (#\d+)', extra)
             if match:
                 product['SKU'] = match.groups()[0]
                 break
+
+        # Fill other fields in
         product['page_title'] = response.css('title::text').extract()[0].replace('\n', ' ').strip()
         product['date'] = datetime.date.today().isoformat()
         product['product_name'] = response.css('.product-name h1::text').extract()[0]
