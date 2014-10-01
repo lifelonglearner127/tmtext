@@ -1,20 +1,17 @@
 import urlparse
 import re
+import datetime
 
 from scrapy.spider import BaseSpider
 from scrapy import Request
 from scrapy.log import msg, WARNING
 from scrapy.selector.unified import SelectorList
 
-from Categories.items import CategoryItem
+from Categories.items import CategoryItem, ProductItem
 from spiders_utils import Utils
 
 
-class VitaDepotSpider(BaseSpider):
-    name = "vitadepot"
-    allowed_domains = ["vitadepot.com"]
-    start_urls = ["http://vitadepot.com/"]
-
+class VitadepotBase(object):
     EXCLUDED_DEPARTMENTS = [
         "/shop-by-brand.html",
         "/shop-by-health-concern.html",
@@ -22,7 +19,7 @@ class VitaDepotSpider(BaseSpider):
 
     def __init__(self, *args, **kwargs):
         self.id_counter = 0
-        super(VitaDepotSpider, self).__init__(*args, **kwargs)
+        super(VitadepotBase, self).__init__()
 
     def _is_excluded(self, url):
         scheme, netloc, path, query, fragment = urlparse.urlsplit(url)
@@ -37,13 +34,47 @@ class VitaDepotSpider(BaseSpider):
         if value is not None:
             item[key] = convert(value)
 
-    def parse(self, response):
+    def _scrape_classifications(self, response):
+        names = response.css('dl#narrow-by-list dt::text').extract()
+        fields = response.css('dl#narrow-by-list dd')
+        result = {}
+        for name, field in zip(names, fields):
+            this_result = []
+            result[name.strip()] = this_result
+            for li in field.css('ol li'):
+                link = li.css('a')
+                url = link.css('::attr(href)').extract()[0]
+                anchor = ''.join(link.xpath('./text()|./*/text()').extract())
+                match = re.search('\d+', ''.join(li.xpath('./text()').extract()))
+                if match:
+                    nr_products = int(match.group())
+                else:
+                    msg('Not found product nr for %s on %s' % (anchor or 'UNKNOWN', response.url), WARNING)
+                    nr_products = 0
+                this_result.append((url, anchor, nr_products))
+        return result
+
+    def _scrape_department_links(self, response):
         top_level_links = response.css('li.level0')
         for link in top_level_links:
             url = link.css('::attr(href)').extract()[0]
             text = link.css('::text').extract()[0]
             if self._is_excluded(url):
                 continue
+            yield url, text
+
+
+class VitadepotSpider(BaseSpider, VitadepotBase):
+    name = "vitadepot"
+    allowed_domains = ["vitadepot.com"]
+    start_urls = ["http://vitadepot.com/"]
+
+    def __init__(self, *args, **kwargs):
+        self.id_counter = 0
+        super(VitadepotSpider, self).__init__(*args, **kwargs)
+
+    def parse(self, response):
+        for url, text in self._scrape_department_links(response):
             category = CategoryItem(text=text)
             yield Request(url, callback=self._parse_category, meta={"category": category})
 
@@ -92,22 +123,51 @@ class VitaDepotSpider(BaseSpider):
         #if description and desc_title:
         #    category['keyword_count'], category['keyword_density'] = Utils.phrases_freq(desc_title, description)
 
-    def _scrape_classifications(self, response):
-        names = response.css('dl#narrow-by-list dt::text').extract()
-        fields = response.css('dl#narrow-by-list dd')
-        result = {}
-        for name, field in zip(names, fields):
-            this_result = []
-            result[name.strip()] = this_result
-            for li in field.css('ol li'):
-                link = li.css('a')
-                url = link.css('::attr(href)').extract()[0]
-                anchor = ''.join(link.xpath('./text()|./*/text()').extract())
-                match = re.search('\d+', ''.join(li.xpath('./text()').extract()))
-                if match:
-                    nr_products = int(match.group())
-                else:
-                    msg('Not found product nr for %s on %s' % (anchor or 'UNKNOWN', response.url), WARNING)
-                    nr_products = 0
-                this_result.append((url, anchor, nr_products))
-        return result
+
+
+class VitadepotBestsellerSpider(BaseSpider, VitadepotBase):
+    name = "vitadepot_bestseller"
+    start_urls = ["http://vitadepot.com"]
+
+    def __init__(self, *args, **kwargs):
+        super(VitadepotBestsellerSpider, self).__init__(*args, **kwargs)
+
+    def parse(self, response):
+        department = response.meta.get('department')
+        for rank, (url, product) in enumerate(self._scrape_product_links(response)):
+            product['department'] = department
+            product['rank'] = rank
+            yield Request(url, self.parse_product, meta={'product': product})
+        if department is None:
+            for url, text in self._scrape_department_links(response):
+                yield Request(url, callback=self.parse, meta={"department": text})
+
+    def parse_product(self, response):
+        product = response.meta['product']
+        extras = response.css('.extratributes ul li span::text').extract()
+        for extra in extras:
+            match = re.search('SKU (#\d+)', extra)
+            if match:
+                product['SKU'] = match.groups()[0]
+                break
+        product['page_title'] = response.css('title::text').extract()[0].replace('\n', ' ').strip()
+        product['date'] = datetime.date.today().isoformat()
+        product['product_name'] = response.css('.product-name h1::text').extract()[0]
+        yield product
+
+    def _scrape_product_links(self, response):
+        parent_elts = response.css('.item')
+        for parent in parent_elts:
+            product = ProductItem()
+            url = parent.css('.product-name a::attr(href)').extract()[0]
+            product['list_name'] = parent.css('.product-name a::text').extract()[0]
+            price = parent.css('.special-price .price::text')
+            listprice = parent.css('.old-price .price::text')
+            price = price or parent.css('.price')[0].css('::text')
+            try:
+                listprice = listprice or parent.css('#old-price-')[0].css('::text')
+            except IndexError:
+                listprice = price
+            product['price'] = ''.join(price.extract()).strip()
+            product['listprice'] = ''.join(listprice.extract()).strip()
+            yield url, product
