@@ -33,7 +33,7 @@ class VitadepotBase(object):
         self.id_counter += 1
         return self.id_counter
 
-    def _set_value(self, item, key, value, convert=lambda val: val)
+    def _set_value(self, item, key, value, convert=lambda val: val):
         """Set item["key"] to value if value is not None"""
         if value is not None:
             item[key] = convert(value)
@@ -138,8 +138,8 @@ class VitadepotSpider(BaseSpider, VitadepotBase):
         self._set_value(category, 'description_title', desc_title)
         tokenized = Utils.normalize_text(description) if description else []
         category['description_wc'] = len(tokenized)
-        #if description and desc_title:
-        #    category['keyword_count'], category['keyword_density'] = Utils.phrases_freq(desc_title, description)
+        if description and desc_title:
+            category['keyword_count'], category['keyword_density'] = Utils.phrases_freq(desc_title, description)
 
 
 
