@@ -178,7 +178,7 @@ class VitadepotBestsellerSpider(BaseSpider, VitadepotBase):
         yield product
 
     def _scrape_product_links(self, response):
-        parent_elts = response.css('.item')
+        parent_elts = response.css('#cat_bestSellers .item')
         for parent in parent_elts:
             product = ProductItem()
             url = parent.css('.product-name a::attr(href)').extract()[0]
