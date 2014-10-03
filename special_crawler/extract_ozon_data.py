@@ -231,7 +231,7 @@ class OzonScraper(Scraper):
         categories["super_dept"] = self._super_dept()
         categories["dept"] = self._dept()
         categories["full"] = self._all_depts()
-        categories["hostname"] = 'Tesco'
+        categories["hostname"] = 'Ozon'
         
         return categories
     
@@ -330,7 +330,7 @@ class OzonScraper(Scraper):
         x    "owned"
         x    "product_id"
         x    "image_url"
-        "video_url"
+    "video_url"
     "upc" - can't find an example of this on Ozon
         x    "product_images"
         x    "categories"
