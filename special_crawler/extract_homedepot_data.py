@@ -76,7 +76,7 @@ class HomeDepotScraper(Scraper):
     # extract product name from its product page tree
     # ! may throw exception if not found
     def _product_name_from_tree(self):
-        return self.tree_html.xpath('//h1[@id="title"]/span[@id="productTitle"]')[0].text
+        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
 
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
@@ -108,7 +108,7 @@ class HomeDepotScraper(Scraper):
         return full_description
 
 
-    # extract product price from its product product page tree
+    # extract product price from its product product page tree.
     def _price_from_tree(self):
         
         price = self.tree_html.xpath("//*[@id='priceblock_ourprice']//text()")
@@ -267,7 +267,7 @@ class HomeDepotScraper(Scraper):
 
     '''
     
-    name
+    x    name
     x    keywords
     short
     long
