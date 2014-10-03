@@ -35,7 +35,6 @@ class Scraper():
 
     BASE_DATA_TYPES_LIST = {
             "product_name", # name of product, string
-            "keywords", # keywords associated with product (usually from "meta" tag), string
             "short_desc", # short description, string
             "description", # long description, string
             "price", # price (string, with or without currency)
@@ -67,8 +66,8 @@ class Scraper():
             "pdf_url", # urls of product pdfs, list of strings
             "average_review", # average value of review, float?
             "review_count", # total number of reviews, int
-            "meta_description", # description in meta tag, string
             "asin",
+            "meta", # information (keywords and description) extracted from meta tags, dictionary like {"keywords":"string", "description":"string"}
             # ^^ above: all collected fields from all subscrapers
             # below: extra fields taken from PHP crawler returned object
             "manufacturer",
@@ -212,19 +211,22 @@ class Scraper():
             "attributes" : ["model", "manufacturer", "UPC/EAN/ISBN", "feature_count",
                             "product_images", "owned", "pdf_url", "pdf_count", "video_url", "video_count", \
                             "loaded_in_seconds", "title", "review_count"], \
-            "categories" : ["super_dept", "dept"],
-            # TODO: for now naming "description" "short_desc" because of duplicate issue. To change back...
-            "meta" : ["short_desc", "keywords"],
+            # "categories" : ["super_dept", "dept"],
         }
 
         # pack input object into nested structure according to structure above
-        nested_object = {key : {} for key in DICT_STRUCTURE.keys()}
+        nested_object = {}
         for root_key in DICT_STRUCTURE.keys():
             for subkey in DICT_STRUCTURE[root_key]:
-                nested_object[root_key][subkey] = data_types_dict[subkey]
-                print subkey
-                print data_types_dict.keys()
-                del data_types_dict[subkey]
+                # only add this if this data type was requested
+                if subkey in data_types_dict:
+                    if root_key not in nested_object:
+                        nested_object[root_key] = {}
+
+                    nested_object[root_key][subkey] = data_types_dict[subkey]
+                    # print subkey
+                    # print data_types_dict.keys()
+                    del data_types_dict[subkey]
         # now add leftover keys to root level
         nested_object.update(data_types_dict)
 

@@ -307,9 +307,18 @@ class ServiceSimpleTest(unittest.TestCase):
 
         # all data types (keys) for this scraper
         DATA_TYPES = scraper.BASE_DATA_TYPES.keys()
+        
+        # flatten it into a list
+        response_keys = response.keys()
+        for top_key in ["attributes", "processed"]:
+            if top_key in response.keys():
+                response_keys += response[top_key].keys()
+                response_keys.remove(top_key)
+
 
         # verify all keys are in the output structure
-        self.assertEqual(sorted(response.keys()), sorted(DATA_TYPES))
+        print sorted(DATA_TYPES)
+        self.assertEqual(sorted(response_keys), sorted(DATA_TYPES))
 
     # template function:
     # test requests for specific data (one type at once):
@@ -326,9 +335,16 @@ class ServiceSimpleTest(unittest.TestCase):
             print request_url
             response = requests.get(request_url).json()
 
+            # flatten it into a list
+            response_keys = response.keys()
+            for top_key in ["attributes", "processed"]:
+                if top_key in response.keys():
+                    response_keys += response[top_key].keys()
+                    response_keys.remove(top_key)
+
             print response
 
-            self.assertEqual(response.keys(), [data_type])
+            self.assertEqual(response_keys, [data_type])
 
     # test all keys are in the response for simple (all-data) request for walmart
     # (using template function)

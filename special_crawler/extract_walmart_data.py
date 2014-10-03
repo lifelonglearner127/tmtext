@@ -186,6 +186,23 @@ class WalmartScraper(Scraper):
 
         return self.tree_html.xpath("//meta[@name='Keywords']/@content")[0]
 
+    # extract info from meta tags
+    # ! TODO: meta description not implemented yet
+    def _meta_info_from_tree(self):
+        """Extracts product info from its page meta tags:
+        keywords for product and description
+        Returns:
+            dictionary containing "keywords" and "description" as tags,
+            and their values
+        """
+
+        keywords = self._meta_keywords_from_tree()
+        # TODO
+        description = None
+
+        return {"keywords" : keywords,\
+                "description" : description}
+
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_brand_from_tree(self):
@@ -445,7 +462,7 @@ class WalmartScraper(Scraper):
     DATA_TYPES = { \
         # Info extracted from product page
         "product_name" : _product_name_from_tree, \
-        "keywords" : _meta_keywords_from_tree, \
+        "meta" : _meta_info_from_tree, \
         "brand" : _meta_brand_from_tree, \
         "short_desc" : _short_description_from_tree, \
         "description" : _long_description_from_tree, \
@@ -454,7 +471,6 @@ class WalmartScraper(Scraper):
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
         "features" : _features_from_tree, \
-        "nr_features" : _nr_features_from_tree, \
         "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
         "review_count": _nr_reviews_from_tree, \
