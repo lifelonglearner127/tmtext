@@ -471,6 +471,7 @@ class WalmartScraper(Scraper):
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
         "features" : _features_from_tree, \
+        "feature_count" : _nr_features_from_tree, \
         "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
         "review_count": _nr_reviews_from_tree, \

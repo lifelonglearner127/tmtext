@@ -74,7 +74,8 @@ class Scraper():
             "UPC/EAN/ISBN",
             "pdf_count",
             "video_count",
-            "date"
+            "date",
+            "item_id"
     }
 
     # Structure containing data types returned by the crawler as keys
@@ -210,7 +211,7 @@ class Scraper():
             "processed" : ["product_name", "description", "price", "features", "htags", "date"], \
             "attributes" : ["model", "manufacturer", "UPC/EAN/ISBN", "feature_count",
                             "product_images", "owned", "pdf_url", "pdf_count", "video_url", "video_count", \
-                            "loaded_in_seconds", "title", "review_count"], \
+                            "loaded_in_seconds", "title", "review_count", "item_id"], \
             # "categories" : ["super_dept", "dept"],
         }
 
