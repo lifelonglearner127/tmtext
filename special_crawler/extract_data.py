@@ -49,7 +49,6 @@ class Scraper():
             "product_id", # product id (usually from page url), string
             "image_url", # urls of product images, list of strings
             "video_url", # urls of product videos, list of strings
-            "upc", # UPC of product, string
             "product_images", # number of product images, int
             "categories", # info on product categories, dictionary like: {"super_dept": "string", "dept": "string", "full": ["full", "path", "to", "product"], "hostname": "string"}
             "dept", # product department
