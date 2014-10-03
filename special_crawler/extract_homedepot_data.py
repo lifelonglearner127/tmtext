@@ -5,10 +5,11 @@ import re
 import sys
 import json
 
-from lxml import html
+from lxml import html, etree
 import time
 import requests
 from extract_data import Scraper
+
 
 class HomeDepotScraper(Scraper):
     
@@ -33,7 +34,7 @@ class HomeDepotScraper(Scraper):
     #      though this method still seems to work...
     def _extract_product_id(self):
         #product_id = self.product_page_url.split('/')[-1]
-        product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+        product_id = self.tree_html.xpath('//h2[@class="product_details"]//span[@itemprop="productID"]/text()')[0]
 
         return product_id
 
@@ -50,12 +51,25 @@ class HomeDepotScraper(Scraper):
 
     # return dictionary with one element containing the PDF
     def pdf_for_url(self):
-        return None
-    
+        moreinfo = self.tree_html.xpath('//div[@id="moreinfo_wrapper"]')[0]
+        html = etree.tostring(moreinfo)
+        pdfurl = re.findall(r'(http://.*?\.pdf)', html)[0]
+        return pdfurl
 
     def _image_url(self):
-        image_url = self.tree_html.xpath("//span[@class='a-button-text']//img/@src")
-        return image_url
+        #image_url = self.tree_html.xpath('//div[@class="popup-content"]/img/@src')
+        
+        scripts = self.tree_html.xpath('//script//text()')
+        for script in scripts:
+            jsonvar = re.findall(r'JSON = (.*?);', script)
+            if len(jsonvar) > 0:
+                jsonvar = jsonvar[0]
+                break
+        jsonvar = json.loads(jsonvar)
+        imageurl = []
+        for row in jsonvar.items():
+            imageurl.append(row[1][0]['mediaUrl'])
+        return imageurl
         
     def manufacturer_content_body(self):
         full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
@@ -63,14 +77,11 @@ class HomeDepotScraper(Scraper):
     
     #extract average review, and total reviews  
     def reviews_for_url(self):
-        average_review = self.tree_html.xpath("//span[@id='acrPopover']/@title")[0]
-        average_review = re.findall("([0-9]\.?[0-9]?) out of 5 stars", average_review)[0]
-
+        average_review = self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')[0]
         return average_review
 
     def nr_reviews(self):
-        nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")[0]
-        nr_reviews = re.findall("([0-9]+) customer reviews", nr_reviews)[0]
+        nr_reviews = self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
         return nr_reviews
         
     # extract product name from its product page tree
@@ -88,7 +99,7 @@ class HomeDepotScraper(Scraper):
     # ! may throw exception if not found
     def _meta_brand_from_tree(self):
         #<div id="mbc" data-asin="B000JMAVYO" data-brand="Spicy World"
-        return self.tree_html.xpath('//div[@id="mbc"]/@data-brand')[0]
+        return self.tree_html.xpath('//span[@itemprop="brand"]//text()')[0].strip()
 
 
     # extract product short description from its product page tree
@@ -103,7 +114,7 @@ class HomeDepotScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
-        full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
+        full_description = " ".join(self.tree_html.xpath('//div[contains(@class, "main_description")]//span[@itemprop="description"]//text()')).strip()
         
         return full_description
 
@@ -111,11 +122,7 @@ class HomeDepotScraper(Scraper):
     # extract product price from its product product page tree.
     def _price_from_tree(self):
         
-        price = self.tree_html.xpath("//*[@id='priceblock_ourprice']//text()")
-        if price:
-            return price[0].strip()
-        
-        price = self.tree_html.xpath("//*[contains(@class, 'offer-price')]//text()")
+        price = self.tree_html.xpath("//span[@id='ajaxPrice']//text()")
         if price:
             return price[0].strip()
         
@@ -128,7 +135,7 @@ class HomeDepotScraper(Scraper):
     #      - is format ok?
     def _anchors_from_tree(self):
         # get all links found in the description text
-        description_node = self.tree_html.xpath('//*[@class="productDescriptionWrapper"]')[0]
+        description_node = self.tree_html.xpath('//div[contains(@class, "main_description")]//span[@itemprop="description"]')[0]
         links = description_node.xpath(".//a")
         nr_links = len(links)
 
@@ -159,16 +166,16 @@ class HomeDepotScraper(Scraper):
     # extract product model from its product product page tree
     # ! may throw exception if not found
     def _model_from_tree(self):
-        model = self.tree_html.xpath("//tr[@class='item-model-number']/td[@class='value']//text()")[0]
+        model = self.tree_html.xpath('//h2[contains(@class, "product_details modelNo")]//text()')[0].strip()
         return model
 
     # extract product features list from its product product page tree, return as string
     # join all text in spec table; separate rows by newlines and eliminate spaces between cells
     def _features_from_tree(self):
-        rows = self.tree_html.xpath("//div[@class='content pdClearfix']//tbody//tr")
+        rows = self.tree_html.xpath('//div[contains(@class, "main_description")]//ul[@class="bulletList"]//li')
         
         # list of lists of cells (by rows)
-        cells = map(lambda row: row.xpath(".//*//text()"), rows)
+        cells = map(lambda row: row.xpath(".//text()"), rows)
         # list of text in each row
         
         rows_text = map(\
@@ -185,7 +192,7 @@ class HomeDepotScraper(Scraper):
     # ! may throw exception if not found
     def _nr_features_from_tree(self):
         # select table rows with more than 2 cells (the others are just headers), count them
-        return len(filter(lambda row: len(row.xpath(".//td"))>0, self.tree_html.xpath("//div[@class='content pdClearfix']//tbody//tr")))
+        return len(filter(lambda row: len(row.xpath(".//text()"))>0, self.tree_html.xpath('//div[contains(@class, "main_description")]//ul[@class="bulletList"]//li')))
 
     # extract page title from its product product page tree
     # ! may throw exception if not found
@@ -201,17 +208,24 @@ class HomeDepotScraper(Scraper):
     # TODO:
     #      test this in conjuction with _seller_meta_from_tree; also test at least one of the values is 1
     def _seller_from_tree(self):
-        seller_info = {}
-        h5_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h5//text()[normalize-space()!='']"))
-        acheckboxlabel = map(lambda text: self._clean_text(text), self.tree_html.xpath("//span[@class='a-checkbox-label']//text()[normalize-space()!='']"))
-        
-        seller_info['owned'] = 1 if "FREE Two-Day" in acheckboxlabel else 0
-        seller_info['marketplace'] = 1 if "Other Sellers on Amazon" in h5_tags else 0
+        seller_info = {}      
+        seller_info['owned'] = 1
+        seller_info['marketplace'] = 0
 
         return seller_info
 
     def _product_images(self):
-        return len(self.tree_html.xpath("//span[@class='a-button-text']//img/@src"))
+        scripts = self.tree_html.xpath('//script//text()')
+        for script in scripts:
+            jsonvar = re.findall(r'JSON = (.*?);', script)
+            if len(jsonvar) > 0:
+                jsonvar = jsonvar[0]
+                break
+        jsonvar = json.loads(jsonvar)
+        imageurl = []
+        for row in jsonvar.items():
+            imageurl.append(row[1][0]['mediaUrl'])
+        return len(imageurl)
     
     def _no_image(self):
         return None
@@ -230,8 +244,14 @@ class HomeDepotScraper(Scraper):
     
     # extract a hierarchical list of all the departments the product belongs to
     def _all_depts(self):
-        all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
-        all = map(lambda t: self._clean_text(t), all)
+        scripts = self.tree_html.xpath('//script//text()')
+        for script in scripts:
+            jsonvar = re.findall(r'BREADCRUMB_JSON = (.*?);', script)
+            if len(jsonvar) > 0:
+                jsonvar = jsonvar[0]
+                break
+        jsonvar = json.loads(jsonvar)
+        all = jsonvar['bcEnsightenData']['contentSubCategory'].split(u'\u003e')
         return all
     
     def _meta_description(self):
@@ -241,8 +261,16 @@ class HomeDepotScraper(Scraper):
         return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
     
     def _asin(self):
-        #<input type="hidden" id="ASIN" name="ASIN" value="B00G2Y4WNY"
-        return self.tree_html.xpath("//input[@name='ASIN']/@value")[0]
+        print '\n\n\n\n\n'
+        scripts = self.tree_html.xpath('//script//text()')
+        for script in scripts:
+            var = re.findall(r'CI_ItemUPC=(.*?);', script)
+            print var
+            if len(var) > 0:
+                var = var[0]
+                break
+        var = re.findall(r'[0-9]+', str(var))[0]
+        return var
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -266,39 +294,36 @@ class HomeDepotScraper(Scraper):
 
 
     '''
+    HOMEDEPOT --------------------
     
     x    name
     x    keywords
-    short
-    long
-    price
-    anchors
+    short - doesn't exist
+    x    long
+    x    price
+    x    anchors
     x    htags
-    features
-    nr_features
+    x    features
+    x    nr_features
     x    title
-    seller 
-    product_id
+    x    seller - hardcoded as just 'owned'
+    x    product_id
     x    load_time
-    image_url
+    x    image_url
     video_url
-    brand
-    model
-    manufacturer_content_body
-    pdf_url
+    x    brand
+    x    model
+    manufacturer_content_body - haven't found an instance of this
+    x    pdf_url
     no_image
-    average_review
-    total_reviews
+    x    average_review
+    x    total_reviews
     
-    UPC/EAN/ISBN
-    product_images
-    all_depts
-    super_dept 
-    dept 
-    review_count
+    x    UPC/EAN/ISBN
+    x    product_images
+    x    all_depts
     x    meta description 
     x    meta keywords 
-    model_meta
     
 
     '''
@@ -332,11 +357,15 @@ class HomeDepotScraper(Scraper):
         
         "product_images" : _product_images,\
         "all_depts" : _all_depts,\
-        "dept" : _dept,\
-        "super_dept" : _super_dept,\
         "meta_description" : _meta_description,\
         "meta_keywords" : _meta_keywords,\
-        "asin" : _asin,\
+        "upc" : _asin,\
+        
+        "model" : _model_from_tree, \
+        "pdf_url" : pdf_for_url, \
+        
+        "average_review" : reviews_for_url, \
+        "total_reviews" : nr_reviews, \
         
         "load_time": None \
         }
@@ -344,8 +373,6 @@ class HomeDepotScraper(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
-        "model" : _model_from_tree, \
-        "pdf_url" : pdf_for_url, \
-        "average_review" : reviews_for_url, \
-        "total_reviews" : nr_reviews\
+        
+        
     }
