@@ -10,7 +10,7 @@ from extract_bestbuy_data import BestBuyScraper
 from extract_kmart_data import KMartScraper
 from extract_target_data import TargetScraper
 from extract_ozon_data import OzonScraper
-
+from extract_homedepot_data import HomeDepotScraper
 
 
 import datetime
@@ -31,7 +31,8 @@ SUPPORTED_SITES = {"walmart" : WalmartScraper,
                    "bestbuy" : BestBuyScraper,
                    "kmart" : KMartScraper,
                    "target" : TargetScraper,
-                   "ozon" : OzonScraper
+                   "ozon" : OzonScraper,
+                   "homedepot" : HomeDepotScraper
                    }
 
 # add logger
