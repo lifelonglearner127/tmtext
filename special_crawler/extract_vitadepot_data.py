@@ -11,6 +11,7 @@ from extract_data import Scraper
 
 
 
+
 #region Helper functions
 def apikey(key):
     def _decorator(func):
@@ -117,9 +118,10 @@ class VitadepotScraper(Scraper):
 
     #region Helper methods
     def check_url_format(self):
-        scheme, netloc, path, query, fragment = urlparse.urlsplit(self.product_page_url)
-        return scheme == 'http' and re.match('(www)?vitadepot.com', netloc) and re.match('.+?.html', path) and not \
-            (query or fragment)
+        #scheme, netloc, path, query, fragment = urlparse.urlsplit(self.product_page_url)
+        return re.match('http://vitadepot\.com/[^/]+\.html', self.product_page_url)
+        #return scheme == 'http' and re.match('(www)?vitadepot.com', netloc) and re.match('.+?.html', path) and not \
+        #    (query or fragment)
 
     def _scrape_features(self):
         return map(lambda s: s.text.strip(), self.tree_html.cssselect('.extratributes ul li span'))
@@ -150,9 +152,12 @@ class VitadepotScraper(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = {
+        'seller': lambda self: {'marketplace': 1, 'owned': 1},
+        'pdf_url': lambda self: None,
+        'total_reviews': lambda self: 0,  # None found so far
     }
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.vitadepot.com/<product-name>.html"
+    INVALID_URL_MESSAGE = "Expected URL format is http://vitadepot.com/<product-name>.html"
     #endregion
     #--VitadepotScraper
 
