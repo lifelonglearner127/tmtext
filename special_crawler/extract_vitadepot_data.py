@@ -9,6 +9,8 @@ from lxml.etree import tostring
 from extract_data import Scraper
 
 
+
+#region Helper functions
 def apikey(key):
     def _decorator(func):
         func.apikey = key
@@ -17,8 +19,9 @@ def apikey(key):
     return _decorator
 
 
+#endregion
+
 class VitadepotScraper(Scraper):
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.vitadepot.com/<product-name>.html"
 
     def __init__(self, product_page_url):
         for method in map(lambda name: getattr(self.__class__, name), dir(self)):
@@ -27,11 +30,7 @@ class VitadepotScraper(Scraper):
 
         Scraper.__init__(self, product_page_url)
 
-    def check_url_format(self):
-        scheme, netloc, path, query, fragment = urlparse.urlsplit(self.product_page_url)
-        return scheme == 'http' and re.match('(www)?vitadepot.com', netloc) and re.match('.+?.html', path) and not \
-            (query or fragment)
-
+    #region API methods
     @apikey('id')
     def _extract_product_id(self):
         return self.tree_html.xpath('//div[@class="no-display"]/input[@name="product"]/@value')[0]
@@ -74,8 +73,6 @@ class VitadepotScraper(Scraper):
 
     @apikey('htags')
     def _htags_from_tree(self):
-        #htags_list = [tag.text for tag in chain(*(child.findall('h1') + child.findall('h2') for child in
-        #                                                self._find_description_elts()))]
         tags = [[], 'h1', 'h2', 'h3', 'h4']
         htags_list = [tag.text for tag in chain(*(reduce(lambda a, b: a + child.findall(b), tags)
                                                   for child in self._find_description_elts()))]
@@ -98,6 +95,14 @@ class VitadepotScraper(Scraper):
     def _title_from_tree(self):
         return self.tree_html.cssselect('title')[0].text.strip(' \n')
 
+    #endregion
+
+    #region Helper methods
+    def check_url_format(self):
+        scheme, netloc, path, query, fragment = urlparse.urlsplit(self.product_page_url)
+        return scheme == 'http' and re.match('(www)?vitadepot.com', netloc) and re.match('.+?.html', path) and not \
+            (query or fragment)
+
     def _scrape_features(self):
         return map(lambda s: s.text.strip(), self.tree_html.cssselect('.extratributes ul li span'))
 
@@ -113,7 +118,9 @@ class VitadepotScraper(Scraper):
             raise Exception(self.INVALID_URL_MESSAGE)
         return json.dumps(self.product_info(args))
 
+    #endregion
 
+    #region Data
     DATA_TYPES = {
     }
 
@@ -121,6 +128,10 @@ class VitadepotScraper(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = {
     }
+
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.vitadepot.com/<product-name>.html"
+    #endregion
+    #--VitadepotScraper
 
 
 if __name__ == "__main__":
