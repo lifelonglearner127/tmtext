@@ -10,6 +10,7 @@ from extract_data import Scraper
 
 
 
+
 #region Helper functions
 def apikey(key):
     def _decorator(func):
@@ -95,6 +96,23 @@ class VitadepotScraper(Scraper):
     def _title_from_tree(self):
         return self.tree_html.cssselect('title')[0].text.strip(' \n')
 
+    @apikey('all_depts')
+    def _crumbs_from_tree(self):
+        breadcrumbs = self._extract_breadcrumbs()
+        return [{'level': level + 1, 'url': bc['url'], 'text': bc['text']} for level, bc in enumerate(breadcrumbs)]
+
+    @apikey('dept')
+    def _dept_from_tree(self):
+        return self._extract_breadcrumbs()[-1]
+
+    @apikey('super_dept')
+    def _super_dept_from_tree(self):
+        return self._extract_breadcrumbs()[0]
+
+    @apikey('sku')
+    def _sku_from_tree(self):
+        return self._find_sku(self._scrape_features())
+
     #endregion
 
     #region Helper methods
@@ -112,6 +130,11 @@ class VitadepotScraper(Scraper):
     def _find_sku(self, features):
         sku = next(iter(filter(None, (re.match('SKU #(\d+)', ftr) for ftr in features))), None)
         return sku.groups()[0] if sku else None
+
+    def _extract_breadcrumbs(self):
+        bc = self.tree_html.cssselect('.breadcrumbs ul li a')
+        links = ((a.get('href'), a.text) for a in bc)
+        return [{'url': url, 'text': text} for url, text in links if len(urlparse.urlparse(url).path) > 1]
 
     def main(self, *args):
         if not self.check_url_format():
