@@ -12,10 +12,6 @@ from lxml.etree import tostring
 from extract_data import Scraper
 
 
-
-
-
-
 #region Helper functions
 def apikey(key):
     def _decorator(func):
@@ -23,8 +19,6 @@ def apikey(key):
         return func
 
     return _decorator
-
-
 #endregion
 
 
@@ -131,7 +125,6 @@ class ArgosScraper(BaseScraper):
 
     def check_url_format(self):
         return re.match('http://www\.argos\.co\.uk/static/Product/partNumber/\d+.htm', self.product_page_url)
-
 
 if __name__ == "__main__":
     scraper = ArgosScraper(sys.argv[1])
