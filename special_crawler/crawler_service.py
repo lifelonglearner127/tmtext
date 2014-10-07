@@ -6,6 +6,11 @@ from extract_tesco_data import TescoScraper
 from extract_amazon_data import AmazonScraper
 from extract_pgestore_data import PGEStore
 from extract_wayfair_data import WayfairScraper
+from extract_bestbuy_data import BestBuyScraper
+from extract_kmart_data import KMartScraper
+from extract_target_data import TargetScraper
+from extract_ozon_data import OzonScraper
+from extract_vitadepot_data import VitadepotScraper
 from extract_argos_data import ArgosScraper
 
 
@@ -25,6 +30,11 @@ SUPPORTED_SITES = {"walmart" : WalmartScraper,
                    "amazon" : AmazonScraper,
                    "pgestore" : PGEStore,
                    "wayfair" : WayfairScraper,
+                   "bestbuy" : BestBuyScraper,
+                   # "kmart" : KMartScraper,
+                   # "target" : TargetScraper,
+                   "ozon" : OzonScraper,
+                   "vitadepot": VitadepotScraper,
                    "argos": ArgosScraper
                    }
 
