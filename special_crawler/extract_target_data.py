@@ -1,0 +1,2 @@
+class TargetScraper():
+    pass

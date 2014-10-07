@@ -1,8 +1,8 @@
 from functools import partial
+
 from pyramid import testing
 import pyramid.httpexceptions as exc
 from pyspecs import given, when, then, the, finish
-
 import mock
 
 from web_runner import views
@@ -27,21 +27,21 @@ with given.a_configuration_with_one_spider:
     )
 
     with testing.testConfig(request=request, settings=settings) as config:
-        # Mock ScrapydMediator to isolate the test.
-        with mock.patch('web_runner.views.ScrapydMediator') \
-                as ScrapydMediatorMock:
-            mediator_mock = ScrapydMediatorMock.return_value
-            mediator_mock.start_job.return_value = dict(
-                status="ok", jobid="XXX")
+        # Mock ScrapydJobHelper to isolate the test.
+        with mock.patch('web_runner.views.ScrapydJobHelper') \
+                as ScrapydJobHelperMock:
+            with mock.patch('web_runner.db.DbInterface') as DbMock:
+                helper_mock = ScrapydJobHelperMock.return_value
+                helper_mock.start_job.return_value = "XXX"
 
-            # Pyramid testing doesn't configure resources.
-            request.route_path = mock.MagicMock()
+                # Pyramid testing doesn't configure resources.
+                request.route_path = mock.MagicMock()
 
-            with when.starting_a_spider:
-                with then.it_should_redirect_to_pending_state:
-                    the(
-                        partial(views.spider_start_view, request)
-                    ).should.raise_an(exc.HTTPFound)
+                with when.starting_a_spider:
+                    with then.it_should_redirect_to_pending_state:
+                        the(
+                            partial(views.spider_start_view, request)
+                        ).should.raise_an(exc.HTTPFound)
 
 
 with given.a_configuration_with_one_command_and_spider:
@@ -68,22 +68,22 @@ with given.a_configuration_with_one_command_and_spider:
         remote_addr="127.0.0.1",
     )
 
-    with testing.testConfig(request=request, settings=settings) as config:
-        # Mock ScrapydMediator to isolate the test.
-        with mock.patch('web_runner.views.ScrapydMediator') \
-                as ScrapydMediatorMock:
-            mediator_mock = ScrapydMediatorMock.return_value
-            mediator_mock.start_job.return_value = dict(
-                status="ok", jobid="XXX")
+    with testing.testConfig(request=request, settings=settings):
+        # Mock ScrapydJobHelper to isolate the test.
+        with mock.patch('web_runner.views.ScrapydJobHelper') \
+                as ScrapydJobHelperMock:
+            with mock.patch('web_runner.db.DbInterface') as DbMock:
+                helper_mock = ScrapydJobHelperMock.return_value
+                helper_mock.start_job.return_value = "XXX"
 
-            # Pyramid testing doesn't configure resources.
-            request.route_path = mock.MagicMock()
+                # Pyramid testing doesn't configure resources.
+                request.route_path = mock.MagicMock()
 
-            with when.starting_a_command:
-                with then.it_should_redirect_to_pending_state:
-                    the(
-                        partial(views.command_start_view, request)
-                    ).should.raise_an(exc.HTTPFound)
+                with when.starting_a_command:
+                    cmd_request = partial(views.command_start_view, request)
+
+                    with then.it_should_redirect_to_pending_state:
+                        the(cmd_request).should.raise_an(exc.HTTPFound)
 
 
 if __name__ == '__main__':

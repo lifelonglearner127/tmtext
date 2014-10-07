@@ -7,7 +7,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 requires = [
     'pyramid>=1.5.1',
     # 'pyramid_chameleon',
-    'pyramid_debugtoolbar',
+    # 'pyramid_debugtoolbar',
     'waitress',
 
     'enum34>=1.0',

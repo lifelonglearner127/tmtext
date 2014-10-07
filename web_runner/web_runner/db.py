@@ -164,10 +164,7 @@ class DbInterface(object):
                 LOG.error("Error inserting a new request. Detail= " + str(e))
                 ret = False
 
-
         return ret
-
-
 
     def new_request_event(self, event_type, jobids, ip=None):
         """Add a new request to the DB:
@@ -180,29 +177,28 @@ class DbInterface(object):
 
         Return: boolean with the operation success
         """
-        
-        if not jobids or len(jobids)==0:
+        if not jobids:
             return False
 
         event_date = datetime.datetime.utcnow()
-        
-        #Get the requetid associated
+
+        # Get the requestid associated.
         sql = 'SELECT request_id FROM scrapy_jobs WHERE scrapy_jobid=?'
         cursor = self._conn.cursor()
         cursor.execute(sql, (jobids[0],))
-        (requestid,) = cursor.fetchone()
-
-        if not requestid:
+        row = cursor.fetchone()
+        if row is None:
             return False
+
+        (requestid,) = row
 
         # Insert the event in the DB
         insert_sql = '''INSERT INTO request_ops(request_id, 
                         date, type, description)
                         VALUES(?,?,?,?)'''
 
-        desc =  json.dumps({'ip': ip}) if ip else ''
-        sql_values= (requestid, event_date, event_type, desc)
-        print(sql_values)
+        desc = json.dumps({'ip': ip}) if ip else ''
+        sql_values = (requestid, event_date, event_type, desc)
 
         try:        
             cursor = self._conn.cursor()
@@ -210,12 +206,11 @@ class DbInterface(object):
             self._conn.commit()
             ret = True
         except sqlite3.Error as e:
-            LOG.error("Error inserting an request event. Detail= " + str(e))
+            LOG.error("Error inserting an request event. Detail= %s", e)
             self._conn.rollback()
             ret = False
 
         return ret
-
 
     def new_spider(self, name, params, jobid, ip=None, id=None):
         """Insert a new spider into the DB

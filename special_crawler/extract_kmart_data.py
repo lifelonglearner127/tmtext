@@ -5,16 +5,12 @@ import re
 import sys
 import json
 import os.path
-import urllib, cStringIO
-from io import BytesIO
-from PIL import Image
-import mmh3 as MurmurHash
 from lxml import html
 import time
 import requests
 from extract_data import Scraper
 
-class WayfairScraper(Scraper):
+class KMartScraper(Scraper):
     
     INVALID_URL_MESSAGE = "Expected URL format is http://www.wayfair.com/<product-name>.html"
     
@@ -24,7 +20,7 @@ class WayfairScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.wayfair.com/[0-9a-zA-Z\-\~\/\.]+\.html$", self.product_page_url)
+        m = re.match(r"^http://www.kmart.com/.*$", self.product_page_url)
 
         return not not m
     
@@ -32,8 +28,8 @@ class WayfairScraper(Scraper):
     #      better way of extracting id now that URL format is more permissive
     #      though this method still seems to work...
     def _extract_product_id(self):
-        product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
-        return product_id
+        prod_id = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-product-id')[0]
+        return prod_id
 
     # return dictionary with one element containing the video url
     def video_for_url(self):
@@ -47,10 +43,21 @@ class WayfairScraper(Scraper):
     # return dictionary with one element containing the PDF
     def pdf_for_url(self):
         return None
-        
+    
+    # image urls    
     def _image_url(self):
-        image_url = self.tree_html.xpath("//ul[@class='slides']/li/img/@src")
+        image_url = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-gallery-images')[0]
+        json_list = json.loads(image_url)
+        image_url = []
+        for i in json_list:
+            image_url.append(i['url'])
         return image_url
+    
+    # Number of product images    
+    def _product_images(self):
+        image_url = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-gallery-images')[0]
+        json_list = json.loads(image_url)
+        return len(json_list)
         
     def manufacturer_content_body(self):
         return None
@@ -75,22 +82,30 @@ class WayfairScraper(Scraper):
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_brand_from_tree(self):
-        return self.tree_html.xpath('//meta[@property="og:brand"]/@content')[0]
-
+        return self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content')[0]
 
     # extract product short description from its product page tree
     # ! may throw exception if not found
     def _short_description_from_tree(self):
-        short_description = " ".join(self.tree_html.xpath('//div[contains(@class, "prod_features")]//li//text()')).strip()
-        return short_description
+        desc = " ".join(self.tree_html.xpath('//div[@id="desc1"]//text()[normalize-space()!=""]'))
+        if len(desc)>0:
+            return desc
+        
+        return None
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
-    #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
-        full_description = self.tree_html.xpath('//p[contains(@class,"prod_romance_copy")]//text()')[0]
-        return full_description
+        desc = " ".join(self.tree_html.xpath('//div[@id="desc"]//text()[normalize-space()!=""]'))
+        if len(desc)>0:
+            return desc
+        
+        desc = " ".join(self.tree_html.xpath('//section[@id="description"]//text()[normalize-space()!=""]'))
+        if len(desc):
+            return desc
+        
+        return None
 
 
     # extract product price from its product product page tree
@@ -108,7 +123,7 @@ class WayfairScraper(Scraper):
     #      - is format ok?
     def _anchors_from_tree(self):
         # get all links found in the description text
-        description_node = self.tree_html.xpath("//section[@class='detailWrapper']")[0]
+        description_node = self.tree_html.xpath('//div[@id="long-description"]//text()')[0]
         links = description_node.xpath(".//a")
         nr_links = len(links)
 
@@ -139,14 +154,14 @@ class WayfairScraper(Scraper):
     # extract product model from its product product page tree
     # ! may throw exception if not found
     def _model_from_tree(self):
-        return None
+        return self.tree_html.xpath('//span[@id="model-value"]/text()')[0]
 
     # extract product features list from its product product page tree, return as string
     # join all text in spec table; separate rows by newlines and eliminate spaces between cells
     def _features_from_tree(self):
-        rows = self.tree_html.xpath("//div[contains(@class, 'prod_features')]")
+        rows = self.tree_html.xpath("//div[@id='features']")
         # list of lists of cells (by rows)
-        cells = map(lambda row: row.xpath(".//li//text()"), rows)
+        cells = map(lambda row: row.xpath(".//div[@class='feature']//text()"), rows)
         # list of text in each row
         
         rows_text = map(\
@@ -163,7 +178,7 @@ class WayfairScraper(Scraper):
     # ! may throw exception if not found
     def _nr_features_from_tree(self):
         # select table rows with more than 2 cells (the others are just headers), count them
-        return len(filter(lambda row: len(row.xpath(".//text()"))>0, self.tree_html.xpath("//div[contains(@class, 'prod_features')]//li")))
+        return len(filter(lambda row: len(row.xpath(".//text()"))>0, self.tree_html.xpath("//div[@id='features']/div[@class='feature']")))
 
     # extract page title from its product product page tree
     # ! may throw exception if not found
@@ -192,25 +207,21 @@ class WayfairScraper(Scraper):
         return 1
     
     def _upc(self):
-        return self.tree_html.xpath('//meta[@property="og:upc"]/@content')[0]
-    
-    # Number of product images
-    def _product_images(self):
-        return len(self.tree_html.xpath("//ul[@class='slides']/li/img/@src"))
+        return self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-sku-id')[0]
 
     # extract the department which the product belongs to
     def _dept(self):
-        dept = " ".join(self.tree_html.xpath("//span[contains(@class, 'breadcrumb')]//a[2]//text()")).strip()
+        dept = " ".join(self.tree_html.xpath("//ul[@id='breadcrumb-list']/li[2]/a/text()")).strip()
         return dept
     
     # extract the department's department, or super department
     def _super_dept(self):
-        dept = " ".join(self.tree_html.xpath("//span[contains(@class, 'breadcrumb')]//a[1]//text()")).strip()
+        dept = " ".join(self.tree_html.xpath("//ul[@id='breadcrumb-list']/li[1]/a/text()")).strip()
         return dept
     
     # extract a hierarchical list of all the departments the product belongs to
     def _all_depts(self):
-        all = self.tree_html.xpath("//span[contains(@class, 'breadcrumb')]//a//text()")
+        all = self.tree_html.xpath("//ul[@id='breadcrumb-list']/li/a/text()")
         return all
     
     # extracts whether the first product image is the "no-image" picture
@@ -231,6 +242,18 @@ class WayfairScraper(Scraper):
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
+    
+    
+    '''
+    # input an lxml tree and the associated tag, attribute, and attribute value
+    # returns a tree
+    def xpather(self, tree, *args):
+        chunk = ".//%s[contains(@%s, %s)]"
+        
+        return None
+    '''
+    
+    
     def main(args):
         # check if there is an argument
         if len(args) <= 1:
@@ -250,44 +273,42 @@ class WayfairScraper(Scraper):
 
 
     '''
-    short_desc example:
-        http://www.wayfair.com/daily-sales/p/Dual-Purpose-Storage-Milan-Storage-Slipper-Chair-in-Rustic-Brown~IRD1778~E13601.html
-    long_desc example:
-        http://www.wayfair.com/Aspire-Josie-28-H-Table-Lamp-with-Drum-Shade-Set-of-2-68915-EHQ1592.html
-    video example
-        http://www.wayfair.com/Minka-Aire-54-RainMan-5-Blade-Indoor-Outdoor-Ceiling-Fan-F582-BNW-MKA1582.html
-        http://www.wayfair.com/KitchenAid-Stand-Mixer-Attachment-Pack-1-FPPA-KAD1004.html
-        note: the above videos seem broken
-        http://www.wayfair.com/Cuisinart-1.0-Cu.-Ft.-900W-Countertop-Microwave-CMW-100-CUI1128.html
+        pdf example - 
+            http://www.kmart.com/radar-rpx-800-p185-70r13-86t-bw-all/p-072W005512515001P?prdNo=2&blockNo=2&blockType=G2
+
     
-        x   "name" 
-        x    "keywords"  - no meta keywords exist
-        x    "short_desc" 
+        x    "name" 
+        x    "keywords" - None exists
+        x    "short_desc"
         x    "long_desc" 
-        x    "manufacturer_content_body" - not sure what you wanted for this, returning none
-        x    "price" 
-        x    "anchors" - none found
-        x    "htags" 
-        x    "features" 
-        x    "nr_features" 
-        x    "title" 
-        x    "seller"
-        x    "product_id" 
-        x    "image_url" 
-        x    "video_url"
-        x    "upc" 
-        x    "product_images" 
-        x    "dept" 
-        x    "super_dept" 
-        x    "all_depts" 
-        x    "no_image" - not implemented
-        x    "load_time"
-         
-        x    "brand" 
-        x    "model" - none available
-        x    "pdf_url" - none found
-        x    "average_review" 
-        x    "total_reviews" 
+        "manufacturer_content_body"
+        "price" 
+        "anchors"
+        "htags" 
+        "features" 
+        "nr_features" 
+        "title" 
+        "seller"
+        "product_id" 
+        "image_url" 
+        "video_url"
+        "upc" 
+        "product_images" 
+        "dept" 
+        "super_dept" 
+        "all_depts" 
+        "no_image"
+        "load_time"
+ 
+        "brand" 
+        "model"
+        "pdf_url"
+        "average_review" 
+        "total_reviews" 
+    
+        "in_stock"
+        "mobile_image_same"
+        "in_stores_only"
     
 
     '''
