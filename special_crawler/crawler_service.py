@@ -10,6 +10,8 @@ from extract_bestbuy_data import BestBuyScraper
 from extract_kmart_data import KMartScraper
 from extract_target_data import TargetScraper
 from extract_ozon_data import OzonScraper
+from extract_vitadepot_data import VitadepotScraper
+from extract_argos_data import ArgosScraper
 
 
 
@@ -31,7 +33,9 @@ SUPPORTED_SITES = {"walmart" : WalmartScraper,
                    "bestbuy" : BestBuyScraper,
                    # "kmart" : KMartScraper,
                    # "target" : TargetScraper,
-                   "ozon" : OzonScraper
+                   "ozon" : OzonScraper,
+                   "vitadepot": VitadepotScraper,
+                   "argos": ArgosScraper
                    }
 
 # add logger
@@ -103,7 +107,7 @@ def validate_args(arguments):
         arguments['site'] = [site_argument]
 
     if site_argument not in SUPPORTED_SITES.keys():
-        raise InvalidUsage("Unsupported site: " + site_argument)
+        raise InvalidUsage("Unsupported site: " + str(site_argument))
     
 
 # validate request "data" parameters
