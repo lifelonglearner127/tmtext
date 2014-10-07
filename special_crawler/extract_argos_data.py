@@ -4,12 +4,12 @@ import urlparse
 import json
 import sys
 import string
+import re
 from itertools import chain
 
 from lxml.etree import tostring
 
 from extract_data import Scraper
-
 
 
 #region Helper functions
@@ -19,8 +19,6 @@ def apikey(key):
         return func
 
     return _decorator
-
-
 #endregion
 
 
@@ -45,7 +43,7 @@ class BaseScraper(Scraper):
     DATA_TYPES_SPECIAL = {
     }
 
-    INVALID_URL_MESSAGE = "Incorrect url format"
+    INVALID_URL_MESSAGE = "Expected url format is: http://www.argos.co.uk/static/Product/partNumber/{digits}.htm"
 
 
 class ArgosScraper(BaseScraper):
@@ -125,6 +123,8 @@ class ArgosScraper(BaseScraper):
     def _extract_full_description(self):
         return self.tree_html.cssselect('.fullDetails')[0]
 
+    def check_url_format(self):
+        return re.match('http://www\.argos\.co\.uk/static/Product/partNumber/\d+.htm', self.product_page_url)
 
 if __name__ == "__main__":
     scraper = ArgosScraper(sys.argv[1])
