@@ -1,17 +1,20 @@
 #!/usr/bin/python
 
-from flask import Flask, jsonify, abort, request
-from extract_walmart_data import WalmartScraper
-from extract_tesco_data import TescoScraper
-from extract_amazon_data import AmazonScraper
-from extract_pgestore_data import PGEStore
-from extract_wayfair_data import WayfairScraper
-
 import datetime
 import logging
 from logging import StreamHandler
 import re
 import json
+
+from flask import Flask, jsonify, request
+
+from extract_walmart_data import WalmartScraper
+from extract_tesco_data import TescoScraper
+from extract_amazon_data import AmazonScraper
+from extract_pgestore_data import PGEStore
+from extract_wayfair_data import WayfairScraper
+from extract_argos_data import ArgosScraper
+
 
 app = Flask(__name__)
 
@@ -21,8 +24,9 @@ SUPPORTED_SITES = {"walmart" : WalmartScraper,
                    "tesco" : TescoScraper,
                    "amazon" : AmazonScraper,
                    "pgestore" : PGEStore,
-                   "wayfair" : WayfairScraper
-                   }
+                   "wayfair": WayfairScraper,
+                   "argos": ArgosScraper,
+}
 
 # add logger
 # using StreamHandler ensures that the log is sent to stderr to be picked up by uwsgi log
