@@ -58,7 +58,9 @@ SSH_SUDO_PASSWORD = None
 SSH_SUDO_CERT = None
 
 REPO_BASE_PATH = '~/repos/'
-REPO_URL = 'https://ContentSolutionsDeploy:Content2020@bitbucket.org/dfeinleib/tmtext.git'
+#REPO_URL = 'https://ContentSolutionsDeploy:Content2020@bitbucket.org/dfeinleib/tmtext.git'
+#REPO_URL = 'https://ContentSolutionsDeploy@bitbucket.org/dfeinleib/tmtext.git'
+REPO_URL = 'git@bitbucket.org:dfeinleib/tmtext.git'
 
 
 @contextmanager
@@ -143,17 +145,32 @@ def setup_users():
     )
 
     # Create the ssh certificate for web_runner user
-    rem_ssh_cert_file = '~%s/.ssh/authorized_keys' % WEB_RUNNER_USER
+    rem_ssh_deploy_cert_file = '~%s/.ssh/authorized_keys' % WEB_RUNNER_USER
+    rem_ssh_priv_cert_file = '~%s/.ssh/id_rsa' % WEB_RUNNER_USER
+    rem_ssh_pub_cert_file = '~%s/.ssh/id_rsa.pub' % WEB_RUNNER_USER
+    ssh_config_file = '~%s/.ssh/config' % WEB_RUNNER_USER
+
     if orig_cert and not sudo(
-            'test -e %s && echo OK ; true' % (rem_ssh_cert_file,)
+            'test -e %s && echo OK ; true' % (rem_ssh_deploy_cert_file,)
     ).endswith("OK"):
         sudo('mkdir -p ~%s/.ssh' % WEB_RUNNER_USER)
         sudo('chmod 700  ~%s/.ssh' % WEB_RUNNER_USER)
 
-        cert_content = open('web_runner_rsa.pub', 'r').read()
-        cuisine.file_write('/tmp/inst_cert', cert_content)
-        sudo('mv /tmp/inst_cert ' + rem_ssh_cert_file)
-        sudo('chmod 600 %s' % rem_ssh_cert_file)
+        deploy_cert = open('web_runner_rsa.pub', 'r').read()
+        priv_cert = open('web_runner_user_rsa', 'r').read()
+        pub_cert = open('web_runner_user_rsa.pub', 'r').read()
+        ssh_config = 'Host bitbucket.org\n\tStrictHostKeyChecking no'
+        cuisine.file_write('/tmp/deploy_cert', deploy_cert)
+        cuisine.file_write('/tmp/priv_cert', priv_cert)
+        cuisine.file_write('/tmp/pub_cert', pub_cert)
+        cuisine.file_write('/tmp/ssh_config', ssh_config)
+        sudo('mv /tmp/deploy_cert ' + rem_ssh_deploy_cert_file)
+        sudo('mv /tmp/priv_cert ' + rem_ssh_priv_cert_file)
+        sudo('mv /tmp/pub_cert ' + rem_ssh_pub_cert_file)
+        sudo('mv /tmp/ssh_config ' + ssh_config_file)
+        sudo('chmod 600 %s' % rem_ssh_deploy_cert_file)
+        sudo('chmod 600 %s' % rem_ssh_priv_cert_file)
+        sudo('chmod 600 %s' % rem_ssh_pub_cert_file)
         sudo(
             'chown -R %s:%s ~%s/.ssh/'
             % (WEB_RUNNER_USER, WEB_RUNNER_GROUP, WEB_RUNNER_USER))
