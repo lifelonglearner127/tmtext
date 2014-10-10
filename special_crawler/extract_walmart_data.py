@@ -343,12 +343,23 @@ class WalmartScraper(Scraper):
     # extract product seller meta tag content from its product product page tree
     # ! may throw exception if not found
     def _seller_meta_from_tree(self):
-        """Extracts sellers of product extracted from 'seller' meta tag
+        """Extracts sellers of product extracted from 'seller' meta tag, and their availability
         Returns:
-            list of string with the contents of the tag, or None
+            dictionary with sellers as keys and availability (true/false) as values
         """
 
-        return self.tree_html.xpath("//meta[@itemprop='seller']/@content")
+        sellers = self.tree_html.xpath("//div[@itemprop='offers']")
+
+        sellers_dict = {}
+        for seller in sellers:
+            # try to get seller if any, otherwise ignore this div
+            try:
+                avail = (seller.xpath(".//meta[@itemprop='availability']/@content")[0] == "http://schema.org/InStock")
+                sellers_dict[seller.xpath(".//meta[@itemprop='seller']/@content")[0]] = avail
+            except IndexError:
+                pass
+
+        return sellers_dict
 
     # extract product seller information from its product product page tree
     def _seller_from_tree(self):
@@ -362,8 +373,16 @@ class WalmartScraper(Scraper):
         seller_info = {}
         sellers = self._seller_meta_from_tree()
 
-        seller_info['owned'] = 1 if ('Walmart.com' in sellers) else 0
-        seller_info['marketplace'] = 1 if (sellers != ['Walmart.com']) else 0
+        # owned if has seller Walmart.com and availability for it is true
+        seller_info['owned'] = 1 if ('Walmart.com' in sellers.keys() and sellers['Walmart.com']) else 0
+        # found on marketplace if there are other keys other than walmart and they are in stock
+        # TODO:
+        #      more sophisticated checking of availability for marketplace? (values are more than just InStock/OutOfStock)
+        #      (because for walmart they should only be available when in stock) 
+        # remove Walmart key as we already checked for it
+        if 'Walmart.com' in sellers.keys():
+            del sellers['Walmart.com']
+        seller_info['marketplace'] = 1 if (len(sellers.keys()) > 0 and any(sellers.values())) else 0
 
         return seller_info
 
