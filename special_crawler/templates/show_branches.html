@@ -1,0 +1,14 @@
+<form name="Branches" action="{{url_for('switch_branch')}}" method='POST'>
+	<select name="Branches">
+	{% for b in branches %}
+		{% if b == current_branch %}
+	    <option value="{{b}}" selected>{{b}}</option>
+	    {% else %}
+	    <option value="{{b}}">{{b}}</option>
+		{% endif %}
+	{% endfor %}
+	</select>
+    <button type="submit">Switch</button>
+</form>
+
+<p> Current branch: {{current_branch}} </p>
