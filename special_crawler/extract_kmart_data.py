@@ -228,6 +228,9 @@ class KMartScraper(Scraper):
     def _no_image(self):
         None
         
+    def _mobile_image_same(self):
+        pass
+        
     
     def fetch_bytes(self, url):
         file = cStringIO.StringIO(urllib.urlopen(url).read())
@@ -355,6 +358,8 @@ class KMartScraper(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
+        "mobile_image_same" : _mobile_image_same, \
+
         "manufacturer_content_body" : manufacturer_content_body, \
         "pdf_url" : pdf_for_url, \
         "average_review" : reviews_for_url, \

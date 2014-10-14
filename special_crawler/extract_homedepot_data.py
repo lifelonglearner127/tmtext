@@ -4,19 +4,18 @@ import urllib
 import re
 import sys
 import json
-import os.path
-import urllib, cStringIO
-from io import BytesIO
-from PIL import Image
-import mmh3 as MurmurHash
-from lxml import html
+
+from lxml import html, etree
 import time
 import requests
 from extract_data import Scraper
 
-class WayfairScraper(Scraper):
+
+class HomeDepotScraper(Scraper):
     
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.wayfair.com/<product-name>.html"
+#    http://www.amazon.com/dp/B000JMAVYO
+    
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.homedepot.com/p/<product-name>/<product-id>"
     
     
     def check_url_format(self):
@@ -24,7 +23,9 @@ class WayfairScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.wayfair.com/[0-9a-zA-Z\-\~\/\.]+\.html$", self.product_page_url)
+
+        #m = re.match("^http://www.amazon.com/dp/[a-zA-Z0-9]+$", self.product_page_url)
+        m = re.match(r"^http://www.homedepot.com/.*?$", self.product_page_url)
 
         return not not m
     
@@ -32,35 +33,56 @@ class WayfairScraper(Scraper):
     #      better way of extracting id now that URL format is more permissive
     #      though this method still seems to work...
     def _extract_product_id(self):
-        product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
+        #product_id = self.product_page_url.split('/')[-1]
+        product_id = self.tree_html.xpath('//h2[@class="product_details"]//span[@itemprop="productID"]/text()')[0]
+
         return product_id
 
     # return dictionary with one element containing the video url
     def video_for_url(self):
-        video_url = "\n".join(self.tree_html.xpath("//script//text()"))
-        video_url = re.sub(r"\\", "", video_url)
-        
-        print '\n\n\n\n\n', video_url, '\n\n'
-        video_url = re.findall("url.+(http.+flv)\"", video_url)
-        return video_url
+        #"url":"http://ecx.images-amazon.com/images/I/B1d2rrt0oJS.mp4"
+        video_url = self.tree_html.xpath('//script[@type="text/javascript"]') 
+        temp = []
+        for v in video_url:
+            r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", str(v.xpath('.//text()')))
+            if r:
+                temp.extend(r)
+        return temp
 
     # return dictionary with one element containing the PDF
     def pdf_for_url(self):
-        return None
-        
+        moreinfo = self.tree_html.xpath('//div[@id="moreinfo_wrapper"]')[0]
+        html = etree.tostring(moreinfo)
+        pdfurl = re.findall(r'(http://.*?\.pdf)', html)[0]
+        return pdfurl
+
     def _image_url(self):
-        image_url = self.tree_html.xpath("//ul[@class='slides']/li/img/@src")
-        return image_url
+        #image_url = self.tree_html.xpath('//div[@class="popup-content"]/img/@src')
+        
+        scripts = self.tree_html.xpath('//script//text()')
+        for script in scripts:
+            jsonvar = re.findall(r'JSON = (.*?);', script)
+            if len(jsonvar) > 0:
+                jsonvar = jsonvar[0]
+                break
+        jsonvar = json.loads(jsonvar)
+        imageurl = []
+        for row in jsonvar.items():
+            imageurl.append(row[1][0]['mediaUrl'])
+        return imageurl
         
     def manufacturer_content_body(self):
-        return None
+        full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
+        return full_description
     
     #extract average review, and total reviews  
     def reviews_for_url(self):
-        return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
+        average_review = self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')[0]
+        return average_review
 
     def nr_reviews(self):
-        return self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
+        nr_reviews = self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
+        return nr_reviews
         
     # extract product name from its product page tree
     # ! may throw exception if not found
@@ -70,18 +92,21 @@ class WayfairScraper(Scraper):
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_keywords_from_tree(self):
-        return None
-
+        
+        return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0]
+        
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_brand_from_tree(self):
-        return self.tree_html.xpath('//meta[@property="og:brand"]/@content')[0]
+        #<div id="mbc" data-asin="B000JMAVYO" data-brand="Spicy World"
+        return self.tree_html.xpath('//span[@itemprop="brand"]//text()')[0].strip()
 
 
     # extract product short description from its product page tree
     # ! may throw exception if not found
     def _short_description_from_tree(self):
-        short_description = " ".join(self.tree_html.xpath('//div[contains(@class, "prod_features")]//li//text()')).strip()
+        
+        short_description = " ".join(self.tree_html.xpath("//*[@id='feature-bullets']//text()")).strip()
         return short_description
 
     # extract product long description from its product product page tree
@@ -89,17 +114,19 @@ class WayfairScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
-        full_description = self.tree_html.xpath('//p[contains(@class,"prod_romance_copy")]//text()')[0]
+        full_description = " ".join(self.tree_html.xpath('//div[contains(@class, "main_description")]//span[@itemprop="description"]//text()')).strip()
+        
         return full_description
 
 
-    # extract product price from its product product page tree
+    # extract product price from its product product page tree.
     def _price_from_tree(self):
-        meta_price = self.tree_html.xpath('//meta[@itemprop="price"]//@content')
-        if meta_price:
-            return meta_price[0].strip()
-        else:
-            return None
+        
+        price = self.tree_html.xpath("//span[@id='ajaxPrice']//text()")
+        if price:
+            return price[0].strip()
+        
+        return None
 
     # extract product price from its product product page tree
     # ! may throw exception if not found
@@ -108,7 +135,7 @@ class WayfairScraper(Scraper):
     #      - is format ok?
     def _anchors_from_tree(self):
         # get all links found in the description text
-        description_node = self.tree_html.xpath("//section[@class='detailWrapper']")[0]
+        description_node = self.tree_html.xpath('//div[contains(@class, "main_description")]//span[@itemprop="description"]')[0]
         links = description_node.xpath(".//a")
         nr_links = len(links)
 
@@ -139,14 +166,16 @@ class WayfairScraper(Scraper):
     # extract product model from its product product page tree
     # ! may throw exception if not found
     def _model_from_tree(self):
-        return None
+        model = self.tree_html.xpath('//h2[contains(@class, "product_details modelNo")]//text()')[0].strip()
+        return model
 
     # extract product features list from its product product page tree, return as string
     # join all text in spec table; separate rows by newlines and eliminate spaces between cells
     def _features_from_tree(self):
-        rows = self.tree_html.xpath("//div[contains(@class, 'prod_features')]")
+        rows = self.tree_html.xpath('//div[contains(@class, "main_description")]//ul[@class="bulletList"]//li')
+        
         # list of lists of cells (by rows)
-        cells = map(lambda row: row.xpath(".//li//text()"), rows)
+        cells = map(lambda row: row.xpath(".//text()"), rows)
         # list of text in each row
         
         rows_text = map(\
@@ -163,7 +192,7 @@ class WayfairScraper(Scraper):
     # ! may throw exception if not found
     def _nr_features_from_tree(self):
         # select table rows with more than 2 cells (the others are just headers), count them
-        return len(filter(lambda row: len(row.xpath(".//text()"))>0, self.tree_html.xpath("//div[contains(@class, 'prod_features')]//li")))
+        return len(filter(lambda row: len(row.xpath(".//text()"))>0, self.tree_html.xpath('//div[contains(@class, "main_description")]//ul[@class="bulletList"]//li')))
 
     # extract page title from its product product page tree
     # ! may throw exception if not found
@@ -179,57 +208,72 @@ class WayfairScraper(Scraper):
     # TODO:
     #      test this in conjuction with _seller_meta_from_tree; also test at least one of the values is 1
     def _seller_from_tree(self):
-        seller_info = {}
+        seller_info = {}      
         seller_info['owned'] = 1
         seller_info['marketplace'] = 0
 
         return seller_info
-    
-    def _marketplace(self):
-        return 0
-    
-    def _owned(self):
-        return 1
-    
-    def _upc(self):
-        return self.tree_html.xpath('//meta[@property="og:upc"]/@content')[0]
-    
-    # Number of product images
+
     def _product_images(self):
-        return len(self.tree_html.xpath("//ul[@class='slides']/li/img/@src"))
+        scripts = self.tree_html.xpath('//script//text()')
+        for script in scripts:
+            jsonvar = re.findall(r'JSON = (.*?);', script)
+            if len(jsonvar) > 0:
+                jsonvar = jsonvar[0]
+                break
+        jsonvar = json.loads(jsonvar)
+        imageurl = []
+        for row in jsonvar.items():
+            imageurl.append(row[1][0]['mediaUrl'])
+        return len(imageurl)
+    
+    def _no_image(self):
+        return None
+
+    def _mobile_image_same(self):
+        pass
 
     # extract the department which the product belongs to
     def _dept(self):
-        dept = " ".join(self.tree_html.xpath("//span[contains(@class, 'breadcrumb')]//a[2]//text()")).strip()
-        return dept
+        all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
+        all = map(lambda t: self._clean_text(t), all)
+        return all[1]
     
     # extract the department's department, or super department
     def _super_dept(self):
-        dept = " ".join(self.tree_html.xpath("//span[contains(@class, 'breadcrumb')]//a[1]//text()")).strip()
-        return dept
+        all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
+        all = map(lambda t: self._clean_text(t), all)
+        return all[0]
     
     # extract a hierarchical list of all the departments the product belongs to
     def _all_depts(self):
-        all = self.tree_html.xpath("//span[contains(@class, 'breadcrumb')]//a//text()")
+        scripts = self.tree_html.xpath('//script//text()')
+        for script in scripts:
+            jsonvar = re.findall(r'BREADCRUMB_JSON = (.*?);', script)
+            if len(jsonvar) > 0:
+                jsonvar = jsonvar[0]
+                break
+        jsonvar = json.loads(jsonvar)
+        all = jsonvar['bcEnsightenData']['contentSubCategory'].split(u'\u003e')
         return all
     
-    # extracts whether the first product image is the "no-image" picture
-    def _no_image(self):
-        None
-        
-    def _mobile_image_same(self):
-        pass
-        
+    def _meta_description(self):
+        return self.tree_html.xpath("//meta[@name='description']/@content")[0]
     
-    def fetch_bytes(self, url):
-        file = cStringIO.StringIO(urllib.urlopen(url).read())
-        img = Image.open(file)
-        
-        b = BytesIO()
-        img.save(b, format='png')
-        data = b.getvalue()
+    def _meta_keywords(self):
+        return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
     
-        return data
+    def _asin(self):
+        print '\n\n\n\n\n'
+        scripts = self.tree_html.xpath('//script//text()')
+        for script in scripts:
+            var = re.findall(r'CI_ItemUPC=(.*?);', script)
+            print var
+            if len(var) > 0:
+                var = var[0]
+                break
+        var = re.findall(r'[0-9]+', str(var))[0]
+        return var
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -237,7 +281,7 @@ class WayfairScraper(Scraper):
     def main(args):
         # check if there is an argument
         if len(args) <= 1:
-            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython crawler_service.py <product_url>\n")
+            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython crawler_service.py <amazon_product_url>\n")
             sys.exit(1)
     
         product_page_url = args[1]
@@ -253,44 +297,36 @@ class WayfairScraper(Scraper):
 
 
     '''
-    short_desc example:
-        http://www.wayfair.com/daily-sales/p/Dual-Purpose-Storage-Milan-Storage-Slipper-Chair-in-Rustic-Brown~IRD1778~E13601.html
-    long_desc example:
-        http://www.wayfair.com/Aspire-Josie-28-H-Table-Lamp-with-Drum-Shade-Set-of-2-68915-EHQ1592.html
-    video example
-        http://www.wayfair.com/Minka-Aire-54-RainMan-5-Blade-Indoor-Outdoor-Ceiling-Fan-F582-BNW-MKA1582.html
-        http://www.wayfair.com/KitchenAid-Stand-Mixer-Attachment-Pack-1-FPPA-KAD1004.html
-        note: the above videos seem broken
-        http://www.wayfair.com/Cuisinart-1.0-Cu.-Ft.-900W-Countertop-Microwave-CMW-100-CUI1128.html
+    HOMEDEPOT --------------------
     
-        x   "name" 
-        x    "keywords"  - no meta keywords exist
-        x    "short_desc" 
-        x    "long_desc" 
-        x    "manufacturer_content_body" - not sure what you wanted for this, returning none
-        x    "price" 
-        x    "anchors" - none found
-        x    "htags" 
-        x    "features" 
-        x    "nr_features" 
-        x    "title" 
-        x    "seller"
-        x    "product_id" 
-        x    "image_url" 
-        x    "video_url"
-        x    "upc" 
-        x    "product_images" 
-        x    "dept" 
-        x    "super_dept" 
-        x    "all_depts" 
-        x    "no_image" - not implemented
-        x    "load_time"
-         
-        x    "brand" 
-        x    "model" - none available
-        x    "pdf_url" - none found
-        x    "average_review" 
-        x    "total_reviews" 
+    x    name
+    x    keywords
+    short - doesn't exist
+    x    long
+    x    price
+    x    anchors
+    x    htags
+    x    features
+    x    nr_features
+    x    title
+    x    seller - hardcoded as just 'owned'
+    x    product_id
+    x    load_time
+    x    image_url
+    video_url
+    x    brand
+    x    model
+    manufacturer_content_body - haven't found an instance of this
+    x    pdf_url
+    no_image
+    x    average_review
+    x    total_reviews
+    
+    x    UPC/EAN/ISBN
+    x    product_images
+    x    all_depts
+    x    meta description 
+    x    meta keywords 
     
 
     '''
@@ -308,6 +344,7 @@ class WayfairScraper(Scraper):
         "keywords" : _meta_keywords_from_tree, \
         "short_desc" : _short_description_from_tree, \
         "long_desc" : _long_description_from_tree, \
+        "manufacturer_content_body" : manufacturer_content_body, \
         "price" : _price_from_tree, \
         "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
@@ -315,34 +352,31 @@ class WayfairScraper(Scraper):
         "nr_features" : _nr_features_from_tree, \
         "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
-        "marketplace" : _marketplace, \
-        "owned" : _owned, \
         "product_id" : _extract_product_id, \
+        "brand" : _meta_brand_from_tree, \
         "image_url" : _image_url, \
         "video_url" : video_for_url, \
+        "no_image" : _no_image, \
         
-        "upc" : _upc,\
-        "product_images" : _product_images, \
-        "dept" : _dept,\
-        "super_dept" : _super_dept,\
+        "product_images" : _product_images,\
         "all_depts" : _all_depts,\
-        "no_image" : _no_image,\
-        "brand" : _meta_brand_from_tree, \
-        "model" : _model_from_tree, \
-
+        "meta_description" : _meta_description,\
+        "meta_keywords" : _meta_keywords,\
+        "upc" : _asin,\
         
-        "load_time": None\
+        "model" : _model_from_tree, \
+        "pdf_url" : pdf_for_url, \
+        
+        "average_review" : reviews_for_url, \
+        "total_reviews" : nr_reviews, \
+        
+        "load_time": None \
         }
 
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         "mobile_image_same" : _mobile_image_same, \
-        "manufacturer_content_body" : manufacturer_content_body, \
-        "pdf_url" : pdf_for_url, \
-        "average_review" : reviews_for_url, \
-        "total_reviews" : nr_reviews\
+
+        
     }
-
-
-

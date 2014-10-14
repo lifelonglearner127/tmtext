@@ -416,6 +416,35 @@ class ServiceSimpleTest(unittest.TestCase):
     def test_ozon_specificdata(self):
         self._test_specificdata("ozon", "http://www.ozon.ru/context/detail/id/26610761/")
 
+    # test all keys are in the response for simple (all-data) request for kmart
+    # (using template function)
+    def test_kmart_alldata(self):
+        self._test_alldata("kmart", "http://www.kmart.com/kenmore-18.2-cu-ft-top-freezer-refrigerator-w/p-022W002243717000P?prdNo=1&blockNo=1&blockType=G1")
+
+    # test requests for each specific type of data for homedepot
+    # (using template function)
+    def test_homedepot_specificdata(self):
+        self._test_specificdata("homedepot", "http://www.kmart.com/kenmore-18.2-cu-ft-top-freezer-refrigerator-w/p-022W002243717000P?prdNo=1&blockNo=1&blockType=G1")
+
+    # test all keys are in the response for simple (all-data) request for homedepot
+    # (using template function)
+    def test_homedepot_alldata(self):
+        self._test_alldata("homedepot", "http://www.homedepot.com/p/Ryobi-2-200-Watt-Green-Gasoline-Powered-Digital-Inverter-Generator-RYI2200/203617901?N=5yc1vZbx9nZ1z0z72o")
+
+    # test requests for each specific type of data for homedepot
+    # (using template function)
+    def test_homedepot_specificdata(self):
+        self._test_specificdata("homedepot", "http://www.homedepot.com/p/Ryobi-2-200-Watt-Green-Gasoline-Powered-Digital-Inverter-Generator-RYI2200/203617901?N=5yc1vZbx9nZ1z0z72o")
+
+    # test all keys are in the response for simple (all-data) request for statelinetack
+    # (using template function)
+    def test_statelinetack_alldata(self):
+        self._test_alldata("statelinetack", "http://www.statelinetack.com/item/silver-fox-english-starter-set/SLT700633/")
+
+    # test requests for each specific type of data for statelinetack
+    # (using template function)
+    def test_statelinetack_specificdata(self):
+        self._test_specificdata("statelinetack", "http://www.statelinetack.com/item/silver-fox-english-starter-set/SLT700633/")
 
 
 if __name__=='__main__':
