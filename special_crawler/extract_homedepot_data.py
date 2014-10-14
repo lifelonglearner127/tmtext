@@ -230,6 +230,9 @@ class HomeDepotScraper(Scraper):
     def _no_image(self):
         return None
 
+    def _mobile_image_same(self):
+        pass
+
     # extract the department which the product belongs to
     def _dept(self):
         all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
@@ -373,6 +376,7 @@ class HomeDepotScraper(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
-        
+        "mobile_image_same" : _mobile_image_same, \
+
         
     }

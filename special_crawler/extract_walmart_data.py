@@ -398,6 +398,9 @@ class WalmartScraper(Scraper):
         """
 
         return re.sub("&nbsp;", " ", text).strip()
+    
+    def _mobile_image_same(self):
+        pass
 
 
     # TODO: fix to work with restructured code
@@ -471,6 +474,8 @@ class WalmartScraper(Scraper):
 
     DATA_TYPES_SPECIAL = { \
         "pdf_url" : _pdf_url, \
+        "mobile_image_same" : _mobile_image_same \
+
     #    "reviews" : reviews_for_url \
     }
 

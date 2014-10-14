@@ -52,9 +52,38 @@ class AmazonScraper(Scraper):
     def pdf_for_url(self):
         return None
     
+    #returns 1 if the mobile version is the same, 0 otherwise
+    def _mobile_image_same(self):
+        url = self.product_page_url
+        mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
+        pc_headers = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        
+        img_list = []
+        for h in [mobile_headers, pc_headers]:
+            contents = requests.get(url, headers=h).text
+            tree = html.fromstring(contents)
+            
+            image_url = self._image_url(tree)
+            print '\n\n\nImage URL:', image_url, '\n\n\n'
+            
+            img_list.extend(image_url)
+        
+        if len(img_list) == 2:
+            return img_list[0] == img_list[1]
+        return None
 
-    def _image_url(self):
-        image_url = self.tree_html.xpath("//span[@class='a-button-text']//img/@src")
+    def _image_url(self, tree = None):
+        if tree == None:
+            tree = self.tree_html
+            
+        image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
+        return image_url
+    
+    def _mobile_image_url(self, tree = None):
+        if tree == None:
+            tree = self.tree_html
+            
+        image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
         return image_url
         
     def manufacturer_content_body(self):
@@ -247,6 +276,10 @@ class AmazonScraper(Scraper):
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
+    
+    
+    
+    
     def main(args):
         # check if there is an argument
         if len(args) <= 1:
@@ -349,6 +382,7 @@ class AmazonScraper(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
+        "mobile_image_same" : _mobile_image_same, \
         "model" : _model_from_tree, \
         "pdf_url" : pdf_for_url, \
         "average_review" : reviews_for_url, \
