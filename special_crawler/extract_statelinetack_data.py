@@ -52,9 +52,15 @@ class StateLineTackScraper(Scraper):
 
     # return dictionary with one element containing the PDF
     def pdf_for_url(self):
-        moreinfo = self.tree_html.xpath('//div[@id="moreinfo_wrapper"]')[0]
-        html = etree.tostring(moreinfo)
-        pdfurl = re.findall(r'(http://.*?\.pdf)', html)[0]
+        moreinfo = self.tree_html.xpath('//div[@class="ItemPageDownloadableResources"]//div//a/@href')
+        pdfurl = []
+        print '\n\n'
+        for a in moreinfo:
+            p = re.findall(r'(.*\.pdf)', a)
+            pdfurl.extend(p)
+        
+        baseurl = 'http://www.statelinetack.com/'    
+        pdfurl = [baseurl + x[1:] for x in pdfurl] 
         return pdfurl
 
     
@@ -245,6 +251,9 @@ class StateLineTackScraper(Scraper):
     
     def _no_image(self):
         return None
+    
+    def _mobile_image_same(self):
+        pass
 
     # extract the department which the product belongs to
     def _dept(self):
@@ -260,14 +269,8 @@ class StateLineTackScraper(Scraper):
     
     # extract a hierarchical list of all the departments the product belongs to
     def _all_depts(self):
-        scripts = self.tree_html.xpath('//script//text()')
-        for script in scripts:
-            jsonvar = re.findall(r'BREADCRUMB_JSON = (.*?);', script)
-            if len(jsonvar) > 0:
-                jsonvar = jsonvar[0]
-                break
-        jsonvar = json.loads(jsonvar)
-        all = jsonvar['bcEnsightenData']['contentSubCategory'].split(u'\u003e')
+        # 
+        all = self.tree_html.xpath('//div[@id="ItemPageBreadCrumb"]//a/text()')
         return all
     
     def _meta_description(self):
@@ -316,15 +319,15 @@ class StateLineTackScraper(Scraper):
     x    product_id
     x    load_time
     x    image_url
-    video_url
     
-    pdf_url
+    
+    x    pdf_url
     x    average_review
     x    total_reviews
     
     UPC/EAN/ISBN
     x    product_images
-    all_depts
+    x    all_depts
     x    meta description 
     x    meta keywords - may not ever be populated although the tag exists
     
@@ -332,8 +335,10 @@ class StateLineTackScraper(Scraper):
     
     # 
     missing --------------------------------------
+    mobile_image_same - haven't implemented yet
     noimage - haven't implemented yet
     short - doesn't exist
+    video_url - couldn't find on stateline tack
     brand - couldn't find on stateline tack
     model - couldn't find on stateline tack
     manufacturer_content_body - no instances of this found on statelinetack
@@ -386,6 +391,7 @@ class StateLineTackScraper(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
-        
+        "mobile_image_same" : _mobile_image_same \
+
         
     }
