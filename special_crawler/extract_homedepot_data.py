@@ -40,14 +40,7 @@ class HomeDepotScraper(Scraper):
 
     # return dictionary with one element containing the video url
     def video_for_url(self):
-        #"url":"http://ecx.images-amazon.com/images/I/B1d2rrt0oJS.mp4"
-        video_url = self.tree_html.xpath('//script[@type="text/javascript"]') 
-        temp = []
-        for v in video_url:
-            r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", str(v.xpath('.//text()')))
-            if r:
-                temp.extend(r)
-        return temp
+        return None
 
     # return dictionary with one element containing the PDF
     def pdf_for_url(self):
