@@ -62,6 +62,11 @@ REPO_BASE_PATH = '~/repos/'
 #REPO_URL = 'https://ContentSolutionsDeploy@bitbucket.org/dfeinleib/tmtext.git'
 REPO_URL = 'git@bitbucket.org:dfeinleib/tmtext.git'
 
+LOCAL_CERT_BASE_PATH = os.getenv("HOME") + '/tmp/web_runner_ssh_keys'
+CERT_REPO_URL = 'git@bitbucket.org:itsyndicate/tmtext-ssh.git'
+LOCAL_CERT_PATH = LOCAL_CERT_BASE_PATH + os.sep + re.search(
+                    '.+\/([^\s]+?)\.git$', CERT_REPO_URL).group(1)
+
 
 @contextmanager
 def virtualenv(environment):
@@ -85,6 +90,23 @@ def virtualenv(environment):
             yield
 
 
+def get_ssh_keys():
+    '''Get ssh certificates to connect to target servers'''
+    puts(green('Getting ssh certificates'))
+
+    local_original_mode = cuisine.is_local()
+    cuisine.mode_local()
+    
+    if not cuisine.dir_exists(LOCAL_CERT_PATH):
+        local('mkdir -p ' + LOCAL_CERT_BASE_PATH)
+        local('cd %s && git clone %s && cd %s'
+            % (LOCAL_CERT_BASE_PATH, CERT_REPO_URL, LOCAL_CERT_PATH))
+    else:
+        local('cd %s && git pull' % (LOCAL_CERT_PATH))
+
+    if not local_original_mode:
+        cuisine.mode_remote()
+
 def set_environment_vagrant():
     '''Define Vagrant's environment'''
     puts(green('Using Vagrant settings'))
@@ -93,12 +115,13 @@ def set_environment_vagrant():
     global SSH_SUDO_CERT
     global WEB_RUNNER_CERT
 
+    get_ssh_keys()
 #    env.hosts = ['vagrant@127.0.0.1:2222']
     #SSH_SUDO_USER = 'vagrant'
     #SSH_SUDO_PASSWORD = 'vagrant'
     SSH_SUDO_USER = 'vagrant'
     SSH_SUDO_PASSWORD = 'vagrant'
-    WEB_RUNNER_CERT = 'web_runner_rsa'
+    WEB_RUNNER_CERT = LOCAL_CERT_PATH + os.sep + 'web_runner_rsa'
 
     env.hosts = ['127.0.0.1']
     env.port = 2222
@@ -116,10 +139,12 @@ def set_production():
     global SSH_SUDO_CERT
     global WEB_RUNNER_CERT
 
+    get_ssh_keys()
+
     SSH_SUDO_USER = 'ubuntu'
     SSH_SUDO_PASSWORD = None
-    SSH_SUDO_CERT = 'ubuntu_id_rsa'
-    WEB_RUNNER_CERT = 'web_runner_rsa'
+    SSH_SUDO_CERT = LOCAL_CERT_PATH + os.sep + 'ubuntu_id_rsa'
+    WEB_RUNNER_CERT = LOCAL_CERT_PATH + os.sep + 'web_runner_rsa'
 
     env.user = WEB_RUNNER_USER
     env.password = WEB_RUNNER_PASSWORD
@@ -156,9 +181,9 @@ def setup_users():
         sudo('mkdir -p ~%s/.ssh' % WEB_RUNNER_USER)
         sudo('chmod 700  ~%s/.ssh' % WEB_RUNNER_USER)
 
-        deploy_cert = open('web_runner_rsa.pub', 'r').read()
-        priv_cert = open('web_runner_user_rsa', 'r').read()
-        pub_cert = open('web_runner_user_rsa.pub', 'r').read()
+        deploy_cert = open(LOCAL_CERT_PATH + os.sep + 'web_runner_rsa.pub', 'r').read()
+        priv_cert = open(LOCAL_CERT_PATH + os.sep + 'web_runner_user_rsa', 'r').read()
+        pub_cert = open(LOCAL_CERT_PATH + os.sep + 'web_runner_user_rsa.pub', 'r').read()
         ssh_config = 'Host bitbucket.org\n\tStrictHostKeyChecking no'
         cuisine.file_write('/tmp/deploy_cert', deploy_cert)
         cuisine.file_write('/tmp/priv_cert', priv_cert)
@@ -230,9 +255,9 @@ def _get_venv_path(venv):
     return VENV_PREFIX + os.sep + venv
 
 
-def _get_repo_path():
-    return REPO_BASE_PATH + os.sep + re.search(
-        '.+\/([^\s]+?)\.git$', REPO_URL).group(1)
+def _get_repo_path(base_path=REPO_BASE_PATH, url=REPO_URL):
+    return base_path + os.sep + re.search(
+        '.+\/([^\s]+?)\.git$', url).group(1)
 
 
 def _setup_virtual_env_scrapyd():
