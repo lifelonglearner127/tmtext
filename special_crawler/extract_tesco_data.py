@@ -312,6 +312,7 @@ class TescoScraper(Scraper):
         return None
     
     #returns 1 if the mobile version is the same, 0 otherwise
+    #TODO this makes 2 requests, needs to be more efficient but we're looking for a way to standardize things
     def _mobile_image_same(self):
         url = self.product_page_url
         mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}

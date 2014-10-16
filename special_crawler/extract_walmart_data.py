@@ -7,6 +7,7 @@ import json
 
 from lxml import html
 import time
+import requests
 
 from extract_data import Scraper
 
@@ -412,6 +413,35 @@ class WalmartScraper(Scraper):
 
         return average_review
 
+    def _product_images(self):
+        return len(self._image_url())
+
+    def _image_url(self):
+        scripts = self.tree_html.xpath("//script//text()")
+        for script in scripts:
+            find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script)) 
+            if len(find)>0:
+                return find
+        
+        # It should only return this img when there's no img carousel    
+        pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
+        return pic
+    
+    # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
+    def _mobile_image_same(self):
+        url = self.product_page_url
+        url = re.sub('http://www', 'http://mobile', url)
+        mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
+        contents = requests.get(url, headers=mobile_headers).text
+        tree = html.fromstring(contents)
+        mobile_img = tree.xpath('.//*[contains(@class,"carousel ")]//*[contains(@class, "carousel-item")]/@data-model-id')
+        img = self._image_url()
+        
+        if mobile_img and img:
+            return mobile_img[0] == img[0]
+        else:
+            return None # no images found to compare
+    
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -423,6 +453,8 @@ class WalmartScraper(Scraper):
         """
 
         return re.sub("&nbsp;", " ", text).strip()
+    
+
 
 
     # TODO: fix to work with restructured code
@@ -479,6 +511,9 @@ class WalmartScraper(Scraper):
         "average_review": _avg_review_from_tree, \
         # video needs both page source and separate requests
         "video_url" : _video_url, \
+        
+        "product_images" : _product_images, \
+        "img_url" : _image_url, \
 
 
         "load_time": None \
@@ -496,6 +531,8 @@ class WalmartScraper(Scraper):
 
     DATA_TYPES_SPECIAL = { \
         "pdf_url" : _pdf_url, \
+        "mobile_image_same" : _mobile_image_same \
+
     #    "reviews" : reviews_for_url \
     }
 
