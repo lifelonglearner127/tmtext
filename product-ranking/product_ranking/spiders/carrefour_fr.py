@@ -12,7 +12,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
 class CarrefourProductsSpider(BaseProductsSpider):
-    name = 'carrefour_products'
+    name = 'carrefour_fr_products'
     allowed_domains = ["carrefour.fr"]
     start_urls = []
 
