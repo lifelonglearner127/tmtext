@@ -292,6 +292,9 @@ class WalmartProductsSpider(BaseProductsSpider):
             pass
 
     def _scrape_total_matches(self, response):
+        if response.css('.no-results'):
+            return 0
+
         num_results = None
 
         # We get two different types of pages.
@@ -336,7 +339,7 @@ class WalmartProductsSpider(BaseProductsSpider):
                     INFO
                 )
         else:
-            self.log("Found no product links %s." % response.url, ERROR)
+            self.log("Found no product links %s." % response.url, WARNING)
 
         for link in links:
             yield link, SiteProductItem()
