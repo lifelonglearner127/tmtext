@@ -211,6 +211,11 @@ class WalmartProductsSpider(BaseProductsSpider):
             response.xpath('//meta[@name="Description"]/@content').extract(),
         )
 
+        prices = response.xpath('//*[@id="SWFromPrice"]//text()').extract()
+        if prices:
+            price = "".join([p.strip() for p in prices])
+            product['price'] = price.replace('$', '')
+
     def _populate_from_js(self, response, product):
         # This fails with movies.
         scripts = response.xpath(
@@ -218,17 +223,26 @@ class WalmartProductsSpider(BaseProductsSpider):
         if not scripts:
             self.log("No JS matched in %s" % response.url, WARNING)
             return None, None
+
+        if not scripts.re("currentItemPrice:\s*([-+]?\d*\.\d+|\d+),"):
+            scripts = response.xpath(
+                "//script[contains(text(), 'var DefaultItemWidget =')]")
+
         if len(scripts) > 1:
             self.log(
-                "Matched multiple script blocks in %s" % response.url, WARNING)
+                "Matched multiple script blocks in %s" % response.url,
+                WARNING
+            )
 
         cond_set(product, 'upc', map(int, scripts.re("upc:\s*'(\d+)',")))
         cond_set(product, 'brand',
                  filter(None, scripts.re("brand:\s*'(.+)',")))
         cond_set(product, 'model', scripts.re("model:\s*'(.+)',"))
         cond_set(product, 'title', scripts.re("friendlyName:\s*'(.+)',"))
-        cond_set(product, 'price',
-                 map(float, scripts.re("currentItemPrice:\s*'(\d+)',")))
+        cond_set(
+            product, 'price',
+            map(float, scripts.re("currentItemPrice:\s*([-+]?\d*\.\d+|\d+),"))
+        )
         cond_set(product, 'rating',
                  map(float, scripts.re("currentRating:\s*'(.+)',")))
 
