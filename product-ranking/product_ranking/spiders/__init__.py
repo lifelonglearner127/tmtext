@@ -157,9 +157,9 @@ class BaseProductsSpider(Spider):
 
         self.searchterms = []
         if searchterms_str is not None:
-            self.searchterms = searchterms_str.split(',')
+            self.searchterms = searchterms_str.decode('utf-8').split(',')
         elif searchterms_fn is not None:
-            with open(searchterms_fn) as f:
+            with open(searchterms_fn, encoding='utf-8') as f:
                 self.searchterms = f.readlines()
         else:
             self.log("No search terms provided!", ERROR)
@@ -178,7 +178,9 @@ class BaseProductsSpider(Spider):
         for st in self.searchterms:
             yield Request(
                 self.url_formatter.format(
-                    self.SEARCH_URL, search_term=urllib.quote_plus(st)),
+                    self.SEARCH_URL,
+                    search_term=urllib.quote_plus(st.encode('utf-8')),
+                ),
                 meta={'search_term': st, 'remaining': self.quantity},
             )
 
