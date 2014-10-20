@@ -268,7 +268,6 @@ class SainsburysUkProductsSpider(BaseProductsSpider):
         cat = self.CATEGORIES[response.meta['cat']]
 
         next = cat._scrape_next_results_page_link(response)
-        link = None
         if next:
             link = urlparse.urljoin(response.url, next[0])
         else:
