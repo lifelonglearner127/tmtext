@@ -34,47 +34,65 @@ class Scraper():
     # using the declarations in the subclasses (for data types that have support in each subclass)
 
     BASE_DATA_TYPES_LIST = {
+            "url", # url of product
+            "event",
+            "product_id",
+            "site_id",
+            "date",
+            "status",
+
+            # product_info
             "product_name", # name of product, string
-            "short_desc", # short description, string
-            "description", # long description, string
-            "price", # price (string, with or without currency)
-            "anchors", # links found in the description, dictionary like {"links" : [], quantity: 0}
-            "htags", # h1 and h2 tags, dictionary like: {"h1" : [], "h2": ["text in tag"]}
+            "product_title", # page title, string
+            "title_seo", # SEO title, string
+            "model", # model of product, string
+            "upc", # upc of product, string
             "features", # features of product, string
             "feature_count", # number of features of product, int
-            "title", # page title, string
-            "seller", # seller of product, dictionary like: {"owned" : 1, "marketplace": 0}
-            "marketplace", # whether product can be found on marketplace, 1/0
-            "owned", # whether product is owned by site, 1/0
-            "product_id", # product id (usually from page url), string
-            "image_url", # urls of product images, list of strings
-            "video_url", # urls of product videos, list of strings
-            "product_images", # number of product images, int
-            "categories", # info on product categories, dictionary like: {"super_dept": "string", "dept": "string", "full": ["full", "path", "to", "product"], "hostname": "string"}
-            "dept", # product department
-            "super_dept", # parent of department
-            "all_depts", # full path of categories down to this product, list of strings
-            "no_image", # whether product image is a "there is no image" image: true/false
-            "product_in_stock", # whether product is in stock: true/false
-            "in_stores_only", # whether product can be found in stores only: true/false
+            "model_meta", # model from meta, string
+            "description", # short description / entire description if no short available, string
+            "long_description", # long description / null if description above is entire description, string
+
+            # page_attributes
+            "mobile_image_same", # whether mobile image is same as desktop image, true/false
+            "image_count", # number of product images, int
+            "image_urls", # urls of product images, list of strings
+            "video_count", # nr of videos, int
+            "video_urls", # urls of product videos, list of strings
+            "pdf_count", # nr of pdfs, string
+            "pdf_urls", # urls of product pdfs, list of strings
+            "webcollage", # whether video is from webcollage (?), true/false
+            "htags", # h1 and h2 tags, dictionary like: {"h1" : [], "h2": ["text in tag"]}
             "loaded_in_seconds", # load time of product page in seconds, float
-            "mobile_image_same", # whether mobile image is same as desktop image: true/false
-            "brand", # brand of product, string
-            "model", # model of product, string
-            "manufacturer_content_body", # special section of description by the manufacturer, string
-            "pdf_url", # urls of product pdfs, list of strings
-            "average_review", # average value of review, float?
+            "keywords", # keywords for this product, usually from meta tag, string
+            
+            # reviews
             "review_count", # total number of reviews, int
-            "asin",
-            "meta", # information (keywords and description) extracted from meta tags, dictionary like {"keywords":"string", "description":"string"}
-            # ^^ above: all collected fields from all subscrapers
-            # below: extra fields taken from PHP crawler returned object
-            "manufacturer",
-            "UPC/EAN/ISBN",
-            "pdf_count",
-            "video_count",
-            "date",
-            "item_id"
+            "average_review", # average value of review, float
+            "max_review", # highest review score, float
+            "min_review", # lowest review score, float
+            
+            # sellers
+            "price", # price, string including currency
+            "in_stores", # available to purchase in stores, true/false
+            "in_stores_only", # whether product can be found in stores only, true/false
+            "owned", # whether product is owned by site, true/false
+            "owned_out_of_stock", # whether product is owned and out of stock, true/false
+            "marketplace", # whether product can be found on marketplace, true/false
+            "marketplace_sellers", # sellers on marketplace (or equivalent) selling item, list of strings
+            "marketplace_lowest_price", # string
+            
+            # classification
+            "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
+            "category_name" # category for this product, string
+            "brand" # brand of product, string
+
+            # Deprecated:
+            # "anchors", # links found in the description, dictionary like {"links" : [], quantity: 0}
+            # "product_id", # product id (usually from page url), string
+            # "no_image", # whether product image is a "there is no image" image: true/false
+            # "manufacturer_content_body", # special section of description by the manufacturer, string
+            # "asin",
     }
 
     # Structure containing data types returned by the crawler as keys
@@ -85,18 +103,43 @@ class Scraper():
     # or data types will be added to the structure below
     # 
     # "loaded_in_seconds" needs to always have a value of None (no need to implement extraction)
+    # TODO: date should be implemented here
     BASE_DATA_TYPES = {
         data_type : lambda x: None for data_type in BASE_DATA_TYPES_LIST # using argument for lambda because it will be used with "self"
+    }
+
+    # structure containing subdictionaries of returned object
+    # and how they should be grouped.
+    # keys are root object keys, values are lists of result object keys that should be nested
+    # into these root keys
+    # keys that should be left in the root are not included in this structure
+    # TODO: make sure this is synchronized somehow with BASE_DATA_TYPES? like there should be no extra data types here
+    #       maybe put it as an instance variable
+    # TODO: what if only specific data was requested? will this still work?
+    # TODO: add one for root? to make sure nothing new appears in root either?
+    DICT_STRUCTURE = {
+        "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
+                        "features", "feature_count", "model_meta", "description", "long_description"],
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls",\
+                            "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords"], \
+        "reviews": ["review_count", "average_review", "max_review", "min_review"], \
+        "sellers": ["price", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
+                    "marketplace", "marketplace_sellers", "marketplace_lowest_price"], \
+        "classification": ["categories", "category_name", "brand"]
     }
 
 
     def __init__(self, product_page_url):
         self.product_page_url = product_page_url
 
+        # Set date
+        self.BASE_DATA_TYPES['date'] = lambda x: time.strftime("%Y-%m-%d %H:%M:%S")
+
         # update data types dictionary to overwrite names of implementing methods for each data type
         # with implmenting function from subclass
         self.ALL_DATA_TYPES = dict(self.BASE_DATA_TYPES.items() + self.DATA_TYPES.items() + self.DATA_TYPES_SPECIAL.items())
         # remove data types that were not declared in this superclass
+    
         # TODO: do this more efficiently?
         for key in list(self.ALL_DATA_TYPES.keys()):
             if key not in self.BASE_DATA_TYPES:
@@ -198,26 +241,11 @@ class Scraper():
     # arguments: data_types_dict - contains original flat response dictionary
     # returns: result nested response dictionary
     def _pack_returned_object(self, data_types_dict):
-        # structure containing subdictionaries of returned object
-        # and how they should be grouped.
-        # keys are root object keys, values are lists of result object keys that should be nested
-        # into these root keys
-        # keys that should be left in the root are not included in this structure
-        # TODO: make sure this is synchronized somehow with BASE_DATA_TYPES? like there should be no extra data types here
-        #       maybe put it as an instance variable
-        # TODO: what if only specific data was requested? will this still work?
-        DICT_STRUCTURE = {
-            "processed" : ["product_name", "description", "price", "features", "htags", "date"], \
-            "attributes" : ["model", "manufacturer", "UPC/EAN/ISBN", "feature_count",
-                            "product_images", "owned", "pdf_url", "pdf_count", "video_url", "video_count", \
-                            "loaded_in_seconds", "title", "review_count", "item_id"], \
-            # "categories" : ["super_dept", "dept"],
-        }
 
         # pack input object into nested structure according to structure above
         nested_object = {}
-        for root_key in DICT_STRUCTURE.keys():
-            for subkey in DICT_STRUCTURE[root_key]:
+        for root_key in self.DICT_STRUCTURE.keys():
+            for subkey in self.DICT_STRUCTURE[root_key]:
                 # only add this if this data type was requested
                 if subkey in data_types_dict:
                     if root_key not in nested_object:
