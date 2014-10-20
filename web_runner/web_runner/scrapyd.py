@@ -5,12 +5,10 @@ from future_builtins import *
 
 import logging
 import urlparse
-import json
 import os.path
 import time
 import thread
 import urllib
-import urllib2
 
 import enum
 import pyramid.httpexceptions as exc
@@ -42,13 +40,11 @@ class ScrapydJobStartError(ScrapydJobException):
         self.status = status
 
 
-class ScrapydMediator(object):
-
-    SCRAPYD_BASE_URL = 'spider._scrapyd.base_url'
+class ScrapydJobHelper(object):
 
     SCRAPYD_ITEMS_PATH = 'spider._scrapyd.items_path'
 
-    _VERIFICATION_DELAY = 0.1
+    _VERIFICATION_DELAY = 1
 
     class JobStatus(enum.Enum):
         unknown = 0
@@ -56,20 +52,19 @@ class ScrapydMediator(object):
         finished = 2
         pending = 3
 
-    def __init__(self, settings, spider_config):
+    def __init__(self, settings, spider_config, scrapyd):
         if spider_config is None:
             raise exc.HTTPNotFound("Unknown resource.")
 
-        self.scrapyd_base_url = settings[ScrapydMediator.SCRAPYD_BASE_URL]
-        self.scrapyd_items_path = settings[ScrapydMediator.SCRAPYD_ITEMS_PATH]
+        self.scrapyd = scrapyd
+        self.scrapyd_items_path = settings[ScrapydJobHelper.SCRAPYD_ITEMS_PATH]
 
         self.config = spider_config
 
-    def start_job(self, params, timeout=1.0):
+    def start_job(self, params):
         """Returns the job ID of the started Scrapyd job.
 
         :param params: Parameters for the job to be started.
-        :param timeout: Seconds to wait for Scrapy to show the job.
         """
         try:
             spider_name = self.config.spider_name.format(**params)
@@ -77,73 +72,50 @@ class ScrapydMediator(object):
         except KeyError as e:
             raise ScrapydJobException("Parameter %s is required." % e)
 
-        url = urlparse.urljoin(self.scrapyd_base_url, 'schedule.json')
-        # Convert to a list of pairs to handle multivalued parameters.
-        data = list(filter(
-            lambda (k, _): k not in {'project', 'spider'},
-            params.items()
-        ))
-        data.append(('project', project_name))
-        data.append(('spider', spider_name))
+        return self.scrapyd.schedule_job(project_name, spider_name, params)
 
-        LOG.info("Calling Scrapyd on '%s' with parameters: %s", url, data)
-        result = self._fetch_json(url, data)
-        if result['status'] != "ok":
-            raise ScrapydJobStartError(
-                result['status'],
-                "Failed to start job with parameters: %r" % data,
-            )
-        jobid = result['jobid']
-
-        # Wait until the job appears in the list of jobs.
-        queue_status = self.report_on_job_with_retry(jobid, timeout=timeout)
-        if queue_status == ScrapydMediator.JobStatus.unknown:
-            raise ScrapydJobStartError(
-                "ok",
-                "Timeout on waiting for Scrapyd to list job '%s'." % jobid,
-            )
-
-        return jobid
-
-    def report_on_job(self, jobid):
+    def _report_on_job_without_retry(self, jobid, fresh=False):
         """Returns the status of a job."""
-        url = urlparse.urljoin(self.scrapyd_base_url, 'listjobs.json') \
-            + '?' + urllib.urlencode({'project': self.config.project_name})
-        response = self._fetch_json(url)
-        if response['status'] != "ok":
-            LOG.error("Scrapyd was not OK: %s", json.dumps(response))
-            raise exc.HTTPBadGateway(
-                "Scrapyd was not OK, it was '{status}': {message}".format(
-                    **response))
+        jobs = self.scrapyd.get_jobs([self.config.project_name], fresh)
 
-        if any(job_desc['id'] == jobid for job_desc in response['finished']):
-            status = ScrapydMediator.JobStatus.finished
-        elif any(job_desc['id'] == jobid for job_desc in response['pending']):
-            status = ScrapydMediator.JobStatus.pending
-        elif any(job_desc['id'] == jobid for job_desc in response['running']):
-            status = ScrapydMediator.JobStatus.running
-        elif os.path.exists(self.retrieve_job_data_fn(jobid)):
-            LOG.warn("Scrapyd doesn't know the job but the file is present.")
-            status = ScrapydMediator.JobStatus.finished
-        else:
-            status = ScrapydMediator.JobStatus.unknown
+        try:
+            job = jobs[jobid]
+
+            status = ScrapydJobHelper.JobStatus[job['status']]
+        except KeyError:
+            if os.path.exists(self.retrieve_job_data_fn(jobid)):
+                LOG.warn(
+                    "Scrapyd doesn't know the job but the file is present.")
+                status = ScrapydJobHelper.JobStatus.finished
+            else:
+                status = ScrapydJobHelper.JobStatus.unknown
 
         return status
 
-    def report_on_job_with_retry(self, jobid, timeout=1.0):
+    def report_on_job(self, jobid, timeout=30, max_retries=2):
         """Returns the status of a job."""
-        retry_count = 1 + timeout // ScrapydMediator._VERIFICATION_DELAY
-        for _ in range(int(retry_count)):
-            status = self.report_on_job(jobid)
-            if status != ScrapydMediator.JobStatus.unknown:
+        current_try = 0
+        end_time = time.time() + timeout
+        status = None
+        while True:
+            # Ask for a fresh response if it's not the first iteration.
+            status = self._report_on_job_without_retry(
+                jobid, fresh=current_try != 0)
+            if status is ScrapydJobHelper.JobStatus.unknown \
+                    and current_try < max_retries \
+                    and end_time > time.time():
+                LOG.info(
+                    "Waiting %gs before retrying to get job status for '%s'."
+                    " (%d)",
+                    ScrapydJobHelper._VERIFICATION_DELAY,
+                    jobid,
+                    current_try,
+                )
+                time.sleep(ScrapydJobHelper._VERIFICATION_DELAY)
+            else:
                 break
 
-            LOG.debug(
-                "Job %s not ready. Waiting %g before retrying.",
-                jobid,
-                ScrapydMediator._VERIFICATION_DELAY,
-            )
-            time.sleep(ScrapydMediator._VERIFICATION_DELAY)
+            current_try += 1
 
         return status
 
@@ -166,21 +138,9 @@ class ScrapydMediator(object):
         ))
         return os.path.join(path, "%s.jl" % jobid)
 
-    @staticmethod
-    def _fetch_json(url, data=None):
-        enc_data = None
-        if data is not None:
-            enc_data = urllib.urlencode(data)
 
-        conn = urllib2.urlopen(url, enc_data)
-        response = json.load(conn)
-        conn.close()
-
-        return response
-
-
-class ScrapydInterface(object):
-    """Interface to Scrapyd."""
+class Scrapyd(object):
+    """Class to interact with Scrapyd."""
 
     _CACHE = repoze.lru.ExpiringLRUCache(100, 10)
     _CACHE_LOCK = thread.allocate_lock()
@@ -188,7 +148,40 @@ class ScrapydInterface(object):
     def __init__(self, url):
         self.scrapyd_url = url
 
-    def _make_uncached_request(self, url):
+    def _post(self, resource, data):
+        url = urlparse.urljoin(self.scrapyd_url, resource)
+
+        try:
+            response = requests.post(url, data)
+            LOG.debug(
+                "POST to scrapyd resource %s got: %s",
+                url,
+                response.content,
+            )
+
+            result = response.json()
+
+            # Check result response is successful.
+            if result['status'].lower() != "ok":
+                LOG.error("Scrapyd was not OK: %r", result)
+                raise exc.HTTPBadGateway(
+                    "Scrapyd was not OK, it was '{status}': {message}".format(
+                        **result))
+
+            # If the job was created, before returning the cache must be
+            # invalidated.
+            # There is no need to get _CACHE_LOCK as clearing it does not
+            # introduce a race condition.
+            self._CACHE.clear()
+
+            return result
+        except requests.exceptions.RequestException as e:
+            msg = "Error contacting Scrapyd: %s" % e
+            LOG.error(msg)
+            raise exc.HTTPBadGateway(msg)
+
+    @staticmethod
+    def _make_uncached_request(url):
         try:
             response = requests.get(url)
             LOG.debug(
@@ -221,25 +214,25 @@ class ScrapydInterface(object):
 
         if fresh:
             LOG.debug("Invalidated cache for %r.", url)
-            ScrapydInterface._CACHE.invalidate(url)
+            Scrapyd._CACHE.invalidate(url)
             result = None
         else:
-            result = ScrapydInterface._CACHE.get(url)
+            result = Scrapyd._CACHE.get(url)
 
         if result is not None:
             LOG.debug("Cache hit for %r.", url)
         else:
             LOG.debug("Cache miss for %r.", url)
             # Will get exclusive access to the cache.
-            with ScrapydInterface._CACHE_LOCK:
+            with Scrapyd._CACHE_LOCK:
                 # Before we got access, it may have been populated.
-                result = ScrapydInterface._CACHE.get(url)
+                result = Scrapyd._CACHE.get(url)
                 if result is not None:
                     LOG.debug("Cache hit after locking for %r.", url)
                 else:
-                    result = self._make_uncached_request(url)
+                    result = Scrapyd._make_uncached_request(url)
 
-                    ScrapydInterface._CACHE.put(url, result, timeout=cache_time)
+                    Scrapyd._CACHE.put(url, result, timeout=cache_time)
 
         # Check result response is successful.
         if result['status'].lower() != "ok":
@@ -273,7 +266,7 @@ class ScrapydInterface(object):
 
         return spiders_data['spiders']
 
-    def get_jobs(self, projects=None):
+    def get_jobs(self, projects=None, fresh=False):
         """Return jobs associated to a project.
 
         The function returns a dictionary whose key is a job's ID and the value
@@ -290,6 +283,10 @@ class ScrapydInterface(object):
 
         :param projects: The list of project to query. If it is None, all
                          projects will be queried.
+        :type projects: list
+        :param fresh: If cached entries should not be used. This parameter will
+                      not cause to fetch fresh projects.
+        :type fresh: bool
         :rtype: dict
         """
         if not projects:
@@ -298,23 +295,48 @@ class ScrapydInterface(object):
         jobs_by_id = {}
         for project in projects:
             jobs_by_status = self._make_request(
-                'listjobs.json', project=project)
+                'listjobs.json', fresh, project=project)
 
             for job_status, jobs in jobs_by_status.items():
                 if job_status == "status":
                     continue  # This is not a real status, ironically.
 
                 for job in jobs:
-                    job_id = job['id']
                     # Convert the date from local to UTC
                     if 'start_time' in job:
                         job['start_time'] = local2utc(job['start_time'])
                     if 'end_time' in job:
                         job['end_time'] = local2utc(job['end_time'])
+
+                    job['status'] = job_status
+
+                    job_id = job['id']
                     jobs_by_id[job_id] = job
-                    jobs_by_id[job_id]['status'] = job_status
 
         return jobs_by_id
+
+    def schedule_job(self, project, spider, params):
+        """Schedules a spider and returns its job ID.
+
+        :param project: Project where to find the spider.
+        :type project: str
+        :param spider: Name of the spider for which to start a job.
+        :type spider: str
+        :param params: Parameters for the job to be started.
+        :type params: dict
+        :rtype: str
+        """
+        # Convert to a list of pairs to handle multivalued parameters.
+        data = list(filter(
+            lambda (k, _): k not in {'project', 'spider'},
+            params.items()
+        ))
+        data.append(('project', project))
+        data.append(('spider', spider))
+
+        result = self._post('schedule.json', data)
+
+        return result['jobid']
 
     def get_queues(self, projects=None):
         """Returns the scrapyd queue status.

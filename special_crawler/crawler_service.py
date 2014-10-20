@@ -10,7 +10,10 @@ from extract_bestbuy_data import BestBuyScraper
 from extract_kmart_data import KMartScraper
 from extract_target_data import TargetScraper
 from extract_ozon_data import OzonScraper
-
+from extract_vitadepot_data import VitadepotScraper
+from extract_argos_data import ArgosScraper
+from extract_homedepot_data import HomeDepotScraper
+from extract_statelinetack_data import StateLineTackScraper
 
 
 import datetime
@@ -29,9 +32,13 @@ SUPPORTED_SITES = {"walmart" : WalmartScraper,
                    "pgestore" : PGEStore,
                    "wayfair" : WayfairScraper,
                    "bestbuy" : BestBuyScraper,
-                   # "kmart" : KMartScraper,
+                   "kmart" : KMartScraper,
                    # "target" : TargetScraper,
-                   "ozon" : OzonScraper
+                   "ozon" : OzonScraper,
+                   "vitadepot": VitadepotScraper,
+                   "argos": ArgosScraper,
+                   "homedepot" : HomeDepotScraper,
+                   "statelinetack" : StateLineTackScraper
                    }
 
 # add logger
@@ -103,17 +110,17 @@ def validate_args(arguments):
         arguments['site'] = [site_argument]
 
     if site_argument not in SUPPORTED_SITES.keys():
-        raise InvalidUsage("Unsupported site: " + site_argument)
+        raise InvalidUsage("Unsupported site: " + str(site_argument))
     
 
 # validate request "data" parameters
-def validate_data_params(arguments, ALL_DATA_TYPES):
+def validate_data_params(arguments, DATA_TYPES, DATA_TYPES_SPECIAL):
     # Validate data
 
     if 'data' in arguments:
         # TODO: do the arguments need to be flattened?
         data_argument_values = map(lambda s: str(s), arguments['data'])
-        data_permitted_values = map(lambda s: str(s), ALL_DATA_TYPES.keys())
+        data_permitted_values = map(lambda s: str(s), DATA_TYPES.keys() + DATA_TYPES_SPECIAL.keys())
 
         # if there are other keys besides "data" or other values outside of the predefined data types (DATA_TYPES), return invalid usage
         if set(data_argument_values).difference(set(data_permitted_values)):
@@ -151,7 +158,7 @@ def get_data():
         check_input(url, is_valid_url)
 
     # data
-    validate_data_params(request_arguments, site_scraper.ALL_DATA_TYPES)
+    validate_data_params(request_arguments, site_scraper.DATA_TYPES, site_scraper.DATA_TYPES_SPECIAL)
 
     # return all data if there are no "data" parameters
     if 'data' not in request_arguments:

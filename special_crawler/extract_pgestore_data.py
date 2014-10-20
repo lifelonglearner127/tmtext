@@ -223,6 +223,9 @@ class PGEStore(Scraper):
     def _no_image(self):
         return None
     
+    def _mobile_image_same(self):
+        pass
+    
     def fetch_bytes(self, url):
         file = cStringIO.StringIO(urllib.urlopen(url).read())
         img = Image.open(file)
@@ -339,6 +342,8 @@ class PGEStore(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
+        "mobile_image_same" : _mobile_image_same, \
+
         "model" : _model_from_tree, \
         "pdf_url" : pdf_for_url, \
         "average_review" : reviews_for_url, \

@@ -5,16 +5,18 @@ import re
 import sys
 import json
 
-from lxml import html
+from lxml import html, etree
 import time
 import requests
 from extract_data import Scraper
 
-class AmazonScraper(Scraper):
+
+class StateLineTackScraper(Scraper):
     
-#    http://www.amazon.com/dp/B000JMAVYO
-    
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id>"
+    # holds a data from an external request for loading 
+    bazaar = None
+        
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.statelinetack.com/item/<product-name>/<product-id>/"
     
     
     def check_url_format(self):
@@ -24,7 +26,7 @@ class AmazonScraper(Scraper):
         """
 
         #m = re.match("^http://www.amazon.com/dp/[a-zA-Z0-9]+$", self.product_page_url)
-        m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        m = re.match(r"^http://www.statelinetack.com/.*?$", self.product_page_url)
 
         return not not m
     
@@ -33,7 +35,7 @@ class AmazonScraper(Scraper):
     #      though this method still seems to work...
     def _extract_product_id(self):
         #product_id = self.product_page_url.split('/')[-1]
-        product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+        product_id = self.tree_html.xpath('//input[@id="ctl00_ctl00_CenterContentArea_MainContent_HidBaseNo"]/@value')[0]
 
         return product_id
 
@@ -50,101 +52,104 @@ class AmazonScraper(Scraper):
 
     # return dictionary with one element containing the PDF
     def pdf_for_url(self):
-        return None
-    
-    #returns 1 if the mobile version is the same, 0 otherwise
-    def _mobile_image_same(self):
-        url = self.product_page_url
-        mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
-        pc_headers = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        moreinfo = self.tree_html.xpath('//div[@class="ItemPageDownloadableResources"]//div//a/@href')
+        pdfurl = []
+        print '\n\n'
+        for a in moreinfo:
+            p = re.findall(r'(.*\.pdf)', a)
+            pdfurl.extend(p)
         
-        img_list = []
-        for h in [mobile_headers, pc_headers]:
-            contents = requests.get(url, headers=h).text
-            tree = html.fromstring(contents)
-            
-            image_url = self._image_url(tree)
-            print '\n\n\nImage URL:', image_url, '\n\n\n'
-            
-            img_list.extend(image_url)
-        
-        if len(img_list) == 2:
-            return img_list[0] == img_list[1]
-        return None
+        baseurl = 'http://www.statelinetack.com/'    
+        pdfurl = [baseurl + x[1:] for x in pdfurl] 
+        return pdfurl
 
-    def _image_url(self, tree = None):
-        if tree == None:
-            tree = self.tree_html
-            
-        image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
-        return image_url
     
-    def _mobile_image_url(self, tree = None):
-        if tree == None:
-            tree = self.tree_html
-            
-        image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
-        return image_url
+    def _image_url(self):
+        #metaimg comes from meta tag
+        metaimg = self.tree_html.xpath('//meta[@property="og:image"]/@content')
+        
+        #imgurl comes from the carousel
+        imageurl = self.tree_html.xpath('//img[@class="swatch"]/@src')
+        imageurl.extend(metaimg)
+        return imageurl
+    
+    # image count
+    def _product_images(self):
+        #metaimg comes from meta tag
+        metaimg = self.tree_html.xpath('//meta[@property="og:image"]/@content')
+        
+        #imgurl comes from the carousel
+        imageurl = self.tree_html.xpath('//img[@class="swatch"]/@src')
+        imageurl.append(metaimg)
+        return len(imageurl)
         
     def manufacturer_content_body(self):
-        full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
-        return full_description
+        return None
     
+    #bazaar for ratings
+    def get_bazaar(self):
+        if self.bazaar != None:
+            return self.bazaar
+        else:
+            url = 'http://tabcomstatelinetack.ugc.bazaarvoice.com/3421-en_us/%s/reviews.djs?format=embeddedhtml'
+            url = url % (self._extract_product_id())
+
+            contents = urllib.urlopen(url).read()
+            tree = re.findall(r'var materials=(\{.*?\})', contents)[0]
+            tree = re.sub(r'\\(.)', r'\1', tree)
+            tree = re.findall(r'(\<.*\>)', tree)[0]
+            tree = html.fromstring(tree)
+
+            return tree
+
     #extract average review, and total reviews  
     def reviews_for_url(self):
-        average_review = self.tree_html.xpath("//span[@id='acrPopover']/@title")[0]
-        average_review = re.findall("([0-9]\.?[0-9]?) out of 5 stars", average_review)[0]
-
-        return average_review
+        bazaar = self.get_bazaar()
+        avg = bazaar.xpath('//*[contains(@class, "BVRRRatingNumber")]//text()')
+        return avg[0]
 
     def nr_reviews(self):
-        nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")[0]
-        nr_reviews = re.findall("([0-9]+) customer reviews", nr_reviews)[0]
-        return nr_reviews
+        bazaar = self.get_bazaar()
+        num = bazaar.xpath('//*[contains(@class, "BVRRRatingRangeNumber")]//text()')
+        return num[0]
         
     # extract product name from its product page tree
     # ! may throw exception if not found
     def _product_name_from_tree(self):
-        return self.tree_html.xpath('//h1[@id="title"]/span[@id="productTitle"]')[0].text
+        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
 
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_keywords_from_tree(self):
         
-        return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0]
+        return None
         
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_brand_from_tree(self):
-        #<div id="mbc" data-asin="B000JMAVYO" data-brand="Spicy World"
-        return self.tree_html.xpath('//div[@id="mbc"]/@data-brand')[0]
+        return None
 
 
     # extract product short description from its product page tree
     # ! may throw exception if not found
     def _short_description_from_tree(self):
-        
-        short_description = " ".join(self.tree_html.xpath("//*[@id='feature-bullets']//text()")).strip()
-        return short_description
+        return None
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
-        full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
-        
-        return full_description
+        full_description = ([x.strip() for x in self.tree_html.xpath('//div[@id="ItemPageProductSummaryBoxMain"]//text()') if len(x.strip())>0])
+        for row in range(0,4):
+            if len(full_description[row]) > 60:
+                return full_description[row]
+        return ''
 
-
-    # extract product price from its product product page tree
+    # extract product price from its product product page tree.
     def _price_from_tree(self):
         
-        price = self.tree_html.xpath("//*[@id='priceblock_ourprice']//text()")
-        if price:
-            return price[0].strip()
-        
-        price = self.tree_html.xpath("//*[contains(@class, 'offer-price')]//text()")
+        price = self.tree_html.xpath("//span[@id='lowPrice']//text()")
         if price:
             return price[0].strip()
         
@@ -157,7 +162,7 @@ class AmazonScraper(Scraper):
     #      - is format ok?
     def _anchors_from_tree(self):
         # get all links found in the description text
-        description_node = self.tree_html.xpath('//*[@class="productDescriptionWrapper"]')[0]
+        description_node = self.tree_html.xpath('//div[contains(@class, "GreyBoxMiddle")]/div/span/span/span/div[3]')[0]
         links = description_node.xpath(".//a")
         nr_links = len(links)
 
@@ -188,34 +193,40 @@ class AmazonScraper(Scraper):
     # extract product model from its product product page tree
     # ! may throw exception if not found
     def _model_from_tree(self):
-        model = self.tree_html.xpath("//tr[@class='item-model-number']/td[@class='value']//text()")[0]
-        return model
+        return None
 
     # extract product features list from its product product page tree, return as string
     # join all text in spec table; separate rows by newlines and eliminate spaces between cells
     def _features_from_tree(self):
-        rows = self.tree_html.xpath("//div[@class='content pdClearfix']//tbody//tr")
-        
-        # list of lists of cells (by rows)
-        cells = map(lambda row: row.xpath(".//*//text()"), rows)
-        # list of text in each row
-        
-        rows_text = map(\
-            lambda row: ":".join(\
-                map(lambda cell: cell.strip(), row)\
-                ), \
-            cells)
-        all_features_text = "\n".join(rows_text)
-
-        # return dict with all features info
-        return all_features_text
+        return self._feature_helper()
 
     # extract number of features from tree
     # ! may throw exception if not found
     def _nr_features_from_tree(self):
-        # select table rows with more than 2 cells (the others are just headers), count them
-        return len(filter(lambda row: len(row.xpath(".//td"))>0, self.tree_html.xpath("//div[@class='content pdClearfix']//tbody//tr")))
+        return len(self._feature_helper())
+        
+    #this helper is specific to this site
+    def _feature_helper(self):
+        full_description = [x.strip() for x in self.tree_html.xpath('//div[@id="ItemPageProductSummaryBoxMain"]//text()') if len(x.strip())>0]
+        full_description = [x for x in full_description if len(x)>3]
+        
+        feat_index = [i for i in range(len(full_description)) if re.findall(r'^.{0,10}(F|f)eatures.{0,4}$', full_description[i])]
+        spec_index = [i for i in range(len(full_description)) if re.findall(r'^.{0,10}(S|s)pecifications.{0,4}$', full_description[i])]
+        if len(feat_index)>0:
+            feat_index = feat_index[0]
+        else:
+            feat_index = 0
+            
+        if len(spec_index)>0:
+            spec_index = spec_index[0]
+        else:
+            spec_index = None
 
+        if spec_index>0:
+            return full_description[feat_index+1:spec_index]
+        else:
+            return full_description[feat_index+1:]
+    
     # extract page title from its product product page tree
     # ! may throw exception if not found
     def _title_from_tree(self):
@@ -230,20 +241,19 @@ class AmazonScraper(Scraper):
     # TODO:
     #      test this in conjuction with _seller_meta_from_tree; also test at least one of the values is 1
     def _seller_from_tree(self):
-        seller_info = {}
-        h5_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h5//text()[normalize-space()!='']"))
-        acheckboxlabel = map(lambda text: self._clean_text(text), self.tree_html.xpath("//span[@class='a-checkbox-label']//text()[normalize-space()!='']"))
-        
-        seller_info['owned'] = 1 if "FREE Two-Day" in acheckboxlabel else 0
-        seller_info['marketplace'] = 1 if "Other Sellers on Amazon" in h5_tags else 0
+        seller_info = {}      
+        seller_info['owned'] = 1
+        seller_info['marketplace'] = 0
 
         return seller_info
-
-    def _product_images(self):
-        return len(self.tree_html.xpath("//span[@class='a-button-text']//img/@src"))
+    
+    
     
     def _no_image(self):
         return None
+    
+    def _mobile_image_same(self):
+        pass
 
     # extract the department which the product belongs to
     def _dept(self):
@@ -259,27 +269,23 @@ class AmazonScraper(Scraper):
     
     # extract a hierarchical list of all the departments the product belongs to
     def _all_depts(self):
-        all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
-        all = map(lambda t: self._clean_text(t), all)
+        # 
+        all = self.tree_html.xpath('//div[@id="ItemPageBreadCrumb"]//a/text()')
         return all
     
     def _meta_description(self):
-        return self.tree_html.xpath("//meta[@name='description']/@content")[0]
+        return self.tree_html.xpath("//meta[@name='Description']/@content")[0]
     
     def _meta_keywords(self):
-        return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
+        return self.tree_html.xpath("//meta[@name='Keywords']/@content")[0]
     
     def _asin(self):
-        #<input type="hidden" id="ASIN" name="ASIN" value="B00G2Y4WNY"
-        return self.tree_html.xpath("//input[@name='ASIN']/@value")[0]
+        return None
+    
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
-    
-    
-    
-    
     def main(args):
         # check if there is an argument
         if len(args) <= 1:
@@ -296,28 +302,12 @@ class AmazonScraper(Scraper):
         return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
 
 
-    '''
-    
-    x extra : all_depts = since dept/super_dept were deprecated and you wanted the whole breadcrumb, I added all_depts which is ordered in a hierarchy
-    x UPC/EAN/ISBN - returns ASIN
-    x product_images -  for given  url  it should be 1
-    x super_dept - scraped from the breadcrumbs
-    x dept - scraped from the breadcrumbs
-    x model_title -  exists as "title_from_tree"
-    x review_count - exists as "total_reviews"
-    x meta description - 
-    x meta keywords - 
-    x model_meta  -  there's no meta for model, but there is a model in the source
-    
-    '''
 
 
     '''
-    http://www.amazon.com/Dell-Inspiron-i3531-1200BK-15-6-Inch-Laptop/dp/B00KMRGF28/ref=sr_1_1?ie=UTF8&qid=1409586411&sr=8-1&keywords=dell
+    HOMEDEPOT --------------------
     
     x    name
-    x    keywords
-    x    short
     x    long
     x    price
     x    anchors
@@ -325,18 +315,33 @@ class AmazonScraper(Scraper):
     x    features
     x    nr_features
     x    title
-    x    seller  <-  Not sure, There are a lot of versions of owned vs merchant, I'll need to look into this more
+    x    seller - hardcoded as just 'owned'
     x    product_id
     x    load_time
     x    image_url
-    x    video_url
-    x    brand
-    x    model
-    x    manufacturer_content_body
-        pdf_url
-        no_image
+    
+    
+    x    pdf_url
     x    average_review
     x    total_reviews
+    
+    UPC/EAN/ISBN
+    x    product_images
+    x    all_depts
+    x    meta description 
+    x    meta keywords - may not ever be populated although the tag exists
+    
+    
+    
+    # 
+    missing --------------------------------------
+    mobile_image_same - haven't implemented yet
+    noimage - haven't implemented yet
+    short - doesn't exist
+    video_url - couldn't find on stateline tack
+    brand - couldn't find on stateline tack
+    model - couldn't find on stateline tack
+    manufacturer_content_body - no instances of this found on statelinetack
     
 
     '''
@@ -370,11 +375,15 @@ class AmazonScraper(Scraper):
         
         "product_images" : _product_images,\
         "all_depts" : _all_depts,\
-        "dept" : _dept,\
-        "super_dept" : _super_dept,\
         "meta_description" : _meta_description,\
         "meta_keywords" : _meta_keywords,\
-        "asin" : _asin,\
+        "upc" : _asin,\
+        
+        "model" : _model_from_tree, \
+        "pdf_url" : pdf_for_url, \
+        
+        "average_review" : reviews_for_url, \
+        "total_reviews" : nr_reviews, \
         
         "load_time": None \
         }
@@ -382,10 +391,7 @@ class AmazonScraper(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
-        "mobile_image_same" : _mobile_image_same, \
-        "model" : _model_from_tree, \
-        "pdf_url" : pdf_for_url, \
-        "average_review" : reviews_for_url, \
-        "total_reviews" : nr_reviews\
-    }
+        "mobile_image_same" : _mobile_image_same \
 
+        
+    }

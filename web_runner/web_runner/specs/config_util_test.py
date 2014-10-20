@@ -1,4 +1,7 @@
+from functools import partial
+
 from pyspecs import given, when, then, the, finish
+import pyramid.httpexceptions as exc
 
 from web_runner.config_util import find_spider_config_from_path, SpiderConfig
 from web_runner.config_util import find_command_config_from_path, CommandConfig
@@ -24,10 +27,12 @@ with given.a_configuration_of_a_spider:
                 SpiderConfig('spider_name', 'spider_project_name'))
 
     with when.searching_for_an_unexistant_resource:
-        config = find_spider_config_from_path(settings, '/unexistant/')
+        config = partial(
+            find_command_config_from_path, settings, '/unexistant/')
+        config.__name__ = "find_command_config_from_path"
 
-        with then.it_should_return_none:
-            the(config).should.be(None)
+        with then.it_should_raise_not_found:
+            the(config).should.raise_an(exc.HTTPNotFound)
 
 
 with given.a_configuration_of_a_command_with_one_spider:
@@ -57,10 +62,12 @@ with given.a_configuration_of_a_command_with_one_spider:
             ))
 
     with when.searching_for_an_unexistant_resource:
-        config = find_command_config_from_path(settings, '/unexistant/')
+        config = partial(
+            find_command_config_from_path, settings, '/unexistant/')
+        config.__name__ = "find_command_config_from_path"
 
-        with then.it_should_return_none:
-            the(config).should.be(None)
+        with then.it_should_raise_not_found:
+            the(config).should.raise_an(exc.HTTPNotFound)
 
 with given.a_configuration_of_a_command_with_two_spiders:
     settings = {
@@ -97,10 +104,12 @@ with given.a_configuration_of_a_command_with_two_spiders:
             ))
 
     with when.searching_for_an_unexistant_resource:
-        config = find_command_config_from_path(settings, '/unexistant/')
+        config = partial(
+            find_command_config_from_path, settings, '/unexistant/')
+        config.__name__ = "find_command_config_from_path"
 
-        with then.it_should_return_none:
-            the(config).should.be(None)
+        with then.it_should_raise_not_found:
+            the(config).should.raise_an(exc.HTTPNotFound)
 
 
 if __name__ == '__main__':

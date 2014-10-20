@@ -38,9 +38,19 @@ class OzonScraper(Scraper):
 
     # return video urls
     def video_for_url(self):
-        video_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
-        video_url = re.search("\['http.*\.flv\']", video_url.strip()).group()
-        video_url = re.findall("'(.*?)'", video_url)
+        """ example video pages:
+        http://www.ozon.ru/context/detail/id/24920178/
+        http://www.ozon.ru/context/detail/id/19090838/
+        """
+        iframes = self.tree_html.xpath("//iframe")
+        video_url = []
+        for iframe in iframes:
+            src = str(iframe.xpath('.//@src'))
+            print(src)
+            find = re.findall(r'www\.youtube\.com/embed/.*$', src)
+            if find:
+                video_url.append(find[0])
+        
         return video_url
 
     # return dictionary with one element containing the PDF
@@ -48,8 +58,17 @@ class OzonScraper(Scraper):
         return None
         
     def _image_url(self):
-        image_url = self.tree_html.xpath('//img[@class="eMicroGallery_fullImage"]/@src')
-
+        text = self.tree_html.xpath('//*[@class="bImageColumn"]/script//text()')
+        text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
+        jsn = json.loads(text)
+        
+        image_url = []
+        for row in jsn:
+            if 'Elements' in row:
+                for element in row['Elements']:
+                    if 'Original' in element:
+                        image_url.append(element['Original'])
+        
         return image_url
         
    
@@ -91,7 +110,7 @@ class OzonScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
-        return  " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']//text()")).strip()
+        return  " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
     
     def manufacturer_content_body(self):
        return None
@@ -206,7 +225,7 @@ class OzonScraper(Scraper):
     
     #extract links for all images
     def _product_images(self):
-        image_url = self.tree_html.xpath('//img[@class="eMicroGallery_fullImage"]/@src')
+        image_url = self._image_url()
         return len(image_url)
 
     # extract the department which the product belongs to
@@ -231,7 +250,7 @@ class OzonScraper(Scraper):
         categories["super_dept"] = self._super_dept()
         categories["dept"] = self._dept()
         categories["full"] = self._all_depts()
-        categories["hostname"] = 'Tesco'
+        categories["hostname"] = 'Ozon'
         
         return categories
     
@@ -330,7 +349,7 @@ class OzonScraper(Scraper):
         x    "owned"
         x    "product_id"
         x    "image_url"
-        "video_url"
+    "video_url"
     "upc" - can't find an example of this on Ozon
         x    "product_images"
         x    "categories"
@@ -342,13 +361,13 @@ class OzonScraper(Scraper):
         x    "in_stores_only" - hard coded
         x    "load_time"
     "mobile_image_same" - not implemented
-    "brand" - can't find an example of this on Ozon
-    "model" - can't find an example of this on Ozon
-    "manufacturer_content_body" - can't find an example of this on Ozon
-    "pdf_url" - can't find an example of this on Ozon
         x    "average_review"
         x    "total_reviews"
     
+    "pdf_url" - can't find an example of this on Ozon
+    "brand" - can't find an example of this on Ozon
+    "model" - can't find an example of this on Ozon
+    "manufacturer_content_body" - can't find an example of this on Ozon
     
     '''
 

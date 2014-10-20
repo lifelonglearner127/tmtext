@@ -357,19 +357,28 @@ class WalmartScraper(Scraper):
 
         return self.tree_html.xpath("//title//text()")[0].strip()
 
-    # extract product seller meta keyword from its product product page tree
+    # extract product seller meta tag content from its product product page tree
     # ! may throw exception if not found
     def _seller_meta_from_tree(self):
-        """Extracts seller of product extracted from 'seller' meta tag
+        """Extracts sellers of product extracted from 'seller' meta tag, and their availability
         Returns:
-            string with the contents of the tag, or None
+            dictionary with sellers as keys and availability (true/false) as values
         """
 
-        return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
+        sellers = self.tree_html.xpath("//div[@itemprop='offers']")
 
-    # extract product seller information from its product product page tree (using h2 visible tags)
-    # TODO:
-    #      test this in conjuction with _seller_meta_from_tree; also test at least one of the values is 1
+        sellers_dict = {}
+        for seller in sellers:
+            # try to get seller if any, otherwise ignore this div
+            try:
+                avail = (seller.xpath(".//meta[@itemprop='availability']/@content")[0] == "http://schema.org/InStock")
+                sellers_dict[seller.xpath(".//meta[@itemprop='seller']/@content")[0]] = avail
+            except IndexError:
+                pass
+
+        return sellers_dict
+
+    # extract product seller information from its product product page tree
     def _seller_from_tree(self):
         """Extracts seller info of product extracted from 'Buy from ...' elements on page
         Returns:
@@ -379,9 +388,18 @@ class WalmartScraper(Scraper):
         """
 
         seller_info = {}
-        h2_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h2//text()"))
-        seller_info['owned'] = 1 if "Buy from Walmart" in h2_tags else 0
-        seller_info['marketplace'] = 1 if "Buy from Marketplace" in h2_tags else 0
+        sellers = self._seller_meta_from_tree()
+
+        # owned if has seller Walmart.com and availability for it is true
+        seller_info['owned'] = 1 if ('Walmart.com' in sellers.keys() and sellers['Walmart.com']) else 0
+        # found on marketplace if there are other keys other than walmart and they are in stock
+        # TODO:
+        #      more sophisticated checking of availability for marketplace? (values are more than just InStock/OutOfStock)
+        #      (because for walmart they should only be available when in stock) 
+        # remove Walmart key as we already checked for it
+        if 'Walmart.com' in sellers.keys():
+            del sellers['Walmart.com']
+        seller_info['marketplace'] = 1 if (len(sellers.keys()) > 0 and any(sellers.values())) else 0
 
         return seller_info
 

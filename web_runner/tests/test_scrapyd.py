@@ -9,13 +9,14 @@ import unittest
 import mock
 import pyramid.httpexceptions as exc
 
-from web_runner.scrapyd import ScrapydInterface
+from web_runner.config_util import SpiderConfig
+from web_runner.scrapyd import Scrapyd, ScrapydJobHelper
 
 
 logging.basicConfig(level=logging.FATAL)
 
 
-class ScrapydInterfaceTest(unittest.TestCase):
+class ScrapydTest(unittest.TestCase):
 
     maxDiff = None
 
@@ -29,9 +30,9 @@ class ScrapydInterfaceTest(unittest.TestCase):
 
     def setUp(self):
         # Always clear the cache so that tests are independent.
-        ScrapydInterface._CACHE.clear()
+        Scrapyd._CACHE.clear()
 
-        self.subject = ScrapydInterface(ScrapydInterfaceTest.URL)
+        self.subject = Scrapyd(ScrapydTest.URL)
 
     def test_when_status_is_not_ok_then_it_should_report_an_error(self):
         with mock.patch('web_runner.scrapyd.requests') as mock_requests:
@@ -375,5 +376,123 @@ class ScrapydInterfaceTest(unittest.TestCase):
             mock_requests_get.assert_any_call(self.URL)
             mock_requests_get.assert_any_call(self.EXPECTED_LIST_SPIDERS_URL)
             mock_requests_get.assert_any_call(self.EXPECTED_LIST_JOBS_URL)
-            mock_requests_get.assert_any_with(
-                self.EXPECTED_LIST_PROJECTS_URL)
+            mock_requests_get.assert_any_call(self.EXPECTED_LIST_PROJECTS_URL)
+
+    def test_when_a_job_is_started_ok_then_we_return_its_id(self):
+        with mock.patch('web_runner.scrapyd.requests.post') as mock_post:
+            response = mock_post.return_value
+            response.json.return_value = {"status": "ok", "jobid": "XXX"}
+
+            job_id = self.subject.schedule_job('project', 'spider', {})
+
+            self.assertEqual('XXX', job_id)
+
+
+ScrapydJobHelper._VERIFICATION_DELAY = 0  # Not to waste time.
+
+
+class ScrapydJobsHelperTest(unittest.TestCase):
+
+    def test_when_starting_a_job_then_it_should_return_the_job_id(self):
+        scrapyd = mock.MagicMock(spec=Scrapyd)
+        scrapyd.schedule_job.return_value = "XXX"
+
+        helper = ScrapydJobHelper(
+            {ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path'},
+            SpiderConfig('spider name', 'spider project'),
+            scrapyd,
+        )
+
+        job_id = helper.start_job({})
+
+        self.assertEqual("XXX", job_id)
+
+    def test_when_a_job_exists_then_it_should_report_its_status(self):
+        scrapyd = mock.MagicMock(spec=Scrapyd)
+        scrapyd.get_jobs.return_value = {
+            '2f16646cfcaf11e1b0090800272a6d06': {
+                'id': '2f16646cfcaf11e1b0090800272a6d06',
+                'spider': 'spider3',
+                'status': 'finished',
+            },
+            '78391cc0fcaf11e1b0090800272a6d06': {
+                'id': '78391cc0fcaf11e1b0090800272a6d06',
+                'project_name': 'spider1',
+                'status': 'pending',
+            },
+        }
+
+        helper = ScrapydJobHelper(
+            {ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path'},
+            SpiderConfig('spider name', 'spider project'),
+            scrapyd,
+        )
+
+        status = helper.report_on_job("2f16646cfcaf11e1b0090800272a6d06")
+
+        self.assertEqual(ScrapydJobHelper.JobStatus.finished, status)
+
+        scrapyd.get_jobs.assert_called_once_with(['spider project'], False)
+
+    def test_when_a_job_is_unknown_then_it_should_retry(self):
+        scrapyd = mock.MagicMock(spec=Scrapyd)
+        scrapyd.get_jobs.side_effect = [
+            {},
+            {},
+            {
+                '2f16646cfcaf11e1b0090800272a6d06': {
+                    'id': '2f16646cfcaf11e1b0090800272a6d06',
+                    'spider': 'spider3',
+                    'status': 'finished',
+                },
+                '78391cc0fcaf11e1b0090800272a6d06': {
+                    'id': '78391cc0fcaf11e1b0090800272a6d06',
+                    'project_name': 'spider1',
+                    'status': 'pending',
+                },
+            },
+        ]
+
+        helper = ScrapydJobHelper(
+            {ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path'},
+            SpiderConfig('spider name', 'spider project'),
+            scrapyd,
+        )
+
+        status = helper.report_on_job("2f16646cfcaf11e1b0090800272a6d06")
+
+        self.assertEqual(ScrapydJobHelper.JobStatus.finished, status)
+
+        scrapyd.get_jobs.assert_called_with(['spider project'], True)
+
+    def test_when_a_job_is_unknown_consistently_then_it_should_consider_it_unknonw(
+            self):
+        scrapyd = mock.MagicMock(spec=Scrapyd)
+        scrapyd.get_jobs.side_effect = [
+            {},
+            {
+                '2f16646cfcaf11e1b0090800272a6d06': {
+                    'id': '2f16646cfcaf11e1b0090800272a6d06',
+                    'spider': 'spider3',
+                    'status': 'finished',
+                },
+                '78391cc0fcaf11e1b0090800272a6d06': {
+                    'id': '78391cc0fcaf11e1b0090800272a6d06',
+                    'project_name': 'spider1',
+                    'status': 'pending',
+                },
+            },
+        ]
+
+        helper = ScrapydJobHelper(
+            {ScrapydJobHelper.SCRAPYD_ITEMS_PATH: 'scrapyd items path'},
+            SpiderConfig('spider name', 'spider project'),
+            scrapyd,
+        )
+
+        status = helper.report_on_job(
+            "2f16646cfcaf11e1b0090800272a6d06", max_retries=0)
+
+        self.assertEqual(ScrapydJobHelper.JobStatus.unknown, status)
+
+        scrapyd.get_jobs.assert_called_once_with(['spider project'], False)
