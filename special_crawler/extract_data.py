@@ -54,14 +54,14 @@ class Scraper():
             "long_description", # long description / null if description above is entire description, string
 
             # page_attributes
-            "mobile_image_same", # whether mobile image is same as desktop image, true/false
+            "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
             "image_urls", # urls of product images, list of strings
             "video_count", # nr of videos, int
             "video_urls", # urls of product videos, list of strings
             "pdf_count", # nr of pdfs, string
             "pdf_urls", # urls of product pdfs, list of strings
-            "webcollage", # whether video is from webcollage (?), true/false
+            "webcollage", # whether video is from webcollage (?), 1/0
             "htags", # h1 and h2 tags, dictionary like: {"h1" : [], "h2": ["text in tag"]}
             "loaded_in_seconds", # load time of product page in seconds, float
             "keywords", # keywords for this product, usually from meta tag, string
@@ -74,11 +74,11 @@ class Scraper():
             
             # sellers
             "price", # price, string including currency
-            "in_stores", # available to purchase in stores, true/false
-            "in_stores_only", # whether product can be found in stores only, true/false
-            "owned", # whether product is owned by site, true/false
-            "owned_out_of_stock", # whether product is owned and out of stock, true/false
-            "marketplace", # whether product can be found on marketplace, true/false
+            "in_stores", # available to purchase in stores, 1/0
+            "in_stores_only", # whether product can be found in stores only, 1/0
+            "owned", # whether product is owned by site, 1/0
+            "owned_out_of_stock", # whether product is owned and out of stock, 1/0
+            "marketplace", # whether product can be found on marketplace, 1/0
             "marketplace_sellers", # sellers on marketplace (or equivalent) selling item, list of strings
             "marketplace_lowest_price", # string
             
@@ -90,7 +90,7 @@ class Scraper():
             # Deprecated:
             # "anchors", # links found in the description, dictionary like {"links" : [], quantity: 0}
             # "product_id", # product id (usually from page url), string
-            # "no_image", # whether product image is a "there is no image" image: true/false
+            # "no_image", # whether product image is a "there is no image" image: 1/0
             # "manufacturer_content_body", # special section of description by the manufacturer, string
             # "asin",
     }
