@@ -36,7 +36,7 @@ class AmazonScraper(Scraper):
             r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", str(v.xpath('.//text()')))
             if r:
                 temp.extend(r)
-        return temp
+        return ",".join(temp)
 
     # return one element containing the PDF
     def pdf_for_url(self):
@@ -47,17 +47,13 @@ class AmazonScraper(Scraper):
         url = self.product_page_url
         mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
         pc_headers = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        
         img_list = []
         for h in [mobile_headers, pc_headers]:
             contents = requests.get(url, headers=h).text
             tree = html.fromstring(contents)
-            
             image_url = self._image_url(tree)
             print '\n\n\nImage URL:', image_url, '\n\n\n'
-            
             img_list.extend(image_url)
-        
         if len(img_list) == 2:
             return img_list[0] == img_list[1]
         return None
@@ -65,14 +61,12 @@ class AmazonScraper(Scraper):
     def _image_url(self, tree = None):
         if tree == None:
             tree = self.tree_html
-            
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
         return image_url
     
     def _mobile_image_url(self, tree = None):
         if tree == None:
             tree = self.tree_html
-            
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
         return image_url
         
@@ -84,7 +78,6 @@ class AmazonScraper(Scraper):
     def reviews_for_url(self):
         average_review = self.tree_html.xpath("//span[@id='acrPopover']/@title")[0]
         average_review = re.findall("([0-9]\.?[0-9]?) out of 5 stars", average_review)[0]
-
         return average_review
 
     def nr_reviews(self):
@@ -100,20 +93,17 @@ class AmazonScraper(Scraper):
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_keywords_from_tree(self):
-        
         return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0]
         
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_brand_from_tree(self):
-        #<div id="mbc" data-asin="B000JMAVYO" data-brand="Spicy World"
         return self.tree_html.xpath('//div[@id="mbc"]/@data-brand')[0]
 
 
     # extract product short description from its product page tree
     # ! may throw exception if not found
     def _short_description_from_tree(self):
-        
         short_description = " ".join(self.tree_html.xpath("//*[@id='feature-bullets']//text()")).strip()
         return short_description
 
@@ -123,56 +113,36 @@ class AmazonScraper(Scraper):
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
         full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
-        
         return full_description
 
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
-        
         price = self.tree_html.xpath("//*[@id='priceblock_ourprice']//text()")
         if price:
             return price[0].strip()
-        
         price = self.tree_html.xpath("//*[contains(@class, 'offer-price')]//text()")
         if price:
             return price[0].strip()
-        
         return None
 
-    # extract product price from its product product page tree
-    # ! may throw exception if not found
-    # TODO:
-    #      - test
-    #      - is format ok?
     def _anchors_from_tree(self):
-        # get all links found in the description text
+        '''get all links found in the description text'''
         description_node = self.tree_html.xpath('//*[@class="productDescriptionWrapper"]')[0]
         links = description_node.xpath(".//a")
         nr_links = len(links)
-
         links_dicts = []
-
         for link in links:
-            # TODO: 
-            #       extract text even if nested in something?
-            #       better error handling (on a per link basis)
             links_dicts.append({"href" : link.xpath("@href")[0], "text" : link.xpath("text()")[0]})
-
         ret = {"quantity" : nr_links, "links" : links_dicts}
-
         return ret
 
 
     # extract htags (h1, h2) from its product product page tree
     def _htags_from_tree(self):
         htags_dict = {}
-
-        # add h1 tags text to the list corresponding to the "h1" key in the dict
         htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
-        # add h2 tags text to the list corresponding to the "h2" key in the dict
         htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
-
         return htags_dict
 
     # extract product model from its product product page tree
@@ -223,7 +193,6 @@ class AmazonScraper(Scraper):
         seller_info = {}
         h5_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h5//text()[normalize-space()!='']"))
         acheckboxlabel = map(lambda text: self._clean_text(text), self.tree_html.xpath("//span[@class='a-checkbox-label']//text()[normalize-space()!='']"))
-        
         seller_info['owned'] = 1 if "FREE Two-Day" in acheckboxlabel else 0
         seller_info['marketplace'] = 1 if "Other Sellers on Amazon" in h5_tags else 0
 
