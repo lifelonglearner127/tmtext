@@ -32,26 +32,21 @@ class WalmartProductsSpider(BaseProductsSpider):
 
     SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
         "&_refineresult=true&ic=16_0&search_constraint=0" \
-        "&search_query={search_term}&search_sort={search_sort}"
+        "&search_query={search_term}&sort={search_sort}"
 
     RELATED_PRODUCTS_URL = \
-        "http://irsws.walmart.com/irs-ws/irs/2.0" \
-        "?callback=irs_process_response" \
-        "&modules_bit_field=0000000" \
-        "&api_key=01" \
-        "&visitor_id=78348875473" \
-        "&category={category_id}" \
-        "&client_guid={client_guid}" \
-        "&config_id=0" \
-        "&parent_item_id={item_id}"
+        "http://irsws.walmart.com/irs-ws/irs/2.0?" \
+        "callback=irs_process_response&modules_bit_field=0000000" \
+        "&api_key=01&visitor_id=78348875473&category={category_id}" \
+        "&client_guid={client_guid}&config_id=0&parent_item_id={item_id}"
 
     SEARCH_SORT = {
         'best_match': 0,
-        'high_price': 3,
-        'low_price': 4,
-        'best_sellers': 5,
-        'newest': 6,
-        'rating': 7,
+        'high_price': 'price_high',
+        'low_price': 'price_low',
+        'best_sellers': 'best_seller',
+        'newest': 'new',
+        'rating': 'rating_high',
     }
 
     def __init__(self, search_sort='best_match', *args, **kwargs):
@@ -162,7 +157,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             module_list = data.get('result', {}).get('moduleList', [])
             for module in module_list:
                 if module['moduleTitle'] \
-                        == "People who bought this item also bought":
+                        == "Other items purchased by customers who viewed this item":
                     product['related_products'] = {
                         "buyers_also_bought": [
                             RelatedProduct(
@@ -214,7 +209,9 @@ class WalmartProductsSpider(BaseProductsSpider):
         prices = response.xpath('//*[@id="SWFromPrice"]//text()').extract()
         if prices:
             price = "".join([p.strip() for p in prices])
-            product['price'] = price.replace('$', '')
+            price = price.replace('$', '')
+            if price != "0.0":
+                product['price'] = price
 
     def _populate_from_js(self, response, product):
         # This fails with movies.
@@ -234,7 +231,7 @@ class WalmartProductsSpider(BaseProductsSpider):
                 WARNING
             )
 
-        cond_set(product, 'upc', map(int, scripts.re("upc:\s*'(\d+)',")))
+        cond_set(product, 'upc', scripts.re("upc:\s*'(\d+)',"))
         cond_set(product, 'brand',
                  filter(None, scripts.re("brand:\s*'(.+)',")))
         cond_set(product, 'model', scripts.re("model:\s*'(.+)',"))
