@@ -86,7 +86,7 @@ class WalmartScraper(Scraper):
         #      return false cause no rich media at all?
         return True
 
-    def _video_url(self):
+    def _video_urls(self):
         """Extracts video URL for a given walmart product
         Returns:
             list containing the video's URLs
@@ -126,7 +126,7 @@ class WalmartScraper(Scraper):
 
         return None
 
-    def _pdf_url(self):
+    def _pdf_urls(self):
         """Extracts pdf URL for a given walmart product
         Returns:
             list containing the pdf's URLs
@@ -236,37 +236,6 @@ class WalmartScraper(Scraper):
             return meta_price[0]
         else:
             return None
-
-    # extract links from product description
-    # ! may throw exception if not found
-    # TODO:
-    #      - test
-    #      - is format ok?
-    def _anchors_from_tree(self):
-        """Extracts 'a' tags found in the description text
-        Returns:
-            nested dictionary with following first-level keys:
-            'quantity' - value is int containing total number of links
-            'links' - value is list of dictionary with 'href' and 'text' keys (1 dict for each link)
-        """
-
-        # get all links found in the description text
-        description_node = self.tree_html.xpath("//div[@itemprop='description']")[0]
-        links = description_node.xpath(".//a")
-        nr_links = len(links)
-
-        links_dicts = []
-
-        for link in links:
-            # TODO: 
-            #       extract text even if nested in something?
-            #       better error handling (on a per link basis)
-            links_dicts.append({"href" : link.xpath("@href")[0], "text" : link.xpath("text()")[0]})
-
-        ret = {"quantity" : nr_links, "links" : links_dicts}
-
-        return ret
-
 
     # extract htags (h1, h2) from its product product page tree
     def _htags_from_tree(self):
@@ -413,10 +382,10 @@ class WalmartScraper(Scraper):
 
         return average_review
 
-    def _product_images(self):
-        return len(self._image_url())
+    def _image_count(self):
+        return len(self._image_urls())
 
-    def _image_url(self):
+    def _image_urls(self):
         scripts = self.tree_html.xpath("//script//text()")
         for script in scripts:
             find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script)) 
@@ -435,7 +404,7 @@ class WalmartScraper(Scraper):
         contents = requests.get(url, headers=mobile_headers).text
         tree = html.fromstring(contents)
         mobile_img = tree.xpath('.//*[contains(@class,"carousel ")]//*[contains(@class, "carousel-item")]/@data-model-id')
-        img = self._image_url()
+        img = self._image_urls()
         
         if mobile_img and img:
             return mobile_img[0] == img[0]
@@ -494,29 +463,27 @@ class WalmartScraper(Scraper):
 
     DATA_TYPES = { \
         # Info extracted from product page
-        "name" : _product_name_from_tree, \
+        "product_name" : _product_name_from_tree, \
         "keywords" : _meta_keywords_from_tree, \
         "brand" : _meta_brand_from_tree, \
-        "short_desc" : _short_description_from_tree, \
-        "long_desc" : _long_description_from_tree, \
+        "description" : _short_description_from_tree, \
+        # TODO: check if descriptions work right
+        "long_description" : _long_description_from_tree, \
         "price" : _price_from_tree, \
-        "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
         "features" : _features_from_tree, \
-        "nr_features" : _nr_features_from_tree, \
-        "title" : _title_from_tree, \
+        "feature_count" : _nr_features_from_tree, \
+        # TODO: or is this title_seo?
+        "product_title" : _title_from_tree, \
         "seller": _seller_from_tree, \
-        "total_reviews": _nr_reviews_from_tree, \
+        "review_count": _nr_reviews_from_tree, \
         "average_review": _avg_review_from_tree, \
         # video needs both page source and separate requests
-        "video_url" : _video_url, \
+        "video_urls" : _video_urls, \
         
-        "product_images" : _product_images, \
-        "img_url" : _image_url, \
-
-
-        "load_time": None \
+        "image_count" : _image_count, \
+        "image_urls" : _image_urls, \
         }
 
     # special data that can't be extracted from the product page
@@ -530,7 +497,7 @@ class WalmartScraper(Scraper):
     """
 
     DATA_TYPES_SPECIAL = { \
-        "pdf_url" : _pdf_url, \
+        "pdf_urls" : _pdf_urls, \
         "mobile_image_same" : _mobile_image_same \
 
     #    "reviews" : reviews_for_url \
