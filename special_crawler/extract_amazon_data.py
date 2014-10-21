@@ -28,6 +28,9 @@ class AmazonScraper(Scraper):
 
         return product_id
 
+    def _url(self):
+        return self.product_page_url
+
     # return one element containing the video url
     def video_for_url(self):
         video_url = self.tree_html.xpath('//script[@type="text/javascript"]') 
@@ -309,7 +312,10 @@ class AmazonScraper(Scraper):
     # their associated methods return the raw data
     DATA_TYPES = { \
         # Info extracted from product page
-        "name" : _product_name_from_tree, \
+        "url" : _url, \
+        "product_name" : _product_name_from_tree, \
+        "product_title" : _title_from_tree, \
+        
         "keywords" : _meta_keywords_from_tree, \
         "short_desc" : _short_description_from_tree, \
         "long_desc" : _long_description_from_tree, \
@@ -319,7 +325,6 @@ class AmazonScraper(Scraper):
         "htags" : _htags_from_tree, \
         "features" : _features_from_tree, \
         "nr_features" : _nr_features_from_tree, \
-        "title" : _title_from_tree, \
         "seller": _seller_from_tree, \
         "product_id" : _extract_product_id, \
         "brand" : _meta_brand_from_tree, \
