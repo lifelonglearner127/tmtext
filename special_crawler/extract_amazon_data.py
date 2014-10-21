@@ -11,9 +11,7 @@ import requests
 from extract_data import Scraper
 
 class AmazonScraper(Scraper):
-    
-#    http://www.amazon.com/dp/B000JMAVYO
-    
+        
     INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id>"
     
     
@@ -22,24 +20,16 @@ class AmazonScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-
-        #m = re.match("^http://www.amazon.com/dp/[a-zA-Z0-9]+$", self.product_page_url)
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-
         return not not m
     
-    # TODO:
-    #      better way of extracting id now that URL format is more permissive
-    #      though this method still seems to work...
     def _extract_product_id(self):
-        #product_id = self.product_page_url.split('/')[-1]
         product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
 
         return product_id
 
-    # return dictionary with one element containing the video url
+    # return one element containing the video url
     def video_for_url(self):
-        #"url":"http://ecx.images-amazon.com/images/I/B1d2rrt0oJS.mp4"
         video_url = self.tree_html.xpath('//script[@type="text/javascript"]') 
         temp = []
         for v in video_url:
@@ -48,7 +38,7 @@ class AmazonScraper(Scraper):
                 temp.extend(r)
         return temp
 
-    # return dictionary with one element containing the PDF
+    # return one element containing the PDF
     def pdf_for_url(self):
         return None
     
