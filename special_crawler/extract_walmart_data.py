@@ -331,6 +331,21 @@ class WalmartScraper(Scraper):
 
         return sellers_dict
 
+    # TODO: more optimal - don't extract this twice
+    # TODO: add docstring
+    def _owned_meta_from_tree(self):
+        seller_dict = self._seller_from_tree()
+        owned = seller_dict['owned']
+        return owned
+
+    # TODO: more optimal - don't extract this twice
+    # TODO: add docstring
+    def _marketplace_meta_from_tree(self):
+        seller_dict = self._seller_from_tree()
+        marketplace = seller_dict['marketplace']
+        return marketplace        
+
+
     # extract product seller information from its product product page tree
     def _seller_from_tree(self):
         """Extracts seller info of product extracted from 'Buy from ...' elements on page
@@ -407,7 +422,10 @@ class WalmartScraper(Scraper):
         img = self._image_urls()
         
         if mobile_img and img:
-            return mobile_img[0] == img[0]
+            if mobile_img[0] == img[0]:
+                return 1
+            else:
+                return 0
         else:
             return None # no images found to compare
     
@@ -476,7 +494,8 @@ class WalmartScraper(Scraper):
         "feature_count" : _nr_features_from_tree, \
         # TODO: or is this title_seo?
         "product_title" : _title_from_tree, \
-        "seller": _seller_from_tree, \
+        "owned": _owned_meta_from_tree, \
+        "marketplace": _marketplace_meta_from_tree, \
         "review_count": _nr_reviews_from_tree, \
         "average_review": _avg_review_from_tree, \
         # video needs both page source and separate requests
