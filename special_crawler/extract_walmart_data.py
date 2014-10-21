@@ -85,7 +85,7 @@ class WalmartScraper(Scraper):
         #      return false cause no rich media at all?
         return True
 
-    def _video_url(self):
+    def _video_urls(self):
         """Extracts video URL for a given walmart product
         Returns:
             list containing the video's URLs
@@ -125,7 +125,7 @@ class WalmartScraper(Scraper):
 
         return None
 
-    def _pdf_url(self):
+    def _pdf_urls(self):
         """Extracts pdf URL for a given walmart product
         Returns:
             list containing the pdf's URLs
@@ -252,37 +252,6 @@ class WalmartScraper(Scraper):
             return meta_price[0]
         else:
             return None
-
-    # extract links from product description
-    # ! may throw exception if not found
-    # TODO:
-    #      - test
-    #      - is format ok?
-    def _anchors_from_tree(self):
-        """Extracts 'a' tags found in the description text
-        Returns:
-            nested dictionary with following first-level keys:
-            'quantity' - value is int containing total number of links
-            'links' - value is list of dictionary with 'href' and 'text' keys (1 dict for each link)
-        """
-
-        # get all links found in the description text
-        description_node = self.tree_html.xpath("//div[@itemprop='description']")[0]
-        links = description_node.xpath(".//a")
-        nr_links = len(links)
-
-        links_dicts = []
-
-        for link in links:
-            # TODO: 
-            #       extract text even if nested in something?
-            #       better error handling (on a per link basis)
-            links_dicts.append({"href" : link.xpath("@href")[0], "text" : link.xpath("text()")[0]})
-
-        ret = {"quantity" : nr_links, "links" : links_dicts}
-
-        return ret
-
 
     # extract htags (h1, h2) from its product product page tree
     def _htags_from_tree(self):
@@ -464,23 +433,20 @@ class WalmartScraper(Scraper):
         "product_name" : _product_name_from_tree, \
         "meta" : _meta_info_from_tree, \
         "brand" : _meta_brand_from_tree, \
-        "short_desc" : _short_description_from_tree, \
-        "description" : _long_description_from_tree, \
+        "description" : _short_description_from_tree, \
+        "long_description" : _long_description_from_tree, \
         "price" : _price_from_tree, \
-        "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
         "features" : _features_from_tree, \
         "feature_count" : _nr_features_from_tree, \
-        "title" : _title_from_tree, \
+        # is this seo title instead?
+        "product_title" : _title_from_tree, \
         "seller": _seller_from_tree, \
         "review_count": _nr_reviews_from_tree, \
         "average_review": _avg_review_from_tree, \
         # video needs both page source and separate requests
-        "video_url" : _video_url, \
-
-
-        "loaded_in_seconds": None \
+        "video_urls" : _video_urls, \
         }
 
     # special data that can't be extracted from the product page
@@ -494,7 +460,7 @@ class WalmartScraper(Scraper):
     """
 
     DATA_TYPES_SPECIAL = { \
-        "pdf_url" : _pdf_url, \
+        "pdf_urls" : _pdf_urls, \
     #    "reviews" : reviews_for_url \
     }
 

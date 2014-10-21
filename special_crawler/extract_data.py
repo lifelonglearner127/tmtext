@@ -34,6 +34,7 @@ class Scraper():
     # using the declarations in the subclasses (for data types that have support in each subclass)
 
     BASE_DATA_TYPES_LIST = {
+            # TODO: set url globally
             "url", # url of product
             "event",
             "product_id",
