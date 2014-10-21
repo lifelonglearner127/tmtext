@@ -14,36 +14,30 @@ class BestBuyScraper(Scraper):
     
     INVALID_URL_MESSAGE = "Expected URL format is http://www.bestbuy.com/site/<product-name>/<product-id>.*"
     
-    
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
         m = re.match(r"^http://www.bestbuy.com/.*$", self.product_page_url)
-
         return not not m
-    
-    # TODO:
-    #      better way of extracting id now that URL format is more permissive
-    #      though this method still seems to work...
+
+    def _url(self):
+        return self.product_page_url
+
     def _extract_product_id(self):
         prod_id = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-product-id')[0]
         return prod_id
 
-    # return dictionary with one element containing the video url
     def video_for_url(self):
         video_url = "\n".join(self.tree_html.xpath("//script//text()"))
         video_url = re.sub(r"\\", "", video_url)
-        
         video_url = re.findall("url.+(http.+flv)\"", video_url)
         return video_url
 
-    # return dictionary with one element containing the PDF
     def pdf_for_url(self):
         return None
     
-    # image urls    
     def _image_url(self):
         image_url = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-gallery-images')[0]
         json_list = json.loads(image_url)
@@ -52,7 +46,6 @@ class BestBuyScraper(Scraper):
             image_url.append(i['url'])
         return image_url
     
-    # Number of product images    
     def _product_images(self):
         image_url = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-gallery-images')[0]
         json_list = json.loads(image_url)
@@ -91,12 +84,9 @@ class BestBuyScraper(Scraper):
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
-    # TODO:
-    #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
         full_description = self.tree_html.xpath('//div[@id="long-description"]//text()')[0]
         return full_description
-
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
@@ -108,25 +98,18 @@ class BestBuyScraper(Scraper):
 
     # extract product price from its product product page tree
     # ! may throw exception if not found
-    # TODO:
-    #      - test
-    #      - is format ok?
     def _anchors_from_tree(self):
         # get all links found in the description text
         description_node = self.tree_html.xpath('//div[@id="long-description"]//text()')[0]
         links = description_node.xpath(".//a")
         nr_links = len(links)
-
         links_dicts = []
-
         for link in links:
             # TODO: 
             #       extract text even if nested in something?
             #       better error handling (on a per link basis)
             links_dicts.append({"href" : link.xpath("@href")[0], "text" : link.xpath("text()")[0]})
-
         ret = {"quantity" : nr_links, "links" : links_dicts}
-
         return ret
 
 
@@ -153,14 +136,12 @@ class BestBuyScraper(Scraper):
         # list of lists of cells (by rows)
         cells = map(lambda row: row.xpath(".//div[@class='feature']//text()"), rows)
         # list of text in each row
-        
         rows_text = map(\
             lambda row: ":".join(\
                 map(lambda cell: cell.strip(), row)\
                 ), \
             cells)
         all_features_text = "\n".join(rows_text)
-
         # return dict with all features info
         return all_features_text
 
@@ -181,13 +162,10 @@ class BestBuyScraper(Scraper):
         return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
 
     # extract product seller information from its product product page tree (using h2 visible tags)
-    # TODO:
-    #      test this in conjuction with _seller_meta_from_tree; also test at least one of the values is 1
     def _seller_from_tree(self):
         seller_info = {}
         seller_info['owned'] = 1
         seller_info['marketplace'] = 0
-
         return seller_info
     
     def _marketplace(self):
@@ -217,22 +195,24 @@ class BestBuyScraper(Scraper):
     # extracts whether the first product image is the "no-image" picture
     def _no_image(self):
         None
+
     def _mobile_image_same(self):
-        pass
+        return None
     
     def fetch_bytes(self, url):
         file = cStringIO.StringIO(urllib.urlopen(url).read())
         img = Image.open(file)
-        
         b = BytesIO()
         img.save(b, format='png')
         data = b.getvalue()
-    
         return data
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
+
+
+
     def main(args):
         # check if there is an argument
         if len(args) <= 1:
@@ -249,49 +229,6 @@ class BestBuyScraper(Scraper):
         return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
 
 
-
-
-    '''
-
-    
-            x    "name" 
-            x    "keywords"
-            x    "short_desc" - None
-            x    "long_desc" 
-            "manufacturer_content_body" - Not sure if this exists on BestBuy
-            x    "price" 
-            x    "anchors"
-            x    "htags" 
-            x    "features" 
-            x    "nr_features" 
-            x    "title" 
-            x    "seller"
-            x    "product_id" 
-            x    "image_url" 
-            "video_url"
-            x    "upc" 
-            x    "product_images" 
-            x    "dept" 
-            x    "super_dept" 
-            x    "all_depts" 
-            "no_image" - Not sure if it exists on Bestbuy
-            x    "load_time"
-         
-            x    "brand" 
-            x    "model"
-            "pdf_url" -  Not sure if it exists on Bestbuy
-            x    "average_review" 
-            x    "total_reviews" 
-            
-            "in_stock"
-            "mobile_image_same"
-            "in_stores_only"
-    
-
-    '''
-
-
-
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
     # 
@@ -299,37 +236,39 @@ class BestBuyScraper(Scraper):
     # their associated methods return the raw data
     DATA_TYPES = { \
         # Info extracted from product page
-        "name" : _product_name_from_tree, \
+        "url" : _url, \
+        "product_name" : _product_name_from_tree, \
         "keywords" : _meta_keywords_from_tree, \
-        "short_desc" : _short_description_from_tree, \
-        "long_desc" : _long_description_from_tree, \
+        "description" : _short_description_from_tree, \
+        "long_description" : _long_description_from_tree, \
         "price" : _price_from_tree, \
         "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
         "features" : _features_from_tree, \
-        "nr_features" : _nr_features_from_tree, \
-        "title" : _title_from_tree, \
-        "seller": _seller_from_tree, \
+        "feature_count" : _nr_features_from_tree, \
+        "product_title" : _title_from_tree, \
+
         "marketplace" : _marketplace, \
         "owned" : _owned, \
         "product_id" : _extract_product_id, \
-        "image_url" : _image_url, \
-        "video_url" : video_for_url, \
-        
         "upc" : _upc,\
-        "product_images" : _product_images, \
-        "dept" : _dept,\
-        "super_dept" : _super_dept,\
-        "all_depts" : _all_depts,\
+        "video_urls" : video_for_url, \
+        
+        "image_urls" : _image_url, \
+        "image_count" : _product_images, \
+
+        "category_name" : _dept,\
+        "categories" : _all_depts,\
+
         "no_image" : _no_image,\
         "brand" : _meta_brand_from_tree, \
         "model" : _model_from_tree, \
         
         "average_review" : reviews_for_url, \
-        "total_reviews" : nr_reviews, \
+        "review_count" : nr_reviews, \
 
         
-        "load_time": None\
+        "loaded_in_seconds": None\
         }
 
     # special data that can't be extracted from the product page
@@ -337,7 +276,7 @@ class BestBuyScraper(Scraper):
     DATA_TYPES_SPECIAL = { \
         "mobile_image_same" : _mobile_image_same, \
         "manufacturer_content_body" : manufacturer_content_body, \
-        "pdf_url" : pdf_for_url
+        "pdf_urls" : pdf_for_url
     }
 
 

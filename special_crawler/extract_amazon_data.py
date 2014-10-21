@@ -306,7 +306,7 @@ class AmazonScraper(Scraper):
     DATA_TYPES_SPECIAL = { \
         "mobile_image_same" : _mobile_image_same, \
         "model" : _model_from_tree, \
-        "pdf_url" : pdf_for_url, \
+        "pdf_urls" : pdf_for_url, \
         "average_review" : reviews_for_url, \
         "review_count" : nr_reviews\
     }
