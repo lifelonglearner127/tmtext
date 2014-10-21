@@ -18,7 +18,7 @@ class AmazonScraper(Scraper):
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
-            True if valid, False otherwise
+            True if valid, False otherwise.
         """
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         return not not m
