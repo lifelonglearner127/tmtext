@@ -41,6 +41,12 @@ class WalmartScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
+    def __init__(self, product_page_url):
+        Scraper.__init__(self, product_page_url)
+
+        # whether product has any webcollage media
+        self.has_webcollage_media = False
+
     # checks input format
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -102,6 +108,7 @@ class WalmartScraper(Scraper):
         response_text = urllib.urlopen(request_url).read()
 
         # get first "src" value in response
+        # # webcollage videos
         video_url_candidates = re.findall("src: \"([^\"]+)\"", response_text)
         if video_url_candidates:
             # remove escapes
@@ -110,6 +117,7 @@ class WalmartScraper(Scraper):
 
             # if it ends in flv, it's a video, ok
             if video_url_candidate.endswith(".flv"):
+                self.has_webcollage_media = True
                 return [video_url_candidate]
 
             # if it doesn't, it may be a url to make another request to, to get customer reviews video
@@ -140,6 +148,7 @@ class WalmartScraper(Scraper):
         if pdf_url_candidates:
             # remove escapes
             pdf_url = re.sub('\\\\', "", pdf_url_candidates[0])
+            self.has_webcollage_media = True
 
             return [pdf_url]
 
@@ -166,9 +175,20 @@ class WalmartScraper(Scraper):
             return {"reviews" : {"total_reviews": None, "average_review": None}}
         return {"reviews" : {"total_reviews": reviews_count, "average_review": average_review}}
 
+    def _product_has_webcollage(self):
+        """Uses video and pdf information
+        to check whether product has any media from webcollage.
+        Returns:
+            1 if there is webcollage media
+            0 otherwise
+        """
+        if self.has_webcollage_media:
+            return 1
+        return 0
 
     # extract product name from its product page tree
     # ! may throw exception if not found
+    # TODO: improve, filter by tag class or something
     def _product_name_from_tree(self):
         """Extracts product name
         Returns:
@@ -264,6 +284,16 @@ class WalmartScraper(Scraper):
         """
 
         return self.tree_html.xpath("//table[@class='SpecTable']//td[contains(text(),'Model')]/following-sibling::*/text()")[0]
+
+    # extract product model from its product product page tree (meta tag)
+    # ! may throw exception if not found
+    def _meta_model_from_tree(self):
+        """Extracts product model from meta tag
+        Returns:
+            string containing the meta model
+        """
+
+        return self.tree_html.xpath("//meta[@itemprop='model']/@content")[0]
 
     # extract product features list from its product product page tree, return as string
     def _features_from_tree(self):
@@ -490,16 +520,19 @@ class WalmartScraper(Scraper):
         "price" : _price_from_tree, \
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
+        "model_meta" : _meta_model_from_tree, \
         "features" : _features_from_tree, \
         "feature_count" : _nr_features_from_tree, \
-        # TODO: or is this title_seo?
-        "product_title" : _title_from_tree, \
+        "title_seo" : _title_from_tree, \
+        # TODO: I think this causes the method to be called twice and is inoptimal
+        "product_title" : _product_name_from_tree, \
         "owned": _owned_meta_from_tree, \
         "marketplace": _marketplace_meta_from_tree, \
         "review_count": _nr_reviews_from_tree, \
         "average_review": _avg_review_from_tree, \
         # video needs both page source and separate requests
         "video_urls" : _video_urls, \
+        "webcollage" : _product_has_webcollage, \
         
         "image_count" : _image_count, \
         "image_urls" : _image_urls, \
