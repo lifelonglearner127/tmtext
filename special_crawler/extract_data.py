@@ -136,6 +136,13 @@ class Scraper():
         # Set date
         self.BASE_DATA_TYPES['date'] = lambda x: time.strftime("%Y-%m-%d %H:%M:%S")
 
+        # Set url
+        self.BASE_DATA_TYPES['url'] = lambda x: self.product_page_url
+
+        # Set status
+        # TODO: handle error as well
+        self.BASE_DATA_TYPES['status'] = lambda x: "success"
+
         # update data types dictionary to overwrite names of implementing methods for each data type
         # with implmenting function from subclass
         self.ALL_DATA_TYPES = dict(self.BASE_DATA_TYPES.items() + self.DATA_TYPES.items() + self.DATA_TYPES_SPECIAL.items())
