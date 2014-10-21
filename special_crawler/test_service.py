@@ -310,7 +310,7 @@ class ServiceSimpleTest(unittest.TestCase):
         
         # flatten it into a list
         response_keys = response.keys()
-        for top_key in ["attributes", "processed"]:
+        for top_key in ["product_info", "page_attributes", "reviews", "sellers", "classification"]:
             if top_key in response.keys():
                 response_keys += response[top_key].keys()
                 response_keys.remove(top_key)
@@ -337,7 +337,7 @@ class ServiceSimpleTest(unittest.TestCase):
 
             # flatten it into a list
             response_keys = response.keys()
-            for top_key in ["attributes", "processed"]:
+            for top_key in ["product_info", "page_attributes", "reviews", "sellers", "classification"]:
                 if top_key in response.keys():
                     response_keys += response[top_key].keys()
                     response_keys.remove(top_key)
