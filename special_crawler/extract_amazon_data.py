@@ -31,8 +31,7 @@ class AmazonScraper(Scraper):
     def _url(self):
         return self.product_page_url
 
-    # return one element containing the video url
-    def video_for_url(self):
+    def video_urls(self):
         video_url = self.tree_html.xpath('//script[@type="text/javascript"]') 
         temp = []
         for v in video_url:
@@ -40,6 +39,9 @@ class AmazonScraper(Scraper):
             if r:
                 temp.extend(r)
         return ",".join(temp)
+
+    def video_count(self):
+        return len(self.video_urls().split(','))
 
     # return one element containing the PDF
     def pdf_for_url(self):
@@ -184,22 +186,22 @@ class AmazonScraper(Scraper):
     def _title_from_tree(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
-    # extract product seller meta keyword from its product product page tree
-    # ! may throw exception if not found
-    def _seller_meta_from_tree(self):
-        return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
-
     # extract product seller information from its product product page tree (using h2 visible tags)
-    # TODO:
-    #      test this in conjuction with _seller_meta_from_tree; also test at least one of the values is 1
     def _seller_from_tree(self):
         seller_info = {}
         h5_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h5//text()[normalize-space()!='']"))
         acheckboxlabel = map(lambda text: self._clean_text(text), self.tree_html.xpath("//span[@class='a-checkbox-label']//text()[normalize-space()!='']"))
         seller_info['owned'] = 1 if "FREE Two-Day" in acheckboxlabel else 0
         seller_info['marketplace'] = 1 if "Other Sellers on Amazon" in h5_tags else 0
-
         return seller_info
+
+    def _owned(self):
+        s = self._seller_from_tree()
+        return s['owned']
+
+    def _marketplace(self):
+        s = self._seller_from_tree()
+        return s['marketplace']
 
     def _product_images(self):
         return len(self.tree_html.xpath("//span[@class='a-button-text']//img/@src"))
@@ -258,89 +260,45 @@ class AmazonScraper(Scraper):
         return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
 
 
-    '''
     
-    x extra : all_depts = since dept/super_dept were deprecated and you wanted the whole breadcrumb, I added all_depts which is ordered in a hierarchy
-    x UPC/EAN/ISBN - returns ASIN
-    x product_images -  for given  url  it should be 1
-    x super_dept - scraped from the breadcrumbs
-    x dept - scraped from the breadcrumbs
-    x model_title -  exists as "title_from_tree"
-    x review_count - exists as "total_reviews"
-    x meta description - 
-    x meta keywords - 
-    x model_meta  -  there's no meta for model, but there is a model in the source
-    
-    '''
-
-
-    '''
-    http://www.amazon.com/Dell-Inspiron-i3531-1200BK-15-6-Inch-Laptop/dp/B00KMRGF28/ref=sr_1_1?ie=UTF8&qid=1409586411&sr=8-1&keywords=dell
-    
-    x    name
-    x    keywords
-    x    short
-    x    long
-    x    price
-    x    anchors
-    x    htags
-    x    features
-    x    nr_features
-    x    title
-    x    seller  <-  Not sure, There are a lot of versions of owned vs merchant, I'll need to look into this more
-    x    product_id
-    x    load_time
-    x    image_url
-    x    video_url
-    x    brand
-    x    model
-    x    manufacturer_content_body
-        pdf_url
-        no_image
-    x    average_review
-    x    total_reviews
-    
-
-    '''
-
-
-
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
     # 
     # data extracted from product page
     # their associated methods return the raw data
     DATA_TYPES = { \
-        # Info extracted from product page
         "url" : _url, \
         "product_name" : _product_name_from_tree, \
         "product_title" : _title_from_tree, \
         
         "keywords" : _meta_keywords_from_tree, \
-        "short_desc" : _short_description_from_tree, \
-        "long_desc" : _long_description_from_tree, \
+        "descrtiption" : _short_description_from_tree, \
+        "long_description" : _long_description_from_tree, \
         "manufacturer_content_body" : manufacturer_content_body, \
         "price" : _price_from_tree, \
         "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
         "features" : _features_from_tree, \
-        "nr_features" : _nr_features_from_tree, \
-        "seller": _seller_from_tree, \
+        "feature_count" : _nr_features_from_tree, \
+
+        "owned" : _owned, \
+        "marketplace" : _marketplace, \
+
         "product_id" : _extract_product_id, \
         "brand" : _meta_brand_from_tree, \
-        "image_url" : _image_url, \
-        "video_url" : video_for_url, \
+        
+        "image_urls" : _image_url, \
+        "image_count" : _product_images,\
+
+        "video_urls" : video_urls, \
+        "video_count" : video_count, \
         "no_image" : _no_image, \
         
-        "product_images" : _product_images,\
-        "all_depts" : _all_depts,\
-        "dept" : _dept,\
-        "super_dept" : _super_dept,\
-        "meta_description" : _meta_description,\
-        "meta_keywords" : _meta_keywords,\
-        "asin" : _asin,\
+        "categories" : _all_depts,\
+        "category_name" : _dept,\
+        "upc" : _asin,\
         
-        "load_time": None \
+        "loaded_in_seconds": None \
         }
 
     # special data that can't be extracted from the product page
@@ -350,6 +308,6 @@ class AmazonScraper(Scraper):
         "model" : _model_from_tree, \
         "pdf_url" : pdf_for_url, \
         "average_review" : reviews_for_url, \
-        "total_reviews" : nr_reviews\
+        "review_count" : nr_reviews\
     }
 
