@@ -129,13 +129,26 @@ class Scraper():
         "classification": ["categories", "category_name", "brand"]
     }
 
+    # response in case of error
+    ERROR_RESPONSE = {
+        "url" : None,
+        "event" : None,
+        "product_id" : None,
+        "event" : None,
+        "date": None,
+        "status": None
+    }
+
 
     def __init__(self, product_page_url):
         self.product_page_url = product_page_url
 
-        # Set date
-        self.BASE_DATA_TYPES['date'] = lambda x: time.strftime("%Y-%m-%d %H:%M:%S")
+        current_date = time.strftime("%Y-%m-%d %H:%M:%S")
 
+        # Set fields for success response
+
+        # Set date
+        self.BASE_DATA_TYPES['date'] = lambda x: current_date
         # Set url
         self.BASE_DATA_TYPES['url'] = lambda x: self.product_page_url
 
@@ -153,6 +166,15 @@ class Scraper():
             if key not in self.BASE_DATA_TYPES:
                 print "*******EXTRA data type: ", key
                 del self.ALL_DATA_TYPES[key]
+
+        # Set fields for error response
+        
+        # Set date
+        self.ERROR_RESPONSE['date'] = current_date
+        # Set url
+        self.ERROR_RESPONSE['url'] = self.product_page_url
+        # Set status
+        self.ERROR_RESPONSE['status'] = "failure"
 
     # extract product info from product page.
     # (note: this is for info that can be extracted directly from the product page, not content generated through javascript)
