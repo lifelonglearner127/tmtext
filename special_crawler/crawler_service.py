@@ -13,7 +13,7 @@ from extract_ozon_data import OzonScraper
 from extract_vitadepot_data import VitadepotScraper
 from extract_argos_data import ArgosScraper
 from extract_homedepot_data import HomeDepotScraper
-# from extract_statelinetack_data import StateLineTackScraper
+from extract_statelinetack_data import StateLineTackScraper
 
 
 import datetime
