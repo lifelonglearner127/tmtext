@@ -34,6 +34,7 @@ class Scraper():
     # using the declarations in the subclasses (for data types that have support in each subclass)
 
     BASE_DATA_TYPES_LIST = {
+            # TODO: set url globally
             "url", # url of product
             "event",
             "product_id",
@@ -84,7 +85,7 @@ class Scraper():
             
             # classification
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
-            "category_name" # category for this product, string
+            "category_name", # category for this product, string
             "brand" # brand of product, string
 
             # Deprecated:
@@ -134,6 +135,13 @@ class Scraper():
 
         # Set date
         self.BASE_DATA_TYPES['date'] = lambda x: time.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Set url
+        self.BASE_DATA_TYPES['url'] = lambda x: self.product_page_url
+
+        # Set status
+        # TODO: handle error as well
+        self.BASE_DATA_TYPES['status'] = lambda x: "success"
 
         # update data types dictionary to overwrite names of implementing methods for each data type
         # with implmenting function from subclass

@@ -247,6 +247,7 @@ class TescoScraper(Scraper):
             return True
         else:
             return False
+
     
     #read the bytes of an image
     def fetch_bytes(self, url):

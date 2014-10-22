@@ -7,6 +7,7 @@ import json
 
 from lxml import html
 import time
+import requests
 
 from extract_data import Scraper
 
@@ -39,6 +40,12 @@ class WalmartScraper(Scraper):
 
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
+
+    def __init__(self, product_page_url):
+        Scraper.__init__(self, product_page_url)
+
+        # whether product has any webcollage media
+        self.has_webcollage_media = False
 
     # checks input format
     def check_url_format(self):
@@ -85,7 +92,7 @@ class WalmartScraper(Scraper):
         #      return false cause no rich media at all?
         return True
 
-    def _video_url(self):
+    def _video_urls(self):
         """Extracts video URL for a given walmart product
         Returns:
             list containing the video's URLs
@@ -101,6 +108,7 @@ class WalmartScraper(Scraper):
         response_text = urllib.urlopen(request_url).read()
 
         # get first "src" value in response
+        # # webcollage videos
         video_url_candidates = re.findall("src: \"([^\"]+)\"", response_text)
         if video_url_candidates:
             # remove escapes
@@ -109,6 +117,7 @@ class WalmartScraper(Scraper):
 
             # if it ends in flv, it's a video, ok
             if video_url_candidate.endswith(".flv"):
+                self.has_webcollage_media = True
                 return [video_url_candidate]
 
             # if it doesn't, it may be a url to make another request to, to get customer reviews video
@@ -125,7 +134,7 @@ class WalmartScraper(Scraper):
 
         return None
 
-    def _pdf_url(self):
+    def _pdf_urls(self):
         """Extracts pdf URL for a given walmart product
         Returns:
             list containing the pdf's URLs
@@ -139,6 +148,7 @@ class WalmartScraper(Scraper):
         if pdf_url_candidates:
             # remove escapes
             pdf_url = re.sub('\\\\', "", pdf_url_candidates[0])
+            self.has_webcollage_media = True
 
             return [pdf_url]
 
@@ -165,9 +175,20 @@ class WalmartScraper(Scraper):
             return {"reviews" : {"total_reviews": None, "average_review": None}}
         return {"reviews" : {"total_reviews": reviews_count, "average_review": average_review}}
 
+    def _product_has_webcollage(self):
+        """Uses video and pdf information
+        to check whether product has any media from webcollage.
+        Returns:
+            1 if there is webcollage media
+            0 otherwise
+        """
+        if self.has_webcollage_media:
+            return 1
+        return 0
 
     # extract product name from its product page tree
     # ! may throw exception if not found
+    # TODO: improve, filter by tag class or something
     def _product_name_from_tree(self):
         """Extracts product name
         Returns:
@@ -185,23 +206,6 @@ class WalmartScraper(Scraper):
         """
 
         return self.tree_html.xpath("//meta[@name='Keywords']/@content")[0]
-
-    # extract info from meta tags
-    # ! TODO: meta description not implemented yet
-    def _meta_info_from_tree(self):
-        """Extracts product info from its page meta tags:
-        keywords for product and description
-        Returns:
-            dictionary containing "keywords" and "description" as tags,
-            and their values
-        """
-
-        keywords = self._meta_keywords_from_tree()
-        # TODO
-        description = None
-
-        return {"keywords" : keywords,\
-                "description" : description}
 
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
@@ -253,37 +257,6 @@ class WalmartScraper(Scraper):
         else:
             return None
 
-    # extract links from product description
-    # ! may throw exception if not found
-    # TODO:
-    #      - test
-    #      - is format ok?
-    def _anchors_from_tree(self):
-        """Extracts 'a' tags found in the description text
-        Returns:
-            nested dictionary with following first-level keys:
-            'quantity' - value is int containing total number of links
-            'links' - value is list of dictionary with 'href' and 'text' keys (1 dict for each link)
-        """
-
-        # get all links found in the description text
-        description_node = self.tree_html.xpath("//div[@itemprop='description']")[0]
-        links = description_node.xpath(".//a")
-        nr_links = len(links)
-
-        links_dicts = []
-
-        for link in links:
-            # TODO: 
-            #       extract text even if nested in something?
-            #       better error handling (on a per link basis)
-            links_dicts.append({"href" : link.xpath("@href")[0], "text" : link.xpath("text()")[0]})
-
-        ret = {"quantity" : nr_links, "links" : links_dicts}
-
-        return ret
-
-
     # extract htags (h1, h2) from its product product page tree
     def _htags_from_tree(self):
         """Extracts 'h' tags in product page
@@ -311,6 +284,16 @@ class WalmartScraper(Scraper):
         """
 
         return self.tree_html.xpath("//table[@class='SpecTable']//td[contains(text(),'Model')]/following-sibling::*/text()")[0]
+
+    # extract product model from its product product page tree (meta tag)
+    # ! may throw exception if not found
+    def _meta_model_from_tree(self):
+        """Extracts product model from meta tag
+        Returns:
+            string containing the meta model
+        """
+
+        return self.tree_html.xpath("//meta[@itemprop='model']/@content")[0]
 
     # extract product features list from its product product page tree, return as string
     def _features_from_tree(self):
@@ -357,19 +340,43 @@ class WalmartScraper(Scraper):
 
         return self.tree_html.xpath("//title//text()")[0].strip()
 
-    # extract product seller meta keyword from its product product page tree
+    # extract product seller meta tag content from its product product page tree
     # ! may throw exception if not found
     def _seller_meta_from_tree(self):
-        """Extracts seller of product extracted from 'seller' meta tag
+        """Extracts sellers of product extracted from 'seller' meta tag, and their availability
         Returns:
-            string with the contents of the tag, or None
+            dictionary with sellers as keys and availability (true/false) as values
         """
 
-        return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
+        sellers = self.tree_html.xpath("//div[@itemprop='offers']")
 
-    # extract product seller information from its product product page tree (using h2 visible tags)
-    # TODO:
-    #      test this in conjuction with _seller_meta_from_tree; also test at least one of the values is 1
+        sellers_dict = {}
+        for seller in sellers:
+            # try to get seller if any, otherwise ignore this div
+            try:
+                avail = (seller.xpath(".//meta[@itemprop='availability']/@content")[0] == "http://schema.org/InStock")
+                sellers_dict[seller.xpath(".//meta[@itemprop='seller']/@content")[0]] = avail
+            except IndexError:
+                pass
+
+        return sellers_dict
+
+    # TODO: more optimal - don't extract this twice
+    # TODO: add docstring
+    def _owned_meta_from_tree(self):
+        seller_dict = self._seller_from_tree()
+        owned = seller_dict['owned']
+        return owned
+
+    # TODO: more optimal - don't extract this twice
+    # TODO: add docstring
+    def _marketplace_meta_from_tree(self):
+        seller_dict = self._seller_from_tree()
+        marketplace = seller_dict['marketplace']
+        return marketplace        
+
+
+    # extract product seller information from its product product page tree
     def _seller_from_tree(self):
         """Extracts seller info of product extracted from 'Buy from ...' elements on page
         Returns:
@@ -379,9 +386,18 @@ class WalmartScraper(Scraper):
         """
 
         seller_info = {}
-        h2_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h2//text()"))
-        seller_info['owned'] = 1 if "Buy from Walmart" in h2_tags else 0
-        seller_info['marketplace'] = 1 if "Buy from Marketplace" in h2_tags else 0
+        sellers = self._seller_meta_from_tree()
+
+        # owned if has seller Walmart.com and availability for it is true
+        seller_info['owned'] = 1 if ('Walmart.com' in sellers.keys() and sellers['Walmart.com']) else 0
+        # found on marketplace if there are other keys other than walmart and they are in stock
+        # TODO:
+        #      more sophisticated checking of availability for marketplace? (values are more than just InStock/OutOfStock)
+        #      (because for walmart they should only be available when in stock) 
+        # remove Walmart key as we already checked for it
+        if 'Walmart.com' in sellers.keys():
+            del sellers['Walmart.com']
+        seller_info['marketplace'] = 1 if (len(sellers.keys()) > 0 and any(sellers.values())) else 0
 
         return seller_info
 
@@ -411,6 +427,38 @@ class WalmartScraper(Scraper):
 
         return average_review
 
+    def _image_count(self):
+        return len(self._image_urls())
+
+    def _image_urls(self):
+        scripts = self.tree_html.xpath("//script//text()")
+        for script in scripts:
+            find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script)) 
+            if len(find)>0:
+                return find
+        
+        # It should only return this img when there's no img carousel    
+        pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
+        return pic
+    
+    # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
+    def _mobile_image_same(self):
+        url = self.product_page_url
+        url = re.sub('http://www', 'http://mobile', url)
+        mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
+        contents = requests.get(url, headers=mobile_headers).text
+        tree = html.fromstring(contents)
+        mobile_img = tree.xpath('.//*[contains(@class,"carousel ")]//*[contains(@class, "carousel-item")]/@data-model-id')
+        img = self._image_urls()
+        
+        if mobile_img and img:
+            if mobile_img[0] == img[0]:
+                return 1
+            else:
+                return 0
+        else:
+            return None # no images found to compare
+    
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -422,6 +470,8 @@ class WalmartScraper(Scraper):
         """
 
         return re.sub("&nbsp;", " ", text).strip()
+    
+
 
 
     # TODO: fix to work with restructured code
@@ -462,25 +512,30 @@ class WalmartScraper(Scraper):
     DATA_TYPES = { \
         # Info extracted from product page
         "product_name" : _product_name_from_tree, \
-        "meta" : _meta_info_from_tree, \
+        "keywords" : _meta_keywords_from_tree, \
         "brand" : _meta_brand_from_tree, \
-        "short_desc" : _short_description_from_tree, \
-        "description" : _long_description_from_tree, \
+        "description" : _short_description_from_tree, \
+        # TODO: check if descriptions work right
+        "long_description" : _long_description_from_tree, \
         "price" : _price_from_tree, \
-        "anchors" : _anchors_from_tree, \
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
+        "model_meta" : _meta_model_from_tree, \
         "features" : _features_from_tree, \
         "feature_count" : _nr_features_from_tree, \
-        "title" : _title_from_tree, \
-        "seller": _seller_from_tree, \
+        "title_seo" : _title_from_tree, \
+        # TODO: I think this causes the method to be called twice and is inoptimal
+        "product_title" : _product_name_from_tree, \
+        "owned": _owned_meta_from_tree, \
+        "marketplace": _marketplace_meta_from_tree, \
         "review_count": _nr_reviews_from_tree, \
         "average_review": _avg_review_from_tree, \
         # video needs both page source and separate requests
-        "video_url" : _video_url, \
-
-
-        "loaded_in_seconds": None \
+        "video_urls" : _video_urls, \
+        "webcollage" : _product_has_webcollage, \
+        
+        "image_count" : _image_count, \
+        "image_urls" : _image_urls, \
         }
 
     # special data that can't be extracted from the product page
@@ -494,7 +549,9 @@ class WalmartScraper(Scraper):
     """
 
     DATA_TYPES_SPECIAL = { \
-        "pdf_url" : _pdf_url, \
+        "pdf_urls" : _pdf_urls, \
+        "mobile_image_same" : _mobile_image_same \
+
     #    "reviews" : reviews_for_url \
     }
 
