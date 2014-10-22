@@ -13,33 +13,40 @@ from extract_data import Scraper
 
 class StateLineTackScraper(Scraper):
     
+    ##########################################
+    ############### PREP
+    ##########################################
     # holds a data from an external request for loading 
     bazaar = None
-        
     INVALID_URL_MESSAGE = "Expected URL format is http://www.statelinetack.com/item/<product-name>/<product-id>/"
-    
-    
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-
         #m = re.match("^http://www.amazon.com/dp/[a-zA-Z0-9]+$", self.product_page_url)
         m = re.match(r"^http://www.statelinetack.com/.*?$", self.product_page_url)
-
         return not not m
     
-    # TODO:
-    #      better way of extracting id now that URL format is more permissive
-    #      though this method still seems to work...
+
+    ##########################################
+    ############### CONTAINER : NONE
+    ##########################################
+    def _url(self):
+        return self.product_page_url
+
+
+
+
+
+
+    
     def _extract_product_id(self):
         #product_id = self.product_page_url.split('/')[-1]
         product_id = self.tree_html.xpath('//input[@id="ctl00_ctl00_CenterContentArea_MainContent_HidBaseNo"]/@value')[0]
 
         return product_id
 
-    # return dictionary with one element containing the video url
     def video_for_url(self):
         #"url":"http://ecx.images-amazon.com/images/I/B1d2rrt0oJS.mp4"
         video_url = self.tree_html.xpath('//script[@type="text/javascript"]') 
@@ -50,7 +57,6 @@ class StateLineTackScraper(Scraper):
                 temp.extend(r)
         return temp
 
-    # return dictionary with one element containing the PDF
     def pdf_for_url(self):
         moreinfo = self.tree_html.xpath('//div[@class="ItemPageDownloadableResources"]//div//a/@href')
         pdfurl = []
@@ -67,17 +73,14 @@ class StateLineTackScraper(Scraper):
     def _image_url(self):
         #metaimg comes from meta tag
         metaimg = self.tree_html.xpath('//meta[@property="og:image"]/@content')
-        
         #imgurl comes from the carousel
         imageurl = self.tree_html.xpath('//img[@class="swatch"]/@src')
         imageurl.extend(metaimg)
         return imageurl
     
-    # image count
-    def _product_images(self):
+    def _image_count(self):
         #metaimg comes from meta tag
         metaimg = self.tree_html.xpath('//meta[@property="og:image"]/@content')
-        
         #imgurl comes from the carousel
         imageurl = self.tree_html.xpath('//img[@class="swatch"]/@src')
         imageurl.append(metaimg)
@@ -113,32 +116,20 @@ class StateLineTackScraper(Scraper):
         num = bazaar.xpath('//*[contains(@class, "BVRRRatingRangeNumber")]//text()')
         return num[0]
         
-    # extract product name from its product page tree
-    # ! may throw exception if not found
     def _product_name_from_tree(self):
         return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
 
-    # extract meta "keywords" tag for a product from its product page tree
-    # ! may throw exception if not found
     def _meta_keywords_from_tree(self):
         
         return None
         
-    # extract meta "brand" tag for a product from its product page tree
-    # ! may throw exception if not found
     def _meta_brand_from_tree(self):
         return None
 
 
-    # extract product short description from its product page tree
-    # ! may throw exception if not found
     def _short_description_from_tree(self):
         return None
 
-    # extract product long description from its product product page tree
-    # ! may throw exception if not found
-    # TODO:
-    #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree(self):
         full_description = ([x.strip() for x in self.tree_html.xpath('//div[@id="ItemPageProductSummaryBoxMain"]//text()') if len(x.strip())>0])
         for row in range(0,4):
@@ -146,7 +137,6 @@ class StateLineTackScraper(Scraper):
                 return full_description[row]
         return ''
 
-    # extract product price from its product product page tree.
     def _price_from_tree(self):
         
         price = self.tree_html.xpath("//span[@id='lowPrice']//text()")
@@ -155,31 +145,18 @@ class StateLineTackScraper(Scraper):
         
         return None
 
-    # extract product price from its product product page tree
-    # ! may throw exception if not found
-    # TODO:
-    #      - test
-    #      - is format ok?
     def _anchors_from_tree(self):
         # get all links found in the description text
         description_node = self.tree_html.xpath('//div[contains(@class, "GreyBoxMiddle")]/div/span/span/span/div[3]')[0]
         links = description_node.xpath(".//a")
         nr_links = len(links)
-
         links_dicts = []
-
         for link in links:
-            # TODO: 
-            #       extract text even if nested in something?
-            #       better error handling (on a per link basis)
             links_dicts.append({"href" : link.xpath("@href")[0], "text" : link.xpath("text()")[0]})
 
         ret = {"quantity" : nr_links, "links" : links_dicts}
-
         return ret
 
-
-    # extract htags (h1, h2) from its product product page tree
     def _htags_from_tree(self):
         htags_dict = {}
 
@@ -190,22 +167,15 @@ class StateLineTackScraper(Scraper):
 
         return htags_dict
 
-    # extract product model from its product product page tree
-    # ! may throw exception if not found
     def _model_from_tree(self):
         return None
 
-    # extract product features list from its product product page tree, return as string
-    # join all text in spec table; separate rows by newlines and eliminate spaces between cells
     def _features_from_tree(self):
         return self._feature_helper()
 
-    # extract number of features from tree
-    # ! may throw exception if not found
     def _nr_features_from_tree(self):
         return len(self._feature_helper())
         
-    #this helper is specific to this site
     def _feature_helper(self):
         full_description = [x.strip() for x in self.tree_html.xpath('//div[@id="ItemPageProductSummaryBoxMain"]//text()') if len(x.strip())>0]
         full_description = [x for x in full_description if len(x)>3]
@@ -227,19 +197,12 @@ class StateLineTackScraper(Scraper):
         else:
             return full_description[feat_index+1:]
     
-    # extract page title from its product product page tree
-    # ! may throw exception if not found
     def _title_from_tree(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
-    # extract product seller meta keyword from its product product page tree
-    # ! may throw exception if not found
     def _seller_meta_from_tree(self):
         return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
 
-    # extract product seller information from its product product page tree (using h2 visible tags)
-    # TODO:
-    #      test this in conjuction with _seller_meta_from_tree; also test at least one of the values is 1
     def _seller_from_tree(self):
         seller_info = {}      
         seller_info['owned'] = 1
@@ -247,29 +210,23 @@ class StateLineTackScraper(Scraper):
 
         return seller_info
     
-    
-    
     def _no_image(self):
         return None
     
     def _mobile_image_same(self):
         pass
 
-    # extract the department which the product belongs to
     def _dept(self):
         all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
         all = map(lambda t: self._clean_text(t), all)
         return all[1]
     
-    # extract the department's department, or super department
     def _super_dept(self):
         all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
         all = map(lambda t: self._clean_text(t), all)
         return all[0]
     
-    # extract a hierarchical list of all the departments the product belongs to
     def _all_depts(self):
-        # 
         all = self.tree_html.xpath('//div[@id="ItemPageBreadCrumb"]//a/text()')
         return all
     
@@ -286,6 +243,8 @@ class StateLineTackScraper(Scraper):
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
+
+
     def main(args):
         # check if there is an argument
         if len(args) <= 1:
@@ -304,55 +263,11 @@ class StateLineTackScraper(Scraper):
 
 
 
-    '''
-    HOMEDEPOT --------------------
-    
-    x    name
-    x    long
-    x    price
-    x    anchors
-    x    htags
-    x    features
-    x    nr_features
-    x    title
-    x    seller - hardcoded as just 'owned'
-    x    product_id
-    x    load_time
-    x    image_url
-    
-    
-    x    pdf_url
-    x    average_review
-    x    total_reviews
-    
-    UPC/EAN/ISBN
-    x    product_images
-    x    all_depts
-    x    meta description 
-    x    meta keywords - may not ever be populated although the tag exists
-    
-    
-    
-    # 
-    missing --------------------------------------
-    mobile_image_same - haven't implemented yet
-    noimage - haven't implemented yet
-    short - doesn't exist
-    video_url - couldn't find on stateline tack
-    brand - couldn't find on stateline tack
-    model - couldn't find on stateline tack
-    manufacturer_content_body - no instances of this found on statelinetack
-    
-
-    '''
 
 
 
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
-    # 
-    # data extracted from product page
-    # their associated methods return the raw data
     DATA_TYPES = { \
         # Info extracted from product page
         "name" : _product_name_from_tree, \
