@@ -486,3 +486,5 @@ class TescoScraper(Scraper):
     # # returns 1 if the product is in stock, 0 otherwise
     # def _product_in_stock(self):
     #     return None
+
+    
