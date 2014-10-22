@@ -35,17 +35,16 @@ class StateLineTackScraper(Scraper):
     def _url(self):
         return self.product_page_url
 
-
-
-
-
-
+    def _event(self):
+        return None
     
-    def _extract_product_id(self):
-        #product_id = self.product_page_url.split('/')[-1]
+    def _product_id(self):
         product_id = self.tree_html.xpath('//input[@id="ctl00_ctl00_CenterContentArea_MainContent_HidBaseNo"]/@value')[0]
-
         return product_id
+
+
+
+
 
     def video_for_url(self):
         #"url":"http://ecx.images-amazon.com/images/I/B1d2rrt0oJS.mp4"
