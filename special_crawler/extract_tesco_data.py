@@ -28,7 +28,7 @@ class TescoScraper(Scraper):
     '''
 
     ##########################################
-    ############### VALIDATION
+    ############### PREP
     ##########################################
     INVALID_URL_MESSAGE = "Expected URL format is http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd"
     

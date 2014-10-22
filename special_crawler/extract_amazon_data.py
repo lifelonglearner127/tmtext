@@ -13,7 +13,7 @@ from extract_data import Scraper
 class AmazonScraper(Scraper):
 
     ##########################################
-    ############### VALIDATION
+    ############### PREP
     ##########################################
         
     INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id>"
