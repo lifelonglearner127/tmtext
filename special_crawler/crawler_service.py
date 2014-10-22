@@ -38,7 +38,7 @@ SUPPORTED_SITES = {"walmart" : WalmartScraper,
                    # "vitadepot": VitadepotScraper,
                    # "argos": ArgosScraper,
                    "homedepot" : HomeDepotScraper,
-                   # "statelinetack" : StateLineTackScraper
+                   "statelinetack" : StateLineTackScraper
                    }
 
 # add logger
