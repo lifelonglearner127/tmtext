@@ -82,21 +82,22 @@ class GatewayError(Exception):
 # validate input and raise exception with message for client if necessary
 def check_input(url, is_valid_url, invalid_url_message=""):
     # TODO: complete these error messages with more details specific to the scraped site
-    if not url:
-        raise InvalidUsage("No input URL was provided.", 400)
+    # if not url:
+    #     raise InvalidUsage("No input URL was provided.", 400)
 
-    if not is_valid_url:
-        raise InvalidUsage(\
-            "Invalid URL: " + str(url) + " " + str(invalid_url_message),\
-            400)
+    # if not is_valid_url:
+    #     raise InvalidUsage(\
+    #         "Invalid URL: " + str(url) + " " + str(invalid_url_message),\
+    #         400)
+    pass
 
 # infer domain from input URL
 def extract_domain(url):
-    m = re.match("^http://www\.([^/\.]+)\..*$", url)
-    if m:
-        return m.group(1)
+    # m = re.match("^http://www\.([^/\.]+)\..*$", url)
+    # if m:
+    #     return m.group(1)
     # TODO: return error message about bad URL if it does not match the regex
-
+    return "walmart"
 
 
 # validate request mandatory arguments
