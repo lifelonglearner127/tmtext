@@ -382,7 +382,7 @@ class WalmartScraper(Scraper):
         Returns:
             string containing upc
         """
-        return sel.xpath("//meta[@property='og:upc']/@content").extract()[0]   
+        return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]   
 
 
     # extract product seller information from its product product page tree
