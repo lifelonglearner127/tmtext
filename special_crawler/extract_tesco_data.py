@@ -364,7 +364,9 @@ class TescoScraper(Scraper):
         return re.sub("&nbsp;", " ", text).strip()
 
     
-
+    ##########################################
+    ################ RETURN TYPES
+    ##########################################
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
     DATA_TYPES = { \
@@ -421,9 +423,6 @@ class TescoScraper(Scraper):
         "mobile_image_same" : _mobile_image_same, \
         "no_image" : _no_image,\
 
-        # CONTAINER : CLASSIFICATION
-        "brand" : _brand, \
-
         # CONTAINER : PRODUCT_INFO
         "model" : _model, \
         "long_description" : _long_description, \
@@ -433,6 +432,9 @@ class TescoScraper(Scraper):
         "review_count" : _review_count, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
+
+        # CONTAINER : CLASSIFICATION
+        "brand" : _brand, \
     }
 
 
