@@ -373,7 +373,16 @@ class WalmartScraper(Scraper):
     def _marketplace_meta_from_tree(self):
         seller_dict = self._seller_from_tree()
         marketplace = seller_dict['marketplace']
-        return marketplace        
+        return marketplace     
+
+    # ! may throw exception if not found
+    # TODO: is this the right UPC? there are versions of it in the page, some with leading "00" before it
+    def _upc_from_tree(self):
+        """Extracts UPC of product from meta tag
+        Returns:
+            string containing upc
+        """
+        return sel.xpath("//meta[@property='og:upc']/@content").extract()[0]   
 
 
     # extract product seller information from its product product page tree
@@ -511,6 +520,7 @@ class WalmartScraper(Scraper):
 
     DATA_TYPES = { \
         # Info extracted from product page
+        "upc" : _upc_from_tree, \
         "product_name" : _product_name_from_tree, \
         "keywords" : _meta_keywords_from_tree, \
         "brand" : _meta_brand_from_tree, \
