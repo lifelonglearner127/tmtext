@@ -416,7 +416,7 @@ class ServiceSimpleTest(unittest.TestCase):
                 "product_name", "product_title", "title_seo",\
                 # "model", 
                 "upc",
-                # "features", "feature_count", 
+                "features", "feature_count", 
                 # "model_meta", \
                 # "description", "long_description", \
                 # "image_count", 
