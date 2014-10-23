@@ -416,5 +416,15 @@ class ServiceSimpleTest(unittest.TestCase):
     def test_bestbuy_specificdata(self):
         self._test_specificdata("bestbuy", "http://www.bestbuy.com/site/insignia-48-class-47-5-8-diag--led-1080p-60hz-hdtv/2563138.p?id=1219074400922&skuId=2563138")
 
+    # test all keys are in the response for simple (all-data) request for bestbuy
+    # (using template function)
+    def test_statelinetack_alldata(self):
+        self._test_alldata("statelinetack", "http://www.statelinetack.com/item/tuffrider-ladies-starter-pull-on-breeches/E000336/")
+
+    # test requests for each specific type of data for statelineattack
+    # (using template function)
+    def test_statelinetack_specificdata(self):
+        self._test_specificdata("statelinetack", "http://www.statelinetack.com/item/tuffrider-ladies-starter-pull-on-breeches/E000336/")
+
 if __name__=='__main__':
     unittest.main()

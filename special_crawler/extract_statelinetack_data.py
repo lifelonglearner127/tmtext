@@ -45,9 +45,6 @@ class StateLineTackScraper(Scraper):
     def _site_id(self):
         return None
 
-    def _date(self):
-        return None
-
     def _status(self):
         return "success"
 
@@ -307,7 +304,6 @@ class StateLineTackScraper(Scraper):
         "event" : _event, \
         "product_id" : _product_id, \
         "site_id" : _site_id, \
-        "date" : _date, \
         "status" : _status, \
 
         # CONTAINER : PRODUCT_INFO

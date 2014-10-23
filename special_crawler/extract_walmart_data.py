@@ -295,6 +295,33 @@ class WalmartScraper(Scraper):
 
         return self.tree_html.xpath("//meta[@itemprop='model']/@content")[0]
 
+    def _categories_hierarchy(self):
+        """Extracts full path of hierarchy of categories
+        this product belongs to, from the lowest level category
+        it belongs to, to its top level department
+        Returns:
+            list of strings containing full path of categories
+            (from highest-most general to lowest-most specific)
+            or None if list is empty of not found
+        """
+
+        categories_list = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")
+        if categories_list:
+            return categories_list
+        else:
+            return None
+
+    # ! may throw exception of not found
+    def _category(self):
+        """Extracts lowest level (most specific) category this product
+        belongs to.
+        Returns:
+            string containing product category
+        """
+
+        # return last element of the categories list
+        return self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")[-1]
+
     # extract product features list from its product product page tree, return as string
     def _features_from_tree(self):
         """Extracts product features
@@ -382,7 +409,7 @@ class WalmartScraper(Scraper):
         Returns:
             string containing upc
         """
-        return sel.xpath("//meta[@property='og:upc']/@content").extract()[0]   
+        return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]   
 
 
     # extract product seller information from its product product page tree
@@ -546,6 +573,9 @@ class WalmartScraper(Scraper):
         
         "image_count" : _image_count, \
         "image_urls" : _image_urls, \
+
+        "categories" : _categories_hierarchy, \
+        "category_name" : _category, \
         }
 
     # special data that can't be extracted from the product page
