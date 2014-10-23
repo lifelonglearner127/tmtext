@@ -333,32 +333,40 @@ class AmazonScraper(Scraper):
         "no_image" : _no_image, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
-
-
-
-
-
-        "keywords" : _keywords, \
-        "price" : _price, \
+        "webcollage" : _webcollage, \
         "htags" : _htags, \
+        "keywords" : _keywords, \
 
+        # CONTAINER : REVIEWS
+        "review_count" : _review_count, \
+        "average_review" : _average_review, \
+        "max_review" : _max_review, \
+        "min_review" : _min_review, \
+
+        # CONTAINER : SELLERS
+        "price" : _price, \
+        "in_stores_only" : _in_stores_only, \
+        "in_stores" : _in_stores, \
         "owned" : _owned, \
+        "owned_out_of_stock" : _owned_out_of_stock, \
         "marketplace" : _marketplace, \
+        "marketplace_sellers" : _marketplace_sellers, \
+        "marketplace_lowest_price" : _marketplace_lowest_price, \
 
+        # CONTAINER : CLASSIFICATION
+        "categories" : _categories, \
+        "category_name" : _category_name, \
         "brand" : _brand, \
-        
-        "categories" : _categories,\
-        "category_name" : _category_name,\
-        
-        "loaded_in_seconds": None \
+
+
+
+        "loaded_in_seconds" : None, \
         }
 
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         "mobile_image_same" : _mobile_image_same, \
-        "average_review" : _average_review, \
-        "review_count" : _review_count\
     }
 
 
