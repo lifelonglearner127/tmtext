@@ -322,7 +322,7 @@ class AmazonScraper(Scraper):
         "features" : _features, \
         "feature_count" : _feature_count, \
         "model_meta" : _model_meta, \
-        "descrtiption" : _description, \
+        "description" : _description, \
         "long_description" : _long_description, \
 
         # CONTAINER : PAGE_ATTRIBUTES

@@ -83,7 +83,7 @@ class TescoScraper(Scraper):
         return self.tree_html.xpath("//h1")[0].text
 
     def _product_title(self):
-        return None
+        return self.tree_html.xpath("//meta[@property='og:title']/@content")[0]
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -202,7 +202,7 @@ class TescoScraper(Scraper):
     #populate the bazaarvoice variable for use by other functions
     def load_bazaarvoice(self):
         url = "http://api.bazaarvoice.com/data/batch.json?passkey=asiwwvlu4jk00qyffn49sr7tb&apiversion=5.4&displaycode=1235-en_gb&resource.q0=products&filter.q0=id%3Aeq%3A" \
-        + self._extract_product_id() + \
+        + self._product_id() + \
         "&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US"
         req = requests.get(url)
         self.bazaarvoice = req.json()
