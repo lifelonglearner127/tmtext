@@ -59,7 +59,7 @@ class StateLineTackScraper(Scraper):
         return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
     
     def _product_title(self):
-        return None
+        return self.tree_html.xpath("//meta[@property='og:title']/@content")[0]
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -197,7 +197,7 @@ class StateLineTackScraper(Scraper):
             return self.bazaar
         else:
             url = 'http://tabcomstatelinetack.ugc.bazaarvoice.com/3421-en_us/%s/reviews.djs?format=embeddedhtml'
-            url = url % (self._extract_product_id())
+            url = url % (self._product_id())
 
             contents = urllib.urlopen(url).read()
             tree = re.findall(r'var materials=(\{.*?\})', contents)[0]
