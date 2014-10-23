@@ -283,7 +283,7 @@ class WalmartScraper(Scraper):
             string containing the product model, or None
         """
 
-        return self.tree_html.xpath("//table[@class='SpecTable']//td[contains(text(),'Model')]/following-sibling::*/text()")[0]
+        return self.tree_html.xpath("//div[@class='specs-table']/table//td[contains(text(),'Model')]/following-sibling::*/text()")[0].strip()
 
     # extract product model from its product product page tree (meta tag)
     # ! may throw exception if not found
@@ -332,7 +332,7 @@ class WalmartScraper(Scraper):
         """
 
         # join all text in spec table; separate rows by newlines and eliminate spaces between cells
-        rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
+        rows = self.tree_html.xpath("//div[@class='specs-table']/table//tr")
         # list of lists of cells (by rows)
         cells = map(lambda row: row.xpath(".//td//text()"), rows)
         # list of text in each row
@@ -355,7 +355,7 @@ class WalmartScraper(Scraper):
         """
 
         # select table rows with more than 2 cells (the others are just headers), count them
-        return len(filter(lambda row: len(row.xpath(".//td"))>1, self.tree_html.xpath("//table[@class='SpecTable']//tr")))
+        return len(filter(lambda row: len(row.xpath(".//td"))>1, self.tree_html.xpath("//div[@class='specs-table']/table//tr")))
 
     # extract page title from its product product page tree
     # ! may throw exception if not found
