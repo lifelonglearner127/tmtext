@@ -240,7 +240,7 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
         
-        full_description = " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
+        full_description = " ".join(self.tree_html.xpath("//section[@class='product-about js-about-item']//text()")).strip()
         # TODO: return None if no description
         return full_description
 
