@@ -205,7 +205,7 @@ class WalmartScraper(Scraper):
             string containing the tag's content, or None
         """
 
-        return self.tree_html.xpath("//meta[@name='Keywords']/@content")[0]
+        return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
 
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
@@ -409,7 +409,7 @@ class WalmartScraper(Scraper):
         Returns:
             string containing upc
         """
-        return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]   
+        return self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]   
 
 
     # extract product seller information from its product product page tree
