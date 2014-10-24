@@ -5,7 +5,7 @@ import re
 import sys
 import json
 
-from lxml import html
+from lxml import html, etree
 import time
 import requests
 
@@ -155,6 +155,7 @@ class WalmartScraper(Scraper):
         else:
             return None
 
+    # deprecated
     # TODO: flatten returned object
     def reviews_for_url(self):
         """Extracts and returns reviews data for a walmart product
@@ -226,8 +227,12 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
-        # TODO: return None if no description
+        short_description = "".join(map(lambda li_element: etree.tostring(li_element), \
+            self.tree_html.xpath("//div[@class='product-short-description module']//li")\
+            ))
+        # return None if no description/
+        if not short_description.strip():
+            return
         return short_description
 
     # extract product long description from its product product page tree
@@ -445,8 +450,9 @@ class WalmartScraper(Scraper):
             int containing total nr of reviews
         """
 
-        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
-        nr_reviews = int(reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")[0])
+        nr_reviews_str = self.tree_html.xpath("//div[@class='review-summary grid grid-padded']\
+            //p[@class='heading-e']/span[1]/text()")
+        nr_reviews = int(nr_reviews_str[0])
 
         return nr_reviews
 
@@ -458,8 +464,9 @@ class WalmartScraper(Scraper):
             float containing average value of reviews
         """
 
-        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
-        average_review = float(reviews_info_node.xpath("span[@itemprop='ratingValue']/text()")[0])
+        average_review_str = self.tree_html.xpath("//div[@class='review-summary grid grid-padded']\
+            //p[@class='heading-e']/span[2]/text()")
+        average_review = float(average_review_str[0])
 
         return average_review
 
@@ -467,16 +474,19 @@ class WalmartScraper(Scraper):
         return len(self._image_urls())
 
     def _image_urls(self):
-        scripts = self.tree_html.xpath("//script//text()")
-        for script in scripts:
-            find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script)) 
-            if len(find)>0:
-                return find
-        
+        # TODO: bad. these are all thumbnails
+        images_carousel = self.tree_html.xpath("//div[@class='product-carousel-wrapper']//a/@href")
+        if images_carousel:
+            return images_carousel
+
         # It should only return this img when there's no img carousel    
-        pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
-        return pic
-    
+        main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
+        if main_image:
+            return main_image
+
+        # nothing found
+        return None
+        
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
     def _mobile_image_same(self):
         url = self.product_page_url
