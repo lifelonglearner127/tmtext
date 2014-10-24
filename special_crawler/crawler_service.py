@@ -15,7 +15,7 @@ from extract_argos_data import ArgosScraper
 from extract_homedepot_data import HomeDepotScraper
 from extract_statelinetack_data import StateLineTackScraper
 
-
+from urllib2 import HTTPError
 import datetime
 import logging
 from logging import StreamHandler
@@ -50,6 +50,21 @@ app.logger.addHandler(fh)
 
 class InvalidUsage(Exception):
     status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['error'] = self.message
+        return rv
+
+class GatewayError(Exception):
+    status_code = 502
 
     def __init__(self, message, status_code=None, payload=None):
         Exception.__init__(self)
@@ -161,19 +176,32 @@ def get_data():
 
     # return all data if there are no "data" parameters
     if 'data' not in request_arguments:
-        ret = site_scraper.product_info()
+        try:
+            ret = site_scraper.product_info()
+        except HTTPError:
+            raise GatewayError("Error communicating with site crawled.")
 
         return jsonify(ret)
 
     # return only requested data
-    ret = site_scraper.product_info(request_arguments['data'])
-    
+    try:
+        ret = site_scraper.product_info(request_arguments['data'])
+    except HTTPError:
+        raise GatewayError("Error communicating with site crawled.")
+
+
     return jsonify(ret)
 
 
 @app.errorhandler(InvalidUsage)
 def handle_invalid_usage(error):
     #TODO: not leave this as json output? error format should be consistent
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
+
+@app.errorhandler(GatewayError)
+def handle_invalid_usage(error):
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
