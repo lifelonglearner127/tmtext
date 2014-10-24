@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import urllib
+import urllib2
 import re
 import sys
 import json
@@ -231,8 +231,12 @@ class Scraper():
         Returns:
             lxml tree object
         """
-
-        contents = urllib.urlopen(self.product_page_url).read()
+        
+        request = urllib2.Request(self.product_page_url)
+        # set user agent to avoid blocking
+        request.add_header('User-Agent',\
+         'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')
+        contents = urllib2.urlopen(request).read()
         self.tree_html = html.fromstring(contents)
 
     # Extract product info given a list of the type of info needed.
