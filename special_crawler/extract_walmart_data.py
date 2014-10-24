@@ -471,16 +471,19 @@ class WalmartScraper(Scraper):
         return len(self._image_urls())
 
     def _image_urls(self):
-        scripts = self.tree_html.xpath("//script//text()")
-        for script in scripts:
-            find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script)) 
-            if len(find)>0:
-                return find
-        
+        # TODO: bad. these are all thumbnails
+        images_carousel = self.tree_html.xpath("//div[@class='product-carousel-wrapper']//a/@href")
+        if images_carousel:
+            return images_carousel
+
         # It should only return this img when there's no img carousel    
-        pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
-        return pic
-    
+        main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
+        if main_image:
+            return main_image
+
+        # nothing found
+        return None
+        
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
     def _mobile_image_same(self):
         url = self.product_page_url
