@@ -26,20 +26,21 @@ app = Flask(__name__)
 
 # dictionary containing supported sites as keys
 # and their respective scrapers as values
-SUPPORTED_SITES = {"walmart" : WalmartScraper,
-                   "tesco" : TescoScraper,
-                   "amazon" : AmazonScraper,
-                   # "pgestore" : PGEStore,
-                   # "wayfair" : WayfairScraper,
-                   "bestbuy" : BestBuyScraper,
-                   # "kmart" : KMartScraper,
-                   # "target" : TargetScraper,
-                   # "ozon" : OzonScraper,
-                   # "vitadepot": VitadepotScraper,
-                   # "argos": ArgosScraper,
-                   "homedepot" : HomeDepotScraper,
-                   "statelinetack" : StateLineTackScraper
-                   }
+SUPPORTED_SITES = {
+                    "amazon" : AmazonScraper,
+                    "bestbuy" : BestBuyScraper,
+                    "homedepot" : HomeDepotScraper,
+                    "statelinetack" : StateLineTackScraper,
+                    "tesco" : TescoScraper,
+                    "walmart" : WalmartScraper
+                    # "argos": ArgosScraper,
+                    # "kmart" : KMartScraper,
+                    # "ozon" : OzonScraper,
+                    # "pgestore" : PGEStore,
+                    # "target" : TargetScraper,
+                    # "vitadepot": VitadepotScraper,
+                    # "wayfair" : WayfairScraper,
+                    }
 
 # add logger
 # using StreamHandler ensures that the log is sent to stderr to be picked up by uwsgi log
