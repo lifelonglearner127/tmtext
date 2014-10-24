@@ -205,7 +205,7 @@ class WalmartScraper(Scraper):
             string containing the tag's content, or None
         """
 
-        return self.tree_html.xpath("//meta[@name='Keywords']/@content")[0]
+        return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
 
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
@@ -240,7 +240,7 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
         
-        full_description = " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
+        full_description = " ".join(self.tree_html.xpath("//section[@class='product-about js-about-item']//text()")).strip()
         # TODO: return None if no description
         return full_description
 
@@ -283,7 +283,7 @@ class WalmartScraper(Scraper):
             string containing the product model, or None
         """
 
-        return self.tree_html.xpath("//table[@class='SpecTable']//td[contains(text(),'Model')]/following-sibling::*/text()")[0]
+        return self.tree_html.xpath("//div[@class='specs-table']/table//td[contains(text(),'Model')]/following-sibling::*/text()")[0].strip()
 
     # extract product model from its product product page tree (meta tag)
     # ! may throw exception if not found
@@ -332,7 +332,7 @@ class WalmartScraper(Scraper):
         """
 
         # join all text in spec table; separate rows by newlines and eliminate spaces between cells
-        rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
+        rows = self.tree_html.xpath("//div[@class='specs-table']/table//tr")
         # list of lists of cells (by rows)
         cells = map(lambda row: row.xpath(".//td//text()"), rows)
         # list of text in each row
@@ -355,7 +355,7 @@ class WalmartScraper(Scraper):
         """
 
         # select table rows with more than 2 cells (the others are just headers), count them
-        return len(filter(lambda row: len(row.xpath(".//td"))>1, self.tree_html.xpath("//table[@class='SpecTable']//tr")))
+        return len(filter(lambda row: len(row.xpath(".//td"))>1, self.tree_html.xpath("//div[@class='specs-table']/table//tr")))
 
     # extract page title from its product product page tree
     # ! may throw exception if not found
@@ -409,7 +409,7 @@ class WalmartScraper(Scraper):
         Returns:
             string containing upc
         """
-        return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]   
+        return self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]   
 
 
     # extract product seller information from its product product page tree
