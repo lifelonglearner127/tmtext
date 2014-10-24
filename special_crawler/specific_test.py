@@ -1,15 +1,36 @@
+"""
+UnitTesting Service
+
+* Make sure a crawler_service is running in order to test
+
+This accomplishes the following:
+1. look through current directory
+2. find all "extract_<SUPPORTED_SITE>_test.json
+    these json files are lists of dicts,
+    the dicts are expected outputs from a site
+3. Look into the dict to find what url it's from
+4. Run the scraper (running on localhost) on the urls
+5. compare the expected vs. actual results
+    strings are compared using a Levenshtein distance
+    formula, and a threshold is set so that very 
+    similar strings map as the same
+6. display differences
+
+"""
+
 import requests
 from flask import Flask, jsonify, abort, request
 import os
 import json
 import unittest
 
+#This class gets built out dynamically
 class SpecTest(unittest.TestCase):
     pass
 
-# levenshtein distance formula - used from http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Python
+# levenshtein distance formula - adapted from http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Python
 # this is able to tell how similar two strings are
-# note it doesn't compare the whole string if long, just the ends
+# note it doesn't compare the whole string if its long, just the ends
 def lev(self, seq1, seq2):
     seq1 = seq1.strip()
     seq2 = seq2.strip()
@@ -51,7 +72,7 @@ def create_test (expected, actual):
 
 def load_test(expected, actual, name):
     test_method = create_test(expected, actual)
-    test_method.__name__ = 'test_%s' % name
+    test_method.__name__ = 'test_%s' % str(name)
     setattr (SpecTest, test_method.__name__, test_method)
 
 SUPPORTED_SITES = [
@@ -69,6 +90,28 @@ SUPPORTED_SITES = [
                    "walmart" ,
                    "wayfair" ,
                    ]
+
+
+
+# traverse down 2 proposedly similar dictionaries and test if they're identical
+# expected dict, actual dict, and the current branch within the dictionary tree
+def compare_dict(expected, actual, branch):
+     # KEY DIFFERENCES
+    expected_extra_keys = [x for x in expected.keys() if x not in actual.keys()]
+    actual_extra_keys = [x for x in actual.keys() if x not in expected.keys()]
+
+    load_test([], expected_extra_keys, "extra_keys_in_expected_not_in_actual")
+    load_test([], actual_extra_keys, "extra_keys_in_actual_not_in_expected")
+
+
+    # VALUE DIFFERENCES - The following codes was assisted by : http://stackoverflow.com/questions/2798956/python-unittest-generate-multiple-tests-programmatically                    
+    union_keys = set(actual.keys()) & set(expected.keys())
+    for key in union_keys:
+        if(isinstance(expected[key], dict) and isinstance(actual[key], dict)):
+            compare_dict(expected[key], actual[key], "%s > %s"%(branch, key))
+        else:
+            load_test(expected[key], actual[key], "%s > %s"%(branch, key))
+
 
 
 
@@ -97,27 +140,9 @@ def build_unit_test():
                 test_url = "http://localhost/get_data?site=%s&url=%s"%(site, url)
                 actual = requests.get(test_url).text
                 actual = json.loads(actual)
-                compare_dict(expected, actual, "")
+                compare_dict(expected, actual, url)
 
                
-
-# traverse down 2 proposedly similar dictionaries and test if they're identical
-# expected dict, actual dict, and the current branch within the dictionary tree
-def compare_dict(expected, actual, branch):
-     # KEY DIFFERENCES
-    expected_extra_keys = [x for x in expected.keys() if x not in actual.keys()]
-    actual_extra_keys = [x for x in actual.keys() if x not in expected.keys()]
-
-    load_test([], expected_extra_keys, "extra_keys_in_expected_not_in_actual")
-    load_test([], actual_extra_keys, "extra_keys_in_actual_not_in_expected")
-
-
-    # VALUE DIFFERENCES - The following codes was assisted by : http://stackoverflow.com/questions/2798956/python-unittest-generate-multiple-tests-programmatically                    
-    union_keys = set(actual.keys()) & set(expected.keys())
-    for key in union_keys:
-        print key
-        print "returned_value_for_%s_is_same"%key
-        load_test(expected[key], actual[key], "returned_value_for_%s_is_same"%(key))
 
 
     
