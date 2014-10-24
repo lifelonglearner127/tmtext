@@ -59,7 +59,7 @@ class StateLineTackScraper(Scraper):
         return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
     
     def _product_title(self):
-        return None
+        return self.tree_html.xpath("//meta[@property='og:title']/@content")[0]
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -122,23 +122,22 @@ class StateLineTackScraper(Scraper):
         return None
     
     def _mobile_image_same(self):
-        pass
+        return None
 
     def _image_urls(self):
         #metaimg comes from meta tag
-        metaimg = self.tree_html.xpath('//meta[@property="og:image"]/@content')
+        #metaimg = self.tree_html.xpath('//meta[@property="og:image"]/@content')
         #imgurl comes from the carousel
         imageurl = self.tree_html.xpath('//img[@class="swatch"]/@src')
-        imageurl.extend(metaimg)
+        
+        if(len(imageurl) == 0):
+            imageurl = self.tree_html.xpath('//meta[@property="og:image"]/@content')
+
         return imageurl
     
     def _image_count(self):
-        #metaimg comes from meta tag
-        metaimg = self.tree_html.xpath('//meta[@property="og:image"]/@content')
-        #imgurl comes from the carousel
-        imageurl = self.tree_html.xpath('//img[@class="swatch"]/@src')
-        imageurl.append(metaimg)
-        return len(imageurl)
+        imgurls = self._image_urls()
+        return len(imgurls)
 
     def _video_urls(self):
         #"url":"http://ecx.images-amazon.com/images/I/B1d2rrt0oJS.mp4"
@@ -197,25 +196,30 @@ class StateLineTackScraper(Scraper):
             return self.bazaar
         else:
             url = 'http://tabcomstatelinetack.ugc.bazaarvoice.com/3421-en_us/%s/reviews.djs?format=embeddedhtml'
-            url = url % (self._extract_product_id())
+            url = url % (self._product_id())
 
             contents = urllib.urlopen(url).read()
-            tree = re.findall(r'var materials=(\{.*?\})', contents)[0]
-            tree = re.sub(r'\\(.)', r'\1', tree)
-            tree = re.findall(r'(\<.*\>)', tree)[0]
-            tree = html.fromstring(tree)
+            # tree = re.findall(r'var materials=(\{.*?\}.*\})', contents)[0]
+            # tree = re.sub(r'\\(.)', r'\1', tree)
+            # tree = re.findall(r'(\<.*\>)', tree)[0]
+            # tree = html.fromstring(contents)
 
-            return tree
+            return contents
 
     #extract average review, and total reviews  
     def _average_review(self):
         bazaar = self.get_bazaar()
-        avg = bazaar.xpath('//*[contains(@class, "BVRRRatingNumber")]//text()')
+        # avg = bazaar.xpath('//*[contains(@class, "BVRRRatingNumber")]//text()')
+        # avg = re.findall(r'<span class=\\"BVRRNumber BVRRRatingRangeNumber\\">(.*?)<\\/span>', bazaar)
+        avg = re.findall(r'<span class=\\"BVRRNumber BVRRRatingNumber\\">([0-9.]*?)<\\/span>', bazaar)
+        
         return avg[0]
 
     def _review_count(self):
         bazaar = self.get_bazaar()
-        num = bazaar.xpath('//*[contains(@class, "BVRRRatingRangeNumber")]//text()')
+        # num = bazaar.xpath('//*[contains(@class, "BVRRRatingRangeNumber")]//text()')
+        num = re.findall(r'\<span class\=\\"BVRRNumber\\"\>([0-9]*?)\<\\/span\> review', bazaar)
+
         return num[0]
 
     def _max_review(self):
@@ -268,9 +272,9 @@ class StateLineTackScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _category_name(self):
-        all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
+        all = self._categories()
         all = map(lambda t: self._clean_text(t), all)
-        return all[1]
+        return all[-1]
     
     def _categories(self):
         all = self.tree_html.xpath('//div[@id="ItemPageBreadCrumb"]//a/text()')
