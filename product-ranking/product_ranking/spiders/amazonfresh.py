@@ -4,7 +4,6 @@ from future_builtins import *
 import urlparse
 
 from scrapy.log import ERROR
-from scrapy.selector import Selector
 from scrapy.utils.project import get_project_settings
 
 from product_ranking.items import SiteProductItem
@@ -53,13 +52,11 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
         return prod
 
     def _search_page_error(self, response):
-        sel = Selector(response)
-
         try:
-            found1 = sel.xpath('//div[@class="warning"]/p/text()').extract()[0]
-            found2 = sel.xpath(
-                '//div[@class="warning"]/p/strong/text()'
-            ).extract()[0]
+            found1 = response.xpath(
+                '//div[@class="warning"]/p/text()').extract()[0]
+            found2 = response.xpath(
+                '//div[@class="warning"]/p/strong/text()').extract()[0]
             found = found1 + " " + found2
             if 'did not match any products' in found:
                 self.log(found, ERROR)
