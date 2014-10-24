@@ -155,6 +155,7 @@ class WalmartScraper(Scraper):
         else:
             return None
 
+    # deprecated
     # TODO: flatten returned object
     def reviews_for_url(self):
         """Extracts and returns reviews data for a walmart product
@@ -449,8 +450,9 @@ class WalmartScraper(Scraper):
             int containing total nr of reviews
         """
 
-        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
-        nr_reviews = int(reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")[0])
+        nr_reviews_str = self.tree_html.xpath("//div[@class='review-summary grid grid-padded']\
+            //p[@class='heading-e']/span[1]/text()")
+        nr_reviews = int(nr_reviews_str[0])
 
         return nr_reviews
 
@@ -462,8 +464,9 @@ class WalmartScraper(Scraper):
             float containing average value of reviews
         """
 
-        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
-        average_review = float(reviews_info_node.xpath("span[@itemprop='ratingValue']/text()")[0])
+        average_review_str = self.tree_html.xpath("//div[@class='review-summary grid grid-padded']\
+            //p[@class='heading-e']/span[2]/text()")
+        average_review = float(average_review_str[0])
 
         return average_review
 
