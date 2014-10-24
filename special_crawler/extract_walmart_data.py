@@ -5,7 +5,7 @@ import re
 import sys
 import json
 
-from lxml import html
+from lxml import html, etree
 import time
 import requests
 
@@ -226,8 +226,12 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
-        # TODO: return None if no description
+        short_description = "".join(map(lambda li_element: etree.tostring(li_element), \
+            self.tree_html.xpath("//div[@class='product-short-description module']//li")\
+            ))
+        # return None if no description/
+        if not short_description.strip():
+            return
         return short_description
 
     # extract product long description from its product product page tree
