@@ -30,7 +30,7 @@ class WalmartProductsSpider(BaseProductsSpider):
     # Options search_sort and cat_id are added when a search sort exclusively
     # for the criteria requested is wanted.
     SEARCH_URL = "http://www.walmart.com/search/?query={search_term}" \
-        "&sort={search_sort}&soft_sort=false&cat_id=0"
+        "&sort={search_sort}&soft_sort=false&cat_id=0&redirect=false"
 
     _SEARCH_SORT = {
         'best_match': 0,
