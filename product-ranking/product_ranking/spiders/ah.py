@@ -28,7 +28,8 @@ class AhProductsSpider(BaseProductsSpider):
     allowed_domains = ["ah.nl"]
     start_urls = []
 
-    SEARCH_URL = "http://www.ah.nl/appie/zoeken?rq={search_term}&sorting={sort}"
+    SEARCH_URL = ("http://www.ah.nl/appie/zoeken?rq={search_term}"
+                  "&sorting={sort}")
 
     SORT_BY = {
         'relevance': 'relevance',
@@ -49,7 +50,8 @@ class AhProductsSpider(BaseProductsSpider):
 
         for product in products:
             item = SiteProductItem()
-            cond_set(item, 'title', product.css('div.detail h2::text').extract())
+            cond_set(item, 'title',
+                     product.css('div.detail h2::text').extract())
             if item.get('title'):
                 item['title'] = item['title'].strip()
             cond_set(
