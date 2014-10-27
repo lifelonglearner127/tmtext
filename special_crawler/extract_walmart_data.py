@@ -46,6 +46,19 @@ class WalmartScraper(Scraper):
 
         # whether product has any webcollage media
         self.has_webcollage_media = False
+        # product videos (to be used for "video_urls", "video_count", and "webcollage")
+        self.video_urls = None
+        # whether videos were extracted
+        self.extracted_video_urls = False
+        # product pdfs (to be used for "pdf_urls", "pdf_count", and "webcollage")
+        self.pdf_urls = None
+        # whether videos were extracted
+        self.extracted_pdf_urls = False
+
+        # whether product has any pdfs
+        self.has_pdf = False
+        # whether product has any videos
+        self.has_video = False
 
     # checks input format
     def check_url_format(self):
@@ -92,11 +105,13 @@ class WalmartScraper(Scraper):
         #      return false cause no rich media at all?
         return True
 
-    def _video_urls(self):
+    def _extract_video_urls(self):
         """Extracts video URL for a given walmart product
-        Returns:
-            list containing the video's URLs
+        and puts them in instance variable.
         """
+
+        # set flag that videos where attemtped to be extracted
+        self.extracted_video_urls = True
 
         # if there is no video button, return no video
         if not self._has_video_button():
@@ -118,7 +133,8 @@ class WalmartScraper(Scraper):
             # if it ends in flv, it's a video, ok
             if video_url_candidate.endswith(".flv"):
                 self.has_webcollage_media = True
-                return [video_url_candidate]
+                self.has_video = True
+                self.video_urls = [video_url_candidate]
 
             # if it doesn't, it may be a url to make another request to, to get customer reviews video
             new_response = urllib.urlopen(video_url_candidate).read()
@@ -129,16 +145,41 @@ class WalmartScraper(Scraper):
 
                 video_url_req = "http://client.expotv.com/vurl/%s?output=mp4" % video_id
                 video_url = urllib.urlopen(video_url_req).url
+                self.has_video = True
+                self.video_urls = [video_url]
 
-                return [video_url]
+    def _video_urls(self):
+        """Extracts video URLs for a given walmart product
+        Returns:
+            list of strings containing the video urls
+            or None if none found
+        """
 
-        return None
+        if not self.extracted_video_urls:
+            self._extract_video_urls()
+
+        return self.video_urls
 
     def _pdf_urls(self):
-        """Extracts pdf URL for a given walmart product
+        """Extracts pdf URLs for a given walmart product
         Returns:
-            list containing the pdf's URLs
+            list of strings containing the pdf urls
+            or None if not found
         """
+
+        if not self.extracted_pdf_urls:
+            self._extract_pdf_urls()
+
+        return self.pdf_urls
+
+
+    def _extract_pdf_urls(self):
+        """Extracts pdf URL for a given walmart product
+        and puts them in instance variable.
+        """
+
+        # set flag indicating we've already attempted to extract pdf urls
+        self.extracted_pdf_urls = True
 
         request_url = self.BASE_URL_PDFREQ + self._extract_product_id()
 
@@ -149,11 +190,8 @@ class WalmartScraper(Scraper):
             # remove escapes
             pdf_url = re.sub('\\\\', "", pdf_url_candidates[0])
             self.has_webcollage_media = True
-
-            return [pdf_url]
-
-        else:
-            return None
+            self.has_pdf = True
+            self.pdf_urls = [pdf_url]
 
     # deprecated
     # TODO: flatten returned object
@@ -183,9 +221,51 @@ class WalmartScraper(Scraper):
             1 if there is webcollage media
             0 otherwise
         """
+
+        if not self.extracted_video_urls:
+            self._extract_video_urls()
+
+        if not self.extracted_pdf_urls:
+            self._extract_pdf_urls()
+
         if self.has_webcollage_media:
             return 1
         return 0
+
+    def _product_has_video(self):
+        """Whether product has video
+        To be replaced with function that actually counts
+        number of videos for this product
+        Returns:
+            1 if product has video
+            0 if product doesn't have video
+        """
+
+        if not self.extracted_video_urls:
+            self._extract_video_urls()
+
+        if self.has_video:
+            return 1
+        else:
+            return 0
+
+    def _product_has_pdf(self):
+        """Whether product has pdf
+        To be replaced with function that actually counts
+        number of pdfs for this product
+        Returns:
+            1 if product has pdf
+            0 if product doesn't have pdf
+        """
+        
+        if not self.extracted_pdf_urls:
+            self._extract_pdf_urls()
+
+        if self.has_pdf:
+            return 1
+        else:
+            return 0
+
 
     # extract product name from its product page tree
     # ! may throw exception if not found
@@ -578,6 +658,7 @@ class WalmartScraper(Scraper):
         "review_count": _nr_reviews_from_tree, \
         "average_review": _avg_review_from_tree, \
         # video needs both page source and separate requests
+        "video_count" : _product_has_video, \
         "video_urls" : _video_urls, \
         "webcollage" : _product_has_webcollage, \
         
@@ -600,6 +681,7 @@ class WalmartScraper(Scraper):
 
     DATA_TYPES_SPECIAL = { \
         "pdf_urls" : _pdf_urls, \
+        "pdf_count" : _product_has_pdf, \
         "mobile_image_same" : _mobile_image_same \
 
     #    "reviews" : reviews_for_url \
