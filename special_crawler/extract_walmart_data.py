@@ -315,6 +315,10 @@ class WalmartScraper(Scraper):
         if not short_description.strip():
             short_description = " ".join(self.tree_html.xpath("//div[@class='product-short-description module']//text()"))
 
+        # try to extract from old page structure - in case walmart is 
+        # returning an old type of page
+        if not short_description:
+            short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
 
         # return None if no description
         if not short_description.strip():
