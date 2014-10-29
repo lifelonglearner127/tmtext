@@ -391,6 +391,12 @@ class ServiceSimpleTest(unittest.TestCase):
 
         # check these data types were not null
         for data_type in data:
+            if "error" in response_flat:
+                print response_flat["error"], " for ", url
+                break
+            if not response_flat[data_type]:
+                print "None for ", url
+                break
             print "Testing ", data_type, " for ", url, "... ", response_flat[data_type]
             self.assertTrue(data_type in response_flat)
             self.assertIsNotNone(response_flat[data_type])
@@ -430,16 +436,20 @@ class ServiceSimpleTest(unittest.TestCase):
                 "categories", "category_name", 
                 ]
 
+        walmart_data = ["description"]
 
-        self._test_notnull("walmart", "http://www.walmart.com/ip/14245213", walmart_data)
-        self._test_notnull("walmart", "http://www.walmart.com/ip/12555259", walmart_data)
-        self._test_notnull("walmart", "http://www.walmart.com/ip/17324906", walmart_data)
-        self._test_notnull("walmart", "http://www.walmart.com/ip/26893665", walmart_data)
-        self._test_notnull("walmart", "http://www.walmart.com/ip/22985117", walmart_data)
-        self._test_notnull("walmart", "http://www.walmart.com/ip/20750534", walmart_data)
-        self._test_notnull("walmart", "http://www.walmart.com/ip/22309190", walmart_data)
-        self._test_notnull("walmart", "http://www.walmart.com/ip/16637056", walmart_data)
-        self._test_notnull("walmart", "http://www.walmart.com/ip/23497315", walmart_data)
+        with open("unilever.csv") as inputf:
+            for line in inputf:
+                self._test_notnull("walmart", line.strip(), walmart_data)
+        # self._test_notnull("walmart", "http://www.walmart.com/ip/14245213", walmart_data)
+        # self._test_notnull("walmart", "http://www.walmart.com/ip/12555259", walmart_data)
+        # self._test_notnull("walmart", "http://www.walmart.com/ip/17324906", walmart_data)
+        # self._test_notnull("walmart", "http://www.walmart.com/ip/26893665", walmart_data)
+        # self._test_notnull("walmart", "http://www.walmart.com/ip/22985117", walmart_data)
+        # self._test_notnull("walmart", "http://www.walmart.com/ip/20750534", walmart_data)
+        # self._test_notnull("walmart", "http://www.walmart.com/ip/22309190", walmart_data)
+        # self._test_notnull("walmart", "http://www.walmart.com/ip/16637056", walmart_data)
+        # self._test_notnull("walmart", "http://www.walmart.com/ip/23497315", walmart_data)
 
     # test all keys are in the response for simple (all-data) request for tesco
     # (using template function)
