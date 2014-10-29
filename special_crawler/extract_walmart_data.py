@@ -656,7 +656,20 @@ class WalmartScraper(Scraper):
         else:
             pinfo_dict = self.js_entry_function_body
 
-        marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
+        # TODO: what to do when there is no 'marketplaceOptions'?
+        #       e.g. http://www.walmart.com/ip/23149039
+        try:
+            marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
+        except Exception:
+            # if 'marketplaceOptions' key was not found,
+            # check if product is owned and has no other sellers
+            owned = self._owned_from_script()
+            other_sellers = pinfo_dict['buyingOptions']['otherSellersCount']
+            if owned and not other_sellers:
+                return 0
+            else:
+                # didn't find info on this
+                return None
 
         # if list is empty, then product is not available on marketplace
         if marketplace_seller_info:
