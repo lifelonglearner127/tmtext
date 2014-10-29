@@ -100,8 +100,11 @@ class AmazonScraper(Scraper):
 
     def _long_description(self):
         full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
-        return full_description
+        if full_description is not None and len(full_description)>5:
+            return full_description
 
+        full_description = " ".join(self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript//text()')).strip()
+        return full_description
 
 
 
@@ -130,7 +133,12 @@ class AmazonScraper(Scraper):
         if tree == None:
             tree = self.tree_html
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
-        return image_url
+        if image_url is not None and len(image_url)>0:
+            return image_url
+
+        image_url = tree.xpath('//img[@id="imgBlkFront"]')
+        if image_url is not None and len(image_url)>0:
+            return ["inline image"]
     
     def _mobile_image_url(self, tree = None):
         if tree == None:
@@ -139,7 +147,7 @@ class AmazonScraper(Scraper):
         return image_url
 
     def _image_count(self):
-        return len(self.tree_html.xpath("//span[@class='a-button-text']//img/@src"))
+        return len(self._image_urls())
     
     # return 1 if the "no image" image is found
     def _no_image(self):
