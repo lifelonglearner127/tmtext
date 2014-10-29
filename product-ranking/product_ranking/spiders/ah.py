@@ -75,12 +75,12 @@ class AhProductsSpider(BaseProductsSpider):
             _id = product.xpath('.//div[@class="detail"]/a[contains'
                                 '(@href, "/product/")]/@href').extract()
             if not _id:
-                self.log('Product details URL has not been found')
-                return
+                self.log('Product details URL has not been found', ERROR)
+                continue
             _id = _id[0].replace('/appie/producten/product/', '')
             if not '/' in _id:
-                self.log('Invalid details URL: ' + _id)
-                return
+                self.log('Invalid details URL: ' + _id, ERROR)
+                continue
             _id = _id.split('/', 1)[0].strip()
             prod_url = ('http://www.ah.nl/appie/data_/producten/product/'
                         '%s/johma-kipsate-salade?pageType=PRODUCTS' % _id)
@@ -101,8 +101,6 @@ class AhProductsSpider(BaseProductsSpider):
             url, _, new_offset = _get_next_page(url, page_offset)
         if new_offset > getattr(self, 'total_results', 0):
             return  # if we've scraped all the items already
-        with open('/tmp/l1.log', 'a') as fh:
-            fh.write(url + '\n')
         return url
 
     def _scrape_total_matches(self, response):
@@ -110,11 +108,14 @@ class AhProductsSpider(BaseProductsSpider):
         if totals:
             total = int(totals[0])
         else:
-            self.log(
-                "'total matches' string not found at %s" % response.url,
-                ERROR
-            )
-            return
+            if 'geen producten gevonden' in response.body.lower():
+                return 0  # nothing has been found
+            else:
+                self.log(
+                    "'total matches' string not found at %s" % response.url,
+                    ERROR
+                )
+                return
         self.total_results = total  # remember num of results
         return total
 
@@ -122,13 +123,16 @@ class AhProductsSpider(BaseProductsSpider):
         product = response.meta['product']
         cond_set(
             product, 'image_url',
-            response.xpath('//div[@class="information"]'
-                           '//img[contains(@src, "http")]/@src').extract()
+            response.xpath('//div[@class="product-detail__image"]'
+                           '/a/img/@src').extract()
         )
         cond_set(
             product, 'brand',
             response.xpath('.//meta[@itemprop="brand"]/@content').extract()
         )
         cond_set(product, 'description',
-                 response.css('div.information').extract())
+                 response.xpath(
+                     './/div[contains(@class, "product-detail__content")]'
+                     '/div/p//text()'
+                 ).extract())
         return product
