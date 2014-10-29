@@ -310,10 +310,17 @@ class WalmartScraper(Scraper):
         short_description = "".join(map(lambda li_element: etree.tostring(li_element), \
             self.tree_html.xpath("//div[@class='product-short-description module']//li")\
             ))
-        # return None if no description/
+
+        # try with just the text
         if not short_description.strip():
-            return
-        return short_description
+            short_description = " ".join(self.tree_html.xpath("//div[@class='product-short-description module']//text()"))
+
+
+        # return None if no description
+        if not short_description.strip():
+            return None
+
+        return short_description.strip()
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
