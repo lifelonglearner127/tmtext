@@ -27,9 +27,10 @@ class WalmartProductsSpider(BaseProductsSpider):
     name = 'walmart_products'
     allowed_domains = ["walmart.com"]
 
-    SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
-        "&_refineresult=true&ic=16_0&search_constraint=0" \
-        "&search_query={search_term}&sort={search_sort}"
+    # Options search_sort and cat_id are added when a search sort exclusively
+    # for the criteria requested is wanted.
+    SEARCH_URL = "http://www.walmart.com/search/?query={search_term}" \
+        "&sort={search_sort}&soft_sort=false&cat_id=0&redirect=false"
 
     _SEARCH_SORT = {
         'best_match': 0,
@@ -130,35 +131,45 @@ class WalmartProductsSpider(BaseProductsSpider):
             'is_in_store_only',
             data['buyingOptions']['storeOnlyItem'],
         )
-        if available:
-            try:
-                cond_set_value(
-                    product,
-                    'price',
-                    data['buyingOptions']['price']['displayPrice'],
-                )
-            except KeyError:
-                # Packs of products have different buyingOptions.
-                try:
-                    cond_set_value(
-                        product,
-                        'price',
-                        data['buyingOptions']['maxPrice']['displayPrice'],
-                    )
-                except KeyError:
-                    self.log(
-                        "Product with unknown buyingOptions structure: %s\n%s"
-                        % (response.url, pprint.pformat(data)),
-                        ERROR
-                    )
+
+        # This value is not available for packs and if there's no stock.
+        cond_set_value(
+            product,
+            'price',
+            data['buyingOptions'].get('price', {}).get('displayPrice'),
+        )
+
+        # This is for packs but will not be available is there's no stock.
+        cond_set_value(
+            product,
+            'price',
+            data['buyingOptions'].get('maxPrice', {}).get('displayPrice'),
+        )
+
+        if available and 'price' not in product:
+            self.log(
+                "Product with unknown buyingOptions structure: %s\n%s"
+                % (response.url, pprint.pformat(data)),
+                ERROR
+            )
 
         try:
             cond_set_value(
                 product, 'upc', data['analyticsData']['upc'], conv=int)
         except ValueError:
-            pass  # Not really a UPC.
+            # Not really a UPC.
+            self.log(
+                "Invalid UPC, %r, in %r."
+                % (data['analyticsData']['upc'], response.url),
+                WARNING
+            )
         cond_set_value(product, 'image_url', data['primaryImageUrl'])
-        cond_set_value(product, 'brand', data['analyticsData']['brand'])
+        cond_set_value(
+            product,
+            'brand',
+            data['analyticsData']['brand'],
+            conv=lambda s: None if not s else s,
+        )
 
     def _scrape_total_matches(self, response):
         if response.css('.no-results'):
