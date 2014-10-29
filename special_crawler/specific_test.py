@@ -2,6 +2,7 @@
 UnitTesting Service
 
 * Make sure a crawler_service is running in order to test
+* Make sure specific_test.py is run from the directory with the json files
 
 This accomplishes the following:
 1. look through current directory
@@ -119,8 +120,11 @@ def build_unit_test():
     for site in SUPPORTED_SITES:
         path = 'extract_%s_test.json'%site
         test_json = []
-        #print os.getcwd()
         if os.path.isfile(path):
+            print "##################################################"
+            print "################ SITE : ", site
+            print "##################################################\n"
+
             try:
                 f = open(path, 'r')
                 s = f.read()
@@ -131,7 +135,6 @@ def build_unit_test():
             except Exception as e:
                 print "Error loading json file: ", e
                 f.close()
-                break
             else:
                 f.close()
 
