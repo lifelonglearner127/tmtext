@@ -16,6 +16,7 @@ import requests
 from extract_data import Scraper
 
 class TescoScraper(Scraper):
+    
     '''
     NOTES : 
 
@@ -34,6 +35,7 @@ class TescoScraper(Scraper):
     
     #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
     bazaarvoice = None
+    pdfs = None
     
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -64,9 +66,6 @@ class TescoScraper(Scraper):
         return product_id
 
     def _site_id(self):
-        return None
-
-    def _date(self):
         return None
 
     def _status(self):
@@ -123,10 +122,15 @@ class TescoScraper(Scraper):
         return None
 
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//ul[@class='features']/li//text()")).strip()
-        return short_description
+        description = " ".join(self.tree_html.xpath("//ul[@class='features']/li//text()")).strip()
+        return description
 
     def _long_description(self):
+        #this first description was written for book description
+        description = self.tree_html.xpath('//p[@itemprop="description"]//text()')[0]
+        if len(description)>5:
+            return description
+
         if not self.bazaarvoice:
            self.load_bazaarvoice()
         content = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['Description']
@@ -164,18 +168,24 @@ class TescoScraper(Scraper):
 
     def _image_urls(self):
         head = 'http://tesco.scene7.com/is/image/'
-        image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
-        image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url)[0]
-        image_url = image_url.split(',')
-        image_url = [head+link for link in image_url]
+        image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")
+        if(len(image_url)>0):
+            image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url[1])
+            if(len(image_url)>0):
+                image_url = image_url[0].split(',')
+                image_url = [head+link for link in image_url]
+                if(len(image_url)>0):
+                    return image_url
+                    
+        #img id='scene7-placeholder'
+        image_url = self.tree_html.xpath('//img[@id="scene7-placeholder"]//@src')
         return image_url
 
+
+
     def _image_count(self):
-        head = 'http://tesco.scene7.com/is/image/'
-        image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
-        image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url)[0]
-        image_url = image_url.split(',')
-        return len(image_url)
+        image_urls = self._image_urls()
+        return len(image_urls)
 
     def _video_urls(self):
         video_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
@@ -189,13 +199,21 @@ class TescoScraper(Scraper):
             return len(urls)
         return None
 
+    def _pdf_helper(self):
+        if self.pdfs == None:
+            url = self.tree_html.xpath('//div[@id="inlineContentURL"]//text()')
+            if len(url)>0:
+                req = requests.get(url[0]).text
+                if len(req)>0:
+                    self.pdfs = re.findall(r"(http.*\.pdf)", req)
+        return self.pdfs
+
     def _pdf_urls(self):
-        string = etree.tostring(self.tree_html)
-        return re.findall(r"(http.*\.pdf)", string)
+        return self._pdf_helper()
 
     def _pdf_count(self):
-        urls = self._pdf_urls()
-        if urls:
+        urls = self._pdf_helper()
+        if urls is not None:
             return len(urls)
         return None
     
@@ -375,7 +393,6 @@ class TescoScraper(Scraper):
         "event" : _event, \
         "product_id" : _product_id, \
         "site_id" : _site_id, \
-        "date" : _date, \
         "status" : _status, \
 
         # CONTAINER : PRODUCT_INFO
@@ -393,7 +410,6 @@ class TescoScraper(Scraper):
         "image_count" : _image_count, \
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
-        "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
@@ -420,6 +436,8 @@ class TescoScraper(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         # CONTAINER : PAGE_ATTRIBUTES
+        "pdf_urls" : _pdf_urls, \
+        "pdf_count" : _pdf_count, \
         "mobile_image_same" : _mobile_image_same, \
         "no_image" : _no_image,\
 

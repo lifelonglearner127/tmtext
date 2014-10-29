@@ -19,10 +19,6 @@ class AmazonScraper(Scraper):
     INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id>"
     
     def check_url_format(self):
-        """Checks product URL format for this scraper instance is valid.
-        Returns:
-            True if valid, False otherwise.
-        """
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         return not not m
 
@@ -46,9 +42,6 @@ class AmazonScraper(Scraper):
     def _site_id(self):
         return None
 
-    def _date(self):
-        return None
-
     def _status(self):
         return 'success'
 
@@ -64,6 +57,7 @@ class AmazonScraper(Scraper):
 
     def _product_title(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
+        #return None
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -74,7 +68,6 @@ class AmazonScraper(Scraper):
 
     # Amazon's version of UPC
     def _asin(self):
-        #<input type="hidden" id="ASIN" name="ASIN" value="B00G2Y4WNY"
         return self.tree_html.xpath("//input[@name='ASIN']/@value")[0]
 
     def _features(self):
@@ -107,8 +100,11 @@ class AmazonScraper(Scraper):
 
     def _long_description(self):
         full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
-        return full_description
+        if full_description is not None and len(full_description)>5:
+            return full_description
 
+        full_description = " ".join(self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript//text()')).strip()
+        return full_description
 
 
 
@@ -126,18 +122,23 @@ class AmazonScraper(Scraper):
         for h in [mobile_headers, pc_headers]:
             contents = requests.get(url, headers=h).text
             tree = html.fromstring(contents)
-            image_url = self._image_url(tree)
+            image_url = self._image_urls(tree)
             print '\n\n\nImage URL:', image_url, '\n\n\n'
             img_list.extend(image_url)
         if len(img_list) == 2:
             return img_list[0] == img_list[1]
         return None
 
-    def _image_url(self, tree = None):
+    def _image_urls(self, tree = None):
         if tree == None:
             tree = self.tree_html
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
-        return image_url
+        if image_url is not None and len(image_url)>0:
+            return image_url
+
+        image_url = tree.xpath('//img[@id="imgBlkFront"]')
+        if image_url is not None and len(image_url)>0:
+            return ["inline image"]
     
     def _mobile_image_url(self, tree = None):
         if tree == None:
@@ -146,7 +147,7 @@ class AmazonScraper(Scraper):
         return image_url
 
     def _image_count(self):
-        return len(self.tree_html.xpath("//span[@class='a-button-text']//img/@src"))
+        return len(self._image_urls())
     
     # return 1 if the "no image" image is found
     def _no_image(self):
@@ -310,7 +311,6 @@ class AmazonScraper(Scraper):
         "event" : _event, \
         "product_id" : _product_id, \
         "site_id" : _site_id, \
-        "date" : _date, \
         "status" : _status, \
 
         # CONTAINER : PRODUCT_INFO
@@ -327,7 +327,7 @@ class AmazonScraper(Scraper):
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
-        "image_urls" : _image_url, \
+        "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
         "no_image" : _no_image, \

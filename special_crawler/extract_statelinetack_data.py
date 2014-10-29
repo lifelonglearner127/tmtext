@@ -12,6 +12,13 @@ from extract_data import Scraper
 
 
 class StateLineTackScraper(Scraper):
+    '''
+    NOTES : 
+
+    no_image examples:
+        http://www.statelinetack.com/item/horseware-pony-liner-200g/E012435/
+
+    '''
     
     ##########################################
     ############### PREP

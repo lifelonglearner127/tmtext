@@ -32,10 +32,10 @@ SUPPORTED_SITES = {
                     "homedepot" : HomeDepotScraper,
                     "statelinetack" : StateLineTackScraper,
                     "tesco" : TescoScraper,
-                    "walmart" : WalmartScraper
+                    "walmart" : WalmartScraper,
                     # "argos": ArgosScraper,
                     # "kmart" : KMartScraper,
-                    # "ozon" : OzonScraper,
+                    "ozon" : OzonScraper,
                     # "pgestore" : PGEStore,
                     # "target" : TargetScraper,
                     # "vitadepot": VitadepotScraper,
