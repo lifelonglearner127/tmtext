@@ -60,6 +60,11 @@ class WalmartScraper(Scraper):
         # whether product has any videos
         self.has_video = False
 
+        # javascript function found in a script tag
+        # containing various info on the product.
+        # Currently used for seller info (but useful for others as well)
+        self.js_entry_function_body = None
+
     # checks input format
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -595,7 +600,69 @@ class WalmartScraper(Scraper):
                 return 0
         else:
             return None # no images found to compare
+
+    # ! may throw exception if json object not decoded properly
+    def _extract_jsfunction_body(self):
+        """Extracts body of javascript function
+        found in a script tag on each product page,
+        that contains various usable information about product.
+        Stores function body as json decoded dictionary in instance variable.
+        Returns:
+            function body as dictionary (containing various info on product)
+        """
+
+        body_raw = "".join(self.tree_html.xpath("//section[@class='center']/script//text()"))
+        body_clean = re.sub("\n", " ", body_raw)
+        # extract json part of function body
+        body_jpart = re.findall("\{\"productName.*?\}\s*\);", body_clean)[0]
+        body_jpart = body_jpart[:-2].strip()
+
+        body_dict = json.loads(body_jpart)
+
+        self.js_entry_function_body = body_dict
+        return body_dict
     
+    # ! may throw exception if not found
+    def _owned_from_script(self):
+        """Extracts 'owned' (by walmart) info on product
+        from script tag content (using an object in a js function).
+        Returns:
+            1/0 (product owned/not owned)
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        seller = pinfo_dict['analyticsData']['sellerName']
+
+        # TODO: what if walmart is not primary seller?
+        if (seller == "Walmart.com"):
+            return 1
+        else:
+            return 0
+
+    # ! may throw exception if not found
+    def _marketplace_from_script(self):
+        """Extracts 'marketplace' sellers info on product
+        from script tag content (using an object in a js function).
+        Returns:
+            1/0 (product has marketplace sellers/has not)
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
+
+        # if list is empty, then product is not available on marketplace
+        if marketplace_seller_info:
+            return 1
+        else:
+            return 0
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -664,8 +731,8 @@ class WalmartScraper(Scraper):
         "title_seo" : _title_from_tree, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title" : _product_name_from_tree, \
-        "owned": _owned_meta_from_tree, \
-        "marketplace": _marketplace_meta_from_tree, \
+        "owned": _owned_from_script, \
+        "marketplace": _marketplace_from_script, \
         "review_count": _nr_reviews_from_tree, \
         "average_review": _avg_review_from_tree, \
         # video needs both page source and separate requests
