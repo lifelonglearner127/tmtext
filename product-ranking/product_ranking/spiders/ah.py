@@ -126,6 +126,12 @@ class AhProductsSpider(BaseProductsSpider):
             response.xpath('//div[@class="product-detail__image"]'
                            '/a/img/@src').extract()
         )
+        if not product.get('image_url'):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//div[@class="product-detail__image"]'
+                               '//img/@src').extract()
+            )
         cond_set(
             product, 'brand',
             response.xpath('.//meta[@itemprop="brand"]/@content').extract()
