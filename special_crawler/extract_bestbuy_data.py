@@ -157,10 +157,10 @@ class BestBuyScraper(Scraper):
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
-    def reviews_for_url(self):
+    def _average_review(self):
         return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
 
-    def nr_reviews(self):
+    def _review_count(self):
         return self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
  
     def _max_review(self):
@@ -222,7 +222,7 @@ class BestBuyScraper(Scraper):
         dept = " ".join(self.tree_html.xpath("//ul[@id='breadcrumb-list']/li[1]/a/text()")).strip()
         return dept
     
-   def _brand(self):
+    def _brand(self):
         return self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content')[0]
     
 
@@ -256,7 +256,7 @@ class BestBuyScraper(Scraper):
         "product_title" : _product_title, \
         "title_seo" : _title_seo, \
         "model" : _model, \
-        "upc" : _asin,\
+        "upc" : _upc,\
         "features" : _features, \
         "feature_count" : _feature_count, \
         "model_meta" : _model_meta, \
