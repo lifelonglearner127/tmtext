@@ -430,7 +430,7 @@ class WalmartScraper(Scraper):
             table_node = self.tree_html.xpath("//div[@class='specs-table']/table")[0]
         except Exception:
             table_node = None
-            
+
         if not table_node:
             # old page version:
             table_node = self.tree_html.xpath("//table[@class='SpecTable']")[0]
@@ -631,8 +631,32 @@ class WalmartScraper(Scraper):
     def _image_count(self):
         return len(self._image_urls())
 
-    def _image_urls(self):
-        # TODO: bad. these are all thumbnails
+    def _image_urls_old(self):
+        """Extracts image urls for this product.
+        Works on old version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
+
+        scripts = self.tree_html.xpath("//script//text()")
+        for script in scripts:
+            find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script)) 
+            if len(find)>0:
+                return find
+
+        # It should only return this img when there's no img carousel    
+        pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
+        if pic:
+            return pic
+        else:
+            return None
+
+    def _image_urls_new(self):
+        """Extracts image urls for this product.
+        Works on new version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
         images_carousel = self.tree_html.xpath("//div[@class='product-carousel-wrapper']//a/@href")
         if images_carousel:
             return images_carousel
@@ -644,6 +668,20 @@ class WalmartScraper(Scraper):
 
         # nothing found
         return None
+
+    def _image_urls(self):
+        """Extracts image urls for this product.
+        Works on both old and new version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
+
+        # assume new version
+        image_list = self._image_urls_new()
+        if image_list is None:
+            return self._image_urls_old()
+
+        return image_list
         
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
     def _mobile_image_same(self):
