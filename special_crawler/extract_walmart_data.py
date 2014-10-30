@@ -60,6 +60,11 @@ class WalmartScraper(Scraper):
         # whether product has any videos
         self.has_video = False
 
+        # javascript function found in a script tag
+        # containing various info on the product.
+        # Currently used for seller info (but useful for others as well)
+        self.js_entry_function_body = None
+
     # checks input format
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -326,19 +331,56 @@ class WalmartScraper(Scraper):
 
         return short_description.strip()
 
-    # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
-    #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
+    #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)        
+    def _long_description_from_tree_old(self):
+        """Extracts product long description.
+        Works on old design for walmart pages.
+        Returns:
+            string containing the text content of the product's description, or None
+        """
+
+        full_description = " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
+        # return None if empty
+        if not full_description:
+            return None
+        return full_description
+
+    # ! may throw exception if not found
     def _long_description_from_tree(self):
-        """Extracts product long description
+        """Extracts product long description.
+        Works on latest design for walmart pages.
+        Returns:
+            string containing the text content of the product's description, or None
+        """
+
+        full_description = " ".join(self.tree_html.xpath("//section[@class='product-about js-about-item']//text()")).strip()
+        # return None if empty
+        if not full_description:
+            return None
+        return full_description
+
+    def _long_description(self):
+        """Extracts product long description.
+        Wrapper function that uses extractor functions to try extracting assuming
+        either old walmart page design, or new. Works for both.
         Returns:
             string containing the text content of the product's description, or None
         """
         
-        full_description = " ".join(self.tree_html.xpath("//section[@class='product-about js-about-item']//text()")).strip()
-        # TODO: return None if no description
-        return full_description
+        # assume new page format
+        # extractor function may throw exception if extraction fails
+        try:
+            long_description_new = self._long_description_from_tree()
+        except Exception:
+            long_description_new = None
+
+        # try assuming old page structure now
+        if long_description_new is None:
+            return self._long_description_from_tree_old()
+
+        return long_description_new
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
@@ -595,7 +637,127 @@ class WalmartScraper(Scraper):
                 return 0
         else:
             return None # no images found to compare
+
+    # ! may throw exception if json object not decoded properly
+    def _extract_jsfunction_body(self):
+        """Extracts body of javascript function
+        found in a script tag on each product page,
+        that contains various usable information about product.
+        Stores function body as json decoded dictionary in instance variable.
+        Returns:
+            function body as dictionary (containing various info on product)
+        """
+
+        body_raw = "".join(self.tree_html.xpath("//section[@class='center']/script//text()"))
+        body_clean = re.sub("\n", " ", body_raw)
+        # extract json part of function body
+        body_jpart = re.findall("\{\"productName.*?\}\s*\);", body_clean)[0]
+        body_jpart = body_jpart[:-2].strip()
+
+        body_dict = json.loads(body_jpart)
+
+        self.js_entry_function_body = body_dict
+        return body_dict
     
+    # ! may throw exception if not found
+    def _owned_from_script(self):
+        """Extracts 'owned' (by walmart) info on product
+        from script tag content (using an object in a js function).
+        Returns:
+            1/0 (product owned/not owned)
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        seller = pinfo_dict['analyticsData']['sellerName']
+
+        # TODO: what if walmart is not primary seller?
+        if (seller == "Walmart.com"):
+            return 1
+        else:
+            return 0
+
+    # ! may throw exception if not found
+    def _marketplace_from_script(self):
+        """Extracts 'marketplace' sellers info on product
+        from script tag content (using an object in a js function).
+        Returns:
+            1/0 (product has marketplace sellers/has not)
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        # TODO: what to do when there is no 'marketplaceOptions'?
+        #       e.g. http://www.walmart.com/ip/23149039
+        try:
+            marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
+        except Exception:
+            # if 'marketplaceOptions' key was not found,
+            # check if product is owned and has no other sellers
+            owned = self._owned_from_script()
+            other_sellers = pinfo_dict['buyingOptions']['otherSellersCount']
+            if owned and not other_sellers:
+                return 0
+            else:
+                # didn't find info on this
+                return None
+
+        # if list is empty, then product is not available on marketplace
+        if marketplace_seller_info:
+            return 1
+        else:
+            return 0
+
+    def _owned(self):
+        """Extracts info on whether product is ownedby Walmart.com.
+        Uses functions that work on both old page design and new design.
+        Will choose whichever gives results.
+        Returns:
+            1/0 (owned/not owned)
+        """
+
+        # assume new design
+        # _owned_from_script() may throw exception if extraction fails
+        # (causing the service to return None for "owned")
+        try:
+            owned_new = self._owned_from_script()
+        except Exception:
+            owned_new = None
+
+        if owned_new is None:
+            # try to extract assuming old page structure
+            return self._owned_meta_from_tree()
+
+        return owned_new
+
+    def _marketplace(self):
+        """Extracts info on whether product is found on marketplace
+        Uses functions that work on both old page design and new design.
+        Will choose whichever gives results.
+        Returns:
+            1/0 (marketplace sellers / no marketplace sellers)
+        """
+
+        # assume new design
+        # _owned_from_script() may throw exception if extraction fails
+        # (causing the service to return None for "owned")
+        try:
+            marketplace_new = self._marketplace_from_script()
+        except Exception:
+            marketplace_new = None
+
+        if marketplace_new is None:
+            # try to extract assuming old page structure
+            return self._marketplace_meta_from_tree()
+
+        return marketplace_new
+
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -654,7 +816,7 @@ class WalmartScraper(Scraper):
         "brand" : _meta_brand_from_tree, \
         "description" : _short_description_from_tree, \
         # TODO: check if descriptions work right
-        "long_description" : _long_description_from_tree, \
+        "long_description" : _long_description, \
         "price" : _price_from_tree, \
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
@@ -664,8 +826,8 @@ class WalmartScraper(Scraper):
         "title_seo" : _title_from_tree, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title" : _product_name_from_tree, \
-        "owned": _owned_meta_from_tree, \
-        "marketplace": _marketplace_meta_from_tree, \
+        "owned": _owned, \
+        "marketplace": _marketplace, \
         "review_count": _nr_reviews_from_tree, \
         "average_review": _avg_review_from_tree, \
         # video needs both page source and separate requests

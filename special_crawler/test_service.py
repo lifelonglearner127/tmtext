@@ -394,9 +394,9 @@ class ServiceSimpleTest(unittest.TestCase):
             if "error" in response_flat:
                 print response_flat["error"], " for ", url
                 break
-            if not response_flat[data_type]:
-                print "None for ", url
-                break
+            # if not response_flat[data_type]:
+            #     print "None for ", url
+            #     break
             print "Testing ", data_type, " for ", url, "... ", response_flat[data_type]
             self.assertTrue(data_type in response_flat)
             self.assertIsNotNone(response_flat[data_type])
@@ -436,7 +436,7 @@ class ServiceSimpleTest(unittest.TestCase):
                 "categories", "category_name", 
                 ]
 
-        walmart_data = ["description"]
+        walmart_data = ["owned", "marketplace"]
 
         with open("unilever.csv") as inputf:
             for line in inputf:
