@@ -677,6 +677,51 @@ class WalmartScraper(Scraper):
         else:
             return 0
 
+    def _owned(self):
+        """Extracts info on whether product is ownedby Walmart.com.
+        Uses functions that work on both old page design and new design.
+        Will choose whichever gives results.
+        Returns:
+            1/0 (owned/not owned)
+        """
+
+        # assume new design
+        # _owned_from_script() may throw exception if extraction fails
+        # (causing the service to return None for "owned")
+        try:
+            owned_new = self._owned_from_script()
+        except Exception:
+            owned_new = None
+
+        if owned_new is None:
+            # try to extract assuming old page structure
+            return self._owned_meta_from_tree()
+
+        return owned_new
+
+    def _marketplace(self):
+        """Extracts info on whether product is found on marketplace
+        Uses functions that work on both old page design and new design.
+        Will choose whichever gives results.
+        Returns:
+            1/0 (marketplace sellers / no marketplace sellers)
+        """
+
+        # assume new design
+        # _owned_from_script() may throw exception if extraction fails
+        # (causing the service to return None for "owned")
+        try:
+            marketplace_new = self._marketplace_from_script()
+        except Exception:
+            marketplace_new = None
+
+        if marketplace_new is None:
+            # try to extract assuming old page structure
+            return self._marketplace_meta_from_tree()
+
+        return marketplace_new
+
+
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         """Cleans a piece of text of html entities
@@ -744,8 +789,8 @@ class WalmartScraper(Scraper):
         "title_seo" : _title_from_tree, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title" : _product_name_from_tree, \
-        "owned": _owned_from_script, \
-        "marketplace": _marketplace_from_script, \
+        "owned": _owned, \
+        "marketplace": _marketplace, \
         "review_count": _nr_reviews_from_tree, \
         "average_review": _avg_review_from_tree, \
         # video needs both page source and separate requests
