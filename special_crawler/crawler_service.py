@@ -36,7 +36,7 @@ SUPPORTED_SITES = {
                     # "argos": ArgosScraper,
                     # "kmart" : KMartScraper,
                     "ozon" : OzonScraper,
-                    # "pgestore" : PGEStore,
+                    "pgestore" : PGEStore,
                     # "target" : TargetScraper,
                     # "vitadepot": VitadepotScraper,
                     # "wayfair" : WayfairScraper,
