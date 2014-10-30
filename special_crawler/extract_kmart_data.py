@@ -12,7 +12,8 @@ from extract_data import Scraper
 
 class KMartScraper(Scraper):
     
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.wayfair.com/<product-name>.html"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.kmart.com/.*"
+    
     
     
     def check_url_format(self):
