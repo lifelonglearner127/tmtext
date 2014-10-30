@@ -16,7 +16,6 @@ import requests
 from extract_data import Scraper
 
 class TescoScraper(Scraper):
-    
     '''
     NOTES : 
 
@@ -258,9 +257,7 @@ class TescoScraper(Scraper):
             if len(s) > 1:
                 no_img_list = json.loads(s)    
             f.close()
-            
         first_hash = str(MurmurHash.hash(self.fetch_bytes(image_url[0])))
-
         if first_hash in no_img_list:
             return True
         else:
@@ -288,13 +285,11 @@ class TescoScraper(Scraper):
         if not self.bazaarvoice:
             self.load_bazaarvoice()
         average_review = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['AverageOverallRating']
-    
         return average_review
 
     def _review_count(self):
         if not self.bazaarvoice:
             self.load_bazaarvoice()
-
         nr_reviews = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['TotalReviewCount']
         return nr_reviews
         
