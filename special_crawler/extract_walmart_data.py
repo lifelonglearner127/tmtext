@@ -202,7 +202,8 @@ class WalmartScraper(Scraper):
     # TODO: flatten returned object
     def reviews_for_url(self):
         """Extracts and returns reviews data for a walmart product
-        using additional requests (other than page source)
+        using additional requests (other than page source).
+        Works for old walmart page structure.
         Returns:
             nested dictionary with 'reviews' as first-level key,
             pointing to another dictionary with following keys:
@@ -602,8 +603,9 @@ class WalmartScraper(Scraper):
 
     # extract nr of product reviews information from its product page
     # ! may throw exception if not found
-    def _nr_reviews_from_tree(self):
+    def _nr_reviews_new(self):
         """Extracts total nr of reviews info for walmart product using page source
+        Works for new walmart page structure
         Returns:
             int containing total nr of reviews
         """
@@ -616,8 +618,9 @@ class WalmartScraper(Scraper):
 
     # extract average product reviews information from its product page
     # ! may throw exception if not found
-    def _avg_review_from_tree(self):
+    def _avg_review_new(self):
         """Extracts average review info for walmart product using page source
+        Works for new walmart page structure
         Returns:
             float containing average value of reviews
         """
@@ -627,6 +630,70 @@ class WalmartScraper(Scraper):
         average_review = float(average_review_str[0])
 
         return average_review
+
+    # ! may throw exception if not found
+    def _avg_review_old(self):
+        """Extracts average review info for walmart product using page source
+        Works for old walmart page structure
+        Returns:
+            float containing average value of reviews
+        """
+        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
+        average_review = float(reviews_info_node.xpath("span[@itemprop='ratingValue']/text()")[0])
+        return average_review
+
+    # ! may throw exception if not found
+    def _nr_reviews_old(self):
+        """Extracts total nr of reviews info for walmart product using page source
+        Works for old walmart page structure
+        Returns:
+            int containing total nr of reviews
+        """
+        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
+        nr_reviews = int(reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")[0])
+        return nr_reviews
+
+    def _avg_review(self):
+        """Extracts average review value for walmart product
+        Works for both new and old walmart page structure
+        (uses the extractor function relevant for this page)
+        Returns:
+            float containing average value of reviews
+        """
+
+        # assume new page structure
+        # extractor function may throw exception if extraction failed
+        try:
+            average_review = self._avg_review_new()
+        except Exception:
+            average_review = None
+
+        # extractor for new page structure failed. try with old
+        if average_review is None:
+            return self._avg_review_old()
+
+        return average_review
+
+    def _nr_reviews(self):
+        """Extracts total nr of reviews info for walmart product using page source
+        Works for both new and old walmart page structure
+        (uses the extractor function relevant for this page)
+        Returns:
+            int containing total nr of reviews
+        """
+
+        # assume new page structure
+        # extractor function may throw exception if extraction failed
+        try:
+            nr_reviews = self._nr_reviews_new()
+        except Exception:
+            nr_reviews = None
+
+        # extractor for new page structure failed. try with old
+        if nr_reviews is None:
+            return self._nr_reviews_old()
+
+        return nr_reviews
 
     def _image_count(self):
         return len(self._image_urls())
@@ -891,8 +958,8 @@ class WalmartScraper(Scraper):
         "product_title" : _product_name_from_tree, \
         "owned": _owned, \
         "marketplace": _marketplace, \
-        "review_count": _nr_reviews_from_tree, \
-        "average_review": _avg_review_from_tree, \
+        "review_count": _nr_reviews, \
+        "average_review": _avg_review, \
         # video needs both page source and separate requests
         "video_count" : _product_has_video, \
         "video_urls" : _video_urls, \
