@@ -356,7 +356,7 @@ class TescoScraper(Scraper):
 
 
     ##########################################
-    ############### CONTAINER : SELLERS
+    ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
         all = self.tree_html.xpath("//div[@id='breadcrumb']//li//span/text()")
