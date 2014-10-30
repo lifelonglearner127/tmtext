@@ -286,12 +286,14 @@ class WalmartScraper(Scraper):
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_keywords_from_tree(self):
-        """Extracts meta 'kewyords' tag for a walmart product
+        """Extracts meta 'kewyords' tag for a walmart product.
+        Works for both old or new version of walmart pages
         Returns:
             string containing the tag's content, or None
         """
 
-        return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
+        # supports both new and old version of walmart pages
+        return self.tree_html.xpath("//meta[@name='keywords']/@content | //meta[@name='Keywords']/@content")[0]
 
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
