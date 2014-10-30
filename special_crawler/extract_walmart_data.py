@@ -418,12 +418,24 @@ class WalmartScraper(Scraper):
     # extract product model from its product product page tree
     # ! may throw exception if not found
     def _model_from_tree(self):
-        """Extracts product model
+        """Extracts product model.
+        Works for both old and new walmart page structure.
         Returns:
             string containing the product model, or None
         """
 
-        return self.tree_html.xpath("//div[@class='specs-table']/table//td[contains(text(),'Model')]/following-sibling::*/text()")[0].strip()
+        # extract features table for new page version:
+        # might cause exception if table node not found (and premature exit of function)
+        try:
+            table_node = self.tree_html.xpath("//div[@class='specs-table']/table")[0]
+        except Exception:
+            table_node = None
+            
+        if not table_node:
+            # old page version:
+            table_node = self.tree_html.xpath("//table[@class='SpecTable']")[0]
+
+        return table_node.xpath(".//td[contains(text(),'Model')]/following-sibling::*/text()")[0].strip()
 
     # extract product model from its product product page tree (meta tag)
     # ! may throw exception if not found
@@ -472,7 +484,11 @@ class WalmartScraper(Scraper):
         """
 
         # join all text in spec table; separate rows by newlines and eliminate spaces between cells
+        # new page version:
         rows = self.tree_html.xpath("//div[@class='specs-table']/table//tr")
+        if not rows:
+            # old page version:
+            rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
         # list of lists of cells (by rows)
         cells = map(lambda row: row.xpath(".//td//text()"), rows)
         # list of text in each row
@@ -489,13 +505,20 @@ class WalmartScraper(Scraper):
     # extract number of features from tree
     # ! may throw exception if not found
     def _nr_features_from_tree(self):
-        """Extracts number of product features
+        """Extracts number of product features.
+        Works for both old and new walmart page structure
         Returns:
             int containing number of features
         """
 
         # select table rows with more than 2 cells (the others are just headers), count them
-        return len(filter(lambda row: len(row.xpath(".//td"))>1, self.tree_html.xpath("//div[@class='specs-table']/table//tr")))
+        # new page version:
+        rows = self.tree_html.xpath("//div[@class='specs-table']/table//tr")
+        if not rows:
+            # old page version:
+            rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
+
+        return len(filter(lambda row: len(row.xpath(".//td"))>1, rows))
 
     # extract page title from its product product page tree
     # ! may throw exception if not found
