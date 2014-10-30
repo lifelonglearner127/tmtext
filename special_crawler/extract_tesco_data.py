@@ -360,8 +360,10 @@ class TescoScraper(Scraper):
     ##########################################
     def _categories(self):
         all = self.tree_html.xpath("//div[@id='breadcrumb']//li//span/text()")
-        #the last value is the product itself
-        return all[:-1]
+        out = all[1:-1]#the last value is the product itself, and the first value is "home"
+        out = [self._clean_text(r) for r in out]
+        out = out[::-1]
+        return out
 
     def _category_name(self):
         dept = " ".join(self.tree_html.xpath("//div[@id='breadcrumb']//li[2]//text()")).strip()
