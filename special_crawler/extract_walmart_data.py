@@ -331,19 +331,56 @@ class WalmartScraper(Scraper):
 
         return short_description.strip()
 
-    # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
-    #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
+    #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)        
+    def _long_description_from_tree_old(self):
+        """Extracts product long description.
+        Works on old design for walmart pages.
+        Returns:
+            string containing the text content of the product's description, or None
+        """
+
+        full_description = " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
+        # return None if empty
+        if not full_description:
+            return None
+        return full_description
+
+    # ! may throw exception if not found
     def _long_description_from_tree(self):
-        """Extracts product long description
+        """Extracts product long description.
+        Works on latest design for walmart pages.
+        Returns:
+            string containing the text content of the product's description, or None
+        """
+
+        full_description = " ".join(self.tree_html.xpath("//section[@class='product-about js-about-item']//text()")).strip()
+        # return None if empty
+        if not full_description:
+            return None
+        return full_description
+
+    def _long_description(self):
+        """Extracts product long description.
+        Wrapper function that uses extractor functions to try extracting assuming
+        either old walmart page design, or new. Works for both.
         Returns:
             string containing the text content of the product's description, or None
         """
         
-        full_description = " ".join(self.tree_html.xpath("//section[@class='product-about js-about-item']//text()")).strip()
-        # TODO: return None if no description
-        return full_description
+        # assume new page format
+        # extractor function may throw exception if extraction fails
+        try:
+            long_description_new = self._long_description_from_tree()
+        except Exception:
+            long_description_new = None
+
+        # try assuming old page structure now
+        if long_description_new is None:
+            return self._long_description_from_tree_old()
+
+        return long_description_new
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
@@ -779,7 +816,7 @@ class WalmartScraper(Scraper):
         "brand" : _meta_brand_from_tree, \
         "description" : _short_description_from_tree, \
         # TODO: check if descriptions work right
-        "long_description" : _long_description_from_tree, \
+        "long_description" : _long_description, \
         "price" : _price_from_tree, \
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
