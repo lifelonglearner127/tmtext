@@ -30,7 +30,13 @@ class PGEStore(Scraper):
         """
 
         m = re.match(r"^http://www.pgestore.com/[0-9a-zA-Z,/\-\.\_]+\.html$", self.product_page_url)
-        return not not m
+        n = re.match(r"^http://www.pgshop.com/.*$", self.product_page_url)
+
+        return (not not m) or (not not n)
+
+
+
+
 
     ##########################################
     ############### CONTAINER : NONE
@@ -42,7 +48,7 @@ class PGEStore(Scraper):
         return None
 
     def _product_id(self):
-        product_id = self.tree_html.xpath('//div[contains(@class, "productid")]//text()')[0]
+        product_id = self.tree_html.xpath('//*[contains(@itemprop, "productID")]//text()')[0]
         product_id = re.findall("([0-9]+)", product_id)[0]
         return product_id
 
@@ -54,11 +60,13 @@ class PGEStore(Scraper):
 
 
 
+
+
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//h1[@class='productname']//text()")[0]
+        return self._clean_text(self.tree_html.xpath("//h1[@class='product-name']//text()")[0])
 
     def _product_title(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -73,21 +81,23 @@ class PGEStore(Scraper):
         return self.tree_html.xpath('//div[@id="prodSku"]//text()')[0]
 
     def _features(self):
-        return None
+        return self.tree_html.xpath('//div[contains(@class, "main-column vp")]/ul/li//text()')
 
     def _feature_count(self):
-        return None
+        return len(self._features())
 
     def _model_meta(self):
         return None
 
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//div[@class='tabContent']//text()")).strip()
-        return short_description
+        #short_description = " ".join(self.tree_html.xpath("//div[@class='tabContent']//text()")).strip()
+        #return short_description
+        return None
 
     def _long_description(self):
-        full_description = " ".join(self.tree_html.xpath("//div[@class='tabContent']//text()")).strip()
+        full_description = " ".join(self.tree_html.xpath('//div[contains(@class, "main-column vp")]/text()')).strip()
         return full_description
+
 
 
 
@@ -98,36 +108,39 @@ class PGEStore(Scraper):
         pass
 
     def _image_urls(self):
-        image_url = self.tree_html.xpath("//img[contains(@class, 'productaltimage')]/@fullsizesrc")
+        image_url = self.tree_html.xpath('//div[@class="thumb"]/a/@href')
         return image_url
 
     def _image_count(self):
-        image_url = self.tree_html.xpath("//img[contains(@class, 'productaltimage')]/@fullsizesrc")
-        return len(image_url)
+        return len(self._image_urls())
 
     def _video_urls(self):
-        base = 'http://www.pgestore.com'
-        video_url = self.tree_html.xpath('//img[contains(@class, "productaltvideo")]/following-sibling::script//text()')[0]
-        video_url = re.findall('showProductVideo\(\"(.+?)\"\)', video_url)
-        return base+video_url[0]
+        # base = 'http://www.pgestore.com'
+        # video_url = self.tree_html.xpath('//img[contains(@class, "productaltvideo")]/following-sibling::script//text()')[0]
+        # video_url = re.findall('showProductVideo\(\"(.+?)\"\)', video_url)
+        # return base+video_url[0]
+        return None
 
     def _video_count(self):
-        urls = self._video_urls()
-        if urls:
-            return len(urls)
+        # urls = self._video_urls()
+        # if urls:
+        #     return len(urls)
+        # return None
         return None
 
     def _pdf_helper(self):
-        if self.pdfs is not None:
-            url = "http://content.webcollage.net/pgstore/smart-button?ird=true&channel-product-id=%s"%(self._extract_product_id())
-            contents = urllib.urlopen(url).read()
-            pdf = re.findall(r'wcobj=\\\"(http:\\/\\/.+?\.pdf)\\\"', str(contents))
-            if pdf:
-                self.pdfs = re.sub(r'\\', '', pdf[0])
+        # if self.pdfs is not None:
+        #     url = "http://content.webcollage.net/pgstore/smart-button?ird=true&channel-product-id=%s"%(self._extract_product_id())
+        #     contents = urllib.urlopen(url).read()
+        #     pdf = re.findall(r'wcobj=\\\"(http:\\/\\/.+?\.pdf)\\\"', str(contents))
+        #     if pdf:
+        #         self.pdfs = re.sub(r'\\', '', pdf[0])
+        return None
 
     def _pdf_urls(self):
-        self._pdf_helper()
-        return self.pdfs
+        # self._pdf_helper()
+        # return self.pdfs
+        return None
         
     def _pdf_count(self):
         urls = self._pdf_urls()
@@ -152,29 +165,36 @@ class PGEStore(Scraper):
 
 
 
+
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
     #populate the reviews_tree variable for use by other functions
-    def _load_reviews(self):
-        try:
-            if not self.reviews_tree:
-                url = "http://reviews.pgestore.com/3300/PG_00%s/reviews.htm?format=embedded"
-                url = url%(self._extract_product_id())
-                contents = urllib.urlopen(url).read()
-                self.reviews_tree = html.fromstring(contents)
-        except:
-            pass
+    # def _load_reviews(self):
+    #     try:
+    #         if not self.reviews_tree:
+    #             url = "http://reviews.pgestore.com/3300/PG_00%s/reviews.htm?format=embedded"
+    #             url = url%(self._extract_product_id())
+    #             contents = urllib.urlopen(url).read()
+    #             self.reviews_tree = html.fromstring(contents)
+    #     except:
+    #         pass
 
     def _average_review(self):
-        self._load_reviews()
-        rating = self.reviews_tree.xpath('//span[@class="BVRRNumber BVRRRatingNumber"]/text()')[0]
+        # self._load_reviews()
+        # rating = self.reviews_tree.xpath('//span[@class="BVRRNumber BVRRRatingNumber"]/text()')[0]
+        # return rating
+        rating = self.tree_html.xpath('div[@id="ratingsreviews"]/span/@data-rating')
         return rating
 
     def _review_count(self):
-        self._load_reviews()
-        nr = self.reviews_tree.xpath('//span[@class="BVRRCount BVRRNonZeroCount"]/span[@class="BVRRNumber"]/text()')[0]
-        return nr
+        # self._load_reviews()
+        # nr = self.reviews_tree.xpath('//span[@class="BVRRCount BVRRNonZeroCount"]/span[@class="BVRRNumber"]/text()')[0]
+        # return nr
+        count = self.tree_html.xpath('div[@id="ratingsreviews"][1]/span[2]//text()')
+        count = " ".join(count)
+        count = re.sub('[^0-9]', '', count)
+        return count
 
     def _max_review(self):
         return None
@@ -237,6 +257,7 @@ class PGEStore(Scraper):
         return self.tree_html.xpath('//span[contains(@class, "brand")]//text()')[0]
 
 
+
     ##########################################
     ################ HELPER FUNCTIONS
     ##########################################
@@ -245,10 +266,10 @@ class PGEStore(Scraper):
         return re.sub("&nbsp;", " ", text).strip()
 
 
+
     ##########################################
     ################ RETURN TYPES
     ##########################################
-
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
     
@@ -282,7 +303,6 @@ class PGEStore(Scraper):
         "htags" : _htags, \
         "keywords" : _keywords, \
 
-
         # CONTAINER : SELLERS
         "price" : _price, \
         "in_stores_only" : _in_stores_only, \
@@ -297,8 +317,6 @@ class PGEStore(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-
-
 
         "loaded_in_seconds" : None, \
         }
