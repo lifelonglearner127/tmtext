@@ -15,6 +15,11 @@ import requests
 from extract_data import Scraper
 
 class PGEStore(Scraper):
+    '''
+        PGEStore has a lot of code commented out, they changed the format of the site and the commented code is saved as a backup
+    '''
+
+
     ##########################################
     ############### PREP
     ##########################################
@@ -184,14 +189,14 @@ class PGEStore(Scraper):
         # self._load_reviews()
         # rating = self.reviews_tree.xpath('//span[@class="BVRRNumber BVRRRatingNumber"]/text()')[0]
         # return rating
-        rating = self.tree_html.xpath('div[@id="ratingsreviews"]/span/@data-rating')
+        rating = self.tree_html.xpath('//div[@id="ratingsreviews"][1]/span/@data-rating')[0]
         return rating
 
     def _review_count(self):
         # self._load_reviews()
         # nr = self.reviews_tree.xpath('//span[@class="BVRRCount BVRRNonZeroCount"]/span[@class="BVRRNumber"]/text()')[0]
         # return nr
-        count = self.tree_html.xpath('div[@id="ratingsreviews"][1]/span[2]//text()')
+        count = self.tree_html.xpath('//div[@id="ratingsreviews"][1]/span[2]//text()')
         count = " ".join(count)
         count = re.sub('[^0-9]', '', count)
         return count
@@ -209,9 +214,10 @@ class PGEStore(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        meta_price = self.tree_html.xpath("//meta[@name='pgeprice']/@content")
-        if meta_price:
-            return meta_price[0].strip()
+        #price = self.tree_html.xpath("//meta[@name='pgeprice']/@content")
+        price = (self.tree_html.xpath('//span[@class="price-nosale"]//text()'))
+        if price:
+            return price[0].strip()
         else:
             return None
 
@@ -246,16 +252,15 @@ class PGEStore(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _category_name(self):
-        dept = " ".join(self.tree_html.xpath("//div[@id='breadcrumb']//a[2]//text()")).strip()
-        return dept
+        return self._categories()[0]
     
     def _categories(self):
-        all = self.tree_html.xpath("//div[@id='breadcrumb']//a//text()")
-        return all
+        all = self.tree_html.xpath("//div[contains(@class, 'breadcrumb-wrap')]/ol/li/a/text()")
+        return all[1:]#first one is "Home"
 
     def _brand(self):
-        return self.tree_html.xpath('//span[contains(@class, "brand")]//text()')[0]
-
+        #return self.tree_html.xpath('//span[contains(@class, "brand")]//text()')[0]
+        return None
 
 
     ##########################################
