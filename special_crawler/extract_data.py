@@ -254,6 +254,12 @@ class Scraper():
             and the scraped data as values
         """
 
+        # _pre_scrape is especially useful for grabbing a related page that multiple fields need access to
+        try:
+            self._pre_scrape()
+        except Error as e:
+            pass # not all websites need a pre_scrape
+
         results_dict = {}
 
         for info in info_type_list:

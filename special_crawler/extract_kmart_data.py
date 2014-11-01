@@ -6,6 +6,8 @@ import sys
 import json
 import os.path
 from lxml import html
+from lxml import etree
+
 import time
 import requests
 from extract_data import Scraper
@@ -15,6 +17,9 @@ class KMartScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
+    table = None
+    reviews = None
+    price = None
     
     INVALID_URL_MESSAGE = "Expected URL format is http://www.kmart.com/.*"
     
@@ -28,6 +33,37 @@ class KMartScraper(Scraper):
         return not not m
 
 
+    def _pre_scrape(self):
+        try:
+            table = "http://www.kmart.com/content/pdp/config/products/v1/products/%s?site=kmart"
+            table = table%self._product_id()
+            contents = requests.get(table).text
+            table = json.loads(str(contents))
+            self.table = table
+        except Exception as e:
+            print ("PreScrape Error - Table : ", e)
+
+        try:
+            reviews = "http://www.kmart.com/content/pdp/ratings/single/search/Kmart/%s&targetType=product&limit=10&offset=0"
+            reviews = reviews%self._product_id()
+            contents = requests.get(reviews).text
+            reviews = json.loads(str(contents))
+            self.reviews = reviews
+        except Exception as e:
+            print ("PreScrape Error - Reviews: ", e)
+
+        try:
+            price = "http://www.kmart.com/content/pdp/products/pricing/v1/get/price/display/json?pid=%s&pidType=0&priceMatch=Y&memberStatus=G&storeId=10151"
+            price = price%self._product_id()[:-1]#There's a 'P' on the end that needs to come off
+            contents = requests.get(price).text
+            price = json.loads(str(contents))
+            self.price = price
+        except Exception as e:
+            print ("PreScrape Error - Price: ", e)
+
+
+
+
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -38,7 +74,9 @@ class KMartScraper(Scraper):
         return None
 
     def _product_id(self):
-        prod_id = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-product-id')[0]
+        #http://www.kmart.com/radar-rpx-800-p185-70r13-86t-bw-all/p-072W005512515001P?prdNo=2&blockNo=2&blockType=G2
+        prod_id = re.findall(r'/\S-(\w+)\??\/?.*$', self.product_page_url)
+        prod_id = str(prod_id[0])
         return prod_id
 
     def _site_id(self):
@@ -57,30 +95,26 @@ class KMartScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
+        return self.table['data']['product']['name']
 
     def _product_title(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.table['data']['seo']['title']
 
     def _title_seo(self):
-        return None
+        return self.table['data']['seo']['title']
 
     def _model(self):
-        return self.tree_html.xpath('//span[@id="model-value"]/text()')[0]
+        return self.table['data']['mfr']['modelNo']
 
     def _upc(self):
-        return self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-sku-id')[0]
+        return self.table['data']['identity']['ssin']
 
     def _features(self):
-        rows = self.tree_html.xpath("//div[@id='features']")
-        cells = map(lambda row: row.xpath(".//div[@class='feature']//text()"), rows)
-        rows_text = map(\
-            lambda row: ":".join(\
-                map(lambda cell: cell.strip(), row)\
-                ), \
-            cells)
-        all_features_text = "\n".join(rows_text)
-        return all_features_text
+        xml = self.table['data']['product']['desc'][0]['val']
+        xml = "<body>" + xml + "</body>"
+        xml = etree.XML(xml)
+        features = xml.xpath('.//ul/li/text()')
+        return features
 
     def _feature_count(self):
         return len(self._features())
@@ -89,19 +123,12 @@ class KMartScraper(Scraper):
         return None
 
     def _description(self):
-        desc = " ".join(self.tree_html.xpath('//div[@id="desc1"]//text()[normalize-space()!=""]'))
-        if len(desc)>0:
-            return desc
         return None
 
     def _long_description(self):
-        desc = " ".join(self.tree_html.xpath('//div[@id="desc"]//text()[normalize-space()!=""]'))
-        if len(desc)>0:
-            return desc
-        desc = " ".join(self.tree_html.xpath('//section[@id="description"]//text()[normalize-space()!=""]'))
-        if len(desc):
-            return desc
-        return None
+        desc = self.table['data']['product']['desc'][1]['val']
+        return desc
+
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -111,24 +138,15 @@ class KMartScraper(Scraper):
         pass
     
     def _image_urls(self):
-        image_url = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-gallery-images')[0]
-        json_list = json.loads(image_url)
-        image_url = []
-        for i in json_list:
-            image_url.append(i['url'])
-        return image_url
+        imgs = self.table['data']['product']['assets']['imgs'][0]['vals']
+        imgs = [x['src'] for x in imgs]
+        return imgs
     
     def _image_count(self):
-        image_url = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-gallery-images')[0]
-        json_list = json.loads(image_url)
-        return len(json_list)
+        return len(self._image_urls())
 
     def _video_urls(self):
-        video_url = "\n".join(self.tree_html.xpath("//script//text()"))
-        video_url = re.sub(r"\\", "", video_url)
-        #print '\n\n\n\n\n', video_url, '\n\n'
-        video_url = re.findall("url.+(http.+flv)\"", video_url)
-        return video_url
+        return None
 
     def _video_count(self):
         urls = self._video_urls()
@@ -137,10 +155,13 @@ class KMartScraper(Scraper):
         return None
 
     def _pdf_urls(self):
-        return None
+        pdfs = self.table['data']['product']['assets']['attachments']
+        pdfs = [x['link']['attrs']['href'] for x in pdfs]
+        return pdfs
 
     def _pdf_count(self):
-        return None
+        urls = self._pdf_urls()
+        return len(urls)
 
     def _webcollage(self):
         return None
@@ -165,28 +186,37 @@ class KMartScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
     def _average_review(self):
-        return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
+        return self.reviews['data']['overall_rating']
 
     def _review_count(self):
-        return self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
+        return self.reviews['data']['review_count']
  
     def _max_review(self):
-        return None
+        buckets = self.reviews['data']['overall_rating_breakdown']
+        if self._review_count() == 0:
+            return None
+        max = 0
+        for x in buckets:
+            if(float(x['count'])>0 and float(x['name'])>max):
+                max = float(x['name'])
+        return max
 
     def _min_review(self):
-        return None
-
+        if self._review_count() == 0:
+            return None
+        buckets = self.reviews['data']['overall_rating_breakdown']
+        min = 5
+        for x in buckets:
+            if(float(x['count'])>0 and float(x['name'])<min):
+                min = float(x['name'])
+        return min
 
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        meta_price = self.tree_html.xpath('//meta[@itemprop="price"]//@content')
-        if meta_price:
-            return meta_price[0].strip()
-        else:
-            return None
+        return self.price['priceDisplay']['response'][0]['finalPrice']['display']
 
     def _in_stores_only(self):
         return None
@@ -219,15 +249,15 @@ class KMartScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _category_name(self):
-        dept = " ".join(self.tree_html.xpath("//ul[@id='breadcrumb-list']/li[1]/a/text()")).strip()
-        return dept
+        return self._categories()[0]
     
     def _categories(self):
-        all = self.tree_html.xpath("//ul[@id='breadcrumb-list']/li/a/text()")
-        return all
+        cat = self.table['data']['product']['taxonomy']['web']['sites']['kmart']['hierarchies'][0]['specificHierarchy']
+        cat = [x['name'] for x in cat]
+        return cat
 
     def _brand(self):
-        return self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content')[0]
+        return self.table['data']['product']['brand']['name']
 
 
 
