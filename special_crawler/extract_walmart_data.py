@@ -282,7 +282,7 @@ class WalmartScraper(Scraper):
             string containing product name, or None
         """
 
-        return self.tree_html.xpath("//h1")[0].text
+        return self.tree_html.xpath("//h1[contains(@class, 'product-name')]")[0].text.strip()
 
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
