@@ -436,7 +436,7 @@ class ServiceSimpleTest(unittest.TestCase):
                 "categories", "category_name", 
                 ]
 
-        walmart_data = ["owned", "marketplace"]
+        walmart_data = ["product_title"]
 
         with open("unilever.csv") as inputf:
             for line in inputf:

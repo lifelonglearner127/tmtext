@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import urllib2
+from httplib import IncompleteRead
 import re
 import sys
 import json
@@ -25,8 +26,12 @@ class Scraper():
         tree_html (lxml tree object): html tree of page source. This variable is initialized
         whenever a request is made for a piece of data in DATA_TYPES. So it can be used for methods
         extracting these types of data.
+        MAX_RETRIES (int): number of retries before giving up fetching product page soruce (if errors encountered
+            - usually IncompleteRead exceptions)
     """
 
+    # number of retries for fetching product page source before giving up
+    MAX_RETRIES = 3
 
     # List containing all data types returned by the crawler (that will appear in responses of requests to service in crawler_service.py)
     # In practice, all returned data types for all crawlers should be defined here
@@ -236,8 +241,25 @@ class Scraper():
         # set user agent to avoid blocking
         request.add_header('User-Agent',\
          'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')
-        contents = urllib2.urlopen(request).read()
-        self.tree_html = html.fromstring(contents)
+
+        for i in range(self.MAX_RETRIES):
+            try:
+                contents = urllib2.urlopen(request).read()
+                self.tree_html = html.fromstring(contents)
+
+                # if we got it we can exit the loop and stop retrying
+                return
+
+            except IncompleteRead, e:
+                pass
+
+            # try getting it again, without catching exception.
+            # if it had worked by now, it would have returned.
+            # if it still doesn't work, it will throw exception.
+            # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
+            contents = urllib2.urlopen(request).read()
+            self.tree_html = html.fromstring(contents)
+            
 
     # Extract product info given a list of the type of info needed.
     # Return dictionary containing type of info as keys and extracted info as values.
