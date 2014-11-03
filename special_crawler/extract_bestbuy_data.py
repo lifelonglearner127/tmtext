@@ -12,126 +12,62 @@ from extract_data import Scraper
 
 class BestBuyScraper(Scraper):
     
+    ##########################################
+    ############### PREP
+    ##########################################
     INVALID_URL_MESSAGE = "Expected URL format is http://www.bestbuy.com/site/<product-name>/<product-id>.*"
-    
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
-            True if valid, False otherwise
+        True if valid, False otherwise
         """
         m = re.match(r"^http://www.bestbuy.com/.*$", self.product_page_url)
         return not not m
 
+
+
+
+    ##########################################
+    ############### CONTAINER : NONE
+    ##########################################
     def _url(self):
         return self.product_page_url
 
-    def _extract_product_id(self):
+    def _event(self):
+        return None
+
+    def _product_id(self):
         prod_id = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-product-id')[0]
         return prod_id
 
-    def video_for_url(self):
-        video_url = "\n".join(self.tree_html.xpath("//script//text()"))
-        video_url = re.sub(r"\\", "", video_url)
-        video_url = re.findall("url.+(http.+flv)\"", video_url)
-        return video_url
-
-    def pdf_for_url(self):
+    def _site_id(self):
         return None
-    
-    def _image_url(self):
-        image_url = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-gallery-images')[0]
-        json_list = json.loads(image_url)
-        image_url = []
-        for i in json_list:
-            image_url.append(i['url'])
-        return image_url
-    
-    def _product_images(self):
-        image_url = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-gallery-images')[0]
-        json_list = json.loads(image_url)
-        return len(json_list)
-        
-    def manufacturer_content_body(self):
-        return None
-    
-    #extract average review, and total reviews  
-    def reviews_for_url(self):
-        return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
 
-    def nr_reviews(self):
-        return self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
-        
-    # extract product name from its product page tree
-    # ! may throw exception if not found
-    def _product_name_from_tree(self):
+    def _status(self):
+        return "success"
+
+
+
+
+    ##########################################
+    ############### CONTAINER : PRODUCT_INFO
+    ##########################################
+    def _product_name(self):
         return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
+    
+    def _product_title(self):
+        return self.tree_html.xpath("//title//text()")[0].strip()
 
-    # extract meta "keywords" tag for a product from its product page tree
-    # ! may throw exception if not found
-    def _meta_keywords_from_tree(self):
-        return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0]
+    def _title_seo(self):
+        return self.tree_html.xpath("//title//text()")[0].strip()
 
-    # extract meta "brand" tag for a product from its product page tree
-    # ! may throw exception if not found
-    def _meta_brand_from_tree(self):
-        return self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content')[0]
-
-
-    # extract product short description from its product page tree
-    # ! may throw exception if not found
-    def _short_description_from_tree(self):
-        return None
-
-    # extract product long description from its product product page tree
-    # ! may throw exception if not found
-    def _long_description_from_tree(self):
-        full_description = self.tree_html.xpath('//div[@id="long-description"]//text()')[0]
-        return full_description
-
-    # extract product price from its product product page tree
-    def _price_from_tree(self):
-        meta_price = self.tree_html.xpath('//meta[@itemprop="price"]//@content')
-        if meta_price:
-            return meta_price[0].strip()
-        else:
-            return None
-
-    # extract product price from its product product page tree
-    # ! may throw exception if not found
-    def _anchors_from_tree(self):
-        # get all links found in the description text
-        description_node = self.tree_html.xpath('//div[@id="long-description"]//text()')[0]
-        links = description_node.xpath(".//a")
-        nr_links = len(links)
-        links_dicts = []
-        for link in links:
-            # TODO: 
-            #       extract text even if nested in something?
-            #       better error handling (on a per link basis)
-            links_dicts.append({"href" : link.xpath("@href")[0], "text" : link.xpath("text()")[0]})
-        ret = {"quantity" : nr_links, "links" : links_dicts}
-        return ret
-
-
-    # extract htags (h1, h2) from its product product page tree
-    def _htags_from_tree(self):
-        htags_dict = {}
-
-        # add h1 tags text to the list corresponding to the "h1" key in the dict
-        htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
-        # add h2 tags text to the list corresponding to the "h2" key in the dict
-        htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
-
-        return htags_dict
-
-    # extract product model from its product product page tree
-    # ! may throw exception if not found
-    def _model_from_tree(self):
+    def _model(self):
         return self.tree_html.xpath('//span[@id="model-value"]/text()')[0]
 
-    # extract product features list from its product product page tree, return as string
-    # join all text in spec table; separate rows by newlines and eliminate spaces between cells
-    def _features_from_tree(self):
+    def _upc(self):
+        return self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-sku-id')[0]
+
+    def _features(self):
         rows = self.tree_html.xpath("//div[@id='features']")
         # list of lists of cells (by rows)
         cells = map(lambda row: row.xpath(".//div[@class='feature']//text()"), rows)
@@ -145,138 +81,230 @@ class BestBuyScraper(Scraper):
         # return dict with all features info
         return all_features_text
 
-    # extract number of features from tree
-    # ! may throw exception if not found
-    def _nr_features_from_tree(self):
+    def _feature_count(self):
         # select table rows with more than 2 cells (the others are just headers), count them
         return len(filter(lambda row: len(row.xpath(".//text()"))>0, self.tree_html.xpath("//div[@id='features']/div[@class='feature']")))
 
-    # extract page title from its product product page tree
-    # ! may throw exception if not found
-    def _title_from_tree(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+    def _model_meta(self):
+        return None
 
-    # extract product seller meta keyword from its product product page tree
-    # ! may throw exception if not found
-    def _seller_meta_from_tree(self):
-        return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
+    def _description(self):
+        return None
 
-    # extract product seller information from its product product page tree (using h2 visible tags)
-    def _seller_from_tree(self):
-        seller_info = {}
-        seller_info['owned'] = 1
-        seller_info['marketplace'] = 0
-        return seller_info
-    
-    def _marketplace(self):
-        return 0
-    
-    def _owned(self):
-        return 1
-    
-    def _upc(self):
-        return self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-sku-id')[0]
+    def _long_description(self):
+        full_description = self.tree_html.xpath('//div[@id="long-description"]//text()')[0]
+        return full_description
 
-    # extract the department which the product belongs to
-    def _dept(self):
-        dept = " ".join(self.tree_html.xpath("//ul[@id='breadcrumb-list']/li[2]/a/text()")).strip()
-        return dept
+
+
+
+    ##########################################
+    ############### CONTAINER : PAGE_ATTRIBUTES
+    ##########################################
+    def _mobile_image_same(self):
+        return None
+
+    def _image_urls(self):
+        image_url = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-gallery-images')[0]
+        json_list = json.loads(image_url)
+        image_url = []
+        for i in json_list:
+            image_url.append(i['url'])
+        return image_url
     
-    # extract the department's department, or super department
-    def _super_dept(self):
-        dept = " ".join(self.tree_html.xpath("//ul[@id='breadcrumb-list']/li[1]/a/text()")).strip()
-        return dept
+    def _image_count(self):
+        return len(self._image_urls())
+
+    def _video_urls(self):
+        video_url = "\n".join(self.tree_html.xpath("//script//text()"))
+        video_url = re.sub(r"\\", "", video_url)
+        video_url = re.findall("url.+(http.+flv)\"", video_url)
+        return video_url
+
+    def _video_count(self):
+        return len(self._video_urls())
+
+    def _pdf_urls(self):
+        return None
     
-    # extract a hierarchical list of all the departments the product belongs to
-    def _all_depts(self):
-        all = self.tree_html.xpath("//ul[@id='breadcrumb-list']/li/a/text()")
-        return all
-    
+    def _pdf_count(self):
+        pdf = self._pdf_urls()
+        if pdf is not None:
+            return len(pdf)
+        return None
+
+    def _webcollage(self):
+        return None
+
+    def _htags(self):
+        htags_dict = {}
+        htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
+        htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
+        return htags_dict
+
+    def _keywords(self):
+        return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0]
+
     # extracts whether the first product image is the "no-image" picture
     def _no_image(self):
         None
 
-    def _mobile_image_same(self):
+
+
+
+
+
+    ##########################################
+    ############### CONTAINER : REVIEWS
+    ##########################################
+    def _average_review(self):
+        return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
+
+    def _review_count(self):
+        return self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
+ 
+    def _max_review(self):
+        return None
+
+    def _min_review(self):
+        return None
+
+
+
+
+
+    ##########################################
+    ############### CONTAINER : SELLERS
+    ##########################################
+    def _price(self):
+        meta_price = self.tree_html.xpath('//meta[@itemprop="price"]//@content')
+        if meta_price:
+            return meta_price[0].strip()
+        else:
+            return None
+
+    def _in_stores_only(self):
+        return None
+
+    def _in_stores(self):
+        return None
+
+    def _owned(self):
+        return 1
+    
+    def _marketplace(self):
+        return 0
+
+    def _seller_from_tree(self):
         return None
     
-    def fetch_bytes(self, url):
-        file = cStringIO.StringIO(urllib.urlopen(url).read())
-        img = Image.open(file)
-        b = BytesIO()
-        img.save(b, format='png')
-        data = b.getvalue()
-        return data
+    def _owned_out_of_stock(self):
+        return None
 
-    # clean text inside html tags - remove html entities, trim spaces
+    def _marketplace_sellers(self):
+        return None
+
+    def _marketplace_lowest_price(self):
+        return None
+
+
+
+
+
+    ##########################################
+    ############### CONTAINER : CLASSIFICATION
+    ##########################################    
+    def _categories(self):
+        all = self.tree_html.xpath("//ul[@id='breadcrumb-list']/li/a/text()")
+        return all
+
+    def _category_name(self):
+        dept = " ".join(self.tree_html.xpath("//ul[@id='breadcrumb-list']/li[1]/a/text()")).strip()
+        return dept
+    
+    def _brand(self):
+        return self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content')[0]
+    
+
+
+
+    ##########################################
+    ################ HELPER FUNCTIONS
+    ##########################################
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
 
 
 
-    def main(args):
-        # check if there is an argument
-        if len(args) <= 1:
-            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython crawler_service.py <product_url>\n")
-            sys.exit(1)
-    
-        product_page_url = args[1]
-    
-        # check format of page url
-        if not check_url_format(product_page_url):
-            sys.stderr.write(INVALID_URL_MESSAGE)
-            sys.exit(1)
-    
-        return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
 
+    ##########################################
+    ################ RETURN TYPES
+    ##########################################
 
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
-    # 
-    # data extracted from product page
-    # their associated methods return the raw data
     DATA_TYPES = { \
-        # Info extracted from product page
+        # CONTAINER : NONE
         "url" : _url, \
-        "product_name" : _product_name_from_tree, \
-        "keywords" : _meta_keywords_from_tree, \
-        "description" : _short_description_from_tree, \
-        "long_description" : _long_description_from_tree, \
-        "price" : _price_from_tree, \
-        "anchors" : _anchors_from_tree, \
-        "htags" : _htags_from_tree, \
-        "features" : _features_from_tree, \
-        "feature_count" : _nr_features_from_tree, \
-        "product_title" : _title_from_tree, \
+        "event" : _event, \
+        "product_id" : _product_id, \
+        "site_id" : _site_id, \
+        "status" : _status, \
 
-        "marketplace" : _marketplace, \
-        "owned" : _owned, \
-        "product_id" : _extract_product_id, \
+        # CONTAINER : PRODUCT_INFO
+        "product_name" : _product_name, \
+        "product_title" : _product_title, \
+        "title_seo" : _title_seo, \
+        "model" : _model, \
         "upc" : _upc,\
-        "video_urls" : video_for_url, \
-        
-        "image_urls" : _image_url, \
-        "image_count" : _product_images, \
+        "features" : _features, \
+        "feature_count" : _feature_count, \
+        "model_meta" : _model_meta, \
+        "description" : _description, \
+        "long_description" : _long_description, \
 
-        "category_name" : _dept,\
-        "categories" : _all_depts,\
+        # CONTAINER : PAGE_ATTRIBUTES
+        "image_count" : _image_count,\
+        "image_urls" : _image_urls, \
+        "video_count" : _video_count, \
+        "video_urls" : _video_urls, \
+        "no_image" : _no_image, \
+        "pdf_count" : _pdf_count, \
+        "pdf_urls" : _pdf_urls, \
+        "webcollage" : _webcollage, \
+        "htags" : _htags, \
+        "keywords" : _keywords, \
 
-        "no_image" : _no_image,\
-        "brand" : _meta_brand_from_tree, \
-        "model" : _model_from_tree, \
-        
-        "average_review" : reviews_for_url, \
-        "review_count" : nr_reviews, \
+        # CONTAINER : REVIEWS
+        "review_count" : _review_count, \
+        "average_review" : _average_review, \
+        "max_review" : _max_review, \
+        "min_review" : _min_review, \
 
-        
-        "loaded_in_seconds": None\
+        # CONTAINER : SELLERS
+        "price" : _price, \
+        "in_stores_only" : _in_stores_only, \
+        "in_stores" : _in_stores, \
+        "owned" : _owned, \
+        "owned_out_of_stock" : _owned_out_of_stock, \
+        "marketplace" : _marketplace, \
+        "marketplace_sellers" : _marketplace_sellers, \
+        "marketplace_lowest_price" : _marketplace_lowest_price, \
+
+        # CONTAINER : CLASSIFICATION
+        "categories" : _categories, \
+        "category_name" : _category_name, \
+        "brand" : _brand, \
+
+
+
+        "loaded_in_seconds" : None, \
         }
 
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         "mobile_image_same" : _mobile_image_same, \
-        "manufacturer_content_body" : manufacturer_content_body, \
-        "pdf_urls" : pdf_for_url
     }
 
 

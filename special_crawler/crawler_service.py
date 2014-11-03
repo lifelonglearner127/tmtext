@@ -34,12 +34,12 @@ SUPPORTED_SITES = {
                     "tesco" : TescoScraper,
                     "walmart" : WalmartScraper,
                     # "argos": ArgosScraper,
-                    # "kmart" : KMartScraper,
+                    "kmart" : KMartScraper,
                     "ozon" : OzonScraper,
-                    # "pgestore" : PGEStore,
+                    "pgestore" : PGEStore,
                     # "target" : TargetScraper,
                     # "vitadepot": VitadepotScraper,
-                    # "wayfair" : WayfairScraper,
+                    "wayfair" : WayfairScraper,
                     }
 
 # add logger

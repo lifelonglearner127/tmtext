@@ -63,7 +63,10 @@ class StateLineTackScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
+        a = self.tree_html.xpath('//*[@itemprop="name"]/text()')[0]
+        if a is not None and len(a)>3:
+            return a
+        return self._product_title()
     
     def _product_title(self):
         return self.tree_html.xpath("//meta[@property='og:title']/@content")[0]
@@ -108,13 +111,13 @@ class StateLineTackScraper(Scraper):
         return None
 
     def _description(self):
-        return None
-
-    def _long_description(self):
         full_description = ([x.strip() for x in self.tree_html.xpath('//div[@id="ItemPageProductSummaryBoxMain"]//text()') if len(x.strip())>0])
         for row in range(0,4):
             if len(full_description[row]) > 60:
                 return full_description[row]
+        return None
+
+    def _long_description(self):
         return None
 
 
