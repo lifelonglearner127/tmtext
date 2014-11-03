@@ -126,7 +126,7 @@ class TescoScraper(Scraper):
 
     def _long_description(self):
         #this first description was written for book description
-        description = self.tree_html.xpath('//p[@itemprop="description"]//text()')[0]
+        description = " ".join([self._clean_text(x) for x in self.tree_html.xpath('//*[@class="detailWrapper"]/p//text()')])
         if len(description)>5:
             return description
 
@@ -218,8 +218,18 @@ class TescoScraper(Scraper):
     
     #populate the bazaarvoice variable for use by other functions
     def load_bazaarvoice(self):
+        # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        # http://api.bazaarvoice.com/data/batch.json?passkey=asiwwvlu4jk00qyffn49sr7tb&apiversion=5.4&displaycode=1235-en_gb&resource.q0=products&filter.q0=id%3Aeq%3A518-7080&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US
+        # http://api.bazaarvoice.com/data/batch.json?passkey=asiwwvlu4jk00qyffn49sr7tb&apiversion=5.5&displaycode=1235-en_gb&resource.q0=products&filter.q0=id%3Aeq%3A210-0593&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US&resource.q1=reviews&filter.q1=isratingsonly%3Aeq%3Afalse&filter.q1=productid%3Aeq%3A210-0593&filter.q1=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US&sort.q1=submissiontime%3Adesc&stats.q1=reviews&filteredstats.q1=reviews&include.q1=authors%2Cproducts%2Ccomments&filter_reviews.q1=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US&filter_reviewcomments.q1=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US&filter_comments.q1=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US&limit.q1=8&offset.q1=0&limit_comments.q1=3&callback=bv_183_31233
+        # sometimes Tesco ID isn't same as Bazaar ID
+        # DATA.Bazaar.productID = '210-0593'
+        bazaar_id = ' '.join(self.tree_html.xpath('//script//text()'))
+        bazaar_id = re.findall(r"DATA\.Bazaar\.productID \= '([0-9]{2,5}.[0-9]{2,5})'", bazaar_id)[0]
+        bazaar_id = str(bazaar_id)
+
+
         url = "http://api.bazaarvoice.com/data/batch.json?passkey=asiwwvlu4jk00qyffn49sr7tb&apiversion=5.4&displaycode=1235-en_gb&resource.q0=products&filter.q0=id%3Aeq%3A" \
-        + self._product_id() + \
+        + bazaar_id + \
         "&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US"
         req = requests.get(url)
         self.bazaarvoice = req.json()
@@ -326,14 +336,6 @@ class TescoScraper(Scraper):
     def _marketplace(self):
         h2_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h2//text()"))
         return 1 if "more buying option(s) from:" in h2_tags else 0
-
-    def _seller_from_tree(self):
-        seller_info = {}
-        h2_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h2//text()"))
-        seller_info['owned'] = 1 if "Buy on Tesco Direct from:" in h2_tags else 0
-        seller_info['marketplace'] = 1 if "more buying option(s) from:" in h2_tags else 0
-
-        return seller_info
     
     def _owned_out_of_stock(self):
         return None
@@ -357,11 +359,11 @@ class TescoScraper(Scraper):
         all = self.tree_html.xpath("//div[@id='breadcrumb']//li//span/text()")
         out = all[1:-1]#the last value is the product itself, and the first value is "home"
         out = [self._clean_text(r) for r in out]
-        out = out[::-1]
+        #out = out[::-1]
         return out
 
     def _category_name(self):
-        dept = " ".join(self.tree_html.xpath("//div[@id='breadcrumb']//li[2]//text()")).strip()
+        dept = self._categories()[0]    
         return dept
     
     def _brand(self):
