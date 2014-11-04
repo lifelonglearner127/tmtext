@@ -220,6 +220,35 @@ class WalmartScraper(Scraper):
             return {"reviews" : {"total_reviews": None, "average_review": None}}
         return {"reviews" : {"total_reviews": reviews_count, "average_review": average_review}}
 
+
+    def _has_webcollage_iframe(self):
+        """Extracts webcollage links from an iframe on the page.
+        (Example: http://www.walmart.com/ip/Trix-Wildberry-Red-Swirls-Cereal-22.7-oz/25847976
+            has some webcollage images)
+        Returns:
+            1 if page has iframe with webcollage images, 0 otherwise
+        """
+
+        # assume only 1 iframe
+        # TODO: identify it by class or smth?
+        try:
+            iframe_link = self.tree_html.xpath("//iframe/@src")[0]
+            if iframe_link.startswith("/"):
+                # append scheme
+                iframe_link = "http:" + iframe_link
+
+            # get contents of iframe
+            contents = urllib.urlopen(iframe_link).read()
+            # get webcollage content from iframe
+            # TODO: what if they are in comments?
+            if "media.webcollage.net" in contents:
+                return 1
+
+        except Exception, e:
+            return 0
+
+        return 0
+
     def _product_has_webcollage(self):
         """Uses video and pdf information
         to check whether product has any media from webcollage.
@@ -236,6 +265,10 @@ class WalmartScraper(Scraper):
 
         if self.has_webcollage_media:
             return 1
+
+        if self._has_webcollage_iframe():
+            return 1
+
         return 0
 
     def _product_has_video(self):
@@ -282,7 +315,7 @@ class WalmartScraper(Scraper):
             string containing product name, or None
         """
 
-        return self.tree_html.xpath("//h1")[0].text
+        return self.tree_html.xpath("//h1[contains(@class, 'product-name')]")[0].text.strip()
 
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
