@@ -46,6 +46,8 @@ class Scraper():
             "site_id",
             "date",
             "status",
+            "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
+                       # Only implemented for walmart. Possible values: "Walmart v1" or "Walmart v2"
 
             # product_info
             "product_name", # name of product, string

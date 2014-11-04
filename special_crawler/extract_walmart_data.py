@@ -921,6 +921,23 @@ class WalmartScraper(Scraper):
 
         return marketplace_new
 
+    def _version(self):
+        """Determines if walmart page being read (and version of extractor functions
+            being used) is old or new design.
+        Returns:
+            "Walmart v1" for old design
+            "Walmart v2" for new design
+        """
+
+        # using the "keywords" tag to distinguish between page versions.
+        # In old version, it was capitalized, in new version it's not
+        if self.tree_html.xpath("//meta[@name='keywords']/@content"):
+            return "Walmart v2"
+        if self.tree_html.xpath("//meta[@name='Keywords']/@content"):
+            return "Walmart v1"
+
+        # we could not decide
+        return None
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -1003,6 +1020,8 @@ class WalmartScraper(Scraper):
 
         "categories" : _categories_hierarchy, \
         "category_name" : _category, \
+
+        "scraper" : _version, \
         }
 
     # special data that can't be extracted from the product page
