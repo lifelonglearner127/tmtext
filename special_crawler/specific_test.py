@@ -92,7 +92,10 @@ SUPPORTED_SITES = [
                    "wayfair" ,
                    ]
 
-
+DONT_CHECK = [
+                "date",
+                "loaded_in_seconds"
+                ]
 
 # traverse down 2 proposedly similar dictionaries and test if they're identical
 # expected dict, actual dict, and the current branch within the dictionary tree
@@ -107,6 +110,7 @@ def compare_dict(expected, actual, branch):
 
     # VALUE DIFFERENCES - The following codes was assisted by : http://stackoverflow.com/questions/2798956/python-unittest-generate-multiple-tests-programmatically                    
     union_keys = set(actual.keys()) & set(expected.keys())
+    union_keys = union_keys.difference(DONT_CHECK)
     for key in union_keys:
         if(isinstance(expected[key], dict) and isinstance(actual[key], dict)):
             compare_dict(expected[key], actual[key], "%s > %s"%(branch, key))
@@ -131,7 +135,7 @@ def build_unit_test():
                 if len(s) > 1:
                     test_json = json.loads(s)
                 else:
-                    Raise("json file not long enough")
+                    raise Exception("json file not long enough")
             except Exception as e:
                 print "Error loading json file: ", e
                 f.close()
