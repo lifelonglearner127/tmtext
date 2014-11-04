@@ -99,12 +99,21 @@ class AmazonScraper(Scraper):
         return short_description
 
     def _long_description(self):
-        full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
-        if full_description is not None and len(full_description)>5:
-            return full_description
+        desc = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
+        if desc is not None and len(desc)>5:
+            return desc
 
-        full_description = " ".join(self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript//text()')).strip()
-        return full_description
+        desc = " ".join(self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript//text()')).strip()
+        if desc is not None and len(desc)>5:
+            return desc
+
+        desc = '\n'.join(self.tree_html.xpath('//script//text()'))
+        desc = re.findall(r'var iframeContent = "(.*)";', desc)
+        desc = urllib.unquote_plus(str(desc))
+        desc = html.fromstring(desc)
+        desc = self._clean_text(' '.join(desc.xpath('//div[@class="productDescriptionWrapper"]//text()')))
+        
+        return desc
 
 
 

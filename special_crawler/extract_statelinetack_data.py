@@ -112,8 +112,8 @@ class StateLineTackScraper(Scraper):
 
     def _description(self):
         full_description = ([x.strip() for x in self.tree_html.xpath('//div[@id="ItemPageProductSummaryBoxMain"]//text()') if len(x.strip())>0])
-        for row in range(0,4):
-            if len(full_description[row]) > 60:
+        for row in range(0,6):
+            if len(full_description[row]) > 24:#to avoid the heading "product description"
                 return full_description[row]
         return None
 

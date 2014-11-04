@@ -122,6 +122,8 @@ class TescoScraper(Scraper):
 
     def _description(self):
         description = " ".join(self.tree_html.xpath("//ul[@class='features']/li//text()")).strip()
+        if len(description)<4:
+            return self._long_description()
         return description
 
     def _long_description(self):
