@@ -94,17 +94,38 @@ class AmazonScraper(Scraper):
     def _model_meta(self):
         return None 
 
+
     def _description(self):
         short_description = " ".join(self.tree_html.xpath("//*[@id='feature-bullets']//text()")).strip()
-        return short_description
+        if short_description is not None and len(short_description)>0:
+            return short_description
+        return self._long_description_helper()
+
 
     def _long_description(self):
-        full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
-        if full_description is not None and len(full_description)>5:
-            return full_description
+        d1 = self._description()
+        d2 = self._long_description_helper()
+        if d1 == d2:
+            return None
+        return d2
 
-        full_description = " ".join(self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript//text()')).strip()
-        return full_description
+
+    def _long_description_helper(self):
+        desc = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
+        if desc is not None and len(desc)>5:
+            return desc
+
+        desc = " ".join(self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript//text()')).strip()
+        if desc is not None and len(desc)>5:
+            return desc
+
+        desc = '\n'.join(self.tree_html.xpath('//script//text()'))
+        desc = re.findall(r'var iframeContent = "(.*)";', desc)
+        desc = urllib.unquote_plus(str(desc))
+        desc = html.fromstring(desc)
+        desc = self._clean_text(' '.join(desc.xpath('//div[@class="productDescriptionWrapper"]//text()')))
+        
+        return desc
 
 
 
@@ -224,12 +245,14 @@ class AmazonScraper(Scraper):
         
     # extract product price from its product product page tree
     def _price(self):
-        price = self.tree_html.xpath("//*[@id='priceblock_ourprice']//text()")
+        price = self.tree_html.xpath("//*[contains(@id, 'priceblock_')]//text()")#priceblock_ can usually have a few things after it
         if price:
             return price[0].strip()
+
         price = self.tree_html.xpath("//*[contains(@class, 'offer-price')]//text()")
         if price:
             return price[0].strip()
+
         return None
 
     def _in_stores_only(self):
@@ -261,7 +284,12 @@ class AmazonScraper(Scraper):
         h5_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h5//text()[normalize-space()!='']"))
         acheckboxlabel = map(lambda text: self._clean_text(text), self.tree_html.xpath("//span[@class='a-checkbox-label']//text()[normalize-space()!='']"))
         seller_info['owned'] = 1 if "FREE Two-Day" in acheckboxlabel else 0
+
+        a = self.tree_html.xpath('//div[@id="soldByThirdParty"]')
+        a = not not a#turn it into a boolean
         seller_info['marketplace'] = 1 if "Other Sellers on Amazon" in h5_tags else 0
+        seller_info['marketplace'] = int(seller_info['marketplace'] or a)
+
         return seller_info
 
 
