@@ -134,7 +134,6 @@ class StateLineTackScraper(Scraper):
         #         return description[row]
         # return None
         desc, feat = self._feature_helper()
-        return desc
         return ' '.join(desc)
 
 
