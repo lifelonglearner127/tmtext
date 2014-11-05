@@ -121,6 +121,10 @@ class StateLineTackScraper(Scraper):
         else:
             desc = full_description[0]
 
+        if isinstance(desc, str) or isinstance(desc, unicode):
+            temp = []
+            temp.append(desc)
+            desc = temp
 
         return desc, feat
 
