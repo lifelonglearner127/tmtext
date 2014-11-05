@@ -349,12 +349,14 @@ class WalmartScraper(Scraper):
         """
 
         short_description = "".join(map(lambda li_element: etree.tostring(li_element), \
-            self.tree_html.xpath("//div[@class='product-short-description module']//li")\
+            self.tree_html.xpath("//div[@class='product-short-description module']//li | " +\
+                "//div[starts-with(@class, 'choice-short-description')]//li")\
             ))
 
         # try with just the text
         if not short_description.strip():
-            short_description = " ".join(self.tree_html.xpath("//div[@class='product-short-description module']//text()"))
+            short_description = " ".join(self.tree_html.xpath("//div[@class='product-short-description module']//text() | " + \
+                "//div[starts-with(@class, 'choice-short-description')]//text()"))
 
         # try to extract from old page structure - in case walmart is 
         # returning an old type of page
@@ -391,7 +393,7 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        full_description = " ".join(self.tree_html.xpath("//section[@class='product-about js-about-item']//text()")).strip()
+        full_description = " ".join(self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]//text()")).strip()
         # return None if empty
         if not full_description:
             return None
