@@ -363,11 +363,28 @@ class WalmartScraper(Scraper):
         if not short_description:
             short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
 
-        # return None if no description
+        # if no short description, return the long description
         if not short_description.strip():
             return None
 
         return short_description.strip()
+
+    def _short_description_wrapper(self):
+        """Extracts product short description.
+        If not found, returns long description instead.
+        Returns:
+            string containing the text content of the product's description, or None
+        """
+
+        try:
+            short_description = self._short_description_from_tree()
+        except:
+            short_description = None
+
+        if not short_description:
+            return self._long_description()
+
+        return short_description
 
     # ! may throw exception if not found
     # TODO:
@@ -416,9 +433,29 @@ class WalmartScraper(Scraper):
 
         # try assuming old page structure now
         if long_description_new is None:
-            return self._long_description_from_tree_old()
+            long_description = self._long_description_from_tree_old()
+        else:
+            long_description = long_description_new
 
-        return long_description_new
+        return long_description
+
+    def _long_description_wrapper(self):
+        """Extracts product long description.
+        Wrapper function that uses extractor functions to try extracting assuming
+        either old walmart page design, or new. Works for both.
+        If short description is empty, returns None, because
+        long description text will be returned by the short description function.
+        Returns:
+            string containing the text content of the product's description, or None
+        """
+
+        # if there was no short description, we returned this instead.
+        # So long description should be set to null
+        if not self._short_description_from_tree():
+            return None
+
+        return self._long_description()
+
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
@@ -996,9 +1033,9 @@ class WalmartScraper(Scraper):
         "product_name" : _product_name_from_tree, \
         "keywords" : _meta_keywords_from_tree, \
         "brand" : _meta_brand_from_tree, \
-        "description" : _short_description_from_tree, \
+        "description" : _short_description_wrapper, \
         # TODO: check if descriptions work right
-        "long_description" : _long_description, \
+        "long_description" : _long_description_wrapper, \
         "price" : _price_from_tree, \
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
