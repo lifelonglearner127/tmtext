@@ -371,18 +371,30 @@ class WalmartScraper(Scraper):
 
     def _short_description_wrapper(self):
         """Extracts product short description.
-        If not found, returns long description instead.
+        If not found, returns long description instead,
+        or the first, bulletted part of the long description, if found.
         Returns:
             string containing the text content of the product's description, or None
         """
 
+        # TODO: maybe these extractor functions are being called too many times.
+        #       maybe reimplement this using state - an instance variable containing
+        #       both descriptions (extracted at once)
         try:
             short_description = self._short_description_from_tree()
         except:
             short_description = None
 
         if not short_description:
-            return self._long_description()
+            # try to get bullets at beginning of long description
+            # Obs: //text() instead of /text() won't work because of unclosed <li> tags...
+            # TODO: maybe should return <li> tags entirely instead. but that would break the long
+            #       description. look at the comments there.
+            short_description = " ".join(self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]//li/text()")).strip()
+            
+        if not short_description.strip():
+            # if there are no bullets either, get the entire long description text
+            short_description = self._long_description()
 
         return short_description
 
@@ -443,7 +455,7 @@ class WalmartScraper(Scraper):
         """Extracts product long description.
         Wrapper function that uses extractor functions to try extracting assuming
         either old walmart page design, or new. Works for both.
-        If short description is empty, returns None, because
+        If short description is equal to long description, returns None, because
         long description text will be returned by the short description function.
         Returns:
             string containing the text content of the product's description, or None
@@ -451,10 +463,20 @@ class WalmartScraper(Scraper):
 
         # if there was no short description, we returned this instead.
         # So long description should be set to null
-        if not self._short_description_from_tree():
+        short_description = self._short_description_wrapper()
+        long_description = self._long_description()
+        # notice this only works because currently
+        # when short description is the bulletted
+        # list at beginning of long description,
+        # only the text is extracted (in _short_description_wrapper()).
+        # (even though for regular short description, <li> tags are included)
+        # 
+        # Otherwise, maybe this should be replaced with a test for:
+        # if long description contains nothing else but text in <li> tags
+        if short_description == long_description:
             return None
 
-        return self._long_description()
+        return long_description
 
 
     # extract product price from its product product page tree
