@@ -9,7 +9,8 @@ from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.spiders import BaseProductsSpider, \
+    cond_set, cond_set_value
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -132,19 +133,25 @@ class AmazonProductsSpider(BaseProductsSpider):
         if response.css('#noResultsTitle'):
             return 0
 
-        # The first possible place is where it normally is in a fully rendered
-        # page.
-        values = response.css('#resultCount > span ::text').re(
-            '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults')
+        # Every result I saw is shown with this format
+        #    1-16 of 424,831 results for
+        #    2 results for
+        values = response.css('#s-result-count ::text').re(
+            '([0-9,]+)\s[Rr]esults for')
         if not values:
-            # Otherwise, it appears within a comment.
-            values = response.css(
-                '#result-count-only-next'
-            ).xpath(
-                'comment()'
-            ).re(
-                '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults\s+'
-            )
+            # The first possible place is where it normally is in a fully
+            # rendered page.
+            values = response.css('#resultCount > span ::text').re(
+                '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults')
+            if not values:
+                # Otherwise, it appears within a comment.
+                values = response.css(
+                    '#result-count-only-next'
+                ).xpath(
+                    'comment()'
+                ).re(
+                    '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults\s+'
+                )
 
         if values:
             total_matches = int(values[0].replace(',', ''))
@@ -158,7 +165,10 @@ class AmazonProductsSpider(BaseProductsSpider):
         return total_matches
 
     def _scrape_product_links(self, response):
-        links = response.css('.prod > h3 > a ::attr(href)').extract()
+        links = response.css(
+            'a.s-access-detail-page ::attr(href)'
+        ).extract()
+        links = [l for l in links if '/product-reviews/' not in l]
         if not links:
             self.log("Found no product links.", WARNING)
         for link in links:
@@ -173,8 +183,7 @@ class AmazonProductsSpider(BaseProductsSpider):
             self.log("Found more than one 'next page' link.", ERROR)
         return next_page_url
 
-    ## Captcha handling functions.
-
+    # Captcha handling functions.
     def _has_captcha(self, response):
         return '.images-amazon.com/captcha/' in response.body_as_unicode()
 
