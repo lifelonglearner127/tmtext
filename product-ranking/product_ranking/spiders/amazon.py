@@ -168,7 +168,6 @@ class AmazonProductsSpider(BaseProductsSpider):
         links = response.css(
             'a.s-access-detail-page ::attr(href)'
         ).extract()
-        links = [l for l in links if '/product-reviews/' not in l]
         if not links:
             self.log("Found no product links.", WARNING)
         for link in links:
