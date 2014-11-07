@@ -228,6 +228,32 @@ class ImpactgelScraper(Scraper):
         
         return 0
 
+    # ! may throw exception if not found
+    def _price(self):
+        """Extracts product list price.
+        Returns:
+            string containing price
+            (including currency)
+        """
+
+        return self.tree_html.xpath("//span[@id='listPrice']/text()")[0]
+
+    # ! may throw exception not found
+    def _unavailable(self):
+        """Extracts product availability
+        Returns:
+            1 if product out of stock, 0 otherwise
+        """
+
+        # example out of stock product: http://shop.impactgel.com/Cowtown-Saddle-Pad-Blk-Cream-White-Fleece-36x34-1332-6.htm
+
+        availability = self.tree_html.xpath("//span[@id='prodAvailStatus']/text()")[0]
+
+        if availability == "Out-of-Stock":
+            return 1
+        else:
+            return 0
+
 
     DATA_TYPES = {
         "product_name" : _page_title, \
@@ -258,4 +284,15 @@ class ImpactgelScraper(Scraper):
         "htags" : _htags, \
         "keywords" : _keywords, \
 
+        "price" : _price, \
+        "owned_out_of_stock" : _unavailable, \
+
+        # # What are these supposed to be?
+        # "in_stores"
+        # "in_stores_only"
+        # "owned"
+        # "marketplace"
+        # "marketplace_sellers"
+        # "marketplace_lowest_price"
+        
     }
