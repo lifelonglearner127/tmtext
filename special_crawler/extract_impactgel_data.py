@@ -1,3 +1,4 @@
+import urllib
 import re
 
 from extract_data import Scraper
@@ -184,6 +185,50 @@ class ImpactgelScraper(Scraper):
         # there were no images so extractor function returned exception
         return 0
 
+    # ! may throw exception if not found
+    def _video_urls(self):
+        """Extracts video urls for this product
+        Returns:
+            list of strings containing video urls
+        """
+
+        # Videos are youtube embedded videos
+        # in iframes
+
+        iframes_urls = self.tree_html.xpath("//iframe/@src")
+
+        # turn embed links into youtube links
+        def embed_to_youtube_link(embed_link):
+            # remove query string parameters
+            youtube_link = urllib.splitquery(embed_link)[0]
+            # replace "embed" with youtube link path
+            youtube_link = re.sub("/embed/", "/watch?v=", youtube_link)
+            return youtube_link
+
+        youtube_urls = map(embed_to_youtube_link, iframes_urls)
+
+        # TODO: any other forms of videos besides youtube?
+        
+        return youtube_urls
+
+    def _video_count(self):
+        """Counts number of videos available for this product
+        Returns:
+            int containing nr of videos
+        """
+
+        try:
+            video_urls = self._video_urls()
+            return len(video_urls)
+        except:
+            pass
+
+        # extractor function threw exception so
+        # no videos were found
+        
+        return 0
+
+
     DATA_TYPES = {
         "product_name" : _page_title, \
         "product_title": _page_title, \
@@ -205,8 +250,8 @@ class ImpactgelScraper(Scraper):
         # "mobile_image_same" 
         "image_count" : _image_count, \
         "image_urls" : _image_urls, \
-        # "video_count" : _video_count, \
-        # "video_urls" : _video_urls, \
+        "video_count" : _video_count, \
+        "video_urls" : _video_urls, \
         # "pdf_count" : _pdf_count, \
         # "pdf_urls" : _pdf_urls, \
         # "webcollage"
