@@ -165,6 +165,11 @@ class Scraper():
 
         # update data types dictionary to overwrite names of implementing methods for each data type
         # with implmenting function from subclass
+        # precaution mesaure in case one of the dicts is not defined in a scraper
+        if not hasattr(self, "DATA_TYPES"):
+            self.DATA_TYPES = {}
+        if not hasattr(self, "DATA_TYPES_SPECIAL"):
+            self.DATA_TYPES_SPECIAL = {}
         self.ALL_DATA_TYPES = dict(self.BASE_DATA_TYPES.items() + self.DATA_TYPES.items() + self.DATA_TYPES_SPECIAL.items())
         # remove data types that were not declared in this superclass
     
