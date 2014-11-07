@@ -181,10 +181,10 @@ class AmazonScraper(Scraper):
             r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", str(v.xpath('.//text()')))
             if r:
                 temp.extend(r)
-        return ",".join(temp)
+        return temp#",".join(temp)
 
     def _video_count(self):
-        return len(self._video_urls().split(','))
+        return len(self._video_urls())#.split(','))
 
     # return one element containing the PDF
     def _pdf_urls(self):

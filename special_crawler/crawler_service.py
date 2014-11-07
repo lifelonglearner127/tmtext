@@ -34,13 +34,13 @@ SUPPORTED_SITES = {
                     "statelinetack" : StateLineTackScraper,
                     "tesco" : TescoScraper,
                     "walmart" : WalmartScraper,
-                    # "argos": ArgosScraper,
+                    "argos": ArgosScraper,
                     "kmart" : KMartScraper,
                     "ozon" : OzonScraper,
                     "pgestore" : PGEStore,
                     "pgshop" : PGEStore,
                     # "target" : TargetScraper,
-                    # "vitadepot": VitadepotScraper,
+                    "vitadepot": VitadepotScraper,
                     "wayfair" : WayfairScraper,
                     # "impactgel" : ImpactgelScraper,
                     }
@@ -164,8 +164,13 @@ def get_data():
 
     url = request_arguments['url'][0]
     site = request_arguments['site'][0]
+    if 'bot' in request_arguments:
+        bot = request_arguments['bot'][0]
+    else:
+        bot = None
+
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url)
+    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)
 
     # validate parameter values
     # url

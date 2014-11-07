@@ -147,8 +147,9 @@ class Scraper():
     }
 
 
-    def __init__(self, product_page_url):
-        self.product_page_url = product_page_url
+    def __init__(self, **kwargs):
+        self.product_page_url = kwargs['url']
+        self.bot_type = kwargs['bot']
 
         current_date = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -246,8 +247,14 @@ class Scraper():
         
         request = urllib2.Request(self.product_page_url)
         # set user agent to avoid blocking
-        request.add_header('User-Agent',\
-         'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')
+        agent = ''
+        if self.bot_type == "google":
+            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
+            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        else:
+            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+        request.add_header('User-Agent', agent)
+
 
         for i in range(self.MAX_RETRIES):
             try:

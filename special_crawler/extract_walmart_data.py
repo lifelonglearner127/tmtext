@@ -41,8 +41,8 @@ class WalmartScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
-    def __init__(self, product_page_url):
-        Scraper.__init__(self, product_page_url)
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
         self.has_webcollage_media = False

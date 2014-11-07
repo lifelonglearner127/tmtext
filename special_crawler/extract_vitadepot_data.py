@@ -25,12 +25,12 @@ def apikey(key):
 
 class VitadepotScraper(Scraper):
 
-    def __init__(self, product_page_url):
+    def __init__(self, **kwargs):
         for method in map(lambda name: getattr(self.__class__, name), dir(self)):
             if hasattr(method, 'apikey'):
                 self.DATA_TYPES[method.apikey] = method
 
-        Scraper.__init__(self, product_page_url)
+        Scraper.__init__(self, **kwargs)
 
     #region API methods
     @apikey('id')
