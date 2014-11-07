@@ -256,9 +256,9 @@ class ImpactgelScraper(Scraper):
 
 
     DATA_TYPES = {
-        "product_name" : _page_title, \
-        "product_title": _page_title, \
-        "title_seo" : _product_name, \
+        "product_name" : _product_name, \
+        "product_title": _product_name, \
+        "title_seo" : _page_title, \
         "model" : _model, \
         # "upc" : _upc, \
 
