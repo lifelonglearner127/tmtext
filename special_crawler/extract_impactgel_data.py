@@ -85,15 +85,30 @@ class ImpactgelScraper(Scraper):
 
         return None
 
-    # def _categories(self):
-    #     """Extracts full path of hierarchy of categories
-    #     this product belongs to, from the lowest level category
-    #     it belongs to, to its top level department
-    #     Returns:
-    #         list of strings containing full path of categories
-    #         (from highest-most general to lowest-most specific)
-    #         or None if list is empty of not found
-    #     """
+    # ! may throw exception if not found
+    def _categories(self):
+        """Extracts full path of hierarchy of categories
+        this product belongs to, from the lowest level category
+        it belongs to, to its top level department
+        Returns:
+            list of strings containing full path of categories
+            (from highest-most general to lowest-most specific)
+            or None if list is empty of not found
+        """
+
+        # eliminate "Home" root
+        return self.tree_html.xpath("//a[starts-with(@class,'breadcrumb')]//text()")[1:]
+
+    # ! may throw exception if not found
+    def _category_name(self):
+        """Extracts lowest level (most specific) category this product
+        belongs to.
+        Returns:
+            string containing product category
+        """
+
+        return self.tree_html.xpath("//a[starts-with(@class,'breadcrumb')]//text()")[-1]
+
 
     # ! may return exception if not found
     def _brand(self):
@@ -268,9 +283,8 @@ class ImpactgelScraper(Scraper):
         "description" : _description, \
         # "long_description": _long_description, \
     
-        # # can't extract categories        
-        # "categories" : _categories, \
-        # "category_name" : _category_name, \
+        "categories" : _categories, \
+        "category_name" : _category_name, \
         "brand" : _brand,
 
         # "mobile_image_same" 
