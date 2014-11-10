@@ -147,8 +147,9 @@ class Scraper():
     }
 
 
-    def __init__(self, product_page_url):
-        self.product_page_url = product_page_url
+    def __init__(self, **kwargs):
+        self.product_page_url = kwargs['url']
+        self.bot_type = kwargs['bot']
 
         current_date = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -165,6 +166,11 @@ class Scraper():
 
         # update data types dictionary to overwrite names of implementing methods for each data type
         # with implmenting function from subclass
+        # precaution mesaure in case one of the dicts is not defined in a scraper
+        if not hasattr(self, "DATA_TYPES"):
+            self.DATA_TYPES = {}
+        if not hasattr(self, "DATA_TYPES_SPECIAL"):
+            self.DATA_TYPES_SPECIAL = {}
         self.ALL_DATA_TYPES = dict(self.BASE_DATA_TYPES.items() + self.DATA_TYPES.items() + self.DATA_TYPES_SPECIAL.items())
         # remove data types that were not declared in this superclass
     
@@ -241,8 +247,19 @@ class Scraper():
         
         request = urllib2.Request(self.product_page_url)
         # set user agent to avoid blocking
-        request.add_header('User-Agent',\
-         'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')
+        agent = ''
+        if self.bot_type == "google":
+            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
+            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        else:
+            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+        request.add_header('User-Agent', agent)
+
+        # cookie necessary for impactgel
+        # TODO: maybe do this better
+        if "impactgel" in self.product_page_url:
+            request.add_header("Cookie", "JSESSIONID=6FB8BEAA04B19F0E06C149CCB683EDA9.m1plqscsfapp03")
+
 
         for i in range(self.MAX_RETRIES):
             try:
