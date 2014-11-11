@@ -815,7 +815,11 @@ class WalmartScraper(Scraper):
         # It should only return this img when there's no img carousel    
         pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
         if pic:
-            return pic
+            # check if it's a "no image" image
+            if self._no_image(pic[0]):
+                return None
+            else:
+                return pic
         else:
             return None
 
@@ -832,7 +836,11 @@ class WalmartScraper(Scraper):
         # It should only return this img when there's no img carousel    
         main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
         if main_image:
-            return main_image
+            # check if this is a "no image" image
+            if self._no_image(main_image[0]):
+                return None
+            else:
+                return main_image
 
         # nothing found
         return None
@@ -852,6 +860,7 @@ class WalmartScraper(Scraper):
         return image_list
         
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
+    # might be outdated? (since walmart site redesign)
     def _mobile_image_same(self):
         url = self.product_page_url
         url = re.sub('http://www', 'http://mobile', url)

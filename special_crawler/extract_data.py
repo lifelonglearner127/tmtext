@@ -5,6 +5,13 @@ from httplib import IncompleteRead
 import re
 import sys
 import json
+from io import BytesIO
+import cStringIO
+from PIL import Image
+import mmh3 as MurmurHash
+import os
+
+from no_img_hash import fetch_bytes
 
 from lxml import html
 import time
@@ -346,6 +353,38 @@ class Scraper():
     # it should be implemented by subclasses with specific code to validate the URL for the specific site
     def check_url_format(self):
         return True
+
+    
+    # Checks if image given as parameter is "no  image" image
+    # To be used by subscrapers
+    def _no_image(self, image_url):
+        """Verifies if image with URL given as argument is
+        a "no image" image.
+
+        Certain products have an image that indicates "there is no image available"
+        a hash of these "no-images" is saved to a json file 
+        and new images are compared to see if they're the same.
+
+        Uses "fetch_bytes" function from the script used to compute
+        hashes that images here are compard against.
+
+        Returns:
+            True if it's a "no image" image, False otherwise
+        """
+
+        path = 'no_img_list.json'
+        no_img_list = []
+        if os.path.isfile(path):
+            f = open(path, 'r')
+            s = f.read()
+            if len(s) > 1:
+                no_img_list = json.loads(s)    
+            f.close()
+        first_hash = str(MurmurHash.hash(fetch_bytes(image_url)))
+        if first_hash in no_img_list:
+            return True
+        else:
+            return False
 
     
 if __name__=="__main__":
