@@ -797,7 +797,22 @@ class WalmartScraper(Scraper):
         return nr_reviews
 
     def _image_count(self):
-        return len(self._image_urls())
+        """Counts number of (valid) images found
+        for this product (not including images saying "no image available")
+        Returns:
+            int representing number of images
+        """
+        
+        try:
+            images = self._image_urls()
+        except Exception:
+            images = None
+            pass
+
+        if not images:
+            return 0
+        else:
+            return len(images)
 
     def _image_urls_old(self):
         """Extracts image urls for this product.
