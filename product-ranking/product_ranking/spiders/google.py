@@ -13,8 +13,6 @@ from scrapy.http import Request
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 from product_ranking.spiders import cond_set, cond_set_value
-from product_ranking.spiders.contrib.guess_brand import \
-    guess_brand_from_first_words
 
 
 def clear_text(l):
@@ -119,11 +117,6 @@ class GoogleProductsSpider(BaseProductsSpider):
             '[contains(./*[@class="specs-name"]/text(), "Brand")]'
             '/*[@class="specs-value"]/text()'
         ).extract())
-
-        if not product.get('brand', None):
-            brand = guess_brand_from_first_words(product['title'])
-            if brand:
-                product['brand'] = brand
 
         related = response.css('#related li.rel-item .rel-title a')
         r = []
