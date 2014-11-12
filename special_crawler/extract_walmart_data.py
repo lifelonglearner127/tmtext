@@ -611,7 +611,7 @@ class WalmartScraper(Scraper):
             return re.sub("_", " ", string.capwords(category_name, "_"))
 
         categories_list = map(clean_category, categories_list)
-        print categories_list, "CATEGORIES LIST*******"
+        categories_list, "CATEGORIES LIST*******"
         return categories_list
 
     # ! may throw exception of not found
