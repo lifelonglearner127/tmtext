@@ -310,12 +310,20 @@ class WalmartScraper(Scraper):
     # ! may throw exception if not found
     # TODO: improve, filter by tag class or something
     def _product_name_from_tree(self):
-        """Extracts product name
+        """Extracts product name.
+        Supports both old and new page design.
         Returns:
             string containing product name, or None
         """
 
-        return self.tree_html.xpath("//h1[contains(@class, 'product-name')]")[0].text.strip()
+        # assume new design
+        product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
+
+        if not product_name_node:
+            # assume old design
+            product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
+
+        return product_name_node[0].text.strip()
 
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
