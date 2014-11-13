@@ -310,12 +310,20 @@ class WalmartScraper(Scraper):
     # ! may throw exception if not found
     # TODO: improve, filter by tag class or something
     def _product_name_from_tree(self):
-        """Extracts product name
+        """Extracts product name.
+        Supports both old and new page design.
         Returns:
             string containing product name, or None
         """
 
-        return self.tree_html.xpath("//h1[contains(@class, 'product-name')]")[0].text.strip()
+        # assume new design
+        product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
+
+        if not product_name_node:
+            # assume old design
+            product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
+
+        return product_name_node[0].text.strip()
 
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
@@ -552,29 +560,84 @@ class WalmartScraper(Scraper):
     def _categories_hierarchy(self):
         """Extracts full path of hierarchy of categories
         this product belongs to, from the lowest level category
-        it belongs to, to its top level department
+        it belongs to, to its top level department.
+        Works for both old and new page design
         Returns:
             list of strings containing full path of categories
             (from highest-most general to lowest-most specific)
             or None if list is empty of not found
         """
 
+        # assume new page design
         categories_list = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")
         if categories_list:
             return categories_list
         else:
-            return None
+            # assume old page design
+            try:
+                return self._categories_hierarchy_old()
+            except Exception:
+                return None
+
+    # ! may throw exception if not found
+    def _categories_hierarchy_old(self):
+        """Extracts full path of hierarchy of categories
+        this product belongs to, from the lowest level category
+        it belongs to, to its top level department.
+        For old page design
+        Returns:
+            list of strings containing full path of categories
+            (from highest-most general to lowest-most specific)
+            or None if list is empty of not found
+        """
+
+        js_breadcrumb_text = self.tree_html.xpath("""//script[@type='text/javascript' and
+         contains(text(), 'adsDefinitionObject.ads.push')]/text()""")[0]
+
+        # extract relevant part from js function text
+        js_breadcrumb_text = re.sub("\n", " ", js_breadcrumb_text)
+        m = re.match('.*(\{.*"unitName".*\}).*', js_breadcrumb_text)
+        json_object = json.loads(m.group(1))
+        categories_string = json_object["unitName"]
+        categories_list = categories_string.split("/")
+        # remove first irrelevant part
+        catalog_index = categories_list.index("catalog")
+        categories_list = categories_list[catalog_index + 1 :]
+
+        # clean categories names
+        def clean_category(category_name):
+            import string
+            # capitalize every word, separated by "_", replace "_" with spaces
+            return re.sub("_", " ", string.capwords(category_name, "_"))
+
+        categories_list = map(clean_category, categories_list)
+        categories_list, "CATEGORIES LIST*******"
+        return categories_list
 
     # ! may throw exception of not found
     def _category(self):
         """Extracts lowest level (most specific) category this product
         belongs to.
+        Works for both old and new pages
         Returns:
             string containing product category
         """
 
         # return last element of the categories list
-        return self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")[-1]
+        
+        # assume new design
+        try:
+            category = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")[-1]
+        except Exception:
+            category = None 
+        
+        if category:
+            return category
+        else:
+            # asume old design
+            category = self._categories_hierarchy_old()[-1]
+
+            return category
 
     # extract product features list from its product product page tree, return as string
     def _features_from_tree(self):
@@ -797,7 +860,22 @@ class WalmartScraper(Scraper):
         return nr_reviews
 
     def _image_count(self):
-        return len(self._image_urls())
+        """Counts number of (valid) images found
+        for this product (not including images saying "no image available")
+        Returns:
+            int representing number of images
+        """
+        
+        try:
+            images = self._image_urls()
+        except Exception:
+            images = None
+            pass
+
+        if not images:
+            return 0
+        else:
+            return len(images)
 
     def _image_urls_old(self):
         """Extracts image urls for this product.
@@ -815,7 +893,11 @@ class WalmartScraper(Scraper):
         # It should only return this img when there's no img carousel    
         pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
         if pic:
-            return pic
+            # check if it's a "no image" image
+            if self._no_image(pic[0]):
+                return None
+            else:
+                return pic
         else:
             return None
 
@@ -832,7 +914,11 @@ class WalmartScraper(Scraper):
         # It should only return this img when there's no img carousel    
         main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
         if main_image:
-            return main_image
+            # check if this is a "no image" image
+            if self._no_image(main_image[0]):
+                return None
+            else:
+                return main_image
 
         # nothing found
         return None
@@ -852,6 +938,7 @@ class WalmartScraper(Scraper):
         return image_list
         
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
+    # might be outdated? (since walmart site redesign)
     def _mobile_image_same(self):
         url = self.product_page_url
         url = re.sub('http://www', 'http://mobile', url)

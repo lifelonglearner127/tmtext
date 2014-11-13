@@ -14,6 +14,7 @@ from extract_vitadepot_data import VitadepotScraper
 from extract_argos_data import ArgosScraper
 from extract_homedepot_data import HomeDepotScraper
 from extract_statelinetack_data import StateLineTackScraper
+from extract_impactgel_data import ImpactgelScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -41,6 +42,7 @@ SUPPORTED_SITES = {
                     # "target" : TargetScraper,
                     "vitadepot": VitadepotScraper,
                     "wayfair" : WayfairScraper,
+                    "impactgel" : ImpactgelScraper,
                     }
 
 # add logger
@@ -93,9 +95,9 @@ def check_input(url, is_valid_url, invalid_url_message=""):
 
 # infer domain from input URL
 def extract_domain(url):
-    m = re.match("^http://www\.([^/\.]+)\..*$", url)
+    m = re.match("^http://(www|shop)\.([^/\.]+)\..*$", url)
     if m:
-        return m.group(1)
+        return m.group(2)
     # TODO: return error message about bad URL if it does not match the regex
 
 

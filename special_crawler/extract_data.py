@@ -5,6 +5,13 @@ from httplib import IncompleteRead
 import re
 import sys
 import json
+from io import BytesIO
+import cStringIO
+from PIL import Image
+import mmh3 as MurmurHash
+import os
+
+from no_img_hash import fetch_bytes
 
 from lxml import html
 import time
@@ -166,6 +173,11 @@ class Scraper():
 
         # update data types dictionary to overwrite names of implementing methods for each data type
         # with implmenting function from subclass
+        # precaution mesaure in case one of the dicts is not defined in a scraper
+        if not hasattr(self, "DATA_TYPES"):
+            self.DATA_TYPES = {}
+        if not hasattr(self, "DATA_TYPES_SPECIAL"):
+            self.DATA_TYPES_SPECIAL = {}
         self.ALL_DATA_TYPES = dict(self.BASE_DATA_TYPES.items() + self.DATA_TYPES.items() + self.DATA_TYPES_SPECIAL.items())
         # remove data types that were not declared in this superclass
     
@@ -249,6 +261,11 @@ class Scraper():
         else:
             agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
         request.add_header('User-Agent', agent)
+
+        # cookie necessary for impactgel
+        # TODO: maybe do this better
+        if "impactgel" in self.product_page_url:
+            request.add_header("Cookie", "JSESSIONID=6FB8BEAA04B19F0E06C149CCB683EDA9.m1plqscsfapp03")
 
 
         for i in range(self.MAX_RETRIES):
@@ -336,6 +353,38 @@ class Scraper():
     # it should be implemented by subclasses with specific code to validate the URL for the specific site
     def check_url_format(self):
         return True
+
+    
+    # Checks if image given as parameter is "no  image" image
+    # To be used by subscrapers
+    def _no_image(self, image_url):
+        """Verifies if image with URL given as argument is
+        a "no image" image.
+
+        Certain products have an image that indicates "there is no image available"
+        a hash of these "no-images" is saved to a json file 
+        and new images are compared to see if they're the same.
+
+        Uses "fetch_bytes" function from the script used to compute
+        hashes that images here are compard against.
+
+        Returns:
+            True if it's a "no image" image, False otherwise
+        """
+
+        path = 'no_img_list.json'
+        no_img_list = []
+        if os.path.isfile(path):
+            f = open(path, 'r')
+            s = f.read()
+            if len(s) > 1:
+                no_img_list = json.loads(s)    
+            f.close()
+        first_hash = str(MurmurHash.hash(fetch_bytes(image_url)))
+        if first_hash in no_img_list:
+            return True
+        else:
+            return False
 
     
 if __name__=="__main__":
