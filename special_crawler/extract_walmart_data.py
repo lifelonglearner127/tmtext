@@ -913,7 +913,7 @@ class WalmartScraper(Scraper):
         Returns:
             list of strings representing image urls
         """
-        images_carousel = self.tree_html.xpath("//div[@class='product-carousel-wrapper']//a/@href")
+        images_carousel = self.tree_html.xpath("//div[starts-with(@class,'product-carousel-wrapper')]//a/@href")
         if images_carousel:
             return images_carousel
 
