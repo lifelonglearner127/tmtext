@@ -894,10 +894,16 @@ class WalmartScraper(Scraper):
         pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
         if pic:
             # check if it's a "no image" image
-            if self._no_image(pic[0]):
-                return None
-            else:
-                return pic
+            # this may return a decoder not found error
+            try:
+                if self._no_image(pic[0]):
+                    return None
+            except Exception, e:
+                # TODO: how to get this printed in the logs
+                print "WARNING: ", e.message
+
+            return pic
+
         else:
             return None
 
@@ -915,10 +921,15 @@ class WalmartScraper(Scraper):
         main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
         if main_image:
             # check if this is a "no image" image
-            if self._no_image(main_image[0]):
-                return None
-            else:
-                return main_image
+            # this may return a decoder not found error
+            try:
+                if self._no_image(main_image[0]):
+                    return None
+            except Exception, e:
+                print "WARNING: ", e.message
+                                
+            return main_image
+
 
         # nothing found
         return None
