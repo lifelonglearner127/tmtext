@@ -23,7 +23,7 @@ def _brand_in_list(brand):
     return brand.lower() in BRANDS
 
 
-def guess_brand_from_first_words(text, fname='data/brands.list', max_words=7):
+def guess_brand_from_first_words(text, fname='brands.list', max_words=7):
     """ Tries to guess the brand in the given text, assuming that the
          given text starts with the brand name.
         Example: Apple Iphone 16GB
