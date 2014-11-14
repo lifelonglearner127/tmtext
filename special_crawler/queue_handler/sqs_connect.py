@@ -24,24 +24,18 @@ used item from the queue.
 
 """
 
-# import queue
 from boto.sqs.message import Message
 import boto.sqs
 
 class SQS_Queue():
-    def __init__(self, name):
-        # self.item_queue = queue.Queue()
-
-        self.conn = boto.sqs.connect_to_region("us-east-1")
-
+    # Connect to the SQS Queue
+    def __init__(self, name, region="us-east-1"):
+        self.conn = boto.sqs.connect_to_region(region)
         self.q = self.conn.get_queue(name)
-
         self.currentM = None
 
-        # print("CLEARING QUEUE : (makes testing cleaner, but will be bad in production (IE if you have two nodes, one will clear the old one's contributions to the queue))")
-        # self.q.clear() ####### WARNING : THIS CLEARS THE QUEUE
-
-
+    # Add message/a list of messages to the queue
+    # Messages are strings (or at least serialized to strings)
     def put(self, message):
         m = Message()
         if isinstance(message, str):
@@ -52,6 +46,8 @@ class SQS_Queue():
                 m.set_body(row)
                 self.q.write(m)
 
+    # Get an item from the queue
+    # Note : it remains on the queue until you call task_done
     def get(self):
         if self.currentM is None:
             rs = self.q.get_messages()
@@ -61,13 +57,18 @@ class SQS_Queue():
         else:
             raise Exception("Incompleted message exists, consider issuing \"task_done\" before getting another message off the Queue. Message : %s"%self.currentM)
 
+    # SQS won't remove an item from the queue until you tell it to
+    # this is how you tell it to
     def task_done(self):
         if self.currentM is not None:
             self.q.delete_message(self.currentM)
             self.currentM = None
         else:
             raise Exception("No current task to finish")
-        #
+    
+    # completely clear out the queue
+    def clear(self):
+        self.q.clear()
 
     # Check if the SQS Queue is empty
     # due to a lag in the queue count, the count may be off,
@@ -78,7 +79,7 @@ class SQS_Queue():
 
 
 
-
+#Some trial connection stuff for testing, may become outdated as the above is continually integrated into other components
 def main():
     sqs = SQS_Queue()
     while(not sqs.empty()):

@@ -1,10 +1,16 @@
+#! usr/bin/env python3
 from sqs_connect import SQS_Queue
 import logging
 import time
 import json
 import requests
 
-#{batchid : x, event : y, url : z, site : w} 
+# clean up code: comments, necessary files, 
+# diagnose error
+# add necessary site data
+# json message
+# bindings
+
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
 
@@ -12,21 +18,21 @@ def main():
     sqs_scrape = SQS_Queue('test_scrape')
 
 
-
-    # TODO: Explanatory comments
-    while True: # not sqs_scrape.empty():
+    # Continually pull off 
+    while True:
         try:
             row = sqs_scrape.get()
             url_to_scrape = json.loads(row)
             sqs_process = SQS_Queue(url_to_scrape['server_name'])
             url = url_to_scrape['url']
             site = url_to_scrape['site_id']
-            # print("Scraping url : ", url)
 
             base = "http://localhost/get_data?site=%s&url=%s"
             output = requests.get(base%(site, url)).text
             # TODO: add necessary data here: Site_id, and event. deser + add + ser if needed, or use jsonmessage to return
-            # print(output)
+            
+
+
             sqs_process.put(output)
             sqs_scrape.task_done()
         except IndexError as e:
