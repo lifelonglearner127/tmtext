@@ -2,7 +2,7 @@ import re
 
 from scrapy import FormRequest
 
-from product_ranking.spiders.contrib.product_spider import ProductsSpider
+from contrib.product_spider import ProductsSpider
 from product_ranking.spiders import cond_set, cond_set_value
 from product_ranking.spiders import cond_replace, cond_replace_value
 
