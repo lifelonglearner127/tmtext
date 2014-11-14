@@ -1,3 +1,6 @@
+#!usr/bin/env python3
+
+
 """ 
 
 This is a helper function that wraps the SQS Queue functionality 
@@ -23,6 +26,7 @@ used item from the queue.
 ***  boto.sqs.connect_to_region needs these credentials to exist
 
 """
+
 
 from boto.sqs.message import Message
 import boto.sqs
@@ -66,9 +70,17 @@ class SQS_Queue():
         else:
             raise Exception("No current task to finish")
     
-    # completely clear out the queue
+    # if a process gets a message, and fails, the currentM needs to be reset. Use this.
+    def reset_message(self):
+        self.currentM = None
+
+    # completely clear out the SQS queue
     def clear(self):
         self.q.clear()
+
+    # a rough estimate of how many objects are currently in the queue
+    def count(self):
+        return self.q.count()
 
     # Check if the SQS Queue is empty
     # due to a lag in the queue count, the count may be off,
