@@ -23,12 +23,12 @@ def apikey(key):
 
 
 class BaseScraper(Scraper):
-    def __init__(self, product_page_url):
+    def __init__(self, **kwargs):
         for method in map(lambda name: getattr(self.__class__, name), dir(self)):
             if hasattr(method, 'apikey'):
                 self.DATA_TYPES[method.apikey] = method
 
-        Scraper.__init__(self, product_page_url)
+        Scraper.__init__(self, **kwargs)
 
     def main(self, *args):
         if not self.check_url_format():

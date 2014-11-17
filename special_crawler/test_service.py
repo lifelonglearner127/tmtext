@@ -436,7 +436,7 @@ class ServiceSimpleTest(unittest.TestCase):
                 "categories", "category_name", 
                 ]
 
-        walmart_data = ["owned", "marketplace"]
+        walmart_data = ["product_title"]
 
         with open("unilever.csv") as inputf:
             for line in inputf:
@@ -454,12 +454,12 @@ class ServiceSimpleTest(unittest.TestCase):
     # test all keys are in the response for simple (all-data) request for tesco
     # (using template function)
     def test_tesco_alldata(self):
-        self._test_alldata("tesco", "http://www.tesco.com/direct/lindam-adjustable-back-seat-mirror/211-3189.prd")
+        self._test_alldata("tesco", "http://www.tesco.com/direct/torch-keychain-1-led/592-8399.prd")
 
     # test requests for each specific type of data for tesco
     # (using template function)
     def test_tesco_specificdata(self):
-        self._test_specificdata("tesco", "http://www.tesco.com/direct/lindam-adjustable-back-seat-mirror/211-3189.prd")
+        self._test_specificdata("tesco", "http://www.tesco.com/direct/torch-keychain-1-led/592-8399.prd")
 
     # test all keys are in the response for simple (all-data) request for amazon
     # (using template function)

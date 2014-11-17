@@ -97,13 +97,19 @@ class PGEStore(Scraper):
     def _description(self):
         #short_description = " ".join(self.tree_html.xpath("//div[@class='tabContent']//text()")).strip()
         #return short_description
-        return None
+        description = self._long_description_helper()
+        return description
 
     def _long_description(self):
+        d1 = self._description()
+        d2 = self._long_description_helper(self)
+        if d1 == d2:
+            return None
+        return d2
+
+    def _long_description_helper(self):
         full_description = " ".join(self.tree_html.xpath('//div[contains(@class, "main-column vp")]/text()')).strip()
         return full_description
-
-
 
 
     ##########################################

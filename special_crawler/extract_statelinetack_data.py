@@ -63,7 +63,10 @@ class StateLineTackScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
+        a = self.tree_html.xpath('//*[@itemprop="name"]/text()')[0]
+        if a is not None and len(a)>3:
+            return a
+        return self._product_title()
     
     def _product_title(self):
         return self.tree_html.xpath("//meta[@property='og:title']/@content")[0]
@@ -78,13 +81,22 @@ class StateLineTackScraper(Scraper):
         return None
 
     def _features(self):
-        return self._feature_helper()
+        desc, feat = self._feature_helper()
+        return feat
 
     def _feature_count(self):
-        return len(self._feature_helper())
+        desc, feat = self._feature_helper()
+        return len(feat)
         
     def _feature_helper(self):
-        full_description = [x.strip() for x in self.tree_html.xpath('//div[@id="ItemPageProductSummaryBoxMain"]//text()') if len(x.strip())>0]
+        tree = self.tree_html
+        tree = str(etree.tostring(tree))
+        print re.findall(r'\s*<strong>\s*(.*)\s*</strong>\s*', tree)# take care of some crazy spacing issues
+        tree = re.sub(r'\s*<strong>\s*(.*)\s*</strong>\s*', r'\1', tree)
+        tree = re.sub(r'\n', '', tree)
+        tree = html.fromstring(tree)
+
+        full_description = [x.strip() for x in tree.xpath('//div[@id="ItemPageProductSummaryBoxMain"]//div[@class="GreyBoxMiddle"]//text()') if len(x.strip())>0]
         full_description = [x for x in full_description if len(x)>3]
         
         feat_index = [i for i in range(len(full_description)) if re.findall(r'^.{0,10}(F|f)eatures.{0,4}$', full_description[i])]
@@ -100,21 +112,36 @@ class StateLineTackScraper(Scraper):
             spec_index = None
 
         if spec_index>0:
-            return full_description[feat_index+1:spec_index]
+            feat = full_description[feat_index+1:spec_index]
         else:
-            return full_description[feat_index+1:]
+            feat = full_description[feat_index+1:]
+
+        if feat_index>0:
+            desc = full_description[0:feat_index]
+        else:
+            desc = full_description[0]
+
+        if isinstance(desc, str) or isinstance(desc, unicode):
+            temp = []
+            temp.append(desc)
+            desc = temp
+
+        return desc, feat
 
     def _model_meta(self):
         return None
 
     def _description(self):
-        return None
+        # description = ([x.strip() for x in self.tree_html.xpath('//div[@id="ItemPageProductSummaryBoxMain"]//div[@class="GreyBoxMiddle"]//text()') if len(x.strip())>0])
+        # for row in range(0,6):
+        #     if len(description[row]) > 3:#to avoid the heading "product description"
+        #         return description[row]
+        # return None
+        desc, feat = self._feature_helper()
+        return ' '.join(desc)
+
 
     def _long_description(self):
-        full_description = ([x.strip() for x in self.tree_html.xpath('//div[@id="ItemPageProductSummaryBoxMain"]//text()') if len(x.strip())>0])
-        for row in range(0,4):
-            if len(full_description[row]) > 60:
-                return full_description[row]
         return None
 
 

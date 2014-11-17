@@ -41,8 +41,8 @@ class WalmartScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
-    def __init__(self, product_page_url):
-        Scraper.__init__(self, product_page_url)
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
         self.has_webcollage_media = False
@@ -72,7 +72,7 @@ class WalmartScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+$", self.product_page_url)
+        m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
         return not not m
 
     # TODO:
@@ -202,7 +202,8 @@ class WalmartScraper(Scraper):
     # TODO: flatten returned object
     def reviews_for_url(self):
         """Extracts and returns reviews data for a walmart product
-        using additional requests (other than page source)
+        using additional requests (other than page source).
+        Works for old walmart page structure.
         Returns:
             nested dictionary with 'reviews' as first-level key,
             pointing to another dictionary with following keys:
@@ -218,6 +219,35 @@ class WalmartScraper(Scraper):
         except Exception, e:
             return {"reviews" : {"total_reviews": None, "average_review": None}}
         return {"reviews" : {"total_reviews": reviews_count, "average_review": average_review}}
+
+
+    def _has_webcollage_iframe(self):
+        """Extracts webcollage links from an iframe on the page.
+        (Example: http://www.walmart.com/ip/Trix-Wildberry-Red-Swirls-Cereal-22.7-oz/25847976
+            has some webcollage images)
+        Returns:
+            1 if page has iframe with webcollage images, 0 otherwise
+        """
+
+        # assume only 1 iframe
+        # TODO: identify it by class or smth?
+        try:
+            iframe_link = self.tree_html.xpath("//iframe/@src")[0]
+            if iframe_link.startswith("/"):
+                # append scheme
+                iframe_link = "http:" + iframe_link
+
+            # get contents of iframe
+            contents = urllib.urlopen(iframe_link).read()
+            # get webcollage content from iframe
+            # TODO: what if they are in comments?
+            if "media.webcollage.net" in contents:
+                return 1
+
+        except Exception, e:
+            return 0
+
+        return 0
 
     def _product_has_webcollage(self):
         """Uses video and pdf information
@@ -235,6 +265,10 @@ class WalmartScraper(Scraper):
 
         if self.has_webcollage_media:
             return 1
+
+        if self._has_webcollage_iframe():
+            return 1
+
         return 0
 
     def _product_has_video(self):
@@ -276,22 +310,32 @@ class WalmartScraper(Scraper):
     # ! may throw exception if not found
     # TODO: improve, filter by tag class or something
     def _product_name_from_tree(self):
-        """Extracts product name
+        """Extracts product name.
+        Supports both old and new page design.
         Returns:
             string containing product name, or None
         """
 
-        return self.tree_html.xpath("//h1")[0].text
+        # assume new design
+        product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
+
+        if not product_name_node:
+            # assume old design
+            product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
+
+        return product_name_node[0].text.strip()
 
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_keywords_from_tree(self):
-        """Extracts meta 'kewyords' tag for a walmart product
+        """Extracts meta 'kewyords' tag for a walmart product.
+        Works for both old or new version of walmart pages
         Returns:
             string containing the tag's content, or None
         """
 
-        return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
+        # supports both new and old version of walmart pages
+        return self.tree_html.xpath("//meta[@name='keywords']/@content | //meta[@name='Keywords']/@content")[0]
 
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
@@ -313,23 +357,58 @@ class WalmartScraper(Scraper):
         """
 
         short_description = "".join(map(lambda li_element: etree.tostring(li_element), \
-            self.tree_html.xpath("//div[@class='product-short-description module']//li")\
+            self.tree_html.xpath("//div[@class='product-short-description module']//li | " +\
+                "//div[starts-with(@class, 'choice-short-description')]//li")\
             ))
 
         # try with just the text
         if not short_description.strip():
-            short_description = " ".join(self.tree_html.xpath("//div[@class='product-short-description module']//text()"))
+            short_description = " ".join(self.tree_html.xpath("//div[@class='product-short-description module']//text() | " + \
+                "//div[starts-with(@class, 'choice-short-description')]//text()"))
 
         # try to extract from old page structure - in case walmart is 
         # returning an old type of page
         if not short_description:
             short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
 
-        # return None if no description
+        # if no short description, return the long description
         if not short_description.strip():
             return None
 
         return short_description.strip()
+
+    def _short_description_wrapper(self):
+        """Extracts product short description.
+        If not found, returns long description instead,
+        or the first, bulletted part of the long description, if found.
+        Returns:
+            string containing the text content of the product's description, or None
+        """
+
+        # TODO: maybe these extractor functions are being called too many times.
+        #       maybe reimplement this using state - an instance variable containing
+        #       both descriptions (extracted at once)
+        try:
+            short_description = self._short_description_from_tree()
+        except:
+            short_description = None
+
+        if not short_description:
+            # get everything before and including <li> tags from long description.
+            short_description = " ".join(self.tree_html.xpath("//div[@class='js-ellipsis module']//*[following-sibling::li|self::li|following-sibling::ul]//text()")).strip()
+
+            # hack: remove everything after "Ingredients", cause sometimes they're still there...
+            try:
+                ingredients_index = short_description.index("Ingredients:")
+                short_description = short_description[: ingredients_index].strip()
+            except Exception:
+                pass
+
+        if not short_description.strip():
+            # if there are no bullets either, get the entire long description text
+            short_description = self._long_description()
+
+        return short_description
 
     # ! may throw exception if not found
     # TODO:
@@ -355,7 +434,7 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        full_description = " ".join(self.tree_html.xpath("//section[@class='product-about js-about-item']//text()")).strip()
+        full_description = " ".join(self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]//text()")).strip()
         # return None if empty
         if not full_description:
             return None
@@ -378,9 +457,42 @@ class WalmartScraper(Scraper):
 
         # try assuming old page structure now
         if long_description_new is None:
-            return self._long_description_from_tree_old()
+            long_description = self._long_description_from_tree_old()
+        else:
+            long_description = long_description_new
 
-        return long_description_new
+        return long_description
+
+    def _long_description_wrapper(self):
+        """Extracts product long description.
+        Wrapper function that uses extractor functions to try extracting assuming
+        either old walmart page design, or new. Works for both.
+        If short description is equal to long description, returns None, because
+        long description text will be returned by the short description function.
+        Returns:
+            string containing the text content of the product's description, or None
+        """
+
+        # if short description is null, it probably returned some part of long description
+        # so change strategy for returning long description
+        short_description = self._short_description_from_tree()
+        long_description = self._long_description()
+
+        if short_description is None:
+    
+            # get all long description text that is not in long description
+            all_long_description_text = " ".join(self.tree_html.xpath("//div[@class='js-ellipsis module']//text()")).strip()
+            short_description_text = self._short_description_wrapper()
+
+            # normalize spaces
+            all_long_description_text = re.sub("\s+", " ", all_long_description_text)
+            short_description_text = re.sub("\s+", " ", short_description_text)
+
+            # substract the 2 strings
+            long_description = "".join(all_long_description_text.rsplit(short_description_text)).strip()
+
+        return long_description
+
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
@@ -416,12 +528,24 @@ class WalmartScraper(Scraper):
     # extract product model from its product product page tree
     # ! may throw exception if not found
     def _model_from_tree(self):
-        """Extracts product model
+        """Extracts product model.
+        Works for both old and new walmart page structure.
         Returns:
             string containing the product model, or None
         """
 
-        return self.tree_html.xpath("//div[@class='specs-table']/table//td[contains(text(),'Model')]/following-sibling::*/text()")[0].strip()
+        # extract features table for new page version:
+        # might cause exception if table node not found (and premature exit of function)
+        try:
+            table_node = self.tree_html.xpath("//div[@class='specs-table']/table")[0]
+        except Exception:
+            table_node = None
+
+        if not table_node:
+            # old page version:
+            table_node = self.tree_html.xpath("//table[@class='SpecTable']")[0]
+
+        return table_node.xpath(".//td[contains(text(),'Model')]/following-sibling::*/text()")[0].strip()
 
     # extract product model from its product product page tree (meta tag)
     # ! may throw exception if not found
@@ -436,29 +560,84 @@ class WalmartScraper(Scraper):
     def _categories_hierarchy(self):
         """Extracts full path of hierarchy of categories
         this product belongs to, from the lowest level category
-        it belongs to, to its top level department
+        it belongs to, to its top level department.
+        Works for both old and new page design
         Returns:
             list of strings containing full path of categories
             (from highest-most general to lowest-most specific)
             or None if list is empty of not found
         """
 
+        # assume new page design
         categories_list = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")
         if categories_list:
             return categories_list
         else:
-            return None
+            # assume old page design
+            try:
+                return self._categories_hierarchy_old()
+            except Exception:
+                return None
+
+    # ! may throw exception if not found
+    def _categories_hierarchy_old(self):
+        """Extracts full path of hierarchy of categories
+        this product belongs to, from the lowest level category
+        it belongs to, to its top level department.
+        For old page design
+        Returns:
+            list of strings containing full path of categories
+            (from highest-most general to lowest-most specific)
+            or None if list is empty of not found
+        """
+
+        js_breadcrumb_text = self.tree_html.xpath("""//script[@type='text/javascript' and
+         contains(text(), 'adsDefinitionObject.ads.push')]/text()""")[0]
+
+        # extract relevant part from js function text
+        js_breadcrumb_text = re.sub("\n", " ", js_breadcrumb_text)
+        m = re.match('.*(\{.*"unitName".*\}).*', js_breadcrumb_text)
+        json_object = json.loads(m.group(1))
+        categories_string = json_object["unitName"]
+        categories_list = categories_string.split("/")
+        # remove first irrelevant part
+        catalog_index = categories_list.index("catalog")
+        categories_list = categories_list[catalog_index + 1 :]
+
+        # clean categories names
+        def clean_category(category_name):
+            import string
+            # capitalize every word, separated by "_", replace "_" with spaces
+            return re.sub("_", " ", string.capwords(category_name, "_"))
+
+        categories_list = map(clean_category, categories_list)
+        categories_list, "CATEGORIES LIST*******"
+        return categories_list
 
     # ! may throw exception of not found
     def _category(self):
         """Extracts lowest level (most specific) category this product
         belongs to.
+        Works for both old and new pages
         Returns:
             string containing product category
         """
 
         # return last element of the categories list
-        return self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")[-1]
+        
+        # assume new design
+        try:
+            category = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")[-1]
+        except Exception:
+            category = None 
+        
+        if category:
+            return category
+        else:
+            # asume old design
+            category = self._categories_hierarchy_old()[-1]
+
+            return category
 
     # extract product features list from its product product page tree, return as string
     def _features_from_tree(self):
@@ -470,7 +649,11 @@ class WalmartScraper(Scraper):
         """
 
         # join all text in spec table; separate rows by newlines and eliminate spaces between cells
+        # new page version:
         rows = self.tree_html.xpath("//div[@class='specs-table']/table//tr")
+        if not rows:
+            # old page version:
+            rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
         # list of lists of cells (by rows)
         cells = map(lambda row: row.xpath(".//td//text()"), rows)
         # list of text in each row
@@ -487,13 +670,20 @@ class WalmartScraper(Scraper):
     # extract number of features from tree
     # ! may throw exception if not found
     def _nr_features_from_tree(self):
-        """Extracts number of product features
+        """Extracts number of product features.
+        Works for both old and new walmart page structure
         Returns:
             int containing number of features
         """
 
         # select table rows with more than 2 cells (the others are just headers), count them
-        return len(filter(lambda row: len(row.xpath(".//td"))>1, self.tree_html.xpath("//div[@class='specs-table']/table//tr")))
+        # new page version:
+        rows = self.tree_html.xpath("//div[@class='specs-table']/table//tr")
+        if not rows:
+            # old page version:
+            rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
+
+        return len(filter(lambda row: len(row.xpath(".//td"))>1, rows))
 
     # extract page title from its product product page tree
     # ! may throw exception if not found
@@ -577,8 +767,9 @@ class WalmartScraper(Scraper):
 
     # extract nr of product reviews information from its product page
     # ! may throw exception if not found
-    def _nr_reviews_from_tree(self):
+    def _nr_reviews_new(self):
         """Extracts total nr of reviews info for walmart product using page source
+        Works for new walmart page structure
         Returns:
             int containing total nr of reviews
         """
@@ -591,8 +782,9 @@ class WalmartScraper(Scraper):
 
     # extract average product reviews information from its product page
     # ! may throw exception if not found
-    def _avg_review_from_tree(self):
+    def _avg_review_new(self):
         """Extracts average review info for walmart product using page source
+        Works for new walmart page structure
         Returns:
             float containing average value of reviews
         """
@@ -603,24 +795,161 @@ class WalmartScraper(Scraper):
 
         return average_review
 
-    def _image_count(self):
-        return len(self._image_urls())
+    # ! may throw exception if not found
+    def _avg_review_old(self):
+        """Extracts average review info for walmart product using page source
+        Works for old walmart page structure
+        Returns:
+            float containing average value of reviews
+        """
+        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
+        average_review = float(reviews_info_node.xpath("span[@itemprop='ratingValue']/text()")[0])
+        return average_review
 
-    def _image_urls(self):
-        # TODO: bad. these are all thumbnails
-        images_carousel = self.tree_html.xpath("//div[@class='product-carousel-wrapper']//a/@href")
+    # ! may throw exception if not found
+    def _nr_reviews_old(self):
+        """Extracts total nr of reviews info for walmart product using page source
+        Works for old walmart page structure
+        Returns:
+            int containing total nr of reviews
+        """
+        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
+        nr_reviews = int(reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")[0])
+        return nr_reviews
+
+    def _avg_review(self):
+        """Extracts average review value for walmart product
+        Works for both new and old walmart page structure
+        (uses the extractor function relevant for this page)
+        Returns:
+            float containing average value of reviews
+        """
+
+        # assume new page structure
+        # extractor function may throw exception if extraction failed
+        try:
+            average_review = self._avg_review_new()
+        except Exception:
+            average_review = None
+
+        # extractor for new page structure failed. try with old
+        if average_review is None:
+            return self._avg_review_old()
+
+        return average_review
+
+    def _nr_reviews(self):
+        """Extracts total nr of reviews info for walmart product using page source
+        Works for both new and old walmart page structure
+        (uses the extractor function relevant for this page)
+        Returns:
+            int containing total nr of reviews
+        """
+
+        # assume new page structure
+        # extractor function may throw exception if extraction failed
+        try:
+            nr_reviews = self._nr_reviews_new()
+        except Exception:
+            nr_reviews = None
+
+        # extractor for new page structure failed. try with old
+        if nr_reviews is None:
+            return self._nr_reviews_old()
+
+        return nr_reviews
+
+    def _image_count(self):
+        """Counts number of (valid) images found
+        for this product (not including images saying "no image available")
+        Returns:
+            int representing number of images
+        """
+        
+        try:
+            images = self._image_urls()
+        except Exception:
+            images = None
+            pass
+
+        if not images:
+            return 0
+        else:
+            return len(images)
+
+    def _image_urls_old(self):
+        """Extracts image urls for this product.
+        Works on old version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
+
+        scripts = self.tree_html.xpath("//script//text()")
+        for script in scripts:
+            find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script)) 
+            if len(find)>0:
+                return find
+
+        # It should only return this img when there's no img carousel    
+        pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
+        if pic:
+            # check if it's a "no image" image
+            # this may return a decoder not found error
+            try:
+                if self._no_image(pic[0]):
+                    return None
+            except Exception, e:
+                # TODO: how to get this printed in the logs
+                print "WARNING: ", e.message
+
+            return pic
+
+        else:
+            return None
+
+    def _image_urls_new(self):
+        """Extracts image urls for this product.
+        Works on new version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
+        images_carousel = self.tree_html.xpath("//div[starts-with(@class,'product-carousel-wrapper')]//a/@href")
         if images_carousel:
             return images_carousel
 
         # It should only return this img when there's no img carousel    
         main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
         if main_image:
+            # check if this is a "no image" image
+            # this may return a decoder not found error
+            try:
+                if self._no_image(main_image[0]):
+                    return None
+            except Exception, e:
+                print "WARNING: ", e.message
+                                
             return main_image
+
 
         # nothing found
         return None
+
+    def _image_urls(self):
+        """Extracts image urls for this product.
+        Works on both old and new version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
+
+        # assume new version
+        image_list = self._image_urls_new()
+        if image_list is None:
+            return self._image_urls_old()
+
+        return image_list
         
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
+    # might be outdated? (since walmart site redesign)
     def _mobile_image_same(self):
         url = self.product_page_url
         url = re.sub('http://www', 'http://mobile', url)
@@ -758,6 +1087,23 @@ class WalmartScraper(Scraper):
 
         return marketplace_new
 
+    def _version(self):
+        """Determines if walmart page being read (and version of extractor functions
+            being used) is old or new design.
+        Returns:
+            "Walmart v1" for old design
+            "Walmart v2" for new design
+        """
+
+        # using the "keywords" tag to distinguish between page versions.
+        # In old version, it was capitalized, in new version it's not
+        if self.tree_html.xpath("//meta[@name='keywords']/@content"):
+            return "Walmart v2"
+        if self.tree_html.xpath("//meta[@name='Keywords']/@content"):
+            return "Walmart v1"
+
+        # we could not decide
+        return None
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -814,9 +1160,9 @@ class WalmartScraper(Scraper):
         "product_name" : _product_name_from_tree, \
         "keywords" : _meta_keywords_from_tree, \
         "brand" : _meta_brand_from_tree, \
-        "description" : _short_description_from_tree, \
+        "description" : _short_description_wrapper, \
         # TODO: check if descriptions work right
-        "long_description" : _long_description, \
+        "long_description" : _long_description_wrapper, \
         "price" : _price_from_tree, \
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
@@ -828,8 +1174,8 @@ class WalmartScraper(Scraper):
         "product_title" : _product_name_from_tree, \
         "owned": _owned, \
         "marketplace": _marketplace, \
-        "review_count": _nr_reviews_from_tree, \
-        "average_review": _avg_review_from_tree, \
+        "review_count": _nr_reviews, \
+        "average_review": _avg_review, \
         # video needs both page source and separate requests
         "video_count" : _product_has_video, \
         "video_urls" : _video_urls, \
@@ -840,6 +1186,8 @@ class WalmartScraper(Scraper):
 
         "categories" : _categories_hierarchy, \
         "category_name" : _category, \
+
+        "scraper" : _version, \
         }
 
     # special data that can't be extracted from the product page
