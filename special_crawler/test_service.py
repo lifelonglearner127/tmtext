@@ -414,42 +414,43 @@ class ServiceSimpleTest(unittest.TestCase):
     def test_walmart_specificdata(self):
         self._test_specificdata("walmart", "http://www.walmart.com/ip/14245213")
 
-    # test requests for returned values to be not null for walmart
-    def test_walmart_notnull(self):
-        # data that should be not null for walmart
-        walmart_data = [
-                "url", "date", "status", \
-                "product_name", "product_title", "title_seo",\
-                # "model", 
-                "upc",
-                "features", "feature_count", 
-                # "model_meta", \
-                # "description", "long_description", \
-                # "image_count", 
-                # "image_urls", \
-                # # "video_count", "pdf_count", \
-                "webcollage", "htags", "loaded_in_seconds", \
-                "keywords", \
-                "price", \
-                # # "in_stores", "in_stores_only", "owned_out_of_stock", "marketplace_sellers", "marketplace_lowest_price", \
-                # "owned", "marketplace", \
-                "categories", "category_name", 
-                ]
+    # TODO: add to separate test suite
+    # # test requests for returned values to be not null for walmart
+    # def test_walmart_notnull(self):
+    #     # data that should be not null for walmart
+    #     walmart_data = [
+    #             "url", "date", "status", \
+    #             "product_name", "product_title", "title_seo",\
+    #             # "model", 
+    #             "upc",
+    #             "features", "feature_count", 
+    #             # "model_meta", \
+    #             # "description", "long_description", \
+    #             # "image_count", 
+    #             # "image_urls", \
+    #             # # "video_count", "pdf_count", \
+    #             "webcollage", "htags", "loaded_in_seconds", \
+    #             "keywords", \
+    #             "price", \
+    #             # # "in_stores", "in_stores_only", "owned_out_of_stock", "marketplace_sellers", "marketplace_lowest_price", \
+    #             # "owned", "marketplace", \
+    #             "categories", "category_name", 
+    #             ]
 
-        walmart_data = ["product_title"]
+    #     walmart_data = ["product_title"]
 
-        with open("unilever.csv") as inputf:
-            for line in inputf:
-                self._test_notnull("walmart", line.strip(), walmart_data)
-        # self._test_notnull("walmart", "http://www.walmart.com/ip/14245213", walmart_data)
-        # self._test_notnull("walmart", "http://www.walmart.com/ip/12555259", walmart_data)
-        # self._test_notnull("walmart", "http://www.walmart.com/ip/17324906", walmart_data)
-        # self._test_notnull("walmart", "http://www.walmart.com/ip/26893665", walmart_data)
-        # self._test_notnull("walmart", "http://www.walmart.com/ip/22985117", walmart_data)
-        # self._test_notnull("walmart", "http://www.walmart.com/ip/20750534", walmart_data)
-        # self._test_notnull("walmart", "http://www.walmart.com/ip/22309190", walmart_data)
-        # self._test_notnull("walmart", "http://www.walmart.com/ip/16637056", walmart_data)
-        # self._test_notnull("walmart", "http://www.walmart.com/ip/23497315", walmart_data)
+    #     with open("unilever.csv") as inputf:
+    #         for line in inputf:
+    #             self._test_notnull("walmart", line.strip(), walmart_data)
+    #     # self._test_notnull("walmart", "http://www.walmart.com/ip/14245213", walmart_data)
+    #     # self._test_notnull("walmart", "http://www.walmart.com/ip/12555259", walmart_data)
+    #     # self._test_notnull("walmart", "http://www.walmart.com/ip/17324906", walmart_data)
+    #     # self._test_notnull("walmart", "http://www.walmart.com/ip/26893665", walmart_data)
+    #     # self._test_notnull("walmart", "http://www.walmart.com/ip/22985117", walmart_data)
+    #     # self._test_notnull("walmart", "http://www.walmart.com/ip/20750534", walmart_data)
+    #     # self._test_notnull("walmart", "http://www.walmart.com/ip/22309190", walmart_data)
+    #     # self._test_notnull("walmart", "http://www.walmart.com/ip/16637056", walmart_data)
+    #     # self._test_notnull("walmart", "http://www.walmart.com/ip/23497315", walmart_data)
 
     # test all keys are in the response for simple (all-data) request for tesco
     # (using template function)
