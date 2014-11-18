@@ -80,6 +80,8 @@ class Scraper():
             "htags", # h1 and h2 tags, dictionary like: {"h1" : [], "h2": ["text in tag"]}
             "loaded_in_seconds", # load time of product page in seconds, float
             "keywords", # keywords for this product, usually from meta tag, string
+            "meta_tags",# a list of pairs of meta tag keys and values
+            "meta_tag_count", # the number of meta tags in the source of the page
             
             # reviews
             "review_count", # total number of reviews, int
@@ -136,7 +138,8 @@ class Scraper():
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
                         "features", "feature_count", "model_meta", "description", "long_description"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls",\
-                            "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords"], \
+                            "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
+                            'meta_tags','meta_tag_count'], \
         "reviews": ["review_count", "average_review", "max_review", "min_review"], \
         "sellers": ["price", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price"], \
