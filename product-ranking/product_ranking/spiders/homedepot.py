@@ -114,6 +114,7 @@ class HomedepotProductsSpider(BaseProductsSpider):
         return self._gen_variants_requests(response, product, skus)
 
     def _gen_variants_requests(self, response, product, skus):
+        reqs = []
         for _, sku in skus:
             new_product = product.copy()
             new_product['upc'] = sku
@@ -122,25 +123,30 @@ class HomedepotProductsSpider(BaseProductsSpider):
             new_meta['product'] = new_product
             new_meta['handle_httpstatus_list'] = [404]
             url = self.DETAILS_URL % sku
-            yield Request(
+            reqs.append(Request(
                 url,
                 self._parse_skudetails,
                 meta=new_meta,
-                priority=1000,
+                priority=1000)
             )
+        if not reqs:
+            return product
+        return reqs
 
     def _gen_certona_url(self, response):
-        appid = response.xpath("//input[@id='certona_appId']/@value").extract()
-        if not appid:
-            return
-
+        # changed version 4.2x -> 5.3x
+        # appid = response.xpath("//input[@id='certona_appId']/@value").extract()
+        # if not appid:
+        #     print "no appid"
+        #     return
+        appid = 'homedepot01'
         critemid = response.xpath(
             "//input[@id='certona_critemId']/@value").extract()
         if not critemid:
             return
 
         payload = {
-            "appid": appid[0],
+            "appid": appid,
             "tk": "62903038691729",
             "ss": "181357350200414",
             "sg": "1",
@@ -243,6 +249,12 @@ class HomedepotProductsSpider(BaseProductsSpider):
             totals = totals.replace(",", "")
             if is_num(totals):
                 return int(totals)
+        no_matches = response.xpath(
+            "//h1[@class='page-title']/text()").extract()
+        if no_matches:
+            if 'we could not find any' in no_matches[0] or \
+               'we found 0 matches for' in no_matches[0]:
+                return 0
         return None
 
     def _scrape_product_links(self, response):
