@@ -9,6 +9,7 @@
 
 # Hidden files
 !.htaccess
+.vagrant
 
 #Config
 application/config/config.local.php
