@@ -1,4 +1,4 @@
-#!usr/bin/env python3
+#!/usr/bin/env python3
 from sqs_connect import SQS_Queue
 import logging
 import time
