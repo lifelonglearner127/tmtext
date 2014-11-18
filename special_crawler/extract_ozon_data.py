@@ -97,6 +97,13 @@ class OzonScraper(Scraper):
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
     ##########################################
+    def _meta_tags(self):
+        tags = map(lambda x:x.values() ,self.tree_html.xpath('//meta[not(@http-equiv)]'))
+        return tags
+
+    def _meta_tag_count(self):
+        tags = self._meta_tags()
+        return len(tags)
 
     def _mobile_image_same(self):
         return None
@@ -284,6 +291,8 @@ class OzonScraper(Scraper):
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
+        "meta_tags": _meta_tags,\
+        "meta_tag_count": _meta_tag_count,\
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \
@@ -316,5 +325,4 @@ class OzonScraper(Scraper):
         "mobile_image_same" : _mobile_image_same, \
         
     }
-
 
