@@ -56,6 +56,44 @@ class ChicksaddleryScraper(Scraper):
 
         return len(self.tree_html.xpath("//h2[text()='Features']/following-sibling::li"))
 
+    def _description(self):
+        """Extracts product description text
+        Returns:
+            string containing product description
+            or None if description not found or empty
+        """
+
+        # TODO: This aims to only extract the first part of the description.
+        #       Does it do it correctly for many examples?
+        description_node = self.tree_html.xpath(\
+            "//div[@class='product-description']/text()[normalize-space()!=''] | " + \
+            "//div[@class='product-description']/h4//text()[normalize-space()!='']"
+            )
+
+        description_text = "".join(description_node).strip()
+
+        if description_text:
+            return description_text
+        else:
+            return None
+
+    def _long_description(self):
+        """Extracts product long description text
+        Returns:
+            string containing product long description
+            or None if description not found or empty
+        """
+
+        description_node = self.tree_html.xpath(\
+            "//div[@class='product-description']/p/text()[normalize-space()!='']" \
+            )
+
+        description_text = "".join(description_node).strip()
+
+        if description_text:
+            return description_text
+        else:
+            return None
 
     DATA_TYPES = {
         "product_name" : _product_name, \
@@ -64,4 +102,6 @@ class ChicksaddleryScraper(Scraper):
         "model" : _model, \
         "features" : _features, \
         "feature_count" : _feature_count, \
+        "description" : _description, \
+        "long_description" : _long_description, \
     }
