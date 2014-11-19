@@ -15,7 +15,7 @@ This accomplishes the following:
     strings are compared using a Levenshtein distance
     formula, and a threshold is set so that very 
     similar strings map as the same
-6. display differences
+6. display differences.
 
 """
 

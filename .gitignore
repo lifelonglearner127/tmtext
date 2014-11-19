@@ -46,3 +46,4 @@ dist
 /webroot/webshoots
 /webroot/emails_logos
 !/webroot/img/
+/special_crawler/queue_handler/venv

@@ -1,14 +1,14 @@
-#!usr/bin/env python3
+#!/usr/bin/env python3
 from sqs_connect import SQS_Queue
 import logging
 import time
 import json
 import requests
 
-# clean up code: comments, necessary files, 
-# diagnose error
-# add necessary site data
-# json message
+    # clean up code: comments, necessary files, 
+    # diagnose error
+    # add necessary site data
+    # json message
 # bindings
 # steps 1 + 6
 
@@ -40,15 +40,17 @@ def main():
             base = "http://localhost/get_data?site=%s&url=%s"
             output = requests.get(base%(site_id, url)).text
 
-            # Add the processing fields to the return object
-            # TODO...
-
+            # Add the processing fields to the return object and re-serialize it
+            output = json.loads(output)
+            output['url'] = url
+            output['site_id'] = site_id
+            output['product_id'] = product_id
+            output['event'] = event
+            output = json.dumps(output)
 
             # Add the scraped page to the processing queue and remove it from the scrape queue
             sqs_process.put(output)
             sqs_scrape.task_done()
-
-            #logging.warning('done with : ', url)
 
         except IndexError as e:
             # This exception will most likely be triggered because you were grabbing off an empty queue
