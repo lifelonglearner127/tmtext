@@ -265,12 +265,6 @@ class Scraper():
             agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
         request.add_header('User-Agent', agent)
 
-        # cookie necessary for impactgel
-        # TODO: maybe do this better
-        if "impactgel" in self.product_page_url:
-            request.add_header("Cookie", "JSESSIONID=6FB8BEAA04B19F0E06C149CCB683EDA9.m1plqscsfapp03")
-
-
         for i in range(self.MAX_RETRIES):
             try:
                 contents = urllib2.urlopen(request).read()
