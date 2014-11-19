@@ -274,7 +274,14 @@ class Scraper():
         for i in range(self.MAX_RETRIES):
             try:
                 contents = urllib2.urlopen(request).read()
-                self.tree_html = html.fromstring(contents)
+
+                try:
+                    self.tree_html = html.fromstring(contents.decode("utf8"))
+                except UnicodeError, e:
+                    # if string was not utf8, don't deocde it
+                    print "Warning creating html tree from page content: ", e.message
+
+                    self.tree_html = html.fromstring(contents)
 
                 # if we got it we can exit the loop and stop retrying
                 return
