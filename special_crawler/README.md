@@ -2,6 +2,10 @@ This directory contains a python module for a REST service that extracts and pro
 
 The service is implemented in python 2.7.
 
+## Dependencies:
+
+- libjpeg-dev
+
 ## Dependencies (python packages):
 
 - Flask

@@ -56,6 +56,136 @@ class ChicksaddleryScraper(Scraper):
 
         return len(self.tree_html.xpath("//h2[text()='Features']/following-sibling::li"))
 
+    def _description(self):
+        """Extracts product description text
+        Returns:
+            string containing product description
+            or None if description not found or empty
+        """
+
+        # TODO: This aims to only extract the first part of the description.
+        #       Does it do it correctly for many examples?
+        description_node = self.tree_html.xpath(\
+            "//div[@class='product-description']/text()[normalize-space()!=''] | " + \
+            "//div[@class='product-description']/h4//text()[normalize-space()!='']"
+            )
+
+        description_text = "".join(description_node).strip()
+
+        if description_text:
+            return description_text
+        else:
+            return None
+
+    def _long_description(self):
+        """Extracts product long description text
+        Returns:
+            string containing product long description
+            or None if description not found or empty
+        """
+
+        description_node = self.tree_html.xpath(\
+            "//div[@class='product-description']/p/text()[normalize-space()!='']" \
+            )
+
+        description_text = "".join(description_node).strip()
+
+        if description_text:
+            return description_text
+        else:
+            return None
+
+    def _image_urls(self):
+        """Extracts image urls for this product
+        Returns:
+            list of strings representing urls of images
+            or None if no image found
+        """
+
+        base_url = "http://www.chicksaddlery.com/Merchant2/"
+        images = self.tree_html.xpath("//div[@class='product-image']/img/@src")
+
+        if images:
+            return map(lambda relative_url: base_url + relative_url, images)
+        else:
+            return None
+
+    def _image_count(self):
+        """Extracts number of images for this product
+        Returns:
+            int representing number of images
+        """
+
+        return len(self.tree_html.xpath("//div[@class='product-image']/img"))
+
+    def _htags(self):
+        """Extracts <h1> and <h2> tags on the product page
+        Returns:
+            dictionary with "h1" and "h2" as keys,
+            and lists with each heading's text as values
+        """
+
+        h1s = self.tree_html.xpath("//h1//text()")
+        h2s = self.tree_html.xpath("//h2//text()")
+
+        return {
+        "h1" : h1s,
+        "h2" : h2s,
+        }
+
+    # ! may throw exception if not found
+    def _keywords(self):
+        """Extracts keywords related to product, from
+        "meta" tag
+        Returns:
+            string containing keywords
+        """
+
+        return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
+
+    # ! might throw exception if not found
+    def _price(self):
+        """Extracts (main) price on product page
+        Returns:
+            string containing product price, including currency
+        """
+
+        return self.tree_html.xpath("""//td[@id='main-content']
+            /div[starts-with(@class,'product-details')]
+            /div[@class='product-price']//strong/text()""")[0]
+
+    # ! may throw exception if not found
+    def _categories_hierarchy(self):
+        """Extracts full path of hierarchy of categories
+        this product belongs to, from the lowest level category
+        it belongs to, to its top level department.
+        Works for both old and new page design
+        Returns:
+            list of strings containing full path of categories
+            (from highest-most general to lowest-most specific)
+            or None if list is empty of not found
+        """
+
+        categories_full = self.tree_html.xpath("//div[@id='page-header']/a/text()")
+
+        # eliminate "Home"
+        categories = categories_full[1:]
+
+        if categories:
+            return categories
+        else:
+            return None
+
+    # ! may throw exception if not found
+    def _category(self):
+        """Extracts lowest level (most specific) category this product
+        belongs to.
+        Works for both old and new pages
+        Returns:
+            string containing product category
+        """
+
+        return self.tree_html.xpath("//div[@id='page-header']/a/text()")[-1]
 
     DATA_TYPES = {
         "product_name" : _product_name, \
@@ -64,4 +194,13 @@ class ChicksaddleryScraper(Scraper):
         "model" : _model, \
         "features" : _features, \
         "feature_count" : _feature_count, \
+        "description" : _description, \
+        "long_description" : _long_description, \
+        "image_count" : _image_count, \
+        "image_urls" : _image_urls, \
+        "htags" : _htags, \
+        "keywords" : _keywords, \
+        "price" : _price, \
+        "categories" : _categories_hierarchy, \
+        "category_name" : _category, \
     }
