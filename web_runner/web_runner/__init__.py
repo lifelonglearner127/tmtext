@@ -53,6 +53,8 @@ def main(global_config, **settings):
                      '/crawl/project/{project}/spider/{spider}/job/{jobid}/')
     config.add_route("spider job results",
                      '/result/project/{project}/spider/{spider}/job/{jobid}/')
+    config.add_route("spider history",
+                     '/history/project/{project}/spider/{spider}/job/{jobid}/')
 
     config.add_route("command pending jobs", '/command/{name}/pending/{jobid}/')
     config.add_route("command job results", '/command/{name}/result/{jobid}/')

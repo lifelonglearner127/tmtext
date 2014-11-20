@@ -238,37 +238,8 @@ def command_result(request):
              renderer='json', http_cache=MIN_CACHE_FRESHNESS)
 def command_history(request):
     """Report command history"""
-    name = request.matchdict['name']
-    encoded_job_ids = request.matchdict['jobid']
-    try:
-        job_ids = decode_ids(encoded_job_ids)
-    except TypeError:
-        # Malformed Job ID.
-        raise exc.HTTPBadRequest("The job ID is invalid.")
 
-    settings = request.registry.settings
-    cfg_template = find_command_config_from_name(settings, name)
-
-    # Get the associated requestId
-    dbinterf = web_runner.db.DbInterface(
-        settings['db_filename'], recreate=False)
-    request_ids = dbinterf.get_requestid(job_ids)
-    if len(request_ids) == 0:
-        raise exc.HTTPBadRequest("The job ID does not exist.")
-    elif len(request_ids) > 1:
-        raise exc.HTTPBadRequest("Jobids belong to different request.")
-
-    # Request the internal state history
-    request.matchdict['requestid'] = request_ids[0]
-    req_history = request_history(request)
-
-    # Create the structure to returns
-    ret = {
-            'history': map((lambda x: (x[0], x[2])), req_history['history']),
-            'status':  req_history['status'],
-          }
-
-    return ret
+    return _history(request, "command")
 
 
 def spider_start_view(request):
@@ -383,6 +354,14 @@ def spider_results_view(request):
         raise exc.HTTPBadGateway(
             detail="The content could not be retrieved: %s" % e)
 
+
+@view_config(route_name='spider history', request_method='GET',
+             renderer='json', http_cache=MIN_CACHE_FRESHNESS)
+def spider_history_view(request):
+    """Report spider history"""
+    
+    return _history(request, 'spider')
+ 
 
 @view_config(route_name='status', request_method='GET', renderer='json',
              http_cache=MIN_CACHE_FRESHNESS)
@@ -646,5 +625,47 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
     sort_history = sorted(history, key=lambda x: x.date)
     return map((lambda x: x.__repr__()), sort_history)
 
+
+
+def _history(request, request_type):
+    """Returns the history of a request to be publish
+
+    request_type can be: "spider" or "command"
+    """
+
+    if request_type == 'command':
+        name = request.matchdict['name']
+        encoded_job_ids = request.matchdict['jobid']
+        try:
+            job_ids = decode_ids(encoded_job_ids)
+        except TypeError:
+            # Malformed Job ID.
+            raise exc.HTTPBadRequest("The job ID is invalid.")
+    elif request_type == 'spider':
+        job_ids = (request.matchdict['jobid'],)
+
+    settings = request.registry.settings
+    #cfg_template = find_command_config_from_name(settings, name)
+
+    # Get the associated requestId
+    dbinterf = web_runner.db.DbInterface(
+        settings['db_filename'], recreate=False)
+    request_ids = dbinterf.get_requestid(job_ids)
+    if len(request_ids) == 0:
+        raise exc.HTTPBadRequest("The job ID does not exist.")
+    elif len(request_ids) > 1:
+        raise exc.HTTPBadRequest("Jobids belong to different request.")
+
+    # Request the internal state history
+    request.matchdict['requestid'] = request_ids[0]
+    req_history = request_history(request)
+
+    # Create the structure to returns
+    ret = {
+            'history': map((lambda x: (x[0], x[2])), req_history['history']),
+            'status':  req_history['status'],
+          }
+
+    return ret
 
 # vim: set expandtab ts=4 sw=4:
