@@ -234,6 +234,43 @@ def command_result(request):
     return request.response
 
 
+@view_config(route_name='command history', request_method='GET',
+             renderer='json', http_cache=MIN_CACHE_FRESHNESS)
+def command_history(request):
+    """Report command history"""
+    name = request.matchdict['name']
+    encoded_job_ids = request.matchdict['jobid']
+    try:
+        job_ids = decode_ids(encoded_job_ids)
+    except TypeError:
+        # Malformed Job ID.
+        raise exc.HTTPBadRequest("The job ID is invalid.")
+
+    settings = request.registry.settings
+    cfg_template = find_command_config_from_name(settings, name)
+
+    # Get the associated requestId
+    dbinterf = web_runner.db.DbInterface(
+        settings['db_filename'], recreate=False)
+    request_ids = dbinterf.get_requestid(job_ids)
+    if len(request_ids) == 0:
+        raise exc.HTTPBadRequest("The job ID does not exist.")
+    elif len(request_ids) > 1:
+        raise exc.HTTPBadRequest("Jobids belong to different request.")
+
+    # Request the internal state history
+    request.matchdict['requestid'] = request_ids[0]
+    req_history = request_history(request)
+
+    # Create the structure to returns
+    ret = {
+            'history': map((lambda x: (x[0], x[2])), req_history['history']),
+            'status':  req_history['status'],
+          }
+
+    return ret
+
+
 def spider_start_view(request):
     """Starts job in Scrapyd and redirects to the "spider pending jobs" view."""
     settings = request.registry.settings
