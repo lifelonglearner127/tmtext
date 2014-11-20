@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
+
+'''
+Gist : Scrape Queue -> Scrape -> Process Queue
+
+'''
+
+
+
+
 from sqs_connect import SQS_Queue
 import logging
 import time
 import json
 import requests
-
-    # clean up code: comments, necessary files, 
-    # diagnose error
-    # add necessary site data
-    # json message
-# bindings
-# steps 1 + 6
+#from models import select_site_by_id
 
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
 
 def main():
+    # establish the scrape queue
     sqs_scrape = SQS_Queue('test_scrape')
 
 
@@ -28,6 +32,7 @@ def main():
 
             # Vars from the json object
             url = message_json['url']
+            site = message_json['site']
             site_id = message_json['site_id']
             server_name = message_json['server_name']
             product_id = message_json['product_id']
@@ -38,7 +43,7 @@ def main():
 
             # Scrape the page using the scraper running on localhost
             base = "http://localhost/get_data?site=%s&url=%s"
-            output = requests.get(base%(site_id, url)).text
+            output = requests.get(base%(site, url)).text
 
             # Add the processing fields to the return object and re-serialize it
             output = json.loads(output)
@@ -47,6 +52,7 @@ def main():
             output['product_id'] = product_id
             output['event'] = event
             output = json.dumps(output)
+            print(output)
 
             # Add the scraped page to the processing queue and remove it from the scrape queue
             sqs_process.put(output)
