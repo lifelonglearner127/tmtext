@@ -15,6 +15,7 @@ from extract_argos_data import ArgosScraper
 from extract_homedepot_data import HomeDepotScraper
 from extract_statelinetack_data import StateLineTackScraper
 from extract_impactgel_data import ImpactgelScraper
+from extract_chicksaddlery_data import ChicksaddleryScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -43,6 +44,7 @@ SUPPORTED_SITES = {
                     "vitadepot": VitadepotScraper,
                     "wayfair" : WayfairScraper,
                     "impactgel" : ImpactgelScraper,
+                    "chicksaddlery" : ChicksaddleryScraper,
                     }
 
 # add logger
