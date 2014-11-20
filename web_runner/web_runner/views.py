@@ -239,7 +239,7 @@ def command_result(request):
 def command_history(request):
     """Report command history"""
 
-    return _history(request, "command")
+    return _history_by_jobid(request, "command")
 
 
 def spider_start_view(request):
@@ -360,7 +360,7 @@ def spider_results_view(request):
 def spider_history_view(request):
     """Report spider history"""
     
-    return _history(request, 'spider')
+    return _history_by_jobid(request, 'spider')
  
 
 @view_config(route_name='status', request_method='GET', renderer='json',
@@ -627,10 +627,18 @@ def _get_history(requestid, request_info, jobids_info, operations_info):
 
 
 
-def _history(request, request_type):
+def _history_by_jobid(request, request_type):
     """Returns the history of a request to be publish
 
     request_type can be: "spider" or "command"
+
+    The view returns a dictionary with the following keys:
+     * history: List with history content.
+     * status: String with the requestid status
+
+    Exanmple of history:
+        [["2014-07-30 21:13:02.829964", "Request arrived from 127.0.0.1."],
+        ["2014-07-30 21:16:02.829964", "Request Finished"]]
     """
 
     if request_type == 'command':
