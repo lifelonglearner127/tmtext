@@ -56,13 +56,19 @@ class BhinnekaScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
+        try:
+            return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
+        except:
+            return None
 
     def _product_title(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        try:
+            return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
+        except:
+            None
 
     def _title_seo(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return None
 
     def _model(self):
         return None
@@ -72,6 +78,7 @@ class BhinnekaScraper(Scraper):
 
     def _features(self):
         try:
+            '''
             feature_name_list = self.tree_html.xpath('//table[@class="spesifications"]//tr/td[1]/b/text()')
             feature_html_list = self.tree_html.xpath('//table[@class="spesifications"]//tr/td[2]')
             feature_text_list = []
@@ -82,23 +89,41 @@ class BhinnekaScraper(Scraper):
 
             for index in range(0,len(feature_name_list)):
                 features.append([feature_name_list[index],feature_text_list[index]])
+            '''
 
-            return features
+            feature_html_list = self.tree_html.xpath('//table[@class="spesifications"]//tr')
+            features = ""
+
+            for feature in feature_html_list:
+                features += " ".join([x for x in feature.itertext()])
+                features += "\n"
+
+            return features.strip()
         except:
             return None
 
     def _feature_count(self):
         try:
-            return len(self._features())
+            return len(self.tree_html.xpath('//table[@class="spesifications"]//tr'))
         except:
-            return 0
+            return None
 
     def _model_meta(self):
         return None
 
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath('//div[contains(@class, "prod_features")]//li//text()')).strip()
-        return short_description
+        try:
+            short_description = ''
+            items = self.tree_html.xpath('//div[@class="brdrTopSolid prodInfoSection"]//text()')
+
+            for item in items:
+                if item.replace('\r','').replace('\n','').strip() == '':
+                    continue
+                short_description += '\n' + item
+
+            return short_description.strip()
+        except:
+            return None
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
@@ -129,8 +154,12 @@ class BhinnekaScraper(Scraper):
         pass
         
     def _image_urls(self):
-        image_url = self.tree_html.xpath("//ul[@class='slides']/li/img/@src")
-        return image_url
+        image_urls = self.tree_html.xpath('//div[@id="thumb"]/img/@src')
+
+        if not image_urls:
+            image_urls = self.tree_html.xpath('//div[@id="prodMedia"]/div/img/@src')
+
+        return image_urls
 
     def _image_count(self):
         return len(self._image_urls())
@@ -157,10 +186,10 @@ class BhinnekaScraper(Scraper):
         return None
 
     def _htags(self):
-        htags_dict = {}
-        htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
-        htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
-        return htags_dict
+        h1_tags = self.tree_html.xpath('//h1')
+        h2_tags = self.tree_html.xpath('//h2')
+
+        return h1_tags + h2_tags
 
     def _keywords(self):
         return None
@@ -176,13 +205,24 @@ class BhinnekaScraper(Scraper):
     ##########################################
 
     def _average_review(self):
+        if not self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()'):
+            return None
+
         return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
 
     def _review_count(self):
-        return self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
+        try:
+            review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
+            return len(review_rating_list)
+        except:
+            return None
 
     def _max_review(self):
-        return None
+        try:
+            review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
+            return max(review_rating_list)
+        except:
+            return None
 
     def _min_review(self):
         try:
@@ -195,11 +235,10 @@ class BhinnekaScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        meta_price = self.tree_html.xpath('//meta[@itemprop="price"]//@content')
-        if meta_price:
-            return meta_price[0].strip()
-        else:
-            return None
+        try:
+            return self.tree_html.xpath('//span[@itemprop="price"]/text()')[0].strip()
+        except:
+            return  None
 
     def _in_stores_only(self):
         return None
@@ -233,15 +272,16 @@ class BhinnekaScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        all = self.tree_html.xpath("//span[contains(@class, 'breadcrumb')]//a//text()")
-        return all
+        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1:-1]
 
     def _category_name(self):
-        dept = " ".join(self.tree_html.xpath("//span[contains(@class, 'breadcrumb')]//a[1]//text()")).strip()
-        return dept
+        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[-1]
     
     def _brand(self):
-        return self.tree_html.xpath('//meta[@property="og:brand"]/@content')[0]
+        try:
+            return self.tree_html.xpath('//a[@id="ctl00_content_lnkBrand"]/@title')[0]
+        except:
+            return None
 
 
 
