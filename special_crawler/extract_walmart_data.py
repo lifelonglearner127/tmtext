@@ -913,9 +913,21 @@ class WalmartScraper(Scraper):
         Returns:
             list of strings representing image urls
         """
+
+        def _fix_relative_url(relative_url):
+            """Fixes relative image urls by prepending
+            the domain. First checks if url is relative
+            """
+
+            if not relative_url.startswith("http"):
+                return "http://www.walmart.com" + relative_url
+            else:
+                return relative_url
+
         images_carousel = self.tree_html.xpath("//div[starts-with(@class,'product-carousel-wrapper')]//a/@href")
         if images_carousel:
-            return images_carousel
+            # fix relative urls
+            return map(_fix_relative_url, images_carousel)
 
         # It should only return this img when there's no img carousel    
         main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
