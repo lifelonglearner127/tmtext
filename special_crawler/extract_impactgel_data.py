@@ -270,6 +270,12 @@ class ImpactgelScraper(Scraper):
             return 0
 
 
+    def _owned(self):
+        return 1
+
+    def _marketplace(self):
+        return 0
+
     DATA_TYPES = {
         "product_name" : _product_name, \
         "product_title": _product_name, \
@@ -299,13 +305,15 @@ class ImpactgelScraper(Scraper):
         "keywords" : _keywords, \
 
         "price" : _price, \
+        "marketplace": _marketplace, \
+        "owned" : _owned, \
         "owned_out_of_stock" : _unavailable, \
 
         # # What are these supposed to be?
         # "in_stores"
         # "in_stores_only"
-        # "owned"
-        # "marketplace"
+        # "owned" -> default 1
+        # "marketplace" -> default 0
         # "marketplace_sellers"
         # "marketplace_lowest_price"
         
