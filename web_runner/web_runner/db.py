@@ -339,6 +339,33 @@ class DbInterface(object):
 
         return ret
 
+
+    def get_requestid(self, jobids):
+        """Return a tuple with all requestid associate to jobids"""
+
+        cursor = self._conn.cursor()
+    
+        # Create the query
+        #sql = 'SELECT DISTINCT request_id FROM scrapy_jobs WHERE scrapy_jobid in (?)'
+        #quote_gen = map((lambda x: "'" + x + "'"), jobids)
+        #jobids_sql = '(' + ','.join(quote_gen) + ')'
+        #cursor.execute(sql, (jobids_sql,))
+
+        # Create the query
+        # WARNING: This query is insecure. I was not able to do it 
+        # in a secure way. For sure it is possible. Needs to be updated.
+        quote_gen = map((lambda x: "'" + x + "'"), jobids)
+        jobids_sql = ','.join(quote_gen)
+        sql = '''
+            SELECT DISTINCT request_id 
+            FROM scrapy_jobs 
+            WHERE scrapy_jobid in (%s)''' % jobids_sql
+        cursor.execute(sql)
+
+        output = tuple( request_id[0] for request_id in cursor.fetchall() or () )
+
+        return output
+
     def _get_jobids(self, request_id):
         """Return a tuple with all jobids asociated to a request id"""
         
