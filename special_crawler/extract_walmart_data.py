@@ -859,6 +859,22 @@ class WalmartScraper(Scraper):
 
         return nr_reviews
 
+    def _no_image(self, url):
+        """Overwrites the _no_image
+        in the base class with an additional test.
+        Then calls the base class no_image.
+
+        Returns True if image in url is a "no image"
+        image, False if not
+        """
+
+        # if image name is "no_image", return True
+        if re.match(".*no.image\..*", url):
+            return True
+
+        else:
+            return Scraper._no_image(self, url)
+
     def _image_count(self):
         """Counts number of (valid) images found
         for this product (not including images saying "no image available")
@@ -927,7 +943,17 @@ class WalmartScraper(Scraper):
         images_carousel = self.tree_html.xpath("//div[starts-with(@class,'product-carousel-wrapper')]//a/@href")
         if images_carousel:
             # fix relative urls
-            return map(_fix_relative_url, images_carousel)
+            images_carousel = map(_fix_relative_url, images_carousel)
+
+            # if there's only one image, check to see if it's a "no image"
+            if len(images_carousel) == 1:
+                try:
+                    if self._no_image(images_carousel[0]):
+                        return None
+                except Exception, e:
+                    print "WARNING: ", e.message
+
+                return images_carousel
 
         # It should only return this img when there's no img carousel    
         main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
