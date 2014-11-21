@@ -314,6 +314,10 @@ class Scraper():
 
         results_dict = {}
 
+        # if it's an unavailable product, abort
+        if self.unavailable_product():
+            return self.ERROR_RESPONSE
+
         for info in info_type_list:
 
             try:
@@ -358,6 +362,17 @@ class Scraper():
     def check_url_format(self):
         return True
 
+
+    def unavailable_product(self):
+        """Abstract method.
+        Checks if current page is an unavailable product page.
+        To be implemented by each scraper specifically for its site.
+        Returns:
+            True if unavailable product page,
+            False otherwise
+        """
+
+        return False
     
     # Checks if image given as parameter is "no  image" image
     # To be used by subscrapers

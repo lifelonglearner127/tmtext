@@ -75,6 +75,25 @@ class WalmartScraper(Scraper):
         m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
         return not not m
 
+    def unavailable_product(self):
+        """Checks if current page is an unavailable product page.
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
+
+        try:
+            page_title = self.tree_html.xpath("//title/text()")[0]
+        except Exception:
+            page_title = None
+
+        if page_title == " - Walmart":
+            return True
+
+        else:
+            return False
+
     # TODO:
     #      better way of extracting id now that URL format is more permissive
     #      though this method still seems to work...
