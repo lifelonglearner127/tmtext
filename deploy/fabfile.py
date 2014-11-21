@@ -63,7 +63,7 @@ REPO_BASE_PATH = '~/repos/'
 REPO_URL = 'git@bitbucket.org:dfeinleib/tmtext.git'
 
 LOCAL_CERT_BASE_PATH = os.getenv("HOME") + '/tmp/web_runner_ssh_keys'
-CERT_REPO_URL = 'git@bitbucket.org:itsyndicate/tmtext-ssh.git'
+CERT_REPO_URL = 'git@bitbucket.org:dfeinleib/tmtext-ssh.git'
 LOCAL_CERT_PATH = LOCAL_CERT_BASE_PATH + os.sep + re.search(
                     '.+\/([^\s]+?)\.git$', CERT_REPO_URL).group(1)
 
