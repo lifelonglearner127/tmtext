@@ -187,6 +187,12 @@ class ChicksaddleryScraper(Scraper):
 
         return self.tree_html.xpath("//div[@id='page-header']/a/text()")[-1]
 
+    def _owned(self):
+        return 1
+
+    def _marketplace(self):
+        return 0
+
     DATA_TYPES = {
         "product_name" : _product_name, \
         "product_title" : _product_name, \
@@ -201,6 +207,8 @@ class ChicksaddleryScraper(Scraper):
         "htags" : _htags, \
         "keywords" : _keywords, \
         "price" : _price, \
+        "marketplace": _marketplace, \
+        "owned" : _owned, \
         "categories" : _categories_hierarchy, \
         "category_name" : _category, \
     }
