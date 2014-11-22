@@ -37,17 +37,18 @@ class BhinnekaScraper(Scraper):
     ############### CONTAINER : NONE
     ##########################################
     def _url(self):
-            return self.product_page_url
+        return self.product_page_url
 
     def _event(self):
-            return None
+        return None
 
     def _product_id(self):
-            product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
-            return product_id
+        product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
+
+        return product_id
 
     def _site_id(self):
-            return None
+        return None
 
     def _status(self):
         return "success"
@@ -56,16 +57,10 @@ class BhinnekaScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        try:
-            return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
-        except:
-            return None
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
 
     def _product_title(self):
-        try:
-            return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
-        except:
-            None
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
 
     def _title_seo(self):
         return None
@@ -77,75 +72,63 @@ class BhinnekaScraper(Scraper):
         return None
 
     def _features(self):
-        try:
-            '''
-            feature_name_list = self.tree_html.xpath('//table[@class="spesifications"]//tr/td[1]/b/text()')
-            feature_html_list = self.tree_html.xpath('//table[@class="spesifications"]//tr/td[2]')
-            feature_text_list = []
-            features = []
+        feature_html_list = self.tree_html.xpath('//table[@class="spesifications"]//tr')
 
-            for feature in feature_html_list:
-                feature_text_list.append("\n".join([x for x in feature.itertext()]))
-
-            for index in range(0,len(feature_name_list)):
-                features.append([feature_name_list[index],feature_text_list[index]])
-            '''
-
-            feature_html_list = self.tree_html.xpath('//table[@class="spesifications"]//tr')
-            features = ""
-
-            for feature in feature_html_list:
-                features += " ".join([x for x in feature.itertext()])
-                features += "\n"
-
-            return features.strip()
-        except:
+        if not feature_html_list:
             return None
+
+        features = []
+
+        for feature in feature_html_list:
+            feature_row = ''
+            feature_row += " ".join([x for x in feature.itertext()])
+            features.append(feature_row.strip())
+
+        return features
 
     def _feature_count(self):
-        try:
-            return len(self.tree_html.xpath('//table[@class="spesifications"]//tr'))
-        except:
-            return None
+        feature_html_list = self.tree_html.xpath('//table[@class="spesifications"]//tr')
+
+        if not feature_html_list:
+            return 0
+
+        return len(feature_html_list)
 
     def _model_meta(self):
         return None
 
     def _description(self):
-        try:
-            short_description = ''
-            items = self.tree_html.xpath('//div[@class="brdrTopSolid prodInfoSection"]//text()')
+        items = self.tree_html.xpath('//div[@class="brdrTopSolid prodInfoSection"]//text()')
 
-            for item in items:
-                if item.replace('\r','').replace('\n','').strip() == '':
-                    continue
-                short_description += '\n' + item
-
-            return short_description.strip()
-        except:
+        if not items:
             return None
+
+        short_description = ''
+
+        for item in items:
+            if item.replace('\r','').replace('\n','').strip() == '':
+                continue
+            short_description += '\n' + item
+
+        return short_description.strip()
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        try:
-            feature_name_list = self.tree_html.xpath('//table[@class="spesifications"]//tr/td[1]/b/text()')
-            overview = self.tree_html.xpath('//li[contains(@id, "tabTitleItem")]/text()')[0]
+        overview = self.tree_html.xpath('//li[contains(@id, "tabTitleItem")]/text()')[0]
 
-            if overview != "Overview":
-                return None
-
-            overview_tab_html = self.tree_html.xpath('//div[contains(@class, "tabContentSelected")]/div')
-            overview_tab_text = ""
-
-            for item in overview_tab_html:
-                overview_tab_text += (" " . join([x for x in item.itertext()]).strip())
-
-            return overview_tab_text.replace("\n","").replace("\r","")
-        except:
+        if overview.strip() != "Overview":
             return None
+
+        overview_tab_html = self.tree_html.xpath('//div[contains(@class, "tabContentSelected")]/div')
+        overview_tab_text = ""
+
+        for item in overview_tab_html:
+            overview_tab_text += (" " . join([x for x in item.itertext()]).strip())
+
+        return overview_tab_text.replace("\n","").replace("\r","")
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -166,6 +149,7 @@ class BhinnekaScraper(Scraper):
     
     def _video_urls(self):
         video_urls = self.tree_html.xpath("//iframe[@allowfullscreen]/@src")
+
         return video_urls
 
     def _video_count(self):
@@ -180,12 +164,13 @@ class BhinnekaScraper(Scraper):
 
 
     def _webcollage(self):
-        return None
+        return 0
 
     def _htags(self):
         htags_dict = {}
         htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
         htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
+
         return htags_dict
 
     def _keywords(self):
@@ -208,34 +193,34 @@ class BhinnekaScraper(Scraper):
         return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
 
     def _review_count(self):
-        try:
-            review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
-            return len(review_rating_list)
-        except:
-            return None
+        review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
+
+        if not review_rating_list:
+            return 0
+
+        return len(review_rating_list)
 
     def _max_review(self):
-        try:
-            review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
-            return max(review_rating_list)
-        except:
+        review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
+
+        if not review_rating_list:
             return None
 
+        return max(review_rating_list)
+
     def _min_review(self):
-        try:
-            review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
-            return min(review_rating_list)
-        except:
+        review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
+
+        if not review_rating_list:
             return None
+
+        return min(review_rating_list)
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        try:
-            return self.tree_html.xpath('//span[@itemprop="price"]/text()')[0].strip()
-        except:
-            return  None
+        return self.tree_html.xpath('//span[@itemprop="price"]/text()')[0].strip()
 
     def _in_stores_only(self):
         return None
@@ -275,10 +260,7 @@ class BhinnekaScraper(Scraper):
         return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[-1]
     
     def _brand(self):
-        try:
-            return self.tree_html.xpath('//a[@id="ctl00_content_lnkBrand"]/@title')[0]
-        except:
-            return None
+        return self.tree_html.xpath('//a[@id="ctl00_content_lnkBrand"]/@title')[0]
 
 
 
