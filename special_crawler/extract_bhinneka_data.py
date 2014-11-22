@@ -71,10 +71,10 @@ class BhinnekaScraper(Scraper):
         return None
 
     def _model(self):
-        return None
+        return self.tree_html.xpath('//meta[@itemprop="model"]/@content')[0]
 
     def _upc(self):
-        return self.tree_html.xpath('//meta[@property="og:upc"]/@content')[0]
+        return None
 
     def _features(self):
         try:
@@ -165,11 +165,8 @@ class BhinnekaScraper(Scraper):
         return len(self._image_urls())
     
     def _video_urls(self):
-        video_url = "\n".join(self.tree_html.xpath("//script//text()"))
-        video_url = re.sub(r"\\", "", video_url)
-        print '\n\n\n\n\n', video_url, '\n\n'
-        video_url = re.findall("url.+(http.+flv)\"", video_url)
-        return video_url
+        video_urls = self.tree_html.xpath("//iframe[@allowfullscreen]/@src")
+        return video_urls
 
     def _video_count(self):
         return len(self._video_urls())
@@ -186,10 +183,10 @@ class BhinnekaScraper(Scraper):
         return None
 
     def _htags(self):
-        h1_tags = self.tree_html.xpath('//h1')
-        h2_tags = self.tree_html.xpath('//h2')
-
-        return h1_tags + h2_tags
+        htags_dict = {}
+        htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
+        htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
+        return htags_dict
 
     def _keywords(self):
         return None
