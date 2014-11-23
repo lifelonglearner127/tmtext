@@ -190,7 +190,7 @@ class BhinnekaScraper(Scraper):
         if not self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()'):
             return None
 
-        return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
+        return float(self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0])
 
     def _review_count(self):
         review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
