@@ -201,20 +201,36 @@ class BhinnekaScraper(Scraper):
         return len(review_rating_list)
 
     def _max_review(self):
-        review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
+        review_rating_list_text= self.tree_html.xpath('//div[@id="customerReviewContent"]//ul[@id="starRateContainer"]/li/div[contains(@class, "rateBarContainer")]/div[contains(@class,"rateBar")]/text()')
+        review_rating_list_int = []
 
-        if not review_rating_list:
+        if not review_rating_list_text:
             return None
 
-        return max(review_rating_list)
+        for index in range(5):
+            if int(review_rating_list_text[index]) > 0:
+                review_rating_list_int.append(5 - index)
+
+        if not review_rating_list_int:
+            return None
+
+        return max(review_rating_list_int)
 
     def _min_review(self):
-        review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
+        review_rating_list_text= self.tree_html.xpath('//div[@id="customerReviewContent"]//ul[@id="starRateContainer"]/li/div[contains(@class, "rateBarContainer")]/div[contains(@class,"rateBar")]/text()')
+        review_rating_list_int = []
 
-        if not review_rating_list:
+        if not review_rating_list_text:
             return None
 
-        return min(review_rating_list)
+        for index in range(5):
+            if int(review_rating_list_text[index]) > 0:
+                review_rating_list_int.append(5 - index)
+
+        if not review_rating_list_int:
+            return None
+
+        return min(review_rating_list_int)
 
     ##########################################
     ############### CONTAINER : SELLERS
