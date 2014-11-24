@@ -816,6 +816,8 @@ class WalmartScraper(Scraper):
 
         return float(min(review_rating_list_int))
 
+    # extract revew list information from its product page tree
+    # ! may return None if not found or no reviews
     def _reviews(self):
         review_rating_list_text = self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
         review_rating_list_int = []
