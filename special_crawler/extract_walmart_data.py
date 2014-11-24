@@ -783,7 +783,7 @@ class WalmartScraper(Scraper):
     # extract max review information from its product page tree
     # ! may return None if not found or no review
     def _max_review(self):
-        review_rating_list_text= self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
+        review_rating_list_text = self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
         review_rating_list_int = []
 
         if not review_rating_list_text:
@@ -801,7 +801,7 @@ class WalmartScraper(Scraper):
     # extract min review information from its product page tree
     # ! may return None if not found or no review
     def _min_review(self):
-        review_rating_list_text= self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
+        review_rating_list_text = self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
         review_rating_list_int = []
 
         if not review_rating_list_text:
