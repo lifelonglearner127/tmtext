@@ -88,6 +88,7 @@ class Scraper():
             "average_review", # average value of review, float
             "max_review", # highest review score, float
             "min_review", # lowest review score, float
+            "reviews", # review list
             
             # sellers
             "price", # price, string including currency
@@ -140,7 +141,7 @@ class Scraper():
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls",\
                             "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             'meta_tags','meta_tag_count'], \
-        "reviews": ["review_count", "average_review", "max_review", "min_review"], \
+        "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price"], \
         "classification": ["categories", "category_name", "brand"]
