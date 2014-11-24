@@ -21,8 +21,7 @@ class BhinnekaScraper(Scraper):
     ############### PREP
     ##########################################
     INVALID_URL_MESSAGE = "Expected URL format is http://www.wayfair.com/<product-name>.html"
-    
-    
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
@@ -44,9 +43,6 @@ class BhinnekaScraper(Scraper):
 
         return product_id
 
-    def _site_id(self):
-        return None
-
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
@@ -61,9 +57,6 @@ class BhinnekaScraper(Scraper):
 
     def _model(self):
         return self.tree_html.xpath('//meta[@itemprop="model"]/@content')[0]
-
-    def _upc(self):
-        return None
 
     def _features(self):
         feature_html_list = self.tree_html.xpath('//table[@class="spesifications"]//tr')
@@ -87,9 +80,6 @@ class BhinnekaScraper(Scraper):
             return 0
 
         return len(feature_html_list)
-
-    def _model_meta(self):
-        return None
 
     def _description(self):
         items = self.tree_html.xpath('//div[@class="brdrTopSolid prodInfoSection"]//text()')
@@ -149,14 +139,6 @@ class BhinnekaScraper(Scraper):
     def _video_count(self):
         return len(self._video_urls())
 
-    # return dictionary with one element containing the PDF
-    def _pdf_urls(self):
-        return None
-
-    def _pdf_count(self):
-        return None
-
-
     def _webcollage(self):
         return 0
 
@@ -166,13 +148,6 @@ class BhinnekaScraper(Scraper):
         htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
 
         return htags_dict
-
-    def _keywords(self):
-        return None
-
-
-
-
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -193,7 +168,7 @@ class BhinnekaScraper(Scraper):
         return len(review_rating_list)
 
     def _max_review(self):
-        review_rating_list_text= self.tree_html.xpath('//div[@id="customerReviewContent"]//ul[@id="starRateContainer"]/li/div[contains(@class, "rateBarContainer")]/div[contains(@class,"rateBar")]/text()')
+        review_rating_list_text = self.tree_html.xpath('//div[@id="customerReviewContent"]//ul[@id="starRateContainer"]/li/div[contains(@class, "rateBarContainer")]/div[contains(@class,"rateBar")]/text()')
         review_rating_list_int = []
 
         if not review_rating_list_text:
@@ -209,7 +184,7 @@ class BhinnekaScraper(Scraper):
         return float(max(review_rating_list_int))
 
     def _min_review(self):
-        review_rating_list_text= self.tree_html.xpath('//div[@id="customerReviewContent"]//ul[@id="starRateContainer"]/li/div[contains(@class, "rateBarContainer")]/div[contains(@class,"rateBar")]/text()')
+        review_rating_list_text = self.tree_html.xpath('//div[@id="customerReviewContent"]//ul[@id="starRateContainer"]/li/div[contains(@class, "rateBarContainer")]/div[contains(@class,"rateBar")]/text()')
         review_rating_list_int = []
 
         if not review_rating_list_text:
@@ -230,33 +205,11 @@ class BhinnekaScraper(Scraper):
     def _price(self):
         return self.tree_html.xpath('//span[@itemprop="price"]/text()')[0].strip()
 
-    def _in_stores_only(self):
-        return None
-
-    def _in_stores(self):
-        return None
-
     def _owned(self):
         return 1
     
     def _marketplace(self):
         return 0
-
-    def _seller_from_tree(self):
-        return None
-    
-    def _owned_out_of_stock(self):
-        return None
-
-    def _marketplace_sellers(self):
-        return None
-
-    def _marketplace_lowest_price(self):
-        return None
-
-
-
-
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -270,18 +223,11 @@ class BhinnekaScraper(Scraper):
     def _brand(self):
         return self.tree_html.xpath('//a[@id="ctl00_content_lnkBrand"]/@title')[0]
 
-
-
-
-
-
-
     ##########################################
     ################ HELPER FUNCTIONS
     ##########################################
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
-
 
     ##########################################
     ################ RETURN TYPES
@@ -294,17 +240,14 @@ class BhinnekaScraper(Scraper):
         # CONTAINER : NONE
         "url" : _url, \
         "product_id" : _product_id, \
-        "site_id" : _site_id, \
 
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
         "product_title" : _product_title, \
         "title_seo" : _title_seo, \
         "model" : _model, \
-        "upc" : _upc,\
         "features" : _features, \
         "feature_count" : _feature_count, \
-        "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
 
@@ -313,38 +256,24 @@ class BhinnekaScraper(Scraper):
         "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
-        "no_image" : _no_image, \
-        "pdf_count" : _pdf_count, \
-        "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
-        "keywords" : _keywords, \
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \
         "average_review" : _average_review, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
-
         # CONTAINER : SELLERS
         "price" : _price, \
-        "in_stores_only" : _in_stores_only, \
-        "in_stores" : _in_stores, \
         "owned" : _owned, \
-        "owned_out_of_stock" : _owned_out_of_stock, \
         "marketplace" : _marketplace, \
-        "marketplace_sellers" : _marketplace_sellers, \
-        "marketplace_lowest_price" : _marketplace_lowest_price, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-
-
-
         "loaded_in_seconds" : None, \
-
         }
 
     # special data that can't be extracted from the product page
