@@ -7,6 +7,13 @@ from scrapy.item import Item, Field
 
 RelatedProduct = collections.namedtuple("RelatedProduct", ['title', 'url'])
 
+BuyerReviews = collections.namedtuple(
+    "BuyerReviews",
+    ['num_of_reviews',  # int
+     'average_rating',  # float
+     'rating_by_star']  # dict, {star: num_of_reviews,}, like {1: 45, 2: 234}
+)
+
 
 class SiteProductItem(Item):
     # Search metadata.
@@ -32,6 +39,8 @@ class SiteProductItem(Item):
     is_in_store_only = Field()
     # Out of stock
     is_out_of_stock = Field()
+    # Feedback from the buyers (with ratings etc.)
+    buyer_reviews = Field()  # see BuyerReviews obj
 
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
