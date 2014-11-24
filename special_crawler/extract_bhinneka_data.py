@@ -39,9 +39,6 @@ class BhinnekaScraper(Scraper):
     def _url(self):
         return self.product_page_url
 
-    def _event(self):
-        return None
-
     def _product_id(self):
         product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
 
@@ -49,9 +46,6 @@ class BhinnekaScraper(Scraper):
 
     def _site_id(self):
         return None
-
-    def _status(self):
-        return "success"
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -63,7 +57,7 @@ class BhinnekaScraper(Scraper):
         return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
 
     def _title_seo(self):
-        return None
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
 
     def _model(self):
         return self.tree_html.xpath('//meta[@itemprop="model"]/@content')[0]
@@ -176,8 +170,6 @@ class BhinnekaScraper(Scraper):
     def _keywords(self):
         return None
 
-    def _no_image(self):
-        return None
 
 
 
@@ -214,7 +206,7 @@ class BhinnekaScraper(Scraper):
         if not review_rating_list_int:
             return None
 
-        return max(review_rating_list_int)
+        return float(max(review_rating_list_int))
 
     def _min_review(self):
         review_rating_list_text= self.tree_html.xpath('//div[@id="customerReviewContent"]//ul[@id="starRateContainer"]/li/div[contains(@class, "rateBarContainer")]/div[contains(@class,"rateBar")]/text()')
@@ -230,7 +222,7 @@ class BhinnekaScraper(Scraper):
         if not review_rating_list_int:
             return None
 
-        return min(review_rating_list_int)
+        return float(min(review_rating_list_int))
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -301,10 +293,8 @@ class BhinnekaScraper(Scraper):
     DATA_TYPES = { \
         # CONTAINER : NONE
         "url" : _url, \
-        "event" : _event, \
         "product_id" : _product_id, \
         "site_id" : _site_id, \
-        "status" : _status, \
 
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
