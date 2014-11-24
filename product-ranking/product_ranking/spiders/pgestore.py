@@ -1,157 +1,155 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-import urlparse
-
-from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set, cond_set_value
+import urllib
+import json
 
 from scrapy.http import Request
-from scrapy.log import ERROR
-from scrapy.selector import Selector
+from scrapy.log import ERROR, INFO
+
+from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 
 
-class PGEStoreProductSpider(BaseProductsSpider):
+class PGShopProductSpider(BaseProductsSpider):
     name = 'pgestore_products'
-    allowed_domains = ["pgestore.com", "igodigital.com"]
+    allowed_domains = ["pgshop.com", "pgestore.recs.igodigital.com"]
 
-    SEARCH_URL = "http://www.pgestore.com/on/demandware.store/Sites-PG-Site/" \
-                 "default/Search-Show?q={search_term}&srule={search_sort}&brand=" \
-                 "&start=0&sz=24"
+    SEARCH_URL = "http://www.pgshop.com/pgshop/" \
+                 "?prefn1=showOnShop" \
+                 "&q={search_term}&start={start}&sz=40" \
+                 "&action=sort&srule={search_sort}" \
+                 "&prefv1=1|2&appendto=0&pindex=3&ptype=ajax"
 
     SEARCH_SORT = {
-        'best_match': 'best_matches',
-        'product_name_ascending': 'product-name-ascending',
-        'product_name_descending': 'product-name-descending',
+        'product_name_ascending': 'A-Z',
+        'product_name_descending': 'Z-A',
         'high_price': 'price-high-to-low',
         'low_price': 'price-low-to-high',
         'best_sellers': 'top-sellers',
-        'rating': 'top-rated',
-        'category_placement_and_brand': 'cat-placement-and-brand',
+        'rating': 'top rated',
+        'default': 'default sorting rule',
     }
 
-    def __init__(self, search_sort='best_match', *args, **kwargs):
+    RECOMMENDED_URL = "http://pgestore.recs.igodigital.com/a/v2/" \
+                      "pgestore/product/recommend.json" \
+                      "?item={upc}&amp;environment=PRD&amp;&amp;item_count=8"
+
+    def __init__(self, search_sort='default', *args, **kwargs):
         # All this is to set the site_name since we have several
         # allowed_domains.
-        super(PGEStoreProductSpider, self).__init__(
+        super(PGShopProductSpider, self).__init__(
             url_formatter=FormatterWithDefaults(
                 search_sort=self.SEARCH_SORT[search_sort],
+                start=0,
             ),
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
 
-    def parse_product(self, response):
-        prod = response.meta['product']
-
-        self._populate_from_html(response, prod)
-
-        cond_set_value(prod, 'locale', 'en-US')  # Default locale.
-
-        # Override the URL with one without the search parameters.
-        url_parts = urlparse.urlsplit(response.url, allow_fragments=False)
-        url_parts = url_parts._replace(query='')
-        prod['url'] = urlparse.urlunsplit(url_parts)
-
-        related_product_link = response.xpath(
-            "//*[@id='crossSell']/script/@src").extract()[0]
-        return Request(
-            related_product_link,
-            self.parse_related_products,
-            meta=response.meta.copy(),
-        )
-
-    def _populate_from_html(self, response, product):
-        brands = response.xpath(
-            "//*[@id='pdpMain']/div[1]/script[2]/text()").re('.*?(\'(.*\w))')[1]
-        cond_set(product, 'brand', [brands])
-        if 'brand' not in product:
-            self.log("Found no brand name in: %s" % response.url, ERROR)
-
-        cond_set(
-            product,
-            'title',
-            response.xpath("//*[@id='pdpMain']/div[2]/h1/text()").extract()
-        )
-        cond_set(product, 'upc',
-                 response.xpath("//*[@id='prodSku']/text()").extract())
-        cond_set(
-            product,
-            'image_url',
-            response.xpath(
-                "//*[@id='pdpMain']/div[1]/div[2]/img/@src").extract()
-        )
-        cond_set_value(product, 'price',
-                       ''.join(response.css('.price ::text').extract()).strip())
-
-        cond_set(
-            product,
-            'description',
-            response.xpath(
-                "//*[@id='pdpTab1']//*[@class='tabContent']").extract()
-        )
-
-    def parse_related_products(self, response):
-        """The page parsed here is a JavaScript file with HTML in two variables.
-        """
-        product = response.meta['product']
-
-        others_purchased_html = Selector(text=response.selector.re(
-            r'if \(id == "igdrec_2"\)\s*{\s*div\.innerHTML = "(.*?)";')[0])
-        others_purchased_links = others_purchased_html.xpath(
-            "//*[@class='igo_product']/a[2]")
-        if others_purchased_links:
-            product['related_products'] = {
-                "buyers_also_bought": list(
-                    RelatedProduct(
-                        link.xpath('text()').extract()[0],
-                        link.xpath('@href').extract()[0])
-                    for link in others_purchased_links
-                )
-            }
-
-        also_like_html = Selector(text=response.selector.re(
-            r'if \(id == "igdrec_1"\)\s*{\s*div\.innerHTML = "(.*?)";')[0])
-        also_like_links = also_like_html.xpath("//*[@class='igo_product']/a[2]")
-        if also_like_links:
-            product.setdefault('related_products', {})["recommended"] = list(
-                RelatedProduct(
-                    link.xpath('text()').extract()[0],
-                    link.xpath('@href').extract()[0])
-                for link in also_like_links
-            )
-
-        return product
+    def _scrape_total_matches(self, response):
+        num_results = response.xpath(
+            '//span[@class="number-copy"]/text()').extract()
+        if num_results and num_results[0]:
+            return int(num_results[0])
+        else:
+            no_result_div = response.xpath(
+                '//div[@class="nosearchresult_div"]')
+            if no_result_div:
+                self.log("There is no result for this search term.", level=INFO)
+                return 0
+            else:
+                return None
 
     def _scrape_product_links(self, response):
-        links = response.xpath("//*[@class='description']/a/@href").extract()
+        links = response.xpath(
+            "//li[contains(@class, 'product-tile')]"
+            "//p[@class='product-name']"
+            "/a[contains(@class, 'name-link')]/@href").extract()
         if not links:
             self.log("Found no product links.", ERROR)
         for link in links:
             yield link, SiteProductItem()
 
-    def _scrape_total_matches(self, response):
-        num_results = response.xpath(
-            "//*[@id='deptmainheaderinfo']/text()").extract()
-        if num_results and num_results[0]:
-            num_results = num_results[0].split(" ")
-            return int(num_results[2])
-        else:
-            self.log("Failed to parse total number of matches.", level=ERROR)
-
     def _scrape_next_results_page_link(self, response):
-        next_pages = response.xpath(
-            "//a[@class='pngFix pagenext']/@href").extract()
-        next_page = None
-        if len(next_pages) == 2:
-            next_page = next_pages[0]
-        elif len(next_pages) == 0:
-            # likely to have only 2 pages for the search so let's grab that
-            next_pages = response.xpath(
-                "//a[@class='page-2']/@href").extract()
-            if len(next_pages) == 0:
-                self.log("Found no 'next page' link.", ERROR)
-            elif len(next_pages) == 2:
-                next_page = next_pages[0]
-        return next_page
+        total_matches = response.meta.get('total_matches')
+        start = response.meta.get('start', 0)
+
+        if total_matches <= start or total_matches <= 40:
+            return None
+
+        start += 40
+        if start > total_matches:
+            start = total_matches
+        response.meta['start'] = start
+
+        search_term = response.meta.get('search_term')
+        return self.url_formatter.format(
+            self.SEARCH_URL,
+            search_term=urllib.quote_plus(search_term.encode('utf-8')),
+            start=start)
+
+    def parse_product(self, response):
+        prod = response.meta['product']
+
+        prod['url'] = response.url
+        prod['locale'] = 'en-US'
+
+        title = response.xpath(
+            '//*[@itemprop="name"]/text()').extract()
+        if title:
+            prod['title'] = title[0].strip()
+
+        upc = response.xpath(
+            '//*[@itemprop="productID"]/text()').extract()
+        if upc:
+            prod['upc'] = upc[0].strip()
+
+        img = response.xpath(
+            '//div[contains(@class, "x1-target")]/img/@src').extract()
+        if img:
+            prod['image_url'] = img[0].strip()
+
+        price = response.xpath('//section[contains(@class, "price")]'
+                               '//span[contains(@class,"price-sales")'
+                               ' or contains(@class,"price-nosale")]'
+                               '/text()').extract()
+        if price:
+            prod['price'] = price[0].strip()
+
+        description = response.xpath(
+            'string(//div[contains(@class,"accordion-content")])').extract()
+        if description:
+            prod['description'] = description[0].strip()
+
+        brand = response.xpath(
+            '//a[@class="cta"]/@title').re('Visit the (\w+) brand shop')
+        if brand:
+            prod['brand'] = brand[0]
+
+        return Request(
+            self.RECOMMENDED_URL.format(upc=prod['upc']),
+            callback=self.parse_recommended_items,
+            meta=response.meta.copy(),
+        )
+
+    def parse_recommended_items(self, response):
+        prod = response.meta['product']
+        data = json.loads(response.body)
+        if not data:
+            return prod
+
+        data = data[0].get('items', None)
+        if not data:
+            return prod
+
+        recommendations = []
+        for item in data:
+            url = item['link']
+            title = item['name']
+            recommendations.append(RelatedProduct(title, url))
+
+        if recommendations:
+            prod['related_products'] = {'recommended': recommendations}
+
+        return prod
