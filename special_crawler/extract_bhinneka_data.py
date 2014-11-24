@@ -270,7 +270,7 @@ class BhinnekaScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1:-1]
+        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1:]
 
     def _category_name(self):
         return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[-1]
