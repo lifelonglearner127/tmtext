@@ -67,7 +67,8 @@ class PGShopProductSpider(BaseProductsSpider):
             "//p[@class='product-name']"
             "/a[contains(@class, 'name-link')]/@href").extract()
         if not links:
-            self.log("Found no product links.", ERROR)
+            if not response.xpath('//div[@class="nosearchresult_div"]'):
+                self.log("Found no product links.", ERROR)
         for link in links:
             yield link, SiteProductItem()
 
