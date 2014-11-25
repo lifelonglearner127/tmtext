@@ -799,6 +799,60 @@ class WalmartScraper(Scraper):
 
         return nr_reviews
 
+    # extract max review information from its product page tree
+    # ! may return None if not found or no review
+    def _max_review(self):
+        review_rating_list_text = self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
+        review_rating_list_int = []
+
+        if not review_rating_list_text:
+            return None
+
+        for index in range(5):
+            if int(review_rating_list_text[index]) > 0:
+                review_rating_list_int.append(5 - index)
+
+        if not review_rating_list_int:
+            return None
+
+        return float(max(review_rating_list_int))
+
+    # extract min review information from its product page tree
+    # ! may return None if not found or no review
+    def _min_review(self):
+        review_rating_list_text = self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
+        review_rating_list_int = []
+
+        if not review_rating_list_text:
+            return None
+
+        for index in range(5):
+            if int(review_rating_list_text[index]) > 0:
+                review_rating_list_int.append(5 - index)
+
+        if not review_rating_list_int:
+            return None
+
+        return float(min(review_rating_list_int))
+
+    # extract revew list information from its product page tree
+    # ! may return None if not found or no reviews
+    def _reviews(self):
+        review_rating_list_text = self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
+        review_rating_list_int = []
+
+        if not review_rating_list_text:
+            return None
+
+        for index in range(5):
+            if int(review_rating_list_text[index]) > 0:
+                review_rating_list_int.append([5 - index, int(review_rating_list_text[index])])
+
+        if not review_rating_list_int:
+            return None
+
+        return review_rating_list_int
+
     # extract average product reviews information from its product page
     # ! may throw exception if not found
     def _avg_review_new(self):
@@ -1233,6 +1287,9 @@ class WalmartScraper(Scraper):
         "marketplace": _marketplace, \
         "review_count": _nr_reviews, \
         "average_review": _avg_review, \
+        "max_review" : _max_review, \
+        "min_review" : _min_review, \
+        "reviews" : _reviews, \
         # video needs both page source and separate requests
         "video_count" : _product_has_video, \
         "video_urls" : _video_urls, \
