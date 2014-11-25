@@ -20,15 +20,15 @@ class BhinnekaScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.wayfair.com/<product-name>.html"
+
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.bhinneka.com/products/<product-sku>/<product-name>.aspx"
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-#        m = re.match(r"^http://www.bhinneka.com/[0-9a-zA-Z\-\~\/\.]+\.aspx$", self.product_page_url)
-        m = re.match(r"^http://www.bhinneka.com/products/sku\d+/.+\.aspx", self.product_page_url)
+        m = re.match(r"^http://www.bhinneka.com/products/sku\d+/.+\.aspx$", self.product_page_url)
 
         return not not m
     
