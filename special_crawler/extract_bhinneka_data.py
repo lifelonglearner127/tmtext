@@ -53,7 +53,7 @@ class BhinnekaScraper(Scraper):
         return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//title/text()')[0].strip()
+        return self.tree_html.xpath('//head/title/text()')[0].strip()
 
     def _model(self):
         return self.tree_html.xpath('//meta[@itemprop="model"]/@content')[0]
@@ -228,10 +228,16 @@ class BhinnekaScraper(Scraper):
         return self.tree_html.xpath('//div[@id="ctl00_content_divPrice"]//text()')[0].strip()
 
     def _owned(self):
-        return 1
+        if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() == 'Bhinneka.Com':
+            return 1
+        else:
+            return 0
     
     def _marketplace(self):
-        return 0
+        if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() != 'Bhinneka.Com':
+            return 1
+        else:
+            return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
