@@ -232,7 +232,7 @@ class BhinnekaScraper(Scraper):
             return 1
         else:
             return 0
-    
+
     def _marketplace(self):
         if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() != 'Bhinneka.Com':
             return 1
