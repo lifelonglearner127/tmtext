@@ -315,8 +315,8 @@ class Scraper():
 
         results_dict = {}
 
-        # if it's an unavailable product, abort
-        if self.unavailable_product():
+        # if it's not a valid product page, abort
+        if self.not_a_product():
             return self.ERROR_RESPONSE
 
         for info in info_type_list:
@@ -364,12 +364,13 @@ class Scraper():
         return True
 
 
-    def unavailable_product(self):
+    def not_a_product(self):
         """Abstract method.
-        Checks if current page is an unavailable product page.
+        Checks if current page is not a valid product page
+        (either an unavailable product page, or some other type of content)
         To be implemented by each scraper specifically for its site.
         Returns:
-            True if unavailable product page,
+            True if not a product page,
             False otherwise
         """
 
