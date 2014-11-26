@@ -75,8 +75,9 @@ class WalmartScraper(Scraper):
         m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
         return not not m
 
-    def unavailable_product(self):
-        """Checks if current page is an unavailable product page.
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
         Overwrites dummy base class method.
         Returns:
             True if it's an unavailable product page
