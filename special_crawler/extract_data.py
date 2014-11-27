@@ -26,7 +26,7 @@ class Scraper():
     Each subclass must implement:
     - define DATA_TYPES and DATA_TYPES_SPECIAL structures (see subclass docs)
     - implement each method found in the values of the structures above
-    - implement check_url_format()
+    - implement checktree_html_format()
 
     Attributes:
         product_page_url (string): URL of the page of the product being scraped
