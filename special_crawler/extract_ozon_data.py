@@ -200,19 +200,10 @@ class OzonScraper(Scraper):
             return 0
 
     def _max_review(self):
-        review_arr = self.tree_html.xpath("//div[@id='comments_list']//div[@itemprop='review']//div[@itemprop='reviewRating']//meta[@itemprop='ratingValue']/@content")
-        if len(review_arr) == 0:
-            return None
-        review_arr = [int(s) for s in review_arr]
-        return max(review_arr)
+        return None
 
     def _min_review(self):
-        review_arr = self.tree_html.xpath("//div[@id='comments_list']//div[@itemprop='review']//div[@itemprop='reviewRating']//meta[@itemprop='ratingValue']/@content")
-        if len(review_arr) == 0:
-            return None
-        review_arr = [int(s) for s in review_arr]
-        return min(review_arr)
-
+        return None
 
 
 
