@@ -140,6 +140,9 @@ class BhinnekaScraper(Scraper):
     def _video_urls(self):
         video_urls = self.tree_html.xpath("//iframe[@allowfullscreen]/@src")
 
+        if not video_urls:
+            return None
+
         return video_urls
 
     def _video_count(self):
@@ -149,6 +152,9 @@ class BhinnekaScraper(Scraper):
     def _pdf_urls(self):
         pdf_urls = self.tree_html.xpath('//a[contains(@href, ".pdf")]/@href')
         pdf_urls[:] = ["http://www.bhinneka.com" + x for x in pdf_urls]
+
+        if not pdf_urls:
+            return None
 
         return pdf_urls
 
@@ -304,7 +310,6 @@ class BhinnekaScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-        "loaded_in_seconds" : None, \
         }
 
     # special data that can't be extracted from the product page
