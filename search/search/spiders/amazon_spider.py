@@ -72,7 +72,8 @@ class AmazonSpider(SearchSpider):
 
 
         # get search results for received results page and add them to product_urls to be parsed
-        results = hxs.select("//h3[@class='newaps']/a")
+        # Note: xpath below ignores Sponsored links (which is good)
+        results = hxs.select("//div[@class='a-row a-spacing-small']/a")
         for result in results:
             product_url = result.select("@href").extract()[0]
                 
@@ -210,7 +211,8 @@ class AmazonSpider(SearchSpider):
             item['product_name'] = product_name[0].strip()
 
             # extract product model number
-            model_number_holder = hxs.select("//tr[@class='item-model-number']/td[@class='value']/text() | //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text()").extract()
+            model_number_holder = hxs.select("""//tr[@class='item-model-number']/td[@class='value']/text() |
+             //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text()""").extract()
             if model_number_holder:
                 item['product_model'] = model_number_holder[0].strip()
             # if no product model explicitly on the page, try to extract it from name
