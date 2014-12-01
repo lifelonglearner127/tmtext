@@ -136,7 +136,7 @@ class TescoScraper(Scraper):
 
     def _long_description_temp(self):
         #this first description was written for book description
-        description = " ".join([self._clean_text(x) for x in self.tree_html.xpath('//*[@class="detailWrapper"]/p//text()')])
+        description = " ".join([self._clean_text(x) for x in self.tree_html.xpath('//*[@class="detailWrapper"]//text()')])
         if len(description)>5:
             return description
 
@@ -209,10 +209,25 @@ class TescoScraper(Scraper):
         video_url = re.findall("'(.*?)'", video_url)
         return video_url
 
+    def _video_youtube(self):
+        #Find an embedded youtube link
+        youtube = 0
+        url = self.tree_html.xpath('//div[@id="inlineContentURL"]//text()')
+        if len(url)>0:
+            req = requests.get(url[0]).text
+            if len(req)>0 and req.find('youtube.com') > 0:
+                youtube = 1
+        return youtube
+
     def _video_count(self):
         urls = self._video_urls()
+        yt = self._video_youtube()
+        vt = 0
         if urls:
-            return len(urls)
+            vt = len(urls)
+        vt += yt
+        if vt > 0:
+            return vt
         return None
 
     def _pdf_helper(self):
@@ -347,12 +362,18 @@ class TescoScraper(Scraper):
         return None
 
     def _owned(self):
-        h2_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h2//text()"))
-        return 1 if "Buy on Tesco Direct from:" in h2_tags else 0
+        span_txt = self.tree_html.xpath("//span[@class='available-from']//text()")
+        if span_txt:
+            if span_txt[0].find("Tesco") < 0:
+                return 0
+        return 1
 
     def _marketplace(self):
-        h2_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h2//text()"))
-        return 1 if "more buying option(s) from:" in h2_tags else 0
+        span_txt = self.tree_html.xpath("//span[@class='available-from']//text()")
+        if span_txt:
+            if span_txt[0].find("Tesco") < 0:
+                return 1
+        return 0
 
     def _owned_out_of_stock(self):
         return None
