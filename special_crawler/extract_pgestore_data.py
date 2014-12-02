@@ -95,21 +95,20 @@ class PGEStore(Scraper):
         return None
 
     def _description(self):
-        #short_description = " ".join(self.tree_html.xpath("//div[@class='tabContent']//text()")).strip()
-        #return short_description
-        description = self._long_description_helper()
-        return description
+        full_description = " ".join(self.tree_html.xpath('//div[contains(@class, "main-column vp")]/text()')).strip()
+        return full_description
 
     def _long_description(self):
         d1 = self._description()
-        d2 = self._long_description_helper(self)
+        full_description = " ".join(self.tree_html.xpath('//div[contains(@class,"accordion-content")]//p//text()'))
+        d2 = full_description.strip()
         if d1 == d2:
             return None
         return d2
 
     def _long_description_helper(self):
-        full_description = "\n".join(self.tree_html.xpath('//div[contains(@class,"accordion-content")]//p//text()')).strip()
-        return full_description
+        full_description = " ".join(self.tree_html.xpath('//div[contains(@class,"accordion-content")]//p//text()'))
+        return full_description.strip()
 
 
     ##########################################
@@ -267,9 +266,9 @@ class PGEStore(Scraper):
         #return self.tree_html.xpath('//span[contains(@class, "brand")]//text()')[0]
         text = self.tree_html.xpath('//div[contains(@class, "pdp-brand pampers")]//div[contains(@class,"fl-rt rel")]//a[@class="cta"]/@title')[0]
         # Visit the Pampers brand shop
-        text = text.replace('Visit the Pampers', '')
-        text = text.replace(' shop', '')
-        brand = text.replace.strip()
+        text = text.replace('Visit the ', '')
+        text = text.replace('brand shop', '')
+        brand = text.strip()
         return brand
 
 
