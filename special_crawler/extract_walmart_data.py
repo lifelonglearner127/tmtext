@@ -449,7 +449,8 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        full_description = " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
+        # select text in nodes under @itemprop='description' that don't have an ancestor @class='ql-details-short-desc' (that's where short description is)
+        full_description = " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()[not(ancestor::*[@class='ql-details-short-desc'])]")).strip()
         # return None if empty
         if not full_description:
             return None
