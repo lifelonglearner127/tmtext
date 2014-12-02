@@ -15,9 +15,9 @@ class AmazonScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
-        
+
     INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id>"
-    
+
     def check_url_format(self):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         return not not m
@@ -31,7 +31,7 @@ class AmazonScraper(Scraper):
 
     def _url(self):
         return self.product_page_url
-    
+
     def _event(self):
         return None
 
@@ -72,11 +72,11 @@ class AmazonScraper(Scraper):
 
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix']//tbody//tr")
-        
+
         # list of lists of cells (by rows)
         cells = map(lambda row: row.xpath(".//*//text()"), rows)
         # list of text in each row
-        
+
         rows_text = map(\
             lambda row: ":".join(\
                 map(lambda cell: cell.strip(), row)\
@@ -92,7 +92,7 @@ class AmazonScraper(Scraper):
         return len(filter(lambda row: len(row.xpath(".//td"))>0, self.tree_html.xpath("//div[@class='content pdClearfix']//tbody//tr")))
 
     def _model_meta(self):
-        return None 
+        return None
 
 
     def _description(self):
@@ -124,7 +124,7 @@ class AmazonScraper(Scraper):
         desc = urllib.unquote_plus(str(desc))
         desc = html.fromstring(desc)
         desc = self._clean_text(' '.join(desc.xpath('//div[@class="productDescriptionWrapper"]//text()')))
-        
+
         return desc
 
 
@@ -133,6 +133,14 @@ class AmazonScraper(Scraper):
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
     ##########################################
+    #extract meta tags exclude http-equiv
+    def _meta_tags(self):
+        tags = map(lambda x:x.values() ,self.tree_html.xpath('//meta[not(@http-equiv)]'))
+        return tags
+
+    def _meta_tag_count(self):
+        tags = self._meta_tags()
+        return len(tags)
 
     #returns 1 if the mobile version is the same, 0 otherwise
     def _mobile_image_same(self):
@@ -160,7 +168,7 @@ class AmazonScraper(Scraper):
         image_url = tree.xpath('//img[@id="imgBlkFront"]')
         if image_url is not None and len(image_url)>0:
             return ["inline image"]
-    
+
     def _mobile_image_url(self, tree = None):
         if tree == None:
             tree = self.tree_html
@@ -169,13 +177,13 @@ class AmazonScraper(Scraper):
 
     def _image_count(self):
         return len(self._image_urls())
-    
+
     # return 1 if the "no image" image is found
     def _no_image(self):
         return None
 
     def _video_urls(self):
-        video_url = self.tree_html.xpath('//script[@type="text/javascript"]') 
+        video_url = self.tree_html.xpath('//script[@type="text/javascript"]')
         temp = []
         for v in video_url:
             r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", str(v.xpath('.//text()')))
@@ -189,7 +197,7 @@ class AmazonScraper(Scraper):
     # return one element containing the PDF
     def _pdf_urls(self):
         return None
-    
+
     def _pdf_count(self):
         urls = self._pdf_urls()
         if urls:
@@ -210,7 +218,7 @@ class AmazonScraper(Scraper):
     # ! may throw exception if not found
     def _keywords(self):
         return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0]
- 
+
 
 
 
@@ -242,7 +250,7 @@ class AmazonScraper(Scraper):
     ##########################################
     ################ CONTAINER : SELLERS
     ##########################################
-        
+
     # extract product price from its product product page tree
     def _price(self):
         price = self.tree_html.xpath("//*[contains(@id, 'priceblock_')]//text()")#priceblock_ can usually have a few things after it
@@ -304,7 +312,7 @@ class AmazonScraper(Scraper):
         all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
         all = map(lambda t: self._clean_text(t), all)
         return all[1]
-    
+
     # extract a hierarchical list of all the departments the product belongs to
     def _categories(self):
         all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
@@ -364,6 +372,8 @@ class AmazonScraper(Scraper):
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
+        "meta_tags": _meta_tags,\
+        "meta_tag_count": _meta_tag_count,\
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \
@@ -433,21 +443,21 @@ class AmazonScraper(Scraper):
 
     # def _meta_description(self):
     #     return self.tree_html.xpath("//meta[@name='description']/@content")[0]
-    
+
     # def _meta_keywords(self):
     #     return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
-  
+
     # def main(args):
     #     # check if there is an argument
     #     if len(args) <= 1:
     #         sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython crawler_service.py <amazon_product_url>\n")
     #         sys.exit(1)
-    
+
     #     product_page_url = args[1]
-    
+
     #     # check format of page url
     #     if not check_url_format(product_page_url):
     #         sys.stderr.write(INVALID_URL_MESSAGE)
     #         sys.exit(1)
-    
+
     #     return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))

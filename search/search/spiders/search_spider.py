@@ -499,40 +499,48 @@ class SearchSpider(BaseSpider):
 
     def parseURL_walmart(self, hxs):
 
-        product_name_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
+        product_name_holder = hxs.select("//h1[contains(@class, 'product-name')]/text()").extract()
         if product_name_holder:
             product_name = product_name_holder[0].strip()
         else:
             product_name = None
 
-        # get integer part of product price
-        product_price_big = hxs.select("//span[@class='bigPriceText1']/text()").extract()
-
-        # if there is a range of prices take their average
-        if len(product_price_big) > 1:
-
-            # remove $ and .
-            product_price_min = re.sub("[\$\.,]", "", product_price_big[0])
-            product_price_max = re.sub("[\$\.,]", "", product_price_big[-1])
-
-            #TODO: check if they're ints?
-            product_price_big = (int(product_price_min) + int(product_price_max))/2.0
-
-        elif product_price_big:
-            product_price_big = int(re.sub("[\$\.,]", "", product_price_big[0]))
-
-        # get fractional part of price
-        #TODO - not that important
-
-        if product_price_big:
-            product_price = product_price_big
+        product_price_node = hxs.select("//meta[@itemprop='price']/@content").extract()
+        # remove currency and , (e.g. 1,000)
+        if product_price_node:
+            product_price = float(re.sub("[\$,]", "", product_price_node[0]))
         else:
             product_price = None
 
-        #TODO: if it contains 2 words, first could be brand - also add it in similar_names function
-        product_model_holder = hxs.select("//td[contains(text(),'Model')]/following-sibling::*/text()").extract()
+        # # Not relevant anymore:
+        # # TODO: figure out what this list of prices contained
+        # # get integer part of product price
+        # product_price_big = hxs.select("//span[@class='bigPriceText1']/text()").extract()
+
+        # # if there is a range of prices take their average
+        # if len(product_price_big) > 1:
+
+        #     # remove $ and .
+        #     product_price_min = re.sub("[\$\.,]", "", product_price_big[0])
+        #     product_price_max = re.sub("[\$\.,]", "", product_price_big[-1])
+
+        #     #TODO: check if they're ints?
+        #     product_price_big = (int(product_price_min) + int(product_price_max))/2.0
+
+        # elif product_price_big:
+        #     product_price_big = int(re.sub("[\$\.,]", "", product_price_big[0]))
+
+        # # get fractional part of price
+        # #TODO - not that important
+
+        # if product_price_big:
+        #     product_price = product_price_big
+        # else:
+        #     product_price = None
+
+        product_model_holder = hxs.select("//div[@class='specs-table']/table//td[contains(text(),'Model')]/following-sibling::*/text()").extract()
         if product_model_holder:
-            product_model = product_model_holder[0]
+            product_model = product_model_holder[0].strip()
         else:
             product_model = None
 
