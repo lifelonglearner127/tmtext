@@ -26,6 +26,8 @@ class PGEStore(Scraper):
     INVALID_URL_MESSAGE = "Expected URL format is http://www.pgestore.com/[0-9a-zA-Z,/-]+\.html"
     
     reviews_tree = None
+    max_score = None
+    min_score = None
     pdfs = None
     
     def check_url_format(self):
@@ -180,15 +182,30 @@ class PGEStore(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
     #populate the reviews_tree variable for use by other functions
-    # def _load_reviews(self):
-    #     try:
-    #         if not self.reviews_tree:
-    #             url = "http://reviews.pgestore.com/3300/PG_00%s/reviews.htm?format=embedded"
-    #             url = url%(self._extract_product_id())
-    #             contents = urllib.urlopen(url).read()
-    #             self.reviews_tree = html.fromstring(contents)
-    #     except:
-    #         pass
+    def _load_reviews(self):
+        try:
+            if not self.max_score or not self.min_score:
+                # url = "http://reviews.pgestore.com/3300/PG_00%s/reviews.htm?format=embedded"
+                url = "http://pgestore.ugc.bazaarvoice.com/3300-en_us/%s/reviews.djs?format=embeddedhtml" % self._product_id()
+                contents = urllib.urlopen(url).read()
+                # contents = re.findall(r'"BVRRRatingSummarySourceID":"(.*?)"}', contents)[0]
+                reviews = re.findall(r'<span class=\\"BVRRHistAbsLabel\\">(.*?)<\\/span>', contents)
+                score = 5
+                for review in reviews:
+                    if int(review) > 0:
+                        self.max_score = score
+                        break
+                    score -= 1
+
+                score = 1
+                for review in reviews:
+                    if int(review) > 0:
+                        self.min_score = score
+                        break
+                    score += 1
+                # self.reviews_tree = html.fromstring(contents)
+        except:
+            pass
 
     def _average_review(self):
         # self._load_reviews()
@@ -206,10 +223,12 @@ class PGEStore(Scraper):
         return count
 
     def _max_review(self):
-        return None
+        self._load_reviews()
+        return self.max_score
 
     def _min_review(self):
-        return None
+        self._load_reviews()
+        return self.min_score
 
 
 
