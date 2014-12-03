@@ -20,15 +20,15 @@ class BhinnekaScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.wayfair.com/<product-name>.html"
+
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.bhinneka.com/products/<product-sku>/<product-name>.aspx"
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-#        m = re.match(r"^http://www.bhinneka.com/[0-9a-zA-Z\-\~\/\.]+\.aspx$", self.product_page_url)
-        m = re.match(r"^http://www.bhinneka.com/products/sku\d+/.+\.aspx", self.product_page_url)
+        m = re.match(r"^http://www.bhinneka.com/products/sku\d+/.+\.aspx$", self.product_page_url)
 
         return not not m
     
@@ -53,7 +53,7 @@ class BhinnekaScraper(Scraper):
         return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
+        return self.tree_html.xpath('//head/title/text()')[0].strip()
 
     def _model(self):
         return self.tree_html.xpath('//meta[@itemprop="model"]/@content')[0]
@@ -126,18 +126,41 @@ class BhinnekaScraper(Scraper):
         if not image_urls:
             image_urls = self.tree_html.xpath('//div[@id="prodMedia"]/div/img/@src')
 
+        if len(image_urls) == 1 and "no_picture" in image_urls[0]:
+            return None
+
         return image_urls
 
     def _image_count(self):
+        if self._image_urls() == None:
+            return 0
+
         return len(self._image_urls())
     
     def _video_urls(self):
         video_urls = self.tree_html.xpath("//iframe[@allowfullscreen]/@src")
 
+        if not video_urls:
+            return None
+
         return video_urls
 
     def _video_count(self):
         return len(self._video_urls())
+
+    # return dictionary with one element containing the PDF
+    def _pdf_urls(self):
+        pdf_urls = self.tree_html.xpath('//a[contains(@href, ".pdf")]/@href')
+        pdf_urls[:] = ["http://www.bhinneka.com" + x for x in pdf_urls]
+
+        if not pdf_urls:
+            return None
+
+        return pdf_urls
+
+    def _pdf_count(self):
+        return len(self._pdf_urls())
+
 
     def _webcollage(self):
         return 0
@@ -148,6 +171,11 @@ class BhinnekaScraper(Scraper):
         htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
 
         return htags_dict
+
+    def _keywords(self):
+        return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0].strip()
+
+
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -203,13 +231,19 @@ class BhinnekaScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath('//span[@itemprop="price"]/text()')[0].strip()
+        return self.tree_html.xpath('//div[@id="ctl00_content_divPrice"]//text()')[0].strip()
 
     def _owned(self):
-        return 1
-    
+        if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() == 'Bhinneka.Com':
+            return 1
+        else:
+            return 0
+
     def _marketplace(self):
-        return 0
+        if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() != 'Bhinneka.Com':
+            return 1
+        else:
+            return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -256,8 +290,11 @@ class BhinnekaScraper(Scraper):
         "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
+        "pdf_count" : _pdf_count, \
+        "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
+        "keywords" : _keywords, \
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \
@@ -273,7 +310,6 @@ class BhinnekaScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-        "loaded_in_seconds" : None, \
         }
 
     # special data that can't be extracted from the product page

@@ -36,18 +36,9 @@ class MaplinScraper(Scraper):
     def _url(self):
         return self.product_page_url
 
-    def _event(self):
-        return None
-
     def _product_id(self):
         product_id = self.product_page_url.split('/')[-1]
         return product_id
-
-    def _site_id(self):
-        return None
-
-    def _status(self):
-        return 'success'
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -98,15 +89,7 @@ class MaplinScraper(Scraper):
         return description
 
     def _long_description(self):
-        d1 = self._description()
-        d2 = self._long_description_temp()
-
-        if d1 == d2:
-            return None
-        return d2
-
-    def _long_description_temp(self):
-        long_description = self.tree_html.xpath("//div[@class='productDescription']//text()")[0].strip()
+        long_description = "\n".join(self.tree_html.xpath("//div[@class='productDescription']//text()")).strip()
         return long_description
 
     ##########################################
@@ -133,16 +116,13 @@ class MaplinScraper(Scraper):
             return len(urls)
         return 0
 
-    def _pdf_helper(self):
+    def _pdf_urls(self):
         pdfs = self.tree_html.xpath("//a[@title='Terms & Conditions']/@href")
         self.pdfs = map(lambda pdf: "http://www.maplin.co.uk%s" % pdf, pdfs)
         return self.pdfs
 
-    def _pdf_urls(self):
-        return self._pdf_helper()
-
     def _pdf_count(self):
-        urls = self._pdf_helper()
+        urls = self._pdf_urls()
         if urls is not None:
             return len(urls)
         return 0
@@ -161,12 +141,6 @@ class MaplinScraper(Scraper):
 
     def _keywords(self):
         return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
-
-    # return True if there is a no-image image and False otherwise
-    # Certain products have an image that indicates "there is no image available"
-    # a hash of these "no-images" is saved to a json file and new images are compared to see if they're the same
-    def _no_image(self):
-        return None
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -259,20 +233,17 @@ class MaplinScraper(Scraper):
     DATA_TYPES = { \
         # CONTAINER : NONE
         "url" : _url, \
-        "event" : _event, \
         "product_id" : _product_id, \
-        "site_id" : _site_id, \
-        "status" : _status, \
 
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
         "product_title" : _product_title, \
         "title_seo" : _title_seo, \
-        "upc" : _upc,\
         "features" : _features, \
         "feature_count" : _feature_count, \
-        "model_meta" : _model_meta, \
         "description" : _description, \
+        "model" : _model, \
+        "long_description" : _long_description, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
@@ -282,6 +253,15 @@ class MaplinScraper(Scraper):
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
+        "pdf_urls" : _pdf_urls, \
+        "pdf_count" : _pdf_count, \
+        "mobile_image_same" : _mobile_image_same, \
+
+        # CONTAINER : REVIEWS
+        "average_review" : _average_review, \
+        "review_count" : _review_count, \
+        "max_review" : _max_review, \
+        "min_review" : _min_review, \
 
         # CONTAINER : SELLERS
         "price" : _price, \
@@ -296,7 +276,6 @@ class MaplinScraper(Scraper):
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \
-
         "loaded_in_seconds": None \
         }
 
@@ -304,22 +283,6 @@ class MaplinScraper(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
-        # CONTAINER : PAGE_ATTRIBUTES
-        "pdf_urls" : _pdf_urls, \
-        "pdf_count" : _pdf_count, \
-        "mobile_image_same" : _mobile_image_same, \
-        "no_image" : _no_image,\
-
-        # CONTAINER : PRODUCT_INFO
-        "model" : _model, \
-        "long_description" : _long_description, \
-
-        # CONTAINER : REVIEWS
-        "average_review" : _average_review, \
-        "review_count" : _review_count, \
-        "max_review" : _max_review, \
-        "min_review" : _min_review, \
-
         # CONTAINER : CLASSIFICATION
         "brand" : _brand, \
     }

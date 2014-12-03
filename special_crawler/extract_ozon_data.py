@@ -1,4 +1,5 @@
 #!/usr/bin/python
+ # -*- coding: utf-8 -*-
 
 import urllib
 import re
@@ -60,6 +61,14 @@ class OzonScraper(Scraper):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
+        try:
+            logo_txt_arr = [s.strip() for s in self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")]
+            logo_txt = ''.join(logo_txt_arr)
+            avg = re.findall(r': (.*)$', logo_txt)
+            return avg[0]
+        except IndexError:
+            return None
+
         return None
 
     def _upc(self):
@@ -150,8 +159,11 @@ class OzonScraper(Scraper):
         return None
         
     def _pdf_count(self):
-        return len(self._pdf_urls())
-        
+        urls = self._pdf_urls()
+        if urls is not None:
+            return len(urls)
+        return 0
+
     def _webcollage(self):
         return None
 
@@ -171,6 +183,7 @@ class OzonScraper(Scraper):
 
 
 
+
     ##########################################
     ################ CONTAINER : REVIEWS
     ##########################################
@@ -180,8 +193,11 @@ class OzonScraper(Scraper):
         return r
     
     def _review_count(self):
-        nr = self.tree_html.xpath('//div[@itemprop="aggregateRating"]//span//text()')[0]
-        return re.findall(r'[0-9]+', nr)[0]
+        try:
+            nr = self.tree_html.xpath('//div[@itemprop="aggregateRating"]//span//text()')[0]
+            return re.findall(r'[0-9]+', nr)[0]
+        except IndexError:
+            return 0
 
     def _max_review(self):
         return None
@@ -192,18 +208,21 @@ class OzonScraper(Scraper):
 
 
 
-
     ##########################################
     ################ CONTAINER : SELLERS
     ##########################################
 
     def _price(self):
-        meta_price = self.tree_html.xpath("//div[@class='pages_set']//div[@class='price']//text()")
-        if meta_price:
-            return meta_price
-        else:
+        try:
+            price_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//span[@itemprop='price']//text()")[0]
+            currency_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//meta[@itemprop='priceCurrency']/@content")[0]
+            price_txt = re.findall(r'[0-9\.]+', price_txt)[0]
+            if len(price_txt) == 0:
+                return None
+            return "%s %s" % (price_txt, currency_txt.strip())
+        except IndexError:
             return None
-    
+
     def _in_stores_only(self):
         return 0
 
@@ -246,7 +265,14 @@ class OzonScraper(Scraper):
         return dept
    
     def _brand(self):
-        return None
+        try:
+            brand_txt = self.tree_html.xpath("//div[@class='bContentBlock']//h1[@itemprop='name']//text()")[0].strip()
+            brand_txt = brand_txt.split(" ")[0]
+            if len(brand_txt) == 0:
+                return None
+            return brand_txt
+        except IndexError:
+            return None
 
 
 
