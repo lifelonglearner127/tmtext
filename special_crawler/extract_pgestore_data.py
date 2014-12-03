@@ -264,7 +264,7 @@ class PGEStore(Scraper):
 
     def _brand(self):
         #return self.tree_html.xpath('//span[contains(@class, "brand")]//text()')[0]
-        text = self.tree_html.xpath('//div[contains(@class, "pdp-brand pampers")]//div[contains(@class,"fl-rt rel")]//a[@class="cta"]/@title')[0]
+        text = self.tree_html.xpath('//div[contains(@class, "pdp-brand")]//div//a[@class="cta"]/@title')[0]
         # Visit the Pampers brand shop
         text = text.replace('Visit the ', '')
         text = text.replace('brand shop', '')
