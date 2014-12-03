@@ -1037,7 +1037,7 @@ class WalmartScraper(Scraper):
                 except Exception, e:
                     print "WARNING: ", e.message
 
-                return images_carousel
+            return images_carousel
 
         # It should only return this img when there's no img carousel
         main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
@@ -1052,6 +1052,12 @@ class WalmartScraper(Scraper):
 
             return main_image
 
+        # bundle product images
+        images_bundle = self.tree_html.xpath("//div[@class='image-body']/img/@src")
+        if images_bundle:
+            # fix relative urls
+            images_bundle = map(_fix_relative_url, images_bundle)
+            return images_bundle
 
         # nothing found
         return None

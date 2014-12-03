@@ -17,6 +17,8 @@ from extract_statelinetack_data import StateLineTackScraper
 from extract_impactgel_data import ImpactgelScraper
 from extract_chicksaddlery_data import ChicksaddleryScraper
 from extract_bhinneka_data import BhinnekaScraper
+from extract_maplin_data import MaplinScraper
+
 from extract_hersheys_data import HersheysScraper
 from urllib2 import HTTPError
 import datetime
@@ -47,6 +49,7 @@ SUPPORTED_SITES = {
                     "impactgel" : ImpactgelScraper,
                     "chicksaddlery" : ChicksaddleryScraper,
                     "bhinneka" : BhinnekaScraper,
+                    "maplin" : MaplinScraper,
                     "hersheysstore" : HersheysScraper
                     }
 
