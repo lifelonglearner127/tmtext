@@ -43,19 +43,23 @@ class WalmartSpider(SearchSpider):
 
 
 
-        results = hxs.select("//div[@class='prodInfo']/div[@class='prodInfoBox']/a[@class='prodLink ListItemLink']")
+        # TODO: check this xpath and extractions
+        results = hxs.select("//h4[@class='tile-heading']/a")
         for result in results:
             item = SearchItem()
             #item['origin_site'] = site
 
-            #TODO: usually the manufacturer is in bold, so maybe use that
             product_name = " ".join(result.select(".//text()").extract())
-            # append text that is in <span> if any
-            span_text = result.select("./span/text()")
 
-            #TODO: use span text differently, as it is more important/relevant (bold) ?
-            for text in span_text:
-                product_name += " " + text.extract()
+            # # Not relevant anymore:
+            # # TODO: check if relevant
+            # # append text that is in <span> if any
+            # span_text = result.select("./span/text()")
+
+            # #TODO: use span text differently, as it is more important/relevant (bold) ?
+            # for text in span_text:
+            #     product_name += " " + text.extract()
+
             item['product_name'] = product_name
             rel_url = result.select("@href").extract()[0]
             
@@ -70,6 +74,10 @@ class WalmartSpider(SearchSpider):
             #     assert self.by_id
             # else:
             #     assert not self.by_id
+            #     
+            
+
+            # TODO: also get the price and other info?
 
 
             items.add(item)

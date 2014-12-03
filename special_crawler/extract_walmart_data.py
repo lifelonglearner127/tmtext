@@ -17,7 +17,7 @@ class WalmartScraper(Scraper):
         Attributes:
             product_page_url (inherited): the URL for the product page being scraped
         Static attributes:
-            DATA_TYPES (dict): 
+            DATA_TYPES (dict):
             DATA_TYPES_SPECIAL (dict):  structures containing the supported data types to be extracted as keys
                                         and the methods that implement them as values
 
@@ -75,8 +75,9 @@ class WalmartScraper(Scraper):
         m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
         return not not m
 
-    def unavailable_product(self):
-        """Checks if current page is an unavailable product page.
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
         Overwrites dummy base class method.
         Returns:
             True if it's an unavailable product page
@@ -315,7 +316,7 @@ class WalmartScraper(Scraper):
             1 if product has pdf
             0 if product doesn't have pdf
         """
-        
+
         if not self.extracted_pdf_urls:
             self._extract_pdf_urls()
 
@@ -356,6 +357,15 @@ class WalmartScraper(Scraper):
         # supports both new and old version of walmart pages
         return self.tree_html.xpath("//meta[@name='keywords']/@content | //meta[@name='Keywords']/@content")[0]
 
+    #extract meta tags exclude http-equiv
+    def _meta_tags(self):
+        tags = map(lambda x:x.values() ,self.tree_html.xpath('//meta[not(@http-equiv)]'))
+        return tags
+
+    def _meta_tag_count(self):
+        tags = self._meta_tags()
+        return len(tags)
+
     # extract meta "brand" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_brand_from_tree(self):
@@ -385,7 +395,7 @@ class WalmartScraper(Scraper):
             short_description = " ".join(self.tree_html.xpath("//div[@class='product-short-description module']//text() | " + \
                 "//div[starts-with(@class, 'choice-short-description')]//text()"))
 
-        # try to extract from old page structure - in case walmart is 
+        # try to extract from old page structure - in case walmart is
         # returning an old type of page
         if not short_description:
             short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
@@ -431,7 +441,7 @@ class WalmartScraper(Scraper):
 
     # ! may throw exception if not found
     # TODO:
-    #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)        
+    #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description_from_tree_old(self):
         """Extracts product long description.
         Works on old design for walmart pages.
@@ -439,7 +449,8 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        full_description = " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
+        # select text in nodes under @itemprop='description' that don't have an ancestor @class='ql-details-short-desc' (that's where short description is)
+        full_description = " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()[not(ancestor::*[@class='ql-details-short-desc'])]")).strip()
         # return None if empty
         if not full_description:
             return None
@@ -466,7 +477,7 @@ class WalmartScraper(Scraper):
         Returns:
             string containing the text content of the product's description, or None
         """
-        
+
         # assume new page format
         # extractor function may throw exception if extraction fails
         try:
@@ -498,7 +509,7 @@ class WalmartScraper(Scraper):
         long_description = self._long_description()
 
         if short_description is None:
-    
+
             # get all long description text that is not in long description
             all_long_description_text = " ".join(self.tree_html.xpath("//div[@class='js-ellipsis module']//text()")).strip()
             short_description_text = self._short_description_wrapper()
@@ -643,13 +654,13 @@ class WalmartScraper(Scraper):
         """
 
         # return last element of the categories list
-        
+
         # assume new design
         try:
             category = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")[-1]
         except Exception:
-            category = None 
-        
+            category = None
+
         if category:
             return category
         else:
@@ -747,7 +758,7 @@ class WalmartScraper(Scraper):
     def _marketplace_meta_from_tree(self):
         seller_dict = self._seller_from_tree()
         marketplace = seller_dict['marketplace']
-        return marketplace     
+        return marketplace
 
     # ! may throw exception if not found
     # TODO: is this the right UPC? there are versions of it in the page, some with leading "00" before it
@@ -756,7 +767,7 @@ class WalmartScraper(Scraper):
         Returns:
             string containing upc
         """
-        return self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]   
+        return self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
 
 
     # extract product seller information from its product product page tree
@@ -776,7 +787,7 @@ class WalmartScraper(Scraper):
         # found on marketplace if there are other keys other than walmart and they are in stock
         # TODO:
         #      more sophisticated checking of availability for marketplace? (values are more than just InStock/OutOfStock)
-        #      (because for walmart they should only be available when in stock) 
+        #      (because for walmart they should only be available when in stock)
         # remove Walmart key as we already checked for it
         if 'Walmart.com' in sellers.keys():
             del sellers['Walmart.com']
@@ -954,7 +965,7 @@ class WalmartScraper(Scraper):
         Returns:
             int representing number of images
         """
-        
+
         try:
             images = self._image_urls()
         except Exception:
@@ -975,11 +986,11 @@ class WalmartScraper(Scraper):
 
         scripts = self.tree_html.xpath("//script//text()")
         for script in scripts:
-            find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script)) 
+            find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script))
             if len(find)>0:
                 return find
 
-        # It should only return this img when there's no img carousel    
+        # It should only return this img when there's no img carousel
         pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
         if pic:
             # check if it's a "no image" image
@@ -1026,9 +1037,9 @@ class WalmartScraper(Scraper):
                 except Exception, e:
                     print "WARNING: ", e.message
 
-                return images_carousel
+            return images_carousel
 
-        # It should only return this img when there's no img carousel    
+        # It should only return this img when there's no img carousel
         main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
         if main_image:
             # check if this is a "no image" image
@@ -1038,7 +1049,7 @@ class WalmartScraper(Scraper):
                     return None
             except Exception, e:
                 print "WARNING: ", e.message
-                                
+
             return main_image
 
 
@@ -1058,7 +1069,7 @@ class WalmartScraper(Scraper):
             return self._image_urls_old()
 
         return image_list
-        
+
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
     # might be outdated? (since walmart site redesign)
     def _mobile_image_same(self):
@@ -1069,7 +1080,7 @@ class WalmartScraper(Scraper):
         tree = html.fromstring(contents)
         mobile_img = tree.xpath('.//*[contains(@class,"carousel ")]//*[contains(@class, "carousel-item")]/@data-model-id')
         img = self._image_urls()
-        
+
         if mobile_img and img:
             if mobile_img[0] == img[0]:
                 return 1
@@ -1098,7 +1109,7 @@ class WalmartScraper(Scraper):
 
         self.js_entry_function_body = body_dict
         return body_dict
-    
+
     # ! may throw exception if not found
     def _owned_from_script(self):
         """Extracts 'owned' (by walmart) info on product
@@ -1226,7 +1237,7 @@ class WalmartScraper(Scraper):
         """
 
         return re.sub("&nbsp;", " ", text).strip()
-    
+
 
 
 
@@ -1254,7 +1265,7 @@ class WalmartScraper(Scraper):
 
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
-    # 
+    #
     # data extracted from product page
     # their associated methods return the raw data
     """Contains as keys all data types that can be extracted by this class
@@ -1270,6 +1281,8 @@ class WalmartScraper(Scraper):
         "upc" : _upc_from_tree, \
         "product_name" : _product_name_from_tree, \
         "keywords" : _meta_keywords_from_tree, \
+        "meta_tags": _meta_tags,\
+        "meta_tag_count": _meta_tag_count,\
         "brand" : _meta_brand_from_tree, \
         "description" : _short_description_wrapper, \
         # TODO: check if descriptions work right
@@ -1294,7 +1307,7 @@ class WalmartScraper(Scraper):
         "video_count" : _product_has_video, \
         "video_urls" : _video_urls, \
         "webcollage" : _product_has_webcollage, \
-        
+
         "image_count" : _image_count, \
         "image_urls" : _image_urls, \
 
@@ -1337,7 +1350,7 @@ if __name__=="__main__":
 ##  - url of video
 ##  - url of pdf
 ##  - anchors (?)
-##  - H tags 
+##  - H tags
 ##  - page load time (?)
 ##  - number of reviews
 ##  - model
@@ -1347,7 +1360,7 @@ if __name__=="__main__":
 ##  - number of features
 ##  - sold by walmart / sold by marketplace sellers
 
-##  
+##
 ## To implement:
 ##     - number of images, URLs of images
 ##  - number of videos, URLs of videos if more than 1
