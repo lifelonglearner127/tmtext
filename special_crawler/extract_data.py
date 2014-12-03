@@ -26,7 +26,7 @@ class Scraper():
     Each subclass must implement:
     - define DATA_TYPES and DATA_TYPES_SPECIAL structures (see subclass docs)
     - implement each method found in the values of the structures above
-    - implement check_url_format()
+    - implement checktree_html_format()
 
     Attributes:
         product_page_url (string): URL of the page of the product being scraped
@@ -88,6 +88,7 @@ class Scraper():
             "average_review", # average value of review, float
             "max_review", # highest review score, float
             "min_review", # lowest review score, float
+            "reviews", # review list
             
             # sellers
             "price", # price, string including currency
@@ -140,7 +141,7 @@ class Scraper():
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls",\
                             "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             'meta_tags','meta_tag_count'], \
-        "reviews": ["review_count", "average_review", "max_review", "min_review"], \
+        "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price"], \
         "classification": ["categories", "category_name", "brand"]
@@ -314,6 +315,10 @@ class Scraper():
 
         results_dict = {}
 
+        # if it's not a valid product page, abort
+        if self.not_a_product():
+            return self.ERROR_RESPONSE
+
         for info in info_type_list:
 
             try:
@@ -358,6 +363,18 @@ class Scraper():
     def check_url_format(self):
         return True
 
+
+    def not_a_product(self):
+        """Abstract method.
+        Checks if current page is not a valid product page
+        (either an unavailable product page, or some other type of content)
+        To be implemented by each scraper specifically for its site.
+        Returns:
+            True if not a product page,
+            False otherwise
+        """
+
+        return False
     
     # Checks if image given as parameter is "no  image" image
     # To be used by subscrapers

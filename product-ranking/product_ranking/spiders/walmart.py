@@ -8,7 +8,8 @@ import urlparse
 
 from scrapy.log import ERROR, WARNING, INFO
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import (SiteProductItem, RelatedProduct,
+                                   BuyerReviews)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
 
@@ -27,10 +28,9 @@ class WalmartProductsSpider(BaseProductsSpider):
     name = 'walmart_products'
     allowed_domains = ["walmart.com"]
 
-    # Options search_sort and cat_id are added when a search sort exclusively
-    # for the criteria requested is wanted.
-    SEARCH_URL = "http://www.walmart.com/search/?query={search_term}" \
-        "&sort={search_sort}&soft_sort=false&cat_id=0&redirect=false"
+    SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
+        "&_refineresult=true&ic=16_0&search_constraint=0" \
+        "&search_query={search_term}&sort={search_sort}"
 
     _SEARCH_SORT = {
         'best_match': 0,
@@ -60,11 +60,10 @@ class WalmartProductsSpider(BaseProductsSpider):
         product = response.meta['product']
 
         self._populate_from_js(response, product)
-
         self._populate_from_html(response, product)
+        product['buyer_reviews'] = self._build_buyer_reviews(response)
 
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
-
         return product
 
     def _search_page_error(self, response):
@@ -78,6 +77,28 @@ class WalmartProductsSpider(BaseProductsSpider):
             title = node.xpath('text()').extract()[0]
             also_considered.append(RelatedProduct(title, link))
         return also_considered
+
+    def _build_buyer_reviews(self, response):
+        overall_block = response.xpath(
+            '//*[contains(@class, "review-summary")]'
+            '//p[contains(@class, "heading")][contains(text(), "|")]//text()'
+        ).extract()
+        overall_text = ' '.join(overall_block)
+        if not overall_text.strip():
+            return
+        buyer_reviews = {}
+        buyer_reviews['num_of_reviews'] = int(
+            overall_text.split('review')[0].strip())
+        buyer_reviews['average_rating'] = float(
+            overall_text.split('|')[1].split('out')[0].strip())
+        buyer_reviews['rating_by_star'] = {}
+        for _revs in response.css('.review-histogram .rating-filter'):
+            _star = _revs.css('.meter-inline ::text').extract()[0].strip()
+            _reviews = _revs.css('.rating-val ::text').extract()[0].strip()
+            _star = (_star.lower().replace('stars', '').replace('star', '')
+                     .strip())
+            buyer_reviews['rating_by_star'][int(_star)] = int(_reviews)
+        return BuyerReviews(**buyer_reviews)
 
     def _populate_from_html(self, response, product):
         cond_set(
@@ -131,45 +152,35 @@ class WalmartProductsSpider(BaseProductsSpider):
             'is_in_store_only',
             data['buyingOptions']['storeOnlyItem'],
         )
-
-        # This value is not available for packs and if there's no stock.
-        cond_set_value(
-            product,
-            'price',
-            data['buyingOptions'].get('price', {}).get('displayPrice'),
-        )
-
-        # This is for packs but will not be available is there's no stock.
-        cond_set_value(
-            product,
-            'price',
-            data['buyingOptions'].get('maxPrice', {}).get('displayPrice'),
-        )
-
-        if available and 'price' not in product:
-            self.log(
-                "Product with unknown buyingOptions structure: %s\n%s"
-                % (response.url, pprint.pformat(data)),
-                ERROR
-            )
+        if available:
+            try:
+                cond_set_value(
+                    product,
+                    'price',
+                    data['buyingOptions']['price']['displayPrice'],
+                )
+            except KeyError:
+                # Packs of products have different buyingOptions.
+                try:
+                    cond_set_value(
+                        product,
+                        'price',
+                        data['buyingOptions']['maxPrice']['displayPrice'],
+                    )
+                except KeyError:
+                    self.log(
+                        "Product with unknown buyingOptions structure: %s\n%s"
+                        % (response.url, pprint.pformat(data)),
+                        ERROR
+                    )
 
         try:
             cond_set_value(
                 product, 'upc', data['analyticsData']['upc'], conv=int)
         except ValueError:
-            # Not really a UPC.
-            self.log(
-                "Invalid UPC, %r, in %r."
-                % (data['analyticsData']['upc'], response.url),
-                WARNING
-            )
+            pass  # Not really a UPC.
         cond_set_value(product, 'image_url', data['primaryImageUrl'])
-        cond_set_value(
-            product,
-            'brand',
-            data['analyticsData']['brand'],
-            conv=lambda s: None if not s else s,
-        )
+        cond_set_value(product, 'brand', data['analyticsData']['brand'])
 
     def _scrape_total_matches(self, response):
         if response.css('.no-results'):

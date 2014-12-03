@@ -16,7 +16,8 @@ from extract_homedepot_data import HomeDepotScraper
 from extract_statelinetack_data import StateLineTackScraper
 from extract_impactgel_data import ImpactgelScraper
 from extract_chicksaddlery_data import ChicksaddleryScraper
-
+from extract_bhinneka_data import BhinnekaScraper
+from extract_hersheys_data import HersheysScraper
 from urllib2 import HTTPError
 import datetime
 import logging
@@ -45,6 +46,8 @@ SUPPORTED_SITES = {
                     "wayfair" : WayfairScraper,
                     "impactgel" : ImpactgelScraper,
                     "chicksaddlery" : ChicksaddleryScraper,
+                    "bhinneka" : BhinnekaScraper,
+                    "hersheysstore" : HersheysScraper
                     }
 
 # add logger
@@ -122,7 +125,7 @@ def validate_args(arguments):
         site_argument = arguments['site'][0]
     else:
         site_argument = extract_domain(arguments['url'][0])
-    
+
         # If site could not be extracted the URL was invalid
         if not site_argument:
             raise InvalidUsage("Invalid input URL: " + arguments['url'][0] + ". Domain could not be extracted")
@@ -131,7 +134,7 @@ def validate_args(arguments):
         arguments['site'] = [site_argument]
 
     if site_argument not in SUPPORTED_SITES.keys():
-        raise InvalidUsage("Unsupported site: " + site_argument)    
+        raise InvalidUsage("Unsupported site: " + site_argument)
 
 # validate request "data" parameters
 def validate_data_params(arguments, ALL_DATA_TYPES):
