@@ -89,7 +89,11 @@ class TescoScraper(Scraper):
     def _model(self):
         if not self.bazaarvoice:
             self.load_bazaarvoice()
-        return self.bazaarvoice['BatchedResults']['q0']['Results'][0]['ModelNumbers'][0]
+        try:
+            m = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['ModelNumbers'][0]
+        except:
+            m = None
+        return m
 
     def _upc(self):
         return self.tree_html.xpath('//meta[@property="og:upc"]/@content')[0]
@@ -142,7 +146,10 @@ class TescoScraper(Scraper):
 
         if not self.bazaarvoice:
            self.load_bazaarvoice()
-        content = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['Description']
+        try:
+            content = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['Description']
+        except:
+            content = None
         return content
 
 
@@ -179,8 +186,8 @@ class TescoScraper(Scraper):
             img_list.append(image_url)
 
         if len(img_list) == 2:
-            return img_list[0] == img_list[1]
-        return None
+            if img_list[0] == img_list[1]: return 1
+        return 0
 
     def _image_urls(self):
         head = 'http://tesco.scene7.com/is/image/'
@@ -204,10 +211,13 @@ class TescoScraper(Scraper):
         return len(image_urls)
 
     def _video_urls(self):
-        video_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
-        video_url = re.search("\['http.*\.flv\']", video_url.strip()).group()
-        video_url = re.findall("'(.*?)'", video_url)
-        return video_url
+        try:
+            video_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
+            video_url = re.search("\['http.*\.flv\']", video_url.strip()).group()
+            video_url = re.findall("'(.*?)'", video_url)
+            return video_url
+        except:
+            return []
 
     def _video_youtube(self):
         #Find an embedded youtube link
@@ -228,15 +238,25 @@ class TescoScraper(Scraper):
         vt += yt
         if vt > 0:
             return vt
-        return None
+        return 0
 
     def _pdf_helper(self):
         if self.pdfs == None:
+            pf = []
             url = self.tree_html.xpath('//div[@id="inlineContentURL"]//text()')
             if len(url)>0:
                 req = requests.get(url[0]).text
-                if len(req)>0:
-                    self.pdfs = re.findall(r"(http.*\.pdf)", req)
+                if len(req)>10 and req.find('.pdf')>7:
+                    i=j= len(req)-4
+                    while i>0:
+                        i -= 1
+                        if req[i:i+4]=='.pdf':
+                            j=i+4
+                        if req[i:i+5]=='http:' and j-i > 15 and j-i < 250:
+                            pf.append(req[i:j])
+                            j = 0
+
+            self.pdfs = pf
         return self.pdfs
 
     def _pdf_urls(self):
