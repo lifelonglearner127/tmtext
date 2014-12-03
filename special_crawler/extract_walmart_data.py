@@ -986,7 +986,12 @@ class WalmartScraper(Scraper):
 
         scripts = self.tree_html.xpath("//script//text()")
         for script in scripts:
-            find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script))
+            # TODO: is str() below needed?
+            #       it sometimes throws an exception for non-ascii text
+            try:
+                find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script))
+            except:
+                find = []
             if len(find)>0:
                 return find
 
