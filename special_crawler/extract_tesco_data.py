@@ -255,7 +255,6 @@ class TescoScraper(Scraper):
                         if req[i:i+5]=='http:' and j-i > 15 and j-i < 250:
                             pf.append(req[i:j])
                             j = 0
-
             self.pdfs = pf
         return self.pdfs
 
