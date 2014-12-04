@@ -176,9 +176,15 @@ def get_data():
         bot = request_arguments['bot'][0]
     else:
         bot = None
+    
+    if 'crawlera' in request_arguments:
+        crawlera = request_arguments['crawlera'][0]
+    else:
+        crawlera = None
+
 
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)
+    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot, crawlera=crawlera)
 
     # validate parameter values
     # url
