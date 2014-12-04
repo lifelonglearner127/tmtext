@@ -266,6 +266,13 @@ class OzonScraper(Scraper):
    
     def _brand(self):
         try:
+            brand_txt = self.tree_html.xpath("//a[contains(@href, 'brand')]/text()")[0].strip()
+            if len(brand_txt)>1:
+                return brand_txt
+        except:
+            pass
+
+        try:
             brand_txt = self.tree_html.xpath("//*[@itemprop='publisher']/a//text()")[0].strip()
             return brand_txt
         except:
