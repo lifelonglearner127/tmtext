@@ -265,23 +265,41 @@ class OzonScraper(Scraper):
         return self._categories()[-1]
    
     def _brand(self):
+        #search for misc product brand
+        brand_txt = self.tree_html.xpath("//div[@class='PageModule']//a[contains(@href, 'brand')]/text()")
+        for brand in brand_txt:
+            if len(brand.strip())>1:
+                return brand.strip()
+
+        #search for a books brand
         try:
             brand_txt = self.tree_html.xpath("//*[@itemprop='publisher']/a//text()")[0].strip()
             return brand_txt
         except:
             pass
 
-        try:
-            brand_txt = self.tree_html.xpath("//div[@class='bContentBlock']//h1[@itemprop='name']//text()")[0].strip()
-            brand_txt = brand_txt.split("//*[@itemprop='publisher'] ")[0]
-            if len(brand_txt) == 0:
-                return None
-            return brand_txt
-        except IndexError:
-            return None
+        # try:
+        #     brand_txt = self.tree_html.xpath("//div[@class='bContentBlock']//h1[@itemprop='name']//text()")[0].strip()
+        #     brand_txt = brand_txt.split("//*[@itemprop='publisher'] ")[0]
+        #     if len(brand_txt) == 0:
+        #         return None
+        #     return "C"+brand_txt
+        # except IndexError:
+        #     return None
         
+    '''
+    python curl_wrapper.py 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/1434860/'
+    "ФИЗМАТЛИТ"
 
+    python curl_wrapper.py 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/1435596/'
+    None
 
+    python curl_wrapper.py 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/26422253/'
+    Joan Rivers
+
+    python curl_wrapper.py 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/19550371/'
+    ФК Зенит
+    '''
 
 
 
