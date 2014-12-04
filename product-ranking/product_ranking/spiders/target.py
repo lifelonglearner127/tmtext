@@ -10,7 +10,7 @@ import urllib
 import urllib2
 import urlparse
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 from scrapy import Selector
@@ -22,6 +22,8 @@ class TargetProductSpider(BaseProductsSpider):
     name = 'target_products'
     allowed_domains = ["target.com", "recs.richrelevance.com"]
     start_urls = ["http://www.target.com/"]
+    # TODO: support new currencies if you're going to scrape target.canada
+    #  or any other target.* different from target.com!
     SEARCH_URL = "http://www.target.com/s?searchTerm={search_term}"
     SCRIPT_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js"
     CALL_RR = True
@@ -149,6 +151,12 @@ class TargetProductSpider(BaseProductsSpider):
             if itype == 'ITEM':
                 new_product = product.copy()
                 new_product['price'] = price
+                if not isinstance(new_product, Price):
+                    new_product['price'] = Price(
+                        price=new_product['price'].replace(
+                            '$', '').replace(',', '').strip(),
+                        priceCurrency='USD'
+                    )
                 new_product['model'] = color
                 new_product['upc'] = code
                 product_list.append(new_product)

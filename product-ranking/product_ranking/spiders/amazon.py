@@ -8,7 +8,7 @@ import string
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value
 
@@ -78,6 +78,16 @@ class AmazonProductsSpider(BaseProductsSpider):
             'price',
             response.css('#priceblock_ourprice ::text').extract(),
         )
+        if product.get('price', None):
+            if not '$' in product['price']:
+                self.log('Currency symbol not recognized: %s' % response.url,
+                         level=ERROR)
+            else:
+                product['price'] = Price(
+                    priceCurrency='USD',
+                    price=product['price'].replace('$', '').strip()\
+                        .replace(',', '')
+                )
         cond_set(
             product,
             'description',

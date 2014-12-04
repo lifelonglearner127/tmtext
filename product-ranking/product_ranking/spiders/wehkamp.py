@@ -5,7 +5,7 @@ import string
 
 from scrapy.log import WARNING
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set
 
 
@@ -52,6 +52,11 @@ class WehkampProductsSpider(BaseProductsSpider):
                 "//div[@class='priceblock']"
                 "/span[@class='price']/text()").extract()
         )
+        if product.get('price', None):
+            product['price'] = Price(
+                priceCurrency='EUR',
+                price=product['price'].replace(',', '').strip()
+            )
 
         cond_set(
             product,

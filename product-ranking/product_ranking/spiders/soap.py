@@ -1,12 +1,11 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import json
 
 from scrapy.log import ERROR, WARNING
 from scrapy import Request
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value, \
     populate_from_open_graph
 
@@ -60,6 +59,7 @@ class SoapProductSpider(BaseProductsSpider):
         # Override the title from other sources. This is the one we want.
         cond_set(
             product, 'title', response.css('.productTitle h1 ::text').extract())
+        self._unify_price(product)
 
     def _scrape_product_links(self, response):
         links = response.xpath(
@@ -88,3 +88,12 @@ class SoapProductSpider(BaseProductsSpider):
             if len(next_pages) > 2:
                 self.log("Found more than two 'next page' links.", WARNING)
         return next_page
+
+    def _unify_price(self, product):
+        price = product.get('price')
+        if price is None:
+            return
+        is_usd = not price.find('$')
+        price = price[1:].replace(',', '')
+        if is_usd and price.replace('.', '').isdigit():
+            product['price'] = Price('USD', price)

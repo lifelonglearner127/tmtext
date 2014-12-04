@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults, populate_from_open_graph
 
@@ -45,6 +47,23 @@ class MorrisonsProductsSpider(BaseProductsSpider):
 
         price = response.xpath("//meta[@itemprop='price']/@content").extract()
         cond_set(product, 'price', price)
+
+        if product.get('price', None):
+            if not u'£' in product.get('price', ''):
+                if product['price'].strip().endswith('p'):
+                    product['price'] = u'£0.%s' % product['price'].replace(
+                        'p', '').strip()
+                elif product['price'].strip() == '0.0':
+                    product['price'] = '£0.0'
+                else:
+                    self.log('Invalid price at: %s' % response.url,
+                             level=ERROR)
+            if u'£' in product['price']:
+                product['price'] = Price(
+                    price=product['price'].replace(u'£', '').replace(
+                        ',', '').replace(' ', '').strip(),
+                    priceCurrency='GBP'
+                )
 
         upc = response.xpath("//meta[@itemprop='sku']/@content").extract()
         cond_set(product, 'upc', upc, conv=int)

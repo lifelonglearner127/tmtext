@@ -5,7 +5,7 @@ import re
 
 from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
@@ -17,6 +17,8 @@ class CostcoProductsSpider(BaseProductsSpider):
     SEARCH_URL = "http://www.costco.com/CatalogSearch?pageSize=96" \
         "&catalogId=10701&langId=-1&storeId=10301" \
         "&currentPage=1&keyword={search_term}"
+
+    DEFAULT_CURRENCY = u'USD'
 
     def parse_product(self, response):
         prod = response.meta['product']
@@ -42,11 +44,19 @@ class CostcoProductsSpider(BaseProductsSpider):
         if brand:
             prod['brand'] = brand
 
-        price = response.xpath(
-            '//input[contains(@name,"price")]/@value').extract()
-        cond_set(prod, 'price', price)
-        if 'price' in prod and (not prod['price'] or prod['price'] == '$0.00'):
-            del prod['price']
+
+        price_value = response.xpath(
+            '//input[contains(@name,"price")]/@value').re('[\d.]+')
+
+        if price_value:
+            price_value = u''.join(price_value)
+            if price_value != '0.00':
+                price = Price(
+                    priceCurrency=self.DEFAULT_CURRENCY,
+                    price=u''.join(price_value)
+                )
+
+                cond_set_value(prod, 'price', price)
 
         des = response.xpath('//div[@id="product-tab1"]//text()').extract()
         des = ' '.join(i.strip() for i in des)

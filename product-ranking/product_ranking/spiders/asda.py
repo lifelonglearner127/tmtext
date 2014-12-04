@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
@@ -6,7 +8,7 @@ import urllib
 
 from scrapy.log import WARNING, ERROR
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 
 
@@ -58,6 +60,12 @@ class AsdaProductsSpider(BaseProductsSpider):
             prod['title'] = item['itemName']
             prod['brand'] = item['brandName']
             prod['price'] = item['price']
+            if prod.get('price', None):
+                prod['price'] = Price(
+                    price=prod['price'].replace('£', '').replace(
+                        ',', '').strip(),
+                    priceCurrency='GBP'
+                )
             # FIXME Verify by comparing a prod in another site.
             prod['upc'] = int(item['cin'])
             prod['model'] = item['id']

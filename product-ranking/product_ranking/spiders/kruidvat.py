@@ -4,7 +4,7 @@ from future_builtins import *
 import string
 import urlparse
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from scrapy.log import ERROR
 
@@ -46,6 +46,12 @@ class KruidvatProductsSpider(BaseProductsSpider):
                 "//p[@class='product-price']"
                 "/meta[@itemprop='price']/@content").extract()
         )
+        if product.get('price', None):
+            product['price'] = Price(
+                price=product['price'].replace(',', '.').replace(
+                    '$', '').strip(),
+                priceCurrency='EUR'
+            )
 
         cond_set(
             product,

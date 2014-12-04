@@ -9,7 +9,7 @@ import urlparse
 from scrapy.log import ERROR, WARNING, INFO
 
 from product_ranking.items import (SiteProductItem, RelatedProduct,
-                                   BuyerReviews)
+                                   BuyerReviews, Price)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
 
@@ -153,26 +153,26 @@ class WalmartProductsSpider(BaseProductsSpider):
             data['buyingOptions']['storeOnlyItem'],
         )
         if available:
+            price_block = None
             try:
-                cond_set_value(
-                    product,
-                    'price',
-                    data['buyingOptions']['price']['displayPrice'],
-                )
+                price_block = data['buyingOptions']['price']
             except KeyError:
                 # Packs of products have different buyingOptions.
                 try:
-                    cond_set_value(
-                        product,
-                        'price',
-                        data['buyingOptions']['maxPrice']['displayPrice'],
-                    )
+                    price_block =\
+                        data['buyingOptions']['maxPrice']
                 except KeyError:
                     self.log(
                         "Product with unknown buyingOptions structure: %s\n%s"
                         % (response.url, pprint.pformat(data)),
                         ERROR
                     )
+            if price_block:
+                _price = Price(
+                    priceCurrency=price_block['currencyUnit'],
+                    price=price_block['currencyAmount']
+                )
+                cond_set_value(product, 'price', _price)
 
         try:
             cond_set_value(

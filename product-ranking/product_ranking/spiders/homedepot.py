@@ -10,7 +10,7 @@ import urlparse
 from scrapy import Request, Selector
 from scrapy.log import DEBUG
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set
 
 
@@ -65,6 +65,16 @@ class HomedepotProductsSpider(BaseProductsSpider):
             response.xpath(
                 "//div[@class='pricingReg']"
                 "/span[@itemprop='price']/text()").extract())
+
+        if product.get('price', None):
+            if not '$' in product['price']:
+                self.log('Unknown currency at' % response.url)
+            else:
+                product['price'] = Price(
+                    price=product['price'].replace(',', '').replace(
+                        '$', '').strip(),
+                    priceCurrency='USD'
+                )
 
         cond_set(
             product,
@@ -217,6 +227,16 @@ class HomedepotProductsSpider(BaseProductsSpider):
             storeskus = jsdata['storeSkus']
             price = storeskus['storeSku']['pricing']['originalPrice']
             product['price'] = price
+
+            if product.get('price', None):
+                if not '$' in product['price']:
+                    self.log('Unknown currency at' % response.url)
+                else:
+                    product['price'] = Price(
+                        price=product['price'].replace(',', '').replace(
+                            '$', '').strip(),
+                        priceCurrency='USD'
+                    )
 
             desc = jsdata['info']['description']
             product['description'] = desc

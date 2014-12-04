@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
@@ -8,7 +10,7 @@ import string
 import urllib
 import urlparse
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import FormatterWithDefaults
 from product_ranking.spiders import cond_set, cond_set_value
@@ -205,6 +207,16 @@ class JohnlewisProductsSpider(BaseProductsSpider):
             conv=strip_price
         )
 
+        if product.get('price', None):
+            if not '£' in product['price']:
+                self.log('Unknown currency at' % response.url)
+            else:
+                product['price'] = Price(
+                    price=product['price'].replace(',', '').replace(
+                        '£', '').strip(),
+                    priceCurrency='GBP'
+                )
+
         cond_set(
             product,
             'upc',
@@ -368,6 +380,14 @@ class JohnlewisProductsSpider(BaseProductsSpider):
                 new_product = product.copy()
                 new_product['model'] = color
                 new_product['price'] = v['price']
+                if not '£' in new_product['price']:
+                    self.log('Unknown currency at' % response.url)
+                else:
+                    new_product['price'] = Price(
+                        price=new_product['price'].replace(',', '').replace(
+                            '£', '').strip(),
+                        priceCurrency='GBP'
+                    )
                 new_product['image_url'] = image_url
                 stock = v['stock']
                 if stock == '0':

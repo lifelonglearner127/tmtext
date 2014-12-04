@@ -5,7 +5,7 @@ import string
 
 from scrapy.log import DEBUG
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set
 
 
@@ -45,6 +45,16 @@ class WellProductsSpider(BaseProductsSpider):
             ).extract(),
             conv=string.strip,
         )
+
+        if product.get('price', None):
+            if not '$' in product['price']:
+                self.log('Unknown currency at %s' % response.url)
+            else:
+                product['price'] = Price(
+                    priceCurrency='CAD',
+                    price=product['price'].replace(',', '').replace(
+                        ' ', '').replace('$', '').strip()
+                )
 
         cond_set(
             product,
