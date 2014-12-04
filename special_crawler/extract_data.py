@@ -15,6 +15,8 @@ from no_img_hash import fetch_bytes
 
 from lxml import html
 import time
+from crawlera_api_wrapper import CrawleraRequest
+import requests
 
 class Scraper():
 
@@ -161,6 +163,9 @@ class Scraper():
     def __init__(self, **kwargs):
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
+        self.crawlera = kwargs['crawlera']
+        if self.crawlera is not None:
+            self.crawlera = int(self.crawlera)
 
         current_date = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -255,41 +260,43 @@ class Scraper():
         Returns:
             lxml tree object
         """
-        
-        request = urllib2.Request(self.product_page_url)
-        # set user agent to avoid blocking
-        agent = ''
-        if self.bot_type == "google":
-            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
-            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        if self.crawlera == 1:
+            cr = CrawleraRequest()
+            contents = cr.get_page(self.product_page_url)
         else:
-            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
-        request.add_header('User-Agent', agent)
+            request = urllib2.Request(self.product_page_url)
+            # set user agent to avoid blocking
+            agent = ''
+            if self.bot_type == "google":
+                agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            else:
+                agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+            request.add_header('User-Agent', agent)
 
-        for i in range(self.MAX_RETRIES):
-            try:
-                contents = urllib2.urlopen(request).read()
-
+            for i in range(self.MAX_RETRIES):
                 try:
-                    self.tree_html = html.fromstring(contents.decode("utf8"))
-                except UnicodeError, e:
-                    # if string was not utf8, don't deocde it
-                    print "Warning creating html tree from page content: ", e.message
+                    contents = urllib2.urlopen(request).read()
 
-                    self.tree_html = html.fromstring(contents)
+                    try:
+                        self.tree_html = html.fromstring(contents.decode("utf8"))
+                    except UnicodeError, e:
+                        # if string was not utf8, don't deocde it
+                        print "Warning creating html tree from page content: ", e.message
 
-                # if we got it we can exit the loop and stop retrying
-                return
+                        self.tree_html = html.fromstring(contents)
 
-            except IncompleteRead, e:
-                pass
+                    # if we got it we can exit the loop and stop retrying
+                    return
 
-            # try getting it again, without catching exception.
-            # if it had worked by now, it would have returned.
-            # if it still doesn't work, it will throw exception.
-            # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
+                except IncompleteRead, e:
+                    pass
+
+                # try getting it again, without catching exception.
+                # if it had worked by now, it would have returned.
+                # if it still doesn't work, it will throw exception.
+                # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
             contents = urllib2.urlopen(request).read()
-            self.tree_html = html.fromstring(contents)
+        self.tree_html = html.fromstring(contents)
             
 
     # Extract product info given a list of the type of info needed.
