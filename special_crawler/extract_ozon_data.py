@@ -118,7 +118,7 @@ class OzonScraper(Scraper):
         return None
 
     def _image_urls(self):
-        text = self.tree_html.xpath('//*[@class="bImageColumn"]/script//text()')
+        text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
         text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
         jsn = json.loads(text)
         image_url = []
@@ -258,21 +258,30 @@ class OzonScraper(Scraper):
     def _categories(self):
         all = self.tree_html.xpath("//ul[@class='navLine']/li//text()")
         #the last value is the product itself
-        return all[:-1]
+        return all[0:-1]
    
     def _category_name(self):
-        dept = " ".join(self.tree_html.xpath("//ul[@class='navLine']/li[1]//text()")).strip()
-        return dept
+        # dept = " ".join(self.tree_html.xpath("//ul[@class='navLine']/li[1]//text()")).strip()
+        return self._categories()[-1]
    
     def _brand(self):
         try:
+            brand_txt = self.tree_html.xpath("//*[@itemprop='publisher']/a//text()")[0].strip()
+            return brand_txt
+        except:
+            pass
+
+        try:
             brand_txt = self.tree_html.xpath("//div[@class='bContentBlock']//h1[@itemprop='name']//text()")[0].strip()
-            brand_txt = brand_txt.split(" ")[0]
+            brand_txt = brand_txt.split("//*[@itemprop='publisher'] ")[0]
             if len(brand_txt) == 0:
                 return None
             return brand_txt
         except IndexError:
             return None
+        
+
+
 
 
 
