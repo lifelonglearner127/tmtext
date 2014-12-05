@@ -31,7 +31,24 @@ class BhinnekaScraper(Scraper):
         m = re.match(r"^http://www.bhinneka.com/products/sku\d+/.+\.aspx$", self.product_page_url)
 
         return not not m
-    
+
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
+
+        try:
+            self._product_title()
+            self._price()
+        except Exception:
+            return True
+
+        return False
+
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -249,10 +266,13 @@ class BhinnekaScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1:]
+        if self._brand().strip().lower() == self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[-1].strip().lower():
+            return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1:-1]
+
+        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1]
 
     def _category_name(self):
-        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[-1]
+        return self._categories()[-1]
     
     def _brand(self):
         return self.tree_html.xpath('//a[@id="ctl00_content_lnkBrand"]/@title')[0]
