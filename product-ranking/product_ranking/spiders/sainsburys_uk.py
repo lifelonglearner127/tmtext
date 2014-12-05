@@ -3,9 +3,11 @@
 import urlparse
 import re
 
-from product_ranking.spiders import cond_replace
+from product_ranking.spiders import cond_replace, cond_replace_value
 from product_ranking.spiders import cond_set_value, cond_set
 from contrib.product_spider import ProductsSpider
+from product_ranking.spiders.contrib.contrib import unify_price, unify_decimal
+from product_ranking.spiders.contrib.currency import SYM_GBP
 
 
 class SainsburysProductSpider(ProductsSpider):
@@ -118,5 +120,11 @@ class SainsburysProductSpider(ProductsSpider):
                      response.css('#productImageHolder img::attr(src)')
                      .extract(),
                      lambda url: urlparse.urljoin(response.url, url))
+        self._unify_price(product)
 
+    def _unify_price(self, product):
+        price = product['price'].encode('utf-8')
+        price = unify_price(['GBP'], {SYM_GBP: 'GBP'},
+                            unify_decimal(', ', '.'), 'GBP')(price)
+        cond_replace_value(product, 'price', price)
 
