@@ -317,5 +317,3 @@ class BhinnekaScraper(Scraper):
     DATA_TYPES_SPECIAL = { \
         "mobile_image_same" : _mobile_image_same, \
     }
-
-
