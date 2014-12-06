@@ -42,8 +42,11 @@ class BhinnekaScraper(Scraper):
         """
 
         try:
-            self._product_title()
-            self._price()
+            itemtype = self.tree_html.xpath('//div[@id="ctl00_content_divfound"]/@itemtype')[0].strip()
+
+            if itemtype != "http://schema.org/Product":
+                raise Exception()
+
         except Exception:
             return True
 
