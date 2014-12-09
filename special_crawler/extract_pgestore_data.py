@@ -28,6 +28,7 @@ class PGEStore(Scraper):
     reviews_tree = None
     max_score = None
     min_score = None
+    reviews = None
     pdfs = None
     
     def check_url_format(self):
@@ -198,11 +199,18 @@ class PGEStore(Scraper):
                     score -= 1
 
                 score = 1
-                for review in reviews:
+                for review in reversed(reviews):
                     if int(review) > 0:
                         self.min_score = score
                         break
                     score += 1
+
+                self.reviews = []
+                score = 1
+                for review in reversed(reviews):
+                    self.reviews.append([score, int(review)])
+                    score += 1
+
                 # self.reviews_tree = html.fromstring(contents)
         except:
             pass
@@ -230,7 +238,9 @@ class PGEStore(Scraper):
         self._load_reviews()
         return self.min_score
 
-
+    def _reviews(self):
+        self._load_reviews()
+        return self.reviews
 
 
     ##########################################
@@ -367,5 +377,6 @@ class PGEStore(Scraper):
         "average_review" : _average_review, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
+        "reviews" : _reviews, \
     }
 

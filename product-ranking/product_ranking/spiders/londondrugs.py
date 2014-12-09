@@ -1,13 +1,83 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import string
 import urlparse
+from itertools import ifilter
+from decimal import Decimal, InvalidOperation
+
+from scrapy.log import DEBUG
 
 from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider
+from product_ranking.spiders import BaseProductsSpider, cond_replace_value
 from product_ranking.spiders import cond_set, cond_set_value
-from scrapy.log import DEBUG
+from product_ranking.items import Price
+
+
+def unify_decimal(ignored, float_dots):
+    """ Create a function to convert various floating point textual
+    representations to it's equivalent that can be converted to float directly.
+
+    Usage:
+       unify_float([ignored, float_dots])(string_:str) -> string
+
+    Arguments:
+       ignored - list of symbols to be removed from string
+       float_dots - decimal/real parts separator
+
+    Raises:
+       `ValueError` - resulting string cannot be converted to float.
+    """
+
+    def unify_float_wr(string_):
+        try:
+            result = ''.join(['.' if c in float_dots else c for c in
+                              string_ if c not in ignored])
+            return str(Decimal(result))
+        except InvalidOperation:
+            raise ValueError('Cannot convert to decimal')
+
+    return unify_float_wr
+
+
+def unify_price(currency_codes, currency_signs, unify_decimal,
+                default_currency=None):
+    """Convert textual price representation to `Price` object.
+
+    Usage:
+       unify_price(currency_codes, currency_signs, unify_float,
+       [default_currency])(string_) -> Price
+
+    Arguments:
+       currency_codes - list of possible currency codes (like ['EUR', 'USD'])
+       currency_signs - dictionary to convert substrings to currency codes
+       unify_decimal - function to convert price part into decimal
+       default_currency - default currency code
+
+    Raises:
+       `ValueError` - no currency code found and default_curreny is None.
+    """
+
+    def unify_price_wr(string_):
+        string_ = string_.strip()
+        sorted_ = sorted(currency_signs.keys(), None, len, True)
+        sign = next(ifilter(string_.startswith, sorted_), '')
+        string_ = currency_signs.get(sign, '') + string_[len(sign):]
+        sorted_ = sorted(currency_codes, None, len, True)
+        currency = next(ifilter(string_.startswith, sorted_), None)
+
+        if currency is None:
+            currency = default_currency
+        else:
+            string_ = string_[len(currency):]
+
+        if currency is None:
+            raise ValueError('Could not get currency code')
+
+        float_string = unify_decimal(string_.strip())
+
+        return Price(currency, float_string)
+
+    return unify_price_wr
 
 
 class LondondrugsProductsSpider(BaseProductsSpider):
@@ -139,6 +209,7 @@ class LondondrugsProductsSpider(BaseProductsSpider):
         )
         cond_set_value(product, 'url', response.url)
         product['locale'] = "en-US"
+        self._unify_price(product)
         return product
 
     def _scrape_total_matches(self, response):
@@ -146,7 +217,7 @@ class LondondrugsProductsSpider(BaseProductsSpider):
             "//div[@id='search']/div[@class='nohits']"
             "/div[@class='nohitsmessage']"
             "/text()").re(
-                "We're sorry, no products were found for your search:")
+            "We're sorry, no products were found for your search:")
         if nohitsmessage:
             return 0
         total = response.xpath(
@@ -184,7 +255,7 @@ class LondondrugsProductsSpider(BaseProductsSpider):
             "//div[@id='search']/div[@class='nohits']"
             "/div[@class='nohitsmessage']"
             "/text()").re(
-                "We're sorry, no products were found for your search:")
+            "We're sorry, no products were found for your search:")
         if nohitsmessage:
             return
         links = response.xpath(
@@ -203,7 +274,7 @@ class LondondrugsProductsSpider(BaseProductsSpider):
             "//div[@id='search']/div[@class='nohits']"
             "/div[@class='nohitsmessage']"
             "/text()").re(
-                "We're sorry, no products were found for your search:")
+            "We're sorry, no products were found for your search:")
         if nohitsmessage:
             return
         next = response.xpath(
@@ -212,3 +283,9 @@ class LondondrugsProductsSpider(BaseProductsSpider):
             next = next.extract()[0]
             next = urlparse.urljoin(response.url, next)
             return next
+
+    def _unify_price(self, product):
+        price = product['price']
+        price = unify_price(['USD'], {'$': 'USD'}, unify_decimal(', ', '.'),
+                            'USD')(price)
+        cond_replace_value(product, 'price', price)

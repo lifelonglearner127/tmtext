@@ -1,12 +1,11 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import json
 import pprint
 import re
 import urlparse
 
-from scrapy.log import ERROR, WARNING, INFO
+from scrapy.log import ERROR, INFO
 
 from product_ranking.items import (SiteProductItem, RelatedProduct,
                                    BuyerReviews, Price)
@@ -126,6 +125,17 @@ class WalmartProductsSpider(BaseProductsSpider):
         if recommended:
             product.setdefault(
                 'related_products', {})['recommended'] = recommended
+        if not product.get('price'):
+            currency = response.css('[itemprop=priceCurrency]::attr(content)')
+            price = response.css('[itemprop=price]::attr(content)')
+            if price and currency:
+                currency = currency.extract()[0]
+                price = re.search('[,. 0-9]+', price.extract()[0])
+                if price:
+                    price = price.group()
+                    price = price.replace(',', '').replace(' ', '')
+                    cond_set_value(product, 'price',
+                                   Price(priceCurrency=currency, price=price))
 
     def _populate_from_js(self, response, product):
         scripts = response.xpath("//script").re(
@@ -173,7 +183,6 @@ class WalmartProductsSpider(BaseProductsSpider):
                     price=price_block['currencyAmount']
                 )
                 cond_set_value(product, 'price', _price)
-
         try:
             cond_set_value(
                 product, 'upc', data['analyticsData']['upc'], conv=int)
