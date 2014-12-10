@@ -1058,7 +1058,13 @@ class WalmartScraper(Scraper):
             return main_image
 
         # bundle product images
-        images_bundle = self.tree_html.xpath("//div[@class='image-body']/img/@src")
+        images_bundle = self.tree_html.xpath("//div[contains(@class, 'choice-hero-imagery-components')]//" + \
+                                             "img[contains(@class, 'media-object')]/@src")
+
+        if not images_bundle:
+            images_bundle = self.tree_html.xpath("//div[contains(@class, 'non-choice-hero-components')]//" + \
+                                                 "img[contains(@class, 'media-object')]/@src")
+
         if images_bundle:
             # fix relative urls
             images_bundle = map(_fix_relative_url, images_bundle)
