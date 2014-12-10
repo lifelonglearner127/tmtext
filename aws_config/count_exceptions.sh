@@ -21,7 +21,7 @@ else
 # to run the stats on - then run on given number of batches
 # (input will be part of the filenames to be monitored)
 
-	RANGE=$2
+	RANGE=${@:2}
 	for NR in $RANGE
 	do
 		LOGFILE=shared_sshfs/search_log_"$FILE"_"$NR".txt
