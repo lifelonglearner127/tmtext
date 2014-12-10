@@ -9,7 +9,7 @@ LOG = logging.getLogger(__name__)
 LB_ROUND_ROBIN = 'ROUND_ROBIN'
 
 '''
-TODO:
+TODO and problems to solve:
 . Write all pydocs
 . documentation
 . There's a memory leak
@@ -40,15 +40,17 @@ class LBInterface(object):
 
     def set_id(self, id, server):
         self.ids[id] = server
-        self.ids_date = { id: (datetime.date.today(), None) }
+        self.ids_date[id] = [datetime.datetime.utcnow()]
 
     def get_id(self, id):
         try:
             server = self.ids[id]
+            self.ids_date[id].append(datetime.datetime.utcnow())
         except KeyError:
             server = None
 
         return server
+
 
 
 class LBRoundRobin(LBInterface):
