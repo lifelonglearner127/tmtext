@@ -3,6 +3,7 @@ import logging
 import sqlite3
 import os
 import datetime
+import re
 
 LOG = logging.getLogger(__name__)
 
@@ -19,6 +20,37 @@ TODO and problems to solve:
 def getLB(method, **kwargs):
     if method == LB_ROUND_ROBIN:
         return LBRoundRobin(kwargs)
+
+
+def getLB_from_config(config):
+    import pdb; pdb.set_trace()
+    try:
+        lb_schedule_conf = config['lb.schedule']
+    except KeyError:
+        raise Exception("Load Balancer scheduler not in configuration")
+
+
+    if lb_schedule_conf == 'round_robin':
+        lb_schedule = LB_ROUND_ROBIN
+
+        # Get the target servers
+        config_servers = ( config[x] for x in config.keys() 
+                             if x.startswith('lb.server.'))
+        serv_re = re.compile(r'^\s*([\w\.-]+)(:?(\d+))?\s*$')
+        lb_servers = []
+        for config_server in config_servers:
+            re_output = serv_re.match(config_server)
+            if re_output:
+                server = LBServer(*re_output.group(1,3))
+                lb_servers.append(server)
+
+        kwargs = {'servers': lb_servers}
+    else:
+        raise Exception("Load Balancer scheduler %s not available" %
+          lb_schedule_conf)
+
+    return getLB(lb_schedule, **kwargs)
+
 
 class LBServer(object):
     def __init__(self, host, port=None):
