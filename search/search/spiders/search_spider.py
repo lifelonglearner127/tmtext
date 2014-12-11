@@ -500,6 +500,11 @@ class SearchSpider(BaseSpider):
     def parseURL_walmart(self, hxs):
 
         product_name_holder = hxs.select("//h1[contains(@class, 'product-name')]/text()").extract()
+
+        # try for old page version
+        if not product_name_holder:
+            product_name_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
+
         if product_name_holder:
             product_name = product_name_holder[0].strip()
         else:
@@ -515,30 +520,39 @@ class SearchSpider(BaseSpider):
         # # Not relevant anymore:
         # # TODO: figure out what this list of prices contained
         # # get integer part of product price
-        # product_price_big = hxs.select("//span[@class='bigPriceText1']/text()").extract()
+        # try for old page version
 
-        # # if there is a range of prices take their average
-        # if len(product_price_big) > 1:
+        if not product_price_node:
+            product_price_big = hxs.select("//span[@class='bigPriceText1']/text()").extract()
 
-        #     # remove $ and .
-        #     product_price_min = re.sub("[\$\.,]", "", product_price_big[0])
-        #     product_price_max = re.sub("[\$\.,]", "", product_price_big[-1])
+            # if there is a range of prices take their average
+            if len(product_price_big) > 1:
 
-        #     #TODO: check if they're ints?
-        #     product_price_big = (int(product_price_min) + int(product_price_max))/2.0
+                # remove $ and .
+                product_price_min = re.sub("[\$\.,]", "", product_price_big[0])
+                product_price_max = re.sub("[\$\.,]", "", product_price_big[-1])
 
-        # elif product_price_big:
-        #     product_price_big = int(re.sub("[\$\.,]", "", product_price_big[0]))
+                #TODO: check if they're ints?
+                product_price_big = (int(product_price_min) + int(product_price_max))/2.0
 
-        # # get fractional part of price
-        # #TODO - not that important
+            elif product_price_big:
+                product_price_big = int(re.sub("[\$\.,]", "", product_price_big[0]))
 
-        # if product_price_big:
-        #     product_price = product_price_big
-        # else:
-        #     product_price = None
+            # get fractional part of price
+            #TODO - not that important
+
+            if product_price_big:
+                product_price = product_price_big
+            else:
+                product_price = None
+
 
         product_model_holder = hxs.select("//div[@class='specs-table']/table//td[contains(text(),'Model')]/following-sibling::*/text()").extract()
+
+        # try for old page version
+        if not product_model_holder:
+            product_model_holder = hxs.select("//td[contains(text(),'Model')]/following-sibling::*/text()").extract()
+
         if product_model_holder:
             product_model = product_model_holder[0].strip()
         else:
