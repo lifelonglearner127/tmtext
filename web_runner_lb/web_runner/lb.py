@@ -15,6 +15,7 @@ TODO and problems to solve:
 . documentation
 . There's a memory leak
 . persistence
+. Logging
 '''
 
 def getLB(method, **kwargs):
@@ -23,7 +24,6 @@ def getLB(method, **kwargs):
 
 
 def getLB_from_config(config):
-    import pdb; pdb.set_trace()
     try:
         lb_schedule_conf = config['lb.schedule']
     except KeyError:
