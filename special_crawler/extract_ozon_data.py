@@ -62,10 +62,16 @@ class OzonScraper(Scraper):
 
     def _model(self):
         try:
-            logo_txt_arr = [s.strip() for s in self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")]
-            logo_txt = ''.join(logo_txt_arr)
-            avg = re.findall(r': (.*)$', logo_txt)
-            return avg[0]
+            names = self.tree_html.xpath("//div[@class='bTechDescription']/div[starts-with(@class,'bTechCover')]/div[@class='bTechName']//text()")
+            values = self.tree_html.xpath("//div[@class='bTechDescription']/div[starts-with(@class,'bTechCover')]/div[@class='bTechDescr']//text()")
+            idx = 0
+            model = None
+            for name in names:
+                if "Артикул" == name.encode('utf-8').strip():
+                    model = values[idx].strip()
+                    break
+                idx += 1
+            return model
         except IndexError:
             return None
 
