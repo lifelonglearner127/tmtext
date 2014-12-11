@@ -20,18 +20,38 @@ class BhinnekaScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.wayfair.com/<product-name>.html"
+
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.bhinneka.com/products/<product-sku>/<product-name>.aspx"
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-#        m = re.match(r"^http://www.bhinneka.com/[0-9a-zA-Z\-\~\/\.]+\.aspx$", self.product_page_url)
-        m = re.match(r"^http://www.bhinneka.com/products/sku\d+/.+\.aspx", self.product_page_url)
+        m = re.match(r"^http://www.bhinneka.com/products/sku\d+/.+\.aspx$", self.product_page_url)
 
         return not not m
-    
+
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
+
+        try:
+            itemtype = self.tree_html.xpath('//div[@id="ctl00_content_divfound"]/@itemtype')[0].strip()
+
+            if itemtype != "http://schema.org/Product":
+                raise Exception()
+
+        except Exception:
+            return True
+
+        return False
+
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -53,7 +73,7 @@ class BhinnekaScraper(Scraper):
         return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
+        return self.tree_html.xpath('//head/title/text()')[0].strip()
 
     def _model(self):
         return self.tree_html.xpath('//meta[@itemprop="model"]/@content')[0]
@@ -126,18 +146,41 @@ class BhinnekaScraper(Scraper):
         if not image_urls:
             image_urls = self.tree_html.xpath('//div[@id="prodMedia"]/div/img/@src')
 
+        if len(image_urls) == 1 and "no_picture" in image_urls[0]:
+            return None
+
         return image_urls
 
     def _image_count(self):
+        if self._image_urls() == None:
+            return 0
+
         return len(self._image_urls())
     
     def _video_urls(self):
         video_urls = self.tree_html.xpath("//iframe[@allowfullscreen]/@src")
 
+        if not video_urls:
+            return None
+
         return video_urls
 
     def _video_count(self):
         return len(self._video_urls())
+
+    # return dictionary with one element containing the PDF
+    def _pdf_urls(self):
+        pdf_urls = self.tree_html.xpath('//a[contains(@href, ".pdf")]/@href')
+        pdf_urls[:] = ["http://www.bhinneka.com" + x for x in pdf_urls]
+
+        if not pdf_urls:
+            return None
+
+        return pdf_urls
+
+    def _pdf_count(self):
+        return len(self._pdf_urls())
+
 
     def _webcollage(self):
         return 0
@@ -148,6 +191,11 @@ class BhinnekaScraper(Scraper):
         htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
 
         return htags_dict
+
+    def _keywords(self):
+        return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0].strip()
+
+
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -203,22 +251,31 @@ class BhinnekaScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath('//span[@itemprop="price"]/text()')[0].strip()
+        return self.tree_html.xpath('//div[@id="ctl00_content_divPrice"]//text()')[0].strip()
 
     def _owned(self):
-        return 1
-    
+        if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() == 'Bhinneka.Com':
+            return 1
+        else:
+            return 0
+
     def _marketplace(self):
-        return 0
+        if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() != 'Bhinneka.Com':
+            return 1
+        else:
+            return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1:]
+        if self._brand().strip().lower() == self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[-1].strip().lower():
+            return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1:-1]
+
+        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1]
 
     def _category_name(self):
-        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[-1]
+        return self._categories()[-1]
     
     def _brand(self):
         return self.tree_html.xpath('//a[@id="ctl00_content_lnkBrand"]/@title')[0]
@@ -256,8 +313,11 @@ class BhinnekaScraper(Scraper):
         "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
+        "pdf_count" : _pdf_count, \
+        "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
+        "keywords" : _keywords, \
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \
@@ -273,7 +333,6 @@ class BhinnekaScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-        "loaded_in_seconds" : None, \
         }
 
     # special data that can't be extracted from the product page
@@ -281,5 +340,3 @@ class BhinnekaScraper(Scraper):
     DATA_TYPES_SPECIAL = { \
         "mobile_image_same" : _mobile_image_same, \
     }
-
-

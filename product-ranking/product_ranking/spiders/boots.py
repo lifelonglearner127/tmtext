@@ -8,9 +8,9 @@ import re
 import string
 import urllib
 import urlparse
-
 import ast
-from product_ranking.items import SiteProductItem, RelatedProduct
+
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.spiders import FormatterWithDefaults
 from product_ranking.spiders import populate_from_open_graph
@@ -124,6 +124,15 @@ class BootsProductsSpider(BaseProductsSpider):
             response.xpath("//p[@class='productOfferPrice']/text()").extract(),
             conv=string.strip,
         )
+        if product.get('price', None):
+            if not '£' in product['price']:
+                self.log('Unknown currency at' % response.url)
+            else:
+                product['price'] = Price(
+                    price=product['price'].replace(',', '').replace(
+                        '£', '').strip(),
+                    priceCurrency='GBP'
+                )
 
         cond_set(
             product,

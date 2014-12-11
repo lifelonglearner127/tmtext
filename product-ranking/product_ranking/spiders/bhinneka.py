@@ -2,6 +2,7 @@ import re
 
 from scrapy import FormRequest
 
+from product_ranking.items import Price
 from contrib.product_spider import ProductsSpider
 from product_ranking.spiders import cond_set, cond_set_value
 from product_ranking.spiders import cond_replace, cond_replace_value
@@ -66,6 +67,15 @@ class BhinnekaProductsSpider(ProductsSpider):
         cond_set_value(product, 'description', box.xpath(xpath).extract(),
                        ''.join)
         cond_set(product, 'price', box.css('.prod-itm-price::text').extract())
+        if product.get('price', '') and not isinstance(product['price'], Price):
+            if not 'Rp' in product['price']:
+                self.log('Unrecognized currency at %s' % response.url)
+            else:
+                product['price'] = Price(
+                    price=product['price'].lower().replace(
+                        'rp', '').replace(',', '').strip(),
+                    priceCurrency='IDR'
+                )
         cond_set(product, 'image_url',
                  box.css('.prod-itm-link img::attr(src)').extract())
 
@@ -76,6 +86,15 @@ class BhinnekaProductsSpider(ProductsSpider):
                  response.css('#ctl00_content_lnkBrand::text').extract())
         cond_set(product, 'price',
                  response.css('[itemprop=price]::text').extract())
+        if product.get('price', '') and not isinstance(product['price'], Price):
+            if not 'Rp' in product['price']:
+                self.log('Unrecognized currency at %s' % response.url)
+            else:
+                product['price'] = Price(
+                    price=product['price'].lower().replace(
+                        'rp', '').replace(',', '').strip(),
+                    priceCurrency='IDR'
+                )
         cond_replace(product, 'image_url',
                      response.css('#prodMedia img::attr(src)').extract())
         specs = response.css('.spesifications').extract()

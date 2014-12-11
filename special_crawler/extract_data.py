@@ -92,6 +92,8 @@ class Scraper():
             
             # sellers
             "price", # price, string including currency
+            "price_amount", # price, float
+            "price_currency", # currency for price, string of max 3 chars
             "in_stores", # available to purchase in stores, 1/0
             "in_stores_only", # whether product can be found in stores only, 1/0
             "owned", # whether product is owned by site, 1/0
@@ -142,7 +144,7 @@ class Scraper():
                             "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             'meta_tags','meta_tag_count'], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
-        "sellers": ["price", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
+        "sellers": ["price", "price_amount", "price_currency", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price"], \
         "classification": ["categories", "category_name", "brand"]
     }
@@ -315,8 +317,8 @@ class Scraper():
 
         results_dict = {}
 
-        # if it's an unavailable product, abort
-        if self.unavailable_product():
+        # if it's not a valid product page, abort
+        if self.not_a_product():
             return self.ERROR_RESPONSE
 
         for info in info_type_list:
@@ -364,12 +366,13 @@ class Scraper():
         return True
 
 
-    def unavailable_product(self):
+    def not_a_product(self):
         """Abstract method.
-        Checks if current page is an unavailable product page.
+        Checks if current page is not a valid product page
+        (either an unavailable product page, or some other type of content)
         To be implemented by each scraper specifically for its site.
         Returns:
-            True if unavailable product page,
+            True if not a product page,
             False otherwise
         """
 

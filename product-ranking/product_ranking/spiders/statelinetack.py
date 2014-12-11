@@ -5,7 +5,7 @@ import urlparse
 
 from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults, populate_from_open_graph
 
@@ -49,6 +49,13 @@ class StatelinetackProductsSpider(BaseProductsSpider):
 
         price = response.xpath("//*[@id='lowPrice']/text()").extract()
         cond_set(product, 'price', price)
+
+        if product.get('price', None):
+            product['price'] = Price(
+                priceCurrency='USD',
+                price=product['price'].replace(',', '').replace(
+                    ' ', '').strip()
+            )
 
         upc = response.xpath(
             "//*[@id='ctl00_ctl00_CenterContentArea_MainContent_HidBaseNo']"

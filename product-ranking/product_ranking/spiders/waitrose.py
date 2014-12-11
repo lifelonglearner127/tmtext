@@ -1,11 +1,14 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import json
+import urlparse
 
 from scrapy.http.request.form import FormRequest
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider
 
 
@@ -79,6 +82,21 @@ class WaitroseProductsSpider(BaseProductsSpider):
 
             # This one is not in the mapping since it requires transformation.
             product['upc'] = int(product_data['productid'])
+
+            if product.get('price', None):
+                product['price'] = product['price'].replace('&pound;', '£')
+                if not '£' in product['price']:
+                    self.log('Unknown currency at %s' % self.response)
+                else:
+                    product['price'] = Price(
+                        priceCurrency='GBP',
+                        price=product['price'].replace('£', '').replace(
+                            ' ', '').replace(',', '').strip()
+                    )
+
+            if not product.get('url', '').startswith('http'):
+                product['url'] = urlparse.urljoin(
+                    'http://www.waitrose.com', product['url'])
 
             yield None, product
 

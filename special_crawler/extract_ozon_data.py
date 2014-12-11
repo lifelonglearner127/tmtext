@@ -124,7 +124,7 @@ class OzonScraper(Scraper):
         return None
 
     def _image_urls(self):
-        text = self.tree_html.xpath('//*[@class="bImageColumn"]/script//text()')
+        text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
         text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
         jsn = json.loads(text)
         image_url = []
@@ -264,21 +264,48 @@ class OzonScraper(Scraper):
     def _categories(self):
         all = self.tree_html.xpath("//ul[@class='navLine']/li//text()")
         #the last value is the product itself
-        return all[:-1]
+        return all[0:-1]
    
     def _category_name(self):
-        dept = " ".join(self.tree_html.xpath("//ul[@class='navLine']/li[1]//text()")).strip()
-        return dept
+        # dept = " ".join(self.tree_html.xpath("//ul[@class='navLine']/li[1]//text()")).strip()
+        return self._categories()[-1]
    
     def _brand(self):
+        #search for misc product brand
+        brand_txt = self.tree_html.xpath("//div[@class='PageModule']//a[contains(@href, 'brand')]/text()")
+        for brand in brand_txt:
+            if len(brand.strip())>1:
+                return brand.strip()
+
+        #search for a books brand
         try:
-            brand_txt = self.tree_html.xpath("//div[@class='bContentBlock']//h1[@itemprop='name']//text()")[0].strip()
-            brand_txt = brand_txt.split(" ")[0]
-            if len(brand_txt) == 0:
-                return None
+            brand_txt = self.tree_html.xpath("//*[@itemprop='publisher']/a//text()")[0].strip()
             return brand_txt
-        except IndexError:
-            return None
+        except:
+            pass
+
+        # try:
+        #     brand_txt = self.tree_html.xpath("//div[@class='bContentBlock']//h1[@itemprop='name']//text()")[0].strip()
+        #     brand_txt = brand_txt.split("//*[@itemprop='publisher'] ")[0]
+        #     if len(brand_txt) == 0:
+        #         return None
+        #     return "C"+brand_txt
+        # except IndexError:
+        #     return None
+        
+    '''
+    python curl_wrapper.py 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/1434860/'
+    "ФИЗМАТЛИТ"
+
+    python curl_wrapper.py 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/1435596/'
+    None
+
+    python curl_wrapper.py 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/26422253/'
+    Joan Rivers
+
+    python curl_wrapper.py 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/19550371/'
+    ФК Зенит
+    '''
 
 
 

@@ -12,8 +12,6 @@ def _load_brands(fname):
     BRANDS = BRANDS.split()
     BRANDS = [b.lower().strip().rstrip() for b in BRANDS]
     BRANDS = set(BRANDS)  # set lookup is faster than list lookup
-    for b in BRANDS:
-        print "DEBUGLEOH: " + b
 
 
 def _brand_in_list(brand):

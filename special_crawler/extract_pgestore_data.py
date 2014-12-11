@@ -26,6 +26,9 @@ class PGEStore(Scraper):
     INVALID_URL_MESSAGE = "Expected URL format is http://www.pgestore.com/[0-9a-zA-Z,/-]+\.html"
     
     reviews_tree = None
+    max_score = None
+    min_score = None
+    reviews = None
     pdfs = None
     
     def check_url_format(self):
@@ -77,7 +80,7 @@ class PGEStore(Scraper):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _title_seo(self):
-        return None
+        return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
         return None
@@ -95,21 +98,20 @@ class PGEStore(Scraper):
         return None
 
     def _description(self):
-        #short_description = " ".join(self.tree_html.xpath("//div[@class='tabContent']//text()")).strip()
-        #return short_description
-        description = self._long_description_helper()
-        return description
+        full_description = " ".join(self.tree_html.xpath('//div[contains(@class, "main-column vp")]/text()')).strip()
+        return full_description
 
     def _long_description(self):
         d1 = self._description()
-        d2 = self._long_description_helper(self)
+        full_description = " ".join(self.tree_html.xpath('//div[contains(@class,"accordion-content")]//p//text()'))
+        d2 = full_description.strip()
         if d1 == d2:
             return None
         return d2
 
     def _long_description_helper(self):
-        full_description = " ".join(self.tree_html.xpath('//div[contains(@class, "main-column vp")]/text()')).strip()
-        return full_description
+        full_description = " ".join(self.tree_html.xpath('//div[contains(@class,"accordion-content")]//p//text()'))
+        return full_description.strip()
 
 
     ##########################################
@@ -181,15 +183,37 @@ class PGEStore(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
     #populate the reviews_tree variable for use by other functions
-    # def _load_reviews(self):
-    #     try:
-    #         if not self.reviews_tree:
-    #             url = "http://reviews.pgestore.com/3300/PG_00%s/reviews.htm?format=embedded"
-    #             url = url%(self._extract_product_id())
-    #             contents = urllib.urlopen(url).read()
-    #             self.reviews_tree = html.fromstring(contents)
-    #     except:
-    #         pass
+    def _load_reviews(self):
+        try:
+            if not self.max_score or not self.min_score:
+                # url = "http://reviews.pgestore.com/3300/PG_00%s/reviews.htm?format=embedded"
+                url = "http://pgestore.ugc.bazaarvoice.com/3300-en_us/%s/reviews.djs?format=embeddedhtml" % self._product_id()
+                contents = urllib.urlopen(url).read()
+                # contents = re.findall(r'"BVRRRatingSummarySourceID":"(.*?)"}', contents)[0]
+                reviews = re.findall(r'<span class=\\"BVRRHistAbsLabel\\">(.*?)<\\/span>', contents)
+                score = 5
+                for review in reviews:
+                    if int(review) > 0:
+                        self.max_score = score
+                        break
+                    score -= 1
+
+                score = 1
+                for review in reversed(reviews):
+                    if int(review) > 0:
+                        self.min_score = score
+                        break
+                    score += 1
+
+                self.reviews = []
+                score = 1
+                for review in reversed(reviews):
+                    self.reviews.append([score, int(review)])
+                    score += 1
+
+                # self.reviews_tree = html.fromstring(contents)
+        except:
+            pass
 
     def _average_review(self):
         # self._load_reviews()
@@ -202,18 +226,21 @@ class PGEStore(Scraper):
         # self._load_reviews()
         # nr = self.reviews_tree.xpath('//span[@class="BVRRCount BVRRNonZeroCount"]/span[@class="BVRRNumber"]/text()')[0]
         # return nr
-        count = self.tree_html.xpath('//div[@id="ratingsreviews"][1]/span[2]//text()')
-        count = " ".join(count)
+        count = self.tree_html.xpath('//div[@id="ratingsreviews"][1]/span[2]//text()')[0]
         count = re.sub('[^0-9]', '', count)
         return count
 
     def _max_review(self):
-        return None
+        self._load_reviews()
+        return self.max_score
 
     def _min_review(self):
-        return None
+        self._load_reviews()
+        return self.min_score
 
-
+    def _reviews(self):
+        self._load_reviews()
+        return self.reviews
 
 
     ##########################################
@@ -266,7 +293,12 @@ class PGEStore(Scraper):
 
     def _brand(self):
         #return self.tree_html.xpath('//span[contains(@class, "brand")]//text()')[0]
-        return None
+        text = self.tree_html.xpath('//div[contains(@class, "pdp-brand")]//div//a[@class="cta"]/@title')[0]
+        # Visit the Pampers brand shop
+        text = text.replace('Visit the ', '')
+        text = text.replace('brand shop', '')
+        brand = text.strip()
+        return brand
 
 
     ##########################################
@@ -345,5 +377,6 @@ class PGEStore(Scraper):
         "average_review" : _average_review, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
+        "reviews" : _reviews, \
     }
 

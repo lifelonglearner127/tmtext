@@ -10,7 +10,7 @@ from scrapy.log import ERROR, WARNING, DEBUG
 from scrapy.selector import Selector
 from scrapy.http import Request
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 from product_ranking.spiders import cond_set, cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -194,6 +194,18 @@ class GoogleProductsSpider(BaseProductsSpider):
 
             _prices = item.xpath('.//*[contains(@class, "price")]')
             price = get_price(_prices)
+
+            # TODO: support more currencies? we have to detect the website
+            #  (google.au, google.br etc.) and use the appropriate currency
+            # See https://support.google.com/merchants/answer/160637?hl=en
+            if '$' not in price:  # TODO: only USD is supported now
+                self.log('Unrecognized currency sign at %s' % response.url,
+                         level=ERROR)
+            else:
+                price = Price(
+                    price=price.replace('$', '').replace(',', '').strip(),
+                    priceCurrency='USD'
+                )
 
             # fill from json
             l = json_data.get(id)

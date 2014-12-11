@@ -4,9 +4,10 @@ from future_builtins import *
 import urlparse
 
 from scrapy.log import ERROR
+from scrapy.selector import Selector
 from scrapy.utils.project import get_project_settings
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 
@@ -42,6 +43,15 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
         price = response.xpath(
             '//div[@class="price"]/span[@class="value"]/text()').extract()
         cond_set(prod, 'price', price)
+        if prod.get('price', None):
+            if not '$' in prod['price']:
+                self.log('Unknown currency at %s' % response.url, level=ERROR)
+            else:
+                prod['price'] = Price(
+                    price=prod['price'].replace('$', '').replace(
+                        ',', '').replace(' ', '').strip(),
+                    priceCurrency='USD'
+                )
         des = response.xpath('//*[@id="productDescription"]/p/text()').extract()
         cond_set(prod, 'description', des)
         img_url = response.xpath(

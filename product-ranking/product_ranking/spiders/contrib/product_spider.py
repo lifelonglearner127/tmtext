@@ -1,5 +1,6 @@
 import types
 import urllib
+import urlparse
 
 from scrapy import Request
 from scrapy.http import HtmlResponse
@@ -31,7 +32,8 @@ def option_requester(field_name):
                 return Request(url,
                                callback=getattr(self, '_parse_' + field_name),
                                meta=new_meta,
-                               errback=self._handle_option_error)
+                               errback=self._handle_option_error,
+                               dont_filter=True)
 
         return _wr
 
@@ -89,12 +91,12 @@ class ProductsSpider(BaseProductsSpider):
             method_name = '_parse_%s' % key
             old_method = getattr(self, method_name)
             new_method = types.MethodType(option_parser(old_method),
-                                          self.__class__)
+                                          self)
             setattr(self.__class__, method_name, new_method)
             method_name = '_request_%s' % key
             old_method = getattr(self, method_name)
             new_method = types.MethodType(option_requester(key)(old_method),
-                                          self.__class__)
+                                          self)
             setattr(self.__class__, method_name, new_method)
 
         # Creating the list of optional fields to be scraped
@@ -164,14 +166,17 @@ class ProductsSpider(BaseProductsSpider):
             self._populate_hardcoded_fields(product)
             self._get_model_from_title(product)
 
-            # Yield Request if _populate_from_box returns a meta dict
+            new_meta = response.meta.copy() if hasattr(response, 'meta') \
+                else {}
             if meta and url:
-                new_meta = response.meta.copy()
                 new_meta.update(meta)
-                yield Request(url, self.parse_product, meta=meta), product
+            if url:
+                new_meta['product'] = product
+                yield Request(urlparse.urljoin(response.url, url),
+                              self.parse_product, meta=new_meta,
+                              errback=self._handle_product_page_error), product
             else:
-                # No meta dict returned
-                yield url, product
+                yield None, product
 
     def _populate_from_html(self, response, product):
         """Populate SiteProductItem from product page HTML"""
@@ -235,3 +240,7 @@ class ProductsSpider(BaseProductsSpider):
         failure.request.meta['options'].remove(failure.request.meta['field'])
         if not failure.request.meta['options']:
             return failure.request.meta['product']
+
+    def _handle_product_page_error(self, failure):
+        self.log('Request failed: %s' % failure.request)
+        return failure.request.meta['product']
