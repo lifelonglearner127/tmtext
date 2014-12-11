@@ -67,7 +67,7 @@ class OzonScraper(Scraper):
             idx = 0
             model = None
             for name in names:
-                if "Артикул" == name.encode('utf-8'):
+                if "Артикул" == name.encode('utf-8').strip():
                     model = values[idx].strip()
                     break
                 idx += 1
