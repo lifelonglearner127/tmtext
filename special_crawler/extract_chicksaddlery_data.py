@@ -1,10 +1,21 @@
 from lxml import html, etree
+import re
 
 from extract_data import Scraper
 
 class ChicksaddleryScraper(Scraper):
     """Implements methods that each extract an individual piece of data for chicksaddlery.com
     """
+
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.chicksaddlery.com/page/CDS/[a-zA-Z0-9/]*"
+
+    def check_url_format(self):
+        """Checks product URL format for this scraper instance is valid.
+        Returns:
+            True if valid, False otherwise
+        """
+        m = re.match("http://www\.chicksaddlery\.com/page/CDS/[a-zA-Z0-9/]*", self.product_page_url)
+        return not not m
 
     # ! may throw exception if not found
     def _product_name(self):

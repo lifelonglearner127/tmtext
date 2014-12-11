@@ -19,7 +19,7 @@ else
 # if second argument was given, representing range of subbatches for this input
 # to run the stats on - then run on given number of batches
 # (input will be part of the filenames to be monitored)
-	RANGE=$2
+	RANGE=${@:2}
 
 	for NR in $RANGE
 	do

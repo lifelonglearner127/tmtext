@@ -81,19 +81,19 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
     	mode   => 600,
   	}
 
-	# file { "/home/ubuntu/.ssh/id_rsa":
-	# 	source => "puppet:///modules/common/id_rsa",
-	# 	mode => 600,
-	# 	owner => ubuntu,
-	# 	group => ubuntu,
-	# }
+	file { "/home/ubuntu/.ssh/id_rsa":
+		source => "puppet:///modules/common/id_rsa",
+		mode => 600,
+		owner => ubuntu,
+		group => ubuntu,
+	}
 
-	# file { "/home/ubuntu/.ssh/id_rsa.pub":
-	# 	source => "puppet:///modules/common/id_rsa.pub",
-	# 	mode => 644,
-	# 	owner => ubuntu,
-	# 	group => ubuntu,
-	# }
+	file { "/home/ubuntu/.ssh/id_rsa.pub":
+		source => "puppet:///modules/common/id_rsa.pub",
+		mode => 644,
+		owner => ubuntu,
+		group => ubuntu,
+	}
 
  #  ssh_authorized_key { "ssh_key":
  #    ensure => "present",
@@ -102,14 +102,14 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
  #    user   => "ubuntu",
  #  }
 
-  # # create folder to share between them
-  #   file { "/home/ubuntu/shared_sshfs":
-  #     ensure => "directory",
-  #     owner  => "ubuntu",
-  #     group  => "ubuntu",
-  #     mode => 644
-  #     #creates => "/home/ubuntu/shared_sshfs"
-  #   }
+  # create folder to share between them
+    file { "/home/ubuntu/shared_sshfs":
+      ensure => "directory",
+      owner  => "ubuntu",
+      group  => "ubuntu",
+      mode => 644
+      #creates => "/home/ubuntu/shared_sshfs"
+    }
 
   exec { "create-shared-sshfs":
     # return successful whatever mkdir returns (it will return 1 if shared_sshfs mounted)

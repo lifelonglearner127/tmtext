@@ -39,7 +39,8 @@ class Price:
         self.priceCurrency = priceCurrency
         if self.priceCurrency not in valid_currency_codes:
             raise ValueError('Invalid currency: %s' % priceCurrency)
-        self.price = decimal.Decimal(price)
+        # Remove comma(s) in price string if needed (i.e: '1,254.09')
+        self.price = decimal.Decimal(str(price).replace(',', ''))
 
     def __repr__(self):
         return u'%s(priceCurrency=%s, price=%s)' % (

@@ -47,7 +47,7 @@ class MaplinScraper(Scraper):
         return self.tree_html.xpath("//h1[@itemprop='name']")[0].text
 
     def _product_title(self):
-        return self.tree_html.xpath("//h1[@itemprop='name']//text()").strip()
+        return self.tree_html.xpath("//h1[@itemprop='name']")[0].text
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -117,9 +117,14 @@ class MaplinScraper(Scraper):
         return 0
 
     def _pdf_urls(self):
-        pdfs = self.tree_html.xpath("//a[@title='Terms & Conditions']/@href")
-        self.pdfs = map(lambda pdf: "http://www.maplin.co.uk%s" % pdf, pdfs)
-        return self.pdfs
+        pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
+        pdf_hrefs = []
+        for pdf in pdfs:
+            if pdf.attrib['title'] == 'Terms & Conditions':
+                pass
+            else:
+                pdf_hrefs.append("http://www.maplin.co.uk%s" % pdf.attrib['href'])
+        return pdf_hrefs
 
     def _pdf_count(self):
         urls = self._pdf_urls()

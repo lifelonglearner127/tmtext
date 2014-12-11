@@ -91,12 +91,12 @@ class ProductsSpider(BaseProductsSpider):
             method_name = '_parse_%s' % key
             old_method = getattr(self, method_name)
             new_method = types.MethodType(option_parser(old_method),
-                                          self.__class__)
+                                          self)
             setattr(self.__class__, method_name, new_method)
             method_name = '_request_%s' % key
             old_method = getattr(self, method_name)
             new_method = types.MethodType(option_requester(key)(old_method),
-                                          self.__class__)
+                                          self)
             setattr(self.__class__, method_name, new_method)
 
         # Creating the list of optional fields to be scraped
