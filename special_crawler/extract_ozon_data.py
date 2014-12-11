@@ -124,14 +124,22 @@ class OzonScraper(Scraper):
         return None
 
     def _image_urls(self):
-        text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
-        text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
-        jsn = json.loads(text)
+        try:
+            text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
+            text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
+            jsn = json.loads(text)
+        except IndexError:
+            text = self.tree_html.xpath('//div[@class="bCombiningColumn"]//div[@class="bContentColumn"]//script//text()')
+            text = re.findall(r'\.model_data = (\{.*\});', str(text))[0]
+            text = ''.join(text)
+            jsn = json.loads(text.decode("unicode_escape"))
+            jsn = jsn['Gallery']['Groups']
+
         image_url = []
         for row in jsn:
             if 'Elements' in row:
                 for element in row['Elements']:
-                    if 'Original' in element:
+                    if 'Original' in element and len(image_url) < 7:
                         image_url.append(element['Original'])
         return image_url
 
