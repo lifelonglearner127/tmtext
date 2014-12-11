@@ -139,7 +139,7 @@ class OzonScraper(Scraper):
         for row in jsn:
             if 'Elements' in row:
                 for element in row['Elements']:
-                    if 'Original' in element and len(image_url) < 7:
+                    if 'Original' in element:
                         image_url.append(element['Original'])
         return image_url
 
