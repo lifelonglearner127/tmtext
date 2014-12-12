@@ -339,6 +339,16 @@ class Scraper():
 
             results_dict[info] = results
 
+        #
+        # Add the following calculations to all scrapes
+        #
+        
+        results_dict['img_hashes'] = []
+        
+        if 'image_urls' in results_dict and results_dict['image_urls'] is not None:
+            for image_url in results_dict['image_urls']:
+                results_dict['img_hashes'].append( str(MurmurHash.hash(fetch_bytes(image_url))))
+
         return results_dict
 
     # pack returned object data types into nested dictionary according to specific format
