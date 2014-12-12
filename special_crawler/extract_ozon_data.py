@@ -247,9 +247,13 @@ class OzonScraper(Scraper):
         return 1
 
     def _owned_out_of_stock(self):
-        s = " ".join(self.tree_html.xpath("//span[contains(@class, 'mInStock')]//text()"))
-        if not not s:
-            return not not re.findall(u"\u041D\u0430 \u0441\u043A\u043B\u0430\u0434\u0435", unicode(s))
+        try:
+            text = self.tree_html.xpath("//div[starts-with(@class,'bSaleBlock')]/h3/text()")[0]
+            text = text.encode("utf-8")
+            if text.strip() == "Нет в продаже":
+                return 1
+        except IndexError:
+            return 0
         return None
 
     def _marketplace(self):
