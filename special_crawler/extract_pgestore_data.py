@@ -36,7 +36,10 @@ class PGEStore(Scraper):
         Returns:
             True if valid, False otherwise
         """
-
+        non_product_arr = ["-about-us.html", "pgshop-faqs.html"]
+        for non_product in non_product_arr:
+            if non_product in self.product_page_url:
+                return False
         m = re.match(r"^http://www.pgestore.com/[0-9a-zA-Z,/\-\.\_]+\.html", self.product_page_url)
         n = re.match(r"^http://www.pgshop.com/[0-9a-zA-Z,/\-\.\_]+\.html", self.product_page_url)
 
