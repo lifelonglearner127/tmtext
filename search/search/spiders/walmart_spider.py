@@ -45,6 +45,11 @@ class WalmartSpider(SearchSpider):
 
         # TODO: check this xpath and extractions
         results = hxs.select("//h4[@class='tile-heading']/a")
+
+        # try xpath for old page version
+        if not results:
+             results = hxs.select("//div[@class='prodInfo']/div[@class='prodInfoBox']/a[@class='prodLink ListItemLink']")
+
         for result in results:
             item = SearchItem()
             #item['origin_site'] = site

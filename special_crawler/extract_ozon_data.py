@@ -62,10 +62,16 @@ class OzonScraper(Scraper):
 
     def _model(self):
         try:
-            logo_txt_arr = [s.strip() for s in self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")]
-            logo_txt = ''.join(logo_txt_arr)
-            avg = re.findall(r': (.*)$', logo_txt)
-            return avg[0]
+            names = self.tree_html.xpath("//div[@class='bTechDescription']/div[starts-with(@class,'bTechCover')]/div[@class='bTechName']//text()")
+            values = self.tree_html.xpath("//div[@class='bTechDescription']/div[starts-with(@class,'bTechCover')]/div[@class='bTechDescr']//text()")
+            idx = 0
+            model = None
+            for name in names:
+                if "Артикул" == name.encode('utf-8').strip():
+                    model = values[idx].strip()
+                    break
+                idx += 1
+            return model
         except IndexError:
             return None
 
@@ -118,9 +124,17 @@ class OzonScraper(Scraper):
         return None
 
     def _image_urls(self):
-        text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
-        text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
-        jsn = json.loads(text)
+        try:
+            text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
+            text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
+            jsn = json.loads(text)
+        except IndexError:
+            text = self.tree_html.xpath('//div[@class="bCombiningColumn"]//div[@class="bContentColumn"]//script//text()')
+            text = re.findall(r'\.model_data = (\{.*\});', str(text))[0]
+            text = ''.join(text)
+            jsn = json.loads(text.decode("unicode_escape"))
+            jsn = jsn['Gallery']['Groups']
+
         image_url = []
         for row in jsn:
             if 'Elements' in row:
@@ -233,9 +247,13 @@ class OzonScraper(Scraper):
         return 1
 
     def _owned_out_of_stock(self):
-        s = " ".join(self.tree_html.xpath("//span[contains(@class, 'mInStock')]//text()"))
-        if not not s:
-            return not not re.findall(u"\u041D\u0430 \u0441\u043A\u043B\u0430\u0434\u0435", unicode(s))
+        try:
+            text = self.tree_html.xpath("//div[starts-with(@class,'bSaleBlock')]/h3/text()")[0]
+            text = text.encode("utf-8")
+            if text.strip() == "Нет в продаже":
+                return 1
+        except IndexError:
+            return 0
         return None
 
     def _marketplace(self):

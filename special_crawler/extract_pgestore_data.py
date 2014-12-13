@@ -23,7 +23,7 @@ class PGEStore(Scraper):
     ##########################################
     ############### PREP
     ##########################################
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.pgestore.com/[0-9a-zA-Z,/-]+\.html"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.pgestore.com/[0-9a-zA-Z,/-]+\.html?.* or http://www.pgshop.com/[0-9a-zA-Z,/-]+\.html?.*"
     
     reviews_tree = None
     max_score = None
@@ -37,8 +37,8 @@ class PGEStore(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match(r"^http://www.pgestore.com/[0-9a-zA-Z,/\-\.\_]+\.html$", self.product_page_url)
-        n = re.match(r"^http://www.pgshop.com/.*$", self.product_page_url)
+        m = re.match(r"^http://www.pgestore.com/[0-9a-zA-Z,/\-\.\_]+\.html\?", self.product_page_url)
+        n = re.match(r"^http://www.pgshop.com/[0-9a-zA-Z,/\-\.\_]+\.html\?", self.product_page_url)
 
         return (not not m) or (not not n)
 
@@ -77,7 +77,7 @@ class PGEStore(Scraper):
         return self._clean_text(self.tree_html.xpath("//h1[@class='product-name']//text()")[0])
 
     def _product_title(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self._clean_text(self.tree_html.xpath("//h1[@class='product-name']//text()")[0])
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -244,8 +244,8 @@ class PGEStore(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        #price = self.tree_html.xpath("//meta[@name='pgeprice']/@content")
-        price = (self.tree_html.xpath('//span[@class="price-nosale"]//text()'))
+        # price = (self.tree_html.xpath('//span[@class="price-nosale"]//text()'))
+        price = self.tree_html.xpath('//section[starts-with(@class,"price vm")]//span[starts-with(@class,"price-nosale") or starts-with(@class,"price-sales")]//text()')
         if price:
             return price[0].strip()
         else:
