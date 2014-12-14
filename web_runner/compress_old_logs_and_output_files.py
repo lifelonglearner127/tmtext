@@ -12,7 +12,12 @@ import sys
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, 'web_runner'))
-from util import find_files, file_age_in_seconds, file_is_bzip2
+from util import (find_files, file_age_in_seconds, file_is_bzip2,
+                  num_of_running_instances)
+
+
+if num_of_running_instances(__file__) > 1:
+    sys.exit()
 
 
 # TODO: parse configs and get paths from there
