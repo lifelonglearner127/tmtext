@@ -2,6 +2,11 @@ import pickle
 import zlib
 import base64
 import datetime
+import bz2
+import os
+import fnmatch
+import time
+import stat
 
 
 FINISH = 'finished'
@@ -119,5 +124,32 @@ def dict_filter(source, items):
             continue
 
     return ret
+
+
+def file_is_bzip2(fname):
+    """ Tests if the given file is bzipped """
+    if not os.path.exists(fname):
+        return
+    fh = bz2.BZ2File(fname)
+    try:
+        _ = fh.next()
+        fh.close()
+        return True
+    except Exception, e:
+        fh.close()
+        return False
+
+
+def find_files(directory, pattern):
+    for root, dirs, files in os.walk(directory):
+        for basename in files:
+            if fnmatch.fnmatch(basename, pattern):
+                filename = os.path.join(root, basename)
+                yield filename
+
+
+def file_age_in_seconds(pathname):
+    return time.time() - os.stat(pathname)[stat.ST_MTIME]
+
 
 # vim: set expandtab ts=4 sw=4:
