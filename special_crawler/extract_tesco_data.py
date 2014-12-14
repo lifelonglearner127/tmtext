@@ -43,6 +43,7 @@ class TescoScraper(Scraper):
         """
         m = re.match("^http://www.tesco.com/direct/[0-9a-zA-Z-]+/[0-9-]+\.prd$", self.product_page_url)
         n = re.match("^http://www.tesco.com/.*$", self.product_page_url)
+        self.scraper_version = self._version()
         return (not not m) or (not not n)
 
 
@@ -60,7 +61,7 @@ class TescoScraper(Scraper):
         return None
 
     def _product_id(self):
-        if self._version()=="groceries":
+        if self.scraper_version=="groceries":
             product_id = self.product_page_url.split('/')[-1][3:]
             return product_id
         product_id = self.product_page_url.split('/')[-1]
@@ -81,12 +82,12 @@ class TescoScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return self.tree_html.xpath("//h1//text()")[0]
         return self.tree_html.xpath("//h1")[0].text
 
     def _product_title(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return self.tree_html.xpath("//h1//text()")[0]
         return self.tree_html.xpath("//meta[@property='og:title']/@content")[0]
 
@@ -94,7 +95,7 @@ class TescoScraper(Scraper):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
-        if self._version() == "groceries":
+        if self.scraper_version == "groceries":
             return None
         if not self.bazaarvoice:
             self.load_bazaarvoice()
@@ -105,12 +106,12 @@ class TescoScraper(Scraper):
         return m
 
     def _upc(self):
-        if self._version() == "groceries":
+        if self.scraper_version == "groceries":
             return None
         return self.tree_html.xpath('//meta[@property="og:upc"]/@content')[0]
 
     def _features(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             fts = self.tree_html.xpath("//div[@class='detailsWrapper'][3]//tbody//tr")
             fs=[]
             for row  in fts:
@@ -138,7 +139,7 @@ class TescoScraper(Scraper):
         return all_features_text
 
     def _feature_count(self):
-        if self._version() == "groceries":
+        if self.scraper_version == "groceries":
             f = self._features()
             if f == None or len(f) < 1: return 0
             return len(self._features())
@@ -149,7 +150,7 @@ class TescoScraper(Scraper):
         return None
 
     def _description(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return  " ".join(self.tree_html.xpath("//div[@class='detailsWrapper'][1]//text()")).strip()
         description = " ".join(self.tree_html.xpath("//ul[@class='features']/li//text()")).strip()
         if len(description)<4:
@@ -157,7 +158,7 @@ class TescoScraper(Scraper):
         return description
 
     def _long_description(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return  " ".join(self.tree_html.xpath("//div[@class='detailsWrapper'][2]//text()")).strip()
         d1 = self._description()
         d2 = self._long_description_temp()
@@ -200,7 +201,7 @@ class TescoScraper(Scraper):
         mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
         pc_headers = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         img_list = []
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             for h in [mobile_headers, pc_headers]:
                 contents = requests.get(url, headers=h).text
                 tree = html.fromstring(contents)
@@ -228,7 +229,7 @@ class TescoScraper(Scraper):
         return 0
 
     def _image_urls(self,tree=None):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             if tree == None:
                 tree = self.tree_html
             image_url = tree.xpath("//div[@class='productImage']//img//@src")
@@ -256,7 +257,7 @@ class TescoScraper(Scraper):
         return len(image_urls)
 
     def _video_urls(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return []
         try:
             video_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
@@ -277,7 +278,7 @@ class TescoScraper(Scraper):
         return youtube
 
     def _video_count(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return 0
         urls = self._video_urls()
         yt = self._video_youtube()
@@ -308,12 +309,12 @@ class TescoScraper(Scraper):
         return self.pdfs
 
     def _pdf_urls(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return None
         return self._pdf_helper()
 
     def _pdf_count(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return None
         urls = self._pdf_helper()
         if urls is not None:
@@ -351,7 +352,7 @@ class TescoScraper(Scraper):
         return htags_dict
 
     def _keywords(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
         return None
 
@@ -398,7 +399,7 @@ class TescoScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
     def _average_review(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return None
         if not self.bazaarvoice:
             self.load_bazaarvoice()
@@ -406,7 +407,7 @@ class TescoScraper(Scraper):
         return average_review
 
     def _review_count(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return 0
         if not self.bazaarvoice:
             self.load_bazaarvoice()
@@ -427,7 +428,7 @@ class TescoScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             meta_price = self.tree_html.xpath("//span[@class='linePrice']//text()")
         else:
             meta_price = self.tree_html.xpath("//p[@class='current-price']//text()")
@@ -475,7 +476,7 @@ class TescoScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return None
         all = self.tree_html.xpath("//div[@id='breadcrumb']//li//span/text()")
         out = all[1:-1]#the last value is the product itself, and the first value is "home"
@@ -484,13 +485,13 @@ class TescoScraper(Scraper):
         return out
 
     def _category_name(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return None
         dept = self._categories()[0]
         return dept
 
     def _brand(self):
-        if self._version()=="groceries":
+        if self.scraper_version == "groceries":
             return None
         if not self.bazaarvoice:
             self.load_bazaarvoice()
