@@ -187,7 +187,7 @@ class WalmartScraper(Scraper):
         return self.video_urls
 
     def _pdf_urls(self):
-        """Extracts pdf URLs for a given walmart product
+        """Extracts pdf URLs for a given walmart product, puts them in an instance variable
         Returns:
             list of strings containing the pdf urls
             or None if not found
@@ -214,36 +214,16 @@ class WalmartScraper(Scraper):
             pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
 
             if pdf_url_candidates:
+                self.has_webcollage_media = True
                 for item in pdf_url_candidates:
                     # remove escapes
                     pdf_url = re.sub('\\\\', "", item.strip())
                     self.pdf_urls.append(pdf_url) if pdf_url not in self.pdf_urls else None
 
         if self.pdf_urls:
-            self.has_webcollage_media = True
             self.has_pdf = True
 
         return self.pdf_urls
-
-    def _extract_pdf_urls(self):
-        """Extracts pdf URL for a given walmart product
-        and puts them in instance variable.
-        """
-
-        # set flag indicating we've already attempted to extract pdf urls
-        self.extracted_pdf_urls = True
-
-        request_url = self.BASE_URL_PDFREQ + self._extract_product_id()
-
-        response_text = urllib.urlopen(request_url).read().decode('string-escape')
-
-        pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
-        if pdf_url_candidates:
-            # remove escapes
-            pdf_url = re.sub('\\\\', "", pdf_url_candidates[0])
-            self.has_webcollage_media = True
-            self.has_pdf = True
-            self.pdf_urls = [pdf_url]
 
     # deprecated
     # TODO: flatten returned object
@@ -308,7 +288,7 @@ class WalmartScraper(Scraper):
             self._extract_video_urls()
 
         if not self.extracted_pdf_urls:
-            self._extract_pdf_urls()
+            self._pdf_urls()
 
         if self.has_webcollage_media:
             return 1
@@ -352,7 +332,7 @@ class WalmartScraper(Scraper):
         """
 
         if not self.extracted_pdf_urls:
-            self._extract_pdf_urls()
+            self._pdf_urls()
 
         if self.has_pdf:
             return 1
