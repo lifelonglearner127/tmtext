@@ -6,7 +6,7 @@ INPUT=$1
 SESSION="monitor_matching"
 BASEPATH="/home/ana/code/tmtext/aws_config"
 
-RANGE={1..5}
+RANGE={1..10}
 
 # kill session if already exists
 tmux kill-session -t $SESSION

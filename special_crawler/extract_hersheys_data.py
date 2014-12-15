@@ -55,7 +55,7 @@ class HersheysScraper(Scraper):
         return self.tree_html.xpath('//h1[@class="prod_title"]/span[@class="prod_title_webname1"]')[0].text
 
     def _product_title(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath('//h1[@class="prod_title"]/span[@class="prod_title_webname1"]')[0].text
         #return None
 
     def _title_seo(self):
@@ -245,19 +245,20 @@ class HersheysScraper(Scraper):
 
     # extract the department which the product belongs to
     def _category_name(self):
-        all = self._categories()
-        if all != None and len(all) > 1:
-            if all[-1]=="Search":
-                return all[-2]
-            return all[-1]
+##        all = self._categories()
+##        if all != None and len(all) > 1:
+##            if all[-1]=="Search":
+##                return all[-2]
+##            return all[-1]
         return None
 
     # extract a hierarchical list of all the departments the product belongs to
     def _categories(self):
-        all = self.tree_html.xpath("//ol[@class='breadcrumb']//li//text()")
-        all = map(lambda t: self._clean_text(t), all)
-        alln = [m for m in all if m != '']
-        return alln
+##        all = self.tree_html.xpath("//ol[@class='breadcrumb']//li//text()")
+##        all = map(lambda t: self._clean_text(t), all)
+##        alln = [m for m in all if m != '']
+##        return alln
+        return None
 
     def _brand(self):
         return "HERSHEY'S"

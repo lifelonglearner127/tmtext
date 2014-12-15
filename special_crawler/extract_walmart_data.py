@@ -192,17 +192,10 @@ class WalmartScraper(Scraper):
             list of strings containing the pdf urls
             or None if not found
         """
-        if not self.extracted_pdf_urls:
-            self._extract_pdf_urls()
 
-        return self.pdf_urls
+        if self.extracted_pdf_urls:
+            return self.pdf_urls
 
-    def _extract_pdf_urls(self):
-        """Extracts pdf URL for a given walmart product
-        and puts them in instance variable.
-        """
-
-        # set flag indicating we've already attempted to extract pdf urls
         self.extracted_pdf_urls = True
         self.pdf_urls = []
 
@@ -229,6 +222,8 @@ class WalmartScraper(Scraper):
         if self.pdf_urls:
             self.has_webcollage_media = True
             self.has_pdf = True
+
+        return self.pdf_urls
 
     # deprecated
     # TODO: flatten returned object
