@@ -6,6 +6,7 @@ import sys
 import json
 
 from lxml import html, etree
+import lxml
 import time
 import requests
 
@@ -191,12 +192,49 @@ class WalmartScraper(Scraper):
             list of strings containing the pdf urls
             or None if not found
         """
-
+        """
         if not self.extracted_pdf_urls:
             self._extract_pdf_urls()
 
         return self.pdf_urls
+        """
+#        product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
 
+        # set flag indicating we've already attempted to extract pdf urls
+
+        if self.extracted_pdf_urls:
+            return self.pdf_urls
+
+        self.extracted_pdf_urls = True
+        self.pdf_urls = []
+
+        pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+
+        for item in pdf_links:
+            if item.strip().endswith(".pdf"):
+                self.pdf_urls.append(item.strip()) if item.strip() not in self.pdf_urls else None
+#            elif ".pdf?" in item:
+#                self.pdf_urls.append(item[:-(len(item) - item.find(".pdf?") - 4)]) if item[:-(len(item) - item.find(".pdf?") - 4)] not in self.pdf_urls else None
+
+        if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
+            request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
+            request_url = "http:" + request_url.strip()
+
+            response_text = urllib.urlopen(request_url).read().decode('string-escape')
+
+            pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
+
+            if pdf_url_candidates:
+                for item in pdf_url_candidates:
+                    # remove escapes
+                    pdf_url = re.sub('\\\\', "", item.strip())
+                    self.pdf_urls.append(pdf_url) if pdf_url not in self.pdf_urls else None
+
+        if self.pdf_urls:
+            self.has_webcollage_media = True
+            self.has_pdf = True
+
+        return self.pdf_urls
 
     def _extract_pdf_urls(self):
         """Extracts pdf URL for a given walmart product
@@ -307,6 +345,13 @@ class WalmartScraper(Scraper):
             return 1
         else:
             return 0
+
+    def _pdf_count(self):
+        """Returns the number of pdf
+        """
+
+        return len(self.pdf_urls)
+
 
     def _product_has_pdf(self):
         """Whether product has pdf
@@ -1346,7 +1391,7 @@ class WalmartScraper(Scraper):
 
     DATA_TYPES_SPECIAL = { \
         "pdf_urls" : _pdf_urls, \
-        "pdf_count" : _product_has_pdf, \
+        "pdf_count" : _pdf_count, \
         "mobile_image_same" : _mobile_image_same \
 
     #    "reviews" : reviews_for_url \
