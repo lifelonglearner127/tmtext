@@ -192,15 +192,6 @@ class WalmartScraper(Scraper):
             list of strings containing the pdf urls
             or None if not found
         """
-        """
-        if not self.extracted_pdf_urls:
-            self._extract_pdf_urls()
-
-        return self.pdf_urls
-        """
-#        product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
-
-        # set flag indicating we've already attempted to extract pdf urls
 
         if self.extracted_pdf_urls:
             return self.pdf_urls
@@ -213,8 +204,6 @@ class WalmartScraper(Scraper):
         for item in pdf_links:
             if item.strip().endswith(".pdf"):
                 self.pdf_urls.append(item.strip()) if item.strip() not in self.pdf_urls else None
-#            elif ".pdf?" in item:
-#                self.pdf_urls.append(item[:-(len(item) - item.find(".pdf?") - 4)]) if item[:-(len(item) - item.find(".pdf?") - 4)] not in self.pdf_urls else None
 
         if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
             request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
