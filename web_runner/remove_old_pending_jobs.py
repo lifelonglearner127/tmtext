@@ -1,6 +1,5 @@
 #
-# Clears the queue of all the pending tasks BEFORE the given date (format 2014-05-20)
-# Be careful!
+# Clears the queue of all the pending tasks. Be careful!
 #
 
 # TODO: integrate this code later into web_runner/scrapyd, now it's just a draft written in a hurry
