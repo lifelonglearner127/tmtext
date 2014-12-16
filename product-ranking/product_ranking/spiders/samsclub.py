@@ -166,6 +166,8 @@ class SamsclubProductsSpider(BaseProductsSpider):
         cond_set(product, 'model', response.xpath(
             "//span[@itemprop='model']/text()").extract(),
             conv=string.strip)
+        if product.get('model', '').strip().lower() == 'null':
+            product['model'] = ''
 
         product['locale'] = "en-US"
 
