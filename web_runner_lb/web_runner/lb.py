@@ -62,7 +62,7 @@ def getLB_from_config(config):
     return getLB(lb_schedule, **kwargs)
 
 
-class LBServer(object):a
+class LBServer(object):
     '''Object that represents a LB Server
 
     Attributes:
