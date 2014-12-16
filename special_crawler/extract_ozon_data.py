@@ -35,8 +35,16 @@ class OzonScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = self.tree_html.xpath('//div[@class="eDetail_ProductId"]//text()')[0]
+        flag = False
+        for item in self.product_page_url.split('/'):
+            if flag:
+                product_id = item
+                break
+            if item == "id":
+                flag = True
         return product_id
+        # product_id = self.tree_html.xpath('//div[@class="eDetail_ProductId"]//text()')[0]
+        # return product_id
 
     def _site_id(self):
         return None
@@ -103,18 +111,36 @@ class OzonScraper(Scraper):
     def _description(self):
         short_description = " ".join(self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")).strip()
         if len(short_description) < 1:
-            return  " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
+            # for ex: http://www.ozon.ru/context/detail/id/19966749/
+            # short_description = " ".join(self.tree_html.xpath("//div[starts-with(@class,'eFirstDetailComment_textIn')]//text()"))
+            # if len(short_description) < 1:
+            # http://www.ozon.ru/context/detail/id/18467120/
+            script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
+            m = re.findall(r"\.model_data = (.*?)};", script)
+            script = m[0] + "}"
+            jsn = json.loads(script)
+            #jsn = jsn['Gallery']['Groups']
+            short_description = jsn["FirstComment"]["FirstComment"]["Text"]
+            if len(short_description) < 1:
+                short_description = " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
+                if len(short_description) < 1:
+                    short_description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
         return short_description
 
     def _long_description(self):
-        short_description = " ".join(self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")).strip()
-        if len(short_description) < 1:
+        description = self._description()
+        if len(description) < 1:
             return None
-        return  " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
-
-
-
-
+        description = " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
+        if len(description) < 1:
+            # return  " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
+            script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
+            m = re.findall(r"\.model_data = (.*?)};", script)
+            script = m[0] + "}"
+            jsn = json.loads(script)
+            #jsn = jsn['Gallery']['Groups']
+            description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
+        return description
 
 
     ##########################################
@@ -336,6 +362,10 @@ class OzonScraper(Scraper):
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
 
+    def _clean_html(self, raw_html):
+        cleanr =re.compile('<.*?>')
+        cleantext = re.sub(cleanr,'', raw_html)
+        return cleantext
 
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
