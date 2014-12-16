@@ -32,7 +32,7 @@ def add_routes(settings, config):
             resource_key = '{}.{}.resource'.format(controller_type, cfg_name)
             resource_path = os.path.normpath(settings[resource_key]) + '/'
 
-            LOG.info("Configuring %s '%s' under '%s'.", controller_type,
+            LOG.info("LB Configuring %s '%s' under '%s'.", controller_type,
                      cfg_name, resource_path)
             route_name = '{}-{}'.format(controller_type, cfg_name)
             config.add_route(route_name, resource_path)

@@ -39,7 +39,6 @@ def command_start_view(request):
     return resp
 
 
-
 @view_config(route_name='command pending jobs', request_method='GET',
              http_cache=MIN_CACHE_FRESHNESS)
 def command_pending(request):
@@ -50,9 +49,6 @@ def command_pending(request):
     (resp, lb_server) = _redirect_request(lb, r'\/pending\/([^\/]+)', request)
 
     return resp
-
-
-
 
 
 @view_config(route_name='command job results', request_method='GET',
@@ -67,13 +63,16 @@ def command_result(request):
     return resp
 
 
-
 @view_config(route_name='command history', request_method='GET',
              renderer='json', http_cache=MIN_CACHE_FRESHNESS)
 def command_history(request):
     """Report command history"""
+    settings = request.registry.settings
 
-    return _history_by_jobid(request, "command")
+    lb = settings.lb
+    (resp, lb_server) = _redirect_request(lb, r'\/history\/([^\/]+)', request)
+
+    return resp
 
 
 
@@ -100,7 +99,6 @@ def spider_start_view(request):
     return resp
 
 
-
 @view_config(route_name='spider pending jobs', request_method='GET',
              http_cache=MIN_CACHE_FRESHNESS)
 def spider_pending_view(request):
@@ -111,7 +109,6 @@ def spider_pending_view(request):
     (resp, lb_server) = _redirect_request(lb, r'\/job\/([^\/]+)', request)
 
     return resp
-
 
 
 @view_config(route_name='spider job results', request_method='GET')
@@ -131,16 +128,14 @@ def spider_results_view(request):
     return resp
 
 
-
 @view_config(route_name='spider history', request_method='GET',
              renderer='json', http_cache=MIN_CACHE_FRESHNESS)
 def spider_history_view(request):
     """Report spider history"""
+    resp = spider_pending_view(request)
+    return resp
     
-    return _history_by_jobid(request, 'spider')
  
-
-
 
 
 def _redirect_request(lb, regexp, request):
@@ -161,8 +156,9 @@ def _redirect_request(lb, regexp, request):
         # A specific server should be used
         re_out = re.search(regexp, request.url)
         if not re_out:
-            # Not valid url. Raise error. TODO
-            pass
+            # Not valid url.
+            LOG.warn("No valid jobid on request %s" % request.url)
+            raise exc.HTTPBadRequest("The job ID is invalid.")
 
         jobid = re_out.group(1)
         lb_server = lb.get_id(jobid)
@@ -171,17 +167,21 @@ def _redirect_request(lb, regexp, request):
         # Get a server from the pool
         lb_server =lb.get_new_server(request)
         if not lb_server:
-            # No server available. Raise error. TODO
-            pass
+            # No server available. Raise error.
+            LOG.error("No server available in LB for request %s" % request.url)
+            raise exc.HTTPBadRequest("No server available on LB.")
 
     if not lb_server:
-        # No server assigned for the operation. raise error. TODO
-        pass
+        # No server assigned for the operation.
+        LOG.error("No server assigned in LB for request %s" % request.url)
+        raise exc.HTTPBadRequest("No server assigned on LB.")
 
     # Redirect the request
     request.server_name = lb_server.host
     if lb_server.port:
         request.server_port = lb_server.port
+    LOG.debug("Request redirected to server %s:%s. url=%s" %
+      (lb_server.host, lb_server.port, request.url))
     resp = request.get_response()
 
     return (resp, lb_server)

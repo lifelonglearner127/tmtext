@@ -10,6 +10,10 @@ LOG = logging.getLogger(__name__)
 LB_ROUND_ROBIN = 'ROUND_ROBIN'
 
 '''
+Load balancer module to handle request on Web Runner REST Server
+'''
+
+'''
 TODO and problems to solve:
 . Write all pydocs
 . documentation
@@ -19,11 +23,17 @@ TODO and problems to solve:
 '''
 
 def getLB(method, **kwargs):
+    '''Returns a LBInterface object according the LB method
+
+    kwargs are the custom LB method parameters
+    '''
     if method == LB_ROUND_ROBIN:
         return LBRoundRobin(kwargs)
 
 
 def getLB_from_config(config):
+    '''Returns a LBInterface object with a Pyramid config file configuration'''
+
     try:
         lb_schedule_conf = config['lb.schedule']
     except KeyError:
@@ -52,14 +62,26 @@ def getLB_from_config(config):
     return getLB(lb_schedule, **kwargs)
 
 
-class LBServer(object):
+class LBServer(object):a
+    '''Object that represents a LB Server
+
+    Attributes:
+      . host
+      . port
+    '''
     def __init__(self, host, port=None):
         self.host = host
         self.port = port
 
 
 class LBInterface(object):
-    '''TODO: Write PyDoc'''
+    '''Base class to handle schedule LB assignament
+    
+    This class implements the core of the LB distribution and assignament.
+    This class must be extended to implement the method get_new_server.
+    That method receives a Pyramid request object and returns a LB
+    server assigned for the task.
+    '''
     
     def __init__(self, method, servers):
         self.lbMethod = method
@@ -68,13 +90,16 @@ class LBInterface(object):
         self.ids_date = {}
         
     def get_new_server(self, request):
+        '''Method to be extended'''
         raise NotImplementedError
 
     def set_id(self, id, server):
+        '''Relate an id with a specific server'''
         self.ids[id] = server
         self.ids_date[id] = [datetime.datetime.utcnow()]
 
     def get_id(self, id):
+        '''Get the server related with an id'''
         try:
             server = self.ids[id]
             self.ids_date[id].append(datetime.datetime.utcnow())
@@ -86,6 +111,7 @@ class LBInterface(object):
 
 
 class LBRoundRobin(LBInterface):
+    '''LB class that implements Round Robin for Web Runner RESP API'''
 
     def __init__(self, servers):
         LBInterface.__init__(self, 'RoundRobin', **servers)
