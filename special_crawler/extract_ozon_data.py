@@ -18,7 +18,9 @@ class OzonScraper(Scraper):
     ##########################################
     
     INVALID_URL_MESSAGE = "Expected URL format is http://www.ozon.ru/.*"
-    
+
+    feature_count = 0
+
     def check_url_format(self):
         m = re.match("^http://www\.ozon\.ru/.*$", self.product_page_url) 
         return (not not m)
@@ -70,8 +72,8 @@ class OzonScraper(Scraper):
 
     def _model(self):
         isbn = self.tree_html.xpath("//p[@itemprop='isbn']//text()")[0].strip()
-        if "ISBN" in isbn:
-            return "ISBN"
+        if isbn and len(isbn) > 0:
+            return isbn
         try:
             names = self.tree_html.xpath("//div[@class='bTechDescription']/div[starts-with(@class,'bTechCover')]/div[@class='bTechName']//text()")
             values = self.tree_html.xpath("//div[@class='bTechDescription']/div[starts-with(@class,'bTechCover')]/div[@class='bTechDescr']//text()")
@@ -99,10 +101,29 @@ class OzonScraper(Scraper):
                 map(lambda cell: cell.strip(), row)\
                 ), \
             cells)
+        if len(rows_text) < 1:
+            # get from json
+            script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
+            m = re.findall(r"\.model_data = (.*?)};", script)
+            script = m[0] + "}"
+            jsn = json.loads(script)
+            #jsn = jsn['Gallery']['Groups']
+            rows_text = []
+            for feature in jsn["Capabilities"]["Capabilities"]:
+                try:
+                    rows_text.append("%s: %s" % (feature["Name"], feature["Value"][0]["Text"]))
+                except:
+                    rows_text.append("%s: %s" % (feature["Name"], feature["Value"]))
+            self.feature_count = len(rows_text)
+            short_description = jsn["FirstComment"]["FirstComment"]["Text"]
+
         all_features_text = "\n".join(rows_text)
         return all_features_text
 
     def _feature_count(self):
+        features = self._features()
+        if self.feature_count > 0:
+            return self.feature_count
         return len(filter(lambda row: len(row.xpath(".//text()"))>0, self.tree_html.xpath("//div[@class='bTechDescription']//div[contains(@class, 'bTechCover')]")))
 
     def _model_meta(self):
@@ -119,8 +140,15 @@ class OzonScraper(Scraper):
             m = re.findall(r"\.model_data = (.*?)};", script)
             script = m[0] + "}"
             jsn = json.loads(script)
-            #jsn = jsn['Gallery']['Groups']
-            short_description = jsn["FirstComment"]["FirstComment"]["Text"]
+            # short_description = jsn["FirstComment"]["FirstComment"]["Text"]
+            rows_text = []
+            for row in jsn["Capabilities"]["MainCapabilities"]:
+                try:
+                    rows_text.append("%s: %s" % (row["Name"], row["Value"]["Text"]))
+                except:
+                    rows_text.append("%s: %s" % (row["Name"], row["Value"]))
+            short_description = "\n".join(rows_text)
+
             if len(short_description) < 1:
                 short_description = " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
                 if len(short_description) < 1:
