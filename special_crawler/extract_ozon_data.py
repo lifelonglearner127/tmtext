@@ -61,6 +61,9 @@ class OzonScraper(Scraper):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
+        isbn = self.tree_html.xpath("//p[@itemprop='isbn']//text()")[0].strip()
+        if "ISBN" in isbn:
+            return "ISBN"
         try:
             names = self.tree_html.xpath("//div[@class='bTechDescription']/div[starts-with(@class,'bTechCover')]/div[@class='bTechName']//text()")
             values = self.tree_html.xpath("//div[@class='bTechDescription']/div[starts-with(@class,'bTechCover')]/div[@class='bTechDescr']//text()")
@@ -99,9 +102,14 @@ class OzonScraper(Scraper):
 
     def _description(self):
         short_description = " ".join(self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")).strip()
+        if len(short_description) < 1:
+            return  " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
         return short_description
 
     def _long_description(self):
+        short_description = " ".join(self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")).strip()
+        if len(short_description) < 1:
+            return None
         return  " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
 
 
