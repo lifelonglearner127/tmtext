@@ -198,8 +198,8 @@ class ChicagoScraper(Scraper):
     def _owned_out_of_stock(self):
         availability = self.tree_html.xpath("//span[@itemprop='availability']")
         if len(availability) > 0:
-            return 1
-        return 0
+            return 0
+        return 1
 
     def _marketplace_sellers(self):
         return None
