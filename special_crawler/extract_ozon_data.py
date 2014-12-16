@@ -20,6 +20,7 @@ class OzonScraper(Scraper):
     INVALID_URL_MESSAGE = "Expected URL format is http://www.ozon.ru/.*"
 
     feature_count = 0
+    is_long_desc_is_none = False
 
     def check_url_format(self):
         m = re.match("^http://www\.ozon\.ru/.*$", self.product_page_url) 
@@ -65,7 +66,7 @@ class OzonScraper(Scraper):
         return self.tree_html.xpath("//h1")[0].text
 
     def _product_title(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath("//h1")[0].text
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -136,20 +137,24 @@ class OzonScraper(Scraper):
             # short_description = " ".join(self.tree_html.xpath("//div[starts-with(@class,'eFirstDetailComment_textIn')]//text()"))
             # if len(short_description) < 1:
             # http://www.ozon.ru/context/detail/id/18467120/
-            script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
-            m = re.findall(r"\.model_data = (.*?)};", script)
-            script = m[0] + "}"
-            jsn = json.loads(script)
-            # short_description = jsn["FirstComment"]["FirstComment"]["Text"]
-            rows_text = []
-            for row in jsn["Capabilities"]["MainCapabilities"]:
-                try:
-                    rows_text.append("%s: %s" % (row["Name"], row["Value"]["Text"]))
-                except:
-                    rows_text.append("%s: %s" % (row["Name"], row["Value"]))
-            short_description = "\n".join(rows_text)
+            try:
+                script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
+                m = re.findall(r"\.model_data = (.*?)};", script)
+                script = m[0] + "}"
+                jsn = json.loads(script)
+                # short_description = jsn["FirstComment"]["FirstComment"]["Text"]
+                rows_text = []
+                for row in jsn["Capabilities"]["MainCapabilities"]:
+                    try:
+                        rows_text.append("%s: %s" % (row["Name"], row["Value"]["Text"]))
+                    except:
+                        rows_text.append("%s: %s" % (row["Name"], row["Value"]))
+                short_description = "\n".join(rows_text)
+            except IndexError:
+                short_description = ""
 
             if len(short_description) < 1:
+                self.is_long_desc_is_none = True
                 short_description = " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
                 if len(short_description) < 1:
                     short_description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
@@ -157,17 +162,20 @@ class OzonScraper(Scraper):
 
     def _long_description(self):
         description = self._description()
-        if len(description) < 1:
+        if self.is_long_desc_is_none:
             return None
         description = " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
         if len(description) < 1:
             # return  " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
-            script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
-            m = re.findall(r"\.model_data = (.*?)};", script)
-            script = m[0] + "}"
-            jsn = json.loads(script)
-            #jsn = jsn['Gallery']['Groups']
-            description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
+            try:
+                script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
+                m = re.findall(r"\.model_data = (.*?)};", script)
+                script = m[0] + "}"
+                jsn = json.loads(script)
+                #jsn = jsn['Gallery']['Groups']
+                description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
+            except IndexError:
+                description = None
         return description
 
 
