@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 from itertools import islice
+import re
 import string
 import urllib
 import urlparse
@@ -10,6 +11,11 @@ import scrapy.log
 from scrapy.log import ERROR, WARNING, INFO
 from scrapy.http import Request
 from scrapy.spider import Spider
+
+
+# Regular expression to match integer or floating point number with optional comma:
+# 1; 12; 1,132,334; 1.05; 1,123.09
+FLOATING_POINT_RGEX = re.compile('\d{1,3}[,\d{3}]*\.?\d*')
 
 
 def compose(*funcs):

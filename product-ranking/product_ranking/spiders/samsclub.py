@@ -4,8 +4,9 @@ from future_builtins import *
 import string
 import urllib
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider
+from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.http import Request, FormRequest
 from scrapy.log import DEBUG, ERROR
@@ -131,30 +132,25 @@ class SamsclubProductsSpider(BaseProductsSpider):
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='plImageHolder']/img/@src").extract())
 
-        cond_set(
-            product,
-            'price',
-            response.xpath(
-                "//div[@class='moneyBoxBtn']/a"
-                "/span[contains(@class,'onlinePrice')]/text()"
-            ).extract())
+        price = response.xpath(
+            "//div[@class='moneyBoxBtn']/a"
+            "/span[contains(@class,'onlinePrice')]/text()"
+            ).re(FLOATING_POINT_RGEX)
 
-        pr = response.xpath(
-            "//div[contains(@class,'pricingInfo')]"
-            "/ul/li/span/text()").extract()
-        if not pr:
+        if not price:
             pr = response.xpath(
-                "//div[contains(@class,'pricingInfo')]"
-                "/div/ul/li/span/text()").extract()
-        if pr:
-            price = "".join(pr[:-1]) + "." + pr[-1]
-            cond_set_value(product, 'price', price)
+                '//div[contains(@class,"pricingInfo")]//span/text()').extract()
+            if pr:
+                price = "".join(pr[:-1]) + "." + pr[-1]
+                price = [price.replace('$', '')]
 
-        cond_set(
-            product,
-            'price',
-            response.xpath(
-                "//span[contains(@class,'onlinePrice')]/text()").extract())
+            if not price:
+                price = response.xpath(
+                        "//span[contains(@class,'onlinePrice')]/text()").re(FLOATING_POINT_RGEX)
+
+        if price:
+            product['price'] = Price(price=price[0],
+                                     priceCurrency='USD')
 
         cond_set(
             product,
@@ -163,19 +159,11 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 "//div[@itemprop='description']").extract(),
         )
 
-        productid = response.xpath(
-            "//span[@itemprop='productID']/text()").extract()
-        if productid:
-            productid = productid[0].strip().replace('#:', '', 1)
-            try:
-                product['upc'] = int(productid)
-            except ValueError:
-                self.log("Failed to parse upc number of matches: %r" % (
-                    productid), ERROR)
-
         cond_set(product, 'model', response.xpath(
             "//span[@itemprop='model']/text()").extract(),
             conv=string.strip)
+        if product.get('model', '').strip().lower() == 'null':
+            product['model'] = ''
 
         product['locale'] = "en-US"
 
