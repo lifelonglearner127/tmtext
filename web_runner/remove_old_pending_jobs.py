@@ -8,6 +8,7 @@
 import urllib
 import requests
 import json
+import sys
 
 
 BASE_HOST = 'http://localhost:6800'
@@ -41,6 +42,10 @@ def canceljob(project, _id):
 
 
 if __name__ == '__main__':
+    if raw_input('Type YES to cancel all pending jobs: ').strip() != 'YES':
+        print 'wrong answer, exit'
+        sys.exit()
+
     projects = listprojects()
     print 'PROJECTS:', projects
     jobs = listjobs(projects)
