@@ -30,7 +30,8 @@ class TescoScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.tesco.com/direct/<part-of-product-name>/<product_id>.prd \
+                           or http://www.tesco.com/groceries/product/details/?id=<product_id>"
 
     #Holds a JSON variable that contains information scraped from a query which Tesco makes through javascript
     bazaarvoice = None
@@ -62,7 +63,7 @@ class TescoScraper(Scraper):
 
     def _product_id(self):
         if self.scraper_version=="groceries":
-            product_id = self.product_page_url.split('/')[-1][3:]
+            product_id = self.product_page_url.split('/')[-1][4:]
             return product_id
         product_id = self.product_page_url.split('/')[-1]
         product_id = product_id.split('.')[0]
@@ -235,6 +236,7 @@ class TescoScraper(Scraper):
             image_url = tree.xpath("//div[@class='productImage']//img//@src")
             if len(image_url)==0:
                 image_url = tree.xpath("//div[@id='productImages']//ul[@class='productImagesList']//a//@href")
+            if len(image_url)==0: return None
             return image_url
         head = 'http://tesco.scene7.com/is/image/'
         image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")
@@ -248,24 +250,26 @@ class TescoScraper(Scraper):
 
         #img id='scene7-placeholder'
         image_url = self.tree_html.xpath('//img[@id="scene7-placeholder"]//@src')
+        if(len(image_url)==0): return None
         return image_url
 
 
 
     def _image_count(self):
         image_urls = self._image_urls()
+        if(image_urls==None): return 0
         return len(image_urls)
 
     def _video_urls(self):
         if self.scraper_version == "groceries":
-            return []
+            return None
         try:
             video_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
             video_url = re.search("\['http.*\.flv\']", video_url.strip()).group()
             video_url = re.findall("'(.*?)'", video_url)
             return video_url
         except:
-            return []
+            return None
 
     def _video_youtube(self):
         #Find an embedded youtube link
@@ -311,7 +315,9 @@ class TescoScraper(Scraper):
     def _pdf_urls(self):
         if self.scraper_version == "groceries":
             return None
-        return self._pdf_helper()
+        res = self._pdf_helper()
+        if len(res)==0: return None
+        return res
 
     def _pdf_count(self):
         if self.scraper_version == "groceries":
