@@ -412,6 +412,8 @@ def configure():
     _configure_scrapyd()
     _configure_web_runner()
     _configure_web_runner_web()
+    setup_swap()
+    setup_cron()
 
 
 def _install_web_runner():
