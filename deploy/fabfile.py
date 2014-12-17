@@ -9,6 +9,7 @@ from fabric.api import cd, env, run, local, sudo, settings, prefix
 from fabric.contrib.console import confirm
 from fabric.utils import puts
 from fabric.colors import red, green
+from fabric.contrib import files
 import cuisine
 
 '''
@@ -471,6 +472,26 @@ def _run_web_runner_web():
         run("tmux send-keys -t webrunner:2 'cd %s/web_runner_web' C-m"
             % repo_path)
         run("tmux send-keys -t webrunner:2 './manage.py runserver 0.0.0.0:8000' C-m")
+
+
+def setup_cron():
+    cron_file = '/etc/cron.d/compresslogs'
+    username = 'web_runner'
+    homedir = '/home/web_runner'
+    repopath = 'repos/tmtext/web_runner'
+    scriptname = 'compress_old_logs_and_output_files.py'
+    if files.contains(cron_file, scriptname):
+        puts(green('Cron already installed'))
+    else:
+        files.append(cron_file,
+                     '*/7  *  *  *  *  {user} /usr/bin/python {home}/{repo}/{script}'.format(
+                         user=username, home=homedir, repo=repopath, script=scriptname
+                     ),
+                     use_sudo=True)
+
+
+def setup_swap():
+    pass
 
 
 def run_servers(restart_scrapyd=False):
