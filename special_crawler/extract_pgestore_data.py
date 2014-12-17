@@ -131,17 +131,14 @@ class PGEStore(Scraper):
         return len(self._image_urls())
 
     def _video_urls(self):
-        # base = 'http://www.pgestore.com'
-        # video_url = self.tree_html.xpath('//img[contains(@class, "productaltvideo")]/following-sibling::script//text()')[0]
-        # video_url = re.findall('showProductVideo\(\"(.+?)\"\)', video_url)
-        # return base+video_url[0]
-        return None
+        video_url = self.tree_html.xpath("//li[starts-with(@class,'video-thumb')]//a/@data-videoid")
+        video_url = ["https://www.youtube.com/watch?v=%s" % r for r in video_url]
+        return video_url
 
     def _video_count(self):
-        # urls = self._video_urls()
-        # if urls:
-        #     return len(urls)
-        # return None
+        urls = self._video_urls()
+        if urls:
+            return len(urls)
         return None
 
     def _pdf_helper(self):
@@ -178,9 +175,6 @@ class PGEStore(Scraper):
 
     def _no_image(self):
         return None
-
-
-
 
     ##########################################
     ############### CONTAINER : REVIEWS
