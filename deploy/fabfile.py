@@ -366,6 +366,46 @@ def _configure_web_runner_web():
         run("tmux send-keys -t webrunner:4 'exit()' C-m")
 
 
+def setup_cron():
+    """
+    Setup cron tasks, for now only log compression
+    """
+    cron_file = '/etc/cron.d/compresslogs'
+    username = 'web_runner'
+    homedir = '/home/web_runner'
+    repopath = 'repos/tmtext/web_runner'
+    scriptname = 'compress_old_logs_and_output_files.py'
+    if files.contains(cron_file, scriptname):
+        puts(green('Cron already installed'))
+    else:
+        files.append(cron_file,
+                     '*/7  *  *  *  *  {user} /usr/bin/python {home}/{repo}/{script}'.format(
+                         user=username, home=homedir, repo=repopath, script=scriptname
+                     ),
+                     use_sudo=True)
+
+
+def setup_swap():
+    """
+    Create and enable swap, 8G
+    """
+    swap_file = '/mnt/swapfile'
+#    with settings(warn_only=True):
+    result = sudo('/sbin/swapon -s')
+    if swap_file not in result:
+        sudo('dd if=/dev/zero of={swap} bs=1M count=8192'.format(swap=swap_file))
+        sudo('/sbin/mkswap {swap}'.format(swap=swap_file))
+        sudo('/sbin/swapon {swap}'.format(swap=swap_file))
+        result = sudo('/sbin/swapon -s')
+        if swap_file in result:
+            files.append('/etc/fstab',
+                         '{swap}  none    swap    sw    0    0'.format(swap=swap_file), use_sudo=True)
+            sudo('chmod 600 {swap}'.format(swap=swap_file))
+            sudo('chown root.root {swap}'.format(swap=swap_file))
+    else:
+        puts(green('Swap already enabled'))
+
+
 def configure():
     puts(green('Configuring the servers'))
 
@@ -472,26 +512,6 @@ def _run_web_runner_web():
         run("tmux send-keys -t webrunner:2 'cd %s/web_runner_web' C-m"
             % repo_path)
         run("tmux send-keys -t webrunner:2 './manage.py runserver 0.0.0.0:8000' C-m")
-
-
-def setup_cron():
-    cron_file = '/etc/cron.d/compresslogs'
-    username = 'web_runner'
-    homedir = '/home/web_runner'
-    repopath = 'repos/tmtext/web_runner'
-    scriptname = 'compress_old_logs_and_output_files.py'
-    if files.contains(cron_file, scriptname):
-        puts(green('Cron already installed'))
-    else:
-        files.append(cron_file,
-                     '*/7  *  *  *  *  {user} /usr/bin/python {home}/{repo}/{script}'.format(
-                         user=username, home=homedir, repo=repopath, script=scriptname
-                     ),
-                     use_sudo=True)
-
-
-def setup_swap():
-    pass
 
 
 def run_servers(restart_scrapyd=False):
