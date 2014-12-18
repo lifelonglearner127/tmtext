@@ -75,6 +75,8 @@ class LBServer(object):
             self.host = host
             if port:
                 self.port = int(port)
+            else:
+                self.port = None
         else:
             self.host = host
             self.port = port
