@@ -101,6 +101,7 @@ class Scraper():
             "marketplace", # whether product can be found on marketplace, 1/0
             "marketplace_sellers", # sellers on marketplace (or equivalent) selling item, list of strings
             "marketplace_lowest_price", # string
+            "in_stock", # binary (0/1), whether product can be bought from the site, from any seller
             
             # classification
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
@@ -145,7 +146,7 @@ class Scraper():
                             'meta_tags','meta_tag_count'], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
-                    "marketplace", "marketplace_sellers", "marketplace_lowest_price"], \
+                    "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock"], \
         "classification": ["categories", "category_name", "brand"]
     }
 
