@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import json
 import re
@@ -8,11 +7,12 @@ import string
 import urllib
 import urlparse
 
-from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider
-from product_ranking.spiders import cond_set, cond_set_value
 from scrapy import Request
 from scrapy.log import DEBUG, ERROR
+
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
+from product_ranking.spiders import BaseProductsSpider
+from product_ranking.spiders import cond_set, cond_set_value
 
 
 class CanadiantireProductsSpider(BaseProductsSpider):
@@ -160,7 +160,8 @@ class CanadiantireProductsSpider(BaseProductsSpider):
         m = re.match(r'\$(.*)\*.*', price)
         if m:
             price = m.group(1)
-        cond_set_value(product, 'price', price)
+        cond_set_value(product, 'price',
+                       Price('USD', price) if price else None)
 
         info = response.xpath(
             "//div[@id='features']/div[@class='tabContent']"
@@ -181,7 +182,9 @@ class CanadiantireProductsSpider(BaseProductsSpider):
         prices = set(x.get('currentPrice') for x in prod_data.get('skus'))
         if len(prices) < 2:
             product['upc'] = upc
-            cond_set_value(product, 'price', prod_data.get('currentPrice'))
+            price = prod_data.get('currentPrice')
+            cond_set_value(product, 'price',
+                           Price('USD', price) if price else None)
             cond_set_value(product, 'title', prod_data.get('name'))
             return product
 
@@ -190,7 +193,9 @@ class CanadiantireProductsSpider(BaseProductsSpider):
         for skudata in prod_data.get('skus'):
             new_product = product.copy()
             new_product['upc'] = skudata.get('productNumber')
-            new_product['price'] = skudata.get('currentPrice')
+            price = skudata.get('currentPrice')
+            cond_set_value(new_product, 'price',
+                           Price('USD', price) if price else None)
             new_product['title'] = prod_data.get('name')
             new_product['model'] = "size:" + skudata.get('product_size')
 

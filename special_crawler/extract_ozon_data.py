@@ -18,7 +18,10 @@ class OzonScraper(Scraper):
     ##########################################
     
     INVALID_URL_MESSAGE = "Expected URL format is http://www.ozon.ru/.*"
-    
+
+    feature_count = 0
+    is_long_desc_is_none = False
+
     def check_url_format(self):
         m = re.match("^http://www\.ozon\.ru/.*$", self.product_page_url) 
         return (not not m)
@@ -35,8 +38,16 @@ class OzonScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = self.tree_html.xpath('//div[@class="eDetail_ProductId"]//text()')[0]
+        flag = False
+        for item in self.product_page_url.split('/'):
+            if flag:
+                product_id = item
+                break
+            if item == "id":
+                flag = True
         return product_id
+        # product_id = self.tree_html.xpath('//div[@class="eDetail_ProductId"]//text()')[0]
+        # return product_id
 
     def _site_id(self):
         return None
@@ -55,17 +66,26 @@ class OzonScraper(Scraper):
         return self.tree_html.xpath("//h1")[0].text
 
     def _product_title(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath("//h1")[0].text
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
+        isbn = self.tree_html.xpath("//p[@itemprop='isbn']//text()")[0].strip()
+        if isbn and len(isbn) > 0:
+            return isbn
         try:
-            logo_txt_arr = [s.strip() for s in self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")]
-            logo_txt = ''.join(logo_txt_arr)
-            avg = re.findall(r': (.*)$', logo_txt)
-            return avg[0]
+            names = self.tree_html.xpath("//div[@class='bTechDescription']/div[starts-with(@class,'bTechCover')]/div[@class='bTechName']//text()")
+            values = self.tree_html.xpath("//div[@class='bTechDescription']/div[starts-with(@class,'bTechCover')]/div[@class='bTechDescr']//text()")
+            idx = 0
+            model = None
+            for name in names:
+                if "Артикул" == name.encode('utf-8').strip():
+                    model = values[idx].strip()
+                    break
+                idx += 1
+            return model
         except IndexError:
             return None
 
@@ -82,10 +102,29 @@ class OzonScraper(Scraper):
                 map(lambda cell: cell.strip(), row)\
                 ), \
             cells)
+        if len(rows_text) < 1:
+            # get from json
+            script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
+            m = re.findall(r"\.model_data = (.*?)};", script)
+            script = m[0] + "}"
+            jsn = json.loads(script)
+            #jsn = jsn['Gallery']['Groups']
+            rows_text = []
+            for feature in jsn["Capabilities"]["Capabilities"]:
+                try:
+                    rows_text.append("%s: %s" % (feature["Name"], feature["Value"][0]["Text"]))
+                except:
+                    rows_text.append("%s: %s" % (feature["Name"], feature["Value"]))
+            self.feature_count = len(rows_text)
+            short_description = jsn["FirstComment"]["FirstComment"]["Text"]
+
         all_features_text = "\n".join(rows_text)
         return all_features_text
 
     def _feature_count(self):
+        features = self._features()
+        if self.feature_count > 0:
+            return self.feature_count
         return len(filter(lambda row: len(row.xpath(".//text()"))>0, self.tree_html.xpath("//div[@class='bTechDescription']//div[contains(@class, 'bTechCover')]")))
 
     def _model_meta(self):
@@ -93,14 +132,51 @@ class OzonScraper(Scraper):
 
     def _description(self):
         short_description = " ".join(self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")).strip()
+        if len(short_description) < 1:
+            # for ex: http://www.ozon.ru/context/detail/id/19966749/
+            # short_description = " ".join(self.tree_html.xpath("//div[starts-with(@class,'eFirstDetailComment_textIn')]//text()"))
+            # if len(short_description) < 1:
+            # http://www.ozon.ru/context/detail/id/18467120/
+            try:
+                script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
+                m = re.findall(r"\.model_data = (.*?)};", script)
+                script = m[0] + "}"
+                jsn = json.loads(script)
+                # short_description = jsn["FirstComment"]["FirstComment"]["Text"]
+                rows_text = []
+                for row in jsn["Capabilities"]["MainCapabilities"]:
+                    try:
+                        rows_text.append("%s: %s" % (row["Name"], row["Value"]["Text"]))
+                    except:
+                        rows_text.append("%s: %s" % (row["Name"], row["Value"]))
+                short_description = "\n".join(rows_text)
+            except IndexError:
+                short_description = ""
+
+            if len(short_description) < 1:
+                self.is_long_desc_is_none = True
+                short_description = " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
+                if len(short_description) < 1:
+                    short_description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
         return short_description
 
     def _long_description(self):
-        return  " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
-
-
-
-
+        description = self._description()
+        if self.is_long_desc_is_none:
+            return None
+        description = " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
+        if len(description) < 1:
+            # return  " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
+            try:
+                script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
+                m = re.findall(r"\.model_data = (.*?)};", script)
+                script = m[0] + "}"
+                jsn = json.loads(script)
+                #jsn = jsn['Gallery']['Groups']
+                description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
+            except IndexError:
+                description = None
+        return description
 
 
     ##########################################
@@ -118,9 +194,17 @@ class OzonScraper(Scraper):
         return None
 
     def _image_urls(self):
-        text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
-        text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
-        jsn = json.loads(text)
+        try:
+            text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
+            text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
+            jsn = json.loads(text)
+        except IndexError:
+            text = self.tree_html.xpath('//div[@class="bCombiningColumn"]//div[@class="bContentColumn"]//script//text()')
+            text = re.findall(r'\.model_data = (\{.*\});', str(text))[0]
+            text = ''.join(text)
+            jsn = json.loads(text.decode("unicode_escape"))
+            jsn = jsn['Gallery']['Groups']
+
         image_url = []
         for row in jsn:
             if 'Elements' in row:
@@ -233,9 +317,13 @@ class OzonScraper(Scraper):
         return 1
 
     def _owned_out_of_stock(self):
-        s = " ".join(self.tree_html.xpath("//span[contains(@class, 'mInStock')]//text()"))
-        if not not s:
-            return not not re.findall(u"\u041D\u0430 \u0441\u043A\u043B\u0430\u0434\u0435", unicode(s))
+        try:
+            text = self.tree_html.xpath("//div[starts-with(@class,'bSaleBlock')]/h3/text()")[0]
+            text = text.encode("utf-8")
+            if text.strip() == "Нет в продаже":
+                return 1
+        except IndexError:
+            return 0
         return None
 
     def _marketplace(self):
@@ -310,6 +398,10 @@ class OzonScraper(Scraper):
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
 
+    def _clean_html(self, raw_html):
+        cleanr =re.compile('<.*?>')
+        cleantext = re.sub(cleanr,'', raw_html)
+        return cleantext
 
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service

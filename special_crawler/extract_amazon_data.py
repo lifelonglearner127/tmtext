@@ -53,7 +53,11 @@ class AmazonScraper(Scraper):
     ##########################################
 
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@id="title"]/span[@id="productTitle"]')[0].text
+        pn = self.tree_html.xpath('//h1[@id="title"]/span[@id="productTitle"]')
+        if len(pn)>0:
+            return pn[0].text
+        pn = self.tree_html.xpath('//h1[@class="parseasinTitle "]/span[@id="btAsinTitle"]//text()')    #
+        return pn[0]
 
     def _product_title(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -161,13 +165,20 @@ class AmazonScraper(Scraper):
     def _image_urls(self, tree = None):
         if tree == None:
             tree = self.tree_html
+        #The small images are to the left of the big image
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
+        if image_url is not None and len(image_url)>0:
+            return image_url
+
+        #The small images are below the big image
+        image_url = tree.xpath("//div[@id='thumbs-image']//img/@src")
         if image_url is not None and len(image_url)>0:
             return image_url
 
         image_url = tree.xpath('//img[@id="imgBlkFront"]')
         if image_url is not None and len(image_url)>0:
             return ["inline image"]
+        return None
 
     def _mobile_image_url(self, tree = None):
         if tree == None:
@@ -176,6 +187,8 @@ class AmazonScraper(Scraper):
         return image_url
 
     def _image_count(self):
+        if self._image_urls()==None:
+            return 0
         return len(self._image_urls())
 
     # return 1 if the "no image" image is found
@@ -189,9 +202,11 @@ class AmazonScraper(Scraper):
             r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", str(v.xpath('.//text()')))
             if r:
                 temp.extend(r)
+        if len(temp)==0: return None
         return temp#",".join(temp)
 
     def _video_count(self):
+        if self._video_urls()==None: return 0
         return len(self._video_urls())#.split(','))
 
     # return one element containing the PDF
@@ -228,23 +243,45 @@ class AmazonScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        average_review = self.tree_html.xpath("//span[@id='acrPopover']/@title")[0]
-        average_review = re.findall("([0-9]\.?[0-9]?) out of 5 stars", average_review)[0]
-        return average_review
+        average_review = self.tree_html.xpath("//span[@id='acrPopover']/@title")
+        if len(average_review) == 0:
+            average_review = self.tree_html.xpath("//div[@class='gry txtnormal acrRating']//text()")
+        average_review = re.findall("([0-9]\.?[0-9]?) out of 5 stars", average_review[0])[0]
+        return self._tofloat(average_review)
 
     def _review_count(self):
-        nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")[0]
-        nr_reviews = re.findall("([0-9]+) customer reviews", nr_reviews)[0]
-        return nr_reviews
+        nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")
+        if len(nr_reviews) > 0:
+            nr_review = re.findall("([0-9]+) customer reviews", nr_reviews[0])
+            if len(nr_review) == 0:
+                nr_review = re.findall("([0-9]+) customer review", nr_reviews[0])
+            if len(nr_review) > 0:
+                return self._toint(nr_review[0])
+        nr_reviews = self.tree_html.xpath("//div[@class='fl gl5 mt3 txtnormal acrCount']//text()")
+        if len(nr_reviews) > 1:
+            return self._toint(nr_reviews[1])
+        nr_reviews = self.tree_html.xpath("//a[@class='a-link-normal a-text-normal product-reviews-link']//text()")
+        return self._toint(nr_reviews[0].replace('(','').replace(')',''))
+
+    def _tofloat(self,s):
+        try:
+            t=float(s)
+            return t
+        except ValueError:
+            return 0.0
+
+    def _toint(self,s):
+        try:
+            t=int(s)
+            return t
+        except ValueError:
+            return 0
 
     def _max_review(self):
         return None
 
     def _min_review(self):
         return None
-
-
-
 
 
     ##########################################
@@ -310,19 +347,25 @@ class AmazonScraper(Scraper):
     # extract the department which the product belongs to
     def _category_name(self):
         all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
+        if len(all)==0:
+            all = self.tree_html.xpath("//li[@class='breadcrumb']/a//text()")
         all = map(lambda t: self._clean_text(t), all)
         return all[1]
 
     # extract a hierarchical list of all the departments the product belongs to
     def _categories(self):
         all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
+        if len(all)==0:
+            all = self.tree_html.xpath("//li[@class='breadcrumb']/a//text()")
         all = map(lambda t: self._clean_text(t), all)
         return all
 
     def _brand(self):
-        return self.tree_html.xpath('//div[@id="mbc"]/@data-brand')[0]
-
-
+        bn=self.tree_html.xpath('//div[@id="mbc"]/@data-brand')
+        if len(bn)>0:
+            return bn[0]
+        bn=self.tree_html.xpath('//div[@class="buying"]//span/a//text()')
+        return bn[0]
 
 
     ##########################################
