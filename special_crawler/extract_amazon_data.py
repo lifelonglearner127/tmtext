@@ -178,7 +178,7 @@ class AmazonScraper(Scraper):
         image_url = tree.xpath('//img[@id="imgBlkFront"]')
         if image_url is not None and len(image_url)>0:
             return ["inline image"]
-        return []
+        return None
 
     def _mobile_image_url(self, tree = None):
         if tree == None:
@@ -187,6 +187,8 @@ class AmazonScraper(Scraper):
         return image_url
 
     def _image_count(self):
+        if self._image_urls()==None:
+            return 0
         return len(self._image_urls())
 
     # return 1 if the "no image" image is found
@@ -200,9 +202,11 @@ class AmazonScraper(Scraper):
             r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", str(v.xpath('.//text()')))
             if r:
                 temp.extend(r)
+        if len(temp)==0: return None
         return temp#",".join(temp)
 
     def _video_count(self):
+        if self._video_urls()==None: return 0
         return len(self._video_urls())#.split(','))
 
     # return one element containing the PDF
@@ -243,7 +247,7 @@ class AmazonScraper(Scraper):
         if len(average_review) == 0:
             average_review = self.tree_html.xpath("//div[@class='gry txtnormal acrRating']//text()")
         average_review = re.findall("([0-9]\.?[0-9]?) out of 5 stars", average_review[0])[0]
-        return average_review
+        return self._tofloat(average_review)
 
     def _review_count(self):
         nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")
@@ -252,23 +256,32 @@ class AmazonScraper(Scraper):
             if len(nr_review) == 0:
                 nr_review = re.findall("([0-9]+) customer review", nr_reviews[0])
             if len(nr_review) > 0:
-                return nr_review[0]
+                return self._toint(nr_review[0])
         nr_reviews = self.tree_html.xpath("//div[@class='fl gl5 mt3 txtnormal acrCount']//text()")
         if len(nr_reviews) > 1:
-            return nr_reviews[1]
+            return self._toint(nr_reviews[1])
         nr_reviews = self.tree_html.xpath("//a[@class='a-link-normal a-text-normal product-reviews-link']//text()")
-        print "nr_reviews 3",nr_reviews
-        return nr_reviews[0].replace('(','').replace(')','')
+        return self._toint(nr_reviews[0].replace('(','').replace(')',''))
 
+    def _tofloat(self,s):
+        try:
+            t=float(s)
+            return t
+        except ValueError:
+            return 0.0
+
+    def _toint(self,s):
+        try:
+            t=int(s)
+            return t
+        except ValueError:
+            return 0
 
     def _max_review(self):
         return None
 
     def _min_review(self):
         return None
-
-
-
 
 
     ##########################################
