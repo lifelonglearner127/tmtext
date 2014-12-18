@@ -1197,6 +1197,23 @@ class WalmartScraper(Scraper):
             return 0
 
     # ! may throw exception if not found
+    def _stores_available_from_script(self):
+        """Extracts whether product is available in stores.
+        Works on new page version.
+        Returns 1/0
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        available = pinfo_dict["analyticsData"]["storesAvail"]
+
+        return 1 if available else 0
+
+
+    # ! may throw exception if not found
     def _in_stock_from_script(self):
         """Extracts info on whether product is available to be
         bought on the site, from any seller (marketplace or owned).
@@ -1213,6 +1230,7 @@ class WalmartScraper(Scraper):
         available = pinfo_dict["analyticsData"]["onlineAvail"]
 
         return 1 if available else 0
+
 
     def _in_stock_old(self):
         """Extracts info on whether product is available to be
@@ -1291,6 +1309,20 @@ class WalmartScraper(Scraper):
             in_stock_old = self._in_stock_old()
 
         return in_stock_old
+
+    def _owned_out_of_stock(self):
+        """Extracts whether product is owned and out of stock.
+        Works on both old and new page version.
+        Returns 1/0
+        """
+
+        owned = self._owned()
+        in_stock = self._in_stock()
+
+        if owned==1 and in_stock==0:
+            return 1
+        else:
+            return 0
 
 
     def _version(self):
@@ -1381,6 +1413,8 @@ class WalmartScraper(Scraper):
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title" : _product_name_from_tree, \
         "owned": _owned, \
+        "owned_out_of_stock": _owned_out_of_stock, \
+        "in_stores" : _stores_available_from_script, \
         "marketplace": _marketplace, \
         "in_stock": _in_stock, \
         "review_count": _nr_reviews, \
