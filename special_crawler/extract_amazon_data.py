@@ -1,18 +1,5 @@
 #!/usr/bin/python
 
-'''
-http://www.amazon.com/Williams-Bachmann-Trains-Norfolk-Western/dp/B0013PNDLO
-http://www.amazon.com/MMS-Blank-Face-Bicycle-Cards/dp/B00ME5SRDQ
-http://www.amazon.com/HORI-Full-HD-Monitor-PlayStation-4/dp/B00QXJF5V6
-http://www.amazon.com/ASTRO-Gaming-A50-Xbox-One-White/dp/B00NY5ZNYQ
-http://www.amazon.com/Oakland-Raiders-62-Inch-Double-Umbrella/dp/B003NGP4NG
-http://www.amazon.com/Joanie-Loves-Chachi-Scott-Baio/dp/B00005JOED
-http://www.amazon.com/Facts-Life-Season-9/dp/B001JAHS7I
-http://www.amazon.com/Smooth-Fitness-9-65-Treadmill-Model/dp/B00G8UIYHC
-http://www.amazon.com/Whatman-6789-0402-Puradisc-Syringe-Maximum/dp/B000FMUHGU
-'''
-
-
 
 import urllib
 import re
