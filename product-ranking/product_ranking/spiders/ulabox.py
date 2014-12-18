@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
@@ -5,9 +7,9 @@ import string
 import urlparse
 
 from scrapy import Request
-from scrapy.log import WARNING
+from scrapy.log import WARNING, ERROR
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set
 
 
@@ -46,6 +48,18 @@ class UlaboxProductsSpider(BaseProductsSpider):
             response.xpath(
                 "//form/strong[@itemprop='price']/text()").extract()
         )
+
+        if product.get('price', None):
+            if isinstance(product['price'], str):
+                product['price'] = product['price'].decode('utf8')
+            if not u'€' in product['price']:
+                self.log('Unknown currency at %s' % response.url, level=ERROR)
+            else:
+                product['price'] = Price(
+                    priceCurrency='EUR',
+                    price=product['price'].replace(' ', '').replace(
+                        ',', '.').replace(u'€', '').strip()
+                )
 
         cond_set(
             product,

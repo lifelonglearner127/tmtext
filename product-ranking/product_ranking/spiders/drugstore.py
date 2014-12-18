@@ -3,7 +3,7 @@ from future_builtins import *
 
 from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider,FormatterWithDefaults, \
     cond_set, cond_set_value
 
@@ -50,6 +50,16 @@ class DrugstoreProductsSpider(BaseProductsSpider):
 
         cond_set(product, 'price', response.xpath(
             "//div[@id='productprice']/*[@class='price']/text()").extract())
+
+        if product.get('price', None):
+            if not '$' in product['price']:
+                self.log('Unknown currency at' % response.url)
+            else:
+                product['price'] = Price(
+                    price=product['price'].replace(',', '').replace(
+                        '$', '').strip(),
+                    priceCurrency='USD'
+                )
 
         cond_set_value(
             product,

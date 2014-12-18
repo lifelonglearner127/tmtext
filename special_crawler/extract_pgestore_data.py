@@ -23,11 +23,12 @@ class PGEStore(Scraper):
     ##########################################
     ############### PREP
     ##########################################
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.pgestore.com/[0-9a-zA-Z,/-]+\.html"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.pgestore.com/[0-9a-zA-Z,/-]+\.html or http://www.pgshop.com/[0-9a-zA-Z,/-]+\.html"
     
     reviews_tree = None
     max_score = None
     min_score = None
+    reviews = None
     pdfs = None
     
     def check_url_format(self):
@@ -35,9 +36,12 @@ class PGEStore(Scraper):
         Returns:
             True if valid, False otherwise
         """
-
-        m = re.match(r"^http://www.pgestore.com/[0-9a-zA-Z,/\-\.\_]+\.html$", self.product_page_url)
-        n = re.match(r"^http://www.pgshop.com/.*$", self.product_page_url)
+        non_product_arr = ["-about-us.html", "pgshop-faqs.html"]
+        for non_product in non_product_arr:
+            if non_product in self.product_page_url:
+                return False
+        m = re.match(r"^http://www.pgestore.com/[0-9a-zA-Z,/\-\.\_]+\.html", self.product_page_url)
+        n = re.match(r"^http://www.pgshop.com/[0-9a-zA-Z,/\-\.\_]+\.html", self.product_page_url)
 
         return (not not m) or (not not n)
 
@@ -76,7 +80,7 @@ class PGEStore(Scraper):
         return self._clean_text(self.tree_html.xpath("//h1[@class='product-name']//text()")[0])
 
     def _product_title(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self._clean_text(self.tree_html.xpath("//h1[@class='product-name']//text()")[0])
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -127,17 +131,14 @@ class PGEStore(Scraper):
         return len(self._image_urls())
 
     def _video_urls(self):
-        # base = 'http://www.pgestore.com'
-        # video_url = self.tree_html.xpath('//img[contains(@class, "productaltvideo")]/following-sibling::script//text()')[0]
-        # video_url = re.findall('showProductVideo\(\"(.+?)\"\)', video_url)
-        # return base+video_url[0]
-        return None
+        video_url = self.tree_html.xpath("//li[starts-with(@class,'video-thumb')]//a/@data-videoid")
+        video_url = ["https://www.youtube.com/watch?v=%s" % r for r in video_url]
+        return video_url
 
     def _video_count(self):
-        # urls = self._video_urls()
-        # if urls:
-        #     return len(urls)
-        # return None
+        urls = self._video_urls()
+        if urls:
+            return len(urls)
         return None
 
     def _pdf_helper(self):
@@ -175,9 +176,6 @@ class PGEStore(Scraper):
     def _no_image(self):
         return None
 
-
-
-
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
@@ -198,11 +196,18 @@ class PGEStore(Scraper):
                     score -= 1
 
                 score = 1
-                for review in reviews:
+                for review in reversed(reviews):
                     if int(review) > 0:
                         self.min_score = score
                         break
                     score += 1
+
+                self.reviews = []
+                score = 1
+                for review in reversed(reviews):
+                    self.reviews.append([score, int(review)])
+                    score += 1
+
                 # self.reviews_tree = html.fromstring(contents)
         except:
             pass
@@ -230,15 +235,17 @@ class PGEStore(Scraper):
         self._load_reviews()
         return self.min_score
 
-
+    def _reviews(self):
+        self._load_reviews()
+        return self.reviews
 
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        #price = self.tree_html.xpath("//meta[@name='pgeprice']/@content")
-        price = (self.tree_html.xpath('//span[@class="price-nosale"]//text()'))
+        # price = (self.tree_html.xpath('//span[@class="price-nosale"]//text()'))
+        price = self.tree_html.xpath('//section[starts-with(@class,"price vm")]//span[starts-with(@class,"price-nosale") or starts-with(@class,"price-sales")]//text()')
         if price:
             return price[0].strip()
         else:
@@ -367,5 +374,6 @@ class PGEStore(Scraper):
         "average_review" : _average_review, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
+        "reviews" : _reviews, \
     }
 

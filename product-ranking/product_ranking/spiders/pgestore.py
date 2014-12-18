@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import urllib
 import json
@@ -7,7 +6,7 @@ import json
 from scrapy.http import Request
 from scrapy.log import ERROR, INFO
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 
 
@@ -92,7 +91,6 @@ class PGShopProductSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         prod = response.meta['product']
-
         prod['url'] = response.url
         prod['locale'] = 'en-US'
 
@@ -128,6 +126,8 @@ class PGShopProductSpider(BaseProductsSpider):
         if brand:
             prod['brand'] = brand[0]
 
+        self._unify_price(prod)
+
         return Request(
             self.RECOMMENDED_URL.format(upc=prod['upc']),
             callback=self.parse_recommended_items,
@@ -154,3 +154,12 @@ class PGShopProductSpider(BaseProductsSpider):
             prod['related_products'] = {'recommended': recommendations}
 
         return prod
+
+    def _unify_price(self, product):
+        price = product.get('price')
+        if price is None:
+            return
+        is_usd = not price.find('$')
+        price = price[1:].replace(',', '')
+        if is_usd and price.replace('.', '').isdigit():
+            product['price'] = Price('USD', price)

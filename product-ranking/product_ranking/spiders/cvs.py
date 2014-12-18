@@ -8,7 +8,7 @@ import urlparse
 from scrapy import Request
 from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import cond_set, cond_set_value
 
@@ -91,6 +91,15 @@ class CvsProductsSpider(BaseProductsSpider):
                 '@data-upcnumber').extract()[0])
             product['price'] = addbasketbutton.xpath(
                 '@data-listprice').extract()[0]
+            if product.get('price', None):
+                if not '$' in product['price']:
+                    self.log('Unknown currency at' % response.url)
+                else:
+                    product['price'] = Price(
+                        price=product['price'].replace(',', '').replace(
+                            '$', '').strip(),
+                        priceCurrency='USD'
+                    )
 
         desc = response.xpath("//div[@id='prodDesc']/p/text()")
         desc = (" ".join(desc.extract())).strip()

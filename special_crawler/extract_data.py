@@ -94,6 +94,8 @@ class Scraper():
             
             # sellers
             "price", # price, string including currency
+            "price_amount", # price, float
+            "price_currency", # currency for price, string of max 3 chars
             "in_stores", # available to purchase in stores, 1/0
             "in_stores_only", # whether product can be found in stores only, 1/0
             "owned", # whether product is owned by site, 1/0
@@ -101,6 +103,7 @@ class Scraper():
             "marketplace", # whether product can be found on marketplace, 1/0
             "marketplace_sellers", # sellers on marketplace (or equivalent) selling item, list of strings
             "marketplace_lowest_price", # string
+            "in_stock", # binary (0/1), whether product can be bought from the site, from any seller
             
             # classification
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
@@ -144,8 +147,8 @@ class Scraper():
                             "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             'meta_tags','meta_tag_count'], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
-        "sellers": ["price", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
-                    "marketplace", "marketplace_sellers", "marketplace_lowest_price"], \
+        "sellers": ["price", "price_amount", "price_currency", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
+                    "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock"], \
         "classification": ["categories", "category_name", "brand"]
     }
 

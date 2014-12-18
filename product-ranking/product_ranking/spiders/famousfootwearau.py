@@ -3,7 +3,7 @@ from future_builtins import *
 
 import urlparse
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.log import DEBUG
@@ -16,35 +16,54 @@ class FamousfootwearauProductsSpider(BaseProductsSpider):
 
     SEARCH_URL = "http://www.famousfootwear.com.au/Search.aspx?q={search_term}"
 
+    DEFAULT_CURRENCY = u'AUD'
+
     def parse_product(self, response):
         def full_url(url):
             return urlparse.urljoin(response.url, url)
         product = response.meta['product']
-        cond_set(product, 'brand', response.xpath(
-            "//div[@id='brand']/text()").extract())
+        cond_set(product,
+                 'brand',
+                 response.xpath("//div[@class='prod_minfo']"
+                                "/div[@class='prod_brand']"
+                                "/text()").extract())
 
         cond_set(product, 'title', response.xpath(
             "//meta[@property='og:title']/@content").extract())
         cond_set(product, 'title', response.xpath(
             "//div[@id='brand']/following::h1/text()").extract())
 
-        cond_set(product, 'price', response.xpath(
-            "//td[@id='tdDetails']/div[@class='price']/text()").extract())
-        cond_set(product, 'price', response.xpath(
-            "//td[@id='tdDetails']/div[@class='price']/span/span[@class='sale']/text()").extract())
+        price_values = response.xpath("//div[@class='prod_minfo']"
+                                      "/div[@class='prod_price']"
+                                      "/span/span[@class='sale']"
+                                      "/text()").re('[\d.]+')
+        if not price_values:
+            price_values = response.xpath("//div[@class='prod_minfo']"
+                                          "/div[@class='prod_price']"
+                                          "/text()").re('[\d.]+')
+        if price_values:
+            price = u''.join(price_values)
+
+            cond_set_value(product,
+                           'price',
+                           Price(
+                               priceCurrency=self.DEFAULT_CURRENCY,
+                               price=price))
 
         cond_set(
-            product, 'image_url', response.xpath(
-                "//td[@id='tdImages']/div[@id='image-wrap']"
-                "/a/img/@src").extract(),
+            product, 'image_url', response.xpath("(//div[@id='prod_slider']"
+                                                 "/div/div"
+                                                 "/a[@class='MagicZoom']"
+                                                 "/@href)[1]").extract(),
             conv=full_url)
+
         cond_set(product, 'description', response.xpath(
             "//meta[@name='description']/@content").extract())
         cond_set(product, 'upc', response.xpath(
             "//input[@id='hidId']/@value").extract())
         cond_set_value(product, 'locale', "en-US")
 
-        rels = response.xpath("//div[@class='relatedProducts']/ul/li/a")
+        rels = response.xpath("//ul[@class='like_list row']/li/a")
         related = []
         for r in rels:
             href = r.xpath("@href").extract()
@@ -72,9 +91,9 @@ class FamousfootwearauProductsSpider(BaseProductsSpider):
     def _scrape_product_links(self, response):
         def full_url(url):
             return urlparse.urljoin(response.url, url)
-        links = response.xpath(
-            "//div[@id='panResults']/ul[@class='ulProducts']"
-            "/li/a/@href").extract()
+        links = response.xpath("//div[@class='productGrid']"
+                               "//li/a[@class='modal_link']"
+                               "/@href").extract()
         if not links:
             self.log("Found no product links.", DEBUG)
             return

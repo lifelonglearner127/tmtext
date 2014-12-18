@@ -1,12 +1,13 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
-
+import re
 import string
 
 from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    cond_set_value, \
+    cond_replace_value, cond_replace
 
 
 class BolProductsSpider(BaseProductsSpider):
@@ -41,13 +42,6 @@ class BolProductsSpider(BaseProductsSpider):
             conv=string.strip,
         )
 
-        cond_set(
-            product,
-            'price',
-            response.xpath(
-                "//span[@class='offer_price']/meta[@itemprop='price']/@content"
-            ).extract())
-
         j = response.xpath(
             "//div[contains(@class,'product_description')]/div"
             "/div[@class='content']/descendant::*[text()]/text()"
@@ -77,8 +71,25 @@ class BolProductsSpider(BaseProductsSpider):
                 pass
         if recommended_prods:
             product['related_products'] = {"recommended": recommended_prods}
-
+        self._price_from_html(response, product)
         return product
+
+    def _price_from_html(self, response, product):
+        css = '.product-price-bol [itemprop=price]::attr(content)'
+        cond_replace(product, 'price', response.css(css).extract())
+        cond_set(
+            product,
+            'price',
+            response.xpath(
+                "//span[@class='offer_price']/meta[@itemprop='price']/@content"
+            ).extract())
+
+        currency = response.css('[itemprop=priceCurrency]::attr(content)')
+        currency = currency.extract()[0] if currency else 'EUR'
+        price = product.get('price', '')
+        price = price.replace(',', '.')
+        if price and re.match(' *\d+\.?\d* *\Z', price):
+            cond_replace_value(product, 'price', Price(currency, price))
 
     def _scrape_total_matches(self, response):
         totals = response.xpath(

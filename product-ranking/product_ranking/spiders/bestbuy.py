@@ -1,33 +1,53 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 
-from scrapy.selector import Selector
-from scrapy.log import ERROR, WARNING
-
-from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.items import Price
+from product_ranking.spiders import cond_set, cond_replace_value
+from product_ranking.spiders.contrib.product_spider import ProductsSpider
 
 
-class BestBuyProductSpider(BaseProductsSpider):
+class BestBuyProductSpider(ProductsSpider):
     name = 'bestbuy_products'
     allowed_domains = ["bestbuy.com"]
 
     SEARCH_URL = "http://www.bestbuy.com/site/searchpage.jsp?_dyncharset=UTF-" \
-        "8&_dynSessConf=&id=pcat17071&type=page&sc=Global&cp=1&nrp=15&sp=&qp=" \
-        "&list=n&iht=y&usc=All+Categories&ks=960&st={search_term}"
+                 "8&_dynSessConf=&id=pcat17071&type=page&sc=Global&cp={page}" \
+                 "&nrp=15&sp=&qp=" \
+                 "&list=n&iht=y&usc=All+Categories&ks=960&st={search_term}"
 
-    def parse_product(self, response):
-        prod = response.meta['product']
+    def __init__(self, *args, **kwargs):
+        super(BestBuyProductSpider, self).__init__(*args, **kwargs)
+        self.url_formatter.defaults['page'] = 1
 
-        self._populate_from_schemaorg(response, prod)
+    def _total_matches_from_html(self, response):
+        matches = response.css('.ui-state-active [data-facet-value=All]::text')
+        if not matches:
+            return 0
+        matches = matches.extract()[0]
+        matches = re.search('\((\d+)\)', matches)
+        if not matches:
+            return
+        return int(matches.group(1))
 
-        self._populate_from_html(response, prod)
+    def _scrape_next_results_page_link(self, response):
+        next_link = response.css('.pager-next::attr(data-page-no)')
+        if not next_link:
+            return None
+        next_link = int(next_link.extract()[0])
+        search_term = response.meta['search_term']
+        return self.url_formatter.format(self.SEARCH_URL,
+                                         search_term=search_term,
+                                         page=next_link)
 
-        cond_set_value(prod, 'locale', 'en-US')  # Default locale.
+    def _fetch_product_boxes(self, response):
+        return response.css('.list-content .list-item')
 
-        return prod
+    def _link_from_box(self, box):
+        return box.css('::attr(data-url)').extract()[0]
+
+    def _populate_from_box(self, response, box, product):
+        return
 
     def _populate_from_schemaorg(self, response, product):
         product_tree = response.xpath("//*[@itemtype='http://schema.org/Product']")
@@ -72,6 +92,7 @@ class BestBuyProductSpider(BaseProductsSpider):
         ).extract())
 
     def _populate_from_html(self, response, product):
+        self._populate_from_schemaorg(response, product)
         title = response.css("#sku-title ::text").extract()[0]
         brand, _ = re.split(r'\s+-\s+', title, 1)
         cond_set(product, 'title', [title])
@@ -80,30 +101,13 @@ class BestBuyProductSpider(BaseProductsSpider):
         cond_set(product, 'upc', response.css("#sku-value ::text").extract())
         cond_set(product, 'model',
                  response.css("#model-value ::text").extract())
+        self._unify_price(product)
 
-    def _scrape_product_links(self, response):
-        links = response.xpath(
-            "//*[@itemtype='http://schema.org/Product']"
-            "/descendant::*[not (@itemtype)]//a[@itemprop='url']/@href"
-        ).extract()
-        if not links:
-            self.log("Found no product links.", ERROR)
-        for link in links:
-            yield link, SiteProductItem()
-
-    def _scrape_total_matches(self, response):
-        num_results = response.css(
-            "#searchstate > b:nth-child(1)::text").extract()
-        if num_results and num_results[0]:
-            return int(num_results[0])
-        else:
-            self.log("Failed to parse total number of matches.", level=ERROR)
-
-    def _scrape_next_results_page_link(self, response):
-        next_pages = response.css("a.next::attr(href)").extract()
-        next_page = None
-        if next_pages:
-            next_page = next_pages[0]
-            if len(next_pages) > 2:
-                self.log("Found more than two 'next page' links.", WARNING)
-        return next_page
+    def _unify_price(self, product):
+        price = product.get('price')
+        if price is None:
+            return
+        price_match = re.search('\$ *([, 0-9]+(?:\.[, 0-9]+)?)', price)
+        price = price_match.group(1)
+        price = ''.join(re.split('[ ,]+', price))
+        cond_replace_value(product, 'price', Price('USD', price))

@@ -3,7 +3,9 @@ from future_builtins import *
 
 import urlparse
 
-from product_ranking.items import SiteProductItem
+from scrapy.log import ERROR
+
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
@@ -27,6 +29,16 @@ class WalGreensProductsSpider(BaseProductsSpider):
         price = response.xpath('//b[@itemprop="price"]//text()').extract()
         if price:
             prod['price'] = price[0].strip()
+
+        if prod.get('price'):
+            if not '$' in prod['price']:
+                self.log('Unknown currency at %s' % response.url, level=ERROR)
+            else:
+                prod['price'] = Price(
+                    priceCurrency='USD',
+                    price=prod['price'].replace(',', '').replace(
+                        ' ', '').replace('$', '').strip()
+                )
 
         img_url = response.xpath(
             '//img[@id="main-product-image"]/@src').extract()

@@ -7,7 +7,7 @@ import string
 
 from scrapy.log import ERROR, DEBUG
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
@@ -51,6 +51,15 @@ class CarrefourProductsSpider(BaseProductsSpider):
                 'price',
                 product.css('div.sc_result_price::text').re('(\d.+)'),
             )
+            if item.get('price', None):
+                if not '€' in item['price']:
+                    self.log('Unknown currency at' % response.url)
+                else:
+                    item['price'] = Price(
+                        price=item['price'].replace(',', '').replace(
+                            '€', '').strip(),
+                        priceCurrency='EUR'
+                    )
 
             cond_set(
                 item,

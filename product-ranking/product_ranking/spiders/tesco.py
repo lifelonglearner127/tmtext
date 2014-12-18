@@ -6,7 +6,7 @@ import urlparse
 
 from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set_value
 
 
@@ -22,6 +22,8 @@ class TescoProductsSpider(BaseProductsSpider):
     name = 'tesco_products'
     allowed_domains = ["tesco.com"]
 
+    # TODO: change the currency if you're going to support different countries
+    #  (only UK and GBP are supported now)
     SEARCH_URL = "http://www.tesco.com/groceries/product/search/default.aspx" \
         "?searchBox={search_term}&newSort=true&search=Search"
 
@@ -88,6 +90,12 @@ class TescoProductsSpider(BaseProductsSpider):
 
             cond_set_value(prod, 'price', product_data.get('price'))
             cond_set_value(prod, 'image_url', product_data.get('mediumImage'))
+
+            if prod.get('price', None):
+                prod['price'] = Price(
+                    price=str(prod['price']).replace(',', '').strip(),
+                    priceCurrency='GBP'
+                )
 
             try:
                 brand, title = self.brand_from_title(product_data['name'])

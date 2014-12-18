@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
@@ -6,7 +8,7 @@ import urlparse
 
 from scrapy.log import ERROR, DEBUG
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
      cond_set, cond_set_value
 
@@ -52,6 +54,18 @@ class OcadoProductsSpider(BaseProductsSpider):
         cond_set(product, 'price', response.xpath(
             "//div[@id='bopRight']//meta[@itemprop='price']/@content"
         ).extract())
+
+        if product.get('price', None):
+            if isinstance(product['price'], str):
+                product['price'] = product['price'].decode('utf8')
+            if not u'£' in product['price']:
+                self.log('Unknown currency at %s' % response.url, level=ERROR)
+            else:
+                product['price'] = Price(
+                    priceCurrency='GBP',
+                    price=product['price'].replace(u'£', '').replace(
+                        ' ', '').replace(',', '').strip()
+                )
 
         img_url = response.xpath(
             "//ul[@id='galleryImages']/li[1]/a/@href"

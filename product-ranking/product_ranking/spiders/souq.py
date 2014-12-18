@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import ast
 import json
@@ -10,7 +9,7 @@ from scrapy.http import FormRequest
 from scrapy.log import DEBUG, INFO, ERROR
 from scrapy.selector import Selector
 
-from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     populate_from_open_graph, cond_set_value
 from product_ranking.spiders import FormatterWithDefaults
@@ -129,6 +128,17 @@ class SouqProductsSpider(BaseProductsSpider):
             conv=string.strip
 
         )
+
+        # unify price
+        currency = response.css('#item_price .currency::text') \
+            or response.css('#item_price .price-holder span::text')
+        price = product.get('price', '').replace(',', '')
+        if price.replace('.', '').isdigit() and currency:
+            currency = currency[0].extract()
+            try:
+                product['price'] = Price(currency, price)
+            except ValueError:
+                product['price'] = '%s %s' % (currency, price)
 
         cond_set(
             product,

@@ -11,7 +11,7 @@ setup(
     include_package_data=True,
     data_files=[(root, [os.path.join(root, f) for f in files])
          for root, _, files in itertools.chain(os.walk('train_captchas_data'),
-                                               os.walk('product-ranking/data'))],
+                                               os.walk('product_ranking/data'))],
     install_requires=[
         "Scrapy>=0.22",
     ],
