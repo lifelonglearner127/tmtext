@@ -1214,6 +1214,19 @@ class WalmartScraper(Scraper):
 
         return 1 if available else 0
 
+    def _in_stock_old(self):
+        """Extracts info on whether product is available to be
+        bought on the site, from any seller (marketplace or owned).
+        Works on old page design
+        Returns:
+            1/0 (available/not available)
+        """
+
+        sellers = self._seller_meta_from_tree()
+        available = any(sellers.values())
+
+        return 1 if available else 0
+
     def _owned(self):
         """Extracts info on whether product is ownedby Walmart.com.
         Uses functions that work on both old page design and new design.
@@ -1261,7 +1274,7 @@ class WalmartScraper(Scraper):
     def _in_stock(self):
         """Extracts info on whether product is available to be
         bought on the site, from any seller (marketplace or owned).
-        Works on new page design
+        Works on both old and new page design
         Returns:
             1/0 (available/not available)
         """
@@ -1269,11 +1282,16 @@ class WalmartScraper(Scraper):
         # assume new page version
         try:
             in_stock_new = self._in_stock_from_script()
-        except Exception, e:
+            return in_stock_new
+        except:
             in_stock_new = None
 
-        return in_stock_new
-        # TODO: add support for old page version
+        # assume old page design
+        if not in_stock_new:
+            in_stock_old = self._in_stock_old()
+
+        return in_stock_old
+
 
     def _version(self):
         """Determines if walmart page being read (and version of extractor functions
