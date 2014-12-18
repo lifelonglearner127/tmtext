@@ -15,8 +15,6 @@ from no_img_hash import fetch_bytes
 
 from lxml import html
 import time
-from crawlera_api_wrapper import CrawleraRequest
-import requests
 
 class Scraper():
 
@@ -166,9 +164,6 @@ class Scraper():
     def __init__(self, **kwargs):
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
-        self.crawlera = kwargs['crawlera']
-        if self.crawlera is not None:
-            self.crawlera = int(self.crawlera)
 
         current_date = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -263,43 +258,41 @@ class Scraper():
         Returns:
             lxml tree object
         """
-        if self.crawlera == 1:
-            cr = CrawleraRequest()
-            contents = cr.get_page(self.product_page_url)
+        
+        request = urllib2.Request(self.product_page_url)
+        # set user agent to avoid blocking
+        agent = ''
+        if self.bot_type == "google":
+            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
+            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
         else:
-            request = urllib2.Request(self.product_page_url)
-            # set user agent to avoid blocking
-            agent = ''
-            if self.bot_type == "google":
-                agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-            else:
-                agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
-            request.add_header('User-Agent', agent)
+            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+        request.add_header('User-Agent', agent)
 
-            for i in range(self.MAX_RETRIES):
+        for i in range(self.MAX_RETRIES):
+            try:
+                contents = urllib2.urlopen(request).read()
+
                 try:
-                    contents = urllib2.urlopen(request).read()
+                    self.tree_html = html.fromstring(contents.decode("utf8"))
+                except UnicodeError, e:
+                    # if string was not utf8, don't deocde it
+                    print "Warning creating html tree from page content: ", e.message
 
-                    try:
-                        self.tree_html = html.fromstring(contents.decode("utf8"))
-                    except UnicodeError, e:
-                        # if string was not utf8, don't deocde it
-                        print "Warning creating html tree from page content: ", e.message
+                    self.tree_html = html.fromstring(contents)
 
-                        self.tree_html = html.fromstring(contents)
+                # if we got it we can exit the loop and stop retrying
+                return
 
-                    # if we got it we can exit the loop and stop retrying
-                    return
+            except IncompleteRead, e:
+                pass
 
-                except IncompleteRead, e:
-                    pass
-
-                # try getting it again, without catching exception.
-                # if it had worked by now, it would have returned.
-                # if it still doesn't work, it will throw exception.
-                # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
+            # try getting it again, without catching exception.
+            # if it had worked by now, it would have returned.
+            # if it still doesn't work, it will throw exception.
+            # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
             contents = urllib2.urlopen(request).read()
-        self.tree_html = html.fromstring(contents)
+            self.tree_html = html.fromstring(contents)
             
 
     # Extract product info given a list of the type of info needed.
@@ -341,16 +334,6 @@ class Scraper():
                 results = None
 
             results_dict[info] = results
-
-        #
-        # Add the following calculations to all scrapes
-        #
-        
-        results_dict['img_hashes'] = []
-        
-        if 'image_urls' in results_dict and results_dict['image_urls'] is not None:
-            for image_url in results_dict['image_urls']:
-                results_dict['img_hashes'].append( str(MurmurHash.hash(fetch_bytes(image_url))))
 
         return results_dict
 
