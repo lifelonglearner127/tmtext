@@ -3,23 +3,6 @@
 import unittest
 import requests
 from crawler_service import SUPPORTED_SITES
-from extract_walmart_data import WalmartScraper
-from extract_tesco_data import TescoScraper
-from extract_amazon_data import AmazonScraper
-from extract_pgestore_data import PGEStore
-from extract_wayfair_data import WayfairScraper
-from extract_bestbuy_data import BestBuyScraper
-from extract_kmart_data import KMartScraper
-from extract_ozon_data import OzonScraper
-from extract_vitadepot_data import VitadepotScraper
-from extract_argos_data import ArgosScraper
-from extract_homedepot_data import HomeDepotScraper
-from extract_statelinetack_data import StateLineTackScraper
-from extract_impactgel_data import ImpactgelScraper
-from extract_chicksaddlery_data import ChicksaddleryScraper
-from extract_bhinneka_data import BhinnekaScraper
-from extract_maplin_data import MaplinScraper
-from crawler_service import SUPPORTED_SITES
 
 
 class ServiceScraperTest(unittest.TestCase):
