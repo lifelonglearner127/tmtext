@@ -4,6 +4,7 @@ import sqlite3
 import os
 import datetime
 import re
+import web_runner.db
 
 LOG = logging.getLogger(__name__)
 
@@ -15,11 +16,9 @@ Load balancer module to handle request on Web Runner REST Server
 
 '''
 TODO and problems to solve:
-. Write all pydocs
 . documentation
 . There's a memory leak
 . persistence
-. Logging
 '''
 
 def getLB(method, **kwargs):
@@ -28,7 +27,7 @@ def getLB(method, **kwargs):
     kwargs are the custom LB method parameters
     '''
     if method == LB_ROUND_ROBIN:
-        return LBRoundRobin(kwargs)
+        return LBRoundRobin(**kwargs)
 
 
 def getLB_from_config(config):
@@ -39,6 +38,7 @@ def getLB_from_config(config):
     except KeyError:
         raise Exception("Load Balancer scheduler not in configuration")
 
+    lb_db_file = config.get('lb.db', None)
 
     if lb_schedule_conf == 'round_robin':
         lb_schedule = LB_ROUND_ROBIN
@@ -54,7 +54,7 @@ def getLB_from_config(config):
                 server = LBServer(*re_output.group(1,3))
                 lb_servers.append(server)
 
-        kwargs = {'servers': lb_servers}
+        kwargs = {'servers': lb_servers, 'db': lb_db_file}
     else:
         raise Exception("Load Balancer scheduler %s not available" %
           lb_schedule_conf)
@@ -69,9 +69,20 @@ class LBServer(object):
       . host
       . port
     '''
-    def __init__(self, host, port=None):
-        self.host = host
-        self.port = port
+    def __init__(self, host=None, port=None, serial=None):
+        if serial:
+            (host, port) = serial.split('|', 1)
+            self.host = host
+            if port:
+                self.port = int(port)
+        else:
+            self.host = host
+            self.port = port
+
+    def serialize(self):
+        host = self.host if self.host else ""
+        port = str(self.port) if self.port else ""
+        return "%s|%s" % (host, port)
 
 
 class LBInterface(object):
@@ -83,11 +94,16 @@ class LBInterface(object):
     server assigned for the task.
     '''
     
-    def __init__(self, method, servers):
+    def __init__(self, method, servers, db=None):
         self.lbMethod = method
         self.servers = servers
         self.ids = {}
         self.ids_date = {}
+        self.lbdb = None
+
+        if db:
+            self.lbdb = web_runner.db.Lbdb(db, recreate=False)
+            self.lbdb.create_dbstructure()
         
     def get_new_server(self, request):
         '''Method to be extended'''
@@ -95,16 +111,31 @@ class LBInterface(object):
 
     def set_id(self, id, server):
         '''Relate an id with a specific server'''
-        self.ids[id] = server
-        self.ids_date[id] = [datetime.datetime.utcnow()]
+
+        if self.lbdb:
+            # Use the LB DB
+            self.lbdb.set_rb_id(id, server.serialize())
+        else:
+            # Don't use the db
+            self.ids[id] = server
+            self.ids_date[id] = [datetime.datetime.utcnow()]
 
     def get_id(self, id):
         '''Get the server related with an id'''
-        try:
-            server = self.ids[id]
-            self.ids_date[id].append(datetime.datetime.utcnow())
-        except KeyError:
-            server = None
+        if self.lbdb:
+            # Use the DB
+            server_str = self.lbdb.get_rb_id(id)
+            if server_str:
+                server = LBServer(serial=server_str)
+            else:
+                server = None
+        else:
+            # Use the memory
+            try:
+                server = self.ids[id]
+                self.ids_date[id].append(datetime.datetime.utcnow())
+            except KeyError:
+                server = None
 
         return server
 
@@ -113,8 +144,9 @@ class LBInterface(object):
 class LBRoundRobin(LBInterface):
     '''LB class that implements Round Robin for Web Runner RESP API'''
 
-    def __init__(self, servers):
-        LBInterface.__init__(self, 'RoundRobin', **servers)
+    def __init__(self, servers, db=None):
+        LBInterface.__init__(self, 'RoundRobin', servers, db)
+
         self.counter = 0
 
     def get_new_server(self, request):
