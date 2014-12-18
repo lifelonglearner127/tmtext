@@ -53,11 +53,8 @@ SUPPORTED_SITES = {
                     "bhinneka" : BhinnekaScraper,
                     "maplin" : MaplinScraper,
                     "hersheysstore" : HersheysScraper,
-<<<<<<< HEAD
+                    "target" : TargetScraper,
                     "chicago" : ChicagoScraper
-=======
-                    "target" : TargetScraper
->>>>>>> cb829c920bd75e7617a690db9b9f2425b5823541
                     }
 
 # add logger
