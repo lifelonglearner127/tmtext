@@ -108,7 +108,8 @@ class MaplinScraper(Scraper):
         return len(image_urls)
 
     def _video_urls(self):
-        return None
+        video_url = self.tree_html.xpath("//ul[@id='carousel_alternate']//a[@class='gallery-video']/@href")
+        return video_url
 
     def _video_count(self):
         urls = self._video_urls()
