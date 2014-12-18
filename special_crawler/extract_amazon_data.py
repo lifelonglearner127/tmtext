@@ -314,6 +314,24 @@ class AmazonScraper(Scraper):
 
         return None
 
+    def _in_stock(self):
+        in_stock = self.tree_html.xpath('//div[contains(@id, "availability")]//text()')
+        in_stock = " ".join(in_stock)
+        if 'currently unavailable' in in_stock.lower():
+            return 0
+
+        in_stock = self.tree_html.xpath('//div[contains(@id, "outOfStock")]//text()')
+        in_stock = " ".join(in_stock)
+        if 'currently unavailable' in in_stock.lower():
+            return 0
+
+        in_stock = self.tree_html.xpath("//div[@id='buyBoxContent']//text()")
+        in_stock = " ".join(in_stock)
+        if 'sign up to be notified when this item becomes available' in in_stock.lower():
+            return 0
+
+        return 1
+
     def _in_stores_only(self):
         return None
 
@@ -440,6 +458,7 @@ class AmazonScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
+        "in_stock" : _in_stock, \
         "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
         "owned" : _owned, \
