@@ -1196,6 +1196,24 @@ class WalmartScraper(Scraper):
         else:
             return 0
 
+    # ! may throw exception if not found
+    def _in_stock_from_script(self):
+        """Extracts info on whether product is available to be
+        bought on the site, from any seller (marketplace or owned).
+        Works on new page design
+        Returns:
+            1/0 (available/not available)
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        available = pinfo_dict["analyticsData"]["onlineAvail"]
+
+        return 1 if available else 0
+
     def _owned(self):
         """Extracts info on whether product is ownedby Walmart.com.
         Uses functions that work on both old page design and new design.
@@ -1239,6 +1257,23 @@ class WalmartScraper(Scraper):
             return self._marketplace_meta_from_tree()
 
         return marketplace_new
+
+    def _in_stock(self):
+        """Extracts info on whether product is available to be
+        bought on the site, from any seller (marketplace or owned).
+        Works on new page design
+        Returns:
+            1/0 (available/not available)
+        """
+
+        # assume new page version
+        try:
+            in_stock_new = self._in_stock_from_script()
+        except Exception, e:
+            in_stock_new = None
+
+        return in_stock_new
+        # TODO: add support for old page version
 
     def _version(self):
         """Determines if walmart page being read (and version of extractor functions
@@ -1329,6 +1364,7 @@ class WalmartScraper(Scraper):
         "product_title" : _product_name_from_tree, \
         "owned": _owned, \
         "marketplace": _marketplace, \
+        "in_stock": _in_stock, \
         "review_count": _nr_reviews, \
         "average_review": _avg_review, \
         "max_review" : _max_review, \
