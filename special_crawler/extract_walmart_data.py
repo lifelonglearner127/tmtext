@@ -1212,6 +1212,25 @@ class WalmartScraper(Scraper):
 
         return 1 if available else 0
 
+    # ! may throw exception if not found
+    def _marketplace_sellers_from_script(self):
+        """Extracts list of marketplace sellers for this product.
+        Works on new page version.
+        Returns:
+            list of strings representing marketplace sellers,
+            or None if none found / not relevant
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
+        sellers = map(lambda d: d["sellerName"], sellers_dict)
+
+        return sellers
+
 
     # ! may throw exception if not found
     def _in_stock_from_script(self):
@@ -1288,6 +1307,31 @@ class WalmartScraper(Scraper):
             return self._marketplace_meta_from_tree()
 
         return marketplace_new
+
+    def _marketplace_sellers(self):
+        """Extracts list of marketplace sellers for this product
+        Works for both old and new page version
+        Returns:
+            list of strings representing marketplace sellers,
+            or None if none found / not relevant
+        """
+
+        # assume new page version
+        try:
+            sellers = self._marketplace_sellers_from_script()
+            # filter out walmart
+            sellers = filter(lambda s: s!="Walmart.com", sellers)
+            return sellers if sellers else None
+        except:
+            sellers = None
+
+        if not sellers:
+            # assume old page version
+            sellers = self._seller_meta_from_tree().keys()
+            # filter out walmart
+            sellers = filter(lambda s: s!="Walmart.com", sellers)
+            return sellers if sellers else None
+
 
     def _in_stock(self):
         """Extracts info on whether product is available to be
@@ -1416,6 +1460,7 @@ class WalmartScraper(Scraper):
         "owned_out_of_stock": _owned_out_of_stock, \
         "in_stores" : _stores_available_from_script, \
         "marketplace": _marketplace, \
+        "marketplace_sellers" : _marketplace_sellers, \
         "in_stock": _in_stock, \
         "review_count": _nr_reviews, \
         "average_review": _avg_review, \
