@@ -191,7 +191,7 @@ class Scraper():
         # TODO: do this more efficiently?
         for key in list(self.ALL_DATA_TYPES.keys()):
             if key not in self.BASE_DATA_TYPES:
-                print "*******EXTRA data type: ", key
+#                print "*******EXTRA data type: ", key
                 del self.ALL_DATA_TYPES[key]
 
         # Set fields for error response
