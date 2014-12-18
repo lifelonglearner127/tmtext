@@ -370,6 +370,9 @@ def setup_cron():
     """
     Setup cron tasks, for now only log compression
     """
+    orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
+    env.user, env.password, env.key_filename = \
+        SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
     cron_file = '/etc/cron.d/compresslogs'
     username = 'web_runner'
     homedir = '/home/web_runner'
@@ -383,12 +386,16 @@ def setup_cron():
                          user=username, home=homedir, repo=repopath, script=scriptname
                      ),
                      use_sudo=True)
-
+    env.user, env.password, env.key_filename = \
+        orig_user, orig_passw, orig_cert
 
 def setup_swap():
     """
     Create and enable swap, 8G
     """
+    orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
+    env.user, env.password, env.key_filename = \
+        SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
     swap_file = '/mnt/swapfile'
 #    with settings(warn_only=True):
     result = sudo('/sbin/swapon -s')
@@ -404,6 +411,8 @@ def setup_swap():
             sudo('chown root.root {swap}'.format(swap=swap_file))
     else:
         puts(green('Swap already enabled'))
+    env.user, env.password, env.key_filename = \
+        orig_user, orig_passw, orig_cert
 
 
 def configure():
@@ -412,8 +421,7 @@ def configure():
     _configure_scrapyd()
     _configure_web_runner()
     _configure_web_runner_web()
-    setup_swap()
-    setup_cron()
+
 
 
 def _install_web_runner():
@@ -531,6 +539,8 @@ def _common_tasks():
     setup_users()
     setup_packages()
     setup_tmux()
+    setup_swap()
+    setup_cron()
 
 
 def deploy_scrapyd(restart_scrapyd=False, branch='master'):
