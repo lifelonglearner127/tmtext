@@ -25,7 +25,7 @@ class ServiceScraperTest(unittest.TestCase):
             print e
 
         # service address
-        self.address = "http://localhost/get_data?url=%s"
+        self.address = "http://localhost:5000/get_data?url=%s"
 
     # template function:
     # test all keys are in the response for simple (all-data) request
@@ -233,6 +233,18 @@ class ServiceScraperTest(unittest.TestCase):
     def test_homedepot_specificdata(self):
         for url in self.urls_by_scraper["homedepot"]:
             self._test_specificdata("homedepot", url)
+
+    # test all keys are in the response for simple (all-data) request for homedepot
+    # (using template function)
+    def test_ozon_alldata(self):
+        for url in self.urls_by_scraper["ozon"]:
+            self._test_alldata("ozon", url)
+
+    # test requests for each specific type of data for homedepot
+    # (using template function)
+    def test_ozon_specificdata(self):
+        for url in self.urls_by_scraper["ozon"]:
+            self._test_specificdata("ozon", url)
 
 if __name__=='__main__':
     unittest.main()
