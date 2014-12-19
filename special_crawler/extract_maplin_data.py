@@ -109,6 +109,8 @@ class MaplinScraper(Scraper):
 
     def _video_urls(self):
         video_url = self.tree_html.xpath("//ul[@id='carousel_alternate']//a[@class='gallery-video']/@href")
+        if len(video_url) == 0:
+            return None
         return video_url
 
     def _video_count(self):
@@ -125,6 +127,8 @@ class MaplinScraper(Scraper):
                 pass
             else:
                 pdf_hrefs.append("http://www.maplin.co.uk%s" % pdf.attrib['href'])
+        if len(pdf_hrefs) == 0:
+            return None
         return pdf_hrefs
 
     def _pdf_count(self):
