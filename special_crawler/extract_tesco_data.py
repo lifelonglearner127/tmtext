@@ -207,10 +207,11 @@ class TescoScraper(Scraper):
                 contents = requests.get(url, headers=h).text
                 tree = html.fromstring(contents)
                 image_url = self._image_urls(tree)
-          #      print '\n\n\nImage URL:', image_url, '\n\n\n'
-                img_list.extend(image_url)
+            #    print '\n\n\nImage URL:', image_url, '\n\n\n'
+                if image_url != None:
+                    img_list.extend(image_url)
             if len(img_list) == 2:
-                return img_list[0] == img_list[1]
+                if img_list[0] == img_list[1]: return 1
             return 0
 
         for h in [mobile_headers, pc_headers]:
@@ -236,7 +237,15 @@ class TescoScraper(Scraper):
             image_url = tree.xpath("//div[@class='productImage']//img//@src")
             if len(image_url)==0:
                 image_url = tree.xpath("//div[@id='productImages']//ul[@class='productImagesList']//a//@href")
+            contents = tree.xpath("//script[@id=\"zoomedProductImageTemplate\"]//text()")
+            if len(contents) > 0:
+                imgtree = html.fromstring(contents[0])
+                image_urlz = imgtree.xpath("//ul[@class='zoomedImagesList']//img//@src")
+                if len(image_urlz) > len(image_url): image_url = image_urlz
             if len(image_url)==0: return None
+            for s in image_url:
+                if s.find('noimage')>0:
+                    image_url.remove(s)
             return image_url
         head = 'http://tesco.scene7.com/is/image/'
         image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")
