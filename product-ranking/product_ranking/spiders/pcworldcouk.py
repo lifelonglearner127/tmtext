@@ -35,6 +35,7 @@ class PcworldcoukProductsSpider(BaseProductsSpider):
     }
 
     def __init__(self, sort_mode=None, *args, **kwargs):
+        kwargs['searchterms_str'] = urllib.quote(kwargs['searchterms_str'])
         if sort_mode:
             if sort_mode not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
