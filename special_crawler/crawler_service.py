@@ -18,6 +18,7 @@ from extract_impactgel_data import ImpactgelScraper
 from extract_chicksaddlery_data import ChicksaddleryScraper
 from extract_bhinneka_data import BhinnekaScraper
 from extract_maplin_data import MaplinScraper
+from extract_target_data import TargetScraper
 from extract_chicago_data import ChicagoScraper
 
 from extract_hersheys_data import HersheysScraper
@@ -52,6 +53,7 @@ SUPPORTED_SITES = {
                     "bhinneka" : BhinnekaScraper,
                     "maplin" : MaplinScraper,
                     "hersheysstore" : HersheysScraper,
+                    "target" : TargetScraper,
                     "chicago" : ChicagoScraper
                     }
 

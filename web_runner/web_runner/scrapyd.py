@@ -9,6 +9,7 @@ import os.path
 import time
 import thread
 import urllib
+import bz2
 
 import enum
 import pyramid.httpexceptions as exc
@@ -17,6 +18,7 @@ import requests.exceptions
 import repoze.lru
 
 from .util import string_from_local2utc as local2utc
+from .util import file_is_bzip2
 
 
 LOG = logging.getLogger(__name__)
@@ -121,8 +123,12 @@ class ScrapydJobHelper(object):
 
     def retrieve_job_data(self, jobid):
         """Returns a file like object with the job's result."""
+        job_output_file = self.retrieve_job_data_fn(jobid)
         try:
-            return open(self.retrieve_job_data_fn(jobid))
+            if file_is_bzip2(job_output_file):
+                return bz2.BZ2File(job_output_file)
+            else:
+                return open(job_output_file)
         except IOError as e:
             msg = "Failed to open data file: %s" % e
             LOG.exception(msg)

@@ -26,7 +26,7 @@ class ChicagoScraper(Scraper):
 
     def check_url_format(self):
         #for ex: https://chicago.doortodoororganics.com/shop/products/rudis-white-hamburger-buns
-        m = re.match(r"^https://chicago\.doortodoororganics\.com/shop/products/([a-zA-Z0-9\-_]+)$", self.product_page_url)
+        m = re.match(r"^http://chicago\.doortodoororganics\.com/shop/products/([a-zA-Z0-9\-_]+)$", self.product_page_url)
         return not not m
 
     ##########################################
