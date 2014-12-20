@@ -22,7 +22,7 @@ class ChicagoScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.maplin.co.uk/p/<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://chicago.doortodoororganics.com/shop/products/([a-zA-Z0-9\-_]+)"
 
     def check_url_format(self):
         #for ex: https://chicago.doortodoororganics.com/shop/products/rudis-white-hamburger-buns
@@ -63,11 +63,8 @@ class ChicagoScraper(Scraper):
 
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='attributes-row']//span//text()")
-        
-        all_features_text = "\n".join(rows)
-
         # return dict with all features info
-        return all_features_text
+        return rows
 
     def _feature_count(self):
         rows = self.tree_html.xpath("//div[@class='attributes-row']//span//text()")
@@ -129,6 +126,8 @@ class ChicagoScraper(Scraper):
                 pass
             else:
                 pdf_hrefs.append(pdf.attrib['href'])
+        if len(pdf_hrefs) == 0:
+            return None
         return pdf_hrefs
 
     def _pdf_count(self):
@@ -160,13 +159,13 @@ class ChicagoScraper(Scraper):
         script = " ".join(script)
         m = re.findall(r"setAvgRating\(([0-9\.]+)\);", script)
         average_review = m[0]
-        return average_review
+        return float(average_review)
 
     def _review_count(self):
         try:
             review_count = self.tree_html.xpath("//div[@itemprop='ratingValue']//@title")[0]
             m = re.findall(r"[0-9]+", '1 people rated this')
-            return m[0]
+            return int(m[0])
         except IndexError:
             return 0
 
@@ -215,13 +214,6 @@ class ChicagoScraper(Scraper):
 
     def _category_name(self):
         return self._categories()[-1]
-
-    def load_universal_variable(self):
-        js_content = ' '.join(self.tree_html.xpath('//script//text()'))
-
-        universal_variable = {}
-        universal_variable["manufacturer"] = re.findall(r'"manufacturer": "(.*?)"', js_content)[0]
-        return universal_variable
 
     def _brand(self):
         return self.tree_html.xpath("//a[@itemprop='brand']//text()")[0].strip()
