@@ -213,10 +213,10 @@ def setup_packages():
     env.user, env.password, env.key_filename = \
         SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
 
+    sudo('apt-get update --fix-missing')
     cuisine.package_ensure('python-software-properties')
     # TODO: verify if the repo must be added
     #cuisine.repository_ensure_apt('ppa:fkrull/deadsnakes')
-    sudo('apt-get update')
     cuisine.package_ensure('python3.4 python3.4-dev')
     cuisine.package_ensure('python-dev')
     cuisine.package_ensure('python-pip python3-pip')
