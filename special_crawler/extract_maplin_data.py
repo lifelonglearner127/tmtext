@@ -70,7 +70,7 @@ class MaplinScraper(Scraper):
                 map(lambda cell: cell.strip(), row)\
                 ), \
             cells)
-        all_features_text = "\n".join(rows_text)
+        all_features_text = rows_text
 
         # return dict with all features info
         return all_features_text
@@ -79,7 +79,9 @@ class MaplinScraper(Scraper):
         rows = self.tree_html.xpath("//table[@class='product-specs']//tr")
         cells = map(lambda row: row.xpath(".//*//text()"), rows)
         # list of text in each row
-        return len(cells) - 1
+        if len(cells) > 0:
+            return len(cells) - 1
+        return 0
 
     def _model_meta(self):
         return None
@@ -90,6 +92,8 @@ class MaplinScraper(Scraper):
 
     def _long_description(self):
         long_description = "\n".join(self.tree_html.xpath("//div[@class='productDescription']//text()")).strip()
+        script = "\n".join(self.tree_html.xpath("//div[@class='productDescription']//script//text()")).strip()
+        long_description = long_description.replace(script, "")
         return long_description
 
     ##########################################
