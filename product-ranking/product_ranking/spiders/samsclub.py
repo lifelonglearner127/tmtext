@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-#
+
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import re
 import string
 import urllib
 
@@ -134,20 +137,25 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
         price = response.xpath(
             "//div[@class='moneyBoxBtn']/a"
-            "/span[contains(@class,'onlinePrice')]/text()"
-            ).re(FLOATING_POINT_RGEX)
+            "/span[contains(@class,'onlinePrice')]"
+            "/text()").re(FLOATING_POINT_RGEX)
 
         if not price:
             pr = response.xpath(
-                '//div[contains(@class,"pricingInfo")]//span/text()').extract()
+                "//div[contains(@class,'pricingInfo')]//li"
+                "/span/text()").extract()
             if pr:
                 price = "".join(pr[:-1]) + "." + pr[-1]
-                price = [price.replace('$', '')]
+                m = re.search(FLOATING_POINT_RGEX, price)
+                if m:
+                    price = [m.group(0)]
+                else:
+                    price = None
 
             if not price:
                 price = response.xpath(
-                        "//span[contains(@class,'onlinePrice')]/text()").re(FLOATING_POINT_RGEX)
-
+                    "//span[contains(@class,'onlinePrice')]"
+                    "/text()").re(FLOATING_POINT_RGEX)
         if price:
             product['price'] = Price(price=price[0],
                                      priceCurrency='USD')
@@ -188,7 +196,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         if response.url.find('ajaxSearch') > 0:
-            links = response.xpath("//body/li/a/@href").extract()
+            links = response.xpath("//body/ul/li/a/@href").extract()
         else:
             links = response.xpath(
                 "//ul[contains(@class,'shelfItems')]"
@@ -208,6 +216,5 @@ class SamsclubProductsSpider(BaseProductsSpider):
             return SamsclubProductsSpider._NEXT_PAGE_URL.format(
                 search_term=response.meta['search_term'],
                 offset=response.meta['products_per_page'] + 1,
-                prods_per_page=num_items,
-            )
+                prods_per_page=num_items)
         return None

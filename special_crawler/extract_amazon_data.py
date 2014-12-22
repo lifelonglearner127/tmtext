@@ -23,7 +23,16 @@ class AmazonScraper(Scraper):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        '''Overwrites parent class method that determines if current page
+        is not a product page.
+        Currently for Amazon it detects captcha validation forms,
+        and returns True if current page is one.
+        '''
 
+        if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
+            return True
+        return False
 
 
     ##########################################
