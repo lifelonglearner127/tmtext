@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+
 import urllib
 import re
 import sys
@@ -22,7 +23,16 @@ class AmazonScraper(Scraper):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        '''Overwrites parent class method that determines if current page
+        is not a product page.
+        Currently for Amazon it detects captcha validation forms,
+        and returns True if current page is one.
+        '''
 
+        if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
+            return True
+        return False
 
 
     ##########################################
@@ -300,6 +310,24 @@ class AmazonScraper(Scraper):
 
         return None
 
+    def _in_stock(self):
+        in_stock = self.tree_html.xpath('//div[contains(@id, "availability")]//text()')
+        in_stock = " ".join(in_stock)
+        if 'currently unavailable' in in_stock.lower():
+            return 0
+
+        in_stock = self.tree_html.xpath('//div[contains(@id, "outOfStock")]//text()')
+        in_stock = " ".join(in_stock)
+        if 'currently unavailable' in in_stock.lower():
+            return 0
+
+        in_stock = self.tree_html.xpath("//div[@id='buyBoxContent']//text()")
+        in_stock = " ".join(in_stock)
+        if 'sign up to be notified when this item becomes available' in in_stock.lower():
+            return 0
+
+        return 1
+
     def _in_stores_only(self):
         return None
 
@@ -426,6 +454,7 @@ class AmazonScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
+        "in_stock" : _in_stock, \
         "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
         "owned" : _owned, \
