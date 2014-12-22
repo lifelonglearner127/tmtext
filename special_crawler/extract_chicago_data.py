@@ -22,11 +22,11 @@ class ChicagoScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://chicago.doortodoororganics.com/shop/products/([a-zA-Z0-9\-_]+)"
+    INVALID_URL_MESSAGE = "Expected URL format is https://chicago.doortodoororganics.com/shop/products/([a-zA-Z0-9\-_]+)"
 
     def check_url_format(self):
         #for ex: https://chicago.doortodoororganics.com/shop/products/rudis-white-hamburger-buns
-        m = re.match(r"^http://chicago\.doortodoororganics\.com/shop/products/([a-zA-Z0-9\-_]+)$", self.product_page_url)
+        m = re.match(r"^https://chicago\.doortodoororganics\.com/shop/products/([a-zA-Z0-9\-_]+)$", self.product_page_url)
         return not not m
 
     ##########################################
@@ -164,7 +164,7 @@ class ChicagoScraper(Scraper):
     def _review_count(self):
         try:
             review_count = self.tree_html.xpath("//div[@itemprop='ratingValue']//@title")[0]
-            m = re.findall(r"[0-9]+", '1 people rated this')
+            m = re.findall(r"[0-9]+", review_count)
             return int(m[0])
         except IndexError:
             return 0
@@ -179,7 +179,7 @@ class ChicagoScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//span[@itemprop='price']//text()")[0]
+        price = self.tree_html.xpath("//meta[starts-with(@property,'og:price:amount')]/@content")[0].strip()
         return price
 
     def _in_stores_only(self):
