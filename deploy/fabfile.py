@@ -225,6 +225,7 @@ def setup_packages():
     cuisine.package_ensure('libssl-dev')
     cuisine.package_ensure('git')
     cuisine.package_ensure('tmux')
+    cuisine.package_ensure('mc htop iotop nano')  # just for convenience
     sudo('pip install virtualenv --upgrade')
 
     env.user, env.password, env.key_filename = \
