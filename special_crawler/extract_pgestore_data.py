@@ -193,9 +193,6 @@ class PGEStore(Scraper):
     def _no_image(self):
         return None
 
-
-
-
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
