@@ -20,6 +20,7 @@ from extract_bhinneka_data import BhinnekaScraper
 from extract_maplin_data import MaplinScraper
 from extract_target_data import TargetScraper
 from extract_chicago_data import ChicagoScraper
+from extract_samsclub_data import SamsclubScraper
 
 from extract_hersheys_data import HersheysScraper
 from urllib2 import HTTPError
@@ -54,7 +55,8 @@ SUPPORTED_SITES = {
                     "maplin" : MaplinScraper,
                     "hersheysstore" : HersheysScraper,
                     "target" : TargetScraper,
-                    "chicago" : ChicagoScraper
+                    "chicago" : ChicagoScraper,
+                    "samsclub" : SamsclubScraper
                     }
 
 # add logger
