@@ -1,11 +1,15 @@
+# -*- coding: utf-8 -*-#
+
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import re
 import string
 import urllib
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider
+from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.http import Request, FormRequest
 from scrapy.log import DEBUG, ERROR
@@ -131,30 +135,30 @@ class SamsclubProductsSpider(BaseProductsSpider):
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='plImageHolder']/img/@src").extract())
 
-        cond_set(
-            product,
-            'price',
-            response.xpath(
-                "//div[@class='moneyBoxBtn']/a"
-                "/span[contains(@class,'onlinePrice')]/text()"
-            ).extract())
+        price = response.xpath(
+            "//div[@class='moneyBoxBtn']/a"
+            "/span[contains(@class,'onlinePrice')]"
+            "/text()").re(FLOATING_POINT_RGEX)
 
-        pr = response.xpath(
-            "//div[contains(@class,'pricingInfo')]"
-            "/ul/li/span/text()").extract()
-        if not pr:
+        if not price:
             pr = response.xpath(
-                "//div[contains(@class,'pricingInfo')]"
-                "/div/ul/li/span/text()").extract()
-        if pr:
-            price = "".join(pr[:-1]) + "." + pr[-1]
-            cond_set_value(product, 'price', price)
+                "//div[contains(@class,'pricingInfo')]//li"
+                "/span/text()").extract()
+            if pr:
+                price = "".join(pr[:-1]) + "." + pr[-1]
+                m = re.search(FLOATING_POINT_RGEX, price)
+                if m:
+                    price = [m.group(0)]
+                else:
+                    price = None
 
-        cond_set(
-            product,
-            'price',
-            response.xpath(
-                "//span[contains(@class,'onlinePrice')]/text()").extract())
+            if not price:
+                price = response.xpath(
+                    "//span[contains(@class,'onlinePrice')]"
+                    "/text()").re(FLOATING_POINT_RGEX)
+        if price:
+            product['price'] = Price(price=price[0],
+                                     priceCurrency='USD')
 
         cond_set(
             product,
@@ -163,19 +167,11 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 "//div[@itemprop='description']").extract(),
         )
 
-        productid = response.xpath(
-            "//span[@itemprop='productID']/text()").extract()
-        if productid:
-            productid = productid[0].strip().replace('#:', '', 1)
-            try:
-                product['upc'] = int(productid)
-            except ValueError:
-                self.log("Failed to parse upc number of matches: %r" % (
-                    productid), ERROR)
-
         cond_set(product, 'model', response.xpath(
             "//span[@itemprop='model']/text()").extract(),
             conv=string.strip)
+        if product.get('model', '').strip().lower() == 'null':
+            product['model'] = ''
 
         product['locale'] = "en-US"
 
@@ -200,7 +196,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         if response.url.find('ajaxSearch') > 0:
-            links = response.xpath("//body/li/a/@href").extract()
+            links = response.xpath("//body/ul/li/a/@href").extract()
         else:
             links = response.xpath(
                 "//ul[contains(@class,'shelfItems')]"
@@ -220,6 +216,5 @@ class SamsclubProductsSpider(BaseProductsSpider):
             return SamsclubProductsSpider._NEXT_PAGE_URL.format(
                 search_term=response.meta['search_term'],
                 offset=response.meta['products_per_page'] + 1,
-                prods_per_page=num_items,
-            )
+                prods_per_page=num_items)
         return None
