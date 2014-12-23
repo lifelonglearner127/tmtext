@@ -18,6 +18,7 @@ from extract_impactgel_data import ImpactgelScraper
 from extract_chicksaddlery_data import ChicksaddleryScraper
 from extract_bhinneka_data import BhinnekaScraper
 from extract_maplin_data import MaplinScraper
+from extract_samsclub_data import SamsclubScraper
 
 from extract_hersheys_data import HersheysScraper
 from urllib2 import HTTPError
@@ -50,7 +51,8 @@ SUPPORTED_SITES = {
                     "chicksaddlery" : ChicksaddleryScraper,
                     "bhinneka" : BhinnekaScraper,
                     "maplin" : MaplinScraper,
-                    "hersheysstore" : HersheysScraper
+                    "hersheysstore" : HersheysScraper,
+                    "samsclub" : SamsclubScraper
                     }
 
 # add logger
