@@ -16,9 +16,8 @@ Load balancer module to handle request on Web Runner REST Server
 
 '''
 TODO and problems to solve:
-. documentation
 . There's a memory leak
-. persistence
+. db maitenance
 '''
 
 def getLB(method, **kwargs):
