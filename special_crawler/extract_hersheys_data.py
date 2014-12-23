@@ -22,7 +22,25 @@ class HersheysScraper(Scraper):
         m = re.match(r"^http://www.hersheysstore.com/product/([a-zA-Z0-9\-])", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
 
+        try:
+            page_title = self.tree_html.xpath("//title/text()")[0]
+        except Exception:
+            page_title = None
+            return True
+        if page_title.find("Not Found")>=0:
+            return True
+
+        else:
+            return False
 
 
     ##########################################
@@ -128,6 +146,8 @@ class HersheysScraper(Scraper):
         if tree == None:
             tree = self.tree_html
         image_url = self.tree_html.xpath('//ul[@class="slides cf"]//a/@href')
+        if len(image_url)==0:
+            image_url = self.tree_html.xpath('//ul[@class="slides cf"]//img/@src')
         return image_url
 
 
