@@ -33,8 +33,9 @@ class AddSearchTermInTitleFields(object):
 
     @staticmethod
     def process_item(item, spider):
-        AddSearchTermInTitleFields.add_search_term_in_title_fields(
-            item, item['search_term'])
+        if not item.has_key("is_single_result"):
+            AddSearchTermInTitleFields.add_search_term_in_title_fields(
+                item, item['search_term'])
 
         return item
 
