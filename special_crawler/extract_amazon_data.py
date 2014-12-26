@@ -414,7 +414,7 @@ class AmazonScraper(Scraper):
         return None
 
     def _owned(self):
-        a = self.tree_html.xpath("//*[contains(text(),'sold by Amazon.com')]")
+        a = self.tree_html.xpath("//*[contains(text(),'old by Amazon') ]")
         if len(a)>0 : return 1
         s = self._seller_from_tree()
         return s['owned']
@@ -423,8 +423,9 @@ class AmazonScraper(Scraper):
         return None
 
     def _marketplace(self):
-        a = self.tree_html.xpath("//*[contains(text(),'sold by Amazon.com')]")
-        if len(a)>0 : return 0
+        a = self.tree_html.xpath("//*[contains(text(),'old by ')  and not(contains(text(),'old by Amazon'))]")
+        if len(a)>0 : return 1
+        return 0
         s = self._seller_from_tree()
         return s['marketplace']
 
