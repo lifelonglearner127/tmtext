@@ -1,1 +1,2 @@
 Scrapy==0.24.2
+simmetrica
