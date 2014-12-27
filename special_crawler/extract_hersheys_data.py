@@ -136,6 +136,7 @@ class HersheysScraper(Scraper):
             contents = requests.get(url, headers=h).text
             tree = html.fromstring(contents)
             image_url = self._image_urls(tree)
+            if image_url==None: image_url=[]
 #            print '\n\n\nImage URL:', image_url, '\n\n\n'
             img_list.extend(image_url)
         if len(img_list) == 2:
@@ -148,19 +149,28 @@ class HersheysScraper(Scraper):
         image_url = self.tree_html.xpath('//ul[@class="slides cf"]//a/@href')
         if len(image_url)==0:
             image_url = self.tree_html.xpath('//ul[@class="slides cf"]//img/@src')
+        if len(image_url) > 0:
+            # check if this is a "no image" image
+            # this may return a decoder not found error
+            try:
+                if self._no_image(image_url[0]):
+                    return None
+            except Exception, e:
+                print "image_urls WARNING: ", e.message
         return image_url
-
 
 
     def _mobile_image_url(self):
         return None
 
     def _image_count(self):
-        return len(self._image_urls())
+        imgs = self._image_urls()
+        if imgs==None: return 0
+        return len(imgs)
 
     # return 1 if the "no image" image is found
-    def _no_image(self):
-        return None
+#    def _no_image(self):
+#        return None
 
     def _video_urls(self):
         return None
@@ -327,7 +337,7 @@ class HersheysScraper(Scraper):
         "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
-        "no_image" : _no_image, \
+   #     "no_image" : _no_image, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
