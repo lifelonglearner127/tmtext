@@ -6,6 +6,9 @@
 #     http://doc.scrapy.org/en/latest/topics/settings.html
 #
 
+import os
+import sys
+
 BOT_NAME = 'product_ranking'
 
 SPIDER_MODULES = ['product_ranking.spiders']
@@ -27,3 +30,14 @@ AMAZONFRESH_LOCATION = {
     "northern_cali": "A3FX2TOAMS7SFL",
     "seattle": "A83PXQN2224PA"
 }
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+if os.path.exists(os.path.join(CWD, 'extensions.py')):
+    if not 'EXTENSIONS' in globals():
+        EXTENSIONS = {}
+    EXTENSIONS['product_ranking.extensions.StatsCollector'] = 500
+
+    # memory limit
+    EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
+    MEMUSAGE_LIMIT_MB = 128
+    MEMUSAGE_ENABLED = True
