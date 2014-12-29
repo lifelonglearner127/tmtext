@@ -18,6 +18,9 @@ from extract_impactgel_data import ImpactgelScraper
 from extract_chicksaddlery_data import ChicksaddleryScraper
 from extract_bhinneka_data import BhinnekaScraper
 from extract_maplin_data import MaplinScraper
+from extract_target_data import TargetScraper
+from extract_chicago_data import ChicagoScraper
+from extract_samsclub_data import SamsclubScraper
 
 from extract_hersheys_data import HersheysScraper
 from urllib2 import HTTPError
@@ -50,7 +53,10 @@ SUPPORTED_SITES = {
                     "chicksaddlery" : ChicksaddleryScraper,
                     "bhinneka" : BhinnekaScraper,
                     "maplin" : MaplinScraper,
-                    "hersheysstore" : HersheysScraper
+                    "hersheysstore" : HersheysScraper,
+                    "target" : TargetScraper,
+                    "chicago" : ChicagoScraper,
+                    "samsclub" : SamsclubScraper
                     }
 
 # add logger
@@ -103,6 +109,10 @@ def check_input(url, is_valid_url, invalid_url_message=""):
 
 # infer domain from input URL
 def extract_domain(url):
+    if 'chicago.doortodoororganics.com' in url:
+        # for chicago scraper
+        # https://chicago.doortodoororganics.com/shop/products/rudis-white-hamburger-buns
+        return 'chicago'
     m = re.match("^http://(www|shop)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)

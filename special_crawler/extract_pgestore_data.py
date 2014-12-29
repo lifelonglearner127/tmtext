@@ -36,7 +36,7 @@ class PGEStore(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        non_product_arr = ["-about-us.html", "pgshop-faqs.html"]
+        non_product_arr = ["-about-us.html", "pgshop-faqs.html", "holiday-calendar-2014.html"]
         for non_product in non_product_arr:
             if non_product in self.product_page_url:
                 return False
@@ -101,20 +101,37 @@ class PGEStore(Scraper):
         return None
 
     def _description(self):
-        full_description = " ".join(self.tree_html.xpath('//div[contains(@class, "main-column vp")]/text()')).strip()
-        return full_description
+        accordions = self.tree_html.xpath('//div[contains(@class, "accordion-container vp")]')
+        description = None
+        long_des = None
+        for accordion in accordions:
+            h3 = " ".join(accordion.xpath('.//h3//text()')).strip()
+            if h3 == "Description":
+                description = [d.strip() for d in accordion.xpath(".//div[contains(@class, 'accordion-content')]//text()") if len(d.strip()) > 0]
+                description = "\n".join(description).strip()
+            if h3 == "Product Details":
+                long_des = [d.strip() for d in accordion.xpath(".//div[contains(@class, 'accordion-content')]//text()") if len(d.strip()) > 0]
+                long_des = "\n".join(long_des).strip()
+
+        if description is None:
+            return long_des
+        return  description
 
     def _long_description(self):
-        d1 = self._description()
-        full_description = " ".join(self.tree_html.xpath('//div[contains(@class,"accordion-content")]//p//text()'))
-        d2 = full_description.strip()
-        if d1 == d2:
+        accordions = self.tree_html.xpath('//div[contains(@class, "accordion-container vp")]')
+        description = None
+        long_des = None
+        for accordion in accordions:
+            h3 = " ".join(accordion.xpath('.//h3//text()')).strip()
+            if h3 == "Description":
+                description = [d.strip() for d in accordion.xpath(".//div[contains(@class, 'accordion-content')]//text()") if len(d.strip()) > 0]
+                description = "\n".join(description).strip()
+            if h3 == "Product Details":
+                long_des = [d.strip() for d in accordion.xpath(".//div[contains(@class, 'accordion-content')]//text()") if len(d.strip()) > 0]
+                long_des = "\n".join(long_des).strip()
+        if description is None:
             return None
-        return d2
-
-    def _long_description_helper(self):
-        full_description = " ".join(self.tree_html.xpath('//div[contains(@class,"accordion-content")]//p//text()'))
-        return full_description.strip()
+        return long_des
 
 
     ##########################################
@@ -131,17 +148,14 @@ class PGEStore(Scraper):
         return len(self._image_urls())
 
     def _video_urls(self):
-        # base = 'http://www.pgestore.com'
-        # video_url = self.tree_html.xpath('//img[contains(@class, "productaltvideo")]/following-sibling::script//text()')[0]
-        # video_url = re.findall('showProductVideo\(\"(.+?)\"\)', video_url)
-        # return base+video_url[0]
-        return None
+        video_url = self.tree_html.xpath("//li[starts-with(@class,'video-thumb')]//a/@data-videoid")
+        video_url = ["https://www.youtube.com/watch?v=%s" % r for r in video_url]
+        return video_url
 
     def _video_count(self):
-        # urls = self._video_urls()
-        # if urls:
-        #     return len(urls)
-        # return None
+        urls = self._video_urls()
+        if urls:
+            return len(urls)
         return None
 
     def _pdf_helper(self):
@@ -178,9 +192,6 @@ class PGEStore(Scraper):
 
     def _no_image(self):
         return None
-
-
-
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -288,7 +299,7 @@ class PGEStore(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _category_name(self):
-        return self._categories()[0]
+        return self._categories()[-1]
     
     def _categories(self):
         all = self.tree_html.xpath("//div[contains(@class, 'breadcrumb-wrap')]/ol/li/a/text()")
