@@ -26,6 +26,18 @@ class OzonScraper(Scraper):
         m = re.match("^http://www\.ozon\.ru/.*$", self.product_page_url) 
         return (not not m)
     
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
+        if len(self._categories()) < 1:
+            return True
+        else:
+            return False
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -210,7 +222,8 @@ class OzonScraper(Scraper):
             if 'Elements' in row:
                 for element in row['Elements']:
                     if 'Original' in element:
-                        image_url.append(element['Original'])
+                        if 'noimg_' not in element['Original']:
+                            image_url.append(element['Original'])
         return image_url
 
     def _image_count(self):
