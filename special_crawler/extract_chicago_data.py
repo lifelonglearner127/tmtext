@@ -16,17 +16,17 @@ import requests
 from extract_data import Scraper
 
 
-class MaplinScraper(Scraper):
+class ChicagoScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.maplin.co.uk/p/<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://chicago.doortodoororganics.com/shop/products/([a-zA-Z0-9\-_]+)"
 
     def check_url_format(self):
-        #for ex: http://www.maplin.co.uk/p/black-heated-socks-1-pair-n57ds
-        m = re.match(r"^http://www\.maplin\.co\.uk/p/([a-zA-Z0-9\-]+)?$", self.product_page_url)
+        #for ex: http://chicago.doortodoororganics.com/shop/products/rudis-white-hamburger-buns
+        m = re.match(r"^http://chicago\.doortodoororganics\.com/shop/products/([a-zA-Z0-9\-_]+)$", self.product_page_url)
         return not not m
 
     ##########################################
@@ -37,17 +37,20 @@ class MaplinScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.product_page_url.split('/')[-1]
+        script = self.tree_html.xpath("//script//text()")
+        script = " ".join(script)
+        m = re.findall(r"dtdoRecurringItem.addToSubscription\(([0-9\.]+),", script)
+        product_id = m[0]
         return product_id
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//h1[@itemprop='name']")[0].text
+        return self._clean_text(self.tree_html.xpath("//h1[@itemprop='name']//text()")[0])
 
     def _product_title(self):
-        return self.tree_html.xpath("//h1[@itemprop='name']")[0].text
+        return self._clean_text(self.tree_html.xpath("//h1[@itemprop='name']//text()")[0])
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -59,41 +62,36 @@ class MaplinScraper(Scraper):
         return self.tree_html.xpath("//span[@itemprop='sku']//text()")[0].strip()
 
     def _features(self):
-        rows = self.tree_html.xpath("//table[@class='product-specs']//tr")
-        
-        # list of lists of cells (by rows)
-        cells = map(lambda row: row.xpath(".//*//text()"), rows)
-        # list of text in each row
-        cells = cells[1:]
-        rows_text = map(\
-            lambda row: ":".join(\
-                map(lambda cell: cell.strip(), row)\
-                ), \
-            cells)
-        all_features_text = rows_text
-
+        rows = self.tree_html.xpath("//div[@class='attributes-row']//span//text()")
         # return dict with all features info
-        return all_features_text
+        return rows
 
     def _feature_count(self):
-        rows = self.tree_html.xpath("//table[@class='product-specs']//tr")
-        cells = map(lambda row: row.xpath(".//*//text()"), rows)
-        # list of text in each row
-        if len(cells) > 0:
-            return len(cells) - 1
-        return 0
+        rows = self.tree_html.xpath("//div[@class='attributes-row']//span//text()")
+        return len(rows)
 
     def _model_meta(self):
         return None
 
     def _description(self):
-        description = "\n".join(self.tree_html.xpath("//div[@class='product-summary']//ul[1]//li//text()")).strip()
+        description = "\n".join(self.tree_html.xpath("//p[@itemprop='description']//text()")).strip()
         return description
 
     def _long_description(self):
-        long_description = "\n".join(self.tree_html.xpath("//div[@class='productDescription']//text()")).strip()
-        script = "\n".join(self.tree_html.xpath("//div[@class='productDescription']//script//text()")).strip()
-        long_description = long_description.replace(script, "")
+        div_tag = self.tree_html.xpath("//div[@class='l-s-prod-left']/div")[1]
+        long_description = []
+        long_description.append(div_tag.xpath(".//a//text()")[0].strip())
+
+        for span_item in div_tag.xpath(".//span//text()"):
+            prod_arr = self.tree_html.xpath("//div[@class='prod-tag-descrip']")
+            long_description.append(span_item)
+            for prod_item in prod_arr:
+                h4 = prod_item.xpath(".//h4//text()")[0]
+                if h4 == span_item:
+                    p_txt = prod_item.xpath(".//p//text()")[0].strip()
+                    long_description.append(p_txt)
+
+        long_description = "\n".join(long_description).strip()
         return long_description
 
     ##########################################
@@ -104,7 +102,7 @@ class MaplinScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_url = self.tree_html.xpath("//ul[@id='carousel_alternate']//img/@src")
+        image_url = self.tree_html.xpath("//img[@itemprop='image']/@src")
         return image_url
 
     def _image_count(self):
@@ -112,10 +110,7 @@ class MaplinScraper(Scraper):
         return len(image_urls)
 
     def _video_urls(self):
-        video_url = self.tree_html.xpath("//ul[@id='carousel_alternate']//a[@class='gallery-video']/@href")
-        if len(video_url) == 0:
-            return None
-        return video_url
+        return None
 
     def _video_count(self):
         urls = self._video_urls()
@@ -130,7 +125,7 @@ class MaplinScraper(Scraper):
             if pdf.attrib['title'] == 'Terms & Conditions':
                 pass
             else:
-                pdf_hrefs.append("http://www.maplin.co.uk%s" % pdf.attrib['href'])
+                pdf_hrefs.append(pdf.attrib['href'])
         if len(pdf_hrefs) == 0:
             return None
         return pdf_hrefs
@@ -160,19 +155,22 @@ class MaplinScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
     def _average_review(self):
-        average_review = self.tree_html.xpath("//span[@itemprop='ratingValue']//text()")[0].strip()
-        return average_review
+        script = self.tree_html.xpath("//script//text()")
+        script = " ".join(script)
+        m = re.findall(r"setAvgRating\(([0-9\.]+)\);", script)
+        average_review = m[0]
+        return float(average_review)
 
     def _review_count(self):
         try:
-            review_count = self.tree_html.xpath("//span[@itemprop='ratingCount']//text()")[0].strip()
-            return review_count
+            review_count = self.tree_html.xpath("//div[@itemprop='ratingValue']//@title")[0]
+            m = re.findall(r"[0-9]+", review_count)
+            return int(m[0])
         except IndexError:
             return 0
 
     def _max_review(self):
-        average_review = self.tree_html.xpath("//span[@itemprop='bestRating']//text()")[0].strip()
-        return average_review
+        return None
 
     def _min_review(self):
         return None
@@ -181,12 +179,8 @@ class MaplinScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//meta[@itemprop='price']/@content")[0].strip()
-        currency = self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0].strip()
-        if price and currency:
-            return "%s %s" % (currency, price)
-        else:
-            return None
+        price = self.tree_html.xpath("//meta[starts-with(@property,'og:price:amount')]/@content")[0].strip()
+        return price
 
     def _in_stores_only(self):
         return None
@@ -201,7 +195,10 @@ class MaplinScraper(Scraper):
         return 0
 
     def _owned_out_of_stock(self):
-        return None
+        availability = self.tree_html.xpath("//span[@itemprop='availability']")
+        if len(availability) > 0:
+            return 0
+        return 1
 
     def _marketplace_sellers(self):
         return None
@@ -213,24 +210,13 @@ class MaplinScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        all = self.tree_html.xpath("//ul[contains(@class, 'breadcrumb')]//li//span/text()")
-        out = all[1:-1]#the last value is the product itself, and the first value is "home"
-        out = [self._clean_text(r) for r in out]
-        #out = out[::-1]
-        return out
+        return self.tree_html.xpath("//ul[@class='shop-map']/li[starts-with(@class,'active')]/a/text()")
 
     def _category_name(self):
         return self._categories()[-1]
 
-    def load_universal_variable(self):
-        js_content = ' '.join(self.tree_html.xpath('//script//text()'))
-
-        universal_variable = {}
-        universal_variable["manufacturer"] = re.findall(r'"manufacturer": "(.*?)"', js_content)[0]
-        return universal_variable
-
     def _brand(self):
-        return self.load_universal_variable()["manufacturer"]
+        return self.tree_html.xpath("//a[@itemprop='brand']//text()")[0].strip()
 
     ##########################################
     ################ HELPER FUNCTIONS

@@ -22,7 +22,25 @@ class HersheysScraper(Scraper):
         m = re.match(r"^http://www.hersheysstore.com/product/([a-zA-Z0-9\-])", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
 
+        try:
+            page_title = self.tree_html.xpath("//title/text()")[0]
+        except Exception:
+            page_title = None
+            return True
+        if page_title.find("Not Found")>=0:
+            return True
+
+        else:
+            return False
 
 
     ##########################################
@@ -55,7 +73,7 @@ class HersheysScraper(Scraper):
         return self.tree_html.xpath('//h1[@class="prod_title"]/span[@class="prod_title_webname1"]')[0].text
 
     def _product_title(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath('//h1[@class="prod_title"]/span[@class="prod_title_webname1"]')[0].text
         #return None
 
     def _title_seo(self):
@@ -128,6 +146,8 @@ class HersheysScraper(Scraper):
         if tree == None:
             tree = self.tree_html
         image_url = self.tree_html.xpath('//ul[@class="slides cf"]//a/@href')
+        if len(image_url)==0:
+            image_url = self.tree_html.xpath('//ul[@class="slides cf"]//img/@src')
         return image_url
 
 
@@ -245,19 +265,20 @@ class HersheysScraper(Scraper):
 
     # extract the department which the product belongs to
     def _category_name(self):
-        all = self._categories()
-        if all != None and len(all) > 1:
-            if all[-1]=="Search":
-                return all[-2]
-            return all[-1]
+##        all = self._categories()
+##        if all != None and len(all) > 1:
+##            if all[-1]=="Search":
+##                return all[-2]
+##            return all[-1]
         return None
 
     # extract a hierarchical list of all the departments the product belongs to
     def _categories(self):
-        all = self.tree_html.xpath("//ol[@class='breadcrumb']//li//text()")
-        all = map(lambda t: self._clean_text(t), all)
-        alln = [m for m in all if m != '']
-        return alln
+##        all = self.tree_html.xpath("//ol[@class='breadcrumb']//li//text()")
+##        all = map(lambda t: self._clean_text(t), all)
+##        alln = [m for m in all if m != '']
+##        return alln
+        return None
 
     def _brand(self):
         return "HERSHEY'S"

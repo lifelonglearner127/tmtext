@@ -6,6 +6,7 @@ import sys
 import json
 
 from lxml import html, etree
+import lxml
 import time
 import requests
 
@@ -186,37 +187,45 @@ class WalmartScraper(Scraper):
         return self.video_urls
 
     def _pdf_urls(self):
-        """Extracts pdf URLs for a given walmart product
+        """Extracts pdf URLs for a given walmart product, puts them in an instance variable
         Returns:
             list of strings containing the pdf urls
             or None if not found
         """
 
-        if not self.extracted_pdf_urls:
-            self._extract_pdf_urls()
+        if self.extracted_pdf_urls:
+            return self.pdf_urls
+
+        self.extracted_pdf_urls = True
+        self.pdf_urls = []
+
+        pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+
+        for item in pdf_links:
+            if item.strip().endswith(".pdf"):
+                self.pdf_urls.append(item.strip()) if item.strip() not in self.pdf_urls else None
+
+        if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
+            request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
+            request_url = "http:" + request_url.strip()
+
+            response_text = urllib.urlopen(request_url).read().decode('string-escape')
+
+            pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
+
+            if pdf_url_candidates:
+                self.has_webcollage_media = True
+                for item in pdf_url_candidates:
+                    # remove escapes
+                    pdf_url = re.sub('\\\\', "", item.strip())
+                    self.pdf_urls.append(pdf_url) if pdf_url not in self.pdf_urls else None
+
+        if self.pdf_urls:
+            self.has_pdf = True
+        else:
+            self.pdf_urls = None
 
         return self.pdf_urls
-
-
-    def _extract_pdf_urls(self):
-        """Extracts pdf URL for a given walmart product
-        and puts them in instance variable.
-        """
-
-        # set flag indicating we've already attempted to extract pdf urls
-        self.extracted_pdf_urls = True
-
-        request_url = self.BASE_URL_PDFREQ + self._extract_product_id()
-
-        response_text = urllib.urlopen(request_url).read().decode('string-escape')
-
-        pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
-        if pdf_url_candidates:
-            # remove escapes
-            pdf_url = re.sub('\\\\', "", pdf_url_candidates[0])
-            self.has_webcollage_media = True
-            self.has_pdf = True
-            self.pdf_urls = [pdf_url]
 
     # deprecated
     # TODO: flatten returned object
@@ -281,7 +290,7 @@ class WalmartScraper(Scraper):
             self._extract_video_urls()
 
         if not self.extracted_pdf_urls:
-            self._extract_pdf_urls()
+            self._pdf_urls()
 
         if self.has_webcollage_media:
             return 1
@@ -308,6 +317,13 @@ class WalmartScraper(Scraper):
         else:
             return 0
 
+    def _pdf_count(self):
+        """Returns the number of pdf
+        """
+
+        return len(self.pdf_urls)
+
+
     def _product_has_pdf(self):
         """Whether product has pdf
         To be replaced with function that actually counts
@@ -318,7 +334,7 @@ class WalmartScraper(Scraper):
         """
 
         if not self.extracted_pdf_urls:
-            self._extract_pdf_urls()
+            self._pdf_urls()
 
         if self.has_pdf:
             return 1
@@ -1182,6 +1198,74 @@ class WalmartScraper(Scraper):
         else:
             return 0
 
+    # ! may throw exception if not found
+    def _stores_available_from_script(self):
+        """Extracts whether product is available in stores.
+        Works on new page version.
+        Returns 1/0
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        available = pinfo_dict["analyticsData"]["storesAvail"]
+
+        return 1 if available else 0
+
+    # ! may throw exception if not found
+    def _marketplace_sellers_from_script(self):
+        """Extracts list of marketplace sellers for this product.
+        Works on new page version.
+        Returns:
+            list of strings representing marketplace sellers,
+            or None if none found / not relevant
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
+        sellers = map(lambda d: d["sellerName"], sellers_dict)
+
+        return sellers
+
+
+    # ! may throw exception if not found
+    def _in_stock_from_script(self):
+        """Extracts info on whether product is available to be
+        bought on the site, from any seller (marketplace or owned).
+        Works on new page design
+        Returns:
+            1/0 (available/not available)
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        available = pinfo_dict["analyticsData"]["onlineAvail"]
+
+        return 1 if available else 0
+
+
+    def _in_stock_old(self):
+        """Extracts info on whether product is available to be
+        bought on the site, from any seller (marketplace or owned).
+        Works on old page design
+        Returns:
+            1/0 (available/not available)
+        """
+
+        sellers = self._seller_meta_from_tree()
+        available = any(sellers.values())
+
+        return 1 if available else 0
+
     def _owned(self):
         """Extracts info on whether product is ownedby Walmart.com.
         Uses functions that work on both old page design and new design.
@@ -1225,6 +1309,67 @@ class WalmartScraper(Scraper):
             return self._marketplace_meta_from_tree()
 
         return marketplace_new
+
+    def _marketplace_sellers(self):
+        """Extracts list of marketplace sellers for this product
+        Works for both old and new page version
+        Returns:
+            list of strings representing marketplace sellers,
+            or None if none found / not relevant
+        """
+
+        # assume new page version
+        try:
+            sellers = self._marketplace_sellers_from_script()
+            # filter out walmart
+            sellers = filter(lambda s: s!="Walmart.com", sellers)
+            return sellers if sellers else None
+        except:
+            sellers = None
+
+        if not sellers:
+            # assume old page version
+            sellers = self._seller_meta_from_tree().keys()
+            # filter out walmart
+            sellers = filter(lambda s: s!="Walmart.com", sellers)
+            return sellers if sellers else None
+
+
+    def _in_stock(self):
+        """Extracts info on whether product is available to be
+        bought on the site, from any seller (marketplace or owned).
+        Works on both old and new page design
+        Returns:
+            1/0 (available/not available)
+        """
+
+        # assume new page version
+        try:
+            in_stock_new = self._in_stock_from_script()
+            return in_stock_new
+        except:
+            in_stock_new = None
+
+        # assume old page design
+        if not in_stock_new:
+            in_stock_old = self._in_stock_old()
+
+        return in_stock_old
+
+    def _owned_out_of_stock(self):
+        """Extracts whether product is owned and out of stock.
+        Works on both old and new page version.
+        Returns 1/0
+        """
+
+        owned = self._owned()
+        in_stock = self._in_stock()
+
+        if owned==1 and in_stock==0:
+            return 1
+        else:
+            return 0
+
 
     def _version(self):
         """Determines if walmart page being read (and version of extractor functions
@@ -1314,7 +1459,11 @@ class WalmartScraper(Scraper):
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title" : _product_name_from_tree, \
         "owned": _owned, \
+        "owned_out_of_stock": _owned_out_of_stock, \
+        "in_stores" : _stores_available_from_script, \
         "marketplace": _marketplace, \
+        "marketplace_sellers" : _marketplace_sellers, \
+        "in_stock": _in_stock, \
         "review_count": _nr_reviews, \
         "average_review": _avg_review, \
         "max_review" : _max_review, \
@@ -1346,7 +1495,7 @@ class WalmartScraper(Scraper):
 
     DATA_TYPES_SPECIAL = { \
         "pdf_urls" : _pdf_urls, \
-        "pdf_count" : _product_has_pdf, \
+        "pdf_count" : _pdf_count, \
         "mobile_image_same" : _mobile_image_same \
 
     #    "reviews" : reviews_for_url \
