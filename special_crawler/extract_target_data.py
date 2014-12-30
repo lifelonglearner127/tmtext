@@ -84,7 +84,7 @@ class TargetScraper(Scraper):
         return None
 
     def _description(self):
-        description = self.tree_html.xpath("//span[@itemprop='description']//text()")[0].strip()
+        description = "".join(self.tree_html.xpath("//span[@itemprop='description']//text()")).strip()
         return description
 
     def _long_description(self):
@@ -107,6 +107,8 @@ class TargetScraper(Scraper):
 
     def _image_urls(self):
         image_url = self.tree_html.xpath("//ul[@id='carouselContainer']//li//img/@src")
+        if len(image_url) < 1:
+            image_url = self.tree_html.xpath("//div[@class='HeroPrimContainer']//a//img//@src")
         return image_url
 
     def _image_count(self):
@@ -116,6 +118,9 @@ class TargetScraper(Scraper):
     def _video_urls(self):
         video_url = self.tree_html.xpath("//div[@class='videoblock']//div//a/@href")
         video_url = [("http://www.target.com%s" % r) for r in video_url]
+        demo_url = self.tree_html.xpath("//div[starts-with(@class, 'demoblock')]//span//a/@href")
+        video_url += demo_url
+
         return video_url
 
     def _video_count(self):
@@ -129,6 +134,13 @@ class TargetScraper(Scraper):
         pdf_hrefs = []
         for pdf in pdfs:
             pdf_hrefs.append(pdf.attrib['href'])
+
+        # get from webcollage
+        url = "http://content.webcollage.net/target/smart-button?ird=true&channel-product-id=%s" % self._product_id()
+        contents = urllib.urlopen(url).read()
+        wc_pdfs = re.findall(r'href=\\\"([^ ]*?\.pdf)', contents, re.DOTALL)
+        wc_pdfs = [r.replace("\\", "") for r in wc_pdfs]
+        pdf_hrefs += wc_pdfs
         return pdf_hrefs
 
     def _pdf_count(self):
@@ -138,6 +150,9 @@ class TargetScraper(Scraper):
         return 0
 
     def _webcollage(self):
+        atags = self.tree_html.xpath("//a[contains(@href, 'webcollage.net/')]")
+        if len(atags) > 0:
+            return 1
         return 0
 
     # extract htags (h1, h2) from its product product page tree
@@ -228,7 +243,9 @@ class TargetScraper(Scraper):
         return 0
 
     def _owned_out_of_stock(self):
-        return None
+        if 'disabled' in self.tree_html.xpath("//button[@id='addToCart']/@class")[0]:
+            return 1
+        return 0
 
     def _marketplace_sellers(self):
         return None
@@ -292,8 +309,6 @@ class TargetScraper(Scraper):
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
-        "pdf_urls" : _pdf_urls, \
-        "pdf_count" : _pdf_count, \
         "mobile_image_same" : _mobile_image_same, \
 
         # CONTAINER : SELLERS
@@ -325,5 +340,10 @@ class TargetScraper(Scraper):
         "max_review" : _max_review, \
         "min_review" : _min_review, \
         "reviews" : _reviews, \
+
+        # CONTAINER : PAGE_ATTRIBUTES
+        "pdf_urls" : _pdf_urls, \
+        "pdf_count" : _pdf_count, \
+
     }
 
