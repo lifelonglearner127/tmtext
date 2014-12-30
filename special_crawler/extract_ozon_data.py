@@ -224,10 +224,14 @@ class OzonScraper(Scraper):
                     if 'Original' in element:
                         if 'noimg_' not in element['Original']:
                             image_url.append(element['Original'])
+        if len(image_url) < 1:
+            return None
         return image_url
 
     def _image_count(self):
         image_url = self._image_urls()
+        if not image_url:
+            return 0
         return len(image_url)
 
     # return 1 if the "no image" image is found
@@ -247,10 +251,15 @@ class OzonScraper(Scraper):
             find = re.findall(r'www\.youtube\.com/embed/.*$', src)
             if find:
                 video_url.append(find[0])
+        if len(video_url) < 1:
+            return None
         return video_url
 
     def _video_count(self):
-        return len(self._video_urls())
+        video_urls = self._video_urls()
+        if not video_urls:
+            return 0
+        return len(video_urls)
 
     def _pdf_urls(self):
         return None
