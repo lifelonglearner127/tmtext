@@ -109,14 +109,18 @@ class AmazonScraper(Scraper):
                 elems = self.tree_html.xpath("//div[@id='detail_bullets_id']//div[@class='content']/ul//li")
             for l in elems:
                 t = l.xpath(".//text()")
-                if len(t) > 1 and len(t[0].strip())>2  and len(t[1].strip())>2 :
+                if len(t) > 1 and len(t[0].strip())>2  and len(t[1].strip())>2 and \
+                 t[0].find('Customer Review') < 0  and t[0].find('function(') < 0 and\
+                 t[0].find('Delivery') < 0 and t[0].find('Date ') < 0  and t[0].find('Best Seller') < 0 :
                     rows_text.append(t[0].strip()+" "+t[1].strip())
         else:
             # list of lists of cells (by rows)
             cells=[]
             for row in rows:
                 r = row.xpath(".//*[not(self::script)]//text()")
-                if len(r)>0 and r[0].find('Customer Review') < 0  and r[0].find('function(') < 0 :
+                if len(r)>0 and len(r[0])>1 and r[0].find('Customer Review') < 0 \
+                   and r[0].find('function(') < 0 and  r[0].find('Delivery') < 0 \
+                   and r[0].find('Date ') < 0 and r[0].find('Best Seller') < 0:
                     cells.append(r)
 #            cells = map(lambda row: row.xpath(".//*[not(self::script)]//text()"), rows)
             # list of text in each row
