@@ -102,36 +102,23 @@ class AmazonScraper(Scraper):
             rows = self.tree_html.xpath("//div[@id='dv-center-features']//table//tr")
         if len(rows)==0:
             rows = self.tree_html.xpath("//table[@id='aloha-ppd-glance-table']//tr")
-        if len(rows)==0:
-            rows_text =[]
-            elems = self.tree_html.xpath("//td[contains(@class,'bucket')]//div[@class='content']/ul//li")
-            if len(rows_text)==0:
-                elems = self.tree_html.xpath("//div[@id='detail_bullets_id']//div[@class='content']/ul//li")
-            for l in elems:
-                t = l.xpath(".//text()")
-                if len(t) > 1 and len(t[0].strip())>2  and len(t[1].strip())>2 and \
-                 t[0].find('Customer Review') < 0  and t[0].find('function(') < 0 and\
-                 t[0].find('Delivery') < 0 and t[0].find('Date ') < 0  and t[0].find('Best Seller') < 0 \
-                 and t[0].find('Manufacturer ref') < 0 and t[0].find('ASIN') < 0 :
-                    rows_text.append(t[0].strip()+" "+t[1].strip())
-        else:
-            # list of lists of cells (by rows)
-            cells=[]
-            for row in rows:
-                r = row.xpath(".//*[not(self::script)]//text()")
-                if len(r)>0 and len(r[0])>1 and r[0].find('Customer Review') < 0 \
-                   and r[0].find('function(') < 0 and  r[0].find('Delivery') < 0 \
-                   and r[0].find('Date ') < 0 and r[0].find('Best Seller') < 0 \
-                   and r[0].find('Manufacturer ref') < 0 and r[0].find('ASIN') < 0:
-                    cells.append(r)
+        # list of lists of cells (by rows)
+        cells=[]
+        for row in rows:
+            r = row.xpath(".//*[not(self::script)]//text()")
+            if len(r)>0 and len(r[0])>1 and r[0].find('Customer Review') < 0 \
+               and r[0].find('function(') < 0 and  r[0].find('Delivery') < 0 \
+               and r[0].find('Date ') < 0 and r[0].find('Best Seller') < 0 \
+               and r[0].find('Manufacturer ref') < 0 and r[0].find('ASIN') < 0:
+                cells.append(r)
 #            cells = map(lambda row: row.xpath(".//*[not(self::script)]//text()"), rows)
-            # list of text in each row
-            rows_text = map(\
-                lambda row: ":".join(\
-                    map(lambda cell: cell.strip(), row)\
-                    ), \
-                cells)
-            all_features_text = "\n".join(rows_text)
+        # list of text in each row
+        rows_text = map(\
+            lambda row: ":".join(\
+                map(lambda cell: cell.strip(), row)\
+                ), \
+            cells)
+        all_features_text = "\n".join(rows_text)
         # return dict with all features info
      #   return all_features_text
         return rows_text
@@ -181,9 +168,6 @@ class AmazonScraper(Scraper):
             if desc is not None and len(desc)>0:
                 return  self._clean_text(desc)
 
-##        desc=" ".join(self.tree_html.xpath("//table[@id='productDetailsTable']//*[not(self::a or self::script or self::style)]/text()[normalize-space()]") ).strip()
-##        if desc is not None and len(desc)>0:
-##            return  self._clean_text(desc.replace("\n"," "))
         desc = '\n'.join(self.tree_html.xpath('//script//text()'))
         desc = re.findall(r'var iframeContent = "(.*)";', desc)
         desc = urllib.unquote_plus(str(desc))
@@ -420,8 +404,9 @@ class AmazonScraper(Scraper):
         return None
 
     def _owned(self):
-        a = self.tree_html.xpath("//*[contains(text(),'old by Amazon') ]")
-        if len(a)>0 : return 1
+        aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
+        for a in aa:
+            if a.text_content().find('old by Amazon')>0: return 1
         s = self._seller_from_tree()
         return s['owned']
 
@@ -429,8 +414,10 @@ class AmazonScraper(Scraper):
         return None
 
     def _marketplace(self):
-        a = self.tree_html.xpath("//*[contains(text(),'old by ')  and not(contains(text(),'old by Amazon'))]")
-        if len(a)>0 : return 1
+        aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
+        for a in aa:
+            if a.text_content().find('old by ')>0 and a.text_content().find('old by Amazon')<0:
+                return 1
         a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
         if len(a)>0 and a[0].find('seller')>=0: return 1
         s = self._seller_from_tree()
