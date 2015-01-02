@@ -8,6 +8,7 @@ import psycopg2
 import psycopg2.extras
 import requests
 from datetime import date
+import datetime
 from crawler_service import SUPPORTED_SITES
 
 
@@ -536,10 +537,27 @@ class ServiceScraperTest(unittest.TestCase):
             sample_json = json.loads(sample_json)
 
             sample_url = row["url"]
+            last_update_date = row["last_update_date"]
 
             diff_engine = JsonDiff(sample_json, test_json)
             diff_engine.diff()
             today = date.today()
+
+            difference_days = (today - last_update_date).days
+
+            if difference_days >= 7:
+                is_old = 1
+            else:
+                is_old = 0
+
+            if is_old:
+                print "Sample info is old %d days ago, please update sample info to get more correct report results!" % difference_days
+                self.cur.execute("update url_samples set is_old=1 where website='%s'" % website)
+                self.con.commit()
+            else:
+                print "Sample info is old %d days ago, please update sample info to get more correct report results!" % difference_days
+                self.cur.execute("update url_samples set is_old=0 where website='%s'" % website)
+                self.con.commit()
 
             sql = ("insert into report_results(sample_url, test_url, website, "
                    "report_result, report_date, sample_json, test_json) "
