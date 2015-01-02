@@ -7,6 +7,7 @@ import copy
 import psycopg2
 import psycopg2.extras
 import requests
+from datetime import date
 from crawler_service import SUPPORTED_SITES
 
 
@@ -140,8 +141,6 @@ class JsonDiff:
         The model will treat all keys as regexes. All values will be
         dicts, lists, or regexes
         """
-        json_keys = []
-        model_keys = []
         if type(json_input) is dict and type(model) is dict:
             json_keys = json_input.keys()
             model_keys = model.keys()
@@ -517,35 +516,37 @@ class ServiceScraperTest(unittest.TestCase):
         except Exception, e:
             print e
 
-        '''
-        sample_json = json.load(open("a.json"))
-        test_json = json.load(open("b.json"))
-
-        diff_engine = JsonDiff(sample_json, test_json)
-        diff_engine.diff()
-
-        print diff_engine.log
-        exit(1)
-        '''
-
         # service address
         self.address = "http://127.0.0.1/get_data?url=%s"
 
-    def _test(self, site, url):
-        response = requests.get(self.address % url)
-        test_json = response.text
-        self.cur.execute("select * from url_samples where website='%s'" % site)
+    def _test(self, website, test_url):
+        response = requests.get(self.address % test_url)
+        self.cur.execute("select * from url_samples where website='%s'" % website)
         row = self.cur.fetchall()
         row = row[0]
 
+        test_json = response.text
         sample_json = row["json"]
-        sample_json = json.loads(sample_json)
         test_json = json.loads(test_json)
+        sample_json = json.loads(sample_json)
+
+        sample_url = row["url"]
 
         diff_engine = JsonDiff(sample_json, test_json)
         diff_engine.diff()
+        today = date.today()
 
-        print diff_engine.log
+        sql = ("insert into report_results(sample_url, test_url, website, "
+               "report_result, report_date, sample_json, test_json) "
+               "values('%s', '%s', '%s', '%s', '%s', '%s', '%s')"
+               % (sample_url, test_url, website, diff_engine.log, today.isoformat(), json.dumps(sample_json), json.dumps(test_json)))
+
+        print "\n-------------------------------Report results for %s-------------------------------\n" \
+              ">>>>>>sample url: %s\n>>>>>>test url: %s" % (website, sample_url, test_url)
+        print ">>>>>>reports:\n%s" % diff_engine.log
+
+        self.cur.execute(sql)
+        self.con.commit()
 
     # test all keys are in the response for simple (all-data) request for bhinneka
     # (using template function)
