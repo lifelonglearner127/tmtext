@@ -523,30 +523,34 @@ class ServiceScraperTest(unittest.TestCase):
         response = requests.get(self.address % test_url)
         self.cur.execute("select * from url_samples where website='%s'" % website)
         row = self.cur.fetchall()
-        row = row[0]
+        print "\n-------------------------------Report results for %s-------------------------------" % website
 
-        test_json = response.text
-        sample_json = row["json"]
-        test_json = json.loads(test_json)
-        sample_json = json.loads(sample_json)
+        if not row:
+            print "Please make sample data for %s in database before test" % website
+        else:
+            row = row[0]
 
-        sample_url = row["url"]
+            test_json = response.text
+            sample_json = row["json"]
+            test_json = json.loads(test_json)
+            sample_json = json.loads(sample_json)
 
-        diff_engine = JsonDiff(sample_json, test_json)
-        diff_engine.diff()
-        today = date.today()
+            sample_url = row["url"]
 
-        sql = ("insert into report_results(sample_url, test_url, website, "
-               "report_result, report_date, sample_json, test_json) "
-               "values('%s', '%s', '%s', '%s', '%s', '%s', '%s')"
-               % (sample_url, test_url, website, diff_engine.log, today.isoformat(), json.dumps(sample_json), json.dumps(test_json)))
+            diff_engine = JsonDiff(sample_json, test_json)
+            diff_engine.diff()
+            today = date.today()
 
-        print "\n-------------------------------Report results for %s-------------------------------\n" \
-              ">>>>>>sample url: %s\n>>>>>>test url: %s" % (website, sample_url, test_url)
-        print ">>>>>>reports:\n%s" % diff_engine.log
+            sql = ("insert into report_results(sample_url, test_url, website, "
+                   "report_result, report_date, sample_json, test_json) "
+                   "values('%s', '%s', '%s', '%s', '%s', '%s', '%s')"
+                   % (sample_url, test_url, website, diff_engine.log, today.isoformat(), json.dumps(sample_json), json.dumps(test_json)))
 
-        self.cur.execute(sql)
-        self.con.commit()
+            print ">>>>>>sample url: %s\n>>>>>>test url: %s" % (sample_url, test_url)
+            print ">>>>>>reports:\n%s\n" % diff_engine.log
+
+            self.cur.execute(sql)
+            self.con.commit()
 
     # test all keys are in the response for simple (all-data) request for bhinneka
     # (using template function)
