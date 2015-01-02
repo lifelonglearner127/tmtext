@@ -5,6 +5,8 @@ import json
 import re
 import copy
 import psycopg2
+import psycopg2.extras
+import requests
 from crawler_service import SUPPORTED_SITES
 
 
@@ -510,11 +512,12 @@ class ServiceScraperTest(unittest.TestCase):
                             self.urls_by_scraper[site].append(url)
 
             self.con = None
-#            con = py
-
+            self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
+            self.cur = self.con.cursor(cursor_factory=psycopg2.extras.DictCursor)
         except Exception, e:
             print e
 
+        '''
         sample_json = json.load(open("a.json"))
         test_json = json.load(open("b.json"))
 
@@ -523,12 +526,32 @@ class ServiceScraperTest(unittest.TestCase):
 
         print diff_engine.log
         exit(1)
+        '''
 
         # service address
-        self.address = "http://localhost:5000/get_data?url=%s"
+        self.address = "http://127.0.0.1/get_data?url=%s"
 
     def _test(self, site, url):
-        pass
+        response = requests.get(self.address % url)
+        test_json = response.text
+        self.cur.execute("select * from url_samples where website='%s'" % site)
+        row = self.cur.fetchall()
+        row = row[0]
+
+        sample_json = row["json"]
+        sample_json = json.loads(sample_json)
+        test_json = json.loads(test_json)
+
+        diff_engine = JsonDiff(sample_json, test_json)
+        diff_engine.diff()
+
+        print diff_engine.log
+
+    # test all keys are in the response for simple (all-data) request for bhinneka
+    # (using template function)
+    def test_bhinneka(self):
+        for url in self.urls_by_scraper["bhinneka"]:
+            self._test("bhinneka", url)
 
     # test all keys are in the response for simple (all-data) request for walmart
     # (using template function)
