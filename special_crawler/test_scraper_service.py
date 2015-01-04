@@ -8,8 +8,8 @@ import psycopg2
 import psycopg2.extras
 import requests
 from datetime import date
-import datetime
 from crawler_service import SUPPORTED_SITES
+from psycopg2.extensions import adapt
 
 
 class JsonDiff:
@@ -199,8 +199,8 @@ class JsonDiff:
                 # Potential regex match
                 self._diff_json_item(_json1, _json2, path, True)
             else:
-                self.difference.append('TypeDifference : {} - {}:'
-                                       ' ({}), {}: ({})'
+                self.difference.append(u'TypeDifference : {} - {}:'
+                                       u' ({}), {}: ({})'
                                        .format(path, type(_json1).__name__,
                                                str(_json1),
                                                type(_json2).__name__,
@@ -236,8 +236,8 @@ class JsonDiff:
         Resulting difference is stored in the class's self.difference variable
         """
         if not type(_json1) == type(_json2):
-            self.difference.append('TypeDifference : {} - is {}: ({}),'
-                                   ' but was {}: ({})'
+            self.difference.append(u'TypeDifference : {} - is {}: ({}),'
+                                   u' but was {}: ({})'
                                    .format(path, type(_json1).__name__,
                                            str(_json1), type(_json2).__name__,
                                            str(_json2)))
@@ -422,8 +422,8 @@ class JsonDiff:
 
         original_index = 0
         for index in range(len(_json2)):
-            while not _json2[index] == json2_original[::-1][original_index]:
-                original_index += 1
+#            while not _json2[index] == json2_original[::-1][original_index]:
+#                original_index += 1
             new_path = "{}[{}]".format(path, len(
                 json2_original) - original_index - 1)
             self._expand_diff(_json2[index], new_path, False)
@@ -434,11 +434,11 @@ class JsonDiff:
             match = re.match(_json2, str(_json1))
             if not match:
                 self.difference.append(
-                    'Changed: {} to {} from {}'.format(path, _json1, _json2))
+                    u'Changed: {} to {} from {}'.format(path, _json1, _json2))
         else:
             if not _json1 == _json2:
                 self.difference.append(
-                    'Changed: {} to {} from {}'.format(path, _json1, _json2))
+                    u'Changed: {} to {} from {}'.format(path, _json1, _json2))
 
     def _expand_diff(self, blob, path, new_item):
         """
@@ -463,7 +463,7 @@ class JsonDiff:
                     new_path = "{}.{}".format(path, key)
                 if type(blob[key]) not in [list, dict]:
                     self.difference.append(
-                        '{}: {}={}'.format(c, new_path, blob[key]))
+                        u'{}: {}={}'.format(c, new_path, blob[key]))
                 else:
                     self._expand_diff(blob[key], new_path, new_item)
         elif type(blob) is list:
@@ -473,9 +473,9 @@ class JsonDiff:
                     self._expand_diff(item[index], new_path, new_item)
                 else:
                     self.difference.append(
-                        '{}: {}={}'.format(c, new_path, blob[index]))
+                        u'{}: {}={}'.format(c, new_path, blob[index]))
         else:
-            self.difference.append('{}: {}={}'.format(c, path, blob))
+            self.difference.append(u"{}: {}={}".format(c, path, blob))
 
     def diff(self):
         difference = []
@@ -521,7 +521,6 @@ class ServiceScraperTest(unittest.TestCase):
         self.address = "http://127.0.0.1/get_data?url=%s"
 
     def _test(self, website, test_url):
-        response = requests.get(self.address % test_url)
         self.cur.execute("select * from url_samples where website='%s'" % website)
         row = self.cur.fetchall()
         print "\n-------------------------------Report results for %s-------------------------------" % website
@@ -529,6 +528,7 @@ class ServiceScraperTest(unittest.TestCase):
         if not row:
             print "Please make sample data for %s in database before test" % website
         else:
+            response = requests.get(self.address % test_url)
             row = row[0]
 
             test_json = response.text
@@ -561,14 +561,14 @@ class ServiceScraperTest(unittest.TestCase):
 
             sql = ("insert into report_results(sample_url, test_url, website, "
                    "report_result, report_date, sample_json, test_json) "
-                   "values('%s', '%s', '%s', '%s', '%s', '%s', '%s')"
-                   % (sample_url, test_url, website, diff_engine.log, today.isoformat(), json.dumps(sample_json), json.dumps(test_json)))
+                   "values('%s', '%s', '%s', %s, '%s', '%s', '%s')"
+                   % (sample_url, test_url, website, adapt('a').getquoted(), today.isoformat(), json.dumps(sample_json), json.dumps(test_json)))
 
             print ">>>>>>sample url: %s\n>>>>>>test url: %s" % (sample_url, test_url)
             print ">>>>>>reports:\n%s\n" % diff_engine.log
 
             self.cur.execute(sql)
-            self.con.commit()
+#            self.con.commit()
 
     # test all keys are in the response for simple (all-data) request for bhinneka
     # (using template function)
