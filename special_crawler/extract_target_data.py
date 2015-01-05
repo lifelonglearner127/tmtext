@@ -74,11 +74,11 @@ class TargetScraper(Scraper):
             row_txts = [self._clean_text(r) for r in row_txts]
             row_txts = "".join(row_txts)
             line_txts.append(row_txts)
-        all_features_text = "\n".join(line_txts)
+        all_features_text = line_txts
         return all_features_text
 
     def _feature_count(self):
-        return len(self.tree_html.xpath("//ul[@class='normal-list']//li"))
+        return len(self._features())
 
     def _model_meta(self):
         return None
@@ -119,8 +119,20 @@ class TargetScraper(Scraper):
         video_url = self.tree_html.xpath("//div[@class='videoblock']//div//a/@href")
         video_url = [("http://www.target.com%s" % r) for r in video_url]
         demo_url = self.tree_html.xpath("//div[starts-with(@class, 'demoblock')]//span//a/@href")
-        video_url += demo_url
+        demo_url = [r for r in demo_url if len(self._clean_text(r)) > 0]
+        for item in demo_url:
+            contents = urllib.urlopen(item).read()
+            tree = html.fromstring(contents)
+            redirect_link = tree.xpath("//div[@id='slow-reporting-message']//a/@href")[0]
+            redirect_contents = urllib.urlopen(redirect_link).read()
+            redirect_tree = html.fromstring(redirect_contents)
+            tabs = redirect_tree.xpath("//div[@class='wc-ms-navbar']//li//a//span/text()")
+            if "Video" in tabs:
+                #have video
+                video_url.append(item)
 
+        if len(video_url) < 1:
+            return None
         return video_url
 
     def _video_count(self):
@@ -259,7 +271,7 @@ class TargetScraper(Scraper):
     def _categories(self):
         all = self.tree_html.xpath("//div[contains(@id, 'breadcrumbs')]//a/text()")
         out = [self._clean_text(r) for r in all]
-        return out
+        return out[1:]
 
     def _category_name(self):
         return self._categories()[-1]
@@ -304,8 +316,6 @@ class TargetScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
-        "video_urls" : _video_urls, \
-        "video_count" : _video_count, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
@@ -344,6 +354,7 @@ class TargetScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \
-
+        "video_urls" : _video_urls, \
+        "video_count" : _video_count, \
     }
 
