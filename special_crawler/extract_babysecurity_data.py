@@ -233,6 +233,9 @@ class BabysecurityScraper(Scraper):
     def _categories(self):
         all = self.tree_html.xpath("//div[contains(@class, 'breadcrumbs')]//li//a//text()")
         out = [self._clean_text(r) for r in all]
+        out = out[1:]
+        if len(out) < 1:
+            return None
         return out
 
     def _category_name(self):
