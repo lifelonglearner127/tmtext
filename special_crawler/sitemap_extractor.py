@@ -53,8 +53,8 @@ if __name__ == "__main__":
         sitemap_extractor(url, outputfile, changefreq, priority)
     else:
         print "######################################################################################################"
-        print "This is sitemap extractor to grab product page URLs from xml page.(Author: Marek Glica)"
+        print "This is a sitemap extractor to grab product page URLs from xml page.(Author: Marek Glica)"
         print "Please input correct arguments.\nfor ex: python sitemap_extractor.py \"http://www.babysecurity.co.uk/sitemap.xml\" babysecurity_sitemap.txt daily 1.0"
-        print "This grabs all product URLs of which priority is equal or greater than 1.0, changefreq is 'daily'."
-        print "And this exports product URLs in babysecurity_sitemap.txt file."
+        print "\t\tThis grabs all product URLs of which <priority> is equal or greater than 1.0 and <changefreq> is 'daily'."
+        print "\t\tAnd this exports product URLs in babysecurity_sitemap.txt file."
         print "######################################################################################################"
