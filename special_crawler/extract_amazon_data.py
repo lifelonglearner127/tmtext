@@ -361,9 +361,15 @@ class AmazonScraper(Scraper):
             return 0
 
     def _max_review(self):
+        rv = self._reviews()
+        if rv !=None and len(rv)>0:
+            return rv[-1][0]
         return None
 
     def _min_review(self):
+        rv = self._reviews()
+        if rv !=None and len(rv)>0:
+            return rv[0][0]
         return None
 
 
@@ -382,8 +388,6 @@ class AmazonScraper(Scraper):
         price = self.tree_html.xpath("//*[contains(@class, 'offer-price')]//text()")
         if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
             return price[0].strip()
-
-
 
         pid=self._product_id()
         price = self.tree_html.xpath("//button[@value='"+pid+"']//text()")
