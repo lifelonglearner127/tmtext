@@ -213,33 +213,33 @@ class AmazonScraper(Scraper):
             tree = self.tree_html
         #The small images are to the left of the big image
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
-        if image_url is not None and len(image_url)>0:
+        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
 
         #The small images are below the big image
         image_url = tree.xpath("//div[@id='thumbs-image']//img/@src")
-        if image_url is not None and len(image_url)>0:
+        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
 
         #Amazon instant video
         image_url = tree.xpath("//div[@class='dp-meta-icon-container']//img/@src")
-        if image_url is not None and len(image_url)>0:
+        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
 
         image_url = tree.xpath("//td[@id='prodImageCell']//img/@src")
-        if image_url is not None and len(image_url)>0:
+        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
 
         image_url = tree.xpath("//div[contains(@id,'thumb-container')]//img/@src")
-        if image_url is not None and len(image_url)>0:
+        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
 
         image_url = tree.xpath("//div[contains(@class,'imageThumb')]//img/@src")
-        if image_url is not None and len(image_url)>0:
+        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
 
         image_url = tree.xpath("//div[contains(@id,'coverArt')]//img/@src")
-        if image_url is not None and len(image_url)>0:
+        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
         image_url = tree.xpath('//img[@id="imgBlkFront"]')
         if image_url is not None and len(image_url)>0:
@@ -258,8 +258,13 @@ class AmazonScraper(Scraper):
         return len(self._image_urls())
 
     # return 1 if the "no image" image is found
-    def _no_image(self):
-        return None
+    def no_image(self,image_url):
+        try:
+            if self._no_image(image_url[0]):
+                return 1
+        except Exception, e:
+            print "image_urls WARNING: ", e.message
+        return 0
 
     def _video_urls(self):
         video_url = self.tree_html.xpath('//script[@type="text/javascript"]')
@@ -331,6 +336,16 @@ class AmazonScraper(Scraper):
         nr_reviews = self.tree_html.xpath("//a[@class='a-link-normal a-text-normal product-reviews-link']//text()")
         return self._toint(nr_reviews[0].replace('(','').replace(')',''))
 
+    def _reviews(self):
+        stars=self.tree_html.xpath("//tr[@class='a-histogram-row']//a//text()")
+        rev=[]
+        for i in range(len(stars)-1,0,-2):
+            a=self._toint(stars[i-1].split()[0])
+            b= self._toint(stars[i])
+            rev.append([a,b])
+        if len(rev) > 0 :  return rev
+        return None
+
     def _tofloat(self,s):
         try:
             t=float(s)
@@ -358,24 +373,29 @@ class AmazonScraper(Scraper):
 
     # extract product price from its product product page tree
     def _price(self):
+        price = self.tree_html.xpath("//span[@id='actualPriceValue']/b/text()")
+        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
+            return price[0].strip()
         price = self.tree_html.xpath("//*[contains(@id, 'priceblock_')]//text()")#priceblock_ can usually have a few things after it
-        if len(price)>0:
+        if len(price)>0 and len(price[0].strip())<12  and price[0].strip()!="":
+            return price[0].strip()
+        price = self.tree_html.xpath("//*[contains(@class, 'offer-price')]//text()")
+        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
             return price[0].strip()
 
-        price = self.tree_html.xpath("//*[contains(@class, 'offer-price')]//text()")
-        if len(price)>0:
-            return price[0].strip()
+
+
         pid=self._product_id()
         price = self.tree_html.xpath("//button[@value='"+pid+"']//text()")
  #       price = self.tree_html.xpath("//span[@id='actualPriceValue']//text()")
-        if len(price)>0:
+        if len(price)>0  and price[0].strip()!="":
             p=price[0].split()
             return p[-1]
         price = self.tree_html.xpath("//div[@id='"+pid+"']//a[@class='a-button-text']/span//text()")
-        if len(price)>0:
+        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
             return price[0]
         price = self.tree_html.xpath("//*[contains(@class, 'price')]//text()")
-        if len(price)>0:
+        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
             return price[0].strip()
         return None
 
@@ -572,7 +592,7 @@ class AmazonScraper(Scraper):
         "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
-        "no_image" : _no_image, \
+#        "no_image" : _no_image, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
@@ -586,6 +606,7 @@ class AmazonScraper(Scraper):
         "average_review" : _average_review, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
+        "reviews" : _reviews, \
 
         # CONTAINER : SELLERS
         "price" : _price, \
