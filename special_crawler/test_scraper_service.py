@@ -6,7 +6,6 @@ import re
 import copy
 import psycopg2
 import psycopg2.extras
-import requests
 from datetime import date
 from crawler_service import SUPPORTED_SITES
 from psycopg2.extensions import adapt
@@ -517,58 +516,74 @@ class ServiceScraperTest(unittest.TestCase):
         except Exception, e:
             print e
 
-        # service address
-        self.address = "http://127.0.0.1/get_data?url=%s"
-
-    def _test(self, website, test_url):
-        self.cur.execute("select * from url_samples where website='%s'" % website)
+    def _test(self, website, sample_url):
+        self.cur.execute("select * from url_samples where website='%s' and url='%s'" % (website, sample_url))
         row = self.cur.fetchall()
+
         print "\n-------------------------------Report results for %s-------------------------------" % website
+        print ">>>>>>sample url: %s" % sample_url
+
+        site_scraper = SUPPORTED_SITES[website](url=sample_url, bot=None)
+        test_json = site_scraper.product_info()
+        test_json = json.loads(json.dumps(test_json))
 
         if not row:
-            print "Please make sample data for %s in database before test" % website
+            print "This is new sample url and is loading to sample url tables.\n"
+
+            if site_scraper.not_a_product():
+                is_valid = 0
+                print "This url is not valid.\n"
+                sample_json = ''
+            else:
+                is_valid = 1
+                sample_json = test_json
+
+            self.cur.execute("insert into url_samples(url, website, json, is_old, is_valid)"
+                             " values('%s', '%s', '%s', 1, %d)"
+                             % (sample_url, website, json.dumps(sample_json).replace("'", "\""), is_valid))
+            self.con.commit()
         else:
-            response = requests.get(self.address % test_url)
             row = row[0]
 
-            test_json = response.text
-            sample_json = row["json"]
-            test_json = json.loads(test_json)
-            sample_json = json.loads(sample_json)
-
-            sample_url = row["url"]
-            last_update_date = row["last_update_date"]
-
-            diff_engine = JsonDiff(sample_json, test_json)
-            diff_engine.diff()
-            today = date.today()
-
-            difference_days = (today - last_update_date).days
-
-            if difference_days >= 7:
-                is_old = 1
-            else:
-                is_old = 0
-
-            if is_old:
-                print "Sample info is old %d days ago, please update sample info to get more correct report results!" % difference_days
-                self.cur.execute("update url_samples set is_old=1 where website='%s'" % website)
+            if site_scraper.not_a_product():
+                print "This url is not valid anymore.\n"
+                self.cur.execute("update url_samples set is_valid=0 where id = %d" % row["id"])
                 self.con.commit()
             else:
-                print "Sample info is old %d days ago, please update sample info to get more correct report results!" % difference_days
-                self.cur.execute("update url_samples set is_old=0 where website='%s'" % website)
+                sample_json = row["json"]
+                sample_json = json.loads(sample_json)
+
+                diff_engine = JsonDiff(sample_json, test_json)
+                diff_engine.diff()
+
+                today = date.today()
+                '''
+                difference_days = (today - last_update_date).days
+
+                if difference_days >= 7:
+                    is_old = 1
+                else:
+                    is_old = 0
+
+                if is_old:
+                    print "Sample info is old %d days ago, please update sample info to get more correct report results!" % difference_days
+                    self.cur.execute("update url_samples set is_old=1 where website='%s'" % website)
+                    self.con.commit()
+                else:
+                    print "Sample info is old %d days ago, please update sample info to get more correct report results!" % difference_days
+                    self.cur.execute("update url_samples set is_old=0 where website='%s'" % website)
+                    self.con.commit()
+                '''
+
+                sql = ("insert into report_results(sample_url, website, "
+                       "report_result, report_date, sample_json, current_json) "
+                       "values('%s', '%s', %s, '%s', '%s', '%s')"
+                       % (sample_url, website, adapt(diff_engine.log).getquoted(), today.isoformat(), json.dumps(sample_json).replace("'", "\""), json.dumps(test_json).replace("'", "\"")))
+
+                print ">>>>>>reports:\n%s\n" % diff_engine.log
+
+                self.cur.execute(sql)
                 self.con.commit()
-
-            sql = ("insert into report_results(sample_url, test_url, website, "
-                   "report_result, report_date, sample_json, test_json) "
-                   "values('%s', '%s', '%s', %s, '%s', '%s', '%s')"
-                   % (sample_url, test_url, website, adapt('a').getquoted(), today.isoformat(), json.dumps(sample_json), json.dumps(test_json)))
-
-            print ">>>>>>sample url: %s\n>>>>>>test url: %s" % (sample_url, test_url)
-            print ">>>>>>reports:\n%s\n" % diff_engine.log
-
-            self.cur.execute(sql)
-#            self.con.commit()
 
     # test all keys are in the response for simple (all-data) request for bhinneka
     # (using template function)
