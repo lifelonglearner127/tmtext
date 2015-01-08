@@ -5,7 +5,8 @@ except ImportError:
     USING_SIMMETRICA = False
 
 
-MONITORING_HOST = '54.174.165.160'
+MONITORING_HOST = 'keywords-mon.contentanalyticsinc.com'  # hostname, not IP
+SIMMETRICA_CONFIG = '/opt/simmetrica/config/config.yml'
 
 
 def push_simmetrica_event(
@@ -33,3 +34,31 @@ def push_simmetrica_event(
         # TODO: implement command-line event addition
         return
     return True
+
+
+def get_simmetrica_events(
+        event_name, start, end, period='hour',
+        host=MONITORING_HOST, port=6379, db=0, password=None
+):
+    simm = Simmetrica(host=host, port=port, db=db, password=password)
+    results = simm.query(event_name, start, end, period)
+    return results
+
+
+def return_average_for_last_days(
+        event_name, n_days=4, exclude_zeros=True,
+        host=MONITORING_HOST, port=6379, db=0, password=None
+):
+    simm = Simmetrica(host=host, port=port, db=db, password=password)
+    start = simm.get_current_timestamp() - 86400 * n_days
+    end = simm.get_current_timestamp()
+    events = []
+    for _stamp, _events in get_simmetrica_events(event_name, start, end):
+        _events = int(_events)
+        if exclude_zeros:
+            if _events == 0:
+                continue
+        events.append(int(_events))
+    if not events:
+        return
+    return float(sum(events)) / len(events)
