@@ -9,6 +9,7 @@ from fabric.api import cd, env, run, local, sudo, settings, prefix
 from fabric.contrib.console import confirm
 from fabric.utils import puts
 from fabric.colors import red, green
+from fabric.contrib import files
 import cuisine
 
 '''
@@ -212,10 +213,10 @@ def setup_packages():
     env.user, env.password, env.key_filename = \
         SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
 
+    sudo('apt-get update --fix-missing')
     cuisine.package_ensure('python-software-properties')
     # TODO: verify if the repo must be added
     #cuisine.repository_ensure_apt('ppa:fkrull/deadsnakes')
-    sudo('apt-get update')
     cuisine.package_ensure('python3.4 python3.4-dev')
     cuisine.package_ensure('python-dev')
     cuisine.package_ensure('python-pip python3-pip')
@@ -224,6 +225,7 @@ def setup_packages():
     cuisine.package_ensure('libssl-dev')
     cuisine.package_ensure('git')
     cuisine.package_ensure('tmux')
+    cuisine.package_ensure('mc htop iotop nano')  # just for convenience
     sudo('pip install virtualenv --upgrade')
 
     env.user, env.password, env.key_filename = \
@@ -365,12 +367,62 @@ def _configure_web_runner_web():
         run("tmux send-keys -t webrunner:4 'exit()' C-m")
 
 
+def setup_cron():
+    """
+    Setup cron tasks, for now only log compression
+    """
+    orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
+    env.user, env.password, env.key_filename = \
+        SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
+    cron_file = '/etc/cron.d/compresslogs'
+    username = 'web_runner'
+    homedir = '/home/web_runner'
+    repopath = 'repos/tmtext/web_runner'
+    scriptname = 'compress_old_logs_and_output_files.py'
+    if files.contains(cron_file, scriptname):
+        puts(green('Cron already installed'))
+    else:
+        files.append(cron_file,
+                     '*/7  *  *  *  *  {user} /usr/bin/python {home}/{repo}/{script}'.format(
+                         user=username, home=homedir, repo=repopath, script=scriptname
+                     ),
+                     use_sudo=True)
+    env.user, env.password, env.key_filename = \
+        orig_user, orig_passw, orig_cert
+
+def setup_swap():
+    """
+    Create and enable swap, 8G
+    """
+    orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
+    env.user, env.password, env.key_filename = \
+        SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
+    swap_file = '/mnt/swapfile'
+#    with settings(warn_only=True):
+    result = sudo('/sbin/swapon -s')
+    if swap_file not in result:
+        sudo('dd if=/dev/zero of={swap} bs=1M count=8192'.format(swap=swap_file))
+        sudo('/sbin/mkswap {swap}'.format(swap=swap_file))
+        sudo('/sbin/swapon {swap}'.format(swap=swap_file))
+        result = sudo('/sbin/swapon -s')
+        if swap_file in result:
+            files.append('/etc/fstab',
+                         '{swap}  none    swap    sw    0    0'.format(swap=swap_file), use_sudo=True)
+            sudo('chmod 600 {swap}'.format(swap=swap_file))
+            sudo('chown root.root {swap}'.format(swap=swap_file))
+    else:
+        puts(green('Swap already enabled'))
+    env.user, env.password, env.key_filename = \
+        orig_user, orig_passw, orig_cert
+
+
 def configure():
     puts(green('Configuring the servers'))
 
     _configure_scrapyd()
     _configure_web_runner()
     _configure_web_runner_web()
+
 
 
 def _install_web_runner():
@@ -488,6 +540,8 @@ def _common_tasks():
     setup_users()
     setup_packages()
     setup_tmux()
+    setup_swap()
+    setup_cron()
 
 
 def deploy_scrapyd(restart_scrapyd=False, branch='master'):
