@@ -154,13 +154,15 @@ class WalmartScraper(Scraper):
         if video_url_candidates:
             # remove escapes
             #TODO: better way to do this?
-            video_url_candidate = re.sub('\\\\', "", video_url_candidates[0])
+            for video_url_item in video_url_candidates:
+                video_url_candidate = re.sub('\\\\', "", video_url_item)
 
-            # if it ends in flv, it's a video, ok
-            if video_url_candidate.endswith(".flv"):
-                self.has_webcollage_media = True
-                self.has_video = True
-                self.video_urls = [video_url_candidate]
+                # if it ends in flv, it's a video, ok
+                if video_url_candidate.endswith(".flv"):
+                    self.has_webcollage_media = True
+                    self.has_video = True
+                    self.video_urls = [video_url_candidate]
+                    break
 
             # if it doesn't, it may be a url to make another request to, to get customer reviews video
             new_response = urllib.urlopen(video_url_candidate).read()
