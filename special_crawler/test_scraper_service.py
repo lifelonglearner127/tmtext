@@ -526,6 +526,8 @@ class ServiceScraperTest(unittest.TestCase):
         site_scraper = SUPPORTED_SITES[website](url=sample_url, bot=None)
         test_json = site_scraper.product_info()
         test_json = json.loads(json.dumps(test_json))
+        test_json_str = json.dumps(test_json)
+        test_json_str = test_json_str.replace("'", "\"")
 
         if not row:
             print "This is new sample url and is loading to sample url tables.\n"
@@ -533,14 +535,14 @@ class ServiceScraperTest(unittest.TestCase):
             if site_scraper.not_a_product():
                 is_valid = 0
                 print "This url is not valid.\n"
-                sample_json = ''
+                sample_json_str = ''
             else:
                 is_valid = 1
-                sample_json = test_json
+                sample_json_str = test_json_str
 
             self.cur.execute("insert into url_samples(url, website, json, is_old, is_valid)"
                              " values('%s', '%s', '%s', 1, %d)"
-                             % (sample_url, website, json.dumps(sample_json).replace("'", "\""), is_valid))
+                             % (sample_url, website, sample_json_str, is_valid))
             self.con.commit()
         else:
             row = row[0]
@@ -551,8 +553,8 @@ class ServiceScraperTest(unittest.TestCase):
                 self.con.commit()
             else:
                 sample_json = row["json"]
+                sample_json_str = row["json"]
                 sample_json = json.loads(sample_json)
-
                 diff_engine = JsonDiff(sample_json, test_json)
                 diff_engine.diff()
 
@@ -578,7 +580,8 @@ class ServiceScraperTest(unittest.TestCase):
                 sql = ("insert into report_results(sample_url, website, "
                        "report_result, report_date, sample_json, current_json) "
                        "values('%s', '%s', %s, '%s', '%s', '%s')"
-                       % (sample_url, website, adapt(diff_engine.log).getquoted(), today.isoformat(), json.dumps(sample_json).replace("'", "\""), json.dumps(test_json).replace("'", "\"")))
+                       % (sample_url, website, adapt(diff_engine.log).getquoted(), today.isoformat(),
+                          sample_json_str, test_json_str))
 
                 print ">>>>>>reports:\n%s\n" % diff_engine.log
 
