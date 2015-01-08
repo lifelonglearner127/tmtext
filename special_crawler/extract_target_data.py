@@ -127,7 +127,7 @@ class TargetScraper(Scraper):
             redirect_contents = urllib.urlopen(redirect_link).read()
             redirect_tree = html.fromstring(redirect_contents)
             tabs = redirect_tree.xpath("//div[@class='wc-ms-navbar']//li//a//span/text()")
-            if "Video" in tabs:
+            if "Video" in tabs or "Product Video" in tabs:
                 #have video
                 video_url.append(item)
 
@@ -256,6 +256,7 @@ class TargetScraper(Scraper):
 
     def _owned_out_of_stock(self):
         if 'disabled' in self.tree_html.xpath("//button[@id='addToCart']/@class")[0]:
+
             return 1
         return 0
 
