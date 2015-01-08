@@ -104,6 +104,8 @@ class BabysecurityScraper(Scraper):
 
     def _image_urls(self):
         image_url = self.tree_html.xpath("//div[starts-with(@class,'thumbnails')]//div[@class='item']//a/@href")
+        if len(image_url) < 1:
+            image_url = self.tree_html.xpath("//div[contains(@class,'product-img-column')]//p[contains(@class,'product-image')]//a[contains(@class,'cloud-zoom')]/@href")
         return image_url
 
     def _image_count(self):
@@ -198,7 +200,10 @@ class BabysecurityScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//div[contains(@class,'product-type-data')]//p[@class='special-price']//span[@class='price']//text()")[0].strip()
+        try:
+            price = self.tree_html.xpath("//div[contains(@class,'product-type-data')]//p[@class='special-price']//span[@class='price']//text()")[0].strip()
+        except IndexError:
+            price = self.tree_html.xpath("//div[contains(@class,'product-type-data')]//span[@class='regular-price']//span[@class='price']//text()")[0].strip()
         return price
 
     def _in_stores_only(self):
@@ -249,7 +254,16 @@ class BabysecurityScraper(Scraper):
         return universal_variable
 
     def _brand(self):
-        return self.tree_html.xpath("//div[contains(@class, 'box-brand')]//a//img/@alt")[0].strip()
+        brand = None
+        trs = self.tree_html.xpath("//table[@class='data-table']//tr")
+        for tr in trs:
+            try:
+                head_txt = tr.xpath("//th//text()")[0].strip()
+                if head_txt == "Brand":
+                    brand = tr.xpath("//td//text()")[0].strip()
+            except IndexError:
+                pass
+        return brand
 
     ##########################################
     ################ HELPER FUNCTIONS
