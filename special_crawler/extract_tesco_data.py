@@ -47,7 +47,25 @@ class TescoScraper(Scraper):
         self.scraper_version = self._version()
         return (not not m) or (not not n)
 
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
+        try:
+            page_title = self.tree_html.xpath("//title/text()")[0]
+        except Exception:
+            page_title = ""
 
+        if page_title.find('not found')>0:
+            return True
+        else:
+            if self.product_page_url.find('groceries')>0 and self.product_page_url.find('product/details')<0:
+                return True
+            return False
 
 
 
@@ -430,12 +448,29 @@ class TescoScraper(Scraper):
         return nr_reviews
 
     def _max_review(self):
+        rv = self._reviews()
+        if rv !=None and len(rv)>0:
+            return rv[-1][0]
         return None
 
     def _min_review(self):
+        rv = self._reviews()
+        if rv !=None and len(rv)>0:
+            return rv[0][0]
         return None
 
-
+    def _reviews(self):
+        if not self.bazaarvoice:
+            self.load_bazaarvoice()
+        stars = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['RatingDistribution']
+        rev=[]
+        for s in stars:
+            a = s['RatingValue']
+            b = s['Count']
+            rev.append([a,b])
+        if len(rev) > 0 :
+            return sorted(rev, key=lambda x: x[0])
+        return None
 
 
 
@@ -601,6 +636,7 @@ class TescoScraper(Scraper):
         "review_count" : _review_count, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
+        "reviews" : _reviews, \
 
         # CONTAINER : CLASSIFICATION
         "brand" : _brand, \
