@@ -222,6 +222,8 @@ class WalmartScraper(Scraper):
 
         if self.pdf_urls:
             self.has_pdf = True
+        else:
+            self.pdf_urls = None
 
         return self.pdf_urls
 

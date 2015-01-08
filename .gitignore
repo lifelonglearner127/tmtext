@@ -48,3 +48,4 @@ dist
 !/webroot/img/
 /special_crawler/queue_handler/venv
 settings_ses.p*
+*.swp
