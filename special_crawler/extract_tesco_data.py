@@ -448,12 +448,29 @@ class TescoScraper(Scraper):
         return nr_reviews
 
     def _max_review(self):
+        rv = self._reviews()
+        if rv !=None and len(rv)>0:
+            return rv[-1][0]
         return None
 
     def _min_review(self):
+        rv = self._reviews()
+        if rv !=None and len(rv)>0:
+            return rv[0][0]
         return None
 
-
+    def _reviews(self):
+        if not self.bazaarvoice:
+            self.load_bazaarvoice()
+        stars = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['RatingDistribution']
+        rev=[]
+        for s in stars:
+            a = s['RatingValue']
+            b = s['Count']
+            rev.append([a,b])
+        if len(rev) > 0 :
+            return sorted(rev, key=lambda x: x[0])
+        return None
 
 
 
@@ -619,6 +636,7 @@ class TescoScraper(Scraper):
         "review_count" : _review_count, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
+        "reviews" : _reviews, \
 
         # CONTAINER : CLASSIFICATION
         "brand" : _brand, \
