@@ -47,7 +47,25 @@ class TescoScraper(Scraper):
         self.scraper_version = self._version()
         return (not not m) or (not not n)
 
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
+        try:
+            page_title = self.tree_html.xpath("//title/text()")[0]
+        except Exception:
+            page_title = ""
 
+        if page_title.find('not found')>0:
+            return True
+        else:
+            if self.product_page_url.find('groceries')>0 and self.product_page_url.find('product/details')<0:
+                return True
+            return False
 
 
 
