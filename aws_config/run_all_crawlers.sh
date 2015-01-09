@@ -1,6 +1,6 @@
 #!/bin/bash
 
-INPUT="walmart_genmills"
+INPUT="walmart_unilever"
 SITE="amazon"
 
 for node in "$@"
