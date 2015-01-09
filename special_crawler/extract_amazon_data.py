@@ -325,7 +325,7 @@ class AmazonScraper(Scraper):
     def _review_count(self):
         nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")
         if len(nr_reviews) > 0:
-            nr_review = re.findall("([0-9]+) customer reviews", nr_reviews[0])
+            nr_review = re.findall("([0-9,]+) customer reviews", nr_reviews[0])
             if len(nr_review) == 0:
                 nr_review = re.findall("([0-9]+) customer review", nr_reviews[0])
             if len(nr_review) > 0:
@@ -334,7 +334,8 @@ class AmazonScraper(Scraper):
         if len(nr_reviews) > 1:
             return self._toint(nr_reviews[1])
         nr_reviews = self.tree_html.xpath("//a[@class='a-link-normal a-text-normal product-reviews-link']//text()")
-        return self._toint(nr_reviews[0].replace('(','').replace(')',''))
+
+        return self._toint(nr_reviews[0].replace('(','').replace(')','').replace(',',''))
 
     def _reviews(self):
         stars=self.tree_html.xpath("//tr[@class='a-histogram-row']//a//text()")
@@ -355,6 +356,7 @@ class AmazonScraper(Scraper):
 
     def _toint(self,s):
         try:
+            s = s.replace(',','')
             t=int(s)
             return t
         except ValueError:
