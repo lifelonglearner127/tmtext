@@ -538,8 +538,8 @@ class ServiceScraperTest(unittest.TestCase):
                 is_valid = 1
                 sample_json_str = test_json_str
 
-            self.cur.execute("insert into url_samples(url, website, json, is_old, is_valid)"
-                             " values('%s', '%s', $$%s$$, 1, %d)"
+            self.cur.execute("insert into url_samples(url, website, json, is_valid)"
+                             " values('%s', '%s', $$%s$$, %d)"
                              % (sample_url, website, sample_json_str, is_valid))
             self.con.commit()
         else:
@@ -557,23 +557,6 @@ class ServiceScraperTest(unittest.TestCase):
                 diff_engine.diff()
 
                 today = date.today()
-                '''
-                difference_days = (today - last_update_date).days
-
-                if difference_days >= 7:
-                    is_old = 1
-                else:
-                    is_old = 0
-
-                if is_old:
-                    print "Sample info is old %d days ago, please update sample info to get more correct report results!" % difference_days
-                    self.cur.execute("update url_samples set is_old=1 where website='%s'" % website)
-                    self.con.commit()
-                else:
-                    print "Sample info is old %d days ago, please update sample info to get more correct report results!" % difference_days
-                    self.cur.execute("update url_samples set is_old=0 where website='%s'" % website)
-                    self.con.commit()
-                '''
 
                 sql = ("insert into report_results(sample_url, website, "
                        "report_result, report_date, sample_json, current_json) "
