@@ -188,7 +188,7 @@ class BaseProductsSpider(Spider):
 
         # try to decode the product url (it may be base16-encoded)
         try:
-            product_url_decoded = b16decode(self.product_url)
+            product_url_decoded = b16decode(self.product_url.strip())
             self.product_url = product_url_decoded
         except TypeError:
             pass
