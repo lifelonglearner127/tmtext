@@ -186,13 +186,6 @@ class BaseProductsSpider(Spider):
 
         self.product_url = product_url
 
-        # try to decode the product url (it may be base16-encoded)
-        try:
-            product_url_decoded = b16decode(self.product_url.strip())
-            self.product_url = product_url_decoded
-        except TypeError:
-            pass
-
         self.searchterms = []
         if searchterms_str is not None:
             self.searchterms = searchterms_str.decode('utf-8').split(',')
