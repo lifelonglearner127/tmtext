@@ -641,12 +641,23 @@ class ServiceScraperTest(unittest.TestCase):
         for url in self.urls_by_scraper["homedepot"]:
             self._test("homedepot", url)
 
-    # test all keys are in the response for simple (all-data) request for homedepot
+    # test all keys are in the response for simple (all-data) request for ozon
     # (using template function)
     def test_ozon(self):
         for url in self.urls_by_scraper["ozon"]:
             self._test("ozon", url)
 
+    # test all keys are in the response for simple (all-data) request for target
+    # (using template function)
+    def test_target(self):
+        for url in self.urls_by_scraper["target"]:
+            self._test("target", url)
+
+    # test all keys are in the response for simple (all-data) request for hersheysstore
+    # (using template function)
+    def test_hersheysstore(self):
+        for url in self.urls_by_scraper["hersheysstore"]:
+            self._test("hersheysstore", url)
 
 if __name__=='__main__':
     unittest.main()
