@@ -21,6 +21,9 @@ class JsonDiff:
         # variable to control how deep to recursively search
         # currently not used
         self.list_depth = list_depth
+        self.occurrence_value_change = 0
+        self.occurrence_structural_change = 0
+        self.occurrence_type_change = 0
 
     def logger(self, log_level, message):
         self.log += log_level + ": " + message + "\n"
@@ -203,6 +206,7 @@ class JsonDiff:
                                                str(_json1),
                                                type(_json2).__name__,
                                                str(_json2)))
+                self.occurrence_type_change += 1
         else:
             # they are the same type
             # Three choices: dict, list, item
@@ -239,6 +243,7 @@ class JsonDiff:
                                    .format(path, type(_json1).__name__,
                                            str(_json1), type(_json2).__name__,
                                            str(_json2)))
+            self.occurrence_type_change += 1
         else:
             # they are the same type
             # Three choices: dict, list, item
@@ -433,10 +438,12 @@ class JsonDiff:
             if not match:
                 self.difference.append(
                     u'Changed: {} to {} from {}'.format(path, _json1, _json2))
+                self.occurrence_value_change += 1
         else:
             if not _json1 == _json2:
                 self.difference.append(
                     u'Changed: {} to {} from {}'.format(path, _json1, _json2))
+                self.occurrence_value_change += 1
 
     def _expand_diff(self, blob, path, new_item):
         """
@@ -462,6 +469,7 @@ class JsonDiff:
                 if type(blob[key]) not in [list, dict]:
                     self.difference.append(
                         u'{}: {}={}'.format(c, new_path, blob[key]))
+                    self.occurrence_structural_change += 1
                 else:
                     self._expand_diff(blob[key], new_path, new_item)
         elif type(blob) is list:
@@ -472,8 +480,10 @@ class JsonDiff:
                 else:
                     self.difference.append(
                         u'{}: {}={}'.format(c, new_path, blob[index]))
+                    self.occurrence_structural_change += 1
         else:
             self.difference.append(u"{}: {}={}".format(c, path, blob))
+            self.occurrence_structural_change += 1
 
     def diff(self):
         difference = []
@@ -533,23 +543,23 @@ class ServiceScraperTest(unittest.TestCase):
             print "This is new sample url and is loading to sample url tables.\n"
 
             if site_scraper.not_a_product():
-                is_valid = 0
+                not_a_product = 1
                 print "This url is not valid.\n"
                 sample_json_str = ''
             else:
-                is_valid = 1
+                not_a_product = 0
                 sample_json_str = test_json_str
 
-            self.cur.execute("insert into console_urlsamples(url, website, json, qualified_date, is_valid)"
-                             " values('%s', '%s', $$%s$$, %s, %d)"
-                             % (sample_url, website, sample_json_str, today.isoformat(), is_valid))
+            self.cur.execute("insert into console_urlsamples(url, website, json, qualified_date, not_a_product)"
+                             " values('%s', '%s', $$%s$$, '%s', %d)"
+                             % (sample_url, website, sample_json_str, today.isoformat(), not_a_product))
             self.con.commit()
         else:
             row = row[0]
 
             if site_scraper.not_a_product():
                 print "This url is not valid anymore.\n"
-                self.cur.execute("update console_urlsamples set is_valid=0 where id = %d" % row["id"])
+                self.cur.execute("update console_urlsamples set not_a_product=1 where id = %d" % row["id"])
                 self.con.commit()
             else:
                 sample_json = row["json"]
@@ -559,9 +569,11 @@ class ServiceScraperTest(unittest.TestCase):
                 diff_engine.diff()
 
                 sql = ("insert into console_reportresults(sample_url, website, "
-                       "report_result, report_date, sample_json, current_json) "
-                       "values('%s', '%s', $$%s$$, '%s', $$%s$$, $$%s$$)"
-                       % (sample_url, website, diff_engine.log, today.isoformat(),
+                       "report_result, changes_in_structure, changes_in_type, changes_in_value, report_date, "
+                       "sample_json, current_json) "
+                       "values('%s', '%s', $$%s$$, %d, %d, %d, '%s', $$%s$$, $$%s$$)"
+                       % (sample_url, website, diff_engine.log, diff_engine.occurrence_structural_change,
+                          diff_engine.occurrence_type_change, diff_engine.occurrence_value_change, today.isoformat(),
                           sample_json_str, test_json_str))
 
                 print ">>>>>>reports:\n%s\n" % diff_engine.log
