@@ -527,7 +527,6 @@ class ServiceScraperTest(unittest.TestCase):
         test_json = site_scraper.product_info()
         test_json = json.loads(json.dumps(test_json))
         test_json_str = json.dumps(test_json)
-        test_json_str = test_json_str.replace("'", "\"")
 
         if not row:
             print "This is new sample url and is loading to sample url tables.\n"
@@ -541,7 +540,7 @@ class ServiceScraperTest(unittest.TestCase):
                 sample_json_str = test_json_str
 
             self.cur.execute("insert into url_samples(url, website, json, is_old, is_valid)"
-                             " values('%s', '%s', '%s', 1, %d)"
+                             " values('%s', '%s', $$%s$$, 1, %d)"
                              % (sample_url, website, sample_json_str, is_valid))
             self.con.commit()
         else:
@@ -579,8 +578,8 @@ class ServiceScraperTest(unittest.TestCase):
 
                 sql = ("insert into report_results(sample_url, website, "
                        "report_result, report_date, sample_json, current_json) "
-                       "values('%s', '%s', %s, '%s', '%s', '%s')"
-                       % (sample_url, website, adapt(diff_engine.log).getquoted(), today.isoformat(),
+                       "values('%s', '%s', $$%s$$, '%s', $$%s$$, $$%s$$)"
+                       % (sample_url, website, diff_engine.log, today.isoformat(),
                           sample_json_str, test_json_str))
 
                 print ">>>>>>reports:\n%s\n" % diff_engine.log
