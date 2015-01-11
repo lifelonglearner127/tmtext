@@ -6,7 +6,7 @@ import re
 import string
 import urllib
 import urlparse
-from base64 import b32decode
+from base64 import b16decode
 
 import scrapy.log
 from scrapy.log import ERROR, WARNING, INFO
@@ -186,9 +186,9 @@ class BaseProductsSpider(Spider):
 
         self.product_url = product_url
 
-        # try to decode the product url (it may be base32-encoded)
+        # try to decode the product url (it may be base16-encoded)
         try:
-            product_url_decoded = b32decode(self.product_url)
+            product_url_decoded = b16decode(self.product_url)
             self.product_url = product_url_decoded
         except TypeError:
             pass
