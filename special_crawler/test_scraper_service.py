@@ -516,7 +516,7 @@ class ServiceScraperTest(unittest.TestCase):
             print e
 
     def _test(self, website, sample_url):
-        self.cur.execute("select * from url_samples where website='%s' and url='%s'" % (website, sample_url))
+        self.cur.execute("select * from console_urlsamples where website='%s' and url='%s'" % (website, sample_url))
         row = self.cur.fetchall()
 
         print "\n-------------------------------Report results for %s-------------------------------" % website
@@ -526,6 +526,8 @@ class ServiceScraperTest(unittest.TestCase):
         test_json = site_scraper.product_info()
         test_json = json.loads(json.dumps(test_json))
         test_json_str = json.dumps(test_json)
+
+        today = date.today()
 
         if not row:
             print "This is new sample url and is loading to sample url tables.\n"
@@ -538,16 +540,16 @@ class ServiceScraperTest(unittest.TestCase):
                 is_valid = 1
                 sample_json_str = test_json_str
 
-            self.cur.execute("insert into url_samples(url, website, json, is_valid)"
-                             " values('%s', '%s', $$%s$$, %d)"
-                             % (sample_url, website, sample_json_str, is_valid))
+            self.cur.execute("insert into console_urlsamples(url, website, json, qualified_date, is_valid)"
+                             " values('%s', '%s', $$%s$$, %s, %d)"
+                             % (sample_url, website, sample_json_str, today.isoformat(), is_valid))
             self.con.commit()
         else:
             row = row[0]
 
             if site_scraper.not_a_product():
                 print "This url is not valid anymore.\n"
-                self.cur.execute("update url_samples set is_valid=0 where id = %d" % row["id"])
+                self.cur.execute("update console_urlsamples set is_valid=0 where id = %d" % row["id"])
                 self.con.commit()
             else:
                 sample_json = row["json"]
@@ -556,9 +558,7 @@ class ServiceScraperTest(unittest.TestCase):
                 diff_engine = JsonDiff(sample_json, test_json)
                 diff_engine.diff()
 
-                today = date.today()
-
-                sql = ("insert into report_results(sample_url, website, "
+                sql = ("insert into console_reportresults(sample_url, website, "
                        "report_result, report_date, sample_json, current_json) "
                        "values('%s', '%s', $$%s$$, '%s', $$%s$$, $$%s$$)"
                        % (sample_url, website, diff_engine.log, today.isoformat(),
