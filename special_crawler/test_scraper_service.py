@@ -8,7 +8,6 @@ import psycopg2
 import psycopg2.extras
 from datetime import date
 from crawler_service import SUPPORTED_SITES
-from psycopg2.extensions import adapt
 
 
 class JsonDiff:
