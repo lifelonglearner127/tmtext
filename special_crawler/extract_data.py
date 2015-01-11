@@ -82,6 +82,10 @@ class Scraper():
             "keywords", # keywords for this product, usually from meta tag, string
             "meta_tags",# a list of pairs of meta tag keys and values
             "meta_tag_count", # the number of meta tags in the source of the page
+
+            "image_hashes", # list of hash values of images as returned by _image_hash() function - list of strings (the same order as image_urls)
+            "thumbnail", # thumbnail of the main product image on the page - tbd
+
             
             # reviews
             "review_count", # total number of reviews, int
@@ -102,6 +106,17 @@ class Scraper():
             "marketplace_sellers", # sellers on marketplace (or equivalent) selling item, list of strings
             "marketplace_lowest_price", # string
             "in_stock", # binary (0/1), whether product can be bought from the site, from any seller
+
+            "site_online", # the item is sold by the site and delivered directly, irrespective of availability - binary
+            "site_online_in_stock", # currently available from the site - binary
+            "site_online_out_of_stock", # currently unavailable from the site - binary
+            "marketplace_in_stock", # currently available from at least one marketplace seller - binary
+            "marketplace_out_of_stock", # currently unavailable from any marketplace seller - binary
+            "marketplace_prices", # the list of marketplace prices - list of floating-point numbers ([0.00, 0.00], needs to be in the same order as list of marketplace_sellers)
+            "in_stores_in_stock", # currently available for pickup from a physical store - binary (null should be used for items that can not be ordered online and the availability may depend on location of the store)
+            "in_stores_out_of_stock", # currently unavailable for pickup from a physical store - binary (null should be used for items that can not be ordered online and the availability may depend on location of the store)
+            "online_only", # site_online or marketplace but not in_stores - binary
+
             
             # classification
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
@@ -143,10 +158,14 @@ class Scraper():
                         "features", "feature_count", "model_meta", "description", "long_description"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls",\
                             "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
-                            'meta_tags','meta_tag_count'], \
+                            "meta_tags","meta_tag_count", \
+                            "image_hashes", "thumbnail"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
-                    "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock"], \
+                    "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock", \
+                    "site_online", "site_online_in_stock", "site_online_out_of_stock", "marketplace_in_stock", \
+                    "marketplace_out_of_stock", "marketplace_prices", "in_stores_in_stock", \
+                    "in_stores_out_of_stock", "online_only"],
         "classification": ["categories", "category_name", "brand"]
     }
 

@@ -23,7 +23,7 @@ class TargetScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9]+)"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9A-Za-z]+)"
 
     reviews_tree = None
     max_score = None
@@ -34,8 +34,19 @@ class TargetScraper(Scraper):
 
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
-        m = re.match(r"^http://www\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9]+)", self.product_page_url)
+        m = re.match(r"^http://www\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9A-Za-z]+)", self.product_page_url)
         return not not m
+
+    def not_a_product(self):
+        '''Overwrites parent class method that determines if current page
+        is not a product page.
+        Currently for Amazon it detects captcha validation forms,
+        and returns True if current page is one.
+        '''
+
+        if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
+            return True
+        return False
 
     ##########################################
     ############### CONTAINER : NONE
@@ -70,24 +81,69 @@ class TargetScraper(Scraper):
         rows = self.tree_html.xpath("//ul[@class='normal-list']//li")
         line_txts = []
         for row in rows:
-            row_txts = row.xpath(".//text()")
-            row_txts = [self._clean_text(r) for r in row_txts]
-            row_txts = "".join(row_txts)
-            line_txts.append(row_txts)
-        all_features_text = "\n".join(line_txts)
+            try:
+                strong = row.xpath(".//strong//text()")[0].strip()
+                if True:
+                # if strong[-1:] == ":":
+                    # feature
+                    row_txt = " ".join([self._clean_text(i) for i in row.xpath(".//text()") if len(self._clean_text(i)) > 0]).strip()
+                    row_txt = row_txt.replace("\t", "")
+                    row_txt = row_txt.replace("\n", "")
+                    row_txt = row_txt.replace(" , ", ", ")
+                    line_txts.append(row_txt)
+            except IndexError:
+                pass
+        all_features_text = line_txts
+        if len(all_features_text) < 1:
+            return None
         return all_features_text
 
     def _feature_count(self):
-        return len(self.tree_html.xpath("//ul[@class='normal-list']//li"))
+        features = len(self._features())
+        if features is None:
+            return 0
+        return len(self._features())
 
     def _model_meta(self):
         return None
 
     def _description(self):
+        description = self._description_helper()
+        if len(description) < 1:
+            return self._long_description_helper()
+        return description
+
+    def _description_helper(self):
         description = "".join(self.tree_html.xpath("//span[@itemprop='description']//text()")).strip()
+        description_copy = "".join(self.tree_html.xpath("//div[@class='details-copy']//text()")).strip()
+        description += description_copy
+        rows = self.tree_html.xpath("//ul[@class='normal-list']//li")
+        lis = []
+        for r in rows:
+            try:
+                strong = r.xpath(".//strong//text()")[0].strip()
+                if strong[-1:] == ":":
+                    break
+            except IndexError:
+                pass
+            #not feature
+            row_txt = " ".join([self._clean_text(i) for i in r.xpath(".//text()") if len(self._clean_text(i)) > 0]).strip()
+            row_txt = row_txt.replace("\t", "")
+            row_txt = row_txt.replace("\n", "")
+            row_txt = row_txt.replace(" , ", ", ")
+            lis.append(row_txt)
+        description_2nd = "\n".join(lis)
+        if len(description_2nd) > 0:
+            description += description_2nd
         return description
 
     def _long_description(self):
+        description = self._description_helper()
+        if len(description) < 1:
+            return None
+        return self._long_description_helper()
+
+    def _long_description_helper(self):
         rows = self.tree_html.xpath("//ul[starts-with(@class,'normal-list reduced-spacing-list')]//li")
         line_txts = []
         for row in rows:
@@ -119,8 +175,24 @@ class TargetScraper(Scraper):
         video_url = self.tree_html.xpath("//div[@class='videoblock']//div//a/@href")
         video_url = [("http://www.target.com%s" % r) for r in video_url]
         demo_url = self.tree_html.xpath("//div[starts-with(@class, 'demoblock')]//span//a/@href")
-        video_url += demo_url
+        demo_url = [r for r in demo_url if len(self._clean_text(r)) > 0]
+        for item in demo_url:
+            contents = urllib.urlopen(item).read()
+            tree = html.fromstring(contents)
+            redirect_link = tree.xpath("//div[@id='slow-reporting-message']//a/@href")[0]
+            redirect_contents = urllib.urlopen(redirect_link).read()
+            redirect_tree = html.fromstring(redirect_contents)
+            tabs = redirect_tree.xpath("//div[@class='wc-ms-navbar']//li//a//span/text()")
+            if "Video" in tabs or "Product Video" in tabs:
+                #have video
+                video_urls_tmp = redirect_tree.xpath("//div[@class='wc-gallery-thumb']//img/@wcobj")
+                if len(video_urls_tmp) > 0:
+                    video_url += video_urls_tmp
+                else:
+                    video_url.append(item)
 
+        if len(video_url) < 1:
+            return None
         return video_url
 
     def _video_count(self):
@@ -244,6 +316,7 @@ class TargetScraper(Scraper):
 
     def _owned_out_of_stock(self):
         if 'disabled' in self.tree_html.xpath("//button[@id='addToCart']/@class")[0]:
+
             return 1
         return 0
 
@@ -259,7 +332,7 @@ class TargetScraper(Scraper):
     def _categories(self):
         all = self.tree_html.xpath("//div[contains(@id, 'breadcrumbs')]//a/text()")
         out = [self._clean_text(r) for r in all]
-        return out
+        return out[1:]
 
     def _category_name(self):
         return self._categories()[-1]
@@ -304,8 +377,6 @@ class TargetScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
-        "video_urls" : _video_urls, \
-        "video_count" : _video_count, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
@@ -344,6 +415,7 @@ class TargetScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \
-
+        "video_urls" : _video_urls, \
+        "video_count" : _video_count, \
     }
 
