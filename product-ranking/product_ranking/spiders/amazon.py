@@ -162,7 +162,6 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         return BuyerReviews(**buyer_reviews)
 
-
     def _scrape_total_matches(self, response):
         # Where this value appears is a little weird and changes a bit so we
         # need two alternatives to capture it consistently.
@@ -266,3 +265,6 @@ class AmazonProductsSpider(BaseProductsSpider):
             result.meta['product'] = product
 
         return result
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
