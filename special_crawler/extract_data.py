@@ -176,6 +176,26 @@ class Scraper():
         "status": None
     }
 
+    def load_image_hashes():
+        '''Read file with image hashes list
+        Return list of image hashes found in file
+        '''
+        path = 'no_img_list.json'
+        no_img_list = []
+        if os.path.isfile(path):
+            f = open(path, 'r')
+            s = f.read()
+            if len(s) > 1:
+                no_img_list = json.loads(s)    
+            f.close()
+        return no_img_list
+
+    '''Static class variable that holds list of image hashes
+    that are "no image" images.
+    Should be loaded once when service is started, and subsequently
+    used whenever needed, by _no_image(), in any sub-scraper.
+    '''
+    NO_IMAGE_HASHES = load_image_hashes()
 
     def __init__(self, **kwargs):
         self.product_page_url = kwargs['url']
@@ -445,16 +465,9 @@ class Scraper():
             True if it's a "no image" image, False otherwise
         """
 
-        path = 'no_img_list.json'
-        no_img_list = []
-        if os.path.isfile(path):
-            f = open(path, 'r')
-            s = f.read()
-            if len(s) > 1:
-                no_img_list = json.loads(s)    
-            f.close()
         first_hash = self._image_hash(image_url)
-        if first_hash in no_img_list:
+        if first_hash in self.NO_IMAGE_HASHES:
+            print "not an image"
             return True
         else:
             return False
