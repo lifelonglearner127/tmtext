@@ -126,7 +126,11 @@ class BabysecurityScraper(Scraper):
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
         pdf_hrefs = []
         for pdf in pdfs:
-            pdf_hrefs.append(pdf.attrib['href'])
+            pdf_url_txts = [self._clean_text(r) for r in pdf.xpath(".//text()") if len(self._clean_text(r)) > 0]
+            if len(pdf_url_txts) > 0:
+                pdf_hrefs.append(pdf.attrib['href'])
+        if len(pdf_hrefs) < 1:
+            return None
         return pdf_hrefs
 
     def _pdf_count(self):
