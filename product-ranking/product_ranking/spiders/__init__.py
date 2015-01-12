@@ -6,7 +6,6 @@ import re
 import string
 import urllib
 import urlparse
-from base64 import b16decode
 
 import scrapy.log
 from scrapy.log import ERROR, WARNING, INFO
