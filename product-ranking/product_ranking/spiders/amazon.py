@@ -8,9 +8,9 @@ import string
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem, Price
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, \
-    cond_set, cond_set_value
+    cond_set, cond_set_value, FLOATING_POINT_RGEX
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -54,6 +54,8 @@ class AmazonProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
+        prod['buyer_reviews'] = self._build_buyer_reviews(response)
+
         if not self._has_captcha(response):
             self._populate_from_js(response, prod)
 
@@ -69,6 +71,7 @@ class AmazonProductsSpider(BaseProductsSpider):
             result = None
         else:
             result = self._handle_captcha(response, self.parse_product)
+
         return result
 
     def _populate_from_html(self, response, product):
@@ -135,6 +138,29 @@ class AmazonProductsSpider(BaseProductsSpider):
                 'image_url',
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
+
+    def _build_buyer_reviews(self, response):
+        buyer_reviews = {}
+
+        total = response.xpath(
+            'string(//*[@id="summaryStars"])').re(FLOATING_POINT_RGEX)
+        if not total:
+            return
+        buyer_reviews['num_of_reviews'] = int(total[0].replace(',', ''))
+
+        average = response.xpath(
+            '//*[@id="summaryStars"]/a/@title').extract()[0].replace('out of 5 stars','')
+        buyer_reviews['average_rating'] = float(average)
+
+        buyer_reviews['rating_by_star'] = {}
+        for tr in response.xpath(
+            '//table[@id="histogramTable"]'
+            '/tr[@class="a-histogram-row"]'): #td[last()]//text()').re('\d+')
+            rating = tr.xpath('string(.//td[1])').re(FLOATING_POINT_RGEX)[0]
+            number = tr.xpath('string(.//td[last()])').re(FLOATING_POINT_RGEX)[0]
+            buyer_reviews['rating_by_star'][rating] = int(number.replace(',', ''))
+
+        return BuyerReviews(**buyer_reviews)
 
     def _scrape_total_matches(self, response):
         # Where this value appears is a little weird and changes a bit so we
@@ -239,3 +265,6 @@ class AmazonProductsSpider(BaseProductsSpider):
             result.meta['product'] = product
 
         return result
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
