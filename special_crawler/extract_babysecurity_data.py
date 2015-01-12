@@ -23,7 +23,7 @@ class BabysecurityScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9]+)"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www\.babysecurity\.co\.uk/([a-zA-Z0-9\-\_/]+)"
 
     reviews_tree = None
     max_score = None
@@ -34,9 +34,21 @@ class BabysecurityScraper(Scraper):
 
     def check_url_format(self):
         # for ex: http://www.babysecurity.co.uk/bornfree-deco-bottles-5oz-3-pack-0-3-months.html#.VJjkDDMDQE
-        m = re.match(r"^http://www\.babysecurity\.co\.uk/([a-zA-Z0-9\-\_]+)\.html", self.product_page_url)
+        m = re.match(r"^http://www\.babysecurity\.co\.uk/([a-zA-Z0-9\-\_/]+)", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
+        if self._image_count() < 1:
+            return True
+        else:
+            return False
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -106,14 +118,20 @@ class BabysecurityScraper(Scraper):
         image_url = self.tree_html.xpath("//div[starts-with(@class,'thumbnails')]//div[@class='item']//a/@href")
         if len(image_url) < 1:
             image_url = self.tree_html.xpath("//div[contains(@class,'product-img-column')]//p[contains(@class,'product-image')]//a[contains(@class,'cloud-zoom')]/@href")
+        if len(image_url) < 1:
+            return None
         return image_url
 
     def _image_count(self):
         image_urls = self._image_urls()
-        return len(image_urls)
+        if image_urls:
+            return len(image_urls)
+        return 0
 
     def _video_urls(self):
         video_url = self.tree_html.xpath("//div[starts-with(@class,'product-img-column')]//iframe/@src")
+        if len(video_url) < 1:
+            return None
         return video_url
 
     def _video_count(self):
@@ -249,13 +267,6 @@ class BabysecurityScraper(Scraper):
 
     def _category_name(self):
         return self._categories()[-1]
-
-    def load_universal_variable(self):
-        js_content = ' '.join(self.tree_html.xpath('//script//text()'))
-
-        universal_variable = {}
-        universal_variable["manufacturer"] = re.findall(r'"manufacturer": "(.*?)"', js_content)[0]
-        return universal_variable
 
     def _brand(self):
         brand = None
