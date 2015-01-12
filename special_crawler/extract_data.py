@@ -183,7 +183,12 @@ class Scraper():
 
         # Set generic fields
         # directly (don't need to be computed by the scrapers)
-        self.pre_set_fields()
+
+        # Note: This needs to be done before merging with DATA_TYPES, below,
+        # so that BASE_DATA_TYPES values can be overwritten by DATA_TYPES values
+        # if needed. (more specifically overwrite functions for extracting certain data
+        # (especially sellers-related fields))
+        self._pre_set_fields()
 
         # update data types dictionary to overwrite names of implementing methods for each data type
         # with implmenting function from subclass
@@ -201,22 +206,32 @@ class Scraper():
                 print "*******EXTRA data type: ", key
                 del self.ALL_DATA_TYPES[key]
 
-
-    def pre_set_fields(self):
+    def _pre_set_fields(self):
         '''Before the scraping for the particular site is started,
         some general fields are set directly.
+        Fields set: date, url, status
         '''
 
         current_date = time.strftime("%Y-%m-%d %H:%M:%S")
 
         # Set fields for success respose
 
+        # Generic fields
         # Set date
         self.BASE_DATA_TYPES['date'] = lambda x: current_date
         # Set url
         self.BASE_DATA_TYPES['url'] = lambda x: self.product_page_url
         # Set status
         self.BASE_DATA_TYPES['status'] = lambda x: "success"
+
+        # Deprecated fields
+        self.BASE_DATA_TYPES['owned'] = lambda c: c._owned()
+        self.BASE_DATA_TYPES['owned_out_of_stock'] = lambda c: c._owned_out_of_stock()
+        # Inferred fields
+        # TODO
+        self.BASE_DATA_TYPES['site_online_in_stock'] = lambda c: c._site_online_in_stock()
+        self.BASE_DATA_TYPES['marketplace_in_stock'] = lambda c: c._marketplace_in_stock()
+        self.BASE_DATA_TYPES['in_stores_in_stock'] = lambda c: c._in_stores_in_stock()
 
         # Set fields for error response
         
@@ -360,8 +375,6 @@ class Scraper():
 
             results_dict[info] = results
 
-        # compute additional fields 
-
         return results_dict
 
     # pack returned object data types into nested dictionary according to specific format
@@ -436,6 +449,28 @@ class Scraper():
             return True
         else:
             return False
+
+    def _owned(self):
+        '''General function for setting value of legacy field "owned".
+        It will be inferred from value of "site_online_in_stock" field.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+
+        # set extractor function for owned
+        # to be same as for site_online_in_stock
+        return self.DATA_TYPES['site_online_in_stock']
+
+    def _owned_out_of_stock(self):
+        '''General function for setting value of legacy field "owned_out_of_stock".
+        It will be inferred from value of "site_online_out_of_stock" field.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+
+        # set extractor function for owned_out_of_stock
+        # to be same as for site_online_out_of_stock
+        return self.DATA_TYPES['site_online_out_of_stock']
 
     
 if __name__=="__main__":
