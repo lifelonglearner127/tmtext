@@ -6,7 +6,6 @@ import re
 import string
 import urllib
 import urlparse
-from base64 import b32decode
 
 import scrapy.log
 from scrapy.log import ERROR, WARNING, INFO
@@ -185,13 +184,6 @@ class BaseProductsSpider(Spider):
             self.quantity = int(quantity)
 
         self.product_url = product_url
-
-        # try to decode the product url (it may be base32-encoded)
-        try:
-            product_url_decoded = b32decode(self.product_url)
-            self.product_url = product_url_decoded
-        except TypeError:
-            pass
 
         self.searchterms = []
         if searchterms_str is not None:
