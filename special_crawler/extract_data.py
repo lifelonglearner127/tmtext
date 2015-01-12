@@ -46,7 +46,6 @@ class Scraper():
     # using the declarations in the subclasses (for data types that have support in each subclass)
 
     BASE_DATA_TYPES_LIST = {
-            # TODO: set url globally
             "url", # url of product
             "event",
             "product_id",
@@ -100,13 +99,10 @@ class Scraper():
             "price_currency", # currency for price, string of max 3 chars
             "in_stores", # available to purchase in stores, 1/0
             "in_stores_only", # whether product can be found in stores only, 1/0
-            "owned", # whether product is owned by site, 1/0
-            "owned_out_of_stock", # whether product is owned and out of stock, 1/0
             "marketplace", # whether product can be found on marketplace, 1/0
             "marketplace_sellers", # sellers on marketplace (or equivalent) selling item, list of strings
             "marketplace_lowest_price", # string
             "in_stock", # binary (0/1), whether product can be bought from the site, from any seller
-
             "site_online", # the item is sold by the site and delivered directly, irrespective of availability - binary
             "site_online_in_stock", # currently available from the site - binary
             "site_online_out_of_stock", # currently unavailable from the site - binary
@@ -116,7 +112,9 @@ class Scraper():
             "in_stores_in_stock", # currently available for pickup from a physical store - binary (null should be used for items that can not be ordered online and the availability may depend on location of the store)
             "in_stores_out_of_stock", # currently unavailable for pickup from a physical store - binary (null should be used for items that can not be ordered online and the availability may depend on location of the store)
             "online_only", # site_online or marketplace but not in_stores - binary
-
+            # legacy
+            "owned", # whether product is owned by site, 1/0
+            "owned_out_of_stock", # whether product is owned and out of stock, 1/0
             
             # classification
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
@@ -151,7 +149,6 @@ class Scraper():
     # keys that should be left in the root are not included in this structure
     # TODO: make sure this is synchronized somehow with BASE_DATA_TYPES? like there should be no extra data types here
     #       maybe put it as an instance variable
-    # TODO: what if only specific data was requested? will this still work?
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
@@ -184,18 +181,9 @@ class Scraper():
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
 
-        current_date = time.strftime("%Y-%m-%d %H:%M:%S")
-
-        # Set fields for success response
-
-        # Set date
-        self.BASE_DATA_TYPES['date'] = lambda x: current_date
-        # Set url
-        self.BASE_DATA_TYPES['url'] = lambda x: self.product_page_url
-
-        # Set status
-        # TODO: handle error as well
-        self.BASE_DATA_TYPES['status'] = lambda x: "success"
+        # Set generic fields
+        # directly (don't need to be computed by the scrapers)
+        self.pre_set_fields()
 
         # update data types dictionary to overwrite names of implementing methods for each data type
         # with implmenting function from subclass
@@ -213,6 +201,23 @@ class Scraper():
                 print "*******EXTRA data type: ", key
                 del self.ALL_DATA_TYPES[key]
 
+
+    def pre_set_fields(self):
+        '''Before the scraping for the particular site is started,
+        some general fields are set directly.
+        '''
+
+        current_date = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Set fields for success respose
+
+        # Set date
+        self.BASE_DATA_TYPES['date'] = lambda x: current_date
+        # Set url
+        self.BASE_DATA_TYPES['url'] = lambda x: self.product_page_url
+        # Set status
+        self.BASE_DATA_TYPES['status'] = lambda x: "success"
+
         # Set fields for error response
         
         # Set date
@@ -221,6 +226,7 @@ class Scraper():
         self.ERROR_RESPONSE['url'] = self.product_page_url
         # Set status
         self.ERROR_RESPONSE['status'] = "failure"
+
 
     # extract product info from product page.
     # (note: this is for info that can be extracted directly from the product page, not content generated through javascript)
@@ -353,6 +359,8 @@ class Scraper():
                 results = None
 
             results_dict[info] = results
+
+        # compute additional fields 
 
         return results_dict
 
