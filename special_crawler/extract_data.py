@@ -228,7 +228,6 @@ class Scraper():
         self.BASE_DATA_TYPES['owned'] = lambda c: c._owned()
         self.BASE_DATA_TYPES['owned_out_of_stock'] = lambda c: c._owned_out_of_stock()
         # Inferred fields
-        # TODO
         self.BASE_DATA_TYPES['site_online_in_stock'] = lambda c: c._site_online_in_stock()
         self.BASE_DATA_TYPES['marketplace_in_stock'] = lambda c: c._marketplace_in_stock()
         self.BASE_DATA_TYPES['in_stores_in_stock'] = lambda c: c._in_stores_in_stock()
@@ -471,6 +470,85 @@ class Scraper():
         # set extractor function for owned_out_of_stock
         # to be same as for site_online_out_of_stock
         return self.DATA_TYPES['site_online_out_of_stock']
+
+    def _site_online_in_stock(self):
+        '''General function for setting value of field "site_online_in_stock".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+
+        # compute necessary fields
+        # Note: might lead to calling these functions twice.
+        # But they should be inexpensive
+        try:
+            site_online = self.ALL_DATA_TYPES['site_online'](self)
+        except:
+            site_online = None
+
+        try:
+            site_online_out_of_stock = self.ALL_DATA_TYPES['site_online_out_of_stock'](self)
+        except:
+            site_online_out_of_stock = None
+
+        # site_online is 1 and site_online_out_of_stock is 0
+        if site_online == 1 and site_online_out_of_stock == 0:
+            return 1
+
+        return 0
+
+    def _in_stores_in_stock(self):
+        '''General function for setting value of field "in_stores_in_stock".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+
+        # compute necessary fields
+        # Note: might lead to calling these functions twice.
+        # But they should be inexpensive
+        try:
+            in_stores = self.ALL_DATA_TYPES['in_stores'](self)
+        except:
+            in_stores = None
+
+        try:
+            in_stores_out_of_stock = self.ALL_DATA_TYPES['in_stores_out_of_stock'](self)
+        except:
+            in_stores_out_of_stock = None
+
+        # in_stores is 1 and in_stores_out_of_stock is 0
+        if in_stores == 1 and in_stores_out_of_stock == 0:
+            return 1
+
+        return 0
+
+    def _marketplace_in_stock(self):
+        '''General function for setting value of field "in_stores_in_stock".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+
+        # compute necessary fields
+        # Note: might lead to calling these functions twice.
+        # But they should be inexpensive
+        try:
+            marketplace = self.ALL_DATA_TYPES['marketplace'](self)
+        except:
+            marketplace = None
+
+        try:
+            marketplace_out_of_stock = self.ALL_DATA_TYPES['marketplace_out_of_stock'](self)
+        except:
+            marketplace_out_of_stock = None
+
+        # marketplace is 1 and marketplace_out_of_stock is 0
+        if marketplace == 1 and marketplace_out_of_stock == 0:
+            return 1
+
+        return 0
+
 
     
 if __name__=="__main__":
