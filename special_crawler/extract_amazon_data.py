@@ -209,42 +209,73 @@ class AmazonScraper(Scraper):
         return None
 
     def _image_urls(self, tree = None):
+        allimg = self._image_helper()
+        n = len(allimg)
+
         if tree == None:
             tree = self.tree_html
         #The small images are to the left of the big image
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
-        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return image_url
 
         #The small images are below the big image
         image_url = tree.xpath("//div[@id='thumbs-image']//img/@src")
-        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return image_url
 
         #Amazon instant video
         image_url = tree.xpath("//div[@class='dp-meta-icon-container']//img/@src")
-        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return image_url
 
         image_url = tree.xpath("//td[@id='prodImageCell']//img/@src")
-        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return image_url
 
         image_url = tree.xpath("//div[contains(@id,'thumb-container')]//img/@src")
-        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return image_url
 
         image_url = tree.xpath("//div[contains(@class,'imageThumb')]//img/@src")
-        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return image_url
 
         image_url = tree.xpath("//div[contains(@id,'coverArt')]//img/@src")
-        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return image_url
+
         image_url = tree.xpath('//img[@id="imgBlkFront"]')
-        if image_url is not None and len(image_url)>0:
+        if image_url is not None and len(image_url)>n:
             return ["inline image"]
+
+        if len(allimg) > 0:
+            return allimg
         return None
+
+    def _image_helper(self):
+        res = []
+        all_scripts = self.tree_html.xpath('//script[@type="text/javascript"]//text()')
+        for s in all_scripts:
+            st = s.find('data["colorImages"]')
+            if st > 0:
+                colors = self.tree_html.xpath('//div[@id="variation_color_name"]//span[@class="selection"]//text()')
+
+                color=""
+                if len(colors)>0:
+                    color=colors[0].strip()
+                st = s.find("{",st)
+                e = s.find(";",st)
+                if st>=e: continue
+                imdata=json.loads(s[st:e])
+
+                if type(imdata) is dict and len(imdata)>0:
+                    if color=="" or not imdata.has_key(color):
+                        color =imdata.keys()[0]
+                    for t in imdata[color]:
+                        res.append(t['large'])
+                    return res
+        return res
 
     def _mobile_image_url(self, tree = None):
         if tree == None:
@@ -253,13 +284,16 @@ class AmazonScraper(Scraper):
         return image_url
 
     def _image_count(self):
-        if self._image_urls()==None:
+        iu = self._image_urls()
+        if iu ==None:
             return 0
-        return len(self._image_urls())
+        return len(iu)
 
     # return 1 if the "no image" image is found
     def no_image(self,image_url):
         try:
+            if len(image_url)>0 and image_url[0].find("no-img-sm")>0:
+                return 1
             if self._no_image(image_url[0]):
                 return 1
         except Exception, e:
