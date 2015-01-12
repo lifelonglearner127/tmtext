@@ -417,6 +417,16 @@ class Scraper():
         """
 
         return False
+
+    def _image_hash(self, image_url):
+        """Computes hash for an image.
+        To be used in _no_image, and for value of _image_hashes
+        returned by scraper.
+        Returns string representing hash of image.
+
+        :param image_url: url of image to be hashed
+        """
+        return str(MurmurHash.hash(fetch_bytes(image_url)))
     
     # Checks if image given as parameter is "no  image" image
     # To be used by subscrapers
@@ -443,7 +453,7 @@ class Scraper():
             if len(s) > 1:
                 no_img_list = json.loads(s)    
             f.close()
-        first_hash = str(MurmurHash.hash(fetch_bytes(image_url)))
+        first_hash = self._image_hash(image_url)
         if first_hash in no_img_list:
             return True
         else:
