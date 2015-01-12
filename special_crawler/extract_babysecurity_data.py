@@ -45,10 +45,10 @@ class BabysecurityScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        if self._image_count() < 1:
+        image_url = self.tree_html.xpath("//div[contains(@class,'product-img-column')]//p[contains(@class,'product-image')]")
+        if len(image_url) < 1:
             return True
-        else:
-            return False
+        return False
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
