@@ -260,10 +260,15 @@ class AmazonScraper(Scraper):
             st = s.find('data["colorImages"]')
             if st > 0:
                 colors = self.tree_html.xpath('//div[@id="variation_color_name"]//span[@class="selection"]//text()')
-
+                pack = self.tree_html.xpath('//div[@id="variation_item_package_quantity"]//span[@class="selection"]//text()')
+                style = self.tree_html.xpath('//div[@id="variation_style_name"]//span[@class="selection"]//text()')
                 color=""
                 if len(colors)>0:
                     color=colors[0].strip()
+                if len(pack)>0:
+                    color=pack[0].strip() + " " + color
+                if  len(style)>0:
+                    color=style[0].strip()
                 st = s.find("{",st)
                 e = s.find(";",st)
                 if st>=e: continue
