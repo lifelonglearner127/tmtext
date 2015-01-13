@@ -118,6 +118,7 @@ class BabysecurityScraper(Scraper):
         image_url = self.tree_html.xpath("//div[starts-with(@class,'thumbnails')]//div[@class='item']//a/@href")
         if len(image_url) < 1:
             image_url = self.tree_html.xpath("//div[contains(@class,'product-img-column')]//p[contains(@class,'product-image')]//a[contains(@class,'cloud-zoom')]/@href")
+            image_url = [r for r in image_url if "no-image." not in r]
         if len(image_url) < 1:
             return None
         return image_url
