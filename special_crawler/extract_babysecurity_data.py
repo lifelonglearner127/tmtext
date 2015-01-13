@@ -66,9 +66,7 @@ class BabysecurityScraper(Scraper):
         return self.tree_html.xpath("//div[@class='product-name']/h1/text()")[0].strip()
 
     def _product_title(self):
-        if self._title_seo():
-            return self.tree_html.xpath("//div[@class='product-name']/h1/text()")[0].strip()
-        return None
+        return self.tree_html.xpath("//div[@class='product-name']/h1/text()")[0].strip()
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
