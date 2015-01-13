@@ -116,7 +116,8 @@ class TargetScraper(Scraper):
     def _description_helper(self):
         description = "".join(self.tree_html.xpath("//span[@itemprop='description']//text()")).strip()
         description_copy = "".join(self.tree_html.xpath("//div[@class='details-copy']//text()")).strip()
-        description += description_copy
+        if description in description_copy:
+            description = description_copy
         rows = self.tree_html.xpath("//ul[@class='normal-list']//li")
         lis = []
         for r in rows:
@@ -183,7 +184,8 @@ class TargetScraper(Scraper):
             redirect_contents = urllib.urlopen(redirect_link).read()
             redirect_tree = html.fromstring(redirect_contents)
             tabs = redirect_tree.xpath("//div[@class='wc-ms-navbar']//li//a//span/text()")
-            if "Video" in tabs or "Product Video" in tabs:
+            video_tabs = [r for r in tabs if "video" in r.lower()]
+            if len(video_tabs) > 0:
                 #have video
                 video_urls_tmp = redirect_tree.xpath("//div[@class='wc-gallery-thumb']//img/@wcobj")
                 if len(video_urls_tmp) > 0:
