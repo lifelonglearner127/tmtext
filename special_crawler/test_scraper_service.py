@@ -565,7 +565,7 @@ class ServiceScraperTest(unittest.TestCase):
                 sample_json = row["json"]
                 sample_json_str = row["json"]
                 sample_json = json.loads(sample_json)
-                diff_engine = JsonDiff(sample_json, test_json)
+                diff_engine = JsonDiff(test_json, sample_json)
                 diff_engine.diff()
 
                 sql = ("insert into console_reportresults(sample_url, website, "
