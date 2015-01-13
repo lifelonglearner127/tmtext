@@ -12,6 +12,7 @@ from scrapy.log import ERROR, WARNING, INFO
 from scrapy.http import Request
 from scrapy.spider import Spider
 
+from product_ranking.items import SiteProductItem
 
 # Regular expression to match integer or floating point number with optional comma:
 # 1; 12; 1,132,334; 1.05; 1,123.09
@@ -158,6 +159,7 @@ class BaseProductsSpider(Spider):
                  quantity=None,
                  searchterms_str=None, searchterms_fn=None,
                  site_name=None,
+                 product_url=None,
                  *args, **kwargs):
         super(BaseProductsSpider, self).__init__(*args, **kwargs)
 
@@ -180,6 +182,8 @@ class BaseProductsSpider(Spider):
             self.quantity = sys.maxint
         else:
             self.quantity = int(quantity)
+
+        self.product_url = product_url
 
         self.searchterms = []
         if searchterms_str is not None:
@@ -210,6 +214,13 @@ class BaseProductsSpider(Spider):
                 meta={'search_term': st, 'remaining': self.quantity},
             )
 
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            yield Request(self.product_url,
+                          self._parse_single_product,
+                          meta={'product': prod})
+
     def parse(self, response):
         if self._search_page_error(response):
             remaining = response.meta['remaining']
@@ -230,6 +241,15 @@ class BaseProductsSpider(Spider):
             if request is not None:
                 yield request
 
+    def _parse_single_product(self, response):
+        """
+        Usually this func is the same to parse_product.
+        :param response:
+        :return: SiteProductItem with Price, Reviews, In/Out of Stock
+        """
+        raise NotImplementedError
+
+
     def _get_products(self, response):
         remaining = response.meta['remaining']
         search_term = response.meta['search_term']
@@ -248,7 +268,7 @@ class BaseProductsSpider(Spider):
             total_matches = self._scrape_total_matches(response)
             if total_matches is not None:
                 response.meta['total_matches'] = total_matches
-                self.log("Found %d total matches." % total_matches, INFO)
+                self.log("Found %d `     total matches." % total_matches, INFO)
             else:
                 self.log(
                     "Failed to parse total matches for %s" % response.url,

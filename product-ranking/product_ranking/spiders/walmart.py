@@ -65,6 +65,9 @@ class WalmartProductsSpider(BaseProductsSpider):
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         return product
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def _search_page_error(self, response):
         path = urlparse.urlsplit(response.url)[2]
         return path == '/FileNotFound.aspx'

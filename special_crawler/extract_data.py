@@ -46,7 +46,6 @@ class Scraper():
     # using the declarations in the subclasses (for data types that have support in each subclass)
 
     BASE_DATA_TYPES_LIST = {
-            # TODO: set url globally
             "url", # url of product
             "event",
             "product_id",
@@ -100,13 +99,10 @@ class Scraper():
             "price_currency", # currency for price, string of max 3 chars
             "in_stores", # available to purchase in stores, 1/0
             "in_stores_only", # whether product can be found in stores only, 1/0
-            "owned", # whether product is owned by site, 1/0
-            "owned_out_of_stock", # whether product is owned and out of stock, 1/0
             "marketplace", # whether product can be found on marketplace, 1/0
             "marketplace_sellers", # sellers on marketplace (or equivalent) selling item, list of strings
             "marketplace_lowest_price", # string
             "in_stock", # binary (0/1), whether product can be bought from the site, from any seller
-
             "site_online", # the item is sold by the site and delivered directly, irrespective of availability - binary
             "site_online_in_stock", # currently available from the site - binary
             "site_online_out_of_stock", # currently unavailable from the site - binary
@@ -116,7 +112,9 @@ class Scraper():
             "in_stores_in_stock", # currently available for pickup from a physical store - binary (null should be used for items that can not be ordered online and the availability may depend on location of the store)
             "in_stores_out_of_stock", # currently unavailable for pickup from a physical store - binary (null should be used for items that can not be ordered online and the availability may depend on location of the store)
             "online_only", # site_online or marketplace but not in_stores - binary
-
+            # legacy
+            "owned", # whether product is owned by site, 1/0
+            "owned_out_of_stock", # whether product is owned and out of stock, 1/0
             
             # classification
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
@@ -151,7 +149,6 @@ class Scraper():
     # keys that should be left in the root are not included in this structure
     # TODO: make sure this is synchronized somehow with BASE_DATA_TYPES? like there should be no extra data types here
     #       maybe put it as an instance variable
-    # TODO: what if only specific data was requested? will this still work?
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
@@ -179,23 +176,39 @@ class Scraper():
         "status": None
     }
 
+    def load_image_hashes():
+        '''Read file with image hashes list
+        Return list of image hashes found in file
+        '''
+        path = 'no_img_list.json'
+        no_img_list = []
+        if os.path.isfile(path):
+            f = open(path, 'r')
+            s = f.read()
+            if len(s) > 1:
+                no_img_list = json.loads(s)    
+            f.close()
+        return no_img_list
+
+    '''Static class variable that holds list of image hashes
+    that are "no image" images.
+    Should be loaded once when service is started, and subsequently
+    used whenever needed, by _no_image(), in any sub-scraper.
+    '''
+    NO_IMAGE_HASHES = load_image_hashes()
 
     def __init__(self, **kwargs):
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
 
-        current_date = time.strftime("%Y-%m-%d %H:%M:%S")
+        # Set generic fields
+        # directly (don't need to be computed by the scrapers)
 
-        # Set fields for success response
-
-        # Set date
-        self.BASE_DATA_TYPES['date'] = lambda x: current_date
-        # Set url
-        self.BASE_DATA_TYPES['url'] = lambda x: self.product_page_url
-
-        # Set status
-        # TODO: handle error as well
-        self.BASE_DATA_TYPES['status'] = lambda x: "success"
+        # Note: This needs to be done before merging with DATA_TYPES, below,
+        # so that BASE_DATA_TYPES values can be overwritten by DATA_TYPES values
+        # if needed. (more specifically overwrite functions for extracting certain data
+        # (especially sellers-related fields))
+        self._pre_set_fields()
 
         # update data types dictionary to overwrite names of implementing methods for each data type
         # with implmenting function from subclass
@@ -213,6 +226,32 @@ class Scraper():
 #                print "*******EXTRA data type: ", key
                 del self.ALL_DATA_TYPES[key]
 
+    def _pre_set_fields(self):
+        '''Before the scraping for the particular site is started,
+        some general fields are set directly.
+        Fields set: date, url, status
+        '''
+
+        current_date = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Set fields for success respose
+
+        # Generic fields
+        # Set date
+        self.BASE_DATA_TYPES['date'] = lambda x: current_date
+        # Set url
+        self.BASE_DATA_TYPES['url'] = lambda x: self.product_page_url
+        # Set status
+        self.BASE_DATA_TYPES['status'] = lambda x: "success"
+
+        # Deprecated fields
+        self.BASE_DATA_TYPES['owned'] = lambda c: c._owned()
+        self.BASE_DATA_TYPES['owned_out_of_stock'] = lambda c: c._owned_out_of_stock()
+        # Inferred fields
+        self.BASE_DATA_TYPES['site_online_in_stock'] = lambda c: c._site_online_in_stock()
+        self.BASE_DATA_TYPES['marketplace_in_stock'] = lambda c: c._marketplace_in_stock()
+        self.BASE_DATA_TYPES['in_stores_in_stock'] = lambda c: c._in_stores_in_stock()
+
         # Set fields for error response
         
         # Set date
@@ -221,6 +260,7 @@ class Scraper():
         self.ERROR_RESPONSE['url'] = self.product_page_url
         # Set status
         self.ERROR_RESPONSE['status'] = "failure"
+
 
     # extract product info from product page.
     # (note: this is for info that can be extracted directly from the product page, not content generated through javascript)
@@ -397,6 +437,16 @@ class Scraper():
         """
 
         return False
+
+    def _image_hash(self, image_url):
+        """Computes hash for an image.
+        To be used in _no_image, and for value of _image_hashes
+        returned by scraper.
+        Returns string representing hash of image.
+
+        :param image_url: url of image to be hashed
+        """
+        return str(MurmurHash.hash(fetch_bytes(image_url)))
     
     # Checks if image given as parameter is "no  image" image
     # To be used by subscrapers
@@ -415,19 +465,113 @@ class Scraper():
             True if it's a "no image" image, False otherwise
         """
 
-        path = 'no_img_list.json'
-        no_img_list = []
-        if os.path.isfile(path):
-            f = open(path, 'r')
-            s = f.read()
-            if len(s) > 1:
-                no_img_list = json.loads(s)    
-            f.close()
-        first_hash = str(MurmurHash.hash(fetch_bytes(image_url)))
-        if first_hash in no_img_list:
+        first_hash = self._image_hash(image_url)
+        if first_hash in self.NO_IMAGE_HASHES:
+            print "not an image"
             return True
         else:
             return False
+
+    def _owned(self):
+        '''General function for setting value of legacy field "owned".
+        It will be inferred from value of "site_online_in_stock" field.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+
+        # set extractor function for owned
+        # to be same as for site_online_in_stock
+        return self.DATA_TYPES['site_online_in_stock']
+
+    def _owned_out_of_stock(self):
+        '''General function for setting value of legacy field "owned_out_of_stock".
+        It will be inferred from value of "site_online_out_of_stock" field.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+
+        # set extractor function for owned_out_of_stock
+        # to be same as for site_online_out_of_stock
+        return self.DATA_TYPES['site_online_out_of_stock']
+
+    def _site_online_in_stock(self):
+        '''General function for setting value of field "site_online_in_stock".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+
+        # compute necessary fields
+        # Note: might lead to calling these functions twice.
+        # But they should be inexpensive
+        try:
+            site_online = self.ALL_DATA_TYPES['site_online'](self)
+        except:
+            site_online = None
+
+        try:
+            site_online_out_of_stock = self.ALL_DATA_TYPES['site_online_out_of_stock'](self)
+        except:
+            site_online_out_of_stock = None
+
+        # site_online is 1 and site_online_out_of_stock is 0
+        if site_online == 1 and site_online_out_of_stock == 0:
+            return 1
+
+        return 0
+
+    def _in_stores_in_stock(self):
+        '''General function for setting value of field "in_stores_in_stock".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+
+        # compute necessary fields
+        # Note: might lead to calling these functions twice.
+        # But they should be inexpensive
+        try:
+            in_stores = self.ALL_DATA_TYPES['in_stores'](self)
+        except:
+            in_stores = None
+
+        try:
+            in_stores_out_of_stock = self.ALL_DATA_TYPES['in_stores_out_of_stock'](self)
+        except:
+            in_stores_out_of_stock = None
+
+        # in_stores is 1 and in_stores_out_of_stock is 0
+        if in_stores == 1 and in_stores_out_of_stock == 0:
+            return 1
+
+        return 0
+
+    def _marketplace_in_stock(self):
+        '''General function for setting value of field "in_stores_in_stock".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+
+        # compute necessary fields
+        # Note: might lead to calling these functions twice.
+        # But they should be inexpensive
+        try:
+            marketplace = self.ALL_DATA_TYPES['marketplace'](self)
+        except:
+            marketplace = None
+
+        try:
+            marketplace_out_of_stock = self.ALL_DATA_TYPES['marketplace_out_of_stock'](self)
+        except:
+            marketplace_out_of_stock = None
+
+        # marketplace is 1 and marketplace_out_of_stock is 0
+        if marketplace == 1 and marketplace_out_of_stock == 0:
+            return 1
+
+        return 0
+
 
     
 if __name__=="__main__":

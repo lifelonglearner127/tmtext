@@ -63,7 +63,7 @@ class TescoScraper(Scraper):
         if page_title.find('not found')>0:
             return True
         else:
-            if self.product_page_url.find('groceries')>0 and self.product_page_url.find('product/details')<0:
+            if self.product_page_url.find('groceries')>0 and self.product_page_url.find('product/details/?id=')<0:
                 return True
             return False
 
@@ -264,6 +264,7 @@ class TescoScraper(Scraper):
             for s in image_url:
                 if s.find('noimage')>0:
                     image_url.remove(s)
+            if(len(image_url)==0): return None
             return image_url
         head = 'http://tesco.scene7.com/is/image/'
         image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")
