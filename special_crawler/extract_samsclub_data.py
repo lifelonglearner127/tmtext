@@ -28,7 +28,7 @@ class SamsclubScraper(Scraper):
     reviews_tree = None
     max_score = None
     min_score = None
-    review_count = None
+    review_count = 0
     average_review = None
     reviews = None
 
@@ -73,28 +73,41 @@ class SamsclubScraper(Scraper):
         return self.tree_html.xpath("//input[@id='mbxSkuId']/@value")[0].strip()
 
     def _features(self):
-        rows = self.tree_html.xpath("//div[starts-with(@class,'itemdetailsDescription')]")
-        line_txts = []
-        for row in rows:
-            row_txts = row.xpath(".//p//text()")
-            row_txts = [self._clean_text(r) for r in row_txts]
-            row_txts = ": ".join(row_txts)
-            line_txts.append(row_txts)
-        return line_txts
+        rows = self.tree_html.xpath("//div[contains(@class,'itemFeatures')]//li//text()")
+        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+        if len(rows) < 1:
+            return None
+        return rows
 
     def _feature_count(self):
-        return len(self.tree_html.xpath("//div[starts-with(@class,'itemdetailsDescription')]"))
+        features = len(self._features())
+        if features is None:
+            return 0
+        return len(self._features())
 
     def _model_meta(self):
         return None
 
     def _description(self):
-        description = "\n".join(self.tree_html.xpath("//div[starts-with(@class,'itemBullets')]//ul//li//text()"))
-        description += "\n" + self.tree_html.xpath("//div[starts-with(@class,'itemDescription')]//p[contains(@class,'itemDetailsPara')]//text()")[0].strip()
+        description = self._description_helper()
+        if len(description) < 1:
+            return self._long_description_helper()
+        return description
+
+    def _description_helper(self):
+        rows = self.tree_html.xpath("//div[contains(@class,'itemBullets')]//text()")
+        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+        description = "\n".join(rows)
         return description
 
     def _long_description(self):
-        rows = self.tree_html.xpath("//div[starts-with(@class,'itemFeatures')]//text()")
+        description = self._description_helper()
+        if len(description) < 1:
+            return None
+        return self._long_description_helper()
+
+    def _long_description_helper(self):
+        rows = self.tree_html.xpath("//div[@itemprop='description']//p//text()")
         row_txts = [self._clean_text(r) for r in rows]
         long_description = "\n".join(row_txts)
         return long_description
@@ -127,12 +140,15 @@ class SamsclubScraper(Scraper):
 
     def _image_count(self):
         image_urls = self._image_urls()
-        if len(image_urls) == 0:
-            return 0
-        return len(image_urls)
+        if image_urls:
+            return len(image_urls)
+        return 0
 
     def _video_urls(self):
-        return None
+        rows = self.tree_html.xpath("//a[contains(text(),'View a video')]/@href")
+        if len(rows) < 1:
+            return None
+        return rows
 
     def _video_count(self):
         urls = self._video_urls()
@@ -145,11 +161,19 @@ class SamsclubScraper(Scraper):
         pdf_hrefs = []
         for pdf in pdfs:
             pdf_hrefs.append(pdf.attrib['href'])
+        pdfs = self.tree_html.xpath("//a[contains(@onclick,'.pdf')]")
+        for pdf in pdfs:
+            # window.open('http://graphics.samsclub.com/images/pool-SNFRound.pdf','_blank')
+            try:
+                url = re.findall(r"open\('(.*?)',", pdf.attrib['onclick'])[0]
+                pdf_hrefs.append(url)
+            except IndexError:
+                pass
         return pdf_hrefs
 
     def _pdf_count(self):
         urls = self._pdf_urls()
-        if urls is not None:
+        if urls:
             return len(urls)
         return 0
 
@@ -232,6 +256,8 @@ class SamsclubScraper(Scraper):
 
     def _reviews(self):
         self._load_reviews()
+        if len(self.reviews) < 1:
+            return None
         return self.reviews
 
     ##########################################
@@ -239,8 +265,9 @@ class SamsclubScraper(Scraper):
     ##########################################
     def _price(self):
         price = self.tree_html.xpath("//span[@class='price']//text()")[0].strip()
+        currency = self.tree_html.xpath("//span[@class='superscript']//text()")[0].strip()
         superscript = self.tree_html.xpath("//span[@class='superscript']//text()")[1].strip()
-        price = int(price) + int(superscript) * 0.01
+        price = "%s%s.%s" % (currency, price, superscript)
         return price
 
     def _in_stores_only(self):
@@ -256,7 +283,10 @@ class SamsclubScraper(Scraper):
         return 0
 
     def _owned_out_of_stock(self):
-        return None
+        out_of_stock = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")[0].strip()
+        if 'Out of stock online' in out_of_stock:
+            return 1
+        return 0
 
     def _marketplace_sellers(self):
         return None
@@ -270,7 +300,7 @@ class SamsclubScraper(Scraper):
     def _categories(self):
         all = self.tree_html.xpath("//div[contains(@id, 'breadcrumb')]//a/text()")
         out = [self._clean_text(r) for r in all]
-        return out
+        return out[1:]
 
     def _category_name(self):
         return self._categories()[-1]
