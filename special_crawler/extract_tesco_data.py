@@ -60,13 +60,13 @@ class TescoScraper(Scraper):
         except Exception:
             page_title = ""
 
-        if page_title.find('not found')>0:
+        if page_title.find('not found')>0 or page_title.find('Error')>0:
             return True
-        else:
+        elif self.scraper_version=="groceries":
             prod_cont = self.tree_html.xpath("//div[@class='productDetailsContainer']")
             if prod_cont == None or len(prod_cont) == 0:
                 return True
-            return False
+        return False
 
 
 
