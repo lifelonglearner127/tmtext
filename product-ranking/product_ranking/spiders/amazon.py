@@ -74,13 +74,45 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         return result
 
-    def _populate_from_html(self, response, product):
-        cond_set(product, 'brand', response.css('#brand ::text').extract())
+    def _get_price(self, response, product):
+        """ Parses and sets the product price, with all possible variations
+        :param response: Scrapy's Response obj
+        :param product: Scrapy's Item (dict, basically)
+        :return: None
+        """
         cond_set(
             product,
             'price',
             response.css('#priceblock_ourprice ::text').extract(),
         )
+        if not product.get('price', None):
+            cond_set(
+                product,
+                'price',
+                response.css(
+                    '#unqualifiedBuyBox .a-color-price ::text').extract(),
+            )
+        if not product.get('price', None):
+            cond_set(
+                product,
+                'price',
+                response.css(
+                    '#priceblock_saleprice ::text').extract(),
+            )
+        if not product.get('price', None):
+            cond_set(
+                product,
+                'price',
+                response.css(
+                    '#actualPriceValue ::text').extract(),
+            )
+        if not product.get('price', None):
+            cond_set(
+                product,
+                'price',
+                response.css(
+                    '#buyNewSection .offer-price ::text').extract(),
+            )
         if product.get('price', None):
             if not '$' in product['price']:
                 self.log('Currency symbol not recognized: %s' % response.url,
@@ -91,6 +123,10 @@ class AmazonProductsSpider(BaseProductsSpider):
                     price=product['price'].replace('$', '').strip()\
                         .replace(',', '')
                 )
+
+    def _populate_from_html(self, response, product):
+        cond_set(product, 'brand', response.css('#brand ::text').extract())
+        self._get_price(response, product)
         cond_set(
             product,
             'description',
