@@ -63,7 +63,8 @@ class TescoScraper(Scraper):
         if page_title.find('not found')>0:
             return True
         else:
-            if self.product_page_url.find('groceries')>0 and self.product_page_url.find('product/details/?id=')<0:
+            prod_cont = self.tree_html.xpath("//div[@class='productDetailsContainer']")
+            if prod_cont == None or len(prod_cont) == 0:
                 return True
             return False
 
@@ -214,6 +215,19 @@ class TescoScraper(Scraper):
         tags = self._meta_tags()
         return len(tags)
 
+    def check_image_urls(self,img_urls):
+        pc_headers = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        res = []
+        for img_url in img_urls:
+            contents = requests.get(img_url, headers=pc_headers).text
+            tree = html.fromstring(contents)
+            images = tree.xpath("//title//text()")
+            if not (images != None and len(images) > 0 and (images[0].find("not found") > 0 or images[0].find("Error")>=0) ):
+                res.append(img_url)
+        if len(res)==0 : return None
+        return res
+
+
     #returns 1 if the mobile version is the same, 0 otherwise
     def _mobile_image_same(self):
         url = self.product_page_url
@@ -265,7 +279,8 @@ class TescoScraper(Scraper):
                 if s.find('noimage')>0:
                     image_url.remove(s)
             if(len(image_url)==0): return None
-            return image_url
+
+            return self.check_image_urls(image_url)
         head = 'http://tesco.scene7.com/is/image/'
         image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")
         if(len(image_url)>0):
@@ -274,12 +289,12 @@ class TescoScraper(Scraper):
                 image_url = image_url[0].split(',')
                 image_url = [head+link for link in image_url]
                 if(len(image_url)>0):
-                    return image_url
+                    return self.check_image_urls(image_url)
 
         #img id='scene7-placeholder'
         image_url = self.tree_html.xpath('//img[@id="scene7-placeholder"]//@src')
         if(len(image_url)==0): return None
-        return image_url
+        return self.check_image_urls(image_url)
 
 
 
@@ -479,6 +494,8 @@ class TescoScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
+        if self._owned_out_of_stock() == 1:
+            return "out of stock - no price given"
         if self.scraper_version == "groceries":
             meta_price = self.tree_html.xpath("//span[@class='linePrice']//text()")
         else:
@@ -508,7 +525,15 @@ class TescoScraper(Scraper):
                 return 1
         return 0
 
+    def _in_stock(self):
+        if self._owned_out_of_stock() == 1:
+            return 0
+        return 1
+
     def _owned_out_of_stock(self):
+        um = self.tree_html.xpath('//p[@class="warning unavailableMsg"]//text()')
+        if len(um)>0 and um[0].find("not available"):
+            return 1
         return None
 
     def _marketplace_sellers(self):
@@ -603,6 +628,7 @@ class TescoScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
+        "in_stock" : _in_stock, \
         "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
         "owned" : _owned, \
