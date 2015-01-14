@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+import re
 
 from scrapy.log import ERROR
 from scrapy.selector import Selector
 
-from scrapy.http import Request
-from product_ranking.items import SiteProductItem, Price
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FormatterWithDefaults
+    cond_set_value
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
@@ -64,6 +63,7 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         cond_set(prod, 'locale', ['en-US'])
 
         prod['url'] = response.url
+        self._buyer_reviews_from_html(response, prod)
         return prod
 
     def _search_page_error(self, response):
@@ -109,3 +109,32 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         if links:
             return links.extract()[0].strip()
         return None
+
+    def _buyer_reviews_from_html(self, response, product):
+        stars_regexp = r'% .+ (\d[\d, ]*) '
+        total = ''.join(response.css('#summaryStars a::text').extract())
+        total = re.search('\d[\d, ]*', total)
+        total = total.group() if total else None
+        total = int(re.sub('[ ,]+', '', total)) if total else None
+        average = response.css('#avgRating span::text').extract()
+        average = re.search('\d[\d ,.]*', average[0] if average else '')
+        average = float(re.sub('[ ,]+', '',
+                               average.group())) if average else None
+        ratings = {}
+        for row in response.css('.a-histogram-row .a-span10 ~ td a'):
+            title = row.css('::attr(title)').extract()
+            text = row.css('::text').extract()
+            stars = re.search(stars_regexp, title[0]) \
+                if text and text[0].isdigit() and title else None
+            if stars:
+                stars = int(re.sub('[ ,]+', '', stars.group(1)))
+                ratings[stars] = int(text[0])
+        if not total:
+            total = sum(ratings.itervalues()) if ratings else 0
+        if not average:
+            average = sum(k * v for k, v in
+                          ratings.iteritems()) / total if ratings else 0
+        buyer_reviews = BuyerReviews(num_of_reviews=total,
+                                     average_rating=average,
+                                     rating_by_star=ratings)
+        cond_set_value(product, 'buyer_reviews', buyer_reviews)

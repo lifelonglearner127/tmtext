@@ -1,15 +1,17 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 
 import json
+import re
 import string
 
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, \
-    cond_set, cond_set_value, FLOATING_POINT_RGEX
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
 try:
@@ -32,10 +34,10 @@ except ImportError as e:
 
 
 class AmazonProductsSpider(BaseProductsSpider):
-    name = 'amazon_products'
-    allowed_domains = ["amazon.com"]
+    name = 'amazonfr_products'
+    allowed_domains = ["amazon.fr"]
 
-    SEARCH_URL = "http://www.amazon.com/s/?field-keywords={search_term}"
+    SEARCH_URL = "http://www.amazon.fr/s/?field-keywords={search_term}"
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
@@ -54,8 +56,6 @@ class AmazonProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
-        prod['buyer_reviews'] = self._build_buyer_reviews(response)
-
         if not self._has_captcha(response):
             self._populate_from_js(response, prod)
 
@@ -71,7 +71,6 @@ class AmazonProductsSpider(BaseProductsSpider):
             result = None
         else:
             result = self._handle_captcha(response, self.parse_product)
-
         return result
 
     def _populate_from_html(self, response, product):
@@ -82,14 +81,14 @@ class AmazonProductsSpider(BaseProductsSpider):
             response.css('#priceblock_ourprice ::text').extract(),
         )
         if product.get('price', None):
-            if not '$' in product['price']:
-                self.log('Currency symbol not recognized: %s' % response.url,
-                         level=ERROR)
+            if not u'EUR' in product.get('price', ''):
+                self.log('Invalid price at: %s' % response.url, level=ERROR)
             else:
                 product['price'] = Price(
-                    priceCurrency='USD',
-                    price=product['price'].replace('$', '').strip()\
-                        .replace(',', '')
+                    price=product['price'].replace('EUR', '').replace(
+                        ' ', '').replace(u'\xa0', '').replace(
+                            ',', '.').strip(),
+                    priceCurrency='EUR'
                 )
         cond_set(
             product,
@@ -126,6 +125,7 @@ class AmazonProductsSpider(BaseProductsSpider):
             elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
                 model = li.xpath('text()').extract()
         cond_set(product, 'model', model, conv=string.strip)
+        self._buyer_reviews_from_html(response, product)
 
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...
@@ -139,70 +139,23 @@ class AmazonProductsSpider(BaseProductsSpider):
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
 
-    def _build_buyer_reviews(self, response):
-        buyer_reviews = {}
-
-        total = response.xpath(
-            'string(//*[@id="summaryStars"])').re(FLOATING_POINT_RGEX)
-        if not total:
-            return
-        buyer_reviews['num_of_reviews'] = int(total[0].replace(',', ''))
-
-        average = response.xpath(
-            '//*[@id="summaryStars"]/a/@title').extract()[0].replace('out of 5 stars','')
-        buyer_reviews['average_rating'] = float(average)
-
-        buyer_reviews['rating_by_star'] = {}
-        for tr in response.xpath(
-            '//table[@id="histogramTable"]'
-            '/tr[@class="a-histogram-row"]'): #td[last()]//text()').re('\d+')
-            rating = tr.xpath('string(.//td[1])').re(FLOATING_POINT_RGEX)[0]
-            number = tr.xpath('string(.//td[last()])').re(FLOATING_POINT_RGEX)[0]
-            buyer_reviews['rating_by_star'][rating] = int(number.replace(',', ''))
-
-        return BuyerReviews(**buyer_reviews)
-
     def _scrape_total_matches(self, response):
-        # Where this value appears is a little weird and changes a bit so we
-        # need two alternatives to capture it consistently.
-
-        if response.css('#noResultsTitle'):
-            return 0
-
-        # Every result I saw is shown with this format
-        #    1-16 of 424,831 results for
-        #    2 results for
-        values = response.css('#s-result-count ::text').re(
-            '([0-9,]+)\s[Rr]esults for')
-        if not values:
-            # The first possible place is where it normally is in a fully
-            # rendered page.
-            values = response.css('#resultCount > span ::text').re(
-                '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults')
-            if not values:
-                # Otherwise, it appears within a comment.
-                values = response.css(
-                    '#result-count-only-next'
-                ).xpath(
-                    'comment()'
-                ).re(
-                    '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults\s+'
-                )
-
-        if values:
-            total_matches = int(values[0].replace(',', ''))
+        if u'ne correspond à aucun article' in response.body_as_unicode():
+            total_matches = 0
         else:
-            self.log(
-                "Failed to parse total number of matches for: %s"
-                % response.url,
-                level=ERROR
-            )
-            total_matches = None
+            count_matches = response.xpath(
+                '//h2[@id="s-result-count"]/text()').re('sur (.+) r')
+            if count_matches and count_matches[-1]:
+                total_matches = int(count_matches[-1].replace(
+                    u' ', '').replace(u'\xa0', ''))
+            else:
+                total_matches = None
         return total_matches
 
     def _scrape_product_links(self, response):
-        links = response.css(
-            'a.s-access-detail-page ::attr(href)'
+        links = response.xpath(
+            '//div[contains(@class, "s-item-container")]'
+            '//a[contains(@class, "s-access-detail-page")]/@href'
         ).extract()
         if not links:
             self.log("Found no product links.", WARNING)
@@ -218,7 +171,8 @@ class AmazonProductsSpider(BaseProductsSpider):
             self.log("Found more than one 'next page' link.", ERROR)
         return next_page_url
 
-    # Captcha handling functions.
+    ## Captcha handling functions.
+
     def _has_captcha(self, response):
         return '.images-amazon.com/captcha/' in response.body_as_unicode()
 
@@ -233,7 +187,6 @@ class AmazonProductsSpider(BaseProductsSpider):
         return self._cbw.solve_captcha(captcha_img)
 
     def _handle_captcha(self, response, callback):
-        # FIXME This is untested and wrong.
         captcha_solve_try = response.meta.get('captcha_solve_try', 0)
         product = response.meta['product']
 
@@ -266,6 +219,31 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         return result
 
-    def _parse_single_product(self, response):
-        return self.parse_product(response)
-
+    def _buyer_reviews_from_html(self, response, product):
+        stars_regexp = r'% .+ (\d[\d, ]*) '
+        total = ''.join(response.css('#summaryStars a::text').extract())
+        total = re.search('\d[\d, ]*', total)
+        total = total.group() if total else None
+        total = int(re.sub('[ ,]+', '', total)) if total else None
+        average = response.css('#avgRating span::text').extract()
+        average = re.search('\d[\d ,.]*', average[0] if average else '')
+        average = float(re.sub('[ ,]+', '',
+                               average.group())) if average else None
+        ratings = {}
+        for row in response.css('.a-histogram-row .a-span10 ~ td a'):
+            title = row.css('::attr(title)').extract()
+            text = row.css('::text').extract()
+            stars = re.search(stars_regexp, title[0]) \
+                if text and text[0].isdigit() and title else None
+            if stars:
+                stars = int(re.sub('[ ,]+', '', stars.group(1)))
+                ratings[stars] = int(text[0])
+        if not total:
+            total = sum(ratings.itervalues()) if ratings else 0
+        if not average:
+            average = sum(k * v for k, v in
+                          ratings.iteritems()) / total if ratings else 0
+        buyer_reviews = BuyerReviews(num_of_reviews=total,
+                                     average_rating=average,
+                                     rating_by_star=ratings)
+        cond_set_value(product, 'buyer_reviews', buyer_reviews)
