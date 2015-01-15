@@ -73,10 +73,22 @@ class SamsclubScraper(Scraper):
         return self.tree_html.xpath("//input[@id='mbxSkuId']/@value")[0].strip()
 
     def _features(self):
-        rows = self.tree_html.xpath("//div[contains(@class,'itemFeatures')]//li//text()")
+        lis = self.tree_html.xpath("//div[contains(@class,'itemFeatures')]//li")
+        rows = []
+        for li in lis:
+            txt = "".join(li.xpath(".//text()"))
+            rows.append(txt)
         rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
         if len(rows) < 1:
-            return None
+            trs = self.tree_html.xpath("//div[contains(@class,'itemFeatures')]//table//tr")
+            rows = []
+            for tr in trs:
+                tds = tr.xpath(".//td")
+                if len(tds) > 0:
+                    row_txt = " ".join([self._clean_text(r) for r in tr.xpath(".//text()") if len(self._clean_text(r)) > 0])
+                    rows.append(row_txt)
+            if len(rows) < 1:
+                return None
         return rows
 
     def _feature_count(self):
@@ -107,10 +119,19 @@ class SamsclubScraper(Scraper):
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        rows = self.tree_html.xpath("//div[@itemprop='description']//p//text()")
-        row_txts = [self._clean_text(r) for r in rows]
-        long_description = "\n".join(row_txts)
-        return long_description
+        rows = self.tree_html.xpath("//div[@itemprop='description']//text()")
+        long_description = "".join(rows)
+        rows = self.tree_html.xpath("//div[@itemprop='description']/*")
+        row_txts = []
+        for row in rows:
+            if row.tag == 'style' or row.tag == 'h3':
+                row_txt = "".join(row.xpath(".//text()"))
+                long_description = long_description.replace(row_txt, "")
+        # row_txts = [self._clean_text(r) for r in row_txts if len(self._clean_text(r)) > 0]
+        # if row_txts[0] == "Description":
+        #     row_txts = row_txts[1:]
+        # long_description = "\n".join(row_txts)
+        return long_description.strip()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -157,8 +178,11 @@ class SamsclubScraper(Scraper):
         return 0
 
     def _pdf_urls(self):
-        pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
         pdf_hrefs = []
+        pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
+        for pdf in pdfs:
+            pdf_hrefs.append(pdf.attrib['href'])
+        pdfs = self.tree_html.xpath("//a[contains(@href,'pdfpdf')]")
         for pdf in pdfs:
             pdf_hrefs.append(pdf.attrib['href'])
         pdfs = self.tree_html.xpath("//a[contains(@onclick,'.pdf')]")
@@ -169,6 +193,8 @@ class SamsclubScraper(Scraper):
                 pdf_hrefs.append(url)
             except IndexError:
                 pass
+        if len(pdf_hrefs) < 1:
+            return None
         return pdf_hrefs
 
     def _pdf_count(self):
