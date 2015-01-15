@@ -168,7 +168,7 @@ class WalmartScraper(Scraper):
                     self.has_webcollage_media = True
                     self.has_video = True
                     self.video_urls.append(video_url_candidate)
-                    continue
+                    break
 
                 # if it doesn't, it may be a url to make another request to, to get customer reviews video
                 if "client.expotv.com" in video_url_candidate:
@@ -202,7 +202,7 @@ class WalmartScraper(Scraper):
                     self.has_sellpoints_media = True
                     self.has_video = True
                     self.video_urls.append(video_url_candidate)
-                    continue
+                    break
 
         if len(self.video_urls) == 0:
             self.video_urls = None
