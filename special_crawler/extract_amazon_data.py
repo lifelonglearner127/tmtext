@@ -22,9 +22,10 @@ class AmazonScraper(Scraper):
     def check_url_format(self):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         n = re.match(r"^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        l = re.match(r"^http://www.amazon.co.uk/.*$", self.product_page_url)
         self.scraper_version = "com"
-        if (not not n): self.scraper_version = "uk"
-        return (not not m) or (not not n)
+        if (not not n) or (not not l): self.scraper_version = "uk"
+        return (not not m) or (not not n) or (not not l)
 
     def not_a_product(self):
         '''Overwrites parent class method that determines if current page
