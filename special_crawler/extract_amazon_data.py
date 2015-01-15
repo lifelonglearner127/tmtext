@@ -255,26 +255,48 @@ class AmazonScraper(Scraper):
 
     def _image_helper(self):
         res = []
-        all_scripts = self.tree_html.xpath('//script[@type="text/javascript"]//text()')
-        for s in all_scripts:
-            st = s.find('data["colorImages"]')
-            if st > 0:
-                colors = self.tree_html.xpath('//div[@id="variation_color_name"]//span[@class="selection"]//text()')
+        try:
+            all_scripts = self.tree_html.xpath('//script[@type="text/javascript"]//text()')
+            for s in all_scripts:
+                st = s.find('data["colorImages"]')
+                if st > 0:
+                    colors = self.tree_html.xpath('//div[@id="variation_color_name"]//span[@class="selection"]//text()')
+                    pack = self.tree_html.xpath('//div[@id="variation_item_package_quantity"]//span[@class="selection"]//text()')
+                    style = self.tree_html.xpath('//div[@id="variation_style_name"]//span[@class="selection"]//text()')
+                    color=""
+                    if len(colors)>0:
+                        color=colors[0].strip()
+                    if len(pack)>0:
+                        color=pack[0].strip() + " " + color
+                    if  len(style)>0:
+                        color=style[0].strip()
+                    st = s.find("{",st)
+                    e = s.find(";",st)
+                    if st>=e: continue
+                    imdata=json.loads(s[st:e])
 
-                color=""
-                if len(colors)>0:
-                    color=colors[0].strip()
-                st = s.find("{",st)
-                e = s.find(";",st)
-                if st>=e: continue
-                imdata=json.loads(s[st:e])
-
-                if type(imdata) is dict and len(imdata)>0:
-                    if color=="" or not imdata.has_key(color):
-                        color =imdata.keys()[0]
-                    for t in imdata[color]:
-                        res.append(t['large'])
-                    return res
+                    if type(imdata) is dict and len(imdata)>0:
+                        if color=="" or not imdata.has_key(color):
+                            color =imdata.keys()[0]
+                        for t in imdata[color]:
+                            res.append(t['large'])
+                        return res
+                st = s.find("'colorImages':")
+                if len(res)==0 and st > 0:
+                    while s[st]!="{" and st>0:
+                        st -= 1
+                    e = s.find("};",st)+1
+                    if st>=e: continue
+                    imdata=json.loads(s[st:e].replace("'",'"'))
+                    if type(imdata) is dict and len(imdata)>0  and imdata.has_key('colorImages')\
+                     and imdata['colorImages'].has_key('initial'):
+                        for d in imdata['colorImages']['initial']:
+                            imu = d.get("large","")
+                            if len(imu)>10:
+                                res.append(imu)
+                        return res
+        except:
+            return []
         return res
 
     def _mobile_image_url(self, tree = None):
