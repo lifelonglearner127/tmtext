@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 from itertools import islice
 import json
@@ -10,24 +9,28 @@ import urllib
 import urllib2
 import urlparse
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set
-from product_ranking.spiders import cond_set_value, populate_from_open_graph
 from scrapy import Selector
 from scrapy.http import FormRequest, Request
-from scrapy.log import DEBUG,INFO, ERROR
+from scrapy.log import DEBUG, INFO
+
+from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
+    BuyerReviews
+from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import cond_set_value, populate_from_open_graph
 
 
 class TargetProductSpider(BaseProductsSpider):
     name = 'target_products'
-    allowed_domains = ["target.com", "recs.richrelevance.com"]
+    allowed_domains = ["target.com", "recs.richrelevance.com",
+                       'api.bazaarvoice.com']
     start_urls = ["http://www.target.com/"]
     # TODO: support new currencies if you're going to scrape target.canada
     #  or any other target.* different from target.com!
     SEARCH_URL = "http://www.target.com/s?searchTerm={search_term}"
     SCRIPT_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js"
     CALL_RR = True
-    POPULATE_VARIANTS = True
+    POPULATE_VARIANTS = False
+    POPULATE_REVIEWS = True
     SORTING = None
 
     SORT_MODES = {
@@ -37,6 +40,14 @@ class TargetProductSpider(BaseProductsSpider):
         "pricehigh": "PriceHigh",
         "newest": "newest"
     }
+
+    REVIEW_API_PASS = "aqxzr0zot28ympbkxbxqacldq"
+
+    REVIEW_API_URL = "http://api.bazaarvoice.com/data/batch.json" \
+                     "?passkey={apipass}&apiversion=5.5" \
+                     "&displaycode=19988-en_us&resource.q0=products" \
+                     "&filter.q0=id%3Aeq%3A{model}&stats.q0=reviews" \
+                     "&filteredstats.q0=reviews"
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
@@ -61,7 +72,10 @@ class TargetProductSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         prod = response.meta['product']
+        old_url = prod['url'].rsplit('#', 1)[0]
+        prod['url'] = None
         populate_from_open_graph(response, prod)
+        cond_set_value(prod, 'url', old_url)
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
 
@@ -81,10 +95,13 @@ class TargetProductSpider(BaseProductsSpider):
             else:
                 self.log("No {rr} payload at %s" % response.url, DEBUG)
 
-        if self.POPULATE_VARIANTS:
+        if self.POPULATE_REVIEWS:
+            return self._request_reviews(response, prod)
+        elif self.POPULATE_VARIANTS:
             if variants:
                 return self._populate_variants(response, prod, variants)
-        return prod
+        else:
+            return prod
 
     def _populate_from_html(self, response, product):
         if 'title' in product and product['title'] == '':
@@ -282,9 +299,12 @@ class TargetProductSpider(BaseProductsSpider):
             product['related_products'] = {"recommended": ritems,
                                            "buyers_also_bought": obitems}
         variants = response.meta.get('variants')
-        if variants:
+        if self.POPULATE_REVIEWS:
+            return self._request_reviews(response, product)
+        elif variants and self.POPULATE_VARIANTS:
             return self._populate_variants(response, product, variants)
-        return product
+        else:
+            return product
 
     def _extract_links_with_brand(self, containers):
         bi_list = []
@@ -458,3 +478,33 @@ class TargetProductSpider(BaseProductsSpider):
         if next_page:
             next_page = next_page[0]
             return self._gen_next_request(response, next_page)
+
+    def _request_reviews(self, response, product):
+        prod_id = re.search('\d+\Z', product['url'])
+        if prod_id:
+            prod_id = prod_id.group()
+            url = self.REVIEW_API_URL.format(apipass=self.REVIEW_API_PASS,
+                                             model=prod_id)
+            return Request(url, self._parse_reviews, meta=response.meta)
+        else:
+            return product
+
+    def _parse_reviews(self, response):
+        product = response.meta['product']
+        data = json.loads(response.body_as_unicode())
+        data = data.get('BatchedResults', {}).get('q0', {})
+        data = data.get('Results', [{}])[0]
+        data = data.get('FilteredReviewStatistics', {})
+        average = data.get('AverageOverallRating')
+        total = data.get('TotalReviewCount')
+        if average is None or total is None:
+            return product
+        distribution = data.get('RatingDistribution', [])
+        distribution = {d['Count']: d['RatingValue']
+                        for d in data.get('RatingDistribution', [])}
+        reviews = BuyerReviews(total, average, distribution)
+        cond_set_value(product, 'buyer_reviews', reviews)
+        variants = response.meta.get('variants')
+        if variants and self.POPULATE_VARIANTS:
+            return self._populate_variants(response, product, variants)
+        return product

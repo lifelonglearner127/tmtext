@@ -60,14 +60,13 @@ class TescoScraper(Scraper):
         except Exception:
             page_title = ""
 
-        if page_title.find('not found')>0:
+        if page_title.find('not found')>0 or page_title.find('Error')>0:
             return True
-        else:
+        elif self.scraper_version=="groceries":
             prod_cont = self.tree_html.xpath("//div[@class='productDetailsContainer']")
             if prod_cont == None or len(prod_cont) == 0:
-#            if self.product_page_url.find('groceries')>0 and self.product_page_url.find('product/details/?id=')<0:
                 return True
-            return False
+        return False
 
 
 
@@ -223,7 +222,7 @@ class TescoScraper(Scraper):
             contents = requests.get(img_url, headers=pc_headers).text
             tree = html.fromstring(contents)
             images = tree.xpath("//title//text()")
-            if not (images != None and len(images) > 0 and images[0].find("not found") > 0):
+            if not (images != None and len(images) > 0 and (images[0].find("not found") > 0 or images[0].find("Error")>=0) ):
                 res.append(img_url)
         if len(res)==0 : return None
         return res

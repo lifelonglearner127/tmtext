@@ -320,12 +320,11 @@ class OzonScraper(Scraper):
 
     def _price(self):
         try:
-            price_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//span[@itemprop='price']//text()")[0]
-            currency_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//meta[@itemprop='priceCurrency']/@content")[0]
-            price_txt = re.findall(r'[0-9\.]+', price_txt)[0]
-            if len(price_txt) == 0:
-                return None
-            return "%s %s" % (price_txt, currency_txt.strip())
+            price_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//span[contains(@class,'eOzonPrice_main')]//text()")[0].strip()
+            price_sub_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//span[contains(@class,'eOzonPrice_submain')]//text()")[0].strip()
+            currency_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//meta[@itemprop='priceCurrency']/@content")[0].strip()
+            price_txt = price_txt.replace(u'\xa0', u'')
+            return "%s.%s %s" % (price_txt, price_sub_txt, currency_txt)
         except IndexError:
             return None
 
