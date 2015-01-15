@@ -2,7 +2,7 @@ import re
 import urlparse
 
 from contrib.product_spider import ProductsSpider
-from product_ranking.items import RelatedProduct, Price
+from product_ranking.items import RelatedProduct, Price,  BuyerReviews
 from product_ranking.spiders import cond_set, cond_set_value, \
     _populate_from_open_graph_product
 
@@ -119,7 +119,9 @@ class StaplesProductsSpider(ProductsSpider):
         if price and currency:
             cond_set_value(product, 'price', Price(currency[0], price[0]))
         self._populate_related_products(self, response, product)
-        self._buyer_reviews_from_html(response, product)
+        buyer_reviews = self._buyer_reviews_from_html(response, product)
+        if buyer_reviews:
+            cond_set_value(product, 'buyer_reviews', buyer_reviews)
 
     def _populate_related_products(self, self1, response, product):
         xpath = '//*[@class="a200" and text()="Related Products"]' \
@@ -136,5 +138,44 @@ class StaplesProductsSpider(ProductsSpider):
                        {'Related Products': products})
 
     def _buyer_reviews_from_html(self, response, product):
-        print "BUYER_REVIEWS"
-        pass
+        rarea = response.xpath(
+            "//div[@id='reviews_inline']")
+        if rarea:
+            rarea = rarea[0]
+        else:
+            return
+        total = rarea.xpath("//span[@class='count']/text()").extract()
+        if total:
+            try:
+                total = int(total[0])
+            except ValueError:
+                total = 0
+        else:
+            return
+        avrg = rarea.xpath(
+            "//span[contains(@class,'average')]/text()").extract()
+        if avrg:
+            try:
+                avrg = float(avrg[0])
+            except ValueError:
+                avrg = 0.0
+        else:
+            return
+        ratings = {}
+        rat = rarea.xpath("//ul[@class='pr-ratings-histogram-content']/li")
+        for irat in rat:
+            label = irat.xpath(
+                "p[@class='pr-histogram-label']/span/text()").re("(\d) Stars")
+            if label:
+                label = label[0]
+            val = irat.xpath(
+                "p[@class='pr-histogram-count']/span/text()").re("\((\d+)\)")
+            try:
+                val = int(val[0])
+            except ValueError:
+                val = 0
+            ratings[label] = val
+        return BuyerReviews(
+            num_of_reviews=total,
+            average_rating=avrg,
+            rating_by_star=ratings)
