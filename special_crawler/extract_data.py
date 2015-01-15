@@ -75,7 +75,8 @@ class Scraper():
             "video_urls", # urls of product videos, list of strings
             "pdf_count", # nr of pdfs, string
             "pdf_urls", # urls of product pdfs, list of strings
-            "webcollage", # whether video is from webcollage (?), 1/0
+            "webcollage", # whether page contains webcollage content, 1/0
+            "sellpoints", # whether page contains sellpoint content, 1/0
             "htags", # h1 and h2 tags, dictionary like: {"h1" : [], "h2": ["text in tag"]}
             "loaded_in_seconds", # load time of product page in seconds, float
             "keywords", # keywords for this product, usually from meta tag, string
@@ -156,7 +157,7 @@ class Scraper():
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls",\
                             "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail"], \
+                            "image_hashes", "thumbnail", "sellpoints"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock", \
@@ -332,19 +333,28 @@ class Scraper():
             try:
                 contents = urllib2.urlopen(request).read()
 
-                try:
-                    self.tree_html = html.fromstring(contents.decode("utf8"))
-                except UnicodeError, e:
-                    # if string was not utf8, don't deocde it
-                    print "Warning creating html tree from page content: ", e.message
+            # handle urls with special characters
+            except UnicodeEncodeError, e:
 
-                    self.tree_html = html.fromstring(contents)
-
-                # if we got it we can exit the loop and stop retrying
-                return
+                request = urllib2.Request(self.product_page_url.encode("utf-8"))
+                request.add_header('User-Agent', agent)
+                contents = urllib2.urlopen(request).read()
 
             except IncompleteRead, e:
-                pass
+                continue
+
+
+            try:
+                self.tree_html = html.fromstring(contents.decode("utf8"))
+            except UnicodeError, e:
+                # if string was not utf8, don't deocde it
+                print "Warning creating html tree from page content: ", e.message
+
+                self.tree_html = html.fromstring(contents)
+
+            # if we got it we can exit the loop and stop retrying
+            return
+
 
             # try getting it again, without catching exception.
             # if it had worked by now, it would have returned.
