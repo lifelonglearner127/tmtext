@@ -183,16 +183,24 @@ class TargetScraper(Scraper):
             redirect_link = tree.xpath("//div[@id='slow-reporting-message']//a/@href")[0]
             redirect_contents = urllib.urlopen(redirect_link).read()
             redirect_tree = html.fromstring(redirect_contents)
-            tabs = redirect_tree.xpath("//div[@class='wc-ms-navbar']//li//a//span/text()")
-            video_tabs = [r for r in tabs if "video" in r.lower()]
-            if len(video_tabs) > 0:
-                #have video
-                video_urls_tmp = redirect_tree.xpath("//div[@class='wc-gallery-thumb']//img/@wcobj")
-                if len(video_urls_tmp) > 0:
-                    video_url += video_urls_tmp
-                else:
-                    video_url.append(item)
-
+            tabs = redirect_tree.xpath("//div[@class='wc-ms-navbar']//li//a")
+            for tab in tabs:
+                tab_txt = ""
+                try:
+                    tab_txt = tab.xpath(".//span/text()")[0].strip()
+                except IndexError:
+                    continue
+                # if tab_txt == "Video" or tab_txt == "Videos" or tab_txt == "360 View Video":
+                if "video" in tab_txt.lower():
+                    redirect_link2 = tab.xpath("./@href")[0]
+                    redirect_link2 = "http://content.webcollage.net" + redirect_link2
+                    redirect_contents2 = urllib.urlopen(redirect_link2).read()
+                    redirect_tree2 = html.fromstring(redirect_contents2)
+                    video_urls_tmp = redirect_tree2.xpath("//div[@class='wc-gallery-thumb']//img/@wcobj")
+                    if len(video_urls_tmp) > 0:
+                        video_url += video_urls_tmp
+                    else:
+                        video_url.append(item)
         if len(video_url) < 1:
             return None
         return video_url
