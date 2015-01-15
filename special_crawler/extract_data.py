@@ -76,6 +76,7 @@ class Scraper():
             "pdf_count", # nr of pdfs, string
             "pdf_urls", # urls of product pdfs, list of strings
             "webcollage", # whether video is from webcollage (?), 1/0
+            "sellpoints", # whether video is from sellpoints (?), 1/0
             "htags", # h1 and h2 tags, dictionary like: {"h1" : [], "h2": ["text in tag"]}
             "loaded_in_seconds", # load time of product page in seconds, float
             "keywords", # keywords for this product, usually from meta tag, string
@@ -154,7 +155,7 @@ class Scraper():
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
                         "features", "feature_count", "model_meta", "description", "long_description"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls",\
-                            "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
+                            "pdf_count", "pdf_urls", "webcollage", "sellpoints", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
                             "image_hashes", "thumbnail"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
