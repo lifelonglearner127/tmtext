@@ -107,10 +107,12 @@ def check_input(url, is_valid_url, invalid_url_message=""):
         raise InvalidUsage("No input URL was provided.", 400)
 
     if not is_valid_url:
-        raise InvalidUsage(\
-            "Invalid URL: " + str(url) + " " + str(invalid_url_message),\
-            400)
-
+        try:
+            error_message = "Invalid URL: " + str(url) + " " + str(invalid_url_message)
+        except UnicodeEncodeError:
+            error_message = "Invalid URL: " + url.encode("utf-8") + str(invalid_url_message)
+        raise InvalidUsage(error_message, 400)
+        
 # infer domain from input URL
 def extract_domain(url):
     if 'chicago.doortodoororganics.com' in url:

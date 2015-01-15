@@ -332,19 +332,28 @@ class Scraper():
             try:
                 contents = urllib2.urlopen(request).read()
 
-                try:
-                    self.tree_html = html.fromstring(contents.decode("utf8"))
-                except UnicodeError, e:
-                    # if string was not utf8, don't deocde it
-                    print "Warning creating html tree from page content: ", e.message
+            # handle urls with special characters
+            except UnicodeEncodeError, e:
 
-                    self.tree_html = html.fromstring(contents)
-
-                # if we got it we can exit the loop and stop retrying
-                return
+                request = urllib2.Request(self.product_page_url.encode("utf-8"))
+                request.add_header('User-Agent', agent)
+                contents = urllib2.urlopen(request).read()
 
             except IncompleteRead, e:
-                pass
+                continue
+
+
+            try:
+                self.tree_html = html.fromstring(contents.decode("utf8"))
+            except UnicodeError, e:
+                # if string was not utf8, don't deocde it
+                print "Warning creating html tree from page content: ", e.message
+
+                self.tree_html = html.fromstring(contents)
+
+            # if we got it we can exit the loop and stop retrying
+            return
+
 
             # try getting it again, without catching exception.
             # if it had worked by now, it would have returned.
