@@ -22,10 +22,9 @@ class AmazonScraper(Scraper):
     def check_url_format(self):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         n = re.match(r"^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        l = re.match(r"^http://www.amazon.co.uk/.*$", self.product_page_url)
         self.scraper_version = "com"
-        if (not not n) or (not not l): self.scraper_version = "uk"
-        return (not not m) or (not not n) or (not not l)
+        if (not not n): self.scraper_version = "uk"
+        return (not not m) or (not not n)
 
     def not_a_product(self):
         '''Overwrites parent class method that determines if current page
@@ -296,6 +295,18 @@ class AmazonScraper(Scraper):
                             if len(imu)>10:
                                 res.append(imu)
                         return res
+                st = s.find("var colorImages")
+                if len(res)==0 and st > 0:
+                    st = s.find("{",st)
+                    e = s.find("};",st)+1
+                    if st>=e: continue
+                    imdata=json.loads(s[st:e].replace("'",'"'))
+                    if type(imdata) is dict and len(imdata)>0  and imdata.has_key('initial'):
+                        for d in imdata['initial']:
+                            imu = d.get("large","")
+                            if len(imu)>10:
+                                res.append(imu)
+                        return res
         except:
             return []
         return res
@@ -315,7 +326,7 @@ class AmazonScraper(Scraper):
     # return 1 if the "no image" image is found
     def no_image(self,image_url):
         try:
-            if len(image_url)>0 and image_url[0].find("no-img-sm")>0:
+            if len(image_url)>0 and image_url[0].find("no-img")>0:
                 return 1
             if self._no_image(image_url[0]):
                 return 1
@@ -402,6 +413,16 @@ class AmazonScraper(Scraper):
             b= self._toint(stars[i])
             rev.append([a,b])
         if len(rev) > 0 :  return rev
+        stars=self.tree_html.xpath("//div[contains(@class,'histoRow')]")
+        for a in stars:
+            b=a.text_content().strip().split()
+            if len(b)>2:
+                b1 = self._toint(b[0])
+                b2 =self._toint(b[2])
+                rev.append([b1,b2])
+        if len(rev) > 0 :
+            rev.reverse()
+            return rev
         return None
 
     def _tofloat(self,s):
@@ -457,6 +478,11 @@ class AmazonScraper(Scraper):
         price = self.tree_html.xpath("//div[@id='"+pid+"']//a[@class='a-button-text']/span//text()")
         if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
             return price[0]
+
+        price = self.tree_html.xpath("//div[@id='unqualifiedBuyBox']//span[@class='a-color-price']//text()")
+        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
+            return price[0]
+
         price = self.tree_html.xpath("//*[contains(@class, 'price')]//text()")
         if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
             return price[0].strip()
@@ -500,6 +526,8 @@ class AmazonScraper(Scraper):
         aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
         for a in aa:
             if a.text_content().find('old by ')>0 and a.text_content().find('old by Amazon')<0:
+                return 1
+            if a.text_content().find('seller')>0 :
                 return 1
         a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
         if len(a)>0 and a[0].find('seller')>=0: return 1
