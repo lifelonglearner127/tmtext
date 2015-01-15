@@ -22,6 +22,7 @@ from extract_target_data import TargetScraper
 from extract_chicago_data import ChicagoScraper
 from extract_samsclub_data import SamsclubScraper
 from extract_babysecurity_data import BabysecurityScraper
+from extract_staples_data import StaplesScraper
 
 from extract_hersheys_data import HersheysScraper
 from urllib2 import HTTPError
@@ -59,6 +60,7 @@ SUPPORTED_SITES = {
                     "chicago" : ChicagoScraper,
                     "samsclub" : SamsclubScraper,
                     "babysecurity" : BabysecurityScraper,
+                    "staples" : StaplesScraper,
                     }
 
 # add logger
