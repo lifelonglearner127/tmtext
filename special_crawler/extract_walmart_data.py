@@ -974,7 +974,6 @@ class WalmartScraper(Scraper):
         # if image name is "no_image", return True
         if re.match(".*no.image\..*", url):
             return True
-
         else:
             return Scraper._no_image(self, url)
 
@@ -1012,7 +1011,7 @@ class WalmartScraper(Scraper):
             except:
                 find = []
             if len(find)>0:
-                return find
+                return self._qualify_image_urls(find)
 
         # It should only return this img when there's no img carousel
         pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
@@ -1026,10 +1025,24 @@ class WalmartScraper(Scraper):
                 # TODO: how to get this printed in the logs
                 print "WARNING: ", e.message
 
-            return pic
+            return self._qualify_image_urls(pic)
 
         else:
             return None
+
+    def _qualify_image_urls(self, image_list):
+        """Remove no image urls in image list
+        """
+        qualified_image_list = []
+
+        for image in image_list:
+            if not re.match(".*no.image\..*", image):
+                qualified_image_list.append(image)
+
+        if len(qualified_image_list) == 0:
+            return None
+        else:
+            return qualified_image_list
 
     def _image_urls_new(self):
         """Extracts image urls for this product.
@@ -1061,7 +1074,7 @@ class WalmartScraper(Scraper):
                 except Exception, e:
                     print "WARNING: ", e.message
 
-            return images_carousel
+            return self._qualify_image_urls(images_carousel)
 
         # It should only return this img when there's no img carousel
         main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
@@ -1074,7 +1087,7 @@ class WalmartScraper(Scraper):
             except Exception, e:
                 print "WARNING: ", e.message
 
-            return main_image
+            return self._qualify_image_urls(main_image)
 
         # bundle product images
         images_bundle = self.tree_html.xpath("//div[contains(@class, 'choice-hero-imagery-components')]//" + \
@@ -1087,7 +1100,7 @@ class WalmartScraper(Scraper):
         if images_bundle:
             # fix relative urls
             images_bundle = map(_fix_relative_url, images_bundle)
-            return images_bundle
+            return self._qualify_image_urls(images_bundle)
 
         # nothing found
         return None
