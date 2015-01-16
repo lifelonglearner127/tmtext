@@ -516,14 +516,14 @@ class ServiceScraperTest(unittest.TestCase):
                     is_valid_param = True
                     break
 
-        if not is_valid_param:
-            print "\nPlease input valid website name.\n-----------------------------------"
+            if not is_valid_param:
+                print "\nPlease input valid website name.\n-----------------------------------"
 
-            for site, scraper in SUPPORTED_SITES.items():
-                sys.stdout.write(site + " ")
+                for site, scraper in SUPPORTED_SITES.items():
+                    sys.stdout.write(site + " ")
 
-            print "\n"
-            exit(1)
+                print "\n"
+                exit(1)
 
         # read input urls from file
         try:
