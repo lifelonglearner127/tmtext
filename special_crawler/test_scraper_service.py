@@ -6,6 +6,7 @@ import re
 import copy
 import psycopg2
 import psycopg2.extras
+import sys
 from datetime import date
 from crawler_service import SUPPORTED_SITES
 
@@ -507,6 +508,23 @@ class ServiceScraperTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(ServiceScraperTest, self).__init__(*args, **kwargs)
 
+        is_valid_param = False
+
+        if specified_website != "":
+            for site, scraper in SUPPORTED_SITES.items():
+                if site == specified_website:
+                    is_valid_param = True
+                    break
+
+        if not is_valid_param:
+            print "\nPlease input valid website name.\n-----------------------------------"
+
+            for site, scraper in SUPPORTED_SITES.items():
+                sys.stdout.write(site + " ")
+
+            print "\n"
+            exit(1)
+
         # read input urls from file
         try:
             with open("url_samples.txt") as f:
@@ -514,6 +532,10 @@ class ServiceScraperTest(unittest.TestCase):
                 self.urls_by_scraper = {}
                 for site, scraper in SUPPORTED_SITES.items():
                     self.urls_by_scraper[site] = []
+
+                    if specified_website != "" and site != specified_website:
+                        continue
+
                     for url in self.urls:
                         site_scraper = scraper(url=url, bot=None)
                         if site_scraper.check_url_format():
@@ -526,7 +548,7 @@ class ServiceScraperTest(unittest.TestCase):
             print e
 
     def _test(self, website, sample_url):
-        self.cur.execute("select * from console_urlsamples where website='%s' and url='%s'" % (website, sample_url))
+        self.cur.execute("select * from console_urlsample where website='%s' and url='%s'" % (website, sample_url))
         row = self.cur.fetchall()
 
         print "\n-------------------------------Report results for %s-------------------------------" % website
@@ -550,7 +572,7 @@ class ServiceScraperTest(unittest.TestCase):
                 not_a_product = 0
                 sample_json_str = test_json_str
 
-            self.cur.execute("insert into console_urlsamples(url, website, json, qualified_date, not_a_product)"
+            self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
                              " values('%s', '%s', $$%s$$, '%s', %d)"
                              % (sample_url, website, sample_json_str, today.isoformat(), not_a_product))
             self.con.commit()
@@ -559,7 +581,7 @@ class ServiceScraperTest(unittest.TestCase):
 
             if site_scraper.not_a_product():
                 print "This url is not valid anymore.\n"
-                self.cur.execute("update console_urlsamples set not_a_product=1 where id = %d" % row["id"])
+                self.cur.execute("update console_urlsample set not_a_product=1 where id = %d" % row["id"])
                 self.con.commit()
             else:
                 sample_json = row["json"]
@@ -568,7 +590,7 @@ class ServiceScraperTest(unittest.TestCase):
                 diff_engine = JsonDiff(test_json, sample_json)
                 diff_engine.diff()
 
-                sql = ("insert into console_reportresults(sample_url, website, "
+                sql = ("insert into console_reportresult(sample_url, website, "
                        "report_result, changes_in_structure, changes_in_type, changes_in_value, report_date, "
                        "sample_json, current_json) "
                        "values('%s', '%s', $$%s$$, %d, %d, %d, '%s', $$%s$$, $$%s$$)"
@@ -653,5 +675,12 @@ class ServiceScraperTest(unittest.TestCase):
         for url in self.urls_by_scraper["hersheysstore"]:
             self._test("hersheysstore", url)
 
-if __name__=='__main__':
+if __name__ == '__main__':
+    specified_website = ""
+
+    if len(sys.argv) == 2:
+        specified_website = sys.argv[1]
+
+    del sys.argv[1:]
+
     unittest.main()
