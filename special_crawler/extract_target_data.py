@@ -191,7 +191,8 @@ class TargetScraper(Scraper):
                 except IndexError:
                     continue
                 # if tab_txt == "Video" or tab_txt == "Videos" or tab_txt == "360 View Video":
-                if "video" in tab_txt.lower():
+                # if "video" in tab_txt.lower():
+                if '360 view video' == tab_txt.lower() or 'videos' == tab_txt.lower() or 'video' == tab_txt.lower():
                     redirect_link2 = tab.xpath("./@href")[0]
                     redirect_link2 = "http://content.webcollage.net" + redirect_link2
                     redirect_contents2 = urllib.urlopen(redirect_link2).read()
