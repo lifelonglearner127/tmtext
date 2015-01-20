@@ -179,6 +179,8 @@ class PGEStore(Scraper):
         return None
 
     def _webcollage(self):
+        image_url = self.tree_html.xpath("//img[contains(@src, 'media.webcollage.net')]/@src")
+
         return None
 
     def _htags(self):
