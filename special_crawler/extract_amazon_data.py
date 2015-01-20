@@ -212,18 +212,19 @@ class AmazonScraper(Scraper):
     def _image_urls(self, tree = None):
         allimg = self._image_helper()
         n = len(allimg)
-
+        vurls = self._video_urls()
         if tree == None:
             tree = self.tree_html
         #The small images are to the left of the big image
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
 
         #The small images are below the big image
         image_url = tree.xpath("//div[@id='thumbs-image']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            res = [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
+            return res
 
         #Amazon instant video
         image_url = tree.xpath("//div[@class='dp-meta-icon-container']//img/@src")
@@ -236,7 +237,7 @@ class AmazonScraper(Scraper):
 
         image_url = tree.xpath("//div[contains(@id,'thumb-container')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
 
         image_url = tree.xpath("//div[contains(@class,'imageThumb')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
@@ -296,6 +297,18 @@ class AmazonScraper(Scraper):
                             if len(imu)>10:
                                 res.append(imu)
                         return res
+                st = s.find("var colorImages")
+                if len(res)==0 and st > 0:
+                    st = s.find("{",st)
+                    e = s.find("};",st)+1
+                    if st>=e: continue
+                    imdata=json.loads(s[st:e].replace("'",'"'))
+                    if type(imdata) is dict and len(imdata)>0  and imdata.has_key('initial'):
+                        for d in imdata['initial']:
+                            imu = d.get("large","")
+                            if len(imu)>10:
+                                res.append(imu)
+                        return res
         except:
             return []
         return res
@@ -315,7 +328,7 @@ class AmazonScraper(Scraper):
     # return 1 if the "no image" image is found
     def no_image(self,image_url):
         try:
-            if len(image_url)>0 and image_url[0].find("no-img-sm")>0:
+            if len(image_url)>0 and image_url[0].find("no-img")>0:
                 return 1
             if self._no_image(image_url[0]):
                 return 1
@@ -324,12 +337,29 @@ class AmazonScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        video_url = self.tree_html.xpath('//script[@type="text/javascript"]')
+        video_url = self.tree_html.xpath('//script')  #[@type="text/javascript"]
         temp = []
         for v in video_url:
-            r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", str(v.xpath('.//text()')))
+            st=str(v.xpath('.//text()'))
+            r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", st)
             if r:
                 temp.extend(r)
+            ii=st.find("kib-thumb-container-")
+            if ii > 0:
+                ij=st.find('"',ii+19)
+                if ij-ii<25:
+                    vid = st[ii:ij]
+                    viurl = self.tree_html.xpath('//div[@id="%s"]//img/@src' % vid)
+                    if len(viurl)>0:
+                        temp.append(viurl[0])
+
+        #Find video among the  small images.
+        image_url = self.tree_html.xpath("//span[@class='a-button-text']//img/@src")
+        if len(image_url)==0:
+            image_url = self.tree_html.xpath("//div[@id='thumbs-image']//img/@src")
+        for v in image_url:
+            if v.find("player")>0 :
+                temp.append(v)
         if len(temp)==0: return None
         return temp#",".join(temp)
 
@@ -402,6 +432,16 @@ class AmazonScraper(Scraper):
             b= self._toint(stars[i])
             rev.append([a,b])
         if len(rev) > 0 :  return rev
+        stars=self.tree_html.xpath("//div[contains(@class,'histoRow')]")
+        for a in stars:
+            b=a.text_content().strip().split()
+            if len(b)>2:
+                b1 = self._toint(b[0])
+                b2 =self._toint(b[2])
+                rev.append([b1,b2])
+        if len(rev) > 0 :
+            rev.reverse()
+            return rev
         return None
 
     def _tofloat(self,s):
@@ -457,6 +497,11 @@ class AmazonScraper(Scraper):
         price = self.tree_html.xpath("//div[@id='"+pid+"']//a[@class='a-button-text']/span//text()")
         if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
             return price[0]
+
+        price = self.tree_html.xpath("//div[@id='unqualifiedBuyBox']//span[@class='a-color-price']//text()")
+        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
+            return price[0]
+
         price = self.tree_html.xpath("//*[contains(@class, 'price')]//text()")
         if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
             return price[0].strip()
@@ -500,6 +545,8 @@ class AmazonScraper(Scraper):
         aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
         for a in aa:
             if a.text_content().find('old by ')>0 and a.text_content().find('old by Amazon')<0:
+                return 1
+            if a.text_content().find('seller')>0 :
                 return 1
         a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
         if len(a)>0 and a[0].find('seller')>=0: return 1

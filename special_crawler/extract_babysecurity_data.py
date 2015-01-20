@@ -132,7 +132,9 @@ class BabysecurityScraper(Scraper):
     def _video_urls(self):
         video_url = self.tree_html.xpath("//div[starts-with(@class,'product-img-column')]//iframe/@src")
         if len(video_url) < 1:
-            return None
+            video_url = self.tree_html.xpath("//iframe/@src")
+            if len(video_url) < 1:
+                return None
         return video_url
 
     def _video_count(self):
