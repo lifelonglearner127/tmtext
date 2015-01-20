@@ -213,6 +213,7 @@ class AmazonScraper(Scraper):
         allimg = self._image_helper()
         n = len(allimg)
         vurls = self._video_urls()
+        if vurls==None: vurls=[]
         if tree == None:
             tree = self.tree_html
         #The small images are to the left of the big image
@@ -248,10 +249,10 @@ class AmazonScraper(Scraper):
             return image_url
 
         image_url = tree.xpath('//img[@id="imgBlkFront"]')
-        if image_url is not None and len(image_url)>n:
+        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return ["inline image"]
 
-        if len(allimg) > 0:
+        if len(allimg) > 0 and self.no_image(allimg)==0:
             return allimg
         return None
 
