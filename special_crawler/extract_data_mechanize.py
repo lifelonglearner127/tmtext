@@ -10,6 +10,8 @@ import cStringIO
 from PIL import Image
 import mmh3 as MurmurHash
 import os
+import mechanize
+import cookielib
 
 from no_img_hash import fetch_bytes
 
@@ -39,6 +41,7 @@ class Scraper():
 
     # number of retries for fetching product page source before giving up
     MAX_RETRIES = 3
+    br = None
 
     # List containing all data types returned by the crawler (that will appear in responses of requests to service in crawler_service.py)
     # In practice, all returned data types for all crawlers should be defined here
@@ -318,27 +321,64 @@ class Scraper():
         Returns:
             lxml tree object
         """
+        # Browser
+        self.br = mechanize.Browser()
 
-        request = urllib2.Request(self.product_page_url)
-        # set user agent to avoid blocking
-        agent = ''
-        if self.bot_type == "google":
-            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
-            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-        else:
-            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
-        request.add_header('User-Agent', agent)
+        # Cookie Jar
+        cj = cookielib.LWPCookieJar()
+        self.br.set_cookiejar(cj)
+
+        # Browser options
+        self.br.set_handle_equiv(True)
+        self.br.set_handle_gzip(True)
+        self.br.set_handle_redirect(True)
+        self.br.set_handle_referer(True)
+        self.br.set_handle_robots(False)
+        self.br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
+
+        one_url = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=383249&catalogId=4&item_id=71504599&langId=-1&currentSKUNbr=383249&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=117896272"
+
+        # Open some site, let's pick a random one, the first that pops in mind:
+        r = self.br.open(one_url)
+        html = r.read()
+
+        # Show the source
+        print html
+        # Follows refresh 0 but not hangs on refresh > 0
+        # br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+
+        # Want debugging messages?
+        #br.set_debug_http(True)
+        #br.set_debug_redirects(True)
+        #br.set_debug_responses(True)
+
+        # User-Agent (this is cheating, ok?)
+        self.br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')]
+
+        # request = urllib2.Request(self.product_page_url)
+        # # set user agent to avoid blocking
+        # agent = ''
+        # if self.bot_type == "google":
+        #     print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
+        #     agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        # else:
+        #     agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+        # request.add_header('User-Agent', agent)
 
         for i in range(self.MAX_RETRIES):
             try:
-                contents = urllib2.urlopen(request).read()
+                r = self.br.open(self.product_page_url)
+                contents = r.read()
+                # contents = urllib2.urlopen(request).read()
 
             # handle urls with special characters
             except UnicodeEncodeError, e:
 
-                request = urllib2.Request(self.product_page_url.encode("utf-8"))
-                request.add_header('User-Agent', agent)
-                contents = urllib2.urlopen(request).read()
+                r = br.open(self.product_page_url.encode("utf-8"))
+                contents = r.read()
+                # request = urllib2.Request(self.product_page_url.encode("utf-8"))
+                # request.add_header('User-Agent', agent)
+                # contents = urllib2.urlopen(request).read()
 
             except IncompleteRead, e:
                 continue
@@ -360,7 +400,9 @@ class Scraper():
             # if it had worked by now, it would have returned.
             # if it still doesn't work, it will throw exception.
             # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
-            contents = urllib2.urlopen(request).read()
+            r = self.br.open(self.product_page_url)
+            contents = r.read()
+            # contents = urllib2.urlopen(request).read()
             self.tree_html = html.fromstring(contents)
             
 
