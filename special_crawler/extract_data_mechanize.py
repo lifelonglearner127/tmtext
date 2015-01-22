@@ -336,14 +336,6 @@ class Scraper():
         self.br.set_handle_robots(False)
         self.br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
 
-        one_url = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=383249&catalogId=4&item_id=71504599&langId=-1&currentSKUNbr=383249&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=117896272"
-
-        # Open some site, let's pick a random one, the first that pops in mind:
-        r = self.br.open(one_url)
-        html = r.read()
-
-        # Show the source
-        print html
         # Follows refresh 0 but not hangs on refresh > 0
         # br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
 
@@ -353,7 +345,7 @@ class Scraper():
         #br.set_debug_responses(True)
 
         # User-Agent (this is cheating, ok?)
-        self.br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')]
+        # self.br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')]
 
         # request = urllib2.Request(self.product_page_url)
         # # set user agent to avoid blocking
