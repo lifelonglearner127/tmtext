@@ -327,8 +327,8 @@ class OzonScraper(Scraper):
     
     def _review_count(self):
         try:
-            nr = self.tree_html.xpath('//div[@itemprop="aggregateRating"]//span//text()')[0]
-            return re.findall(r'[0-9]+', nr)[0]
+            review_count = self.tree_html.xpath("//div[@itemprop='reviewCount']//text()")[0].strip()
+            return int(review_count)
         except IndexError:
             return 0
 
@@ -405,6 +405,8 @@ class OzonScraper(Scraper):
             brand_txt = self.tree_html.xpath("//div[@class='eItemBrand_textLogo']//text()")[0].strip()
         except:
             brand_txt = ""
+        if len(brand_txt) > 0:
+            return brand_txt
         try:
             brand_txt = self.tree_html.xpath("//a[@class='eItemBrand_logo']//img/@alt")[0].strip()
         except:
