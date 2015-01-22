@@ -1,8 +1,9 @@
 import re
 from urlparse import urljoin
 
-from product_ranking.items import RelatedProduct, Price
-from product_ranking.spiders import cond_set, cond_set_value
+from product_ranking.items import RelatedProduct, Price, BuyerReviews
+from product_ranking.spiders import cond_set, cond_set_value, \
+    cond_replace_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 
 
@@ -12,22 +13,36 @@ def _itemprop(data, name, attr=None):
 
 
 class QuillProductsSpider(ProductsSpider):
+    """ quill.com product ranking spider.
+
+    Takes `order` argument with following possible values:
+
+    * `relevance` (default)
+    * `price_asc`, `price_desc`
+    * `rating_asc`, `rating_desc`
+    * `sale`
+    * `new`
+
+    Following fields are not scraped:
+    * `is_out_of_stock`, `is_in_store_only`, `upc`
+    """
+
     name = 'quill_products'
 
     allowed_domains = [
         'quill.com'
     ]
 
-    SEARCH_URL = "http://www.quill.com/search?dsNav={sort_mode}:" \
+    SEARCH_URL = "http://www.quill.com/search?dsNav=Ns:{sort_mode}:" \
                  ",Up:Page_Search_Leap&keywords={search_term}&act=Sort"
 
     SORT_MODES = {
         'default': '',
         'relevance': '',
-        'price_desc': 'Ns:p.price|101|-1|',
-        'price_asc': 'Ns:p.price|101|1|',
-        'sale': 'Ns:p.sale_flag|101|-1|',
-        'new': 'Ns:p.new_flag|101|-1|',
+        'price_desc': 'p.price|101|-1|',
+        'price_asc': 'p.price|101|1|',
+        'sale': 'p.sale_flag|101|-1|',
+        'new': 'p.new_flag|101|-1|',
         'rating_desc': 'p.avg_rating|101|-1|',
         'rating_asc': 'p.avg_rating|101|1|'
     }
@@ -44,6 +59,10 @@ class QuillProductsSpider(ProductsSpider):
         return urljoin(response.url, link[0].extract()) if link else None
 
     def _fetch_product_boxes(self, response):
+        brands = response.css('.pnlBrand .listMenu li.link .formLabel::text')
+        brands = brands.extract()
+        brands.sort(key=lambda s: len(s), reverse=True)
+        cond_set_value(response.meta, 'brands', brands)
         return response.css('.BrowseItem .itemDetails')
 
     def _link_from_box(self, box):
@@ -65,6 +84,11 @@ class QuillProductsSpider(ProductsSpider):
                 '/node()[normalize-space()]'
         cond_set_value(product, 'description',
                        response.xpath(xpath).extract(), ''.join)
+        cond_set(product, 'brand', filter(product.get('title', '').startswith,
+                                          response.meta.get('brands', [])))
+        if product.get('description', '') == '':
+            xpath = '//div[@id="divDescription"]/node()[normalize-space()]'
+            product['description'] = ''.join(response.xpath(xpath).extract())
         self._populate_related_products(response, product)
         price = product.get('price')
         if price:
@@ -75,6 +99,9 @@ class QuillProductsSpider(ProductsSpider):
                 self.log('Incorrect price format %s at %s' %
                          (price, response.url))
                 product['price'] = None
+        self._buyer_reviews_from_html(response, product)
+        cond_replace_value(product, 'url', response.url.split('?', 1)[0])
+
 
     def _populate_related_products(self, response, product):
         related_products = {}
@@ -110,3 +137,46 @@ class QuillProductsSpider(ProductsSpider):
                 yield RelatedProduct(
                     url=urljoin('http://quill.com', url[0].extract()),
                     title=title[0].extract())
+
+    def _buyer_reviews_from_html(self, response, product):
+        rarea = response.xpath(
+            "//div[@id='ReviewContent']")
+        if rarea:
+            rarea = rarea[0]
+        else:
+            return
+        total = rarea.xpath("//span[@class='count']/text()").extract()
+        if total:
+            try:
+                total = int(total[0])
+            except ValueError:
+                total = 0
+        else:
+            return
+        avrg = rarea.xpath(
+            "//span[contains(@class,'average')]/text()").extract()
+        if avrg:
+            try:
+                avrg = float(avrg[0])
+            except ValueError:
+                avrg = 0.0
+        else:
+            return
+        ratings = {}
+        rat = rarea.xpath("//ul[@class='pr-ratings-histogram-content']/li")
+        for irat in rat:
+            label = irat.xpath(
+                "p[@class='pr-histogram-label']/span/text()").re("(\d) Stars")
+            if label:
+                label = label[0]
+            val = irat.xpath(
+                "p[@class='pr-histogram-count']/span/text()").re("\((\d+)\)")
+            try:
+                val = int(val[0])
+            except ValueError:
+                val = 0
+            ratings[label] = val
+        reviews = BuyerReviews(num_of_reviews=total,
+                               average_rating=avrg,
+                               rating_by_star=ratings)
+        cond_set_value(product, 'buyer_reviews', reviews)
