@@ -9,7 +9,7 @@ def _load_brands(fname):
     if BRANDS:  # don't perform expensive load operations
         return
     BRANDS = resource_string(__name__, fname)
-    BRANDS = BRANDS.split()
+    BRANDS = BRANDS.split('\n')
     BRANDS = [b.lower().strip().rstrip() for b in BRANDS]
     BRANDS = set(BRANDS)  # set lookup is faster than list lookup
 
