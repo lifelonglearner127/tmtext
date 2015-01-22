@@ -290,11 +290,24 @@ class SamsclubScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//span[@class='price']//text()")[0].strip()
-        currency = self.tree_html.xpath("//span[@class='superscript']//text()")[0].strip()
-        superscript = self.tree_html.xpath("//span[@class='superscript']//text()")[1].strip()
-        price = "%s%s.%s" % (currency, price, superscript)
-        return price
+        try:
+            price = self.tree_html.xpath("//span[@class='price']//text()")[0].strip()
+            currency = self.tree_html.xpath("//span[@class='superscript']//text()")[0].strip()
+            superscript = self.tree_html.xpath("//span[@class='superscript']//text()")[1].strip()
+            price = "%s%s.%s" % (currency, price, superscript)
+            return price
+        except:
+            pass
+        try:
+            txt = self.tree_html.xpath("//span[contains(@class,'ipClubSelector')]//text()")[0].strip()
+            if "Select your Club" in txt:
+                return "in stores only - no online price"
+        except:
+            pass
+
+        if len(self.tree_html.xpath("//h2[contains(text(),'Select your options')]//text()")) > 0:
+            return "price depends on option"
+        return None
 
     def _in_stores_only(self):
         return None
