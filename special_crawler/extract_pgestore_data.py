@@ -183,8 +183,11 @@ class PGEStore(Scraper):
         url = "http://content.webcollage.net/pg-estore/power-page?ird=true&channel-product-id=%s" % self._product_id()
         html = urllib.urlopen(url).read()
         m = re.findall(r'_wccontent = (\{.*?\});', html, re.DOTALL)
-        if ".webcollage.net" in m[0]:
-            return 1
+        try:
+            if ".webcollage.net" in m[0]:
+                return 1
+        except IndexError:
+            pass
         return 0
 
     def _htags(self):
