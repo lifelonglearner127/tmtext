@@ -130,7 +130,7 @@ class WehkampProductsSpider(BaseProductsSpider):
                 )
                 cond_set_value(product, 'buyer_reviews', br)
 
-        cond_set(product, 'locale', "en_US")
+        cond_set(product, 'locale', ("en_US",))
 
         return product
 
