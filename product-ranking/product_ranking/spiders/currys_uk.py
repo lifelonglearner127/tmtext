@@ -147,6 +147,23 @@ class CurrysUkProductsSpider(ProductsSpider):
         'buyer_reviews': True
     }
 
+    def start_requests(self):
+        for req in super(CurrysUkProductsSpider, self).start_requests():
+            req.meta.update({'dont_redirect': True,
+                             'handle_httpstatus_list': [302]})
+            yield req
+
+    def parse(self, response):
+        if response.status == 302:
+            location = response.headers['Location']
+            request = Request(urlparse.urljoin(response.url, location),
+                              meta=response.meta, dont_filter=True)
+            yield request
+        else:
+            for item in super(CurrysUkProductsSpider, self).parse(response):
+                yield item
+
+
     def _total_matches_from_html(self, response):
         if self._is_product_page(response):
             return 1

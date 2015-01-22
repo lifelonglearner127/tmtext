@@ -20,6 +20,9 @@ from extract_bhinneka_data import BhinnekaScraper
 from extract_maplin_data import MaplinScraper
 from extract_target_data import TargetScraper
 from extract_chicago_data import ChicagoScraper
+from extract_samsclub_data import SamsclubScraper
+from extract_babysecurity_data import BabysecurityScraper
+from extract_staples_data import StaplesScraper
 
 from extract_hersheys_data import HersheysScraper
 from urllib2 import HTTPError
@@ -54,7 +57,10 @@ SUPPORTED_SITES = {
                     "maplin" : MaplinScraper,
                     "hersheysstore" : HersheysScraper,
                     "target" : TargetScraper,
-                    "chicago" : ChicagoScraper
+                    "chicago" : ChicagoScraper,
+                    "samsclub" : SamsclubScraper,
+                    "babysecurity" : BabysecurityScraper,
+                    "staples" : StaplesScraper,
                     }
 
 # add logger
@@ -101,10 +107,12 @@ def check_input(url, is_valid_url, invalid_url_message=""):
         raise InvalidUsage("No input URL was provided.", 400)
 
     if not is_valid_url:
-        raise InvalidUsage(\
-            "Invalid URL: " + str(url) + " " + str(invalid_url_message),\
-            400)
-
+        try:
+            error_message = "Invalid URL: " + str(url) + " " + str(invalid_url_message)
+        except UnicodeEncodeError:
+            error_message = "Invalid URL: " + url.encode("utf-8") + str(invalid_url_message)
+        raise InvalidUsage(error_message, 400)
+        
 # infer domain from input URL
 def extract_domain(url):
     if 'chicago.doortodoororganics.com' in url:

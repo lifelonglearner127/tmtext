@@ -26,16 +26,18 @@ class WalmartScraper(Scraper):
                                  should contain information on what the expected format for the
                                  input URL is.
 
-            BASE_URL_VIDEOREQ (string):
-            BASE_URL_PDFREQ (string):
+            BASE_URL_VIDEOREQ_WEBCOLLAGE (string):
+            BASE_URL_PDFREQ_WEBCOLLAGE (string):
             BASE_URL_REVIEWSREQ (string):   strings containing necessary hardcoded URLs for extracting walmart
                                             videos, pdfs and reviews
     """
 
-    # base URL for request containing video URL
-    BASE_URL_VIDEOREQ = "http://json.webcollage.net/apps/json/walmart?callback=jsonCallback&environment-id=live&cpi="
-    # base URL for request containing pdf URL
-    BASE_URL_PDFREQ = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
+    # base URL for request containing video URL from webcollage
+    BASE_URL_VIDEOREQ_WEBCOLLAGE = "http://json.webcollage.net/apps/json/walmart?callback=jsonCallback&environment-id=live&cpi="
+    # base URL for request containing video URL from sellpoints
+    BASE_URL_VIDEOREQ_SELLPOINTS = "http://www.walmart.com/product/idml/video/%s/SellPointsVideos"
+    # base URL for request containing pdf URL from webcollage
+    BASE_URL_PDFREQ_WEBCOLLAGE = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
     # base URL for request for product reviews - formatted string
     BASE_URL_REVIEWSREQ = 'http://walmart.ugc.bazaarvoice.com/1336a/%20{0}/reviews.djs?format=embeddedhtml'
 
@@ -47,6 +49,8 @@ class WalmartScraper(Scraper):
 
         # whether product has any webcollage media
         self.has_webcollage_media = False
+        # whether product has any sellpoints media
+        self.has_sellpoints_media = False
         # product videos (to be used for "video_urls", "video_count", and "webcollage")
         self.video_urls = None
         # whether videos were extracted
@@ -143,7 +147,9 @@ class WalmartScraper(Scraper):
         if not self._has_video_button():
             return None
 
-        request_url = self.BASE_URL_VIDEOREQ + self._extract_product_id()
+        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE + self._extract_product_id()
+
+        self.video_urls = []
 
         #TODO: handle errors
         response_text = urllib.urlopen(request_url).read()
@@ -154,25 +160,52 @@ class WalmartScraper(Scraper):
         if video_url_candidates:
             # remove escapes
             #TODO: better way to do this?
-            video_url_candidate = re.sub('\\\\', "", video_url_candidates[0])
+            for video_url_item in video_url_candidates:
+                video_url_candidate = re.sub('\\\\', "", video_url_item)
 
-            # if it ends in flv, it's a video, ok
-            if video_url_candidate.endswith(".flv"):
-                self.has_webcollage_media = True
-                self.has_video = True
-                self.video_urls = [video_url_candidate]
+                # if it ends in flv, it's a video, ok
+                if video_url_candidate.endswith(".flv"):
+                    self.has_webcollage_media = True
+                    self.has_video = True
+                    self.video_urls.append(video_url_candidate)
+                    break
 
-            # if it doesn't, it may be a url to make another request to, to get customer reviews video
-            new_response = urllib.urlopen(video_url_candidate).read()
-            video_id_candidates = re.findall("param name=\"video\" value=\"(.*)\"", new_response)
+                # if it doesn't, it may be a url to make another request to, to get customer reviews video
+                if "client.expotv.com" in video_url_candidate:
+                    new_response = urllib.urlopen(video_url_candidate).read()
+                    video_id_candidates = re.findall("param name=\"video\" value=\"(.*)\"", new_response)
 
-            if video_id_candidates:
-                video_id = video_id_candidates[0]
+                    if video_id_candidates:
+                        video_id = video_id_candidates[0]
 
-                video_url_req = "http://client.expotv.com/vurl/%s?output=mp4" % video_id
-                video_url = urllib.urlopen(video_url_req).url
-                self.has_video = True
-                self.video_urls = [video_url]
+                        video_url_req = "http://client.expotv.com/vurl/%s?output=mp4" % video_id
+                        video_url = urllib.urlopen(video_url_req).url
+                        self.has_video = True
+                        self.video_urls.append(video_url)
+
+        # check sellpoints media if webcollage media doesn't exist
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
+        #TODO: handle errors
+        response_text = urllib.urlopen(request_url).read()
+
+        # get first "src" value in response
+        # # webcollage videos
+        video_url_candidates = re.findall("'file': '([^']+)'", response_text)
+        if video_url_candidates:
+            # remove escapes
+            #TODO: better way to do this?
+            for video_url_item in video_url_candidates:
+                video_url_candidate = re.sub('\\\\', "", video_url_item)
+
+                # if it ends in flv, it's a video, ok
+                if video_url_candidate.endswith(".mp4") or video_url_candidate.endswith(".flv"):
+                    self.has_sellpoints_media = True
+                    self.has_video = True
+                    self.video_urls.append(video_url_candidate)
+                    break
+
+        if len(self.video_urls) == 0:
+            self.video_urls = None
 
     def _video_urls(self):
         """Extracts video URLs for a given walmart product
@@ -297,6 +330,28 @@ class WalmartScraper(Scraper):
 
         if self._has_webcollage_iframe():
             return 1
+
+        return 0
+
+    def _product_has_sellpoints(self):
+        """Uses video and pdf information
+        to check whether product has any media from sellpoints.
+        Returns:
+            1 if there is sellpoints media
+            0 otherwise
+        """
+
+        if not self.extracted_video_urls:
+            self._extract_video_urls()
+
+#        if not self.extracted_pdf_urls:
+#            self._pdf_urls()
+
+        if self.has_sellpoints_media:
+            return 1
+
+#        if self._has_sellpoints_iframe():
+#            return 1
 
         return 0
 
@@ -971,7 +1026,6 @@ class WalmartScraper(Scraper):
         # if image name is "no_image", return True
         if re.match(".*no.image\..*", url):
             return True
-
         else:
             return Scraper._no_image(self, url)
 
@@ -1009,7 +1063,7 @@ class WalmartScraper(Scraper):
             except:
                 find = []
             if len(find)>0:
-                return find
+                return self._qualify_image_urls(find)
 
         # It should only return this img when there's no img carousel
         pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
@@ -1023,10 +1077,24 @@ class WalmartScraper(Scraper):
                 # TODO: how to get this printed in the logs
                 print "WARNING: ", e.message
 
-            return pic
+            return self._qualify_image_urls(pic)
 
         else:
             return None
+
+    def _qualify_image_urls(self, image_list):
+        """Remove no image urls in image list
+        """
+        qualified_image_list = []
+
+        for image in image_list:
+            if not re.match(".*no.image\..*", image):
+                qualified_image_list.append(image)
+
+        if len(qualified_image_list) == 0:
+            return None
+        else:
+            return qualified_image_list
 
     def _image_urls_new(self):
         """Extracts image urls for this product.
@@ -1058,7 +1126,7 @@ class WalmartScraper(Scraper):
                 except Exception, e:
                     print "WARNING: ", e.message
 
-            return images_carousel
+            return self._qualify_image_urls(images_carousel)
 
         # It should only return this img when there's no img carousel
         main_image = self.tree_html.xpath("//img[@class='product-image js-product-image js-product-primary-image']/@src")
@@ -1071,7 +1139,7 @@ class WalmartScraper(Scraper):
             except Exception, e:
                 print "WARNING: ", e.message
 
-            return main_image
+            return self._qualify_image_urls(main_image)
 
         # bundle product images
         images_bundle = self.tree_html.xpath("//div[contains(@class, 'choice-hero-imagery-components')]//" + \
@@ -1084,7 +1152,7 @@ class WalmartScraper(Scraper):
         if images_bundle:
             # fix relative urls
             images_bundle = map(_fix_relative_url, images_bundle)
-            return images_bundle
+            return self._qualify_image_urls(images_bundle)
 
         # nothing found
         return None
@@ -1473,6 +1541,7 @@ class WalmartScraper(Scraper):
         "video_count" : _product_has_video, \
         "video_urls" : _video_urls, \
         "webcollage" : _product_has_webcollage, \
+        "sellpoints" : _product_has_sellpoints, \
 
         "image_count" : _image_count, \
         "image_urls" : _image_urls, \

@@ -26,6 +26,18 @@ class OzonScraper(Scraper):
         m = re.match("^http://www\.ozon\.ru/.*$", self.product_page_url) 
         return (not not m)
     
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
+        if len(self._categories()) < 1:
+            return True
+        else:
+            return False
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -116,7 +128,6 @@ class OzonScraper(Scraper):
                 except:
                     rows_text.append("%s: %s" % (feature["Name"], feature["Value"]))
             self.feature_count = len(rows_text)
-            short_description = jsn["FirstComment"]["FirstComment"]["Text"]
 
         all_features_text = "\n".join(rows_text)
         return all_features_text
@@ -131,12 +142,14 @@ class OzonScraper(Scraper):
         return None
 
     def _description(self):
+        description = self._description_helper()
+        if not description or len(description) < 1:
+            return self._long_description_helper()
+        return description
+
+    def _description_helper(self):
         short_description = " ".join(self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")).strip()
         if len(short_description) < 1:
-            # for ex: http://www.ozon.ru/context/detail/id/19966749/
-            # short_description = " ".join(self.tree_html.xpath("//div[starts-with(@class,'eFirstDetailComment_textIn')]//text()"))
-            # if len(short_description) < 1:
-            # http://www.ozon.ru/context/detail/id/18467120/
             try:
                 script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
                 m = re.findall(r"\.model_data = (.*?)};", script)
@@ -151,31 +164,45 @@ class OzonScraper(Scraper):
                         rows_text.append("%s: %s" % (row["Name"], row["Value"]))
                 short_description = "\n".join(rows_text)
             except IndexError:
-                short_description = ""
-
-            if len(short_description) < 1:
-                self.is_long_desc_is_none = True
-                short_description = " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
-                if len(short_description) < 1:
-                    short_description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
+                short_description = None
         return short_description
 
     def _long_description(self):
-        description = self._description()
-        if self.is_long_desc_is_none:
+        description = self._description_helper()
+        if not description or len(description) < 1:
             return None
-        description = " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
+        return self._long_description_helper()
+
+    def _long_description_helper(self):
+        try:
+            script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
+            m = re.findall(r"\.model_data = (.*?)};", script)
+            script = m[0] + "}"
+            jsn = json.loads(script)
+        except IndexError:
+            description = None
+            return description
+
+        description = ""
+        try:
+            description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
+        except KeyError:
+            pass
+
+        try:
+            for block in jsn["PlainTextDescription"]["Blocks"]:
+                description += self._clean_html(block['Text'])
+        except KeyError:
+            pass
+
+        try:
+            for block in jsn["Description"]["Blocks"]:
+                description += self._clean_html(block['Text'])
+        except KeyError:
+            pass
+
         if len(description) < 1:
-            # return  " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
-            try:
-                script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
-                m = re.findall(r"\.model_data = (.*?)};", script)
-                script = m[0] + "}"
-                jsn = json.loads(script)
-                #jsn = jsn['Gallery']['Groups']
-                description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
-            except IndexError:
-                description = None
+            return None
         return description
 
 
@@ -194,6 +221,7 @@ class OzonScraper(Scraper):
         return None
 
     def _image_urls(self):
+        image_url = []
         try:
             text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
             text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
@@ -203,18 +231,34 @@ class OzonScraper(Scraper):
             text = re.findall(r'\.model_data = (\{.*\});', str(text))[0]
             text = ''.join(text)
             jsn = json.loads(text.decode("unicode_escape"))
-            jsn = jsn['Gallery']['Groups']
+            jsn = jsn['Gallery']
+            if 'Groups' in jsn:
+                jsn = jsn['Groups']
+                for row in jsn:
+                    if 'Elements' in row:
+                        for element in row['Elements']:
+                            if 'Original' in element:
+                                if 'noimg_' not in element['Original']:
+                                    image_url.append(element['Original'])
+            elif 'GalleryPages' in jsn:
+                jsn = jsn['GalleryPages']
+                for jsn_itr in jsn:
+                    jsn_itr_group = jsn_itr['Groups']
+                    for row in jsn_itr_group:
+                        if 'Elements' in row:
+                            for element in row['Elements']:
+                                if 'Original' in element:
+                                    if 'noimg_' not in element['Original']:
+                                        image_url.append(element['Original'])
 
-        image_url = []
-        for row in jsn:
-            if 'Elements' in row:
-                for element in row['Elements']:
-                    if 'Original' in element:
-                        image_url.append(element['Original'])
+        if len(image_url) < 1:
+            return None
         return image_url
 
     def _image_count(self):
         image_url = self._image_urls()
+        if not image_url:
+            return 0
         return len(image_url)
 
     # return 1 if the "no image" image is found
@@ -234,10 +278,15 @@ class OzonScraper(Scraper):
             find = re.findall(r'www\.youtube\.com/embed/.*$', src)
             if find:
                 video_url.append(find[0])
+        if len(video_url) < 1:
+            return None
         return video_url
 
     def _video_count(self):
-        return len(self._video_urls())
+        video_urls = self._video_urls()
+        if not video_urls:
+            return 0
+        return len(video_urls)
 
     def _pdf_urls(self):
         return None
@@ -298,12 +347,11 @@ class OzonScraper(Scraper):
 
     def _price(self):
         try:
-            price_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//span[@itemprop='price']//text()")[0]
-            currency_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//meta[@itemprop='priceCurrency']/@content")[0]
-            price_txt = re.findall(r'[0-9\.]+', price_txt)[0]
-            if len(price_txt) == 0:
-                return None
-            return "%s %s" % (price_txt, currency_txt.strip())
+            price_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//span[contains(@class,'eOzonPrice_main')]//text()")[0].strip()
+            price_sub_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//span[contains(@class,'eOzonPrice_submain')]//text()")[0].strip()
+            currency_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//meta[@itemprop='priceCurrency']/@content")[0].strip()
+            price_txt = price_txt.replace(u'\xa0', u'')
+            return "%s.%s %s" % (price_txt, price_sub_txt, currency_txt)
         except IndexError:
             return None
 
@@ -353,6 +401,17 @@ class OzonScraper(Scraper):
         return self._categories()[-1]
    
     def _brand(self):
+        try:
+            brand_txt = self.tree_html.xpath("//div[@class='eItemBrand_textLogo']//text()")[0].strip()
+        except:
+            brand_txt = ""
+        try:
+            brand_txt = self.tree_html.xpath("//a[@class='eItemBrand_logo']//img/@alt")[0].strip()
+        except:
+            brand_txt = ""
+
+        if len(brand_txt) > 0:
+            return brand_txt
         #search for misc product brand
         brand_txt = self.tree_html.xpath("//div[@class='PageModule']//a[contains(@href, 'brand')]/text()")
         for brand in brand_txt:
