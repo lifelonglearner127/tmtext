@@ -546,7 +546,6 @@ class ServiceScraperTest(unittest.TestCase):
                 site_scraper = None
 
                 if not row:
-                    print url
 
                     for site, scraper in SUPPORTED_SITES.items():
                         site_scraper = scraper(url=url, bot=None)
@@ -557,7 +556,7 @@ class ServiceScraperTest(unittest.TestCase):
                     if site_scraper is not None:
                         sample_json = site_scraper.product_info()
                         sample_json = json.loads(json.dumps(sample_json))
-                        sample_json_str = json.dumps(sample_json)
+                        sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
 
                         today = date.today()
 
@@ -568,6 +567,8 @@ class ServiceScraperTest(unittest.TestCase):
                         else:
                             not_a_product = 0
                             sample_json_str = sample_json_str
+
+                        print url
 
                         self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
                                          " values('%s', '%s', $$%s$$, '%s', %d)"
@@ -600,9 +601,10 @@ class ServiceScraperTest(unittest.TestCase):
         print ">>>>>>sample url: %s" % sample_url
 
         site_scraper = SUPPORTED_SITES[website](url=sample_url, bot=None)
+
         test_json = site_scraper.product_info()
         test_json = json.loads(json.dumps(test_json))
-        test_json_str = json.dumps(test_json)
+        test_json_str = json.dumps(test_json, sort_keys=True, indent=4)
 
         today = date.today()
 
