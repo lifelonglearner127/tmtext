@@ -39,3 +39,11 @@ def guess_brand_from_first_words(text, fname='data/brands.list', max_words=7):
         partial_brand = ' '.join(partial_brand)
         if _brand_in_list(partial_brand):
             return partial_brand
+    # nothing has been found - try to get rid of 'the'
+    if text.lower().startswith('the '):
+        text = text[4:]
+    for cur_words in list(reversed(range(max_words)))[0:-1]:
+        partial_brand = text.split(' ')[0:cur_words]
+        partial_brand = ' '.join(partial_brand)
+        if _brand_in_list(partial_brand):
+            return partial_brand
