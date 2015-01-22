@@ -525,25 +525,70 @@ class ServiceScraperTest(unittest.TestCase):
                 print "\n"
                 exit(1)
 
-        # read input urls from file
+        # read input urls from database
         try:
-            with open("url_samples.txt") as f:
-                self.urls = f.read().splitlines()
-                self.urls_by_scraper = {}
-                for site, scraper in SUPPORTED_SITES.items():
-                    self.urls_by_scraper[site] = []
-
-                    if specified_website != "" and site != specified_website:
-                        continue
-
-                    for url in self.urls:
-                        site_scraper = scraper(url=url, bot=None)
-                        if site_scraper.check_url_format():
-                            self.urls_by_scraper[site].append(url)
-
             self.con = None
             self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
             self.cur = self.con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            self.cur.execute("select url_list from console_massurlimport")
+
+            self.urls = []
+
+            for row in self.cur:
+                self.urls.extend(row[0].splitlines())
+
+            print "Loading urls..."
+
+            for url in self.urls:
+                self.cur.execute("select * from console_urlsample where url='%s'" % url)
+                row = self.cur.fetchall()
+
+                site_scraper = None
+
+                if not row:
+                    print url
+
+                    for site, scraper in SUPPORTED_SITES.items():
+                        site_scraper = scraper(url=url, bot=None)
+
+                        if site_scraper.check_url_format():
+                            break
+
+                    if site_scraper is not None:
+                        sample_json = site_scraper.product_info()
+                        sample_json = json.loads(json.dumps(sample_json))
+                        sample_json_str = json.dumps(sample_json)
+
+                        today = date.today()
+
+                        if site_scraper.not_a_product():
+                            not_a_product = 1
+                            print "This url is not valid.\n"
+                            sample_json_str = ''
+                        else:
+                            not_a_product = 0
+                            sample_json_str = sample_json_str
+
+                        self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
+                                         " values('%s', '%s', $$%s$$, '%s', %d)"
+                                         % (url, site, sample_json_str, today.isoformat(), not_a_product))
+                        self.con.commit()
+
+            self.cur.execute("select url from console_urlsample")
+            self.urls = self.cur.fetchall()
+            self.urls_by_scraper = {}
+
+            for site, scraper in SUPPORTED_SITES.items():
+                self.urls_by_scraper[site] = []
+
+                if specified_website != "" and site != specified_website:
+                    continue
+
+                for url in self.urls:
+                    site_scraper = scraper(url=url[0], bot=None)
+                    if site_scraper.check_url_format() and url[0] not in self.urls_by_scraper[site]:
+                        self.urls_by_scraper[site].append(url[0])
+
         except Exception, e:
             print e
 
@@ -561,47 +606,31 @@ class ServiceScraperTest(unittest.TestCase):
 
         today = date.today()
 
-        if not row:
-            print "This is new sample url and is loading to sample url tables.\n"
+        row = row[0]
 
-            if site_scraper.not_a_product():
-                not_a_product = 1
-                print "This url is not valid.\n"
-                sample_json_str = ''
-            else:
-                not_a_product = 0
-                sample_json_str = test_json_str
-
-            self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
-                             " values('%s', '%s', $$%s$$, '%s', %d)"
-                             % (sample_url, website, sample_json_str, today.isoformat(), not_a_product))
+        if site_scraper.not_a_product():
+            print "This url is not valid anymore.\n"
+            self.cur.execute("update console_urlsample set not_a_product=1 where url = '%s'" % row["url"])
             self.con.commit()
         else:
-            row = row[0]
+            sample_json = row["json"]
+            sample_json_str = row["json"]
+            sample_json = json.loads(sample_json)
+            diff_engine = JsonDiff(test_json, sample_json)
+            diff_engine.diff()
 
-            if site_scraper.not_a_product():
-                print "This url is not valid anymore.\n"
-                self.cur.execute("update console_urlsample set not_a_product=1 where id = %d" % row["id"])
-                self.con.commit()
-            else:
-                sample_json = row["json"]
-                sample_json_str = row["json"]
-                sample_json = json.loads(sample_json)
-                diff_engine = JsonDiff(test_json, sample_json)
-                diff_engine.diff()
+            sql = ("insert into console_reportresult(sample_url, website, "
+                   "report_result, changes_in_structure, changes_in_type, changes_in_value, report_date, "
+                   "sample_json, current_json) "
+                   "values('%s', '%s', $$%s$$, %d, %d, %d, '%s', $$%s$$, $$%s$$)"
+                   % (sample_url, website, diff_engine.log, diff_engine.occurrence_structural_change,
+                      diff_engine.occurrence_type_change, diff_engine.occurrence_value_change, today.isoformat(),
+                      sample_json_str, test_json_str))
 
-                sql = ("insert into console_reportresult(sample_url, website, "
-                       "report_result, changes_in_structure, changes_in_type, changes_in_value, report_date, "
-                       "sample_json, current_json) "
-                       "values('%s', '%s', $$%s$$, %d, %d, %d, '%s', $$%s$$, $$%s$$)"
-                       % (sample_url, website, diff_engine.log, diff_engine.occurrence_structural_change,
-                          diff_engine.occurrence_type_change, diff_engine.occurrence_value_change, today.isoformat(),
-                          sample_json_str, test_json_str))
+            print ">>>>>>reports:\n%s\n" % diff_engine.log
 
-                print ">>>>>>reports:\n%s\n" % diff_engine.log
-
-                self.cur.execute(sql)
-                self.con.commit()
+            self.cur.execute(sql)
+            self.con.commit()
 
     # test all keys are in the response for simple (all-data) request for bhinneka
     # (using template function)
