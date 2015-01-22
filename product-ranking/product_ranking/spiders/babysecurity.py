@@ -3,7 +3,7 @@ from future_builtins import *
 
 import urlparse
 
-from scrapy.log import ERROR
+from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, Price, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, \
@@ -37,7 +37,10 @@ class BabySecurityProductSpider(BaseProductsSpider):
         nums = response.xpath(
             'string(//p[@class="amount"])').re('(\d+)')
         if not nums:
-            return None
+            st = response.meta.get('search_term')
+            self.log("No products found with search_term %s" % st,
+                     WARNING)
+            return 0
 
         return int(nums[-1])
 
@@ -46,7 +49,13 @@ class BabySecurityProductSpider(BaseProductsSpider):
             '//li[@class="item"]'
             '//h2[@class="product-name"]/a/@href').extract()
         if not links:
-            self.log("Found no product links.", ERROR)
+            allert = response.xpath('//p[@class="note-msg"]/text()').extract()
+            if allert:
+                allert_msg = "Your search returned no results"
+                if allert_msg in allert[0]:
+                    st = response.meta.get('search_term')
+                    self.log("No products were found with search term %s. "\
+                             "No any links available" % st, WARNING )
         for link in links:
             yield link, SiteProductItem()
 
