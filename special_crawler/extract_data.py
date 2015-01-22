@@ -396,10 +396,10 @@ class Scraper():
             try:
                 results = self.ALL_DATA_TYPES[info](self)
             except IndexError, e:
-                sys.stderr.write("ERROR: No " + info + " for " + self.product_page_url + ":\n" + str(e) + "\n")
+                sys.stderr.write("ERROR: No " + info + " for " + self.product_page_url.encode("utf-8") + ":\n" + str(e) + "\n")
                 results = None
             except Exception, e:
-                sys.stderr.write("ERROR: Unknown error extracting " + info + " for " + self.product_page_url + ":\n" + str(e) + "\n")
+                sys.stderr.write("ERROR: Unknown error extracting " + info + " for " + self.product_page_url.encode("utf-8") + ":\n" + str(e) + "\n")
                 results = None
 
             results_dict[info] = results
