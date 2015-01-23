@@ -12,6 +12,7 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 from product_ranking.spiders import cond_set, cond_set_value,\
     cond_replace_value, _extract_open_graph_metadata, populate_from_open_graph
 
+
 # to run - add additional argument -a search_sort="low-to-high"/"high-to-low"
 # default "low-to-high"
 class CoachSpider(BaseProductsSpider):
@@ -42,31 +43,26 @@ class CoachSpider(BaseProductsSpider):
         If no response - use NEW_SEARCH_URL to make new request.
         """
         if response.status != 404:
-            # check is there AJAX redirect (at the old-stile site)
-            term = r"document.location.href\s=\s'(.*)';"
-            script = re.findall(term, response.body_as_unicode())
-            if script:
-                domain = "http://www.coach.com/"
-                link = urlparse.urljoin(domain, script[0])
-                self.log('Follow the redirecting link %s' % link, WARNING)
-                new_meta = dict(response.meta)
-                return Request(link, callback=self.parse, meta=new_meta)
+            if not self.new_stile:
+                # check is there AJAX redirect (at the old-stile site)
+                term = r"document.location.href\s=\s'(.*)';"
+                # try to find AJAX redirecting script
+                script = re.findall(term, response.body_as_unicode())
+                if script:
+                    domain = "http://www.coach.com/"
+                    link = urlparse.urljoin(domain, script[0])
+                    self.log('Follow the redirecting link %s' % link, WARNING)
+                    new_meta = dict(response.meta)
+                    return Request(link, callback=self.parse, meta=new_meta)
             return super(CoachSpider, self).parse(response)
         # if first request to old-stile site failed
         else:
             self.log("Follow to the new stile site. Old stile response 404",
                      INFO)
             # populate request to new url
-            st = response.meta['search_term']
             self.new_stile = True
-            return Request(
-                self.url_formatter.format(
-                    self.NEW_SEARCH_URL,
-                    search_term=st,
-                    search_sort=self.search_sort),
-                meta={'search_term': st, 
-                      'remaining': self.quantity},
-            )
+            self.SEARCH_URL = self.NEW_SEARCH_URL
+            return super(CoachSpider, self).start_requests()
 
     def parse_product(self, response):
         if self.new_stile:
@@ -78,7 +74,7 @@ class CoachSpider(BaseProductsSpider):
         prod = response.meta['product']
         populate_from_open_graph(response, prod)
 
-        prod['locale'] = 'en_US' 
+        prod['locale'] = 'en_US'
 
         title = response.xpath(
             '//meta[@property="og:title"]/@content'
@@ -87,7 +83,7 @@ class CoachSpider(BaseProductsSpider):
             cond_set_value(prod, 'title', title[0].capitalize())
 
         price = response.xpath(
-            '//div[@class="sales-price-container"]'\
+            '//div[@class="sales-price-container"]'
             '/span[contains(@class, "salesprice")]/text()'
         ).extract()
         # if no sale price was found
@@ -96,7 +92,8 @@ class CoachSpider(BaseProductsSpider):
                 '//div[@class="product-price"]/span/text()'
             ).extract()
         if price and '$' in price[0]:
-            n_price = price[0].strip().replace('$', '').replace(',', '').strip()
+            n_price = price[0].strip().replace('$', '').\
+                replace(',', '').strip()
             prod['price'] = Price(priceCurrency='USD', price=n_price)
 
         brand = response.xpath(
@@ -128,12 +125,12 @@ class CoachSpider(BaseProductsSpider):
         # in case item use usual price, not sale
         if not price:
             price = response.xpath(
-            '//span[@id="pdTabProductPriceSpan"]/text()'
+                '//span[@id="pdTabProductPriceSpan"]/text()'
             ).re(re_pattern)
         prod['price'] = Price(
-                priceCurrency='USD',
-                price=price[0]
-            )
+            priceCurrency='USD',
+            price=price[0]
+        )
 
         brand = response.xpath(
             '//meta[@itemprop="brand"]/@content'
@@ -148,19 +145,17 @@ class CoachSpider(BaseProductsSpider):
             return self._scrape_total_matches_old(response)
 
     def _scrape_total_matches_new(self, response):
-        uniqe_links = self.scrape_links_at_the_new_site(response)
-        if not uniqe_links:
-            allert = response.xpath(
-                '//div[@class="container-shopGrid"]/h2/text()'
-            ).extract()
-            if allert:
-                msg = "0 RESULT FOR :"
-                if msg in allert[0]:
-                    st = response.meta.get('search_term')
-                    self.log("No products found with search_term '%s'" % st,
-                             WARNING)
-                    return 0
-        return len(uniqe_links)
+        matches = response.xpath(
+            '//div[@class="container-shopGrid"]/h2/text()'
+        ).extract()
+        if matches:
+            matches_stripped = re.findall(r'(\d+)', matches[0])
+            matches_result = int(matches_stripped[0])
+            if matches_result == 0:
+                st = response.meta.get('search_term')
+                self.log("No products found with search_term '%s'" % st,
+                         WARNING)
+            return matches_result
 
     def _scrape_total_matches_old(self, response):
         divs_with_items = response.xpath('//div[contains(@id, "seq")]')
@@ -169,7 +164,7 @@ class CoachSpider(BaseProductsSpider):
             if allert:
                 st = response.meta.get('search_term')
                 self.log("No products found with search_term %s" % st,
-                             WARNING)
+                         WARNING)
                 return 0
         return len(divs_with_items)
 
@@ -183,8 +178,8 @@ class CoachSpider(BaseProductsSpider):
         links = self.scrape_links_at_the_new_site(response)
         if not links:
             st = response.meta.get('search_term')
-            self.log("Found no product links at page %s with "\
-                     "search term '%s'" % (response.url, st), 
+            self.log("Found no product links at page %s with "
+                     "search term '%s'" % (response.url, st),
                      WARNING)
         for link in links:
             yield link, SiteProductItem()
@@ -194,8 +189,8 @@ class CoachSpider(BaseProductsSpider):
         links = divs_with_items.xpath('.//a/@href').extract()
         if not links:
             st = response.meta.get('search_term')
-            self.log("Found no product links at page %s with "\
-                     "search term '%s'" % (response.url, st), 
+            self.log("Found no product links at page %s with "
+                     "search term '%s'" % (response.url, st),
                      WARNING)
         for link in links:
             img_link = divs_with_items.xpath('.//img/@src').extract()[0]
@@ -203,10 +198,14 @@ class CoachSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
-        """Not implemented for this site - all items
-        returned on one page"""
+        links = response.xpath(
+            '//div[@class="pagination"]/ul/li[@class="current-page"]'
+            '/following-sibling::li/a/@href'
+        ).extract()
+        if links and links[0]:
+            return links[0]
         return None
-    
+
     def scrape_links_at_the_new_site(self, response):
         """Scrape only uniqe links with color stripped"""
         links = response.xpath(
@@ -214,5 +213,8 @@ class CoachSpider(BaseProductsSpider):
         ).extract()
         color_ext = r"\?dwvar_color=.*"
         stripped_links = [re.sub(color_ext, '', link) for link in links]
-        uniqe_links = set(stripped_links)
+        uniqe_links = []
+        for link in stripped_links:
+            if link not in uniqe_links:
+                uniqe_links.append(link)
         return uniqe_links
