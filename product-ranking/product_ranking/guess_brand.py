@@ -9,7 +9,7 @@ def _load_brands(fname):
     if BRANDS:  # don't perform expensive load operations
         return
     BRANDS = resource_string(__name__, fname)
-    BRANDS = BRANDS.split()
+    BRANDS = BRANDS.split('\n')
     BRANDS = [b.lower().strip().rstrip() for b in BRANDS]
     BRANDS = set(BRANDS)  # set lookup is faster than list lookup
 
@@ -34,6 +34,14 @@ def guess_brand_from_first_words(text, fname='data/brands.list', max_words=7):
     # prepare the data
     text = text.strip().replace('  ', ' ')
     # take `max_words` first words; `max_words`-1; `max_words`-2; and so on
+    for cur_words in list(reversed(range(max_words)))[0:-1]:
+        partial_brand = text.split(' ')[0:cur_words]
+        partial_brand = ' '.join(partial_brand)
+        if _brand_in_list(partial_brand):
+            return partial_brand
+    # nothing has been found - try to get rid of 'the'
+    if text.lower().startswith('the '):
+        text = text[4:]
     for cur_words in list(reversed(range(max_words)))[0:-1]:
         partial_brand = text.split(' ')[0:cur_words]
         partial_brand = ' '.join(partial_brand)
