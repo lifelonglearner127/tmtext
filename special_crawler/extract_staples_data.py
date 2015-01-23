@@ -97,11 +97,25 @@ class StaplesScraper(Scraper):
 
     def _description(self):
         description = self._description_helper()
-        if len(description) < 1:
+        if description is None or len(description) < 1:
             return self._long_description_helper()
         return description
 
     def _description_helper(self):
+        line_txts = self.tree_html.xpath("//div[contains(@class,'productDetails')]//div[@class='copyBullets']//text()")
+        line_txts = [self._clean_text(r) for r in line_txts if len(self._clean_text(r)) > 1 and self._clean_text(r) != 'See more details']
+        description = "\n".join(line_txts)
+        if len(description) < 1:
+            return None
+        return description
+
+    def _long_description(self):
+        description = self._description_helper()
+        if description is None or len(description) < 1:
+            return None
+        return self._long_description_helper()
+
+    def _long_description_helper(self):
         line_txts = self.tree_html.xpath("//div[@id='subdesc_content']//text()")
         line_txts = [self._clean_text(r) for r in line_txts if len(self._clean_text(r)) > 1 and self._clean_text(r) != 'PRODUCT DETAILS' and self._clean_text(r) != 'Compare with similar items' and self._clean_text(r) != u'Would you like to give' and self._clean_text(r) != u'on product content, images, or tell us about a lower price?' and self._clean_text(r) != 'feedback']
         description = "\n".join(line_txts)
@@ -125,15 +139,6 @@ class StaplesScraper(Scraper):
         #     pass
         # description = "\n".join(line_txts)
         # return description
-
-    def _long_description(self):
-        description = self._description_helper()
-        if len(description) < 1:
-            return None
-        return self._long_description_helper()
-
-    def _long_description_helper(self):
-        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
