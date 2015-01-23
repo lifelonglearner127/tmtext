@@ -14,7 +14,6 @@ from lxml import html
 from lxml import etree
 import time
 import requests
-# from extract_data_mechanize import Scraper
 from extract_data import Scraper
 
 
