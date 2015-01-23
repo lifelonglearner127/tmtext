@@ -78,9 +78,15 @@ class MichaelKorsProductsSpider(ProductsSpider):
         cont = '#productDetailsLeftSidebar .inner-container '
         cond_set(product, 'title', response.css(cont + 'h1::text').extract(),
                  unicode.strip)
-        cond_set(product, 'price',
-                 response.css('#iprosProdPriceval::attr(value)').extract(),
-                 lambda price: Price(priceCurrency='USD', price=price))
+
+        price = response.xpath(
+            '//div[@id="productPrice"]' \
+            '/div[contains(@class, "display_price")]/input/@value'
+        ).extract()
+        if price:
+            price = price[0]
+            product["price"] = Price(priceCurrency='USD', price=price)
+
         model = response.css('#storeStyleNumber::text').extract()
         if model:
             model = re.search(r'Store Style #:\xa0(.+)', model[0])
