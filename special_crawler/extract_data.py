@@ -318,7 +318,7 @@ class Scraper():
         Returns:
             lxml tree object
         """
-        
+
         request = urllib2.Request(self.product_page_url)
         # set user agent to avoid blocking
         agent = ''
