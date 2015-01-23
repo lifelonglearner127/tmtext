@@ -422,8 +422,14 @@ class AmazonScraper(Scraper):
         if len(nr_reviews) > 1:
             return self._toint(nr_reviews[1])
         nr_reviews = self.tree_html.xpath("//a[@class='a-link-normal a-text-normal product-reviews-link']//text()")
+        if len(nr_reviews) > 1:
+            return self._toint(nr_reviews[0].replace('(','').replace(')','').replace(',',''))
+        nr_reviews = self.tree_html.xpath("//span[@class='crAvgStars']/a//text()")
+        if len(nr_reviews) > 0:
+            res = nr_reviews[0].split()
+            return self._toint(res[0])
+        return None
 
-        return self._toint(nr_reviews[0].replace('(','').replace(')','').replace(',',''))
 
     def _reviews(self):
         stars=self.tree_html.xpath("//tr[@class='a-histogram-row']//a//text()")
