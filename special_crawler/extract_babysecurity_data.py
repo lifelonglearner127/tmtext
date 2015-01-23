@@ -78,20 +78,38 @@ class BabysecurityScraper(Scraper):
         return self.tree_html.xpath("//div[@class='sku']/text()")[0].strip()
 
     def _features(self):
-        rows = self.tree_html.xpath("//div[starts-with(@class, 'product-shop')]/text()")
-        line_txts = []
-        for row in rows:
-            if len(row.strip()) > 0:
-                line_txts += [self._clean_text(r) for r in row.split(u'\u2022') if len(self._clean_text(r)) > 0]
-        return line_txts
+        return None
 
     def _feature_count(self):
+        if self._features() is None:
+            return 0
         return len(self._features())
 
     def _model_meta(self):
         return None
 
     def _description(self):
+        description = self._description_helper()
+        if len(description) < 1:
+            return self._long_description_helper()
+        return description
+
+    def _description_helper(self):
+        rows = self.tree_html.xpath("//div[starts-with(@class, 'product-shop')]/text()")
+        line_txts = []
+        for row in rows:
+            if len(row.strip()) > 0:
+                line_txts += [self._clean_text(r) for r in row.split(u'\u2022') if len(self._clean_text(r)) > 0]
+        return "\n".join(line_txts)
+
+
+    def _long_description(self):
+        description = self._description_helper()
+        if len(description) < 1:
+            return None
+        return self._long_description_helper()
+
+    def _long_description_helper(self):
         panels = self.tree_html.xpath("//div[@class='panel']")
         for panel in panels:
             try:
@@ -103,9 +121,6 @@ class BabysecurityScraper(Scraper):
         rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
         description = "\n".join(rows)
         return description
-
-    def _long_description(self):
-        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
