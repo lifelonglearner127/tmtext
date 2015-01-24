@@ -175,6 +175,22 @@ class TargetScraper(Scraper):
     def _video_urls(self):
         video_url = self.tree_html.xpath("//div[@class='videoblock']//div//a/@href")
         video_url = [("http://www.target.com%s" % r) for r in video_url]
+        video_url2 = video_url[:]
+        video_url = []
+        for item in video_url2:
+            contents = urllib.urlopen(item).read()
+            tree = html.fromstring(contents)
+            links = tree.xpath("//ul[@class='media-thumbnails']//a/@href")
+            flag = False
+            for link in links:
+                try:
+                    link = re.findall(r'^(.*?),', link)[0]
+                    video_url.append(link)
+                    flag = True
+                except:
+                    pass
+            if not flag:
+                video_url.append(item)
         demo_url = self.tree_html.xpath("//div[starts-with(@class, 'demoblock')]//span//a/@href")
         demo_url = [r for r in demo_url if len(self._clean_text(r)) > 0]
         for item in demo_url:

@@ -17,13 +17,13 @@ import requests
 from extract_data import Scraper
 
 
-class BabysecurityScraper(Scraper):
+class StaplesAdvantageScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www\.babysecurity\.co\.uk/([a-zA-Z0-9\-\_/]+)"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www\.staplesadvantage\.com/webapp/wcs/stores/servlet/StplShowItem\?(.*)"
 
     reviews_tree = None
     max_score = None
@@ -33,8 +33,8 @@ class BabysecurityScraper(Scraper):
     reviews = None
 
     def check_url_format(self):
-        # for ex: http://www.babysecurity.co.uk/bornfree-deco-bottles-5oz-3-pack-0-3-months.html#.VJjkDDMDQE
-        m = re.match(r"^http://www\.babysecurity\.co\.uk/([a-zA-Z0-9\-\_/]+)", self.product_page_url)
+        # for ex: http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=383249&catalogId=4&item_id=71504599&langId=-1&currentSKUNbr=383249&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=117896272
+        m = re.match(r"^http://www\.staplesadvantage\.com/webapp/wcs/stores/servlet/StplShowItem\?(.*)", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -45,10 +45,8 @@ class BabysecurityScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        image_url = self.tree_html.xpath("//div[contains(@class,'product-img-column')]//p[contains(@class,'product-image')]")
-        if len(image_url) < 1:
-            return True
         return False
+
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -57,32 +55,44 @@ class BabysecurityScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return None
+        # http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=310342&catalogId=4&item_id=71341298&langId=-1&currentSKUNbr=310342&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=125083516&addWE1ToCart=true
+        id = self.tree_html.xpath("//div[@class='maindetailitem']//input[@name='currentSKUNumber']/@value")[0].strip()
+        return id
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//div[@class='product-name']/h1/text()")[0].strip()
+        return self.tree_html.xpath("//div[@class='maindetailitem']//h3//text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//div[@class='product-name']/h1/text()")[0].strip()
+        return self.tree_html.xpath("//div[@class='maindetailitem']//h3//text()")[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath("//div[@class='maindetailitem']//h3//text()")[0].strip()
     
     def _model(self):
         return None
 
     def _upc(self):
-        return self.tree_html.xpath("//div[@class='sku']/text()")[0].strip()
+        upc = self.tree_html.xpath("//span[@class='staplesSKUNumber']//text()")[0].strip()
+        return upc
 
     def _features(self):
-        return None
+        rows = self.tree_html.xpath("//table[@class='specifications']//tr")
+        line_txts = []
+        for row in rows:
+            try:
+                head_txt = "".join(row.xpath(".//th//text()")).strip()
+                txt = "".join(row.xpath(".//td//text()")).strip()
+                txt = "%s: %s" % (head_txt, txt)
+                if len(txt.strip()) > 0:
+                    line_txts.append(txt)
+            except:
+                pass
+        return line_txts
 
     def _feature_count(self):
-        if self._features() is None:
-            return 0
         return len(self._features())
 
     def _model_meta(self):
@@ -90,37 +100,36 @@ class BabysecurityScraper(Scraper):
 
     def _description(self):
         description = self._description_helper()
-        if len(description) < 1:
+        if description is None or len(description) < 1:
             return self._long_description_helper()
         return description
 
     def _description_helper(self):
-        rows = self.tree_html.xpath("//div[starts-with(@class, 'product-shop')]/text()")
         line_txts = []
+        rows = self.tree_html.xpath("//div[contains(@id, 'section1_pane')]")
         for row in rows:
-            if len(row.strip()) > 0:
-                line_txts += [self._clean_text(r) for r in row.split(u'\u2022') if len(self._clean_text(r)) > 0]
-        return "\n".join(line_txts)
+            try:
+                txt = row.xpath(".//div[@class='tabs_instead_title']//text()")[0].strip()
+            except IndexError:
+                continue
+            if txt == "Description":
+                line_txts = row.xpath(".//text()")
+                if line_txts[0] == "Description":
+                    line_txts = line_txts[1:]
 
+        if len(line_txts) < 1:
+            return None
+        description = "\n".join(line_txts)
+        return description
 
     def _long_description(self):
         description = self._description_helper()
-        if len(description) < 1:
+        if description is None or len(description) < 1:
             return None
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        panels = self.tree_html.xpath("//div[@class='panel']")
-        for panel in panels:
-            try:
-                if panel.xpath("./h2/text()")[0].strip() == "Details":
-                    #this is description tab
-                    rows = panel.xpath("./div[@class='std']//text()")
-            except IndexError:
-                pass
-        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-        description = "\n".join(rows)
-        return description
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -130,12 +139,13 @@ class BabysecurityScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_url = self.tree_html.xpath("//div[starts-with(@class,'thumbnails')]//div[@class='item']//a/@href")
+        image_url = self.tree_html.xpath("//div[@class='maindetailitem']//div[@class='productpics']//li//img/@src")
+        image_url = ["http://www.staplesadvantage.com%s" % r for r in image_url if "s0930105_sc7" not in r]
         if len(image_url) < 1:
-            image_url = self.tree_html.xpath("//div[contains(@class,'product-img-column')]//p[contains(@class,'product-image')]//a[contains(@class,'cloud-zoom')]/@href")
-            image_url = [r for r in image_url if "no-image." not in r]
-        if len(image_url) < 1:
-            return None
+            image_url = self.tree_html.xpath("//div[@class='maindetailitem']//div[@class='productpics']//div[contains(@class,'showinprint')]//img[@class='mainproductimage']/@src")
+            image_url = ["http://www.staplesadvantage.com%s" % r for r in image_url if "s0930105_sc7" not in r]
+            if len(image_url) < 1:
+                return None
         return image_url
 
     def _image_count(self):
@@ -145,13 +155,7 @@ class BabysecurityScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        video_url = self.tree_html.xpath("//div[starts-with(@class,'product-img-column')]//iframe/@src")
-        if len(video_url) < 1:
-            video_url = self.tree_html.xpath("//iframe/@src")
-            if len(video_url) < 1:
-                return None
-        return video_url
-
+        return None
     def _video_count(self):
         urls = self._video_urls()
         if urls:
@@ -176,8 +180,14 @@ class BabysecurityScraper(Scraper):
         return 0
 
     def _webcollage(self):
-        atags = self.tree_html.xpath("//a[contains(@href, 'webcollage.net/')]")
-        if len(atags) > 0:
+        # https://scontent.webcollage.net/stapleslink-en/smart-button?ird=true&channel-product-id=823292
+        url = "https://scontent.webcollage.net/stapleslink-en/smart-button?ird=true&channel-product-id=%s" % self._product_id()
+        contents = urllib.urlopen(url).read()
+        m = re.findall(r"_wccontent = (\{.*?\});", contents, re.DOTALL)
+        # jsn = json.loads(m[0].replace("\r\n", ""))
+        # html = jsn["aplus"]["html"]
+        html = m[0]
+        if ".webcollage.net" in html:
             return 1
         return 0
 
@@ -199,29 +209,42 @@ class BabysecurityScraper(Scraper):
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
         if not self.max_score or not self.min_score:
-            reviews = self.tree_html.xpath("//div[contains(@class,'box-reviews')]//dd//div[@class='rating-box']//div[@class='rating']/@style")
+            txt = self.tree_html.xpath("//div[contains(@class,'maindetailitem')]//div[@class='pr-snippet-stars']//div[contains(@data-histogram,'noOfReviews')]/@data-histogram")[0].strip()
+            # ["{'noOfReviews':7,'numOfFives':4,'numOfFours':3,'numOfThrees':0,'numOfTwos':0,'numOfOnes':0}"]
+            rows = []
+            cnt_tmp = int(re.findall(r"numOfFives'\:(\d+)", txt)[0].strip())
+            rows.append(cnt_tmp)
+            cnt_tmp = int(re.findall(r"numOfFours'\:(\d+)", txt)[0].strip())
+            rows.append(cnt_tmp)
+            cnt_tmp = int(re.findall(r"numOfThrees'\:(\d+)", txt)[0].strip())
+            rows.append(cnt_tmp)
+            cnt_tmp = int(re.findall(r"numOfTwos'\:(\d+)", txt)[0].strip())
+            rows.append(cnt_tmp)
+            cnt_tmp = int(re.findall(r"numOfOnes'\:(\d+)", txt)[0].strip())
+            rows.append(cnt_tmp)
+
+            self.reviews = []
+            idx = 5
             rv_scores = []
-            for review in reviews:
-                review_score = re.findall(r'width\:([0-9]+)%', review)[0]
-                review_score = int(5.0*float(review_score)/100)
-                rv_scores.append(review_score)
+            for cnt in rows:
+                if cnt > 0:
+                    self.reviews.append([idx, cnt])
+                    rv_scores.append(idx)
+                idx -= 1
+                if idx < 1:
+                    break
             self.max_score = max(rv_scores)
             self.min_score = min(rv_scores)
-            self.reviews = []
-            for i in range(1,6):
-                if rv_scores.count(i) > 0:
-                    self.reviews.append([i, rv_scores.count(i)])
-
 
     def _average_review(self):
-        avg_review = self.tree_html.xpath("//div[starts-with(@class,'product-shop')]//div[@class='ratings']//div[@class='rating-box']//div[@class='rating']/@style")[0]
-        avg_review = re.findall(r'width\:([0-9]+)%', avg_review)[0]
-        avg_review = round(5.0*float(avg_review)/100, 2)
+        txt = self.tree_html.xpath("//div[contains(@class,'maindetailitem')]//div[@class='pr-snippet-stars']//span[contains(@class,'pr-snippet-rating-decimal')]//text()")[0].strip()
+        avg_review = re.findall(r"^(.*?) of", txt)[0].strip()
+        avg_review = round(float(avg_review), 2)
         return avg_review
 
     def _review_count(self):
-        review_cnt = self.tree_html.xpath("//div[@class='ratings']//a[@id='goto-reviews']/text()")[0].strip()
-        review_cnt = re.findall(r'^([0-9]+)', review_cnt)[0]
+        txt = self.tree_html.xpath("//div[contains(@class,'maindetailitem')]//a[contains(@class,'pr-snippet-link')]//text()")[0].strip()
+        review_cnt = re.findall(r"^(.*?) reviews", txt)[0].strip()
         return int(review_cnt)
 
     def _max_review(self):
@@ -240,10 +263,7 @@ class BabysecurityScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        try:
-            price = self.tree_html.xpath("//div[contains(@class,'product-type-data')]//p[@class='special-price']//span[@class='price']//text()")[0].strip()
-        except IndexError:
-            price = self.tree_html.xpath("//div[contains(@class,'product-type-data')]//span[@class='regular-price']//span[@class='price']//text()")[0].strip()
+        price = "price depends on customer"
         return price
 
     def _in_stores_only(self):
@@ -259,12 +279,7 @@ class BabysecurityScraper(Scraper):
         return 0
 
     def _owned_out_of_stock(self):
-        try:
-            if 'Out of stock' in self.tree_html.xpath("//p[starts-with(@class,'availability')]//span/text()")[0].strip():
-                return 1
-        except IndexError:
-            pass
-        return 0
+        return None
 
     def _marketplace_sellers(self):
         return None
@@ -276,9 +291,10 @@ class BabysecurityScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        all = self.tree_html.xpath("//div[contains(@class, 'breadcrumbs')]//li//a//text()")
+        all = self.tree_html.xpath("//ul[@id='breadcrumbs']//li//a//text()")
         out = [self._clean_text(r) for r in all]
-        out = out[1:]
+        if out[0] == "Home":
+            out = out[1:]
         if len(out) < 1:
             return None
         return out
@@ -288,12 +304,12 @@ class BabysecurityScraper(Scraper):
 
     def _brand(self):
         brand = None
-        trs = self.tree_html.xpath("//table[@class='data-table']//tr")
+        trs = self.tree_html.xpath("//table[@class='specifications']//tr")
         for tr in trs:
             try:
-                head_txt = tr.xpath("//th//text()")[0].strip()
-                if head_txt == "Brand":
-                    brand = tr.xpath("//td//text()")[0].strip()
+                head_txt = tr.xpath(".//th//text()")[0].strip()
+                if head_txt == "Brand Name":
+                    brand = tr.xpath(".//td//text()")[0].strip()
             except IndexError:
                 pass
         return brand
@@ -332,7 +348,6 @@ class BabysecurityScraper(Scraper):
         "pdf_count" : _pdf_count, \
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
-        "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "mobile_image_same" : _mobile_image_same, \
@@ -366,5 +381,7 @@ class BabysecurityScraper(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
+        # CONTAINER : PAGE_ATTRIBUTES
+        "webcollage" : _webcollage, \
     }
 
