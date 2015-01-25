@@ -24,7 +24,7 @@ class BabySecurityProductSpider(BaseProductsSpider):
         'price': 'price',
     }
 
-    def __init__(self, search_sort='best_sellers', direction='asc', *args, **kwargs):
+    def __init__(self, search_sort='name', direction='asc', *args, **kwargs):
         super(BabySecurityProductSpider, self).__init__(
             url_formatter=FormatterWithDefaults(
                 search_sort=self.SEARCH_SORT[search_sort],
