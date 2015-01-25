@@ -210,7 +210,12 @@ class JsonDiff:
                                                type(_json2).__name__,
                                                str(_json2)))
                 '''
-                self.difference.append(u'<tr style="background-color: green; color: white;"><td>{}</td><td>{}</td><td>{}</td></tr>'
+                print u"TypeDifference : {} - {}: ({}), {}: ({})".format(path, type(_json1).__name__,
+                                               str(_json1),
+                                               type(_json2).__name__,
+                                               str(_json2))
+                self.difference.append(u'<tr style="background-color: green; color: white;">'
+                                       u'<td>{}</td><td>{}</td><td>{}</td></tr>'
                                        .format(path, type(_json1).__name__, type(_json2).__name__))
                 self.occurrence_type_change += 1
         else:
@@ -251,7 +256,11 @@ class JsonDiff:
                                            str(_json1), type(_json2).__name__,
                                            str(_json2)))
             '''
-            self.difference.append(u'<tr style="background-color: green; color: white;"><td>{}</td><td>{}</td><td>{}</td></tr>'
+            print u"TypeDifference : {} - is {}: ({}), but was {}: ({})".format(path, type(_json1).__name__,
+                                           str(_json1), type(_json2).__name__,
+                                           str(_json2))
+            self.difference.append(u'<tr style="background-color: green; color: white;"><td>{}</td>'
+                                   u'<td>{}</td><td>{}</td></tr>'
                                    .format(path, type(_json1).__name__, type(_json2).__name__))
             self.occurrence_type_change += 1
         else:
@@ -446,15 +455,19 @@ class JsonDiff:
         if use_regex and type(_json2) is unicode:
             match = re.match(_json2, str(_json1))
             if not match:
+                print u'Changed: {} to {} from {}'.format(path, _json1, _json2)
                 self.difference.append(
 #                    u'Changed: {} to {} from {}'.format(path, _json1, _json2))
-                    u'<tr style="background-color: blue; color: white;"><td>{}</td><td>{}</td><td>{}</td></tr>'.format(path, _json1, _json2))
+                    u'<tr style="background-color: blue; color: white;"><td>{}</td>'
+                    u'<td>{}</td><td>{}</td></tr>'.format(path, _json1, _json2))
                 self.occurrence_value_change += 1
         else:
             if not _json1 == _json2:
+                print u'Changed: {} to {} from {}'.format(path, _json1, _json2)
                 self.difference.append(
 #                    u'Changed: {} to {} from {}'.format(path, _json1, _json2))
-                    u'<tr style="background-color: blue; color: white;"><td>{}</td><td>{}</td><td>{}</td></tr>'.format(path, _json1, _json2))
+                    u'<tr style="background-color: blue; color: white;"><td>{}</td>'
+                    u'<td>{}</td><td>{}</td></tr>'.format(path, _json1, _json2))
                 self.occurrence_value_change += 1
 
     def _expand_diff(self, blob, path, new_item):
@@ -470,8 +483,11 @@ class JsonDiff:
         # Three possibilities: dict, list, item
         if new_item:
             c = '+'
+            color = 'red'
         else:
             c = '-'
+            color = 'black'
+
         if type(blob) is dict:
             for key in blob.keys():
                 if len(path) == 0:
@@ -479,10 +495,11 @@ class JsonDiff:
                 else:
                     new_path = "{}.{}".format(path, key)
                 if type(blob[key]) not in [list, dict]:
+                    print u'{}: {}={}'.format(c, new_path, blob[key])
                     self.difference.append(
 #                        u'{}: {}={}'.format(c, new_path, blob[key]))
-                        u'<tr style="background-color: red; color: white;"><td collspan="2">{}</td><td>{}</td></tr>'.format(
-                            new_path, blob[key]))
+                        u'<tr style="background-color:' + color + u'; color: white;">'
+                        u'<td collspan="2">{}</td><td>{}</td></tr>'.format(new_path, blob[key]))
                     self.occurrence_structural_change += 1
                 else:
                     self._expand_diff(blob[key], new_path, new_item)
@@ -492,15 +509,18 @@ class JsonDiff:
                 if type(blob[index]) in (list, dict):
                     self._expand_diff(item[index], new_path, new_item)
                 else:
+                    print u'{}: {}={}'.format(c, new_path, blob[index])
                     self.difference.append(
 #                        u'{}: {}={}'.format(c, new_path, blob[index]))
-                        u'<tr style="background-color: red; color: white;"><td collspan="2">{}</td><td>{}</td></tr>'.format(
-                            new_path, blob[index]))
+                        u'<tr style="background-color:' +  color + u'; color: white;">'
+                        u'<td>{}</td><td colspan="2">{}</td></tr>'.format(new_path, blob[index]))
                     self.occurrence_structural_change += 1
         else:
+            print u"{}: {}={}".format(c, path, blob)
 #            self.difference.append(u"{}: {}={}".format(c, path, blob))
-            u'<tr style="background-color: red; color: white;"><td collspan="2">{}</td><td>{}</td></tr>'.format(
-                path, blob)
+            self.difference.append(
+                u'<tr style="background-color:' + color + u'; color: white;">'
+                u'<td>{}</td><td colspan="2">{}</td></tr>'.format(path, blob))
             self.occurrence_structural_change += 1
 
     def diff(self):
@@ -637,6 +657,9 @@ class ServiceScraperTest(unittest.TestCase):
             sample_json_str = row["json"]
             sample_json = json.loads(sample_json)
             diff_engine = JsonDiff(test_json, sample_json)
+
+            print ">>>>>>reports:"
+
             diff_engine.diff()
 
             sql = ("insert into console_reportresult(sample_url, website, "
@@ -647,7 +670,6 @@ class ServiceScraperTest(unittest.TestCase):
                       diff_engine.occurrence_type_change, diff_engine.occurrence_value_change, today.isoformat(),
                       sample_json_str, test_json_str))
 
-            print ">>>>>>reports:\n%s\n" % diff_engine.log
 
             self.cur.execute(sql)
             self.con.commit()
