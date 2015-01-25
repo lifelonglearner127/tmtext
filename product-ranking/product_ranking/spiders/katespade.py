@@ -14,6 +14,8 @@ from scrapy.http import Request
 from scrapy.log import DEBUG
 from scrapy.selector import Selector
 
+LEVEL_MAX = 4       # Max deep of upc lookup
+
 
 class KatespadeProductsSpider(BaseProductsSpider):
     name = 'katespade_products'
@@ -107,14 +109,23 @@ class KatespadeProductsSpider(BaseProductsSpider):
 
             new_meta = response.meta.copy()
             new_meta['handle_httpstatus_list'] = [404]
+            new_meta['product_response'] = response
             return Request(
                 url=url, callback=self._extract_reviews,
                 meta=new_meta)
+        return self._product_or_upcreq(response)
+
+    def _product_or_upcreq(self, response):
+        product = response.meta['product']
+        upc = product.get('upc', '')
+        if not upc.isdigit():
+            req = self._extract_upc_callback(response)
+            return req
         return product
 
     def _extract_reviews(self, response):
         if response.status != 200:
-            return product
+            return _product_or_upcreq(response)
         product = response.meta['product']
         text = response.body_as_unicode().encode('utf-8')
         jstext = re.search("var materials=(.*)\,\s+initializers=", text, re.S)
@@ -126,7 +137,43 @@ class KatespadeProductsSpider(BaseProductsSpider):
             buyer_reviews = self._extract_ratings(sel)
             if buyer_reviews:
                 cond_set_value(product, 'buyer_reviews', buyer_reviews)
-        return product
+        return self._product_or_upcreq(response)
+
+    def _extract_upc_callback(self, response):
+        response = response.meta.get('product_response', response)
+        product = response.meta['product']
+        upc = response.xpath(
+            "//form[contains(@class,'pdpForm')]"
+            "/fieldset"
+            "/input[@name='pid']/@value").extract()
+        if upc:
+            upc = upc[0]
+            if upc.isdigit():
+                product['upc'] = upc
+                return product
+        link = self._extract_upc(response)
+        if not link:
+            return
+        return Request(
+            link,
+            meta=response.meta.copy(),
+            callback=self._extract_upc_callback)
+
+    def _extract_upc(sef, response):
+        level = response.meta.get("variations-level", 0)
+
+        # TODO: li @class !contains 'unselectable'
+        variations = response.xpath(
+            "//div[@class='product-variations']"
+            "/ul/li/div[@class='value']")
+        iv = variations[level]
+        level += 1
+        if level > LEVEL_MAX:
+            return
+        response.meta['variations-level'] = level
+        href = iv.xpath("ul/li/a/@href").extract()
+        if href:
+            return href[0]
 
     def _extract_ratings(self, sel):
         avrg = sel.xpath(
