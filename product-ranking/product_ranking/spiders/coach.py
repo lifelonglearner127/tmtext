@@ -1,6 +1,5 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
-from itertools import islice
 import urlparse
 import urllib
 import re
@@ -45,7 +44,7 @@ class CoachSpider(BaseProductsSpider):
 
     def start_requests(self):
         """If new_stile site version, we need first crawl
-        all pagination and count all unique links and 
+        all pagination and count all unique links and
         generate total_matches"""
         if self.new_stile:
             for st in self.searchterms:
@@ -54,7 +53,8 @@ class CoachSpider(BaseProductsSpider):
                     search_term=urllib.quote_plus(st.encode('utf-8')),
                 )
             return Request(url, callback=self.count_products,
-                           meta={'search_term': st, 'remaining': self.quantity})
+                           meta={'search_term': st,
+                                 'remaining': self.quantity})
         else:
             return super(CoachSpider, self).start_requests()
 
@@ -153,7 +153,7 @@ class CoachSpider(BaseProductsSpider):
                     item = RelatedProduct(title=name[0].strip().capitalize(),
                                           url=link[0].strip())
                     recommendations.append(item)
-        prod['related_products'] = {'recommended':recommendations}
+        prod['related_products'] = {'recommended': recommendations}
         return prod
 
     def parse_product_old(self, response):
@@ -204,7 +204,7 @@ class CoachSpider(BaseProductsSpider):
             st = response.meta.get('search_term')
             self.log("No products found with search_term %s" % st,
                      WARNING)
-        return total     
+        return total
 
     def _scrape_total_matches_old(self, response):
         divs_with_items = response.xpath('//div[contains(@id, "seq")]')
