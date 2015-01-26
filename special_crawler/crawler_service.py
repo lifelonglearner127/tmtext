@@ -24,6 +24,7 @@ from extract_samsclub_data import SamsclubScraper
 from extract_babysecurity_data import BabysecurityScraper
 from extract_staples_data import StaplesScraper
 from extract_staplesadvantage_data import StaplesAdvantageScraper
+from extract_souq_data import SouqScraper
 
 from extract_hersheys_data import HersheysScraper
 from urllib2 import HTTPError
@@ -63,6 +64,7 @@ SUPPORTED_SITES = {
                     "babysecurity" : BabysecurityScraper,
                     "staples" : StaplesScraper,
                     "staplesadvantage" : StaplesAdvantageScraper,
+                    "souq": SouqScraper
                     }
 
 # add logger
@@ -121,6 +123,13 @@ def extract_domain(url):
         # for chicago scraper
         # https://chicago.doortodoororganics.com/shop/products/rudis-white-hamburger-buns
         return 'chicago'
+
+    if 'uae.souq.com' in url:
+        # for souq scraper
+        # http://uae.souq.com/ae-en/samsung-galaxy-s3-mini-i8190-8gb-3g-+-wifi-white-4750807/i/
+        return 'souq'
+
+
     m = re.match("^http://(www|shop)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)
