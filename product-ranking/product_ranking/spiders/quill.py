@@ -1,5 +1,8 @@
 import re
+import json
 from urlparse import urljoin
+
+from scrapy.log import WARNING
 
 from product_ranking.items import RelatedProduct, Price, BuyerReviews
 from product_ranking.spiders import cond_set, cond_set_value, \
@@ -48,7 +51,13 @@ class QuillProductsSpider(ProductsSpider):
     }
 
     def _total_matches_from_html(self, response):
+        # for exact results
         total = response.css('.noItemsFound').extract()
+        # for broad results(ex: table)
+        if not total:
+            total = response.xpath(
+                '//span[contains(@class, "results")]/span[@class="L"]/text()'
+            ).extract()
         if not total:
             return 0
         total = re.search('\d+', total[0])
@@ -59,14 +68,13 @@ class QuillProductsSpider(ProductsSpider):
         return urljoin(response.url, link[0].extract()) if link else None
 
     def _fetch_product_boxes(self, response):
-        brands = response.css('.pnlBrand .listMenu li.link .formLabel::text')
-        brands = brands.extract()
-        brands.sort(key=lambda s: len(s), reverse=True)
-        cond_set_value(response.meta, 'brands', brands)
         return response.css('.BrowseItem .itemDetails')
 
     def _link_from_box(self, box):
-        return _itemprop(box, 'name', 'href')[0]
+        link = box.xpath('.//h3/a/@href').extract()
+        possible_link = box.xpath('.//h3/span/@data-url').extract()
+        link.extend(possible_link)
+        return link[0]
 
     def _populate_from_box(self, response, box, product):
         cond_set(product, 'title', _itemprop(box, 'name'), unicode.strip)
@@ -101,6 +109,15 @@ class QuillProductsSpider(ProductsSpider):
                 product['price'] = None
         self._buyer_reviews_from_html(response, product)
         cond_replace_value(product, 'url', response.url.split('?', 1)[0])
+
+        data = r'quillMData\s=\s(.*)</script>'
+        data_script = re.findall(data, response.body_as_unicode())
+        j = json.loads(data_script[0])
+        brand = j['brandName'][0]
+        cond_set_value(product, 'brand', brand)
+
+        locale = j['culturecode']
+        cond_set_value(product, 'locale', locale)
 
 
     def _populate_related_products(self, response, product):
