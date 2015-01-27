@@ -23,11 +23,8 @@ from extract_chicago_data import ChicagoScraper
 from extract_samsclub_data import SamsclubScraper
 from extract_babysecurity_data import BabysecurityScraper
 from extract_staples_data import StaplesScraper
-<<<<<<< HEAD
 from extract_drugstore_data import DrugstoreScraper
-=======
 from extract_staplesadvantage_data import StaplesAdvantageScraper
->>>>>>> 7eda17b8631ac08a3ee5669e2fcf5b55f92dee00
 
 from extract_hersheys_data import HersheysScraper
 from urllib2 import HTTPError
