@@ -128,7 +128,6 @@ class OzonScraper(Scraper):
                 except:
                     rows_text.append("%s: %s" % (feature["Name"], feature["Value"]))
             self.feature_count = len(rows_text)
-            short_description = jsn["FirstComment"]["FirstComment"]["Text"]
 
         all_features_text = "\n".join(rows_text)
         return all_features_text
@@ -143,12 +142,14 @@ class OzonScraper(Scraper):
         return None
 
     def _description(self):
+        description = self._description_helper()
+        if not description or len(description) < 1:
+            return self._long_description_helper()
+        return description
+
+    def _description_helper(self):
         short_description = " ".join(self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")).strip()
         if len(short_description) < 1:
-            # for ex: http://www.ozon.ru/context/detail/id/19966749/
-            # short_description = " ".join(self.tree_html.xpath("//div[starts-with(@class,'eFirstDetailComment_textIn')]//text()"))
-            # if len(short_description) < 1:
-            # http://www.ozon.ru/context/detail/id/18467120/
             try:
                 script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
                 m = re.findall(r"\.model_data = (.*?)};", script)
@@ -163,31 +164,45 @@ class OzonScraper(Scraper):
                         rows_text.append("%s: %s" % (row["Name"], row["Value"]))
                 short_description = "\n".join(rows_text)
             except IndexError:
-                short_description = ""
-
-            if len(short_description) < 1:
-                self.is_long_desc_is_none = True
-                short_description = " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
-                if len(short_description) < 1:
-                    short_description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
+                short_description = None
         return short_description
 
     def _long_description(self):
-        description = self._description()
-        if self.is_long_desc_is_none:
+        description = self._description_helper()
+        if not description or len(description) < 1:
             return None
-        description = " ".join(self.tree_html.xpath("//div[@class='mDetail_SidePadding']/table//text()")).strip()
+        return self._long_description_helper()
+
+    def _long_description_helper(self):
+        try:
+            script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
+            m = re.findall(r"\.model_data = (.*?)};", script)
+            script = m[0] + "}"
+            jsn = json.loads(script)
+        except IndexError:
+            description = None
+            return description
+
+        description = ""
+        try:
+            description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
+        except KeyError:
+            pass
+
+        try:
+            for block in jsn["PlainTextDescription"]["Blocks"]:
+                description += self._clean_html(block['Text'])
+        except KeyError:
+            pass
+
+        try:
+            for block in jsn["Description"]["Blocks"]:
+                description += self._clean_html(block['Text'])
+        except KeyError:
+            pass
+
         if len(description) < 1:
-            # return  " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()")).strip()
-            try:
-                script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
-                m = re.findall(r"\.model_data = (.*?)};", script)
-                script = m[0] + "}"
-                jsn = json.loads(script)
-                #jsn = jsn['Gallery']['Groups']
-                description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
-            except IndexError:
-                description = None
+            return None
         return description
 
 
@@ -206,6 +221,7 @@ class OzonScraper(Scraper):
         return None
 
     def _image_urls(self):
+        image_url = []
         try:
             text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
             text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
@@ -215,15 +231,26 @@ class OzonScraper(Scraper):
             text = re.findall(r'\.model_data = (\{.*\});', str(text))[0]
             text = ''.join(text)
             jsn = json.loads(text.decode("unicode_escape"))
-            jsn = jsn['Gallery']['Groups']
+            jsn = jsn['Gallery']
+            if 'Groups' in jsn:
+                jsn = jsn['Groups']
+                for row in jsn:
+                    if 'Elements' in row:
+                        for element in row['Elements']:
+                            if 'Original' in element:
+                                if 'noimg_' not in element['Original']:
+                                    image_url.append(element['Original'])
+            elif 'GalleryPages' in jsn:
+                jsn = jsn['GalleryPages']
+                for jsn_itr in jsn:
+                    jsn_itr_group = jsn_itr['Groups']
+                    for row in jsn_itr_group:
+                        if 'Elements' in row:
+                            for element in row['Elements']:
+                                if 'Original' in element:
+                                    if 'noimg_' not in element['Original']:
+                                        image_url.append(element['Original'])
 
-        image_url = []
-        for row in jsn:
-            if 'Elements' in row:
-                for element in row['Elements']:
-                    if 'Original' in element:
-                        if 'noimg_' not in element['Original']:
-                            image_url.append(element['Original'])
         if len(image_url) < 1:
             return None
         return image_url
@@ -300,8 +327,8 @@ class OzonScraper(Scraper):
     
     def _review_count(self):
         try:
-            nr = self.tree_html.xpath('//div[@itemprop="aggregateRating"]//span//text()')[0]
-            return re.findall(r'[0-9]+', nr)[0]
+            review_count = self.tree_html.xpath("//div[@itemprop='reviewCount']//text()")[0].strip()
+            return int(review_count)
         except IndexError:
             return 0
 
@@ -374,6 +401,19 @@ class OzonScraper(Scraper):
         return self._categories()[-1]
    
     def _brand(self):
+        try:
+            brand_txt = self.tree_html.xpath("//div[@class='eItemBrand_textLogo']//text()")[0].strip()
+        except:
+            brand_txt = ""
+        if len(brand_txt) > 0:
+            return brand_txt
+        try:
+            brand_txt = self.tree_html.xpath("//a[@class='eItemBrand_logo']//img/@alt")[0].strip()
+        except:
+            brand_txt = ""
+
+        if len(brand_txt) > 0:
+            return brand_txt
         #search for misc product brand
         brand_txt = self.tree_html.xpath("//div[@class='PageModule']//a[contains(@href, 'brand')]/text()")
         for brand in brand_txt:

@@ -24,6 +24,7 @@ from extract_samsclub_data import SamsclubScraper
 from extract_babysecurity_data import BabysecurityScraper
 from extract_staples_data import StaplesScraper
 from extract_soap_data import SoapScraper
+from extract_staplesadvantage_data import StaplesAdvantageScraper
 
 from extract_hersheys_data import HersheysScraper
 from urllib2 import HTTPError
@@ -63,6 +64,7 @@ SUPPORTED_SITES = {
                     "babysecurity" : BabysecurityScraper,
                     "staples" : StaplesScraper,
                     "soap" : SoapScraper,
+                    "staplesadvantage" : StaplesAdvantageScraper,
                     }
 
 # add logger
