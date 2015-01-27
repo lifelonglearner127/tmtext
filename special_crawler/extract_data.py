@@ -13,7 +13,8 @@ import os
 
 from no_img_hash import fetch_bytes
 
-from lxml import html
+from lxml import html, etree
+from itertools import chain
 import time
 
 class Scraper():
@@ -581,6 +582,17 @@ class Scraper():
             return 1
 
         return 0
+
+    def stringify_children(self, node):
+        '''Get all content of node, including markup.
+        :param node: lxml node to get content of
+        '''
+
+        parts = ([node.text] +
+                list(chain(*([etree.tostring(c, with_tail=False), c.tail] for c in node.getchildren()))) +
+                [node.tail])
+        # filter removes possible Nones in texts and tails
+        return ''.join(filter(None, parts))
 
 
     
