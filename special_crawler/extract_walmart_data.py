@@ -414,7 +414,7 @@ class WalmartScraper(Scraper):
             # assume old design
             product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
 
-        return product_name_node[0].text.strip()
+        return self.stringify_children(product_name_node[0]).strip()
 
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
