@@ -1,8 +1,10 @@
 import re
 import json
 from urlparse import urljoin
+import urllib
 
 from scrapy.log import WARNING
+from scrapy.http import Request
 
 from product_ranking.items import RelatedProduct, Price, BuyerReviews
 from product_ranking.spiders import cond_set, cond_set_value, \
@@ -36,19 +38,38 @@ class QuillProductsSpider(ProductsSpider):
         'quill.com'
     ]
 
-    SEARCH_URL = "http://www.quill.com/search?dsNav=Ns:{sort_mode}:" \
+    SEARCH_URL = "http://www.quill.com/search?dsNav=Ns:{sort_mode}" \
                  ",Up:Page_Search_Leap&keywords={search_term}&act=Sort"
 
     SORT_MODES = {
         'default': '',
         'relevance': '',
-        'price_desc': 'p.price|101|-1|',
-        'price_asc': 'p.price|101|1|',
-        'sale': 'p.sale_flag|101|-1|',
-        'new': 'p.new_flag|101|-1|',
-        'rating_desc': 'p.avg_rating|101|-1|',
-        'rating_asc': 'p.avg_rating|101|1|'
+        'price_desc': 'p.price|101|-1|:',
+        'price_asc': 'p.price|101|1|:',
+        'sale': 'p.sale_flag|101|-1|:',
+        'new': 'p.new_flag|101|-1|:',
+        'rating_desc': 'p.avg_rating|101|-1|:',
+        'rating_asc': 'p.avg_rating|101|1|:'
     }
+
+    def parse(self, response):
+        redirected_url = response.request.meta.get('redirect_urls')
+        if redirected_url:
+            root_url = response.url
+            additional_url = "?dsNav=Ns:{sort_mode},Up:Page_Browse_Leap,"\
+                             "Nea:True,N:17361&act=Sort"
+            url = urljoin(root_url, additional_url)
+            for st in self.searchterms:
+                return Request(
+                    self.url_formatter.format(
+                        url,
+                        search_term=urllib.quote_plus(st.encode('utf-8')),
+                    ),
+                    meta={'search_term': st, 'remaining': self.quantity},
+                )
+        else:
+            return super(QuillProductsSpider, self).parse(response)
+
 
     def _total_matches_from_html(self, response):
         # for exact results
@@ -77,6 +98,13 @@ class QuillProductsSpider(ProductsSpider):
         return link[0]
 
     def _populate_from_box(self, response, box, product):
+        red_span = box.xpath('..//span[@class="red"]/text()').extract()
+        if red_span:
+            s = 'Currently out of stock'
+            if s in red_span[0]:
+                cond_set_value(product, 'is_out_of_stock', True)
+        else:
+            cond_set_value(product, 'is_out_of_stock', False)
         cond_set(product, 'title', _itemprop(box, 'name'), unicode.strip)
         cond_set(product, 'price', _itemprop(box, 'price'))
 
@@ -113,12 +141,12 @@ class QuillProductsSpider(ProductsSpider):
         data = r'quillMData\s=\s(.*)</script>'
         data_script = re.findall(data, response.body_as_unicode())
         j = json.loads(data_script[0])
-        brand = j['brandName'][0]
-        cond_set_value(product, 'brand', brand)
+        brand = j.get('brandName')
+        if brand:
+            cond_set_value(product, 'brand', brand[0])
 
         locale = j['culturecode']
         cond_set_value(product, 'locale', locale)
-
 
     def _populate_related_products(self, response, product):
         related_products = {}
