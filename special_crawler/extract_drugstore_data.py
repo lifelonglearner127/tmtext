@@ -330,6 +330,8 @@ class DrugstoreScraper(Scraper):
         "long_description" : _long_description, \
 
         # CONTAINER : PAGE_ATTRIBUTES
+        "video_urls" : _video_urls, \
+        "video_count" : _video_count, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
@@ -345,6 +347,13 @@ class DrugstoreScraper(Scraper):
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
 
+         # CONTAINER : REVIEWS
+        "review_count" : _review_count, \
+        "average_review" : _average_review, \
+        "max_review" : _max_review, \
+        "min_review" : _min_review, \
+        "reviews" : _reviews, \
+
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \
@@ -358,18 +367,9 @@ class DrugstoreScraper(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         # CONTAINER : CLASSIFICATION
-         # CONTAINER : REVIEWS
-        "review_count" : _review_count, \
-        "average_review" : _average_review, \
-        "max_review" : _max_review, \
-        "min_review" : _min_review, \
-        "reviews" : _reviews, \
-
         # CONTAINER : PAGE_ATTRIBUTES
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \
-        "video_urls" : _video_urls, \
-        "video_count" : _video_count, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
