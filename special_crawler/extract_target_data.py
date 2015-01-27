@@ -31,6 +31,7 @@ class TargetScraper(Scraper):
     review_count = None
     average_review = None
     reviews = None
+    video_count = None
 
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
@@ -173,6 +174,7 @@ class TargetScraper(Scraper):
         return len(image_urls)
 
     def _video_urls(self):
+        self.video_count = 0
         video_url = self.tree_html.xpath("//div[@class='videoblock']//div//a/@href")
         video_url = [("http://www.target.com%s" % r) for r in video_url]
         video_url2 = video_url[:]
@@ -189,8 +191,10 @@ class TargetScraper(Scraper):
                     flag = True
                 except:
                     pass
-            if not flag:
-                video_url.append(item)
+            # if not flag:
+            #     video_url.append(item)
+            if len(video_url) < 1:
+                self.video_count = len(tree.xpath("//ul[@id='carouselContainer']//li//img"))
         demo_url = self.tree_html.xpath("//div[starts-with(@class, 'demoblock')]//span//a/@href")
         demo_url = [r for r in demo_url if len(self._clean_text(r)) > 0]
         for item in demo_url:
@@ -218,15 +222,19 @@ class TargetScraper(Scraper):
                         video_url += video_urls_tmp
                     else:
                         video_url.append(item)
+        self.video_count += len(video_url)
         if len(video_url) < 1:
             return None
         return video_url
 
     def _video_count(self):
-        urls = self._video_urls()
-        if urls:
-            return len(urls)
-        return 0
+        # urls = self._video_urls()
+        # if urls:
+        #     return len(urls)
+        # return 0
+        if self.video_count is None:
+            self._video_urls()
+        return self.video_count
 
     def _pdf_urls(self):
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
