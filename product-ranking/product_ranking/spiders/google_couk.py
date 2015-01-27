@@ -77,12 +77,14 @@ class GoogleProductsSpider(BaseProductsSpider):
 
     def parse_init(self, response):
         for request in super(GoogleProductsSpider, self).start_requests():
+
             if self.sort:
                 request.callback = self.sort_request
+                if self.sort == 'default':
+                    request.callback = self.parse
             yield request
 
     def sort_request(self, response):
-
         url = response.request.url
 
         if self.sort:
@@ -142,7 +144,9 @@ class GoogleProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        return None
+        self.log("Impossible to scrape total matches for this spider",
+                 DEBUG)
+        return 0
 
     def _scrape_product_links(self, response):
 
@@ -179,7 +183,7 @@ class GoogleProductsSpider(BaseProductsSpider):
             try:
                 json_data = json_data['spop']['r']
             except:
-                self.log('JSON structure changed', ERROR)
+                self.log('Failed to find ["spop"]["r"] at json data', WARNING)
 
         for item in items:
             url = title = description = price = image_url = None
@@ -246,7 +250,7 @@ class GoogleProductsSpider(BaseProductsSpider):
 
         if not next:
             link = None
-            self.log('Next page link not found', ERROR)
+            self.log('Next page link not found', WARNING)
         else:
             link = urlparse.urljoin(response.url, next[0])
         return link
