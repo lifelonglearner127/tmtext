@@ -97,39 +97,48 @@ class StaplesScraper(Scraper):
 
     def _description(self):
         description = self._description_helper()
-        if len(description) < 1:
+        if description is None or len(description) < 1:
             return self._long_description_helper()
         return description
 
     def _description_helper(self):
-        line_txts = []
-        try:
-            line_txts += self.tree_html.xpath("//div[@id='subdesc_content']//h2//text()")
-        except IndexError:
-            pass
-
-        try:
-            line_txts += self.tree_html.xpath("//div[@id='subdesc_content']//p[@class='skuShortDescription']//text()")
-        except IndexError:
-            pass
-
-        try:
-            rows = self.tree_html.xpath("//div[@id='subdesc_content']//ul//text()")
-            rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 1]
-            line_txts += rows
-        except IndexError:
-            pass
+        line_txts = self.tree_html.xpath("//div[contains(@class,'productDetails')]//div[@class='copyBullets']//text()")
+        line_txts = [self._clean_text(r) for r in line_txts if len(self._clean_text(r)) > 1 and self._clean_text(r) != 'See more details']
         description = "\n".join(line_txts)
+        if len(description) < 1:
+            return None
         return description
 
     def _long_description(self):
         description = self._description_helper()
-        if len(description) < 1:
+        if description is None or len(description) < 1:
             return None
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        return None
+        line_txts = self.tree_html.xpath("//div[@id='subdesc_content']//text()")
+        line_txts = [self._clean_text(r) for r in line_txts if len(self._clean_text(r)) > 1 and self._clean_text(r) != 'PRODUCT DETAILS' and self._clean_text(r) != 'Compare with similar items' and self._clean_text(r) != u'Would you like to give' and self._clean_text(r) != u'on product content, images, or tell us about a lower price?' and self._clean_text(r) != 'feedback']
+        description = "\n".join(line_txts)
+        return description
+        # line_txts = []
+        # try:
+        #     line_txts += self.tree_html.xpath("//div[@id='subdesc_content']//h2//text()")
+        # except IndexError:
+        #     pass
+        #
+        # try:
+        #     line_txts += self.tree_html.xpath("//div[@id='subdesc_content']//p[@class='skuShortDescription']//text()")
+        # except IndexError:
+        #     pass
+        #
+        # try:
+        #     rows = self.tree_html.xpath("//div[@id='subdesc_content']//ul//text()")
+        #     rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 1]
+        #     line_txts += rows
+        # except IndexError:
+        #     pass
+        # description = "\n".join(line_txts)
+        # return description
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -242,7 +251,17 @@ class StaplesScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//dd[@class='finalPrice']//text()")[0].strip()
+        try:
+            price = self.tree_html.xpath("//dd[@class='finalPrice']//text()")[0].strip()
+            return price
+        except IndexError:
+            pass
+        try:
+            price = self.tree_html.xpath("//span[@class='finalPrice']//text()")[0].strip()
+            price = price.replace("*", "")
+        except IndexError:
+            pass
+
         return price
 
     def _in_stores_only(self):

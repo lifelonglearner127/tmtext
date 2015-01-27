@@ -13,6 +13,8 @@
 
 import sys
 import pycurl
+import urllib
+import re
 
 from StringIO import StringIO
 
@@ -35,8 +37,10 @@ def curl_wrapper(url):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        argv = sys.argv[1]
-        url = argv   # 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/28659614/'
+        url = sys.argv[1] # 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/28659614/'
+        url_front = re.findall(r'^(localhost\/get_data\?url=)(.*)', url)[0][0]
+        url_end = re.findall(r'^(localhost\/get_data\?url=)(.*)', url)[0][1]
+        url = url_front + urllib.quote(url_end)
         print curl_wrapper(url)
     else:
         print "######################################################################################################"
