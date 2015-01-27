@@ -212,18 +212,20 @@ class AmazonScraper(Scraper):
     def _image_urls(self, tree = None):
         allimg = self._image_helper()
         n = len(allimg)
-
+        vurls = self._video_urls()
+        if vurls==None: vurls=[]
         if tree == None:
             tree = self.tree_html
         #The small images are to the left of the big image
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
 
         #The small images are below the big image
         image_url = tree.xpath("//div[@id='thumbs-image']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            res = [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
+            return res
 
         #Amazon instant video
         image_url = tree.xpath("//div[@class='dp-meta-icon-container']//img/@src")
@@ -236,7 +238,7 @@ class AmazonScraper(Scraper):
 
         image_url = tree.xpath("//div[contains(@id,'thumb-container')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
 
         image_url = tree.xpath("//div[contains(@class,'imageThumb')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
@@ -247,10 +249,10 @@ class AmazonScraper(Scraper):
             return image_url
 
         image_url = tree.xpath('//img[@id="imgBlkFront"]')
-        if image_url is not None and len(image_url)>n:
+        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return ["inline image"]
 
-        if len(allimg) > 0:
+        if len(allimg) > 0 and self.no_image(allimg)==0:
             return allimg
         return None
 
@@ -336,12 +338,29 @@ class AmazonScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        video_url = self.tree_html.xpath('//script[@type="text/javascript"]')
+        video_url = self.tree_html.xpath('//script')  #[@type="text/javascript"]
         temp = []
         for v in video_url:
-            r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", str(v.xpath('.//text()')))
+            st=str(v.xpath('.//text()'))
+            r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", st)
             if r:
                 temp.extend(r)
+            ii=st.find("kib-thumb-container-")
+            if ii > 0:
+                ij=st.find('"',ii+19)
+                if ij-ii<25:
+                    vid = st[ii:ij]
+                    viurl = self.tree_html.xpath('//div[@id="%s"]//img/@src' % vid)
+                    if len(viurl)>0:
+                        temp.append(viurl[0])
+
+        #Find video among the  small images.
+        image_url = self.tree_html.xpath("//span[@class='a-button-text']//img/@src")
+        if len(image_url)==0:
+            image_url = self.tree_html.xpath("//div[@id='thumbs-image']//img/@src")
+        for v in image_url:
+            if v.find("player")>0 :
+                temp.append(v)
         if len(temp)==0: return None
         return temp#",".join(temp)
 
@@ -403,8 +422,14 @@ class AmazonScraper(Scraper):
         if len(nr_reviews) > 1:
             return self._toint(nr_reviews[1])
         nr_reviews = self.tree_html.xpath("//a[@class='a-link-normal a-text-normal product-reviews-link']//text()")
+        if len(nr_reviews) > 1:
+            return self._toint(nr_reviews[0].replace('(','').replace(')','').replace(',',''))
+        nr_reviews = self.tree_html.xpath("//span[@class='crAvgStars']/a//text()")
+        if len(nr_reviews) > 0:
+            res = nr_reviews[0].split()
+            return self._toint(res[0])
+        return None
 
-        return self._toint(nr_reviews[0].replace('(','').replace(')','').replace(',',''))
 
     def _reviews(self):
         stars=self.tree_html.xpath("//tr[@class='a-histogram-row']//a//text()")
