@@ -6,6 +6,7 @@ import sys
 import json
 import os.path
 import urllib, cStringIO
+import lxml.html
 from io import BytesIO
 from PIL import Image
 import mmh3 as MurmurHash
@@ -16,12 +17,20 @@ from lxml.etree import tostring
 from itertools import chain
 from extract_data import Scraper
 
+
 class SouqScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://uae.souq.com/ae-en/<product-name-info>/"
+
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        # product features list
+        self.features = None
+        self.extracted_features = False
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -77,43 +86,51 @@ class SouqScraper(Scraper):
         return self.tree_html.xpath('//meta[@name="title"]/@content')[0].strip()
 
     def _model(self):
-        return self.tree_html.xpath('//meta[@itemprop="model"]/@content')[0]
+    #****************************************#
+        return None
 
     def _features(self):
-        feature_html_list = self.tree_html.xpath('//table[@class="spesifications"]//tr')
+        if self.extracted_features:
+            return self.features
 
-        if not feature_html_list:
-            return None
+        self.extracted_features = True
+        feature_html_list = self.tree_html.xpath('//div[contains(@class, "product_text")]'
+                                                 '/table//tr')
 
-        features = []
+        if feature_html_list is None:
+            self.features = None
+        else:
+            features = []
+            regex = re.compile(r'[\n\r\t]')
 
-        for feature in feature_html_list:
-            feature_row = ''
-            feature_row += " ".join([x for x in feature.itertext()])
-            features.append(feature_row.strip())
+            for feature_element in feature_html_list:
+                feature_raw_text = ''
+                feature_raw_text += "".join(feature_element.itertext())
+                feature_raw_text = "<tr>" + feature_raw_text + "</tr>"
+                feature_raw_text = regex.sub('', feature_raw_text)
+                feature_text = ''
+                feature_text += "".join(lxml.html.fromstring(feature_raw_text).itertext())
+                features.append(feature_text.strip())
 
-        return features
+            self.features = features
+
+        return self.features
 
     def _feature_count(self):
-        feature_html_list = self.tree_html.xpath('//table[@class="spesifications"]//tr')
+        if not self.extracted_features:
+            self._features()
 
-        if not feature_html_list:
+        if self.features is None:
             return 0
-
-        return len(feature_html_list)
+        else:
+            return len(self.features)
 
     def _description(self):
-        items = self.tree_html.xpath('//div[@class="brdrTopSolid prodInfoSection"]//text()')
-
-        if not items:
-            return None
-
+        description_elements = self.tree_html.xpath('//div[contains(@class, "item-desc")]')[0]
         short_description = ''
-
-        for item in items:
-            if item.replace('\r','').replace('\n','').strip() == '':
-                continue
-            short_description += '\n' + item
+        short_description += " ".join(description_elements.itertext())
+        regex = re.compile(r'[\n\r\t]')
+        short_description = regex.sub('', short_description)
 
         return short_description.strip()
 
@@ -122,18 +139,13 @@ class SouqScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        overview = self.tree_html.xpath('//li[contains(@id, "tabTitleItem")]/text()')[0]
+        description_elements = self.tree_html.xpath('//div[contains(@class, "item-desc")]')[0]
+        long_description = ''
+        long_description += " ".join(description_elements.itertext())
+        regex = re.compile(r'[\n\r\t]')
+        long_description = regex.sub('', long_description)
 
-        if overview.strip() != "Overview":
-            return None
-
-        overview_tab_html = self.tree_html.xpath('//div[contains(@class, "tabContentSelected")]/div')
-        overview_tab_text = ""
-
-        for item in overview_tab_html:
-            overview_tab_text += (" " . join([x for x in item.itertext()]).strip())
-
-        return overview_tab_text.replace("\n","").replace("\r","")
+        return long_description.strip()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -142,7 +154,7 @@ class SouqScraper(Scraper):
         pass
 
     def _image_urls(self):
-        image_urls = self.tree_html.xpath('//div[@id="thumb"]/img/@src')
+        image_urls = self.tree_html.xpath('//div[@id="thumbs"]/ul[contains(@class, "thumbs")]/img/@src')
 
         if not image_urls:
             image_urls = self.tree_html.xpath('//div[@id="prodMedia"]/div/img/@src')
