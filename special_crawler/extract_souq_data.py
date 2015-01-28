@@ -31,6 +31,10 @@ class SouqScraper(Scraper):
         # product features list
         self.features = None
         self.extracted_features = False
+        self.images = None
+        self.extracted_images = False
+        self.videos = None
+        self.extracted_videos = False
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -71,6 +75,7 @@ class SouqScraper(Scraper):
         product_url = self.tree_html.xpath('//meta[@property="og:url"]/@content')[0].strip()
         start_index = product_url.rfind("-")
         product_id = product_url[start_index + 1:-3]
+
         return product_id
 
     ##########################################
@@ -86,7 +91,9 @@ class SouqScraper(Scraper):
         return self.tree_html.xpath('//meta[@name="title"]/@content')[0].strip()
 
     def _model(self):
-    #****************************************#
+        """
+        *********Not defined in Souq*********
+        """
         return None
 
     def _features(self):
@@ -97,7 +104,7 @@ class SouqScraper(Scraper):
         feature_html_list = self.tree_html.xpath('//div[contains(@class, "product_text")]'
                                                  '/table//tr')
 
-        if feature_html_list is None:
+        if not feature_html_list:
             self.features = None
         else:
             features = []
@@ -154,48 +161,73 @@ class SouqScraper(Scraper):
         pass
 
     def _image_urls(self):
-        image_urls = self.tree_html.xpath('//div[@id="thumbs"]/ul[contains(@class, "thumbs")]/img/@src')
+        if self.extracted_images:
+            return self.images
 
-        if not image_urls:
-            image_urls = self.tree_html.xpath('//div[@id="prodMedia"]/div/img/@src')
+        self.extracted_images = True
+        self.images = self.tree_html.xpath('//div[@id="thumbs"]/ul[contains(@class, "thumbs")]//img/@src')
 
-        if len(image_urls) == 1 and "no_picture" in image_urls[0]:
-            return None
+        if not self.images:
+            self.images = self.tree_html.xpath('//div[@id="item-main-cover"]//'
+                                               'img[contains(@class, "img-size-large")]/@src')
 
-        return image_urls
+        if not self.images:
+            self.images = None
+
+        return self.images
 
     def _image_count(self):
-        if self._image_urls() == None:
-            return 0
+        if not self.extracted_images:
+            self._image_urls()
 
-        return len(self._image_urls())
+        if self.images is None:
+            return 0
+        else:
+            return len(self.images)
 
     def _video_urls(self):
-        video_urls = self.tree_html.xpath("//iframe[@allowfullscreen]/@src")
+        if self.extracted_videos:
+            return self.videos
 
-        if not video_urls:
-            return None
+        self.extracted_videos = True
+        self.videos = self.tree_html.xpath("//iframe[@allowfullscreen]/@src")
 
-        return video_urls
+        if not self.videos:
+            self.videos = None
+        else:
+            for index, video_url in enumerate(self.videos):
+                if not video_url.strip().startswith("http:"):
+                    video_url = "http:" + video_url.strip()
+                    self.videos[index] = video_url
+
+        return self.videos
 
     def _video_count(self):
-        return len(self._video_urls())
+        if not self.extracted_videos:
+            self._video_urls()
+
+        if self.videos is None:
+            return 0
+        else:
+            return len(self.videos)
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
-        pdf_urls = self.tree_html.xpath('//a[contains(@href, ".pdf")]/@href')
-        pdf_urls[:] = ["http://www.bhinneka.com" + x for x in pdf_urls]
-
-        if not pdf_urls:
-            return None
-
-        return pdf_urls
+        """
+        *********Not defined in Souq*********
+        """
+        return None
 
     def _pdf_count(self):
-        return len(self._pdf_urls())
-
+        """
+        *********Not defined in Souq*********
+        """
+        return 0
 
     def _webcollage(self):
+        """
+        *********Not defined in Souq*********
+        """
         return 0
 
     def _htags(self):
@@ -208,63 +240,81 @@ class SouqScraper(Scraper):
     def _keywords(self):
         return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0].strip()
 
-
-
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
 
     def _average_review(self):
-        if not self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()'):
+        if not self.tree_html.xpath('//div[@class="rating-window-content"]/span/b/text()'):
             return None
 
-        return float(self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0])
+        return float(self.tree_html.xpath('//div[@class="rating-window-content"]/span/b/text()')[0])
 
     def _review_count(self):
-        review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
+        review_rating_list = self.tree_html.xpath('//div[@class="rating-window-content"]/'
+                                                  'ul[contains(@class, "total-rating")]/li/'
+                                                  'span[@class="fl auto-width"]/text()')
 
         if not review_rating_list:
             return 0
 
-        return len(review_rating_list)
+        review_count = 0
+        regex = re.compile(r'[\n\r\t() ]')
+
+        for review in review_rating_list:
+            review = regex.sub('', review)
+            review_count += int(review)
+
+        return review_count
 
     def _max_review(self):
-        review_rating_list_text = self.tree_html.xpath('//div[@id="customerReviewContent"]//ul[@id="starRateContainer"]/li/div[contains(@class, "rateBarContainer")]/div[contains(@class,"rateBar")]/text()')
-        review_rating_list_int = []
+        review_rating_list = self.tree_html.xpath('//div[@class="rating-window-content"]/'
+                                                  'ul[contains(@class, "total-rating")]/li/'
+                                                  'span[@class="fl auto-width"]/text()')
 
-        if not review_rating_list_text:
+        if not review_rating_list:
             return None
 
-        for index in range(5):
-            if int(review_rating_list_text[index]) > 0:
-                review_rating_list_int.append(5 - index)
+        regex = re.compile(r'[\n\r\t() ]')
 
-        if not review_rating_list_int:
-            return None
+        max_rating_value = 0
 
-        return float(max(review_rating_list_int))
+        for index, review_numbers in enumerate(review_rating_list):
+            review_numbers = regex.sub('', review_numbers)
+
+            if int(review_numbers) > 0:
+                max_rating_value = 5 - index
+                break
+
+        return float(max_rating_value)
 
     def _min_review(self):
-        review_rating_list_text = self.tree_html.xpath('//div[@id="customerReviewContent"]//ul[@id="starRateContainer"]/li/div[contains(@class, "rateBarContainer")]/div[contains(@class,"rateBar")]/text()')
-        review_rating_list_int = []
+        review_rating_list = self.tree_html.xpath('//div[@class="rating-window-content"]/'
+                                                  'ul[contains(@class, "total-rating")]/li/'
+                                                  'span[@class="fl auto-width"]/text()')
 
-        if not review_rating_list_text:
+        if not review_rating_list:
             return None
 
-        for index in range(5):
-            if int(review_rating_list_text[index]) > 0:
-                review_rating_list_int.append(5 - index)
+        regex = re.compile(r'[\n\r\t() ]')
 
-        if not review_rating_list_int:
-            return None
+        min_rating_value = 0
 
-        return float(min(review_rating_list_int))
+        for index, review_numbers in enumerate(reversed(review_rating_list)):
+            review_numbers = regex.sub('', review_numbers)
+
+            if int(review_numbers) > 0:
+                min_rating_value = index + 1
+                break
+
+        return float(min_rating_value)
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath('//div[@id="ctl00_content_divPrice"]//text()')[0].strip()
+        return self.tree_html.xpath('//div[contains(@class, "vip-cart-row")]//'
+                                    'div[contains(@class, "xlarg-price")]')[0].strip()
 
     def _owned(self):
         if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() == 'Bhinneka.Com':
