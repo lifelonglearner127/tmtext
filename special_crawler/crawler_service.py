@@ -23,6 +23,8 @@ from extract_chicago_data import ChicagoScraper
 from extract_samsclub_data import SamsclubScraper
 from extract_babysecurity_data import BabysecurityScraper
 from extract_staples_data import StaplesScraper
+from extract_soap_data import SoapScraper
+from extract_drugstore_data import DrugstoreScraper
 from extract_staplesadvantage_data import StaplesAdvantageScraper
 from extract_souq_data import SouqScraper
 
@@ -63,6 +65,8 @@ SUPPORTED_SITES = {
                     "samsclub" : SamsclubScraper,
                     "babysecurity" : BabysecurityScraper,
                     "staples" : StaplesScraper,
+                    "soap" : SoapScraper,
+					"drugstore" : DrugstoreScraper,
                     "staplesadvantage" : StaplesAdvantageScraper,
                     "souq": SouqScraper
                     }
