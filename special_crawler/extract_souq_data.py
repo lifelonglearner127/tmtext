@@ -314,34 +314,31 @@ class SouqScraper(Scraper):
     ##########################################
     def _price(self):
         return self.tree_html.xpath('//div[contains(@class, "vip-cart-row")]//'
-                                    'div[contains(@class, "xlarg-price")]')[0].strip()
-
-    def _owned(self):
-        if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() == 'Bhinneka.Com':
-            return 1
-        else:
-            return 0
+                                    'div[contains(@class, "xlarg-price")]/text()')[0].strip()
 
     def _marketplace(self):
-        if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() != 'Bhinneka.Com':
-            return 1
-        else:
-            return 0
+        """
+        *********Not defined in Souq*********
+        """
+        return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        if self._brand().strip().lower() == self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[-1].strip().lower():
-            return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1:-1]
+        categories = self.tree_html.xpath('//ul[@class="headline"]/li[@itemtype="http://data-vocabulary.org/Breadcrumb"]/'
+                                          'a[@itemprop="url"]/span[@itemprop="title"]/text()')
 
-        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1]
+        if not categories:
+            return None
+
+        return categories
 
     def _category_name(self):
         return self._categories()[-1]
 
     def _brand(self):
-        return self.tree_html.xpath('//a[@id="ctl00_content_lnkBrand"]/@title')[0]
+        return self.tree_html.xpath('//a[@id="brand"]/text()')[0]
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -389,7 +386,6 @@ class SouqScraper(Scraper):
         "min_review" : _min_review, \
         # CONTAINER : SELLERS
         "price" : _price, \
-        "owned" : _owned, \
         "marketplace" : _marketplace, \
 
         # CONTAINER : CLASSIFICATION
