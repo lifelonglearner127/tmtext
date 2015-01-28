@@ -133,9 +133,9 @@ class SouqScraper(Scraper):
             return len(self.features)
 
     def _description(self):
-        description_elements = self.tree_html.xpath('//div[contains(@class, "item-desc")]')[0]
+        description_elements = self.tree_html.xpath('//div[@id="item_attributes"]//li/text()')
         short_description = ''
-        short_description += " ".join(description_elements.itertext())
+        short_description += " ".join(str(x) for x in description_elements)
         regex = re.compile(r'[\n\r\t]')
         short_description = regex.sub('', short_description)
 
@@ -313,8 +313,12 @@ class SouqScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath('//div[contains(@class, "vip-cart-row")]//'
+        price = self.tree_html.xpath('//div[contains(@class, "vip-cart-row")]//'
                                     'div[contains(@class, "xlarg-price")]/text()')[0].strip()
+        currency = self.tree_html.xpath('//div[contains(@class, "vip-cart-row")]//'
+                                    'div[contains(@class, "xlarg-price")]/span/text()')[0].strip()
+
+        return price + " " + currency
 
     def _marketplace(self):
         """
