@@ -28,6 +28,8 @@ from extract_drugstore_data import DrugstoreScraper
 from extract_staplesadvantage_data import StaplesAdvantageScraper
 
 from extract_hersheys_data import HersheysScraper
+from extract_freshamazon_data import FreshAmazonScraper
+
 from urllib2 import HTTPError
 import datetime
 import logging
@@ -67,6 +69,7 @@ SUPPORTED_SITES = {
                     "soap" : SoapScraper,
 					"drugstore" : DrugstoreScraper,
                     "staplesadvantage" : StaplesAdvantageScraper,
+                    "freshamazon" : FreshAmazonScraper,
                     }
 
 # add logger
@@ -118,13 +121,16 @@ def check_input(url, is_valid_url, invalid_url_message=""):
         except UnicodeEncodeError:
             error_message = "Invalid URL: " + url.encode("utf-8") + str(invalid_url_message)
         raise InvalidUsage(error_message, 400)
-        
+
 # infer domain from input URL
 def extract_domain(url):
     if 'chicago.doortodoororganics.com' in url:
         # for chicago scraper
         # https://chicago.doortodoororganics.com/shop/products/rudis-white-hamburger-buns
         return 'chicago'
+    if 'fresh.amazon.com' in url:
+        # for freshamazon scraper
+        return 'freshamazon'
     m = re.match("^http://(www|shop)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)
