@@ -253,6 +253,9 @@ class Scraper():
         self.BASE_DATA_TYPES['site_online_in_stock'] = lambda c: c._site_online_in_stock()
         self.BASE_DATA_TYPES['marketplace_in_stock'] = lambda c: c._marketplace_in_stock()
         self.BASE_DATA_TYPES['in_stores_in_stock'] = lambda c: c._in_stores_in_stock()
+        # Fields whose implementation don't depend on site
+        self.BASE_DATA_TYPES['meta_tags'] = lambda c: self._meta_tags()
+        self.BASE_DATA_TYPES['meta_tag_count'] = lambda c: self._meta_tag_count()
 
         # Set fields for error response
         
@@ -582,6 +585,15 @@ class Scraper():
             return 1
 
         return 0
+
+    def _meta_tags(self):
+        tags = map(lambda x:x.values(), self.tree_html.xpath('//meta[not(@http-equiv)]'))
+        return tags
+
+    def _meta_tag_count(self):
+        tags = self._meta_tags()
+        return len(tags)
+
 
     def stringify_children(self, node):
         '''Get all content of node, including markup.
