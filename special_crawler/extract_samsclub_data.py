@@ -31,6 +31,9 @@ class SamsclubScraper(Scraper):
     review_count = 0
     average_review = None
     reviews = None
+    image_urls = None
+    image_count = -1
+
 
     def check_url_format(self):
         # for ex: http://www.samsclub.com/sams/dawson-fireplace-fall-2014/prod14520017.ip?origin=item_page.rr1&campaign=rr&sn=ClickCP&campaign_data=prod14170040
@@ -121,6 +124,8 @@ class SamsclubScraper(Scraper):
     def _long_description_helper(self):
         rows = self.tree_html.xpath("//div[@itemprop='description']//text()")
         long_description = "".join(rows)
+        long_description = long_description.replace("View a video of this product.", "")
+        long_description = long_description.replace("View a video of this product", "")
         rows = self.tree_html.xpath("//div[@itemprop='description']/*")
         row_txts = []
         for row in rows:
@@ -141,32 +146,44 @@ class SamsclubScraper(Scraper):
         return None
 
     def _image_urls(self):
-        script = "/n".join(self.tree_html.xpath("//div[@class='container']//script//text()"))
-        m = re.findall(r"imageList = '([0-9]+)?'", script)
-        imglist = m[0]
-        url = "http://scene7.samsclub.com/is/image/samsclub/%s?req=imageset,json&id=init" % imglist
-        contents = urllib.urlopen(url).read()
-        m2 = re.findall(r'\"IMAGE_SET\"\:\"(.*?)\"', contents)
-        img_set = m2[0]
-        img_arr = img_set.split(",")
-        img_urls = []
-        for img in img_arr:
-            img2 = img.split(";")
-            img_url = "http://scene7.samsclub.com/is/image/%s" % img2[0]
-            img_urls.append(img_url)
+        if self.image_count == -1:
+            self.image_urls = None
+            self.image_count = 0
+            script = "/n".join(self.tree_html.xpath("//div[@class='container']//script//text()"))
+            m = re.findall(r"imageList = '([0-9]+)?'", script)
+            imglist = m[0]
+            url = "http://scene7.samsclub.com/is/image/samsclub/%s?req=imageset,json&id=init" % imglist
+            contents = urllib.urlopen(url).read()
+            m2 = re.findall(r'\"IMAGE_SET\"\:\"(.*?)\"', contents)
+            img_set = m2[0]
+            img_urls = []
+            if len(img_set) > 0:
+                img_arr = img_set.split(",")
+                for img in img_arr:
+                    img2 = img.split(";")
+                    img_url = "http://scene7.samsclub.com/is/image/%s" % img2[0]
+                    if img_url[-1:] not in "0123456789":
+                        img_urls.append(img_url)
 
-        if len(img_urls) == 0:
-            return None
-        return img_urls
+            if len(img_urls) == 0:
+                return None
+            self.image_urls = img_urls
+            self.image_count = len(img_urls)
+            return img_urls
+        else:
+            return self.image_urls
 
     def _image_count(self):
-        image_urls = self._image_urls()
-        if image_urls:
-            return len(image_urls)
-        return 0
+        if self.image_count == -1:
+            image_urls = self.image_urls()
+        return self.image_count
+        # image_urls = self._image_urls()
+        # if image_urls:
+        #     return len(image_urls)
+        # return 0
 
     def _video_urls(self):
-        rows = self.tree_html.xpath("//a[contains(text(),'View a video')]/@href")
+        rows = self.tree_html.xpath("//div[@itemprop='description']//a/@href")
         if len(rows) < 1:
             return None
         return rows
@@ -193,6 +210,7 @@ class SamsclubScraper(Scraper):
                 pdf_hrefs.append(url)
             except IndexError:
                 pass
+        pdf_hrefs = [r for r in pdf_hrefs if "JewelryDeliveryTimeline.pdf" not in r]
         if len(pdf_hrefs) < 1:
             return None
         return pdf_hrefs
@@ -231,6 +249,7 @@ class SamsclubScraper(Scraper):
                 tmp_reviews = re.findall(r'<span class=\\"BVRRHistAbsLabel\\">(.*?)<\\/span>', contents)
                 reviews = []
                 for review in tmp_reviews:
+                    review = review.replace(",", "")
                     m = re.findall(r'([0-9]+)', review)
                     reviews.append(m[0])
 
