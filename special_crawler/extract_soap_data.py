@@ -179,13 +179,6 @@ class SoapScraper(Scraper):
         pdf_hrefs = []
         for pdf in pdfs:
             pdf_hrefs.append(pdf.attrib['href'])
-
-        # get from webcollage
-        url = "http://content.webcollage.net/target/smart-button?ird=true&channel-product-id=%s" % self._product_id()
-        contents = urllib.urlopen(url).read()
-        wc_pdfs = re.findall(r'href=\\\"([^ ]*?\.pdf)', contents, re.DOTALL)
-        wc_pdfs = [r.replace("\\", "") for r in wc_pdfs]
-        pdf_hrefs += wc_pdfs
         return pdf_hrefs
 
     def _pdf_count(self):
