@@ -82,7 +82,7 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         return box.css('.plainlink::attr(href)')[0].extract()
 
     def _populate_from_box(self, response, box, product):
-        cond_set(product, 'title', box.css('.plainlink::text')[0].extract(),
+        cond_set(product, 'title', box.css('.plainlink::text').extract(),
                  unicode.strip)
 
     def _populate_from_html(self, response, product):
