@@ -5,6 +5,7 @@ from contrib.product_spider import ProductsSpider
 from product_ranking.items import RelatedProduct, Price,  BuyerReviews
 from product_ranking.spiders import cond_set, cond_set_value, \
     _populate_from_open_graph_product
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 
 class StaplesProductsSpider(ProductsSpider):
@@ -18,9 +19,13 @@ class StaplesProductsSpider(ProductsSpider):
     * `rating`
     * `new`
 
+    Note: when price_desc/price_asc order was chosed, some misorder
+    out_of_store items may occure due to staples.com own server
+    logic.
+
     Following fields are not scraped:
 
-    * `upc`, `is_out_of_stock`, `is_in_store_only`. `buyer_reviews`
+    * `upc`, `is_in_store_only`
     """
 
     name = 'staples_products'
@@ -90,10 +95,10 @@ class StaplesProductsSpider(ProductsSpider):
                  box.css('.name h3 a::attr(title)').extract())
         cond_set(product, 'model', box.css('.model::text').extract(),
                  lambda text: text.replace('Model ', ''))
-        cond_set(product, 'is_in_store_only',
-                 box.css('.stockMessage::text').extract(),
+        cond_set(product, 'is_out_of_stock',
+                 box.css('#stockMessage::text').extract(),
                  "Out of Stock Online".startswith)
-        cond_set_value(product, 'is_in_store_only', False)
+        cond_set_value(product, 'is_out_of_stock', False)
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'title',
@@ -106,9 +111,21 @@ class StaplesProductsSpider(ProductsSpider):
         _populate_from_open_graph_product(response, product)
         cond_set(product, 'image_url',
                  response.css('#largeProductImage::attr(src)').extract())
-        cond_set(product, 'brand',
-                 response.css('product::attr(brandname)').extract())
+        brand = response.xpath(
+            '//productcatalog/product/@brandname'
+        ).extract()
+        if not brand:
+            brand = response.css('product::attr(brandname)').extract()
+        cond_set(product, 'brand', brand)
+        if not brand:
+            brand = guess_brand_from_first_words(product['title'])
+            cond_set_value(product, 'brand', brand)
+
         price = response.css('.finalPrice::text').extract()
+        if not price:
+            price = response.xpath(
+                '//dd[@class="finalPrice"]/b/i/text()'
+            ).extract()
         if price:
             price = re.search('[ ,.0-9]+', price[0])
         if not price:
