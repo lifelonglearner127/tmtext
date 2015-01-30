@@ -201,9 +201,10 @@ class WalmartProductsSpider(BaseProductsSpider):
             return 0
 
         matches = response.css('.result-summary-container ::text').re(
-            'Showing \d+ of (\d+) results')
+            'Showing \d+ of (.+) results')
         if matches:
-            num_results = int(matches[0])
+            num_results = matches[0].replace(',', '')
+            num_results = int(num_results)
         else:
             num_results = None
             self.log(

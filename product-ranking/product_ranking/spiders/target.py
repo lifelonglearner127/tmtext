@@ -49,6 +49,23 @@ class TargetProductSpider(BaseProductsSpider):
                      "&filter.q0=id%3Aeq%3A{model}&stats.q0=reviews" \
                      "&filteredstats.q0=reviews"
 
+    JSON_SEARCH_URL = "http://tws.target.com/searchservice/item" \
+                      "/search_results/v1/by_keyword" \
+                      "?callback=getPlpResponse" \
+                      "&searchTerm=null" \
+                      "&category={category}" \
+                      "&sort_by={sort_mode}" \
+                      "&pageCount=60" \
+                      "&start_results={index}" \
+                      "&page={page}" \
+                      "&zone=PLP" \
+                      "&faceted_value=" \
+                      "&view_type=medium" \
+                      "&stateData=" \
+                      "&response_group=Items" \
+                      "&isLeaf=true" \
+                      "&parent_category_id={category}"
+
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
@@ -66,9 +83,27 @@ class TargetProductSpider(BaseProductsSpider):
 
     def _start_search(self, response):
         for request in super(TargetProductSpider, self).start_requests():
-            request.meta['dont_redirect'] = True
+            #request.meta['dont_redirect'] = True
             request.meta['handle_httpstatus_list'] = [302]
+            request.meta['search_start'] = True
             yield request
+
+    def parse(self, response):
+        regexp = re.compile('^http://[\w]*\.target\.com/c/[^/]+/-/([^#]+)')
+        category = regexp.search(response.url)
+        if response.meta.get('search_start') and category:
+            new_meta = response.meta
+            new_meta['search_start'] = False
+            new_meta['json'] = True
+            category = category.group(1)[2:]
+            new_meta['category'] = category
+            return Request(
+                self.url_formatter.format(self.JSON_SEARCH_URL,
+                                          category=category, index=90,
+                                          sort_mode=self.SORTING or '',
+                                          page=1),
+                meta=new_meta)
+        return list(super(TargetProductSpider, self).parse(response))
 
     def parse_product(self, response):
         prod = response.meta['product']
@@ -334,6 +369,34 @@ class TargetProductSpider(BaseProductsSpider):
         return bi_list
 
     def _scrape_product_links(self, response):
+        if response.meta.get('json'):
+            return list(self._scrape_product_links_json(response))
+        else:
+            return list(self._scrape_product_links_html(response))
+
+    def _scrape_product_links_json(self, response):
+        for item in self._get_json_data(response)['items']['Item']:
+            url = item['productDetailPageURL']
+            url = urlparse.urljoin('http://www.target.com', url)
+            product = SiteProductItem()
+            attrs = item.get('itemAttributes', {})
+            cond_set_value(product, 'title', attrs.get('title'))
+            cond_set_value(product, 'brand',
+                           attrs.get('productManufacturerBrand'))
+            p = item.get('priceSummary', {})
+            priceattr = p.get('offerPrice', p.get('listPrice'))
+            if priceattr:
+                currency = priceattr['currencyCode']
+                amount = priceattr['amount']
+                if amount == 'Too low to display':
+                    price = None
+                else:
+                    amount = re.sub('[^0-9.]', '', priceattr['amount'])
+                    price = Price(priceCurrency=currency, price=amount)
+                cond_set_value(product, 'price', price)
+            yield url, product
+
+    def _scrape_product_links_html(self, response):
         sterm = response.xpath(
             "//div[@id='searchMessagingHeader']/h2/span"
             "/span[@class='srhTerm']/text()").extract()
@@ -379,7 +442,31 @@ class TargetProductSpider(BaseProductsSpider):
             #     product['???'] = True
             yield link, product
 
+    def _get_json_data(self, response):
+        data = re.search('getPlpResponse\((.+)\)', response.body_as_unicode())
+        try:
+            data = json.loads(data.group(1))
+        except (ValueError, TypeError, AttributeError):
+            self.log('JSON response expected.')
+            return
+        return data['searchResponse']
+
     def _scrape_total_matches(self, response):
+        if response.meta.get('json'):
+            return self._scrape_total_matches_json(response)
+        else:
+            return self._scrape_total_matches_html(response)
+
+    def _json_get_args(self, data):
+        args = {d['name']: d['value'] for d in
+                data['searchState']['Arguments']['Argument']}
+        return args
+
+    def _scrape_total_matches_json(self, response):
+        data = self._get_json_data(response)
+        return int(self._json_get_args(data)['prodCount'])
+
+    def _scrape_total_matches_html(self, response):
         str_results = response.xpath(
             "//div[@id='searchMessagingHeader']/h2"
             "/span/span[@class='srhCount']/text()")
@@ -415,8 +502,9 @@ class TargetProductSpider(BaseProductsSpider):
             if remaining and remaining > 0:
                 new_meta['remaining'] = remaining
             post_url = "http://www.target.com/SoftRefreshProductListView"
-            return FormRequest.from_response(
-                response=response,
+            return FormRequest(
+                #return FormRequest.from_response(
+                #response=response,
                 url=post_url,
                 method='POST',
                 formdata=data,
@@ -472,6 +560,29 @@ class TargetProductSpider(BaseProductsSpider):
         return requests
 
     def _scrape_next_results_page_link(self, response):
+        if response.meta.get('json'):
+            return self._scrape_next_results_page_link_json(response)
+        else:
+            return self._scrape_next_results_page_link_html(response)
+
+    def _scrape_next_results_page_link_json(self, response):
+        #raw_input(len(list(self._scrape_product_links_json(response))))
+        args = self._json_get_args(self._get_json_data(response))
+        current = int(args['currentPage'])
+        total = int(args['totalPages'])
+        per_page = int(args['resultsPerPage'])
+        if current <= total:
+            sort_mode = self.SORTING or ''
+            category = response.meta['category']
+            new_meta = response.meta.copy()
+            url = self.url_formatter.format(self.JSON_SEARCH_URL,
+                                            sort_mode=sort_mode,
+                                            index=per_page * current,
+                                            page=current + 1,
+                                            category=response.meta['category'])
+            return Request(url, meta=new_meta)
+
+    def _scrape_next_results_page_link_html(self, response):
         next_page = response.xpath(
             "//div[@id='pagination1']/div[@class='col2']"
             "/ul[@class='pagination1']/li[@class='next']/a/@href").extract()
@@ -493,7 +604,7 @@ class TargetProductSpider(BaseProductsSpider):
         product = response.meta['product']
         data = json.loads(response.body_as_unicode())
         data = data.get('BatchedResults', {}).get('q0', {})
-        data = data.get('Results', [{}])[0]
+        data = (data.get('Results') or [{}])[0]
         data = data.get('FilteredReviewStatistics', {})
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
