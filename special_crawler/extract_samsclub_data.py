@@ -177,7 +177,9 @@ class SamsclubScraper(Scraper):
                         img_urls.append(img_url)
 
             if len(img_urls) == 0:
-                return None
+                img_urls = self.tree_html.xpath("//div[contains(@class, 'imgCol')]//div[@id='plImageHolder']//img/@src")
+                if len(img_urls) < 1:
+                    return None
             self.image_urls = img_urls
             self.image_count = len(img_urls)
             return img_urls
@@ -188,10 +190,6 @@ class SamsclubScraper(Scraper):
         if self.image_count == -1:
             image_urls = self.image_urls()
         return self.image_count
-        # image_urls = self._image_urls()
-        # if image_urls:
-        #     return len(image_urls)
-        # return 0
 
     def _video_urls(self):
         rows = self.tree_html.xpath("//div[@id='tabItemDetails']//a/@href")
@@ -210,10 +208,23 @@ class SamsclubScraper(Scraper):
         pdf_hrefs = []
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
         for pdf in pdfs:
-            pdf_hrefs.append(pdf.attrib['href'])
+            try:
+                pdf_hrefs.append(pdf.attrib['href'])
+            except KeyError:
+                pass
         pdfs = self.tree_html.xpath("//a[contains(@href,'pdfpdf')]")
         for pdf in pdfs:
-            pdf_hrefs.append(pdf.attrib['href'])
+            try:
+                pdf_hrefs.append(pdf.attrib['href'])
+            except KeyError:
+                pass
+        pdfs = self.tree_html.xpath("//a[contains(@href,'pdf')]")
+        for pdf in pdfs:
+            try:
+                if pdf.attrib['href'].endswith("pdf"):
+                    pdf_hrefs.append(pdf.attrib['href'])
+            except KeyError:
+                pass
         pdfs = self.tree_html.xpath("//a[contains(@onclick,'.pdf')]")
         for pdf in pdfs:
             # window.open('http://graphics.samsclub.com/images/pool-SNFRound.pdf','_blank')
