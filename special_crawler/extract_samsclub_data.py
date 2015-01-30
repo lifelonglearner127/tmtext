@@ -40,6 +40,17 @@ class SamsclubScraper(Scraper):
         m = re.match(r"^http://www\.samsclub\.com/sams/(.+)?/(.+)", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        '''Overwrites parent class method that determines if current page
+        is not a product page.
+        Currently for Amazon it detects captcha validation forms,
+        and returns True if current page is one.
+        '''
+
+        if len(self.tree_html.xpath("//div[contains(@class, 'imgCol')]//div[@id='plImageHolder']//img")) < 1:
+            return True
+        return False
+
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -183,7 +194,8 @@ class SamsclubScraper(Scraper):
         # return 0
 
     def _video_urls(self):
-        rows = self.tree_html.xpath("//div[@itemprop='description']//a/@href")
+        rows = self.tree_html.xpath("//div[@id='tabItemDetails']//a/@href")
+        rows = [r for r in rows if "video." in r]
         if len(rows) < 1:
             return None
         return rows
