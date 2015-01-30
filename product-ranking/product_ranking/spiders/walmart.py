@@ -44,6 +44,8 @@ class WalmartProductsSpider(BaseProductsSpider):
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
     def __init__(self, search_sort='best_match', *args, **kwargs):
+        if search_sort == 'best_sellers':
+            self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         super(WalmartProductsSpider, self).__init__(
             url_formatter=FormatterWithDefaults(
                 search_sort=self._SEARCH_SORT[search_sort]
