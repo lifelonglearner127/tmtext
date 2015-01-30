@@ -235,13 +235,17 @@ class GoogleProductsSpider(BaseProductsSpider):
                 redirect = url
             url = urlparse.urljoin(response.url, url)
 
+            brand = guess_brand_from_first_words(title)
+
             yield redirect, SiteProductItem(
                 url=url,
                 title=title,
                 price=price,
                 image_url=image_url,
+                brand=brand,
                 description=description,
-                locale='en-US')
+                locale='en-US'
+            )
 
     def _scrape_next_results_page_link(self, response):
         next = response.css('table#nav td.cur') \
