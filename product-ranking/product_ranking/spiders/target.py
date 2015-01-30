@@ -13,9 +13,10 @@ from scrapy import Selector
 from scrapy.http import FormRequest, Request
 from scrapy.log import DEBUG, INFO
 
-from product_ranking.items import SiteProductItem, Price, \
-    BuyerReviews, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
+    BuyerReviews
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    _populate_from_open_graph_product
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 
 
@@ -162,10 +163,37 @@ class TargetProductSpider(BaseProductsSpider):
             desc = desc[0]
             desc = desc.replace("\n", "")
             product['description'] = desc
+        _populate_from_open_graph_product(response, product)
+        cond_set(product, 'image_url',
+                 response.css('[itemprop=image]::attr(src)').extract())
         image = product.get('image_url')
         if image:
             image = image.replace("_100x100.", ".")
             product['image_url'] = image
+
+    def _extract_variants(self, response, product):
+        js = response.xpath(
+            "//script[contains(text(),'Target.globals.refreshItems = ')]"
+            "/text()").re('.*Target.globals.refreshItems = (.*)')
+        variants = []
+        if js:
+            try:
+                jsdata = json.loads(js[0])
+            except ValueError:
+                jsdata = {}
+            for item in jsdata:
+                try:
+                    itype = item['Attributes']['catent_type']
+                    try:
+                        color = item['Attributes']['preselect']['var1']
+                    except KeyError:
+                        color = ""
+                    price = item['Attributes']['price']['formattedOfferPrice']
+                    code = item['Attributes']['partNumber']
+                    variants.append((itype, color, price, code))
+                except KeyError:
+                    pass
+        return variants
 
     def _populate_variants(self, response, product, variants):
         product_list = []
