@@ -7,6 +7,8 @@ import json
 
 from lxml import html, etree
 import lxml
+import urllib
+import lxml.html
 import time
 import requests
 
@@ -535,7 +537,13 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        full_description = " ".join(self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]//text()")).strip()
+        description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]"
+                                                    "/div[contains(@class, 'js-ellipsis')]")[0]
+        full_description = ""
+
+        for description_element in description_elements:
+            full_description += lxml.html.tostring(description_element)
+
         # return None if empty
         if not full_description:
             return None
