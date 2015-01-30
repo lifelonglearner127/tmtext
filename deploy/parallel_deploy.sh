@@ -33,7 +33,7 @@ deploy () {
     fab -H keywords16.contentanalyticsinc.com set_production deploy:branch=master,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
 }
 
-if promptyn "is the sky blue?"; then
+if promptyn "Do you really want to deploy the code to all the servers?"; then
     deploy;
 else
     echo "abort";
