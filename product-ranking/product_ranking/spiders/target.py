@@ -146,9 +146,12 @@ class TargetProductSpider(BaseProductsSpider):
             "//span[@itemprop='price']/text()"
             "|//*[@id='see-low-price']/a/text()"
         ).extract()
-        if price and price[0].startswith('$'):
+        regexp = re.compile('\$([\d, .]+)')
+        if price and regexp.match(price[0]):
+            price = regexp.search(price[0]).group(1)
+            price = re.sub(', ', '', price)
             cond_set_value(product, 'price',
-                           Price(priceCurrency='USD', price=price[0][1:]))
+                           Price(priceCurrency='USD', price=price))
         desc = product.get('description')
         if desc:
             desc = desc.replace("\n", "")
