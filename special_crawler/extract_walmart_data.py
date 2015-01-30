@@ -537,7 +537,6 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-#        full_description = " ".join(self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]//text()")).strip()
         description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]"
                                                     "/div[contains(@class, 'js-ellipsis')]")[0]
         full_description = ""
