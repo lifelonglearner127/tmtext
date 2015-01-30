@@ -264,31 +264,99 @@ class StaplesScraper(Scraper):
 
         return price
 
+    def _price_amount(self):
+        price = self._price()
+        price = price.replace("$", "")
+        price = price.replace(",", "")
+        return float(price)
+
+    def _price_currency(self):
+        price_currency = "USD"
+        return price_currency
+
     def _in_stores_only(self):
-        return None
+        #  in_stores_only - in_stores but neither site_online nor marketplace - binary
+        if self._in_stores():
+            if not self._site_online() and not self._marketplace():
+                return 1
+        return 0
 
     def _in_stores(self):
-        return None
+        '''in_stores - the item can be ordered online for pickup in a physical store
+        or it can not be ordered online at all and can only be purchased in a local store,
+        irrespective of availability - binary
+        '''
+        rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
+        if "Visit your local Club for pricing & availability" in rows:
+            return 1
+        return 0
 
     def _owned(self):
+        '''owned - sold by the site - online or in stores - and available,
+        equivalent to "site_online_in_stock or in_stores_in_stock"(implemented in base class) - binary
+        '''
         return 1
-    
+
     def _marketplace(self):
+        '''marketplace: the product is sold by a third party and the site is just establishing the connection
+        between buyer and seller. E.g., "Sold by X and fulfilled by Amazon" is also a marketplace item,
+        since Amazon is not the seller.
+        '''
         return 0
 
     def _owned_out_of_stock(self):
-        try:
-            if 'Out of stock' in self.tree_html.xpath("//p[starts-with(@class,'availability')]//span/text()")[0].strip():
-                return 1
-        except IndexError:
-            pass
+        '''owned_out_of_stock - sold by the site - online or in stores - and not available,
+        equivalent to "(site_online or in_stores) and not site_online_in_stock and not in_stores_in_stock"
+        (implemented in base class) - binary
+        '''
+        if (self._site_online() or self._in_stores()) and self._site_online_out_of_stock() and self._in_stores_out_of_stock():
+            return 1
+        if self._site_online_out_of_stock() is None and self._in_stores_out_of_stock() is None:
+            return None
         return 0
 
     def _marketplace_sellers(self):
+        '''marketplace_sellers - the list of marketplace sellers - list of strings (["seller1", "seller2"])
+        '''
         return None
 
     def _marketplace_lowest_price(self):
+        # marketplace_lowest_price - the lowest of marketplace prices - floating-point number
         return None
+
+    def _in_stock(self):
+        '''in_stock - the item is available from any seller, directly or in a store - binary
+        (irrespective of the actual seller - this site, a marketplace seller, or a physical store)
+        '''
+        if self._owned_out_of_stock()
+        return None
+
+    def _site_online(self):
+        # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
+        rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
+        if "Unavailable online" in rows:
+            return 0
+        return 1
+
+    def _site_online_out_of_stock(self):
+        #  site_online_out_of_stock - currently unavailable from the site - binary
+        rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
+        if "Out of stock online" in rows:
+            return 1
+        return 0
+
+    def _in_stores_out_of_stock(self):
+        '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
+        (null should be used for items that can not be ordered online and the availability may depend on location of the store)
+        '''
+        return None
+
+    def _online_only(self):
+        # online_only - site_online or marketplace but not in_stores - binary
+        if not self._in_stores():
+            if self._site_online() or self._marketplace():
+                return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -356,6 +424,8 @@ class StaplesScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
         "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
         "owned" : _owned, \
@@ -363,6 +433,11 @@ class StaplesScraper(Scraper):
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
+        "in_stock" : _in_stock, \
+        "site_online" : _site_online, \
+        "site_online_out_of_stock" : _site_online_out_of_stock, \
+        "in_stores_out_of_stock" : _in_stores_out_of_stock, \
+        "online_only" : _online_only, \
 
          # CONTAINER : REVIEWS
         "review_count" : _review_count, \
