@@ -114,7 +114,7 @@ class TargetProductSpider(BaseProductsSpider):
             new_meta['category'] = category
             return Request(
                 self.url_formatter.format(self.JSON_SEARCH_URL,
-                                          category=category, index=90,
+                                          category=category, index=0,
                                           sort_mode=self.SORTING or '',
                                           page=1),
                 meta=new_meta)
@@ -146,10 +146,9 @@ class TargetProductSpider(BaseProductsSpider):
             "//span[@itemprop='price']/text()"
             "|//*[@id='see-low-price']/a/text()"
         ).extract()
-        if not price or price[0] == 'See Low Price in Cart':
-            cond_set(product, 'price', ['$0.00'])
-        else:
-            cond_set(product, 'price', price)
+        if price and price[0].startswith('$'):
+            cond_set_value(product, 'price',
+                           Price(priceCurrency='USD', price=price[0][1:]))
         desc = product.get('description')
         if desc:
             desc = desc.replace("\n", "")
@@ -485,6 +484,7 @@ class TargetProductSpider(BaseProductsSpider):
         current = int(args['currentPage'])
         total = int(args['totalPages'])
         per_page = int(args['resultsPerPage'])
+        raw_input((current, total, per_page))
         if current <= total:
             sort_mode = self.SORTING or ''
             category = response.meta['category']
