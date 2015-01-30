@@ -613,7 +613,7 @@ class ServiceScraperTest(unittest.TestCase):
                                          % (url, site, sample_json_str, today.isoformat(), not_a_product))
                         self.con.commit()
 
-            self.cur.execute("select url from console_urlsample")
+            self.cur.execute("select url from console_urlsample where not_a_product=0")
             self.urls = self.cur.fetchall()
             self.urls_by_scraper = {}
 
@@ -632,7 +632,7 @@ class ServiceScraperTest(unittest.TestCase):
             print e
 
     def _test(self, website, sample_url):
-        self.cur.execute("select * from console_urlsample where website='%s' and url='%s'" % (website, sample_url))
+        self.cur.execute("select * from console_urlsample where website='%s' and url='%s' and not_a_product=0" % (website, sample_url))
         row = self.cur.fetchall()
 
         print "\n-------------------------------Report results for %s-------------------------------" % website
