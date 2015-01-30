@@ -815,13 +815,17 @@ class WalmartScraper(Scraper):
         sellers = self.tree_html.xpath("//div[@itemprop='offers']")
 
         sellers_dict = {}
-        for seller in sellers:
-            # try to get seller if any, otherwise ignore this div
-            try:
-                avail = (seller.xpath(".//meta[@itemprop='availability']/@content")[0] == "http://schema.org/InStock")
-                sellers_dict[seller.xpath(".//meta[@itemprop='seller']/@content")[0]] = avail
-            except IndexError:
-                pass
+
+        not_available = self.tree_html.xpath("//span[@id='MP_SELLER_NA_MSG_3']/@style")[0]
+
+        if not_available.replace(" ", "") != "display:block;":
+            for seller in sellers:
+                # try to get seller if any, otherwise ignore this div
+                try:
+                    avail = (seller.xpath(".//meta[@itemprop='availability']/@content")[0] == "http://schema.org/InStock")
+                    sellers_dict[seller.xpath(".//meta[@itemprop='seller']/@content")[0]] = avail
+                except IndexError:
+                    pass
 
         return sellers_dict
 
