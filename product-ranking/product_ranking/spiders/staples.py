@@ -1,11 +1,16 @@
 import re
 import urlparse
+import string
 
 from contrib.product_spider import ProductsSpider
 from product_ranking.items import RelatedProduct, Price,  BuyerReviews
 from product_ranking.spiders import cond_set, cond_set_value, \
     _populate_from_open_graph_product
 from product_ranking.guess_brand import guess_brand_from_first_words
+
+
+def _strip_non_ascii(s):
+    return filter(lambda x: x in string.printable, s)
 
 
 class StaplesProductsSpider(ProductsSpider):
@@ -93,6 +98,7 @@ class StaplesProductsSpider(ProductsSpider):
     def _populate_from_box(self, response, box, product):
         cond_set(product, 'title',
                  box.css('.name h3 a::attr(title)').extract())
+        product['title'] = _strip_non_ascii(product.get('title', ''))
         cond_set(product, 'model', box.css('.model::text').extract(),
                  lambda text: text.replace('Model ', ''))
         cond_set(product, 'is_out_of_stock',
@@ -103,6 +109,7 @@ class StaplesProductsSpider(ProductsSpider):
     def _populate_from_html(self, response, product):
         cond_set(product, 'title',
                  response.css('.productDetails h1::text').extract())
+        product['title'] = _strip_non_ascii(product.get('title', ''))
         desc = response.css('#subdesc_content')
         headline = desc.css('.skuHeadline').extract()
         description = desc.css('.layoutWidth06').extract()
@@ -150,7 +157,7 @@ class StaplesProductsSpider(ProductsSpider):
             if url and title:
                 products.append(
                     RelatedProduct(url=urlparse.urljoin(response.url, url[0]),
-                                   title=title[0]))
+                                   title=_strip_non_ascii(title[0])))
         cond_set_value(product, 'related_products',
                        {'Related Products': products})
 
