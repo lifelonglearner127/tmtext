@@ -148,7 +148,7 @@ class TargetProductSpider(BaseProductsSpider):
         ).extract()
         regexp = re.compile('\$([\d, .]+)')
         if price and regexp.match(price[0]):
-            price = regexp.search(price[0]).group(1)
+            price = regexp.findall(price[0])[-1]
             price = re.sub(', ', '', price)
             cond_set_value(product, 'price',
                            Price(priceCurrency='USD', price=price))
@@ -292,7 +292,8 @@ class TargetProductSpider(BaseProductsSpider):
             return list(self._scrape_product_links_html(response))
 
     def _scrape_product_links_json(self, response):
-        for item in self._get_json_data(response)['items']['Item']:
+        items = self._get_json_data(response).get('items', {'Item': []})
+        for item in items['Item']:
             url = item['productDetailPageURL']
             url = urlparse.urljoin('http://www.target.com', url)
             product = SiteProductItem()
@@ -416,6 +417,9 @@ class TargetProductSpider(BaseProductsSpider):
                     }
 
             new_meta = response.meta.copy()
+            if new_meta.get('total_matches') is None:
+                new_meta['total_matches'] = \
+                    self._scrape_total_matches(response)
             if remaining and remaining > 0:
                 new_meta['remaining'] = remaining
             post_url = "http://www.target.com/SoftRefreshProductListView"
@@ -484,10 +488,11 @@ class TargetProductSpider(BaseProductsSpider):
 
     def _scrape_next_results_page_link_json(self, response):
         args = self._json_get_args(self._get_json_data(response))
-        current = int(args['currentPage'])
+        current = int(args.get('currentPage', -1))
+        if current == -1:
+            return
         total = int(args['totalPages'])
         per_page = int(args['resultsPerPage'])
-        raw_input((current, total, per_page))
         if current <= total:
             sort_mode = self.SORTING or ''
             category = response.meta['category']
