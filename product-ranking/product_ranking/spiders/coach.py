@@ -22,14 +22,20 @@ class CoachSpider(BaseProductsSpider):
     start_urls = []
 
     NEW_SEARCH_URL = "http://www.coach.com/search?&q={search_term}"\
-                     "&srule=price-{search_sort}&format=ajax"
+                     "&srule={search_sort}&format=ajax"
 
     SEARCH_URL = "http://www.coach.com/online/handbags/SearchResultsView?"\
                  "storeId=10551&catalogId=10051&searchKeyword={search_term}"\
-                 "&srule=price-{search_sort}"
+                 "&srule={search_sort}"
 
-    def __init__(self, search_sort='low-to-high', *args, **kwargs):
-        self.search_sort = search_sort
+    SEARCH_SORT = {
+        'default': "",
+        'price-desc': "price-low-to-high",
+        'price-asc': "price-high-to-low",
+    }
+
+    def __init__(self, search_sort='default', *args, **kwargs):
+        self.search_sort = self.SEARCH_SORT[search_sort]
         self.new_stile = False
         # used to store unique links
         self.links = []
@@ -38,7 +44,7 @@ class CoachSpider(BaseProductsSpider):
         self.initial_responses = []
         super(CoachSpider, self).__init__(
             url_formatter=FormatterWithDefaults(
-                search_sort=search_sort,
+                search_sort=self.search_sort,
             ), *args, **kwargs
         )
 
