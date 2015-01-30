@@ -2,7 +2,6 @@
 
 # DO NOT RUN THIS FILE IF YOU DON'T KNOW WHAT YOU ARE DOING!
 
-
 promptyn () {
     while true; do
         read -p "$1 " yn
@@ -13,7 +12,6 @@ promptyn () {
         esac
     done
 }
-
 
 deploy () {
     echo "DEPLOYING...";
