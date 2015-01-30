@@ -13,8 +13,7 @@ from product_ranking.spiders import cond_set, cond_set_value,\
     cond_replace_value, _extract_open_graph_metadata, populate_from_open_graph
 
 
-# to run - add additional argument -a search_sort="low-to-high"/"high-to-low"
-# default "low-to-high"
+# You may add additional argument -a search_sort="price-desc"/"price-asc"
 class CoachSpider(BaseProductsSpider):
     handle_httpstatus_list = [404]
     name = 'coach_products'
@@ -30,8 +29,8 @@ class CoachSpider(BaseProductsSpider):
 
     SEARCH_SORT = {
         'default': "",
-        'price-desc': "price-low-to-high",
-        'price-asc': "price-high-to-low",
+        'price-asc': "price-low-to-high",
+        'price-desc': "price-high-to-low",
     }
 
     def __init__(self, search_sort='default', *args, **kwargs):
