@@ -13,7 +13,7 @@ from scrapy.http import FormRequest, Request
 from scrapy.log import DEBUG, INFO
 
 from product_ranking.items import SiteProductItem, Price, \
-    BuyerReviews
+    BuyerReviews, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 
@@ -27,7 +27,6 @@ class TargetProductSpider(BaseProductsSpider):
     #  or any other target.* different from target.com!
     SEARCH_URL = "http://www.target.com/s?searchTerm={search_term}"
     SCRIPT_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js"
-    POPULATE_REVIEWS = True
     SORTING = None
 
     SORT_MODES = {
@@ -37,6 +36,11 @@ class TargetProductSpider(BaseProductsSpider):
         "pricehigh": "PriceHigh",
         "newest": "newest"
     }
+
+    RELATED_PRODUCTS_URL = "https://prz-secure.target.com/recommendations/v1" \
+                           "?productId={prod_id}" \
+                           "&context=placementId,{placement};" \
+                           "categoryId,{category}"
 
     REVIEW_API_PASS = "aqxzr0zot28ympbkxbxqacldq"
 
@@ -110,12 +114,7 @@ class TargetProductSpider(BaseProductsSpider):
         cond_set_value(prod, 'url', old_url)
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
-        payload = self._extract_rr_parms(response)
-
-        if self.POPULATE_REVIEWS:
-            return self._request_reviews(response, prod)
-        else:
-            return prod
+        return list(self._request_additional_info(response, prod)) or prod
 
     def _populate_from_html(self, response, product):
         if 'title' in product and product['title'] == '':
@@ -502,6 +501,11 @@ class TargetProductSpider(BaseProductsSpider):
         else:
             return product
 
+    def _return_if_finished(self, response):
+        response.meta['pending'].remove(response.meta['id_'])
+        if not response.meta['pending']:
+            return response.meta['product']
+
     def _parse_reviews(self, response):
         product = response.meta['product']
         data = json.loads(response.body_as_unicode())
@@ -517,4 +521,49 @@ class TargetProductSpider(BaseProductsSpider):
                         for d in data.get('RatingDistribution', [])}
         reviews = BuyerReviews(total, average, distribution)
         cond_set_value(product, 'buyer_reviews', reviews)
-        return product
+        return self._return_if_finished(response)
+
+    def _request_related_products(self, response, product):
+
+        placements = ['pdpv1', 'pdph1', ]
+        prod_id = re.search('"partNumber":"([^"]+)"',
+                            response.body_as_unicode())
+        category = re.search('"RRCategoryId":"([^"]+)"',
+                             response.body_as_unicode())
+        if prod_id and category:
+            prod_id = prod_id.group(1)
+            category = category.group(1)
+        else:
+            self.log('Could not parse related products')
+            return
+        product['related_products'] = {}
+        for placement in placements:
+            url = self.RELATED_PRODUCTS_URL.format(prod_id=prod_id,
+                                                   category=category,
+                                                   placement=placement)
+            yield Request(url, self._parse_related_products,
+                          meta=response.meta)
+
+    def _parse_related_products(self, response):
+        product = response.meta['product']
+        data = json.loads(response.body_as_unicode())
+        strategy = data['strategyDescription']
+        products = []
+        for item in data['recommendations']:
+            url = item['productLink']
+            title = item['productTitle']
+            products.append(RelatedProduct(url=url, title=title))
+        product['related_products'][strategy] = products
+        return self._return_if_finished(response)
+
+    def _request_additional_info(self, response, prod):
+        reviews_request = self._request_reviews(response, prod)
+        relprod_requests = self._request_related_products(response, prod)
+        requests = [reviews_request] + list(relprod_requests)
+        pending = set(request.url for request in requests if request)
+        for request in requests:
+            request.meta['pending'] = pending
+            request.meta['id_'] = request.url
+            yield request
+
+
