@@ -1,3 +1,6 @@
+import socket
+socket.socket.settimeout(10)
+
 try:
     from simmetrica import Simmetrica
     USING_SIMMETRICA = True
