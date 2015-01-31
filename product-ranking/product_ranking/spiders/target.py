@@ -6,14 +6,13 @@ import json
 import re
 import string
 import urllib
-import urllib2
 import urlparse
 
 from scrapy import Selector
 from scrapy.http import FormRequest, Request
 from scrapy.log import DEBUG, INFO
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
+from product_ranking.items import SiteProductItem, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
@@ -28,8 +27,6 @@ class TargetProductSpider(BaseProductsSpider):
     #  or any other target.* different from target.com!
     SEARCH_URL = "http://www.target.com/s?searchTerm={search_term}"
     SCRIPT_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js"
-    CALL_RR = True
-    POPULATE_VARIANTS = False
     POPULATE_REVIEWS = True
     SORTING = None
 
@@ -113,28 +110,10 @@ class TargetProductSpider(BaseProductsSpider):
         cond_set_value(prod, 'url', old_url)
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
-
-        variants = self._extract_variants(response, prod)
         payload = self._extract_rr_parms(response)
-
-        if self.CALL_RR:
-            if payload:
-                new_meta = response.meta.copy()
-                new_meta['variants'] = variants
-                rr_url = urlparse.urljoin(self.SCRIPT_URL,
-                                          "?" + urllib.urlencode(payload))
-                return Request(
-                    rr_url,
-                    self._parse_rr_json,
-                    meta=new_meta)
-            else:
-                self.log("No {rr} payload at %s" % response.url, DEBUG)
 
         if self.POPULATE_REVIEWS:
             return self._request_reviews(response, prod)
-        elif self.POPULATE_VARIANTS:
-            if variants:
-                return self._populate_variants(response, prod, variants)
         else:
             return prod
 
@@ -172,30 +151,6 @@ class TargetProductSpider(BaseProductsSpider):
         if image:
             image = image.replace("_100x100.", ".")
             product['image_url'] = image
-
-    def _extract_variants(self, response, product):
-        js = response.xpath(
-            "//script[contains(text(),'Target.globals.refreshItems = ')]"
-            "/text()").re('.*Target.globals.refreshItems = (.*)')
-        variants = []
-        if js:
-            try:
-                jsdata = json.loads(js[0])
-            except ValueError:
-                jsdata = {}
-            for item in jsdata:
-                try:
-                    itype = item['Attributes']['catent_type']
-                    try:
-                        color = item['Attributes']['preselect']['var1']
-                    except KeyError:
-                        color = ""
-                    price = item['Attributes']['price']['formattedOfferPrice']
-                    code = item['Attributes']['partNumber']
-                    variants.append((itype, color, price, code))
-                except KeyError:
-                    pass
-        return variants
 
     def _populate_variants(self, response, product, variants):
         product_list = []
@@ -287,59 +242,6 @@ class TargetProductSpider(BaseProductsSpider):
                    "flv": "15.0.0",
                    "l": 1}
         return payload
-
-    def _parse_rr_json(self, response):
-        product = response.meta['product']
-        text = response.body_as_unicode()
-        pattern = re.compile(
-            "jsonObj = {([^}]*)};\s+RR\.TGT\.fixAndPushJSON\(([^)]*)\);")
-        mlist = re.findall(pattern, text)
-        if mlist:
-            results = {}
-            for m in mlist:
-                if len(m) > 1:
-                    try:
-                        answ = "{" + m[0] + "}"
-                        jsdata = json.loads(answ)
-
-                        title = jsdata['productTitle']
-                        link = jsdata['productLink']
-
-                        url_split = urlparse.urlsplit(link)
-                        query = urlparse.parse_qs(url_split.query)
-                        original_url = query.get('ct')
-                        ctlink = urllib2.unquote(original_url[0])
-
-                        data = m[1].split(",")
-                        chan = data[1]
-                        if chan not in results:
-                            results[chan] = []
-                        rlist = results[chan]
-                        rlist.append((title, ctlink))
-                    except (ValueError, KeyError, IndexError) as e:
-                        self.log(
-                            "{rr} json response parse error %s" % e, DEBUG)
-
-            def make_product_list(mlist):
-                mitems = []
-                for mname, mlink in mlist:
-                    mitems.append(RelatedProduct(mname, mlink))
-                return mitems
-
-            rlist = results.get('0', [])
-            ritems = make_product_list(rlist)
-            rlist = results.get('1', [])
-            obitems = make_product_list(rlist)
-
-            product['related_products'] = {"recommended": ritems,
-                                           "buyers_also_bought": obitems}
-        variants = response.meta.get('variants')
-        if self.POPULATE_REVIEWS:
-            return self._request_reviews(response, product)
-        elif variants and self.POPULATE_VARIANTS:
-            return self._populate_variants(response, product, variants)
-        else:
-            return product
 
     def _extract_links_with_brand(self, containers):
         bi_list = []
@@ -615,7 +517,4 @@ class TargetProductSpider(BaseProductsSpider):
                         for d in data.get('RatingDistribution', [])}
         reviews = BuyerReviews(total, average, distribution)
         cond_set_value(product, 'buyer_reviews', reviews)
-        variants = response.meta.get('variants')
-        if variants and self.POPULATE_VARIANTS:
-            return self._populate_variants(response, product, variants)
         return product
