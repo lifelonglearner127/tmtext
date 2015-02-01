@@ -7,6 +7,7 @@ import re
 import string
 import urllib
 import urlparse
+import uuid
 
 from scrapy import Selector
 from scrapy.http import FormRequest, Request
@@ -21,7 +22,7 @@ from product_ranking.spiders import cond_set_value, populate_from_open_graph
 class TargetProductSpider(BaseProductsSpider):
     name = 'target_products'
     allowed_domains = ["target.com", "recs.richrelevance.com",
-                       'api.bazaarvoice.com']
+                       'api.bazaarvoice.com', 'www.hlserve.com']
     start_urls = ["http://www.target.com/"]
     # TODO: support new currencies if you're going to scrape target.canada
     #  or any other target.* different from target.com!
@@ -41,6 +42,19 @@ class TargetProductSpider(BaseProductsSpider):
                            "?productId={prod_id}" \
                            "&context=placementId,{placement};" \
                            "categoryId,{category}"
+
+    FEATURED_PRODUCTS_URL = "http://www.hlserve.com/Delivery/ClientPaths" \
+                            "/Library/Delivery.aspx?version=0.9.0" \
+                            "&pageGUID={guid}" \
+                            "&clientid=131" \
+                            "&pagetype=product" \
+                            "&taxonomy={category}" \
+                            "&prodid={prod_id}" \
+                            "&qty=1" \
+                            "&prodp={price}" \
+                            "&maxmes=4&bm_type=2&bm_taxoff=2" \
+                            "&productid={prod_id}" \
+                            "&loc=hl_1_999"
 
     REVIEW_API_PASS = "aqxzr0zot28ympbkxbxqacldq"
 
@@ -467,7 +481,6 @@ class TargetProductSpider(BaseProductsSpider):
             return self._scrape_next_results_page_link_html(response)
 
     def _scrape_next_results_page_link_json(self, response):
-        #raw_input(len(list(self._scrape_product_links_json(response))))
         args = self._json_get_args(self._get_json_data(response))
         current = int(args['currentPage'])
         total = int(args['totalPages'])
@@ -498,8 +511,6 @@ class TargetProductSpider(BaseProductsSpider):
             url = self.REVIEW_API_URL.format(apipass=self.REVIEW_API_PASS,
                                              model=prod_id)
             return Request(url, self._parse_reviews, meta=response.meta)
-        else:
-            return product
 
     def _return_if_finished(self, response):
         response.meta['pending'].remove(response.meta['id_'])
@@ -515,7 +526,7 @@ class TargetProductSpider(BaseProductsSpider):
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
         if average is None or total is None:
-            return product
+            return self._return_if_finished(response)
         distribution = data.get('RatingDistribution', [])
         distribution = {d['Count']: d['RatingValue']
                         for d in data.get('RatingDistribution', [])}
@@ -523,26 +534,46 @@ class TargetProductSpider(BaseProductsSpider):
         cond_set_value(product, 'buyer_reviews', reviews)
         return self._return_if_finished(response)
 
-    def _request_related_products(self, response, product):
-
-        placements = ['pdpv1', 'pdph1', ]
-        prod_id = re.search('"partNumber":"([^"]+)"',
+    def _extract_rp_args(self, response):
+        prod_id = re.search('"partNumber" *: *"([^"]+)"',
                             response.body_as_unicode())
-        category = re.search('"RRCategoryId":"([^"]+)"',
+        category = re.search('"RRCategoryId" *: *"([^"]+)"',
                              response.body_as_unicode())
+        return category, prod_id
+
+    def _request_related_products(self, response, product):
+        placements = ['pdpv1', 'pdph1', ]
+        category, prod_id = self._extract_rp_args(response)
         if prod_id and category:
             prod_id = prod_id.group(1)
             category = category.group(1)
         else:
-            self.log('Could not parse related products')
+            self.log('Could not scrape related products (%s)' % response.url)
             return
-        product['related_products'] = {}
         for placement in placements:
             url = self.RELATED_PRODUCTS_URL.format(prod_id=prod_id,
                                                    category=category,
                                                    placement=placement)
             yield Request(url, self._parse_related_products,
                           meta=response.meta)
+
+    def _request_featured_products(self, response, product):
+        product['related_products']['featured products'] = []
+        category, prod_id = self._extract_rp_args(response)
+        price = product.get('price')
+        if prod_id and category and price:
+            prod_id = prod_id.group(1)
+            category = category.group(1)
+            price = price.price
+        else:
+            self.log('Could not scrape featured products (%s)' % response.url)
+            return
+        guid = uuid.uuid4()
+        url = self.FEATURED_PRODUCTS_URL.format(category=category,
+                                                prod_id=prod_id,
+                                                price=price,
+                                                guid=guid)
+        return Request(url, self._parse_featured_products, meta=response.meta)
 
     def _parse_related_products(self, response):
         product = response.meta['product']
@@ -556,14 +587,39 @@ class TargetProductSpider(BaseProductsSpider):
         product['related_products'][strategy] = products
         return self._return_if_finished(response)
 
+    def _parse_featured_products(self, response):
+        regexp = '"ProductName" *: *"([^"]+)".+?"ProductPage" *: *"([^"]+)"'
+        found = re.findall(regexp, response.body_as_unicode())
+        for title, url in found:
+            title = title.decode('unicode-escape')
+            url = url.decode('unicode-escape')
+            url = "http://" + url if 'http://' not in url else url
+            meta = response.meta.copy()
+            meta['title'] = title
+            meta['pending'].add(title)
+            meta['id_'] = title
+            meta['dont_redirect'] = True
+            meta['handle_httpstatus_list'] = [302]
+            yield Request(url, self._fetch_fp_url, meta=meta, dont_filter=True)
+        yield self._return_if_finished(response)
+
+    def _fetch_fp_url(self, response):
+        product = response.meta['product']
+        url = response.headers['location']
+        rp = RelatedProduct(url=url, title=response.meta['title'])
+        product['related_products']['featured products'].append(rp)
+        return self._return_if_finished(response)
+
     def _request_additional_info(self, response, prod):
+        prod['related_products'] = {}
         reviews_request = self._request_reviews(response, prod)
         relprod_requests = self._request_related_products(response, prod)
-        requests = [reviews_request] + list(relprod_requests)
-        pending = set(request.url for request in requests if request)
+        fp_requests = self._request_featured_products(response, prod)
+        requests = [reviews_request, fp_requests] + list(relprod_requests)
+        #requests = [reviews_request] + list(relprod_requests)
+        requests = filter(None, requests)
+        pending = set(request.url for request in requests)
         for request in requests:
             request.meta['pending'] = pending
             request.meta['id_'] = request.url
             yield request
-
-
