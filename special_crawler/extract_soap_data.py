@@ -125,9 +125,28 @@ class SoapScraper(Scraper):
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        rows = []
-        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-        description = "\n".join(rows)
+        tab_headers = self.tree_html.xpath("//ul[contains(@class,'descriptTab')]//li")
+        txts = []
+        ids = []
+        description = ""
+        for tab_header in tab_headers:
+            txt = "".join(tab_header.xpath(".//text()")).strip()
+            if txt == "Description" or txt in txts:
+                continue
+            txts.append(txt)
+            try:
+                id = tab_header.xpath(".//a/@id")[0].strip()
+                id = re.findall(r"\d+", id)[0]
+                id = "Tab%sDetailInfo" % id
+                ids.append(id)
+                rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='%s']//text()" % id)
+                rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+                if len(rows) > 0:
+                    description += "\n" + "\n".join(rows)
+                description = description.replace("\n.", ".")
+            except:
+                pass
+
         if len(description) < 1:
             return None
         return description
@@ -211,6 +230,7 @@ class SoapScraper(Scraper):
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
         if not self.max_score or not self.min_score:
+            # AMAZON.COM REVIEWS
             # http://www.soap.com/amazon_reviews/06/47/14/mosthelpful_Default.html
             product_id = self._product_id()
             if len(product_id) % 2 == 1:
@@ -245,6 +265,8 @@ class SoapScraper(Scraper):
                     break
             self.max_score = max(rv_scores)
             self.min_score = min(rv_scores)
+
+            # SOAP.COM REVIEWS
 
     def _average_review(self):
         self._load_reviews()
