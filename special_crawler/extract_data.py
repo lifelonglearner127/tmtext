@@ -493,9 +493,10 @@ class Scraper():
         is available.
         '''
 
-        # set extractor function for owned
-        # to be same as for site_online_in_stock
-        return self.DATA_TYPES['site_online_in_stock']
+        # extract site_online_in_stock and stores_in_stock
+        # owned will be 1 if any of these is 1
+        return (self.ALL_DATA_TYPES['site_online_in_stock'](self) or self.ALL_DATA_TYPES['in_stores_in_stock'](self))
+
 
     def _owned_out_of_stock(self):
         '''General function for setting value of legacy field "owned_out_of_stock".
@@ -504,9 +505,32 @@ class Scraper():
         is available.
         '''
 
-        # set extractor function for owned_out_of_stock
-        # to be same as for site_online_out_of_stock
-        return self.DATA_TYPES['site_online_out_of_stock']
+        # owned_out_of_stock is true if item is out of stock online and in stores
+        try:
+            site_online = self.ALL_DATA_TYPES['site_online'](self)
+        except:
+            site_online = None
+
+        try:
+            site_online_in_stock = self.ALL_DATA_TYPES['site_online_in_stock'](self)
+        except:
+            site_online_in_stock = None
+
+        try:
+            in_stores = self.ALL_DATA_TYPES['in_stores'](self)
+        except:
+            in_stores = None
+
+        try:
+            in_stores_in_stock = self.ALL_DATA_TYPES['in_stores_in_stock'](self)
+        except:
+            in_stores_in_stock = None
+
+
+        if (site_online or in_stores) and (not site_online_in_stock) and (not in_stores_in_stock):
+            return 1
+        return 0
+
 
     def _site_online_in_stock(self):
         '''General function for setting value of field "site_online_in_stock".
