@@ -3,7 +3,7 @@ from future_builtins import *
 
 import re
 
-from scrapy.log import ERROR, WARNING
+from scrapy.log import WARNING
 from scrapy.http import Request
 from scrapy import FormRequest
 
@@ -11,6 +11,7 @@ from scrapy.http import Request
 from product_ranking.items import SiteProductItem, Price, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults,\
     cond_set, cond_set_value
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 is_empty = lambda x: x[0] if x else ""
 
@@ -22,7 +23,6 @@ class PeapodProductsSpider(BaseProductsSpider):
     visitor zipcode. It should be from peapod.com coverage area.
 
     Not populated fields:
-    -related_products
     -buyers_reviews # not available
     -upc # not available
     -is_in_store_only # not available
@@ -40,10 +40,12 @@ class PeapodProductsSpider(BaseProductsSpider):
     'specials'
 
     Example command:
-    scrapy crawl -a peapod_products searchterms_str="tea" -a order="default"
+    scrapy crawl -a peapod_products searchterms_str="tea"
+    [-a order="default"] [-a fetch_related_products=True]
     """
     name = "peapod_products"
-    allowed_domains = ["peapod.com"]
+    allowed_domains = ["peapod.com",
+                       "res-x.com"]
 
     start_url = "https://www.peapod.com/site/gateway/zip-entry"\
                 "/top/zipEntry_main.jsp"
@@ -100,13 +102,19 @@ class PeapodProductsSpider(BaseProductsSpider):
         'specials': '-specialCode,+itemLongName',
     }
 
-    def __init__(self, order='default', *args, **kwargs):
+    def __init__(self, order='default', fetch_related_products=True,
+                 *args, **kwargs):
+        if fetch_related_products == "False":
+            self.fetch_related_products = False
+        else:
+            self.fetch_related_products = True
         if order not in self.SORT_MODES.keys():
             self.log("'%s' not in SORT_MODES. Used default for this session"
                      % order, WARNING)
             order = 'default'
         search_sort = self.SORT_MODES[order]
         super(PeapodProductsSpider, self).__init__(
+            site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
                 search_sort=search_sort,
             ), *args, **kwargs
@@ -167,26 +175,10 @@ class PeapodProductsSpider(BaseProductsSpider):
 
         prod['url'] = response.url
 
-        rp = []
-        r_products_dl = response.xpath(
-            '//div[@id="product_rr"]/div[contains(@class, "recsContainer")]/dl'
-        )
-
-        # related_products not populated at this moment
-        if r_products_dl:
-            for dl in r_products_dl:
-                url = dl.xpath(
-                    './/div[@class="recs_info"]/dt/a/@href'
-                ).extract()
-                title = dl.xpath(
-                    './/div[@class="recs_info"]/dt/a/text()'
-                ).extract()
-                if url and title:
-                    rp.append(RelatedProduct(title[0], url[0]))
-        prod['related_products'] = {'recommended': rp}
-
         brand_pattern = r"tm_brand: '(.*)'"
         brand = re.findall(brand_pattern, response.body_as_unicode())
+        if not brand:
+            brand = guess_brand_from_first_words(product['title'])
         if brand:
             brand = brand[0].replace('\\', '').strip()
             prod['brand'] = brand
@@ -198,6 +190,54 @@ class PeapodProductsSpider(BaseProductsSpider):
             cond_set_value(prod, 'is_out_of_stock', True)
         else:
             cond_set_value(prod, 'is_out_of_stock', False)
+
+        if self.fetch_related_products:
+            # continue requests to get related products
+            return self._request_related_products(response)
+        else:
+            return prod
+
+    def _request_related_products(self, response):
+        url = self._get_recommendations_url(response)
+        yield Request(url, self._get_related_products, meta=response.meta)
+
+    def _get_recommendations_url(self, response):
+        url = response.meta['product']['url']
+        prod_id = re.findall(r"productId=(\d+)", url)
+        root_url = "https://www.res-x.com/ws/r2/Resonance.aspx?appid"\
+                   "=peapod01&tk=281487701926380&ss=152382991509512&sg"\
+                   "=1&vr=5.3x&bx=true&sc=product1_rr&ev=product&ei={prod_id}"\
+                   "&cu=1011100700&no=3&ex={prod_id}&storeid=38&storeprice="\
+                   "38_38&pricezone=38&ccb=recService.processRec&"\
+                   "cv12=38&plk=&rf="
+        if prod_id:
+            request_url = root_url.format(prod_id=prod_id[0])
+            return request_url
+
+    def _get_related_products(self, response):
+        ids = re.findall(r'"id":"(\d+)"', response.body_as_unicode())
+        root_url = "https://www.peapod.com/frags/recommendations/"\
+                   "frag_rec.jhtml?recsContainerClass=itemDetail&rrelem"\
+                   "=product1_rr&zipCityId=96019&storeId=38&pids="
+        url = root_url + ','.join(ids)
+        return Request(url, callback=self._parse_related_products,
+                       meta=response.meta, dont_filter=True)
+
+    def _parse_related_products(self, response):
+        prod = response.meta['product']
+        rp = []
+        recs_info = response.xpath(
+            '//div[@class="recs_info"]'
+        )
+        if recs_info:
+            for info in recs_info:
+                url = info.xpath('.//dt/a/@href').extract()
+                if url:
+                    url = 'http://www.peapod.com/' + url[0]
+                title = info.xpath('.//dt/a/text()').extract()
+                if url and title:
+                    rp.append(RelatedProduct(title[0], url))
+        prod['related_products'] = {'recommended': rp}
         return prod
 
     def _scrape_total_matches(self, response):
@@ -206,8 +246,9 @@ class PeapodProductsSpider(BaseProductsSpider):
         ).extract()
         if total_matches:
             total_matches = re.findall("\d+", total_matches[0])
-
-        return int(total_matches[0])
+            if total_matches:
+                return int(total_matches[0])
+            return 0
 
     def _scrape_product_links(self, response):
         links = response.xpath(
