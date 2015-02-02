@@ -32,6 +32,8 @@ class SoapScraper(Scraper):
     review_count = None
     average_review = None
     reviews = None
+    feature_count = None
+    features = None
 
     def check_url_format(self):
         # for ex: http://www.soap.com/p/nordic-naturals-complete-omega-3-6-9-1-000-mg-softgels-lemon-64714
@@ -79,17 +81,27 @@ class SoapScraper(Scraper):
         return None
 
     def _features(self):
+        if self.feature_count is not None:
+            return self.features
+        self.feature_count = 0
+        rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='Tab1DetailInfo']//div[@class='pIdDesContent']//text()")
+        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
         line_txts = []
-        all_features_text = line_txts
-        if len(all_features_text) < 1:
+        if "Features:" in rows:
+            lis = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='Tab1DetailInfo']//div[@class='pIdDesContent']//ul//li")
+            for li in lis:
+                txt = "".join(li.xpath(".//text()")).strip()
+                if len(txt) > 0:
+                    line_txts.append(txt)
+        if len(line_txts) < 1:
             return None
-        return all_features_text
+        self.feature_count = len(line_txts)
+        return line_txts
 
     def _feature_count(self):
-        features = len(self._features())
-        if features is None:
-            return 0
-        return len(self._features())
+        if self.feature_count is None:
+            self._features()
+        return self.feature_count
 
     def _model_meta(self):
         return None
@@ -125,9 +137,28 @@ class SoapScraper(Scraper):
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        rows = []
-        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-        description = "\n".join(rows)
+        tab_headers = self.tree_html.xpath("//ul[contains(@class,'descriptTab')]//li")
+        txts = []
+        ids = []
+        description = ""
+        for tab_header in tab_headers:
+            txt = "".join(tab_header.xpath(".//text()")).strip()
+            if txt == "Description" or txt in txts:
+                continue
+            txts.append(txt)
+            try:
+                id = tab_header.xpath(".//a/@id")[0].strip()
+                id = re.findall(r"\d+", id)[0]
+                id = "Tab%sDetailInfo" % id
+                ids.append(id)
+                rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='%s']//text()" % id)
+                rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+                if len(rows) > 0:
+                    description += "\n" + "\n".join(rows)
+                description = description.replace("\n.", ".")
+            except:
+                pass
+
         if len(description) < 1:
             return None
         return description
@@ -211,6 +242,7 @@ class SoapScraper(Scraper):
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
         if not self.max_score or not self.min_score:
+            # AMAZON.COM REVIEWS
             # http://www.soap.com/amazon_reviews/06/47/14/mosthelpful_Default.html
             product_id = self._product_id()
             if len(product_id) % 2 == 1:
@@ -246,6 +278,8 @@ class SoapScraper(Scraper):
             self.max_score = max(rv_scores)
             self.min_score = min(rv_scores)
 
+            # SOAP.COM REVIEWS
+
     def _average_review(self):
         self._load_reviews()
         return self.average_review
@@ -273,11 +307,22 @@ class SoapScraper(Scraper):
         price = self.tree_html.xpath("//span[@class='singlePrice']//text()")[0].strip()
         return price
 
+    def _price_amount(self):
+        price = self._price()
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        return price_amount
+
+    def _price_currency(self):
+        price = self._price()
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        price_currency = price.replace(price_amount, "")
+        return price_currency
+
     def _in_stores_only(self):
-        return None
+        return 0
 
     def _in_stores(self):
-        return None
+        return 0
 
     def _owned(self):
         return 1
@@ -294,6 +339,34 @@ class SoapScraper(Scraper):
         return None
 
     def _marketplace_lowest_price(self):
+        return None
+
+    def _in_stock(self):
+        '''in_stock - the item is available from any seller, directly or in a store - binary
+        (irrespective of the actual seller - this site, a marketplace seller, or a physical store)
+        '''
+        rows = self.tree_html.xpath("//input[contains(@class,'addToCartButtonBox')]")
+        if len(rows) > 0:
+            return 1
+        return 0
+
+    def _site_online(self):
+        # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
+        return 1
+
+    def _site_online_out_of_stock(self):
+        #  site_online_out_of_stock - currently unavailable from the site - binary
+        if self._site_online() == 0:
+            return None
+        rows = self.tree_html.xpath("//input[contains(@class,'addToCartButtonBox')]")
+        if len(rows) > 0:
+            return 0
+        return 1
+
+    def _in_stores_out_of_stock(self):
+        '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
+        (null should be used for items that can not be ordered online and the availability may depend on location of the store)
+        '''
         return None
 
     ##########################################
@@ -319,7 +392,7 @@ class SoapScraper(Scraper):
         return universal_variable
 
     def _brand(self):
-        return None
+        return self.tree_html.xpath("//div[@class='viewBox']//strong[1]//text()")[1].strip()
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -349,6 +422,8 @@ class SoapScraper(Scraper):
         "long_description" : _long_description, \
 
         # CONTAINER : PAGE_ATTRIBUTES
+        "pdf_urls" : _pdf_urls, \
+        "pdf_count" : _pdf_count, \
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
         "webcollage" : _webcollage, \
@@ -358,6 +433,8 @@ class SoapScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
         "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
         "owned" : _owned, \
@@ -365,6 +442,10 @@ class SoapScraper(Scraper):
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
+        "in_stock" : _in_stock, \
+        "site_online" : _site_online, \
+        "site_online_out_of_stock" : _site_online_out_of_stock, \
+        "in_stores_out_of_stock" : _in_stores_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
@@ -387,8 +468,6 @@ class SoapScraper(Scraper):
         "reviews" : _reviews, \
 
         # CONTAINER : PAGE_ATTRIBUTES
-        "pdf_urls" : _pdf_urls, \
-        "pdf_count" : _pdf_count, \
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
     }
