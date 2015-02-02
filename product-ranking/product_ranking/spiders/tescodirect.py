@@ -1,12 +1,12 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+#from future_builtins import *
 
 import re
 import sys
 import json
 import urllib
 import urllib2
-import urlparse
+import string
 
 from scrapy.selector import Selector
 from scrapy.log import ERROR
@@ -19,6 +19,10 @@ from product_ranking.spiders import BaseProductsSpider, \
     cond_set_value, cond_set, FLOATING_POINT_RGEX
 
 is_empty = lambda x: x[0] if x else None
+
+
+def _strip_non_ascii(s):
+    return filter(lambda x: x in string.printable, s)
 
 
 class TescoDirectProductsSpider(BaseProductsSpider):
@@ -213,10 +217,11 @@ class TescoDirectProductsSpider(BaseProductsSpider):
 
         title = response.xpath(
             '//h1[@class="page-title"]/text()').extract()
-        cond_set(product, 'title', title)
+        title = _strip_non_ascii(title[0]) if title else ''
+        product['title'] = title
 
         if title:
-            brand = guess_brand_from_first_words(title[0])
+            brand = guess_brand_from_first_words(title)
             cond_set(product, 'brand', (brand,))
 
         price = response.xpath(
@@ -279,6 +284,7 @@ class TescoDirectProductsSpider(BaseProductsSpider):
                     url = get.xpath('@href').extract()
                     title = [title.strip() for title in title]
                     for i in range(0, len(title)):
+                        title[i] = _strip_non_ascii(title[i])
                         rp.append(
                             RelatedProduct(
                                 title=title[i],
