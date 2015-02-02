@@ -815,17 +815,13 @@ class WalmartScraper(Scraper):
         sellers = self.tree_html.xpath("//div[@itemprop='offers']")
 
         sellers_dict = {}
-
-        not_available = self.tree_html.xpath("//span[@id='MP_SELLER_NA_MSG_3']/@style")[0]
-
-        if not_available.replace(" ", "") != "display:block;":
-            for seller in sellers:
-                # try to get seller if any, otherwise ignore this div
-                try:
-                    avail = (seller.xpath(".//meta[@itemprop='availability']/@content")[0] == "http://schema.org/InStock")
-                    sellers_dict[seller.xpath(".//meta[@itemprop='seller']/@content")[0]] = avail
-                except IndexError:
-                    pass
+        for seller in sellers:
+            # try to get seller if any, otherwise ignore this div
+            try:
+                avail = (seller.xpath(".//meta[@itemprop='availability']/@content")[0] == "http://schema.org/InStock")
+                sellers_dict[seller.xpath(".//meta[@itemprop='seller']/@content")[0]] = avail
+            except IndexError:
+                pass
 
         return sellers_dict
 
@@ -1278,8 +1274,48 @@ class WalmartScraper(Scraper):
         else:
             return 0
 
+    def _in_stores(self):
+        """Extracts whether product is available in stores.
+        Returns 1/0
+        """
+        in_stores = 0
+
+        try:
+            in_stores = self._stores_available_from_script_old_page()
+            return in_stores
+        except Exception:
+            pass
+
+        try:
+            in_stores = self._stores_available_from_script_new_page()
+            return in_stores
+        except Exception:
+            pass
+
+        return in_stores
+
+    def _stores_available_from_script_old_page(self):
+        """Extracts whether product is available in stores.
+        Works on old page version.
+        Returns 1/0
+        """
+
+        body_raw = "" . join(self.tree_html.xpath("//form[@name='SelectProductForm']//script/text()")).strip()
+        body_clean = re.sub("\n", " ", body_raw)
+        body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
+
+#        body_dict = json.loads(body_jpart)
+
+        sIndex = body_jpart.find("isInStore") + len("isInStore") + 2
+        eIndex = body_jpart.find(",", sIndex)
+
+        if body_jpart[sIndex:eIndex] == "true":
+            return 1
+        else:
+            return 0
+
     # ! may throw exception if not found
-    def _stores_available_from_script(self):
+    def _stores_available_from_script_new_page(self):
         """Extracts whether product is available in stores.
         Works on new page version.
         Returns 1/0
@@ -1342,6 +1378,15 @@ class WalmartScraper(Scraper):
         """
 
         sellers = self._seller_meta_from_tree()
+
+        try:
+            mp_seller_na_msg_3 = self.tree_html.xpath("//span[@id='MP_SELLER_NA_MSG_3']/@style")[0].replace(" ", "")
+
+            if mp_seller_na_msg_3 == "display:block;":
+                return 0
+        except Exception:
+            pass
+
         available = any(sellers.values())
 
         return 1 if available else 0
@@ -1540,7 +1585,7 @@ class WalmartScraper(Scraper):
         "product_title" : _product_name_from_tree, \
         "owned": _owned, \
         "owned_out_of_stock": _owned_out_of_stock, \
-        "in_stores" : _stores_available_from_script, \
+        "in_stores" : _in_stores, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "in_stock": _in_stock, \
