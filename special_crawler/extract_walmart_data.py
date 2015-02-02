@@ -611,6 +611,31 @@ class WalmartScraper(Scraper):
         """
 
         meta_price = self.tree_html.xpath("//meta[@itemprop='price']/@content")
+
+        if meta_price:
+            return meta_price[0]
+        else:
+            return None
+
+    def _price_amount(self):
+        """Extracts numercial value of product price in
+        Returns:
+            the numerical value of the price - floating-point number (null if there is no price)
+        """
+        meta_price = self.tree_html.xpath("//meta[@itemprop='price']/@content")
+
+        if meta_price:
+            return float(meta_price[0][1:])
+        else:
+            return None
+
+    def _price_currency(self):
+        """Extracts currency of product price in
+        Returns:
+            price currency symbol
+        """
+        meta_price = self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")
+
         if meta_price:
             return meta_price[0]
         else:
@@ -1257,6 +1282,12 @@ class WalmartScraper(Scraper):
         #       e.g. http://www.walmart.com/ip/23149039
         try:
             marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
+
+            if not marketplace_seller_info:
+                if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
+                    marketplace_seller_info = None
+                elif not pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
+                    marketplace_seller_info = pinfo_dict["buyingOptions"]["seller"]["name"]
         except Exception:
             # if 'marketplaceOptions' key was not found,
             # check if product is owned and has no other sellers
@@ -1320,6 +1351,9 @@ class WalmartScraper(Scraper):
         Works on new page version.
         Returns 1/0
         """
+
+        if self._site_online():
+            return 1
 
         if not self.js_entry_function_body:
             pinfo_dict = self._extract_jsfunction_body()
@@ -1459,6 +1493,21 @@ class WalmartScraper(Scraper):
             sellers = filter(lambda s: s!="Walmart.com", sellers)
             return sellers if sellers else None
 
+    def _marketplace_out_of_stock(self):
+        """Extracts info on whether currently unavailable from any marketplace seller - binary
+        Uses functions that work on both old page design and new design.
+        Will choose whichever gives results.
+        Returns:
+            1/0
+        """
+        if self._marketplace() == 1:
+            if self._in_stock() == 0:
+                return 1
+            else:
+                return 0
+
+        return None
+
 
     def _in_stock(self):
         """Extracts info on whether product is available to be
@@ -1495,6 +1544,49 @@ class WalmartScraper(Scraper):
         else:
             return 0
 
+    def _site_online(self):
+        """Extracts whether the item is sold by the site and delivered directly
+        Works on both old and new page version.
+        Returns 1/0
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        # TODO: what to do when there is no 'marketplaceOptions'?
+        #       e.g. http://www.walmart.com/ip/23149039
+        try:
+            marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
+
+            if not marketplace_seller_info:
+                if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
+                    return 1
+                elif not pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
+                    return 0
+        except Exception:
+            pass
+
+        return 0
+
+    def _site_online_out_of_stock(self):
+        """Extracts whether currently unavailable from the site - binary
+        Works on both old and new page version.
+        Returns 1/0
+        """
+
+        try:
+            site_online_out_of_stock = self.tree_html.xpath("//meta[@itemprop='availability']/@content")[0]
+
+            if site_online_out_of_stock == "InStock":
+                return 0
+            elif site_online_out_of_stock == "OutOfStock":
+                return 1
+        except Exception:
+            pass
+
+        return None
 
     def _version(self):
         """Determines if walmart page being read (and version of extractor functions
@@ -1575,6 +1667,8 @@ class WalmartScraper(Scraper):
         # TODO: check if descriptions work right
         "long_description" : _long_description_wrapper, \
         "price" : _price_from_tree, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
         "htags" : _htags_from_tree, \
         "model" : _model_from_tree, \
         "model_meta" : _meta_model_from_tree, \
@@ -1588,7 +1682,10 @@ class WalmartScraper(Scraper):
         "in_stores" : _in_stores, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
+        "marketplace_out_of_stock": _marketplace_out_of_stock, \
         "in_stock": _in_stock, \
+        "site_online": _site_online, \
+        "site_online_out_of_stock": _site_online_out_of_stock, \
         "review_count": _nr_reviews, \
         "average_review": _avg_review, \
         "max_review" : _max_review, \
