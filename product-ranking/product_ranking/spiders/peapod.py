@@ -38,6 +38,20 @@ class PeapodProductsSpider(BaseProductsSpider):
     'unit_price'
     'price'
     'specials'
+    'aisle/dept'
+    'most_popular'
+    'calories'
+    'fat'
+    'trans_fat'
+    'carbohydrates'
+    'cholesterol'
+    'dietary_fiber'
+    'gluten_free'
+    'kosher'
+    'organic'
+    'protein'
+    'sodium'
+    'sugar'
 
     Example command:
     scrapy crawl -a peapod_products searchterms_str="tea"
@@ -100,6 +114,20 @@ class PeapodProductsSpider(BaseProductsSpider):
         'unit_price': '+unitPrice,+scaledBestPrice',
         'price': '+scaledBestPrice,+itemLongName',
         'specials': '-specialCode,+itemLongName',
+        'aisle/dept': '+consumProdCategoryId,+itemLongName',
+        'most_popular': '-itemsPurchased,+itemLongName',
+        'calories': '+totalCalories,+itemLongName',
+        'fat': '+totalFat,+itemLongName',
+        'trans_fat': '+transFatQy,+itemLongName',
+        'carbohydrates': '+totalCarbohydrates,+itemLongName',
+        'cholesterol': '+cholesterol,+itemLongName',
+        'dietary_fiber': '-dietaryFiber,+itemLongName',
+        'gluten_free': '-glutenFlag,+itemLongName',
+        'kosher': '-kosher,+kshr1Id,+itemLongName',
+        'organic': '-organic,+itemLongName',
+        'protein': '-protein,+itemLongName',
+        'sodium': '+sodium,+itemLongName',
+        'sugar': '+sugar,+itemLongName',
     }
 
     def __init__(self, order='default', fetch_related_products=True,
