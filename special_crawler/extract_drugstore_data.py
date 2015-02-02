@@ -31,6 +31,8 @@ class DrugstoreScraper(Scraper):
     review_count = None
     average_review = None
     reviews = None
+    image_urls = None
+    image_count = None
 
     def check_url_format(self):
         # for ex: http://www.drugstore.com/california-exotic-novelties-up--tighten-it-up-v-gel/qxp450311?catid=181966
@@ -129,6 +131,9 @@ class DrugstoreScraper(Scraper):
         return None
 
     def _image_urls(self):
+        if self.image_count is not None:
+            return self.image_urls
+        self.image_count = 0
         url = self.tree_html.xpath("//div[@id='divPImage']//a/@href")[0].strip()
         m = re.findall(r"javascript:popUp\('(.*?)',", url)
         url = "http://www.drugstore.com%s" % m[0]
@@ -149,11 +154,13 @@ class DrugstoreScraper(Scraper):
 
         if len(image_url) < 1:
             return None
+        self.image_count = len(image_url)
         return image_url
 
     def _image_count(self):
-        image_urls = self._image_urls()
-        return len(image_urls)
+        if self.image_count is None:
+            self.image_urls()
+        return self.image_count
 
     def _video_urls(self):
         video_url = []
@@ -172,13 +179,6 @@ class DrugstoreScraper(Scraper):
         pdf_hrefs = []
         for pdf in pdfs:
             pdf_hrefs.append(pdf.attrib['href'])
-
-        # get from webcollage
-        url = "http://content.webcollage.net/target/smart-button?ird=true&channel-product-id=%s" % self._product_id()
-        contents = urllib.urlopen(url).read()
-        wc_pdfs = re.findall(r'href=\\\"([^ ]*?\.pdf)', contents, re.DOTALL)
-        wc_pdfs = [r.replace("\\", "") for r in wc_pdfs]
-        pdf_hrefs += wc_pdfs
         return pdf_hrefs
 
     def _pdf_count(self):
@@ -267,8 +267,10 @@ class DrugstoreScraper(Scraper):
         return 0
 
     def _owned_out_of_stock(self):
-        if 'temporarily out of stock' in self.tree_html.xpath("//div[@id='ReplacementReasonDiv']//text()")[0].strip():
-            return 1
+        rows = self.tree_html.xpath("//div[@id='ReplacementReasonDiv']//text()")
+        for row in rows:
+            if "temporarily out of stock" in row:
+                return 1
         return 0
 
     def _marketplace_sellers(self):
@@ -276,6 +278,19 @@ class DrugstoreScraper(Scraper):
 
     def _marketplace_lowest_price(self):
         return None
+
+    def _site_online(self):
+        return 1
+
+    def _site_online_out_of_stock(self):
+        if self._site_online() == 0:
+            return None
+        rows = self.tree_html.xpath("//div[@id='ReplacementReasonDiv']//text()")
+        for row in rows:
+            if "temporarily out of stock" in row:
+                return 1
+        return 0
+
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -291,13 +306,6 @@ class DrugstoreScraper(Scraper):
 
     def _category_name(self):
         return self._categories()[-1]
-
-    def load_universal_variable(self):
-        js_content = ' '.join(self.tree_html.xpath('//script//text()'))
-
-        universal_variable = {}
-        universal_variable["manufacturer"] = re.findall(r'"manufacturer": "(.*?)"', js_content)[0]
-        return universal_variable
 
     def _brand(self):
         return None
@@ -346,6 +354,8 @@ class DrugstoreScraper(Scraper):
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
+        "site_online" : _site_online, \
+        "site_online_out_of_stock" : _site_online_out_of_stock, \
 
          # CONTAINER : REVIEWS
         "review_count" : _review_count, \
