@@ -8,10 +8,7 @@ import urllib
 import urllib2
 import urlparse
 
-# from collections import Iterable
-
 from scrapy.selector import Selector
-from scrapy.item import Item
 from scrapy.log import ERROR
 from scrapy import Request
 
@@ -41,12 +38,30 @@ class TescoDirectProductsSpider(BaseProductsSpider):
 
     link_begin = "http://www.tesco.com"
 
+    sort_by = ""
+
+    SORT_MODES = {
+        "Relevance": False,
+        "Best Sellers": 1,
+        "Customer Rating": 2,
+        "Price (Low - High)": 3,
+        "Price (High - Low)": 4,
+        "Special Offers": 5,
+        "Name (A-Z)": 6,
+        "Name (Z-A)": 7,
+        "Release (Most Recent)": 8,
+        "New In": 10,
+    }
+
     # TODO: change the currency if you're going to support different countries
     #  (only UK and GBP are supported now)
     SEARCH_URL = "http://www.tesco.com/direct/search-results/" \
        "results.page?_DARGS=/blocks/common/flyoutSearch.jsp"
+
     def __init__(self, *args, **kwargs):
         self.search = kwargs["searchterms_str"]
+        if "search_modes" in kwargs:
+            self.sort_by = self.SORT_MODES[kwargs["search_modes"]]    
         super(TescoDirectProductsSpider, self).__init__(*args, **kwargs)
 
     def start_requests(self):
@@ -80,24 +95,49 @@ class TescoDirectProductsSpider(BaseProductsSpider):
             "%2FflyoutSearch.jsp&search=" + str(self.search)
         for st in self.searchterms:
             yield Request(
-                self.url_formatter.format(
+                url=self.url_formatter.format(
                     self.SEARCH_URL,
                     search_term=urllib.quote_plus(st.encode('utf-8')),
                 ),
                 method="POST",
-                meta={'search_term': st, 'remaining': self.quantity},
+                meta={'search_term': st, 'remaining': self.quantity,},
                 body=data,
-                headers={'Content-type':'application/x-www-form-urlencoded'},
+                headers={'Content-type': 'application/x-www-form-urlencoded'},
                 callback=self.handler,
             )
 
     def handler(self, response):
-        self.first_response = response
-        for i in self.get_pages_for_total_matches(response):
-            yield i
-    
+        if not re.search("&sortBy=" + str(self.sort_by), response.url) \
+            and re.search("&sortBy=", response.url):
+            url = re.sub(
+                "&sortBy=\d+",
+                "&sortBy=" + str(self.sort_by),
+                response.url
+            )
+            yield self.request_for_sort(url)
+        elif self.sort_by == False and re.search("&sortBy=", response.url):
+            url = re.sub(
+                "&sortBy=\d+",
+                "",
+                response.url
+            )
+            yield self.request_for_sort(url)
+        else:
+            self.first_response = response
+            for i in self.get_pages_for_total_matches(response):
+                yield i
+
+    def request_for_sort(self, url):
+        return Request(
+                url,
+                meta={
+                    'search_term': self.search,
+                    'remaining': sys.maxint
+                },
+                callback=self.handler,
+            )
+        
     def parse(self, response):
-        self.category_finished = False
         if self._search_page_error(response):
             remaining = response.meta['remaining']
             search_term = response.meta['search_term']
@@ -131,8 +171,12 @@ class TescoDirectProductsSpider(BaseProductsSpider):
     def next_stack_request(self, remaining=sys.maxint):
         if self.stack:
             next_url = self.stack.pop(0)
+            sb = ""
+            if self.sort_by:
+                sb = "&sortBy=" + str(self.sort_by)
             return Request(
-                    self.link_begin + next_url,
+                    self.link_begin + next_url + \
+                    sb,
                     meta = {
                         'search_term': self.search,
                         'remaining': remaining
@@ -181,18 +225,26 @@ class TescoDirectProductsSpider(BaseProductsSpider):
             product["price"] = Price(price=price[0], priceCurrency="GBP")
 
         desc = response.xpath(
-            '//section[@class="detailWrapper"]').extract()
+            '//section[@id="product-details-link"]'
+            '/section[@class="detailWrapper"]'
+        ).extract()
         cond_set(product, 'description', desc)
+
+        is_out_of_stock = response.xpath(
+            '//div[@id="bbSeller1"]').extract()
+        if is_out_of_stock:
+            if "product is currently unavailable." in is_out_of_stock[0]:
+                is_out_of_stock = True
+            else:
+                is_out_of_stock = False
+
+            product["is_out_of_stock"] = is_out_of_stock
 
         image_url = response.xpath(
             '//div[@class="static-product-image scene7-enabled"]' \
             '/img[@itemprop="image"]/@src'
         ).extract()          
         cond_set(product, 'image_url', image_url)
-
-        file1 = open("file.html", "w")
-        file1.write(response.body)
-        file1.close()
 
         resc_url = "http://recs.richrelevance.com/rrserver/p13n_generated.js?"
         apiKey = re.findall("setApiKey\(\'(\w+)", response.body)
@@ -212,9 +264,8 @@ class TescoDirectProductsSpider(BaseProductsSpider):
         ajax = urllib2.urlopen(resc_url)
         resp = ajax.read()
         ajax.close()
-
-        print resc_url
-        
+      
+        #related_products
         rp = []
         sel_all = re.findall('html:(\s+){0,1}\'([^\}]*)', resp)
         if sel_all:
@@ -237,57 +288,68 @@ class TescoDirectProductsSpider(BaseProductsSpider):
                     product["related_products"] = {"recommended": rp}
 
         #buyer_reviews
-        # upc = response.xpath('//meta[@property="og:upc"]/@content').extract()
-        # if upc:
-        #     rating_url = "http://api.bazaarvoice.com/data/batch.json?" \
-        #         "passkey=asiwwvlu4jk00qyffn49sr7tb" \
-        #         "&apiversion=5.5" \
-        #         "&displaycode=1235-en_gb" \
-        #         "&resource.q0=products" \
-        #         "&stats.q0=reviews" \
-        #         "&resource.q1=reviews" \
-        #         "&stats.q1=reviews" \
-        #         "&filteredstats.q1=reviews" \
-        #         "&include.q1=authors%2Cproducts%2Ccomments" \
-        #         "&limit_comments.q1=3"
-        #     rating_url += "&filter.q0=id%3Aeq%3A" + str(upc[0])
-        #     rating_url += "&filter.q1=productid%3Aeq%3A" + str(upc[0])
+        upc = response.xpath('//meta[@property="og:upc"]/@content').extract()
+        if upc:
+            rating_url = "http://api.bazaarvoice.com/data/batch.json?" \
+                "passkey=asiwwvlu4jk00qyffn49sr7tb&apiversion=5.5" \
+                "&displaycode=1235-en_gb&resource.q0=products" \
+                "&stats.q0=reviews&filteredstats.q0=reviews" \
+                "&filter_reviews.q0=contentlocale%3Aeq%3Aen_AU" \
+                "%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US" \
+                "&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen" \
+                "_AU%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US" \
+                "&resource.q1=reviews" \
+                "&filter.q1=isratingsonly%3Aeq%3Afalse" \
+                "&filter.q1=contentlocale%3Aeq%3Aen_AU%2Cen_CA%2Cen_DE" \
+                "%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US" \
+                "&sort.q1=submissiontime%3Adesc&stats.q1=reviews" \
+                "&filteredstats.q1=reviews" \
+                "&include.q1=authors%2Cproducts%2Ccomments" \
+                "&filter_reviews.q1=contentlocale%3Aeq%3Aen_AU%2Cen_CA" \
+                "%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US" \
+                "&filter_reviewcomments.q1=contentlocale%3Aeq%3Aen_AU" \
+                "%2Cen_CA%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US" \
+                "&filter_comments.q1=contentlocale%3Aeq%3Aen_AU%2Cen_CA" \
+                "%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US" \
+                "&limit.q1=5&offset.q1=0&limit_comments.q1=3"
+            rating_url += "&filter.q0=id%3Aeq%3A" + str(upc[0])
+            rating_url += "&filter.q1=productid%3Aeq%3A" + str(upc[0]) 
 
-        #     ajax = urllib2.urlopen(rating_url)
-        #     resp = ajax.read()
-        #     ajax.close()
+            ajax = urllib2.urlopen(rating_url)
+            resp = ajax.read()
+            ajax.close()
 
-        #     data = json.loads(resp)
-        #     try:
-        #         num_of_reviews = data["BatchedResults"] \
-        #             ["q0"]["Results"] \
-        #             [0]["ReviewStatistics"] \
-        #             ["TotalReviewCount"]
-        #     except Exception:
-        #         num_of_reviews = None
-            
-        #     try:
-        #         #average_rating = data["BatchedResults"] \
-        #         #    ["q0"]["Results"]["Rating"]
-        #             # [0]["ReviewStatistics"] \
-        #             # ["SecondaryRatingsAverages"] \
-        #             # ["Value"]["AverageRating"]
-        #         print "-"*50
-        #         print rating_url
-        #         print "SOME"
-        #         print data["BatchedResults"]["q0"]["Includes"]["Products"][upc[0]]["ReviewStatistics"]["AverageOverallRating"]
-        #         print "SOME"
-        #         print "-"*50
-        #     except Exception:
-        #         average_rating = None
-          
-            # rating_by_star = None
-           
-            # product["buyer_reviews"] = BuyerReviews(
-            #     average_rating=average_rating,
-            #     num_of_reviews=num_of_reviews,
-            #     rating_by_star=rating_by_star,
-            # )
+            data = json.loads(resp)
+            try:
+                num_of_reviews = data["BatchedResults"]["q1"] \
+                    ["Includes"]["Products"][upc[0]] \
+                    ["ReviewStatistics"]["TotalReviewCount"]
+            except KeyError:
+                num_of_reviews = None
+
+            try:
+                average_rating = round(data["BatchedResults"]["q1"] \
+                    ["Includes"]["Products"][upc[0]] \
+                    ["ReviewStatistics"]["AverageOverallRating"], 2)
+            except KeyError:
+                average_rating = None
+
+            try:
+                rating_by_star = { 1:0, 2:0, 3:0, 4:0, 5:0 }
+                rbs = data["BatchedResults"]["q1"] \
+                    ["Includes"]["Products"][upc[0]] \
+                    ["ReviewStatistics"]["RatingDistribution"]
+                for mark in rbs:
+                    rating_by_star[mark["RatingValue"]] = mark["Count"]
+            except KeyError:
+                rating_by_star = None
+
+            if average_rating or num_of_reviews:
+                product["buyer_reviews"] = BuyerReviews(
+                    average_rating=average_rating,
+                    num_of_reviews=num_of_reviews,
+                    rating_by_star=rating_by_star,
+                )
 
         product["locale"] = "en_GB"
 
