@@ -18,6 +18,7 @@ class FreshAmazonScraper(Scraper):
 
     def check_url_format(self):
         m = re.match(r"^https://fresh.amazon.com/product.*$", self.product_page_url)
+        self.image_urls = None
         return (not not m)
 
     def not_a_product(self):
@@ -160,35 +161,40 @@ class FreshAmazonScraper(Scraper):
     #returns 1 if the mobile version is the same, 0 otherwise
     def _mobile_image_same(self):
         url = self.product_page_url
+        #Get images for mobile device
         mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
-        pc_headers = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        with requests.Session() as s:
+            s.post('https://fresh.amazon.com/zipEntrySubmit', data={'zip':'90038'})
+            response = s.get(self.product_page_url,headers=mobile_headers, timeout=5)
+            if response != 'Error' and response.ok:
+                contents = response.text
+                try:
+                    tree = html.fromstring(contents.decode("utf8"))
+                except UnicodeError, e:
+                    tree = html.fromstring(contents)
         img_list = []
         ii=0
-        for h in [mobile_headers, pc_headers]:
-            r = requests.get(url, headers=h)
-            contents = r.text
-#            print "r.cookies",r.cookies
-#            contents = requests.get(url, headers=h).text
-#            ii += 1
-#            f = open("cont%s.html" % ii,"w")
-#            print >> f,contents.encode('ascii', 'ignore')
-#            f.close()
-
-            tree = html.fromstring(contents)
-            image_url = self._image_urls(tree)
-            print '\n\n\nImage URL:', image_url, '\n\n\n'
-            img_list.extend(image_url)
-        if len(img_list) == 2:
-            return img_list[0] == img_list[1]
-        return None
+        tree = html.fromstring(contents)
+        image_url_m = self._image_urls(tree)
+        image_url_p = self._image_urls()
+        return image_url_p == image_url_m
 
     def _image_urls(self, tree = None):
+        a = 0
         if tree == None:
+            if self.image_urls != None:
+                return self.image_urls
+            a = 1
             tree = self.tree_html
+
         #The small images are below the big image
         image_url = tree.xpath("//div[@id='thumbnailsWrapper']//img/@src")
-        img_desc = self.tree_html.xpath("//div[contains(@id,'productDescription')]//img/@src")
-        image_url.extend(img_desc)
+
+##        #Images in description
+##        img_desc = self.tree_html.xpath("//div[contains(@id,'productDescription')]//img/@src")
+##        image_url.extend(img_desc)
+        if a == 1:
+            self.image_urls = image_url
         if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
         return None
@@ -200,7 +206,7 @@ class FreshAmazonScraper(Scraper):
     def _mobile_image_url(self, tree = None):
         if tree == None:
             tree = self.tree_html
-        image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
+        image_url = self._image_urls(tree)
         return image_url
 
     def _image_count(self):
@@ -221,35 +227,12 @@ class FreshAmazonScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        video_url = self.tree_html.xpath('//script')  #[@type="text/javascript"]
-        temp = []
-        for v in video_url:
-            st=str(v.xpath('.//text()'))
-            r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", st)
-            if r:
-                temp.extend(r)
-            ii=st.find("kib-thumb-container-")
-            if ii > 0:
-                ij=st.find('"',ii+19)
-                if ij-ii<25:
-                    vid = st[ii:ij]
-                    viurl = self.tree_html.xpath('//div[@id="%s"]//img/@src' % vid)
-                    if len(viurl)>0:
-                        temp.append(viurl[0])
+        return None
 
-        #Find video among the  small images.
-        image_url = self.tree_html.xpath("//span[@class='a-button-text']//img/@src")
-        if len(image_url)==0:
-            image_url = self.tree_html.xpath("//div[@id='thumbs-image']//img/@src")
-        for v in image_url:
-            if v.find("player")>0 :
-                temp.append(v)
-        if len(temp)==0: return None
-        return temp#",".join(temp)
 
     def _video_count(self):
         if self._video_urls()==None: return 0
-        return len(self._video_urls())#.split(','))
+        return len(self._video_urls())
 
     # return one element containing the PDF
     def _pdf_urls(self):
@@ -355,6 +338,17 @@ class FreshAmazonScraper(Scraper):
         if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
             return price[0].strip()
         return None
+
+    def _price_amount(self):
+        price = self._price()
+        clean = re.sub(r'[^0-9.]+', '', price)
+        return float(clean)
+
+    def _price_currency(self):
+        price = self._price()
+        clean = re.sub(r'[^0-9.]+', '', price)
+        return price.replace(clean,"")
+
 
     def _in_stock(self):
         in_stock = self.tree_html.xpath('//div[contains(@id, "availability")]//text()')
@@ -524,6 +518,8 @@ class FreshAmazonScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
+        "price_amount": _price_amount, \
+        "price_currency": _price_currency, \
         "in_stock" : _in_stock, \
         "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
