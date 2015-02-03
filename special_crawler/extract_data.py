@@ -582,7 +582,7 @@ class Scraper():
         try:
             in_stores_out_of_stock = self.ALL_DATA_TYPES['in_stores_out_of_stock'](self)
         except:
-            in_stores_out_of_stock = None_in_stock
+            in_stores_out_of_stock = None
 
         # in_stores is 1 and in_stores_out_of_stock is 0
         if in_stores == 1 and in_stores_out_of_stock == 0:
