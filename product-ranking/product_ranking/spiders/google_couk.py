@@ -1,5 +1,6 @@
 from __future__ import division, absolute_import, unicode_literals
 
+import urllib
 import string
 import urlparse
 import json
@@ -141,6 +142,20 @@ class GoogleProductsSpider(BaseProductsSpider):
 
         self._populate_buyer_reviews(response, product)
 
+        # get right url if it redirect url
+        redirect_pattern = r'&adurl=(.*)'
+        res = re.findall(redirect_pattern, product['url'])
+        if res:
+            req_url = urllib.unquote(res[0])
+            res = urllib.urlopen(req_url)
+            url_not_stripped = res.geturl()
+            product['url'] = url_not_stripped
+
+        # strip GET data from url
+        pattern = r'(.*)\?'
+        result = re.findall(pattern, product['url'])
+        if result:
+            product['url'] = result[0]
         return product
 
     def _scrape_total_matches(self, response):
@@ -229,10 +244,7 @@ class GoogleProductsSpider(BaseProductsSpider):
                     self.log('Invalid JSON on {url}'.format(url=response.url),
                              WARNING)
 
-            if url.startswith('http'):
-                redirect = None
-            else:
-                redirect = url
+            redirect = url
             url = urlparse.urljoin(response.url, url)
 
             brand = guess_brand_from_first_words(title)
