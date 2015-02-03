@@ -1381,8 +1381,8 @@ class WalmartScraper(Scraper):
         Returns 1/0
         """
 
-        if self._site_online():
-            return 1
+#        if self._site_online():
+#           return 1
 
         if not self.js_entry_function_body:
             pinfo_dict = self._extract_jsfunction_body()
