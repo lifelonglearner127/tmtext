@@ -609,6 +609,21 @@ class WalmartScraper(Scraper):
         Returns:
             string containing the product price, with decimals, no currency
         """
+        try:
+            body_raw = "" . join(self.tree_html.xpath("//form[@name='SelectProductForm']//script/text()")).strip()
+            body_clean = re.sub("\n", " ", body_raw)
+            body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
+            sIndex = body_jpart.find("price:") + len("price:") + 1
+            eIndex = body_jpart.find("',", sIndex)
+
+            if "camelPrice" not in body_jpart[sIndex:eIndex] and not self._in_stock():
+                return "out of stock - no price given"
+
+            if "camelPrice" not in body_jpart[sIndex:eIndex] and self._in_stores_only():
+                return "in stores only - no online price"
+        except Exception:
+            pass
+
 
         meta_price = self.tree_html.xpath("//meta[@itemprop='price']/@content")
 
@@ -622,24 +637,31 @@ class WalmartScraper(Scraper):
         Returns:
             the numerical value of the price - floating-point number (null if there is no price)
         """
-        meta_price = self.tree_html.xpath("//meta[@itemprop='price']/@content")
 
-        if meta_price:
-            return float(meta_price[0][1:])
-        else:
+        price_info = self._price_from_tree()
+
+        if price_info is None or price_info == "out of stock - no price given" or price_info == \
+                "in stores only - no online price":
             return None
+        else:
+            if price_info[0] == '$':
+                return price_info[1:]
+            else:
+                return price_info
 
     def _price_currency(self):
         """Extracts currency of product price in
         Returns:
             price currency symbol
         """
-        meta_price = self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")
+        price_info = self._price_from_tree()
 
-        if meta_price:
-            return meta_price[0]
-        else:
+        if price_info is None or price_info == "out of stock - no price given" or price_info == \
+                "in stores only - no online price":
             return None
+        else:
+            meta_currency = self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")
+            return meta_currency
 
     # extract htags (h1, h2) from its product product page tree
     def _htags_from_tree(self):
@@ -1319,7 +1341,20 @@ class WalmartScraper(Scraper):
 
         try:
             in_stores = self._stores_available_from_script_new_page()
-            return in_stores
+
+            if in_stores:
+                return in_stores
+            else:
+                body_raw = "".join(self.tree_html.xpath("//script//text()"))
+                body_clean = re.sub("\n", " ", body_raw)
+                # extract json part of function body
+#                body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
+
+                body_jpart = re.findall("\{\"query.*?\}", body_clean)[0]
+                body_dict = json.loads(body_jpart)
+
+                if body_dict["inStore"] is True:
+                    return 1
         except Exception:
             pass
 
@@ -1550,23 +1585,28 @@ class WalmartScraper(Scraper):
         Returns 1/0
         """
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
-        else:
-            pinfo_dict = self.js_entry_function_body
-
         # TODO: what to do when there is no 'marketplaceOptions'?
         #       e.g. http://www.walmart.com/ip/23149039
         try:
+            #       new design
+            if not self.js_entry_function_body:
+                pinfo_dict = self._extract_jsfunction_body()
+            else:
+                pinfo_dict = self.js_entry_function_body
+
             marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
 
             if not marketplace_seller_info:
-                if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
+                if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"] and \
+                        self.tree_html.xpath("//button[contains(@class,'js-add-to-cart')]"):
                     return 1
-                elif not pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
-                    return 0
         except Exception:
-            pass
+            #       old design
+            if self.tree_html.xpath("//meta[@itemprop='seller']/@content")[0] == "Walmart.com":
+                if self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']"):
+                    if not self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style") or \
+                        "display:none" not in self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style")[0]:
+                        return 1
 
         return 0
 
@@ -1576,15 +1616,16 @@ class WalmartScraper(Scraper):
         Returns 1/0
         """
 
-        try:
-            site_online_out_of_stock = self.tree_html.xpath("//meta[@itemprop='availability']/@content")[0]
+        if self._site_online():
+            try:
+                site_online_out_of_stock = self.tree_html.xpath("//meta[@itemprop='availability']/@content")[0]
 
-            if site_online_out_of_stock == "InStock":
-                return 0
-            elif site_online_out_of_stock == "OutOfStock":
-                return 1
-        except Exception:
-            pass
+                if "InStock" in site_online_out_of_stock:
+                    return 0
+                elif "OutOfStock" in site_online_out_of_stock:
+                    return 1
+            except Exception:
+                pass
 
         return None
 
