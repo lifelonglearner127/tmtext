@@ -206,7 +206,7 @@ class PeapodProductsSpider(BaseProductsSpider):
         brand_pattern = r"tm_brand: '(.*)'"
         brand = re.findall(brand_pattern, response.body_as_unicode())
         if not brand:
-            brand = guess_brand_from_first_words(product['title'])
+            brand = guess_brand_from_first_words(prod['title'])
         if brand:
             brand = brand[0].replace('\\', '').strip()
             prod['brand'] = brand
