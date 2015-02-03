@@ -14,6 +14,7 @@ import requests
 
 from extract_data import Scraper
 
+
 class WalmartScraper(Scraper):
 
     """Implements methods that each extract an individual piece of data for walmart.com
@@ -284,7 +285,6 @@ class WalmartScraper(Scraper):
             return {"reviews" : {"total_reviews": None, "average_review": None}}
         return {"reviews" : {"total_reviews": reviews_count, "average_review": average_review}}
 
-
     def _has_webcollage_iframe(self):
         """Extracts webcollage links from an iframe on the page.
         (Example: http://www.walmart.com/ip/Trix-Wildberry-Red-Swirls-Cereal-22.7-oz/25847976
@@ -380,7 +380,6 @@ class WalmartScraper(Scraper):
 
         return len(self.pdf_urls)
 
-
     def _product_has_pdf(self):
         """Whether product has pdf
         To be replaced with function that actually counts
@@ -397,7 +396,6 @@ class WalmartScraper(Scraper):
             return 1
         else:
             return 0
-
 
     # extract product name from its product page tree
     # ! may throw exception if not found
@@ -430,7 +428,7 @@ class WalmartScraper(Scraper):
         # supports both new and old version of walmart pages
         return self.tree_html.xpath("//meta[@name='keywords']/@content | //meta[@name='Keywords']/@content")[0]
 
-    #extract meta tags exclude http-equiv
+    # extract meta tags exclude http-equiv
     def _meta_tags(self):
         tags = map(lambda x:x.values() ,self.tree_html.xpath('//meta[not(@http-equiv)]'))
         return tags
@@ -448,7 +446,6 @@ class WalmartScraper(Scraper):
         """
 
         return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
-
 
     # extract product short description from its product page tree
     # ! may throw exception if not found
@@ -601,7 +598,6 @@ class WalmartScraper(Scraper):
             long_description = "".join(all_long_description_text.rsplit(short_description_text)).strip()
 
         return long_description
-
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
@@ -895,7 +891,6 @@ class WalmartScraper(Scraper):
         """
         return self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
 
-
     # extract product seller information from its product product page tree
     def _seller_from_tree(self):
         """Extracts seller info of product extracted from 'Buy from ...' elements on page
@@ -1133,7 +1128,6 @@ class WalmartScraper(Scraper):
                 print "WARNING: ", e.message
 
             return self._qualify_image_urls(pic)
-
         else:
             return None
 
@@ -1418,7 +1412,6 @@ class WalmartScraper(Scraper):
 
         return sellers
 
-
     # ! may throw exception if not found
     def _in_stock_from_script(self):
         """Extracts info on whether product is available to be
@@ -1436,7 +1429,6 @@ class WalmartScraper(Scraper):
         available = pinfo_dict["analyticsData"]["onlineAvail"]
 
         return 1 if available else 0
-
 
     def _in_stock_old(self):
         """Extracts info on whether product is available to be
@@ -1543,7 +1535,6 @@ class WalmartScraper(Scraper):
 
         return None
 
-
     def _in_stock(self):
         """Extracts info on whether product is available to be
         bought on the site, from any seller (marketplace or owned).
@@ -1605,7 +1596,7 @@ class WalmartScraper(Scraper):
             if self.tree_html.xpath("//meta[@itemprop='seller']/@content")[0] == "Walmart.com":
                 if self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']"):
                     if not self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style") or \
-                        "display:none" not in self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style")[0]:
+                            "display:none" not in self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style")[0]:
                         return 1
 
         return 0
@@ -1657,9 +1648,6 @@ class WalmartScraper(Scraper):
         """
 
         return re.sub("&nbsp;", " ", text).strip()
-
-
-
 
     # TODO: fix to work with restructured code
     def main(args):
