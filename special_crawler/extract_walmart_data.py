@@ -656,7 +656,7 @@ class WalmartScraper(Scraper):
                 "in stores only - no online price":
             return None
         else:
-            meta_currency = self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")
+            meta_currency = self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
             return meta_currency
 
     # extract htags (h1, h2) from its product product page tree
