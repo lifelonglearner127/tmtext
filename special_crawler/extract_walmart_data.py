@@ -1587,10 +1587,9 @@ class WalmartScraper(Scraper):
 
             marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
 
-            if not marketplace_seller_info:
-                if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"] and \
-                        self.tree_html.xpath("//button[contains(@class,'js-add-to-cart')]"):
-                    return 1
+            if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"] and \
+                    self.tree_html.xpath("//button[contains(@class,'js-add-to-cart')]"):
+                return 1
         except Exception:
             #       old design
             if self.tree_html.xpath("//meta[@itemprop='seller']/@content")[0] == "Walmart.com":
