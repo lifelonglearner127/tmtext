@@ -61,7 +61,10 @@ class SamsclubScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//input[@id='mbxProductId']/@value")[0].strip()
+        try:
+            product_id = self.tree_html.xpath("//input[@id='mbxProductId']/@value")[0].strip()
+        except IndexError:
+            product_id = self.tree_html.xpath("//div[@id='myShoppingList']/@data-productid")[0].strip()
         return product_id
         # product_id = self.tree_html.xpath("//span[@itemprop='productID']//text()")[0].strip()
         # m = re.findall(r"[0-9]+", product_id)
@@ -217,13 +220,14 @@ class SamsclubScraper(Scraper):
         pdfs = self.tree_html.xpath("//a[contains(@href,'pdfpdf')]")
         for pdf in pdfs:
             try:
-                pdf_hrefs.append(pdf.attrib['href'])
+                if pdf.attrib['href'] not in pdf_hrefs:
+                    pdf_hrefs.append(pdf.attrib['href'])
             except KeyError:
                 pass
         pdfs = self.tree_html.xpath("//a[contains(@href,'pdf')]")
         for pdf in pdfs:
             try:
-                if pdf.attrib['href'].endswith("pdf"):
+                if pdf.attrib['href'].endswith("pdf") and pdf.attrib['href'] not in pdf_hrefs:
                     pdf_hrefs.append(pdf.attrib['href'])
             except KeyError:
                 pass
@@ -232,7 +236,8 @@ class SamsclubScraper(Scraper):
             # window.open('http://graphics.samsclub.com/images/pool-SNFRound.pdf','_blank')
             try:
                 url = re.findall(r"open\('(.*?)',", pdf.attrib['onclick'])[0]
-                pdf_hrefs.append(url)
+                if url not in pdf_hrefs:
+                    pdf_hrefs.append(url)
             except IndexError:
                 pass
         pdf_hrefs = [r for r in pdf_hrefs if "JewelryDeliveryTimeline.pdf" not in r]
@@ -355,14 +360,15 @@ class SamsclubScraper(Scraper):
         return None
 
     def _price_amount(self):
-        if self.price_amount is None:
-            self._price()
-        return float(self.price_amount)
+        price = self._price()
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        return price_amount
 
     def _price_currency(self):
-        if self.price_currency is None:
-            self._price()
-        return self.price_currency
+        price = self._price()
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        price_currency = price.replace(price_amount, "")
+        return price_currency
 
     def _in_stores_only(self):
         #  in_stores_only - in_stores but neither site_online nor marketplace - binary
@@ -416,15 +422,6 @@ class SamsclubScraper(Scraper):
         # marketplace_lowest_price - the lowest of marketplace prices - floating-point number
         return None
 
-    def _in_stock(self):
-        '''in_stock - the item is available from any seller, directly or in a store - binary
-        (irrespective of the actual seller - this site, a marketplace seller, or a physical store)
-        '''
-        rows = self.tree_html.xpath("//button[@id='addtocartsingleajaxonline']//text()")[0].strip()
-        if len(rows) > 0:
-            return 1
-        return None
-
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
         rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
@@ -444,13 +441,6 @@ class SamsclubScraper(Scraper):
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
         return None
-
-    def _online_only(self):
-        # online_only - site_online or marketplace but not in_stores - binary
-        if not self._in_stores():
-            if self._site_online() or self._marketplace():
-                return 1
-        return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -515,11 +505,9 @@ class SamsclubScraper(Scraper):
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
-        "in_stock" : _in_stock, \
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
-        "online_only" : _online_only, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
