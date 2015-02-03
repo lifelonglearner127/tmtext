@@ -1599,6 +1599,9 @@ class WalmartScraper(Scraper):
                             "display:none" not in self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style")[0]:
                         return 1
 
+                if self.tree_html.xpath("//input[@name='isOnline']/@value")[0]:
+                    return 1
+
         return 0
 
     def _site_online_out_of_stock(self):
