@@ -72,6 +72,7 @@ class SiteProductItem(Item):
     ranking = Field()       # Integer.
     total_matches = Field()  # Integer.
     results_per_page = Field()  # Integer.
+    scraped_results_per_page = Field() # Integer.
     # Indicates whether this Item comes from scraping single product url
     is_single_result = Field() # Bool
 

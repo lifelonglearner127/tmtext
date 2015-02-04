@@ -236,6 +236,18 @@ class AmazonProductsSpider(BaseProductsSpider):
             total_matches = None
         return total_matches
 
+    def _scrape_results_per_page(self, response):
+        num = response.xpath(
+            '//*[@id="s-result-count"]/text()').re('1-(\d+) of')
+        if num:
+            return int(num[0])
+        else:
+            num = response.xpath(
+                '//*[@id="s-result-count"]/text()').re('(\d+) results')
+            if num:
+                return int(num[0])
+        return None
+
     def _scrape_product_links(self, response):
         links = response.css(
             'a.s-access-detail-page ::attr(href)'

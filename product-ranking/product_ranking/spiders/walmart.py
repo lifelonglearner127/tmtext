@@ -213,6 +213,13 @@ class WalmartProductsSpider(BaseProductsSpider):
             )
         return num_results
 
+    def _scrape_results_per_page(self, response):
+        num = response.css('.result-summary-container ::text').re(
+            'Showing (\d+) of')
+        if num:
+            return int(num[0])
+        return None
+
     def _scrape_product_links(self, response):
         links = response.css('a.js-product-title ::attr(href)').extract()
         if not links:
