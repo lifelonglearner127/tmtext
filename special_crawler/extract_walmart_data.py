@@ -641,9 +641,9 @@ class WalmartScraper(Scraper):
             return None
         else:
             if price_info[0] == '$':
-                return price_info[1:]
+                return float(price_info[1:])
             else:
-                return price_info
+                return float(price_info)
 
     def _price_currency(self):
         """Extracts currency of product price in
@@ -1587,8 +1587,7 @@ class WalmartScraper(Scraper):
 
             marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
 
-            if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"] and \
-                    self.tree_html.xpath("//button[contains(@class,'js-add-to-cart')]"):
+            if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
                 return 1
         except Exception:
             #       old design
