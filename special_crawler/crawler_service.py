@@ -27,7 +27,7 @@ from extract_soap_data import SoapScraper
 from extract_drugstore_data import DrugstoreScraper
 from extract_staplesadvantage_data import StaplesAdvantageScraper
 from extract_souq_data import SouqScraper
-
+from extract_quill_data import QuillScraper
 from extract_hersheys_data import HersheysScraper
 from extract_freshamazon_data import FreshAmazonScraper
 
@@ -71,7 +71,8 @@ SUPPORTED_SITES = {
                     "drugstore" : DrugstoreScraper,
                     "staplesadvantage" : StaplesAdvantageScraper,
                     "freshamazon" : FreshAmazonScraper,
-                    "souq": SouqScraper
+                    "souq": SouqScraper,
+                    "quill" : QuillScraper,
                     }
 
 # add logger
