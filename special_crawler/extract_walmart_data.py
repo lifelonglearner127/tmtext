@@ -1597,9 +1597,13 @@ class WalmartScraper(Scraper):
                             "display:none" not in self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style")[0]:
                         return 1
 
-                if self.tree_html.xpath("//input[@name='isOnline']/@value")[0]:
-                    return 1
+                body_raw = "" . join(self.tree_html.xpath("//script/text()")).strip()
+                body_clean = re.sub("\n", " ", body_raw)
+                sIndex = body_clean.find("'item_online_availability'") + len("'item_online_availability'") + 2
+                eIndex = body_clean.find("']", sIndex)
 
+                if "camelPrice" not in body_clean[sIndex:eIndex] == "true":
+                    return 1
         return 0
 
     def _site_online_out_of_stock(self):
