@@ -152,7 +152,7 @@ class GoogleProductsSpider(BaseProductsSpider):
             product['url'] = url_not_stripped
 
         # strip GET data from only google urls
-        if 'www.google.co.uk/shopping/product' in product['url']:
+        if 'google.co.uk/shopping/product' in product['url']:
             pattern = r'(.*)\?'
             result = re.findall(pattern, product['url'])
             if result:
