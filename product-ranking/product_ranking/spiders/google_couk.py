@@ -151,11 +151,12 @@ class GoogleProductsSpider(BaseProductsSpider):
             url_not_stripped = res.geturl()
             product['url'] = url_not_stripped
 
-        # strip GET data from url
-        pattern = r'(.*)\?'
-        result = re.findall(pattern, product['url'])
-        if result:
-            product['url'] = result[0]
+        # strip GET data from only google urls
+        if 'www.google.co.uk/shopping/product' in product['url']:
+            pattern = r'(.*)\?'
+            result = re.findall(pattern, product['url'])
+            if result:
+                product['url'] = result[0]
         return product
 
     def _scrape_total_matches(self, response):
