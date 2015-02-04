@@ -29,6 +29,7 @@ from extract_staplesadvantage_data import StaplesAdvantageScraper
 from extract_souq_data import SouqScraper
 from extract_freshdirect_data import FreshDirectScraper
 
+from extract_quill_data import QuillScraper
 from extract_hersheys_data import HersheysScraper
 from extract_freshamazon_data import FreshAmazonScraper
 
@@ -74,6 +75,7 @@ SUPPORTED_SITES = {
                     "freshamazon" : FreshAmazonScraper,
                     "souq": SouqScraper,
                     "freshdirect" : FreshDirectScraper,
+                    "quill" : QuillScraper,
                     }
 
 # add logger
