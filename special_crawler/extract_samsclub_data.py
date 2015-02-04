@@ -54,7 +54,7 @@ class SamsclubScraper(Scraper):
         return False
 
     ##########################################
-    ############### CONTAINER : NONE
+    #### ########### CONTAINER : NONE
     ##########################################
 
     def _url(self):
