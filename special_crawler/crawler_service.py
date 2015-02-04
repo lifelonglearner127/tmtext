@@ -27,6 +27,7 @@ from extract_soap_data import SoapScraper
 from extract_drugstore_data import DrugstoreScraper
 from extract_staplesadvantage_data import StaplesAdvantageScraper
 from extract_souq_data import SouqScraper
+from extract_freshdirect_data import FreshDirectScraper
 
 from extract_hersheys_data import HersheysScraper
 from extract_freshamazon_data import FreshAmazonScraper
@@ -71,7 +72,8 @@ SUPPORTED_SITES = {
                     "drugstore" : DrugstoreScraper,
                     "staplesadvantage" : StaplesAdvantageScraper,
                     "freshamazon" : FreshAmazonScraper,
-                    "souq": SouqScraper
+                    "souq": SouqScraper,
+                    "freshdirect" : FreshDirectScraper,
                     }
 
 # add logger
@@ -126,6 +128,10 @@ def check_input(url, is_valid_url, invalid_url_message=""):
         
 # infer domain from input URL
 def extract_domain(url):
+    if 'freshdirect.com' in url:
+        # freshdirect scraper
+        # https://www.freshdirect.com/pdp.jsp?productId=sea_stuffshrmp&catId=sea_hmr_chefprep#explanatory
+        return 'freshdirect'
     if 'chicago.doortodoororganics.com' in url:
         # for chicago scraper
         # https://chicago.doortodoororganics.com/shop/products/rudis-white-hamburger-buns
