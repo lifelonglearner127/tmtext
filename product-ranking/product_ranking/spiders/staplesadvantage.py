@@ -1,3 +1,11 @@
+from urllib import quote, urlencode
+
+#http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101&act=8&currentSearchURL=http%3A%2F%2Fmdex-sa-us-prod-n.staples.com%2Fassembler%2Fgallery%3Fformat%3Djson%26billtoValue%3D1000203%26shiptoValue%3DGUESTSHIP%26divValue%3DHOU%26maValue%3D0001818309001HOU%26uid%3D-1002%26contractValue%3DHOU0000000410%26blockType%3DX%26isWholeSalerAllowed%3DY%26%26Ntt%3Dapple%2Bblack%2Biphone%26isSmartDeadEnds%3DN%26referrer%3Dsagallery%26Nrpp%3D25%26No%3D0&filetersrch=N&filterSearchNoResults=false&forceGallery=true&ggpCatId=&gpCatId=&histSortId=Rel|descending&histSrchURL=&initialOnContractCount=&initialPrevOrderCount=0&interimURL=&isInterim=&isMSIE=false&isSimilarProd=&isSmartDeadEnds=&itemsPerPage=25&l4Count=&level=&model=&origAct=4&pCatId=&pg=1&pgs=25&prevTxy=&selSortOption=Top%20Rated&selectedNavForm=gallerynav&sortId=top_rated|descending&src=SRCH&srchurl=O8MpYrswxCADTA3Daf7YMC3KiUrlF5xOIis2DiO%2FW6kNijD5LxJO39lbtAMCvx9z5kEc9tBH8LFyLkuKq8E8ZoGSZkoNerFQSD0ZIkp79vppQuIK3LB2oZpqelDHkrAQrTL7INv1ZTk%3D&term=apple%20black%20iphone&term=apple%20black%20iphone&tpvBrowse=false&txy=
+#http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101&act=8&filetersrch=N&filterSearchNoResults=false&forceGallery=true&ggpCatId=&gpCatId=&histSortId=Rel|descending&histSrchURL=&initialOnContractCount=&initialPrevOrderCount=0&interimURL=&isInterim=&isMSIE=false&isSimilarProd=&isSmartDeadEnds=&itemsPerPage=25&l4Count=&level=&model=&origAct=4&pCatId=&pg=1&pgs=25&prevTxy=&selSortOption=Top%20Rated&selectedNavForm=gallerynav&sortId=top_rated|descending&src=SRCH&srchurl=O8MpYrswxCADTA3Daf7YMC3KiUrlF5xOIis2DiO%2FW6kNijD5LxJO39lbtAMCvx9z5kEc9tBH8LFyLkuKq8E8ZoGSZkoNerFQSD0ZIkp79vppQuIK3LB2oZpqelDHkrAQrTL7INv1ZTk%3D&term=apple%20black%20iphone&term=apple%20black%20iphone&tpvBrowse=false&txy=
+#http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101&act=8&filetersrch=N&filterSearchNoResults=false&forceGallery=true&ggpCatId=&gpCatId=&histSortId=Rel|descending&interimURL=&isInterim=&isMSIE=false&isSimilarProd=&isSmartDeadEnds=&itemsPerPage=25&l4Count=&level=&model=&origAct=4&pCatId=&pg=1&pgs=25&prevTxy=&selSortOption=Top%20Rated&selectedNavForm=gallerynav&sortId=top_rated|descending&src=SRCH&srchurl=O8MpYrswxCADTA3Daf7YMC3KiUrlF5xOIis2DiO%2FW6kNijD5LxJO39lbtAMCvx9z5kEc9tBH8LFyLkuKq8E8ZoGSZkoNerFQSD0ZIkp79vppQuIK3LB2oZpqelDHkrAQrTL7INv1ZTk%3D&term=apple%20black%20iphone&term=apple%20black%20iphone&tpvBrowse=false&txy=
+#http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101&act=8&filetersrch=N&filterSearchNoResults=false&forceGallery=true&ggpCatId=&gpCatId=&histSortId=Rel|descending&interimURL=&isInterim=&isMSIE=false&isSimilarProd=&isSmartDeadEnds=&itemsPerPage=25&l4Count=&level=&model=&origAct=4&pCatId=&pg=1&pgs=25&prevTxy=&selSortOption=Top%20Rated&selectedNavForm=gallerynav&sortId=top_rated|descending&src=SRCH&term=apple%20black%20iphone&srchurl=O8MpYrswxCADTA3Daf7YMC3KiUrlF5xOIis2DiO/W6kNijD5LxJO39lbtAMCvx9z5kEc9tBH8LFyLkuKq8E8ZoGSZkoNerFQSD0ZIkp79vppQuIK3LB2oZpqelDHkrAQrTL7INv1ZTk=
+
+
 import json
 import re
 from urlparse import urljoin
@@ -28,19 +36,19 @@ class StaplesadvantageProductsSpider(ProductsSpider):
     allowed_domains = ['staplesadvantage.com']
 
     SEARCH_URL = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
-                 "/StplCategoryDisplay" \
-                 "?act=8&filetersrch=N&filterSearchNoResults=false" \
-                 "&selSortOption=Top%20Rated" \
-                 "&sortId={sort_mode}&src=SRCH&term={search_term}" \
-                 "&tpvBrowse=false&pg={page}"
+                 "/StplCategoryDisplay?term={search_term}" \
+                 "&act=4&src=SRCH&reset=true&storeId=10101&pg={page}"
 
     START_URL = 'http://www.staplesadvantage.com/learn?storeId=10101'
 
+    BASE_URL = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
+               "/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101"
+
     SORT_MODES = {
-        'default': 'Rel|descending',
-        'relevance': 'Rel|descending',
-        'rating': 'top_rated|descending',
-        'best': 'best_selling|descending'
+        'default': '',
+        'relevance': '',
+        'rating': (quote('Top Rated'), 'top_rated|descending'),
+        'best': (quote('Best Sellers'), 'best_selling|descending')
     }
 
     OPTIONAL_REQUESTS = {
@@ -57,7 +65,27 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                         meta={'requests': requests})]
 
     def _begin_search(self, response):
-        return response.meta['requests']
+        if not self.sort_mode:
+            for request in response.meta['requests']:
+                yield request
+        for request in response.meta['requests']:
+            request.callback = self._parse_unsorted
+            yield request
+
+    def _parse_unsorted(self, response):
+        css = '[id="%s"]::attr(value)' % self.sort_mode[1]
+        magic = response.css(css)
+        if not magic:
+            self.log('Could not apply ordering')
+            return
+        magic = magic[0].extract()
+        term = response.meta['search_term']
+        fields = self._extract_fields(response)
+        fields.update({'sortId': self.sort_mode[1],
+                       'selSortOption': self.sort_mode[0],
+                       'srchurl': magic})
+        url = '%s&%s' % (self.BASE_URL, urlencode(fields))
+        yield Request(url, meta=response.meta)
 
     def _total_matches_from_html(self, response):
         total = response.css('.didYouMeanNoOfItems').extract()
@@ -65,15 +93,19 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         total = re.search('[\d,]+', total[0])
         return int(total.group().replace(',', '')) if total else 0
 
+    def _extract_fields(self, response):
+        fields = {fld.css('::attr(name)')[0].extract():
+                      fld.css('::attr(value)')[0].extract()
+                  for fld in response.css('#gallerynav input[name][value]')}
+        return fields
+
     def _scrape_next_results_page_link(self, response):
         if not self._fetch_product_boxes(response):
             return None
-        page = response.meta.get('page', 1)
-        search_term = response.meta['search_term']
-        response.meta['page'] = page + 1
-        return self.url_formatter.format(self.SEARCH_URL,
-                                         search_term=search_term,
-                                         page=page + 1)
+        fields = self._extract_fields(response)
+        fields['pg'] = str(int(fields['pg']) + 1)
+        url = '%s&%s' % (self.BASE_URL, urlencode(fields))
+        return url
 
     def _fetch_product_boxes(self, response):
         return response.css('.productdescription')
@@ -139,7 +171,7 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         except KeyError:
             return
         ratings = {i + 1: val for i, val in enumerate(data['review_ratings'])}
-        avg = data['avg']
+        avg = float(data['avg'])
         total = data['review_count']
         cond_set_value(response.meta['product'], 'buyer_reviews',
                        BuyerReviews(total, avg, ratings))
