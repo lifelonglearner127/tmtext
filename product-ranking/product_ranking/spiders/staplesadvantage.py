@@ -41,22 +41,14 @@ class StaplesadvantageProductsSpider(ProductsSpider):
 
     START_URL = 'http://www.staplesadvantage.com/learn?storeId=10101'
 
-    SORT_URL = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
-               "/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101" \
-               "&act=8&filetersrch=N&filterSearchNoResults=false" \
-               "&forceGallery=true&ggpCatId=&gpCatId=" \
-               "&isMSIE=false&origAct=4&pCatId=&pg={page}" \
-               "&selSortOption={sort_mode[0]}" \
-               "&selectedNavForm=gallerynav" \
-               "&sortId={sort_mode[1]}&src=SRCH" \
-               "&term={search_term}" \
-               "&srchurl={magicstr}"
+    BASE_URL = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
+               "/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101"
 
     SORT_MODES = {
         'default': '',
         'relevance': '',
         'rating': (quote('Top Rated'), 'top_rated|descending'),
-        'best': (quote('Best Selling'), 'best_selling|descending')
+        'best': (quote('Best Sellers'), 'best_selling|descending')
     }
 
     OPTIONAL_REQUESTS = {
@@ -88,11 +80,11 @@ class StaplesadvantageProductsSpider(ProductsSpider):
             return
         magic = magic[0].extract()
         term = response.meta['search_term']
-        url = self.url_formatter.format(self.SORT_URL,
-                                        magicstr=magic, search_term=term,
-                                        page=1, sort_mode=self.sort_mode)
-        meta = response.meta.copy()
-        meta['magic'] = magic
+        fields = self._extract_fields(response)
+        fields.update({'sortId': self.sort_mode[1],
+                       'selSortOption': self.sort_mode[0],
+                       'srchurl': magic})
+        url = '%s&%s' % (self.BASE_URL, urlencode(fields))
         yield Request(url, meta=response.meta)
 
     def _total_matches_from_html(self, response):
@@ -101,33 +93,19 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         total = re.search('[\d,]+', total[0])
         return int(total.group().replace(',', '')) if total else 0
 
-    def _scrape_next_results_page_link(self, response):
-        if not self._fetch_product_boxes(response):
-            return None
-        url = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
-              "/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101&"
+    def _extract_fields(self, response):
         fields = {fld.css('::attr(name)')[0].extract():
                       fld.css('::attr(value)')[0].extract()
                   for fld in response.css('#gallerynav input[name][value]')}
-        fields['pg'] = str(int(fields['pg']) + 1)
-        url = url + urlencode(fields)
-        return url
+        return fields
 
-    def _scrape_next_results_page_link_old(self, response):
+    def _scrape_next_results_page_link(self, response):
         if not self._fetch_product_boxes(response):
             return None
-        page = response.meta.get('page', 1)
-        search_term = response.meta['search_term']
-        response.meta['page'] = page + 1
-        #template = self.SORT_URL if self.sort_mode else self.SEARCH_URL
-        template = self.SEARCH_URL
-        magic = response.meta.get('magic')
-        url = self.url_formatter.format(template,
-                                        search_term=search_term,
-                                        page=page + 1,
-                                        magicstr='magic',
-                                        sort_mode=self.sort_mode)
-        raw_input(url)
+        fields = self._extract_fields(response)
+        fields['pg'] = str(int(fields['pg']) + 1)
+        url = '%s&%s' % (self.BASE_URL, urlencode(fields))
+        return url
 
     def _fetch_product_boxes(self, response):
         return response.css('.productdescription')
