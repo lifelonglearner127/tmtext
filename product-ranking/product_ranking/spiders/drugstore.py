@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import re
+import urllib
 
 from scrapy.selector import Selector
 from scrapy.log import ERROR
@@ -28,7 +29,7 @@ class DrugstoreProductsSpider(BaseProductsSpider):
         'best_selling': 'performanceRank%7c0',
         'new_to_store': 'newToStoreDate%7c1',
         'a-z': 'Brand+Line%7c0%7c%7cname%7c0%7c%7cgroupDistinction%7c0',
-        'z-a' : 'Brand+Line%7c1%7c%7cname%7c1%7c%7cgroupDistinction%7c1',
+        'z-a': 'Brand+Line%7c1%7c%7cname%7c1%7c%7cgroupDistinction%7c1',
         'customer_rating': 'avgRating%7c1%7c%7cratingCount%7c1',
         'low_to_high_price': 'price%7c0',
         'high_to_low_price': 'price%7c1',
@@ -46,6 +47,16 @@ class DrugstoreProductsSpider(BaseProductsSpider):
             site_name="drugstore.com",
             *args, **kwargs)
 
+    def start_requests(self):
+        for st in self.searchterms:
+            yield Request(
+                self.url_formatter.format(
+                    self.SEARCH_URL,
+                    search_term=urllib.quote_plus(st.encode('utf-8')),
+                ).replace("%2B", "+"),
+                meta={'search_term': st, 'remaining': self.quantity},
+            )
+
     def parse_product(self, response):
         product = response.meta['product']
 
@@ -55,15 +66,21 @@ class DrugstoreProductsSpider(BaseProductsSpider):
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='divPImage']//img/@src").extract())
 
-        cond_set(product, 'price', response.xpath(
-            "//div[@id='productprice']/*[@class='price']/text()").extract())
-
-        if product.get('price', None):
-            if not '$' in product['price']:
+        
+        price = response.xpath(
+            "//div[@id='productprice']/*[@class='price']/text()").extract()
+        if not price:
+            price = response.xpath(
+                '//div[@id="OldPriceForUnavailableProductDiv"]/span/text()'
+            ).extract()
+            if price:
+                price = re.findall("\$\d+\.\d+", price[0])
+        if price:
+            if not '$' in price[0]:
                 self.log('Unknown currency at' % response.url)
             else:
                 product['price'] = Price(
-                    price=product['price'].replace(',', '').replace(
+                    price=price[0].replace(',', '').replace(
                         '$', '').strip(),
                     priceCurrency='USD'
                 )
@@ -84,6 +101,16 @@ class DrugstoreProductsSpider(BaseProductsSpider):
             else:
                 is_out_of_stock = True
             cond_set(product, 'is_out_of_stock', (is_out_of_stock,))
+        else:
+            is_out_of_stock = response.xpath(
+                '//div[@id="ReplacementReasonDiv"]/span/text()'
+            ).extract()
+            if is_out_of_stock:
+                if "item is temporarily out of stock" in is_out_of_stock[0]:
+                    is_out_of_stock = True
+                else:
+                    is_out_of_stock = False
+                cond_set(product, 'is_out_of_stock', (is_out_of_stock,))
 
         product['locale'] = "en-US"
 
@@ -108,8 +135,8 @@ class DrugstoreProductsSpider(BaseProductsSpider):
         
         if average_rating and num_of_reviews:
             product["buyer_reviews"] = BuyerReviews(
-                num_of_reviews=num_of_reviews[0],
-                average_rating=average_rating[0],
+                num_of_reviews=int(num_of_reviews[0]),
+                average_rating=float(average_rating[0]),
                 rating_by_star=rating_by_star,
             )
 
