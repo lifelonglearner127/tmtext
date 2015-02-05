@@ -104,7 +104,8 @@ class StaplesadvantageProductsSpider(ProductsSpider):
     def _scrape_next_results_page_link(self, response):
         if not self._fetch_product_boxes(response):
             return None
-        url = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101&"
+        url = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
+              "/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101&"
         fields = {fld.css('::attr(name)')[0].extract():
                       fld.css('::attr(value)')[0].extract()
                   for fld in response.css('#gallerynav input[name][value]')}
@@ -192,7 +193,7 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         except KeyError:
             return
         ratings = {i + 1: val for i, val in enumerate(data['review_ratings'])}
-        avg = data['avg']
+        avg = float(data['avg'])
         total = data['review_count']
         cond_set_value(response.meta['product'], 'buyer_reviews',
                        BuyerReviews(total, avg, ratings))
