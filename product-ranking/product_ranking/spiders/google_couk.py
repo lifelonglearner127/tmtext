@@ -157,6 +157,30 @@ class GoogleProductsSpider(BaseProductsSpider):
             result = re.findall(pattern, product['url'])
             if result:
                 product['url'] = result[0]
+                product['google_source_site'] = []
+                stores_link = result[0] + '/online'
+                return Request(stores_link, callback=self.populate_stores,
+                               meta={'product': product,
+                                     'page': 0})
+
+        return product
+
+    def populate_stores(self, response):
+        product = response.meta['product']
+        sellers = response.xpath(
+            '//tr[@class="os-row"]/td[@class="os-seller-name"]/span/a/text()'
+        ).extract()
+        source_list = product['google_source_site']
+        source_list.extend(sellers)
+        product['google_source_site'] = source_list
+        next_link = response.xpath(
+            '//div[@id="online-pagination"]/div[contains(@class, "jfk-button-collapse-left")]/@data-reload'
+        ).extract()
+        if next_link:
+            url = "https://www.google.co.uk" + next_link[0]
+            return Request(url, callback=self.populate_stores,
+                           meta={'product': product})
+        product['google_source_site'] = '; '.join(source_list)
         return product
 
     def _scrape_total_matches(self, response):
@@ -210,6 +234,10 @@ class GoogleProductsSpider(BaseProductsSpider):
                     link = item.xpath('.//a[@class="psgiimg"]')
                 title = link.xpath('string(.)').extract()[0]
                 url = link.xpath('@href').extract()[0]
+                source_site = item.xpath('.//div[@class="_tyb"]/text()'
+                    ).extract()
+                if source_site:
+                    source_site = source_site[0].replace('from ', '').strip()
             except IndexError:
                 self.log('Index error at {url}'.format(url=response.url),
                          WARNING)
@@ -257,6 +285,7 @@ class GoogleProductsSpider(BaseProductsSpider):
                 image_url=image_url,
                 brand=brand,
                 description=description,
+                google_source_site=source_site,
                 locale='en-US'
             )
 
