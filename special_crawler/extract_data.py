@@ -120,7 +120,7 @@ class Scraper():
             
             # classification
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
-            "category_name", # category for this product, string
+            "category_name", # category for th_in_stores_onlyis product, string
             "brand" # brand of product, string
 
             # Deprecated:
