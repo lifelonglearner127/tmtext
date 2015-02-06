@@ -231,8 +231,9 @@ class GoogleProductsSpider(BaseProductsSpider):
                     link = item.xpath('.//a[@class="psgiimg"]')
                 title = link.xpath('string(.)').extract()[0]
                 url = link.xpath('@href').extract()[0]
-                source_site = item.xpath('.//div[@class="_tyb"]/text()'
-                    ).extract()
+                source_site = item.xpath(
+                    './/div[@class="_tyb"]/text()'
+                ).extract()
                 if source_site:
                     source_site = source_site[0].replace('from ', '').strip()
             except IndexError:

@@ -174,7 +174,8 @@ class GoogleProductsSpider(BaseProductsSpider):
         source_list.extend(sellers)
         product['google_source_site'] = source_list
         next_link = response.xpath(
-            '//div[@id="online-pagination"]/div[contains(@class, "jfk-button-collapse-left")]/@data-reload'
+            '//div[@id="online-pagination"]/div[contains(@class,'
+            '"jfk-button-collapse-left")]/@data-reload'
         ).extract()
         if next_link:
             url = "https://www.google.co.uk" + next_link[0]
@@ -234,8 +235,9 @@ class GoogleProductsSpider(BaseProductsSpider):
                     link = item.xpath('.//a[@class="psgiimg"]')
                 title = link.xpath('string(.)').extract()[0]
                 url = link.xpath('@href').extract()[0]
-                source_site = item.xpath('.//div[@class="_tyb"]/text()'
-                    ).extract()
+                source_site = item.xpath(
+                    './/div[@class="_tyb"]/text()'
+                ).extract()
                 if source_site:
                     source_site = source_site[0].replace('from ', '').strip()
             except IndexError:
