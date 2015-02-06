@@ -41,8 +41,9 @@ class FreshAmazonScraper(Scraper):
             agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
         else:
             agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+
         #Set zip code for delivery
-        payload = {'zip':'90038'}
+        payload = {'zip':'94102'}
         headers ={'User-agent': agent}
         for i in range(self.MAX_RETRIES):
             # Use 'with' to ensure the session context is closed after use.
@@ -164,7 +165,7 @@ class FreshAmazonScraper(Scraper):
         #Get images for mobile device
         mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
         with requests.Session() as s:
-            s.post('https://fresh.amazon.com/zipEntrySubmit', data={'zip':'90038'})
+            s.post('https://fresh.amazon.com/zipEntrySubmit', data={'zip':'94102'})
             response = s.get(self.product_page_url,headers=mobile_headers, timeout=5)
             if response != 'Error' and response.ok:
                 contents = response.text
@@ -188,7 +189,7 @@ class FreshAmazonScraper(Scraper):
             tree = self.tree_html
 
         #The small images are below the big image
-        image_url = tree.xpath("//div[@id='thumbnailsWrapper']//img/@src")
+        image_url = tree.xpath("//div[@id='thumbnailsWrapper']//span[not(contains(@class,'video'))]//img/@src")
 
 ##        #Images in description
 ##        img_desc = self.tree_html.xpath("//div[contains(@id,'productDescription')]//img/@src")
@@ -227,6 +228,8 @@ class FreshAmazonScraper(Scraper):
         return 0
 
     def _video_urls(self):
+        video_url = self.tree_html.xpath("//div[@id='thumbnailsWrapper']//span[contains(@class,'video')]/img/@src")
+        if len(video_url) > 0: return video_url
         return None
 
 
@@ -347,7 +350,10 @@ class FreshAmazonScraper(Scraper):
     def _price_currency(self):
         price = self._price()
         clean = re.sub(r'[^0-9.]+', '', price)
-        return price.replace(clean,"")
+        curr = price.replace(clean,"").strip()
+        if curr=="$":
+            return "USD"
+        return curr
 
 
     def _in_stock(self):
@@ -365,7 +371,8 @@ class FreshAmazonScraper(Scraper):
         in_stock = " ".join(in_stock)
         if 'sign up to be notified when this item becomes available' in in_stock.lower():
             return 0
-
+        a = self.tree_html.xpath('//div[@class="item"]')
+        if len(a) > 0 and a[0].text_content().find('Out of stock') >=0 : return 0
         return 1
 
     def _in_stores_only(self):
@@ -380,6 +387,18 @@ class FreshAmazonScraper(Scraper):
             if a.text_content().find('old by Amazon')>0: return 1
         s = self._seller_from_tree()
         return s['owned']
+
+    def _site_online(self):
+        if self._marketplace()==1: return 0
+        return 1
+
+    def _site_online_out_of_stock(self):
+        if self._site_online() == 0: return None
+        a = self.tree_html.xpath('//div[contains(@class,"availability")]//text()')
+        if len(a) > 0 and a[0].find('Available by') >=0 : return 1
+        a = self.tree_html.xpath('//div[@class="item"]')
+        if len(a) > 0 and a[0].text_content().find('Out of stock') >=0 : return 1
+        return 0
 
     def _owned_out_of_stock(self):
         return None
@@ -413,6 +432,15 @@ class FreshAmazonScraper(Scraper):
         return None
 
     def _marketplace_lowest_price(self):
+        return None
+
+    def _marketplace_out_of_stock(self):
+        if self._marketplace()==1:
+            a = self.tree_html.xpath('//div[contains(@class,"availability")]//text()')
+            if len(a) > 0 and a[0].find('Available by') >=0 : return 1
+            a = self.tree_html.xpath('//div[@class="item"]')
+            if len(a) > 0 and a[0].text_content().find('Out of stock') >=0 : return 1
+            return 0
         return None
 
     # extract product seller information from its product product page tree (using h2 visible tags)
@@ -528,7 +556,9 @@ class FreshAmazonScraper(Scraper):
         "marketplace" : _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
-
+        "marketplace_out_of_stock" : _marketplace_out_of_stock,\
+        "site_online": _site_online, \
+        "site_online_out_of_stock": _site_online_out_of_stock,\
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \
