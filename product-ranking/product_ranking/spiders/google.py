@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import string
+import urllib
 import urlparse
 import json
 import re
@@ -79,6 +80,8 @@ class GoogleProductsSpider(BaseProductsSpider):
         for request in super(GoogleProductsSpider, self).start_requests():
             if self.sort:
                 request.callback = self.sort_request
+                if self.sort == 'default':
+                    request.callback = self.parse
             yield request
 
     def sort_request(self, response):
@@ -136,10 +139,51 @@ class GoogleProductsSpider(BaseProductsSpider):
                 ))
         product['related_products'] = {'recommended': r}
 
+        # get right url if it redirect url
+        # TODO: this pattern neems should be checked
+        redirect_pattern = r'&adurl=(.*)'
+        res = re.findall(redirect_pattern, product['url'])
+        if res:
+            req_url = urllib.unquote(res[0])
+            res = urllib.urlopen(req_url)
+            url_not_stripped = res.geturl()
+            product['url'] = url_not_stripped
+
+        # strip GET data from only google urls
+        if 'www.google.com/shopping/product' in product['url']:
+            pattern = r'(.*)\?'
+            result = re.findall(pattern, product['url'])
+            if result:
+                product['url'] = result[0]
+                product['google_source_site'] = []
+                stores_link = result[0] + '/online'
+                return Request(stores_link, callback=self.populate_stores,
+                               meta={'product': product})
+        return product
+
+    def populate_stores(self, response):
+        product = response.meta['product']
+        sellers = response.xpath(
+            '//tr[@class="os-row"]/td[@class="os-seller-name"]/span/a/text()'
+        ).extract()
+        source_list = product['google_source_site']
+        source_list.extend(sellers)
+        product['google_source_site'] = source_list
+        next_link = response.xpath(
+            '//div[@id="online-pagination"]/div[contains(@class,'
+            '"jfk-button-collapse-left")]/@data-reload'
+        ).extract()
+        if next_link:
+            url = "https://www.google.com" + next_link[0]
+            return Request(url, callback=self.populate_stores,
+                           meta={'product': product})
+        product['google_source_site'] = '; '.join(source_list)
         return product
 
     def _scrape_total_matches(self, response):
-        return None
+        self.log("Impossible to scrape total matches for this spider",
+                 DEBUG)
+        return 0
 
     def _scrape_product_links(self, response):
 
@@ -187,6 +231,10 @@ class GoogleProductsSpider(BaseProductsSpider):
                     link = item.xpath('.//a[@class="psgiimg"]')
                 title = link.xpath('string(.)').extract()[0]
                 url = link.xpath('@href').extract()[0]
+                source_site = item.xpath('.//div[@class="_tyb"]/text()'
+                    ).extract()
+                if source_site:
+                    source_site = source_site[0].replace('from ', '').strip()
             except IndexError:
                 self.log('Index error at {url}'.format(url=response.url),
                          WARNING)
@@ -222,10 +270,7 @@ class GoogleProductsSpider(BaseProductsSpider):
                     self.log('Invalid JSON on {url}'.format(url=response.url),
                              WARNING)
 
-            if url.startswith('http'):
-                redirect = None
-            else:
-                redirect = url
+            redirect = url
             url = urlparse.urljoin(response.url, url)
 
             yield redirect, SiteProductItem(
@@ -234,6 +279,7 @@ class GoogleProductsSpider(BaseProductsSpider):
                 price=price,
                 image_url=image_url,
                 description=description,
+                google_source_site=source_site,
                 locale='en-US')
 
     def _scrape_next_results_page_link(self, response):
