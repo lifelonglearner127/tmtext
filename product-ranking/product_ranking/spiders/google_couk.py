@@ -302,17 +302,31 @@ class GoogleProductsSpider(BaseProductsSpider):
         return link
 
     def _populate_buyer_reviews(self, response, product):
-        elt = response.css('#reviews')
-        if not elt:
+        revs = response.xpath(
+            '//div[@id="reviews"]/div[@id="reviews"]'
+        )
+        if not revs:
             return
-        elt = elt[0]
-        by_star = map(int, elt.re('Show only (\d) star reviews \((\d+)\)'))
-        by_star = list(by_star)
-        by_star = dict(zip(by_star[::2], by_star[1::2]))
-        if not by_star:
+        total = response.xpath(
+            '//div[@id="product-rating-reviews"]/span[@id="product-rating"]'
+            '/span[@data-sid="reviews"]/text()'
+        ).extract()
+        if not total:
             return
-        total = elt.re('(\d+) reviews')
-        total = int(total[0]) if total else sum(by_star.values())
+        total = re.findall("\d+", total[0])
+        total = int(total[0])
+        reviews = response.xpath(
+            '//div[@id="reviews"]/div[@id="reviews"]//div[@class="_Joe"]'
+            '/div/a/div[@class="_Roe"]/@style'
+        ).extract()
+        star = 5
+        by_star = {}
+        for rev in reviews:
+            percents = re.findall("width:(\d+\.?\d*)\%", rev)[0]
+            rev_number = total*float(percents)/100
+            rev_number = int(round(rev_number))
+            by_star[star] = rev_number
+            star -= 1
         avg = float(
             sum([star * rating for star, rating in by_star.iteritems()]))
         avg /= total
