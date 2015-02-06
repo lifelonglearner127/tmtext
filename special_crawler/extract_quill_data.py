@@ -263,11 +263,13 @@ class QuillScraper(Scraper):
 
     def _price_amount(self):
         price = self._price()
+        price = price.replace(",", "")
         price_amount = re.findall(r"[\d\.]+", price)[0]
         return price_amount
 
     def _price_currency(self):
         price = self._price()
+        price = price.replace(",", "")
         price_amount = re.findall(r"[\d\.]+", price)[0]
         price_currency = price.replace(price_amount, "")
         return price_currency
