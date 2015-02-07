@@ -1,16 +1,15 @@
 from __future__ import division, absolute_import, unicode_literals
 
 import json
-
-from scrapy.log import ERROR, WARNING
-from scrapy import Request
-import urlparse
 import urllib
+import urlparse
 
-from product_ranking.items import SiteProductItem, Price
 from product_ranking.items import RelatedProduct, BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value, \
-    populate_from_open_graph
+from product_ranking.items import SiteProductItem, Price
+from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import cond_set_value, populate_from_open_graph
+from scrapy import Request
+from scrapy.log import ERROR, WARNING
 
 
 class SoapProductSpider(BaseProductsSpider):
@@ -70,8 +69,6 @@ class SoapProductSpider(BaseProductsSpider):
         return super(SoapProductSpider, self).parse(prev_response)
 
     def parse_product(self, response):
-        # with open("/tmp/soap-item.html", "w") as f:
-        #     f.write(response.body_as_unicode().encode('utf-8'))
         prod = response.meta['product']
 
         populate_from_open_graph(response, prod)
@@ -89,9 +86,22 @@ class SoapProductSpider(BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['handle_httpstatus_list'] = [404]
 
-        # FIXME: generate urls from productid
-        new_meta['url_related'] = "http://www.soap.com/qaps/BehaviorData!GetPageSlots.qs?ProductId=44480&PersonalizationMode=C&SkuCode=AUN-218"
-        new_meta['url_reviews_detail'] = "http://www.soap.com/amazon_reviews/04/44/80/mosthelpful_Default.html"
+        productid = response.xpath(
+            "//input[@id='productIDTextBox']/@value").extract()
+        if productid:
+            productid = productid[0].strip()
+            if len(productid) % 2 == 1:
+                norm_productid = "0" + productid
+            else:
+                norm_productid = productid
+        prodpath = [norm_productid[i:i + 2] for i in range(0, len(norm_productid), 2)]
+        prodpath = "/".join(prodpath)
+
+        new_meta['url_related'] = "http://www.soap.com/qaps/BehaviorData!GetPageSlots.qs?ProductId={pid}&PersonalizationMode=C&SkuCode={upc}".format(
+            pid=productid,
+            upc=prod['upc'])
+        new_meta['url_reviews_detail'] = "http://www.soap.com/amazon_reviews/{prodpath}/mosthelpful_Default.html".format(
+            prodpath=prodpath)
         return Request(json_link, self._parse_brand_json, meta=new_meta)
 
     def _parse_brand_json(self, response):
@@ -112,7 +122,18 @@ class SoapProductSpider(BaseProductsSpider):
             return urlparse.urljoin(response.url, url)
         product = response.meta['product']
         if response.status == 200:
-            print "RELATED", response.url
+            lfb = response.xpath(
+                "//div[@class='frequentlyBought']"
+                "/ul/li/a")
+            frel = []
+            for irel in lfb:
+                name = irel.xpath('@title').extract()
+                if name:
+                    name = name[0]
+                    href = irel.xpath('@href').extract()
+                    if href:
+                        href = full_url(href[0])
+                        frel.append(RelatedProduct(url=href, title=name))
             rel = []
             lrel = response.xpath(
                 "//div[@id='youMayAlsoLikeContainer']/div/div/ul/li"
@@ -126,8 +147,8 @@ class SoapProductSpider(BaseProductsSpider):
                         href = full_url(href[0])
                         rel.append(RelatedProduct(url=href, title=name))
             if rel:
-                product['related_products'] = {"recommended": rel}
-
+                product['related_products'] = {"recommended": frel,
+                                               "also_bought": rel}
         rurl = response.meta['url_reviews_detail']
         new_meta = response.meta.copy()
         new_meta['handle_httpstatus_list'] = [404]
@@ -183,6 +204,12 @@ class SoapProductSpider(BaseProductsSpider):
         desc = response.xpath("//*[@class='pIdDesContent']").extract()
         cond_set_value(product, 'description', desc, conv=''.join)
 
+        if not desc:
+            desc = response.xpath("//div[@class='descriptContent']").extract()
+            if desc:
+                del product['description']
+                cond_set(product, 'description', desc)
+
         upcs = response.xpath("//*[@class='skuHidden']/@value").extract()
         cond_set(product, 'upc', upcs)
 
@@ -191,6 +218,14 @@ class SoapProductSpider(BaseProductsSpider):
             product, 'title', response.css(
                 '.productTitle h1 ::text').extract())
         self._unify_price(product)
+        image_url = response.xpath(
+            "//div[contains(@class,'productDetailPic')]"
+            "/div/a/img/@src").extract()
+        if image_url:
+            image_url = image_url[0]
+            if image_url.startswith("//"):
+                image_url = 'http:' + image_url
+            product['image_url'] = image_url
 
     def _scrape_product_links(self, response):
         links = response.xpath(
@@ -200,12 +235,6 @@ class SoapProductSpider(BaseProductsSpider):
 
         if links:
             links.extend(response.meta['additional_links'])
-        # print "LINKS=", len(links),len(self.urls)
-        # for link in links:
-        #     if link in self.urls:
-        #         raise ValueError("DUPLICATE %s" % link)
-        #     self.urls.add(link)
-
         if not links:
             self.log("Found no product links.", ERROR)
         for link in links:
@@ -214,9 +243,6 @@ class SoapProductSpider(BaseProductsSpider):
     def _scrape_total_matches(self, response):
         num_results = response.xpath(
             "//*[@class='result-pageNum-info']/span/text()").extract()
-        # with open("/tmp/soap-links.html", "w") as f:
-        #     f.write(response.body_as_unicode().encode('utf-8'))
-        # print "NUM_RESULTS=", num_results
         if num_results and num_results[0]:
             return int(num_results[0])
         else:
@@ -225,7 +251,6 @@ class SoapProductSpider(BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         next_pages = response.css(
             "a:nth-child(3).result-pageNum-iconWrap::attr(href)").extract()
-        # print "NEXT_PAGES=",next_pages
         next_page = None
         if next_pages:
             next_page = next_pages[0]
