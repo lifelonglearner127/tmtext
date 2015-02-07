@@ -5,9 +5,17 @@
 from scrapy import signals
 from scrapy.xlib.pydispatch import dispatcher
 
+try:
+    from monitoring import push_simmetrica_event
+except ImportError:
+    try:
+        from spiders.monitoring import push_simmetrica_event
+    except ImportError:
+        print 'ERROR: CAN NOT IMPORT MONITORING PACKAGE!'
+
 
 def _stats_on_spider_open(spider):
-    from monitoring import push_simmetrica_event
+
     if not push_simmetrica_event('monitoring_spider_opened'):
         print 'pushing simmetrica event failed, check redis server and all'\
               ' the events'
@@ -26,7 +34,6 @@ def _stats_on_spider_close(spider, reason):
     # ctrl+c: shutdown
     from pprint import pprint
     pprint(spider_stats)
-    from monitoring import push_simmetrica_event
     if not push_simmetrica_event('monitoring_spider_closed'):
         print 'pushing simmetrica event failed, check redis server and all'\
               ' the events'
