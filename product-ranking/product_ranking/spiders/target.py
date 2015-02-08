@@ -6,8 +6,8 @@ import json
 import re
 import string
 import urllib
+import urllib2
 import urlparse
-import uuid
 
 from scrapy import Selector
 from scrapy.http import FormRequest, Request
@@ -15,20 +15,23 @@ from scrapy.log import DEBUG, INFO
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    _populate_from_open_graph_product
+from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 
 
 class TargetProductSpider(BaseProductsSpider):
     name = 'target_products'
     allowed_domains = ["target.com", "recs.richrelevance.com",
-                       'api.bazaarvoice.com', 'www.hlserve.com']
+                       'api.bazaarvoice.com']
     start_urls = ["http://www.target.com/"]
     # TODO: support new currencies if you're going to scrape target.canada
     #  or any other target.* different from target.com!
     SEARCH_URL = "http://www.target.com/s?searchTerm={search_term}"
     SCRIPT_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js"
+    CALL_RR = False
+    CALL_RECOMM = True
+    POPULATE_VARIANTS = False
+    POPULATE_REVIEWS = True
     SORTING = None
 
     SORT_MODES = {
@@ -36,26 +39,9 @@ class TargetProductSpider(BaseProductsSpider):
         "featured": "Featured",
         "pricelow": "PriceLow",
         "pricehigh": "PriceHigh",
-        "newest": "newest"
+        "newest": "newest",
+        "bestselling": "bestselling"
     }
-
-    RELATED_PRODUCTS_URL = "https://prz-secure.target.com/recommendations/v1" \
-                           "?productId={prod_id}" \
-                           "&context=placementId,{placement};" \
-                           "categoryId,{category}"
-
-    FEATURED_PRODUCTS_URL = "http://www.hlserve.com/Delivery/ClientPaths" \
-                            "/Library/Delivery.aspx?version=0.9.0" \
-                            "&pageGUID={guid}" \
-                            "&clientid=131" \
-                            "&pagetype=product" \
-                            "&taxonomy={category}" \
-                            "&prodid={prod_id}" \
-                            "&qty=1" \
-                            "&prodp={price}" \
-                            "&maxmes=4&bm_type=2&bm_taxoff=2" \
-                            "&productid={prod_id}" \
-                            "&loc=hl_1_999"
 
     REVIEW_API_PASS = "aqxzr0zot28ympbkxbxqacldq"
 
@@ -81,6 +67,8 @@ class TargetProductSpider(BaseProductsSpider):
                       "&response_group=Items" \
                       "&isLeaf=true" \
                       "&parent_category_id={category}"
+
+    RELATED_URL = "{path}?productId={pid}&userId=-1002&min={min}&max={max}&context=placementId,{plid};categoryId,{cid}&callback=jsonCallback"
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
@@ -115,21 +103,73 @@ class TargetProductSpider(BaseProductsSpider):
             new_meta['category'] = category
             return Request(
                 self.url_formatter.format(self.JSON_SEARCH_URL,
-                                          category=category, index=0,
+                                          category=category, index=90,
                                           sort_mode=self.SORTING or '',
                                           page=1),
                 meta=new_meta)
         return list(super(TargetProductSpider, self).parse(response))
 
     def parse_product(self, response):
+        # for some products (with many colors for example) target.com
+        # insert at <meta> another url than you see at browser.
+        # it used to calculate buyer_reviews correct.
+        canonical_url = response.xpath(
+            '//meta[@property="og:url"]/@content'
+        ).extract()
         prod = response.meta['product']
         old_url = prod['url'].rsplit('#', 1)[0]
         prod['url'] = None
         populate_from_open_graph(response, prod)
-        cond_set_value(prod, 'url', old_url)
+
+        prod['url'] = old_url
+        #cond_set_value(prod, 'url', old_url)
+
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
-        return list(self._request_additional_info(response, prod)) or prod
+        # fiME: brand=None
+        if 'brand' in prod and len(prod['brand']) == 0:
+            prod['brand'] = 'No brand'
+        variants = self._extract_variants(response, prod)
+        payload = self._extract_rr_parms(response)
+
+        collection_items = response.xpath('//div[@id="CollectionItems"]//h3/a')
+        # assume that product from collection
+        if collection_items:
+            self._populate_collection_items(response, prod)
+
+        if self.CALL_RECOMM:
+            rurls = self._extract_recomm_urls(response)
+            if rurls:
+                new_meta = response.meta.copy()
+                new_meta['variants'] = variants
+                new_meta['rurls'] = rurls[1:]
+                new_meta['canonical_url'] = canonical_url
+                return Request(
+                    rurls[0],
+                    self._parse_recomm_json,
+                    meta=new_meta)
+
+        if self.CALL_RR:
+            if payload:
+                new_meta = response.meta.copy()
+                new_meta['variants'] = variants
+                new_meta['canonical_url'] = canonical_url
+                rr_url = urlparse.urljoin(self.SCRIPT_URL,
+                                          "?" + urllib.urlencode(payload))
+                return Request(
+                    rr_url,
+                    self._parse_rr_json,
+                    meta=new_meta)
+            else:
+                self.log("No {rr} payload at %s" % response.url, DEBUG)
+
+        if self.POPULATE_REVIEWS:
+            return self._request_reviews(response, prod, canonical_url)
+        elif self.POPULATE_VARIANTS:
+            if variants:
+                return self._populate_variants(response, prod, variants)
+        else:
+            return prod
 
     def _populate_from_html(self, response, product):
         if 'title' in product and product['title'] == '':
@@ -139,20 +179,31 @@ class TargetProductSpider(BaseProductsSpider):
             'title',
             response.xpath(
                 "//h2[contains(@class,'product-name')]"
-                "/span[@itemprop='name']/text()").extract(),
+                "/span[@itemprop='name']/text()"
+                "|//h2[contains(@class,'collection-name')]"
+                "/span[@itemprop='name']/text()"
+            ).extract(),
             conv=string.strip
         )
 
         price = response.xpath(
             "//span[@itemprop='price']/text()"
             "|//*[@id='see-low-price']/a/text()"
+            "|//span[@itemprop='lowPrice']/text()"
         ).extract()
-        regexp = re.compile('\$([\d, .]+)')
-        if price and regexp.match(price[0]):
-            price = regexp.findall(price[0])[-1]
-            price = re.sub(', ', '', price)
-            cond_set_value(product, 'price',
-                           Price(priceCurrency='USD', price=price))
+        if not price or price[0] == 'See Low Price in Cart':
+            cond_set(product, 'price', ['$0.00'])
+        else:
+            cond_set(product, 'price', price)
+        price = product.get('price', None)
+        if price:
+            mp = re.search(FLOATING_POINT_RGEX, price)
+            if mp:
+                price = mp.group(0)
+            else:
+                price = 0.0
+            product['price'] = Price(
+                price=price, priceCurrency='USD')
         desc = product.get('description')
         if desc:
             desc = desc.replace("\n", "")
@@ -163,9 +214,8 @@ class TargetProductSpider(BaseProductsSpider):
             desc = desc[0]
             desc = desc.replace("\n", "")
             product['description'] = desc
-        _populate_from_open_graph_product(response, product)
-        cond_set(product, 'image_url',
-                 response.css('[itemprop=image]::attr(src)').extract())
+        cond_set(product, 'image_url', response.xpath(
+            "//img[@itemprop='image']/@src").extract())
         image = product.get('image_url')
         if image:
             image = image.replace("_100x100.", ".")
@@ -211,6 +261,31 @@ class TargetProductSpider(BaseProductsSpider):
                 new_product['upc'] = code
                 product_list.append(new_product)
         return product_list
+
+    def _extract_recomm_urls(self, response):
+        script = response.xpath(
+            "//script[contains(text(),'var recommendationConfig')]"
+            "/text()").re("var recommendationConfig = {(.*)};")
+        if script:
+            script = script[0]
+        try:
+            jsdata = json.loads("{" + script + "}")
+        except (ValueError, TypeError):
+            urls = []
+            # self.log
+            return urls
+        urls = []
+        for name in jsdata['components']:
+            item = jsdata['components'][name]
+            url = self.RELATED_URL.format(
+                path=jsdata['serviceHostName'],
+                pid=item['productId'],
+                min=item['min'],
+                max=item['max'],
+                plid=item['placementName'],
+                cid=item['categoryId'])
+            urls.append(url)
+        return urls
 
     def _extract_rr_parms(self, response):
         rscript = response.xpath(
@@ -286,6 +361,107 @@ class TargetProductSpider(BaseProductsSpider):
                    "l": 1}
         return payload
 
+    def _parse_recomm_json(self, response):
+        product = response.meta['product']
+        text = response.body_as_unicode()
+        rurls = response.meta['rurls']
+
+        jm = re.search(r"jsonCallback\((.*)},", text)
+        rels = []
+        if jm:
+            jtext = jm.group(1)
+            jtext += "}"
+            try:
+                jdata = json.loads(jtext)
+            except ValueError:
+                jdata = {}
+            rlist = jdata.get('recommendations', [])
+            for ritem in rlist:
+                title = ritem['productTitle']
+                href = ritem['productLink']
+                rels.append(RelatedProduct(title, href))
+
+            related = product.get('related_products', {})
+            rel_recom = related.get('recommended', [])
+            rel_recom.extend(rels)
+            product['related_products'] = {"recommended": rel_recom}
+
+        if rurls:
+            url = rurls[0]
+            rurls = rurls[1:]
+            print "url=", url, "rurls=", rurls
+
+            new_meta = response.meta.copy()
+            new_meta['rurls'] = rurls
+            return Request(
+                url,
+                self._parse_recomm_json,
+                meta=new_meta)
+
+
+        variants = response.meta.get('variants')
+        if self.POPULATE_REVIEWS:
+            canonical_url = response.meta['canonical_url']
+            return self._request_reviews(response, product, canonical_url)
+        elif variants and self.POPULATE_VARIANTS:
+            return self._populate_variants(response, product, variants)
+        else:
+            return product
+
+    def _parse_rr_json(self, response):
+        product = response.meta['product']
+        text = response.body_as_unicode()
+        pattern = re.compile(
+            "jsonObj = {([^}]*)};\s+RR\.TGT\.fixAndPushJSON\(([^)]*)\);")
+        mlist = re.findall(pattern, text)
+        if mlist:
+            results = {}
+            for m in mlist:
+                if len(m) > 1:
+                    try:
+                        answ = "{" + m[0] + "}"
+                        jsdata = json.loads(answ)
+
+                        title = jsdata['productTitle']
+                        link = jsdata['productLink']
+
+                        url_split = urlparse.urlsplit(link)
+                        query = urlparse.parse_qs(url_split.query)
+                        original_url = query.get('ct')
+                        ctlink = urllib2.unquote(original_url[0])
+
+                        data = m[1].split(",")
+                        chan = data[1]
+                        if chan not in results:
+                            results[chan] = []
+                        rlist = results[chan]
+                        rlist.append((title, ctlink))
+                    except (ValueError, KeyError, IndexError) as e:
+                        self.log(
+                            "{rr} json response parse error %s" % e, DEBUG)
+
+            def make_product_list(mlist):
+                mitems = []
+                for mname, mlink in mlist:
+                    mitems.append(RelatedProduct(mname, mlink))
+                return mitems
+
+            rlist = results.get('0', [])
+            ritems = make_product_list(rlist)
+            rlist = results.get('1', [])
+            obitems = make_product_list(rlist)
+
+            product['related_products'] = {"recommended": ritems,
+                                           "buyers_also_bought": obitems}
+        variants = response.meta.get('variants')
+        if self.POPULATE_REVIEWS:
+            canonical_url = response.meta['canonical_url']
+            return self._request_reviews(response, product, canonical_url)
+        elif variants and self.POPULATE_VARIANTS:
+            return self._populate_variants(response, product, variants)
+        else:
+            return product
+
     def _extract_links_with_brand(self, containers):
         bi_list = []
         for ci in containers:
@@ -320,8 +496,7 @@ class TargetProductSpider(BaseProductsSpider):
             return list(self._scrape_product_links_html(response))
 
     def _scrape_product_links_json(self, response):
-        items = self._get_json_data(response).get('items', {'Item': []})
-        for item in items['Item']:
+        for item in self._get_json_data(response)['items']['Item']:
             url = item['productDetailPageURL']
             url = urlparse.urljoin('http://www.target.com', url)
             product = SiteProductItem()
@@ -365,6 +540,7 @@ class TargetProductSpider(BaseProductsSpider):
             self.log("Try again after 1-3 min.", DEBUG)
             return
         bi_list = self._extract_links_with_brand(containers)
+
         if not bi_list:
             self.log("Found no product links.", DEBUG)
         if self.SORTING:
@@ -373,6 +549,9 @@ class TargetProductSpider(BaseProductsSpider):
                          "&lnk=snav_sbox_catnip&viewType=medium").format(
                 self.SORTING, response.meta['search_term'])
             post_req = self._gen_next_request(response, next_page)
+            new_meta = post_req.meta.copy()
+            new_meta['json'] = True
+            post_req = post_req.replace(meta=new_meta)
             yield post_req, SiteProductItem()
             return
 
@@ -445,12 +624,13 @@ class TargetProductSpider(BaseProductsSpider):
                     }
 
             new_meta = response.meta.copy()
-            if new_meta.get('total_matches') is None:
-                new_meta['total_matches'] = \
-                    self._scrape_total_matches(response)
+            if 'total_matches' not in new_meta:
+                new_meta['total_matches'] = self._scrape_total_matches(response)
             if remaining and remaining > 0:
                 new_meta['remaining'] = remaining
             post_url = "http://www.target.com/SoftRefreshProductListView"
+            # new_meta['json'] = True
+
             return FormRequest(
                 #return FormRequest.from_response(
                 #response=response,
@@ -505,20 +685,21 @@ class TargetProductSpider(BaseProductsSpider):
             requests.append(Request(
                 url,
                 callback=self.parse_product,
-                meta=new_meta))
+                meta=new_meta,dont_filter=True))
         return requests
 
     def _scrape_next_results_page_link(self, response):
+        if self.SORTING != None and response.meta.get('search_start'):
+            return
         if response.meta.get('json'):
             return self._scrape_next_results_page_link_json(response)
         else:
             return self._scrape_next_results_page_link_html(response)
 
     def _scrape_next_results_page_link_json(self, response):
+        #raw_input(len(list(self._scrape_product_links_json(response))))
         args = self._json_get_args(self._get_json_data(response))
-        current = int(args.get('currentPage', -1))
-        if current == -1:
-            return
+        current = int(args['currentPage'])
         total = int(args['totalPages'])
         per_page = int(args['resultsPerPage'])
         if current <= total:
@@ -540,18 +721,19 @@ class TargetProductSpider(BaseProductsSpider):
             next_page = next_page[0]
             return self._gen_next_request(response, next_page)
 
-    def _request_reviews(self, response, product):
-        prod_id = re.search('\d+\Z', product['url'])
+    def _request_reviews(self, response, product, canonical_url=None):
+        if canonical_url:
+            main_url = canonical_url[0]
+        else:
+            main_url = product['url']
+        prod_id = re.search('\d+\Z', main_url)
         if prod_id:
             prod_id = prod_id.group()
             url = self.REVIEW_API_URL.format(apipass=self.REVIEW_API_PASS,
                                              model=prod_id)
-            return Request(url, self._parse_reviews, meta=response.meta)
-
-    def _return_if_finished(self, response):
-        response.meta['pending'].remove(response.meta['id_'])
-        if not response.meta['pending']:
-            return response.meta['product']
+            return Request(url, self._parse_reviews, meta=response.meta, dont_filter=True)
+        else:
+            return product
 
     def _parse_reviews(self, response):
         product = response.meta['product']
@@ -562,100 +744,29 @@ class TargetProductSpider(BaseProductsSpider):
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
         if average is None or total is None:
-            return self._return_if_finished(response)
+            return product
         distribution = data.get('RatingDistribution', [])
-        distribution = {d['Count']: d['RatingValue']
+        distribution = {d['RatingValue']: d['Count']
                         for d in data.get('RatingDistribution', [])}
-        reviews = BuyerReviews(total, average, distribution)
+        fdist = {i: 0 for i in range(1, 6)}
+        for i in range(1, 6):
+            if i in distribution:
+                fdist[i] = distribution[i]
+        reviews = BuyerReviews(total, average, fdist)
         cond_set_value(product, 'buyer_reviews', reviews)
-        return self._return_if_finished(response)
+        variants = response.meta.get('variants')
+        if variants and self.POPULATE_VARIANTS:
+            return self._populate_variants(response, product, variants)
+        return product
 
-    def _extract_rp_args(self, response):
-        prod_id = re.search('"partNumber" *: *"([^"]+)"',
-                            response.body_as_unicode())
-        category = re.search('"RRCategoryId" *: *"([^"]+)"',
-                             response.body_as_unicode())
-        return category, prod_id
-
-    def _request_related_products(self, response, product):
-        placements = ['pdpv1', 'pdph1', ]
-        category, prod_id = self._extract_rp_args(response)
-        if prod_id and category:
-            prod_id = prod_id.group(1)
-            category = category.group(1)
-        else:
-            self.log('Could not scrape related products (%s)' % response.url)
-            return
-        for placement in placements:
-            url = self.RELATED_PRODUCTS_URL.format(prod_id=prod_id,
-                                                   category=category,
-                                                   placement=placement)
-            yield Request(url, self._parse_related_products,
-                          meta=response.meta)
-
-    def _request_featured_products(self, response, product):
-        product['related_products']['featured products'] = []
-        category, prod_id = self._extract_rp_args(response)
-        price = product.get('price')
-        if prod_id and category and price:
-            prod_id = prod_id.group(1)
-            category = category.group(1)
-            price = price.price
-        else:
-            self.log('Could not scrape featured products (%s)' % response.url)
-            return
-        guid = uuid.uuid4()
-        url = self.FEATURED_PRODUCTS_URL.format(category=category,
-                                                prod_id=prod_id,
-                                                price=price,
-                                                guid=guid)
-        return Request(url, self._parse_featured_products, meta=response.meta)
-
-    def _parse_related_products(self, response):
-        product = response.meta['product']
-        data = json.loads(response.body_as_unicode())
-        strategy = data['strategyDescription']
-        products = []
-        for item in data['recommendations']:
-            url = item['productLink']
-            title = item['productTitle']
-            products.append(RelatedProduct(url=url, title=title))
-        product['related_products'][strategy] = products
-        return self._return_if_finished(response)
-
-    def _parse_featured_products(self, response):
-        regexp = '"ProductName" *: *"([^"]+)".+?"ProductPage" *: *"([^"]+)"'
-        found = re.findall(regexp, response.body_as_unicode())
-        for title, url in found:
-            title = title.decode('unicode-escape')
-            url = url.decode('unicode-escape')
-            url = "http://" + url if 'http://' not in url else url
-            meta = response.meta.copy()
-            meta['title'] = title
-            meta['pending'].add(title)
-            meta['id_'] = title
-            meta['dont_redirect'] = True
-            meta['handle_httpstatus_list'] = [302]
-            yield Request(url, self._fetch_fp_url, meta=meta, dont_filter=True)
-        yield self._return_if_finished(response)
-
-    def _fetch_fp_url(self, response):
-        product = response.meta['product']
-        url = response.headers['location']
-        rp = RelatedProduct(url=url, title=response.meta['title'])
-        product['related_products']['featured products'].append(rp)
-        return self._return_if_finished(response)
-
-    def _request_additional_info(self, response, prod):
-        prod['related_products'] = {}
-        reviews_request = self._request_reviews(response, prod)
-        relprod_requests = self._request_related_products(response, prod)
-        fp_requests = self._request_featured_products(response, prod)
-        requests = [reviews_request, fp_requests] + list(relprod_requests)
-        #requests = [reviews_request] + list(relprod_requests)
-        requests = filter(None, requests)
-        pending = set(request.url for request in requests)
-        for request in requests:
-            request.meta['pending'] = pending
-            request.meta['id_'] = request.url
-            yield request
+    def _populate_collection_items(self, response, prod):
+        collection_items = response.xpath('//div[@id="CollectionItems"]//h3/a')
+        rp = []
+        for item in collection_items:
+            link = item.xpath('@href').extract()
+            if link:
+                link = 'http://www.target.com' + link[0]
+            name = item.xpath('text()').extract()
+            if name and link:
+                rp.append(RelatedProduct(name[0].strip(), link))
+        prod['related_products'] = {'recommended': rp}
