@@ -20,7 +20,7 @@ from extract_data import Scraper
 class SamsclubScraper(Scraper):
 
     ##########################################
-    ############### PREP
+    ############### PREP+
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+)?/(.+)"
