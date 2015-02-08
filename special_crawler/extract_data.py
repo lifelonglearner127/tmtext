@@ -1,4 +1,4 @@
-#!/usr/bin/python
+ #!/usr/bin/python
 
 import urllib2
 from httplib import IncompleteRead
@@ -13,7 +13,8 @@ import os
 
 from no_img_hash import fetch_bytes
 
-from lxml import html
+from lxml import html, etree
+from itertools import chain
 import time
 
 class Scraper():
@@ -252,6 +253,13 @@ class Scraper():
         self.BASE_DATA_TYPES['site_online_in_stock'] = lambda c: c._site_online_in_stock()
         self.BASE_DATA_TYPES['marketplace_in_stock'] = lambda c: c._marketplace_in_stock()
         self.BASE_DATA_TYPES['in_stores_in_stock'] = lambda c: c._in_stores_in_stock()
+        # these should be set after the 3 above, since they use their computed values
+        self.BASE_DATA_TYPES['online_only'] = lambda c: c._online_only()
+        self.BASE_DATA_TYPES['in_stores_only'] = lambda c: c._in_stores_only()
+        self.BASE_DATA_TYPES['in_stock'] = lambda c: c._in_stock()
+        # Fields whose implementation don't depend on site
+        self.BASE_DATA_TYPES['meta_tags'] = lambda c: self._meta_tags()
+        self.BASE_DATA_TYPES['meta_tag_count'] = lambda c: self._meta_tag_count()
 
         # Set fields for error response
         
@@ -318,7 +326,7 @@ class Scraper():
         Returns:
             lxml tree object
         """
-        
+
         request = urllib2.Request(self.product_page_url)
         # set user agent to avoid blocking
         agent = ''
@@ -345,10 +353,16 @@ class Scraper():
 
 
             try:
+                # replace NULL characters
+                contents = self._clean_null(contents)
+
                 self.tree_html = html.fromstring(contents.decode("utf8"))
             except UnicodeError, e:
                 # if string was not utf8, don't deocde it
                 print "Warning creating html tree from page content: ", e.message
+
+                # replace NULL characters
+                contents = self._clean_null(contents)
 
                 self.tree_html = html.fromstring(contents)
 
@@ -360,8 +374,21 @@ class Scraper():
             # if it had worked by now, it would have returned.
             # if it still doesn't work, it will throw exception.
             # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
+
+            # replace NULL characters
+            contents = self._clean_null(contents)
+
             contents = urllib2.urlopen(request).read()
             self.tree_html = html.fromstring(contents)
+
+    def _clean_null(self, text):
+        '''Remove NULL characters from text if any.
+        Return text without the NULL characters
+        '''
+        if text.find('\00') >= 0:
+            print "WARNING: page contained NULL characters. Removed"
+            text = text.replace('\00','')
+        return text
             
 
     # Extract product info given a list of the type of info needed.
@@ -489,9 +516,10 @@ class Scraper():
         is available.
         '''
 
-        # set extractor function for owned
-        # to be same as for site_online_in_stock
-        return self.DATA_TYPES['site_online_in_stock']
+        # extract site_online_in_stock and stores_in_stock
+        # owned will be 1 if any of these is 1
+        return (self.ALL_DATA_TYPES['site_online_in_stock'](self) or self.ALL_DATA_TYPES['in_stores_in_stock'](self))
+
 
     def _owned_out_of_stock(self):
         '''General function for setting value of legacy field "owned_out_of_stock".
@@ -500,9 +528,32 @@ class Scraper():
         is available.
         '''
 
-        # set extractor function for owned_out_of_stock
-        # to be same as for site_online_out_of_stock
-        return self.DATA_TYPES['site_online_out_of_stock']
+        # owned_out_of_stock is true if item is out of stock online and in stores
+        try:
+            site_online = self.ALL_DATA_TYPES['site_online'](self)
+        except:
+            site_online = None
+
+        try:
+            site_online_in_stock = self.ALL_DATA_TYPES['site_online_in_stock'](self)
+        except:
+            site_online_in_stock = None
+
+        try:
+            in_stores = self.ALL_DATA_TYPES['in_stores'](self)
+        except:
+            in_stores = None
+
+        try:
+            in_stores_in_stock = self.ALL_DATA_TYPES['in_stores_in_stock'](self)
+        except:
+            in_stores_in_stock = None
+
+
+        if (site_online or in_stores) and (not site_online_in_stock) and (not in_stores_in_stock):
+            return 1
+        return 0
+
 
     def _site_online_in_stock(self):
         '''General function for setting value of field "site_online_in_stock".
@@ -527,8 +578,10 @@ class Scraper():
         # site_online is 1 and site_online_out_of_stock is 0
         if site_online == 1 and site_online_out_of_stock == 0:
             return 1
+        if site_online == 1 and site_online_out_of_stock ==1:
+            return 0
 
-        return 0
+        return None
 
     def _in_stores_in_stock(self):
         '''General function for setting value of field "in_stores_in_stock".
@@ -553,8 +606,10 @@ class Scraper():
         # in_stores is 1 and in_stores_out_of_stock is 0
         if in_stores == 1 and in_stores_out_of_stock == 0:
             return 1
+        if in_stores == 1 and in_stores_out_of_stock == 0:
+            return 0
 
-        return 0
+        return None
 
     def _marketplace_in_stock(self):
         '''General function for setting value of field "in_stores_in_stock".
@@ -579,8 +634,124 @@ class Scraper():
         # marketplace is 1 and marketplace_out_of_stock is 0
         if marketplace == 1 and marketplace_out_of_stock == 0:
             return 1
+        if marketplace == 1 and marketplace_out_of_stock == 1:
+            return 0
+
+        return None
+
+    def _get_sellers_types(self):
+        '''Uses scraper extractor functions to get values for sellers type:
+        in_stores, site_online and marketplace.
+        (To be used by other functions that use this info)
+        Returns dictionary containing 1/0/None values for these seller fields.
+        '''
+
+        # compute necessary fields
+        # Note: might lead to calling these functions twice.
+        # But they should be inexpensive
+        try:
+            marketplace = self.ALL_DATA_TYPES['marketplace'](self)
+        except:
+            marketplace = None
+
+        try:
+            site_online = self.ALL_DATA_TYPES['site_online'](self)
+        except:
+            site_online = None
+
+        try:
+            in_stores = self.ALL_DATA_TYPES['in_stores'](self)
+        except:
+            in_stores = None
+
+        return {'marketplace' : marketplace, 'site_online' : site_online, 'in_stores' : in_stores}
+
+
+    def _online_only(self):
+        '''General function for setting value of field "online_only".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation is available.
+        '''
+
+        # compute necessary fields
+        sellers = self._get_sellers_types()
+        # if any of the seller types is None, return None (cannot be determined)
+        if any(v is None for v in sellers.values()):
+            return None
+
+        if (sellers['site_online'] == 1 or sellers['marketplace'] == 1) and \
+            sellers['in_stores'] == 0:
+            return 1
+        return 0
+
+    def _in_stores_only(self):
+        '''General function for setting value of field "in_stores_only".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation is available.
+        '''
+
+        # compute necessary fields
+        sellers = self._get_sellers_types()
+        # if any of the seller types is None, return None (cannot be determined)
+        if any(v is None for v in sellers.values()):
+            return None
+
+        if (sellers['site_online'] == 0 and sellers['marketplace'] == 0) and \
+            sellers['in_stores'] == 1:
+            return 1
+        return 0
+
+    def _in_stock(self):
+        '''General function for setting value of field "in_stores_only".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation is available.
+        '''
+
+        # compute necessary fields
+        # Note: might lead to calling these functions twice.
+        # But they should be inexpensive
+        try:
+            marketplace_in_stock = self.ALL_DATA_TYPES['marketplace_in_stock'](self)
+        except:
+            marketplace_in_stock = None
+
+        try:
+            site_online_in_stock = self.ALL_DATA_TYPES['site_online_in_stock'](self)
+        except:
+            site_online_in_stock = None
+
+        try:
+            in_stores_in_stock = self.ALL_DATA_TYPES['in_stores_in_stock'](self)
+        except:
+            in_stores_in_stock = None
+
+        if any([marketplace_in_stock, site_online_in_stock, in_stores_in_stock]):
+            return 1
+        if all(v is None for v in [marketplace_in_stock, site_online_in_stock, in_stores_in_stock]):
+            return None
 
         return 0
+
+
+    def _meta_tags(self):
+        tags = map(lambda x:x.values(), self.tree_html.xpath('//meta[not(@http-equiv)]'))
+        return tags
+
+    def _meta_tag_count(self):
+        tags = self._meta_tags()
+        return len(tags)
+
+
+    def stringify_children(self, node):
+        '''Get all content of node, including markup.
+        :param node: lxml node to get content of
+        '''
+
+        parts = ([node.text] +
+                list(chain(*([etree.tostring(c, with_tail=False), c.tail] for c in node.getchildren()))) +
+                [node.tail])
+        # filter removes possible Nones in texts and tails
+        return ''.join(filter(None, parts))
 
 
     

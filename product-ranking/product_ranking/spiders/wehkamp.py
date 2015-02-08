@@ -1,6 +1,7 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import re
 import string
 
 from scrapy.log import WARNING
@@ -25,7 +26,7 @@ class WehkampProductsSpider(BaseProductsSpider):
             product,
             'title',
             response.xpath(
-                "//div[@class='pdp-topmatter']"
+                "//div[contains(@class, 'pdp-topmatter')]/div"
                 "/h1[@itemprop='name']/text()").extract(),
             conv=string.strip
         )
@@ -45,13 +46,22 @@ class WehkampProductsSpider(BaseProductsSpider):
                 "//img[@id='mainImage']/@src").extract()
         )
 
+        price = response.xpath(
+                "//div[@class='priceblock']"
+                "/span[@class='price']/text()").extract()
+        if price:
+            price_all = re.findall("\d+", price[0])
+            if len(price_all) >= 2:
+                price = str(price_all[0]) + "." + str(price_all[1])
+            elif price_all:
+                price = price_all[0]
+
         cond_set(
             product,
             'price',
-            response.xpath(
-                "//div[@class='priceblock']"
-                "/span[@class='price']/text()").extract()
+            (price, )
         )
+
         if product.get('price', None):
             product['price'] = Price(
                 priceCurrency='EUR',
