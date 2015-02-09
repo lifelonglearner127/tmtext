@@ -9,7 +9,7 @@ try:
     from monitoring import push_simmetrica_event
 except ImportError:
     try:
-        from spiders.monitoring import push_simmetrica_event
+        from product_ranking.monitoring import push_simmetrica_event
     except ImportError:
         print 'ERROR: CAN NOT IMPORT MONITORING PACKAGE!'
 
