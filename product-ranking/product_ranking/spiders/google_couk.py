@@ -140,8 +140,6 @@ class GoogleProductsSpider(BaseProductsSpider):
                 ))
         product['related_products'] = {'recommended': r}
 
-        self._populate_buyer_reviews(response, product)
-
         # get right url if it redirect url
         redirect_pattern = r'&adurl=(.*)'
         res = re.findall(redirect_pattern, product['url'])
@@ -150,9 +148,15 @@ class GoogleProductsSpider(BaseProductsSpider):
             res = urllib.urlopen(req_url)
             url_not_stripped = res.geturl()
             product['url'] = url_not_stripped
+            review_link = product['buyer_reviews']
+            if review_link:
+                link = 'https://www.google.co.uk' + review_link
+                return Request(link, callback=self.handle_reviews_request,
+                               meta=response.meta)
 
         # strip GET data from only google urls
         if 'google.co.uk/shopping/product' in product['url']:
+            self._populate_buyer_reviews(response, product)
             pattern = r'(.*)\?'
             result = re.findall(pattern, product['url'])
             if result:
@@ -162,7 +166,6 @@ class GoogleProductsSpider(BaseProductsSpider):
                 return Request(stores_link, callback=self.populate_stores,
                                meta={'product': product,
                                      'page': 0})
-
         return product
 
     def populate_stores(self, response):
@@ -235,6 +238,11 @@ class GoogleProductsSpider(BaseProductsSpider):
                     link = item.xpath('.//a[@class="psgiimg"]')
                 title = link.xpath('string(.)').extract()[0]
                 url = link.xpath('@href').extract()[0]
+                rewiew_link = item.xpath(
+                    './/a[@class="shop__secondary"]/@href'
+                ).extract()
+                if rewiew_link:
+                    rewiew_link = rewiew_link[0]
                 source_site = item.xpath(
                     './/div[@class="_tyb"]/text()'
                 ).extract()
@@ -288,8 +296,8 @@ class GoogleProductsSpider(BaseProductsSpider):
                 brand=brand,
                 description=description,
                 google_source_site=source_site,
-                locale='en-US'
-            )
+                buyer_reviews=rewiew_link,
+                locale='en-US')
 
     def _scrape_next_results_page_link(self, response):
         next = response.css('table#nav td.cur') \
@@ -304,19 +312,19 @@ class GoogleProductsSpider(BaseProductsSpider):
         return link
 
     def _populate_buyer_reviews(self, response, product):
+        del product['buyer_reviews']
         revs = response.xpath(
             '//div[@id="reviews"]/div[@id="reviews"]'
         )
         if not revs:
             return
         total = response.xpath(
-            '//div[@id="product-rating-reviews"]/span[@id="product-rating"]'
-            '/span[@data-sid="reviews"]/text()'
+            '//div[@class="_Ape"]/div/div/div[@class="_wpe"]/text()'
         ).extract()
         if not total:
             return
-        total = re.findall("\d+", total[0])
-        total = int(total[0])
+        total = re.findall("\d*,?\d+", total[0])
+        total = int(total[0].replace(',', ''))
         reviews = response.xpath(
             '//div[@id="reviews"]/div[@id="reviews"]//div[@class="_Joe"]'
             '/div/a/div[@class="_Roe"]/@style'
@@ -336,3 +344,8 @@ class GoogleProductsSpider(BaseProductsSpider):
                                average_rating=round(avg, 1),
                                rating_by_star=by_star)
         cond_set_value(product, 'buyer_reviews', reviews)
+
+    def handle_reviews_request(self, response):
+        product = response.meta['product']
+        self._populate_buyer_reviews(response, product)
+        return product
