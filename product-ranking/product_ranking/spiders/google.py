@@ -11,7 +11,8 @@ from scrapy.log import ERROR, WARNING, DEBUG
 from scrapy.selector import Selector
 from scrapy.http import Request
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price
+from product_ranking.items import SiteProductItem, RelatedProduct, Price,\
+    BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 from product_ranking.spiders import cond_set, cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -140,17 +141,22 @@ class GoogleProductsSpider(BaseProductsSpider):
         product['related_products'] = {'recommended': r}
 
         # get right url if it redirect url
-        # TODO: this pattern neems should be checked
-        redirect_pattern = r'&adurl=(.*)'
+        redirect_pattern = r'(&adurl|\?url)=(.*)'
         res = re.findall(redirect_pattern, product['url'])
         if res:
-            req_url = urllib.unquote(res[0])
+            req_url = urllib.unquote(res[0][1])
             res = urllib.urlopen(req_url)
             url_not_stripped = res.geturl()
             product['url'] = url_not_stripped
+            review_link = product['buyer_reviews']
+            if review_link:
+                link = 'https://www.google.com' + review_link
+                return Request(link, callback=self.handle_reviews_request,
+                               meta=response.meta)
 
         # strip GET data from only google urls
         if 'www.google.com/shopping/product' in product['url']:
+            self._populate_buyer_reviews(response, product)
             pattern = r'(.*)\?'
             result = re.findall(pattern, product['url'])
             if result:
@@ -231,6 +237,11 @@ class GoogleProductsSpider(BaseProductsSpider):
                     link = item.xpath('.//a[@class="psgiimg"]')
                 title = link.xpath('string(.)').extract()[0]
                 url = link.xpath('@href').extract()[0]
+                rewiew_link = item.xpath(
+                    './/a[@class="shop__secondary"]/@href'
+                ).extract()
+                if rewiew_link:
+                    rewiew_link = rewiew_link[0]
                 source_site = item.xpath(
                     './/div[@class="_tyb"]/text()'
                 ).extract()
@@ -281,6 +292,7 @@ class GoogleProductsSpider(BaseProductsSpider):
                 image_url=image_url,
                 description=description,
                 google_source_site=source_site,
+                buyer_reviews=rewiew_link,
                 locale='en-US')
 
     def _scrape_next_results_page_link(self, response):
@@ -294,3 +306,43 @@ class GoogleProductsSpider(BaseProductsSpider):
         else:
             link = urlparse.urljoin(response.url, next[0])
         return link
+
+    def _populate_buyer_reviews(self, response, product):
+        product = response.meta['product']
+        del product['buyer_reviews']
+        revs = response.xpath(
+            '//div[@id="reviews"]/div[@id="reviews"]'
+        )
+        if not revs:
+            return
+        total = response.xpath(
+            '//div[@class="_Ape"]/div/div/div[@class="_wpe"]/text()'
+        ).extract()
+        if not total:
+            return
+        total = re.findall("\d*,?\d+", total[0])
+        total = int(total[0].replace(',', ''))
+        reviews = response.xpath(
+            '//div[@id="reviews"]/div[@id="reviews"]//div[@class="_Joe"]'
+            '/div/a/div[@class="_Roe"]/@style'
+        ).extract()
+        star = 5
+        by_star = {}
+        for rev in reviews:
+            percents = re.findall("width:(\d+\.?\d*)\%", rev)[0]
+            rev_number = total*float(percents)/100
+            rev_number = int(round(rev_number))
+            by_star[star] = rev_number
+            star -= 1
+        avg = float(
+            sum([star * rating for star, rating in by_star.iteritems()]))
+        avg /= total
+        reviews = BuyerReviews(num_of_reviews=total,
+                               average_rating=round(avg, 1),
+                               rating_by_star=by_star)
+        cond_set_value(product, 'buyer_reviews', reviews)
+
+    def handle_reviews_request(self, response):
+        product = response.meta['product']
+        self._populate_buyer_reviews(response, product)
+        return product
