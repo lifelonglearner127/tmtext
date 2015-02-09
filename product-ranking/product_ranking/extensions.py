@@ -9,13 +9,15 @@ try:
     from monitoring import push_simmetrica_event
 except ImportError:
     try:
-        from product_ranking.monitoring import push_simmetrica_event
+        from spiders import push_simmetrica_event
     except ImportError:
-        print 'ERROR: CAN NOT IMPORT MONITORING PACKAGE!'
+        try:
+            from product_ranking.spiders import push_simmetrica_event
+        except ImportError:
+            print 'ERROR: CAN NOT IMPORT MONITORING PACKAGE!'
 
 
 def _stats_on_spider_open(spider):
-
     if not push_simmetrica_event('monitoring_spider_opened'):
         print 'pushing simmetrica event failed, check redis server and all'\
               ' the events'
@@ -57,6 +59,7 @@ def _stats_on_spider_close(spider, reason):
             spider_stats['downloader/response_bytes'] / 1024 / 1024  # MBytes
         )
     )
+    print 'Simmetrica events have been pushed...'
 
 
 class StatsCollector(object):
