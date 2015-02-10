@@ -130,10 +130,6 @@ def check_input(url, is_valid_url, invalid_url_message=""):
         
 # infer domain from input URL
 def extract_domain(url):
-    if 'freshdirect.com' in url:
-        # freshdirect scraper
-        # https://www.freshdirect.com/pdp.jsp?productId=sea_stuffshrmp&catId=sea_hmr_chefprep#explanatory
-        return 'freshdirect'
     if 'chicago.doortodoororganics.com' in url:
         # for chicago scraper
         # https://chicago.doortodoororganics.com/shop/products/rudis-white-hamburger-buns
@@ -145,7 +141,7 @@ def extract_domain(url):
         # for souq scraper
         # http://uae.souq.com/ae-en/samsung-galaxy-s3-mini-i8190-8gb-3g-+-wifi-white-4750807/i/
         return 'souq'
-    m = re.match("^http://(www|shop)\.([^/\.]+)\..*$", url)
+    m = re.match("^https?://(www|shop)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)
     # TODO: return error message about bad URL if it does not match the regex
