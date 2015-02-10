@@ -684,6 +684,23 @@ class Scraper():
             return 1
         return 0
 
+    def _in_stores_only(self):
+        '''General function for setting value of field "in_stores_only".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation is available.
+        '''
+
+        # compute necessary fields
+        sellers = self._get_sellers_types()
+        # if any of the seller types is None, return None (cannot be determined)
+        if any(v is None for v in sellers.values()):
+            return None
+
+        if (sellers['site_online'] == 0 and sellers['marketplace'] == 0) and \
+            sellers['in_stores'] == 1:
+            return 1
+        return 0
+
     def _in_stock(self):
         '''General function for setting value of field "in_stores_only".
         It will be inferred from other sellers fields.
