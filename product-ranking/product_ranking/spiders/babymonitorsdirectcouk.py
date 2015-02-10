@@ -25,7 +25,7 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
     -a order=bestselling used by default.
 
     Note: some product where price market as 'DISCONTNUED' may
-    be out of correct position during price order.
+    be out of correct position during price order search.
     """
     name = 'babymonitorsdirectcouk_products'
     allowed_domains = ["babymonitorsdirect.co.uk"]
@@ -42,7 +42,7 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         'relevance': 'relevance',
         'featured': 'featured',
         'newest': 'newest',
-        'bestselling': 'bestselling', # default
+        'bestselling': 'bestselling',  # default
         'alphaasc': 'alphaasc',
         'alphadesc': 'alphadesc',
         'avgcustomerreview': 'avgcustomerreview',
@@ -53,27 +53,24 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
     def __init__(self, order='bestselling', *args, **kwargs):
         order = self.SEARCH_SORT.get(order, 'bestselling')
         formatter = FormatterWithDefaults(order=order)
-        super(BabymonitorsdirectProductsSpider, self
-            ).__init__(formatter, *args, **kwargs)
+        super(BabymonitorsdirectProductsSpider,
+              self).__init__(formatter, *args, **kwargs)
 
     def start_requests(self):
         print 'get products match for all terms'
         for st in self.searchterms:
             url = self.url_formatter.format(
-                    self.SEARCH_URL,
-                    search_term=urllib.quote_plus(st.encode('utf-8')),
-                    dont_filter=False
-                )
-            yield Request(
-                            url, 
-                            callback=self.getResponse, 
-                         )
+                self.SEARCH_URL,
+                search_term=urllib.quote_plus(st.encode('utf-8')),
+                dont_filter=False
+            )
+            yield Request(url, callback=self.getResponse)
 
-    #Function count products on last page in pagination
+    # Function count products on last page in pagination
     def count_prod_set(self, response):
         self.count_prod = 0
-        for div in response.xpath('//ul[contains(@class, "ProductList")]' \
-            '/li[contains(@class, "ListView")]'):
+        for div in response.xpath('//ul[contains(@class, "ProductList")]'
+                                  '/li[contains(@class, "ListView")]'):
             self.count_prod += 1
 
     def getResponse(self, response):
@@ -82,17 +79,18 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         ).extract()
 
         if link:
-            page_number_loc = re.findall("\d+", re.findall("page=\d+", link[0])[0])[0]
+            page_number_loc = re.findall("\d+", re.findall("page=\d+",
+                                         link[0])[0])[0]
         else:
             self.count_prod_set(response)
             for el in self.continue_parse():
-               yield el
+                yield el
             return
 
         if int(page_number_loc) < int(self.page_number):
             self.count_prod_set(response)
             for el in self.continue_parse():
-               yield el
+                yield el
             return
 
         self.page_number = page_number_loc
@@ -102,14 +100,15 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             ajax_link += '&ajax=1'
             full_link = "http://www.babymonitorsdirect.co.uk/" + ajax_link
             yield Request(
-                    full_link,
-                    callback=self.getResponse,
-                    dont_filter=True
-                    )
+                full_link,
+                callback=self.getResponse,
+                dont_filter=True
+            )
 
-    #Function which start parse products after total_matches found
+    # Function which start parse products after total_matches found
     def continue_parse(self):
-        for req in super(BabymonitorsdirectProductsSpider, self).start_requests():
+        for req in super(BabymonitorsdirectProductsSpider,
+                         self).start_requests():
             req.dont_filter = True
             yield req
 
@@ -122,11 +121,11 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         cond_set(product, 'title', title)
 
         brand = response.xpath(
-            '//div[@class="DetailRow"]/div[contains(text(), "Brand:")]' \
+            '//div[@class="DetailRow"]/div[contains(text(), "Brand:")]'
             '/../div[@class="Value"]/a/text()'
         ).extract()
-        cond_set(product, 'brand', brand) 
-        
+        cond_set(product, 'brand', brand)
+
         price = response.xpath(
             '//em[contains(@class, "ProductPrice")]/text()'
         ).extract()
@@ -179,7 +178,7 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             '//div[@class="ProductDescriptionContainer"]').extract()
         cond_set(product, 'description', des)
 
-        #Reviews
+        # Reviews
         num_of_reviews = response.xpath(
             '//div[@class="DetailRow"]/div[contains(text(), "Rating:")]'
             '/../div[@class="Value"]/span/a/text()'
@@ -195,7 +194,8 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             '/../div[@class="Value"]/img/@src'
         ).extract()
         if average_rating:
-            average_rating = int(re.findall("IcoRating(\d)", average_rating[0])[0])
+            average_rating = int(re.findall("IcoRating(\d)",
+                                 average_rating[0])[0])
         if not average_rating:
             num_of_reviews = None
         buyer_reviews = BuyerReviews(num_of_reviews=num_of_reviews,
@@ -217,14 +217,15 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         cond_set_value(product, 'related_products', rp)
 
         cond_set_value(product, 'locale', 'en_GB')
-        
+
         product["url"] = response.url
 
         return product
 
     def _scrape_total_matches(self, response):
         total_matches = None
-        if 'No products found matching the search criteria' in response.body_as_unicode():
+        if 'No products found matching the search criteria' in \
+                response.body_as_unicode():
             total_matches = 0
         elif self.page_number != 0:
             total_matches = (int(self.page_number)-1) * \
@@ -242,7 +243,7 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         links = response.xpath(
-            '//div[@class="CategoryPagination"]' \
+            '//div[@class="CategoryPagination"]'
             '/div[@class="FloatRight"]/a/@href'
         )
         if links:
