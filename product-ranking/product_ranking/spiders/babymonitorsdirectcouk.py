@@ -12,21 +12,49 @@ from scrapy.log import WARNING
 from scrapy.http import Request
 from product_ranking.items import SiteProductItem, RelatedProduct, \
     Price, BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, \
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults,\
     cond_set, cond_set_value
 
 
 class BabymonitorsdirectProductsSpider(BaseProductsSpider):
+    """Spider for babymonitorsdirect.co.uk.
+
+    scrapy crawl babymonitorsdirectcouk_products
+    -a searchterms_str="baby monitor" [-a order=pricedesc]
+
+    -a order=bestselling used by default.
+
+    Note: some product where price market as 'DISCONTNUED' may
+    be out of correct position during price order.
+    """
     name = 'babymonitorsdirectcouk_products'
     allowed_domains = ["babymonitorsdirect.co.uk"]
     start_urls = []
     SEARCH_URL = "http://www.babymonitorsdirect.co.uk/search.php?" \
-        "search_query={search_term}"
+        "search_query={search_term}"\
+        "&section=product&ajax=1&sortBy={order}"
 
     page_number = 0
     _product_on_page = 16
     count_prod = 0
 
+    SEARCH_SORT = {
+        'relevance': 'relevance',
+        'featured': 'featured',
+        'newest': 'newest',
+        'bestselling': 'bestselling', # default
+        'alphaasc': 'alphaasc',
+        'alphadesc': 'alphadesc',
+        'avgcustomerreview': 'avgcustomerreview',
+        'priceasc': 'priceasc',
+        'pricedesc': 'pricedesc',
+    }
+
+    def __init__(self, order='bestselling', *args, **kwargs):
+        order = self.SEARCH_SORT.get(order, 'bestselling')
+        formatter = FormatterWithDefaults(order=order)
+        super(BabymonitorsdirectProductsSpider, self
+            ).__init__(formatter, *args, **kwargs)
 
     def start_requests(self):
         print 'get products match for all terms'
@@ -70,11 +98,14 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         self.page_number = page_number_loc
 
         if link:
-                yield Request(
-                        "http://www.babymonitorsdirect.co.uk/" + link[0], 
-                        callback=self.getResponse,
-                        dont_filter=True 
-                        )
+            ajax_link = link[0].rstrip('#results')
+            ajax_link += '&ajax=1'
+            full_link = "http://www.babymonitorsdirect.co.uk/" + ajax_link
+            yield Request(
+                    full_link,
+                    callback=self.getResponse,
+                    dont_filter=True
+                    )
 
     #Function which start parse products after total_matches found
     def continue_parse(self):
@@ -103,6 +134,12 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             price = response.xpath(
                 '//em[contains(@class, "ProductPrice")]/span/text()'
             ).extract()
+        if price and 'DISCONTNUED' in price[0]:
+            price = response.xpath(
+                '//div[contains(@class, "RetailPrice")]'
+                '/div[@class="Value"]/text()'
+            ).extract()
+            cond_set_value(product, 'is_out_of_stock', True)
         if price:
             price = re.findall("\d+", price[0])
             if len(price) >= 2:
@@ -122,9 +159,9 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         if is_out_of_stock:
             is_out_of_stock = is_out_of_stock[0]
         if "In Stock" in is_out_of_stock:
-            cond_set(product, 'is_out_of_stock', ("True",))
-        elif "Out of Stock" in is_out_of_stock:
             cond_set(product, 'is_out_of_stock', ("False",))
+        elif "Out of Stock" in is_out_of_stock:
+            cond_set(product, 'is_out_of_stock', ("True",))
         else:
             is_out_of_stock = response.xpath(
                 '//div[@class="CurrentlySoldOut"]/p[1]/text()'
@@ -179,13 +216,6 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             rp.append(RelatedProduct(title, url))
         cond_set_value(product, 'related_products', rp)
 
-        #UPC on site is String - not Integer
-        # upc = response.xpath(
-        #     '//div[@class="DetailRow"]' \
-        #     '/div[contains(text(), "Product Code:")]' \
-        #     '/../div[@class="Value"]/span/text()'
-        # ).extract()
-        # cond_set(product, 'upc', upc)
         cond_set_value(product, 'locale', 'en_GB')
         
         product["url"] = response.url
@@ -216,6 +246,8 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             '/div[@class="FloatRight"]/a/@href'
         )
         if links:
-            return "http://www.babymonitorsdirect.co.uk/" + \
-                links.extract()[0].strip()
+            ajax_link = links.extract()[0].strip().rstrip('#results')
+            ajax_link += '&ajax=1'
+            full_link = "http://www.babymonitorsdirect.co.uk/" + ajax_link
+            return full_link
         return None
