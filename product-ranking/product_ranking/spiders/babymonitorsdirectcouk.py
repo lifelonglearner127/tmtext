@@ -2,12 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import re
-import string
 import urllib
-import urlparse
-import collections
-
-from scrapy.log import WARNING
 
 from scrapy.http import Request
 from product_ranking.items import SiteProductItem, RelatedProduct, \
@@ -26,6 +21,8 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
 
     Note: some product where price market as 'DISCONTNUED' may
     be out of correct position during price order search.
+    Note: This type of spider need first to crawl through all
+    pagination page to count total_matches.
     """
     name = 'babymonitorsdirectcouk_products'
     allowed_domains = ["babymonitorsdirect.co.uk"]
@@ -57,7 +54,6 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
               self).__init__(formatter, *args, **kwargs)
 
     def start_requests(self):
-        print 'get products match for all terms'
         for st in self.searchterms:
             url = self.url_formatter.format(
                 self.SEARCH_URL,
