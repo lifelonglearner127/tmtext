@@ -12,11 +12,20 @@ from scrapy import Request
 from scrapy.log import ERROR, WARNING
 
 
+# From PowerReview.groupPath()
+def groupPath(groupId):
+    b = groupId
+    for x in range(0, 6 - len(b)):
+        b = "0" + b
+    b = b[0:2] + "/" + b[2:4] + "/" + b[4:]
+    return b
+
+
 class SoapProductSpider(BaseProductsSpider):
     name = 'soap_products'
     allowed_domains = ["soap.com"]
 
-    SEARCH_URL = "http://www.soap.com/buy?s={search_term}"
+    SEARCH_URL = "http://www.soap.com/buy?s={search_term}&ref=srbr_so_unav"
     ADD_SEARCH = (
         "http://www.soap.com/SearchSite/ProductLoader.qs"
         "?IsPLPAjax=Y&originUrl={origin}&sectionIndex=1")
@@ -45,6 +54,15 @@ class SoapProductSpider(BaseProductsSpider):
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
+
+    def start_requests(self):
+        for request in super(SoapProductSpider, self).start_requests():
+            yield Request(url='http://www.soap.com', meta=request.meta.copy(), callback=self._start_search)
+
+    def _start_search(self, response):
+        return Request(
+            self.SEARCH_URL.format(search_term=response.meta['search_term']),
+            meta=response.meta.copy())
 
     def parse(self, response):
         purl = urlparse.urlparse(response.url)
@@ -89,20 +107,15 @@ class SoapProductSpider(BaseProductsSpider):
         productid = response.xpath(
             "//input[@id='productIDTextBox']/@value").extract()
         if productid:
-            productid = productid[0].strip()
-            if len(productid) % 2 == 1:
-                norm_productid = "0" + productid
-            else:
-                norm_productid = productid
-        prodpath = [norm_productid[i:i + 2] for i in range(0, len(norm_productid), 2)]
-        prodpath = "/".join(prodpath)
+            productid = productid[0]
+            prodpath = groupPath(productid)
 
-        new_meta['url_related'] = "http://www.soap.com/qaps/BehaviorData!GetPageSlots.qs?ProductId={pid}&PersonalizationMode=C&SkuCode={upc}".format(
-            pid=productid,
-            upc=prod['upc'])
-        new_meta['url_reviews_detail'] = "http://www.soap.com/amazon_reviews/{prodpath}/mosthelpful_Default.html".format(
-            prodpath=prodpath)
-        return Request(json_link, self._parse_brand_json, meta=new_meta)
+            new_meta['url_related'] = "http://www.soap.com/qaps/BehaviorData!GetPageSlots.qs?ProductId={pid}&PersonalizationMode=C&SkuCode={upc}".format(
+                pid=productid,
+                upc=prod['upc'])
+            new_meta['url_reviews_detail'] = "http://www.soap.com/amazon_reviews/{prodpath}/mosthelpful_Default.html".format(
+                prodpath=prodpath)
+        return Request(json_link, self._parse_brand_json, meta=new_meta, dont_filter=True)
 
     def _parse_brand_json(self, response):
         product = response.meta['product']
@@ -112,10 +125,12 @@ class SoapProductSpider(BaseProductsSpider):
             cond_set_value(product, 'brand', data.get('brand'))
             cond_set_value(product, 'model', data.get('title'))
 
-        rel_url = response.meta['url_related']
-        new_meta = response.meta.copy()
-        new_meta['handle_httpstatus_list'] = [404]
-        return Request(rel_url, self._parse_related, meta=new_meta)
+        rel_url = response.meta.get('url_related')
+        if rel_url:
+            new_meta = response.meta.copy()
+            new_meta['handle_httpstatus_list'] = [404]
+            return Request(rel_url, self._parse_related, meta=new_meta, dont_filter=True)
+        return product
 
     def _parse_related(self, response):
         def full_url(url):
@@ -152,7 +167,7 @@ class SoapProductSpider(BaseProductsSpider):
         rurl = response.meta['url_reviews_detail']
         new_meta = response.meta.copy()
         new_meta['handle_httpstatus_list'] = [404]
-        return Request(rurl, self._parse_reviews_mosthelpful, meta=new_meta)
+        return Request(rurl, self._parse_reviews_mosthelpful, meta=new_meta, dont_filter=True)
 
     def _parse_reviews_mosthelpful(self, response):
         product = response.meta['product']
@@ -244,7 +259,11 @@ class SoapProductSpider(BaseProductsSpider):
         num_results = response.xpath(
             "//*[@class='result-pageNum-info']/span/text()").extract()
         if num_results and num_results[0]:
-            return int(num_results[0])
+            try:
+                num_results = int(num_results[0])
+            except:
+                num_results = 0
+            return num_results
         else:
             self.log("Failed to parse total number of matches.", level=ERROR)
 
