@@ -208,7 +208,19 @@ class WalmartScraper(Scraper):
                     break
 
         if len(self.video_urls) == 0:
-            self.video_urls = None
+            if self.tree_html.xpath("//div[starts-with(@class,'js-idml-video-container')]"):
+                contents = requests.get("http://www.walmart.com/product/idml/video/" +
+                                        str(self._extract_product_id()) + "/WebcollageVideos").text
+
+                tree = html.fromstring(contents)
+                video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
+                video_relative_path = video_json["videos"][0]["sources"][0]["src"]
+                video_base_path = tree.xpath("//table[@class='wc-gallery-table']/@data-resources-base")[0]
+                self.video_urls.append(video_base_path + video_relative_path)
+                self.has_video = True
+            else:
+                self.video_urls = None
+
 
     def _video_urls(self):
         """Extracts video URLs for a given walmart product
@@ -641,9 +653,9 @@ class WalmartScraper(Scraper):
             return None
         else:
             if price_info[0] == '$':
-                return price_info[1:]
+                return float(price_info[1:])
             else:
-                return price_info
+                return float(price_info)
 
     def _price_currency(self):
         """Extracts currency of product price in
@@ -1328,6 +1340,9 @@ class WalmartScraper(Scraper):
         in_stores = 0
 
         try:
+            if self._in_stores_only() == 1:
+                return 1
+
             in_stores = self._stores_available_from_script_old_page()
             return in_stores
         except Exception:
@@ -1353,6 +1368,31 @@ class WalmartScraper(Scraper):
             pass
 
         return in_stores
+
+
+    def _in_stores_only(self):
+        '''General function for setting value of field "in_stores_only".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation is available.
+        '''
+
+        onlinePriceText = ""
+
+        try:
+            onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceWM']//text()"))
+            if "In stores only" in onlinePriceText:
+                return 1
+        except Exception:
+            pass
+
+        try:
+            onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceMP']//text()"))
+            if "In stores only" in onlinePriceText:
+                return 1
+        except Exception:
+            pass
+
+        return 0
 
     def _stores_available_from_script_old_page(self):
         """Extracts whether product is available in stores.
@@ -1381,8 +1421,8 @@ class WalmartScraper(Scraper):
         Returns 1/0
         """
 
-        if self._site_online():
-            return 1
+#        if self._site_online():
+#           return 1
 
         if not self.js_entry_function_body:
             pinfo_dict = self._extract_jsfunction_body()
@@ -1587,10 +1627,8 @@ class WalmartScraper(Scraper):
 
             marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
 
-            if not marketplace_seller_info:
-                if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"] and \
-                        self.tree_html.xpath("//button[contains(@class,'js-add-to-cart')]"):
-                    return 1
+            if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
+                return 1
         except Exception:
             #       old design
             if self.tree_html.xpath("//meta[@itemprop='seller']/@content")[0] == "Walmart.com":
@@ -1599,6 +1637,13 @@ class WalmartScraper(Scraper):
                             "display:none" not in self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style")[0]:
                         return 1
 
+                body_raw = "" . join(self.tree_html.xpath("//script/text()")).strip()
+                body_clean = re.sub("\n", " ", body_raw)
+                sIndex = body_clean.find("'item_online_availability'") + len("'item_online_availability'") + 2
+                eIndex = body_clean.find("']", sIndex)
+
+                if "camelPrice" not in body_clean[sIndex:eIndex] == "true":
+                    return 1
         return 0
 
     def _site_online_out_of_stock(self):
@@ -1709,6 +1754,7 @@ class WalmartScraper(Scraper):
         "owned": _owned, \
         "owned_out_of_stock": _owned_out_of_stock, \
         "in_stores" : _in_stores, \
+        "in_stores_only" : _in_stores_only, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \

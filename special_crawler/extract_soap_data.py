@@ -309,46 +309,46 @@ class SoapScraper(Scraper):
 
     def _price_amount(self):
         price = self._price()
+        price = price.replace(",", "")
         price_amount = re.findall(r"[\d\.]+", price)[0]
-        return price_amount
+        return float(price_amount)
 
     def _price_currency(self):
         price = self._price()
+        price = price.replace(",", "")
         price_amount = re.findall(r"[\d\.]+", price)[0]
         price_currency = price.replace(price_amount, "")
+        if price_currency == "$":
+            return "USD"
         return price_currency
-
-    def _in_stores_only(self):
-        return 0
 
     def _in_stores(self):
         return 0
 
-    def _owned(self):
-        return 1
-    
     def _marketplace(self):
-        return 0
-
-    def _owned_out_of_stock(self):
-        if len(self.tree_html.xpath("//input[@id='AddCartButton']")) < 1:
-            return 1
+        '''marketplace: the product is sold by a third party and the site is just establishing the connection
+        between buyer and seller. E.g., "Sold by X and fulfilled by Amazon" is also a marketplace item,
+        since Amazon is not the seller.
+        '''
         return 0
 
     def _marketplace_sellers(self):
+        '''marketplace_sellers - the list of marketplace sellers - list of strings (["seller1", "seller2"])
+        '''
         return None
 
     def _marketplace_lowest_price(self):
+        # marketplace_lowest_price - the lowest of marketplace prices - floating-point number
         return None
 
-    def _in_stock(self):
-        '''in_stock - the item is available from any seller, directly or in a store - binary
-        (irrespective of the actual seller - this site, a marketplace seller, or a physical store)
-        '''
-        rows = self.tree_html.xpath("//input[contains(@class,'addToCartButtonBox')]")
-        if len(rows) > 0:
-            return 1
-        return 0
+    def _marketplace_out_of_stock(self):
+        """Extracts info on whether currently unavailable from any marketplace seller - binary
+        Uses functions that work on both old page design and new design.
+        Will choose whichever gives results.
+        Returns:
+            1/0
+        """
+        return None
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
@@ -383,13 +383,6 @@ class SoapScraper(Scraper):
 
     def _category_name(self):
         return self._categories()[-1]
-
-    def load_universal_variable(self):
-        js_content = ' '.join(self.tree_html.xpath('//script//text()'))
-
-        universal_variable = {}
-        universal_variable["manufacturer"] = re.findall(r'"manufacturer": "(.*?)"', js_content)[0]
-        return universal_variable
 
     def _brand(self):
         return self.tree_html.xpath("//div[@class='viewBox']//strong[1]//text()")[1].strip()
@@ -435,14 +428,10 @@ class SoapScraper(Scraper):
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
-        "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
-        "owned" : _owned, \
-        "owned_out_of_stock" : _owned_out_of_stock, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
-        "in_stock" : _in_stock, \
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \

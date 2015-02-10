@@ -454,8 +454,13 @@ class SamsclubScraper(Scraper):
         rows = self.tree_html.xpath("//*[@id='addtocartsingleajaxonline']")
         if len(rows) > 0:
             return 1
-        else:
-            return 0
+        rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
+        if "Out of stock online" in rows:
+            return 1
+        rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
+        if "See online price in cart" in rows:
+            return 1
+        return 0
         #
         # rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
         # site_online = None

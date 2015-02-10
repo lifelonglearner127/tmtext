@@ -353,10 +353,16 @@ class Scraper():
 
 
             try:
+                # replace NULL characters
+                contents = self._clean_null(contents)
+
                 self.tree_html = html.fromstring(contents.decode("utf8"))
             except UnicodeError, e:
                 # if string was not utf8, don't deocde it
                 print "Warning creating html tree from page content: ", e.message
+
+                # replace NULL characters
+                contents = self._clean_null(contents)
 
                 self.tree_html = html.fromstring(contents)
 
@@ -368,8 +374,21 @@ class Scraper():
             # if it had worked by now, it would have returned.
             # if it still doesn't work, it will throw exception.
             # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
+
+            # replace NULL characters
+            contents = self._clean_null(contents)
+
             contents = urllib2.urlopen(request).read()
             self.tree_html = html.fromstring(contents)
+
+    def _clean_null(self, text):
+        '''Remove NULL characters from text if any.
+        Return text without the NULL characters
+        '''
+        if text.find('\00') >= 0:
+            print "WARNING: page contained NULL characters. Removed"
+            text = text.replace('\00','')
+        return text
             
 
     # Extract product info given a list of the type of info needed.

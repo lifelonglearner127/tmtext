@@ -254,23 +254,25 @@ class DrugstoreScraper(Scraper):
         price = self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
         return price
 
-    def _in_stores_only(self):
-        return None
+    def _price_amount(self):
+        price = self._price()
+        price = price.replace(",", "")
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        return float(price_amount)
+
+    def _price_currency(self):
+        price = self._price()
+        price = price.replace(",", "")
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        price_currency = price.replace(price_amount, "")
+        if price_currency == "$":
+            return "USD"
+        return price_currency
 
     def _in_stores(self):
         return None
 
-    def _owned(self):
-        return 1
-    
     def _marketplace(self):
-        return 0
-
-    def _owned_out_of_stock(self):
-        rows = self.tree_html.xpath("//div[@id='ReplacementReasonDiv']//text()")
-        for row in rows:
-            if "temporarily out of stock" in row:
-                return 1
         return 0
 
     def _marketplace_sellers(self):
@@ -291,6 +293,11 @@ class DrugstoreScraper(Scraper):
                 return 1
         return 0
 
+    def _in_stores_out_of_stock(self):
+        '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
+        (null should be used for items that can not be ordered online and the availability may depend on location of the store)
+        '''
+        return None
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -347,15 +354,15 @@ class DrugstoreScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
-        "in_stores_only" : _in_stores_only, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
         "in_stores" : _in_stores, \
-        "owned" : _owned, \
-        "owned_out_of_stock" : _owned_out_of_stock, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
+        "in_stores_out_of_stock" : _in_stores_out_of_stock, \
 
          # CONTAINER : REVIEWS
         "review_count" : _review_count, \
