@@ -1340,6 +1340,9 @@ class WalmartScraper(Scraper):
         in_stores = 0
 
         try:
+            if self._in_stores_only() == 1:
+                return 1
+
             in_stores = self._stores_available_from_script_old_page()
             return in_stores
         except Exception:
@@ -1365,6 +1368,31 @@ class WalmartScraper(Scraper):
             pass
 
         return in_stores
+
+
+    def _in_stores_only(self):
+        '''General function for setting value of field "in_stores_only".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation is available.
+        '''
+
+        onlinePriceText = ""
+
+        try:
+            onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceWM']//text()"))
+            if "In stores only" in onlinePriceText:
+                return 1
+        except Exception:
+            pass
+
+        try:
+            onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceMP']//text()"))
+            if "In stores only" in onlinePriceText:
+                return 1
+        except Exception:
+            pass
+
+        return 0
 
     def _stores_available_from_script_old_page(self):
         """Extracts whether product is available in stores.
@@ -1726,6 +1754,7 @@ class WalmartScraper(Scraper):
         "owned": _owned, \
         "owned_out_of_stock": _owned_out_of_stock, \
         "in_stores" : _in_stores, \
+        "in_stores_only" : _in_stores_only, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
