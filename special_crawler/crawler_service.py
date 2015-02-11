@@ -32,6 +32,7 @@ from extract_freshdirect_data import FreshDirectScraper
 from extract_quill_data import QuillScraper
 from extract_hersheys_data import HersheysScraper
 from extract_freshamazon_data import FreshAmazonScraper
+from extract_george_data import GeorgeScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -76,6 +77,7 @@ SUPPORTED_SITES = {
                     "souq": SouqScraper,
                     "freshdirect" : FreshDirectScraper,
                     "quill" : QuillScraper,
+                     "george" : GeorgeScraper,
                     }
 
 # add logger
@@ -127,7 +129,7 @@ def check_input(url, is_valid_url, invalid_url_message=""):
         except UnicodeEncodeError:
             error_message = "Invalid URL: " + url.encode("utf-8") + str(invalid_url_message)
         raise InvalidUsage(error_message, 400)
-        
+
 # infer domain from input URL
 def extract_domain(url):
     if 'chicago.doortodoororganics.com' in url:
@@ -141,6 +143,8 @@ def extract_domain(url):
         # for souq scraper
         # http://uae.souq.com/ae-en/samsung-galaxy-s3-mini-i8190-8gb-3g-+-wifi-white-4750807/i/
         return 'souq'
+    if 'direct.asda.com/george' in url.lower():
+        return 'george'
     m = re.match("^https?://(www|shop)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)
@@ -233,7 +237,8 @@ def get_data():
     if 'data' not in request_arguments:
         try:
             ret = site_scraper.product_info()
-        except HTTPError:
+
+        except HTTPError as ex:
             raise GatewayError("Error communicating with site crawled.")
 
         return jsonify(ret)
@@ -291,4 +296,4 @@ def post_request_logging(response):
 
 if __name__ == '__main__':
 
-    app.run('0.0.0.0', port=80, threaded=True)
+    app.run('0.0.0.0', port=8000, threaded=True)
