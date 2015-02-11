@@ -96,6 +96,7 @@ class SoapScraper(Scraper):
         if len(line_txts) < 1:
             return None
         self.feature_count = len(line_txts)
+        self.features = line_txts
         return line_txts
 
     def _feature_count(self):
