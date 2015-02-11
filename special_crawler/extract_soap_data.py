@@ -29,7 +29,7 @@ class SoapScraper(Scraper):
     reviews_tree = None
     max_score = None
     min_score = None
-    review_count = None
+    review_count = 0
     average_review = None
     reviews = None
     feature_count = None
@@ -243,6 +243,16 @@ class SoapScraper(Scraper):
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
         if not self.max_score or not self.min_score:
+            # SOAP.COM REVIEWS
+            try:
+                soap_average_review = float(self.tree_html.xpath("//span[contains(@class,'pr-rating pr-rounded average')]//text()")[0].strip())
+            except:
+                soap_average_review = 0
+            try:
+                soap_review_count = int(self.tree_html.xpath("//p[contains(@class,'pr-snapshot-average-based-on-text')]//span[@class='count']//text()")[0].strip())
+            except:
+                soap_review_count = 0
+
             # AMAZON.COM REVIEWS
             # http://www.soap.com/amazon_reviews/06/47/14/mosthelpful_Default.html
             product_id = self._product_id()
@@ -252,18 +262,25 @@ class SoapScraper(Scraper):
             product_id = "/".join(product_id)
             url = "http://www.soap.com/amazon_reviews/%s/mosthelpful_Default.html" % product_id
             req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
-            redirect_contents = urllib2.urlopen(req).read()
-            redirect_tree = html.fromstring(redirect_contents)
-
+            try:
+                redirect_contents = urllib2.urlopen(req).read()
+                redirect_tree = html.fromstring(redirect_contents)
+            except:
+                return
             review_count = redirect_tree.xpath("//span[@class='pr-review-num']//text()")[0].strip()
             m = re.findall(r"\d+", review_count)
             if len(m) > 0:
                 self.review_count = int(m[0])
+            else:
+                self.review_count = 0
             average_review = redirect_tree.xpath("//span[contains(@class, 'pr-rating pr-rounded average')]//text()")[0].strip()
-            m = re.findall(r"\d+", average_review)
+            m = re.findall(r"[\d\.]+", average_review)
             if len(m) > 0:
                 self.average_review = float(m[0])
-
+            else:
+                self.average_review = 0
+            self.average_review = round(((soap_review_count*soap_average_review) + (self.review_count*self.average_review)) / (soap_review_count + self.review_count), 2)
+            self.review_count += soap_review_count
             rows = redirect_tree.xpath("//div[contains(@class,'pr-info-graphic-amazon')]//dl//dd[3]//text()")
             self.reviews = []
             idx = 5
@@ -359,10 +376,16 @@ class SoapScraper(Scraper):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 0:
             return None
-        rows = self.tree_html.xpath("//input[contains(@class,'addToCartButtonBox')]")
-        if len(rows) > 0:
-            return 0
-        return 1
+
+        rows = self.tree_html.xpath("//input[@class='skuHidden']/@isoutofstock")
+        if len(rows) == 1 and 'Y' in rows:
+            return 1
+        if len(rows) > 0 and 'N' not in rows:
+            return 1
+        # rows = self.tree_html.xpath("//input[contains(@class,'addToCartButtonBox')]")
+        # if len(rows) > 0:
+        #     return 0
+        return 0
 
     def _in_stores_out_of_stock(self):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
