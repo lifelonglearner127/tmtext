@@ -1,9 +1,14 @@
 import re
+import urllib
+import urlparse
+
+from scrapy.http import Request
 
 from product_ranking.items import BuyerReviews, Price
 from product_ranking.spiders import cond_set, cond_set_value, \
     populate_from_open_graph, cond_replace_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 
 class TopshopProductsSpider(ProductsSpider):
@@ -40,16 +45,43 @@ class TopshopProductsSpider(ProductsSpider):
         'new': 'Newness',
         'price_asc': 'Price Ascending',
         'price_desc': 'Price Descending',
-        'ratting': 'Rating Descending'
+        'rating': 'Rating Descending'
     }
 
     OPTIONAL_REQUESTS = {
         'buyer_reviews': True
     }
 
+    HARDCODED_FIELDS = {
+        'locale': 'en_GB'
+    }
+
     REVIEWS_API_URL = 'http://reviews.topshop.com/6025-en_gb' \
-                      '/{prod_id}/reviews.htm?format=embedded&amp' \
-                      ';sort=featured'
+                      '/{prod_id}/reviews.htm'
+
+    def start_requests(self):
+        for st in self.searchterms:
+            yield Request(
+                self.url_formatter.format(
+                    self.SEARCH_URL,
+                    search_term=urllib.quote_plus(st.encode('utf-8')),
+                ),
+                callback=self.after_request,
+                meta={'search_term': st, 'remaining': self.quantity},
+            )
+
+    def after_request(self, response):
+        args = urlparse.urlparse(response.url).query
+        parsed_args = urlparse.parse_qs(args)
+        # some search results redirect to other page by categoryID
+        if 'parent_categoryId' in parsed_args:
+            parsed_args['sort_field'] = [self.sort_mode]
+            args = urllib.urlencode(parsed_args, doseq=True)
+            new_url = 'http://www.topshop.com/webapp/wcs/stores/servlet/'\
+                      'CatalogNavigationSearchResultCmd?' + args
+            return Request(new_url, callback=self.parse,
+                           meta=response.meta.copy())
+        return self.parse(response)
 
     def _total_matches_from_html(self, response):
         total = response.css('.product_total::text').extract()
@@ -74,9 +106,10 @@ class TopshopProductsSpider(ProductsSpider):
     def _populate_from_html(self, response, product):
         cond_set(product, 'image_url',
                  response.css('#product_view_full::attr(href)').extract())
-        xpath = '//div[@class="product_description"]/node()[normalize-space()]'
-        cond_set_value(product, 'description', response.xpath(xpath).extract(),
-                       ''.join)
+        desc = response.xpath(
+            '//div[@class="product_description"]'
+        ).extract()
+        cond_set(product, 'description', desc)
         populate_from_open_graph(response, product)
         #price = product.get('price')
         currency = response.css('[property="og:price:currency"]'
@@ -92,9 +125,12 @@ class TopshopProductsSpider(ProductsSpider):
                     .replace(' ', '')
                 price = Price(priceCurrency='GBP', price=price)
         cond_replace_value(product, 'price', price or None)
-        cond_set(product, 'brand',
-                 re.findall('.+ by (.+)', product.get('title')))
-
+        title = product.get('title')
+        brand = re.findall('.+ by (.+)', title)
+        if not brand:
+            brand = guess_brand_from_first_words(title)
+            brand = [brand]
+        cond_set(product, 'brand', brand)
 
     def _request_buyer_reviews(self, response):
         product = response.meta['product']
@@ -104,13 +140,33 @@ class TopshopProductsSpider(ProductsSpider):
         return self.REVIEWS_API_URL.format(prod_id=prod_id[0])
 
     def _parse_buyer_reviews(self, response):
-        css = '.BVRRDisplayContent .BVRRRatingNumber.value::text'
-        reviews = map(int, response.css(css).extract())
-        total = len(reviews)
+        reviews = response.xpath(
+            '//div[@class="BVRRReviewRatingsContainer"]'
+            '//span[@class="BVRRNumber BVRRRatingNumber value"]/text()'
+        ).extract()
+        reviews_prev = response.meta.get('reviews_prev')
+        if reviews_prev:
+            reviews.extend(reviews_prev)
+
+        next_link = response.xpath(
+            '//div[contains(@class, "BVRRPager")]/'
+            'span[contains(@class, "BVRRNextPage")]/a/@href'
+        ).extract()
+        if next_link:
+            meta = response.meta.copy()
+            meta['reviews_prev'] = reviews
+            return Request(next_link[0], callback=self._parse_buyer_reviews,
+                           meta=meta)
+
+        reviews_mapped = map(int, reviews)
+        total = len(reviews_mapped)
         if not total:
             return
-        by_star = {value: reviews.count(value) for value in reviews}
-        avg = float(response.css('.BVRRRatingNumber::text')[0].extract())
+        by_star = {int(value): reviews.count(value) for value in reviews}
+        avg = float(response.xpath(
+            '//span[@id="BVRRSReviewsSummaryOutOfID"]'
+            '/div[@class="BVRRNumber average"]/text()'
+        )[0].extract())
         result = BuyerReviews(num_of_reviews=total, average_rating=avg,
                               rating_by_star=by_star)
         response.meta['product']['buyer_reviews'] = result
