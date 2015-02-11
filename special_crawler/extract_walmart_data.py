@@ -208,7 +208,19 @@ class WalmartScraper(Scraper):
                     break
 
         if len(self.video_urls) == 0:
-            self.video_urls = None
+            if self.tree_html.xpath("//div[starts-with(@class,'js-idml-video-container')]"):
+                contents = requests.get("http://www.walmart.com/product/idml/video/" +
+                                        str(self._extract_product_id()) + "/WebcollageVideos").text
+
+                tree = html.fromstring(contents)
+                video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
+                video_relative_path = video_json["videos"][0]["sources"][0]["src"]
+                video_base_path = tree.xpath("//table[@class='wc-gallery-table']/@data-resources-base")[0]
+                self.video_urls.append(video_base_path + video_relative_path)
+                self.has_video = True
+            else:
+                self.video_urls = None
+
 
     def _video_urls(self):
         """Extracts video URLs for a given walmart product
@@ -1328,6 +1340,9 @@ class WalmartScraper(Scraper):
         in_stores = 0
 
         try:
+            if self._in_stores_only() == 1:
+                return 1
+
             in_stores = self._stores_available_from_script_old_page()
             return in_stores
         except Exception:
@@ -1353,6 +1368,31 @@ class WalmartScraper(Scraper):
             pass
 
         return in_stores
+
+
+    def _in_stores_only(self):
+        '''General function for setting value of field "in_stores_only".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation is available.
+        '''
+
+        onlinePriceText = ""
+
+        try:
+            onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceWM']//text()"))
+            if "In stores only" in onlinePriceText:
+                return 1
+        except Exception:
+            pass
+
+        try:
+            onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceMP']//text()"))
+            if "In stores only" in onlinePriceText:
+                return 1
+        except Exception:
+            pass
+
+        return 0
 
     def _stores_available_from_script_old_page(self):
         """Extracts whether product is available in stores.
@@ -1714,6 +1754,7 @@ class WalmartScraper(Scraper):
         "owned": _owned, \
         "owned_out_of_stock": _owned_out_of_stock, \
         "in_stores" : _in_stores, \
+        "in_stores_only" : _in_stores_only, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
