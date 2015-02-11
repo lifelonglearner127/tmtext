@@ -25,7 +25,8 @@ class TopshopProductsSpider(ProductsSpider):
 
     * `upc`, `model`, `is_out_of_stock`, `is_in_store_only` are not scraped
     * `related_products` not scraped as they are always random
-    * `brand` is not always scraped and may be incorrect as it's taken from the product's title
+    * `brand` is not always scraped and may be incorrect as it's taken from
+       the product's title
 
     """
 
@@ -111,7 +112,7 @@ class TopshopProductsSpider(ProductsSpider):
         ).extract()
         cond_set(product, 'description', desc)
         populate_from_open_graph(response, product)
-        #price = product.get('price')
+        # price = product.get('price')
         currency = response.css('[property="og:price:currency"]'
                                 '::attr(content)')
         price = response.css('[property="og:price:amount"]::attr(content)')
@@ -170,4 +171,3 @@ class TopshopProductsSpider(ProductsSpider):
         result = BuyerReviews(num_of_reviews=total, average_rating=avg,
                               rating_by_star=by_star)
         response.meta['product']['buyer_reviews'] = result
-
