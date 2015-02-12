@@ -7,7 +7,6 @@ import re
 from scrapy.http import Request
 from scrapy import FormRequest
 from scrapy.log import ERROR
-from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
@@ -84,7 +83,7 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
             '//div[@class="price"]/span[@class="value"]/text()').extract()
         cond_set(prod, 'price', price)
         if prod.get('price', None):
-            if not '$' in prod['price']:
+            if '$' not in prod['price']:
                 self.log('Unknown currency at %s' % response.url, level=ERROR)
             else:
                 prod['price'] = Price(
