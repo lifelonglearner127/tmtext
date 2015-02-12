@@ -31,6 +31,8 @@ class StaplesAdvantageScraper(Scraper):
     review_count = None
     average_review = None
     reviews = None
+    pdf_urls = None
+    pdf_count = 0
 
     def check_url_format(self):
         # for ex: http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=383249&catalogId=4&item_id=71504599&langId=-1&currentSKUNbr=383249&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=117896272
@@ -158,7 +160,21 @@ class StaplesAdvantageScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        rows = []
+        url = "http://content.webcollage.net/sc/smart-button?ird=true&channel-product-id=%s" % self._product_id()
+        html = urllib.urlopen(url).read()
+        # \"src\":\"\/_cp\/products\/1374451886781\/tab-6174b48c-58f3-4d4b-8d2f-0d9bf0c90a63
+        # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
+        m = re.findall(r'"src":"([_a-zA-Z0-9/\-\.]*?\.mp4)"', html.replace("\\",""), re.DOTALL)
+        for item in m:
+            if ".blkbry" in item or ".mobile" in item:
+                pass
+            else:
+                rows.append("http://content.webcollage.net%s" % item)
+        if len(rows) < 1:
+            return None
+        return rows
+
     def _video_count(self):
         urls = self._video_urls()
         if urls:
@@ -166,6 +182,8 @@ class StaplesAdvantageScraper(Scraper):
         return 0
 
     def _pdf_urls(self):
+        if self.pdf_urls is not None:
+            return self.pdf_urls
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
         pdf_hrefs = []
         for pdf in pdfs:
@@ -182,13 +200,13 @@ class StaplesAdvantageScraper(Scraper):
         pdf_hrefs += wc_pdfs
         if len(pdf_hrefs) < 1:
             return None
+        self.pdf_count = len(pdf_hrefs)
         return pdf_hrefs
 
     def _pdf_count(self):
-        urls = self._pdf_urls()
-        if urls is not None:
-            return len(urls)
-        return 0
+        if self.pdf_urls is None:
+            self._pdf_urls()
+        return self.pdf_count
 
     def _webcollage(self):
         # https://scontent.webcollage.net/stapleslink-en/smart-button?ird=true&channel-product-id=823292
