@@ -8,16 +8,16 @@ import time
 import requests
 from extract_data import Scraper
 
-class FreshAmazonScraper(Scraper):
+class GeorgeScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is https://fresh.amazon.com/product?asin=<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://direct.asda.com/george/<category>/<sub-category>/<type>/<product id>,default,pd.html"
 
     def check_url_format(self):
-        m = re.match(r"^https://fresh.amazon.com/product.*$", self.product_page_url)
+        m = re.match(r"^http://direct.asda.com/george.*$", self.product_page_url.lower())
         self.image_urls = None
         return (not not m)
 
@@ -27,39 +27,9 @@ class FreshAmazonScraper(Scraper):
         Currently for Amazon it detects captcha validation forms,
         and returns True if current page is one.
         '''
+        if self.product_page_url.find(",pd.html") < 0: return True
         return False
 
-   # method that returns xml tree of page, to extract the desired elemets from
-    def _extract_page_tree(self):
-        """Overwrites parent class method that builds and sets as instance variable the xml tree of the product page
-        Returns:
-            lxml tree object
-        """
-        agent = ''
-        if self.bot_type == "google":
-            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
-            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-        else:
-            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
-
-        #Set zip code for delivery
-        payload = {'zip':'94102'}
-        headers ={'User-agent': agent}
-        for i in range(self.MAX_RETRIES):
-            # Use 'with' to ensure the session context is closed after use.
-            with requests.Session() as s:
-                s.post('https://fresh.amazon.com/zipEntrySubmit', data=payload)
-                # An authorised request.
-                response = s.get(self.product_page_url,headers=headers, timeout=5)
-                if response != 'Error' and response.ok:
-                    contents = response.text
-                    try:
-                        self.tree_html = html.fromstring(contents.decode("utf8"))
-                    except UnicodeError, e:
-                        # if string was not utf8, don't deocde it
-                        print "Warning creating html tree from page content: ", e.message
-                        self.tree_html = html.fromstring(contents)
-                    return
 
     ##########################################
     ############### CONTAINER : NONE
@@ -72,9 +42,9 @@ class FreshAmazonScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = self.product_page_url.split("asin=")
-        if len(product_id) >0 :
-            return product_id[1][0:10]
+        product_id = self.product_page_url.split("/")
+        if len(product_id) > 0 :
+            return product_id[-1].split(",")[0]
         return None
 
     def _site_id(self):
@@ -84,14 +54,12 @@ class FreshAmazonScraper(Scraper):
         return 'success'
 
 
-
-
     ##########################################
     ################ CONTAINER : PRODUCT_INFO
     ##########################################
 
     def _product_name(self):
-        pn = self.tree_html.xpath('//div[@class="buying"]/h1//text()')
+        pn = self.tree_html.xpath('//h1[@id="productName"]//text()')
         if len(pn)>0:
             return pn[0]
         return None
@@ -106,14 +74,15 @@ class FreshAmazonScraper(Scraper):
     def _model(self):
         return None
 
-    # Amazon's version of UPC
-    def _asin(self):
-        return self.tree_html.xpath("//li[child::strong[contains(text(),'ASIN')]]//text()")
-
     def _features(self):
-        rows = self.tree_html.xpath("//h2[contains(text(),'Product Features')]/following-sibling::ul//li//text()")
-        if len(rows)>0:
-            return rows
+        rows = self.tree_html.xpath("//table[@id='fullSpec']//tr")
+        cells=[]
+        for row in rows:
+            r = row.xpath(".//*[not(self::script)]//text()")
+            rc =",".join([c.strip() for c in r])
+            cells.append(rc)
+        if len(cells)>0:
+            return cells
         return None
 
 
@@ -129,7 +98,11 @@ class FreshAmazonScraper(Scraper):
 
 
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//div[contains(@id,'productDescription')]//text()[normalize-space()]")).strip()
+        short_description = " ".join(self.tree_html.xpath("//div[contains(@class,'Description')]//text()[normalize-space()]")).strip()
+        if short_description==None or  short_description=="":
+            sd = self.tree_html.xpath('//*[@id="tabContentsProduct"]//div[@class="description"]//text()[normalize-space()]')
+            if len(sd) > 0:
+                short_description = self._clean_text(sd[0])
         if short_description is not None and len(short_description)>0:
             return short_description.replace("\n"," ")
         return self._long_description_helper()
@@ -164,15 +137,13 @@ class FreshAmazonScraper(Scraper):
         url = self.product_page_url
         #Get images for mobile device
         mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
-        with requests.Session() as s:
-            s.post('https://fresh.amazon.com/zipEntrySubmit', data={'zip':'94102'})
-            response = s.get(self.product_page_url,headers=mobile_headers, timeout=5)
-            if response != 'Error' and response.ok:
-                contents = response.text
-                try:
-                    tree = html.fromstring(contents.decode("utf8"))
-                except UnicodeError, e:
-                    tree = html.fromstring(contents)
+        response = requests.get(self.product_page_url,headers=mobile_headers, timeout=5)
+        if response != 'Error' and response.ok:
+            contents = response.text
+            try:
+                tree = html.fromstring(contents.decode("utf8"))
+            except UnicodeError, e:
+                tree = html.fromstring(contents)
         img_list = []
         ii=0
         tree = html.fromstring(contents)
@@ -189,7 +160,7 @@ class FreshAmazonScraper(Scraper):
             tree = self.tree_html
 
         #The small images are below the big image
-        image_url = tree.xpath("//div[@id='thumbnailsWrapper']//span[not(contains(@class,'video'))]//img/@src")
+        image_url = tree.xpath("//div[@id='imageSlide']//img/@src")
         if a == 1:
             self.image_urls = image_url
         if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
@@ -267,36 +238,19 @@ class FreshAmazonScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        average_review = self.tree_html.xpath("//div[@class='ratingMinimal']/img/@src")
+        average_review = self.tree_html.xpath("//span[@itemprop='ratingValue']//text()")
         if len(average_review) > 0:
-            av_review = average_review[0].split("/")[-1].split("-")[0]
+            av_review = average_review[0]
             return self._tofloat(av_review)
         return None
 
     def _review_count(self):
-        nr_reviews = self.tree_html.xpath("//div[@class='ratingMinimal']")
+        nr_reviews = self.tree_html.xpath("//span[@class='BVRRNumber']//text()")
         if len(nr_reviews) > 0:
-            return self._toint(nr_reviews[0].text_content().strip().replace(")","").replace("(",""))
+            return self._toint(nr_reviews[0].strip())
         return None
 
     def _reviews(self):
-        stars=self.tree_html.xpath("//tr[@class='a-histogram-row']//a//text()")
-        rev=[]
-        for i in range(len(stars)-1,0,-2):
-            a=self._toint(stars[i-1].split()[0])
-            b= self._toint(stars[i])
-            rev.append([a,b])
-        if len(rev) > 0 :  return rev
-        stars=self.tree_html.xpath("//div[contains(@class,'histoRow')]")
-        for a in stars:
-            b=a.text_content().strip().split()
-            if len(b)>2:
-                b1 = self._toint(b[0])
-                b2 =self._toint(b[2])
-                rev.append([b1,b2])
-        if len(rev) > 0 :
-            rev.reverse()
-            return rev
         return None
 
     def _tofloat(self,s):
@@ -333,9 +287,9 @@ class FreshAmazonScraper(Scraper):
 
     # extract product price from its product product page tree
     def _price(self):
-        price = self.tree_html.xpath("//div[@class='itemPrice']//span[@class='value']//text()")
-        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0].strip()
+        price = self.tree_html.xpath("//p[@id='productPrice']/span/span")
+        if len(price)>0  :
+            return price[0].text_content().strip()
         return None
 
     def _price_amount(self):
@@ -344,12 +298,15 @@ class FreshAmazonScraper(Scraper):
         return float(clean)
 
     def _price_currency(self):
+        bn=self.tree_html.xpath('//meta[@itemprop="priceCurrency"]/@content')
+        if len(bn)>0  and bn[0]!="":
+            return bn[0]
         price = self._price()
         clean = re.sub(r'[^0-9.]+', '', price)
         curr = price.replace(clean,"").strip()
         if curr=="$":
             return "USD"
-        return curr
+        return "GBP"
 
     def _in_stores_only(self):
         return None
@@ -363,67 +320,25 @@ class FreshAmazonScraper(Scraper):
 
     def _site_online_out_of_stock(self):
         if self._site_online() == 0: return None
-        a = self.tree_html.xpath('//div[contains(@class,"availability")]//text()')
-        if len(a) > 0 and a[0].find('Available by') >=0 : return 1
-        a = self.tree_html.xpath('//div[@class="item"]')
-        if len(a) > 0 and a[0].text_content().find('Out of stock') >=0 : return 1
+        a = self.tree_html.xpath('//select[contains(@id,"quantity") and @disabled]')
+        if len(a)>0 : return 1
         return 0
 
     def _marketplace(self):
-        aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
-        for a in aa:
-            if a.text_content().find('old by Amazon')>=0:
-                return 0
-            if a.text_content().find('old by ')>0 and a.text_content().find('old by Amazon')<0:
-                return 1
-            if a.text_content().find('seller') or a.text_content().find('Other products by')>0  :
-                return 1
-        a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
-        if len(a)>0 and a[0].find('seller')>=0: return 1
-        s = self._seller_from_tree()
-        return s['marketplace']
+         return 0
 
     def _marketplace_sellers(self):
-        a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
-        if len(a)>0 and a[0].find('seller')>=0:
-            domain=self.product_page_url.split("/")
-            url =self.tree_html.xpath('//div[@id="availability"]//a/@href')
-            if len(url)>0:
-                url = domain[0]+"//"+domain[2]+url[0]
-                print "url",url
-                h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-                contents = requests.get(url, headers=h).text
-                tree = html.fromstring(contents)
-                s = tree.xpath("//p[contains(@class,'SellerName')]//text()")
-                mps=[p.strip() for p in s if p.strip() != ""]
-                if len(mps)>0: return mps
         return None
 
     def _marketplace_lowest_price(self):
         return None
 
     def _marketplace_out_of_stock(self):
-        if self._marketplace()==1:
-            a = self.tree_html.xpath('//div[contains(@class,"availability")]//text()')
-            if len(a) > 0 and a[0].find('Available by') >=0 : return 1
-            a = self.tree_html.xpath('//div[@class="item"]')
-            if len(a) > 0 and a[0].text_content().find('Out of stock') >=0 : return 1
-            return 0
         return None
 
     # extract product seller information from its product product page tree (using h2 visible tags)
     def _seller_from_tree(self):
-        seller_info = {}
-        h5_tags = map(lambda text: self._clean_text(text), self.tree_html.xpath("//h5//text()[normalize-space()!='']"))
-        acheckboxlabel = map(lambda text: self._clean_text(text), self.tree_html.xpath("//span[@class='a-checkbox-label']//text()[normalize-space()!='']"))
-        seller_info['owned'] = 1 if "FREE Two-Day" in acheckboxlabel else 0
-
-        a = self.tree_html.xpath('//div[@id="soldByThirdParty"]')
-        a = not not a#turn it into a boolean
-        seller_info['marketplace'] = 1 if "Other Sellers on Amazon" in h5_tags else 0
-        seller_info['marketplace'] = int(seller_info['marketplace'] or a)
-
-        return seller_info
+        return None
 
 
 
@@ -434,18 +349,29 @@ class FreshAmazonScraper(Scraper):
 
     # extract the department which the product belongs to
     def _category_name(self):
+        bn=self.tree_html.xpath('//div[@id="navBread"]//a//text()')
+        if len(bn)>0:
+            return bn[-1]
         return None
 
     # extract a hierarchical list of all the departments the product belongs to
     def _categories(self):
+        bn=self.tree_html.xpath('//div[@id="navBread"]//a//text()')
+        if len(bn)>0:
+            return bn[1:]
         return None
 
     def _brand(self):
-        bn=self.tree_html.xpath('//div[@class="buying"]//*[contains(text(),"by")]/a//text()')
+        bn=self.tree_html.xpath('//meta[@itemprop="brand"]/@content')
         if len(bn)>0  and bn[0]!="":
             return bn[0]
         return None
 
+    def _upc(self):
+        bn=self.tree_html.xpath('//meta[@property="og:upc"]/@content')
+        if len(bn)>0  and bn[0]!="":
+            return bn[0]
+        return None
 
     def _version(self):
         """Determines if Amazon.co.uk page being read
@@ -461,6 +387,7 @@ class FreshAmazonScraper(Scraper):
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
+        text = text.replace("<br />"," ").replace("\n"," ")
         return re.sub("&nbsp;", " ", text).strip()
 
 
@@ -484,7 +411,7 @@ class FreshAmazonScraper(Scraper):
         "product_title" : _product_title, \
         "title_seo" : _title_seo, \
         "model" : _model, \
-        "upc" : _asin,\
+        "upc" : _upc,\
         "features" : _features, \
         "feature_count" : _feature_count, \
         "model_meta" : _model_meta, \
@@ -496,7 +423,6 @@ class FreshAmazonScraper(Scraper):
         "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
-#        "no_image" : _no_image, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
@@ -516,11 +442,8 @@ class FreshAmazonScraper(Scraper):
         "price" : _price, \
         "price_amount": _price_amount, \
         "price_currency": _price_currency, \
- #       "in_stock" : _in_stock, \
-        "in_stores_only" : _in_stores_only, \
+         "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
-#        "owned" : _owned, \
-#        "owned_out_of_stock" : _owned_out_of_stock, \
         "marketplace" : _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
