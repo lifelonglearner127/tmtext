@@ -190,6 +190,12 @@ class SamsclubScraper(Scraper):
                 img_urls = self.tree_html.xpath("//div[contains(@class, 'imgCol')]//div[@id='plImageHolder']//img/@src")
                 if len(img_urls) < 1:
                     return None
+                try:
+                    if self._no_image(img_urls[0]):
+                        return None
+                except Exception, e:
+                    print "WARNING: ", e.message
+
             self.image_urls = img_urls
             self.image_count = len(img_urls)
             return img_urls
