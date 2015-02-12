@@ -123,10 +123,7 @@ class GeorgeScraper(Scraper):
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
     ##########################################
-    #extract meta tags exclude http-equiv
-##    def _meta_tags(self):
-##        tags = map(lambda x:x.values() ,self.tree_html.xpath('//meta[not(@http-equiv)]'))
-##        return tags
+
 
     def _meta_tag_count(self):
         tags = self._meta_tags()
@@ -238,7 +235,6 @@ class GeorgeScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        url="http://asda.ugc.bazaarvoice.com/1440george-en_gb/GEM310854/reviews.djs?format=embeddedhtml"
         average_review = self.tree_html.xpath("//span[@itemprop='ratingValue']//text()")
         if len(average_review) > 0:
             av_review = average_review[0]
@@ -346,7 +342,7 @@ class GeorgeScraper(Scraper):
     def _marketplace_out_of_stock(self):
         return None
 
-    # extract product seller information from its product product page tree (using h2 visible tags)
+
 
 
     ##########################################
@@ -427,7 +423,7 @@ class GeorgeScraper(Scraper):
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
-#        "meta_tags": _meta_tags,\
+
         "meta_tag_count": _meta_tag_count,\
 
         # CONTAINER : REVIEWS
