@@ -17,7 +17,7 @@ class GeorgeScraper(Scraper):
     INVALID_URL_MESSAGE = "Expected URL format is http://direct.asda.com/george/<category>/<sub-category>/<type>/<product id>,default,pd.html"
 
     def check_url_format(self):
-        m = re.match(r"^http://direct.asda.com/george.*$", self.product_page_url.lower())
+        m = re.match(r"^http://direct.asda.com/.*$", self.product_page_url.lower())
         self.image_urls = None
         return (not not m)
 
@@ -124,9 +124,9 @@ class GeorgeScraper(Scraper):
     ################ CONTAINER : PAGE_ATTRIBUTES
     ##########################################
     #extract meta tags exclude http-equiv
-    def _meta_tags(self):
-        tags = map(lambda x:x.values() ,self.tree_html.xpath('//meta[not(@http-equiv)]'))
-        return tags
+##    def _meta_tags(self):
+##        tags = map(lambda x:x.values() ,self.tree_html.xpath('//meta[not(@http-equiv)]'))
+##        return tags
 
     def _meta_tag_count(self):
         tags = self._meta_tags()
@@ -212,7 +212,7 @@ class GeorgeScraper(Scraper):
         urls = self._pdf_urls()
         if urls:
             return len(urls)
-        return None
+        return 0
 
     def _webcollage(self):
         return None
@@ -238,6 +238,7 @@ class GeorgeScraper(Scraper):
     ##########################################
 
     def _average_review(self):
+        url="http://asda.ugc.bazaarvoice.com/1440george-en_gb/GEM310854/reviews.djs?format=embeddedhtml"
         average_review = self.tree_html.xpath("//span[@itemprop='ratingValue']//text()")
         if len(average_review) > 0:
             av_review = average_review[0]
@@ -245,7 +246,7 @@ class GeorgeScraper(Scraper):
         return None
 
     def _review_count(self):
-        nr_reviews = self.tree_html.xpath("//span[@class='BVRRNumber']//text()")
+        nr_reviews = self.tree_html.xpath('//span[@itemprop="reviewCount"]//text()')
         if len(nr_reviews) > 0:
             return self._toint(nr_reviews[0].strip())
         return None
@@ -287,7 +288,10 @@ class GeorgeScraper(Scraper):
 
     # extract product price from its product product page tree
     def _price(self):
-        price = self.tree_html.xpath("//p[@id='productPrice']/span/span")
+        price = self.tree_html.xpath("//span[@class='productPrice']//span[@class='newPrice']")
+        if len(price)>0  :
+            return price[0].text_content().strip()
+        price = self.tree_html.xpath("//p[@id='productPrice']//span[@class='productPrice']")
         if len(price)>0  :
             return price[0].text_content().strip()
         return None
@@ -312,7 +316,7 @@ class GeorgeScraper(Scraper):
         return None
 
     def _in_stores(self):
-        return None
+        return 0
 
     def _site_online(self):
         if self._marketplace()==1: return 0
@@ -320,6 +324,12 @@ class GeorgeScraper(Scraper):
 
     def _site_online_out_of_stock(self):
         if self._site_online() == 0: return None
+        im = self.tree_html.xpath('//img[@id="outofstock"]')
+        if len(im)>0 : return 1
+        s = self.tree_html.xpath('//select[@id="size"]')
+        if len(s)>0 and s[0].get("disabled")==None: return 0
+        c = self.tree_html.xpath('//select[@id="color"]')
+        if len(c)>0 and c[0].get("disabled")==None: return 0
         a = self.tree_html.xpath('//select[contains(@id,"quantity") and @disabled]')
         if len(a)>0 : return 1
         return 0
@@ -337,10 +347,6 @@ class GeorgeScraper(Scraper):
         return None
 
     # extract product seller information from its product product page tree (using h2 visible tags)
-    def _seller_from_tree(self):
-        return None
-
-
 
 
     ##########################################
@@ -373,13 +379,6 @@ class GeorgeScraper(Scraper):
             return bn[0]
         return None
 
-    def _version(self):
-        """Determines if Amazon.co.uk page being read
-        Returns:
-            "uk" for Amazon.co.uk
-            "com" for Amazon.com
-        """
-        return None
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -428,7 +427,7 @@ class GeorgeScraper(Scraper):
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
-        "meta_tags": _meta_tags,\
+#        "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
 
         # CONTAINER : REVIEWS
