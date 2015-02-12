@@ -3,6 +3,8 @@ from future_builtins import *
 
 import urlparse
 
+from scrapy.http import Request
+from scrapy import FormRequest
 from scrapy.log import ERROR
 from scrapy.selector import Selector
 from scrapy.utils.project import get_project_settings
@@ -17,19 +19,34 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
     allowed_domains = ["fresh.amazon.com"]
     start_urls = []
 
-    SEARCH_URL = "https://fresh.amazon.com/Search?browseMP={market_place_id}" \
-        "&resultsPerPage=50&predictiveSearchFlag=false&recipeSearchFlag=false" \
+    SEARCH_URL = "https://fresh.amazon.com/Search?" \
+        "resultsPerPage=50&predictiveSearchFlag=true&recipeSearchFlag=false" \
         "&comNow=&input={search_term}"
 
-    def __init__(self, location='southern_cali', *args, **kwargs):
-        settings = get_project_settings()
-        locations = settings.get('AMAZONFRESH_LOCATION')
-        loc = locations.get(location, '')
+    WELCOME_URL = "https://fresh.amazon.com/welcome"
+
+    ZIP_URL = "https://fresh.amazon.com/zipEntrySubmit"
+
+    def __init__(self, zip_code='94117', *args, **kwargs):
+        self.zip_code = zip_code
         super(AmazonFreshProductsSpider, self).__init__(
-            url_formatter=FormatterWithDefaults(market_place_id=loc),
+            url_formatter=FormatterWithDefaults(),
             *args,
             **kwargs
         )
+
+    def start_requests(self):
+        yield Request(self.WELCOME_URL, callback=self.login_handler)
+
+    def login_handler(self, response):
+        data = {'refer': '',
+                'zip': self.zip_code}
+        return FormRequest(self.ZIP_URL,
+                           formdata=data,
+                           callback=self.after_login,)
+
+    def after_login(self, response):
+        return super(AmazonFreshProductsSpider, self).start_requests()
 
     def parse_product(self, response):
         prod = response.meta['product']
@@ -52,13 +69,20 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
                         ',', '').replace(' ', '').strip(),
                     priceCurrency='USD'
                 )
-        des = response.xpath('//*[@id="productDescription"]/p/text()').extract()
+        des = response.xpath('//div[@id="productDescription"]').extract()
         cond_set(prod, 'description', des)
         img_url = response.xpath(
             '//div[@id="mainImgWrapper"]/img/@src').extract()
         cond_set(prod, 'image_url', img_url)
         cond_set(prod, 'locale', ['en-US'])
         prod['url'] = response.url
+        out_of_stock_span = response.xpath(
+            '//div[@class="itemUnavailableText"]/span'
+        )
+        if out_of_stock_span:
+            prod['is_out_of_stock'] = True
+        else:
+            prod['is_out_of_stock'] = False
         return prod
 
     def _search_page_error(self, response):
