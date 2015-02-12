@@ -185,17 +185,25 @@ class SoapScraper(Scraper):
     def _video_urls(self):
         # http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=98715&videoType=Consumer
         # url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s&videoType=Consumer" % self._product_id()
-        url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s" % self._product_id()
-        req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
-        redirect_contents = urllib2.urlopen(req).read()
-        redirect_tree = html.fromstring(redirect_contents)
-
-        rows = redirect_tree.xpath("//div[contains(@class,'productVideoList')]//div[@class='videoImage']//a/@onclick")
+        product_ids = list(set(self.tree_html.xpath("//input[@class='skuHidden']/@productid")))
         video_url = []
-        for row in rows:
-            m = re.findall(r"playProductVideo\('(.*?)'", row.strip())
-            if len(m) > 0:
-                video_url.append(m[0])
+        for product_id in product_ids:
+            url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s" % product_id
+            req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
+            redirect_contents = urllib2.urlopen(req).read()
+            redirect_tree = html.fromstring(redirect_contents)
+
+            rows = redirect_tree.xpath("//div[contains(@class,'productVideoList')]//div[@class='videoImage']//a/@onclick")
+            for row in rows:
+                m = re.findall(r"playProductVideo\('(.*?)'", row.strip())
+                if len(m) > 0:
+                    video_url.append(m[0])
+            if len(rows) < 1:
+                try:
+                    now_playing = redirect_tree.xpath("//div[contains(@class,'productVideoPlayer')]//iframe/@src")[0].strip()
+                    video_url.append(now_playing)
+                except IndexError:
+                    pass
         if len(video_url) < 1:
             return None
         return video_url
@@ -255,18 +263,24 @@ class SoapScraper(Scraper):
 
             # AMAZON.COM REVIEWS
             # http://www.soap.com/amazon_reviews/06/47/14/mosthelpful_Default.html
-            product_id = self._product_id()
-            if len(product_id) % 2 == 1:
-                product_id = "0%s" % product_id
-            product_id = [product_id[i:i+2] for i in range(0, len(product_id), 2)]
-            product_id = "/".join(product_id)
-            url = "http://www.soap.com/amazon_reviews/%s/mosthelpful_Default.html" % product_id
-            req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
-            try:
-                redirect_contents = urllib2.urlopen(req).read()
-                redirect_tree = html.fromstring(redirect_contents)
-            except:
-                return
+            product_ids = list(set(self.tree_html.xpath("//input[@class='skuHidden']/@productid")))
+            video_url = []
+            for product_id in product_ids:
+                if len(product_id) % 2 == 1 and len(product_id) < 6:
+                    product_id = "0%s" % product_id
+                product_id = [product_id[i:i+2] for i in range(0, len(product_id), 2)]
+                if len(product_id) == 4:
+                    product_id[2] = product_id[2] + product_id[3]
+                    product_id.pop()
+                product_id = "/".join(product_id)
+                url = "http://www.soap.com/amazon_reviews/%s/mosthelpful_Default.html" % product_id
+                req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
+                try:
+                    redirect_contents = urllib2.urlopen(req).read()
+                    redirect_tree = html.fromstring(redirect_contents)
+                    break
+                except:
+                    continue
             review_count = redirect_tree.xpath("//span[@class='pr-review-num']//text()")[0].strip()
             m = re.findall(r"\d+", review_count)
             if len(m) > 0:
