@@ -2,6 +2,7 @@
 #  -*- coding: utf-8 -*-
 
 import urllib
+import urllib2
 import re
 import sys
 import json
@@ -33,6 +34,8 @@ class StaplesAdvantageScraper(Scraper):
     reviews = None
     pdf_urls = None
     pdf_count = 0
+    video_urls = None
+    video_count = 0
 
     def check_url_format(self):
         # for ex: http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=383249&catalogId=4&item_id=71504599&langId=-1&currentSKUNbr=383249&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=117896272
@@ -160,26 +163,63 @@ class StaplesAdvantageScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        rows = []
-        url = "http://content.webcollage.net/sc/smart-button?ird=true&channel-product-id=%s" % self._product_id()
-        html = urllib.urlopen(url).read()
-        # \"src\":\"\/_cp\/products\/1374451886781\/tab-6174b48c-58f3-4d4b-8d2f-0d9bf0c90a63
+        if self.video_urls is not None:
+            return self.video_urls
+        video_urls = []
+        # https://scontent.webcollage.net/stapleslink-en/sb-for-ppp?ird=true&channel-product-id=957754
+        url = "https://scontent.webcollage.net/stapleslink-en/sb-for-ppp?ird=true&channel-product-id=%s" % self._product_id()
+        req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
+        contents = urllib2.urlopen(req).read()
+        # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
         # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
-        m = re.findall(r'"src":"([_a-zA-Z0-9/\-\.]*?\.mp4)"', html.replace("\\",""), re.DOTALL)
-        for item in m:
-            if ".blkbry" in item or ".mobile" in item:
-                pass
-            else:
-                rows.append("http://content.webcollage.net%s" % item)
-        if len(rows) < 1:
+        m = re.findall(r'wcsb:url="(.*?)"', contents.replace("\\",""), re.DOTALL)
+        if len(m) > 0:
+            url_wc = m[0]
+            req_wc = urllib2.Request(url_wc, headers={'User-Agent' : "Magic Browser"})
+            contents_wc = urllib2.urlopen(req_wc).read()
+            # document.location.replace('
+            m_wc = re.findall(r'document.location.replace\(\'(.*?)\'\);', contents_wc.replace("\\",""), re.DOTALL)
+            if len(m_wc) > 0:
+                url_wc2 = m_wc[0]
+                req_wc2 = urllib2.Request(url_wc2, headers={'User-Agent' : "Magic Browser"})
+                contents_wc2 = urllib2.urlopen(req_wc2).read()
+                tree = html.fromstring(contents_wc2)
+                rows = tree.xpath("//div[contains(@class,'wc-pc-tabs')]//li")
+                for row in rows:
+                    txt = " ".join(row.xpath(".//text()"))
+                    if "Customer Reviews" in txt:
+                        url_wc3 = "http://content.webcollage.net%s" % row.xpath(".//a/@href")[0].strip()
+                        req_wc3 = urllib2.Request(url_wc3, headers={'User-Agent' : "Magic Browser"})
+                        contents_wc3 = urllib2.urlopen(req_wc3).read()
+                        tree3 = html.fromstring(contents_wc3)
+                        url_wc4 = tree3.xpath("//iframe/@src")[0].strip()
+                        req_wc4 = urllib2.Request(url_wc4, headers={'User-Agent' : "Magic Browser"})
+                        contents_wc4 = urllib2.urlopen(req_wc4).read()
+                        tree4 = html.fromstring(contents_wc4)
+                        playerKey = tree4.xpath("//param[@name='playerKey']/@value")[0].strip()
+                        video = tree4.xpath("//param[@name='video']/@value")[0].strip()
+                        # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
+                        url_wc5 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
+                        req_wc5 = urllib2.Request(url_wc5, headers={'User-Agent' : "Magic Browser"})
+                        contents_wc5 = urllib2.urlopen(req_wc5).read()
+                        jsn = json.loads(contents_wc5)
+                        jsn = jsn["sources"]
+                        for item in jsn:
+                            try:
+                                file_name = item['file']
+                                video_urls.append(file_name)
+                            except:
+                                pass
+        if len(video_urls) < 1:
             return None
-        return rows
+        self.video_urls = video_urls
+        self.video_count = len(self.video_urls)
+        return video_urls
 
     def _video_count(self):
-        urls = self._video_urls()
-        if urls:
-            return len(urls)
-        return 0
+        if self.video_urls is None:
+            self._video_urls()
+        return self.video_count
 
     def _pdf_urls(self):
         if self.pdf_urls is not None:
