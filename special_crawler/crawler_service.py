@@ -143,7 +143,7 @@ def extract_domain(url):
         # for souq scraper
         # http://uae.souq.com/ae-en/samsung-galaxy-s3-mini-i8190-8gb-3g-+-wifi-white-4750807/i/
         return 'souq'
-    if 'direct.asda.com/george' in url.lower():
+    if 'direct.asda.com' in url:
         return 'george'
     m = re.match("^https?://(www|shop)\.([^/\.]+)\..*$", url)
     if m:
