@@ -129,7 +129,7 @@ class FreshAmazonScraper(Scraper):
 
 
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//div[contains(@id,'productDescription')]//text()[normalize-space()]")).strip()
+        short_description = " ".join(self.tree_html.xpath("//div[contains(@id,'productDescription')]//p//text()[normalize-space()]")).strip()
         if short_description is not None and len(short_description)>0:
             return short_description.replace("\n"," ")
         return self._long_description_helper()
@@ -376,8 +376,8 @@ class FreshAmazonScraper(Scraper):
                 return 0
             if a.text_content().find('old by ')>0 and a.text_content().find('old by Amazon')<0:
                 return 1
-            if a.text_content().find('seller') or a.text_content().find('Other products by')>0  :
-                return 1
+##            if a.text_content().find('seller') or a.text_content().find('Other products by')>0  :
+##                return 1
         a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
         if len(a)>0 and a[0].find('seller')>=0: return 1
         s = self._seller_from_tree()

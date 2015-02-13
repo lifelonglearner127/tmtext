@@ -34,6 +34,8 @@ class SoapScraper(Scraper):
     reviews = None
     feature_count = None
     features = None
+    video_urls = None
+    video_count = None
 
     def check_url_format(self):
         # for ex: http://www.soap.com/p/nordic-naturals-complete-omega-3-6-9-1-000-mg-softgels-lemon-64714
@@ -183,10 +185,16 @@ class SoapScraper(Scraper):
         return len(image_urls)
 
     def _video_urls(self):
+        if self.video_count is not None:
+            return self.video_urls
+        self.video_count = 0
         # http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=98715&videoType=Consumer
         # url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s&videoType=Consumer" % self._product_id()
-        product_ids = list(set(self.tree_html.xpath("//input[@class='skuHidden']/@productid")))
-        video_url = []
+        product_ids = self.tree_html.xpath("//input[@class='skuHidden']/@productid")
+        m = re.findall(r'showVideos\((.*?)\)', "\n".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        product_ids += m
+        product_ids = list(set(product_ids))
+        video_urls = []
         for product_id in product_ids:
             url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s" % product_id
             req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
@@ -197,22 +205,23 @@ class SoapScraper(Scraper):
             for row in rows:
                 m = re.findall(r"playProductVideo\('(.*?)'", row.strip())
                 if len(m) > 0:
-                    video_url.append(m[0])
+                    video_urls.append(m[0])
             if len(rows) < 1:
                 try:
                     now_playing = redirect_tree.xpath("//div[contains(@class,'productVideoPlayer')]//iframe/@src")[0].strip()
-                    video_url.append(now_playing)
+                    video_urls.append(now_playing)
                 except IndexError:
                     pass
-        if len(video_url) < 1:
+        if len(video_urls) < 1:
             return None
-        return video_url
+        self.video_count = len(video_urls)
+        self.video_urls = video_urls
+        return video_urls
 
     def _video_count(self):
-        urls = self._video_urls()
-        if urls:
-            return len(urls)
-        return 0
+        if self.video_count is None:
+            self._video_urls()
+        return self.video_count
 
     def _pdf_urls(self):
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
@@ -264,9 +273,15 @@ class SoapScraper(Scraper):
             # AMAZON.COM REVIEWS
             # http://www.soap.com/amazon_reviews/06/47/14/mosthelpful_Default.html
             product_ids = list(set(self.tree_html.xpath("//input[@class='skuHidden']/@productid")))
+            # var pr_page_id = '43977';
+            m = re.findall(r"var pr_page_id = '(.*?)'", "\n".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+            product_ids += m
+            product_ids = list(set(product_ids))
             video_url = []
             for product_id in product_ids:
-                if len(product_id) % 2 == 1 and len(product_id) < 6:
+                if len(product_id) == 4:
+                    product_id = "00%s" % product_id
+                if len(product_id) == 5:
                     product_id = "0%s" % product_id
                 product_id = [product_id[i:i+2] for i in range(0, len(product_id), 2)]
                 if len(product_id) == 4:
