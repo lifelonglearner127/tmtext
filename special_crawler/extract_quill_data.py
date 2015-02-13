@@ -34,6 +34,8 @@ class QuillScraper(Scraper):
     reviews = None
     feature_count = None
     features = None
+    video_urls = None
+    video_count = None
 
     def check_url_format(self):
         # for ex: http://www.quill.com/clorox-toilet-bowl-cleaner-bleach/cbs/040672.html#SkuTabs
@@ -162,16 +164,44 @@ class QuillScraper(Scraper):
         return len(image_urls)
 
     def _video_urls(self):
-        video_url = []
-        if len(video_url) < 1:
+        if self.video_urls is not None:
+            return self.video_urls
+        video_urls = []
+        # Request URL:http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=267655
+        sku_data = self.tree_html.xpath("//input[@id='SkuData_Sku']/@value")[0].strip()
+        url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % sku_data
+        contents = urllib.urlopen(url).read()
+        # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
+        # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
+        m = re.findall(r'wcobj="(.*?)"', contents.replace("\\",""), re.DOTALL)
+        if len(m) > 0:
+            url_wc = m[0]
+            contents_wc = urllib.urlopen(url_wc).read()
+            # document.location.replace('
+            tree = html.fromstring(contents_wc)
+            playerKey = tree.xpath("//param[@name='playerKey']/@value")[0].strip()
+            video = tree.xpath("//param[@name='video']/@value")[0].strip()
+            # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
+            url_wc2 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
+            contents_wc2 = urllib.urlopen(url_wc2).read()
+            jsn = json.loads(contents_wc2)
+            jsn = jsn["sources"]
+            for item in jsn:
+                try:
+                    file_name = item['file']
+                    video_urls.append(file_name)
+                except:
+                    pass
+        if len(video_urls) < 1:
             return None
-        return video_url
+        self.video_urls = video_urls
+        self.video_count = len(self.video_urls)
+        return video_urls
 
     def _video_count(self):
-        urls = self._video_urls()
-        if urls:
-            return len(urls)
-        return 0
+        if self.video_urls is None:
+            self._video_urls()
+        return self.video_count
 
     def _pdf_urls(self):
         pdfs = self.tree_html.xpath("//div[@id='PageInner']//a[contains(@href,'.pdf')]")
