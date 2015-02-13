@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 
 import json
+import re
 import string
 
 from scrapy.http.request.form import FormRequest
@@ -122,9 +123,11 @@ class AmazonProductsSpider(BaseProductsSpider):
                 self.log('Currency symbol not recognized: %s' % response.url,
                          level=ERROR)
             else:
+                price = re.findall('[\d ,.]+\d', product['price'])
+                price = re.sub('[, ]', '', price[0])
                 product['price'] = Price(
                     priceCurrency='USD',
-                    price=product['price'].replace('$', '').strip()\
+                    price=price.replace('$', '').strip()\
                         .replace(',', '')
                 )
 
