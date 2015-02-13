@@ -31,7 +31,6 @@ def push_simmetrica_event(
     try:
         simm = Simmetrica(host=host, port=port, db=db, password=password)
         simm.push(event_name, increment=increment_by)
-        print '_' * 20, 'SIMMETRICA EVENT %s PUSHED' % event_name
     except Exception, e:
         # in very rare cases, pushing fails (if using SocksiPy for ex).
         # TODO: implement command-line event addition
