@@ -190,7 +190,10 @@ class SoapScraper(Scraper):
         self.video_count = 0
         # http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=98715&videoType=Consumer
         # url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s&videoType=Consumer" % self._product_id()
-        product_ids = list(set(self.tree_html.xpath("//input[@class='skuHidden']/@productid")))
+        product_ids = self.tree_html.xpath("//input[@class='skuHidden']/@productid")
+        m = re.findall(r'showVideos\((.*?)\)', "\n".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        product_ids += m
+        product_ids = list(set(product_ids))
         video_urls = []
         for product_id in product_ids:
             url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s" % product_id
@@ -270,9 +273,15 @@ class SoapScraper(Scraper):
             # AMAZON.COM REVIEWS
             # http://www.soap.com/amazon_reviews/06/47/14/mosthelpful_Default.html
             product_ids = list(set(self.tree_html.xpath("//input[@class='skuHidden']/@productid")))
+            # var pr_page_id = '43977';
+            m = re.findall(r"var pr_page_id = '(.*?)'", "\n".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+            product_ids += m
+            product_ids = list(set(product_ids))
             video_url = []
             for product_id in product_ids:
-                if len(product_id) % 2 == 1 and len(product_id) < 6:
+                if len(product_id) == 4:
+                    product_id = "00%s" % product_id
+                if len(product_id) == 5:
                     product_id = "0%s" % product_id
                 product_id = [product_id[i:i+2] for i in range(0, len(product_id), 2)]
                 if len(product_id) == 4:
