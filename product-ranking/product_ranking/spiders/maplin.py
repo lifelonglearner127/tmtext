@@ -15,14 +15,13 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.guess_brand import guess_brand_from_first_words
 
-# scrapy crawl maplin_products -a searchterms_str="Earth" [-a order=default]
 
+# scrapy crawl maplin_products -a searchterms_str="Earth" [-a order=default]
 class GandermountainProductsSpider(BaseProductsSpider):
     name = "maplin_products"
     allowed_domains = ["www.maplin.co.uk"]
     start_urls = []
 
-    
     SEARCH_URL = "http://www.maplin.co.uk/search?text={search_term}&x=0&y=0"\
                  "&sort={search_sort}"
 
@@ -76,7 +75,9 @@ class GandermountainProductsSpider(BaseProductsSpider):
                                meta=meta)
 
         prod = response.meta['product']
-        title = response.xpath('//div[@class="product-summary"]/h1/text()').extract()
+        title = response.xpath(
+            '//div[@class="product-summary"]/h1/text()'
+        ).extract()
         cond_set(prod, 'title', title)
 
         brand = re.findall(r'"manufacturer":\s"(.*)",', response.body)
@@ -94,12 +95,15 @@ class GandermountainProductsSpider(BaseProductsSpider):
         ).extract()
         if price and priceCurrency:
             if re.match("\d+(.\d+){0,1}", price[0]):
-                prod["price"] = Price(priceCurrency=priceCurrency[0], price=price[0])
+                prod["price"] = Price(priceCurrency=priceCurrency[0],
+                                      price=price[0])
 
         des = response.xpath('//div[@class="productDescription"]').extract()
         cond_set(prod, 'description', des)
 
-        img_url = response.xpath('//div[@class="product-images"]/img/@src').extract()
+        img_url = response.xpath(
+            '//div[@class="product-images"]/img/@src'
+        ).extract()
         cond_set(prod, 'image_url', img_url)
 
         cond_set(prod, 'locale', ['en-US'])
@@ -151,7 +155,8 @@ class GandermountainProductsSpider(BaseProductsSpider):
 
     def _scrape_total_matches(self, response):
         total_matches = None
-        if 'No products found matching the search criteria' in response.body_as_unicode():
+        if 'No products found matching the search criteria'\
+                in response.body_as_unicode():
             total_matches = 0
         total = response.xpath(
             '//div[@class="list-summary clearfix"]/p/text()'
