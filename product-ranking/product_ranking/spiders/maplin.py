@@ -9,12 +9,13 @@ from scrapy.log import ERROR
 from scrapy.selector import Selector
 
 from scrapy.http import Request
-from product_ranking.items import SiteProductItem, Price
+from product_ranking.items import SiteProductItem, Price, BuyerReviews,\
+    RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.guess_brand import guess_brand_from_first_words
 
-# scrapy crawl maplin_products -a searchterms_str="Earth"
+# scrapy crawl maplin_products -a searchterms_str="Earth" [-a order=default]
 
 class GandermountainProductsSpider(BaseProductsSpider):
     name = "maplin_products"
@@ -22,26 +23,68 @@ class GandermountainProductsSpider(BaseProductsSpider):
     start_urls = []
 
     
-    SEARCH_URL = "http://www.maplin.co.uk/search?text={search_term}&x=0&y=0"
+    SEARCH_URL = "http://www.maplin.co.uk/search?text={search_term}&x=0&y=0"\
+                 "&sort={search_sort}"
 
     product_link = "http://www.maplin.co.uk"
     product_link_next_page = "http://www.maplin.co.uk/search"
 
-   
-    def __init__(self, *args, **kwargs):
-        print 'debug init:'
-        super(GandermountainProductsSpider, self).__init__(*args, **kwargs)    
+    SORT_MODES = {
+        'default': '',
+        'best_seller': '',  # default
+        'price_asc': '=MaplinProduct.price|0',
+        'price_desc': '=MaplinProduct.price|1',
+        'name_asc': '=MaplinProduct.name|0',
+        'name_desc': '=MaplinProduct.name|1'
+    }
+
+    RECOMM_URL = "http://www.maplin.co.uk/thefilter/"\
+                 "showCrossSellAndUpSellProducts?productCode={prod_id}"
+
+    def __init__(self, order='default', *args, **kwargs):
+        if order not in self.SORT_MODES.keys():
+            self.log("'%s' not in SORT_MODES. Used default for this session"
+                     % order, WARNING)
+            order = 'default'
+        search_sort = self.SORT_MODES[order]
+        super(GandermountainProductsSpider, self).__init__(
+            url_formatter=FormatterWithDefaults(
+                search_sort=search_sort,
+            ), *args, **kwargs
+        )
 
     def parse_product(self, response):
-        prod = response.meta['product']
+        reviewed = response.meta.get('reviewed')
+        # if there was no any request for item review try to send it
+        if not reviewed:
+            revs_a = response.xpath(
+                '//a[@class="read_reviews_action"]'
+            )
+            if revs_a:
+                avg = revs_a.xpath(
+                    './/span[@itemprop="ratingValue"]/text()'
+                ).extract()
+                total = revs_a.xpath(
+                    './/span[@itemprop="ratingCount"]/text()'
+                ).extract()
+                rev_url = response.url + '/reviewhtml/all'
+                meta = response.meta.copy()
+                meta['avg'] = avg
+                meta['total'] = total
+                meta['initial_response'] = response
+                return Request(rev_url, callback=self.populate_reviews,
+                               meta=meta)
 
+        prod = response.meta['product']
         title = response.xpath('//div[@class="product-summary"]/h1/text()').extract()
         cond_set(prod, 'title', title)
 
-        if prod.get("title"):
-            brand = guess_brand_from_first_words(prod['title'])
-            if brand:
-                prod['brand'] = brand
+        brand = re.findall(r'"manufacturer":\s"(.*)",', response.body)
+        if not brand:
+            if prod.get("title"):
+                brand = [guess_brand_from_first_words(prod['title'])]
+        if brand:
+            cond_set(prod, 'brand', brand)
 
         price = response.xpath(
             '//p[@class="new-price"]/meta[@itemprop="price"]/@content'
@@ -63,7 +106,48 @@ class GandermountainProductsSpider(BaseProductsSpider):
 
         prod['url'] = response.url
 
+        prod_id = re.findall(r'"id":\s"(.*)",', response.body)
+        if prod_id:
+            recomm_url = self.RECOMM_URL.format(prod_id=prod_id[0])
+            return Request(recomm_url, callback=self.populate_recommendations,
+                           meta=response.meta.copy())
+
         return prod
+
+    def populate_recommendations(self, response):
+        items = response.xpath('//li/div/h4')
+        related = []
+        for item in items:
+            name = item.xpath('.//a/text()').extract()
+            link = item.xpath('.//a/@href').extract()
+            if name and link:
+                name = name[0]
+                final_link = "http://www.maplin.co.uk/" + link[0]
+                related.append(RelatedProduct(title=name, url=final_link))
+        product = response.meta['product']
+        product['related_products'] = related
+        return product
+
+    def populate_reviews(self, response):
+        product = response.meta['product']
+        avg = response.meta['avg']
+        avg = float(avg[0])
+        total = response.meta['total']
+        total = int(total[0])
+        all_revs = response.xpath(
+            '//meta[@itemprop="ratingValue"]/@content'
+        ).extract()
+        stars = {}
+        for number in range(1, 6):
+            pattern = '%s.0' % number
+            quantity = all_revs.count(pattern)
+            stars[number] = quantity
+
+        product['buyer_reviews'] = BuyerReviews(total, avg, stars)
+
+        initial_response = response.meta['initial_response']
+        initial_response.meta['reviewed'] = True
+        return self.parse_product(initial_response)
 
     def _scrape_total_matches(self, response):
         total_matches = None
