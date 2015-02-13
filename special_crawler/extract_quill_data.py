@@ -95,7 +95,8 @@ class QuillScraper(Scraper):
         if len(line_txts) < 1:
             return None
         self.feature_count = len(line_txts)
-        return line_txts
+        self.features = line_txts
+        return self.features
 
     def _feature_count(self):
         if self.feature_count is None:
@@ -272,6 +273,8 @@ class QuillScraper(Scraper):
         price = price.replace(",", "")
         price_amount = re.findall(r"[\d\.]+", price)[0]
         price_currency = price.replace(price_amount, "")
+        if price_currency == "$":
+            return "USD"
         return price_currency
 
     def _in_stores(self):
