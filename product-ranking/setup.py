@@ -9,9 +9,14 @@ setup(
     entry_points={'scrapy': ['settings = product_ranking.settings']},
     zip_safe=False,  # Because of Captcha Breaker.
     include_package_data=True,
-    data_files=[(root, [os.path.join(root, f) for f in files])
-         for root, _, files in itertools.chain(os.walk('train_captchas_data'),
-                                               os.walk('product_ranking/data'))],
+    data_files=[
+        (root, [os.path.join(root, f) for f in files])
+        for root, _, files in itertools.chain(
+            os.walk('train_captchas_data'),
+            os.walk('product_ranking/data'),
+            os.walk('monitoring')
+        )
+    ],
     install_requires=[
         "Scrapy>=0.22",
     ],
