@@ -27,3 +27,8 @@ AMAZONFRESH_LOCATION = {
     "northern_cali": "A3FX2TOAMS7SFL",
     "seattle": "A83PXQN2224PA"
 }
+
+try:
+    from settings_local import *
+except ImportError:
+    pass
