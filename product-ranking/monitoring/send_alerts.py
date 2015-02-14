@@ -17,7 +17,7 @@ SEND_TO = ('no.andrey@gmail.com', )
 
 # alert thresholds
 MIN_TIME = 5  # in seconds
-MAX_TIME = 15*60  # in seconds
+MAX_TIME = 30*60  # in seconds
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
