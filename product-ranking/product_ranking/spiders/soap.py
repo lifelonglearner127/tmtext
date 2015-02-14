@@ -7,6 +7,7 @@ import urlparse
 from product_ranking.items import RelatedProduct, BuyerReviews
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 from scrapy import Request
 from scrapy.log import ERROR, WARNING
@@ -94,6 +95,30 @@ class SoapProductSpider(BaseProductsSpider):
         self._populate_from_html(response, prod)
 
         cond_set_value(prod, 'locale', 'en-US')  # Default locale.
+        plist = response.xpath("//table[contains(@class,'gridItemList')]/tr[@id]")
+        variants = []
+        for pi in plist:
+            inp = pi.xpath("*//input[@class='skuHidden']")
+            if inp:
+                inp = inp[0]
+                value = inp.xpath("@value").extract()
+                if value:
+                    value = value[0]
+                name = inp.xpath("@skuname").extract()
+                if name:
+                    name = name[0]
+                pid = inp.xpath("@productid").extract()
+                if pid:
+                    pid = pid[0]
+                price = inp.xpath("@displayprice").extract()
+                if price:
+                    price = price[0]
+                outofstock = inp.xpath("@isoutofstock").extract()
+                if outofstock:
+                    outofstock = outofstock[0]
+                variants.append(
+                    {'name': name, 'price': price, 'productid': pid, 'outofstock': outofstock, 'value': value})
+        response.meta['variants'] = variants
 
         json_link = response.xpath(
             "//*[@id='soapcom']/head/link[@type='application/json+oembed']"
@@ -123,14 +148,14 @@ class SoapProductSpider(BaseProductsSpider):
             data = json.loads(response.body_as_unicode())
 
             cond_set_value(product, 'brand', data.get('brand'))
-            cond_set_value(product, 'model', data.get('title'))
+            # cond_set_value(product, 'model', data.get('title'))
 
         rel_url = response.meta.get('url_related')
         if rel_url:
             new_meta = response.meta.copy()
             new_meta['handle_httpstatus_list'] = [404]
             return Request(rel_url, self._parse_related, meta=new_meta, dont_filter=True)
-        return product
+        return self._gen_variants(response)
 
     def _parse_related(self, response):
         def full_url(url):
@@ -207,7 +232,29 @@ class SoapProductSpider(BaseProductsSpider):
                         distribution[starno] = revno
             reviews = BuyerReviews(total, avrg, distribution)
             product['buyer_reviews'] = reviews
-        return product
+        return self._gen_variants(response)
+
+    def _gen_variants(self, response):
+        product = response.meta['product']
+        variants = response.meta['variants']
+
+        if not variants:
+            raise AssertionError("NO VARIANTS FOR %s", product)
+
+        varp = []
+        for ivar in variants:
+            vprod = product.copy()
+            vprod['title'] = ivar['name']
+            vprod['upc'] = ivar['productid']
+            pricex = FLOATING_POINT_RGEX.search(ivar['price'])
+            if pricex:
+                price = pricex.group(0)
+                vprod['price'] = Price(
+                    price=price, priceCurrency='USD')
+            if ivar['outofstock'] == 'Y':
+                vprod['is_out_of_stock'] = True
+            varp.append(vprod)
+        return varp
 
     def _populate_from_html(self, response, product):
         prices = response.xpath(
