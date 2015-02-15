@@ -14,6 +14,7 @@ import time
 import json
 import requests
 import threading
+import urllib
 #from models import select_site_by_id
 
 
@@ -43,8 +44,8 @@ def main():
             sqs_process = SQS_Queue('%s_process'%server_name)
 
             # Scrape the page using the scraper running on localhost
-            base = "http://localhost/get_data?site=%s&url=%s"
-            output = requests.get(base%(site, url)).text
+            base = "http://localhost/get_data?url=%s"
+            output = requests.get(base%(urllib.quote(url))).text
 
             # Add the processing fields to the return object and re-serialize it
             output = json.loads(output)

@@ -20,7 +20,7 @@ from extract_data import Scraper
 class SamsclubScraper(Scraper):
 
     ##########################################
-    ############### PREP
+    ############### PREP+
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+)?/(.+)"
@@ -171,7 +171,7 @@ class SamsclubScraper(Scraper):
             self.image_urls = None
             self.image_count = 0
             script = "/n".join(self.tree_html.xpath("//div[@class='container']//script//text()"))
-            m = re.findall(r"imageList = '([0-9]+)?'", script)
+            m = re.findall(r"imageList = '(.+)?'", script)
             imglist = m[0]
             url = "http://scene7.samsclub.com/is/image/samsclub/%s?req=imageset,json&id=init" % imglist
             contents = urllib.urlopen(url).read()
@@ -190,6 +190,12 @@ class SamsclubScraper(Scraper):
                 img_urls = self.tree_html.xpath("//div[contains(@class, 'imgCol')]//div[@id='plImageHolder']//img/@src")
                 if len(img_urls) < 1:
                     return None
+                try:
+                    if self._no_image(img_urls[0]):
+                        return None
+                except Exception, e:
+                    print "WARNING: ", e.message
+
             self.image_urls = img_urls
             self.image_count = len(img_urls)
             return img_urls
@@ -200,6 +206,39 @@ class SamsclubScraper(Scraper):
         if self.image_count == -1:
             image_urls = self.image_urls()
         return self.image_count
+
+    # return True if there is a no-image image and False otherwise
+    # Certain products have an image that indicates "there is no image available"
+    # a hash of these "no-images" is saved to a json file and new images are compared to see if they're the same
+    # def _no_image(self):
+    #     #get image urls
+    #     head = 'http://scene7.samsclub.com/is/image/'
+    #     image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
+    #     image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url)[0]
+    #     image_url = image_url.split(',')
+    #     image_url = [head+link for link in image_url]
+    #     path = 'no_img_list.json'
+    #     no_img_list = []
+    #     if os.path.isfile(path):
+    #         f = open(path, 'r')
+    #         s = f.read()
+    #         if len(s) > 1:
+    #             no_img_list = json.loads(s)
+    #         f.close()
+    #     first_hash = str(MurmurHash.hash(self.fetch_bytes(image_url[0])))
+    #     if first_hash in no_img_list:
+    #         return True
+    #     else:
+    #         return False
+    #
+    # #read the bytes of an image
+    # def fetch_bytes(self, url):
+    #     file = cStringIO.StringIO(urllib.urlopen(url).read())
+    #     img = Image.open(file)
+    #     b = BytesIO()
+    #     img.save(b, format='png')
+    #     data = b.getvalue()
+    #     return data
 
     def _video_urls(self):
         rows = self.tree_html.xpath("//div[@id='tabItemDetails']//a/@href")
@@ -214,7 +253,8 @@ class SamsclubScraper(Scraper):
             if ".blkbry" in item or ".mobile" in item:
                 pass
             else:
-                rows.append("http://content.webcollage.net%s" % item)
+                if "http://content.webcollage.net%s" % item not in rows and item.count(".mp4") < 2:
+                    rows.append("http://content.webcollage.net%s" % item)
         if len(rows) < 1:
             return None
         return rows
@@ -534,6 +574,7 @@ class SamsclubScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
+        # "no_image" : _no_image, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \

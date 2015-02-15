@@ -29,11 +29,13 @@ class SoapScraper(Scraper):
     reviews_tree = None
     max_score = None
     min_score = None
-    review_count = None
+    review_count = 0
     average_review = None
     reviews = None
     feature_count = None
     features = None
+    video_urls = None
+    video_count = None
 
     def check_url_format(self):
         # for ex: http://www.soap.com/p/nordic-naturals-complete-omega-3-6-9-1-000-mg-softgels-lemon-64714
@@ -96,6 +98,7 @@ class SoapScraper(Scraper):
         if len(line_txts) < 1:
             return None
         self.feature_count = len(line_txts)
+        self.features = line_txts
         return line_txts
 
     def _feature_count(self):
@@ -182,28 +185,43 @@ class SoapScraper(Scraper):
         return len(image_urls)
 
     def _video_urls(self):
+        if self.video_count is not None:
+            return self.video_urls
+        self.video_count = 0
         # http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=98715&videoType=Consumer
         # url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s&videoType=Consumer" % self._product_id()
-        url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s" % self._product_id()
-        req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
-        redirect_contents = urllib2.urlopen(req).read()
-        redirect_tree = html.fromstring(redirect_contents)
+        product_ids = self.tree_html.xpath("//input[@class='skuHidden']/@productid")
+        m = re.findall(r'showVideos\((.*?)\)', "\n".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        product_ids += m
+        product_ids = list(set(product_ids))
+        video_urls = []
+        for product_id in product_ids:
+            url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s" % product_id
+            req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
+            redirect_contents = urllib2.urlopen(req).read()
+            redirect_tree = html.fromstring(redirect_contents)
 
-        rows = redirect_tree.xpath("//div[contains(@class,'productVideoList')]//div[@class='videoImage']//a/@onclick")
-        video_url = []
-        for row in rows:
-            m = re.findall(r"playProductVideo\('(.*?)'", row.strip())
-            if len(m) > 0:
-                video_url.append(m[0])
-        if len(video_url) < 1:
+            rows = redirect_tree.xpath("//div[contains(@class,'productVideoList')]//div[@class='videoImage']//a/@onclick")
+            for row in rows:
+                m = re.findall(r"playProductVideo\('(.*?)'", row.strip())
+                if len(m) > 0:
+                    video_urls.append(m[0])
+            if len(rows) < 1:
+                try:
+                    now_playing = redirect_tree.xpath("//div[contains(@class,'productVideoPlayer')]//iframe/@src")[0].strip()
+                    video_urls.append(now_playing)
+                except IndexError:
+                    pass
+        if len(video_urls) < 1:
             return None
-        return video_url
+        self.video_count = len(video_urls)
+        self.video_urls = video_urls
+        return video_urls
 
     def _video_count(self):
-        urls = self._video_urls()
-        if urls:
-            return len(urls)
-        return 0
+        if self.video_count is None:
+            self._video_urls()
+        return self.video_count
 
     def _pdf_urls(self):
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
@@ -242,27 +260,56 @@ class SoapScraper(Scraper):
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
         if not self.max_score or not self.min_score:
+            # SOAP.COM REVIEWS
+            try:
+                soap_average_review = float(self.tree_html.xpath("//span[contains(@class,'pr-rating pr-rounded average')]//text()")[0].strip())
+            except:
+                soap_average_review = 0
+            try:
+                soap_review_count = int(self.tree_html.xpath("//p[contains(@class,'pr-snapshot-average-based-on-text')]//span[@class='count']//text()")[0].strip())
+            except:
+                soap_review_count = 0
+
             # AMAZON.COM REVIEWS
             # http://www.soap.com/amazon_reviews/06/47/14/mosthelpful_Default.html
-            product_id = self._product_id()
-            if len(product_id) % 2 == 1:
-                product_id = "0%s" % product_id
-            product_id = [product_id[i:i+2] for i in range(0, len(product_id), 2)]
-            product_id = "/".join(product_id)
-            url = "http://www.soap.com/amazon_reviews/%s/mosthelpful_Default.html" % product_id
-            req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
-            redirect_contents = urllib2.urlopen(req).read()
-            redirect_tree = html.fromstring(redirect_contents)
-
+            product_ids = list(set(self.tree_html.xpath("//input[@class='skuHidden']/@productid")))
+            # var pr_page_id = '43977';
+            m = re.findall(r"var pr_page_id = '(.*?)'", "\n".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+            product_ids += m
+            product_ids = list(set(product_ids))
+            video_url = []
+            for product_id in product_ids:
+                if len(product_id) == 4:
+                    product_id = "00%s" % product_id
+                if len(product_id) == 5:
+                    product_id = "0%s" % product_id
+                product_id = [product_id[i:i+2] for i in range(0, len(product_id), 2)]
+                if len(product_id) == 4:
+                    product_id[2] = product_id[2] + product_id[3]
+                    product_id.pop()
+                product_id = "/".join(product_id)
+                url = "http://www.soap.com/amazon_reviews/%s/mosthelpful_Default.html" % product_id
+                req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
+                try:
+                    redirect_contents = urllib2.urlopen(req).read()
+                    redirect_tree = html.fromstring(redirect_contents)
+                    break
+                except:
+                    continue
             review_count = redirect_tree.xpath("//span[@class='pr-review-num']//text()")[0].strip()
             m = re.findall(r"\d+", review_count)
             if len(m) > 0:
                 self.review_count = int(m[0])
+            else:
+                self.review_count = 0
             average_review = redirect_tree.xpath("//span[contains(@class, 'pr-rating pr-rounded average')]//text()")[0].strip()
-            m = re.findall(r"\d+", average_review)
+            m = re.findall(r"[\d\.]+", average_review)
             if len(m) > 0:
                 self.average_review = float(m[0])
-
+            else:
+                self.average_review = 0
+            self.average_review = round(((soap_review_count*soap_average_review) + (self.review_count*self.average_review)) / (soap_review_count + self.review_count), 2)
+            self.review_count += soap_review_count
             rows = redirect_tree.xpath("//div[contains(@class,'pr-info-graphic-amazon')]//dl//dd[3]//text()")
             self.reviews = []
             idx = 5
@@ -358,10 +405,16 @@ class SoapScraper(Scraper):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 0:
             return None
-        rows = self.tree_html.xpath("//input[contains(@class,'addToCartButtonBox')]")
-        if len(rows) > 0:
-            return 0
-        return 1
+
+        rows = self.tree_html.xpath("//input[@class='skuHidden']/@isoutofstock")
+        if len(rows) == 1 and 'Y' in rows:
+            return 1
+        if len(rows) > 0 and 'N' not in rows:
+            return 1
+        # rows = self.tree_html.xpath("//input[contains(@class,'addToCartButtonBox')]")
+        # if len(rows) > 0:
+        #     return 0
+        return 0
 
     def _in_stores_out_of_stock(self):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
