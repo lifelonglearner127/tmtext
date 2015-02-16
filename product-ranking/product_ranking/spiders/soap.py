@@ -37,7 +37,7 @@ class SoapProductSpider(BaseProductsSpider):
         'pricehl': "&SortExpression=Price%20(Descending)",
         'nameaz': "&SortExpression=Name%20(Ascending)",
         'nameza': "&SortExpression=Name%20(Descending)",
-        'bestselling': "SortExpression=Bestselling%20(Descending)",
+        'bestselling': "&SortExpression=Bestselling%20(Descending)",
         'newest': "&SortExpression=New%20(Descending)",
     }
 
@@ -58,7 +58,11 @@ class SoapProductSpider(BaseProductsSpider):
 
     def start_requests(self):
         for request in super(SoapProductSpider, self).start_requests():
-            yield Request(url='http://www.soap.com', meta=request.meta.copy(), callback=self._start_search)
+            yield Request(
+                url='http://www.soap.com', 
+                meta=request.meta.copy(),
+                 callback=self._start_search
+            )
 
     def _start_search(self, response):
         return Request(
@@ -77,7 +81,8 @@ class SoapProductSpider(BaseProductsSpider):
         return Request(
             url,
             callback=self._parse_additional_links,
-            meta=new_meta)
+            meta=new_meta
+        )
 
     def _parse_additional_links(self, response):
         prev_response = response.meta['prev_response']
@@ -95,7 +100,8 @@ class SoapProductSpider(BaseProductsSpider):
         self._populate_from_html(response, prod)
 
         cond_set_value(prod, 'locale', 'en-US')  # Default locale.
-        plist = response.xpath("//table[contains(@class,'gridItemList')]/tr[@id]")
+        plist = response.xpath(
+            "//table[contains(@class,'gridItemList')]/tr[@id]")
         variants = []
         for pi in plist:
             inp = pi.xpath("*//input[@class='skuHidden']")
@@ -117,7 +123,11 @@ class SoapProductSpider(BaseProductsSpider):
                 if outofstock:
                     outofstock = outofstock[0]
                 variants.append(
-                    {'name': name, 'price': price, 'productid': pid, 'outofstock': outofstock, 'value': value})
+                    {'name': name, 'price': price, 
+                    'productid': pid, 'outofstock': outofstock, 
+                    'value': value
+                    }
+                )
         response.meta['variants'] = variants
 
         json_link = response.xpath(
@@ -131,16 +141,48 @@ class SoapProductSpider(BaseProductsSpider):
 
         productid = response.xpath(
             "//input[@id='productIDTextBox']/@value").extract()
+
+        #Reviews
+        num_of_reviews = response.xpath(
+            '//p[@class="pr-snapshot-average-based-on-text"]/span/text()'
+        ).re(FLOATING_POINT_RGEX)
+        average_rating = response.xpath(
+            '//span[contains(@class, "average")]/text()'
+        ).re(FLOATING_POINT_RGEX)
+        rating_by_star = {1:0, 2:0, 3:0, 4:0, 5:0}
+        all_marks = response.xpath(
+            '//span[@class="pr-rating pr-rounded"]/text()').extract()
+        for review in all_marks:
+            rating_by_star[int(float(review))] += 1
+        if average_rating and num_of_reviews:
+            prod["buyer_reviews"] = BuyerReviews(
+                num_of_reviews=int(num_of_reviews[0]), 
+                average_rating=float(average_rating[0]), 
+                rating_by_star=rating_by_star
+            ) 
+
         if productid:
             productid = productid[0]
             prodpath = groupPath(productid)
 
-            new_meta['url_related'] = "http://www.soap.com/qaps/BehaviorData!GetPageSlots.qs?ProductId={pid}&PersonalizationMode=C&SkuCode={upc}".format(
-                pid=productid,
-                upc=prod['upc'])
-            new_meta['url_reviews_detail'] = "http://www.soap.com/amazon_reviews/{prodpath}/mosthelpful_Default.html".format(
-                prodpath=prodpath)
-        return Request(json_link, self._parse_brand_json, meta=new_meta, dont_filter=True)
+            new_meta['url_related'] = "http://www.soap.com" \
+                "/qaps/BehaviorData!GetPageSlots.qs?" \
+                "ProductId={pid}&PersonalizationMode=C&SkuCode={upc}".format(
+                    pid=productid,
+                    upc=prod['upc']
+                )
+            new_meta['url_reviews_detail'] = "http://www.soap.com" \
+                "/amazon_reviews/{prodpath}/" \
+                "mosthelpful_Default.html".format(
+                    prodpath=prodpath
+                )
+
+        return Request(
+            json_link, 
+            self._parse_brand_json, 
+            meta=new_meta, 
+            dont_filter=True
+        )
 
     def _parse_brand_json(self, response):
         product = response.meta['product']
@@ -154,8 +196,14 @@ class SoapProductSpider(BaseProductsSpider):
         if rel_url:
             new_meta = response.meta.copy()
             new_meta['handle_httpstatus_list'] = [404]
-            return Request(rel_url, self._parse_related, meta=new_meta, dont_filter=True)
-        return self._gen_variants(response)
+            return Request(
+                rel_url, self._parse_related, 
+                meta=new_meta, dont_filter=True
+            )
+
+        del product["upc"]    
+        return product
+        #return self._gen_variants(response)
 
     def _parse_related(self, response):
         def full_url(url):
@@ -192,69 +240,73 @@ class SoapProductSpider(BaseProductsSpider):
         rurl = response.meta['url_reviews_detail']
         new_meta = response.meta.copy()
         new_meta['handle_httpstatus_list'] = [404]
-        return Request(rurl, self._parse_reviews_mosthelpful, meta=new_meta, dont_filter=True)
 
-    def _parse_reviews_mosthelpful(self, response):
-        product = response.meta['product']
-        if response.status == 200:
+        del product["upc"]
+        return product
+        #return Request(rurl, self._parse_reviews_mosthelpful, meta=new_meta, dont_filter=True)
 
-            total = response.xpath(
-                "//span[@class='pr-review-num']/text()").re(
-                r"(\d+) REVIEWS")
-            if total:
-                try:
-                    total = int(total[0])
-                except ValueError:
-                    total = 0
+    # def _parse_reviews_mosthelpful(self, response):
+    #     product = response.meta['product']
+    #     if response.status == 200:
 
-            avrg = response.xpath(
-                "//span[contains(@class,'average')]/text()").extract()
-            if avrg:
-                avrg = float(avrg[0])
+    #         total = response.xpath(
+    #             "//span[@class='pr-review-num']/text()").re(
+    #             r"(\d+) REVIEWS")
+    #         if total:
+    #             try:
+    #                 total = int(total[0])
+    #             except ValueError:
+    #                 total = 0
 
-            stars = response.xpath("//div[@class='pr-info-graphic-amazon']/dl")
-            distribution = {}
-            for star in stars:
-                starno = star.xpath(
-                    "dd[contains(text(),'star')]/text()").re(
-                    r"(\d+) star")
-                if starno:
-                    try:
-                        starno = int(starno[0])
-                    except ValueError:
-                        starno = 0
-                    revno = star.xpath("dd/text()").re(r"\((\d+)\)")
-                    if revno:
-                        try:
-                            revno = int(revno[0])
-                        except ValueError:
-                            revno = 0
-                        distribution[starno] = revno
-            reviews = BuyerReviews(total, avrg, distribution)
-            product['buyer_reviews'] = reviews
-        return self._gen_variants(response)
+    #         avrg = response.xpath(
+    #             "//span[contains(@class,'average')]/text()").extract()
+    #         if avrg:
+    #             avrg = float(avrg[0])
 
-    def _gen_variants(self, response):
-        product = response.meta['product']
-        variants = response.meta['variants']
+    #         stars = response.xpath("//div[@class='pr-info-graphic-amazon']/dl")
+    #         distribution = {}
+    #         for star in stars:
+    #             starno = star.xpath(
+    #                 "dd[contains(text(),'star')]/text()").re(
+    #                 r"(\d+) star")
+    #             if starno:
+    #                 try:
+    #                     starno = int(starno[0])
+    #                 except ValueError:
+    #                     starno = 0
+    #                 revno = star.xpath("dd/text()").re(r"\((\d+)\)")
+    #                 if revno:
+    #                     try:
+    #                         revno = int(revno[0])
+    #                     except ValueError:
+    #                         revno = 0
+    #                     distribution[starno] = revno
+    #         reviews = BuyerReviews(total, avrg, distribution)
+    #         product['buyer_reviews'] = reviews
+    #     return product
+        #return self._gen_variants(response)
 
-        if not variants:
-            raise AssertionError("NO VARIANTS FOR %s", product)
+    # def _gen_variants(self, response):
+    #     product = response.meta['product']
+    #     variants = response.meta['variants']
 
-        varp = []
-        for ivar in variants:
-            vprod = product.copy()
-            vprod['title'] = ivar['name']
-            vprod['upc'] = ivar['productid']
-            pricex = FLOATING_POINT_RGEX.search(ivar['price'])
-            if pricex:
-                price = pricex.group(0)
-                vprod['price'] = Price(
-                    price=price, priceCurrency='USD')
-            if ivar['outofstock'] == 'Y':
-                vprod['is_out_of_stock'] = True
-            varp.append(vprod)
-        return varp
+    #     if not variants:
+    #         raise AssertionError("NO VARIANTS FOR %s", product)
+
+    #     varp = []
+    #     for ivar in variants:
+    #         vprod = product.copy()
+    #         vprod['title'] = ivar['name']
+    #         vprod['upc'] = ivar['productid']
+    #         pricex = FLOATING_POINT_RGEX.search(ivar['price'])
+    #         if pricex:
+    #             price = pricex.group(0)
+    #             vprod['price'] = Price(
+    #                 price=price, priceCurrency='USD')
+    #         if ivar['outofstock'] == 'Y':
+    #             vprod['is_out_of_stock'] = True
+    #         varp.append(vprod)
+    #     return varp
 
     def _populate_from_html(self, response, product):
         prices = response.xpath(
@@ -296,7 +348,7 @@ class SoapProductSpider(BaseProductsSpider):
         ).extract()
 
         if links:
-            links.extend(response.meta['additional_links'])
+           links.extend(response.meta['additional_links'])
         if not links:
             self.log("Found no product links.", ERROR)
         for link in links:
@@ -317,12 +369,13 @@ class SoapProductSpider(BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         next_pages = response.css(
             "a:nth-child(3).result-pageNum-iconWrap::attr(href)").extract()
-        next_page = None
+        #next_page = None
         if next_pages:
             next_page = next_pages[0]
             if len(next_pages) > 2:
                 self.log("Found more than two 'next page' links.", WARNING)
-        return next_page
+            return next_page
+        return None
 
     def _unify_price(self, product):
         price = product.get('price')
