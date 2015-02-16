@@ -15,7 +15,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
 
 
-class WehkampProductsSpider(BaseProductsSpider):
+class ShopNordstromProductsSpider(BaseProductsSpider):
     name = 'shopnordstrom_products'
     allowed_domains = ["shop.nordstrom.com"]
     start_urls = []
