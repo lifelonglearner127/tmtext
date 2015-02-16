@@ -12,6 +12,7 @@ import mmh3 as MurmurHash
 import os
 
 from no_img_hash import fetch_bytes
+from selenium import webdriver
 
 from lxml import html, etree
 from itertools import chain
@@ -227,6 +228,10 @@ class Scraper():
             if key not in self.BASE_DATA_TYPES:
                 print "*******EXTRA data type: ", key
                 del self.ALL_DATA_TYPES[key]
+
+        #load phantom driver
+        self.driver = webdriver.PhantomJS()
+        self.driver.set_window_size(1120, 550)
 
     def _pre_set_fields(self):
         '''Before the scraping for the particular site is started,
