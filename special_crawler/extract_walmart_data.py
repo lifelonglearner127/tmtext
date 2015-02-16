@@ -74,6 +74,8 @@ class WalmartScraper(Scraper):
         # Currently used for seller info (but useful for others as well)
         self.js_entry_function_body = None
 
+        #whether the page has loaded in phantom
+        self.is_page_loaded_in_phantom = False
     # checks input format
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -1467,6 +1469,33 @@ class WalmartScraper(Scraper):
 
         return 0
 
+    def _in_stores_out_of_stock(self):
+        '''General function for setting value of field "in_stores_out_of_stock".
+        It will be inferred from other sellers fields.
+        Method can be overwritten by scraper class if different implementation is available.
+        '''
+
+        try:
+            # old version
+            self.load_page_in_phantom()
+            WMNotAvailableLine_style = self.driver.find_element(By.XPATH, "//p[@id='WMNotAvailableLine']").\
+                get_attribute("style").strip()
+
+            if "display: block;" in WMNotAvailableLine_style or "display: none;" not in WMNotAvailableLine_style:
+                WMNotAvailableLine_text = self.tree_html.xpath("//p[@id='WMNotAvailableLine']//text()")[0].strip()
+
+                if "Not Available" in WMNotAvailableLine_text:
+                    return 1
+        except Exception:
+            pass
+
+        return None
+
+    def load_page_in_phantom(self):
+        if not self.is_page_loaded_in_phantom:
+            self.driver.get(self.product_page_url)
+            self.is_page_loaded_in_phantom = True
+
     def _stores_available_from_script_old_page(self):
         """Extracts whether product is available in stores.
         Works on old page version.
@@ -1703,11 +1732,10 @@ class WalmartScraper(Scraper):
             if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
                 return 1
         except Exception:
-            self.driver.get(self.product_page_url)
-#            onlinePriceLabel_style = self.tree_html.xpath("//div[@id='onlinePriceLabel']")[0]
+            self.load_page_in_phantom()
             onlinePriceLabel_style = (self.driver.find_element(By.XPATH, "//div[@id='onlinePriceLabel']")).get_attribute("style").strip()
 
-            if onlinePriceLabel_style == "display: block;":
+            if "display: block;" in onlinePriceLabel_style or "display: none;" not in onlinePriceLabel_style:
                 return 1
             '''
             #       old design
@@ -1872,6 +1900,7 @@ class WalmartScraper(Scraper):
         "owned": _owned, \
         "owned_out_of_stock": _owned_out_of_stock, \
         "in_stores" : _in_stores, \
+        "in_stores_out_of_stock" : _in_stores_out_of_stock,
         "in_stores_only" : _in_stores_only, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
