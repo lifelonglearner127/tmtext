@@ -35,7 +35,7 @@ class StaplesAdvantageScraper(Scraper):
     pdf_urls = None
     pdf_count = 0
     video_urls = None
-    video_count = 0
+    video_count = None
 
     def check_url_format(self):
         # for ex: http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=383249&catalogId=4&item_id=71504599&langId=-1&currentSKUNbr=383249&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=117896272
@@ -163,45 +163,40 @@ class StaplesAdvantageScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        if self.video_urls is not None:
+        if self.video_count is not None:
             return self.video_urls
+        self.video_count = 0
         video_urls = []
         # https://scontent.webcollage.net/stapleslink-en/sb-for-ppp?ird=true&channel-product-id=957754
         url = "https://scontent.webcollage.net/stapleslink-en/sb-for-ppp?ird=true&channel-product-id=%s" % self._product_id()
-        req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
-        contents = urllib2.urlopen(req).read()
+        contents = urllib.urlopen(url).read()
         # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
         # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
         m = re.findall(r'wcsb:url="(.*?)"', contents.replace("\\",""), re.DOTALL)
         if len(m) > 0:
             url_wc = m[0]
-            req_wc = urllib2.Request(url_wc, headers={'User-Agent' : "Magic Browser"})
-            contents_wc = urllib2.urlopen(req_wc).read()
+            contents_wc = urllib.urlopen(url_wc).read()
             # document.location.replace('
             m_wc = re.findall(r'document.location.replace\(\'(.*?)\'\);', contents_wc.replace("\\",""), re.DOTALL)
             if len(m_wc) > 0:
                 url_wc2 = m_wc[0]
-                req_wc2 = urllib2.Request(url_wc2, headers={'User-Agent' : "Magic Browser"})
-                contents_wc2 = urllib2.urlopen(req_wc2).read()
+                contents_wc2 = urllib.urlopen(url_wc2).read()
                 tree = html.fromstring(contents_wc2)
                 rows = tree.xpath("//div[contains(@class,'wc-pc-tabs')]//li")
                 for row in rows:
                     txt = " ".join(row.xpath(".//text()"))
                     if "Customer Reviews" in txt:
                         url_wc3 = "http://content.webcollage.net%s" % row.xpath(".//a/@href")[0].strip()
-                        req_wc3 = urllib2.Request(url_wc3, headers={'User-Agent' : "Magic Browser"})
-                        contents_wc3 = urllib2.urlopen(req_wc3).read()
+                        contents_wc3 = urllib.urlopen(url_wc3).read()
                         tree3 = html.fromstring(contents_wc3)
                         url_wc4 = tree3.xpath("//iframe/@src")[0].strip()
-                        req_wc4 = urllib2.Request(url_wc4, headers={'User-Agent' : "Magic Browser"})
-                        contents_wc4 = urllib2.urlopen(req_wc4).read()
+                        contents_wc4 = urllib.urlopen(url_wc4).read()
                         tree4 = html.fromstring(contents_wc4)
                         playerKey = tree4.xpath("//param[@name='playerKey']/@value")[0].strip()
                         video = tree4.xpath("//param[@name='video']/@value")[0].strip()
                         # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
                         url_wc5 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
-                        req_wc5 = urllib2.Request(url_wc5, headers={'User-Agent' : "Magic Browser"})
-                        contents_wc5 = urllib2.urlopen(req_wc5).read()
+                        contents_wc5 = urllib.urlopen(url_wc5).read()
                         jsn = json.loads(contents_wc5)
                         jsn = jsn["sources"]
                         for item in jsn:
@@ -217,7 +212,7 @@ class StaplesAdvantageScraper(Scraper):
         return video_urls
 
     def _video_count(self):
-        if self.video_urls is None:
+        if self.video_count is None:
             self._video_urls()
         return self.video_count
 
