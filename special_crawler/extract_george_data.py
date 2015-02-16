@@ -28,6 +28,7 @@ class GeorgeScraper(Scraper):
         and returns True if current page is one.
         '''
         if self.product_page_url.find(",pd.html") < 0: return True
+        if len(self.tree_html.xpath('//meta[@content="product"]')) == 0: return True
         return False
 
 
@@ -109,6 +110,10 @@ class GeorgeScraper(Scraper):
 
 
     def _long_description(self):
+        long_description = " ".join(self.tree_html.xpath("//div[contains(@id,'wc-overview') or contains(@id,'wc-features')]//text()[normalize-space()]")).strip()
+#        long_description = self.tree_html.xpath("//div[contains(@id,'wc-overview')]")
+        if len(long_description) > 0:
+            return long_description
         return None
 
 
@@ -162,6 +167,13 @@ class GeorgeScraper(Scraper):
             self.image_urls = image_url
         if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
+        image_url = tree.xpath("//img[@id='productImageSmall']/@src")
+        if a == 1:
+            self.image_urls = image_url
+        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
+            return image_url
+        if a == 1:
+            self.image_urls = None
         return None
 
     def _image_helper(self):
@@ -194,6 +206,9 @@ class GeorgeScraper(Scraper):
     def _video_urls(self):
         video_url = self.tree_html.xpath("//div[@id='thumbnailsWrapper']//span[contains(@class,'video')]/img/@src")
         if len(video_url) > 0: return video_url
+        video_url = self.tree_html.xpath("//img[contains(@data-asset-url,'.mp4')]/@wcobj")
+        if len(video_url) > 0:
+            return video_url
         return None
 
 
@@ -212,7 +227,9 @@ class GeorgeScraper(Scraper):
         return 0
 
     def _webcollage(self):
-        return None
+        wbc = self.tree_html.xpath("//img[contains(@src,'webcollage.net')]")
+        if len(wbc) > 0 : return 1
+        return 0
 
     # extract htags (h1, h2) from its product product page tree
     def _htags(self):
@@ -290,6 +307,9 @@ class GeorgeScraper(Scraper):
         price = self.tree_html.xpath("//p[@id='productPrice']//span[@class='productPrice']")
         if len(price)>0  :
             return price[0].text_content().strip()
+        price = self.tree_html.xpath("//span[@class='productPrice']")
+        if len(price)>0  :
+            return price[0].text_content().strip()
         return None
 
     def _price_amount(self):
@@ -326,7 +346,7 @@ class GeorgeScraper(Scraper):
         if len(s)>0 and s[0].get("disabled")==None: return 0
         c = self.tree_html.xpath('//select[@id="color"]')
         if len(c)>0 and c[0].get("disabled")==None: return 0
-        a = self.tree_html.xpath('//select[contains(@id,"quantity") and @disabled]')
+        a = self.tree_html.xpath('//select[contains(@id,"quantity") and not (contains(@id,"null")) and @disabled]')
         if len(a)>0 : return 1
         return 0
 
