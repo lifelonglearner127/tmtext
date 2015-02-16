@@ -164,8 +164,9 @@ class QuillScraper(Scraper):
         return len(image_urls)
 
     def _video_urls(self):
-        if self.video_urls is not None:
+        if self.video_count is not None:
             return self.video_urls
+        self.video_count = 0
         video_urls = []
         # Request URL:http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=267655
         sku_data = self.tree_html.xpath("//input[@id='SkuData_Sku']/@value")[0].strip()
@@ -199,7 +200,7 @@ class QuillScraper(Scraper):
         return video_urls
 
     def _video_count(self):
-        if self.video_urls is None:
+        if self.video_count is None:
             self._video_urls()
         return self.video_count
 

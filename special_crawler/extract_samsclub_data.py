@@ -143,11 +143,11 @@ class SamsclubScraper(Scraper):
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        rows = self.tree_html.xpath("//div[@itemprop='description']//text()")
+        rows = self.tree_html.xpath("//*[@itemprop='description']//text()")
         long_description = "".join(rows)
         long_description = long_description.replace("View a video of this product.", "")
         long_description = long_description.replace("View a video of this product", "")
-        rows = self.tree_html.xpath("//div[@itemprop='description']/*")
+        rows = self.tree_html.xpath("//*[@itemprop='description']/*")
         row_txts = []
         for row in rows:
             if row.tag == 'style' or row.tag == 'h3':

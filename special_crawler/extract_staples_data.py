@@ -294,6 +294,13 @@ class StaplesScraper(Scraper):
         for row in rows:
             if "Available In-Store Only" in row:
                 return 1
+        rows = self.tree_html.xpath("//div[@class='checkmarks']//ul/li")
+        for row in rows:
+            txt = " ".join(row.xpath(".//text()"))
+            if "FREE Shipping to store" in txt:
+                return 1
+            if "Check inventory in other stores" in txt:
+                return 1
         return 0
 
     def _marketplace(self):
