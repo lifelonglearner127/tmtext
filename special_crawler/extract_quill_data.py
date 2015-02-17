@@ -36,6 +36,8 @@ class QuillScraper(Scraper):
     features = None
     video_urls = None
     video_count = None
+    pdf_urls = None
+    pdf_count = 0
 
     def check_url_format(self):
         # for ex: http://www.quill.com/clorox-toilet-bowl-cleaner-bleach/cbs/040672.html#SkuTabs
@@ -205,17 +207,32 @@ class QuillScraper(Scraper):
         return self.video_count
 
     def _pdf_urls(self):
+        if self.pdf_urls is not None:
+            return self.pdf_urls
         pdfs = self.tree_html.xpath("//div[@id='PageInner']//a[contains(@href,'.pdf')]")
         pdf_hrefs = []
         for pdf in pdfs:
-            pdf_hrefs.append(pdf.attrib['href'])
+            pdf_url_txts = [self._clean_text(r) for r in pdf.xpath(".//text()") if len(self._clean_text(r)) > 0]
+            if len(pdf_url_txts) > 0:
+                pdf_hrefs.append(pdf.attrib['href'])
+
+        # get from webcollage
+        # http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=392495
+        url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % self._product_id()
+        contents = urllib.urlopen(url).read()
+        contents = contents.replace("\\", "")
+        wc_pdfs = re.findall(r'wcobj="(.*?)"', contents, re.DOTALL)
+        wc_pdfs = [r.replace("\\", "") for r in wc_pdfs]
+        pdf_hrefs += wc_pdfs
+        if len(pdf_hrefs) < 1:
+            return None
+        self.pdf_count = len(pdf_hrefs)
         return pdf_hrefs
 
     def _pdf_count(self):
-        urls = self._pdf_urls()
-        if urls is not None:
-            return len(urls)
-        return 0
+        if self.pdf_urls is None:
+            self._pdf_urls()
+        return self.pdf_count
 
     def _webcollage(self):
         # http://content.webcollage.net/pg-estore/power-page?ird=true&channel-product-id=037000864868
@@ -297,7 +314,7 @@ class QuillScraper(Scraper):
         price = self._price()
         price = price.replace(",", "")
         price_amount = re.findall(r"[\d\.]+", price)[0]
-        return price_amount
+        return float(price_amount)
 
     def _price_currency(self):
         price = self._price()
