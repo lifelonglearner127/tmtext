@@ -2,12 +2,11 @@
 #  -*- coding: utf-8 -*-
 
 import urllib
-import urllib2
 import re
 import sys
 import json
 import os.path
-import urllib, cStringIO
+import cStringIO
 from io import BytesIO
 from PIL import Image
 import mmh3 as MurmurHash
@@ -390,6 +389,22 @@ class StaplesAdvantageScraper(Scraper):
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
         return None
+
+    def _owned(self):
+        '''General function for setting value of legacy field "owned".
+        It will be inferred from value of "site_online_in_stock" field.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+        return self._site_online()
+
+    def _owned_out_of_stock(self):
+        '''General function for setting value of legacy field "owned_out_of_stock".
+        It will be inferred from value of "site_online_out_of_stock" field.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+        return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
