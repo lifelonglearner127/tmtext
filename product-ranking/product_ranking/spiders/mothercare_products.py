@@ -12,6 +12,18 @@ from product_ranking.spiders.contrib.product_spider import ProductsSpider
 
 
 class MothercareProductsSpider(ProductsSpider):
+    """ mothercare.com product ranking spider.
+
+    `upc` field is missing
+
+    Takes `order` argument with following possible values:
+
+    * `rating` (default)
+    * `best`
+    * `new`
+    * `price_asc`, `price_desc`
+    """
+
     name = 'mothercare_products'
 
     allowed_domains = [
@@ -28,7 +40,7 @@ class MothercareProductsSpider(ProductsSpider):
                  "&view=grid&format=ajax"
 
     SORT_MODES = {
-        'default': 'Bestseller',
+        'default': 'Most Popular',
         'best': 'Bestseller',
         'new': 'New Arrivals',
         'price_asc': 'Price [Low - High]',
@@ -71,16 +83,16 @@ class MothercareProductsSpider(ProductsSpider):
         return link[0] + '&format=ajax' if link else None
 
     def _fetch_product_boxes(self, response):
-        return response.css('.prod-content')
+        return response.css('.producttile')
 
     def _link_from_box(self, box):
         return box.css('a::attr(href)')[0].extract()
 
     def _populate_from_box(self, response, box, product):
-        cond_set(product, 'title', box.css('.productname').extract(),
+        cond_set(product, 'title', box.css('.productname::text').extract(),
                  unicode.strip)
-        cond_set_value(product, 'is_out_of_stock',
-                       not box.css('.inStock span::text').re('In Stock'))
+        cond_set_value(product, 'is_out_of_stock', not box.css('.inStock'))
+        cond_set(product, 'price', box.css('.salesprice::text').extract())
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'image_url',
@@ -104,9 +116,9 @@ class MothercareProductsSpider(ProductsSpider):
                  response.css('[itemprop=model]::text').extract())
 
         price = product.get('price')
-        if price and price.startswith(u'\xa3'):
-            price = price.replace(u'\xa3', '').replace(',', '').replace(' ',
-                                                                        '')
+        price = re.findall(u'\xa3 *\d[\d, .]*', price)
+        if price:
+            price = re.sub(u'[\xa3, ]+', '', price[0])
             cond_replace_value(product, 'price', Price(priceCurrency='GBP',
                                                        price=price))
 
@@ -119,21 +131,21 @@ class MothercareProductsSpider(ProductsSpider):
         url = "http://recs.richrelevance.com/rrserver/p13n_generated.js?"
         api_key = re.search("setApiKey\('([^']+)'\);", response.body).group(1)
         user_id = re.search("setUserId\('([^']+)'\);", response.body).group(1)
-        sess_id = re.search("setSessionId\('([^']+)'\);", response.body).group(
-            1)
-        product_id = re.search('.+/([^,]+)', response.url).group(1)
-        model = response.meta['product'].get('model')
-        bcrumb = response.css('#prodcontent .divider ~ a')[-1]
-        bcrumb_id = bcrumb.css('::attr(href)').extract()[0]
-        bcrumb_id = re.search('/.+/(.+?),', bcrumb_id).group(1)
-        bcrumb_t = bcrumb.css('::text').extract()[0]
+        sess_id = re.search(
+            "setSessionId\('([^']+)'\);", response.body).group(1)
+        product_id = re.search(
+            "R3_ITEM\.setId\('([^']+)'\);", response.body).group(1)
+        cs = re.search("addCategory\('([^']+)', '([^']+)'", response.body)
+        cs = '%s:%s' % (cs.group(1), cs.group(2))
+        chi = re.search("addCategoryHintId\('([^']+)'\);",
+                        response.body).group(1)
         pref = 'http://www.mothercare.com/on/demandware.store' \
                '/Sites-MCENGB-Site/default/Search-Show?q={search_term}' \
             .format(search_term=response.meta['search_term'])
         data = {
             'a': api_key,
-            'chi': '|%s' % bcrumb_id,
-            'cs': '|%s:%s' % (bcrumb_id, bcrumb_t),
+            'chi': '|%s' % chi,
+            'cs': '|%s' % cs,
             'flv': '11.2.202',
             'l': 1,
             'p': product_id,
@@ -147,6 +159,7 @@ class MothercareProductsSpider(ProductsSpider):
             'u': user_id
         }
         url = url + urlencode(data)
+        response.meta['alsoviewed'] = response.css('.rr-recs-items-page')
         return url
 
     def _parse_related_products(self, response):
@@ -155,7 +168,12 @@ class MothercareProductsSpider(ProductsSpider):
         for id_, stategy in self.REQ_STRATEGY.findall(
                 response.body_as_unicode()):
             message = json.loads(stategy)['strategy_message']
-            if not re.match(self.ALLOW_RR, message):
+            if re.match('[Rr]ecently [Vv]iewed', message):
+                continue
+            if response.meta['alsoviewed']:
+                if re.match('[Rr]ecommended *[Ff]or', message):
+                    continue
+            elif re.match('[Pp]eople *[Aa]lso', message):
                 continue
             rp[message] = []
             for iid, data in self.REQ_ITEM.findall(response.body):
@@ -169,12 +187,11 @@ class MothercareProductsSpider(ProductsSpider):
                 url = unquote(re.search('&ct=([^&]+)', url).group(1))
                 rp[message].append(RelatedProduct(title=title, url=url))
         cond_set_value(product, 'related_products', rp)
-        return product
+
 
     def _request_buyer_reviews(self, response):
         sku = re.search('.+/([^,]+)', response.url).group(1)
         url = self.REVOO_URL.format(sku=sku)
-        #raw_input(url)
         return url
 
     def _scrape_review_summary(self, response):
@@ -207,4 +224,4 @@ class MothercareProductsSpider(ProductsSpider):
         assert avg_calculated == avg
         res = BuyerReviews(num_of_reviews=total, average_rating=avg,
                            rating_by_star=by_star)
-        cond_set_value(response.meta['product'], 'buyer_reviews', res)
+        response.meta['product']['buyer_reviews'] = res
