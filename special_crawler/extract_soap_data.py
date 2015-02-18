@@ -272,12 +272,11 @@ class SoapScraper(Scraper):
 
             # AMAZON.COM REVIEWS
             # http://www.soap.com/amazon_reviews/06/47/14/mosthelpful_Default.html
-            product_ids = list(set(self.tree_html.xpath("//input[@class='skuHidden']/@productid")))
+            # product_ids = list(set(self.tree_html.xpath("//input[@class='skuHidden']/@productid")))
             # var pr_page_id = '43977';
             m = re.findall(r"var pr_page_id = '(.*?)'", "\n".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
-            product_ids += m
+            product_ids = m
             product_ids = list(set(product_ids))
-            video_url = []
             for product_id in product_ids:
                 if len(product_id) == 4:
                     product_id = "00%s" % product_id
