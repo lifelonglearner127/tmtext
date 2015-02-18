@@ -12,6 +12,10 @@ from product_ranking.spiders import cond_set_value, populate_from_open_graph
 from scrapy import Request
 from scrapy.log import ERROR, WARNING
 
+from scrapy.conf import settings
+settings.overrides['DEPTH_PRIORITY'] = 1
+settings.overrides['SCHEDULER_DISK_QUEUE'] = 'scrapy.squeue.PickleFifoDiskQueue'
+settings.overrides['SCHEDULER_MEMORY_QUEUE'] = 'scrapy.squeue.FifoMemoryQueue'
 
 # From PowerReview.groupPath()
 def groupPath(groupId):
@@ -201,7 +205,7 @@ class SoapProductSpider(BaseProductsSpider):
                 meta=new_meta, dont_filter=True
             )
 
-        del product["upc"]    
+        del product["upc"]
         return product
         #return self._gen_variants(response)
 
