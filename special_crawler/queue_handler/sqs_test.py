@@ -9,17 +9,17 @@ author: Quinn Stearns
 
 from sqs_connect import Scrape_Queue
 
-def runTests(scrape_queue_name, process_queue_name, batch_csv=None):
+def runTests(scrape_queue_name, process_queue_name, url):
     print("RUNNING SQS TESTS")
 
     sqs_scrape = SQS_Queue(scrape_queue_name)
 
-    message = {'url':'http://www.pgshop.com/home/kitchen/dishwasher-detergent/cascade-complete-powder-dishwasher-detergent-fresh-scent-75-oz/PG_00037000338369.html', 
-                                         'site_id':5, 
-                                         'server_name':'unit_test', 
-                                         'product_id':384, 
-                                         'site':'walmart.com', 
-                                         'event':1}
+    message = {'url':url, 
+               'site_id':5, 
+               'server_name':'unit_test', 
+               'product_id':384, 
+               'site':'walmart.com', 
+               'event':1}
 
     sqs_scrape.put( json.dumps( message ))
 
@@ -47,7 +47,7 @@ if (__name__ == '__main__'):
         url_end = re.findall(r'^(localhost\/get_data\?url=)(.*)', url)[0][1]
         url = url_front + urllib.quote(url_end)
         print runTests('unit_test_scrape', 'unit_test_process', url)
-        
+
     else:
         print "######################################################################################################"
         print "This is Curl wrapper to support unicode string.(Author: Marek Glica)"
