@@ -67,6 +67,11 @@ class Scraper():
             "model_meta", # model from meta, string
             "description", # short description / entire description if no short available, string
             "long_description", # long description / null if description above is entire description, string
+            "ingredients", # list of ingredients - list of strings
+            "ingredient_count", # number of ingredients - integer
+            "nutrition_facts", # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries) 
+                               # containing nutrition facts
+            "nutrition_fact_count", # number of nutrition facts (of elements in the nutrition_facts list) - integer
 
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
@@ -154,7 +159,8 @@ class Scraper():
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
-                        "features", "feature_count", "model_meta", "description", "long_description"],
+                        "features", "feature_count", "model_meta", "description", "long_description",
+                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls",\
                             "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
