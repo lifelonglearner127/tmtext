@@ -36,9 +36,23 @@ def runTests(scrape_queue_name, process_queue_name, batch_csv=None):
     except Exception as e:
         sqs_process.reset_message()
         print('error: ', e)
-        continue
+        return None
 
-    print("SUCCESS. SENT AND RECEIVED MESSAGE.")
+    return message
 
 if (__name__ == '__main__'):
-    runTests('unit_test_scrape', 'unit_test_process')
+    if len(sys.argv) > 1:
+        url = sys.argv[1] # 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/28659614/'
+        url_front = re.findall(r'^(localhost\/get_data\?url=)(.*)', url)[0][0]
+        url_end = re.findall(r'^(localhost\/get_data\?url=)(.*)', url)[0][1]
+        url = url_front + urllib.quote(url_end)
+        print runTests('unit_test_scrape', 'unit_test_process', url)
+        
+    else:
+        print "######################################################################################################"
+        print "This is Curl wrapper to support unicode string.(Author: Marek Glica)"
+        print "Please input correct argument.\nfor ex: python curl_wrapper.py 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/28659614/'"
+        print '(Before, we used $ curl "localhost/get_data?url=http://ww.ozon.ru/context/detail/id/28659614/")'
+        print "######################################################################################################"
+
+    
