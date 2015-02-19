@@ -7,11 +7,26 @@ from __future__ import division, absolute_import, unicode_literals
 import string
 import unittest
 
+from scrapy import Selector
 from scrapy.exceptions import DropItem
 try:
     import mock
 except ImportError:
     pass  # Optional import for test.
+
+
+class CutFromTitleTagsAndReturnStringOnly(object):
+
+    def process_item(self, item, spider):
+        if "title" in item:
+            item["title"] = self._title_without_tags(item["title"])
+        return item
+
+    @staticmethod
+    def _title_without_tags(title):
+        if isinstance(title, str) or isinstance(title, unicode):
+            return Selector(text=title).xpath("string()").extract()[0]
+        return title
 
 
 class AddSearchTermInTitleFields(object):
