@@ -746,6 +746,31 @@ class ServiceScraperTest(unittest.TestCase):
         for url in self.urls_by_scraper["hersheysstore"]:
             self._test("hersheysstore", url)
 
+    # test all keys are in the response for simple (all-data) request for samsclub
+    # (using template function)
+    def test_samsclub(self):
+        for url in self.urls_by_scraper["samsclub"]:
+            self._test("samsclub", url)
+
+
+    # test all keys are in the response for simple (all-data) request for quill
+    # (using template function)
+    def test_quill(self):
+        for url in self.urls_by_scraper["quill"]:
+            self._test("quill", url)
+
+    # test all keys are in the response for simple (all-data) request for quill
+    # (using template function)
+    def test_freshamazon(self):
+        for url in self.urls_by_scraper["freshamazon"]:
+            self._test("freshamazon", url)
+
+    # test all keys are in the response for simple (all-data) request for quill
+    # (using template function)
+    def test_freshdirect(self):
+        for url in self.urls_by_scraper["freshdirect"]:
+            self._test("freshdirect", url)
+
 if __name__ == '__main__':
     specified_website = ""
 
