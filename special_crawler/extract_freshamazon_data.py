@@ -129,7 +129,7 @@ class FreshAmazonScraper(Scraper):
 
 
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//div[contains(@id,'productDescription')]//p//text()[normalize-space()]")).strip()
+        short_description = " ".join(self.tree_html.xpath("//div[contains(@id,'productDescription')]//*[self::p or self::div]//text()[normalize-space()]")).strip()
         if short_description is not None and len(short_description)>0:
             return short_description.replace("\n"," ")
         return self._long_description_helper()
