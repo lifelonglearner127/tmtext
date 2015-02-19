@@ -7,7 +7,10 @@ author: Quinn Stearns
 
 '''
 
-from sqs_connect import Scrape_Queue
+import sys
+import time
+import json
+from sqs_connect import SQS_Queue
 
 def runTests(scrape_queue_name, process_queue_name, url):
     print("RUNNING SQS TESTS")
@@ -27,7 +30,9 @@ def runTests(scrape_queue_name, process_queue_name, url):
 
     sqs_process = SQS_Queue(process_queue_name)
 
-    # while sqs_process.count() > 0:
+    while sqs_process.count() == 0:
+        time.sleep(1)
+
     try:
         message = sqs_process.get()
         print("RECEIVED MESSAGE")
