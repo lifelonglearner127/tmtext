@@ -269,7 +269,8 @@ class SamsclubScraper(Scraper):
                     rows.append("http://content.webcollage.net%s" % item)
         if len(rows) < 1:
             return None
-        self.video_urls = list(set(rows))
+        new_rows = [r for r in rows if ("%s.flash.flv" % r) in rows]
+        self.video_urls = list(set(new_rows))
         self.video_count = len(self.video_urls)
         return self.video_urls
 
