@@ -35,7 +35,11 @@ class AmazonProductsSpider(BaseProductsSpider):
     name = 'amazon_products'
     allowed_domains = ["amazon.com"]
 
-    SEARCH_URL = "http://www.amazon.com/s/?field-keywords={search_term}"
+    user_agent = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:35.0) Gecko'
+                  '/20100101 Firefox/35.0')
+
+    SEARCH_URL = ('http://www.amazon.com/s/ref=nb_sb_noss_1?url=search-alias'
+                  '%3Daps&field-keywords={search_term}')
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
@@ -235,6 +239,18 @@ class AmazonProductsSpider(BaseProductsSpider):
             )
             total_matches = None
         return total_matches
+
+    def _scrape_results_per_page(self, response):
+        num = response.xpath(
+            '//*[@id="s-result-count"]/text()').re('1-(\d+) of')
+        if num:
+            return int(num[0])
+        else:
+            num = response.xpath(
+                '//*[@id="s-result-count"]/text()').re('(\d+) results')
+            if num:
+                return int(num[0])
+        return None
 
     def _scrape_product_links(self, response):
         links = response.css(

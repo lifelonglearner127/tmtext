@@ -173,7 +173,7 @@ class TescoScraper(Scraper):
         if self.scraper_version == "groceries":
             return  " ".join(self.tree_html.xpath("//div[@class='detailsWrapper'][1]//text()")).strip()
         description = " ".join(self.tree_html.xpath("//ul[@class='features']/li//text()")).strip()
-        if len(description)<4:
+        if len(description) < 4:
             return self._long_description_temp()
         return description
 
@@ -189,6 +189,9 @@ class TescoScraper(Scraper):
 
     def _long_description_temp(self):
         #this first description was written for book description
+        description = " ".join(self.tree_html.xpath('//section[@id="product-details-link"]//section//text()')).strip()
+        if len(description) > 2:
+            return description
         description = " ".join([self._clean_text(x) for x in self.tree_html.xpath('//*[@class="detailWrapper"]//text()')])
         if len(description)>5:
             return description

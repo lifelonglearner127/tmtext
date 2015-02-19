@@ -18,28 +18,30 @@ import requests
 from extract_data import Scraper
 
 
-class SoapScraper(Scraper):
+class QuillScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www\.soap\.com/p/(.*)"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www\.quill\.com/(.*)"
 
     reviews_tree = None
     max_score = None
     min_score = None
-    review_count = 0
+    review_count = None
     average_review = None
     reviews = None
     feature_count = None
     features = None
     video_urls = None
     video_count = None
+    pdf_urls = None
+    pdf_count = 0
 
     def check_url_format(self):
-        # for ex: http://www.soap.com/p/nordic-naturals-complete-omega-3-6-9-1-000-mg-softgels-lemon-64714
-        m = re.match(r"^http://www\.soap\.com/p/(.*)", self.product_page_url)
+        # for ex: http://www.quill.com/clorox-toilet-bowl-cleaner-bleach/cbs/040672.html#SkuTabs
+        m = re.match(r"^http://www\.quill\.com/(.*)", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -49,7 +51,7 @@ class SoapScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        if len(self.tree_html.xpath("//div[@class='productDetailPic']//a//img")) < 1:
+        if len(self.tree_html.xpath("//div[@class='skuImageZoom']//img")) < 1:
             return True
         return False
 
@@ -61,23 +63,25 @@ class SoapScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//input[@id='productIDTextBox']/@value")[0].strip()
+        product_id = self.tree_html.xpath("//input[@id='SkuData_Sku']//@value")[0].strip()
         return product_id
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//div[@class='productTitle']//h1//text()")[0].strip()
+        return self.tree_html.xpath("//h1[@itemprop='name']//text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//div[@class='productTitle']//h1//text()")[0].strip()
+        return self.tree_html.xpath("//h1[@itemprop='name']//text()")[0].strip()
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
     
     def _model(self):
-        return None
+        model = self.tree_html.xpath("//div[@itemprop='model']//text()")[0].strip()
+        model = re.findall(r"[\d-]+", model)[0].strip()
+        return model
 
     def _upc(self):
         return None
@@ -86,20 +90,17 @@ class SoapScraper(Scraper):
         if self.feature_count is not None:
             return self.features
         self.feature_count = 0
-        rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='Tab1DetailInfo']//div[@class='pIdDesContent']//text()")
-        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+        rows = self.tree_html.xpath("//div[@id='divSpecifications']//dd")
         line_txts = []
-        if "Features:" in rows:
-            lis = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='Tab1DetailInfo']//div[@class='pIdDesContent']//ul//li")
-            for li in lis:
-                txt = "".join(li.xpath(".//text()")).strip()
-                if len(txt) > 0:
-                    line_txts.append(txt)
+        for row in rows:
+            txt = "".join([r for r in row.xpath(".//text()") if len(self._clean_text(r)) > 0]).strip()
+            if len(txt) > 0:
+                line_txts.append(txt)
         if len(line_txts) < 1:
             return None
         self.feature_count = len(line_txts)
         self.features = line_txts
-        return line_txts
+        return self.features
 
     def _feature_count(self):
         if self.feature_count is None:
@@ -116,19 +117,11 @@ class SoapScraper(Scraper):
         return description
 
     def _description_helper(self):
-        divs = self.tree_html.xpath("//div[@class='naturalBadgeContent']")
         description = ""
-        for div in divs:
-            rows = div.xpath(".//text()")
-            rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-            description += "\n".join(rows)
-            break
-
-        rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='Tab1DetailInfo']//text()")
+        rows = self.tree_html.xpath("//div[@class='skuDetailsScene7']//div[contains(@class,'formRow darkGray')]//text()")
         rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
         if len(rows) > 0:
-            description += "\n" + "\n".join(rows)
-        description = description.replace("\n.", ".")
+            description += "\n".join(rows)
         if len(description) < 1:
             return None
         return description
@@ -140,30 +133,15 @@ class SoapScraper(Scraper):
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        tab_headers = self.tree_html.xpath("//ul[contains(@class,'descriptTab')]//li")
-        txts = []
-        ids = []
-        description = ""
-        for tab_header in tab_headers:
-            txt = "".join(tab_header.xpath(".//text()")).strip()
-            if txt == "Description" or txt in txts:
-                continue
-            txts.append(txt)
-            try:
-                id = tab_header.xpath(".//a/@id")[0].strip()
-                id = re.findall(r"\d+", id)[0]
-                id = "Tab%sDetailInfo" % id
-                ids.append(id)
-                rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='%s']//text()" % id)
-                rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-                if len(rows) > 0:
-                    description += "\n" + "\n".join(rows)
-                description = description.replace("\n.", ".")
-            except:
-                pass
-
-        if len(description) < 1:
+        rows = self.tree_html.xpath("//div[@id='divDescription']//ul//li")
+        line_txts = []
+        for row in rows:
+            txt = "".join([r for r in row.xpath(".//text()") if len(self._clean_text(r)) > 0]).strip()
+            if len(txt) > 0:
+                line_txts.append(txt)
+        if len(line_txts) < 1:
             return None
+        description = "\n".join(line_txts)
         return description
 
     ##########################################
@@ -174,10 +152,13 @@ class SoapScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_url = self.tree_html.xpath("//div[contains(@class,'magicThumbBox')]/a/@href")
+        image_url = self.tree_html.xpath("//div[@class='s7Thumbs']//div[@class='carouselWrap']//img/@src")
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url) < 1:
-            return None
+            image_url = self.tree_html.xpath("//div[@class='skuImgColScene7']//div[@class='skuImageZoom']//img/@src")
+            image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
+            if len(image_url) < 1:
+                return None
         return image_url
 
     def _image_count(self):
@@ -188,34 +169,36 @@ class SoapScraper(Scraper):
         if self.video_count is not None:
             return self.video_urls
         self.video_count = 0
-        # http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=98715&videoType=Consumer
-        # url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s&videoType=Consumer" % self._product_id()
-        product_ids = self.tree_html.xpath("//input[@class='skuHidden']/@productid")
-        m = re.findall(r'showVideos\((.*?)\)', "\n".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
-        product_ids += m
-        product_ids = list(set(product_ids))
         video_urls = []
-        for product_id in product_ids:
-            url = "http://www.soap.com/Product/ProductDetail!GetProductVideo.qs?groupId=%s" % product_id
-            req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
-            redirect_contents = urllib2.urlopen(req).read()
-            redirect_tree = html.fromstring(redirect_contents)
-
-            rows = redirect_tree.xpath("//div[contains(@class,'productVideoList')]//div[@class='videoImage']//a/@onclick")
-            for row in rows:
-                m = re.findall(r"playProductVideo\('(.*?)'", row.strip())
-                if len(m) > 0:
-                    video_urls.append(m[0])
-            if len(rows) < 1:
+        # Request URL:http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=267655
+        sku_data = self.tree_html.xpath("//input[@id='SkuData_Sku']/@value")[0].strip()
+        url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % sku_data
+        contents = urllib.urlopen(url).read()
+        # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
+        # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
+        m = re.findall(r'wcobj="(.*?)"', contents.replace("\\",""), re.DOTALL)
+        if len(m) > 0:
+            url_wc = m[0]
+            contents_wc = urllib.urlopen(url_wc).read()
+            # document.location.replace('
+            tree = html.fromstring(contents_wc)
+            playerKey = tree.xpath("//param[@name='playerKey']/@value")[0].strip()
+            video = tree.xpath("//param[@name='video']/@value")[0].strip()
+            # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
+            url_wc2 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
+            contents_wc2 = urllib.urlopen(url_wc2).read()
+            jsn = json.loads(contents_wc2)
+            jsn = jsn["sources"]
+            for item in jsn:
                 try:
-                    now_playing = redirect_tree.xpath("//div[contains(@class,'productVideoPlayer')]//iframe/@src")[0].strip()
-                    video_urls.append(now_playing)
-                except IndexError:
+                    file_name = item['file']
+                    video_urls.append(file_name)
+                except:
                     pass
         if len(video_urls) < 1:
             return None
-        self.video_count = len(video_urls)
         self.video_urls = video_urls
+        self.video_count = len(self.video_urls)
         return video_urls
 
     def _video_count(self):
@@ -224,22 +207,43 @@ class SoapScraper(Scraper):
         return self.video_count
 
     def _pdf_urls(self):
-        pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
+        if self.pdf_urls is not None:
+            return self.pdf_urls
+        pdfs = self.tree_html.xpath("//div[@id='PageInner']//a[contains(@href,'.pdf')]")
         pdf_hrefs = []
         for pdf in pdfs:
-            pdf_hrefs.append(pdf.attrib['href'])
+            pdf_url_txts = [self._clean_text(r) for r in pdf.xpath(".//text()") if len(self._clean_text(r)) > 0]
+            if len(pdf_url_txts) > 0:
+                pdf_hrefs.append(pdf.attrib['href'])
+
+        # get from webcollage
+        # http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=392495
+        url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % self._product_id()
+        contents = urllib.urlopen(url).read()
+        contents = contents.replace("\\", "")
+        wc_pdfs = re.findall(r'wcobj="(.*?)"', contents, re.DOTALL)
+        wc_pdfs = [r.replace("\\", "") for r in wc_pdfs]
+        pdf_hrefs += wc_pdfs
+        if len(pdf_hrefs) < 1:
+            return None
+        self.pdf_count = len(pdf_hrefs)
         return pdf_hrefs
 
     def _pdf_count(self):
-        urls = self._pdf_urls()
-        if urls is not None:
-            return len(urls)
-        return 0
+        if self.pdf_urls is None:
+            self._pdf_urls()
+        return self.pdf_count
 
     def _webcollage(self):
-        atags = self.tree_html.xpath("//a[contains(@href, 'webcollage.net/')]")
-        if len(atags) > 0:
-            return 1
+        # http://content.webcollage.net/pg-estore/power-page?ird=true&channel-product-id=037000864868
+        url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % self._product_id()
+        html = urllib.urlopen(url).read()
+        m = re.findall(r'_wccontent = (\{.*?\});', html, re.DOTALL)
+        try:
+            if ".webcollage.net" in m[0]:
+                return 1
+        except IndexError:
+            pass
         return 0
 
     # extract htags (h1, h2) from its product product page tree
@@ -260,56 +264,9 @@ class SoapScraper(Scraper):
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
         if not self.max_score or not self.min_score:
-            # SOAP.COM REVIEWS
-            try:
-                soap_average_review = float(self.tree_html.xpath("//span[contains(@class,'pr-rating pr-rounded average')]//text()")[0].strip())
-            except:
-                soap_average_review = 0
-            try:
-                soap_review_count = int(self.tree_html.xpath("//p[contains(@class,'pr-snapshot-average-based-on-text')]//span[@class='count']//text()")[0].strip())
-            except:
-                soap_review_count = 0
-
-            # AMAZON.COM REVIEWS
-            # http://www.soap.com/amazon_reviews/06/47/14/mosthelpful_Default.html
-            # product_ids = list(set(self.tree_html.xpath("//input[@class='skuHidden']/@productid")))
-            # var pr_page_id = '43977';
-            m = re.findall(r"var pr_page_id = '(.*?)'", "\n".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
-            product_ids = m
-            product_ids = list(set(product_ids))
-            for product_id in product_ids:
-                if len(product_id) == 4:
-                    product_id = "00%s" % product_id
-                if len(product_id) == 5:
-                    product_id = "0%s" % product_id
-                product_id = [product_id[i:i+2] for i in range(0, len(product_id), 2)]
-                if len(product_id) == 4:
-                    product_id[2] = product_id[2] + product_id[3]
-                    product_id.pop()
-                product_id = "/".join(product_id)
-                url = "http://www.soap.com/amazon_reviews/%s/mosthelpful_Default.html" % product_id
-                req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
-                try:
-                    redirect_contents = urllib2.urlopen(req).read()
-                    redirect_tree = html.fromstring(redirect_contents)
-                    break
-                except:
-                    continue
-            review_count = redirect_tree.xpath("//span[@class='pr-review-num']//text()")[0].strip()
-            m = re.findall(r"\d+", review_count)
-            if len(m) > 0:
-                self.review_count = int(m[0])
-            else:
-                self.review_count = 0
-            average_review = redirect_tree.xpath("//span[contains(@class, 'pr-rating pr-rounded average')]//text()")[0].strip()
-            m = re.findall(r"[\d\.]+", average_review)
-            if len(m) > 0:
-                self.average_review = float(m[0])
-            else:
-                self.average_review = 0
-            self.average_review = round(((soap_review_count*soap_average_review) + (self.review_count*self.average_review)) / (soap_review_count + self.review_count), 2)
-            self.review_count += soap_review_count
-            rows = redirect_tree.xpath("//div[contains(@class,'pr-info-graphic-amazon')]//dl//dd[3]//text()")
+            self.review_count = int(self.tree_html.xpath("//span[@class='count']//text()")[0].strip())
+            self.average_review = float(self.tree_html.xpath("//span[@class='pr-rating pr-rounded average']//text()")[0].strip())
+            rows = self.tree_html.xpath("//p[@class='pr-histogram-count']//text()")
             self.reviews = []
             idx = 5
             rv_scores = []
@@ -350,7 +307,7 @@ class SoapScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//span[@class='singlePrice']//text()")[0].strip()
+        price = self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
         return price
 
     def _price_amount(self):
@@ -372,19 +329,12 @@ class SoapScraper(Scraper):
         return 0
 
     def _marketplace(self):
-        '''marketplace: the product is sold by a third party and the site is just establishing the connection
-        between buyer and seller. E.g., "Sold by X and fulfilled by Amazon" is also a marketplace item,
-        since Amazon is not the seller.
-        '''
         return 0
 
     def _marketplace_sellers(self):
-        '''marketplace_sellers - the list of marketplace sellers - list of strings (["seller1", "seller2"])
-        '''
         return None
 
     def _marketplace_lowest_price(self):
-        # marketplace_lowest_price - the lowest of marketplace prices - floating-point number
         return None
 
     def _marketplace_out_of_stock(self):
@@ -404,16 +354,10 @@ class SoapScraper(Scraper):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 0:
             return None
-
-        rows = self.tree_html.xpath("//input[@class='skuHidden']/@isoutofstock")
-        if len(rows) == 1 and 'Y' in rows:
-            return 1
-        if len(rows) > 0 and 'N' not in rows:
-            return 1
-        # rows = self.tree_html.xpath("//input[contains(@class,'addToCartButtonBox')]")
-        # if len(rows) > 0:
-        #     return 0
-        return 0
+        rows = self.tree_html.xpath("//a[@id='myAddToCart_sku']")
+        if len(rows) > 0:
+            return 0
+        return 1
 
     def _in_stores_out_of_stock(self):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
@@ -425,10 +369,8 @@ class SoapScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        all = self.tree_html.xpath("//div[contains(@class,'positionNav')]//a//text()")
+        all = self.tree_html.xpath("//div[@id='skuBreadCrumbs']//span[@itemprop='title']//text()")
         out = [self._clean_text(r) for r in all]
-        if out[0].lower() == "home":
-            out = out[1:]
         if len(out) < 1:
             return None
         return out
@@ -437,7 +379,7 @@ class SoapScraper(Scraper):
         return self._categories()[-1]
 
     def _brand(self):
-        return self.tree_html.xpath("//div[@class='viewBox']//strong[1]//text()")[1].strip()
+        return None
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -484,6 +426,7 @@ class SoapScraper(Scraper):
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
+        "_marketplace_out_of_stock" : _marketplace_out_of_stock, \
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
@@ -511,5 +454,6 @@ class SoapScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
+        "webcollage" : _webcollage, \
     }
 

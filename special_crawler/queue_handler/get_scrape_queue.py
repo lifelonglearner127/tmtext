@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 '''
 Gist : Scrape Queue -> Scrape -> Process Queue
@@ -13,6 +13,8 @@ import logging
 import time
 import json
 import requests
+import threading
+import urllib
 #from models import select_site_by_id
 
 
@@ -42,8 +44,8 @@ def main():
             sqs_process = SQS_Queue('%s_process'%server_name)
 
             # Scrape the page using the scraper running on localhost
-            base = "http://localhost/get_data?site=%s&url=%s"
-            output = requests.get(base%(site, url)).text
+            base = "http://localhost/get_data?url=%s"
+            output = requests.get(base%(urllib.quote(url))).text
 
             # Add the processing fields to the return object and re-serialize it
             output = json.loads(output)
@@ -61,12 +63,17 @@ def main():
         except IndexError as e:
             # This exception will most likely be triggered because you were grabbing off an empty queue
             time.sleep(1)
-            
+
         except Exception as e:
             # Catch all other exceptions to prevent the whole thing from crashing
             # TODO : Consider testing that sqs_scrape is still live, and restart it if need be
             logging.warning('Error: ', e)
             sqs_scrape.reset_message()
 
+
 if __name__ == "__main__":
-    main()
+    threads = []
+    for i in range(5):
+        t = threading.Thread(target=main)
+        threads.append(t)
+        t.start()

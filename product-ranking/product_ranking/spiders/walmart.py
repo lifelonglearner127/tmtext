@@ -201,9 +201,10 @@ class WalmartProductsSpider(BaseProductsSpider):
             return 0
 
         matches = response.css('.result-summary-container ::text').re(
-            'Showing \d+ of (\d+) results')
+            'Showing \d+ of (.+) results')
         if matches:
-            num_results = int(matches[0])
+            num_results = matches[0].replace(',', '')
+            num_results = int(num_results)
         else:
             num_results = None
             self.log(
@@ -211,6 +212,13 @@ class WalmartProductsSpider(BaseProductsSpider):
                 ERROR
             )
         return num_results
+
+    def _scrape_results_per_page(self, response):
+        num = response.css('.result-summary-container ::text').re(
+            'Showing (\d+) of')
+        if num:
+            return int(num[0])
+        return None
 
     def _scrape_product_links(self, response):
         links = response.css('a.js-product-title ::attr(href)').extract()

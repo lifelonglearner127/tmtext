@@ -6,7 +6,7 @@ import re
 import sys
 import json
 import os.path
-import urllib, cStringIO
+import cStringIO
 from io import BytesIO
 from PIL import Image
 import mmh3 as MurmurHash
@@ -31,6 +31,10 @@ class StaplesAdvantageScraper(Scraper):
     review_count = None
     average_review = None
     reviews = None
+    pdf_urls = None
+    pdf_count = 0
+    video_urls = None
+    video_count = None
 
     def check_url_format(self):
         # for ex: http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=383249&catalogId=4&item_id=71504599&langId=-1&currentSKUNbr=383249&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=117896272
@@ -45,7 +49,10 @@ class StaplesAdvantageScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        return False
+        rows = self.tree_html.xpath("//div[@class='productpics']//div[@id='s7FlashViewer']")
+        if len(rows) > 0:
+            return False
+        return True
 
     ##########################################
     ############### CONTAINER : NONE
@@ -155,29 +162,85 @@ class StaplesAdvantageScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        if self.video_count is not None:
+            return self.video_urls
+        self.video_count = 0
+        video_urls = []
+        # https://scontent.webcollage.net/stapleslink-en/sb-for-ppp?ird=true&channel-product-id=957754
+        url = "https://scontent.webcollage.net/stapleslink-en/sb-for-ppp?ird=true&channel-product-id=%s" % self._product_id()
+        contents = urllib.urlopen(url).read()
+        # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
+        # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
+        m = re.findall(r'wcsb:url="(.*?)"', contents.replace("\\",""), re.DOTALL)
+        if len(m) > 0:
+            url_wc = m[0]
+            contents_wc = urllib.urlopen(url_wc).read()
+            # document.location.replace('
+            m_wc = re.findall(r'document.location.replace\(\'(.*?)\'\);', contents_wc.replace("\\",""), re.DOTALL)
+            if len(m_wc) > 0:
+                url_wc2 = m_wc[0]
+                contents_wc2 = urllib.urlopen(url_wc2).read()
+                tree = html.fromstring(contents_wc2)
+                rows = tree.xpath("//div[contains(@class,'wc-pc-tabs')]//li")
+                for row in rows:
+                    txt = " ".join(row.xpath(".//text()"))
+                    if "Customer Reviews" in txt:
+                        url_wc3 = "http://content.webcollage.net%s" % row.xpath(".//a/@href")[0].strip()
+                        contents_wc3 = urllib.urlopen(url_wc3).read()
+                        tree3 = html.fromstring(contents_wc3)
+                        url_wc4 = tree3.xpath("//iframe/@src")[0].strip()
+                        contents_wc4 = urllib.urlopen(url_wc4).read()
+                        tree4 = html.fromstring(contents_wc4)
+                        playerKey = tree4.xpath("//param[@name='playerKey']/@value")[0].strip()
+                        video = tree4.xpath("//param[@name='video']/@value")[0].strip()
+                        # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
+                        url_wc5 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
+                        contents_wc5 = urllib.urlopen(url_wc5).read()
+                        jsn = json.loads(contents_wc5)
+                        jsn = jsn["sources"]
+                        for item in jsn:
+                            try:
+                                file_name = item['file']
+                                video_urls.append(file_name)
+                            except:
+                                pass
+        if len(video_urls) < 1:
+            return None
+        self.video_urls = video_urls
+        self.video_count = len(self.video_urls)
+        return video_urls
+
     def _video_count(self):
-        urls = self._video_urls()
-        if urls:
-            return len(urls)
-        return 0
+        if self.video_count is None:
+            self._video_urls()
+        return self.video_count
 
     def _pdf_urls(self):
+        if self.pdf_urls is not None:
+            return self.pdf_urls
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
         pdf_hrefs = []
         for pdf in pdfs:
             pdf_url_txts = [self._clean_text(r) for r in pdf.xpath(".//text()") if len(self._clean_text(r)) > 0]
             if len(pdf_url_txts) > 0:
                 pdf_hrefs.append(pdf.attrib['href'])
+
+        # get from webcollage
+        # https://scontent.webcollage.net/stapleslink-en/smart-button?ird=true&channel-product-id=616321
+        url = "https://scontent.webcollage.net/stapleslink-en/smart-button?ird=true&channel-product-id=%s" % self._product_id()
+        contents = urllib.urlopen(url).read()
+        wc_pdfs = re.findall(r'href=\\\"([^ ]*?\.pdf)', contents, re.DOTALL)
+        wc_pdfs = [r.replace("\\", "") for r in wc_pdfs]
+        pdf_hrefs += wc_pdfs
         if len(pdf_hrefs) < 1:
             return None
+        self.pdf_count = len(pdf_hrefs)
         return pdf_hrefs
 
     def _pdf_count(self):
-        urls = self._pdf_urls()
-        if urls is not None:
-            return len(urls)
-        return 0
+        if self.pdf_urls is None:
+            self._pdf_urls()
+        return self.pdf_count
 
     def _webcollage(self):
         # https://scontent.webcollage.net/stapleslink-en/smart-button?ird=true&channel-product-id=823292
@@ -266,26 +329,82 @@ class StaplesAdvantageScraper(Scraper):
         price = "price depends on customer"
         return price
 
-    def _in_stores_only(self):
-        return None
+    def _price_amount(self):
+        price = self._price()
+        price = price.replace(",", "")
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        return float(price_amount)
+
+    def _price_currency(self):
+        price = self._price()
+        price = price.replace(",", "")
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        price_currency = price.replace(price_amount, "")
+        if price_currency == "$":
+            return "USD"
+        return price_currency
 
     def _in_stores(self):
-        return None
-
-    def _owned(self):
-        return 1
-    
-    def _marketplace(self):
+        '''in_stores - the item can be ordered online for pickup in a physical store
+        or it can not be ordered online at all and can only be purchased in a local store,
+        irrespective of availability - binary
+        '''
         return 0
 
-    def _owned_out_of_stock(self):
-        return None
+    def _marketplace(self):
+        '''marketplace: the product is sold by a third party and the site is just establishing the connection
+        between buyer and seller. E.g., "Sold by X and fulfilled by Amazon" is also a marketplace item,
+        since Amazon is not the seller.
+        '''
+        return 0
 
     def _marketplace_sellers(self):
+        '''marketplace_sellers - the list of marketplace sellers - list of strings (["seller1", "seller2"])
+        '''
         return None
 
     def _marketplace_lowest_price(self):
+        # marketplace_lowest_price - the lowest of marketplace prices - floating-point number
         return None
+
+    def _marketplace_out_of_stock(self):
+        """Extracts info on whether currently unavailable from any marketplace seller - binary
+        Uses functions that work on both old page design and new design.
+        Will choose whichever gives results.
+        Returns:
+            1/0
+        """
+        return None
+
+    def _site_online(self):
+        # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
+        return 1
+
+    def _site_online_out_of_stock(self):
+        #  site_online_out_of_stock - currently unavailable from the site - binary
+        return None
+
+    def _in_stores_out_of_stock(self):
+        '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
+        (null should be used for items that can not be ordered online and the availability may depend on location of the store)
+        '''
+        return None
+
+    def _owned(self):
+        '''General function for setting value of legacy field "owned".
+        It will be inferred from value of "site_online_in_stock" field.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+        return self._site_online()
+
+    def _owned_out_of_stock(self):
+        '''General function for setting value of legacy field "owned_out_of_stock".
+        It will be inferred from value of "site_online_out_of_stock" field.
+        Method can be overwritten by scraper class if different implementation
+        is available.
+        '''
+        return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -354,13 +473,15 @@ class StaplesAdvantageScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
-        "in_stores_only" : _in_stores_only, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
         "in_stores" : _in_stores, \
-        "owned" : _owned, \
-        "owned_out_of_stock" : _owned_out_of_stock, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
+        "site_online" : _site_online, \
+        "site_online_out_of_stock" : _site_online_out_of_stock, \
+        "in_stores_out_of_stock" : _in_stores_out_of_stock, \
 
          # CONTAINER : REVIEWS
         "review_count" : _review_count, \

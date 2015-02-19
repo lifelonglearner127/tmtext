@@ -2,6 +2,7 @@ import re
 import json
 from urlparse import urljoin
 import urllib
+import string
 
 from scrapy.log import WARNING
 from scrapy.http import Request
@@ -15,6 +16,10 @@ from product_ranking.spiders.contrib.product_spider import ProductsSpider
 def _itemprop(data, name, attr=None):
     attr = 'text' if attr is None else 'attr(%s)' % attr
     return data.css('[itemprop=%s]::%s' % (name, attr)).extract()
+
+
+def _strip_non_ascii(s):
+    return filter(lambda x: x in string.printable, s)
 
 
 class QuillProductsSpider(ProductsSpider):
@@ -105,11 +110,20 @@ class QuillProductsSpider(ProductsSpider):
                 cond_set_value(product, 'is_out_of_stock', True)
         else:
             cond_set_value(product, 'is_out_of_stock', False)
-        cond_set(product, 'title', _itemprop(box, 'name'), unicode.strip)
+        cond_set(
+            product, 'title', _itemprop(box, 'name'),
+            unicode.strip
+        )
+        product['title'] = _strip_non_ascii(product.get('title', ''))
         cond_set(product, 'price', _itemprop(box, 'price'))
 
     def _populate_from_html(self, response, product):
-        cond_set(product, 'title', _itemprop(response, 'name'), unicode.strip)
+        cond_set(
+            product, 'title',
+            _itemprop(response, 'name'),
+            unicode.strip
+        )
+        product['title'] = _strip_non_ascii(product.get('title', ''))
         cond_set(product, 'model', _itemprop(response, 'model'),
                  lambda s: s.replace(u'\xa0 Model # ', ''))
         cond_set(product, 'price', _itemprop(response, 'price'))
@@ -120,8 +134,11 @@ class QuillProductsSpider(ProductsSpider):
                 '/node()[normalize-space()]'
         cond_set_value(product, 'description',
                        response.xpath(xpath).extract(), ''.join)
-        cond_set(product, 'brand', filter(product.get('title', '').startswith,
-                                          response.meta.get('brands', [])))
+        cond_set(
+            product, 'brand',
+            filter(product.get('title', '').startswith,
+                   response.meta.get('brands', []))
+        )
         if product.get('description', '') == '':
             xpath = '//div[@id="divDescription"]/node()[normalize-space()]'
             product['description'] = ''.join(response.xpath(xpath).extract())
@@ -165,7 +182,7 @@ class QuillProductsSpider(ProductsSpider):
             if url and title:
                 fbt.append(
                     RelatedProduct(url=urljoin(response.url, url[0].extract()),
-                                   title=title[0].extract()))
+                                   title=_strip_non_ascii(title[0].extract())))
         cond_set_value(related_products, 'Frequently Bought Together,',
                        fbt or None)
         cond_set_value(product, 'related_products', related_products)
@@ -181,7 +198,7 @@ class QuillProductsSpider(ProductsSpider):
             if url and title:
                 yield RelatedProduct(
                     url=urljoin('http://quill.com', url[0].extract()),
-                    title=title[0].extract())
+                    title=_strip_non_ascii(title[0].extract()))
 
     def _buyer_reviews_from_html(self, response, product):
         rarea = response.xpath(

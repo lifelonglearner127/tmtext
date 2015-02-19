@@ -20,7 +20,7 @@ from extract_data import Scraper
 class SamsclubScraper(Scraper):
 
     ##########################################
-    ############### PREP
+    ############### PREP+
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+)?/(.+)"
@@ -33,22 +33,43 @@ class SamsclubScraper(Scraper):
     reviews = None
     image_urls = None
     image_count = -1
-
+    price = None
+    price_amount = None
+    price_currency = None
 
     def check_url_format(self):
         # for ex: http://www.samsclub.com/sams/dawson-fireplace-fall-2014/prod14520017.ip?origin=item_page.rr1&campaign=rr&sn=ClickCP&campaign_data=prod14170040
         m = re.match(r"^http://www\.samsclub\.com/sams/(.+)?/(.+)", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        '''Overwrites parent class method that determines if current page
+        is not a product page.
+        Currently for Amazon it detects captcha validation forms,
+        and returns True if current page is one.
+        '''
+
+        if len(self.tree_html.xpath("//div[contains(@class, 'imgCol')]//div[@id='plImageHolder']//img")) < 1:
+            return True
+        return False
+
     ##########################################
-    ############### CONTAINER : NONE
+    #### ########### CONTAINER : NONE
     ##########################################
 
     def _url(self):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//input[@id='mbxProductId']/@value")[0].strip()
+        try:
+            product_id = self.tree_html.xpath("//input[@name='/atg/commerce/order/purchase/CartModifierFormHandler.baseProductId']/@value")[0].strip()
+            return product_id
+        except:
+            pass
+        try:
+            product_id = self.tree_html.xpath("//input[@id='mbxProductId']/@value")[0].strip()
+        except IndexError:
+            product_id = self.tree_html.xpath("//div[@id='myShoppingList']/@data-productid")[0].strip()
         return product_id
         # product_id = self.tree_html.xpath("//span[@itemprop='productID']//text()")[0].strip()
         # m = re.findall(r"[0-9]+", product_id)
@@ -122,11 +143,11 @@ class SamsclubScraper(Scraper):
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        rows = self.tree_html.xpath("//div[@itemprop='description']//text()")
+        rows = self.tree_html.xpath("//*[@itemprop='description']//text()")
         long_description = "".join(rows)
         long_description = long_description.replace("View a video of this product.", "")
         long_description = long_description.replace("View a video of this product", "")
-        rows = self.tree_html.xpath("//div[@itemprop='description']/*")
+        rows = self.tree_html.xpath("//*[@itemprop='description']/*")
         row_txts = []
         for row in rows:
             if row.tag == 'style' or row.tag == 'h3':
@@ -150,7 +171,7 @@ class SamsclubScraper(Scraper):
             self.image_urls = None
             self.image_count = 0
             script = "/n".join(self.tree_html.xpath("//div[@class='container']//script//text()"))
-            m = re.findall(r"imageList = '([0-9]+)?'", script)
+            m = re.findall(r"imageList = '(.+)?'", script)
             imglist = m[0]
             url = "http://scene7.samsclub.com/is/image/samsclub/%s?req=imageset,json&id=init" % imglist
             contents = urllib.urlopen(url).read()
@@ -166,7 +187,15 @@ class SamsclubScraper(Scraper):
                         img_urls.append(img_url)
 
             if len(img_urls) == 0:
-                return None
+                img_urls = self.tree_html.xpath("//div[contains(@class, 'imgCol')]//div[@id='plImageHolder']//img/@src")
+                if len(img_urls) < 1:
+                    return None
+                try:
+                    if self._no_image(img_urls[0]):
+                        return None
+                except Exception, e:
+                    print "WARNING: ", e.message
+
             self.image_urls = img_urls
             self.image_count = len(img_urls)
             return img_urls
@@ -177,13 +206,55 @@ class SamsclubScraper(Scraper):
         if self.image_count == -1:
             image_urls = self.image_urls()
         return self.image_count
-        # image_urls = self._image_urls()
-        # if image_urls:
-        #     return len(image_urls)
-        # return 0
+
+    # return True if there is a no-image image and False otherwise
+    # Certain products have an image that indicates "there is no image available"
+    # a hash of these "no-images" is saved to a json file and new images are compared to see if they're the same
+    # def _no_image(self):
+    #     #get image urls
+    #     head = 'http://scene7.samsclub.com/is/image/'
+    #     image_url = self.tree_html.xpath("//section[@class='main-details']//script//text()")[1]
+    #     image_url = re.findall("scene7PdpData\.s7ImageSet = '(.*)';", image_url)[0]
+    #     image_url = image_url.split(',')
+    #     image_url = [head+link for link in image_url]
+    #     path = 'no_img_list.json'
+    #     no_img_list = []
+    #     if os.path.isfile(path):
+    #         f = open(path, 'r')
+    #         s = f.read()
+    #         if len(s) > 1:
+    #             no_img_list = json.loads(s)
+    #         f.close()
+    #     first_hash = str(MurmurHash.hash(self.fetch_bytes(image_url[0])))
+    #     if first_hash in no_img_list:
+    #         return True
+    #     else:
+    #         return False
+    #
+    # #read the bytes of an image
+    # def fetch_bytes(self, url):
+    #     file = cStringIO.StringIO(urllib.urlopen(url).read())
+    #     img = Image.open(file)
+    #     b = BytesIO()
+    #     img.save(b, format='png')
+    #     data = b.getvalue()
+    #     return data
 
     def _video_urls(self):
-        rows = self.tree_html.xpath("//div[@itemprop='description']//a/@href")
+        rows = self.tree_html.xpath("//div[@id='tabItemDetails']//a/@href")
+        rows = [r for r in rows if "video." in r]
+
+        url = "http://content.webcollage.net/sc/smart-button?ird=true&channel-product-id=%s" % self._product_id()
+        html = urllib.urlopen(url).read()
+        # \"src\":\"\/_cp\/products\/1374451886781\/tab-6174b48c-58f3-4d4b-8d2f-0d9bf0c90a63
+        # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
+        m = re.findall(r'"src":"([_a-zA-Z0-9/\-\.]*?\.mp4)"', html.replace("\\",""), re.DOTALL)
+        for item in m:
+            if ".blkbry" in item or ".mobile" in item:
+                pass
+            else:
+                if "http://content.webcollage.net%s" % item not in rows and item.count(".mp4") < 2:
+                    rows.append("http://content.webcollage.net%s" % item)
         if len(rows) < 1:
             return None
         return rows
@@ -198,18 +269,43 @@ class SamsclubScraper(Scraper):
         pdf_hrefs = []
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
         for pdf in pdfs:
-            pdf_hrefs.append(pdf.attrib['href'])
+            try:
+                pdf_hrefs.append(pdf.attrib['href'])
+            except KeyError:
+                pass
         pdfs = self.tree_html.xpath("//a[contains(@href,'pdfpdf')]")
         for pdf in pdfs:
-            pdf_hrefs.append(pdf.attrib['href'])
+            try:
+                if pdf.attrib['href'] not in pdf_hrefs:
+                    pdf_hrefs.append(pdf.attrib['href'])
+            except KeyError:
+                pass
+        pdfs = self.tree_html.xpath("//a[contains(@href,'pdf')]")
+        for pdf in pdfs:
+            try:
+                if pdf.attrib['href'].endswith("pdf") and pdf.attrib['href'] not in pdf_hrefs:
+                    pdf_hrefs.append(pdf.attrib['href'])
+            except KeyError:
+                pass
         pdfs = self.tree_html.xpath("//a[contains(@onclick,'.pdf')]")
         for pdf in pdfs:
             # window.open('http://graphics.samsclub.com/images/pool-SNFRound.pdf','_blank')
             try:
                 url = re.findall(r"open\('(.*?)',", pdf.attrib['onclick'])[0]
-                pdf_hrefs.append(url)
+                if url not in pdf_hrefs:
+                    pdf_hrefs.append(url)
             except IndexError:
                 pass
+        pdfs = self.tree_html.xpath("//a[contains(@onclick,'pdf')]")
+        for pdf in pdfs:
+            # window.open('http://graphics.samsclub.com/images/pool-SNFRound.pdf','_blank')
+            try:
+                url = re.findall(r"open\('(.*?)',", pdf.attrib['onclick'])[0]
+                if url not in pdf_hrefs and url.endswith("pdf"):
+                    pdf_hrefs.append(url)
+            except IndexError:
+                pass
+
         pdf_hrefs = [r for r in pdf_hrefs if "JewelryDeliveryTimeline.pdf" not in r]
         if len(pdf_hrefs) < 1:
             return None
@@ -222,6 +318,15 @@ class SamsclubScraper(Scraper):
         return 0
 
     def _webcollage(self):
+        # http://content.webcollage.net/sc/smart-button?ird=true&channel-product-id=prod10740044
+        url = "http://content.webcollage.net/sc/smart-button?ird=true&channel-product-id=%s" % self._product_id()
+        html = urllib.urlopen(url).read()
+        m = re.findall(r'_wccontent = (\{.*?\});', html, re.DOTALL)
+        try:
+            if ".webcollage.net" in m[0]:
+                return 1
+        except IndexError:
+            pass
         return 0
 
     # extract htags (h1, h2) from its product product page tree
@@ -309,47 +414,119 @@ class SamsclubScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
+        if self.price:
+            return self.price
         try:
-            price = self.tree_html.xpath("//span[@class='price']//text()")[0].strip()
+            price_amount = self.tree_html.xpath("//span[@class='price']//text()")[0].strip()
             currency = self.tree_html.xpath("//span[@class='superscript']//text()")[0].strip()
             superscript = self.tree_html.xpath("//span[@class='superscript']//text()")[1].strip()
-            price = "%s%s.%s" % (currency, price, superscript)
+            price = "%s%s.%s" % (currency, price_amount, superscript)
+            self.price = price
             return price
         except:
             pass
         try:
-            txt = self.tree_html.xpath("//span[contains(@class,'ipClubSelector')]//text()")[0].strip()
-            if "Select your Club" in txt:
-                return "in stores only - no online price"
+            if self._site_online() == 0:
+                return "not available online - no price given"
         except:
             pass
-
-        if len(self.tree_html.xpath("//h2[contains(text(),'Select your options')]//text()")) > 0:
-            return "price depends on option"
         return None
 
-    def _in_stores_only(self):
-        return None
+    def _price_amount(self):
+        price = self._price()
+        price = price.replace(",", "")
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        return float(price_amount)
+
+    def _price_currency(self):
+        price = self._price()
+        price = price.replace(",", "")
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        price_currency = price.replace(price_amount, "")
+        if price_currency == "$":
+            return "USD"
+        return price_currency
 
     def _in_stores(self):
-        return None
-
-    def _owned(self):
-        return 1
-    
-    def _marketplace(self):
+        '''in_stores - the item can be ordered online for pickup in a physical store
+        or it can not be ordered online at all and can only be purchased in a local store,
+        irrespective of availability - binary
+        '''
+        in_stores = None
+        rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
+        if "Visit your local Club for pricing & availability" in rows:
+            in_stores = 1
+        rows = self.tree_html.xpath("//div[@id='itemPageMoneyBox']//span//text()")
+        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+        if "Select your Club" in rows and "for price and availability" in rows:
+            in_stores = 1
+        if in_stores is not None:
+            return in_stores
         return 0
 
-    def _owned_out_of_stock(self):
-        out_of_stock = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")[0].strip()
-        if 'Out of stock online' in out_of_stock:
-            return 1
+    def _marketplace(self):
+        '''marketplace: the product is sold by a third party and the site is just establishing the connection
+        between buyer and seller. E.g., "Sold by X and fulfilled by Amazon" is also a marketplace item,
+        since Amazon is not the seller.
+        '''
         return 0
 
     def _marketplace_sellers(self):
+        '''marketplace_sellers - the list of marketplace sellers - list of strings (["seller1", "seller2"])
+        '''
         return None
 
     def _marketplace_lowest_price(self):
+        # marketplace_lowest_price - the lowest of marketplace prices - floating-point number
+        return None
+
+    def _marketplace_out_of_stock(self):
+        """Extracts info on whether currently unavailable from any marketplace seller - binary
+        Uses functions that work on both old page design and new design.
+        Will choose whichever gives results.
+        Returns:
+            1/0
+        """
+        return None
+
+    def _site_online(self):
+        # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
+        rows = self.tree_html.xpath("//*[@id='addtocartsingleajaxonline']")
+        if len(rows) > 0:
+            return 1
+        rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
+        if "Out of stock online" in rows:
+            return 1
+        rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
+        if "See online price in cart" in rows:
+            return 1
+        return 0
+        #
+        # rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
+        # site_online = None
+        # if "Buy online" in rows:
+        #     return 1
+        # if "Unavailable online" in rows:
+        #     site_online = 0
+        # rows = self.tree_html.xpath("//div[@id='itemPageMoneyBox']//span//text()")
+        # rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+        # if "Select your Club" in rows and "for price and availability" in rows:
+        #     site_online = 0
+        # if site_online is not None:
+        #     return site_online
+        # return 1
+
+    def _site_online_out_of_stock(self):
+        #  site_online_out_of_stock - currently unavailable from the site - binary
+        rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
+        if "Out of stock online" in rows:
+            return 1
+        return 0
+
+    def _in_stores_out_of_stock(self):
+        '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
+        (null should be used for items that can not be ordered online and the availability may depend on location of the store)
+        '''
         return None
 
     ##########################################
@@ -397,6 +574,7 @@ class SamsclubScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
+        # "no_image" : _no_image, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
@@ -406,13 +584,15 @@ class SamsclubScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
-        "in_stores_only" : _in_stores_only, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
         "in_stores" : _in_stores, \
-        "owned" : _owned, \
-        "owned_out_of_stock" : _owned_out_of_stock, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
+        "site_online" : _site_online, \
+        "site_online_out_of_stock" : _site_online_out_of_stock, \
+        "in_stores_out_of_stock" : _in_stores_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \

@@ -2,6 +2,7 @@
 #  -*- coding: utf-8 -*-
 
 import urllib
+import urllib2
 import re
 import sys
 import json
@@ -17,13 +18,13 @@ import requests
 from extract_data import Scraper
 
 
-class DrugstoreScraper(Scraper):
+class FreshDirectScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www\.drugstore\.com/([a-zA-Z0-9\-]+)/(.*)"
+    INVALID_URL_MESSAGE = "Expected URL format is https://www\.freshdirect\.com/(.*)"
 
     reviews_tree = None
     max_score = None
@@ -31,12 +32,12 @@ class DrugstoreScraper(Scraper):
     review_count = None
     average_review = None
     reviews = None
-    image_urls = None
-    image_count = None
+    feature_count = None
+    features = None
 
     def check_url_format(self):
-        # for ex: http://www.drugstore.com/california-exotic-novelties-up--tighten-it-up-v-gel/qxp450311?catid=181966
-        m = re.match(r"^http://www\.drugstore\.com/([a-zA-Z0-9\-]+)/(.*)", self.product_page_url)
+        # for ex: https://www.freshdirect.com/pdp.jsp?productId=sea_stuffshrmp&catId=sea_hmr_chefprep#explanatory
+        m = re.match(r"^https://www\.freshdirect\.com/(.*)", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -46,7 +47,7 @@ class DrugstoreScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        if len(self.tree_html.xpath("//h1[@class='captionText']/text()")) < 1:
+        if len(self.tree_html.xpath("//div[@class='main-image']//img")) < 1:
             return True
         return False
 
@@ -58,17 +59,17 @@ class DrugstoreScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//input[@name='product']/@value")[0].strip()
+        product_id = self.tree_html.xpath("//div[@class='pdp-productconfig']//input[@name='productId']/@value")[0].strip()
         return product_id
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//h1[@class='captionText']//text()")[0].strip()
+        return self.tree_html.xpath("//h1[@class='pdpTitle']/text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//h1[@class='captionText']//text()")[0].strip()
+        return self.tree_html.xpath("//h1[@class='pdpTitle']/text()")[0].strip()
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -80,17 +81,19 @@ class DrugstoreScraper(Scraper):
         return None
 
     def _features(self):
+        if self.feature_count is not None:
+            return self.features
+        self.feature_count = 0
         line_txts = []
-        all_features_text = line_txts
-        if len(all_features_text) < 1:
+        if len(line_txts) < 1:
             return None
-        return all_features_text
+        self.feature_count = len(line_txts)
+        return line_txts
 
     def _feature_count(self):
-        features = len(self._features())
-        if features is None:
-            return 0
-        return len(self._features())
+        if self.feature_count is None:
+            self._features()
+        return self.feature_count
 
     def _model_meta(self):
         return None
@@ -102,9 +105,11 @@ class DrugstoreScraper(Scraper):
         return description
 
     def _description_helper(self):
-        rows = self.tree_html.xpath("//div[@id='divSellCopy']//text()")
+        description = ""
+        rows = self.tree_html.xpath("//div[contains(@class,'pdp-accordion-description')]//text()")
         rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-        description = "\n".join(rows)
+        if len(rows) > 0:
+            description += "\n".join(rows)
         if len(description) < 1:
             return None
         return description
@@ -116,11 +121,17 @@ class DrugstoreScraper(Scraper):
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        rows = self.tree_html.xpath("//div[@id='divPromosPDetail']//text()")
-        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-        description = "\n".join(rows)
-        if len(description) < 1:
+        rows = self.tree_html.xpath("//ul[@class='pdp-accordion']/li")
+        line_txts = []
+        for row in rows:
+            if "pdp-accordion-description" in row.xpath("./@class")[0]:
+                continue
+            txt = "\n".join([r for r in row.xpath(".//text()") if len(self._clean_text(r)) > 0]).strip()
+            if len(txt) > 0:
+                line_txts.append(txt)
+        if len(line_txts) < 1:
             return None
+        description = "\n".join(line_txts)
         return description
 
     ##########################################
@@ -131,36 +142,18 @@ class DrugstoreScraper(Scraper):
         return None
 
     def _image_urls(self):
-        if self.image_count is not None:
-            return self.image_urls
-        self.image_count = 0
-        url = self.tree_html.xpath("//div[@id='divPImage']//a/@href")[0].strip()
-        m = re.findall(r"javascript:popUp\('(.*?)',", url)
-        url = "http://www.drugstore.com%s" % m[0]
-        redirect_contents = urllib.urlopen(url).read()
-        redirect_tree = html.fromstring(redirect_contents)
-
-        image_url = []
-        loop_flag = True
-        while loop_flag:
-            image_url.append(redirect_tree.xpath("//div[@id='productImage']//img/@src")[0].strip())
-            try:
-                redirect_url = redirect_tree.xpath("//td[@align='left']//a/@href")[0].strip()
-                redirect_url = "http://www.drugstore.com/%s" % redirect_url
-                redirect_contents = urllib.urlopen(redirect_url).read()
-                redirect_tree = html.fromstring(redirect_contents)
-            except IndexError:
-                loop_flag = False
-
+        image_url = self.tree_html.xpath("//p[@class='thumbnails']//img/@src")
+        image_url = ["https://www.freshdirect.com%s" % self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url) < 1:
-            return None
-        self.image_count = len(image_url)
+            image_url = self.tree_html.xpath("//div[@class='main-image']//img/@src")
+            image_url = ["https://www.freshdirect.com%s" % self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
+            if len(image_url) < 1:
+                return None
         return image_url
 
     def _image_count(self):
-        if self.image_count is None:
-            self.image_urls()
-        return self.image_count
+        image_urls = self._image_urls()
+        return len(image_urls)
 
     def _video_urls(self):
         video_url = []
@@ -188,9 +181,16 @@ class DrugstoreScraper(Scraper):
         return 0
 
     def _webcollage(self):
-        atags = self.tree_html.xpath("//a[contains(@href, 'webcollage.net/')]")
-        if len(atags) > 0:
-            return 1
+        # http://content.webcollage.net/pg-estore/power-page?ird=true&channel-product-id=037000864868
+        # url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % self._product_id()
+        # html = urllib.urlopen(url).read()
+        # m = re.findall(r'_wccontent = (\{.*?\});', html, re.DOTALL)
+        # try:
+        #     if ".webcollage.net" in m[0]:
+        #         return 1
+        # except IndexError:
+        #     pass
+        # return 0
         return 0
 
     # extract htags (h1, h2) from its product product page tree
@@ -209,49 +209,28 @@ class DrugstoreScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
     #populate the reviews_tree variable for use by other functions
-    def _load_reviews(self):
-        if not self.max_score or not self.min_score:
-            rows = self.tree_html.xpath("//ul[contains(@class,'pr-ratings-histogram-content')]//li//p[@class='pr-histogram-count']//text()")
-            self.reviews = []
-            idx = 5
-            rv_scores = []
-            for row in rows:
-                cnt = int(re.findall(r"\d+", row)[0])
-                if cnt > 0:
-                    self.reviews.append([idx, cnt])
-                    rv_scores.append(idx)
-                idx -= 1
-                if idx < 1:
-                    break
-            self.max_score = max(rv_scores)
-            self.min_score = min(rv_scores)
-
     def _average_review(self):
-        avg_review = self.tree_html.xpath("//span[contains(@class,'average')]//text()")[0].strip()
-        avg_review = round(float(avg_review), 2)
-        return avg_review
+        average_review = self.tree_html.xpath("//ul[@class='ratings']//b[contains(@class,'expertrating')]//text()")[0].strip()
+        return float(average_review)/2.0
 
     def _review_count(self):
-        review_cnt = self.tree_html.xpath("//span[@class='count']//text()")[0].strip()
-        return int(review_cnt)
+        return None
 
     def _max_review(self):
-        self._load_reviews()
-        return self.max_score
+        return None
 
     def _min_review(self):
-        self._load_reviews()
-        return self.min_score
+        return None
 
     def _reviews(self):
-        self._load_reviews()
-        return self.reviews
+        return None
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
+        price = self.tree_html.xpath("//div[@class='pdp-price']//text()")[0].strip()
+        price = re.findall(r"(\$[\d\.]+)", price, re.DOTALL)[0]
         return price
 
     def _price_amount(self):
@@ -270,7 +249,7 @@ class DrugstoreScraper(Scraper):
         return price_currency
 
     def _in_stores(self):
-        return None
+        return 0
 
     def _marketplace(self):
         return 0
@@ -281,17 +260,27 @@ class DrugstoreScraper(Scraper):
     def _marketplace_lowest_price(self):
         return None
 
+    def _marketplace_out_of_stock(self):
+        """Extracts info on whether currently unavailable from any marketplace seller - binary
+        Uses functions that work on both old page design and new design.
+        Will choose whichever gives results.
+        Returns:
+            1/0
+        """
+        return None
+
     def _site_online(self):
+        # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
         return 1
 
     def _site_online_out_of_stock(self):
+        #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 0:
             return None
-        rows = self.tree_html.xpath("//div[@id='ReplacementReasonDiv']//text()")
-        for row in rows:
-            if "temporarily out of stock" in row:
-                return 1
-        return 0
+        rows = self.tree_html.xpath("//div[@class='pdp-atc']//button[@data-component='ATCButton']")
+        if len(rows) > 0:
+            return 0
+        return 1
 
     def _in_stores_out_of_stock(self):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
@@ -303,10 +292,8 @@ class DrugstoreScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        all = self.tree_html.xpath("//div[@id='divBreadCrumb']//a[@class='breadcrumb']//text()")
+        all = self.tree_html.xpath("//ul[@class='breadcrumbs']//li//text()")
         out = [self._clean_text(r) for r in all]
-        if out[0].lower() == "home":
-            out = out[1:]
         if len(out) < 1:
             return None
         return out
@@ -345,8 +332,10 @@ class DrugstoreScraper(Scraper):
         "long_description" : _long_description, \
 
         # CONTAINER : PAGE_ATTRIBUTES
-        "video_urls" : _video_urls, \
-        "video_count" : _video_count, \
+        "pdf_urls" : _pdf_urls, \
+        "pdf_count" : _pdf_count, \
+        "image_urls" : _image_urls, \
+        "image_count" : _image_count, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
@@ -360,11 +349,12 @@ class DrugstoreScraper(Scraper):
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
+        "_marketplace_out_of_stock" : _marketplace_out_of_stock, \
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
 
-         # CONTAINER : REVIEWS
+        # CONTAINER : REVIEWS
         "review_count" : _review_count, \
         "average_review" : _average_review, \
         "max_review" : _max_review, \
@@ -384,12 +374,9 @@ class DrugstoreScraper(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         # CONTAINER : CLASSIFICATION
-        # CONTAINER : PAGE_ATTRIBUTES
-        "pdf_urls" : _pdf_urls, \
-        "pdf_count" : _pdf_count, \
 
         # CONTAINER : PAGE_ATTRIBUTES
-        "image_urls" : _image_urls, \
-        "image_count" : _image_count, \
+        "video_urls" : _video_urls, \
+        "video_count" : _video_count, \
+        "webcollage" : _webcollage, \
     }
-

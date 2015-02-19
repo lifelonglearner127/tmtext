@@ -89,8 +89,13 @@ class SearchSpider(BaseSpider):
 
 
         # parseURL functions, one for each supported origin site
-        self.parse_url_functions = {'staples' : self.parseURL_staples, 'walmart' : self.parseURL_walmart, 'newegg' : self.parseURL_newegg,\
-                                     'boots' : self.parseURL_boots, 'ocado' : self.parseURL_ocado, 'tesco' : self.parseURL_tesco}
+        self.parse_url_functions = {'staples' : self.parseURL_staples, \
+                                    'walmart' : self.parseURL_walmart, \
+                                    'newegg' : self.parseURL_newegg,\
+                                    'boots' : self.parseURL_boots, \
+                                    'ocado' : self.parseURL_ocado, \
+                                    'tesco' : self.parseURL_tesco, \
+                                    'amazon' : self.parseURL_amazon}
 
 
     def build_search_pages(self, search_query):
@@ -615,6 +620,61 @@ class SearchSpider(BaseSpider):
             product_name_holder = None
 
         return (product_name, None, None)
+
+    def parseURL_amazon(self, hxs):
+        product_name = product_model = price = None
+
+        # TODO: test
+        product_name_node = hxs.select("//span[@id='productTitle']/text()").extract()
+
+        if product_name_node:
+            product_name = product_name_node[0].strip()
+
+        # extract product model number
+        model_number_holder = hxs.select("""//tr[@class='item-model-number']/td[@class='value']/text() |
+         //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text()""").extract()
+        if model_number_holder:
+            model_number = model_number_holder[0].strip()
+        # if no product model explicitly on the page, try to extract it from name
+        else:
+            # TODO: do I try this here or is it tried somewhere down the line again?
+            product_model_extracted = ProcessText.extract_model_from_name(product_name)
+            if product_model_extracted:
+                model_number = product_model_extracted
+
+        # # no support for brand yet
+        # brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
+        # if brand_holder:
+        #     brand = brand_holder[0]
+        # else:
+        #     pass
+        #     #sys.stderr.write("Didn't find product brand: " + response.url + "\n")
+
+        # extract price
+        #! extracting list price and not discount price when discounts available?
+        # TODO: test. it extracts more than one price
+        price_holder = hxs.select("//span[contains(@id,'priceblock')]/text() | //span[@class='a-color-price']/text() " + \
+            "| //span[@class='listprice']/text() | //span[@id='actualPriceValue']/text() | //b[@class='priceLarge']/text() | //span[@class='price']/text()").extract()
+
+        # if we can't find it like above try other things:
+        if not price_holder:
+            # prefer new prices to used ones
+            price_holder = hxs.select("//span[contains(@class, 'olp-new')]//text()[contains(.,'$')]").extract()
+        if price_holder:
+            product_target_price = price_holder[0].strip()
+            # remove commas separating orders of magnitude (ex 2,000)
+            product_target_price = re.sub(",","",product_target_price)
+            m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
+            if m:
+                price = float(m.group(1))
+        #     else:
+        #         self.log("Didn't match product price: " + price + " " + response.url + "\n", level=log.WARNING)
+
+        # else:
+        #     self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
+
+        return (product_name, product_model, price)
+
 
 
     # accumulate results for each (sending the pending requests and the partial results as metadata),

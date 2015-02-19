@@ -15,7 +15,7 @@ from scrapy.log import DEBUG, INFO
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 
 
@@ -28,7 +28,8 @@ class TargetProductSpider(BaseProductsSpider):
     #  or any other target.* different from target.com!
     SEARCH_URL = "http://www.target.com/s?searchTerm={search_term}"
     SCRIPT_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js"
-    CALL_RR = True
+    CALL_RR = False
+    CALL_RECOMM = True
     POPULATE_VARIANTS = False
     POPULATE_REVIEWS = True
     SORTING = None
@@ -38,7 +39,8 @@ class TargetProductSpider(BaseProductsSpider):
         "featured": "Featured",
         "pricelow": "PriceLow",
         "pricehigh": "PriceHigh",
-        "newest": "newest"
+        "newest": "newest",
+        "bestselling": "bestselling"
     }
 
     REVIEW_API_PASS = "aqxzr0zot28ympbkxbxqacldq"
@@ -48,6 +50,25 @@ class TargetProductSpider(BaseProductsSpider):
                      "&displaycode=19988-en_us&resource.q0=products" \
                      "&filter.q0=id%3Aeq%3A{model}&stats.q0=reviews" \
                      "&filteredstats.q0=reviews"
+
+    JSON_SEARCH_URL = "http://tws.target.com/searchservice/item" \
+                      "/search_results/v1/by_keyword" \
+                      "?callback=getPlpResponse" \
+                      "&searchTerm=null" \
+                      "&category={category}" \
+                      "&sort_by={sort_mode}" \
+                      "&pageCount=60" \
+                      "&start_results={index}" \
+                      "&page={page}" \
+                      "&zone=PLP" \
+                      "&faceted_value=" \
+                      "&view_type=medium" \
+                      "&stateData=" \
+                      "&response_group=Items" \
+                      "&isLeaf=true" \
+                      "&parent_category_id={category}"
+
+    RELATED_URL = "{path}?productId={pid}&userId=-1002&min={min}&max={max}&context=placementId,{plid};categoryId,{cid}&callback=jsonCallback"
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
@@ -66,26 +87,73 @@ class TargetProductSpider(BaseProductsSpider):
 
     def _start_search(self, response):
         for request in super(TargetProductSpider, self).start_requests():
-            request.meta['dont_redirect'] = True
+            #request.meta['dont_redirect'] = True
             request.meta['handle_httpstatus_list'] = [302]
+            request.meta['search_start'] = True
             yield request
 
+    def parse(self, response):
+        regexp = re.compile('^http://[\w]*\.target\.com/c/[^/]+/-/([^#]+)')
+        category = regexp.search(response.url)
+        if response.meta.get('search_start') and category:
+            new_meta = response.meta
+            new_meta['search_start'] = False
+            new_meta['json'] = True
+            category = category.group(1)[2:]
+            new_meta['category'] = category
+            return Request(
+                self.url_formatter.format(self.JSON_SEARCH_URL,
+                                          category=category, index=90,
+                                          sort_mode=self.SORTING or '',
+                                          page=1),
+                meta=new_meta)
+        return list(super(TargetProductSpider, self).parse(response))
+
     def parse_product(self, response):
+        # for some products (with many colors for example) target.com
+        # insert at <meta> another url than you see at browser.
+        # it used to calculate buyer_reviews correct.
+        canonical_url = response.xpath(
+            '//meta[@property="og:url"]/@content'
+        ).extract()
         prod = response.meta['product']
         old_url = prod['url'].rsplit('#', 1)[0]
         prod['url'] = None
         populate_from_open_graph(response, prod)
-        cond_set_value(prod, 'url', old_url)
+
+        prod['url'] = old_url
+        #cond_set_value(prod, 'url', old_url)
+
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
-
+        # fiME: brand=None
+        if 'brand' in prod and len(prod['brand']) == 0:
+            prod['brand'] = 'No brand'
         variants = self._extract_variants(response, prod)
         payload = self._extract_rr_parms(response)
+
+        collection_items = response.xpath('//div[@id="CollectionItems"]//h3/a')
+        # assume that product from collection
+        if collection_items:
+            self._populate_collection_items(response, prod)
+
+        if self.CALL_RECOMM:
+            rurls = self._extract_recomm_urls(response)
+            if rurls:
+                new_meta = response.meta.copy()
+                new_meta['variants'] = variants
+                new_meta['rurls'] = rurls[1:]
+                new_meta['canonical_url'] = canonical_url
+                return Request(
+                    rurls[0],
+                    self._parse_recomm_json,
+                    meta=new_meta)
 
         if self.CALL_RR:
             if payload:
                 new_meta = response.meta.copy()
                 new_meta['variants'] = variants
+                new_meta['canonical_url'] = canonical_url
                 rr_url = urlparse.urljoin(self.SCRIPT_URL,
                                           "?" + urllib.urlencode(payload))
                 return Request(
@@ -96,7 +164,7 @@ class TargetProductSpider(BaseProductsSpider):
                 self.log("No {rr} payload at %s" % response.url, DEBUG)
 
         if self.POPULATE_REVIEWS:
-            return self._request_reviews(response, prod)
+            return self._request_reviews(response, prod, canonical_url)
         elif self.POPULATE_VARIANTS:
             if variants:
                 return self._populate_variants(response, prod, variants)
@@ -111,18 +179,31 @@ class TargetProductSpider(BaseProductsSpider):
             'title',
             response.xpath(
                 "//h2[contains(@class,'product-name')]"
-                "/span[@itemprop='name']/text()").extract(),
+                "/span[@itemprop='name']/text()"
+                "|//h2[contains(@class,'collection-name')]"
+                "/span[@itemprop='name']/text()"
+            ).extract(),
             conv=string.strip
         )
 
         price = response.xpath(
             "//span[@itemprop='price']/text()"
             "|//*[@id='see-low-price']/a/text()"
+            "|//span[@itemprop='lowPrice']/text()"
         ).extract()
         if not price or price[0] == 'See Low Price in Cart':
             cond_set(product, 'price', ['$0.00'])
         else:
             cond_set(product, 'price', price)
+        price = product.get('price', None)
+        if price:
+            mp = re.search(FLOATING_POINT_RGEX, price)
+            if mp:
+                price = mp.group(0)
+            else:
+                price = 0.0
+            product['price'] = Price(
+                price=price, priceCurrency='USD')
         desc = product.get('description')
         if desc:
             desc = desc.replace("\n", "")
@@ -133,6 +214,8 @@ class TargetProductSpider(BaseProductsSpider):
             desc = desc[0]
             desc = desc.replace("\n", "")
             product['description'] = desc
+        cond_set(product, 'image_url', response.xpath(
+            "//img[@itemprop='image']/@src").extract())
         image = product.get('image_url')
         if image:
             image = image.replace("_100x100.", ".")
@@ -178,6 +261,31 @@ class TargetProductSpider(BaseProductsSpider):
                 new_product['upc'] = code
                 product_list.append(new_product)
         return product_list
+
+    def _extract_recomm_urls(self, response):
+        script = response.xpath(
+            "//script[contains(text(),'var recommendationConfig')]"
+            "/text()").re("var recommendationConfig = {(.*)};")
+        if script:
+            script = script[0]
+        try:
+            jsdata = json.loads("{" + script + "}")
+        except (ValueError, TypeError):
+            urls = []
+            # self.log
+            return urls
+        urls = []
+        for name in jsdata['components']:
+            item = jsdata['components'][name]
+            url = self.RELATED_URL.format(
+                path=jsdata['serviceHostName'],
+                pid=item['productId'],
+                min=item['min'],
+                max=item['max'],
+                plid=item['placementName'],
+                cid=item['categoryId'])
+            urls.append(url)
+        return urls
 
     def _extract_rr_parms(self, response):
         rscript = response.xpath(
@@ -253,6 +361,53 @@ class TargetProductSpider(BaseProductsSpider):
                    "l": 1}
         return payload
 
+    def _parse_recomm_json(self, response):
+        product = response.meta['product']
+        text = response.body_as_unicode()
+        rurls = response.meta['rurls']
+
+        jm = re.search(r"jsonCallback\((.*)},", text)
+        rels = []
+        if jm:
+            jtext = jm.group(1)
+            jtext += "}"
+            try:
+                jdata = json.loads(jtext)
+            except ValueError:
+                jdata = {}
+            rlist = jdata.get('recommendations', [])
+            for ritem in rlist:
+                title = ritem['productTitle']
+                href = ritem['productLink']
+                rels.append(RelatedProduct(title, href))
+
+            related = product.get('related_products', {})
+            rel_recom = related.get('recommended', [])
+            rel_recom.extend(rels)
+            product['related_products'] = {"recommended": rel_recom}
+
+        if rurls:
+            url = rurls[0]
+            rurls = rurls[1:]
+            print "url=", url, "rurls=", rurls
+
+            new_meta = response.meta.copy()
+            new_meta['rurls'] = rurls
+            return Request(
+                url,
+                self._parse_recomm_json,
+                meta=new_meta)
+
+
+        variants = response.meta.get('variants')
+        if self.POPULATE_REVIEWS:
+            canonical_url = response.meta['canonical_url']
+            return self._request_reviews(response, product, canonical_url)
+        elif variants and self.POPULATE_VARIANTS:
+            return self._populate_variants(response, product, variants)
+        else:
+            return product
+
     def _parse_rr_json(self, response):
         product = response.meta['product']
         text = response.body_as_unicode()
@@ -300,7 +455,8 @@ class TargetProductSpider(BaseProductsSpider):
                                            "buyers_also_bought": obitems}
         variants = response.meta.get('variants')
         if self.POPULATE_REVIEWS:
-            return self._request_reviews(response, product)
+            canonical_url = response.meta['canonical_url']
+            return self._request_reviews(response, product, canonical_url)
         elif variants and self.POPULATE_VARIANTS:
             return self._populate_variants(response, product, variants)
         else:
@@ -334,6 +490,34 @@ class TargetProductSpider(BaseProductsSpider):
         return bi_list
 
     def _scrape_product_links(self, response):
+        if response.meta.get('json'):
+            return list(self._scrape_product_links_json(response))
+        else:
+            return list(self._scrape_product_links_html(response))
+
+    def _scrape_product_links_json(self, response):
+        for item in self._get_json_data(response)['items']['Item']:
+            url = item['productDetailPageURL']
+            url = urlparse.urljoin('http://www.target.com', url)
+            product = SiteProductItem()
+            attrs = item.get('itemAttributes', {})
+            cond_set_value(product, 'title', attrs.get('title'))
+            cond_set_value(product, 'brand',
+                           attrs.get('productManufacturerBrand'))
+            p = item.get('priceSummary', {})
+            priceattr = p.get('offerPrice', p.get('listPrice'))
+            if priceattr:
+                currency = priceattr['currencyCode']
+                amount = priceattr['amount']
+                if amount == 'Too low to display':
+                    price = None
+                else:
+                    amount = re.sub('[^0-9.]', '', priceattr['amount'])
+                    price = Price(priceCurrency=currency, price=amount)
+                cond_set_value(product, 'price', price)
+            yield url, product
+
+    def _scrape_product_links_html(self, response):
         sterm = response.xpath(
             "//div[@id='searchMessagingHeader']/h2/span"
             "/span[@class='srhTerm']/text()").extract()
@@ -356,6 +540,7 @@ class TargetProductSpider(BaseProductsSpider):
             self.log("Try again after 1-3 min.", DEBUG)
             return
         bi_list = self._extract_links_with_brand(containers)
+
         if not bi_list:
             self.log("Found no product links.", DEBUG)
         if self.SORTING:
@@ -364,6 +549,9 @@ class TargetProductSpider(BaseProductsSpider):
                          "&lnk=snav_sbox_catnip&viewType=medium").format(
                 self.SORTING, response.meta['search_term'])
             post_req = self._gen_next_request(response, next_page)
+            new_meta = post_req.meta.copy()
+            new_meta['json'] = True
+            post_req = post_req.replace(meta=new_meta)
             yield post_req, SiteProductItem()
             return
 
@@ -379,7 +567,31 @@ class TargetProductSpider(BaseProductsSpider):
             #     product['???'] = True
             yield link, product
 
+    def _get_json_data(self, response):
+        data = re.search('getPlpResponse\((.+)\)', response.body_as_unicode())
+        try:
+            data = json.loads(data.group(1))
+        except (ValueError, TypeError, AttributeError):
+            self.log('JSON response expected.')
+            return
+        return data['searchResponse']
+
     def _scrape_total_matches(self, response):
+        if response.meta.get('json'):
+            return self._scrape_total_matches_json(response)
+        else:
+            return self._scrape_total_matches_html(response)
+
+    def _json_get_args(self, data):
+        args = {d['name']: d['value'] for d in
+                data['searchState']['Arguments']['Argument']}
+        return args
+
+    def _scrape_total_matches_json(self, response):
+        data = self._get_json_data(response)
+        return int(self._json_get_args(data)['prodCount'])
+
+    def _scrape_total_matches_html(self, response):
         str_results = response.xpath(
             "//div[@id='searchMessagingHeader']/h2"
             "/span/span[@class='srhCount']/text()")
@@ -412,11 +624,16 @@ class TargetProductSpider(BaseProductsSpider):
                     }
 
             new_meta = response.meta.copy()
+            if 'total_matches' not in new_meta:
+                new_meta['total_matches'] = self._scrape_total_matches(response)
             if remaining and remaining > 0:
                 new_meta['remaining'] = remaining
             post_url = "http://www.target.com/SoftRefreshProductListView"
-            return FormRequest.from_response(
-                response=response,
+            # new_meta['json'] = True
+
+            return FormRequest(
+                #return FormRequest.from_response(
+                #response=response,
                 url=post_url,
                 method='POST',
                 formdata=data,
@@ -468,10 +685,35 @@ class TargetProductSpider(BaseProductsSpider):
             requests.append(Request(
                 url,
                 callback=self.parse_product,
-                meta=new_meta))
+                meta=new_meta,dont_filter=True))
         return requests
 
     def _scrape_next_results_page_link(self, response):
+        if self.SORTING != None and response.meta.get('search_start'):
+            return
+        if response.meta.get('json'):
+            return self._scrape_next_results_page_link_json(response)
+        else:
+            return self._scrape_next_results_page_link_html(response)
+
+    def _scrape_next_results_page_link_json(self, response):
+        #raw_input(len(list(self._scrape_product_links_json(response))))
+        args = self._json_get_args(self._get_json_data(response))
+        current = int(args['currentPage'])
+        total = int(args['totalPages'])
+        per_page = int(args['resultsPerPage'])
+        if current <= total:
+            sort_mode = self.SORTING or ''
+            category = response.meta['category']
+            new_meta = response.meta.copy()
+            url = self.url_formatter.format(self.JSON_SEARCH_URL,
+                                            sort_mode=sort_mode,
+                                            index=per_page * current,
+                                            page=current + 1,
+                                            category=response.meta['category'])
+            return Request(url, meta=new_meta)
+
+    def _scrape_next_results_page_link_html(self, response):
         next_page = response.xpath(
             "//div[@id='pagination1']/div[@class='col2']"
             "/ul[@class='pagination1']/li[@class='next']/a/@href").extract()
@@ -479,13 +721,17 @@ class TargetProductSpider(BaseProductsSpider):
             next_page = next_page[0]
             return self._gen_next_request(response, next_page)
 
-    def _request_reviews(self, response, product):
-        prod_id = re.search('\d+\Z', product['url'])
+    def _request_reviews(self, response, product, canonical_url=None):
+        if canonical_url:
+            main_url = canonical_url[0]
+        else:
+            main_url = product['url']
+        prod_id = re.search('\d+\Z', main_url)
         if prod_id:
             prod_id = prod_id.group()
             url = self.REVIEW_API_URL.format(apipass=self.REVIEW_API_PASS,
                                              model=prod_id)
-            return Request(url, self._parse_reviews, meta=response.meta)
+            return Request(url, self._parse_reviews, meta=response.meta, dont_filter=True)
         else:
             return product
 
@@ -493,18 +739,34 @@ class TargetProductSpider(BaseProductsSpider):
         product = response.meta['product']
         data = json.loads(response.body_as_unicode())
         data = data.get('BatchedResults', {}).get('q0', {})
-        data = data.get('Results', [{}])[0]
+        data = (data.get('Results') or [{}])[0]
         data = data.get('FilteredReviewStatistics', {})
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
         if average is None or total is None:
             return product
         distribution = data.get('RatingDistribution', [])
-        distribution = {d['Count']: d['RatingValue']
+        distribution = {d['RatingValue']: d['Count']
                         for d in data.get('RatingDistribution', [])}
-        reviews = BuyerReviews(total, average, distribution)
+        fdist = {i: 0 for i in range(1, 6)}
+        for i in range(1, 6):
+            if i in distribution:
+                fdist[i] = distribution[i]
+        reviews = BuyerReviews(total, average, fdist)
         cond_set_value(product, 'buyer_reviews', reviews)
         variants = response.meta.get('variants')
         if variants and self.POPULATE_VARIANTS:
             return self._populate_variants(response, product, variants)
         return product
+
+    def _populate_collection_items(self, response, prod):
+        collection_items = response.xpath('//div[@id="CollectionItems"]//h3/a')
+        rp = []
+        for item in collection_items:
+            link = item.xpath('@href').extract()
+            if link:
+                link = 'http://www.target.com' + link[0]
+            name = item.xpath('text()').extract()
+            if name and link:
+                rp.append(RelatedProduct(name[0].strip(), link))
+        prod['related_products'] = {'recommended': rp}

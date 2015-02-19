@@ -27,3 +27,17 @@ AMAZONFRESH_LOCATION = {
     "northern_cali": "A3FX2TOAMS7SFL",
     "seattle": "A83PXQN2224PA"
 }
+
+if not 'EXTENSIONS' in globals():
+    EXTENSIONS = {}
+EXTENSIONS['product_ranking.extensions.StatsCollector'] = 500
+
+# memory limit
+EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
+MEMUSAGE_LIMIT_MB = 256
+MEMUSAGE_ENABLED = True
+
+try:
+    from settings_local import *
+except ImportError:
+    pass
