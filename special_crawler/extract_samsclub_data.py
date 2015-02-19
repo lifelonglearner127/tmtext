@@ -36,6 +36,8 @@ class SamsclubScraper(Scraper):
     price = None
     price_amount = None
     price_currency = None
+    video_count = None
+    video_urls = None
 
     def check_url_format(self):
         # for ex: http://www.samsclub.com/sams/dawson-fireplace-fall-2014/prod14520017.ip?origin=item_page.rr1&campaign=rr&sn=ClickCP&campaign_data=prod14170040
@@ -241,8 +243,11 @@ class SamsclubScraper(Scraper):
     #     return data
 
     def _video_urls(self):
+        if self.video_count is not None:
+            return self.video_urls
+        self.video_count = 0
         rows = self.tree_html.xpath("//div[@id='tabItemDetails']//a/@href")
-        rows = [r for r in rows if "video." in r]
+        rows = [r for r in rows if "video." in r or "/mediaroom/" in r or ("//media." in r and (".flv" in r or ".mov" in r))]
 
         url = "http://content.webcollage.net/sc/smart-button?ird=true&channel-product-id=%s" % self._product_id()
         html = urllib.urlopen(url).read()
@@ -253,17 +258,18 @@ class SamsclubScraper(Scraper):
             if ".blkbry" in item or ".mobile" in item:
                 pass
             else:
-                if "http://content.webcollage.net%s" % item not in rows and item.count(".mp4") < 2:
+                if "http://content.webcollage.net%s" % item not in rows and (item.count(".mp4") < 2 or ".mp4ful" in item):
                     rows.append("http://content.webcollage.net%s" % item)
         if len(rows) < 1:
             return None
-        return rows
+        self.video_urls = list(set(rows))
+        self.video_count = len(self.video_urls)
+        return self.video_urls
 
     def _video_count(self):
-        urls = self._video_urls()
-        if urls:
-            return len(urls)
-        return 0
+        if self.video_count is None:
+            self._video_urls()
+        return self.video_count
 
     def _pdf_urls(self):
         pdf_hrefs = []
