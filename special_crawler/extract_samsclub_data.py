@@ -258,7 +258,14 @@ class SamsclubScraper(Scraper):
             if ".blkbry" in item or ".mobile" in item:
                 pass
             else:
-                if "http://content.webcollage.net%s" % item not in rows and (item.count(".mp4") < 2 or ".mp4ful" in item):
+                if "http://content.webcollage.net%s" % item not in rows and item.count(".mp4") < 2:
+                    rows.append("http://content.webcollage.net%s" % item)
+        m = re.findall(r'"src":"([_a-zA-Z0-9/\-\.]*?\.flv)"', html.replace("\\",""), re.DOTALL)
+        for item in m:
+            if ".blkbry" in item or ".mobile" in item:
+                pass
+            else:
+                if "http://content.webcollage.net%s" % item not in rows and item.count(".flv") < 2:
                     rows.append("http://content.webcollage.net%s" % item)
         if len(rows) < 1:
             return None
