@@ -1,13 +1,87 @@
 # -*- coding: utf-8 -*-
 
+import json
 import urlparse
 import re
+from itertools import ifilter
+from decimal import Decimal, InvalidOperation
+
+from scrapy.http import Request
 
 from product_ranking.spiders import cond_replace, cond_replace_value
 from product_ranking.spiders import cond_set_value, cond_set
 from contrib.product_spider import ProductsSpider
-from product_ranking.spiders.contrib.contrib import unify_price, unify_decimal
-from product_ranking.spiders.contrib.currency import SYM_GBP
+from product_ranking.items import Price, BuyerReviews
+
+
+SYM_GBP = '£'
+
+
+def unify_decimal(ignored, float_dots):
+    """ Create a function to convert various floating point textual
+    representations to it's equivalent that can be converted to float directly.
+
+    Usage:
+       unify_float([ignored, float_dots])(string_:str) -> string
+
+    Arguments:
+       ignored - list of symbols to be removed from string
+       float_dots - decimal/real parts separator
+
+    Raises:
+       `ValueError` - resulting string cannot be converted to float.
+    """
+
+    def unify_float_wr(string_):
+        try:
+            result = ''.join(['.' if c in float_dots else c for c in
+                              string_ if c not in ignored])
+            return str(Decimal(result))
+        except InvalidOperation:
+            raise ValueError('Cannot convert to decimal')
+
+    return unify_float_wr
+
+
+def unify_price(currency_codes, currency_signs, unify_decimal,
+                default_currency=None):
+    """Convert textual price representation to `Price` object.
+
+    Usage:
+       unify_price(currency_codes, currency_signs, unify_float,
+       [default_currency])(string_) -> Price
+
+    Arguments:
+       currency_codes - list of possible currency codes (like ['EUR', 'USD'])
+       currency_signs - dictionary to convert substrings to currency codes
+       unify_decimal - function to convert price part into decimal
+       default_currency - default currency code
+
+    Raises:
+       `ValueError` - no currency code found and default_curreny is None.
+    """
+
+    def unify_price_wr(string_):
+        string_ = string_.strip()
+        sorted_ = sorted(currency_signs.keys(), None, len, True)
+        sign = next(ifilter(string_.startswith, sorted_), '')
+        string_ = currency_signs.get(sign, '') + string_[len(sign):]
+        sorted_ = sorted(currency_codes, None, len, True)
+        currency = next(ifilter(string_.startswith, sorted_), None)
+
+        if currency is None:
+            currency = default_currency
+        else:
+            string_ = string_[len(currency):]
+
+        if currency is None:
+            raise ValueError('Could not get currency code')
+
+        float_string = unify_decimal(string_.strip())
+
+        return Price(currency, float_string)
+
+    return unify_price_wr
 
 
 class SainsburysProductSpider(ProductsSpider):
@@ -39,6 +113,7 @@ class SainsburysProductSpider(ProductsSpider):
 
     allowed_domains = [
         "sainsburys.co.uk",
+        "sainsburysgrocery.ugc.bazaarvoice.com"
     ]
 
     SEARCH_URL = "http://www.sainsburys.co.uk/" \
@@ -60,12 +135,33 @@ class SainsburysProductSpider(ProductsSpider):
         'rating': 'RATINGS_DESC'
     }
 
+    OPTIONAL_REQUESTS = {'reviews': True}
+
+    ROOT_REVS_URL = "http://sainsburysgrocery.ugc.bazaarvoice.com/"\
+                    "{code}/{prod_id}/reviews.djs?format=embeddedhtml"
+
+    def parse(self, response):
+        if '/groceries/' in response.url:
+            if 'orderBy' not in response.url:
+                sorted_url = response.url + '?orderBy=' + self.sort_mode
+                return Request(sorted_url, callback=self.parse,
+                               meta=response.meta.copy())
+        return super(SainsburysProductSpider, self).parse(response)
+
     def _total_matches_from_html(self, response):
-        try:
-            text = response.css('#resultsHeading::text').extract()[0]
-            matches = re.search('We found (\d+)', text).group(1)
-        except (IndexError, AttributeError):
-            matches = 0
+        text = response.xpath(
+            '//div[@class="section"]/h1[@id="resultsHeading"]/text()'
+        ).extract()
+        if text:
+            matches = re.findall(r'(\d+)\sproducts', text[0])
+            if matches:
+                matches = matches[0]
+        else:
+            try:
+                text = response.css('#resultsHeading::text').extract()[0]
+                matches = re.search('We found (\d+)', text).group(1)
+            except (IndexError, AttributeError):
+                matches = 0
         return int(matches)
 
     def _scrape_next_results_page_link(self, response):
@@ -128,3 +224,45 @@ class SainsburysProductSpider(ProductsSpider):
                             unify_decimal(', ', '.'), 'GBP')(price)
         cond_replace_value(product, 'price', price)
 
+    def _request_reviews(self, response):
+        prod_id = re.findall(r"productId:\s'(.*)',", response.body)
+        display_code = re.findall(r"displayCode:\s'(.*)',", response.body)
+        if prod_id and display_code:
+            url = self.ROOT_REVS_URL.format(code=display_code[0],
+                                            prod_id=prod_id[0])
+            return url
+        return
+
+    def _parse_reviews(self, response):
+        res = re.findall(r'"attributes":(.*),"ciTrackingEnabled"',
+                         response.body)
+        if res:
+            data = json.loads(res[0])
+            avg = data['avgRating']
+            avg = float(avg)
+            total = data['numReviews']
+            total = int(total)
+        stars = {}
+        materials = re.findall(r'materials=(.*),', response.body)
+        if materials:
+            data = json.loads(materials[0])
+            all_revs = response.meta.get('all_revs', [])
+            pattern = r'itemprop="ratingValue" class="BVRRNumber'\
+                ' BVRRRatingNumber">(\d+)<'
+            results = re.findall(pattern, data[data.keys()[0]])
+            all_revs.extend(results)
+            for number in range(1, 6):
+                pattern = str(number)
+                quantity = all_revs.count(pattern)
+                stars[number] = quantity
+        if not response.meta.get('not_populate_more'):
+            if total > 8:
+                next_page = response.url + "&page=2"
+                meta = response.meta.copy()
+                meta['not_populate_more'] = True
+                meta['all_revs'] = all_revs
+                return Request(next_page, callback=self._parse_reviews,
+                               meta=meta)
+        product = response.meta['product']
+        cond_set_value(product, 'buyer_reviews',
+                       BuyerReviews(total, avg, stars))
