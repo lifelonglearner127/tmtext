@@ -61,45 +61,8 @@ class WalmartSpider(SearchSpider):
             product_url = Utils.add_domain(product_url, "http://www.walmart.com")
             product_urls.add(product_url)
 
-            # relevant for extracting products from results page only
-            # - deprecated
-            # item = SearchItem()
-            # #item['origin_site'] = site
-
-            # product_name = " ".join(result.select(".//text()").extract())
-
-            # # # Not relevant anymore:
-            # # # TODO: check if relevant
-            # # # append text that is in <span> if any
-            # # span_text = result.select("./span/text()")
-
-            # # #TODO: use span text differently, as it is more important/relevant (bold) ?
-            # # for text in span_text:
-            # #     product_name += " " + text.extract()
-
-            # item['product_name'] = product_name
-            # rel_url = result.select("@href").extract()[0]
-            
-            # root_url = "http://www.walmart.com"
-            # item['product_url'] = Utils.add_domain(rel_url, root_url)
-
-            # if 'origin_url' in response.meta:
-            #     item['origin_url'] = response.meta['origin_url']
-
-            # if 'origin_id' in response.meta:
-            #     request.meta['origin_id'] = response.meta['origin_id']
-            # #     assert self.by_id
-            # # else:
-            # #     assert not self.by_id
-            # #     
-            
-
-            # # TODO: also get the price and other info?
-
-
-            # items.add(item)
-
-                # extract product info from product pages (send request to parse first URL in list)
+ 
+        # extract product info from product pages (send request to parse first URL in list)
         # add as meta all that was received as meta, will pass it on to reduceResults function in the end
         # also send as meta the entire results list (the product pages URLs), will receive callback when they have all been parsed
 
@@ -224,9 +187,6 @@ class WalmartSpider(SearchSpider):
         # find first valid next product url
         next_product_url = None
         if product_urls:
-            next_product_url = product_urls.pop()
-        while product_urls:
-            # print "404 FROM", next_product_url
             next_product_url = product_urls.pop()
 
         # handle corner case of bad next product url
