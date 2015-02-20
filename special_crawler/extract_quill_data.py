@@ -222,7 +222,7 @@ class QuillScraper(Scraper):
         contents = urllib.urlopen(url).read()
         contents = contents.replace("\\", "")
         wc_pdfs = re.findall(r'wcobj="(.*?)"', contents, re.DOTALL)
-        wc_pdfs = [r.replace("\\", "") for r in wc_pdfs]
+        wc_pdfs = [r.replace("\\", "") for r in wc_pdfs if r.endswith(".pdf")]
         pdf_hrefs += wc_pdfs
         if len(pdf_hrefs) < 1:
             return None
