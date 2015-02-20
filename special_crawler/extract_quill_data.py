@@ -183,18 +183,20 @@ class QuillScraper(Scraper):
             # document.location.replace('
             tree = html.fromstring(contents_wc)
             playerKey = tree.xpath("//param[@name='playerKey']/@value")[0].strip()
-            video = tree.xpath("//param[@name='video']/@value")[0].strip()
-            # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
-            url_wc2 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
-            contents_wc2 = urllib.urlopen(url_wc2).read()
-            jsn = json.loads(contents_wc2)
-            jsn = jsn["sources"]
-            for item in jsn:
-                try:
-                    file_name = item['file']
-                    video_urls.append(file_name)
-                except:
-                    pass
+            videos = tree.xpath("//li[contains(@class,'video_slider_item')]/@video_id")
+            for video in videos:
+                # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
+                url_wc2 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
+                contents_wc2 = urllib.urlopen(url_wc2).read()
+                jsn = json.loads(contents_wc2)
+                jsn = jsn["sources"]
+                for item in jsn:
+                    try:
+                        file_name = item['file']
+                        video_urls.append(file_name)
+                        break
+                    except:
+                        pass
         if len(video_urls) < 1:
             return None
         self.video_urls = video_urls
