@@ -37,7 +37,7 @@ class QuillScraper(Scraper):
     video_urls = None
     video_count = None
     pdf_urls = None
-    pdf_count = 0
+    pdf_count = None
 
     def check_url_format(self):
         # for ex: http://www.quill.com/clorox-toilet-bowl-cleaner-bleach/cbs/040672.html#SkuTabs
@@ -207,8 +207,9 @@ class QuillScraper(Scraper):
         return self.video_count
 
     def _pdf_urls(self):
-        if self.pdf_urls is not None:
+        if self.pdf_count is not None:
             return self.pdf_urls
+        self.pdf_count = 0
         pdfs = self.tree_html.xpath("//div[@id='PageInner']//a[contains(@href,'.pdf')]")
         pdf_hrefs = []
         for pdf in pdfs:
@@ -230,7 +231,7 @@ class QuillScraper(Scraper):
         return pdf_hrefs
 
     def _pdf_count(self):
-        if self.pdf_urls is None:
+        if self.pdf_count is None:
             self._pdf_urls()
         return self.pdf_count
 
