@@ -62,7 +62,10 @@ class GeorgeScraper(Scraper):
     def _product_name(self):
         pn = self.tree_html.xpath('//h1[@id="productName"]//text()')
         if len(pn)>0:
-            return pn[0]
+            return pn[0].strip()
+        pn = self.tree_html.xpath('//div[@id="productDetail"]//h1//text()')
+        if len(pn)>0:
+            return pn[0].strip()
         return None
 
     def _product_title(self):
@@ -99,13 +102,17 @@ class GeorgeScraper(Scraper):
 
 
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//div[contains(@class,'Description')]//text()[normalize-space()]")).strip()
+        short_description = " ".join(self.tree_html.xpath("//div[@id='descriptionsContent']//text()[normalize-space()]")).strip()
+        if short_description==None or  short_description=="":
+            short_description = " ".join(self.tree_html.xpath("//p[@class='setDesc']//text()[normalize-space()]")).strip()
+        if short_description==None or  short_description=="":
+            short_description = " ".join(self.tree_html.xpath("//div[contains(@class,'Description') or @class='itemDesc' or contains(@id,'Description')]//text()[normalize-space()]")).strip()
         if short_description==None or  short_description=="":
             sd = self.tree_html.xpath('//*[@id="tabContentsProduct"]//div[@class="description"]//text()[normalize-space()]')
             if len(sd) > 0:
                 short_description = self._clean_text(sd[0])
         if short_description is not None and len(short_description)>0:
-            return short_description.replace("\n"," ")
+            return self._clean_text(short_description)
         return self._long_description_helper()
 
 
@@ -207,6 +214,9 @@ class GeorgeScraper(Scraper):
         video_url = self.tree_html.xpath("//div[@id='thumbnailsWrapper']//span[contains(@class,'video')]/img/@src")
         if len(video_url) > 0: return video_url
         video_url = self.tree_html.xpath("//img[contains(@data-asset-url,'.mp4')]/@wcobj")
+        if len(video_url) > 0:
+            return video_url
+        video_url = self.tree_html.xpath("//div[@itemprop='video']//iframe/@src")
         if len(video_url) > 0:
             return video_url
         return None
@@ -402,8 +412,9 @@ class GeorgeScraper(Scraper):
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
-        text = text.replace("<br />"," ").replace("\n"," ")
-        return re.sub("&nbsp;", " ", text).strip()
+        text = text.replace("<br />"," ").replace("\n"," ").replace("\t"," ").replace("\r"," ")
+       	text = re.sub("&nbsp;", " ", text).strip()
+        return  re.sub(r'\s+', ' ', text)
 
 
 
