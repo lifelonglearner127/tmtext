@@ -7,10 +7,10 @@ from scrapy import Request
 
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value, FormatterWithDefaults
-from product_ranking.spiders.products_test_suit import init_testsuit
+#from product_ranking.spiders.products_test_suit import init_testsuit
 
 
-@init_testsuit
+#@init_testsuit
 class MacysProductsSpider(BaseProductsSpider):
     name = 'macys_products'
     allowed_domains = ['macys.com']
