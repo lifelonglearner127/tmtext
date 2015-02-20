@@ -43,17 +43,21 @@ def runTests(scrape_queue_name, process_queue_name, url):
         print('error: ', e)
         return None
 
-    return message
+    return json.loads( message.decode('unicode_escape'))
 
 if (__name__ == '__main__'):
     if len(sys.argv) > 1:
         url = sys.argv[1] # 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/28659614/'
-        print runTests('unit_test_scrape', 'unit_test_process', url)
+        scrape_queue_name = 'unit_test_scrape'
+        if len(sys.argv) > 2:
+            scrape_queue_name = sys.argv[2]
+        process_queue_name = 'unit_test_process'
+        print json.dumps( runTests(scrape_queue_name, process_queue_name, url), sort_keys=True, indent = 2)
 
     else:
         print "######################################################################################################"
         print "This script sends a message to an SQS Queue for processing and prints the response.(Author: Quinn Stearns)"
-        print "Please input correct argument.\nfor ex: python sqs_test.py 'http://www.ozon.ru/context/detail/id/28659614/'"
+        print "Please input correct argument.\nfor ex: python sqs_test.py 'http://www.ozon.ru/context/detail/id/28659614/' ['unit_test_scrape']"
         print "######################################################################################################"
 
     
