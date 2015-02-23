@@ -24,6 +24,8 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 # * pull message from sqs
 # * push data to sqs (split into parts!)
 # * push logs into sqs (split into parts!)
+# * push compressed data & log files to Amazon S3 (for future processing)
+# * progress tracking ([wc -l / num_of_results], [wc -l / quantity])
 # * ...
 
 
