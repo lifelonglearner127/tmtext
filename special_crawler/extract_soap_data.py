@@ -408,6 +408,14 @@ class SoapScraper(Scraper):
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
+        try:
+            btn_cls = self.tree_html.xpath("//input[@id='AddCartButton']/@class")[0].strip()
+            if "proaddDisableBtn" in btn_cls:
+                return 1
+            if "proaddBtn" in btn_cls:
+                return 0
+        except IndexError:
+            pass
         if self._site_online() == 0:
             return None
         if len(self.tree_html.xpath("//div[contains(@class,'productInfoRight')]//td[@class='outOfStockQty']//span[@class='outOfStock']")) < 1:
