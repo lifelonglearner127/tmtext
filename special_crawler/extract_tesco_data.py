@@ -508,6 +508,21 @@ class TescoScraper(Scraper):
         else:
             return None
 
+    def _price_amount(self):
+        price = self._price()
+        clean = re.sub(r'[^0-9.]+', '', price)
+        return float(clean)
+
+    def _price_currency(self):
+        price = self._price()
+        clean = re.sub(r'[^0-9.]+', '', price)
+        curr = price.replace(clean,"").strip()
+        if curr=="$":
+            return "USD"
+        if curr == u'\u00a3':
+            return "GBP"
+        return curr
+
     def _in_stores_only(self):
         return None
 
@@ -535,17 +550,40 @@ class TescoScraper(Scraper):
 
     def _owned_out_of_stock(self):
         um = self.tree_html.xpath('//p[@class="warning unavailableMsg"]//text()')
-        if len(um)>0 and um[0].find("not available"):
+        if len(um)>0 and um[0].find("not available")>=0:
             return 1
         return None
 
+    def _site_online_out_of_stock(self):
+        if self._site_online() == 0: return None
+        um = self.tree_html.xpath('//p[@class="warning unavailableMsg"]//text()')
+        if len(um)>0 and um[0].find("not available")>=0:
+            return 1
+        um = self.tree_html.xpath('//p[@class="not-available-tesco"]//text()')
+        if len(um)>0 and um[0].find("Sorry")>=0:
+            return 1
+        return 0
+
     def _marketplace_sellers(self):
+        a = self.tree_html.xpath('//span[@class="available-from"]//text()')
+        if len(a) > 0 and a[0].find("Tesco") < 0:
+            return ",".join([b[15:].strip() for b in a])
         return None
 
     def _marketplace_lowest_price(self):
         return None
 
+    def _marketplace_out_of_stock(self):
+        if self._marketplace()==1:
+            um = self.tree_html.xpath('//p[@class="warning unavailableMsg"]//text()')
+            if len(um)>0 and um[0].find("not available"):
+                return 1
+            return 0
+        return None
 
+    def _site_online(self):
+        if self._marketplace()==1: return 0
+        return 1
 
 
 
@@ -631,15 +669,19 @@ class TescoScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
-        "in_stock" : _in_stock, \
+        "price_amount": _price_amount, \
+        "price_currency": _price_currency, \
+#        "in_stock" : _in_stock, \
         "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
-        "owned" : _owned, \
-        "owned_out_of_stock" : _owned_out_of_stock, \
+#        "owned" : _owned, \
+#        "owned_out_of_stock" : _owned_out_of_stock, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
-
+        "marketplace_out_of_stock" : _marketplace_out_of_stock,\
+        "site_online": _site_online, \
+        "site_online_out_of_stock": _site_online_out_of_stock,\
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \
