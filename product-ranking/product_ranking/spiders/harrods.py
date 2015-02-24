@@ -19,12 +19,22 @@ class HarrodsProductsSpider(BaseProductsSpider):
     start_urls = []
     SEARCH_URL = "http://luxury.harrods.com/search?w={search_term}&view=p"
 
+    user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:10.0) "\
+                 "Gecko/20100101 Firefox/10.0"
+
     SORT_MODES = {
+        'default': None,
         'relevance': None,
         'lowprice': 'Low Price',
         'highprice': 'High Price'}
 
+    REDIRECT_SORT_MODES = {
+        'lowprice': 'Low',
+        'highprice': 'High'
+    }
+
     SORTING = None
+    sort_mode = None
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
@@ -32,6 +42,7 @@ class HarrodsProductsSpider(BaseProductsSpider):
                 self.log('"%s" not in SORT_MODES')
                 sort_mode = 'default'
             self.SORTING = self.SORT_MODES[sort_mode]
+            self.sort_mode = sort_mode
 
         self.pageno = 1
         self.brandvisited = []
@@ -56,6 +67,25 @@ class HarrodsProductsSpider(BaseProductsSpider):
                 new_meta = response.meta.copy()
                 new_meta['set_sorting'] = True
                 yield Request(url=slink, meta=new_meta)
+                return
+
+        # Sorting for redirected page (ex: dresses)
+        if 'sort' not in response.url and not response.meta.get('set_sorting'):
+            if self.sort_mode:
+                sorting = self.REDIRECT_SORT_MODES[self.sort_mode]
+                slink = response.xpath(
+                    "//div[@class='clearfix']/ul[contains(@class, 'sorting')]"
+                    "/li/a[text()='{sorting}']"
+                    "/@href".format(sorting=sorting)
+                ).extract()
+                if slink:
+                    slink = slink[0]
+                    next_url = "http://www.harrods.com/" + slink
+                    new_meta = response.meta.copy()
+                    new_meta['set_sorting'] = True
+                    yield Request(url=next_url, meta=new_meta)
+                    return
+
         # Brand shop
         if '/brand/' in response.url:
             path = urlparse.urlparse(response.url).path
@@ -64,7 +94,6 @@ class HarrodsProductsSpider(BaseProductsSpider):
             if links:
                 if response.meta.get('plinks'):
                     links.extend(response.meta.get('plinks'))
-                    print "extend.links=", links
                     links = [x for x in links if x not in self.brandvisited]
                 url = links[0]
                 new_meta = response.meta.copy()
@@ -155,9 +184,14 @@ class HarrodsProductsSpider(BaseProductsSpider):
             "//h1[contains(@class,'product-title')]/span[@itemprop='brand']"
             "/span[@itemprop='name']/text()").extract(),
             conv=string.strip)
+
         price = response.xpath(
-            "//span[contains(@class,'price')]/span[@itemprop='offers']"
-            "/span[@itemprop='price']/text()").re(FLOATING_POINT_RGEX)
+            '//span[contains(@class,"price")]/span[@class="now"]/text()'
+        ).re(FLOATING_POINT_RGEX)
+        if not price:
+            price = response.xpath(
+                "//span[contains(@class,'price')]/span[@itemprop='offers']"
+                "/span[@itemprop='price']/text()").re(FLOATING_POINT_RGEX)
 
         if price:
             price = price[0].replace(',', '')
@@ -245,6 +279,10 @@ class HarrodsProductsSpider(BaseProductsSpider):
         pages = response.xpath(
             "//span[@class='pageselectortext']/a[text()='{pageno}']"
             "/@href".format(pageno=cpageno)).extract()
+        if not pages:
+            pages = response.xpath(
+                "//ul[contains(@class, 'paging')]/li/a[text()='{pageno}']"
+                "/@href".format(pageno=cpageno)).extract()
         if pages:
             return pages[0]
         else:
