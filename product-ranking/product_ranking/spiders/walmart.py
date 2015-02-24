@@ -154,7 +154,7 @@ class WalmartProductsSpider(BaseProductsSpider):
                 ERROR
             )
 
-        data = json.loads(scripts[0])
+        data = json.loads(scripts[0].replace('\r\n', ''))
         cond_set_value(product, 'title', data['productName'])
         available = data['buyingOptions']['available']
         cond_set_value(

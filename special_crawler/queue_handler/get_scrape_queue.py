@@ -1,79 +1,118 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 '''
 Gist : Scrape Queue -> Scrape -> Process Queue
 
 '''
 
-
-
-
 from sqs_connect import SQS_Queue
 import logging
+import sys
 import time
 import json
 import requests
 import threading
 import urllib
-#from models import select_site_by_id
 
+# from config import scrape_queue_name
+
+queue_names = {
+    "Development": "dev_scrape", 
+    "UnitTest": "unit_test_scrape", 
+    "IntegrationTest": "integration_test_scrape", 
+    "Demo": "demo_scrape", 
+    "Production": "production_scrape"}
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
 
-def main():
+def main( scrape_queue_name, thread_id):
+    print( "Starting thread %i" % thread_id)
     # establish the scrape queue
-    sqs_scrape = SQS_Queue('test_scrape')
-
+    sqs_scrape = SQS_Queue( scrape_queue_name)
 
     # Continually pull off the SQS Scrape Queue
     while True:
-        try:
-            # Get message from SQS and de-serialize to a json object
-            message = sqs_scrape.get()
-            message_json = json.loads(message)
+        go_to_sleep = False
+        
+        if sqs_scrape.count() == 0:
+            go_to_sleep = True
 
-            # Vars from the json object
-            url = message_json['url']
-            site = message_json['site']
-            site_id = message_json['site_id']
-            server_name = message_json['server_name']
-            product_id = message_json['product_id']
-            event = message_json['event']
+        if not go_to_sleep:
+            try:
+                # Get message from SQS
+                message = sqs_scrape.get()
+            except IndexError as e:
+                # This exception will most likely be triggered because you were grabbing off an empty queue
+                go_to_sleep = True
+            except Exception as e:
+                # Catch all other exceptions to prevent the whole thing from crashing
+                # TODO : Consider testing that sqs_scrape is still live, and restart it if need be
+                go_to_sleep = True
+                logging.warning('Error: ', e)
 
-            # Connect to the proccess queue responsible for the current batch
-            sqs_process = SQS_Queue('%s_process'%server_name)
+        if not go_to_sleep:
+            try:
+                # De-serialize to a json object
+                message_json = json.loads(message)
 
-            # Scrape the page using the scraper running on localhost
-            base = "http://localhost/get_data?url=%s"
-            output = requests.get(base%(urllib.quote(url))).text
+                # Vars from the json object
+                url = message_json['url']
+                site = message_json['site']
+                site_id = message_json['site_id']
+                server_name = message_json['server_name']
+                product_id = message_json['product_id']
+                event = message_json['event']
+                
+                print('Received: thread {:i} server {:s} url {:s}'.format( thread_id, server_name, url))
 
-            # Add the processing fields to the return object and re-serialize it
-            output = json.loads(output)
-            output['url'] = url
-            output['site_id'] = site_id
-            output['product_id'] = product_id
-            output['event'] = event
-            output = json.dumps(output)
-            print(output)
+                # Scrape the page using the scraper running on localhost
+                base = "http://localhost/get_data?url=%s"
+                output_text = requests.get(base%(urllib.quote(url))).text
 
-            # Add the scraped page to the processing queue and remove it from the scrape queue
-            sqs_process.put(output)
-            sqs_scrape.task_done()
+                # Add the processing fields to the return object and re-serialize it
+                output_json = json.loads(output_text)
+                output_json['url'] = url
+                output_json['site_id'] = site_id
+                output_json['product_id'] = product_id
+                output_json['event'] = event
+                output_message = json.dumps( output_json)
+                #print(output_message)
 
-        except IndexError as e:
-            # This exception will most likely be triggered because you were grabbing off an empty queue
-            time.sleep(1)
+                # Add the scraped page to the processing queue ...
+                sqs_process = SQS_Queue('%s_process'%server_name)
+                sqs_process.put( output_message)
+                # ... and remove it from the scrape queue
+                sqs_scrape.task_done()
+                
+                print('Sent: thread {:i} server {:s} url {:s}'.format( thread_id, server_name, url))
 
-        except Exception as e:
-            # Catch all other exceptions to prevent the whole thing from crashing
-            # TODO : Consider testing that sqs_scrape is still live, and restart it if need be
-            logging.warning('Error: ', e)
-            sqs_scrape.reset_message()
+            except Exception as e:
+                logging.warning('Error: ', e)
+                sqs_scrape.reset_message()
 
+        time.sleep( 1)
 
 if __name__ == "__main__":
-    threads = []
-    for i in range(5):
-        t = threading.Thread(target=main)
-        threads.append(t)
-        t.start()
+    if len(sys.argv) > 1:
+        environment = sys.argv[1] # e.g., UnitTest, see dictionary of queue names
+        queue_name = "no queue"
+        
+        for k in queue_names:
+            if environment == k:
+                queue_name = queue_names[k]
+
+        if queue_name != "no queue":
+            print( "using scrape queue %s" % queue_name)
+            threads = []
+            for i in range(5):
+                print( "Creating thread %i" % i)
+                t = threading.Thread( target=main, args=( queue_name, i))
+                threads.append( t)
+                t.start()
+        else:
+            print "Environment not recognized: %s" % environment
+    else:
+        print "######################################################################################################"
+        print "This script receives URLs via SQS and sends back the scraper response."
+        print "Please input correct argument for the environment.\nfor ex: python get_scrape_queue.py 'UnitTest' "
+        print "######################################################################################################"

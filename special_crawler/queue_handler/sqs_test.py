@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 '''
 For testing new versions of scraper before deployment
 
@@ -7,7 +9,10 @@ author: Quinn Stearns
 
 '''
 
-from sqs_connect import Scrape_Queue
+import sys
+import time
+import json
+from sqs_connect import SQS_Queue
 
 def runTests(scrape_queue_name, process_queue_name, url):
     print("RUNNING SQS TESTS")
@@ -27,7 +32,9 @@ def runTests(scrape_queue_name, process_queue_name, url):
 
     sqs_process = SQS_Queue(process_queue_name)
 
-    # while sqs_process.count() > 0:
+    while sqs_process.count() == 0:
+        time.sleep(1)
+
     try:
         message = sqs_process.get()
         print("RECEIVED MESSAGE")
@@ -38,17 +45,21 @@ def runTests(scrape_queue_name, process_queue_name, url):
         print('error: ', e)
         return None
 
-    return message
+    return json.loads( message)
 
 if (__name__ == '__main__'):
     if len(sys.argv) > 1:
         url = sys.argv[1] # 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/28659614/'
-        print runTests('unit_test_scrape', 'unit_test_process', url)
+        scrape_queue_name = 'unit_test_scrape'
+        if len(sys.argv) > 2:
+            scrape_queue_name = sys.argv[2]
+        process_queue_name = 'unit_test_process'
+        print json.dumps( runTests(scrape_queue_name, process_queue_name, url), sort_keys=True, indent = 2).decode('unicode_escape')
 
     else:
         print "######################################################################################################"
         print "This script sends a message to an SQS Queue for processing and prints the response.(Author: Quinn Stearns)"
-        print "Please input correct argument.\nfor ex: python sqs_test.py 'http://www.ozon.ru/context/detail/id/28659614/'"
+        print "Please input correct argument.\nfor ex: python sqs_test.py 'http://www.ozon.ru/context/detail/id/28659614/' ['unit_test_scrape']"
         print "######################################################################################################"
 
     
