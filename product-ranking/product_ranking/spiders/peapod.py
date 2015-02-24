@@ -131,13 +131,16 @@ class PeapodProductsSpider(BaseProductsSpider):
     }
 
     def __init__(self, order='default', fetch_related_products=True,
-                 *args, **kwargs):
+                 zip_code=None, *args, **kwargs):
         from scrapy.conf import settings
         settings.overrides['DEPTH_PRIORITY'] = 1
         settings.overrides[
             'SCHEDULER_DISK_QUEUE'] = 'scrapy.squeue.PickleFifoDiskQueue'
         settings.overrides[
             'SCHEDULER_MEMORY_QUEUE'] = 'scrapy.squeue.FifoMemoryQueue'
+
+        if zip_code and zip_code != 'default':
+            self.default_zip = zip_code
 
         if fetch_related_products == "False":
             self.fetch_related_products = False
