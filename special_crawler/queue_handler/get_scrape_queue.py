@@ -7,17 +7,25 @@ Gist : Scrape Queue -> Scrape -> Process Queue
 
 from sqs_connect import SQS_Queue
 import logging
+import sys
 import time
 import json
 import requests
 import threading
 import urllib
 
-from config import scrape_queue_name
+# from config import scrape_queue_name
+
+queue_names = {
+    "Development": "dev_scrape", 
+    "UnitTest": "unit_test_scrape", 
+    "IntegrationTest": "integration_test_scrape", 
+    "Demo": "demo_scrape", 
+    "Production": "production_scrape"}
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
 
-def main( thread_id):
+def main( scrape_queue_name, thread_id):
     print( "Starting thread %i" % thread_id)
     # establish the scrape queue
     sqs_scrape = SQS_Queue( scrape_queue_name)
@@ -55,7 +63,7 @@ def main( thread_id):
                 product_id = message_json['product_id']
                 event = message_json['event']
                 
-                print('Received: thread $i server %s url %s'.format( thread_id, server_name, url))
+                print('Received: thread {:i} server {:s} url {:s}'.format( thread_id, server_name, url))
 
                 # Scrape the page using the scraper running on localhost
                 base = "http://localhost/get_data?url=%s"
@@ -76,18 +84,35 @@ def main( thread_id):
                 # ... and remove it from the scrape queue
                 sqs_scrape.task_done()
                 
-                print('Sent: thread $i server %s url %s'.format( thread_id, server_name, url))
+                print('Sent: thread {:i} server {:s} url {:s}'.format( thread_id, server_name, url))
 
             except Exception as e:
                 logging.warning('Error: ', e)
                 sqs_scrape.reset_message()
 
-        sleep( 1)
+        time.sleep( 1)
 
 if __name__ == "__main__":
-    threads = []
-    for i in range(5):
-        print( "Creating thread %i" % i)
-        t = threading.Thread( target=main, args=( i))
-        threads.append( t)
-        t.start()
+    if len(sys.argv) > 1:
+        environment = sys.argv[1] # e.g., UnitTest, see dictionary of queue names
+        queue_name = "no queue"
+        
+        for k in queue_names:
+            if environment == k:
+                queue_name = queue_names[k]
+
+        if queue_name != "no queue":
+            print( "using scrape queue %s" % queue_name)
+            threads = []
+            for i in range(5):
+                print( "Creating thread %i" % i)
+                t = threading.Thread( target=main, args=( queue_name, i))
+                threads.append( t)
+                t.start()
+        else:
+            print "Environment not recognized: %s" % environment
+    else:
+        print "######################################################################################################"
+        print "This script receives URLs via SQS and sends back the scraper response."
+        print "Please input correct argument for the environment.\nfor ex: python get_scrape_queue.py 'UnitTest' "
+        print "######################################################################################################"
