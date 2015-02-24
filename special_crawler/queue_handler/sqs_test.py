@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 '''
 For testing new versions of scraper before deployment
 
@@ -43,7 +45,7 @@ def runTests(scrape_queue_name, process_queue_name, url):
         print('error: ', e)
         return None
 
-    return json.loads( message.decode('unicode_escape'))
+    return json.loads( message)
 
 if (__name__ == '__main__'):
     if len(sys.argv) > 1:
@@ -52,7 +54,7 @@ if (__name__ == '__main__'):
         if len(sys.argv) > 2:
             scrape_queue_name = sys.argv[2]
         process_queue_name = 'unit_test_process'
-        print json.dumps( runTests(scrape_queue_name, process_queue_name, url), sort_keys=True, indent = 2)
+        print json.dumps( runTests(scrape_queue_name, process_queue_name, url), sort_keys=True, indent = 2).decode('unicode_escape')
 
     else:
         print "######################################################################################################"
