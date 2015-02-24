@@ -638,7 +638,10 @@ class WalmartScraper(Scraper):
         if meta_price:
             return meta_price[0]
         else:
-            return None
+            if not self._in_stock():
+                return "out of stock - no price given"
+            else:
+                return None
 
     def _price_amount(self):
         """Extracts numercial value of product price in
