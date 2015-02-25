@@ -240,9 +240,9 @@ class TargetSpider(SearchSpider):
             # TODO: not sure if the best approach, maybe in the future add separate field "DPCI"
             # TODO: may make things worse where there is also an actual model number in the name?
             
-            DPCI_holder =  sel.xpath("//li[contains(strong/text(), 'DPCI')]/text()").re("[0-9\-]+")
+            DPCI_holder =  hxs.select("//li[contains(strong/text(), 'DPCI')]/text()").re("[0-9\-]+")
             if DPCI_holder:
-                item['product_model'] = model_number_holder[0].strip()
+                item['product_model'] = DPCI_holder[0].strip()
             # if no product model explicitly on the page, try to extract it from name
             else:
                 product_model_extracted = ProcessText.extract_model_from_name(item['product_name'])
