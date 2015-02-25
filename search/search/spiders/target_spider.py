@@ -28,10 +28,14 @@ class TargetSpider(SearchSpider):
     # def build_product_name(results_name, URL):
     #     pass
 
+    # "abstract" function that points to actual implementation of parseReults
+    # used to oscilate between parseResults_withProductPages and parseResults_withoutProductPages
+    def parseResults(self, response):
+        return self.parseResults_withProductPages(response)
 
     # create product items from results using only results pages (extracting needed info on products from there)
     # parse results page for target, extract info for all products returned by search (keep them in "meta")
-    def parseResults(self, response):
+    def parseResults_withoutProductPages(self, response):
         hxs = HtmlXPathSelector(response)
 
         if 'items' in response.meta:
@@ -221,9 +225,12 @@ class TargetSpider(SearchSpider):
             self.log("Error: No product name: " + str(response.url) + " from product: " + origin_url, level=log.INFO)
 
         else:
-            #TODO: no model number field?
-            model_number_holder = None
-            if model_number_holder:
+            # consider DPCI as model number
+            # TODO: not sure if the best approach, maybe in the future add separate field "DPCI"
+            # TODO: may make things worse where there is also an actual model number in the name?
+            
+            DPCI_holder =  sel.xpath("//li[contains(strong/text(), 'DPCI')]/text()").re("[0-9\-]+")
+            if DPCI_holder:
                 item['product_model'] = model_number_holder[0].strip()
             # if no product model explicitly on the page, try to extract it from name
             else:
