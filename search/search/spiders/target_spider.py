@@ -150,10 +150,18 @@ class TargetSpider(SearchSpider):
         else:
             product_urls_and_names = response.meta['search_results']
 
-        results = hxs.select("//div[@class='productTitle']/a")
+        results = hxs.select("//li[contains(@class,'tile standard')]")
         for result in results:
-            product_url = result.select("@href").extract()[0]
-            product_name = result.select("text()").extract()[0]
+            item = SearchItem()
+            product_title_holder = result.select(".//div[@class='tileInfo']/a[contains(@class,'productTitle')]")
+
+            # try again, xpath for second type of page structure (ex http://www.target.com/c/quilts-bedding-home/-/N-5xtuw)
+            if not product_title_holder:
+                product_title_holder = result.select(".//div[@class='tileInfo']//*[contains(@class,'productTitle')]/a")
+
+            product_url = product_title_holder.select("@href").extract()
+
+            product_name = product_title_holder.select("@title").extract()
             product_urls_and_names.add((product_url, product_name))
 
         # extract product info from product pages (send request to parse first URL in list)
