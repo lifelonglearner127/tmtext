@@ -58,13 +58,14 @@ class SearchSpider(BaseSpider):
     #                product_urls_file - file containing a list of product pages URLs
     #                output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
-    def __init__(self, product_name = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
+    def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
         output = 2, threshold = 1.0, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
 
         # call specific init for each derived class
         self.init_sub()
 
         self.product_url = product_url
+        self.products_file = products_file
         self.product_name = product_name
         self.output = int(output)
         self.product_urls_file = product_urls_file
@@ -131,6 +132,32 @@ class SearchSpider(BaseSpider):
         search_query = "+".join(ProcessText.normalize(product_name, stem=False, exclude_stopwords=False))
         return search_query
 
+    def parse_products_file(self, products_file):
+        products = []
+        with open(products_file) as f:
+            # skip first line
+            f.readline()
+
+            # TODO: make this more general
+            for line in f:
+                product_info = line.split(",")
+                product = {}
+                product['product_name'] = product_info[0]
+                product['product_price'] = product_info[-1]
+                if product['product_price'].startswith('$'):
+                    product['product_price'] = product['product_price'][1:]
+                product['product_price'] = float(product['product_price'])
+                # using DCPI as url here to be able to have it in results file
+                product['product_url'] = product_info[1]
+
+                # for target, get DCPI column as model number
+                # TODO: horrible hack
+                if self.target_site == 'target':
+                    product['product_model'] = product_info[1]
+
+                products.append(product)
+
+        return products
 
     # parse input and build list of URLs to find matches for, send them to parseURL
     def parse(self, response):
@@ -163,6 +190,110 @@ class SearchSpider(BaseSpider):
             request.meta['pending_requests'] = []
 
             yield request
+
+        # TODO: code below (in this if) is duplicated with parseURL. should deduplicate
+        if self.products_file:
+            # TODO: is this necessary?
+            if not self.target_site:
+                self.log("You can't use the product_name option without setting the target site to search on\n", level=log.ERROR)
+                raise CloseSpider("\nYou can't use the product_name option without setting the target site to search on\n")
+
+            products_info = self.parse_products_file(self.products_file)
+            for product_info in products_info:
+                product_name = product_model = product_price = None
+                if 'product_name' in product_info:
+                    product_name = product_info['product_name']
+                if 'product_price' in product_info:
+                    product_price = product_info['product_price']
+                if 'product_model' in product_info:
+                    product_model = product_info['product_model']
+                else:
+                    product_model = ProcessText.extract_model_from_name(product_name)
+                if not product_model:
+                    # for correctly logging
+                    product_model = ''
+                if 'product_url' in product_info:
+                    product_url = product_info['product_url']
+                else:
+                    product_url = ''
+
+                # if there is no product brand, get first word in name, assume it's the brand
+                product_brand_extracted = ""
+                #product_name_tokenized = ProcessText.normalize(product_name)
+                product_name_tokenized = [word.lower() for word in product_name.split(" ")]
+                #TODO: maybe extract brand as word after 'by', if 'by' is somewhere in the product name
+                if len(product_name_tokenized) > 0 and re.match("[a-z]*", product_name_tokenized[0]):
+                    product_brand_extracted = product_name_tokenized[0].lower()
+
+
+                request = None
+
+                # 1) Search by model number
+                if product_model:
+
+                    #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
+                    query1 = self.build_search_query(product_model)
+                    search_pages1 = self.build_search_pages(query1)
+                    #page1 = search_pages1[self.target_site]
+                    page1 = search_pages1[self.target_site]
+
+                    request1 = Request(page1, callback = self.parseResults)
+
+                    request1.meta['query'] = query1
+                    request1.meta['target_site'] = self.target_site
+                    
+                    request = request1
+
+
+                # 2) Search by product full name
+                query2 = self.build_search_query(product_name)
+                search_pages2 = self.build_search_pages(query2)
+                #page2 = search_pages2[self.target_site]
+                page2 = search_pages2[self.target_site]
+                request2 = Request(page2, callback = self.parseResults)
+
+                request2.meta['query'] = query2
+                request2.meta['target_site'] = self.target_site
+
+                pending_requests = []
+
+                if not request:
+                    request = request2
+                else:
+                    pending_requests.append(request2)
+
+                # 3) Search by combinations of words in product's name
+                # create queries
+
+                for words in ProcessText.words_combinations(product_name, fast=self.fast):
+                    query3 = self.build_search_query(" ".join(words))
+                    search_pages3 = self.build_search_pages(query3)
+                    #page3 = search_pages3[self.target_site]
+                    page3 = search_pages3[self.target_site]
+                    request3 = Request(page3, callback = self.parseResults)
+
+                    request3.meta['query'] = query3
+                    request3.meta['target_site'] = self.target_site
+
+
+                    pending_requests.append(request3)
+
+                request.meta['pending_requests'] = pending_requests
+                #request.meta['origin_site'] = 
+                # product page from source site
+                #TODO: clean this URL? for walmart it added something with ?enlargedsearch=True
+                request.meta['origin_url'] = product_url
+
+                request.meta['origin_name'] = product_name
+                request.meta['origin_model'] = product_model
+                if product_price:
+                    request.meta['origin_price'] = product_price
+
+                request.meta['origin_brand_extracted'] = product_brand_extracted
+
+                yield request
+
+
         
         # if we have product URLs, pass them to parseURL to extract product names (which will pass them to parseResults)
         product_urls = []
