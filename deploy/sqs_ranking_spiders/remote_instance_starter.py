@@ -10,6 +10,10 @@ import random
 import string
 import json
 import datetime
+import zipfile
+
+import boto
+from boto.s3.key import Key
 
 
 REPO_BASE_PATH = '~/repo/'
@@ -17,7 +21,10 @@ REPO_URL = 'git@bitbucket.org:dfeinleib/tmtext.git'
 TASK_QUEUE_NAME = 'TEST_sqs_ranking_spiders_tasks'  # incoming queue for tasks
 DATA_QUEUE_NAME = 'TEST_sqs_ranking_spiders_data'  # output data
 LOGS_QUEUE_NAME = 'TEST_sqs_ranking_spiders_logs'  # output logs
-JOB_OUTPUT_PATH = '~/job_output'
+JOB_OUTPUT_PATH = '~/job_output'  # local dir
+AMAZON_BUCKET_NAME = 'spyder-bucket'  # Amazon S3 bucket name
+AMAZON_ACCESS_KEY = 'AKIAIKTYYIQIZF3RWNRA'
+AMAZON_SECRET_KEY = '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'
 CWD = os.path.dirname(os.path.abspath(__file__))
 
 # TODO:
@@ -80,12 +87,57 @@ def put_file_into_sqs(fname, queue_name, metadata):
         msg = {
             'type': 'ranking_spiders',
             'filename': fname,
-            'utc_datetime': datetime.datetime.utcnow()
+            'utc_datetime': datetime.datetime.utcnow(),
             'part_num': part_num,
             'part_data': part_data
         }
         msg.update(metadata)
         write_msg_to_sqs(queue_name, msg)
+
+
+def put_file_into_s3(bucket_name, fname,
+                     amazon_public_key=AMAZON_ACCESS_KEY,
+                     amazon_secret_key=AMAZON_SECRET_KEY,
+                     compress=True):
+    # Connect to S3
+    conn = boto.connect_s3(
+        aws_access_key_id=amazon_public_key,
+        aws_secret_access_key=amazon_secret_key,
+        is_secure=False,  # uncomment if you are not using ssl
+    )
+    # Get current bucket
+    bucket = conn.get_bucket(bucket_name, validate=False)
+    # Cut out file name
+    filename = os.path.basename(fname)
+    # Generate file path for S3
+    folders = ("/" + datetime.datetime.utcnow().strftime('%Y/%m/%d')
+               + "/" + filename)
+    if compress:
+        archive_name = os.path.splitext(filename)[0] + '.zip'
+        #print 'Creating archive: ' + archive_name
+        zf = zipfile.ZipFile(archive_name, mode='w')
+        try:
+            print 'Adding ' + filename + " to archive"
+            zf.write(fname)
+        finally:
+            zf.close()
+
+        filename = archive_name
+        folders = ("/" + datetime.datetime.utcnow().strftime('%Y/%m/%d')
+                   + "/" + archive_name)
+
+    #print 'Uploading %s to Amazon S3 bucket %s' % \
+    #   (filename, bucket_name)
+    k = Key(bucket)
+    #Set path to file on S3
+    k.key = folders
+    try:
+        # Upload file to S3
+        k.set_contents_from_filename(fname)
+        # Download file from S3
+        #k.get_contents_to_filename('bar.csv')
+    except Exception:
+        print "Check file path..."
 
 
 def execute_task_from_sqs():
@@ -114,6 +166,8 @@ def execute_task_from_sqs():
     )
     put_file_into_sqs(output_path+'.jl', DATA_QUEUE_NAME, metadata)
     put_file_into_sqs(output_path+'.log', LOGS_QUEUE_NAME, metadata)
+    put_file_into_s3(output_path+'.jl')
+    put_file_into_s3(output_path+'.log')
 
 
 if __name__ == '__main__':
