@@ -7,7 +7,7 @@ import re
 
 from scrapy.log import ERROR, DEBUG
 
-from product_ranking.items import SiteProductItem
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import (BaseProductsSpider, FormatterWithDefaults,
                                      cond_set, cond_set_value)
 
@@ -22,14 +22,18 @@ def _get_next_page(current_url, offset_per_page):
         new_offset
     )
 
+is_empty = lambda x: x[0] if x else None
+
 
 class AhProductsSpider(BaseProductsSpider):
     name = 'ah_products'
     allowed_domains = ["ah.nl"]
     start_urls = []
 
-    SEARCH_URL = ("http://www.ah.nl/appie/zoeken?rq={search_term}"
+    SEARCH_URL = ("http://www.ah.nl/zoeken?rq={search_term}"
                   "&sorting={sort}")
+
+    additional_url = "http://www.ah.nl/"
 
     SORT_BY = {
         'relevance': 'relevance',
@@ -43,48 +47,13 @@ class AhProductsSpider(BaseProductsSpider):
         super(AhProductsSpider, self).__init__(formatter, *args, **kwargs)
 
     def _scrape_product_links(self, response):
-        products = response.xpath('//div[contains(@class, "canvas_card")]'
-                                  '[contains(@class, "product")]')
-        if not products:
-            self.log("Found no product links.", ERROR)
 
-        for product in products:
-            item = SiteProductItem()
-            cond_set(item, 'title',
-                     product.css('div.detail h2::text').extract())
-            if item.get('title'):
-                item['title'] = item['title'].strip()
-            cond_set(
-                item, 'image_url',
-                product.xpath(
-                    './/div[contains(@class, "image")]'
-                    '//img[not(contains(@src, "no-product-image"))]/@src'
-                ).extract()
-            )
-            _base_price = product.xpath('.//*[contains(@class, "price")]/ins')
-            _price_main = _base_price.xpath('text()').extract()[0]
-            _price_extra = _base_price.xpath('./span/text()').extract()
-            item['price'] = _price_main
-            if len(_price_extra):
-                item['price'] += _price_extra[0]
+        links = response.xpath(
+            './/div[@class="detail"]/a[contains(@href, "/product/")]/@href'
+        ).extract() 
 
-            if item.get('price') and not '€' in item.get('price'):
-                item['price'] = item['price'].strip() + ' €'
-            item['locale'] = 'nl-NL'
-
-            _id = product.xpath('.//div[@class="detail"]/a[contains'
-                                '(@href, "/product/")]/@href').extract()
-            if not _id:
-                self.log('Product details URL has not been found', ERROR)
-                continue
-            _id = _id[0].replace('/appie/producten/product/', '')
-            if not '/' in _id:
-                self.log('Invalid details URL: ' + _id, ERROR)
-                continue
-            _id = _id.split('/', 1)[0].strip()
-            prod_url = ('http://www.ah.nl/appie/data_/producten/product/'
-                        '%s/johma-kipsate-salade?pageType=PRODUCTS' % _id)
-            yield prod_url, item
+        for link in links:            
+            yield self.additional_url + link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
         # this website uses offsets instead of pagination, so we simple
@@ -121,11 +90,31 @@ class AhProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
+
+        title = response.xpath('//h1[@class="h1"]/text()[normalize-space()]').extract()
+        cond_set(product, 'title', title)
+        if product.get('title'):
+            product['title'] = product['title']
+
         cond_set(
             product, 'image_url',
             response.xpath('//div[@class="product-detail__image"]'
                            '/a/img/@src').extract()
         )
+
+        price = response.xpath(
+            '//p/meta[@itemprop="price"]/@content'
+        ).extract()
+        priceCurrency = response.xpath(
+            '//p/meta[@itemprop="priceCurrency"]/@content'
+        ).extract()
+
+        if price:
+            product["price"] = Price(
+                priceCurrency=is_empty(priceCurrency),
+                price=price[0]
+            )
+
         if not product.get('image_url'):
             cond_set(
                 product, 'image_url',
@@ -136,9 +125,10 @@ class AhProductsSpider(BaseProductsSpider):
             product, 'brand',
             response.xpath('.//meta[@itemprop="brand"]/@content').extract()
         )
-        cond_set(product, 'description',
-                 response.xpath(
-                     './/div[contains(@class, "product-detail__content")]'
-                     '/div/p//text()'
-                 ).extract())
+
+        description = response.xpath(
+            '//div[contains(@class, "row product-detail__content product-detail__border-row")]'
+        ).extract()
+        if description:
+            cond_set(product, 'description', (description[0].replace("\t", "").replace("\n", ""),))
         return product
