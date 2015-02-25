@@ -200,12 +200,12 @@ class GoogleProductsSpider(BaseProductsSpider):
                         or source_dict.has_key(seller):
                     occurrences = 0
                     for key in source_dict_old:
-                        if key == seller or key.startswith("%s - " % seller):
+                        if key == seller or key.startswith("%s::" % seller):
                             occurrences += 1
                     for key in source_dict:
-                        if key == seller or key.startswith("%s - " % seller):
+                        if key == seller or key.startswith("%s::" % seller):
                             occurrences += 1
-                    seller = "%s - %s" % (seller, occurrences)
+                    seller = "%s::%s" % (seller, occurrences)
                 source_dict[seller] = {
                     'price': price,
                     'currency': priceCurrency
@@ -323,6 +323,9 @@ class GoogleProductsSpider(BaseProductsSpider):
 
             redirect = url
             url = urlparse.urljoin(response.url, url)
+
+            if len(source_site) > 0:
+                source_site = '{"%s":{}}' % source_site
 
             yield redirect, SiteProductItem(
                 url=url,
