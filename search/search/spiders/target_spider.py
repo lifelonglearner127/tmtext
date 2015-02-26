@@ -28,10 +28,14 @@ class TargetSpider(SearchSpider):
     # def build_product_name(results_name, URL):
     #     pass
 
+    # "abstract" function that points to actual implementation of parseReults
+    # used to oscilate between parseResults_withProductPages and parseResults_withoutProductPages
+    def parseResults(self, response):
+        return self.parseResults_withProductPages(response)
 
     # create product items from results using only results pages (extracting needed info on products from there)
     # parse results page for target, extract info for all products returned by search (keep them in "meta")
-    def parseResults(self, response):
+    def parseResults_withoutProductPages(self, response):
         hxs = HtmlXPathSelector(response)
 
         if 'items' in response.meta:
@@ -146,11 +150,22 @@ class TargetSpider(SearchSpider):
         else:
             product_urls_and_names = response.meta['search_results']
 
-        results = hxs.select("//div[@class='productTitle']/a")
+        results = hxs.select("//li[contains(@class,'tile standard')]")
         for result in results:
-            product_url = result.select("@href").extract()[0]
-            product_name = result.select("text()").extract()[0]
-            product_urls_and_names.add((product_url, product_name))
+            item = SearchItem()
+            product_title_holder = result.select(".//div[@class='tileInfo']/a[contains(@class,'productTitle')]")
+
+            # try again, xpath for second type of page structure (ex http://www.target.com/c/quilts-bedding-home/-/N-5xtuw)
+            if not product_title_holder:
+                product_title_holder = result.select(".//div[@class='tileInfo']//*[contains(@class,'productTitle')]/a")
+
+            try:
+                product_url = product_title_holder.select("@href").extract()[0]
+
+                product_name = product_title_holder.select("@title").extract()[0]
+                product_urls_and_names.add((product_url, product_name))
+            except Exception:
+                pass
 
         # extract product info from product pages (send request to parse first URL in list)
         # add as meta all that was received as meta, will pass it on to reduceResults function in the end
@@ -221,10 +236,13 @@ class TargetSpider(SearchSpider):
             self.log("Error: No product name: " + str(response.url) + " from product: " + origin_url, level=log.INFO)
 
         else:
-            #TODO: no model number field?
-            model_number_holder = None
-            if model_number_holder:
-                item['product_model'] = model_number_holder[0].strip()
+            # consider DPCI as model number
+            # TODO: not sure if the best approach, maybe in the future add separate field "DPCI"
+            # TODO: may make things worse where there is also an actual model number in the name?
+            
+            DPCI_holder =  hxs.select("//li[contains(strong/text(), 'DPCI')]/text()").re("[0-9\-]+")
+            if DPCI_holder:
+                item['product_model'] = DPCI_holder[0].strip()
             # if no product model explicitly on the page, try to extract it from name
             else:
                 product_model_extracted = ProcessText.extract_model_from_name(item['product_name'])
