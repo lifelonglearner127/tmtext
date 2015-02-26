@@ -671,7 +671,6 @@ class ServiceScraperTest(unittest.TestCase):
                       diff_engine.occurrence_type_change, diff_engine.occurrence_value_change, today.isoformat(),
                       sample_json_str, test_json_str))
 
-
             self.cur.execute(sql)
             self.con.commit()
 
