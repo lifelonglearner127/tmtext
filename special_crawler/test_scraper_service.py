@@ -567,6 +567,7 @@ class ServiceScraperTest(unittest.TestCase):
         try:
             self.con = None
 #            self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
+
             self.con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
             self.cur = self.con.cursor(cursor_factory=psycopg2.extras.DictCursor)
             self.cur.execute("select url_list from console_massurlimport")
