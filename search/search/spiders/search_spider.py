@@ -56,7 +56,9 @@ class SearchSpider(BaseSpider):
     #                product_name - the product's name, for searching by product name
     #                product_url - the product's page url in the source site, for searching by product URL
     #                product_urls_file - file containing a list of product pages URLs
-    #                output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
+    #                output - integer(1/2/3/4) option indicating output type (either result URL (1), or result URL and source product URL (2))
+    #                         3 - same as 2 but with extra field representing confidence score
+    #                         4 - same as 3 but with origin products represented by UPC instead of URL
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
     def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
         output = 2, threshold = 1.0, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
@@ -148,8 +150,6 @@ class SearchSpider(BaseSpider):
                 if product['product_price'].startswith('$'):
                     product['product_price'] = product['product_price'][1:]
                 product['product_price'] = float(product['product_price'])
-                # using DCPI as url here to be able to have it in results file
-                product['product_url'] = product_info[1]
 
                 # for target, get DCPI column as model number
                 # TODO: horrible hack
