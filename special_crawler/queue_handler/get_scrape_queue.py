@@ -27,6 +27,7 @@ queue_names = {
     "Development": "dev_scrape", 
     "UnitTest": "unit_test_scrape", 
     "IntegrationTest": "integration_test_scrape", 
+    "RegressionTest": "test_scrape",
     "Demo": "demo_scrape", 
     "Production": "production_scrape"}
 
