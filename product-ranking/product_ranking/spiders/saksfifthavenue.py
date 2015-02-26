@@ -17,7 +17,7 @@ from scrapy.log import DEBUG
 
 
 class SaksfifthavenueProductsSpider(BaseProductsSpider):
-    # TODO: add brand-shop,sorting
+    # TODO: add brand-shop
     name = 'saksfifthavenue_products'
     allowed_domains = [
         "saksfifthavenue.com", "recs.richrelevance.com",
@@ -28,19 +28,44 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
         "?bmForm=endeca_search_form_one"
         "&bmIsForm=true&bmText=SearchString&SearchString={search_term}"
         "&submit-search=&bmSingle=N_Dim&N_Dim=0&bmHidden=Ntk&Ntk=Entire+Site")
+    SORTING = None
+    SORT_MODES = {
+        'default': None,
+        'new': 'new-arrivals',
+        'best': 'best-sellers',
+        'toprated': 'top-rated',
+        'lowtohigh': 'low-to-high',
+        'atoz': 'a-to-z',
+        'category': None,
+        'sale': 'sale-first',
+        }
 
     def __init__(self, sort_mode=None, *args, **kwargs):
-        # if sort_mode:
-        #     if sort_mode not in self.SORT_MODES:
-        #         self.log('"%s" not in SORT_MODES')
-        #         sort_mode = 'default'
-        #     self.SEARCH_URL += self.SORT_MODES[sort_mode]
+        if sort_mode:
+            if sort_mode not in self.SORT_MODES:
+                self.log('"%s" not in SORT_MODES')
+                sort_mode = 'default'
+            self.SORTING = self.SORT_MODES[sort_mode]
 
         super(SaksfifthavenueProductsSpider, self).__init__(
             None,
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
+
+    def parse(self, response):
+        if self.SORTING and not response.meta.get('set_sorting'):
+            sortmenu = response.xpath(
+                "//span[@id='sort-menu']/ul[@id='sort-by']"
+                "/li[@id='{sorting}']/a/@href".format(sorting=self.SORTING)).extract()
+            if sortmenu:
+                next_url = "http://www.saksfifthavenue.com" + sortmenu[0]
+                new_meta = response.meta.copy()
+                new_meta['set_sorting'] = True
+                yield Request(url=next_url, meta=new_meta)
+                return
+        for r in super(SaksfifthavenueProductsSpider, self).parse(response):
+            yield r
 
     def parse_product(self, response):
         with open("/tmp/saks-item.html", "w") as f:
@@ -267,12 +292,13 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
             "//div[@id='product-container']"
             "/div[contains(@id,'product-')]"
             "/div[@class='product-text']/a/@href").extract()
-        print "LINKS=", len(links), links[0], "..."
+        # print "LINKS=", len(links), links[0:3], "..."
+        # exit(2)
         if not links:
             self.log("Found no product links.", DEBUG)
         for link in links:
             yield link, SiteProductItem()
-            # yield None, SiteProductItem(url=link)
+            #yield None, SiteProductItem(url=link)
 
     def _scrape_next_results_page_link(self, response):
         def full_url(url):
