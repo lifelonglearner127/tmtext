@@ -29,7 +29,7 @@ class SoapScraper(Scraper):
     reviews_tree = None
     max_score = None
     min_score = None
-    review_count = 0
+    review_count = None
     average_review = None
     reviews = None
     feature_count = None
@@ -50,7 +50,8 @@ class SoapScraper(Scraper):
         '''
 
         if len(self.tree_html.xpath("//div[@class='productDetailPic']//a//img")) < 1:
-            return True
+            if len(self.tree_html.xpath("//div[@class='productDetailPic']//div[@id='pdpTop']")) < 1:
+                return True
         return False
 
     ##########################################
@@ -259,7 +260,8 @@ class SoapScraper(Scraper):
     ##########################################
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
-        if not self.max_score or not self.min_score:
+        # if not self.max_score or not self.min_score:
+        if self.review_count is None:
             # SOAP.COM REVIEWS
             try:
                 soap_average_review = float(self.tree_html.xpath("//span[contains(@class,'pr-rating pr-rounded average')]//text()")[0].strip())
@@ -277,6 +279,7 @@ class SoapScraper(Scraper):
             m = re.findall(r"var pr_page_id = '(.*?)'", "\n".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
             product_ids = m
             product_ids = list(set(product_ids))
+            redirect_tree = None
             for product_id in product_ids:
                 if len(product_id) == 4:
                     product_id = "00%s" % product_id
@@ -295,6 +298,10 @@ class SoapScraper(Scraper):
                     break
                 except:
                     continue
+            if redirect_tree is None:
+                self.review_count = soap_review_count
+                self.average_review = soap_average_review
+                return
             review_count = redirect_tree.xpath("//span[@class='pr-review-num']//text()")[0].strip()
             m = re.findall(r"\d+", review_count)
             if len(m) > 0:
@@ -323,8 +330,7 @@ class SoapScraper(Scraper):
                     break
             self.max_score = max(rv_scores)
             self.min_score = min(rv_scores)
-
-            # SOAP.COM REVIEWS
+        return
 
     def _average_review(self):
         self._load_reviews()
@@ -404,7 +410,8 @@ class SoapScraper(Scraper):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 0:
             return None
-
+        if len(self.tree_html.xpath("//div[contains(@class,'productInfoRight')]//td[@class='outOfStockQty']//span[@class='outOfStock']")) < 1:
+            return 0
         rows = self.tree_html.xpath("//input[@class='skuHidden']/@isoutofstock")
         if len(rows) == 1 and 'Y' in rows:
             return 1

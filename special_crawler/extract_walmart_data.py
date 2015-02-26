@@ -1683,6 +1683,79 @@ class WalmartScraper(Scraper):
         # we could not decide
         return None
 
+
+    def  _ingredients(self):
+        # list of ingredients - list of strings
+        ingr=self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+        if len(ingr) > 0:
+            res = []
+            w = ''
+            br = 0
+            for s in ingr[0]:
+                if s == "," and br == 0:
+                    if w != "":
+                        res.append(w.strip())
+                    w = ""
+                elif s == "[" or s == "(":
+                    w += s
+                    br = 1
+                elif s == "]" or s == ")":
+                    w += s
+                    br = 0
+                else:
+                    w += s
+            if w != '':
+                res.append(w.strip())
+            self.ing_count = len(res)
+            return res
+        self.ing_count = None
+        return None
+
+
+    def  _ingredient_count(self):
+        # number of ingredients - integer
+        return  self.ing_count
+
+    def  _nutrition_facts(self):
+        # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
+        # containing nutrition facts
+        res=[]
+        nutr=self.tree_html.xpath("//div[@class='nutrition-section']//div[@class='serving']//div")
+        for i, n in enumerate(nutr):
+            nt = n.text_content()
+            if i == 0:
+                res.append([nt[0:13].strip(),nt[13:].strip()])
+            if i == 1:
+                res.append([nt[0:22].strip(),nt[22:].strip()])
+        nutr=self.tree_html.xpath("//div[@class='nutrition-section']//table[contains(@class,'table')]//tr")
+        _digits = re.compile('\d')
+        for i, n in enumerate(nutr):
+            pr = n.xpath(".//*[self::th or self::td]//text()")
+            if len(pr)>0 and pr[0].find("B6") < 0:
+                m = _digits.search(pr[0])
+                if m != None and m.start() > 1:
+                    p0 = pr[0][0:m.start()-1]
+                    p1 = pr[0][m.start()-1:]
+                    pr[0] = p1.strip()
+                    pr.insert(0,p0.strip())
+            if len(pr)==2 :
+                res.append(pr)
+            elif len(pr)==3 and pr[2].strip()!="":
+                res.append([pr[0].strip(),{"absolute":pr[1].strip(),"relative":pr[2].strip()}])
+            elif len(pr) == 3 and pr[2].strip() == "":
+                res.append([pr[0].strip(),pr[1].strip()])
+        if len(res) > 0:
+            self.nutr_count = len(res)
+            return res
+        self.nutr_count = None
+        return None
+
+
+    def  _nutrition_fact_count(self):
+        # number of nutrition facts (of elements in the nutrition_facts list) - integer
+        return self.nutr_count
+
+
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         """Cleans a piece of text of html entities
@@ -1740,6 +1813,10 @@ class WalmartScraper(Scraper):
         "description" : _short_description_wrapper, \
         # TODO: check if descriptions work right
         "long_description" : _long_description_wrapper, \
+        "ingredients": _ingredients, \
+        "ingredient_count": _ingredient_count, \
+         "nutrition_facts": _nutrition_facts, \
+         "nutrition_fact_count": _nutrition_fact_count, \
         "price" : _price_from_tree, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
