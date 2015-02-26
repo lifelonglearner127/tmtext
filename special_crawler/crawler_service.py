@@ -134,10 +134,6 @@ def check_input(url, is_valid_url, invalid_url_message=""):
 
 # infer domain from input URL
 def extract_domain(url):
-    if '.peapod.com' in url:
-        # for peapod scraper
-        # https://www.peapod.com/itemDetailView.jhtml?productId=191177&NUM=1424733320503
-        return 'peapod'
     if 'chicago.doortodoororganics.com' in url:
         # for chicago scraper
         # https://chicago.doortodoororganics.com/shop/products/rudis-white-hamburger-buns

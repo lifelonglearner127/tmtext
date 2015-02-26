@@ -175,9 +175,11 @@ class PeapodScraper(Scraper):
         line_txts = []
         header_txts = ['<b>Warnings:</b>', '<b>Country of Origin:</b>', '<br>Manufacturer:</b>',
                        '<b>Address:</b>', '<b>Phone:</b>', '>View Substitute Product<',
-                       '>View Disclaimer Information<']
-        for row in rows:
-            line_txt = html.tostring(row)
+                       '>View Disclaimer Information<', '<b>Ingredients:</b>']
+        rows_begin = self.tree_html.xpath("//div[@id='productDetails-details']/text()")
+        rows_begin = [self._clean_text(r) for r in rows_begin if len(self._clean_text(r)) > 0]
+        for row in rows_begin:
+            line_txt = row
             flag = False
             for header_txt in header_txts:
                 if header_txt in line_txt:
@@ -188,6 +190,20 @@ class PeapodScraper(Scraper):
             if len(line_txt) > 0:
                 line_txts.append(line_txt)
                 break
+
+        if len(line_txts) < 1:
+            for row in rows:
+                line_txt = html.tostring(row)
+                flag = False
+                for header_txt in header_txts:
+                    if header_txt in line_txt:
+                        flag = True
+                        break
+                if flag:
+                    break
+                if len(line_txt) > 0:
+                    line_txts.append(line_txt)
+                    break
         if len(line_txts) < 1:
             return None
         description = "".join(line_txts)
@@ -206,6 +222,22 @@ class PeapodScraper(Scraper):
                        '<b>Address:</b>', '<b>Phone:</b>', '>View Substitute Product<',
                        '>View Disclaimer Information<']
         idx = 0
+        rows_begin = self.tree_html.xpath("//div[@id='productDetails-details']/text()")
+        rows_begin = [self._clean_text(r) for r in rows_begin if len(self._clean_text(r)) > 0]
+        for row in rows_begin:
+            line_txt = row
+            flag = False
+            for header_txt in header_txts:
+                if header_txt in line_txt:
+                    flag = True
+                    break
+            if flag:
+                break
+            if len(line_txt) > 0:
+                if idx > 0:
+                    line_txts.append(line_txt)
+                idx += 1
+
         for row in rows:
             line_txt = html.tostring(row)
             flag = False
@@ -375,6 +407,9 @@ class PeapodScraper(Scraper):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         rows = self.tree_html.xpath("//span[contains(@class,'outOfStock')]//text()")
         if "out of stock" in rows:
+            return 1
+        rows = self.tree_html.xpath("//div[@class='buy_button']")
+        if len(rows) < 1:
             return 1
         return 0
 
