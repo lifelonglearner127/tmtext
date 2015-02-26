@@ -129,7 +129,7 @@ class FreshAmazonScraper(Scraper):
 
 
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//div[contains(@id,'productDescription')]//p//text()[normalize-space()]")).strip()
+        short_description = " ".join(self.tree_html.xpath("//div[contains(@id,'productDescription')]//*[self::p or self::div]/text()[normalize-space()]")).strip()
         if short_description is not None and len(short_description)>0:
             return short_description.replace("\n"," ")
         return self._long_description_helper()
@@ -455,6 +455,75 @@ class FreshAmazonScraper(Scraper):
         """
         return None
 
+    def  _ingredients(self):
+        # list of ingredients - list of strings
+        ingr = self.tree_html.xpath("//h2[contains(text(),'Ingredients')]/following-sibling::p//text()")
+        if len(ingr) > 0:
+            res = []
+            w = ''
+            br = 0
+            for s in ingr[0]:
+                if s == "," and br == 0:
+                    if w != "":
+                        res.append(w.strip())
+                    w = ""
+                elif s == "[" or s == "(":
+                    w += s
+                    br = 1
+                elif s == "]" or s == ")":
+                    w += s
+                    br = 0
+                else:
+                    w += s
+            if w != '':
+                res.append(w.strip())
+            self.ing_count = len(res)
+            return res
+        self.ing_count = None
+        return None
+
+
+    def  _ingredient_count(self):
+        # number of ingredients - integer
+        return  self.ing_count
+
+    def  _nutrition_facts(self):
+        # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
+        # containing nutrition facts
+        res=[]
+        nutr=self.tree_html.xpath("//div[@class='nutrition-section']//div[@class='serving']//div")
+        for i, n in enumerate(nutr):
+            nt = n.text_content()
+            if i == 0:
+                res.append([nt[0:13].strip(),nt[13:].strip()])
+            if i == 1:
+                res.append([nt[0:22].strip(),nt[22:].strip()])
+        nutr=self.tree_html.xpath("//table[@class='nfTable']//tr")
+        for i, n in enumerate(nutr):
+            pr = n.xpath(".//*[self::th or self::td]//text()")
+            if len(pr)>0 :
+                if len(pr) == 1 and pr[0].find('Serving')>=0 :
+                    pr = pr[0].split(":")
+                    if len(pr)>1 :
+                        res.append([pr[0].strip(),pr[1].strip()])
+                elif len(pr) == 2 :
+                    res.append([pr[0].strip(),pr[1].strip()])
+                elif len(pr) == 3 and pr[2].strip() != "":
+                    res.append([pr[0].strip(),{"absolute":pr[1].strip(),"relative":pr[2].strip()}])
+                elif len(pr) == 3 and pr[2].strip() == "":
+                    res.append([pr[0].strip(),pr[1].strip()])
+        if len(res) > 0:
+            self.nutr_count = len(res)
+            return res
+        self.nutr_count = None
+        return None
+
+
+    def  _nutrition_fact_count(self):
+        # number of nutrition facts (of elements in the nutrition_facts list) - integer
+        return self.nutr_count
+
+
     ##########################################
     ################ HELPER FUNCTIONS
     ##########################################
@@ -490,7 +559,10 @@ class FreshAmazonScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-
+        "ingredients": _ingredients, \
+        "ingredient_count": _ingredient_count, \
+         "nutrition_facts": _nutrition_facts, \
+         "nutrition_fact_count": _nutrition_fact_count, \
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
