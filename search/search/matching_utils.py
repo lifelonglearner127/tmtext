@@ -12,6 +12,9 @@ import math
 # process text in product names, compute similarity between products
 class ProcessText():
     # weight values
+    # value to outweight any theoretical possible threshold. If UPC matches, products should match.
+    # TODO: finetune
+    UPC_MATCH_WEIGHT = 20
     MODEL_MATCH_WEIGHT = 9
     ALT_MODEL_MATCH_WEIGHT = 7
     BRAND_MATCH_WEIGHT = 5
@@ -149,6 +152,11 @@ class ProcessText():
             else:
                 product2_model = None
 
+            if 'product_upc' in product2:
+                product2_upc = product2['product_upc']
+            else:
+                product2_upc = None
+
             #TODO: currently only considering brand for target products
             # and only available for Amazon
             # normalize brand name
@@ -198,6 +206,9 @@ class ProcessText():
             # check if product brands match
             (brand_matched, words1_copy, words2_copy) = ProcessText.brands_match(words1_copy, words2_copy, product2_brand)
 
+            # check if product UPCs match
+            upc_matched = ProcessText.upcs_match(product_upc, product2_upc)
+
             # check if product names match (a similarity score)
             # use copies of brands names with model number replaced with a placeholder
             score = ProcessText.similar_names(words1_copy, words2_copy)
@@ -208,6 +219,10 @@ class ProcessText():
             # add score for matched brand
             if brand_matched:
                 score += ProcessText.BRAND_MATCH_WEIGHT
+
+            # add score for matched UPC
+            if upc_matched:
+                score += ProcessText.UPC_MATCH_WEIGHT
 
             # add model matching score
             if model_matched:
@@ -498,17 +513,28 @@ class ProcessText():
             if model_intersection:
                 
                 model_matched = 1
-                log.msg("MATCHED: " + str(models1) + str(models2) + "\n", level=log.INFO)
+                log.msg("MODEL MATCHED: " + str(models1) + str(models2) + "\n", level=log.INFO)
             # if alternate models match
             else:
 
                 model_matched = 2
-                log.msg("ALT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.INFO)
+                log.msg("ALT MODEL MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.INFO)
         # if models not matched
         else:
-            log.msg("NOT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.INFO)
+            log.msg("MODEL NOT MATCHED: " + str(alt_models1) + str(alt_models2) + "\n", level=log.INFO)
         
         return (model_matched, name1_copy, name2_copy)
+
+    @staticmethod
+    # check if 2 UPCs match
+    # can be enirched in the future with more sophisticated checks
+    def upcs_match(upc1, upc2):
+        if upc1 == upc2:
+            log.msg("UPC MATCHED: " + str(upc1) + " " + str(upc2) + "\n", level=log.INFO)
+            return True
+        else:
+            log.msg("UPC NOT MATCHED: " + str(upc1) + " " + str(upc2) + "\n", level=log.INFO)
+            return False
 
     # check if word is a likely candidate to represent a model number
     @staticmethod
