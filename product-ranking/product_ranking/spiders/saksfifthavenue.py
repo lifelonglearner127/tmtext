@@ -37,8 +37,7 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
         'lowtohigh': 'low-to-high',
         'atoz': 'a-to-z',
         'category': None,
-        'sale': 'sale-first',
-        }
+        'sale': 'sale-first'}
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
@@ -54,6 +53,23 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
             **kwargs)
 
     def parse(self, response):
+        def full_url(url):
+            return urlparse.urljoin(response.url, url)
+
+        if "main/WorldOfDesigner.jsp" in response.url and not response.meta.get('plinks'):
+            plinks = response.xpath(
+                "//ul[contains(@class,'left-nav-links-container')][2]"
+                "/li[contains(@class,'js-left-nav-links')]"
+                "/ul"
+                "/li/a/@href").extract()
+            if plinks:
+                url = plinks[0]
+                response.meta['plinks'] = plinks[1:]
+                self.linkno = 0
+                self.links = []
+                yield Request(full_url(url), meta=response.meta.copy(), callback=self._parse_links)
+                return
+
         if self.SORTING and not response.meta.get('set_sorting'):
             sortmenu = response.xpath(
                 "//span[@id='sort-menu']/ul[@id='sort-by']"
@@ -66,6 +82,32 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
                 return
         for r in super(SaksfifthavenueProductsSpider, self).parse(response):
             yield r
+
+    def _parse_links(self, response):
+        def full_url(url):
+            return urlparse.urljoin(response.url, url)
+        links = response.xpath(
+            "//div[@id='product-container']"
+            "/div[contains(@id,'product-')]"
+            "/div[@class='product-text']/a/@href").extract()
+        self.linkno += len(links)
+        self.links.extend(links)
+        next_page_links = response.xpath(
+            "//ol[@class='pa-page-number']"
+            "/li/a/img[@alt='next']"
+            "/../@href").extract()
+        if next_page_links:
+            url = next_page_links[0]
+            return Request(full_url(url), meta=response.meta.copy(), callback=self._parse_links)
+        plinks = response.meta.get('plinks')
+        if plinks:
+            url = plinks[0]
+            plinks = plinks[1:]
+            response.meta['plinks'] = plinks
+            return Request(full_url(url), meta=response.meta.copy(), callback=self._parse_links)
+        else:
+            l = list(super(SaksfifthavenueProductsSpider, self).parse(response))
+            return l
 
     def parse_product(self, response):
         with open("/tmp/saks-item.html", "w") as f:
@@ -264,17 +306,17 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
 
     def check_alert(self, response):
         alert = response.xpath("//span[@id='no-results-msg']").extract()
-        print "ALERT=", alert
         return alert
 
     def _scrape_total_matches(self, response):
+        if 'plinks' in response.meta:
+            return self.linkno
         if self.check_alert(response):
             return
         total = response.xpath(
             "//div[@class='pa-gination']"
             "/span[contains(@class,'totalRecords')]"
             "/text()").extract()
-        # print "TOTAL=", total
         if total:
             total = total[0].replace(",", "")
             try:
@@ -284,21 +326,23 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
         return 0
 
     def _scrape_product_links(self, response):
-        with open("/tmp/saks-links.html", "w") as f:
-            f.write(response.body_as_unicode().encode('utf-8'))
+        if 'plinks' in response.meta:
+            links = self.links
+            for link in links:
+                # DEBUG  yield None, SiteProductItem(url=link)
+                yield link, SiteProductItem()
+            return
+
         if self.check_alert(response):
             return
         links = response.xpath(
             "//div[@id='product-container']"
             "/div[contains(@id,'product-')]"
             "/div[@class='product-text']/a/@href").extract()
-        # print "LINKS=", len(links), links[0:3], "..."
-        # exit(2)
         if not links:
             self.log("Found no product links.", DEBUG)
         for link in links:
             yield link, SiteProductItem()
-            #yield None, SiteProductItem(url=link)
 
     def _scrape_next_results_page_link(self, response):
         def full_url(url):
@@ -309,7 +353,6 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
             "//ol[@class='pa-page-number']"
             "/li/a/img[@alt='next']"
             "/../@href").extract()
-        # print "NEXT=", len(next_page_links), next_page_links
         if next_page_links:
             return full_url(next_page_links[0])
         else:
