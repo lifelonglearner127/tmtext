@@ -137,7 +137,7 @@ class ProcessText():
     #            param - threshold for accepting a product name as similar or not (float between 0-1)
     
     @staticmethod
-    def similar(product_name, product_model, product_price, products2, param):
+    def similar(product_name, product_model, product_price, product_upc, products2, param):
         result = None
         products_found = []
         for product2 in products2:
