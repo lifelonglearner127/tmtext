@@ -244,6 +244,10 @@ class TargetSpider(SearchSpider):
             # TODO: may make things worse where there is also an actual model number in the name?
             
             DPCI_holder =  hxs.select("//li[contains(strong/text(), 'DPCI')]/text()").re("[0-9\-]+")
+            # try hidden tag
+            if not DPCI_holder:
+                DPCI_holder = hxs.select("//input[@id='dpciHidden']/@value").extract()
+
             if DPCI_holder:
                 item['product_upc'] = DPCI_holder[0].strip()
             # if no product model explicitly on the page, try to extract it from name
