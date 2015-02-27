@@ -236,7 +236,7 @@ class Scraper():
                 del self.ALL_DATA_TYPES[key]
 
         #load phantom driver
-        self.driver = webdriver.PhantomJS()
+        self.driver = webdriver.PhantomJS(service_log_path='/var/log/flask-uwsgi/ghostdriver.log')
         self.driver.set_window_size(1120, 550)
 
     def _pre_set_fields(self):
