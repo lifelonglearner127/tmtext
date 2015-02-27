@@ -614,7 +614,7 @@ def test_scrapy():
     run(cmd % random.choice(search_terms))
 
 
-def fix_numpy():
+def fix_captchas():
     """ This is a temporary fix and should be removed\changed in the future
         Written with dirty hacks such as copying local project files directly
          into virtualenv. Please get away from this nightmare-ish Scrapyd
