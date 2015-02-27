@@ -232,6 +232,7 @@ class SearchSpider(BaseSpider):
 
 
                 request = None
+                pending_requests = []
 
                 # 1) Search by UPC
                 if product_upc:
@@ -281,8 +282,6 @@ class SearchSpider(BaseSpider):
 
                 request2.meta['query'] = query2
                 request2.meta['target_site'] = self.target_site
-
-                pending_requests = []
 
                 if not request:
                     request = request2
