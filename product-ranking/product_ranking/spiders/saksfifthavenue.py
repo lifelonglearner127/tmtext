@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-#
+
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
@@ -17,7 +19,6 @@ from scrapy.log import DEBUG
 
 
 class SaksfifthavenueProductsSpider(BaseProductsSpider):
-    # TODO: add brand-shop
     name = 'saksfifthavenue_products'
     allowed_domains = [
         "saksfifthavenue.com", "recs.richrelevance.com",
@@ -67,13 +68,16 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
                 response.meta['plinks'] = plinks[1:]
                 self.linkno = 0
                 self.links = []
-                yield Request(full_url(url), meta=response.meta.copy(), callback=self._parse_links)
+                yield Request(
+                    full_url(url), meta=response.meta.copy(),
+                    callback=self._parse_links)
                 return
 
         if self.SORTING and not response.meta.get('set_sorting'):
             sortmenu = response.xpath(
                 "//span[@id='sort-menu']/ul[@id='sort-by']"
-                "/li[@id='{sorting}']/a/@href".format(sorting=self.SORTING)).extract()
+                "/li[@id='{sorting}']"
+                "/a/@href".format(sorting=self.SORTING)).extract()
             if sortmenu:
                 next_url = "http://www.saksfifthavenue.com" + sortmenu[0]
                 new_meta = response.meta.copy()
@@ -90,42 +94,59 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
             "//div[@id='product-container']"
             "/div[contains(@id,'product-')]"
             "/div[@class='product-text']/a/@href").extract()
+        # print "REMAINING=", response.meta.get('remaining')
+        remaining = response.meta.get('remaining')
         self.linkno += len(links)
         self.links.extend(links)
+
+        if remaining < self.linkno:
+            l = list(super(SaksfifthavenueProductsSpider, self).parse(
+                response))
+            return l
+
         next_page_links = response.xpath(
             "//ol[@class='pa-page-number']"
             "/li/a/img[@alt='next']"
             "/../@href").extract()
         if next_page_links:
             url = next_page_links[0]
-            return Request(full_url(url), meta=response.meta.copy(), callback=self._parse_links)
+            return Request(
+                full_url(url), meta=response.meta.copy(),
+                callback=self._parse_links)
         plinks = response.meta.get('plinks')
         if plinks:
             url = plinks[0]
             plinks = plinks[1:]
             response.meta['plinks'] = plinks
-            return Request(full_url(url), meta=response.meta.copy(), callback=self._parse_links)
+            return Request(
+                full_url(url), meta=response.meta.copy(),
+                callback=self._parse_links)
         else:
-            l = list(super(SaksfifthavenueProductsSpider, self).parse(response))
+            l = list(super(SaksfifthavenueProductsSpider, self).parse(
+                response))
             return l
 
     def parse_product(self, response):
-        with open("/tmp/saks-item.html", "w") as f:
-            f.write(response.body_as_unicode().encode('utf-8'))
-
+        response = response.replace(encoding='utf-8')
         product = response.meta['product']
-
+        text = response.body_as_unicode()
+        # jtext = response.xpath(
+        #     "//script[contains(text(),'var mlrs =')]"
+        #     "/text()").re(r"var mlrs = (.*)")
+        m = re.search(r"var mlrs = (.*)", text)
+        if m:
+            jtext = m.group(1)
+            try:
+                jdata = json.loads(jtext)
+            except ValueError as e:
+                self.log("JSON error({0}): ".format(e.message), DEBUG)
+                return
         cond_set(product, 'title', response.xpath(
             "//header/h2[contains(@class,'short-description')]"
             "/text()").extract())
         cond_set(product, 'brand', response.xpath(
             "//header/h1[contains(@class,'brand-name')]/a/text()").extract(),
             conv=string.strip)
-        jtext = response.xpath(
-            "//script[contains(text(),'var mlrs =')]"
-            "/text()").re('var mlrs = (.*)')
-        jdata = json.loads(jtext[0])
-        # pprint(jdata)
 
         tprice = jdata['response']['body'][
             'main_products'][0]['price']['sale_price']
@@ -329,7 +350,6 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
         if 'plinks' in response.meta:
             links = self.links
             for link in links:
-                # DEBUG  yield None, SiteProductItem(url=link)
                 yield link, SiteProductItem()
             return
 
