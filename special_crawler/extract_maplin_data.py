@@ -240,6 +240,9 @@ class MaplinScraper(Scraper):
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
+        rows = self.tree_html.xpath("//input[contains(@class,'grey discontinued')]")
+        if len(rows) > 0:
+            return 1
         lis = self.tree_html.xpath("//ul[contains(@class,'stock-status')]//li")
         for li in lis:
             txt = li.xpath(".//text()")[0].strip()
@@ -254,6 +257,9 @@ class MaplinScraper(Scraper):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 0:
             return None
+        rows = self.tree_html.xpath("//input[contains(@class,'grey discontinued')]")
+        if len(rows) > 0:
+            return 1
         lis = self.tree_html.xpath("//ul[contains(@class,'stock-status')]//li")
         for li in lis:
             txt = li.xpath(".//text()")[0].strip()
