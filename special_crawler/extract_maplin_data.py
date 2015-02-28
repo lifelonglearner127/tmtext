@@ -188,25 +188,85 @@ class MaplinScraper(Scraper):
         else:
             return None
 
-    def _in_stores_only(self):
-        return None
+    def _price_amount(self):
+        price = self._price()
+        price = price.replace(",", "")
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        return float(price_amount)
+
+    def _price_currency(self):
+        price = self._price()
+        price = price.replace(",", "")
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        price_currency = price.replace(price_amount, "")
+        if price_currency == "$":
+            return "USD"
+        elif price_currency == "£":
+            return "GBP"
+        return price_currency
 
     def _in_stores(self):
-        return None
-
-    def _owned(self):
+        # available to purchase in stores, 1/0
+        rows = self.tree_html.xpath("//input[contains(@class,'grey discontinued')]")
+        if len(rows) > 0:
+            return 0
         return 1
-    
+
     def _marketplace(self):
+        '''marketplace: the product is sold by a third party and the site is just establishing the connection
+        between buyer and seller. E.g., "Sold by X and fulfilled by Amazon" is also a marketplace item,
+        since Amazon is not the seller.
+        '''
         return 0
 
-    def _owned_out_of_stock(self):
-        return None
-
     def _marketplace_sellers(self):
+        '''marketplace_sellers - the list of marketplace sellers - list of strings (["seller1", "seller2"])
+        '''
         return None
 
     def _marketplace_lowest_price(self):
+        # marketplace_lowest_price - the lowest of marketplace prices - floating-point number
+        return None
+
+    def _marketplace_out_of_stock(self):
+        """Extracts info on whether currently unavailable from any marketplace seller - binary
+        Uses functions that work on both old page design and new design.
+        Will choose whichever gives results.
+        Returns:
+            1/0
+        """
+        return None
+
+    def _site_online(self):
+        # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
+        lis = self.tree_html.xpath("//ul[contains(@class,'stock-status')]//li")
+        for li in lis:
+            txt = li.xpath(".//text()")[0].strip()
+            i_class = li.xpath(".//i/@class")[0].strip()
+            if txt == "Home Delivery" and i_class == "icon-ok-sign":
+                return 1
+            elif txt == "Home Delivery" and i_class == "icon-remove-sign":
+                return 0
+        return 1
+
+    def _site_online_out_of_stock(self):
+        #  site_online_out_of_stock - currently unavailable from the site - binary
+        if self._site_online() == 0:
+            return None
+        lis = self.tree_html.xpath("//ul[contains(@class,'stock-status')]//li")
+        for li in lis:
+            txt = li.xpath(".//text()")[0].strip()
+            i_class = li.xpath(".//i/@class")[0].strip()
+            if txt == "Home Delivery" and i_class == "icon-ok-sign":
+                return 0
+            elif txt == "Home Delivery" and i_class == "icon-remove-sign":
+                return 1
+        return 0
+
+    def _in_stores_out_of_stock(self):
+        '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
+        (null should be used for items that can not be ordered online and the availability may depend on location of the store)
+        '''
         return None
 
     ##########################################
@@ -279,13 +339,15 @@ class MaplinScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
-        "in_stores_only" : _in_stores_only, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
         "in_stores" : _in_stores, \
-        "owned" : _owned, \
-        "owned_out_of_stock" : _owned_out_of_stock, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
+        "site_online" : _site_online, \
+        "site_online_out_of_stock" : _site_online_out_of_stock, \
+        "in_stores_out_of_stock" : _in_stores_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
