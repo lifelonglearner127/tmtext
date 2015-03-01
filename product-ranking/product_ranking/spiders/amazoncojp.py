@@ -84,10 +84,12 @@ class AmazonProductsSpider(BaseProductsSpider):
             if not u'￥' in product.get('price', ''):
                 self.log('Invalid price at: %s' % response.url, level=ERROR)
             else:
-                if not '.' in product['price']:
-                    product['price'] = product['price'].strip() + '.00'
+                price = re.findall('[\d ,.]+\d', product['price'])
+                price = price[0].replace(' ', '').replace(',', '.')
+                if not '.' in price:
+                    price = price + '.00'
                 product['price'] = Price(
-                    price=product['price'].replace(u'￥', '').replace(
+                    price=price.replace(u'￥', '').replace(
                         ' ', '').replace(',', '').strip(),
                     priceCurrency='JPY'
                 )

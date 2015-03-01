@@ -45,8 +45,10 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
             if not u'£' in prod.get('price', ''):
                 self.log('Invalid price at: %s' % response.url, level=ERROR)
             else:
+                price = re.findall('[\d ,.]+\d', prod['price'])
+                price = re.sub('[, ]', '', price[0])
                 prod['price'] = Price(
-                    price=prod['price'].replace(u'£', '').replace(
+                    price=price.replace(u'£', '').replace(
                         ' ', '').replace(',', '').strip(),
                     priceCurrency='GBP'
                 )

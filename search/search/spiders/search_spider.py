@@ -56,7 +56,9 @@ class SearchSpider(BaseSpider):
     #                product_name - the product's name, for searching by product name
     #                product_url - the product's page url in the source site, for searching by product URL
     #                product_urls_file - file containing a list of product pages URLs
-    #                output - integer(1/2) option indicating output type (either result URL (1), or result URL and source product URL (2))
+    #                output - integer(1/2/3/4) option indicating output type (either result URL (1), or result URL and source product URL (2))
+    #                         3 - same as 2 but with extra field representing confidence score
+    #                         4 - same as 3 but with origin products represented by UPC instead of URL
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
     def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
         output = 2, threshold = 1.0, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
@@ -132,6 +134,7 @@ class SearchSpider(BaseSpider):
         search_query = "+".join(ProcessText.normalize(product_name, stem=False, exclude_stopwords=False))
         return search_query
 
+    # TODO: make more general. this is pretty specific to the clorox audit batch input file
     def parse_products_file(self, products_file):
         products = []
         with open(products_file) as f:
@@ -147,13 +150,11 @@ class SearchSpider(BaseSpider):
                 if product['product_price'].startswith('$'):
                     product['product_price'] = product['product_price'][1:]
                 product['product_price'] = float(product['product_price'])
-                # using DCPI as url here to be able to have it in results file
-                product['product_url'] = product_info[1]
 
                 # for target, get DCPI column as model number
                 # TODO: horrible hack
                 if self.target_site == 'target':
-                    product['product_model'] = product_info[1]
+                    product['product_upc'] = product_info[1]
 
                 products.append(product)
 
@@ -212,6 +213,10 @@ class SearchSpider(BaseSpider):
                 if not product_model:
                     # for correctly logging
                     product_model = ''
+                if 'product_upc' in product_info:
+                    product_upc = product_info['product_upc']
+                else:
+                    product_upc = None
                 if 'product_url' in product_info:
                     product_url = product_info['product_url']
                 else:
@@ -227,8 +232,28 @@ class SearchSpider(BaseSpider):
 
 
                 request = None
+                pending_requests = []
 
-                # 1) Search by model number
+                # 1) Search by UPC
+                if product_upc:
+                    query0 = self.build_search_query(product_upc)
+                    search_pages0 = self.build_search_pages(query0)
+                    #page1 = search_pages1[self.target_site]
+                    page0 = search_pages0[self.target_site]
+
+                    request0 = Request(page0, callback = self.parseResults)
+
+                    request0.meta['query'] = query0
+                    request0.meta['target_site'] = self.target_site
+                    
+                    if not request:
+                        request = request0
+                    else:
+                        pending_requests.append(request0)
+
+                
+
+                # 2) Search by model number
                 if product_model:
 
                     #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
@@ -242,10 +267,13 @@ class SearchSpider(BaseSpider):
                     request1.meta['query'] = query1
                     request1.meta['target_site'] = self.target_site
                     
-                    request = request1
+                    if not request:
+                        request = request1
+                    else:
+                        pending_requests.append(request1)
 
 
-                # 2) Search by product full name
+                # 3) Search by product full name
                 query2 = self.build_search_query(product_name)
                 search_pages2 = self.build_search_pages(query2)
                 #page2 = search_pages2[self.target_site]
@@ -255,14 +283,12 @@ class SearchSpider(BaseSpider):
                 request2.meta['query'] = query2
                 request2.meta['target_site'] = self.target_site
 
-                pending_requests = []
-
                 if not request:
                     request = request2
                 else:
                     pending_requests.append(request2)
 
-                # 3) Search by combinations of words in product's name
+                # 4) Search by combinations of words in product's name
                 # create queries
 
                 for words in ProcessText.words_combinations(product_name, fast=self.fast):
@@ -286,6 +312,7 @@ class SearchSpider(BaseSpider):
 
                 request.meta['origin_name'] = product_name
                 request.meta['origin_model'] = product_model
+                request.meta['origin_upc'] = product_upc
                 if product_price:
                     request.meta['origin_price'] = product_price
 
@@ -828,7 +855,11 @@ class SearchSpider(BaseSpider):
 
 
         ## print stuff
-        self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8"), level=log.DEBUG)
+        if 'origin_upc' not in response.meta:
+            origin_upc = ''
+        else:
+            origin_upc = response.meta['origin_upc']
+        self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8") + " UPC: " + origin_upc.encode("utf-8"), level=log.DEBUG)
         self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
         self.log( "MATCHES: ", level=log.DEBUG)
         for item in items:
@@ -859,6 +890,8 @@ class SearchSpider(BaseSpider):
                 if 'origin_price' in response.meta:
                     request.meta['origin_price'] = response.meta['origin_price']
                 request.meta['origin_brand_extracted'] = response.meta['origin_brand_extracted']
+                if 'origin_upc' in response.meta:
+                    request.meta['origin_upc'] = response.meta['origin_upc']
                 if 'threshold' in response.meta:
                     request.meta['threshold'] = response.meta['threshold']
 
@@ -895,8 +928,14 @@ class SearchSpider(BaseSpider):
                         ## print "PRICE:", product_price
                     else:
                         product_price = None
+
+                    if 'origin_upc' in response.meta:
+                        origin_upc = response.meta['origin_upc']
+                    else:
+                        origin_upc = None
+
                         ## print "NO PRICE"
-                    best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], product_price, items, threshold)
+                    best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], product_price, origin_upc, items, threshold)
 
                     # #self.log( "ALL MATCHES: ", level=log.WARNING)                    
                     # for item in items:
@@ -917,6 +956,9 @@ class SearchSpider(BaseSpider):
                     item['origin_name'] = response.meta['origin_name']
                     if 'origin_model' in response.meta:
                         item['origin_model'] = response.meta['origin_model']
+
+                    if 'origin_upc' in response.meta:
+                        item['origin_upc'] = response.meta['origin_upc']
 
                     # if 'origin_id' in response.meta:
                     #     item['origin_id'] = response.meta['origin_id']
