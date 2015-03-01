@@ -3,6 +3,7 @@
 from __future__ import division, absolute_import, unicode_literals
 
 import json
+import re
 import urlparse
 
 from scrapy.http.request.form import FormRequest
@@ -93,15 +94,18 @@ class WaitroseProductsSpider(BaseProductsSpider):
             product['upc'] = int(product_data['productid'])
 
             if product.get('price', None):
-                product['price'] = product['price'].replace('&pound;', '£')
-                if not '£' in product['price']:
-                    self.log('Unknown currency at %s' % response)
-                else:
+                price = product['price']
+                price = price.replace('&pound;', 'p')
+                price = re.findall('p? *[\d ,.]+ *p? *', price)
+                price = price[0] if price else ''
+                if 'p' in price:
+                    price = re.sub('[p ,]', '', price)
                     product['price'] = Price(
                         priceCurrency='GBP',
-                        price=product['price'].replace('£', '').replace(
-                            ' ', '').replace(',', '').strip()
+                        price=price
                     )
+                else:
+                    self.log('Unknown price format at %s' % response)
 
             if not product.get('url', '').startswith('http'):
                 product['url'] = urlparse.urljoin(
