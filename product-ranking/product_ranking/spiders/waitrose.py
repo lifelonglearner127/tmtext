@@ -84,8 +84,8 @@ class WaitroseProductsSpider(BaseProductsSpider):
             missing_values = False
 
             for product_key, data_key in self._PRODUCT_TO_DATA_KEYS.items():
-                value = product_data.get(data_key, None)
-                if value:
+                value = product_data.get(data_key, 'null')
+                if value != 'null':
                     product[product_key] = product_data[data_key]
                 else:
                     missing_values = True
