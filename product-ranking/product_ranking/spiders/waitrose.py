@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import json
 import urlparse
@@ -10,6 +9,7 @@ from scrapy.http.request.form import FormRequest
 
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider
+from product_ranking.spiders import cond_set_value
 
 
 class WaitroseProductsSpider(BaseProductsSpider):
@@ -66,7 +66,11 @@ class WaitroseProductsSpider(BaseProductsSpider):
             )
 
     def parse_product(self, response):
-        raise AssertionError("This method should never be called.")
+        product = response.meta['product']
+        xpath = '//div[@class="product_disclaimer"]/node()[normalize-space()]'
+        cond_set_value(product, 'description', response.xpath(xpath).extract(),
+                       ''.join)
+        return product
 
     def _scrape_total_matches(self, response):
         data = WaitroseProductsSpider._get_data(response)
@@ -76,9 +80,14 @@ class WaitroseProductsSpider(BaseProductsSpider):
         data = WaitroseProductsSpider._get_data(response)
         for product_data in data['products']:
             product = SiteProductItem()
+            missing_values = False
 
             for product_key, data_key in self._PRODUCT_TO_DATA_KEYS.items():
-                product[product_key] = product_data[data_key]
+                value = product_data.get(data_key, None)
+                if value:
+                    product[product_key] = product_data[data_key]
+                else:
+                    missing_values = True
 
             # This one is not in the mapping since it requires transformation.
             product['upc'] = int(product_data['productid'])
@@ -86,7 +95,7 @@ class WaitroseProductsSpider(BaseProductsSpider):
             if product.get('price', None):
                 product['price'] = product['price'].replace('&pound;', '£')
                 if not '£' in product['price']:
-                    self.log('Unknown currency at %s' % self.response)
+                    self.log('Unknown currency at %s' % response)
                 else:
                     product['price'] = Price(
                         priceCurrency='GBP',
@@ -98,7 +107,10 @@ class WaitroseProductsSpider(BaseProductsSpider):
                 product['url'] = urlparse.urljoin(
                     'http://www.waitrose.com', product['url'])
 
-            yield None, product
+            if missing_values:
+                yield product['url'], product
+            else:
+                yield None, product
 
     def _scrape_next_results_page_link(self, response):
         data = WaitroseProductsSpider._get_data(response)
