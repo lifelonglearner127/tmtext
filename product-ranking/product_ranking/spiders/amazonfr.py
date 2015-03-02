@@ -85,7 +85,8 @@ class AmazonProductsSpider(BaseProductsSpider):
                 self.log('Invalid price at: %s' % response.url, level=ERROR)
             else:
                 price = re.findall('[\d ,.]+\d', product['price'])
-                price = price[0].replace(' ', '').replace(',', '.')
+                price = ''.join(price)
+                price = price.replace(' ', '').replace(',', '.')
                 product['price'] = Price(
                     price=price.replace('EUR', '').replace(
                         ' ', '').replace(u'\xa0', '').replace(

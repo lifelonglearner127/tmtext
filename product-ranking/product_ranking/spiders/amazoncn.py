@@ -173,8 +173,11 @@ class AmazonProductsSpider(BaseProductsSpider):
         else:
             #count_matches = response.xpath(
             #    '//*[@id="resultCount"]/text()').re(u'共([\d, ]+)')
-            count_matches = response.xpath(
-                '//*[@id="resultCount"]/text()').re(u'([\d, ]+)')
+            count_matches = "".join(
+                response.xpath("//h2[@id='s-result-count']//text()")
+                .extract())
+            count_matches = re.findall(r"[\d, ]+", count_matches)
+            count_matches = [r for r in count_matches if len(r.strip()) > 0]
             if count_matches and count_matches[-1]:
                 total_matches = int(
                     count_matches[-1].replace(',', '').strip())
@@ -183,8 +186,11 @@ class AmazonProductsSpider(BaseProductsSpider):
         return total_matches
 
     def _scrape_product_links(self, response):
-        links = response.css(
-            'div.listView div.productTitle a ::attr(href)').extract()
+        links = response.xpath(
+            "//ul/li[@class='s-result-item']/div[1]/div[1]"
+            "//a[contains(@class,'a-link-normal a-text-normal')][1]/@href"
+        ).extract()
+        links = list(set(links))
         for link in links:
             yield link, SiteProductItem()
 
