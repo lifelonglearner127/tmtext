@@ -254,6 +254,8 @@ class SoapScraper(Scraper):
         pdf_hrefs = []
         for pdf in pdfs:
             pdf_hrefs.append(pdf.attrib['href'])
+        pdf_hrefs = list(set(pdf_hrefs))
+        pdf_hrefs = [r for r in pdf_hrefs if "http://http://" not in r]
         return pdf_hrefs
 
     def _pdf_count(self):

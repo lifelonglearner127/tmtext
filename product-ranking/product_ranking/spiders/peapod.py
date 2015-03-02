@@ -104,7 +104,7 @@ class PeapodProductsSpider(BaseProductsSpider):
                  "={search_sort}&%2Fpeapod%2Fhandler%2Fiditarod%2FSearch"\
                  "Handler.locationId=27022&_D%3A%2Fpeapod%2Fhandler%2F"\
                  "iditarod%2FSearchHandler.locationId=+&results=standard"\
-                 "&typeahead=0&pagesize=100&_DARGS=%2Ffr4_top.jhtml"
+                 "&typeahead=0&pagesize=200&_DARGS=%2Ffr4_top.jhtml"
 
     SORT_MODES = {
         'default': '-searchScore,-userFrequency,-itemsPurchased',

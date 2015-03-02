@@ -7,11 +7,13 @@ class SearchItem(Item):
 #    origin_site = Field() # origin site of product
     product_url = Field() # url of result product page
     product_model = Field() # product model of product as extracted from its page or the results page (if found somewhere other that inside its name)
+    product_upc = Field() # product UPC. can be identifier specific to site, like DPCI for target, ASIN for Amazon, etc 
     product_brand = Field() # product brand as extracted from special element in product page
     origin_url = Field() # original product url
 #    origin_id = Field() # original (source) product id (for walmart products)
     origin_name = Field() # product name on origin site
     origin_model = Field() # original (source) product model
+    origin_upc = Field() # original (source) product UPC. can be identifier specific to site, like DPCI for target, ASIN for Amazon, etc
     origin_brand = Field() # original (source) product brand
     origin_brand_extracted = Field() # source product brand - as extracted from product name: not guaranteed to be correct
 
