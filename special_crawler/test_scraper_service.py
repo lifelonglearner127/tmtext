@@ -599,7 +599,7 @@ class ServiceScraperTest(unittest.TestCase):
                     if site_scraper is not None:
 #                        sample_json = site_scraper.product_info()
 #                        sample_json = json.loads(json.dumps(sample_json))
-                        base = "http://localhost:9000/get_data?url=%s"
+                        base = "http://localhost:9001/get_data?url=%s"
                         sample_json = requests.get(base%(urllib.quote(url))).text
                         sample_json = json.loads(sample_json)
                         sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
@@ -648,7 +648,7 @@ class ServiceScraperTest(unittest.TestCase):
 
         site_scraper = SUPPORTED_SITES[website](url=sample_url, bot=None)
 
-        base = "http://localhost:9000/get_data?url=%s"
+        base = "http://localhost:9001/get_data?url=%s"
         test_json = requests.get(base%(urllib.quote(sample_url))).text
         test_json = json.loads(test_json)
 
