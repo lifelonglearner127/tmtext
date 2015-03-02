@@ -448,12 +448,8 @@ class FreshAmazonScraper(Scraper):
 
 
     def _version(self):
-        """Determines if Amazon.co.uk page being read
-        Returns:
-            "uk" for Amazon.co.uk
-            "com" for Amazon.com
-        """
         return None
+
 
     def  _ingredients(self):
         # list of ingredients - list of strings
@@ -462,17 +458,24 @@ class FreshAmazonScraper(Scraper):
             res = []
             w = ''
             br = 0
+            pr = 0
             for s in ingr[0]:
-                if s == "," and br == 0:
+                if s == "," and br == 0 and pr == 0:
                     if w != "":
                         res.append(w.strip())
                     w = ""
-                elif s == "[" or s == "(":
+                elif s == "[":
                     w += s
                     br = 1
-                elif s == "]" or s == ")":
+                elif s == "(":
+                    w += s
+                    pr = 1
+                elif s == "]":
                     w += s
                     br = 0
+                elif s == ")":
+                    w += s
+                    pr = 0
                 else:
                     w += s
             if w != '':
