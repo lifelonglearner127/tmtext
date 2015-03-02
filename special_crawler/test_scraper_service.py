@@ -6,7 +6,9 @@ import re
 import copy
 import psycopg2
 import psycopg2.extras
+import requests
 import sys
+import urllib
 from datetime import date
 from crawler_service import SUPPORTED_SITES
 
@@ -566,8 +568,8 @@ class ServiceScraperTest(unittest.TestCase):
         # read input urls from database
         try:
             self.con = None
-#            self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
-            self.con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
+            self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
+#            self.con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
             self.cur = self.con.cursor(cursor_factory=psycopg2.extras.DictCursor)
             self.cur.execute("select url_list from console_massurlimport")
 
@@ -593,13 +595,16 @@ class ServiceScraperTest(unittest.TestCase):
                             break
 
                     if site_scraper is not None:
-                        sample_json = site_scraper.product_info()
-                        sample_json = json.loads(json.dumps(sample_json))
+#                        sample_json = site_scraper.product_info()
+#                        sample_json = json.loads(json.dumps(sample_json))
+                        base = "http://localhost/get_data?url=%s"
+                        sample_json = requests.get(base%(urllib.quote(url))).text
+                        sample_json = json.loads(sample_json)
                         sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
 
                         today = date.today()
 
-                        if site_scraper.not_a_product():
+                        if "sellers" not in sample_json.keys():
                             not_a_product = 1
                             print "This url is not valid.\n"
                             sample_json_str = ''
@@ -641,15 +646,19 @@ class ServiceScraperTest(unittest.TestCase):
 
         site_scraper = SUPPORTED_SITES[website](url=sample_url, bot=None)
 
-        test_json = site_scraper.product_info()
-        test_json = json.loads(json.dumps(test_json))
+        base = "http://localhost/get_data?url=%s"
+        test_json = requests.get(base%(urllib.quote(sample_url))).text
+        test_json = json.loads(test_json)
+
+#        test_json = site_scraper.product_info()
+#        test_json = json.loads(json.dumps(test_json))
         test_json_str = json.dumps(test_json, sort_keys=True, indent=4)
 
         today = date.today()
 
         row = row[0]
 
-        if site_scraper.not_a_product():
+        if "sellers" not in test_json.keys():
             print "This url is not valid anymore.\n"
             self.cur.execute("update console_urlsample set not_a_product=1 where url = '%s'" % row["url"])
             self.con.commit()
@@ -658,6 +667,7 @@ class ServiceScraperTest(unittest.TestCase):
             sample_json_str = row["json"]
             sample_json = json.loads(sample_json)
             diff_engine = JsonDiff(test_json, sample_json)
+            #        if site_scraper.not_a_product():
 
             print ">>>>>>reports:"
 
