@@ -191,11 +191,11 @@ class AmazonProductsSpider(BaseProductsSpider):
         return self._cbw.solve_captcha(captcha_img)
 
     def _handle_captcha(self, response, callback):
+        # FIXME This is untested and wrong.
         captcha_solve_try = response.meta.get('captcha_solve_try', 0)
-        product = response.meta['product']
-
+        url = response.url
         self.log("Captcha challenge for %s (try %d)."
-                 % (product['url'], captcha_solve_try),
+                 % (url, captcha_solve_try),
                  level=INFO)
 
         captcha = self._solve_captcha(response)
@@ -203,23 +203,25 @@ class AmazonProductsSpider(BaseProductsSpider):
         if captcha is None:
             self.log(
                 "Failed to guess captcha for '%s' (try: %d)." % (
-                    product['url'], captcha_solve_try),
+                    url, captcha_solve_try),
                 level=ERROR
             )
             result = None
         else:
             self.log(
                 "On try %d, submitting captcha '%s' for '%s'." % (
-                    captcha_solve_try, captcha, product['url']),
+                    captcha_solve_try, captcha, url),
                 level=INFO
             )
+            meta = response.meta.copy()
+            meta['captcha_solve_try'] = captcha_solve_try + 1
             result = FormRequest.from_response(
                 response,
                 formname='',
                 formdata={'field-keywords': captcha},
-                callback=callback)
-            result.meta['captcha_solve_try'] = captcha_solve_try + 1
-            result.meta['product'] = product
+                callback=callback,
+                dont_filter=True,
+                meta=meta)
 
         return result
 
