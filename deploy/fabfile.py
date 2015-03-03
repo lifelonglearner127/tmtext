@@ -282,12 +282,14 @@ def _setup_simmetrica_monitoring():
         SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
 
     sudo('pip install simmetrica')
+    env.warn_only = True
     with cd('/home/web_runner/virtual-environments/scrapyd/lib/python2.7'):
         sudo('ln -s /usr/local/lib/python2.7/dist-packages/markupsafe')
         sudo('ln -s /usr/local/lib/python2.7/dist-packages/simmetrica')
         sudo('ln -s /usr/local/lib/python2.7/dist-packages/redis')
         sudo('ln -s /usr/local/lib/python2.7/dist-packages/flask')
         sudo('ln -s /usr/local/lib/python2.7/dist-packages/jinja2')
+    env.warn_only = False
 
     env.user, env.password, env.key_filename = \
         orig_user, orig_passw, orig_cert

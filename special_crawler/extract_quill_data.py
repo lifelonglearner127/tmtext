@@ -36,6 +36,8 @@ class QuillScraper(Scraper):
     features = None
     video_urls = None
     video_count = None
+    pdf_urls = None
+    pdf_count = None
 
     def check_url_format(self):
         # for ex: http://www.quill.com/clorox-toilet-bowl-cleaner-bleach/cbs/040672.html#SkuTabs
@@ -181,18 +183,20 @@ class QuillScraper(Scraper):
             # document.location.replace('
             tree = html.fromstring(contents_wc)
             playerKey = tree.xpath("//param[@name='playerKey']/@value")[0].strip()
-            video = tree.xpath("//param[@name='video']/@value")[0].strip()
-            # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
-            url_wc2 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
-            contents_wc2 = urllib.urlopen(url_wc2).read()
-            jsn = json.loads(contents_wc2)
-            jsn = jsn["sources"]
-            for item in jsn:
-                try:
-                    file_name = item['file']
-                    video_urls.append(file_name)
-                except:
-                    pass
+            videos = tree.xpath("//li[contains(@class,'video_slider_item')]/@video_id")
+            for video in videos:
+                # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
+                url_wc2 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
+                contents_wc2 = urllib.urlopen(url_wc2).read()
+                jsn = json.loads(contents_wc2)
+                jsn = jsn["sources"]
+                for item in jsn:
+                    try:
+                        file_name = item['file']
+                        video_urls.append(file_name)
+                        break
+                    except:
+                        pass
         if len(video_urls) < 1:
             return None
         self.video_urls = video_urls
@@ -205,17 +209,33 @@ class QuillScraper(Scraper):
         return self.video_count
 
     def _pdf_urls(self):
+        if self.pdf_count is not None:
+            return self.pdf_urls
+        self.pdf_count = 0
         pdfs = self.tree_html.xpath("//div[@id='PageInner']//a[contains(@href,'.pdf')]")
         pdf_hrefs = []
         for pdf in pdfs:
-            pdf_hrefs.append(pdf.attrib['href'])
+            pdf_url_txts = [self._clean_text(r) for r in pdf.xpath(".//text()") if len(self._clean_text(r)) > 0]
+            if len(pdf_url_txts) > 0:
+                pdf_hrefs.append(pdf.attrib['href'])
+
+        # get from webcollage
+        # http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=392495
+        url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % self._product_id()
+        contents = urllib.urlopen(url).read()
+        contents = contents.replace("\\", "")
+        wc_pdfs = re.findall(r'wcobj="(.*?)"', contents, re.DOTALL)
+        wc_pdfs = [r.replace("\\", "") for r in wc_pdfs if r.endswith(".pdf")]
+        pdf_hrefs += wc_pdfs
+        if len(pdf_hrefs) < 1:
+            return None
+        self.pdf_count = len(pdf_hrefs)
         return pdf_hrefs
 
     def _pdf_count(self):
-        urls = self._pdf_urls()
-        if urls is not None:
-            return len(urls)
-        return 0
+        if self.pdf_count is None:
+            self._pdf_urls()
+        return self.pdf_count
 
     def _webcollage(self):
         # http://content.webcollage.net/pg-estore/power-page?ird=true&channel-product-id=037000864868
@@ -297,7 +317,7 @@ class QuillScraper(Scraper):
         price = self._price()
         price = price.replace(",", "")
         price_amount = re.findall(r"[\d\.]+", price)[0]
-        return price_amount
+        return float(price_amount)
 
     def _price_currency(self):
         price = self._price()
