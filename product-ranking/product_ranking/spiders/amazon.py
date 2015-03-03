@@ -4,6 +4,7 @@ from __future__ import print_function
 import json
 import re
 import string
+import re
 
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
@@ -256,11 +257,25 @@ class AmazonProductsSpider(BaseProductsSpider):
         return None
 
     def _scrape_product_links(self, response):
-        links = response.css(
-            'a.s-access-detail-page ::attr(href)'
-        ).extract()
-        if not links:
+        lis = response.xpath("//div[@id='resultsCol']//ul//li")
+        links = []
+        last_idx = -1
+        for li in lis:
+            try:
+                data_asin = li.xpath('@id').extract()[0]
+                idx = int(re.findall(r'\d+', data_asin)[0])
+                if idx > last_idx:
+                    link = li.xpath(".//a[contains(@class,'s-access-detail-page')]/@href").extract()[0]
+                    links.append(link)
+                else:
+                    break
+                last_idx = idx
+            except IndexError:
+                continue
+
+        if len(links) < 1:
             self.log("Found no product links.", WARNING)
+
         for link in links:
             yield link, SiteProductItem()
 

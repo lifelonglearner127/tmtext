@@ -272,6 +272,7 @@ def _setup_virtual_env_scrapyd():
     with virtualenv(VENV_SCRAPYD):
         run('pip install scrapyd')
         run('pip install simplejson')
+        run('pip install requests')
 
     _setup_simmetrica_monitoring()
 
