@@ -28,6 +28,7 @@ from extract_drugstore_data import DrugstoreScraper
 from extract_staplesadvantage_data import StaplesAdvantageScraper
 from extract_souq_data import SouqScraper
 from extract_freshdirect_data import FreshDirectScraper
+from extract_peapod_data import PeapodScraper
 
 from extract_quill_data import QuillScraper
 from extract_hersheys_data import HersheysScraper
@@ -77,7 +78,8 @@ SUPPORTED_SITES = {
                     "souq": SouqScraper,
                     "freshdirect" : FreshDirectScraper,
                     "quill" : QuillScraper,
-                     "george" : GeorgeScraper,
+                    "george" : GeorgeScraper,
+                    "peapod" : PeapodScraper,
                     }
 
 # add logger

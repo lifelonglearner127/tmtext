@@ -15,7 +15,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
 
 
-class WehkampProductsSpider(BaseProductsSpider):
+class ShopNordstromProductsSpider(BaseProductsSpider):
     name = 'shopnordstrom_products'
     allowed_domains = ["shop.nordstrom.com"]
     start_urls = []
@@ -44,16 +44,18 @@ class WehkampProductsSpider(BaseProductsSpider):
             '//td[@class="item-number"]/div/text()').extract()
         if upc:
             upc = re.findall("\d+", upc[0])
-            cond_set(product, 'upc', upc)
 
         des = response.xpath(
             '//section[@id="details-and-care"]').extract()
         cond_set(product, 'description', des) 
 
         price = response.xpath(
-            '//td[contains(@class, "item-price")]/span/text()').extract() 
+            '//td[contains(@class, "item-price")]/span[contains(@class, "sale-price")]/text()').extract()
+        if not price:
+            price = response.xpath(
+                '//td[contains(@class, "item-price")]/span/text()').extract() 
         if price:
-            price = re.findall("\d+", price[0])[0]
+            price = re.findall("\d+\.{0,1}\d+", price[0].replace(',', ''))[0]
             product["price"] = Price(priceCurrency="USD", price=price)
 
         image_url = response.xpath(
@@ -62,24 +64,41 @@ class WehkampProductsSpider(BaseProductsSpider):
 
         if item_num:  # RelatedProduct
             rp = []
-            url = "http://recs.richrelevance.com/rrserver/api/" \
-                "rrPlatform/recsForPlacements?jcb=process" \
+            sessionId = re.findall("sessionId\"\:\s+\"([^\"]*)", response.body)
+            userId = re.findall("id\"\:\s+\"([^\"]*)", response.body)
+            url = "http://recs.richrelevance.com/rrserver/api/rrPlatform/recsForPlacements" \
+                "?jcb=process" \
                 "&apiClientKey=3c86c35d5f315680" \
-                "&apiKey=469cc5818c1eb6ac&productId=%s" \
-                "&placements=item_page.PP_4|item_page.PP_3|" \
-                "item_page.FTR&_=1421842916059" % (
-                    re.findall("\d+", item_num[0])[0],)
+                "&sessionId=%s" \
+                "&userId=%s" \
+                "&apiKey=469cc5818c1eb6ac" \
+                "&chi=0" \
+                "&productId=%s" \
+                "&cts=http://shop.nordstrom.com/&categoryData=false" \
+                "&excludeHtml=true" \
+                "&pref=" \
+                "&ts=1423746984929" \
+                "&sgs=2M2:2M2" \
+                "&placements=item_page.PP_4|item_page.PP_3|item_page.PP_2|item_page.FTR" \
+                "&_=1423746984578" % (
+                    sessionId[0],
+                    userId[0],
+                    re.findall("\d+", item_num[0])[0],
+                    )
 
             ajax = urllib2.urlopen(url)
             rp_ajax = ajax.read()
             ajax.close()
             data = json.loads(rp_ajax)
-            
+
             try:
-                for li_prod in data["placements"][0]["recommendedProducts"]:
-                    title = li_prod.get("name", "")
-                    url = li_prod.get("clickURL", "")
-                    rp.append(RelatedProduct(title, url))
+                part = data["placements"][0]["strategyMessage"]
+                related = ["People Also Purchased", "People Also Viewed", "Similar Items", "People Also Bought"]
+                if part in related:
+                    for li_prod in data["placements"][0]["recommendedProducts"]:
+                        title = li_prod.get("name", "")
+                        url = li_prod.get("clickURL", "")
+                        rp.append(RelatedProduct(title, url))
             except Exception:
                 pass
 

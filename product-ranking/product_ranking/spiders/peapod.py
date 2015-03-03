@@ -104,7 +104,7 @@ class PeapodProductsSpider(BaseProductsSpider):
                  "={search_sort}&%2Fpeapod%2Fhandler%2Fiditarod%2FSearch"\
                  "Handler.locationId=27022&_D%3A%2Fpeapod%2Fhandler%2F"\
                  "iditarod%2FSearchHandler.locationId=+&results=standard"\
-                 "&typeahead=0&pagesize=100&_DARGS=%2Ffr4_top.jhtml"
+                 "&typeahead=0&pagesize=200&_DARGS=%2Ffr4_top.jhtml"
 
     SORT_MODES = {
         'default': '-searchScore,-userFrequency,-itemsPurchased',
@@ -131,7 +131,17 @@ class PeapodProductsSpider(BaseProductsSpider):
     }
 
     def __init__(self, order='default', fetch_related_products=True,
-                 *args, **kwargs):
+                 zip_code=None, *args, **kwargs):
+        from scrapy.conf import settings
+        settings.overrides['DEPTH_PRIORITY'] = 1
+        settings.overrides[
+            'SCHEDULER_DISK_QUEUE'] = 'scrapy.squeue.PickleFifoDiskQueue'
+        settings.overrides[
+            'SCHEDULER_MEMORY_QUEUE'] = 'scrapy.squeue.FifoMemoryQueue'
+
+        if zip_code and zip_code != 'default':
+            self.default_zip = zip_code
+
         if fetch_related_products == "False":
             self.fetch_related_products = False
         else:
@@ -207,7 +217,7 @@ class PeapodProductsSpider(BaseProductsSpider):
         brand = re.findall(brand_pattern, response.body_as_unicode())
         if not brand:
             brand = guess_brand_from_first_words(prod['title'])
-        if brand:
+        if brand and brand[0]:
             brand = brand[0].replace('\\', '').strip()
             prod['brand'] = brand
 
