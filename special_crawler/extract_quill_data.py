@@ -176,27 +176,49 @@ class QuillScraper(Scraper):
         contents = urllib.urlopen(url).read()
         # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
         # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
+        m = re.findall(r'"src":"([^"]*?\.flv)",', contents.replace("\\",""), re.DOTALL)
+        m = ["http://content.webcollage.net%s" % r for r in m]
+        if len(m) > 0:
+            video_urls += m
+
         m = re.findall(r'wcobj="(.*?)"', contents.replace("\\",""), re.DOTALL)
         if len(m) > 0:
             url_wc = m[0]
             contents_wc = urllib.urlopen(url_wc).read()
             # document.location.replace('
             tree = html.fromstring(contents_wc)
-            playerKey = tree.xpath("//param[@name='playerKey']/@value")[0].strip()
-            videos = tree.xpath("//li[contains(@class,'video_slider_item')]/@video_id")
-            for video in videos:
-                # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
-                url_wc2 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
-                contents_wc2 = urllib.urlopen(url_wc2).read()
-                jsn = json.loads(contents_wc2)
-                jsn = jsn["sources"]
-                for item in jsn:
-                    try:
-                        file_name = item['file']
-                        video_urls.append(file_name)
-                        break
-                    except:
-                        pass
+            try:
+                playerKey = tree.xpath("//param[@name='playerKey']/@value")[0].strip()
+                videos = tree.xpath("//li[contains(@class,'video_slider_item')]/@video_id")
+                for video in videos:
+                    # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
+                    url_wc2 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
+                    contents_wc2 = urllib.urlopen(url_wc2).read()
+                    jsn = json.loads(contents_wc2)
+                    jsn = jsn["sources"]
+                    for item in jsn:
+                        try:
+                            file_name = item['file']
+                            video_urls.append(file_name)
+                            break
+                        except:
+                            pass
+            except IndexError:
+                pass
+
+        # http://media.flixcar.com/delivery/inpage/show/751/us/621726/json?c=jsonpcar751us621726&complimentary=0&type=.html
+        # data-flix-distributor="751"
+        try:
+            flix_distributor = self.tree_html.xpath("//div[@id='Quill']//script/@data-flix-distributor")[0].strip()
+            flix_lang = self.tree_html.xpath("//div[@id='Quill']//script/@data-flix-language")[0].strip()
+            url_flix = "http://media.flixcar.com/delivery/inpage/show/%s/%s/621726/json" % (flix_distributor, flix_lang)
+            contents_flix = urllib.urlopen(url_flix).read()
+            tree_flix = html.fromstring(contents_flix.replace("\\",""))
+            videos = tree_flix.xpath("//div[contains(@class,'inpage_cap_videos')]//ul[contains(@class,'inpage_block_inner')]/li[contains(@class,'inpage_cap_gallery_link')]/a/@href")
+            video_urls += videos
+        except IndexError:
+            pass
+
         if len(video_urls) < 1:
             return None
         self.video_urls = video_urls
