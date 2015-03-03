@@ -1969,8 +1969,8 @@ class WalmartScraper(Scraper):
         "long_description" : _long_description_wrapper, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
-         "nutrition_facts": _nutrition_facts, \
-         "nutrition_fact_count": _nutrition_fact_count, \
+        "nutrition_facts": _nutrition_facts, \
+        "nutrition_fact_count": _nutrition_fact_count, \
         "price" : _price_from_tree, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
