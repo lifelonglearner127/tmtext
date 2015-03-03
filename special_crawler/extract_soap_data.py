@@ -29,13 +29,15 @@ class SoapScraper(Scraper):
     reviews_tree = None
     max_score = None
     min_score = None
-    review_count = 0
+    review_count = None
     average_review = None
     reviews = None
     feature_count = None
     features = None
     video_urls = None
     video_count = None
+    image_urls = None
+    image_count = None
 
     def check_url_format(self):
         # for ex: http://www.soap.com/p/nordic-naturals-complete-omega-3-6-9-1-000-mg-softgels-lemon-64714
@@ -50,7 +52,8 @@ class SoapScraper(Scraper):
         '''
 
         if len(self.tree_html.xpath("//div[@class='productDetailPic']//a//img")) < 1:
-            return True
+            if len(self.tree_html.xpath("//div[@class='productDetailPic']//div[@id='pdpTop']")) < 1:
+                return True
         return False
 
     ##########################################
@@ -174,15 +177,38 @@ class SoapScraper(Scraper):
         return None
 
     def _image_urls(self):
+        if self.image_count is not None:
+            return self.image_urls
+        self.image_count = 0
         image_url = self.tree_html.xpath("//div[contains(@class,'magicThumbBox')]/a/@href")
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url) < 1:
-            return None
+            skuhdn = self.tree_html.xpath("//input[@id='clothSkuHidden']/@value")[0].strip()
+            skuhdn = skuhdn.lower()
+            skuhdn_prefix = skuhdn.split("-")[0]
+            idx = 1
+            while True:
+                # http://c3.q-assets.com/images/products/p/uxk/uxk-500_1t.jpg
+                url = "http://c3.q-assets.com/images/products/p/%s/%s_%st.jpg" % (skuhdn_prefix, skuhdn, idx)
+                try:
+                    contents = urllib.urlopen(url).read()
+                    if "404 - File or directory not found" in contents:
+                        break
+                    else:
+                        image_url.append(url)
+                except:
+                    break
+                idx += 1
+            if len(image_url) < 1:
+                return None
+        self.image_count = len(image_url)
+        self.image_urls = image_url
         return image_url
 
     def _image_count(self):
-        image_urls = self._image_urls()
-        return len(image_urls)
+        if self.image_count is None:
+            self._image_urls()
+        return self.image_count
 
     def _video_urls(self):
         if self.video_count is not None:
@@ -228,6 +254,8 @@ class SoapScraper(Scraper):
         pdf_hrefs = []
         for pdf in pdfs:
             pdf_hrefs.append(pdf.attrib['href'])
+        pdf_hrefs = list(set(pdf_hrefs))
+        pdf_hrefs = [r for r in pdf_hrefs if "http://http://" not in r]
         return pdf_hrefs
 
     def _pdf_count(self):
@@ -259,7 +287,8 @@ class SoapScraper(Scraper):
     ##########################################
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
-        if not self.max_score or not self.min_score:
+        # if not self.max_score or not self.min_score:
+        if self.review_count is None:
             # SOAP.COM REVIEWS
             try:
                 soap_average_review = float(self.tree_html.xpath("//span[contains(@class,'pr-rating pr-rounded average')]//text()")[0].strip())
@@ -277,6 +306,7 @@ class SoapScraper(Scraper):
             m = re.findall(r"var pr_page_id = '(.*?)'", "\n".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
             product_ids = m
             product_ids = list(set(product_ids))
+            redirect_tree = None
             for product_id in product_ids:
                 if len(product_id) == 4:
                     product_id = "00%s" % product_id
@@ -295,6 +325,10 @@ class SoapScraper(Scraper):
                     break
                 except:
                     continue
+            if redirect_tree is None:
+                self.review_count = soap_review_count
+                self.average_review = soap_average_review
+                return
             review_count = redirect_tree.xpath("//span[@class='pr-review-num']//text()")[0].strip()
             m = re.findall(r"\d+", review_count)
             if len(m) > 0:
@@ -323,8 +357,7 @@ class SoapScraper(Scraper):
                     break
             self.max_score = max(rv_scores)
             self.min_score = min(rv_scores)
-
-            # SOAP.COM REVIEWS
+        return
 
     def _average_review(self):
         self._load_reviews()
@@ -404,15 +437,26 @@ class SoapScraper(Scraper):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 0:
             return None
-
-        rows = self.tree_html.xpath("//input[@class='skuHidden']/@isoutofstock")
-        if len(rows) == 1 and 'Y' in rows:
-            return 1
-        if len(rows) > 0 and 'N' not in rows:
-            return 1
-        # rows = self.tree_html.xpath("//input[contains(@class,'addToCartButtonBox')]")
-        # if len(rows) > 0:
-        #     return 0
+        try:
+            btn_cls = self.tree_html.xpath("//input[@id='AddCartButton']/@class")[0].strip()
+            if "proaddDisableBtn" in btn_cls:
+                return 1
+            if "proaddBtn" in btn_cls:
+                rows = self.tree_html.xpath("//input[@class='skuHidden']/@isoutofstock")
+                if len(rows) == 1 and 'Y' in rows:
+                    return 1
+                if len(rows) > 0 and 'N' not in rows:
+                    return 1
+                # if len(rows) == 1 and 'N' in rows:
+                #     return 1
+                if len(self.tree_html.xpath("//div[contains(@class,'productInfoRight')]//td[@class='outOfStockQty']//span[@class='outOfStock']")) < 1:
+                    return 0
+                # rows = self.tree_html.xpath("//input[contains(@class,'addToCartButtonBox')]")
+                # if len(rows) > 0:
+                #     return 0
+                return 0
+        except IndexError:
+            pass
         return 0
 
     def _in_stores_out_of_stock(self):

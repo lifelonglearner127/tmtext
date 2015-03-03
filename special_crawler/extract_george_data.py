@@ -62,7 +62,10 @@ class GeorgeScraper(Scraper):
     def _product_name(self):
         pn = self.tree_html.xpath('//h1[@id="productName"]//text()')
         if len(pn)>0:
-            return pn[0]
+            return pn[0].strip()
+        pn = self.tree_html.xpath('//div[@id="productDetail"]//h1//text()')
+        if len(pn)>0:
+            return pn[0].strip()
         return None
 
     def _product_title(self):
@@ -76,14 +79,16 @@ class GeorgeScraper(Scraper):
         return None
 
     def _features(self):
-        rows = self.tree_html.xpath("//table[@id='fullSpec']//tr")
-        cells=[]
-        for row in rows:
-            r = row.xpath(".//*[not(self::script)]//text()")
-            rc =",".join([c.strip() for c in r])
-            cells.append(rc)
-        if len(cells)>0:
-            return cells
+        rws = self.tree_html.xpath("//div[@class='tabcontent']//table[@id='fullSpec']")
+        if len(rws)>0:
+            rows = rws[0].xpath(".//tr")
+            cells=[]
+            for row in rows:
+                r = row.xpath(".//*[not(self::script)]//text()")
+                rc =",".join([c.strip() for c in r])
+                cells.append(rc)
+            if len(cells)>0:
+                return cells
         return None
 
 
@@ -99,19 +104,31 @@ class GeorgeScraper(Scraper):
 
 
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//div[contains(@class,'Description')]//text()[normalize-space()]")).strip()
+        sd = self.tree_html.xpath("//div[@id='productDetail']//div[@class='tasting']//text()[normalize-space()]")
+        if len(sd)>0:
+            return sd[0].strip()
+        short_description = " ".join(self.tree_html.xpath("//div[@id='descriptionsContent']//text()[normalize-space()]")).strip()
+        if short_description==None or  short_description=="":
+            short_description = " ".join(self.tree_html.xpath("//p[@class='setDesc']//text()[normalize-space()]")).strip()
+        if short_description==None or  short_description=="":
+            short_description = " ".join(self.tree_html.xpath("//div[contains(@class,'Description') or @class='itemDesc' or contains(@id,'Description')]//text()[normalize-space()]")).strip()
         if short_description==None or  short_description=="":
             sd = self.tree_html.xpath('//*[@id="tabContentsProduct"]//div[@class="description"]//text()[normalize-space()]')
             if len(sd) > 0:
                 short_description = self._clean_text(sd[0])
         if short_description is not None and len(short_description)>0:
-            return short_description.replace("\n"," ")
+            return self._clean_text(short_description)
         return self._long_description_helper()
 
 
     def _long_description(self):
+        ld = self.tree_html.xpath("//div[@id='productDescription']//div[@class='tabcontent' or @id='descriptionsContent']")
+        if len(ld) > 0:
+            fd = " ".join([d.strip() for d in ld[0].xpath("./text()")])
+            long_description = fd + " ".join([d.strip() for d in ld[0].xpath("./div[@class='tasting']/text()")])
+            if len(long_description) > 0:
+                return long_description
         long_description = " ".join(self.tree_html.xpath("//div[contains(@id,'wc-overview') or contains(@id,'wc-features')]//text()[normalize-space()]")).strip()
-#        long_description = self.tree_html.xpath("//div[contains(@id,'wc-overview')]")
         if len(long_description) > 0:
             return long_description
         return None
@@ -162,7 +179,7 @@ class GeorgeScraper(Scraper):
             tree = self.tree_html
 
         #The small images are below the big image
-        image_url = tree.xpath("//div[@id='imageSlide']//img/@src")
+        image_url =[m for m in tree.xpath("//div[@id='imageSlide']//img/@src") if m.find("_100day")<0]
         if a == 1:
             self.image_urls = image_url
         if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
@@ -197,8 +214,10 @@ class GeorgeScraper(Scraper):
         try:
             if len(image_url)>0 and image_url[0].find("no-img")>0:
                 return 1
-            if self._no_image(image_url[0]):
+            if len(image_url)>0 and self._no_image(image_url[0]):
                 return 1
+##            if len(image_url)>0:
+##                print "image hash",self._image_hash(image_url[0])
         except Exception, e:
             print "image_urls WARNING: ", e.message
         return 0
@@ -209,6 +228,12 @@ class GeorgeScraper(Scraper):
         video_url = self.tree_html.xpath("//img[contains(@data-asset-url,'.mp4')]/@wcobj")
         if len(video_url) > 0:
             return video_url
+        video_url = self.tree_html.xpath("//div[@itemprop='video']//iframe/@src")
+        if len(video_url) > 0:
+            return video_url
+        video_url = self.tree_html.xpath('//img[@data-asset-wrapper="video-gallery"]/@data-asset-url')
+        if len(video_url) > 0:
+            return ["http:/"+v for v in video_url]
         return None
 
 
@@ -218,6 +243,9 @@ class GeorgeScraper(Scraper):
 
     # return one element containing the PDF
     def _pdf_urls(self):
+        pdf = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+        if len(pdf)>0:
+            return pdf
         return None
 
     def _pdf_count(self):
@@ -342,6 +370,8 @@ class GeorgeScraper(Scraper):
         if self._site_online() == 0: return None
         im = self.tree_html.xpath('//img[@id="outofstock"]')
         if len(im)>0 : return 1
+        im = self.tree_html.xpath('//span[@class="stockOut"]')
+        if len(im)>0 : return 1
         s = self.tree_html.xpath('//select[@id="size"]')
         if len(s)>0 and s[0].get("disabled")==None: return 0
         c = self.tree_html.xpath('//select[@id="color"]')
@@ -402,8 +432,9 @@ class GeorgeScraper(Scraper):
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
-        text = text.replace("<br />"," ").replace("\n"," ")
-        return re.sub("&nbsp;", " ", text).strip()
+        text = text.replace("<br />"," ").replace("\n"," ").replace("\t"," ").replace("\r"," ")
+       	text = re.sub("&nbsp;", " ", text).strip()
+        return  re.sub(r'\s+', ' ', text)
 
 
 

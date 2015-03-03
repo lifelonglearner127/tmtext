@@ -7,18 +7,34 @@ Gist : Scrape Queue -> Scrape -> Process Queue
 
 from sqs_connect import SQS_Queue
 import logging
+import sys
 import time
 import json
 import requests
 import threading
 import urllib
 
-from config import scrape_queue_name
+# initialize the logger
+logger = logging.getLogger('basic_logger')
+logger.setLevel(logging.DEBUG)
+fh = logging.StreamHandler()
+fh.setLevel(logging.DEBUG)
+logger.addHandler(fh)
+
+# from config import scrape_queue_name
+
+queue_names = {
+    "Development": "dev_scrape", 
+    "UnitTest": "unit_test_scrape", 
+    "IntegrationTest": "integration_test_scrape", 
+    "RegressionTest": "test_scrape",
+    "Demo": "demo_scrape", 
+    "Production": "production_scrape"}
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
 
-def main( thread_id):
-    print( "Starting thread %i" % thread_id)
+def main( environment, scrape_queue_name, thread_id):
+    logger.info( "Starting thread %d" % thread_id)
     # establish the scrape queue
     sqs_scrape = SQS_Queue( scrape_queue_name)
 
@@ -40,7 +56,7 @@ def main( thread_id):
                 # Catch all other exceptions to prevent the whole thing from crashing
                 # TODO : Consider testing that sqs_scrape is still live, and restart it if need be
                 go_to_sleep = True
-                logging.warning('Error: ', e)
+                logger.warn(e)
 
         if not go_to_sleep:
             try:
@@ -55,7 +71,7 @@ def main( thread_id):
                 product_id = message_json['product_id']
                 event = message_json['event']
                 
-                print('Received: thread $i server %s url %s'.format( thread_id, server_name, url))
+                logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
                 # Scrape the page using the scraper running on localhost
                 base = "http://localhost/get_data?url=%s"
@@ -76,18 +92,39 @@ def main( thread_id):
                 # ... and remove it from the scrape queue
                 sqs_scrape.task_done()
                 
-                print('Sent: thread $i server %s url %s'.format( thread_id, server_name, url))
+                logger.info("Sent: thread %d server %s url %s" % ( thread_id, server_name, url))
 
             except Exception as e:
-                logging.warning('Error: ', e)
+                logger.warn(e)
                 sqs_scrape.reset_message()
 
-        sleep( 1)
+        time.sleep( 1)
 
 if __name__ == "__main__":
-    threads = []
-    for i in range(5):
-        print( "Creating thread %i" % i)
-        t = threading.Thread( target=main, args=( i))
-        threads.append( t)
-        t.start()
+    if len(sys.argv) > 1:
+        environment = sys.argv[1] # e.g., UnitTest, see dictionary of queue names
+        queue_name = "no queue"
+        
+        for k in queue_names:
+            if environment == k:
+                queue_name = queue_names[k]
+
+        if queue_name != "no queue":
+            logger.info( "environment: %s" % environment)
+            logger.info( "using scrape queue %s" % queue_name)
+            if environment != "UnitTest":
+                threads = []
+                for i in range(5):
+                    logger.info( "Creating thread %d" % i)
+                    t = threading.Thread( target=main, args=( environment, queue_name, i))
+                    threads.append( t)
+                    t.start()
+            else:
+                main( environment, queue_name, -1)
+        else:
+            print "Environment not recognized: %s" % environment
+    else:
+        print "######################################################################################################"
+        print "This script receives URLs via SQS and sends back the scraper response."
+        print "Please input correct argument for the environment.\nfor ex: python get_scrape_queue.py 'UnitTest' "
+        print "######################################################################################################"
