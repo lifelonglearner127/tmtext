@@ -227,6 +227,10 @@ class AmazonSpider(SearchSpider):
                 upc = upc_node[0].strip().split()[0]
                 item['product_upc'] = upc
 
+            asin_node = hxs.select("//li/b/text()[normalize-space()='ASIN:']/parent::node()/parent::node()/text()").extract()
+            if asin_node:
+                item['product_asin'] = asin_node[0].strip()
+
             brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
             if brand_holder:
                 item['product_brand'] = brand_holder[0]
