@@ -12,6 +12,7 @@ from product_ranking.spiders import cond_replace, cond_replace_value
 from product_ranking.spiders import cond_set_value, cond_set
 from contrib.product_spider import ProductsSpider
 from product_ranking.items import Price, BuyerReviews
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 
 SYM_GBP = '£'
@@ -218,6 +219,9 @@ class SainsburysProductSpider(ProductsSpider):
                      response.css('#productImageHolder img::attr(src)')
                      .extract(),
                      lambda url: urlparse.urljoin(response.url, url))
+        title = product['title']
+        brand = guess_brand_from_first_words(title, max_words=15)
+        cond_set_value(product, 'brand', brand)
         self._unify_price(product)
 
     def _unify_price(self, product):
