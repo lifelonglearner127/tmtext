@@ -631,7 +631,7 @@ class ServiceScraperTest(unittest.TestCase):
                         self.urls_by_scraper[site].append(url[0])
                         nTestUrlCounts += 1
 
-            print "Total test urls: %d" + nTestUrlCounts
+            print "Total test urls: %d" % nTestUrlCounts
 
         except Exception, e:
             print e
