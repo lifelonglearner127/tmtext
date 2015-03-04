@@ -156,7 +156,7 @@ class WalmartSpider(SearchSpider):
 
         upc_node = hxs.select("//meta[@itemprop='productID']/@content")
         if upc_node:
-            item['product_upc'] = upc_node.extract()[0]
+            item['product_upc'] = [upc_node.extract()[0]]
 
 
         brand_holder = hxs.select("//meta[@itemprop='brand']/@content").extract()
