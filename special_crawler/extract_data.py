@@ -12,7 +12,6 @@ import mmh3 as MurmurHash
 import os
 
 from no_img_hash import fetch_bytes
-from selenium import webdriver
 
 from lxml import html, etree
 from itertools import chain
@@ -184,9 +183,6 @@ class Scraper():
         "date": None,
         "status": None
     }
-
-    #load phantom driver
-    driver = webdriver.PhantomJS()
 
     def load_image_hashes():
         '''Read file with image hashes list
