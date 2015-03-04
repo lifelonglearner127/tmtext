@@ -36,6 +36,8 @@ from extract_freshamazon_data import FreshAmazonScraper
 from extract_george_data import GeorgeScraper
 
 from urllib2 import HTTPError
+from selenium import webdriver
+
 import datetime
 import logging
 from logging import StreamHandler
@@ -81,6 +83,8 @@ SUPPORTED_SITES = {
                     "george" : GeorgeScraper,
                     "peapod" : PeapodScraper,
                     }
+
+driver = webdriver.PhantomJS()
 
 # add logger
 # using StreamHandler ensures that the log is sent to stderr to be picked up by uwsgi log
@@ -222,7 +226,7 @@ def get_data():
         bot = None
 
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)
+    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot, driver=driver)
 
     # validate parameter values
     # url
