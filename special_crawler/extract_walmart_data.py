@@ -1503,8 +1503,6 @@ class WalmartScraper(Scraper):
 
     def load_page_in_phantom(self):
         if not self.is_page_loaded_in_phantom:
-            self.driver.quit()
-            self.driver = webdriver.PhantomJS()
             self.driver.get(self.product_page_url)
             self.is_page_loaded_in_phantom = True
 
