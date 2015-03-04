@@ -570,8 +570,8 @@ class ServiceScraperTest(unittest.TestCase):
         # read input urls from database
         try:
             self.con = None
-            self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
-#            self.con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
+#            self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
+            self.con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
             self.cur = self.con.cursor(cursor_factory=psycopg2.extras.DictCursor)
             self.cur.execute("select url_list from console_massurlimport")
 
@@ -601,6 +601,7 @@ class ServiceScraperTest(unittest.TestCase):
 #                        sample_json = json.loads(json.dumps(sample_json))
                         base = "http://localhost:9001/get_data?url=%s"
                         sample_json = requests.get(base%(urllib.quote(url))).text
+                        print sample_json
                         sample_json = json.loads(sample_json)
                         sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
 
@@ -650,6 +651,7 @@ class ServiceScraperTest(unittest.TestCase):
 
         base = "http://localhost:9001/get_data?url=%s"
         test_json = requests.get(base%(urllib.quote(sample_url))).text
+        print test_json
         test_json = json.loads(test_json)
 
 #        test_json = site_scraper.product_info()
