@@ -11,8 +11,8 @@ import urllib
 import lxml.html
 import time
 import requests
+from selenium import webdriver
 from selenium.webdriver.common.by import By
-
 from extract_data import Scraper
 
 
@@ -47,6 +47,8 @@ class WalmartScraper(Scraper):
 
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
+
+    driver = webdriver.PhantomJS()
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -1501,6 +1503,8 @@ class WalmartScraper(Scraper):
 
     def load_page_in_phantom(self):
         if not self.is_page_loaded_in_phantom:
+            self.driver.quit()
+            self.driver = webdriver.PhantomJS()
             self.driver.get(self.product_page_url)
             self.is_page_loaded_in_phantom = True
 
