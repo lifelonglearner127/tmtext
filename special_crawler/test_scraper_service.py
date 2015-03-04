@@ -589,7 +589,7 @@ class ServiceScraperTest(unittest.TestCase):
                 if not row:
 
                     for site, scraper in SUPPORTED_SITES.items():
-                        site_scraper = scraper(url=url, bot=None)
+                        site_scraper = scraper(url=url, bot=None, driver=None)
 
                         if site_scraper.check_url_format():
                             break
