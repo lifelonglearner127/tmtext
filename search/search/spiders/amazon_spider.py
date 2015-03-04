@@ -221,7 +221,11 @@ class AmazonSpider(SearchSpider):
                 if product_model_extracted:
                     item['product_model'] = product_model_extracted
                 ## print "MODEL EXTRACTED: ", product_model_extracted, " FROM NAME ", item['product_name'].encode("utf-8")
-
+                
+            upc_node = hxs.select("//li/b/text()[normalize-space()='UPC:']/parent::node()/parent::node()/text()").extract()
+            if upc_node:
+                upc = upc_node[0].strip().split()[0]
+                item['product_upc'] = upc
 
             brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
             if brand_holder:
