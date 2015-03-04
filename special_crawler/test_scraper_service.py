@@ -631,7 +631,7 @@ class ServiceScraperTest(unittest.TestCase):
                     continue
 
                 for url in self.urls:
-                    site_scraper = scraper(url=url[0], bot=None)
+                    site_scraper = scraper(url=url[0], bot=None, driver=None)
                     if site_scraper.check_url_format() and url[0] not in self.urls_by_scraper[site]:
                         self.urls_by_scraper[site].append(url[0])
 
@@ -645,7 +645,7 @@ class ServiceScraperTest(unittest.TestCase):
         print "\n-------------------------------Report results for %s-------------------------------" % website
         print ">>>>>>sample url: %s" % sample_url
 
-        site_scraper = SUPPORTED_SITES[website](url=sample_url, bot=None)
+        site_scraper = SUPPORTED_SITES[website](url=sample_url, bot=None, driver=None)
 
         base = "http://localhost:9001/get_data?url=%s"
         test_json = requests.get(base%(urllib.quote(sample_url))).text
