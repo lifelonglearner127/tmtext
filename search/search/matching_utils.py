@@ -537,7 +537,7 @@ class ProcessText():
             log.msg("UPC MATCHED: " + str(upc1) + " " + str(upc2) + "\n", level=log.INFO)
             return True
         else:
-            log.msg("UPC NOT MATCHED: " + str(upc1) + " " + str(upc2) + "\n", level=log.INFO)
+            log.msg("UPC NOT MATCHED: " + str(upc1) + " " + str(upc2) + " " + str(list(set(upc1).intersection(set(upc2)))) + "\n", level=log.INFO)
             return False
             
 

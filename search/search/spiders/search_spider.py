@@ -992,7 +992,7 @@ class SearchSpider(BaseSpider):
                         product_price = None
 
                     if 'origin_upc' in response.meta:
-                        origin_upc = str(response.meta['origin_upc'])
+                        origin_upc = response.meta['origin_upc']
                     else:
                         origin_upc = None
 
