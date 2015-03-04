@@ -883,7 +883,7 @@ class SearchSpider(BaseSpider):
             if m:
                 price = float(m.group(1))
             else:
-                sys.stderr.write("Didn't match product price: " + product_target_price + " " + response.url + "\n")
+                sys.stderr.write("Didn't match product price: " + product_target_price + "\n")
 
         # as source site, we are only interested in the UPC, not the DPCI.
         # We won't be searching on other sites by DPCI.
