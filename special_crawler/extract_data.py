@@ -187,7 +187,6 @@ class Scraper():
 
     #load phantom driver
     driver = webdriver.PhantomJS()
-    driver.set_window_size(100, 100)
 
     def load_image_hashes():
         '''Read file with image hashes list
