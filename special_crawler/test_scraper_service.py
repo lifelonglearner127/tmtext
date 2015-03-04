@@ -551,7 +551,7 @@ class ServiceScraperTest(unittest.TestCase):
         is_valid_param = False
 
         if specified_website != "":
-            for site, scraper in SUPPORTED_SITES.items():
+            for site in SUPPORTED_SITES.keys():
                 if site == specified_website:
                     is_valid_param = True
                     break
@@ -559,7 +559,7 @@ class ServiceScraperTest(unittest.TestCase):
             if not is_valid_param:
                 print "\nPlease input valid website name.\n-----------------------------------"
 
-                for site, scraper in SUPPORTED_SITES.items():
+                for site in SUPPORTED_SITES.keys():
                     sys.stdout.write(site + " ")
 
                 print "\n"
@@ -587,7 +587,7 @@ class ServiceScraperTest(unittest.TestCase):
                 if not row:
                     isFound = False
 
-                    for site, scraper in SUPPORTED_SITES.items():
+                    for site in SUPPORTED_SITES.keys():
                         if site + ".com" in url:
                             isFound = True
                             break
@@ -620,7 +620,7 @@ class ServiceScraperTest(unittest.TestCase):
             self.urls_by_scraper = {}
             nTestUrlCounts = 0
 
-            for site, scraper in SUPPORTED_SITES.items():
+            for site in SUPPORTED_SITES.keys():
                 self.urls_by_scraper[site] = []
 
                 if specified_website != "" and site != specified_website:
