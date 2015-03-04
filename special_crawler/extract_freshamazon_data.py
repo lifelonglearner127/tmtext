@@ -459,7 +459,7 @@ class FreshAmazonScraper(Scraper):
             w = ''
             br = 0
             pr = 0
-            for s in ingr[0]:
+            for s in ingr[0].replace(" and ",","):
                 if s == "," and br == 0 and pr == 0:
                     if w != "":
                         res.append(w.strip())
