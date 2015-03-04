@@ -143,6 +143,10 @@ class AmazonSpider(SearchSpider):
         if 'origin_model' in response.meta:
             item['origin_model'] = response.meta['origin_model']
 
+        if 'origin_upc' in response.meta:
+            item['origin_upc'] = response.meta['origin_upc']
+
+
         # if 'origin_id' in response.meta:
         #     item['origin_id'] = response.meta['origin_id']
         #     assert self.by_id
