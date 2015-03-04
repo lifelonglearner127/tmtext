@@ -529,7 +529,8 @@ class ProcessText():
     # check if 2 UPCs match
     # can be enirched in the future with more sophisticated checks
     def upcs_match(upc1, upc2):
-        if upc1 == upc2:
+        # upcs are lists of upcs for each product
+        if set(upc1).intersection(set(upc2)):
             log.msg("UPC MATCHED: " + str(upc1) + " " + str(upc2) + "\n", level=log.INFO)
             return True
         else:

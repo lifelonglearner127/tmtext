@@ -224,7 +224,7 @@ class AmazonSpider(SearchSpider):
                 
             upc_node = hxs.select("//li/b/text()[normalize-space()='UPC:']/parent::node()/parent::node()/text()").extract()
             if upc_node:
-                upc = upc_node[0].strip().split()[0]
+                upc = upc_node[0].strip().split()
                 item['product_upc'] = upc
 
             asin_node = hxs.select("//li/b/text()[normalize-space()='ASIN:']/parent::node()/parent::node()/text()").extract()
