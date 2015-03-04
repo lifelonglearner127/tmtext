@@ -10,8 +10,12 @@ import requests
 import sys
 import urllib
 from datetime import date
-from crawler_service import SUPPORTED_SITES
 
+SUPPORTED_SITES = ["amazon", "bestbuy", "homedepot","statelinetack","tesco","walmart","argos",
+                    "kmart","ozon","pgestore","pgshop","vitadepot","wayfair","impactgel",
+                    "chicksaddlery","bhinneka","maplin","hersheysstore","target","chicago",
+                    "samsclub","babysecurity","staples","soap","drugstore","staplesadvantage",
+                    "freshamazon","souq","freshdirect","quill","george","peapod"]
 
 class JsonDiff:
     def __init__(self, sample_json, test_json, list_depth=0):
@@ -551,7 +555,7 @@ class ServiceScraperTest(unittest.TestCase):
         is_valid_param = False
 
         if specified_website != "":
-            for site in SUPPORTED_SITES.keys():
+            for site in SUPPORTED_SITES:
                 if site == specified_website:
                     is_valid_param = True
                     break
@@ -559,7 +563,7 @@ class ServiceScraperTest(unittest.TestCase):
             if not is_valid_param:
                 print "\nPlease input valid website name.\n-----------------------------------"
 
-                for site in SUPPORTED_SITES.keys():
+                for site in SUPPORTED_SITES:
                     sys.stdout.write(site + " ")
 
                 print "\n"
@@ -587,7 +591,7 @@ class ServiceScraperTest(unittest.TestCase):
                 if not row:
                     isFound = False
 
-                    for site in SUPPORTED_SITES.keys():
+                    for site in SUPPORTED_SITES:
                         if site + ".com" in url:
                             isFound = True
                             break
@@ -620,7 +624,7 @@ class ServiceScraperTest(unittest.TestCase):
             self.urls_by_scraper = {}
             nTestUrlCounts = 0
 
-            for site in SUPPORTED_SITES.keys():
+            for site in SUPPORTED_SITES:
                 self.urls_by_scraper[site] = []
 
                 if specified_website != "" and site != specified_website:
