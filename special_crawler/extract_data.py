@@ -185,6 +185,10 @@ class Scraper():
         "status": None
     }
 
+    #load phantom driver
+    driver = webdriver.PhantomJS()
+    driver.set_window_size(1120, 550)
+
     def load_image_hashes():
         '''Read file with image hashes list
         Return list of image hashes found in file
@@ -234,10 +238,6 @@ class Scraper():
             if key not in self.BASE_DATA_TYPES:
 #                print "*******EXTRA data type: ", key
                 del self.ALL_DATA_TYPES[key]
-
-        #load phantom driver
-        self.driver = webdriver.PhantomJS()
-        self.driver.set_window_size(1120, 550)
 
     def _pre_set_fields(self):
         '''Before the scraping for the particular site is started,
