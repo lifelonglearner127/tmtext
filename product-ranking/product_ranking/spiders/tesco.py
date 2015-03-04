@@ -69,11 +69,8 @@ class TescoProductsSpider(BaseProductsSpider):
         url = response.url
 
         # This will contain everything except for the URL and description.
-        product_jsons = response.xpath(
-            "//script[@type='text/javascript']/text()"
-        ).re(
-            r"\s*tesco\.productData\.push\((\{.+?\})\);"
-        )
+        product_jsons = response.xpath('//meta[@name="productdata"]/@content').extract()
+
         if not product_jsons:
             self.log("Found no product data on: %s" % url, ERROR)
 
@@ -82,7 +79,7 @@ class TescoProductsSpider(BaseProductsSpider):
         if not product_links:
             self.log("Found no product links on: %s" % url, ERROR)
 
-        for product_json, product_link in zip(product_jsons, product_links):
+        for product_json, product_link in zip(product_jsons[0].split('|'), product_links):
             prod = SiteProductItem()
             cond_set_value(prod, 'url', urlparse.urljoin(url, product_link))
 
@@ -91,6 +88,7 @@ class TescoProductsSpider(BaseProductsSpider):
             cond_set_value(prod, 'price', product_data.get('price'))
             cond_set_value(prod, 'image_url', product_data.get('mediumImage'))
 
+            #prod['upc'] = product_data.get('productId')
             if prod.get('price', None):
                 prod['price'] = Price(
                     price=str(prod['price']).replace(',', '').strip(),
