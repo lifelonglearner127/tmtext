@@ -618,6 +618,7 @@ class ServiceScraperTest(unittest.TestCase):
             self.cur.execute("select url from console_urlsample where not_a_product=0")
             self.urls = self.cur.fetchall()
             self.urls_by_scraper = {}
+            nTestUrlCounts = 0
 
             for site, scraper in SUPPORTED_SITES.items():
                 self.urls_by_scraper[site] = []
@@ -628,6 +629,9 @@ class ServiceScraperTest(unittest.TestCase):
                 for url in self.urls:
                     if site + ".com" in url[0] and url[0] not in self.urls_by_scraper[site]:
                         self.urls_by_scraper[site].append(url[0])
+                        nTestUrlCounts += 1
+
+            print "Total test urls: " + nTestUrlCounts
 
         except Exception, e:
             print e
