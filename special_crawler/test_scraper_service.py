@@ -258,11 +258,9 @@ class JsonDiff:
                                            str(_json1), type(_json2).__name__,
                                            str(_json2)))
             '''
-            '''
             print u"TypeDifference : {} - is {}: ({}), but was {}: ({})".format(path, type(_json1).__name__,
                                            str(_json1), type(_json2).__name__,
                                            str(_json2))
-            '''
             self.difference.append(u'<tr style="background-color: green; color: white;"><td>{}</td>'
                                    u'<td>{}</td><td>{}</td></tr>'
                                    .format(path, type(_json1).__name__, type(_json2).__name__))
