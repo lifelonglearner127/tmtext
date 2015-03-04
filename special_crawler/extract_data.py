@@ -208,7 +208,6 @@ class Scraper():
     def __init__(self, **kwargs):
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
-        self.driver = kwargs['driver']
 
         # Set generic fields
         # directly (don't need to be computed by the scrapers)
