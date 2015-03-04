@@ -143,6 +143,10 @@ class AmazonSpider(SearchSpider):
         if 'origin_model' in response.meta:
             item['origin_model'] = response.meta['origin_model']
 
+        if 'origin_upc' in response.meta:
+            item['origin_upc'] = response.meta['origin_upc']
+
+
         # if 'origin_id' in response.meta:
         #     item['origin_id'] = response.meta['origin_id']
         #     assert self.by_id
@@ -221,7 +225,15 @@ class AmazonSpider(SearchSpider):
                 if product_model_extracted:
                     item['product_model'] = product_model_extracted
                 ## print "MODEL EXTRACTED: ", product_model_extracted, " FROM NAME ", item['product_name'].encode("utf-8")
+                
+            upc_node = hxs.select("//li/b/text()[normalize-space()='UPC:']/parent::node()/parent::node()/text()").extract()
+            if upc_node:
+                upc = upc_node[0].strip().split()
+                item['product_upc'] = upc
 
+            asin_node = hxs.select("//li/b/text()[normalize-space()='ASIN:']/parent::node()/parent::node()/text()").extract()
+            if asin_node:
+                item['product_asin'] = asin_node[0].strip()
 
             brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
             if brand_holder:

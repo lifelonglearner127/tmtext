@@ -313,7 +313,7 @@ class SearchSpider(BaseSpider):
 
                 request.meta['origin_name'] = product_name
                 request.meta['origin_model'] = product_model
-                request.meta['origin_upc'] = product_upc
+                request.meta['origin_upc'] = [product_upc]
                 if product_price:
                     request.meta['origin_price'] = product_price
 
@@ -545,7 +545,7 @@ class SearchSpider(BaseSpider):
 
         # 1) Search by UPC
         if product_upc:
-
+            # TODO: search by multiple UPCs if there are more than 1?
             query1 = self.build_search_query(product_upc)
             search_pages1 = self.build_search_pages(query1)
             #page1 = search_pages1[self.target_site]
@@ -647,7 +647,7 @@ class SearchSpider(BaseSpider):
 
         request.meta['origin_name'] = product_name
         request.meta['origin_model'] = product_model
-        request.meta['origin_upc'] = product_upc
+        request.meta['origin_upc'] = [product_upc]
         if product_price:
             request.meta['origin_price'] = product_price
 
@@ -920,7 +920,7 @@ class SearchSpider(BaseSpider):
         if 'origin_upc' not in response.meta:
             origin_upc = ''
         else:
-            origin_upc = response.meta['origin_upc']
+            origin_upc = str(response.meta['origin_upc'])
         self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8") + " UPC: " + origin_upc.encode("utf-8"), level=log.DEBUG)
         self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
         self.log( "MATCHES: ", level=log.DEBUG)
