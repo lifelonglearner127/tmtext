@@ -568,8 +568,8 @@ class ServiceScraperTest(unittest.TestCase):
         # read input urls from database
         try:
             self.con = None
-#            self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
-            self.con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
+            self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
+#            self.con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
             self.cur = self.con.cursor(cursor_factory=psycopg2.extras.DictCursor)
             self.cur.execute("select url_list from console_massurlimport")
 
@@ -584,22 +584,17 @@ class ServiceScraperTest(unittest.TestCase):
                 self.cur.execute("select * from console_urlsample where url='%s'" % url)
                 row = self.cur.fetchall()
 
-                site_scraper = None
-
                 if not row:
+                    isFound = False
 
                     for site, scraper in SUPPORTED_SITES.items():
-                        site_scraper = scraper(url=url, bot=None)
-
-                        if site_scraper.check_url_format():
+                        if site + ".com" in url:
+                            isFound = True
                             break
 
-                    if site_scraper is not None:
-#                        sample_json = site_scraper.product_info()
-#                        sample_json = json.loads(json.dumps(sample_json))
+                    if isFound:
                         base = "http://localhost:9001/get_data?url=%s"
                         sample_json = requests.get(base%(urllib.quote(url))).text
-                        print sample_json
                         sample_json = json.loads(sample_json)
                         sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
 
@@ -631,8 +626,7 @@ class ServiceScraperTest(unittest.TestCase):
                     continue
 
                 for url in self.urls:
-                    site_scraper = scraper(url=url[0], bot=None)
-                    if site_scraper.check_url_format() and url[0] not in self.urls_by_scraper[site]:
+                    if site + ".com" in url[0] and url[0] not in self.urls_by_scraper[site]:
                         self.urls_by_scraper[site].append(url[0])
 
         except Exception, e:
@@ -645,15 +639,10 @@ class ServiceScraperTest(unittest.TestCase):
         print "\n-------------------------------Report results for %s-------------------------------" % website
         print ">>>>>>sample url: %s" % sample_url
 
-        site_scraper = SUPPORTED_SITES[website](url=sample_url, bot=None)
-
         base = "http://localhost:9001/get_data?url=%s"
         test_json = requests.get(base%(urllib.quote(sample_url))).text
-        print test_json
         test_json = json.loads(test_json)
 
-#        test_json = site_scraper.product_info()
-#        test_json = json.loads(json.dumps(test_json))
         test_json_str = json.dumps(test_json, sort_keys=True, indent=4)
 
         today = date.today()
@@ -669,7 +658,6 @@ class ServiceScraperTest(unittest.TestCase):
             sample_json_str = row["json"]
             sample_json = json.loads(sample_json)
             diff_engine = JsonDiff(test_json, sample_json)
-            #        if site_scraper.not_a_product():
 
             print ">>>>>>reports:"
 
