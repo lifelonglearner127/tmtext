@@ -5,10 +5,6 @@ from PIL import Image
 import urllib
 import re
 
-images = []
-hist = []
-matches = 0
-# images = [sys.argv[1], sys.argv[2]]
 
 def get_calcHist(hsv):
     return cv2.calcHist( [hsv], [0, 1], None, [180, 256], [0, 180, 0, 256] )
@@ -17,7 +13,7 @@ def compare_images(img1, img2):
     """ Takes 2 images, as local paths or URLs.
         Returns a float [0, 1) representing the similarities of the images.
     """
-
+    hist = []
     for image in  (img1, img2):
         path, ext = os.path.splitext(image)
         path += ".jpg"
