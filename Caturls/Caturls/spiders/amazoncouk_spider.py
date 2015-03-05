@@ -52,11 +52,11 @@ class AmazoncoukSpider(CaturlsSpider):
 
         try:
             nr_results = hxs.select("//h2[@id='s-result-count']/text()").re("[0-9,]+")[-1]
-            print nr_results, "FOR", response.url
+            print nr_results, "FOR", category
         except Exception:
             pass
 
-        product_links = hxs.select("//div[contains(@class,'a-row a-spacing-mini')]//a[contains(@class, 'a-link-normal s-access-detail-page  a-text-normal')]/@href")
+        product_links = hxs.select("//div[contains(@class,'a-row')]//a[contains(@class, 'a-link-normal s-access-detail-page  a-text-normal')]/@href")
         for product_link in product_links:
             item = ProductItem()
             item['product_url'] = product_link.extract()
