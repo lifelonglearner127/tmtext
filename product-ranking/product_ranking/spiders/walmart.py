@@ -5,13 +5,16 @@ import pprint
 import re
 import urlparse
 
+from scrapy import Selector
+from scrapy.http import Request
 from scrapy.log import ERROR, INFO
 
 from product_ranking.items import (SiteProductItem, RelatedProduct,
-                                   BuyerReviews, Price)
+                                   BuyerReviews, Price, SponsoredLinks)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
 
+is_empty = lambda x: x[0] if x else ""
 
 class WalmartProductsSpider(BaseProductsSpider):
     """Implements a spider for Walmart.com.
@@ -40,6 +43,8 @@ class WalmartProductsSpider(BaseProductsSpider):
         'rating': 'rating_high',
     }
 
+    sponsored_links = []
+
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
@@ -52,6 +57,30 @@ class WalmartProductsSpider(BaseProductsSpider):
             ),
             *args, **kwargs)
 
+    def start_requests(self):
+        for st in self.searchterms:
+            url = "http://www.walmart.com/midas/srv/ypn?" \
+                "query=%s&context=Home" \
+                "&clientId=walmart_us_desktop_backfill_search" \
+                "&channel=ch_8,backfill" % (st,)
+            yield Request(url=url, callback=self.get_sponsored_links)
+
+    def get_sponsored_links(self, response):
+        arr = []
+        for link in response.xpath('///div[contains(@class, "yahoo_sponsored_link")]/div[contains(@class, "yahoo_sponsored_link")]'):
+            lable =  is_empty(link.xpath('div/span[@class="title"]/a').extract())
+            lable = Selector(text=lable).xpath('string()').extract()
+            text = is_empty(link.xpath('div/span[@class="desc"]/a').extract())
+            text = Selector(text=text).xpath('string()').extract()
+            ad_text = is_empty(lable) + " " + is_empty(text)
+
+            ad_url = is_empty(link.xpath('div/span[@class="title"]/a/@href').extract())
+
+            arr.append(SponsoredLinks(ad_text=ad_text, ad_url=ad_url))
+        self.sponsored_links = {"Sponsored links": arr}
+
+        return super(WalmartProductsSpider, self).start_requests()
+
     def parse_product(self, response):
         if self._search_page_error(response):
             self.log(
@@ -59,6 +88,9 @@ class WalmartProductsSpider(BaseProductsSpider):
             return
 
         product = response.meta['product']
+
+        if self.sponsored_links["Sponsored links"]:
+            product["sponsored_links"] = self.sponsored_links
 
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
