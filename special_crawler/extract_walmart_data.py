@@ -1252,12 +1252,15 @@ class WalmartScraper(Scraper):
                     similarity = compare_images(img[0], mobile_img[0])
                     return similarity
                 except:
+                    return 111
                     return None
             else:
+                return 222
                 return None
         else:
+            return 333
             return None # no images found to compare
-
+        return 444
     # ! may throw exception if json object not decoded properly
     def _extract_jsfunction_body(self):
         """Extracts body of javascript function
