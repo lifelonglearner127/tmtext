@@ -49,7 +49,7 @@ class StaplesAdvantageScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        rows = self.tree_html.xpath("//div[@class='productpics']//div[@id='s7FlashViewer']")
+        rows = self.tree_html.xpath("//div[@id='s7FlashViewer']")
         if len(rows) > 0:
             return False
         return True
@@ -63,7 +63,10 @@ class StaplesAdvantageScraper(Scraper):
 
     def _product_id(self):
         # http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=310342&catalogId=4&item_id=71341298&langId=-1&currentSKUNbr=310342&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=125083516&addWE1ToCart=true
-        id = self.tree_html.xpath("//div[@class='maindetailitem']//input[@name='currentSKUNumber']/@value")[0].strip()
+        try:
+            id = self.tree_html.xpath("//div[@class='maindetailitem']//input[@name='currentSKUNumber']/@value")[0].strip()
+        except IndexError:
+            id = self.tree_html.xpath("//input[@name='currentSKUNumber']/@value")[0].strip()
         return id
 
     ##########################################
@@ -192,7 +195,27 @@ class StaplesAdvantageScraper(Scraper):
                         contents_wc4 = urllib.urlopen(url_wc4).read()
                         tree4 = html.fromstring(contents_wc4)
                         playerKey = tree4.xpath("//param[@name='playerKey']/@value")[0].strip()
-                        video = tree4.xpath("//param[@name='video']/@value")[0].strip()
+                        video_ids = tree4.xpath("//div[@id='video_slider']//li[contains(@class,'video_slider_item')]/@video_id")
+                        for video in video_ids:
+                            # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
+                            url_wc5 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
+                            contents_wc5 = urllib.urlopen(url_wc5).read()
+                            jsn = json.loads(contents_wc5)
+                            jsn = jsn["sources"]
+                            for item in jsn:
+                                try:
+                                    file_name = item['file']
+                                    video_urls.append(file_name)
+                                    break
+                                except:
+                                    pass
+                if len(rows) < 1:
+                    url_wc4 = tree.xpath("//iframe/@src")[0].strip()
+                    contents_wc4 = urllib.urlopen(url_wc4).read()
+                    tree4 = html.fromstring(contents_wc4)
+                    playerKey = tree4.xpath("//param[@name='playerKey']/@value")[0].strip()
+                    video_ids = tree4.xpath("//div[@id='video_slider']//li[contains(@class,'video_slider_item')]/@video_id")
+                    for video in video_ids:
                         # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
                         url_wc5 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
                         contents_wc5 = urllib.urlopen(url_wc5).read()
@@ -202,8 +225,10 @@ class StaplesAdvantageScraper(Scraper):
                             try:
                                 file_name = item['file']
                                 video_urls.append(file_name)
+                                break
                             except:
                                 pass
+
         if len(video_urls) < 1:
             return None
         self.video_urls = video_urls
