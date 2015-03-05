@@ -8,6 +8,8 @@ from scrapy.item import Item, Field
 
 RelatedProduct = collections.namedtuple("RelatedProduct", ['title', 'url'])
 
+SponsoredLinks = collections.namedtuple("SponsoredLinks", ['ad_text', 'ad_url'])
+
 BuyerReviews = collections.namedtuple(
     "BuyerReviews",
     ['num_of_reviews',  # int
@@ -88,6 +90,8 @@ class SiteProductItem(Item):
     locale = Field()        # String.
     # Dict of RelatedProducts. The key is the relation name.
     related_products = Field()
+    # Dict of SponsoredLinks. The key is the relation name.
+    sponsored_links = Field()
     # Available in-store only
     is_in_store_only = Field()
     # Out of stock
