@@ -44,6 +44,11 @@ class SoapProductSpider(BaseProductsSpider):
     SORTING = None
 
     def __init__(self, sort_mode=None, *args, **kwargs):
+        from scrapy.conf import settings
+        settings.overrides['DEPTH_PRIORITY'] = 1
+        settings.overrides['SCHEDULER_DISK_QUEUE'] = 'scrapy.squeue.PickleFifoDiskQueue'
+        settings.overrides['SCHEDULER_MEMORY_QUEUE'] = 'scrapy.squeue.FifoMemoryQueue'
+
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -201,7 +206,7 @@ class SoapProductSpider(BaseProductsSpider):
                 meta=new_meta, dont_filter=True
             )
 
-        del product["upc"]    
+        del product["upc"]
         return product
         #return self._gen_variants(response)
 

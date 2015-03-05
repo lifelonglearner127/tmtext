@@ -161,7 +161,7 @@ class GoogleProductsSpider(BaseProductsSpider):
             result = re.findall(pattern, product['url'])
             if result:
                 product['url'] = result[0]
-                product['google_source_site'] = []
+                product['google_source_site'] = "{}"
                 stores_link = result[0] + '/online'
                 return Request(stores_link, callback=self.populate_stores,
                                meta={'product': product})
@@ -169,21 +169,60 @@ class GoogleProductsSpider(BaseProductsSpider):
 
     def populate_stores(self, response):
         product = response.meta['product']
-        sellers = response.xpath(
-            '//tr[@class="os-row"]/td[@class="os-seller-name"]/span/a/text()'
-        ).extract()
-        source_list = product['google_source_site']
-        source_list.extend(sellers)
-        product['google_source_site'] = source_list
+        rows = response.xpath(
+            '//tr[@class="os-row"]'
+        )
+        source_dict_old = json.loads(product['google_source_site'])
+        if len(source_dict_old) < 1:
+            source_dict_old = {}
+        source_dict = {}
+        for row in rows:
+            try:
+                seller = row.xpath(
+                    './td[@class="os-seller-name"]/span/a/text()'
+                ).extract()[0]
+                _prices = row.xpath('.//*[contains(@class, "price")]')
+                price = get_price(_prices)
+                # TODO: support more currencies? we have to detect the website
+                #  (google.au, google.br etc.) and use the appropriate currency
+                # See https://support.google.com/merchants/answer/160637?hl=en
+                if '$' not in price:  # TODO: only USD is supported now
+                    self.log(
+                        'Unrecognized currency sign at %s' % response.url,
+                        level=ERROR
+                    )
+                    price = ''
+                    priceCurrency = ''
+                else:
+                    price = price.replace('$', '').replace(',', '').strip()
+                    priceCurrency = 'USD'
+                if source_dict_old.has_key(seller)\
+                        or source_dict.has_key(seller):
+                    occurrences = 0
+                    for key in source_dict_old:
+                        if key == seller or key.startswith("%s::" % seller):
+                            occurrences += 1
+                    for key in source_dict:
+                        if key == seller or key.startswith("%s::" % seller):
+                            occurrences += 1
+                    seller = "%s::%s" % (seller, occurrences)
+                source_dict[seller] = {
+                    'price': price,
+                    'currency': priceCurrency
+                }
+            except IndexError:
+                pass
+        source_dict_new = dict(source_dict, **source_dict_old)
+        product['google_source_site'] = source_dict_new
         next_link = response.xpath(
             '//div[@id="online-pagination"]/div[contains(@class,'
             '"jfk-button-collapse-left")]/@data-reload'
         ).extract()
+        product['google_source_site'] = json.dumps(source_dict_new)
         if next_link:
             url = "https://www.google.com" + next_link[0]
             return Request(url, callback=self.populate_stores,
                            meta={'product': product})
-        product['google_source_site'] = '; '.join(source_list)
         return product
 
     def _scrape_total_matches(self, response):
@@ -243,10 +282,14 @@ class GoogleProductsSpider(BaseProductsSpider):
                 if rewiew_link:
                     rewiew_link = rewiew_link[0]
                 source_site = item.xpath(
-                    './/div[@class="_tyb"]/text()'
-                ).extract()
+                    './/div[@class="_tyb"]'
+                )
                 if source_site:
-                    source_site = source_site[0].replace('from ', '').strip()
+                    source_site_path = source_site
+                    source_site_text = source_site_path.xpath(
+                        './text()').extract()
+                    source_site = source_site_text[0].replace(
+                        'from ', '').strip()
             except IndexError:
                 self.log('Index error at {url}'.format(url=response.url),
                          WARNING)
@@ -284,6 +327,23 @@ class GoogleProductsSpider(BaseProductsSpider):
 
             redirect = url
             url = urlparse.urljoin(response.url, url)
+
+            if len(source_site) > 0:
+                if len(source_site_path) == 1:
+                    source_price = source_site_path.xpath(
+                        './span[@class="price"]/b/text()'
+                    ).extract()
+                    if source_price:
+                        source_price = source_price[0].replace('$', '')\
+                            .replace(',', '').strip()
+                        priceCurrency = 'USD'
+                        data = {
+                            'price': source_price,
+                            'currency': priceCurrency
+                        }
+                        source_site = '{"%s":%s}' % (source_site, data)
+                else:
+                    source_site = '{"%s":{}}' % source_site
 
             yield redirect, SiteProductItem(
                 url=url,

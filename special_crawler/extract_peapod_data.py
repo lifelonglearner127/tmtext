@@ -17,13 +17,13 @@ import requests
 from extract_data import Scraper
 
 
-class StaplesScraper(Scraper):
+class PeapodScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www\.staples\.com/([a-zA-Z0-9\-/]+)/product_([a-zA-Z0-9]+)"
+    INVALID_URL_MESSAGE = "Expected URL format is (https|http)://www\.peapod\.com/itemDetailView.jhtml\?.*"
 
     reviews_tree = None
     max_score = None
@@ -31,12 +31,12 @@ class StaplesScraper(Scraper):
     review_count = None
     average_review = None
     reviews = None
-    image_urls = None
-    image_count = None
+    feature_count = None
+    features = None
 
     def check_url_format(self):
-        # for ex: http://www.staples.com/Epson-WorkForce-Pro-WF-4630-Color-Inkjet-All-in-One-Printer/product_242602?cmArea=home_box1
-        m = re.match(r"^http://www\.staples\.com/([a-zA-Z0-9\-/]+)/product_([a-zA-Z0-9]+)", self.product_page_url)
+        # for ex: https://www.peapod.com/itemDetailView.jhtml?productId=191177&NUM=1424733320503
+        m = re.match(r"^(https|http)://www\.peapod\.com/itemDetailView.jhtml\?.*", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -47,10 +47,74 @@ class StaplesScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        rows = self.tree_html.xpath("//img[@id='largeProductImage']")
+        rows = self.tree_html.xpath("//dd[@class='productImage']//div[@id='productImageHolder']")
         if len(rows) > 0:
             return False
         return True
+
+    # method that returns xml tree of page, to extract the desired elemets from
+    def _extract_page_tree(self):
+        """Overwrites parent class method that builds and sets as instance variable the xml tree of the product page
+        Returns:
+            lxml tree object
+        """
+        formdata = {
+            '_dyncharset': '',
+            '/peapod/handler/iditarod/ZipHandler.continueURL': '',
+            '_D:/peapod/handler/iditarod/ZipHandler.continueURL': '',
+            '/peapod/handler/iditarod/ZipHandler.submitSuccessURL': '',
+            '_D:/peapod/handler/iditarod/ZipHandler.submitSuccessURL': '',
+            '/peapod/handler/iditarod/ZipHandler.submitFailureURL': '',
+            '_D:/peapod/handler/iditarod/ZipHandler.submitFailureURL': '',
+            '_D:zipcode': '',
+            '/peapod/handler/iditarod/ZipHandler.collectProspectURL': '',
+            '_D:/peapod/handler/iditarod/ZipHandler.collectProspectURL': '',
+            '/peapod/handler/iditarod/ZipHandler.storeClosedURL': '',
+            '_D:/peapod/handler/iditarod/ZipHandler.storeClosedURL': '',
+            '/peapod/handler/iditarod/ZipHandler.defaultGuestParameters': '',
+            '_D:/peapod/handler/iditarod/ZipHandler.defaultGuestParameters': '',
+            '_DARGS': '',
+            'Continue': '',
+            '_D:Continue': '',
+        }
+        start_url = "https://www.peapod.com/site/gateway/zip-entry"\
+                    "/top/zipEntry_main.jsp"
+        contents = urllib.urlopen(start_url).read()
+        tree = html.fromstring(contents)
+
+        new_data = {}
+        for key in formdata.keys():
+            path = '//form[@name="zipEntryForm"]//input[@name="%s"]/@value' % key
+            new_data[key] = tree.xpath(path)[0].strip()
+        # populate static info
+        new_data['zipcode'] = '10036' # '10036'
+        new_data['memberType'] = 'C'
+        new_data['_D:memberType'] = ''
+        agent = ''
+        if self.bot_type == "google":
+            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
+            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        else:
+            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+
+        headers ={'User-agent': agent}
+        for i in range(self.MAX_RETRIES):
+            # Use 'with' to ensure the session context is closed after use.
+            with requests.Session() as s:
+                url = tree.xpath('//form[@name="zipEntryForm"]/@action')[0].strip()
+                s.post('https://peapod.com' + url, data=new_data)
+                # An authorised request.
+                response = s.get('https://peapod.com/',headers=headers, timeout=15)
+                response = s.get(self.product_page_url,headers=headers, timeout=15)
+                if response != 'Error' and response.ok:
+                    contents = response.text
+                    try:
+                        self.tree_html = html.fromstring(contents.decode("utf8"))
+                    except UnicodeError, e:
+                        # if string was not utf8, don't deocde it
+                        print "Warning creating html tree from page content: ", e.message
+                        self.tree_html = html.fromstring(contents)
+                    return
 
     ##########################################
     ############### CONTAINER : NONE
@@ -60,42 +124,42 @@ class StaplesScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return None
+        product_id = self.tree_html.xpath("//div[@class='buy_button']//a/@href")[0].strip()
+        product_id = re.findall(r'\d+', product_id)[0]
+        return product_id
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//div[contains(@class,'productDetails')]/h1/text()")[0].strip()
+        return self.tree_html.xpath("//div[@id='product']//dl//dt//text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//div[contains(@class,'productDetails')]/h1/text()")[0].strip()
+        return self.tree_html.xpath("//div[@id='product']//dl//dt//text()")[0].strip()
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
     
     def _model(self):
-        txt = self.tree_html.xpath("//p[@class='itemModel']//text()")[0].strip()
-        model = re.findall(r"Model\: ([A-Za-z0-9]+)", txt)[0].strip()
-        return model
+        return None
 
     def _upc(self):
-        txt = self.tree_html.xpath("//p[@class='itemModel']//text()")[0].strip()
-        upc = re.findall(r"Item\: ([A-Za-z0-9]+)", txt)[0].strip()
-        return upc
+        return None
 
     def _features(self):
-        rows = self.tree_html.xpath("//table[@id='tableSpecifications']//tr")
+        if self.feature_count is not None:
+            return self.features
+        self.feature_count = 0
         line_txts = []
-        for row in rows:
-            txt = row.xpath(".//td//text()")
-            txt = ": ".join(txt)
-            if len(txt.strip()) > 0:
-                line_txts.append(txt)
+        if len(line_txts) < 1:
+            return None
+        self.feature_count = len(line_txts)
         return line_txts
 
     def _feature_count(self):
-        return len(self._features())
+        if self.feature_count is None:
+            self._features()
+        return self.feature_count
 
     def _model_meta(self):
         return None
@@ -107,11 +171,42 @@ class StaplesScraper(Scraper):
         return description
 
     def _description_helper(self):
-        line_txts = self.tree_html.xpath("//div[contains(@class,'productDetails')]//div[@class='copyBullets']//text()")
-        line_txts = [self._clean_text(r) for r in line_txts if len(self._clean_text(r)) > 1 and self._clean_text(r) != 'See more details']
-        description = "\n".join(line_txts)
-        if len(description) < 1:
+        rows = self.tree_html.xpath("//div[@id='productDetails-details']//p")
+        line_txts = []
+        header_txts = ['<b>Warnings:</b>', '<b>Country of Origin:</b>', '<br>Manufacturer:</b>',
+                       '<b>Address:</b>', '<b>Phone:</b>', '>View Substitute Product<',
+                       '>View Disclaimer Information<', '<b>Ingredients:</b>']
+        rows_begin = self.tree_html.xpath("//div[@id='productDetails-details']/text()")
+        rows_begin = [self._clean_text(r) for r in rows_begin if len(self._clean_text(r)) > 0]
+        for row in rows_begin:
+            line_txt = row
+            flag = False
+            for header_txt in header_txts:
+                if header_txt in line_txt:
+                    flag = True
+                    break
+            if flag:
+                break
+            if len(line_txt) > 0:
+                line_txts.append(line_txt)
+                break
+
+        if len(line_txts) < 1:
+            for row in rows:
+                line_txt = html.tostring(row)
+                flag = False
+                for header_txt in header_txts:
+                    if header_txt in line_txt:
+                        flag = True
+                        break
+                if flag:
+                    break
+                if len(line_txt) > 0:
+                    line_txts.append(line_txt)
+                    break
+        if len(line_txts) < 1:
             return None
+        description = "".join(line_txts)
         return description
 
     def _long_description(self):
@@ -121,29 +216,45 @@ class StaplesScraper(Scraper):
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        line_txts = self.tree_html.xpath("//div[@id='subdesc_content']//text()")
-        line_txts = [self._clean_text(r) for r in line_txts if len(self._clean_text(r)) > 1 and self._clean_text(r) != 'PRODUCT DETAILS' and self._clean_text(r) != 'Compare with similar items' and self._clean_text(r) != u'Would you like to give' and self._clean_text(r) != u'on product content, images, or tell us about a lower price?' and self._clean_text(r) != 'feedback']
-        description = "\n".join(line_txts)
+        rows = self.tree_html.xpath("//div[@id='productDetails-details']//p")
+        line_txts = []
+        header_txts = ['<b>Warnings:</b>', '<b>Country of Origin:</b>', '<br>Manufacturer:</b>',
+                       '<b>Address:</b>', '<b>Phone:</b>', '>View Substitute Product<',
+                       '>View Disclaimer Information<']
+        idx = 0
+        rows_begin = self.tree_html.xpath("//div[@id='productDetails-details']/text()")
+        rows_begin = [self._clean_text(r) for r in rows_begin if len(self._clean_text(r)) > 0]
+        for row in rows_begin:
+            line_txt = row
+            flag = False
+            for header_txt in header_txts:
+                if header_txt in line_txt:
+                    flag = True
+                    break
+            if flag:
+                break
+            if len(line_txt) > 0:
+                if idx > 0:
+                    line_txts.append(line_txt)
+                idx += 1
+
+        for row in rows:
+            line_txt = html.tostring(row)
+            flag = False
+            for header_txt in header_txts:
+                if header_txt in line_txt:
+                    flag = True
+                    break
+            if flag:
+                break
+            if len(line_txt) > 0:
+                if idx > 0:
+                    line_txts.append(line_txt)
+                idx += 1
+        if len(line_txts) < 1:
+            return None
+        description = "".join(line_txts)
         return description
-        # line_txts = []
-        # try:
-        #     line_txts += self.tree_html.xpath("//div[@id='subdesc_content']//h2//text()")
-        # except IndexError:
-        #     pass
-        #
-        # try:
-        #     line_txts += self.tree_html.xpath("//div[@id='subdesc_content']//p[@class='skuShortDescription']//text()")
-        # except IndexError:
-        #     pass
-        #
-        # try:
-        #     rows = self.tree_html.xpath("//div[@id='subdesc_content']//ul//text()")
-        #     rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 1]
-        #     line_txts += rows
-        # except IndexError:
-        #     pass
-        # description = "\n".join(line_txts)
-        # return description
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -153,26 +264,21 @@ class StaplesScraper(Scraper):
         return None
 
     def _image_urls(self):
-        if self.image_count is not None:
-            return self.image_urls
-        self.image_count = 0
-        image_url = self.tree_html.xpath("//div[@class='imageCarousel']//li//img/@src")
+        image_url = self.tree_html.xpath("//input[@id='imageURL']/@value")
         if len(image_url) < 1:
             return None
-        if len(image_url) == 1:
-            try:
-                if self._no_image(image_url[0]):
-                    return None
-            except Exception, e:
-                print "WARNING: ", e.message
-        self.image_urls = image_url
-        self.image_count = len(self.image_urls)
+        try:
+            if self._no_image(image_url[0]):
+                return None
+        except Exception, e:
+            print "WARNING: ", e.message
         return image_url
 
     def _image_count(self):
-        if self.image_count is None:
-            self._image_urls()
-        return self.image_count
+        image_urls = self._image_urls()
+        if image_urls:
+            return len(image_urls)
+        return 0
 
     def _video_urls(self):
         return None
@@ -220,63 +326,30 @@ class StaplesScraper(Scraper):
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
-    #populate the reviews_tree variable for use by other functions
-    def _load_reviews(self):
-        if not self.max_score or not self.min_score:
-            rows = self.tree_html.xpath("//p[@class='pr-histogram-count']//text()")
-            self.reviews = []
-            idx = 5
-            rv_scores = []
-            for row in rows:
-                try:
-                    cnt = int(re.findall(r"[0-9]+", row)[0].strip())
-                except IndexError:
-                    cnt = 0
-                if cnt > 0:
-                    self.reviews.append([idx, cnt])
-                    rv_scores.append(idx)
-                idx -= 1
-                if idx < 1:
-                    break
-            self.max_score = max(rv_scores)
-            self.min_score = min(rv_scores)
-
     def _average_review(self):
-        avg_review = self.tree_html.xpath("//span[contains(@class,'average')]//text()")[0].strip()
-        avg_review = round(float(avg_review), 2)
-        return avg_review
+        return None
 
     def _review_count(self):
-        review_cnt = self.tree_html.xpath("//span[@class='count']//text()")[0].strip()
-        return int(review_cnt)
+        return 0
 
     def _max_review(self):
-        self._load_reviews()
-        return self.max_score
+        return None
 
     def _min_review(self):
-        self._load_reviews()
-        return self.min_score
+        return None
 
     def _reviews(self):
-        self._load_reviews()
-        return self.reviews
+        return None
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
         try:
-            price = self.tree_html.xpath("//dd[@class='finalPrice']//text()")[0].strip()
+            price = self.tree_html.xpath("//dd[@class='productPrice']//text()")[0].strip()
             return price
         except IndexError:
             pass
-        try:
-            price = self.tree_html.xpath("//span[@class='finalPrice']//text()")[0].strip()
-            price = price.replace("*", "")
-        except IndexError:
-            pass
-
         return price
 
     def _price_amount(self):
@@ -299,20 +372,6 @@ class StaplesScraper(Scraper):
         or it can not be ordered online at all and can only be purchased in a local store,
         irrespective of availability - binary
         '''
-        rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
-        if "Visit your local Club for pricing & availability" in rows:
-            return 1
-        rows = self.tree_html.xpath("//p[@id='availableInStore']//text()")
-        for row in rows:
-            if "Available In-Store Only" in row:
-                return 1
-        rows = self.tree_html.xpath("//div[@class='checkmarks']//ul/li")
-        for row in rows:
-            txt = " ".join(row.xpath(".//text()"))
-            if "FREE Shipping to store" in txt:
-                return 1
-            if "Check inventory in other stores" in txt:
-                return 1
         return 0
 
     def _marketplace(self):
@@ -342,21 +401,15 @@ class StaplesScraper(Scraper):
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
-        rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
-        if "Unavailable online" in rows:
-            return 0
-        rows = self.tree_html.xpath("//p[@id='availableInStore']//text()")
-        for row in rows:
-            if "Available In-Store Only" in row:
-                return 0
         return 1
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
-        if self._site_online() == 0:
-            return None
-        rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
-        if "Out of stock online" in rows:
+        rows = self.tree_html.xpath("//span[contains(@class,'outOfStock')]//text()")
+        if "out of stock" in rows:
+            return 1
+        rows = self.tree_html.xpath("//div[@class='buy_button']")
+        if len(rows) < 1:
             return 1
         return 0
 
@@ -370,7 +423,9 @@ class StaplesScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        all = self.tree_html.xpath("//div[contains(@class, 'breadcrumbs')]//a//text()")
+        script_txt = "\n".join(self.tree_html.xpath("//script[@type = 'text/javascript']//text()"))
+        m = re.findall(r"tm_category: '(.*?)'", script_txt, re.DOTALL)
+        all = [m[0]]
         out = [self._clean_text(r) for r in all]
         if len(out) < 1:
             return None
@@ -381,14 +436,9 @@ class StaplesScraper(Scraper):
 
     def _brand(self):
         brand = None
-        trs = self.tree_html.xpath("//table[@class='data-table']//tr")
-        for tr in trs:
-            try:
-                head_txt = tr.xpath("//th//text()")[0].strip()
-                if head_txt == "Brand":
-                    brand = tr.xpath("//td//text()")[0].strip()
-            except IndexError:
-                pass
+        script_txt = "\n".join(self.tree_html.xpath("//script[@type = 'text/javascript']//text()"))
+        m = re.findall(r"tm_brand: '(.*?)\n", script_txt, re.DOTALL)
+        brand = m[0][:-1]
         return brand
 
     ##########################################

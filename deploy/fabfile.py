@@ -3,6 +3,7 @@ from __future__ import with_statement
 
 import os
 import re
+import random
 from contextlib import contextmanager
 
 from fabric.api import cd, env, run, local, sudo, settings, prefix
@@ -271,6 +272,7 @@ def _setup_virtual_env_scrapyd():
     with virtualenv(VENV_SCRAPYD):
         run('pip install scrapyd')
         run('pip install simplejson')
+        run('pip install requests')
 
     _setup_simmetrica_monitoring()
 
@@ -601,5 +603,45 @@ def deploy(restart_scrapyd=False, branch='master'):
     configure()
     install()
     run_servers(restart_scrapyd)
+
+
+def test_scrapy():
+    search_terms = (
+        'water', 'guitar', 'gibson', 'toy', 'books', 'laptop', 'smartphone'
+    )
+    cmd = ("curl --verbose http://localhost:6543/ranking_data/"
+           "  -d 'site=amazon;searchterms_str=%s;quantity=100"
+           ";group_name=test'")
+    run(cmd % random.choice(search_terms))
+
+
+def fix_captchas():
+    """ This is a temporary fix and should be removed\changed in the future
+        Written with dirty hacks such as copying local project files directly
+         into virtualenv. Please get away from this nightmare-ish Scrapyd
+         to the normal command-line calls!
+    """
+    # TODO: removeme\changeme
+    orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
+    env.user, env.password, env.key_filename = \
+        SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
+    sudo('apt-get install -y python-opencv')
+    sudo('chmod 777 -R /home/web_runner/virtual-environments/scrapyd/')
+    sudo('cp /usr/lib/python2.7/dist-packages/cv* /home/web_runner/virtual-environments/scrapyd/lib/python2.7/site-packages/')
+    env.warn_only = True
+    sudo('mkdir /home/web_runner/repos/tmtext/product-ranking/captchas')
+    sudo('mkdir /home/web_runner/repos/tmtext/product-ranking/solved_captchas')
+    sudo("cp /home/web_runner/repos/tmtext/product-ranking/captcha_solver.py /home/web_runner/virtual-environments/scrapyd/lib/python2.7/")
+    sudo('mkdir /home/web_runner/virtual-environments/scrapyd/train_captchas_data/')
+    sudo('cp /home/web_runner/repos/tmtext/product-ranking/train_captchas_data/* /home/web_runner/virtual-environments/scrapyd/train_captchas_data/')
+    env.warn_only = False
+    sudo('chmod 777 -R /home/web_runner/repos/tmtext/product-ranking/captchas')
+    sudo('chmod 777 -R /home/web_runner/repos/tmtext/product-ranking/solved_captchas')
+    env.user, env.password, env.key_filename = \
+        orig_user, orig_passw, orig_cert
+
+    with virtualenv(VENV_SCRAPYD):
+        run('pip install numpy')
+
 
 # vim: set expandtab ts=4 sw=4:
