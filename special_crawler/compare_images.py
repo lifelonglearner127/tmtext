@@ -4,6 +4,7 @@ import cv2
 from PIL import Image
 import urllib
 import re
+import random
 
 
 def get_calcHist(hsv):
@@ -20,10 +21,11 @@ def compare_images(img1, img2):
 
         is_local = os.path.isfile(image)
         if bool(re.findall("^[a-zA-Z]+://", image)):
-            path = "1000.jpg"
-            return 1112
+            # path = "1000.jpg"
+            path = str(random.random()).replace(".", "") + ".jpg"
+            # return 1112
             urllib.urlretrieve(image, path)
-            return 1113
+            # return 1113
         return 1114
         if ext not in (".jpg", ".jpeg", ".png"):
             Image.open(path).convert('RGB').save(path)
