@@ -21,6 +21,7 @@ def compare_images(img1, img2):
         is_local = os.path.isfile(image)
         if bool(re.findall("^[a-zA-Z]+://", image)):
             path = "1000.jpg"
+            return 1112
             urllib.urlretrieve(image, path)
             return 1113
         return 1114
