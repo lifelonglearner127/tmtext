@@ -42,7 +42,7 @@ class SponsoredLinks:
             len(self.sponsored_links.keys()) and 
             self.sponsored_links[self.sponsored_links.keys()[0]]):
             #Here we convert object to json
-            return json.dumps(self.sponsored_links)
+            return json.dumps(self.sponsored_links).encode("UTF-8")
         return ""
 
     def __str__(self):
