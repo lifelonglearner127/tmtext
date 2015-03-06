@@ -67,14 +67,6 @@ def scrapy_price_serializer(value):
     else:
         return value
 
-def dict_to_json(dc={}):
-    if (hasattr(dc, "keys") and 
-        len(dc) and 
-        dc[dc.keys()[0]]):
-        #Here we convert object to json
-        return json.dumps(dc)
-    return ""
-
 
 class SiteProductItem(Item):
     # Search metadata.
