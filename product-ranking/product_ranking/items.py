@@ -2,13 +2,14 @@
 
 import collections
 import decimal
+import json
 
 from scrapy.item import Item, Field
 
 
 RelatedProduct = collections.namedtuple("RelatedProduct", ['title', 'url'])
 
-SponsoredLinks = collections.namedtuple("SponsoredLinks", ['ad_text', 'ad_url'])
+#SponsoredLinks = collections.namedtuple("SponsoredLinks", ['ad_text', 'ad_url'])
 
 BuyerReviews = collections.namedtuple(
     "BuyerReviews",
@@ -30,6 +31,22 @@ valid_currency_codes = """AED AFN ALL AMD ANG AOA ARS AUD AWG AZN BAM BBD BDT
  XBD XCD XDR XFU XOF XPD XPF XPT XSU XTS XUA XXX YER ZAR ZMW ZWD
 """.split(' ')
 valid_currency_codes = [c.strip() for c in valid_currency_codes if c.strip()]
+
+class SponsoredLinks:
+
+    def __init__(self, *args, **kwargs):
+        self.sponsored_links = args[0]
+
+    def __repr__(self):
+        if (hasattr(self.sponsored_links, "keys") and 
+            len(self.sponsored_links.keys()) and 
+            self.sponsored_links[self.sponsored_links.keys()[0]]):
+            #Here we convert object to json
+            return json.dumps(self.sponsored_links)
+        return ""
+
+    def __str__(self):
+        return self.__repr__()
 
 
 class Price:
