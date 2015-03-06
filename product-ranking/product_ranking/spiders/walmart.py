@@ -17,9 +17,11 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
 
 is_empty = lambda x: x[0] if x else ""
 
+
 def get_string_from_html(xp, link):
     loc = is_empty(link.xpath(xp).extract())
     return Selector(text=loc).xpath('string()').extract()
+
 
 class WalmartProductsSpider(BaseProductsSpider):
     """Implements a spider for Walmart.com.
