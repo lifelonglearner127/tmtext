@@ -165,7 +165,9 @@ class BaseProductsSpider(Spider):
         'android_phone': 'Mozilla/5.0 (Android; Mobile; rv:35.0) '\
             'Gecko/35.0 Firefox/35.0',
         'android_pad': 'Mozilla/5.0 (Android; Tablet; rv:35.0) '\
-            'Gecko/35.0 Firefox/35.0'
+            'Gecko/35.0 Firefox/35.0',
+        'android': 'Mozilla/5.0 (Android; Tablet; rv:35.0) '\
+            'Gecko/35.0 Firefox/35.0',
     }
 
     def __init__(self,
@@ -180,8 +182,8 @@ class BaseProductsSpider(Spider):
             self.log("Not available user agent type or it wasn't set."
                      " Default user agent will be used.", INFO)
             user_agent = 'default'
-        # if there is user_agent was defined at current spider - don't
-        # modify it.
+        # if there is `user_agent` defined in the current spider - don't
+        #  modify it.
         try:
             self.user_agent
         except AttributeError:

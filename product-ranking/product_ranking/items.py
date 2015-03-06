@@ -2,13 +2,14 @@
 
 import collections
 import decimal
+import json
 
 from scrapy.item import Item, Field
 
 
 RelatedProduct = collections.namedtuple("RelatedProduct", ['title', 'url'])
 
-SponsoredLinks = collections.namedtuple("SponsoredLinks", ['ad_text', 'ad_url'])
+#SponsoredLinks = collections.namedtuple("SponsoredLinks", ['ad_text', 'ad_url'])
 
 BuyerReviews = collections.namedtuple(
     "BuyerReviews",
