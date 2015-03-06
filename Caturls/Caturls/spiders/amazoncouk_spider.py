@@ -40,13 +40,27 @@ class AmazoncoukSpider(CaturlsSpider):
         for link in search_by_department_links:
             yield Request(root_url + link, callback = self.parsePage)
 
+
     # parse amazon page and extract product URLs
     def parsePage(self, response):
         hxs = HtmlXPathSelector(response)
-        product_links = hxs.select("//div[contains(@class,'a-row a-spacing-mini')]//a[contains(@class, 'a-link-normal s-access-detail-page  a-text-normal')]/@href")
+
+        try:
+            category = hxs.select("//a[@class='a-link-normal a-color-base a-text-bold a-text-normal']/text()").extract()[0]
+        except Exception:
+            category = None
+
+        try:
+            nr_results = hxs.select("//h2[@id='s-result-count']/text()").re("[0-9,]+")[-1]
+            print nr_results, "FOR", category
+        except Exception:
+            pass
+
+        product_links = hxs.select("//div[contains(@class,'a-row')]//a[contains(@class, 'a-link-normal s-access-detail-page  a-text-normal')]/@href")
         for product_link in product_links:
             item = ProductItem()
             item['product_url'] = product_link.extract()
+            item['category'] = category
             yield item
 
         # select next page, if any, parse it too with this method
