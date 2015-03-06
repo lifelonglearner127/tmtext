@@ -48,7 +48,7 @@ class WalmartScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
-    driver = webdriver.PhantomJS()
+    driver = webdriver.PhantomJS(service_log_path='/var/log/flask-uwsgi/ghostdriver.log')
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
