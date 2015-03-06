@@ -49,7 +49,7 @@ class SearchSpider(BaseSpider):
 
     allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
-                       "boots.com", "ocado.com", "tesco.com"]
+                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk"]
 
     # pass product as argument to constructor - either product name or product URL
     # arguments:
@@ -99,7 +99,8 @@ class SearchSpider(BaseSpider):
                                     'ocado' : self.parseURL_ocado, \
                                     'tesco' : self.parseURL_tesco, \
                                     'amazon' : self.parseURL_amazon, \
-                                    'target' : self.parseURL_target}
+                                    'target' : self.parseURL_target, \
+                                    'maplin' : self.parseURL_maplin}
 
 
     def build_search_pages(self, search_query):
@@ -895,6 +896,27 @@ class SearchSpider(BaseSpider):
 
         return (product_name, None, price, upc)
 
+
+    def parseURL_maplin(self, hxs):
+        product_name_holder = hxs.select("//h1[@itemprop='name']/text()").extract()
+
+        if product_name_holder:
+            product_name = product_name_holder[0].strip()
+        else:
+            product_name = None
+
+        price_holder = hxs.select("//meta[@itemprop='price']/@content").extract()
+
+        price = None
+        if price_holder:
+            product_target_price = price_holder[0].strip()
+            # remove commas separating orders of magnitude (ex 2,000)
+            product_target_price = re.sub(",","",product_target_price)
+            price = float(product_target_price)
+
+        upc = None
+
+        return (product_name, None, price, upc)
 
 
     # accumulate results for each (sending the pending requests and the partial results as metadata),
