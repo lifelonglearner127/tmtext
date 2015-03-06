@@ -597,7 +597,7 @@ class ServiceScraperTest(unittest.TestCase):
                             break
 
                     if isFound:
-                        base = "http://localhost:9001/get_data?url=%s"
+                        base = "http://localhost/get_data?url=%s"
                         sample_json = requests.get(base%(urllib.quote(url))).text
                         sample_json = json.loads(sample_json)
                         sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
@@ -647,7 +647,7 @@ class ServiceScraperTest(unittest.TestCase):
         print "\n-------------------------------Report results for %s-------------------------------" % website
         print ">>>>>>sample url: %s" % sample_url
 
-        base = "http://localhost:9001/get_data?url=%s"
+        base = "http://localhost/get_data?url=%s"
         test_json = requests.get(base%(urllib.quote(sample_url))).text
         test_json = json.loads(test_json)
 
