@@ -31,6 +31,8 @@ class StaplesScraper(Scraper):
     review_count = None
     average_review = None
     reviews = None
+    image_urls = None
+    image_count = None
 
     def check_url_format(self):
         # for ex: http://www.staples.com/Epson-WorkForce-Pro-WF-4630-Color-Inkjet-All-in-One-Printer/product_242602?cmArea=home_box1
@@ -151,16 +153,26 @@ class StaplesScraper(Scraper):
         return None
 
     def _image_urls(self):
+        if self.image_count is not None:
+            return self.image_urls
+        self.image_count = 0
         image_url = self.tree_html.xpath("//div[@class='imageCarousel']//li//img/@src")
         if len(image_url) < 1:
             return None
+        if len(image_url) == 1:
+            try:
+                if self._no_image(image_url[0]):
+                    return None
+            except Exception, e:
+                print "WARNING: ", e.message
+        self.image_urls = image_url
+        self.image_count = len(self.image_urls)
         return image_url
 
     def _image_count(self):
-        image_urls = self._image_urls()
-        if image_urls:
-            return len(image_urls)
-        return 0
+        if self.image_count is None:
+            self._image_urls()
+        return self.image_count
 
     def _video_urls(self):
         return None

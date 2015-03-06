@@ -49,7 +49,7 @@ class SearchSpider(BaseSpider):
 
     allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
-                       "boots.com", "ocado.com", "tesco.com"]
+                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk"]
 
     # pass product as argument to constructor - either product name or product URL
     # arguments:
@@ -99,7 +99,8 @@ class SearchSpider(BaseSpider):
                                     'ocado' : self.parseURL_ocado, \
                                     'tesco' : self.parseURL_tesco, \
                                     'amazon' : self.parseURL_amazon, \
-                                    'target' : self.parseURL_target}
+                                    'target' : self.parseURL_target, \
+                                    'maplin' : self.parseURL_maplin}
 
 
     def build_search_pages(self, search_query):
@@ -313,7 +314,7 @@ class SearchSpider(BaseSpider):
 
                 request.meta['origin_name'] = product_name
                 request.meta['origin_model'] = product_model
-                request.meta['origin_upc'] = product_upc
+                request.meta['origin_upc'] = [product_upc]
                 if product_price:
                     request.meta['origin_price'] = product_price
 
@@ -545,7 +546,7 @@ class SearchSpider(BaseSpider):
 
         # 1) Search by UPC
         if product_upc:
-
+            # TODO: search by multiple UPCs if there are more than 1?
             query1 = self.build_search_query(product_upc)
             search_pages1 = self.build_search_pages(query1)
             #page1 = search_pages1[self.target_site]
@@ -647,7 +648,7 @@ class SearchSpider(BaseSpider):
 
         request.meta['origin_name'] = product_name
         request.meta['origin_model'] = product_model
-        request.meta['origin_upc'] = product_upc
+        request.meta['origin_upc'] = [product_upc]
         if product_price:
             request.meta['origin_price'] = product_price
 
@@ -883,7 +884,7 @@ class SearchSpider(BaseSpider):
             if m:
                 price = float(m.group(1))
             else:
-                sys.stderr.write("Didn't match product price: " + product_target_price + " " + response.url + "\n")
+                sys.stderr.write("Didn't match product price: " + product_target_price + "\n")
 
         # as source site, we are only interested in the UPC, not the DPCI.
         # We won't be searching on other sites by DPCI.
@@ -895,6 +896,27 @@ class SearchSpider(BaseSpider):
 
         return (product_name, None, price, upc)
 
+
+    def parseURL_maplin(self, hxs):
+        product_name_holder = hxs.select("//h1[@itemprop='name']/text()").extract()
+
+        if product_name_holder:
+            product_name = product_name_holder[0].strip()
+        else:
+            product_name = None
+
+        price_holder = hxs.select("//meta[@itemprop='price']/@content").extract()
+
+        price = None
+        if price_holder:
+            product_target_price = price_holder[0].strip()
+            # remove commas separating orders of magnitude (ex 2,000)
+            product_target_price = re.sub(",","",product_target_price)
+            price = float(product_target_price)
+
+        upc = None
+
+        return (product_name, None, price, upc)
 
 
     # accumulate results for each (sending the pending requests and the partial results as metadata),
@@ -920,7 +942,7 @@ class SearchSpider(BaseSpider):
         if 'origin_upc' not in response.meta:
             origin_upc = ''
         else:
-            origin_upc = response.meta['origin_upc']
+            origin_upc = str(response.meta['origin_upc'])
         self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8") + " UPC: " + origin_upc.encode("utf-8"), level=log.DEBUG)
         self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
         self.log( "MATCHES: ", level=log.DEBUG)

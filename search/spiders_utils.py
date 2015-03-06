@@ -30,7 +30,7 @@ class Utils():
     # extract domain from url
     @staticmethod
     def extract_domain(url):
-        m = re.match("http://((www1?)|(shop))\.([^\.]+)\.com.*", url)
+        m = re.match("http://((www1?)|(shop))\.([^\.]+)\.com?.*", url)
         if m:
             site = m.group(4)
         else:
