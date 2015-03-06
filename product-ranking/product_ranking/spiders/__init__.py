@@ -182,12 +182,10 @@ class BaseProductsSpider(Spider):
             self.log("Not available user agent type or it wasn't set."
                      " Default user agent will be used.", INFO)
             user_agent = 'default'
-        # if there is `user_agent` defined in the current spider - don't
-        #  modify it.
-        try:
-            self.user_agent
-        except AttributeError:
+
+        if user_agent:
             self.user_agent = self.USER_AGENTS[user_agent]
+
         super(BaseProductsSpider, self).__init__(*args, **kwargs)
 
         if site_name is None:
