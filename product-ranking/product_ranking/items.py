@@ -2,13 +2,14 @@
 
 import collections
 import decimal
+import json
 
 from scrapy.item import Item, Field
 
 
 RelatedProduct = collections.namedtuple("RelatedProduct", ['title', 'url'])
 
-SponsoredLinks = collections.namedtuple("SponsoredLinks", ['ad_text', 'ad_url'])
+#SponsoredLinks = collections.namedtuple("SponsoredLinks", ['ad_text', 'ad_url'])
 
 BuyerReviews = collections.namedtuple(
     "BuyerReviews",
@@ -65,6 +66,14 @@ def scrapy_price_serializer(value):
         return value.__str__()
     else:
         return value
+
+def dict_to_json(dc={}):
+    if (hasattr(dc, "keys") and 
+        len(dc) and 
+        dc[dc.keys()[0]]):
+        #Here we convert object to json
+        return json.dumps(dc)
+    return ""
 
 
 class SiteProductItem(Item):
