@@ -11,7 +11,7 @@ from scrapy.http import Request
 from scrapy.log import ERROR, INFO
 
 from product_ranking.items import (SiteProductItem, RelatedProduct,
-                                   BuyerReviews, Price, SponsoredLinks)
+                                   BuyerReviews, Price, dict_to_json)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
 
@@ -102,7 +102,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             }
             arr.append(sld)
 
-        self.sponsored_links = SponsoredLinks({"Sponsored links": arr})
+        self.sponsored_links = dict_to_json({"Sponsored links": arr})
 
         return super(WalmartProductsSpider, self).start_requests()
 

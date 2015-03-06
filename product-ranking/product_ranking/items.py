@@ -32,22 +32,6 @@ valid_currency_codes = """AED AFN ALL AMD ANG AOA ARS AUD AWG AZN BAM BBD BDT
 """.split(' ')
 valid_currency_codes = [c.strip() for c in valid_currency_codes if c.strip()]
 
-class SponsoredLinks:
-
-    def __init__(self, *args, **kwargs):
-        self.sponsored_links = args[0]
-
-    def __repr__(self):
-        if (hasattr(self.sponsored_links, "keys") and 
-            len(self.sponsored_links.keys()) and 
-            self.sponsored_links[self.sponsored_links.keys()[0]]):
-            #Here we convert object to json
-            return json.dumps(self.sponsored_links).encode("UTF-8")
-        return ""
-
-    def __str__(self):
-        return self.__repr__()
-
 
 class Price:
 
@@ -82,6 +66,14 @@ def scrapy_price_serializer(value):
         return value.__str__()
     else:
         return value
+
+def dict_to_json(dc={}):
+    if (hasattr(dc, "keys") and 
+        len(dc) and 
+        dc[dc.keys()[0]]):
+        #Here we convert object to json
+        return json.dumps(dc)
+    return ""
 
 
 class SiteProductItem(Item):
