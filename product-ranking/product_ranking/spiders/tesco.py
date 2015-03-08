@@ -2,12 +2,14 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import json
+import re
 import urlparse
 
 from scrapy.log import ERROR
 
 from product_ranking.items import SiteProductItem, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set_value
+from product_ranking.spiders import BaseProductsSpider, \
+    cond_set, cond_set_value, FLOATING_POINT_RGEX
 
 
 def brand_at_start(brand):
@@ -25,7 +27,7 @@ class TescoProductsSpider(BaseProductsSpider):
     # TODO: change the currency if you're going to support different countries
     #  (only UK and GBP are supported now)
     SEARCH_URL = "http://www.tesco.com/groceries/product/search/default.aspx" \
-        "?searchBox={search_term}&newSort=true&search=Search"
+        "?searchBox={search_term}&newSort=true"
 
     KNOWN_BRANDS = (
         brand_at_start('Dri Pak'),
@@ -58,63 +60,151 @@ class TescoProductsSpider(BaseProductsSpider):
         return brand, new_title
 
     def parse_product(self, response):
-        raise AssertionError("This method should never be called.")
+        if self.user_agent_key not in ["desktop", "default"]:
+            return self.parse_product_mobile(response)
+        else:
+            raise AssertionError("This method should never be called.")
 
     def _scrape_total_matches(self, response):
-        return int(response.css("span.pageTotalItemCount ::text").extract()[0])
+        if self.user_agent_key not in ["desktop", "default"]:
+            return self._scrape_total_matches_mobile(response)
+        else:
+            return int(response.css("span.pageTotalItemCount ::text").extract()[0])
+
+    def _scrape_total_matches_mobile(self, response):
+        total = response.xpath(
+            '//h1[@class="heading_button"]'
+            '/span[@class="title"]/text()').re('(\d+) result')
+        if total:
+            return int(total[0])
+        return None
 
     def _scrape_product_links(self, response):
         # To populate the description, fetching the product page is necessary.
 
-        url = response.url
+        if self.user_agent_key not in ["desktop", "default"]:
+            links = response.xpath(
+                '//section[contains(@class,"product_listed")]'
+                '//div[contains(@class,"product_info")]//a/@href').extract()
 
-        # This will contain everything except for the URL and description.
-        product_jsons = response.xpath('//meta[@name="productdata"]/@content').extract()
+            if not links:
+                self.log("[Mobile] Found no product data on: %s" % response.url, ERROR)
 
-        if not product_jsons:
-            self.log("Found no product data on: %s" % url, ERROR)
+            for link in links:
+                yield urlparse.urljoin(response.url, link), SiteProductItem()
+        else:
+            url = response.url
 
-        product_links = response.css(
-            ".product > .desc > h2 > a ::attr('href')").extract()
-        if not product_links:
-            self.log("Found no product links on: %s" % url, ERROR)
+            # This will contain everything except for the URL and description.
+            product_jsons = response.xpath('//meta[@name="productdata"]/@content').extract()
 
-        for product_json, product_link in zip(product_jsons[0].split('|'), product_links):
-            prod = SiteProductItem()
-            cond_set_value(prod, 'url', urlparse.urljoin(url, product_link))
+            if not product_jsons:
+                self.log("Found no product data on: %s" % url, ERROR)
 
-            product_data = json.loads(product_json)
+            product_links = response.css(
+                ".product > .desc > h2 > a ::attr('href')").extract()
+            if not product_links:
+                self.log("Found no product links on: %s" % url, ERROR)
 
-            cond_set_value(prod, 'price', product_data.get('price'))
-            cond_set_value(prod, 'image_url', product_data.get('mediumImage'))
+            for product_json, product_link in zip(product_jsons[0].split('|'), product_links):
+                prod = SiteProductItem()
+                cond_set_value(prod, 'url', urlparse.urljoin(url, product_link))
 
-            #prod['upc'] = product_data.get('productId')
-            if prod.get('price', None):
-                prod['price'] = Price(
-                    price=str(prod['price']).replace(',', '').strip(),
-                    priceCurrency='GBP'
-                )
+                product_data = json.loads(product_json)
 
-            try:
-                brand, title = self.brand_from_title(product_data['name'])
-                cond_set_value(prod, 'brand', brand)
-                cond_set_value(prod, 'title', title)
-            except KeyError:
-                raise AssertionError(
-                    "Did not find title or brand from JS for product: %s"
-                    % product_link
-                )
+                cond_set_value(prod, 'price', product_data.get('price'))
+                cond_set_value(prod, 'image_url', product_data.get('mediumImage'))
 
-            yield None, prod
+                #prod['upc'] = product_data.get('productId')
+                if prod.get('price', None):
+                    prod['price'] = Price(
+                        price=str(prod['price']).replace(',', '').strip(),
+                        priceCurrency='GBP'
+                    )
+
+                try:
+                    brand, title = self.brand_from_title(product_data['name'])
+                    cond_set_value(prod, 'brand', brand)
+                    cond_set_value(prod, 'title', title)
+                except KeyError:
+                    raise AssertionError(
+                        "Did not find title or brand from JS for product: %s"
+                        % product_link
+                    )
+
+                yield None, prod
 
     def _scrape_next_results_page_link(self, response):
-        next_pages = response.css('p.next > a ::attr(href)').extract()
-        next_page = None
-        if len(next_pages) == 2:
-            next_page = next_pages[0]
-        elif len(next_pages) > 2:
-            self.log(
-                "Found more than two 'next page' link: %s" % response.url,
-                ERROR
+        if self.user_agent_key not in ["desktop", "default"]:
+            return self._scrape_next_results_page_link_mobile(response)
+        else:
+            next_pages = response.css('p.next > a ::attr(href)').extract()
+            next_page = None
+            if len(next_pages) == 2:
+                next_page = next_pages[0]
+            elif len(next_pages) > 2:
+                self.log(
+                    "Found more than two 'next page' link: %s" % response.url,
+                    ERROR
+                )
+            return next_page
+
+    def _scrape_next_results_page_link_mobile(self, response):
+        url = response.url
+        total = self._scrape_total_matches(response)
+        current_page = re.findall("plpPage=(\d+)", url)
+
+        if not current_page:
+            return url + "&plpPage=2"
+        else:
+            curr = int(current_page[0])
+            if curr < total/20:
+                curr += 1
+                return re.sub("plpPage=(\d+)", "plpPage=%s" %curr, url)
+            return None
+
+    def _scrape_product_links_mobile(self, response):
+        links = response.xpath(
+            '//section[contains(@class,"product_listed")]'
+            '//div[contains(@class,"product_info")]//a/@href').extract()
+
+        if not links:
+            self.log("Found no product data on: %s" % response.url, ERROR)
+
+        for link in links:
+            yield urlparse.urljoin(response.url, link), SiteProductItem()
+
+    def parse_product_mobile(self, response):
+        prod = response.meta['product']
+
+        prod['url'] = response.url
+
+        cond_set(prod, 'locale', ['en-GB'])
+
+        title = response.xpath(
+            '//h1[contains(@class, "pdp_main_title")]/text()').extract()
+        cond_set(prod, 'title', title)
+
+        try:
+            brand, title = self.brand_from_title(prod['title'])
+            cond_set_value(prod, 'brand', brand)
+        except KeyError:
+            raise AssertionError(
+                "Did not find title or brand from JS for product: %s"
+                % response.url
             )
-        return next_page
+
+        img = response.xpath('//*[@id="pdp_image"]/img/@src').extract()
+        cond_set(prod, 'image_url', img)
+
+        price = response.xpath(
+            '//div[contains(@class,"main_price")]'
+            '/text()').re(FLOATING_POINT_RGEX)
+        if price:
+            prod['price'] = Price(price=price[0],
+                                  priceCurrency='GBP')
+
+        desc = response.xpath('string(//p[@class="descriptionText"])').extract()
+        cond_set(prod, "description", desc)
+
+        return prod

@@ -185,6 +185,7 @@ class BaseProductsSpider(Spider):
 
         if user_agent:
             self.user_agent = self.USER_AGENTS[user_agent]
+            self.user_agent_key = user_agent
 
         super(BaseProductsSpider, self).__init__(*args, **kwargs)
 
