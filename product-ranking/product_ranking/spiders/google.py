@@ -282,10 +282,14 @@ class GoogleProductsSpider(BaseProductsSpider):
                 if rewiew_link:
                     rewiew_link = rewiew_link[0]
                 source_site = item.xpath(
-                    './/div[@class="_tyb"]/text()'
-                ).extract()
+                    './/div[@class="_tyb"]'
+                )
                 if source_site:
-                    source_site = source_site[0].replace('from ', '').strip()
+                    source_site_path = source_site
+                    source_site_text = source_site_path.xpath(
+                        './text()').extract()
+                    source_site = source_site_text[0].replace(
+                        'from ', '').strip()
             except IndexError:
                 self.log('Index error at {url}'.format(url=response.url),
                          WARNING)
@@ -325,7 +329,21 @@ class GoogleProductsSpider(BaseProductsSpider):
             url = urlparse.urljoin(response.url, url)
 
             if len(source_site) > 0:
-                source_site = '{"%s":{}}' % source_site
+                if len(source_site_path) == 1:
+                    source_price = source_site_path.xpath(
+                        './span[@class="price"]/b/text()'
+                    ).extract()
+                    if source_price:
+                        source_price = source_price[0].replace('$', '')\
+                            .replace(',', '').strip()
+                        priceCurrency = 'USD'
+                        data = {
+                            'price': source_price,
+                            'currency': priceCurrency
+                        }
+                        source_site = '{"%s":%s}' % (source_site, data)
+                else:
+                    source_site = '{"%s":{}}' % source_site
 
             yield redirect, SiteProductItem(
                 url=url,

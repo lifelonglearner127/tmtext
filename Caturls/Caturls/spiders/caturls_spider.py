@@ -34,14 +34,14 @@ class CaturlsSpider(BaseSpider):
     "nordstrom.com", "macys.com", "williams-sonoma.com", "overstock.com", "newegg.com", "tigerdirect.com"]
 
     # store the cateory page url given as an argument into a field and add it to the start_urls list
-    def __init__(self, cat_page, outfile = "product_urls.txt", use_proxy = False):
+    def __init__(self, cat_page, outfile = "product_urls.txt", with_categories = False, use_proxy = False):
         self.cat_page = cat_page
         self.start_urls = [cat_page]
         self.outfile = outfile
         self.use_proxy = use_proxy
 
         # flag to classify products by category, with additional 'cat' column in the output csv
-        self.with_categories = False
+        self.with_categories = with_categories
 
         # keep track of parsed pages to avoid duplicates
         # used for newegg motherboards
