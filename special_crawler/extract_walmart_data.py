@@ -13,7 +13,7 @@ import time
 import requests
 
 from extract_data import Scraper
-
+from compare_images import compare_images
 
 class WalmartScraper(Scraper):
 
@@ -1247,10 +1247,14 @@ class WalmartScraper(Scraper):
         img = self._image_urls()
 
         if mobile_img and img:
-            if mobile_img[0] == img[0]:
-                return 1
+            if len(mobile_img) > 0 and len(img) > 0:
+                try:
+                    similarity = compare_images(img[0], mobile_img[0])
+                    return similarity
+                except:
+                    return None
             else:
-                return 0
+                return None
         else:
             return None # no images found to compare
 
