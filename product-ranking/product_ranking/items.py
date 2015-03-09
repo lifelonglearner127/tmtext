@@ -107,3 +107,5 @@ class SiteProductItem(Item):
 
     # For google.co.uk, google.com products
     google_source_site = Field()
+
+    is_mobile_agent = Field()  # if the spider was in the mobile mode

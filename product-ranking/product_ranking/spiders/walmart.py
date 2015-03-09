@@ -122,8 +122,9 @@ class WalmartProductsSpider(BaseProductsSpider):
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
         product['buyer_reviews'] = self._build_buyer_reviews(response)
-
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
+        if self.user_agent_key not in ["desktop", "default"]:
+            product['is_mobile_agent'] = True
         return product
 
     def _parse_single_product(self, response):
