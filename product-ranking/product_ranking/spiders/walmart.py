@@ -113,8 +113,6 @@ class WalmartProductsSpider(BaseProductsSpider):
         return super(WalmartProductsSpider, self).start_requests()
 
     def parse_product(self, response):
-        # with open("/tmp/wm-item.html", "w") as f:
-        #     f.write(response.body_as_unicode().encode('utf-8'))
         if self._search_page_error(response):
             self.log(
                 "Got 404 when coming from %r." % response.request.url, ERROR)
