@@ -49,7 +49,7 @@ class SearchSpider(BaseSpider):
 
     allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
-                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk"]
+                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk"]
 
     # pass product as argument to constructor - either product name or product URL
     # arguments:
@@ -107,6 +107,7 @@ class SearchSpider(BaseSpider):
         # build list of urls = search pages for each site
         search_pages = {
                         "amazon" : "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + search_query, \
+                        "amazoncouk" : "http://www.amazon.co.uk/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + search_query, \
                         "walmart" : "http://www.walmart.com/search/search-ng.do?ic=16_0&Find=Find&search_query=%s&Find=Find&search_constraint=0" % search_query, \
                         "bloomingdales" : "http://www1.bloomingdales.com/shop/search?keyword=%s" % search_query, \
                         "overstock" : "http://www.overstock.com/search?keywords=%s" % search_query, \

@@ -33,6 +33,7 @@ class AmazonSpider(SearchSpider):
     def init_sub(self):
         self.target_site = "amazon"
         self.start_urls = [ "http://www.amazon.com" ]
+        self.domain = "http://www.amazon.com"
 
         # captcha solver - will be used when encountering blocked page from amazon
         self.CB = captcha_solver.CaptchaBreakerWrapper()
@@ -82,7 +83,7 @@ class AmazonSpider(SearchSpider):
             if m:
                 product_url = m.group(1)
 
-            product_url = Utils.add_domain(product_url, "http://www.amazon.com")
+            product_url = Utils.add_domain(product_url, self.domain)
 
             product_urls.add(product_url)
 
