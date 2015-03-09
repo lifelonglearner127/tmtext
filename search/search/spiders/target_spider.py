@@ -220,6 +220,9 @@ class TargetSpider(SearchSpider):
         if 'origin_model' in response.meta:
             item['origin_model'] = response.meta['origin_model']
 
+        if 'origin_upc' in response.meta:
+            item['origin_upc'] = response.meta['origin_upc']
+
         # extract product name
 
         #TODO: is this general enough?
@@ -241,14 +244,19 @@ class TargetSpider(SearchSpider):
             # TODO: may make things worse where there is also an actual model number in the name?
             
             DPCI_holder =  hxs.select("//li[contains(strong/text(), 'DPCI')]/text()").re("[0-9\-]+")
+            # try hidden tag
+            if not DPCI_holder:
+                DPCI_holder = hxs.select("//input[@id='dpciHidden']/@value").extract()
+
             if DPCI_holder:
-                item['product_model'] = DPCI_holder[0].strip()
+                item['product_upc'] = [DPCI_holder[0].strip()]
             # if no product model explicitly on the page, try to extract it from name
-            else:
-                product_model_extracted = ProcessText.extract_model_from_name(item['product_name'])
-                if product_model_extracted:
-                    item['product_model'] = product_model_extracted
-                #print "MODEL EXTRACTED: ", product_model_extracted, " FROM NAME ", item['product_name'].encode("utf-8")
+            
+            # no model to extract directly from page for target            
+            product_model_extracted = ProcessText.extract_model_from_name(item['product_name'])
+            if product_model_extracted:
+                item['product_model'] = product_model_extracted
+            #print "MODEL EXTRACTED: ", product_model_extracted, " FROM NAME ", item['product_name'].encode("utf-8")
 
 
             #TODO: no brand field?

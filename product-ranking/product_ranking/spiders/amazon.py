@@ -2,7 +2,9 @@ from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 
 import json
+import re
 import string
+import re
 
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
@@ -122,9 +124,11 @@ class AmazonProductsSpider(BaseProductsSpider):
                 self.log('Currency symbol not recognized: %s' % response.url,
                          level=ERROR)
             else:
+                price = re.findall('[\d ,.]+\d', product['price'])
+                price = re.sub('[, ]', '', price[0])
                 product['price'] = Price(
                     priceCurrency='USD',
-                    price=product['price'].replace('$', '').strip()\
+                    price=price.replace('$', '').strip()\
                         .replace(',', '')
                 )
 
@@ -253,11 +257,25 @@ class AmazonProductsSpider(BaseProductsSpider):
         return None
 
     def _scrape_product_links(self, response):
-        links = response.css(
-            'a.s-access-detail-page ::attr(href)'
-        ).extract()
-        if not links:
+        lis = response.xpath("//div[@id='resultsCol']//ul//li")
+        links = []
+        last_idx = -1
+        for li in lis:
+            try:
+                data_asin = li.xpath('@id').extract()[0]
+                idx = int(re.findall(r'\d+', data_asin)[0])
+                if idx > last_idx:
+                    link = li.xpath(".//a[contains(@class,'s-access-detail-page')]/@href").extract()[0]
+                    links.append(link)
+                else:
+                    break
+                last_idx = idx
+            except IndexError:
+                continue
+
+        if len(links) < 1:
             self.log("Found no product links.", WARNING)
+
         for link in links:
             yield link, SiteProductItem()
 
@@ -287,10 +305,9 @@ class AmazonProductsSpider(BaseProductsSpider):
     def _handle_captcha(self, response, callback):
         # FIXME This is untested and wrong.
         captcha_solve_try = response.meta.get('captcha_solve_try', 0)
-        product = response.meta['product']
-
+        url = response.url
         self.log("Captcha challenge for %s (try %d)."
-                 % (product['url'], captcha_solve_try),
+                 % (url, captcha_solve_try),
                  level=INFO)
 
         captcha = self._solve_captcha(response)
@@ -298,23 +315,25 @@ class AmazonProductsSpider(BaseProductsSpider):
         if captcha is None:
             self.log(
                 "Failed to guess captcha for '%s' (try: %d)." % (
-                    product['url'], captcha_solve_try),
+                    url, captcha_solve_try),
                 level=ERROR
             )
             result = None
         else:
             self.log(
                 "On try %d, submitting captcha '%s' for '%s'." % (
-                    captcha_solve_try, captcha, product['url']),
+                    captcha_solve_try, captcha, url),
                 level=INFO
             )
+            meta = response.meta.copy()
+            meta['captcha_solve_try'] = captcha_solve_try + 1
             result = FormRequest.from_response(
                 response,
                 formname='',
                 formdata={'field-keywords': captcha},
-                callback=callback)
-            result.meta['captcha_solve_try'] = captcha_solve_try + 1
-            result.meta['product'] = product
+                callback=callback,
+                dont_filter=True,
+                meta=meta)
 
         return result
 

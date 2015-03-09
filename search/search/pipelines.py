@@ -35,8 +35,10 @@ class URLsPipeline(object):
 
             # write headers row
             titles = []
-            if int(spider.output) >= 2:
+            if int(spider.output) in [2,3]:
                 titles.append("Original_URL")
+            if int(spider.output) == 4:
+                titles.append("Original_UPC")
 
             # TODO: uncomment.
             # if int(spider.output) == 3:
@@ -80,7 +82,11 @@ class URLsPipeline(object):
                 self.file2.write(line)
         # for option 2 and 3, output in one file source product URL (or id) and matched product URL (if found), separated by a comma
         else:
-            fields = [item['origin_url']]
+            # for option 4, use UPC instead of URL for origin product
+            if option == 4 and 'origin_upc' in item:
+                fields = [item['origin_upc']]
+            else:
+                fields = [item['origin_url']]
 
             # TODO. uncomment
             # # if output type is 3, add additional fields
@@ -95,12 +101,12 @@ class URLsPipeline(object):
             #TODO: this includes the comma at the end of the line even with no results
             if 'product_url' in item:
                 fields.append(item['product_url'])
-            elif option==3:
+            elif option>=3:
                 fields.append("")
             #fields.append(item['product_url'] if 'product_url' in item else "")
             
             # if output type is 3, add additional fields
-            if option == 3:
+            if option >= 3:
 
                 # TODO: uncomment.
                 # # if there was a match (there is a 'product_url', there should also be a 'product_name')

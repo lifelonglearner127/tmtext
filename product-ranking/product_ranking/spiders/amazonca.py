@@ -87,8 +87,10 @@ class AmazonProductsSpider(BaseProductsSpider):
             if not u'CDN$' in product.get('price', ''):
                 self.log('Invalid price at: %s' % response.url, level=ERROR)
             else:
+                price = re.findall('[\d ,.]+\d', product['price'])
+                price = re.sub('[, ]', '', price[0])
                 product['price'] = Price(
-                    price=product['price'].replace(u'CDN$', '').replace(
+                    price=price.replace(u'CDN$', '').replace(
                         ' ', '').replace(',', '').strip(),
                     priceCurrency='CAD'
                 )
