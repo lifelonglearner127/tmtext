@@ -78,14 +78,52 @@ class AmazonProductsSpider(BaseProductsSpider):
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
+
+        price = response.xpath(
+            '//span[@id="priceblock_saleprice"]/text()'
+        ).extract()
+        if not price:
+            price = response.css('#priceblock_ourprice ::text').extract()
+        if not price:
+            price = response.xpath(
+                '//div[contains(@class, "a-box")]//div[@class="a-row"]'
+                '//span[contains(@class, "a-color-price")]/text()'
+            ).extract()
+        if not price:
+            price = response.xpath(
+                '//b[@class="priceLarge"]/text()'
+            ).extract()
+        if not price:
+            price = response.xpath(
+                '//span[@class="olp-padding-right"]'
+                '/span[@class="a-color-price"]/text()'
+            ).extract()
+        if not price:
+            price = response.xpath(
+                '//div[@class="a-box-inner"]/div/'
+                'span[@class="a-color-price"]/text()'
+            ).extract()
+        if not price:
+            price = response.xpath(
+                '//span[@id="priceblock_dealprice"]/text()'
+            ).extract()
+
         cond_set(
             product,
             'price',
-            response.css('#priceblock_ourprice ::text').extract(),
+            price,
         )
         if product.get('price', None):
-            if not u'CDN$' in product.get('price', ''):
-                self.log('Invalid price at: %s' % response.url, level=ERROR)
+            price = product.get('price', '')
+            if not u'CDN$' in price:
+                if 'FREE' in price or ' ' in price:
+                    product['price'] = Price(
+                        priceCurrency='CAD',
+                        price='0.00'
+                    )
+                else:
+                    self.log('Invalid price at: %s' % response.url,
+                             level=ERROR)
             else:
                 price = re.findall('[\d ,.]+\d', product['price'])
                 price = re.sub('[, ]', '', price[0])
@@ -94,19 +132,64 @@ class AmazonProductsSpider(BaseProductsSpider):
                         ' ', '').replace(',', '').strip(),
                     priceCurrency='CAD'
                 )
+
+        description = response.css('.productDescriptionWrapper').extract()
+        if not description:
+            description = response.xpath(
+                '//div[@id="feature-bullets"]'
+            ).extract()
+        if not description:
+            description = response.xpath(
+                '//div[@class="bucket"]/div[@class="content"]'
+            ).extract()
         cond_set(
             product,
             'description',
-            response.css('.productDescriptionWrapper').extract(),
+            description,
         )
+        image = response.css(
+                '#imgTagWrapperId > img ::attr(data-old-hires)').extract()
+        if not image:
+            j = re.findall(r"'colorImages': { 'initial': (.*)},",
+                           response.body)
+            if not j:
+                j = re.findall(r'colorImages = {"initial":(.*)}',
+                               response.body)
+            if j:
+                try:
+                    res = json.loads(j[0])
+                    if len(res) > 1:
+                        image = res[1]['large']
+                    else:
+                        image = res[0]['large']
+                    image = [image]
+                except:
+                    pass
+        if not image:
+            image = response.xpath(
+                '//div[@id="img-canvas"]/img/@src'
+            ).extract()
+        if not image:
+            image = response.xpath(
+                '//img[@id="main-image"]/@src'
+            ).extract()
+        if not image:
+            image = response.xpath(
+                '//div[@class="main-image-inner-wrapper"]/img/@src'
+            ).extract()
+
         cond_set(
             product,
             'image_url',
-            response.css(
-                '#imgTagWrapperId > img ::attr(data-old-hires)').extract()
+            image
         )
-        cond_set(
-            product, 'title', response.css('#productTitle ::text').extract())
+
+        title = response.css('#productTitle ::text').extract()
+        if not title:
+            title = response.xpath(
+                '//h1[@class="parseasinTitle"]/span/span/text()'
+            ).extract()
+        cond_set(product, 'title', title)
 
         # Some data is in a list (ul element).
         model = None
