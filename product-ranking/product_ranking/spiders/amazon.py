@@ -5,6 +5,7 @@ import json
 import re
 import string
 import re
+from urllib import unquote
 
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
@@ -119,10 +120,54 @@ class AmazonProductsSpider(BaseProductsSpider):
                 response.css(
                     '#buyNewSection .offer-price ::text').extract(),
             )
+        if not product.get('price', None):
+            cond_set(
+                product,
+                'price',
+                response.xpath(
+                    '//td/b[@class="priceLarge"]/text()').extract()
+            )
+        if not product.get('price', None):
+            cond_set(
+                product,
+                'price',
+                response.xpath(
+                    '//span[@class="olp-padding-right"]'
+                    '/span[@class="a-color-price"]/text()').extract()
+            )
+        if not product.get('price', None):
+            cond_set(
+                product,
+                'price',
+                response.xpath(
+                    '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]'
+                    '/button/text()').extract()
+            )
+        if not product.get('price', None):
+            cond_set(
+                product,
+                'price',
+                response.xpath(
+                    '//span[@id="priceblock_saleprice"]/text()').extract()
+            )
+        if not product.get('price', None):
+            cond_set(
+                product,
+                'price',
+                response.xpath(
+                    '//li[@class="swatchElement selected"]'
+                    '//span[@class="a-color-price"]/text()').extract()
+            )
         if product.get('price', None):
             if not '$' in product['price']:
-                self.log('Currency symbol not recognized: %s' % response.url,
-                         level=ERROR)
+                if 'FREE' in product['price'] or ' ' in product['price']:
+                    product['price'] = Price(
+                        priceCurrency='USD',
+                        price='0.00'
+                    )
+                else:
+                    self.log('Currency symbol not recognized: %s' % response.url,
+                             level=ERROR)
             else:
                 price = re.findall('[\d ,.]+\d', product['price'])
                 price = re.sub('[, ]', '', price[0])
@@ -135,19 +180,118 @@ class AmazonProductsSpider(BaseProductsSpider):
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         self._get_price(response, product)
+        description = response.css('.productDescriptionWrapper').extract()
+        if not description:
+            iframe_content = re.findall(
+                r'var iframeContent = "(.*)"', response.body
+            )
+            if iframe_content:
+                res = iframe_content[0]
+                f = re.findall('body%3E%0A%20%20(.*)'
+                    '%0A%20%20%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A', res)
+                if f:
+                    desc = unquote(f[0])
+                    description = [desc]
+        if not description:
+            description = response.xpath(
+                '//div[@id="descriptionAndDetails"]'
+            ).extract()
+        if not description:
+            description = response.xpath(
+                '//div[@id="feature-bullets"]'
+            ).extract()
+        if not description:
+            description = response.xpath(
+                '//div[@id="ps-content"]'
+            ).extract()
+        if not description:
+            description = response.xpath(
+                '//div[@id="productDescription_feature_div"]'
+            ).extract()
+        if not description:
+            description = response.xpath(
+                '//div[contains(@class, "dv-simple-synopsis")]'
+            ).extract()
+        if not description:
+            description = response.xpath(
+                '//div[@class="bucket"]/div[@class="content"]'
+            ).extract()
+
         cond_set(
             product,
             'description',
-            response.css('.productDescriptionWrapper').extract(),
+            description,
         )
-        cond_set(
-            product,
-            'image_url',
-            response.css(
-                '#imgTagWrapperId > img ::attr(data-old-hires)').extract()
-        )
-        cond_set(
-            product, 'title', response.css('#productTitle ::text').extract())
+
+        image = response.css(
+            '#imgTagWrapperId > img ::attr(data-old-hires)'
+        ).extract()
+        if not image:
+            image = response.xpath(
+                '//div[@class="main-image-inner-wrapper"]/img/@src'
+            ).extract()
+        if not image:
+            image = response.xpath(
+                '//div[@id="coverArt_feature_div"]//img/@src'
+            ).extract()
+        if not image:
+            j = re.findall(r"'colorImages': { 'initial': (.*)},",
+                           response.body)
+            if not j:
+                j = re.findall(r'colorImages = {"initial":(.*)}',
+                               response.body)
+            if j:
+                try:
+                    res = json.loads(j[0])
+                    if len(res) > 1:
+                        image = res[1]['large']
+                    else:
+                        image = res[0]['large']
+                    image = [image]
+                except:
+                    pass
+        if not image:
+            image = response.xpath(
+                '//div[@id="img-canvas"]/img/@src'
+            ).extract()
+        if not image:
+            image = response.xpath(
+                '//div[@class="dp-meta-icon-container"]/img/@src'
+            ).extract()
+
+        if len(image)>0 and image[0]:
+            if product.get('image_url'):
+                product['image_url'] = image[0]
+            else:
+                cond_set(product, 'image_url', image)
+
+        title = response.css('#productTitle ::text').extract()
+        if not title:
+            title = response.xpath(
+                '//div[@class="buying"]/h1/span[@id="btAsinTitle"]/text()'
+            ).extract()
+        if not title:
+            title = response.xpath(
+                '//div[@id="title_feature_div"]/h1/text()'
+            ).extract()
+        if not title:
+            title = response.xpath(
+                '//div[@id="title_row"]/span/h1/text()'
+            ).extract()
+        if not title:
+            parts = response.xpath(
+                '//div[@id="mnbaProductTitleAndYear"]/span/text()'
+            ).extract()
+            if parts:
+                title = ''
+                for part in parts:
+                    title += part
+                title = [title]
+        if not title:
+            title = response.xpath(
+                '//h1[@id="aiv-content-title"]/text()'
+            ).extract()
+        cond_set(product, 'title', title)
 
         # Some data is in a list (ul element).
         model = None
@@ -189,20 +333,51 @@ class AmazonProductsSpider(BaseProductsSpider):
         total = response.xpath(
             'string(//*[@id="summaryStars"])').re(FLOATING_POINT_RGEX)
         if not total:
-            return
+            total = response.xpath(
+                'string(//div[@id="acr"]/div[@class="txtsmall"]'
+                '/div[contains(@class, "acrCount")])'
+            ).re(FLOATING_POINT_RGEX)
+            if not total:
+                return
         buyer_reviews['num_of_reviews'] = int(total[0].replace(',', ''))
 
         average = response.xpath(
-            '//*[@id="summaryStars"]/a/@title').extract()[0].replace('out of 5 stars','')
+            '//*[@id="summaryStars"]/a/@title')
+        if not average:
+            average = response.xpath(
+                '//div[@id="acr"]/div[@class="txtsmall"]'
+                '/div[contains(@class, "acrRating")]/text()'
+            )
+        average = average.extract()[0].replace('out of 5 stars','')
         buyer_reviews['average_rating'] = float(average)
 
         buyer_reviews['rating_by_star'] = {}
-        for tr in response.xpath(
+        table = response.xpath(
             '//table[@id="histogramTable"]'
-            '/tr[@class="a-histogram-row"]'): #td[last()]//text()').re('\d+')
-            rating = tr.xpath('string(.//td[1])').re(FLOATING_POINT_RGEX)[0]
-            number = tr.xpath('string(.//td[last()])').re(FLOATING_POINT_RGEX)[0]
-            buyer_reviews['rating_by_star'][rating] = int(number.replace(',', ''))
+            '/tr[@class="a-histogram-row"]')
+        if table:
+            for tr in table: #td[last()]//text()').re('\d+')
+                rating = tr.xpath(
+                    'string(.//td[1])').re(FLOATING_POINT_RGEX)[0]
+                number = tr.xpath(
+                    'string(.//td[last()])').re(FLOATING_POINT_RGEX)[0]
+                buyer_reviews['rating_by_star'][rating] = int(
+                    number.replace(',', '')
+                )
+        else:
+            table = response.xpath(
+                '//div[@id="revH"]/div/div[contains(@class, "fl")]'
+            )
+            for div in table:
+                rating = div.xpath(
+                    'string(.//div[contains(@class, "histoRating")])'
+                ).re(FLOATING_POINT_RGEX)[0]
+                number = div.xpath(
+                    'string(.//div[contains(@class, "histoCount")])'
+                ).re(FLOATING_POINT_RGEX)[0]
+                buyer_reviews['rating_by_star'][rating] = int(
+                    number.replace(',', '')
+                )
 
         return BuyerReviews(**buyer_reviews)
 
