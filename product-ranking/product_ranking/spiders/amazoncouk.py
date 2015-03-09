@@ -41,7 +41,7 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
             prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
             ranks.update(prim)
         ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
-        cond_set_value(product, 'best_seller_rank', ranks)
+        cond_set_value(product, 'bestseller_rank', ranks)
 
     def parse_product(self, response):
         prod = response.meta['product']

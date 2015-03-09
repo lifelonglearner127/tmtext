@@ -97,7 +97,7 @@ class SiteProductItem(Item):
     # Feedback from the buyers (with ratings etc.)
     buyer_reviews = Field()  # see BuyerReviews obj
 
-    best_seller_rank = Field()
+    bestseller_rank = Field()
 
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
