@@ -2,7 +2,6 @@
 
 import collections
 import decimal
-import json
 
 from scrapy.item import Item, Field
 
@@ -17,7 +16,6 @@ BuyerReviews = collections.namedtuple(
      'average_rating',  # float
      'rating_by_star']  # dict, {star: num_of_reviews,}, like {1: 45, 2: 234}
 )
-
 
 valid_currency_codes = """AED AFN ALL AMD ANG AOA ARS AUD AWG AZN BAM BBD BDT
  BGN BHD BIF BMD BND BOB BOV BRL BSD BTN BWP BYR BZD CAD CDF CHE CHF CHW CLF
@@ -34,7 +32,6 @@ valid_currency_codes = [c.strip() for c in valid_currency_codes if c.strip()]
 
 
 class Price:
-
     price = None
     priceCurrency = None
 
@@ -70,25 +67,25 @@ def scrapy_price_serializer(value):
 
 class SiteProductItem(Item):
     # Search metadata.
-    site = Field()          # String.
-    search_term = Field()   # String.
-    ranking = Field()       # Integer.
+    site = Field()  # String.
+    search_term = Field()  # String.
+    ranking = Field()  # Integer.
     total_matches = Field()  # Integer.
     results_per_page = Field()  # Integer.
-    scraped_results_per_page = Field() # Integer.
+    scraped_results_per_page = Field()  # Integer.
     # Indicates whether this Item comes from scraping single product url
-    is_single_result = Field() # Bool
+    is_single_result = Field()  # Bool
 
     # Product data.
-    title = Field()         # String.
-    upc = Field()           # Integer.
-    model = Field()         # String, alphanumeric code.
-    url = Field()           # String, URL.
-    image_url = Field()     # String, URL.
-    description = Field()   # String with HTML tags.
-    brand = Field()         # String.
+    title = Field()  # String.
+    upc = Field()  # Integer.
+    model = Field()  # String, alphanumeric code.
+    url = Field()  # String, URL.
+    image_url = Field()  # String, URL.
+    description = Field()  # String with HTML tags.
+    brand = Field()  # String.
     price = Field(serializer=scrapy_price_serializer)  # see Price obj
-    locale = Field()        # String.
+    locale = Field()  # String.
     # Dict of RelatedProducts. The key is the relation name.
     related_products = Field()
     # Dict of SponsoredLinks. The key is the relation name.
@@ -99,6 +96,8 @@ class SiteProductItem(Item):
     is_out_of_stock = Field()
     # Feedback from the buyers (with ratings etc.)
     buyer_reviews = Field()  # see BuyerReviews obj
+
+    best_seller_rank = Field()
 
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
