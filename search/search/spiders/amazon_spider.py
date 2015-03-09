@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
@@ -251,14 +253,18 @@ class AmazonSpider(SearchSpider):
             # if we can't find it like above try other things:
             if not price_holder:
                 # prefer new prices to used ones
+                # TODO: doesn't work for amazon.co.uk (pounds), but isn't needed bery often
                 price_holder = hxs.select("//span[contains(@class, 'olp-new')]//text()[contains(.,'$')]").extract()
             if price_holder:
                 product_target_price = price_holder[0].strip()
                 # remove commas separating orders of magnitude (ex 2,000)
                 product_target_price = re.sub(",","",product_target_price)
-                m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
+                m = re.match("(\$|\xa3)([0-9]+\.?[0-9]*)", product_target_price)
                 if m:
-                    item['product_target_price'] = float(m.group(1))
+                    item['product_target_price'] = float(m.group(2))
+                    currency = m.group(1)
+                    if currency != "$":
+                        item['product_target_price'] = Utils.convert_to_dollars(item['product_target_price'], currency)
                 else:
                     self.log("Didn't match product price: " + product_target_price + " " + response.url + "\n", level=log.WARNING)
 

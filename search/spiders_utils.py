@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
+
 import re
 import sys
 
 from nltk.util import ngrams
 from nltk.corpus import stopwords
+
+from scrapy import log
 
 __init__=['Utils']
 
@@ -109,3 +113,24 @@ class Utils():
         text = re.sub("<body> *\n","",text,1)
         text = re.sub("\n *</body>","",text,1)
         return text.encode("utf-8")
+
+    @staticmethod
+    def convert_to_dollars(price, currency):
+        # approximate conversion to dollars, using fixed rate
+        # currency is assumed to be the symbol
+        # currently only supports pounds
+        
+        rates = {'£' : 1.5}
+
+        # encode currency if it's not
+        try:
+            currency = currency.encode('utf-8')
+        except Exception:
+            pass
+
+        if currency in rates:
+            price = price * rates[currency]
+            return price
+
+        log.msg("Unsupported currency: " + currency.decode('utf-8') + "\n", level = log.WARNING)
+        return price
