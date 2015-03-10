@@ -100,6 +100,21 @@ class AmazonProductsSpider(BaseProductsSpider):
             result = self._handle_captcha(response, self.parse_product)
         return result
 
+    def _populate_bestseller_rank(self, product, response):
+        ranks = {' > '.join(map(unicode.strip,
+                                itm.css('.zg_hrsr_ladder a::text').extract())):
+                     int(re.sub('[ ,]', '',
+                                itm.css('.zg_hrsr_rank::text').re(
+                                    '([\d, ]+)')[0]))
+                 for itm in response.css('.zg_hrsr_item')}
+        prim = response.css('#SalesRank::text, #SalesRank .value'
+                            '::text').re('([\d ,]+) .*in (.+)\(')
+        if prim:
+            prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
+            ranks.update(prim)
+        ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
+        cond_set_value(product, 'bestseller_rank', ranks)
+
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         cond_set(
@@ -154,6 +169,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 model = li.xpath('text()').extract()
         cond_set(product, 'model', model, conv=string.strip)
         self._buyer_reviews_from_html(response, product)
+        self._populate_bestseller_rank(product, response)
 
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...

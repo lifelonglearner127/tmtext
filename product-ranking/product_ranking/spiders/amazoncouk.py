@@ -28,6 +28,21 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         print 'debug init:'
         super(AmazonCoUkProductsSpider, self).__init__(*args, **kwargs)
 
+    def _populate_bestseller_rank(self, product, response):
+        ranks = {' > '.join(map(unicode.strip,
+                                itm.css('.zg_hrsr_ladder a::text').extract())):
+                     int(re.sub('[ ,]', '',
+                                itm.css('.zg_hrsr_rank::text').re(
+                                    '([\d, ]+)')[0]))
+                 for itm in response.css('.zg_hrsr_item')}
+        prim = response.css('#SalesRank::text, #SalesRank .value'
+                            '::text').re('([\d ,]+) .*in (.+)\(')
+        if prim:
+            prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
+            ranks.update(prim)
+        ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
+        cond_set_value(product, 'bestseller_rank', ranks)
+
     def parse_product(self, response):
         prod = response.meta['product']
 
@@ -66,6 +81,7 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
         prod['url'] = response.url
         self._buyer_reviews_from_html(response, prod)
+        self._populate_bestseller_rank(prod, response)
         return prod
 
     def _search_page_error(self, response):

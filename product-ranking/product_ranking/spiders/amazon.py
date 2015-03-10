@@ -2,7 +2,6 @@ from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 
 import json
-import re
 import string
 import re
 
@@ -132,6 +131,21 @@ class AmazonProductsSpider(BaseProductsSpider):
                         .replace(',', '')
                 )
 
+    def populate_bestseller_rank(self, product, response):
+        ranks = {' > '.join(map(unicode.strip,
+                                itm.css('.zg_hrsr_ladder a::text').extract())):
+                     int(re.sub('[ ,]', '',
+                                itm.css('.zg_hrsr_rank::text').re(
+                                    '([\d, ]+)')[0]))
+                 for itm in response.css('.zg_hrsr_item')}
+        prim = response.css('#SalesRank::text, #SalesRank .value'
+                            '::text').re('#([\d ,]+) .*in (.+)\(')
+        if prim:
+            prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
+            ranks.update(prim)
+        ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
+        cond_set_value(product, 'bestseller_rank', ranks)
+
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         self._get_price(response, product)
@@ -170,6 +184,8 @@ class AmazonProductsSpider(BaseProductsSpider):
             elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
                 model = li.xpath('text()').extract()
         cond_set(product, 'model', model, conv=string.strip)
+        self.populate_bestseller_rank(product, response)
+
 
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...

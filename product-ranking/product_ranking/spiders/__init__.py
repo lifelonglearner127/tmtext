@@ -330,6 +330,8 @@ class BaseProductsSpider(Spider):
             # The ranking is the position in this page plus the number of
             # products from other pages.
             prod_item['ranking'] = (i + 1) + (self.quantity - remaining)
+            if self.user_agent_key not in ["desktop", "default"]:
+                prod_item['is_mobile_agent'] = True
 
             if prod_url is None:
                 # The product is complete, no need for another request.
