@@ -120,6 +120,18 @@ class EbaySpider(SearchSpider):
             if product_model_holder:
                 item['product_model'] = product_model_holder[0]
 
+            # TODO: upc?
+            
+            price_holder = hxs.select("//span[@itemprop='price']/text() | //span[@id='mm-saleDscPrc']/text()")
+            try:
+                (currency, price) = price_holder.re("(\$|\xa3)([0-9\.]+)")
+                if currency != "$":
+                    price = Utils.convert_to_dollars(float(price), currency)
+                item['product_target_price'] = float(price)
+            except:
+                self.log("No price: " + str(response.url), level=log.WARNING)
+
+
             # add result to items
             items.add(item)
 

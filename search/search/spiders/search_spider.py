@@ -49,7 +49,7 @@ class SearchSpider(BaseSpider):
 
     allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
-                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk", "pcworld.co.uk"]
+                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk", "pcworld.co.uk", "ebay.co.uk"]
 
     # pass product as argument to constructor - either product name or product URL
     # arguments:
@@ -121,6 +121,7 @@ class SearchSpider(BaseSpider):
                         # "sears" : "http://www.sears.com/search=%s" % search_query}
                         # #TODO: staples?
                         "ebay": "http://www.ebay.com/sch/i.html?_trksid=p2050601.m570.l1313&_nkw=%s" % search_query, \
+                        "ebaycouk": "http://www.ebay.co.uk/sch/i.html?_trksid=p2050601.m570.l1313&_nkw=%s" % search_query, \
                         "sony": "http://store.sony.com/search?SearchTerm=%s" % search_query, \
                         "samsung": "http://www.samsung.com/us/function/search/espsearchResult.do?input_keyword=%s" % search_query, \
                         "target" : "http://www.target.com/s?searchTerm=" + search_query + "&category=0%7CAll%7Cmatchallpartial%7Call+categories&lnk=snav_sbox_" + search_query, \
