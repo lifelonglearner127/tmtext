@@ -1,10 +1,11 @@
-from flask import Flask, jsonify, abort, request
+from flask import Flask, jsonify, request
 import json
-import urllib, cStringIO
 from PIL import Image
 import mmh3 as MurmurHash
 import os.path
 from io import BytesIO
+import requests
+from StringIO import StringIO
 
 '''
     Fetches an image, hashes it, and adds/removes it from the desired path
@@ -79,15 +80,16 @@ def validate_args(args):
 
 
 def fetch_bytes(url):
-    file = cStringIO.StringIO(urllib.urlopen(url).read())
-    img = Image.open(file)
-    
-    b = BytesIO()
-    img.save(b, format='png')
-    data = b.getvalue()
-
-    return data
-
+    agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+    headers ={'User-agent': agent}
+    with requests.Session() as s:
+        response = s.get(url, headers=headers, timeout=15)
+        if response != 'Error' and response.ok:
+            img = Image.open(StringIO(response.content))
+            b = BytesIO()
+            img.save(b, format='png')
+            data = b.getvalue()
+            return data
 
 @app.errorhandler(500)
 def handle_internal_error(error):
