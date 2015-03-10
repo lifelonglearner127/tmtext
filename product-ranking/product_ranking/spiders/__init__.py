@@ -154,13 +154,39 @@ class BaseProductsSpider(Spider):
 
     MAX_RETRIES = 3
 
+    USER_AGENTS = {
+        'default': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:35.0) '\
+            'Gecko/20100101 Firefox/35.0',
+        'desktop': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:35.0) '\
+            'Gecko/20100101 Firefox/35.0',
+        'iphone_ipad': 'Mozilla/5.0 (iPhone; CPU iPhone OS 7_0_6 '\
+            'like Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) '\
+            'Version/7.0 Mobile/11B651 Safari/9537.53',
+        'android_phone': 'Mozilla/5.0 (Android; Mobile; rv:35.0) '\
+            'Gecko/35.0 Firefox/35.0',
+        'android_pad': 'Mozilla/5.0 (Android; Tablet; rv:35.0) '\
+            'Gecko/35.0 Firefox/35.0',
+        'android': 'Mozilla/5.0 (Android; Tablet; rv:35.0) '\
+            'Gecko/35.0 Firefox/35.0',
+    }
+
     def __init__(self,
                  url_formatter=None,
                  quantity=None,
                  searchterms_str=None, searchterms_fn=None,
                  site_name=None,
                  product_url=None,
+                 user_agent=None,
                  *args, **kwargs):
+        if user_agent is None or user_agent not in self.USER_AGENTS.keys():
+            self.log("Not available user agent type or it wasn't set."
+                     " Default user agent will be used.", INFO)
+            user_agent = 'default'
+
+        if user_agent:
+            self.user_agent = self.USER_AGENTS[user_agent]
+            self.user_agent_key = user_agent
+
         super(BaseProductsSpider, self).__init__(*args, **kwargs)
 
         if site_name is None:

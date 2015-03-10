@@ -4,13 +4,23 @@ import json
 import pprint
 import re
 import urlparse
+import requests
 
+from scrapy import Selector
+from scrapy.http import Request
 from scrapy.log import ERROR, INFO
 
 from product_ranking.items import (SiteProductItem, RelatedProduct,
                                    BuyerReviews, Price)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
+
+is_empty = lambda x: x[0] if x else ""
+
+
+def get_string_from_html(xp, link):
+    loc = is_empty(link.xpath(xp).extract())
+    return Selector(text=loc).xpath('string()').extract()
 
 
 class WalmartProductsSpider(BaseProductsSpider):
@@ -40,6 +50,8 @@ class WalmartProductsSpider(BaseProductsSpider):
         'rating': 'rating_high',
     }
 
+    sponsored_links = []
+
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
@@ -52,6 +64,50 @@ class WalmartProductsSpider(BaseProductsSpider):
             ),
             *args, **kwargs)
 
+    def start_requests(self):
+        for st in self.searchterms:
+            url = "http://www.walmart.com/midas/srv/ypn?" \
+                "query=%s&context=Home" \
+                "&clientId=walmart_us_desktop_backfill_search" \
+                "&channel=ch_8,backfill" % (st,)
+            yield Request(url=url, callback=self.get_sponsored_links)
+
+    def get_sponsored_links(self, response):
+        arr = []
+        for link in response.xpath('//div[contains(@class, "yahoo_sponsored_link")]' \
+            '/div[contains(@class, "yahoo_sponsored_link")]'):
+            ad_title = is_empty(
+                get_string_from_html('div/span[@class="title"]/a', link))
+            ad_text = is_empty(
+                get_string_from_html('div/span[@class="desc"]/a', link))
+            visible_url = is_empty(
+                get_string_from_html('div/span[@class="host"]/a', link))
+            actual_url = is_empty(
+                link.xpath('div/span[@class="title"]/a/@href').extract())
+
+            try:
+                r = requests.get(actual_url, headers={
+                    "User-Agent": "Mozilla/5.0 (X11; Linux i686 (x86_64)) " \
+                    "AppleWebKit/537.36 (KHTML, like Gecko) " \
+                    "Chrome/37.0.2062.120 Safari/537.36"
+                    }
+                )
+                actual_url = r.url
+            except Exception:
+                pass
+
+            sld = {
+                    "ad_title" : ad_title,
+                    "ad_text" : ad_text,
+                    "visible_url" : visible_url,
+                    "actual_url" : actual_url,
+            }
+            arr.append(sld)
+
+        self.sponsored_links = arr
+
+        return super(WalmartProductsSpider, self).start_requests()
+
     def parse_product(self, response):
         if self._search_page_error(response):
             self.log(
@@ -60,11 +116,15 @@ class WalmartProductsSpider(BaseProductsSpider):
 
         product = response.meta['product']
 
+        if self.sponsored_links:
+            product["sponsored_links"] = self.sponsored_links
+
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
         product['buyer_reviews'] = self._build_buyer_reviews(response)
-
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
+        if self.user_agent_key not in ["desktop", "default"]:
+            product['is_mobile_agent'] = True
         return product
 
     def _parse_single_product(self, response):
@@ -183,11 +243,28 @@ class WalmartProductsSpider(BaseProductsSpider):
                         ERROR
                     )
             if price_block:
-                _price = Price(
-                    priceCurrency=price_block['currencyUnit'],
-                    price=price_block['currencyAmount']
-                )
-                cond_set_value(product, 'price', _price)
+                try:
+                    _price = Price(
+                        priceCurrency=price_block['currencyUnit'],
+                        price=price_block['currencyAmount']
+                    )
+                    cond_set_value(product, 'price', _price)
+                except KeyError:
+                    try:
+                        if price_block["currencyUnitSymbol"] == "$":
+                            _price = Price(
+                                priceCurrency="USD",
+                                price=price_block['currencyAmount']
+                            )
+                        cond_set_value(product, 'price', _price)
+                    except KeyError:
+                        self.log(
+                            "Product with unknown buyingOptions " \
+                            "structure: %s\n%s" % (
+                                response.url, pprint.pformat(data)),
+                            ERROR
+                        )
+                
         try:
             cond_set_value(
                 product, 'upc', data['analyticsData']['upc'], conv=int)
