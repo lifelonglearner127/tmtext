@@ -915,6 +915,9 @@ class SearchSpider(BaseSpider):
             product_target_price = re.sub(",","",product_target_price)
             price = float(product_target_price)
 
+            # convert to dollars (assume pounds)
+            price = Utils.convert_to_dollars(price, u'\xa3')
+
         upc = None
 
         return (product_name, None, price, upc)
