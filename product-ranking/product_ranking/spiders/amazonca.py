@@ -97,24 +97,12 @@ class AmazonProductsSpider(BaseProductsSpider):
         if not price:
             price = response.xpath(
                 '//div[contains(@class, "a-box")]//div[@class="a-row"]'
-                '//span[contains(@class, "a-color-price")]/text()'
-            ).extract()
-        if not price:
-            price = response.xpath(
-                '//b[@class="priceLarge"]/text()'
-            ).extract()
-        if not price:
-            price = response.xpath(
+                '//span[contains(@class, "a-color-price")]/text() |'
+                '//b[@class="priceLarge"]/text() |'
                 '//span[@class="olp-padding-right"]'
-                '/span[@class="a-color-price"]/text()'
-            ).extract()
-        if not price:
-            price = response.xpath(
+                '/span[@class="a-color-price"]/text() |'
                 '//div[@class="a-box-inner"]/div/'
-                'span[@class="a-color-price"]/text()'
-            ).extract()
-        if not price:
-            price = response.xpath(
+                'span[@class="a-color-price"]/text() |'
                 '//span[@id="priceblock_dealprice"]/text()'
             ).extract()
 
@@ -146,10 +134,7 @@ class AmazonProductsSpider(BaseProductsSpider):
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
             description = response.xpath(
-                '//div[@id="feature-bullets"]'
-            ).extract()
-        if not description:
-            description = response.xpath(
+                '//div[@id="feature-bullets"] |'
                 '//div[@class="bucket"]/div[@class="content"]'
             ).extract()
         cond_set(
@@ -177,14 +162,8 @@ class AmazonProductsSpider(BaseProductsSpider):
                     pass
         if not image:
             image = response.xpath(
-                '//div[@id="img-canvas"]/img/@src'
-            ).extract()
-        if not image:
-            image = response.xpath(
-                '//img[@id="main-image"]/@src'
-            ).extract()
-        if not image:
-            image = response.xpath(
+                '//div[@id="img-canvas"]/img/@src |'
+                '//img[@id="main-image"]/@src |'
                 '//div[@class="main-image-inner-wrapper"]/img/@src'
             ).extract()
 

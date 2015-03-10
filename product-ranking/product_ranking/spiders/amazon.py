@@ -100,73 +100,32 @@ class AmazonProductsSpider(BaseProductsSpider):
         cond_set(
             product,
             'price',
-            response.css('#priceblock_ourprice ::text').extract(),
+            response.css(
+                '#priceblock_ourprice ::text'
+                ', #unqualifiedBuyBox .a-color-price ::text'
+                ', #priceblock_saleprice ::text'
+                ', #actualPriceValue ::text'
+                ', #buyNewSection .offer-price ::text'
+            ).extract(),
         )
         if not product.get('price', None):
             cond_set(
                 product,
                 'price',
-                response.css(
-                    '#unqualifiedBuyBox .a-color-price ::text').extract(),
-            )
-        if not product.get('price', None):
-            cond_set(
-                product,
-                'price',
-                response.css(
-                    '#priceblock_saleprice ::text').extract(),
-            )
-        if not product.get('price', None):
-            cond_set(
-                product,
-                'price',
-                response.css(
-                    '#actualPriceValue ::text').extract(),
-            )
-        if not product.get('price', None):
-            cond_set(
-                product,
-                'price',
-                response.css(
-                    '#buyNewSection .offer-price ::text').extract(),
-            )
-        if not product.get('price', None):
-            cond_set(
-                product,
-                'price',
                 response.xpath(
-                    '//td/b[@class="priceLarge"]/text()').extract()
-            )
-        if not product.get('price', None):
-            cond_set(
-                product,
-                'price',
-                response.xpath(
+                    '//td/b[@class="priceLarge"]/text() |'
                     '//span[@class="olp-padding-right"]'
-                    '/span[@class="a-color-price"]/text()').extract()
-            )
-        if not product.get('price', None):
-            cond_set(
-                product,
-                'price',
-                response.xpath(
+                    '/span[@class="a-color-price"]/text() |'
                     '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]'
-                    '/button/text()').extract()
-            )
-        if not product.get('price', None):
-            cond_set(
-                product,
-                'price',
-                response.xpath(
-                    '//span[@id="priceblock_saleprice"]/text()').extract()
-            )
-        if not product.get('price', None):
-            cond_set(
-                product,
-                'price',
-                response.xpath(
+                    '/button/text() |'
+                    '//span[@id="priceblock_saleprice"]/text() |'
                     '//li[@class="swatchElement selected"]'
-                    '//span[@class="a-color-price"]/text()').extract()
+                    '//span[@class="a-color-price"]/text() |'
+                    '//div[contains(@data-reftag,"atv_dp_bb_est_sd_movie")]'
+                    '/button/text() |'
+                    '//div[@id="mocaBBRegularPrice"]'
+                    '/div/text()[normalize-space()]'
+                ).extract()
             )
         if product.get('price', None):
             if not '$' in product['price']:
@@ -204,26 +163,11 @@ class AmazonProductsSpider(BaseProductsSpider):
                     description = [desc]
         if not description:
             description = response.xpath(
-                '//div[@id="descriptionAndDetails"]'
-            ).extract()
-        if not description:
-            description = response.xpath(
-                '//div[@id="feature-bullets"]'
-            ).extract()
-        if not description:
-            description = response.xpath(
-                '//div[@id="ps-content"]'
-            ).extract()
-        if not description:
-            description = response.xpath(
-                '//div[@id="productDescription_feature_div"]'
-            ).extract()
-        if not description:
-            description = response.xpath(
-                '//div[contains(@class, "dv-simple-synopsis")]'
-            ).extract()
-        if not description:
-            description = response.xpath(
+                '//div[@id="descriptionAndDetails"] |'
+                '//div[@id="feature-bullets"] |'
+                '//div[@id="ps-content"] |'
+                '//div[@id="productDescription_feature_div"] |'
+                '//div[contains(@class, "dv-simple-synopsis")] |'
                 '//div[@class="bucket"]/div[@class="content"]'
             ).extract()
 
@@ -236,14 +180,6 @@ class AmazonProductsSpider(BaseProductsSpider):
         image = response.css(
             '#imgTagWrapperId > img ::attr(data-old-hires)'
         ).extract()
-        if not image:
-            image = response.xpath(
-                '//div[@class="main-image-inner-wrapper"]/img/@src'
-            ).extract()
-        if not image:
-            image = response.xpath(
-                '//div[@id="coverArt_feature_div"]//img/@src'
-            ).extract()
         if not image:
             j = re.findall(r"'colorImages': { 'initial': (.*)},",
                            response.body)
@@ -262,11 +198,14 @@ class AmazonProductsSpider(BaseProductsSpider):
                     pass
         if not image:
             image = response.xpath(
-                '//div[@id="img-canvas"]/img/@src'
-            ).extract()
-        if not image:
-            image = response.xpath(
-                '//div[@class="dp-meta-icon-container"]/img/@src'
+                '//div[@class="main-image-inner-wrapper"]/img/@src |'
+                '//div[@id="coverArt_feature_div"]//img/@src |'
+                '//div[@id="img-canvas"]/img/@src |'
+                '//div[@class="dp-meta-icon-container"]/img/@src |'
+                '//input[@id="mocaGlamorImageUrl"]/@value |'
+                '//div[@class="egcProdImageContainer"]'
+                '/img[@class="egcDesignPreviewBG"]/@src |'
+                '//img[@id="main-image"]/@src'
             ).extract()
 
         if len(image)>0 and image[0]:
@@ -278,15 +217,11 @@ class AmazonProductsSpider(BaseProductsSpider):
         title = response.css('#productTitle ::text').extract()
         if not title:
             title = response.xpath(
-                '//div[@class="buying"]/h1/span[@id="btAsinTitle"]/text()'
-            ).extract()
-        if not title:
-            title = response.xpath(
-                '//div[@id="title_feature_div"]/h1/text()'
-            ).extract()
-        if not title:
-            title = response.xpath(
-                '//div[@id="title_row"]/span/h1/text()'
+                '//div[@class="buying"]/h1/span[@id="btAsinTitle"]/text() |'
+                '//div[@id="title_feature_div"]/h1/text() |'
+                '//div[@id="title_row"]/span/h1/text() |'
+                '//h1[@id="aiv-content-title"]/text() |'
+                '//div[@id="item_name"]/text()'
             ).extract()
         if not title:
             parts = response.xpath(
@@ -297,10 +232,6 @@ class AmazonProductsSpider(BaseProductsSpider):
                 for part in parts:
                     title += part
                 title = [title]
-        if not title:
-            title = response.xpath(
-                '//h1[@id="aiv-content-title"]/text()'
-            ).extract()
         cond_set(product, 'title', title)
 
         # Some data is in a list (ul element).
