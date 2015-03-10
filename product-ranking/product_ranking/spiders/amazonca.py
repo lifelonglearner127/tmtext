@@ -7,6 +7,7 @@ import json
 import re
 import string
 
+from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
@@ -53,6 +54,15 @@ class AmazonProductsSpider(BaseProductsSpider):
         else:
             result = super(AmazonProductsSpider, self).parse(response)
         return result
+
+    def _get_products(self, response):
+        result = super(AmazonProductsSpider, self)._get_products(response)
+        for r in result:
+            if isinstance(r, Request):
+                r = r.replace(dont_filter=True)
+                yield r
+            else:
+                yield r
 
     def parse_product(self, response):
         prod = response.meta['product']
@@ -158,10 +168,10 @@ class AmazonProductsSpider(BaseProductsSpider):
             if j:
                 try:
                     res = json.loads(j[0])
-                    if len(res) > 1:
-                        image = res[1]['large']
-                    else:
+                    try:
                         image = res[0]['large']
+                    except:
+                        image = res[1]['large']
                     image = [image]
                 except:
                     pass
