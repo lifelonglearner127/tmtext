@@ -80,8 +80,17 @@ class AmazonProductsSpider(BaseProductsSpider):
                                 itm.css('.zg_hrsr_rank::text').re(
                                     '([\d, ]+)')[0]))
                  for itm in response.css('.zg_hrsr_item')}
-        prim = response.css('#SalesRank::text, #SalesRank .value::text').re(
-            '([\d ,]+) .*en (.+)\(')
+
+        prim_a = response.css('#SalesRank::text, #SalesRank .value::text').re(
+            '(\d+){0,1}\.{0,1}(\d+) .*en (.+)\(')
+        prim = []
+        if prim_a:
+            if len(prim_a) > 1 and prim_a[0].isdigit() and prim_a[1].isdigit():
+                prim.append(prim_a[0] + prim_a[1])
+                prim.append(prim_a[2])
+            elif len(prim_a) > 1 and prim_a[0].isdigit():
+                prim[0].append(prim_a[0])
+                prim[1].append(prim_a[1])
         if prim:
             prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
             ranks.update(prim)
