@@ -2,7 +2,9 @@
 
 from __future__ import division, absolute_import, unicode_literals
 import re
+import json
 
+from scrapy.http import Request
 from scrapy.log import ERROR
 from scrapy.selector import Selector
 
@@ -22,11 +24,14 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
                   "url=search-alias=aps&field-keywords={search_term}&rh=i:aps,"
                   "k:{search_term}&ajr=0")
 
-    def __init__(self, *args, **kwargs):
-        # locations = settings.get('AMAZONFRESH_LOCATION')
-        # loc = locations.get(location, '')
-        print 'debug init:'
-        super(AmazonCoUkProductsSpider, self).__init__(*args, **kwargs)
+    def _get_products(self, response):
+        result = super(AmazonCoUkProductsSpider, self)._get_products(response)
+        for r in result:
+            if isinstance(r, Request):
+                r = r.replace(dont_filter=True)
+                yield r
+            else:
+                yield r
 
     def _populate_bestseller_rank(self, product, response):
         ranks = {' > '.join(map(unicode.strip,
@@ -46,15 +51,54 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
-        title = response.xpath('//span[@id="productTitle"]/text()').extract()
+        title = response.xpath(
+            '//span[@id="productTitle"]/text()[normalize-space()] |'
+            '//div[@class="buying"]/h1/span[@id="btAsinTitle"]'
+            '/text()[normalize-space()] |'
+            '//div[@id="title_feature_div"]/h1/text()[normalize-space()] |'
+            '//div[@id="title_row"]/span/h1/text()[normalize-space()] |'
+            '//h1[@id="aiv-content-title"]/text()[normalize-space()] |'
+            '//div[@id="item_name"]/text()[normalize-space()] |'
+            '//h1[@class="parseasinTitle"]/span[@id="btAsinTitle"]'
+            '/span/text()[normalize-space()]'
+        ).extract()
         cond_set(prod, 'title', title)
 
         brand = response.xpath('//a[@id="brand"]/text()').extract()
         cond_set(prod, 'brand', brand)
 
-        price = response.xpath(
-            '//span[@id="priceblock_ourprice"]/text()').extract()
-        cond_set(prod, 'price', price)
+        cond_set(
+            prod,
+            'price',
+            response.css(
+                '#priceblock_ourprice ::text'
+                ', #unqualifiedBuyBox .a-color-price ::text'
+                ', #priceblock_saleprice ::text'
+                ', #buyNewSection .offer-price ::text'
+            ).extract(),
+        )
+        if not prod.get('price', None):
+            cond_set(
+                prod,
+                'price',
+                response.xpath(
+                    '//td/b[@class="priceLarge"]/text() |'
+                    '//span[@class="olp-padding-right"]'
+                    '/span[@class="a-color-price"]/text() |'
+                    '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]'
+                    '/button/text() |'
+                    '//span[@id="priceblock_saleprice"]/text() |'
+                    '//li[@class="swatchElement selected"]'
+                    '//span[@class="a-color-price"]/text() |'
+                    '//div[contains(@data-reftag,"atv_dp_bb_est_sd_movie")]'
+                    '/button/text() |'
+                    '//div[@id="mocaBBRegularPrice"]'
+                    '/div/text()[normalize-space()] |'
+                    '//span[@id="actualPriceValue"]/b/text()'
+                    '[normalize-space()] |'
+                    '//span[@id="actualPriceValue"]/text()[normalize-space()]'
+                ).extract()
+            )
 
         if prod.get('price', None):
             if not u'£' in prod.get('price', ''):
@@ -68,14 +112,51 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
                     priceCurrency='GBP'
                 )
 
-        des = response.xpath(
-            '//div[@id="detail_bullets_id"]/div[@class="content"]/text()'
-        ).extract()
-        cond_set(prod, 'description', des)
+        description = response.css('.productDescriptionWrapper').extract()
+        if not description:
+            description = response.xpath(
+                '//div[@id="descriptionAndDetails"] |'
+                '//div[@id="feature-bullets"] |'
+                '//div[@id="ps-content"] |'
+                '//div[@id="productDescription_feature_div"] |'
+                '//div[contains(@class, "dv-simple-synopsis")] |'
+                '//div[@class="bucket"]/div[@class="content"]'
+            ).extract()
 
-        img_url = response.xpath(
-            '//div[@id="imgTagWrapperId"]/img/@src').extract()
-        cond_set(prod, 'image_url', img_url)
+        cond_set(prod, 'description', description)
+
+        image = []
+        j = re.findall(r"'colorImages': { 'initial': (.*)},",
+                       response.body)
+        if not j:
+            j = re.findall(r'colorImages = {"initial":(.*)}',
+                           response.body)
+        if j:
+            try:
+                res = json.loads(j[0])
+                try:
+                    image = res[0]['large']
+                except:
+                    image = res[1]['large']
+                image = [image]
+            except:
+                pass
+        if not image:
+            image = response.xpath(
+                '//div[@class="main-image-inner-wrapper"]/img/@src |'
+                '//div[@id="coverArt_feature_div"]//img/@src |'
+                '//div[@id="img-canvas"]/img/@src |'
+                '//div[@class="dp-meta-icon-container"]/img/@src |'
+                '//input[@id="mocaGlamorImageUrl"]/@value |'
+                '//div[@class="egcProdImageContainer"]'
+                '/img[@class="egcDesignPreviewBG"]/@src |'
+                '//img[@id="main-image"]/@src |'
+                '//div[@id="imgTagWrapperId"]/img/@src |'
+                '//div[@id="kib-container"]/div[@id="kib-ma-container-0"]'
+                '/img/@src'
+            ).extract()
+
+        cond_set(prod, 'image_url', image)
 
         cond_set(prod, 'locale', ['en-US'])
 
