@@ -122,7 +122,6 @@ class WalmartProductsSpider(BaseProductsSpider):
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
         product['buyer_reviews'] = self._build_buyer_reviews(response)
-
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         return product
 
