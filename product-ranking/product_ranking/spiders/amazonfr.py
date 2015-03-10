@@ -77,8 +77,8 @@ class AmazonProductsSpider(BaseProductsSpider):
         ranks = {' > '.join(map(unicode.strip,
                                 itm.css('.zg_hrsr_ladder a::text').extract())):
                      int(re.sub('[ ,]', '',
-                                response.css('.zg_hrsr_rank::text').re(
-                                    '([\d+, ])')[0]))
+                                itm.css('.zg_hrsr_rank::text').re(
+                                    '([\d, ]+)')[0]))
                  for itm in response.css('.zg_hrsr_item')}
         prim = response.css('#SalesRank::text, #SalesRank .value::text').re(
             '([\d ,]+) .*en (.+)\(')
