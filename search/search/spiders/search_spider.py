@@ -49,7 +49,7 @@ class SearchSpider(BaseSpider):
 
     allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
-                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk"]
+                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk", "pcworld.co.uk"]
 
     # pass product as argument to constructor - either product name or product URL
     # arguments:
@@ -127,8 +127,8 @@ class SearchSpider(BaseSpider):
                         "ocado" : "http://www.ocado.com/webshop/getSearchProducts.do?clearTabs=yes&isFreshSearch=true&entry=%s" % search_query,
                         "tesco" : "http://www.tesco.com/direct/search-results/results.page?catId=4294967294&searchquery=%s" % search_query,
                         "boots" : "http://www.boots.com/webapp/wcs/stores/servlet/EndecaSearchListerView?storeId=10052&searchTerm=%s" % search_query,
-                        "currys" : "http://www.currys.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query
-
+                        "currys" : "http://www.currys.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query,
+                        "pcworld" : "http://www.pcworld.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query
                         }
 
         return search_pages
