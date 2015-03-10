@@ -46,7 +46,7 @@ class EbaySpider(SearchSpider):
 
 
 
-        results = hxs.select("//div[@id='ResultSetItems']//h4/a | //div[@id='PaginationAndExpansionsContainer']//h4/a")
+        results = hxs.select("//div[@id='ResultSetItems']//h3/a | //div[@id='PaginationAndExpansionsContainer']//h3/a")
         for result in results:
             product_url = result.select("@href").extract()[0]
 
@@ -95,12 +95,6 @@ class EbaySpider(SearchSpider):
         #item['origin_site'] = site
         item['origin_url'] = origin_url
 
-        if 'origin_id' in response.meta:
-            item['origin_id'] = response.meta['origin_id']
-            assert self.by_id
-        else:
-            assert not self.by_id
-
         # extract product name
         product_name = hxs.select("//h1[@id='itemTitle']/text()").extract()
         if not product_name:
@@ -132,15 +126,24 @@ class EbaySpider(SearchSpider):
         # if there are any more results to be parsed, send a request back to this method with the next product to be parsed
         product_urls = response.meta['search_results']
 
+        # find first valid next product url
+        next_product_url = None
         if product_urls:
-            request = Request(product_urls.pop(), callback = self.parse_product_ebay, meta = response.meta)
+            next_product_url = product_urls.pop()
+
+
+        # if a next product url was found, send new request back to parse_product_url
+        if next_product_url:
+            request = Request(next_product_url, callback = self.parse_product_ebay, meta = response.meta)
             request.meta['items'] = items
             # eliminate next product from pending list (this will be the new list with the first item popped)
             request.meta['search_results'] = product_urls
 
             return request
+
+        # if no next valid product url was found
         else:
-            # otherwise, we are done, send a the response back to reduceResults (no need to make a new request)
+            # we are done, send a the response back to reduceResults (no need to make a new request)
             # add as meta newly added items
             # also add 'parsed' field to indicate that the parsing of all products was completed and they cand be further used
             # (actually that the call was made from this method and was not the initial one, so it has to move on to the next request)
@@ -149,3 +152,5 @@ class EbaySpider(SearchSpider):
             response.meta['items'] = items
 
             return self.reduceResults(response)
+
+
