@@ -8,6 +8,7 @@ import json
 import re
 import string
 import urlparse
+import lxml.html
 
 from product_ranking.items import Price
 from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
@@ -16,6 +17,10 @@ from product_ranking.spiders import cond_set, cond_set_value
 from scrapy import Selector
 from scrapy.http import Request
 from scrapy.log import DEBUG
+
+
+def fromxml(stext):
+    return lxml.html.fromstring(stext).text
 
 
 class SaksfifthavenueProductsSpider(BaseProductsSpider):
@@ -147,17 +152,16 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
         cond_set(product, 'brand', response.xpath(
             "//header/h1[contains(@class,'brand-name')]/a/text()").extract(),
             conv=string.strip)
-
-        tprice = jdata['response']['body'][
-            'main_products'][0]['price']['sale_price']
+        tprice = fromxml(jdata['response']['body'][
+            'main_products'][0]['price']['sale_price'])
         price = re.search(FLOATING_POINT_RGEX, tprice)
         if price:
             price = price.group(0)
             product['price'] = Price(
                 price=price, priceCurrency='USD')
 
-        upc = jdata['response']['body']['main_products'][0]['product_code']
-        cond_set_value(product, 'upc', upc)
+        upc = fromxml(jdata['response']['body']['main_products'][0]['product_code'])
+        cond_set_value(product, 'upc', unicode(upc))
 
         description = jdata['response']['body'][
             'main_products'][0]['description']
@@ -175,9 +179,14 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
         url = self._gen_rr_request(response)
 
         if url:
+            new_meta = response.meta.copy()
+            new_meta['product'] = product
+            new_meta['handle_httpstatus_list'] = [404]
             return Request(
-                url, meta=response.meta.copy(),
-                callback=self._parse_rr)
+                url,
+                meta=new_meta,
+                callback=self._parse_rr,
+                dont_filter=True)
         return product
 
     def _gen_rr_request(self, response):
@@ -220,9 +229,15 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
                     product['related_products'][pp_key] = prodlist
         bvurl = response.meta.get('bvurl')
         if bvurl:
+            # TODO: add dont_filter
+            new_meta = response.meta.copy()
+            new_meta['product'] = product
+            new_meta['handle_httpstatus_list'] = [404]
             return Request(
-                bvurl, meta=response.meta.copy(),
-                callback=self._parse_bv)
+                bvurl,
+                meta=new_meta,
+                callback=self._parse_bv,
+                dont_filter=True)
         return product
 
     def _parse_rr_js(self, text):
