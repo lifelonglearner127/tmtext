@@ -7,6 +7,7 @@ import json
 import re
 import string
 
+from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
@@ -54,6 +55,15 @@ class AmazonProductsSpider(BaseProductsSpider):
             result = super(AmazonProductsSpider, self).parse(response)
         return result
 
+    def _get_products(self, response):
+        result = super(AmazonProductsSpider, self)._get_products(response)
+        for r in result:
+            if isinstance(r, Request):
+                r = r.replace(dont_filter=True)
+                yield r
+            else:
+                yield r
+
     def parse_product(self, response):
         prod = response.meta['product']
 
@@ -93,14 +103,40 @@ class AmazonProductsSpider(BaseProductsSpider):
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
+
+        price = response.xpath(
+            '//span[@id="priceblock_saleprice"]/text()'
+        ).extract()
+        if not price:
+            price = response.css('#priceblock_ourprice ::text').extract()
+        if not price:
+            price = response.xpath(
+                '//div[contains(@class, "a-box")]//div[@class="a-row"]'
+                '//span[contains(@class, "a-color-price")]/text() |'
+                '//b[@class="priceLarge"]/text() |'
+                '//span[@class="olp-padding-right"]'
+                '/span[@class="a-color-price"]/text() |'
+                '//div[@class="a-box-inner"]/div/'
+                'span[@class="a-color-price"]/text() |'
+                '//span[@id="priceblock_dealprice"]/text()'
+            ).extract()
+
         cond_set(
             product,
             'price',
-            response.css('#priceblock_ourprice ::text').extract(),
+            price,
         )
         if product.get('price', None):
-            if not u'CDN$' in product.get('price', ''):
-                self.log('Invalid price at: %s' % response.url, level=ERROR)
+            price = product.get('price', '')
+            if not u'CDN$' in price:
+                if 'FREE' in price or ' ' in price:
+                    product['price'] = Price(
+                        priceCurrency='CAD',
+                        price='0.00'
+                    )
+                else:
+                    self.log('Invalid price at: %s' % response.url,
+                             level=ERROR)
             else:
                 price = re.findall('[\d ,.]+\d', product['price'])
                 price = re.sub('[, ]', '', price[0])
@@ -109,19 +145,55 @@ class AmazonProductsSpider(BaseProductsSpider):
                         ' ', '').replace(',', '').strip(),
                     priceCurrency='CAD'
                 )
+
+        description = response.css('.productDescriptionWrapper').extract()
+        if not description:
+            description = response.xpath(
+                '//div[@id="feature-bullets"] |'
+                '//div[@class="bucket"]/div[@class="content"]'
+            ).extract()
         cond_set(
             product,
             'description',
-            response.css('.productDescriptionWrapper').extract(),
+            description,
         )
+        image = response.css(
+                '#imgTagWrapperId > img ::attr(data-old-hires)').extract()
+        if not image:
+            j = re.findall(r"'colorImages': { 'initial': (.*)},",
+                           response.body)
+            if not j:
+                j = re.findall(r'colorImages = {"initial":(.*)}',
+                               response.body)
+            if j:
+                try:
+                    res = json.loads(j[0])
+                    try:
+                        image = res[0]['large']
+                    except:
+                        image = res[1]['large']
+                    image = [image]
+                except:
+                    pass
+        if not image:
+            image = response.xpath(
+                '//div[@id="img-canvas"]/img/@src |'
+                '//img[@id="main-image"]/@src |'
+                '//div[@class="main-image-inner-wrapper"]/img/@src'
+            ).extract()
+
         cond_set(
             product,
             'image_url',
-            response.css(
-                '#imgTagWrapperId > img ::attr(data-old-hires)').extract()
+            image
         )
-        cond_set(
-            product, 'title', response.css('#productTitle ::text').extract())
+
+        title = response.css('#productTitle ::text').extract()
+        if not title:
+            title = response.xpath(
+                '//h1[@class="parseasinTitle"]/span/span/text()'
+            ).extract()
+        cond_set(product, 'title', title)
 
         # Some data is in a list (ul element).
         model = None
@@ -207,11 +279,11 @@ class AmazonProductsSpider(BaseProductsSpider):
         return self._cbw.solve_captcha(captcha_img)
 
     def _handle_captcha(self, response, callback):
+        # FIXME This is untested and wrong.
         captcha_solve_try = response.meta.get('captcha_solve_try', 0)
-        product = response.meta['product']
-
+        url = response.url
         self.log("Captcha challenge for %s (try %d)."
-                 % (product['url'], captcha_solve_try),
+                 % (url, captcha_solve_try),
                  level=INFO)
 
         captcha = self._solve_captcha(response)
@@ -219,23 +291,25 @@ class AmazonProductsSpider(BaseProductsSpider):
         if captcha is None:
             self.log(
                 "Failed to guess captcha for '%s' (try: %d)." % (
-                    product['url'], captcha_solve_try),
+                    url, captcha_solve_try),
                 level=ERROR
             )
             result = None
         else:
             self.log(
                 "On try %d, submitting captcha '%s' for '%s'." % (
-                    captcha_solve_try, captcha, product['url']),
+                    captcha_solve_try, captcha, url),
                 level=INFO
             )
+            meta = response.meta.copy()
+            meta['captcha_solve_try'] = captcha_solve_try + 1
             result = FormRequest.from_response(
                 response,
                 formname='',
                 formdata={'field-keywords': captcha},
-                callback=callback)
-            result.meta['captcha_solve_try'] = captcha_solve_try + 1
-            result.meta['product'] = product
+                callback=callback,
+                dont_filter=True,
+                meta=meta)
 
         return result
 
