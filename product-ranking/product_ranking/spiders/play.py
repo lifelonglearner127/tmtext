@@ -2,17 +2,17 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-import urlparse
 from datetime import datetime
-import re
 import json
+import re
+import urlparse
 
 from product_ranking.items import Price
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
-from scrapy.log import DEBUG
 from scrapy.http import Request
+from scrapy.log import DEBUG
 
 
 class PlayProductsSpider(BaseProductsSpider):
@@ -43,7 +43,6 @@ class PlayProductsSpider(BaseProductsSpider):
                     self.log('"%s" not in SORT_MODES')
                     sort_mode = 'default'
                 self.SEARCH_URL += self.SORT_MODES[sort_mode]
-
         super(PlayProductsSpider, self).__init__(
             None,
             site_name=self.allowed_domains[0],
@@ -66,17 +65,15 @@ class PlayProductsSpider(BaseProductsSpider):
             parentprodid = parentprodid[0]
             if parentprodid != '0':
                 cond_set_value(product, 'upc', parentprodid)
-
         cond_set(product, 'title', response.xpath(
             "//h1[@itemprop='name']/text()").extract())
         cond_set(product, 'title', response.xpath(
             "//h1[@itemprop='name']/strong/text()").extract())
         cond_set_value(product, 'locale', "en-GB")
-
         cond_set(product, 'brand', response.xpath(
             "//p[contains(@id,'bodycontent') and contains(text(),'Brand:')]"
             "/a/text() ").extract())
-
+        cond_set_value(product, 'brand', ' ')
         mprice = response.xpath(
             "//span[contains(@class,'price')][1]/descendant-or-self::*"
             "/text()").extract()
@@ -88,16 +85,10 @@ class PlayProductsSpider(BaseProductsSpider):
                 if price:
                     product['price'] = Price(
                         price=price, priceCurrency='GBP')
-
         cond_set(product, 'image_url', response.xpath(
             "//figure[@class='product-images']/a/img/@src").extract())
-        # TODO:  desctiption
-        # cond_set(product, 'description', response.xpath(
-        #     "//div[@class='product-info']").extract())
-
-        # cond_set_value(product, 'description', ' ')
-
-        # print "PROD=", prodid, "PARENT=", parentprodid
+        cond_set(product, 'description', response.xpath(
+            "//section[@id='Description']").extract())
         if prodid or parentprodid:
             sess = int((datetime.utcnow() - datetime(
                 1970, 1, 1)).total_seconds())
@@ -110,7 +101,6 @@ class PlayProductsSpider(BaseProductsSpider):
                 meta=new_meta,
                 callback=self._related_parse,
                 dont_filter=True)
-
         return product
 
     def _related_parse(self, response):
@@ -127,7 +117,6 @@ class PlayProductsSpider(BaseProductsSpider):
                         title = itm['Title']
                         href = itm['ProductUrl']
                         related.append(RelatedProduct(title, href))
-                    # print related
                     if related:
                         product['related_products'] = {
                             'recommendations': related}
@@ -136,11 +125,6 @@ class PlayProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        # alert = response.xpath(
-        #     "//div[contains(@class,'search')]"
-        #     "/div[contains(@class,'alert-suggested-results')]")
-        # if alert:
-        #     return 0
         total = response.xpath(
             "//p[contains(text(),'Results')]/strong").re(r"\(of (\d+)\)")
         if total:
@@ -153,21 +137,14 @@ class PlayProductsSpider(BaseProductsSpider):
     def _scrape_product_links(self, response):
         def full_url(url):
             return urlparse.urljoin(response.url, url)
-        # alert = response.xpath(
-        #     "//div[contains(@class,'search')]"
-        #     "/div[contains(@class,'alert-suggested-results')]")
         links = response.xpath(
             "//ul[contains(@class,'line')]"
             "/li/article/a[@class='img']"
             "/@href").extract()
-        print "LINKS=", len(links)
-        # if alert:
-        #     return
         if not links:
             self.log("Found no product links.", DEBUG)
         for link in links:
             yield link, SiteProductItem()
-            # yield None, SiteProductItem(url=full_url(link))
 
     def _scrape_next_results_page_link(self, response):
         def full_url(url):
