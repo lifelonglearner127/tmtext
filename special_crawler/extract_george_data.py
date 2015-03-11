@@ -79,7 +79,7 @@ class GeorgeScraper(Scraper):
         return None
 
     def _features(self):
-        rws = self.tree_html.xpath("//div[@class='tabcontent']//table[@id='fullSpec']")
+        rws = self.tree_html.xpath("//div[@class='tabcontent' or @id='tabcontents' or @class='description']//table[@id='fullSpec']")
         if len(rws)>0:
             rows = rws[0].xpath(".//tr")
             cells=[]
@@ -244,8 +244,8 @@ class GeorgeScraper(Scraper):
     # return one element containing the PDF
     def _pdf_urls(self):
         pdf = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
-        if len(pdf)>0:
-            return pdf
+        if len(pdf)>0 :
+            return [p for p in pdf if "Cancellation" not in p]
         return None
 
     def _pdf_count(self):
