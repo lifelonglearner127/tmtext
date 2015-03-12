@@ -129,7 +129,8 @@ class SearchSpider(BaseSpider):
                         "tesco" : "http://www.tesco.com/direct/search-results/results.page?catId=4294967294&searchquery=%s" % search_query,
                         "boots" : "http://www.boots.com/webapp/wcs/stores/servlet/EndecaSearchListerView?storeId=10052&searchTerm=%s" % search_query,
                         "currys" : "http://www.currys.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query,
-                        "pcworld" : "http://www.pcworld.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query
+                        "pcworld" : "http://www.pcworld.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query,
+                        "maplin" : "http://www.maplin.co.uk/search?text=%s" % search_query
                         }
 
         return search_pages
