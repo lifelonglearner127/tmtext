@@ -1787,6 +1787,10 @@ class WalmartScraper(Scraper):
         #       e.g. http://www.walmart.com/ip/23149039
         try:
             #       new design
+            if "" . join(self.tree_html.xpath("//strong[@class='js-pure-soi-flyout-header']/text")[0]) == \
+                    'This item is only sold at a Walmart store.':
+                return 0
+
             if not self.js_entry_function_body:
                 pinfo_dict = self._extract_productinfo_json_from_jsfunction_body_new()
             else:
