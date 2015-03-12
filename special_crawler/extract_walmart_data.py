@@ -85,6 +85,9 @@ class WalmartScraper(Scraper):
         # onlinePriceLabel info via phantom
         self.phantom_onlinepricelabel_style = None
 
+        # WM_ROW info via phantom
+        self.phantom_wm_row_style = None
+
     # checks input format
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -1520,7 +1523,14 @@ class WalmartScraper(Scraper):
 
             # onlinePriceLabel info for old version
             try:
-                self.phantom_onlinepricelabel_style = (driver.find_element(By.XPATH, "//div[@id='onlinePriceLabel']")).\
+                self.phantom_onlinepricelabel_style = driver.find_element(By.XPATH, "//div[@id='onlinePriceLabel']").\
+                    get_attribute("style").strip()
+            except Exception, e:
+                pass
+
+            # WM_ROW info for old version
+            try:
+                self.phantom_wm_row_style = driver.find_element(By.XPATH, "//tr[@id='WM_ROW']").\
                     get_attribute("style").strip()
             except Exception, e:
                 pass
@@ -1703,6 +1713,15 @@ class WalmartScraper(Scraper):
             else:
                 return 0
 
+        # special case old version
+        try:
+            seller_meta_info = self._seller_meta_from_tree()
+
+            if self._in_stores_only() and ("Walmart.com" not in seller_meta_info.keys() and True not in seller_meta_info.values()):
+                return 1
+        except Exception, e:
+            pass
+
         return None
 
     def _in_stock(self):
@@ -1762,8 +1781,8 @@ class WalmartScraper(Scraper):
         except Exception:
             self.extract_specific_fields_via_phantom()
 
-            if "display: block;" in self.phantom_onlinepricelabel_style or "display: none;" not in \
-                    self.phantom_onlinepricelabel_style:
+            if "display: none;" not in self.phantom_wm_row_style and ("display: block;" in self.phantom_onlinepricelabel_style or "display: none;" not in \
+                    self.phantom_onlinepricelabel_style):
                 return 1
 
         return 0
