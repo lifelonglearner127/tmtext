@@ -1683,16 +1683,10 @@ class WalmartScraper(Scraper):
         # assume new design
         # _owned_from_script() may throw exception if extraction fails
         # (causing the service to return None for "owned")
-        try:
-            marketplace_new = self._marketplace_from_script()
-        except Exception:
-            marketplace_new = None
+        if self._marketplace_sellers():
+            return 1
 
-        if marketplace_new is None:
-            # try to extract assuming old page structure
-            return self._marketplace_meta_from_tree()
-
-        return marketplace_new
+        return 0
 
     def _marketplace_sellers(self):
         """Extracts list of marketplace sellers for this product
@@ -1707,8 +1701,12 @@ class WalmartScraper(Scraper):
             sellers = self._marketplace_sellers_from_script()
             # filter out walmart
             sellers = filter(lambda s: s != "Walmart.com", sellers)
+            seller_name_displayed = self._seller_name_in_web_page()
 
-            if self._seller_name_in_web_page() != "Walmart.com":
+            if seller_name_displayed != "Walmart.com":
+                if len(sellers) == 1 and sellers[0] != seller_name_displayed:
+                    sellers[0] = seller_name_displayed
+
                 return sellers if sellers else None
         except:
             sellers = None
