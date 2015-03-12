@@ -98,6 +98,8 @@ class SiteProductItem(Item):
     buyer_reviews = Field()  # see BuyerReviews obj
 
     bestseller_rank = Field()
+    department = Field()  # now for Amazons only; may change in the future
+    category = Field()  # now for Amazons only; may change in the future
 
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
