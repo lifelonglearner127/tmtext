@@ -16,6 +16,7 @@ from product_ranking.spiders import BaseProductsSpider, \
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 
+is_empty = lambda x: x[0] if x else None
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -321,13 +322,14 @@ class AmazonProductsSpider(BaseProductsSpider):
             '/tr[@class="a-histogram-row"]')
         if table:
             for tr in table: #td[last()]//text()').re('\d+')
-                rating = tr.xpath(
-                    'string(.//td[1])').re(FLOATING_POINT_RGEX)[0]
-                number = tr.xpath(
-                    'string(.//td[last()])').re(FLOATING_POINT_RGEX)[0]
-                buyer_reviews['rating_by_star'][rating] = int(
-                    number.replace(',', '')
-                )
+                rating = is_empty(tr.xpath(
+                    'string(.//td[1])').re(FLOATING_POINT_RGEX))
+                number = is_empty(tr.xpath(
+                    'string(.//td[last()])').re(FLOATING_POINT_RGEX))
+                if number:
+                    buyer_reviews['rating_by_star'][rating] = int(
+                        number.replace(',', '')
+                    )
         else:
             table = response.xpath(
                 '//div[@id="revH"]/div/div[contains(@class, "fl")]'
