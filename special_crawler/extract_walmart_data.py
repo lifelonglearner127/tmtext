@@ -1797,6 +1797,7 @@ class WalmartScraper(Scraper):
             if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
                 return 1
         except Exception:
+            #       old design
             self.extract_specific_fields_via_phantom()
 
             if "display: none;" not in self.phantom_wm_row_style and ("display: block;" in self.phantom_onlinepricelabel_style or "display: none;" not in \
