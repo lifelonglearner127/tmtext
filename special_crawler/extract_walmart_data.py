@@ -1487,18 +1487,19 @@ class WalmartScraper(Scraper):
         Method can be overwritten by scraper class if different implementation is available.
         '''
 
-        try:
-            # old version
-            self.extract_specific_fields_via_phantom()
+        if self._in_stores():
+            try:
+                # old version
+                self.extract_specific_fields_via_phantom()
 
-            if "display: block;" in self.phantom_wmnotavailableline_style or "display: none;" not in \
-                    self.phantom_wmnotavailableline_style:
-                WMNotAvailableLine_text = self.tree_html.xpath("//p[@id='WMNotAvailableLine']//text()")[0].strip()
+                if "display: block;" in self.phantom_wmnotavailableline_style or "display: none;" not in \
+                        self.phantom_wmnotavailableline_style:
+                    WMNotAvailableLine_text = self.tree_html.xpath("//p[@id='WMNotAvailableLine']//text()")[0].strip()
 
-                if "Not Available" in WMNotAvailableLine_text:
-                    return 1
-        except Exception:
-            pass
+                    if "Not Available" in WMNotAvailableLine_text:
+                        return 1
+            except Exception:
+                pass
 
         return None
 
