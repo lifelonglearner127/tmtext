@@ -9,12 +9,12 @@ from lxml import html, etree
 import lxml
 import urllib
 import lxml.html
-import time
 import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from extract_data import Scraper
 from compare_images import compare_images
+
 
 class WalmartScraper(Scraper):
 
@@ -76,8 +76,9 @@ class WalmartScraper(Scraper):
         # Currently used for seller info (but useful for others as well)
         self.js_entry_function_body = None
 
-        #whether the page has loaded in phantom
+        # whether the page has loaded in phantom
         self.is_page_loaded_in_phantom = False
+
     # checks input format
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -226,7 +227,6 @@ class WalmartScraper(Scraper):
             else:
                 self.video_urls = None
 
-
     def _video_urls(self):
         """Extracts video URLs for a given walmart product
         Returns:
@@ -363,14 +363,8 @@ class WalmartScraper(Scraper):
         if not self.extracted_video_urls:
             self._extract_video_urls()
 
-#        if not self.extracted_pdf_urls:
-#            self._pdf_urls()
-
         if self.has_sellpoints_media:
             return 1
-
-#        if self._has_sellpoints_iframe():
-#            return 1
 
         return 0
 
@@ -1446,7 +1440,6 @@ class WalmartScraper(Scraper):
                 body_raw = "".join(self.tree_html.xpath("//script//text()"))
                 body_clean = re.sub("\n", " ", body_raw)
                 # extract json part of function body
-#                body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
 
                 body_jpart = re.findall("\{\"query.*?\}", body_clean)[0]
                 body_dict = json.loads(body_jpart)
@@ -1520,8 +1513,6 @@ class WalmartScraper(Scraper):
         body_clean = re.sub("\n", " ", body_raw)
         body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
 
-#        body_dict = json.loads(body_jpart)
-
         sIndex = body_jpart.find("isInStore") + len("isInStore") + 2
         eIndex = body_jpart.find(",", sIndex)
 
@@ -1536,9 +1527,6 @@ class WalmartScraper(Scraper):
         Works on new page version.
         Returns 1/0
         """
-
-#        if self._site_online():
-#           return 1
 
         if not self.js_entry_function_body:
             pinfo_dict = self._extract_productinfo_json_from_jsfunction_body_new()
@@ -1751,59 +1739,7 @@ class WalmartScraper(Scraper):
 
             if "display: block;" in onlinePriceLabel_style or "display: none;" not in onlinePriceLabel_style:
                 return 1
-            '''
-            #       old design
-            productinfo = self._extract_productinfo_json_from_jsfunction_body_old()
 
-            if productinfo["isInStock"] and not productinfo["isRunout"]:
-                A = "Instock";
-
-            if productinfo["isInStock"] and productinfo["isRunout"]:
-                A = "InstockRunout";
-
-            if not productinfo["isInStock"] and not productinfo["canAddtoCart"]:
-                A = "OutOfStock";
-
-            if productinfo["isEmailMe"]:
-                A = "EmailMe";
-
-            if productinfo["isPreOrder"]:
-                A = "PreorderInstock";
-
-            if productinfo["isPreOrderOOS"]:
-                A = "PreorderOutOfStock";
-
-            if productinfo["isComingSoon"]:
-                A = "ComingSoon";
-
-            if not productinfo["isDisplayable"]:
-                A = "OutOfStock";
-
-            if A == "Instock":
-                if productinfo["isInStock"]:
-                    return 1
-
-                if productinfo["isInStore"] and not productinfo["isInStock"]:
-                    return 1
-
-            if A == "OutOfStock":
-                return 1
-
-            if A == "PreorderInstock":
-                return 1
-
-            if A == "InstockRunout":
-                return 1
-
-            if A == "EmailMe":
-                return 1
-
-            if A == "ComingSoon":
-                return 1
-
-            if A == "PreorderOutOfStock":
-                return 1
-            '''
         return 0
 
     def _site_online_out_of_stock(self):
@@ -1843,8 +1779,7 @@ class WalmartScraper(Scraper):
         # we could not decide
         return None
 
-
-    def  _ingredients(self):
+    def _ingredients(self):
         # list of ingredients - list of strings
         ingr=self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
         if len(ingr) > 0:
@@ -1871,12 +1806,11 @@ class WalmartScraper(Scraper):
         self.ing_count = None
         return None
 
-
-    def  _ingredient_count(self):
+    def _ingredient_count(self):
         # number of ingredients - integer
-        return  self.ing_count
+        return self.ing_count
 
-    def  _nutrition_facts(self):
+    def _nutrition_facts(self):
         # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
         # containing nutrition facts
         res=[]
@@ -1910,11 +1844,9 @@ class WalmartScraper(Scraper):
         self.nutr_count = None
         return None
 
-
-    def  _nutrition_fact_count(self):
+    def _nutrition_fact_count(self):
         # number of nutrition facts (of elements in the nutrition_facts list) - integer
         return self.nutr_count
-
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
