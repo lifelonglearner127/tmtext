@@ -1479,7 +1479,7 @@ class WalmartScraper(Scraper):
         except Exception:
             pass
 
-        return 0
+        return Scraper._in_stores_only(self)
 
     def _in_stores_out_of_stock(self):
         '''General function for setting value of field "in_stores_out_of_stock".
@@ -1787,8 +1787,8 @@ class WalmartScraper(Scraper):
         #       e.g. http://www.walmart.com/ip/23149039
         try:
             #       new design
-            if "" . join(self.tree_html.xpath("//strong[@class='js-pure-soi-flyout-header']/text")[0]) == \
-                    'This item is only sold at a Walmart store.':
+            if ("" . join(self.tree_html.xpath("//strong[@class='js-pure-soi-flyout-header']/text()"))) == \
+                    "This item is only sold at a Walmart store.":
                 return 0
 
             if not self.js_entry_function_body:
