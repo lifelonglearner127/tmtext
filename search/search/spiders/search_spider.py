@@ -460,7 +460,7 @@ class SearchSpider(BaseSpider):
         #TODO: search by model number extracted from product name? Don't I do that implicitly? no, but in combinations
 
         # if there is no product model, try to extract it
-        if not product_model:
+        if not product_model and product_name:
             product_model = ProcessText.extract_model_from_name(product_name)
 
             # for logging purposes, set this back to the empty string if it wasn't found (so was None)
@@ -816,13 +816,22 @@ class SearchSpider(BaseSpider):
         return (product_name, None, None, None)
 
     def parseURL_amazon(self, hxs):
+        # works for amazon.com and amazon.co.uk
         product_name = product_model = price = None
 
-        # TODO: test
-        product_name_node = hxs.select("//span[@id='productTitle']/text()").extract()
+        product_name_node = hxs.select('//h1[@id="title"]/span[@id="productTitle"/text()]').extract()
+        if not product_name_node:
+            product_name_node = hxs.select('//h1[@id="aiv-content-title"]//text()').extract()
+        if not product_name_node:
+            product_name_node = hxs.select('//div[@id="title_feature_div"]/h1//text()').extract()
 
         if product_name_node:
             product_name = product_name_node[0].strip()
+        else:
+            # needs special treatment
+            product_name_node = hxs.select('//h1[@class="parseasinTitle " or @class="parseasinTitle"]/span[@id="btAsinTitle"]//text()').extract()
+            if product_name_node:
+                product_name = " ".join(product_name_node).strip()
 
         # extract product model number
         model_number_holder = hxs.select("""//tr[@class='item-model-number']/td[@class='value']/text() |
@@ -832,9 +841,10 @@ class SearchSpider(BaseSpider):
         # if no product model explicitly on the page, try to extract it from name
         else:
             # TODO: do I try this here or is it tried somewhere down the line again?
-            product_model_extracted = ProcessText.extract_model_from_name(product_name)
-            if product_model_extracted:
-                model_number = product_model_extracted
+            if product_name:
+                product_model_extracted = ProcessText.extract_model_from_name(product_name)
+                if product_model_extracted:
+                    model_number = product_model_extracted
 
         # # no support for brand yet
         # brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()

@@ -164,7 +164,22 @@ class AmazonSpider(SearchSpider):
 
         #TODO: to test this
         #product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
-        product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
+        product_name_node = hxs.select('//h1[@id="title"]/span[@id="productTitle"]/text()').extract()
+        if not product_name_node:
+            product_name_node = hxs.select('//h1[@id="aiv-content-title"]//text()').extract()
+        if not product_name_node:
+            product_name_node = hxs.select('//div[@id="title_feature_div"]/h1//text()').extract()
+
+        if product_name_node:
+            product_name = product_name_node[0].strip()
+        else:
+            # needs special treatment
+            product_name_node = hxs.select('//h1[@class="parseasinTitle " or @class="parseasinTitle"]/span[@id="btAsinTitle"]//text()').extract()
+            if product_name_node:
+                product_name = " ".join(product_name_node).strip()
+
+        product_name = product_name_node[0].strip()
+
         if not product_name:
 
             # log this error:
