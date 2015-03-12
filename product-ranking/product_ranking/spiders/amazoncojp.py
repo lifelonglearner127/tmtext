@@ -95,7 +95,7 @@ class AmazonProductsSpider(BaseProductsSpider):
         prim = response.css('#SalesRank::text, #SalesRank .value'
                             '::text').re('(.+) - ([\d ,]+)')
         if prim:
-            prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
+            prim = {prim[0].strip(): int(re.sub('[ ,]', '', prim[1]))}
             ranks.update(prim)
         ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
         cond_set_value(product, 'category', ranks)
