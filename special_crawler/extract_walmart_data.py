@@ -1707,7 +1707,7 @@ class WalmartScraper(Scraper):
                 if len(sellers) == 1 and sellers[0] != seller_name_displayed:
                     sellers[0] = seller_name_displayed
 
-                return sellers if sellers else None
+            return sellers if sellers else None
         except:
             sellers = None
 
