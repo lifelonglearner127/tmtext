@@ -14,6 +14,8 @@ from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 
+from product_ranking.amazon_bestsellers import amazon_parse_department
+
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -158,7 +160,12 @@ class AmazonProductsSpider(BaseProductsSpider):
             prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
             ranks.update(prim)
         ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
-        cond_set_value(product, 'bestseller_rank', ranks)
+        # parse department
+        department = amazon_parse_department(ranks)
+        cond_set_value(
+            product, 'bestseller_rank',
+            {'categories': ranks, 'department': department}
+        )
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
