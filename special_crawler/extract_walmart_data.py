@@ -45,10 +45,7 @@ class WalmartScraper(Scraper):
     # base URL for request for product reviews - formatted string
     BASE_URL_REVIEWSREQ = 'http://walmart.ugc.bazaarvoice.com/1336a/%20{0}/reviews.djs?format=embeddedhtml'
 
-
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
-
-    driver = webdriver.PhantomJS(service_log_path='/var/log/flask-uwsgi/ghostdriver.log')
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -78,6 +75,15 @@ class WalmartScraper(Scraper):
 
         # whether the page has loaded in phantom
         self.is_page_loaded_in_phantom = False
+
+        # special fields extracted via phantom
+        self.phantom_product_name_node = None
+
+        # wmnotavailableline info via phantom
+        self.phantom_wmnotavailableline_style = None
+
+        # onlinePriceLabel info via phantom
+        self.phantom_onlinepricelabel_style = None
 
     # checks input format
     def check_url_format(self):
@@ -426,9 +432,8 @@ class WalmartScraper(Scraper):
             product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
 
         if self.stringify_children(product_name_node[0]).strip() == '':
-            self.load_page_in_phantom()
-            product_name_node = self.driver.find_element(By.XPATH, "//h1[contains(@class, 'product-name')]").text
-            return product_name_node
+            self.extract_specific_fields_via_phantom()
+            return self.phantom_product_name_node
 
         return self.stringify_children(product_name_node[0]).strip()
 
@@ -1451,15 +1456,12 @@ class WalmartScraper(Scraper):
 
         return in_stores
 
-
     def _in_stores_only(self):
-        '''General function for setting value of field "in_stores_only".
+        """
+        General function for setting value of field "in_stores_only".
         It will be inferred from other sellers fields.
         Method can be overwritten by scraper class if different implementation is available.
-        '''
-
-        onlinePriceText = ""
-
+        """
         try:
             onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceWM']//text()"))
             if "In stores only" in onlinePriceText:
@@ -1484,11 +1486,10 @@ class WalmartScraper(Scraper):
 
         try:
             # old version
-            self.load_page_in_phantom()
-            WMNotAvailableLine_style = self.driver.find_element(By.XPATH, "//p[@id='WMNotAvailableLine']").\
-                get_attribute("style").strip()
+            self.extract_specific_fields_via_phantom()
 
-            if "display: block;" in WMNotAvailableLine_style or "display: none;" not in WMNotAvailableLine_style:
+            if "display: block;" in self.phantom_wmnotavailableline_style or "display: none;" not in \
+                    self.phantom_wmnotavailableline_style:
                 WMNotAvailableLine_text = self.tree_html.xpath("//p[@id='WMNotAvailableLine']//text()")[0].strip()
 
                 if "Not Available" in WMNotAvailableLine_text:
@@ -1498,10 +1499,35 @@ class WalmartScraper(Scraper):
 
         return None
 
-    def load_page_in_phantom(self):
+    def extract_specific_fields_via_phantom(self):
         if not self.is_page_loaded_in_phantom:
-            self.driver.get(self.product_page_url)
+            driver = webdriver.PhantomJS(service_log_path='/var/log/flask-uwsgi/ghostdriver.log')
+            driver.get(self.product_page_url)
+
+            # special case for product name node
+            try:
+                self.phantom_product_name_node = driver.find_element(By.XPATH, "//h1[contains(@class, 'product-name')]").\
+                    text
+            except Exception, e:
+                pass
+
+            # WMNotAvailableLine info for old version
+            try:
+                self.phantom_wmnotavailableline_style = driver.find_element(By.XPATH, "//p[@id='WMNotAvailableLine']").\
+                    get_attribute("style").strip()
+            except Exception, e:
+                pass
+
+            # onlinePriceLabel info for old version
+            try:
+                self.phantom_onlinepricelabel_style = (driver.find_element(By.XPATH, "//div[@id='onlinePriceLabel']")).\
+                    get_attribute("style").strip()
+            except Exception, e:
+                pass
+
             self.is_page_loaded_in_phantom = True
+
+            driver.quit()
 
     def _stores_available_from_script_old_page(self):
         """Extracts whether product is available in stores.
@@ -1734,10 +1760,10 @@ class WalmartScraper(Scraper):
             if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
                 return 1
         except Exception:
-            self.load_page_in_phantom()
-            onlinePriceLabel_style = (self.driver.find_element(By.XPATH, "//div[@id='onlinePriceLabel']")).get_attribute("style").strip()
+            self.extract_specific_fields_via_phantom()
 
-            if "display: block;" in onlinePriceLabel_style or "display: none;" not in onlinePriceLabel_style:
+            if "display: block;" in self.phantom_onlinepricelabel_style or "display: none;" not in \
+                    self.phantom_onlinepricelabel_style:
                 return 1
 
         return 0
