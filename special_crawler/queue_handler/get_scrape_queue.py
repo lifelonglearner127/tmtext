@@ -38,6 +38,7 @@ def main( environment, scrape_queue_name, thread_id):
     logger.info( "Starting thread %d" % thread_id)
     # establish the scrape queue
     sqs_scrape = SQS_Queue( scrape_queue_name)
+    base = "http://localhost/get_data?url=%s"
 
     # Continually pull off the SQS Scrape Queue
     while True:
@@ -74,21 +75,26 @@ def main( environment, scrape_queue_name, thread_id):
                 
                 logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
-                # Scrape the page using the scraper running on localhost
-                base = "http://localhost/get_data?url=%s"
-                get_start = time.time()
-                output_text = requests.get(base%(urllib.quote(url))).text
-                get_end = time.time()
+                for i in range(3):
+                    # Scrape the page using the scraper running on localhost
+                    get_start = time.time()
+                    output_text = requests.get(base%(urllib.quote(url))).text
+                    get_end = time.time()
 
-                # Add the processing fields to the return object and re-serialize it
-                try:
-                    output_json = json.loads(output_text)
-                except Exception as e:
-                    output_json = {
-                        "error":e,
-                        "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
-                        "status":"failure",
-                        "page_attributes":{"loaded_in_seconds":round(get_end-get_start,2)}}
+                    # Add the processing fields to the return object and re-serialize it
+                    try:
+                        output_json = json.loads(output_text)
+                    except Exception as e:
+                        output_json = {
+                            "error":e,
+                            "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
+                            "status":"failure",
+                            "page_attributes":{"loaded_in_seconds":round(get_end-get_start,2)}}
+                    output_json['attempt'] = i+1
+                    if not "error" in output_json:
+                        break
+                    time.sleep( 1)
+
                 output_json['url'] = url
                 output_json['site_id'] = site_id
                 output_json['product_id'] = product_id
