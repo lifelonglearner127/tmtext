@@ -179,11 +179,26 @@ class HarrodsProductsSpider(BaseProductsSpider):
             "//h1[contains(@class,'product-title')]"
             "/span[@itemprop='name']/text()").extract(),
             conv=string.strip)
+        # 2nd case (out of stock)
+        cond_set(product, 'title', response.xpath(
+            "//h1[contains(@class,'product-title')]"
+            "/span[@class='fn']/text()").extract(),
+            conv=string.strip)
 
         cond_set(product, 'brand', response.xpath(
             "//h1[contains(@class,'product-title')]/span[@itemprop='brand']"
             "/span[@itemprop='name']/text()").extract(),
             conv=string.strip)
+        # 2nd case (out of stock)
+        cond_set(product, 'brand', response.xpath(
+            "//h1[contains(@class,'product-title')]/span[@class='brand']"
+            "/text()").extract(),
+            conv=string.strip)
+
+        outofstock = response.xpath(
+            "//div[@id='outOfStockContainer' and not(@style)]").extract()
+        if outofstock:
+            cond_set_value(product, 'is_out_of_stock', True)
 
         price = response.xpath(
             '//span[contains(@class,"price")]/span[@class="now"]/text()'
@@ -198,9 +213,28 @@ class HarrodsProductsSpider(BaseProductsSpider):
             product['price'] = Price(
                 price=price, priceCurrency='GBP')
 
-        cond_set(product, 'upc', response.xpath(
-            "//span[@class='product_code' and @data-prodid]"
-            "/@data-prodid").extract())
+        # Bug #371
+        # cond_set(product, 'upc', response.xpath(
+        #     "//span[@class='product_code' and @data-prodid]"
+        #     "/@data-prodid").extract())
+
+        # dc = []
+        colors = response.xpath("//div[@class='color_c']/a[contains(@class,'active')]")
+        for col in colors:
+            href = col.xpath("@href").extract()
+            if href:
+                href = href[0]
+                image_url = href.replace("-s", "?$productMain$")
+                cond_set_value(product, 'image_url', image_url)
+            datacolor = col.xpath("@data-cname").extract()
+            if datacolor:
+                datacolor = datacolor[0]
+                cond_set_value(product, 'model', datacolor)
+            # price = col.xpath("@data-cprice").extract()
+            # if price:
+            #     price = price[0]
+            #dc.append("|".join((datacolor,price,href)))
+        #product['model'] = u'colors %s : %s ' % (len(colors), ", ".join(dc))
 
         cond_set(product, 'image_url', response.xpath(
             "//div[@class='f_left']/a[@id='product_img']/img/@src").extract())
