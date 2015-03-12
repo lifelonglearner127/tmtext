@@ -1459,6 +1459,7 @@ class WalmartScraper(Scraper):
 
         return in_stores
 
+    # override base class function
     def _in_stores_only(self):
         """
         General function for setting value of field "in_stores_only".
@@ -1650,6 +1651,7 @@ class WalmartScraper(Scraper):
 
         return 1 if available else 0
 
+    # override base class function
     def _owned(self):
         """Extracts info on whether product is ownedby Walmart.com.
         Uses functions that work on both old page design and new design.
@@ -1742,6 +1744,7 @@ class WalmartScraper(Scraper):
 
         return None
 
+    # override base class function
     def _in_stock(self):
         """Extracts info on whether product is available to be
         bought on the site, from any seller (marketplace or owned).
@@ -1763,6 +1766,7 @@ class WalmartScraper(Scraper):
 
         return in_stock_old
 
+    # override base class function
     def _owned_out_of_stock(self):
         """Extracts whether product is owned and out of stock.
         Works on both old and new page version.
