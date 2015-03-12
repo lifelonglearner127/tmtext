@@ -1594,6 +1594,23 @@ class WalmartScraper(Scraper):
         return sellers
 
     # ! may throw exception if not found
+    def _seller_name_in_web_page(self):
+        """Extracts list of marketplace sellers for this product.
+        Works on new page version.
+        Returns:
+            seller name displayed in web page
+        """
+
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_productinfo_json_from_jsfunction_body_new()
+        else:
+            pinfo_dict = self.js_entry_function_body
+
+        seller_name = pinfo_dict["analyticsData"]["sellerName"]
+
+        return seller_name
+
+    # ! may throw exception if not found
     def _in_stock_from_script(self):
         """Extracts info on whether product is available to be
         bought on the site, from any seller (marketplace or owned).
@@ -1689,8 +1706,10 @@ class WalmartScraper(Scraper):
         try:
             sellers = self._marketplace_sellers_from_script()
             # filter out walmart
-            sellers = filter(lambda s: s!="Walmart.com", sellers)
-            return sellers if sellers else None
+            sellers = filter(lambda s: s != "Walmart.com", sellers)
+
+            if self._seller_name_in_web_page() != "Walmart.com":
+                return sellers if sellers else None
         except:
             sellers = None
 
