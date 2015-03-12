@@ -160,12 +160,14 @@ class AmazonProductsSpider(BaseProductsSpider):
             prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
             ranks.update(prim)
         ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
+        cond_set_value(product, 'category', ranks)
         # parse department
         department = amazon_parse_department(ranks)
-        cond_set_value(
-            product, 'bestseller_rank',
-            {'categories': ranks, 'department': department}
-        )
+        if department is None:
+            product['department'] = None
+        else:
+            product['department'], product['bestseller_rank'] \
+                = department.items()[0]
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
