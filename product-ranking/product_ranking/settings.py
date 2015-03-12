@@ -38,6 +38,16 @@ EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
 MEMUSAGE_LIMIT_MB = 256
 MEMUSAGE_ENABLED = True
 
+# TODO: move out from this file! should be set dynamically in the __init__ method of the BaseValidator class
+# The piece of code below is awful, need to get rid of it asap.
+# I have warned you. Better don't look there at all.
+import sys
+_args_names = [arg.split('=')[0] if '=' in arg else arg for arg in sys.argv]
+if 'validate' in _args_names:
+    ITEM_PIPELINES = {
+        'product_ranking.validation.ValidatorPipeline': 100,
+    }
+
 try:
     from settings_local import *
 except ImportError:
