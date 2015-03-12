@@ -207,10 +207,13 @@ class StaplesAdvantageScraper(Scraper):
         return None
 
     def _image_urls(self):
-        script = "\n".join(self.tree_html.xpath("//script//text()"))
-        m = re.findall("enlargedImageURL = '([^']*)'", script, re.DOTALL)
-        image_url = list(set(m))
-        image_url = ["http://www.staplesadvantage.com%s" % r for r in image_url]
+        rows = self.tree_html.xpath("//div[@id='altquickimgalt']//ul/li//a/img/@src")
+        image_url = ["http://www.staplesadvantage.com%s" % r for r in rows]
+        if len(image_url) < 1:
+            script = "\n".join(self.tree_html.xpath("//script//text()"))
+            m = re.findall("enlargedImageURL = '([^']*)'", script, re.DOTALL)
+            image_url = list(set(m))
+            image_url = ["http://www.staplesadvantage.com%s" % r for r in image_url]
         if len(image_url) < 1:
             return None
         try:
