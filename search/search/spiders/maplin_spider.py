@@ -139,11 +139,14 @@ class MaplinSpider(SearchSpider):
             product_target_price = price_holder[0].strip()
             # remove commas separating orders of magnitude (ex 2,000)
             product_target_price = re.sub(",","",product_target_price)
-            product_target_price = float(product_target_price)
+            try:
+                product_target_price = float(product_target_price)
 
-            # convert to dollars (assume pounds)
-            product_target_price = Utils.convert_to_dollars(product_target_price, u'\xa3')
-            item['product_target_price'] = product_target_price
+                # convert to dollars (assume pounds)
+                product_target_price = Utils.convert_to_dollars(product_target_price, u'\xa3')
+                item['product_target_price'] = product_target_price
+            except Exception, ex:
+                self.log("Couldn't convert product price: " + response.url + "\n", level=log.WARNING)
 
         else:
             self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)

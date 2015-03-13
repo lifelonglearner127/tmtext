@@ -819,7 +819,7 @@ class SearchSpider(BaseSpider):
         # works for amazon.com and amazon.co.uk
         product_name = product_model = price = None
 
-        product_name_node = hxs.select('//h1[@id="title"]/span[@id="productTitle"/text()]').extract()
+        product_name_node = hxs.select('//h1[@id="title"]/span[@id="productTitle"]/text()').extract()
         if not product_name_node:
             product_name_node = hxs.select('//h1[@id="aiv-content-title"]//text()').extract()
         if not product_name_node:
