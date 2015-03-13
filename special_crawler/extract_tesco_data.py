@@ -179,7 +179,31 @@ class TescoScraper(Scraper):
 
     def _long_description(self):
         if self.scraper_version == "groceries":
-            return  " ".join(self.tree_html.xpath("//div[@class='detailsWrapper'][2]//text()")).strip()
+            el = self.tree_html.xpath("//div[@class='detailsWrapper'][2]//div[@class='content']")
+            rdata = html.tostring(el[0])
+            st = rdata.find('"content">')
+            fn = rdata.find('</div>')
+            res1 = ""
+            res2 = ""
+            pt1 = pt2 = 0
+            if st > 0:
+                st += 10
+                pt1 = rdata.find('<h4>Manufacturer',st)
+                if pt1 > 0:
+                    pt2 = rdata.find('</p>',pt1)
+                pt3 = rdata.find('<h4>Return')
+                if pt3 > 0:
+                    if pt1 < 0 :
+                        pt1 = pt3
+                    pt4 = rdata.find('</p>',pt3)
+                    if pt4 > 0:
+                        pt2 = pt4
+                if pt1 > 0 and pt2 > 0:
+                    return rdata[st:pt1] + rdata[pt2:fn]
+                else:
+                    return rdata[st:fn]
+            else:
+                return  " ".join(self.tree_html.xpath("//div[@class='detailsWrapper'][2]//text()")).strip()
         d1 = self._description()
         d2 = self._long_description_temp()
 
