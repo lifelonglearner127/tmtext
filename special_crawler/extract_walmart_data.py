@@ -1021,7 +1021,7 @@ class WalmartScraper(Scraper):
             float containing average value of reviews
         """
 
-        average_review_str = self.tree_html.xpath("//div[@class='review-summary']\
+        average_review_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
             //p[@class='heading-e']/span[2]/text()")
         average_review = float(average_review_str[0])
 
