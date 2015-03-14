@@ -952,7 +952,7 @@ class WalmartScraper(Scraper):
             int containing total nr of reviews
         """
 
-        nr_reviews_str = self.tree_html.xpath("//div[@class='review-summary grid grid-padded']\
+        nr_reviews_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
             //p[@class='heading-e']/span[1]/text()")
         nr_reviews = int(nr_reviews_str[0])
 
