@@ -10,6 +10,10 @@ RelatedProduct = collections.namedtuple("RelatedProduct", ['title', 'url'])
 
 #SponsoredLinks = collections.namedtuple("SponsoredLinks", ['ad_text', 'ad_url'])
 
+LimitedStock = collections.namedtuple("LimitedStock",
+                                      ['is_limited',   # bool
+                                       'items_left'])  # int
+
 BuyerReviews = collections.namedtuple(
     "BuyerReviews",
     ['num_of_reviews',  # int
@@ -110,3 +114,5 @@ class SiteProductItem(Item):
     google_source_site = Field()
 
     is_mobile_agent = Field()  # if the spider was in the mobile mode
+
+    limited_stock = Field() # see LimitedStock obj
