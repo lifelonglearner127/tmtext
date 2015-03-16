@@ -178,8 +178,6 @@ class AmazonSpider(SearchSpider):
             if product_name_node:
                 product_name = " ".join(product_name_node).strip()
 
-        product_name = product_name_node[0].strip()
-
         if not product_name:
 
             # log this error:
