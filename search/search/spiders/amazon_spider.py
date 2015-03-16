@@ -228,7 +228,7 @@ class AmazonSpider(SearchSpider):
                     return [FormRequest.from_response(response, callback = self.parse_product_amazon, formdata={'field-keywords' : captcha_text}, meta = meta)]
 
         else:
-            item['product_name'] = product_name[0].strip()
+            item['product_name'] = product_name
 
             # extract product model number
             model_number_holder = hxs.select("""//tr[@class='item-model-number']/td[@class='value']/text() |
