@@ -183,7 +183,7 @@ class WalmartScraper(Scraper):
 
                 # if it ends in flv, it's a video, ok
                 if video_url_candidate.endswith(".flv"):
-                    self.has_webcollage_media = True
+                    self.has_webcollage_media = Truefv
                     self.has_video = True
                     self.video_urls.append(video_url_candidate)
                     break
@@ -1480,7 +1480,8 @@ class WalmartScraper(Scraper):
         except Exception:
             pass
 
-        return Scraper._in_stores_only(self)
+#        return Scraper._in_stores_only(self)
+        return None
 
     def _in_stores_out_of_stock(self):
         '''General function for setting value of field "in_stores_out_of_stock".
@@ -1992,15 +1993,15 @@ class WalmartScraper(Scraper):
         "title_seo" : _title_from_tree, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title" : _product_name_from_tree, \
-        "owned": _owned, \
-        "owned_out_of_stock": _owned_out_of_stock, \
+#        "owned": _owned, \
+#        "owned_out_of_stock": _owned_out_of_stock, \
         "in_stores" : _in_stores, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock,
-        "in_stores_only" : _in_stores_only, \
+#        "in_stores_only" : _in_stores_only, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
-        "in_stock": _in_stock, \
+#        "in_stock": _in_stock, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "review_count": _nr_reviews, \
