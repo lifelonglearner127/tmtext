@@ -179,15 +179,15 @@ class GeorgeScraper(Scraper):
             tree = self.tree_html
 
         #The small images are below the big image
-        image_url =[m for m in tree.xpath("//div[@id='imageSlide']//img/@src") if m.find("_100day")<0]
+        image_url =[m for m in tree.xpath("//div[@id='imageSlide']//img/@src") if m.find("_100day") < 0 and not self._no_image(m)]
         if a == 1:
             self.image_urls = image_url
-        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url)>0:  #and self.no_image(image_url)==0
             return image_url
         image_url = tree.xpath("//img[@id='productImageSmall']/@src")
         if a == 1:
             self.image_urls = image_url
-        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url)>0:  #and self.no_image(image_url)==0
             return image_url
         if a == 1:
             self.image_urls = None
