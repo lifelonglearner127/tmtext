@@ -86,7 +86,7 @@ class URLsPipeline(object):
             if option == 4 and 'origin_upc' in item:
                 fields = [item['origin_upc']]
             else:
-                fields = [item['origin_url']]
+                fields = [item['origin_url'], item['origin_name']]
 
             # TODO. uncomment
             # # if output type is 3, add additional fields
@@ -141,6 +141,7 @@ class URLsPipeline(object):
 
         if int(spider.output) == 2:
             fields.append(item['origin_url'])
+            fields.append(item['origin_name'])
         if 'product_url' in item:
             fields.append(item['product_url'])
             # write unmatched products to second file
