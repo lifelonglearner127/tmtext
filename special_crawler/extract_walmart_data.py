@@ -1079,9 +1079,10 @@ class WalmartScraper(Scraper):
         return nr_reviews
 
     def _rollback(self):
-        rollback = self.tree_html.xpath('//div[@class="js-product-offer-summary"]//span[contains(@class,"flag-rollback")]')
+        rollback = self.tree_html.xpath('//div[@class="js-product-offer-summary"]//'
+                                        'span[contains(@class,"flag-rollback")]')
 
-        if rollback is None:
+        if not rollback:
             return 0
         else:
             return 1
