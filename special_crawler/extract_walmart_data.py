@@ -88,6 +88,9 @@ class WalmartScraper(Scraper):
         # WM_ROW info via phantom
         self.phantom_wm_row_style = None
 
+        # js-product-sellers-summary info via phantom
+        self.phantom_js_product_sellers_summary_style = None
+
     # checks input format
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -1460,6 +1463,7 @@ class WalmartScraper(Scraper):
         return in_stores
 
     # override base class function
+    '''
     def _in_stores_only(self):
         """
         General function for setting value of field "in_stores_only".
@@ -1482,6 +1486,7 @@ class WalmartScraper(Scraper):
 
 #        return Scraper._in_stores_only(self)
         return None
+        '''
 
     def _in_stores_out_of_stock(self):
         '''General function for setting value of field "in_stores_out_of_stock".
@@ -1535,6 +1540,14 @@ class WalmartScraper(Scraper):
             try:
                 self.phantom_wm_row_style = driver.find_element(By.XPATH, "//tr[@id='WM_ROW']").\
                     get_attribute("style").strip()
+            except Exception, e:
+                pass
+
+            # js-product-sellers-summary info via phantom
+            try:
+                self.phantom_js_product_sellers_summary_style = driver.find_element(By.XPATH,
+                "//div[contains(@class, 'js-product-sellers-summary')]//"
+                "div[contains(@class, 'js-product-sellers')]").get_attribute("class").strip()
             except Exception, e:
                 pass
 
@@ -1653,6 +1666,7 @@ class WalmartScraper(Scraper):
         return 1 if available else 0
 
     # override base class function
+    '''
     def _owned(self):
         """Extracts info on whether product is ownedby Walmart.com.
         Uses functions that work on both old page design and new design.
@@ -1674,6 +1688,7 @@ class WalmartScraper(Scraper):
             return self._owned_meta_from_tree()
 
         return owned_new
+    '''
 
     def _marketplace(self):
         """Extracts info on whether product is found on marketplace
@@ -1701,6 +1716,7 @@ class WalmartScraper(Scraper):
 
         # assume new page version
         try:
+            '''
             sellers = self._marketplace_sellers_from_script()
             # filter out walmart
             sellers = filter(lambda s: s != "Walmart.com", sellers)
@@ -1709,8 +1725,18 @@ class WalmartScraper(Scraper):
             if seller_name_displayed != "Walmart.com":
                 if len(sellers) == 1 and sellers[0] != seller_name_displayed:
                     sellers[0] = seller_name_displayed
+            '''
+            self.extract_specific_fields_via_phantom()
 
-            return sellers if sellers else None
+            if "hide-content" in self.phantom_js_product_sellers_summary_style:
+                return None
+
+            displayed_sellers = self.tree_html.xpath("//ul[contains(@class, 'js-marketplace-sellers-list')]//"
+                                                     "li[contains(@class, 'js-marketplace-seller')]//"
+                                                     "div[contains(@class, 'product-mp-seller-name')]//text()")
+            displayed_sellers = filter(lambda s: s != "Walmart.com" and s.strip() != "", displayed_sellers)
+
+            return displayed_sellers if displayed_sellers else None
         except:
             sellers = None
 
@@ -1746,6 +1772,7 @@ class WalmartScraper(Scraper):
         return None
 
     # override base class function
+    '''
     def _in_stock(self):
         """Extracts info on whether product is available to be
         bought on the site, from any seller (marketplace or owned).
@@ -1766,8 +1793,10 @@ class WalmartScraper(Scraper):
             in_stock_old = self._in_stock_old()
 
         return in_stock_old
+    '''
 
     # override base class function
+    '''
     def _owned_out_of_stock(self):
         """Extracts whether product is owned and out of stock.
         Works on both old and new page version.
@@ -1781,6 +1810,7 @@ class WalmartScraper(Scraper):
             return 1
         else:
             return 0
+    '''
 
     def _site_online(self):
         """Extracts whether the item is sold by the site and delivered directly
