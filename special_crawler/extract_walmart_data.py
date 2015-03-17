@@ -1078,6 +1078,15 @@ class WalmartScraper(Scraper):
 
         return nr_reviews
 
+    def _rollback(self):
+        rollback = self.tree_html.xpath('//div[@class="js-product-offer-summary"]//'
+                                        'span[contains(@class,"flag-rollback")]')
+
+        if not rollback:
+            return 0
+        else:
+            return 1
+
     def _no_image(self, url):
         """Overwrites the _no_image
         in the base class with an additional test.
@@ -1832,6 +1841,7 @@ class WalmartScraper(Scraper):
         "features" : _features_from_tree, \
         "feature_count" : _nr_features_from_tree, \
         "title_seo" : _title_from_tree, \
+        "rollback" : _rollback, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title" : _product_name_from_tree, \
         "owned": _owned, \
