@@ -183,7 +183,7 @@ class WalmartScraper(Scraper):
 
                 # if it ends in flv, it's a video, ok
                 if video_url_candidate.endswith(".flv"):
-                    self.has_webcollage_media = Truefv
+                    self.has_webcollage_media = True
                     self.has_video = True
                     self.video_urls.append(video_url_candidate)
                     break
