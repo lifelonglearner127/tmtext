@@ -37,6 +37,8 @@ class UkRsOnlineProductsSpider(ProductsSpider):
         return response.url.startswith('http://uk.rs-online.com/web/p')
 
     def _total_matches_from_html(self, response):
+        if self._is_product_page(response):
+            return 1
         matches = response.css('.viewProdDiv::text').re('f ([\d, ]+) products')
         return int(re.sub('[, ]', '', matches[0])) if matches else 0
 
@@ -118,12 +120,13 @@ class UkRsOnlineProductsSpider(ProductsSpider):
         cond_set_value(product, 'related_products', related_products)
 
     def _populate_buyer_reviews(self, response, product):
-        regexp = '"http://img-europe.electrocomponents.com/siteImages/browse' \
+        regexp = 'http://img-europe.electrocomponents.com/siteImages/browse' \
                  '/stars-(\d+-\d+).gif'
         stars = response.css('img::attr(src)').re(regexp)
         if not stars:
             return
-        stars = map(float, (s.replace('-', '') for s in stars))
+        stars.pop(0)
+        stars = map(float, (s.replace('-', '.') for s in stars))
         by_star = {star: stars.count(star) for star in stars}
         total = len(stars)
         average = sum(stars) / total
