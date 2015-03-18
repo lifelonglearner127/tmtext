@@ -1625,6 +1625,7 @@ class WalmartScraper(Scraper):
 
         return seller_name
 
+    '''
     # ! may throw exception if not found
     def _in_stock_from_script(self):
         """Extracts info on whether product is available to be
@@ -1642,7 +1643,9 @@ class WalmartScraper(Scraper):
         available = pinfo_dict["analyticsData"]["onlineAvail"]
 
         return 1 if available else 0
+    '''
 
+    '''
     def _in_stock_old(self):
         """Extracts info on whether product is available to be
         bought on the site, from any seller (marketplace or owned).
@@ -1664,6 +1667,7 @@ class WalmartScraper(Scraper):
         available = any(sellers.values())
 
         return 1 if available else 0
+    '''
 
     # override base class function
     '''
