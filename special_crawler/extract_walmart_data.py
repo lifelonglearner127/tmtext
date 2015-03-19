@@ -467,15 +467,14 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        short_description = "".join(map(lambda li_element: etree.tostring(li_element), \
-            self.tree_html.xpath("//div[@class='product-short-description module']//li | " +\
-                "//div[starts-with(@class, 'choice-short-description')]//li")\
-            ))
+        description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]"
+                                                    "/div[contains(@class, 'js-ellipsis')]")[0]
+        short_description = ""
 
-        # try with just the text
-        if not short_description.strip():
-            short_description = " ".join(self.tree_html.xpath("//div[@class='product-short-description module']//text() | " + \
-                "//div[starts-with(@class, 'choice-short-description')]//text()"))
+        for description_element in description_elements:
+            if "<b>" in lxml.html.tostring(description_element):
+                break;
+            short_description += lxml.html.tostring(description_element)
 
         # try to extract from old page structure - in case walmart is
         # returning an old type of page
@@ -503,21 +502,6 @@ class WalmartScraper(Scraper):
             short_description = self._short_description_from_tree()
         except:
             short_description = None
-
-        if not short_description:
-            # get everything before and including <li> tags from long description.
-            short_description = " ".join(self.tree_html.xpath("//div[@class='js-ellipsis module']//*[following-sibling::li|self::li|following-sibling::ul]//text()")).strip()
-
-            # hack: remove everything after "Ingredients", cause sometimes they're still there...
-            try:
-                ingredients_index = short_description.index("Ingredients:")
-                short_description = short_description[: ingredients_index].strip()
-            except Exception:
-                pass
-
-        if not short_description.strip():
-            # if there are no bullets either, get the entire long description text
-            short_description = self._long_description()
 
         return short_description
 
@@ -550,8 +534,14 @@ class WalmartScraper(Scraper):
                                                     "/div[contains(@class, 'js-ellipsis')]")[0]
         full_description = ""
 
+        long_description_start = False
+
         for description_element in description_elements:
-            full_description += lxml.html.tostring(description_element)
+            if "<b>" in lxml.html.tostring(description_element):
+                long_description_start = True
+
+            if long_description_start:
+                full_description += lxml.html.tostring(description_element)
 
         # return None if empty
         if not full_description:
@@ -593,21 +583,7 @@ class WalmartScraper(Scraper):
 
         # if short description is null, it probably returned some part of long description
         # so change strategy for returning long description
-        short_description = self._short_description_from_tree()
         long_description = self._long_description()
-
-        if short_description is None:
-
-            # get all long description text that is not in long description
-            all_long_description_text = " ".join(self.tree_html.xpath("//div[@class='js-ellipsis module']//text()")).strip()
-            short_description_text = self._short_description_wrapper()
-
-            # normalize spaces
-            all_long_description_text = re.sub("\s+", " ", all_long_description_text)
-            short_description_text = re.sub("\s+", " ", short_description_text)
-
-            # substract the 2 strings
-            long_description = "".join(all_long_description_text.rsplit(short_description_text)).strip()
 
         return long_description
 
