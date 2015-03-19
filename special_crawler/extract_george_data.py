@@ -29,6 +29,7 @@ class GeorgeScraper(Scraper):
         '''
         if self.product_page_url.find(",pd.html") < 0: return True
         if len(self.tree_html.xpath('//meta[@content="product"]')) == 0: return True
+        if len( self.tree_html.xpath('//div[@class="setInfo"]/h1[@id="productName"]//text()')) >0 : return True
         return False
 
 
@@ -179,15 +180,15 @@ class GeorgeScraper(Scraper):
             tree = self.tree_html
 
         #The small images are below the big image
-        image_url =[m for m in tree.xpath("//div[@id='imageSlide']//img/@src") if m.find("_100day") < 0 and not self._no_image(m)]
+        image_url =[m for m in tree.xpath("//div[@id='imageSlide']//img/@src") if m.find("_100day")<0]
         if a == 1:
             self.image_urls = image_url
-        if image_url is not None and len(image_url)>0:  #and self.no_image(image_url)==0
+        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
         image_url = tree.xpath("//img[@id='productImageSmall']/@src")
         if a == 1:
             self.image_urls = image_url
-        if image_url is not None and len(image_url)>0:  #and self.no_image(image_url)==0
+        if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
         if a == 1:
             self.image_urls = None
@@ -223,6 +224,8 @@ class GeorgeScraper(Scraper):
         return 0
 
     def _video_urls(self):
+        video_url = self.tree_html.xpath('//div[@id="thumb_os_div"]//div[@class="thumbnail_holder"]//img/@src')
+        if len(video_url) > 0: return video_url
         video_url = self.tree_html.xpath("//div[@id='thumbnailsWrapper']//span[contains(@class,'video')]/img/@src")
         if len(video_url) > 0: return video_url
         video_url = self.tree_html.xpath("//img[contains(@data-asset-url,'.mp4')]/@wcobj")
@@ -235,7 +238,6 @@ class GeorgeScraper(Scraper):
         if len(video_url) > 0:
             return ["http:/"+v for v in video_url]
         return None
-
 
     def _video_count(self):
         if self._video_urls()==None: return 0
@@ -329,7 +331,7 @@ class GeorgeScraper(Scraper):
 
     # extract product price from its product product page tree
     def _price(self):
-        price = self.tree_html.xpath("//span[@class='productPrice']//span[@class='newPrice']")
+        price = self.tree_html.xpath("//p[@id='productPrice']//span[@class='productPrice']//span[@class='newPrice']")
         if len(price)>0  :
             return price[0].text_content().strip()
         price = self.tree_html.xpath("//p[@id='productPrice']//span[@class='productPrice']")
