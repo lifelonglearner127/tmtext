@@ -5,6 +5,7 @@ import pprint
 import re
 import urlparse
 import requests
+import uuid
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -56,6 +57,8 @@ class WalmartProductsSpider(BaseProductsSpider):
 
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
+
+    user_agent = 'default'
 
     def __init__(self, search_sort='best_match', zipcode='94117', *args, **kwargs):
         if zipcode:
@@ -127,9 +130,10 @@ class WalmartProductsSpider(BaseProductsSpider):
         self._populate_from_html(response, product)
         product['buyer_reviews'] = self._build_buyer_reviews(response)
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
+        self._gen_related_req(response)
         if not product.get('price'):
             return self._gen_location_request(response)
-        return product
+        return self._start_related(response)
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -209,7 +213,7 @@ class WalmartProductsSpider(BaseProductsSpider):
     def _gen_location_request(self, response):
         data = {"postalCode": ""}
         new_meta = response.meta.copy()
-        new_meta['handle_httpstatus_list'] = [404,405]
+        new_meta['handle_httpstatus_list'] = [404, 405]
         # Need Conetnt-Type= app/json
         req = FormRequest.from_response(
             response=response,
@@ -219,23 +223,105 @@ class WalmartProductsSpider(BaseProductsSpider):
             callback=self._after_location,
             meta=new_meta,
             headers={'x-requested-with': 'XMLHttpRequest',
-                     'Content-Type':'application/json'},
+                     'Content-Type': 'application/json'},
             dont_filter=True)
         req = req.replace(body='{"postalCode":"' + self.zipcode + '"}')
         return req
 
-    def _after_location(self, response):
-        product = response.meta['product']
-        if response.status==200: 
-            url = response.meta['product']['url']
-            return Request(url, meta=response.meta.copy(), callback=self._reload_page,dont_filter=True)
-        return product
+    def _gen_related_req(self, response):
+        prodid = response.xpath("//div[@id='recently-review']/@data-product-id").extract()
+        if prodid:
+            prodid = prodid[0]
+        if not prodid:
+            self.log("No PRODID in %r." % response.url, ERROR)
+            return
+        cid = uuid.uuid4()
+        reql = []
+        url1 = "http://www.walmart.com/irs?parentItemId%5B%5D={prodid}&module=ProductAjax&clientGuid={cid}".format(
+            prodid=prodid, cid=cid)
+        reql.append((url1, self._proc_mod_related))
+        response.meta['relreql'] = reql
+        return reql
 
-    def _reload_page(self,response):
+    def _start_related(self, response):
+        product = response.meta['product']
+        reql = response.meta['relreql']
+        if not reql:
+            return product
+        (url, proc) = reql.pop(0)
+        response.meta['relreql'] = reql
+        return Request(url, meta=response.meta.copy(), callback=proc, dont_filter=True)
+
+    def _proc_related(self, response):
+        print "_PROC_RELATED", response.url
+        product = response.meta['product']
+        related = self._parse_related(response, response)
+        if related:
+            product['related_products'] = {"buyers_also_bought": related}
+        return self._start_related(response)
+
+    def _proc_mod_related(self, response):
+        product = response.meta['product']
+        text = response.body_as_unicode().encode('utf-8')
+        try:
+            jdata = json.loads(text)
+            modules = jdata['moduleList']
+            for m in modules:
+                html = m['html']
+                sel = Selector(text=html)
+                title,rel = self._parse_related(sel,response)
+                if 'related_products' not in product:
+                    product['related_products'] = {}
+                if rel:
+                    product['related_products'][title] = rel[:]
+        except ValueError:
+            self.log(
+                "Unable to parse JSON from %r." % response.request.url, ERROR)
+        return self._start_related(response)
+
+    def _parse_related(self, sel, response):
+        def full_url(url):
+            return urlparse.urljoin(response.url, url)
+        related = []
+        title = sel.xpath("//div[@class='parent-heading']/h4/text()").extract()
+        if not title:
+            title = sel.xpath("//p[@class='heading-a']/text()").extract()
+        if not title:
+            title = sel.xpath("//div/h1/text()").extract()
+        if title:
+            title = title[0]
+        # if not title:
+        #     print "BODY=",sel.body_as_unicode().encode('utf-8')[:320]
+        els = sel.xpath("//ol/li//a[@class='tile-section']/p/..")
+        for el in els:
+            name = el.xpath("p/text()").extract()
+            if name:
+                name = name[0]
+            href= el.xpath("@href").extract()
+            if href:
+                href = href[0]
+                if 'dest=' in href:
+                    url_split = urlparse.urlsplit(href)
+                    query = urlparse.parse_qs(url_split.query)
+                    original_url = query.get('dest')
+                    if original_url:
+                        original_url = original_url[0]
+                else:
+                    original_url = href
+                related.append(RelatedProduct(name, full_url(original_url)))
+        return (title, related)
+
+    def _after_location(self, response):
+        if response.status == 200:
+            url = response.meta['product']['url']
+            return Request(url, meta=response.meta.copy(), callback=self._reload_page, dont_filter=True)
+        return self._start_related(response)
+
+    def _reload_page(self, response):
         product = response.meta['product']
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
-        return product
+        return self._start_related(response)
 
     def _populate_from_js(self, response, product):
         scripts = response.xpath("//script").re(
@@ -305,8 +391,16 @@ class WalmartProductsSpider(BaseProductsSpider):
                 product, 'upc', data['analyticsData']['upc'], conv=int)
         except ValueError:
             pass  # Not really a UPC.
-        cond_set_value(product, 'image_url', data['primaryImageUrl'])
-        cond_set_value(product, 'brand', data['analyticsData']['brand'])
+
+        try:
+            cond_set_value(product, 'image_url', data['primaryImageUrl'])
+        except KeyError:
+            pass
+
+        try:
+            cond_set_value(product, 'brand', data['analyticsData']['brand'])
+        except KeyError:
+            pass
 
     def _scrape_total_matches(self, response):
         if response.css('.no-results'):
