@@ -40,6 +40,7 @@ class URLsPipeline(object):
                 titles.append("Original_URL")
             if int(spider.output) == 4:
                 titles.append("Original_UPC")
+                titles.append("Product_name")
 
             # TODO: uncomment.
             # if int(spider.output) == 3:
