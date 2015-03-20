@@ -49,7 +49,7 @@ class SearchSpider(BaseSpider):
 
     allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
-                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk"]
+                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk", "pcworld.co.uk", "ebay.co.uk"]
 
     # pass product as argument to constructor - either product name or product URL
     # arguments:
@@ -107,6 +107,7 @@ class SearchSpider(BaseSpider):
         # build list of urls = search pages for each site
         search_pages = {
                         "amazon" : "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + search_query, \
+                        "amazoncouk" : "http://www.amazon.co.uk/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=" + search_query, \
                         "walmart" : "http://www.walmart.com/search/search-ng.do?ic=16_0&Find=Find&search_query=%s&Find=Find&search_constraint=0" % search_query, \
                         "bloomingdales" : "http://www1.bloomingdales.com/shop/search?keyword=%s" % search_query, \
                         "overstock" : "http://www.overstock.com/search?keywords=%s" % search_query, \
@@ -120,13 +121,16 @@ class SearchSpider(BaseSpider):
                         # "sears" : "http://www.sears.com/search=%s" % search_query}
                         # #TODO: staples?
                         "ebay": "http://www.ebay.com/sch/i.html?_trksid=p2050601.m570.l1313&_nkw=%s" % search_query, \
+                        "ebaycouk": "http://www.ebay.co.uk/sch/i.html?_trksid=p2050601.m570.l1313&_nkw=%s" % search_query, \
                         "sony": "http://store.sony.com/search?SearchTerm=%s" % search_query, \
                         "samsung": "http://www.samsung.com/us/function/search/espsearchResult.do?input_keyword=%s" % search_query, \
                         "target" : "http://www.target.com/s?searchTerm=" + search_query + "&category=0%7CAll%7Cmatchallpartial%7Call+categories&lnk=snav_sbox_" + search_query, \
                         "ocado" : "http://www.ocado.com/webshop/getSearchProducts.do?clearTabs=yes&isFreshSearch=true&entry=%s" % search_query,
                         "tesco" : "http://www.tesco.com/direct/search-results/results.page?catId=4294967294&searchquery=%s" % search_query,
-                        "boots" : "http://www.boots.com/webapp/wcs/stores/servlet/EndecaSearchListerView?storeId=10052&searchTerm=%s" % search_query
-
+                        "boots" : "http://www.boots.com/webapp/wcs/stores/servlet/EndecaSearchListerView?storeId=10052&searchTerm=%s" % search_query,
+                        "currys" : "http://www.currys.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query,
+                        "pcworld" : "http://www.pcworld.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query,
+                        "maplin" : "http://www.maplin.co.uk/search?text=%s" % search_query
                         }
 
         return search_pages
@@ -456,7 +460,7 @@ class SearchSpider(BaseSpider):
         #TODO: search by model number extracted from product name? Don't I do that implicitly? no, but in combinations
 
         # if there is no product model, try to extract it
-        if not product_model:
+        if not product_model and product_name:
             product_model = ProcessText.extract_model_from_name(product_name)
 
             # for logging purposes, set this back to the empty string if it wasn't found (so was None)
@@ -812,13 +816,22 @@ class SearchSpider(BaseSpider):
         return (product_name, None, None, None)
 
     def parseURL_amazon(self, hxs):
+        # works for amazon.com and amazon.co.uk
         product_name = product_model = price = None
 
-        # TODO: test
-        product_name_node = hxs.select("//span[@id='productTitle']/text()").extract()
+        product_name_node = hxs.select('//h1[@id="title"]/span[@id="productTitle"]/text()').extract()
+        if not product_name_node:
+            product_name_node = hxs.select('//h1[@id="aiv-content-title"]//text()').extract()
+        if not product_name_node:
+            product_name_node = hxs.select('//div[@id="title_feature_div"]/h1//text()').extract()
 
         if product_name_node:
             product_name = product_name_node[0].strip()
+        else:
+            # needs special treatment
+            product_name_node = hxs.select('//h1[@class="parseasinTitle " or @class="parseasinTitle"]/span[@id="btAsinTitle"]//text()').extract()
+            if product_name_node:
+                product_name = " ".join(product_name_node).strip()
 
         # extract product model number
         model_number_holder = hxs.select("""//tr[@class='item-model-number']/td[@class='value']/text() |
@@ -828,9 +841,10 @@ class SearchSpider(BaseSpider):
         # if no product model explicitly on the page, try to extract it from name
         else:
             # TODO: do I try this here or is it tried somewhere down the line again?
-            product_model_extracted = ProcessText.extract_model_from_name(product_name)
-            if product_model_extracted:
-                model_number = product_model_extracted
+            if product_name:
+                product_model_extracted = ProcessText.extract_model_from_name(product_name)
+                if product_model_extracted:
+                    model_number = product_model_extracted
 
         # # no support for brand yet
         # brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
@@ -913,6 +927,9 @@ class SearchSpider(BaseSpider):
             # remove commas separating orders of magnitude (ex 2,000)
             product_target_price = re.sub(",","",product_target_price)
             price = float(product_target_price)
+
+            # convert to dollars (assume pounds)
+            price = Utils.convert_to_dollars(price, u'\xa3')
 
         upc = None
 

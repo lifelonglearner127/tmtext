@@ -29,6 +29,7 @@ class GeorgeScraper(Scraper):
         '''
         if self.product_page_url.find(",pd.html") < 0: return True
         if len(self.tree_html.xpath('//meta[@content="product"]')) == 0: return True
+        if len( self.tree_html.xpath('//div[@class="setInfo"]/h1[@id="productName"]//text()')) >0 : return True
         return False
 
 
@@ -79,7 +80,7 @@ class GeorgeScraper(Scraper):
         return None
 
     def _features(self):
-        rws = self.tree_html.xpath("//div[@class='tabcontent']//table[@id='fullSpec']")
+        rws = self.tree_html.xpath("//div[@class='tabcontent' or @id='tabcontents' or @class='description']//table[@id='fullSpec']")
         if len(rws)>0:
             rows = rws[0].xpath(".//tr")
             cells=[]
@@ -223,6 +224,8 @@ class GeorgeScraper(Scraper):
         return 0
 
     def _video_urls(self):
+        video_url = self.tree_html.xpath('//div[@id="thumb_os_div"]//div[@class="thumbnail_holder"]//img/@src')
+        if len(video_url) > 0: return video_url
         video_url = self.tree_html.xpath("//div[@id='thumbnailsWrapper']//span[contains(@class,'video')]/img/@src")
         if len(video_url) > 0: return video_url
         video_url = self.tree_html.xpath("//img[contains(@data-asset-url,'.mp4')]/@wcobj")
@@ -236,7 +239,6 @@ class GeorgeScraper(Scraper):
             return ["http:/"+v for v in video_url]
         return None
 
-
     def _video_count(self):
         if self._video_urls()==None: return 0
         return len(self._video_urls())
@@ -244,8 +246,8 @@ class GeorgeScraper(Scraper):
     # return one element containing the PDF
     def _pdf_urls(self):
         pdf = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
-        if len(pdf)>0:
-            return pdf
+        if len(pdf)>0 :
+            return [p for p in pdf if "Cancellation" not in p]
         return None
 
     def _pdf_count(self):
@@ -329,7 +331,7 @@ class GeorgeScraper(Scraper):
 
     # extract product price from its product product page tree
     def _price(self):
-        price = self.tree_html.xpath("//span[@class='productPrice']//span[@class='newPrice']")
+        price = self.tree_html.xpath("//p[@id='productPrice']//span[@class='productPrice']//span[@class='newPrice']")
         if len(price)>0  :
             return price[0].text_content().strip()
         price = self.tree_html.xpath("//p[@id='productPrice']//span[@class='productPrice']")

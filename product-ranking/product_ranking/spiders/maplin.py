@@ -10,7 +10,7 @@ from scrapy.selector import Selector
 
 from scrapy.http import Request
 from product_ranking.items import SiteProductItem, Price, BuyerReviews,\
-    RelatedProduct
+    RelatedProduct, LimitedStock
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -109,6 +109,14 @@ class GandermountainProductsSpider(BaseProductsSpider):
         cond_set(prod, 'locale', ['en-US'])
 
         prod['url'] = response.url
+
+        available = response.xpath(
+            '//form[@id="addToCartFormA59LQ"]/input[@type="submit"]/@value'
+        ).extract()
+        if available and 'Last few in store' in available[0]:
+            lim = LimitedStock(is_limited=True,
+                               items_left=[])
+            cond_set(prod, 'limited_stock', [lim])
 
         prod_id = re.findall(r'"id":\s"(.*)",', response.body)
         if prod_id:

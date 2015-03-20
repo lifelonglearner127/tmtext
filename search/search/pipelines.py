@@ -36,6 +36,7 @@ class URLsPipeline(object):
             # write headers row
             titles = []
             if int(spider.output) in [2,3]:
+                titles.append("Product_name")
                 titles.append("Original_URL")
             if int(spider.output) == 4:
                 titles.append("Original_UPC")
@@ -86,7 +87,7 @@ class URLsPipeline(object):
             if option == 4 and 'origin_upc' in item:
                 fields = [item['origin_upc']]
             else:
-                fields = [item['origin_url']]
+                fields = [json.dumps(item['origin_name']), item['origin_url']]
 
             # TODO. uncomment
             # # if output type is 3, add additional fields
@@ -140,6 +141,7 @@ class URLsPipeline(object):
         # (Output 3 not supported for manufacturer spider)
 
         if int(spider.output) == 2:
+            fields.append(item['origin_name'])
             fields.append(item['origin_url'])
         if 'product_url' in item:
             fields.append(item['product_url'])

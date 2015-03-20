@@ -195,9 +195,6 @@ class WalmartSpider(SearchSpider):
         if product_urls:
             next_product_url = product_urls.pop()
 
-        # handle corner case of bad next product url
-        if not product_urls and next_product_url:
-            next_product_url = None
 
         # if a next product url was found, send new request back to parse_product_url
         if next_product_url:

@@ -7,7 +7,7 @@ import urlparse
 import requests
 
 from scrapy import Selector
-from scrapy.http import Request
+from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO
 
 from product_ranking.items import (SiteProductItem, RelatedProduct,
@@ -41,6 +41,8 @@ class WalmartProductsSpider(BaseProductsSpider):
         "&_refineresult=true&ic=16_0&search_constraint=0" \
         "&search_query={search_term}&sort={search_sort}"
 
+    LOCATION_URL = "http://www.walmart.com/location"
+
     _SEARCH_SORT = {
         'best_match': 0,
         'high_price': 'price_high',
@@ -55,7 +57,9 @@ class WalmartProductsSpider(BaseProductsSpider):
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
-    def __init__(self, search_sort='best_match', *args, **kwargs):
+    def __init__(self, search_sort='best_match', zipcode='94117', *args, **kwargs):
+        if zipcode:
+            self.zipcode = zipcode
         if search_sort == 'best_sellers':
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         super(WalmartProductsSpider, self).__init__(
@@ -122,8 +126,9 @@ class WalmartProductsSpider(BaseProductsSpider):
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
         product['buyer_reviews'] = self._build_buyer_reviews(response)
-
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
+        if not product.get('price'):
+            return self._gen_location_request(response)
         return product
 
     def _parse_single_product(self, response):
@@ -200,6 +205,37 @@ class WalmartProductsSpider(BaseProductsSpider):
                     price = price.replace(',', '').replace(' ', '')
                     cond_set_value(product, 'price',
                                    Price(priceCurrency=currency, price=price))
+
+    def _gen_location_request(self, response):
+        data = {"postalCode": ""}
+        new_meta = response.meta.copy()
+        new_meta['handle_httpstatus_list'] = [404,405]
+        # Need Conetnt-Type= app/json
+        req = FormRequest.from_response(
+            response=response,
+            url=self.LOCATION_URL,
+            method='POST',
+            formdata=data,
+            callback=self._after_location,
+            meta=new_meta,
+            headers={'x-requested-with': 'XMLHttpRequest',
+                     'Content-Type':'application/json'},
+            dont_filter=True)
+        req = req.replace(body='{"postalCode":"' + self.zipcode + '"}')
+        return req
+
+    def _after_location(self, response):
+        product = response.meta['product']
+        if response.status==200: 
+            url = response.meta['product']['url']
+            return Request(url, meta=response.meta.copy(), callback=self._reload_page,dont_filter=True)
+        return product
+
+    def _reload_page(self,response):
+        product = response.meta['product']
+        self._populate_from_js(response, product)
+        self._populate_from_html(response, product)
+        return product
 
     def _populate_from_js(self, response, product):
         scripts = response.xpath("//script").re(

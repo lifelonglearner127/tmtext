@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
@@ -33,6 +35,7 @@ class AmazonSpider(SearchSpider):
     def init_sub(self):
         self.target_site = "amazon"
         self.start_urls = [ "http://www.amazon.com" ]
+        self.domain = "http://www.amazon.com"
 
         # captcha solver - will be used when encountering blocked page from amazon
         self.CB = captcha_solver.CaptchaBreakerWrapper()
@@ -82,7 +85,7 @@ class AmazonSpider(SearchSpider):
             if m:
                 product_url = m.group(1)
 
-            product_url = Utils.add_domain(product_url, "http://www.amazon.com")
+            product_url = Utils.add_domain(product_url, self.domain)
 
             product_urls.add(product_url)
 
@@ -161,7 +164,20 @@ class AmazonSpider(SearchSpider):
 
         #TODO: to test this
         #product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
-        product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//h1//text()[normalize-space()!='']").extract())
+        product_name_node = hxs.select('//h1[@id="title"]/span[@id="productTitle"]/text()').extract()
+        if not product_name_node:
+            product_name_node = hxs.select('//h1[@id="aiv-content-title"]//text()').extract()
+        if not product_name_node:
+            product_name_node = hxs.select('//div[@id="title_feature_div"]/h1//text()').extract()
+
+        if product_name_node:
+            product_name = product_name_node[0].strip()
+        else:
+            # needs special treatment
+            product_name_node = hxs.select('//h1[@class="parseasinTitle " or @class="parseasinTitle"]/span[@id="btAsinTitle"]//text()').extract()
+            if product_name_node:
+                product_name = " ".join(product_name_node).strip()
+
         if not product_name:
 
             # log this error:
@@ -212,7 +228,7 @@ class AmazonSpider(SearchSpider):
                     return [FormRequest.from_response(response, callback = self.parse_product_amazon, formdata={'field-keywords' : captcha_text}, meta = meta)]
 
         else:
-            item['product_name'] = product_name[0].strip()
+            item['product_name'] = product_name
 
             # extract product model number
             model_number_holder = hxs.select("""//tr[@class='item-model-number']/td[@class='value']/text() |
@@ -250,14 +266,18 @@ class AmazonSpider(SearchSpider):
             # if we can't find it like above try other things:
             if not price_holder:
                 # prefer new prices to used ones
+                # TODO: doesn't work for amazon.co.uk (pounds), but isn't needed bery often
                 price_holder = hxs.select("//span[contains(@class, 'olp-new')]//text()[contains(.,'$')]").extract()
             if price_holder:
                 product_target_price = price_holder[0].strip()
                 # remove commas separating orders of magnitude (ex 2,000)
                 product_target_price = re.sub(",","",product_target_price)
-                m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
+                m = re.match("(\$|\xa3)([0-9]+\.?[0-9]*)", product_target_price)
                 if m:
-                    item['product_target_price'] = float(m.group(1))
+                    item['product_target_price'] = float(m.group(2))
+                    currency = m.group(1)
+                    if currency != "$":
+                        item['product_target_price'] = Utils.convert_to_dollars(item['product_target_price'], currency)
                 else:
                     self.log("Didn't match product price: " + product_target_price + " " + response.url + "\n", level=log.WARNING)
 

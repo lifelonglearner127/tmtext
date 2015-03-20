@@ -7,12 +7,17 @@ import json
 import re
 import string
 
+from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
-                                     cond_set_value, FormatterWithDefaults)
+                                     cond_set_value, FormatterWithDefaults,
+                                     FLOATING_POINT_RGEX)
+from product_ranking.guess_brand import guess_brand_from_first_words
+
+from product_ranking.amazon_bestsellers import amazon_parse_department
 
 
 try:
@@ -80,6 +85,15 @@ class AmazonProductsSpider(BaseProductsSpider):
             result = super(AmazonProductsSpider, self).parse(response)
         return result
 
+    def _get_products(self, response):
+        result = super(AmazonProductsSpider, self)._get_products(response)
+        for r in result:
+            if isinstance(r, Request):
+                r = r.replace(dont_filter=True)
+                yield r
+            else:
+                yield r
+
     def parse_product(self, response):
         prod = response.meta['product']
 
@@ -100,37 +114,112 @@ class AmazonProductsSpider(BaseProductsSpider):
             result = self._handle_captcha(response, self.parse_product)
         return result
 
+    def _populate_bestseller_rank(self, product, response):
+        ranks = {' > '.join(map(unicode.strip,
+                                itm.css('.zg_hrsr_ladder a::text').extract())):
+                     int(re.sub('[ ,]', '',
+                                itm.css('.zg_hrsr_rank::text').re(
+                                    '([\d, ]+)')[0]))
+                 for itm in response.css('.zg_hrsr_item')}
+        prim = response.css('#SalesRank::text, #SalesRank .value'
+                            '::text').re('([\d ,]+) .*in (.+)\(')
+        if prim:
+            prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
+            ranks.update(prim)
+        ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
+        cond_set_value(product, 'category', ranks)
+        # parse department
+        department = amazon_parse_department(ranks)
+        if department is None:
+            product['department'] = None
+        else:
+            product['department'], product['bestseller_rank'] \
+                = department.items()[0]
+
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
+        price = response.css('#priceblock_ourprice ::text '
+                         ', .price3P::text'
+                         ', .priceLarge::text').extract()
+        if not price:
+            price = response.xpath(
+                '//span[@id="priceblock_saleprice"]/text() |'
+                '//div[@class="a-box-inner"]'
+                '//span[@class="a-color-price"]/text() |'
+                '//td/b[@class="priceLarge"]/text() |'
+                '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]'
+                '/button/text() |'
+                '//li[@class="swatchElement selected"]'
+                '//span[@class="a-color-price"]/text()'
+            ).extract()
+
         cond_set(
             product,
             'price',
-            response.css('#priceblock_ourprice ::text '
-                         ', .price3P::text'
-                         ', .priceLarge::text').extract(),
+            price,
         )
         if product.get('price', None):
             if u'\uffe5' not in product.get('price', ''):
                 self.log('Invalid price at: %s' % response.url, level=ERROR)
             else:
+                price = re.findall(FLOATING_POINT_RGEX, product['price'])[0]
                 product['price'] = Price(
-                    price=product['price'].replace(u'\uffe5', '').replace(
-                        ' ', '').replace(',', '').strip(),
+                    price=price.replace(' ', '').replace(',', '').strip(),
                     priceCurrency='CNY'
                 )
+
+        description = response.css('.productDescriptionWrapper').extract()
+        if not description:
+            description = response.xpath(
+                '//div[@id="bookDescription_feature_div"]/noscript |'
+                '//div[@class="bucket"]/div[@class="content"] |'
+                '//div[@id="featurebullets_feature_div"]'
+            ).extract()
+
         cond_set(
             product,
             'description',
-            response.css('.productDescriptionWrapper').extract(),
+            description,
         )
+
+        image_url = response.css(
+                '#imgTagWrapperId > img ::attr(data-old-hires)').extract()
+        if not image_url:
+            j = re.findall(r"'colorImages': { 'initial': (.*)},",
+                           response.body)
+            if not j:
+                j = re.findall(r'colorImages = {"initial":(.*)}',
+                               response.body)
+            if j:
+                try:
+                    res = json.loads(j[0])
+                    try:
+                        image = res[0]['large']
+                    except:
+                        image = res[1]['large']
+                    image_url = [image]
+                except:
+                    pass
+        if not image_url:
+            image_url = response.xpath(
+                '//div[@id="img-canvas"]/img/@src |'
+                '//div[@class="main-image-inner-wrapper"]/img/@src'
+            ).extract()
+
         cond_set(
             product,
             'image_url',
-            response.css(
-                '#imgTagWrapperId > img ::attr(data-old-hires)').extract()
+            image_url
         )
+
+        title = response.css('#productTitle ::text').extract()
+        if not title:
+            title = response.xpath(
+                '//h1[@class="parseasinTitle"]'
+                '/span[@id="btAsinTitle"]/span/text()'
+            ).extract()
         cond_set(
-            product, 'title', response.css('#productTitle ::text').extract())
+            product, 'title', title)
 
         # Some data is in a list (ul element).
         model = None
@@ -152,8 +241,12 @@ class AmazonProductsSpider(BaseProductsSpider):
                 )
             elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
                 model = li.xpath('text()').extract()
+        if not product.get('brand') and product.get('title'):
+            brand = guess_brand_from_first_words(product['title'])
+            cond_set_value(product, 'brand', brand)
         cond_set(product, 'model', model, conv=string.strip)
         self._buyer_reviews_from_html(response, product)
+        self._populate_bestseller_rank(product, response)
 
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...
@@ -173,8 +266,11 @@ class AmazonProductsSpider(BaseProductsSpider):
         else:
             #count_matches = response.xpath(
             #    '//*[@id="resultCount"]/text()').re(u'共([\d, ]+)')
-            count_matches = response.xpath(
-                '//*[@id="resultCount"]/text()').re(u'([\d, ]+)')
+            count_matches = "".join(
+                response.xpath("//h2[@id='s-result-count']//text()")
+                .extract())
+            count_matches = re.findall(r"[\d, ]+", count_matches)
+            count_matches = [r for r in count_matches if len(r.strip()) > 0]
             if count_matches and count_matches[-1]:
                 total_matches = int(
                     count_matches[-1].replace(',', '').strip())
@@ -183,10 +279,32 @@ class AmazonProductsSpider(BaseProductsSpider):
         return total_matches
 
     def _scrape_product_links(self, response):
-        links = response.css(
-            'div.listView div.productTitle a ::attr(href)').extract()
-        for link in links:
-            yield link, SiteProductItem()
+        lis = response.xpath("//ul/li[@class='s-result-item']")
+        links = []
+        for no, li in enumerate(lis):
+            href = li.xpath(
+                ".//a[contains(@class,'s-access-detail-page')]"
+                "/@href").extract()
+            if href:
+                href = href[0]
+                is_prime = li.xpath(
+                    "*/descendant::i[contains(concat(' ',@class,' '),"
+                    "' a-icon-prime ')]").extract()
+                is_prime_pantry = li.xpath(
+                    "*/descendant::i[contains(concat(' ',@class,' '),"
+                    "' a-icon-prime-pantry ')]").extract()
+                links.append((href, is_prime, is_prime_pantry))
+
+        if not links:
+            self.log("Found no product links.", WARNING)
+
+        for link, is_prime, is_prime_pantry in links:
+            prime = None
+            if is_prime:
+                prime = 'Prime'
+            if is_prime_pantry:
+                prime = 'PrimePantry'
+            yield link, SiteProductItem(prime=prime)
 
     def _scrape_next_results_page_link(self, response):
         next_pages = response.css('#pagnNextLink ::attr(href)').extract()
@@ -213,11 +331,11 @@ class AmazonProductsSpider(BaseProductsSpider):
         return self._cbw.solve_captcha(captcha_img)
 
     def _handle_captcha(self, response, callback):
+        # FIXME This is untested and wrong.
         captcha_solve_try = response.meta.get('captcha_solve_try', 0)
-        product = response.meta['product']
-
+        url = response.url
         self.log("Captcha challenge for %s (try %d)."
-                 % (product['url'], captcha_solve_try),
+                 % (url, captcha_solve_try),
                  level=INFO)
 
         captcha = self._solve_captcha(response)
@@ -225,23 +343,25 @@ class AmazonProductsSpider(BaseProductsSpider):
         if captcha is None:
             self.log(
                 "Failed to guess captcha for '%s' (try: %d)." % (
-                    product['url'], captcha_solve_try),
+                    url, captcha_solve_try),
                 level=ERROR
             )
             result = None
         else:
             self.log(
                 "On try %d, submitting captcha '%s' for '%s'." % (
-                    captcha_solve_try, captcha, product['url']),
+                    captcha_solve_try, captcha, url),
                 level=INFO
             )
+            meta = response.meta.copy()
+            meta['captcha_solve_try'] = captcha_solve_try + 1
             result = FormRequest.from_response(
                 response,
                 formname='',
                 formdata={'field-keywords': captcha},
-                callback=callback)
-            result.meta['captcha_solve_try'] = captcha_solve_try + 1
-            result.meta['product'] = product
+                callback=callback,
+                dont_filter=True,
+                meta=meta)
 
         return result
 
