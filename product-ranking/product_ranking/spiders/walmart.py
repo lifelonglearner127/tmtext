@@ -405,6 +405,8 @@ class WalmartProductsSpider(BaseProductsSpider):
             cond_set_value(product, 'brand', data['analyticsData']['brand'])
         except KeyError:
             pass
+        if 'brand' not in product:
+            cond_set_value(product, 'brand', 'NO BRAND')
 
     def _scrape_total_matches(self, response):
         if response.css('.no-results'):
