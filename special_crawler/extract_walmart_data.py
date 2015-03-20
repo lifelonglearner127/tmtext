@@ -535,12 +535,19 @@ class WalmartScraper(Scraper):
         full_description = ""
 
         long_description_start = False
+        ingredients_description = False
 
         for description_element in description_elements:
             if "<b>" in lxml.html.tostring(description_element):
                 long_description_start = True
 
-            if long_description_start:
+            if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
+                    lxml.html.tostring(description_element):
+                ingredients_description = True
+            else:
+                ingredients_description = False
+
+            if long_description_start and not ingredients_description:
                 full_description += lxml.html.tostring(description_element)
 
         # return None if empty
@@ -1677,7 +1684,12 @@ class WalmartScraper(Scraper):
 
     def  _ingredients(self):
         # list of ingredients - list of strings
-        ingr=self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+        ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+
+        if not ingr:
+            ingr = self.tree_html.xpath("//b[contains(text(),'Ingredients:')]")[0].tail
+            ingr.split(",")
+
         if len(ingr) > 0:
             res = []
             w = ''
