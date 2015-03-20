@@ -85,7 +85,7 @@ class URLsPipeline(object):
         else:
             # for option 4, use UPC instead of URL for origin product
             if option == 4 and 'origin_upc' in item:
-                fields = [item['origin_upc'][0]]
+                fields = [item['origin_upc'][0], json.dumps(item['origin_name'])]
             else:
                 fields = [json.dumps(item['origin_name']), item['origin_url']]
 
