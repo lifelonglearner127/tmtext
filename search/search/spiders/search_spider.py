@@ -163,8 +163,9 @@ class SearchSpider(BaseSpider):
                 #     product['product_upc'] = product_info[1]
 
                 reader = csv.reader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-                product = {}
+                
                 for row in reader:
+                    product = {}
                     product['product_name'] = row[1]
                     product['product_upc'] = row[0]
                     products.append(product)
