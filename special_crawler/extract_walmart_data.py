@@ -535,13 +535,39 @@ class WalmartScraper(Scraper):
         full_description = ""
 
         long_description_start = False
+        ingredients_description = False
 
         for description_element in description_elements:
-            if "<b>" in lxml.html.tostring(description_element):
+            if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
+                    (not long_description_start and "<ul>" in lxml.html.tostring(description_element)):
                 long_description_start = True
 
-            if long_description_start:
+            if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
+                    lxml.html.tostring(description_element):
+                ingredients_description = True
+            else:
+                ingredients_description = False
+
+            if long_description_start and not ingredients_description:
                 full_description += lxml.html.tostring(description_element)
+
+        if self.product_page_url[self.product_page_url.rfind("/") + 1:].isnumeric():
+            url = "http://www.walmart-content.com/product/idml/emc/" + \
+                  self.product_page_url[self.product_page_url.rfind("/") + 1:]
+            contents = requests.get(url).text
+            tree = html.fromstring(contents)
+            description_elements = tree.xpath("//div[@id='js-marketing-content']//*")
+
+            long_description_start = False
+
+            for description_element in description_elements:
+                if not long_description_start and "<h2>Product Description</h2>" in \
+                        lxml.html.tostring(description_element):
+                    long_description_start = True
+
+                if long_description_start and "<h2>Product Description</h2>" not in lxml.html.tostring(description_element) \
+                        and (description_element.tag == "p" or description_element.tag == "h2" or (description_element.tag == "ul" and not description_element.get("class"))):
+                    full_description += lxml.html.tostring(description_element)
 
         # return None if empty
         if not full_description:
@@ -1677,7 +1703,15 @@ class WalmartScraper(Scraper):
 
     def  _ingredients(self):
         # list of ingredients - list of strings
-        ingr=self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+        ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+
+        if not ingr:
+            ingr = self.tree_html.xpath("//b[contains(text(),'Ingredients:')]")[0].tail
+            ingr = ingr.split(",")
+            ingr = map(lambda e: e.strip(), ingr)
+            self.ing_count = len(ingr)
+            return ingr
+
         if len(ingr) > 0:
             res = []
             w = ''
