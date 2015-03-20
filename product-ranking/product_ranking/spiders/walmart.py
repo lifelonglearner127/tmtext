@@ -233,9 +233,11 @@ class WalmartProductsSpider(BaseProductsSpider):
         return req
 
     def _gen_related_req(self, response):
-        prodid = response.xpath("//div[@id='recently-review']/@data-product-id").extract()
-        if prodid:
-            prodid = prodid[0]
+        prodid = response.meta.get('productid')
+        if not prodid:
+            prodid = response.xpath("//div[@id='recently-review']/@data-product-id").extract()
+            if prodid:
+                prodid = prodid[0]
         if not prodid:
             self.log("No PRODID in %r." % response.url, ERROR)
             return
@@ -249,7 +251,7 @@ class WalmartProductsSpider(BaseProductsSpider):
 
     def _start_related(self, response):
         product = response.meta['product']
-        reql = response.meta['relreql']
+        reql = response.meta.get('relreql')
         if not reql:
             return product
         (url, proc) = reql.pop(0)
@@ -257,7 +259,6 @@ class WalmartProductsSpider(BaseProductsSpider):
         return Request(url, meta=response.meta.copy(), callback=proc, dont_filter=True)
 
     def _proc_related(self, response):
-        print "_PROC_RELATED", response.url
         product = response.meta['product']
         related = self._parse_related(response, response)
         if related:
@@ -301,7 +302,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             name = el.xpath("p/text()").extract()
             if name:
                 name = name[0]
-            href= el.xpath("@href").extract()
+            href = el.xpath("@href").extract()
             if href:
                 href = href[0]
                 if 'dest=' in href:
@@ -340,6 +341,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             )
 
         data = json.loads(scripts[0].replace('\r\n', ''))
+        response.meta['productid'] = str(data['buyingOptions']['usItemId'])
         cond_set_value(product, 'title', data['productName'])
         available = data['buyingOptions']['available']
         cond_set_value(
@@ -360,7 +362,8 @@ class WalmartProductsSpider(BaseProductsSpider):
                 # Packs of products have different buyingOptions.
                 try:
                     price_block =\
-                        data['buyingOptions']['maxPrice']
+                        data['buyingOptions']['minPrice']
+                    #     data['buyingOptions']['maxPrice']
                 except KeyError:
                     self.log(
                         "Product with unknown buyingOptions structure: %s\n%s"
