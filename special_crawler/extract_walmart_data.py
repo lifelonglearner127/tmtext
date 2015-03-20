@@ -1688,7 +1688,8 @@ class WalmartScraper(Scraper):
 
         if not ingr:
             ingr = self.tree_html.xpath("//b[contains(text(),'Ingredients:')]")[0].tail
-            ingr.split(",")
+            self.ing_count = len(ingr.split(","))
+            return ingr.split(",")
 
         if len(ingr) > 0:
             res = []
