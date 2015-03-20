@@ -355,6 +355,10 @@ class AmazonProductsSpider(BaseProductsSpider):
                     'string(.//td[1])').re(FLOATING_POINT_RGEX))
                 number = is_empty(tr.xpath(
                     'string(.//td[last()])').re(FLOATING_POINT_RGEX))
+                is_perc = is_empty(tr.xpath(
+                    'string(.//td[last()])').extract())
+                if "%" in is_perc:
+                    break
                 if number:
                     buyer_reviews['rating_by_star'][rating] = int(
                         number.replace(',', '')
