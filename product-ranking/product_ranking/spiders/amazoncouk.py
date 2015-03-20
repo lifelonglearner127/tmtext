@@ -5,7 +5,7 @@ import re
 import json
 
 from scrapy.http import Request
-from scrapy.log import ERROR
+from scrapy.log import ERROR, WARNING
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
