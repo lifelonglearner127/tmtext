@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import string
+import urllib
 import urlparse
 import json
 import re
@@ -10,7 +11,8 @@ from scrapy.log import ERROR, WARNING, DEBUG
 from scrapy.selector import Selector
 from scrapy.http import Request
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price
+from product_ranking.items import SiteProductItem, RelatedProduct, Price,\
+    BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 from product_ranking.spiders import cond_set, cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -79,6 +81,8 @@ class GoogleProductsSpider(BaseProductsSpider):
         for request in super(GoogleProductsSpider, self).start_requests():
             if self.sort:
                 request.callback = self.sort_request
+                if self.sort == 'default':
+                    request.callback = self.parse
             yield request
 
     def sort_request(self, response):
@@ -136,10 +140,95 @@ class GoogleProductsSpider(BaseProductsSpider):
                 ))
         product['related_products'] = {'recommended': r}
 
+        # get right url if it redirect url
+        redirect_pattern = r'(&adurl|\?url)=(.*)'
+        res = re.findall(redirect_pattern, product['url'])
+        if res:
+            req_url = urllib.unquote(res[0][1])
+            res = urllib.urlopen(req_url)
+            url_not_stripped = res.geturl()
+            product['url'] = url_not_stripped
+            review_link = product['buyer_reviews']
+            if review_link:
+                link = 'https://www.google.com' + review_link
+                return Request(link, callback=self.handle_reviews_request,
+                               meta=response.meta)
+
+        # strip GET data from only google urls
+        if 'www.google.com/shopping/product' in product['url']:
+            self._populate_buyer_reviews(response, product)
+            pattern = r'(.*)\?'
+            result = re.findall(pattern, product['url'])
+            if result:
+                product['url'] = result[0]
+                product['google_source_site'] = "{}"
+                stores_link = result[0] + '/online'
+                return Request(stores_link, callback=self.populate_stores,
+                               meta={'product': product})
+        return product
+
+    def populate_stores(self, response):
+        product = response.meta['product']
+        rows = response.xpath(
+            '//tr[@class="os-row"]'
+        )
+        source_dict_old = json.loads(product['google_source_site'])
+        if len(source_dict_old) < 1:
+            source_dict_old = {}
+        source_dict = {}
+        for row in rows:
+            try:
+                seller = row.xpath(
+                    './td[@class="os-seller-name"]/span/a/text()'
+                ).extract()[0]
+                _prices = row.xpath('.//*[contains(@class, "price")]')
+                price = get_price(_prices)
+                # TODO: support more currencies? we have to detect the website
+                #  (google.au, google.br etc.) and use the appropriate currency
+                # See https://support.google.com/merchants/answer/160637?hl=en
+                if '$' not in price:  # TODO: only USD is supported now
+                    self.log(
+                        'Unrecognized currency sign at %s' % response.url,
+                        level=ERROR
+                    )
+                    price = ''
+                    priceCurrency = ''
+                else:
+                    price = price.replace('$', '').replace(',', '').strip()
+                    priceCurrency = 'USD'
+                if source_dict_old.has_key(seller)\
+                        or source_dict.has_key(seller):
+                    occurrences = 0
+                    for key in source_dict_old:
+                        if key == seller or key.startswith("%s::" % seller):
+                            occurrences += 1
+                    for key in source_dict:
+                        if key == seller or key.startswith("%s::" % seller):
+                            occurrences += 1
+                    seller = "%s::%s" % (seller, occurrences)
+                source_dict[seller] = {
+                    'price': price,
+                    'currency': priceCurrency
+                }
+            except IndexError:
+                pass
+        source_dict_new = dict(source_dict, **source_dict_old)
+        product['google_source_site'] = source_dict_new
+        next_link = response.xpath(
+            '//div[@id="online-pagination"]/div[contains(@class,'
+            '"jfk-button-collapse-left")]/@data-reload'
+        ).extract()
+        product['google_source_site'] = json.dumps(source_dict_new)
+        if next_link:
+            url = "https://www.google.com" + next_link[0]
+            return Request(url, callback=self.populate_stores,
+                           meta={'product': product})
         return product
 
     def _scrape_total_matches(self, response):
-        return None
+        self.log("Impossible to scrape total matches for this spider",
+                 DEBUG)
+        return 0
 
     def _scrape_product_links(self, response):
 
@@ -187,6 +276,20 @@ class GoogleProductsSpider(BaseProductsSpider):
                     link = item.xpath('.//a[@class="psgiimg"]')
                 title = link.xpath('string(.)').extract()[0]
                 url = link.xpath('@href').extract()[0]
+                rewiew_link = item.xpath(
+                    './/a[@class="shop__secondary"]/@href'
+                ).extract()
+                if rewiew_link:
+                    rewiew_link = rewiew_link[0]
+                source_site = item.xpath(
+                    './/div[@class="_tyb"]'
+                )
+                if source_site:
+                    source_site_path = source_site
+                    source_site_text = source_site_path.xpath(
+                        './text()').extract()
+                    source_site = source_site_text[0].replace(
+                        'from ', '').strip()
             except IndexError:
                 self.log('Index error at {url}'.format(url=response.url),
                          WARNING)
@@ -222,11 +325,25 @@ class GoogleProductsSpider(BaseProductsSpider):
                     self.log('Invalid JSON on {url}'.format(url=response.url),
                              WARNING)
 
-            if url.startswith('http'):
-                redirect = None
-            else:
-                redirect = url
+            redirect = url
             url = urlparse.urljoin(response.url, url)
+
+            if len(source_site) > 0:
+                if len(source_site_path) == 1:
+                    source_price = source_site_path.xpath(
+                        './span[@class="price"]/b/text()'
+                    ).extract()
+                    if source_price:
+                        source_price = source_price[0].replace('$', '')\
+                            .replace(',', '').strip()
+                        priceCurrency = 'USD'
+                        data = {
+                            'price': source_price,
+                            'currency': priceCurrency
+                        }
+                        source_site = '{"%s":%s}' % (source_site, data)
+                else:
+                    source_site = '{"%s":{}}' % source_site
 
             yield redirect, SiteProductItem(
                 url=url,
@@ -234,6 +351,8 @@ class GoogleProductsSpider(BaseProductsSpider):
                 price=price,
                 image_url=image_url,
                 description=description,
+                google_source_site=source_site,
+                buyer_reviews=rewiew_link,
                 locale='en-US')
 
     def _scrape_next_results_page_link(self, response):
@@ -247,3 +366,43 @@ class GoogleProductsSpider(BaseProductsSpider):
         else:
             link = urlparse.urljoin(response.url, next[0])
         return link
+
+    def _populate_buyer_reviews(self, response, product):
+        product = response.meta['product']
+        del product['buyer_reviews']
+        revs = response.xpath(
+            '//div[@id="reviews"]/div[@id="reviews"]'
+        )
+        if not revs:
+            return
+        total = response.xpath(
+            '//div[@class="_Ape"]/div/div/div[@class="_wpe"]/text()'
+        ).extract()
+        if not total:
+            return
+        total = re.findall("\d*,?\d+", total[0])
+        total = int(total[0].replace(',', ''))
+        reviews = response.xpath(
+            '//div[@id="reviews"]/div[@id="reviews"]//div[@class="_Joe"]'
+            '/div/a/div[@class="_Roe"]/@style'
+        ).extract()
+        star = 5
+        by_star = {}
+        for rev in reviews:
+            percents = re.findall("width:(\d+\.?\d*)\%", rev)[0]
+            rev_number = total*float(percents)/100
+            rev_number = int(round(rev_number))
+            by_star[star] = rev_number
+            star -= 1
+        avg = float(
+            sum([star * rating for star, rating in by_star.iteritems()]))
+        avg /= total
+        reviews = BuyerReviews(num_of_reviews=total,
+                               average_rating=round(avg, 1),
+                               rating_by_star=by_star)
+        cond_set_value(product, 'buyer_reviews', reviews)
+
+    def handle_reviews_request(self, response):
+        product = response.meta['product']
+        self._populate_buyer_reviews(response, product)
+        return product

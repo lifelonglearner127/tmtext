@@ -154,13 +154,39 @@ class BaseProductsSpider(Spider):
 
     MAX_RETRIES = 3
 
+    USER_AGENTS = {
+        'default': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:35.0) '\
+            'Gecko/20100101 Firefox/35.0',
+        'desktop': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:35.0) '\
+            'Gecko/20100101 Firefox/35.0',
+        'iphone_ipad': 'Mozilla/5.0 (iPhone; CPU iPhone OS 7_0_6 '\
+            'like Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) '\
+            'Version/7.0 Mobile/11B651 Safari/9537.53',
+        'android_phone': 'Mozilla/5.0 (Android; Mobile; rv:35.0) '\
+            'Gecko/35.0 Firefox/35.0',
+        'android_pad': 'Mozilla/5.0 (Android; Tablet; rv:35.0) '\
+            'Gecko/35.0 Firefox/35.0',
+        'android': 'Mozilla/5.0 (Android; Tablet; rv:35.0) '\
+            'Gecko/35.0 Firefox/35.0',
+    }
+
     def __init__(self,
                  url_formatter=None,
                  quantity=None,
                  searchterms_str=None, searchterms_fn=None,
                  site_name=None,
                  product_url=None,
+                 user_agent=None,
                  *args, **kwargs):
+        if user_agent is None or user_agent not in self.USER_AGENTS.keys():
+            self.log("Not available user agent type or it wasn't set."
+                     " Default user agent will be used.", INFO)
+            user_agent = 'default'
+
+        if user_agent:
+            self.user_agent = self.USER_AGENTS[user_agent]
+            self.user_agent_key = user_agent
+
         super(BaseProductsSpider, self).__init__(*args, **kwargs)
 
         if site_name is None:
@@ -255,6 +281,7 @@ class BaseProductsSpider(Spider):
         search_term = response.meta['search_term']
         prods_per_page = response.meta.get('products_per_page')
         total_matches = response.meta.get('total_matches')
+        scraped_results_per_page = response.meta.get('scraped_results_per_page')
 
         prods = self._scrape_product_links(response)
 
@@ -263,6 +290,19 @@ class BaseProductsSpider(Spider):
             prods = list(prods)
             prods_per_page = len(prods)
             response.meta['products_per_page'] = prods_per_page
+
+        if scraped_results_per_page is None:
+            scraped_results_per_page = self._scrape_results_per_page(response)
+            if scraped_results_per_page:
+                self.log(
+                    "Found %s products at the first page" %scraped_results_per_page
+                    , INFO)
+            else:
+                scraped_results_per_page = prods_per_page
+                self.log(
+                    "Failed to scrape number of products per page",
+                    ERROR)
+            response.meta['scraped_results_per_page'] = scraped_results_per_page
 
         if total_matches is None:
             total_matches = self._scrape_total_matches(response)
@@ -286,9 +326,12 @@ class BaseProductsSpider(Spider):
             prod_item['search_term'] = search_term
             prod_item['total_matches'] = total_matches
             prod_item['results_per_page'] = prods_per_page
+            prod_item['scraped_results_per_page'] = scraped_results_per_page
             # The ranking is the position in this page plus the number of
             # products from other pages.
             prod_item['ranking'] = (i + 1) + (self.quantity - remaining)
+            if self.user_agent_key not in ["desktop", "default"]:
+                prod_item['is_mobile_agent'] = True
 
             if prod_url is None:
                 # The product is complete, no need for another request.
@@ -388,3 +431,11 @@ class BaseProductsSpider(Spider):
         It should return None if no next page is available.
         """
         raise NotImplementedError
+
+    def _scrape_results_per_page(self, response):
+        """_scrape_results_per_page(response:Response):integer
+
+        Scrapes the number of products at the first page
+        It should return None if the value is unavailable
+        """
+        return None

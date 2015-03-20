@@ -8,13 +8,18 @@ from scrapy.item import Item, Field
 
 RelatedProduct = collections.namedtuple("RelatedProduct", ['title', 'url'])
 
+#SponsoredLinks = collections.namedtuple("SponsoredLinks", ['ad_text', 'ad_url'])
+
+LimitedStock = collections.namedtuple("LimitedStock",
+                                      ['is_limited',   # bool
+                                       'items_left'])  # int
+
 BuyerReviews = collections.namedtuple(
     "BuyerReviews",
     ['num_of_reviews',  # int
      'average_rating',  # float
      'rating_by_star']  # dict, {star: num_of_reviews,}, like {1: 45, 2: 234}
 )
-
 
 valid_currency_codes = """AED AFN ALL AMD ANG AOA ARS AUD AWG AZN BAM BBD BDT
  BGN BHD BIF BMD BND BOB BOV BRL BSD BTN BWP BYR BZD CAD CDF CHE CHF CHW CLF
@@ -31,7 +36,6 @@ valid_currency_codes = [c.strip() for c in valid_currency_codes if c.strip()]
 
 
 class Price:
-
     price = None
     priceCurrency = None
 
@@ -67,26 +71,29 @@ def scrapy_price_serializer(value):
 
 class SiteProductItem(Item):
     # Search metadata.
-    site = Field()          # String.
-    search_term = Field()   # String.
-    ranking = Field()       # Integer.
+    site = Field()  # String.
+    search_term = Field()  # String.
+    ranking = Field()  # Integer.
     total_matches = Field()  # Integer.
     results_per_page = Field()  # Integer.
+    scraped_results_per_page = Field()  # Integer.
     # Indicates whether this Item comes from scraping single product url
-    is_single_result = Field() # Bool
+    is_single_result = Field()  # Bool
 
     # Product data.
-    title = Field()         # String.
-    upc = Field()           # Integer.
-    model = Field()         # String, alphanumeric code.
-    url = Field()           # String, URL.
-    image_url = Field()     # String, URL.
-    description = Field()   # String with HTML tags.
-    brand = Field()         # String.
+    title = Field()  # String.
+    upc = Field()  # Integer.
+    model = Field()  # String, alphanumeric code.
+    url = Field()  # String, URL.
+    image_url = Field()  # String, URL.
+    description = Field()  # String with HTML tags.
+    brand = Field()  # String.
     price = Field(serializer=scrapy_price_serializer)  # see Price obj
-    locale = Field()        # String.
+    locale = Field()  # String.
     # Dict of RelatedProducts. The key is the relation name.
     related_products = Field()
+    # Dict of SponsoredLinks. The key is the relation name.
+    sponsored_links = Field()
     # Available in-store only
     is_in_store_only = Field()
     # Out of stock
@@ -94,7 +101,20 @@ class SiteProductItem(Item):
     # Feedback from the buyers (with ratings etc.)
     buyer_reviews = Field()  # see BuyerReviews obj
 
+    bestseller_rank = Field()
+    department = Field()  # now for Amazons only; may change in the future
+    category = Field()  # now for Amazons only; may change in the future
+
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
     search_term_in_title_exactly = Field()  # Bool
     search_term_in_title_interleaved = Field()  # Bool
+
+    # For google.co.uk, google.com products
+    google_source_site = Field()
+
+    is_mobile_agent = Field()  # if the spider was in the mobile mode
+
+    limited_stock = Field() # see LimitedStock obj
+
+    prime = Field()  # amazon Prime program: Prime/PrimePantry/None

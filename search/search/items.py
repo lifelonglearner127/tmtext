@@ -7,16 +7,22 @@ class SearchItem(Item):
 #    origin_site = Field() # origin site of product
     product_url = Field() # url of result product page
     product_model = Field() # product model of product as extracted from its page or the results page (if found somewhere other that inside its name)
+    product_upc = Field() # product UPC
+    product_dpci = Field() # product DPCI. Identifier specific to target.com
+    product_asin = Field() # product DPCI. Identifier specific to amazon.com
     product_brand = Field() # product brand as extracted from special element in product page
     origin_url = Field() # original product url
 #    origin_id = Field() # original (source) product id (for walmart products)
     origin_name = Field() # product name on origin site
     origin_model = Field() # original (source) product model
+    origin_upc = Field() # original (source) product UPC
+    origin_dpci = Field() # original (source) product DPCI. Identifier specific to target.com
+    origin_asin = Field() # original (source) product DPCI. Identifier specific to amazon.com
     origin_brand = Field() # original (source) product brand
     origin_brand_extracted = Field() # source product brand - as extracted from product name: not guaranteed to be correct
 
-    product_origin_price = Field() # price of product on origin site
-    product_target_price = Field() # price of product on target site
+    product_origin_price = Field() # price of product on origin site, in dollars
+    product_target_price = Field() # price of product on target site, in dollars
 
     product_images = Field() # for manufacturer spider: nr of product images on target (manufacturer) site
     product_videos = Field() # for manufacturer spider: nr of product videos on target (manufacturer) site

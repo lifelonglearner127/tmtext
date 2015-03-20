@@ -23,9 +23,19 @@ from extract_chicago_data import ChicagoScraper
 from extract_samsclub_data import SamsclubScraper
 from extract_babysecurity_data import BabysecurityScraper
 from extract_staples_data import StaplesScraper
+from extract_soap_data import SoapScraper
+from extract_drugstore_data import DrugstoreScraper
 from extract_staplesadvantage_data import StaplesAdvantageScraper
+from extract_souq_data import SouqScraper
+from extract_freshdirect_data import FreshDirectScraper
+from extract_peapod_data import PeapodScraper
 
+from extract_quill_data import QuillScraper
 from extract_hersheys_data import HersheysScraper
+from extract_freshamazon_data import FreshAmazonScraper
+from extract_george_data import GeorgeScraper
+from extract_bloomingdales_data import BloomingdalesScraper
+
 from urllib2 import HTTPError
 import datetime
 import logging
@@ -62,7 +72,16 @@ SUPPORTED_SITES = {
                     "samsclub" : SamsclubScraper,
                     "babysecurity" : BabysecurityScraper,
                     "staples" : StaplesScraper,
+                    "soap" : SoapScraper,
+                    "drugstore" : DrugstoreScraper,
                     "staplesadvantage" : StaplesAdvantageScraper,
+                    "freshamazon" : FreshAmazonScraper,
+                    "souq": SouqScraper,
+                    "freshdirect" : FreshDirectScraper,
+                    "quill" : QuillScraper,
+                    "george" : GeorgeScraper,
+                    "peapod" : PeapodScraper,
+                    "bloomingdales" : BloomingdalesScraper,
                     }
 
 # add logger
@@ -114,14 +133,23 @@ def check_input(url, is_valid_url, invalid_url_message=""):
         except UnicodeEncodeError:
             error_message = "Invalid URL: " + url.encode("utf-8") + str(invalid_url_message)
         raise InvalidUsage(error_message, 400)
-        
+
 # infer domain from input URL
 def extract_domain(url):
     if 'chicago.doortodoororganics.com' in url:
         # for chicago scraper
         # https://chicago.doortodoororganics.com/shop/products/rudis-white-hamburger-buns
         return 'chicago'
-    m = re.match("^http://(www|shop)\.([^/\.]+)\..*$", url)
+    if 'fresh.amazon.com' in url:
+        # for freshamazon scraper
+        return 'freshamazon'
+    if 'uae.souq.com' in url:
+        # for souq scraper
+        # http://uae.souq.com/ae-en/samsung-galaxy-s3-mini-i8190-8gb-3g-+-wifi-white-4750807/i/
+        return 'souq'
+    if 'direct.asda.com' in url:
+        return 'george'
+    m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)
     # TODO: return error message about bad URL if it does not match the regex
@@ -213,7 +241,8 @@ def get_data():
     if 'data' not in request_arguments:
         try:
             ret = site_scraper.product_info()
-        except HTTPError:
+
+        except HTTPError as ex:
             raise GatewayError("Error communicating with site crawled.")
 
         return jsonify(ret)

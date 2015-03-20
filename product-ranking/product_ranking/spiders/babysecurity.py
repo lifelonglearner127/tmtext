@@ -1,8 +1,6 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-import urlparse
-
 from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, Price, RelatedProduct
@@ -15,7 +13,8 @@ class BabySecurityProductSpider(BaseProductsSpider):
     allowed_domains = ["babysecurity.co.uk"]
 
     SEARCH_URL = "http://www.babysecurity.co.uk/catalogsearch/" \
-                 "result/index/?dir={direction}&order={search_sort}&q={search_term}"
+                 "result/index/?dir={direction}&order={search_sort}" \
+                 "&q={search_term}"
 
     SEARCH_SORT = {
         'best_sellers': 'bestsellers',
@@ -49,13 +48,14 @@ class BabySecurityProductSpider(BaseProductsSpider):
             '//li[@class="item"]'
             '//h2[@class="product-name"]/a/@href').extract()
         if not links:
-            allert = response.xpath('//p[@class="note-msg"]/text()').extract()
+            allert = response.xpath(
+                '//p[@class="note-msg"]/text()').extract()
             if allert:
                 allert_msg = "Your search returned no results"
                 if allert_msg in allert[0]:
                     st = response.meta.get('search_term')
-                    self.log("No products were found with search term %s. "\
-                             "No any links available" % st, WARNING )
+                    self.log("No products were found with search term %s. "
+                             "No any links available" % st, WARNING)
         for link in links:
             yield link, SiteProductItem()
 
@@ -69,6 +69,8 @@ class BabySecurityProductSpider(BaseProductsSpider):
             return None
 
     def parse_product(self, response):
+        is_empty = lambda x: x[0] if x else ""
+
         prod = response.meta['product']
         prod['url'] = response.url
         prod['locale'] = 'en-GB'
@@ -105,7 +107,8 @@ class BabySecurityProductSpider(BaseProductsSpider):
         description = response.xpath('string(//div[@class="std"])').extract()
         cond_set(prod, 'description', description, lambda x: x.strip())
 
-        avail = response.xpath('//*[@itemprop="availability"]/@content').extract()
+        avail = response.xpath(
+            '//*[@itemprop="availability"]/@content').extract()
         if avail:
             if "http://schema.org/OutOfStock" in avail[0]:
                 prod['is_out_of_stock'] = True
@@ -113,15 +116,16 @@ class BabySecurityProductSpider(BaseProductsSpider):
                 prod['is_out_of_stock'] = False
 
         recommendations = []
-        for a_tag in response.xpath(
-                '//div[contains(@class,"box-up-sell")]'
-                '//div[@class="item"]//h3[@class="product-name"]/a'):
-            item_title = a_tag.xpath('string(.)').extract()
-            item_url = a_tag.xpath('./@href').extract()
-            if item_title and item_url:
-                item = RelatedProduct(title=item_title[0].strip(),
-                                      url=item_url[0].strip())
-                recommendations.append(item)
+        for li in response.xpath('//div[@class="item"]/ul/li'):
+            all_inf = li.xpath('div/h3/a')
+            title = all_inf.xpath('text()').extract()
+            url = all_inf.xpath('@href').extract()
+            recommendations.append(
+                RelatedProduct(
+                    title=is_empty(title), 
+                    url=is_empty(url)
+                    )
+                )
         prod['related_products'] = {'recommended':recommendations}
 
         return prod

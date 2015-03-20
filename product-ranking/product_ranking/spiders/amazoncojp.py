@@ -7,11 +7,14 @@ import json
 import re
 import string
 
+from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+
+from product_ranking.amazon_bestsellers import amazon_parse_department
 
 
 try:
@@ -53,6 +56,15 @@ class AmazonProductsSpider(BaseProductsSpider):
             result = super(AmazonProductsSpider, self).parse(response)
         return result
 
+    def _get_products(self, response):
+        result = super(AmazonProductsSpider, self)._get_products(response)
+        for r in result:
+            if isinstance(r, Request):
+                r = r.replace(dont_filter=True)
+                yield r
+            else:
+                yield r
+
     def parse_product(self, response):
         prod = response.meta['product']
 
@@ -73,37 +85,137 @@ class AmazonProductsSpider(BaseProductsSpider):
             result = self._handle_captcha(response, self.parse_product)
         return result
 
+    def populate_bestseller_rank(self, product, response):
+        ranks = {' > '.join(map(unicode.strip,
+                                itm.css('.zg_hrsr_ladder a::text').extract())):
+                     int(re.sub('[ ,]', '',
+                                itm.css('.zg_hrsr_rank::text').re(
+                                    '([\d, ]+)')[0]))
+                 for itm in response.css('.zg_hrsr_item')}
+        prim = response.css('#SalesRank::text, #SalesRank .value'
+                            '::text').re('(.+) - ([\d ,]+)')
+        if prim:
+            prim = {prim[0].strip(): int(re.sub('[ ,]', '', prim[1]))}
+            ranks.update(prim)
+        ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
+        cond_set_value(product, 'category', ranks)
+        # parse department
+        department = amazon_parse_department(ranks)
+        if department is None:
+            product['department'] = None
+        else:
+            product['department'], product['bestseller_rank'] \
+                = department.items()[0]
+
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         cond_set(
             product,
             'price',
-            response.css('#priceblock_ourprice ::text').extract(),
+            response.css(
+                '#priceblock_ourprice ::text'
+                ', #unqualifiedBuyBox .a-color-price ::text'
+                ', #priceblock_saleprice ::text'
+                ', #actualPriceValue ::text'
+                ', #buyNewSection .offer-price ::text'
+            ).extract(),
         )
+        if not product.get('price', None):
+            cond_set(
+                product,
+                'price',
+                response.xpath(
+                    '//td/b[@class="priceLarge"]/text() |'
+                    '//span[@class="olp-padding-right"]'
+                    '/span[@class="a-color-price"]/text() |'
+                    '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]'
+                    '/button/text() |'
+                    '//span[@id="priceblock_saleprice"]/text() |'
+                    '//li[@class="swatchElement selected"]'
+                    '//span[@class="a-color-price"]/text() |'
+                    '//div[contains(@data-reftag,"atv_dp_bb_est_sd_movie")]'
+                    '/button/text() |'
+                    '//div[@id="mocaBBRegularPrice"]'
+                    '/div/text()[normalize-space()]'
+                ).extract()
+            )
         if product.get('price', None):
             if not u'￥' in product.get('price', ''):
                 self.log('Invalid price at: %s' % response.url, level=ERROR)
             else:
-                if not '.' in product['price']:
-                    product['price'] = product['price'].strip() + '.00'
+                price = re.findall('[\d ,.]+\d', product['price'])
+                price = price[0].replace(' ', '').replace(',', '.')
+                if not '.' in price:
+                    price = price + '.00'
                 product['price'] = Price(
-                    price=product['price'].replace(u'￥', '').replace(
+                    price=price.replace(u'￥', '').replace(
                         ' ', '').replace(',', '').strip(),
                     priceCurrency='JPY'
                 )
+        description = response.css('.productDescriptionWrapper').extract()
+        if not description:
+            description = response.xpath(
+                '//div[@id="descriptionAndDetails"] |'
+                '//div[@id="feature-bullets"] |'
+                '//div[@id="ps-content"] |'
+                '//div[@id="productDescription_feature_div"] |'
+                '//div[contains(@class, "dv-simple-synopsis")] |'
+                '//div[@class="bucket"]/div[@class="content"]'
+            ).extract()
         cond_set(
             product,
             'description',
-            response.css('.productDescriptionWrapper').extract(),
+            description,
         )
+
+        image = response.css(
+            '#imgTagWrapperId > img ::attr(data-old-hires)'
+        ).extract()
+        if not image:
+            j = re.findall(r"'colorImages': { 'initial': (.*)},",
+                           response.body)
+            if not j:
+                j = re.findall(r'colorImages = {"initial":(.*)}',
+                               response.body)
+            if j:
+                try:
+                    res = json.loads(j[0])
+                    try:
+                        image = res[0]['large']
+                    except:
+                        image = res[1]['large']
+                    image = [image]
+                except:
+                    pass
+        if not image:
+            image = response.xpath(
+                '//div[@class="main-image-inner-wrapper"]/img/@src |'
+                '//div[@id="coverArt_feature_div"]//img/@src |'
+                '//div[@id="img-canvas"]/img/@src |'
+                '//div[@class="dp-meta-icon-container"]/img/@src |'
+                '//input[@id="mocaGlamorImageUrl"]/@value |'
+                '//div[@class="egcProdImageContainer"]'
+                '/img[@class="egcDesignPreviewBG"]/@src |'
+                '//img[@id="main-image"]/@src |'
+                '//img[@class="prod_image_selector"]/@src'
+            ).extract()
         cond_set(
             product,
             'image_url',
-            response.css(
-                '#imgTagWrapperId > img ::attr(data-old-hires)').extract()
+            image
         )
+
+        title = response.css('#productTitle ::text').extract()
+        if not title:
+            title = response.xpath(
+                '//div[@class="buying"]/h1/span[@id="btAsinTitle"]/text() |'
+                '//div[@id="title_feature_div"]/h1/text() |'
+                '//div[@id="title_row"]/span/h1/text() |'
+                '//h1[@id="aiv-content-title"]/text() |'
+                '//div[@id="item_name"]/text()'
+            ).extract()
         cond_set(
-            product, 'title', response.css('#productTitle ::text').extract())
+            product, 'title', title)
 
         # Some data is in a list (ul element).
         model = None
@@ -127,6 +239,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 model = li.xpath('text()').extract()
         cond_set(product, 'model', model, conv=string.strip)
         self._buyer_reviews_from_html(response, product)
+        self.populate_bestseller_rank(product, response)
 
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...
@@ -154,14 +267,32 @@ class AmazonProductsSpider(BaseProductsSpider):
         return total_matches
 
     def _scrape_product_links(self, response):
-        links = response.xpath(
-            '//div[contains(@class, "s-item-container")]'
-            '//a[contains(@class, "s-access-detail-page")]/@href'
-        ).extract()
+        lis = response.xpath("//ul/li[@class='s-result-item']")
+        links = []
+        for no, li in enumerate(lis):
+            href = li.xpath(
+                ".//a[contains(@class,'s-access-detail-page')]"
+                "/@href").extract()
+            if href:
+                href = href[0]
+                is_prime = li.xpath(
+                    "*/descendant::i[contains(concat(' ',@class,' '),"
+                    "' a-icon-prime-jp ')]").extract()
+                is_prime_pantry = li.xpath(
+                    "*/descendant::i[contains(concat(' ',@class,' '),"
+                    "' a-icon-prime-pantry ')]").extract()
+                links.append((href, is_prime, is_prime_pantry))
+
         if not links:
             self.log("Found no product links.", WARNING)
-        for link in links:
-            yield link, SiteProductItem()
+
+        for link, is_prime, is_prime_pantry in links:
+            prime = None
+            if is_prime:
+                prime = 'Prime'
+            if is_prime_pantry:
+                prime = 'PrimePantry'
+            yield link, SiteProductItem(prime=prime)
 
     def _scrape_next_results_page_link(self, response):
         next_pages = response.css('#pagnNextLink ::attr(href)').extract()

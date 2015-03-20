@@ -4,13 +4,23 @@ import json
 import pprint
 import re
 import urlparse
+import requests
 
+from scrapy import Selector
+from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO
 
 from product_ranking.items import (SiteProductItem, RelatedProduct,
                                    BuyerReviews, Price)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
+
+is_empty = lambda x: x[0] if x else ""
+
+
+def get_string_from_html(xp, link):
+    loc = is_empty(link.xpath(xp).extract())
+    return Selector(text=loc).xpath('string()').extract()
 
 
 class WalmartProductsSpider(BaseProductsSpider):
@@ -31,6 +41,8 @@ class WalmartProductsSpider(BaseProductsSpider):
         "&_refineresult=true&ic=16_0&search_constraint=0" \
         "&search_query={search_term}&sort={search_sort}"
 
+    LOCATION_URL = "http://www.walmart.com/location"
+
     _SEARCH_SORT = {
         'best_match': 0,
         'high_price': 'price_high',
@@ -40,10 +52,14 @@ class WalmartProductsSpider(BaseProductsSpider):
         'rating': 'rating_high',
     }
 
+    sponsored_links = []
+
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
-    def __init__(self, search_sort='best_match', *args, **kwargs):
+    def __init__(self, search_sort='best_match', zipcode='94117', *args, **kwargs):
+        if zipcode:
+            self.zipcode = zipcode
         if search_sort == 'best_sellers':
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         super(WalmartProductsSpider, self).__init__(
@@ -51,6 +67,50 @@ class WalmartProductsSpider(BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
+
+    def start_requests(self):
+        for st in self.searchterms:
+            url = "http://www.walmart.com/midas/srv/ypn?" \
+                "query=%s&context=Home" \
+                "&clientId=walmart_us_desktop_backfill_search" \
+                "&channel=ch_8,backfill" % (st,)
+            yield Request(url=url, callback=self.get_sponsored_links)
+
+    def get_sponsored_links(self, response):
+        arr = []
+        for link in response.xpath('//div[contains(@class, "yahoo_sponsored_link")]' \
+            '/div[contains(@class, "yahoo_sponsored_link")]'):
+            ad_title = is_empty(
+                get_string_from_html('div/span[@class="title"]/a', link))
+            ad_text = is_empty(
+                get_string_from_html('div/span[@class="desc"]/a', link))
+            visible_url = is_empty(
+                get_string_from_html('div/span[@class="host"]/a', link))
+            actual_url = is_empty(
+                link.xpath('div/span[@class="title"]/a/@href').extract())
+
+            try:
+                r = requests.get(actual_url, headers={
+                    "User-Agent": "Mozilla/5.0 (X11; Linux i686 (x86_64)) " \
+                    "AppleWebKit/537.36 (KHTML, like Gecko) " \
+                    "Chrome/37.0.2062.120 Safari/537.36"
+                    }
+                )
+                actual_url = r.url
+            except Exception:
+                pass
+
+            sld = {
+                    "ad_title" : ad_title,
+                    "ad_text" : ad_text,
+                    "visible_url" : visible_url,
+                    "actual_url" : actual_url,
+            }
+            arr.append(sld)
+
+        self.sponsored_links = arr
+
+        return super(WalmartProductsSpider, self).start_requests()
 
     def parse_product(self, response):
         if self._search_page_error(response):
@@ -60,11 +120,15 @@ class WalmartProductsSpider(BaseProductsSpider):
 
         product = response.meta['product']
 
+        if self.sponsored_links:
+            product["sponsored_links"] = self.sponsored_links
+
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
         product['buyer_reviews'] = self._build_buyer_reviews(response)
-
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
+        if not product.get('price'):
+            return self._gen_location_request(response)
         return product
 
     def _parse_single_product(self, response):
@@ -142,6 +206,37 @@ class WalmartProductsSpider(BaseProductsSpider):
                     cond_set_value(product, 'price',
                                    Price(priceCurrency=currency, price=price))
 
+    def _gen_location_request(self, response):
+        data = {"postalCode": ""}
+        new_meta = response.meta.copy()
+        new_meta['handle_httpstatus_list'] = [404,405]
+        # Need Conetnt-Type= app/json
+        req = FormRequest.from_response(
+            response=response,
+            url=self.LOCATION_URL,
+            method='POST',
+            formdata=data,
+            callback=self._after_location,
+            meta=new_meta,
+            headers={'x-requested-with': 'XMLHttpRequest',
+                     'Content-Type':'application/json'},
+            dont_filter=True)
+        req = req.replace(body='{"postalCode":"' + self.zipcode + '"}')
+        return req
+
+    def _after_location(self, response):
+        product = response.meta['product']
+        if response.status==200: 
+            url = response.meta['product']['url']
+            return Request(url, meta=response.meta.copy(), callback=self._reload_page,dont_filter=True)
+        return product
+
+    def _reload_page(self,response):
+        product = response.meta['product']
+        self._populate_from_js(response, product)
+        self._populate_from_html(response, product)
+        return product
+
     def _populate_from_js(self, response, product):
         scripts = response.xpath("//script").re(
             WalmartProductsSpider._JS_DATA_RE)
@@ -154,7 +249,7 @@ class WalmartProductsSpider(BaseProductsSpider):
                 ERROR
             )
 
-        data = json.loads(scripts[0])
+        data = json.loads(scripts[0].replace('\r\n', ''))
         cond_set_value(product, 'title', data['productName'])
         available = data['buyingOptions']['available']
         cond_set_value(
@@ -183,11 +278,28 @@ class WalmartProductsSpider(BaseProductsSpider):
                         ERROR
                     )
             if price_block:
-                _price = Price(
-                    priceCurrency=price_block['currencyUnit'],
-                    price=price_block['currencyAmount']
-                )
-                cond_set_value(product, 'price', _price)
+                try:
+                    _price = Price(
+                        priceCurrency=price_block['currencyUnit'],
+                        price=price_block['currencyAmount']
+                    )
+                    cond_set_value(product, 'price', _price)
+                except KeyError:
+                    try:
+                        if price_block["currencyUnitSymbol"] == "$":
+                            _price = Price(
+                                priceCurrency="USD",
+                                price=price_block['currencyAmount']
+                            )
+                        cond_set_value(product, 'price', _price)
+                    except KeyError:
+                        self.log(
+                            "Product with unknown buyingOptions " \
+                            "structure: %s\n%s" % (
+                                response.url, pprint.pformat(data)),
+                            ERROR
+                        )
+                
         try:
             cond_set_value(
                 product, 'upc', data['analyticsData']['upc'], conv=int)
@@ -201,9 +313,10 @@ class WalmartProductsSpider(BaseProductsSpider):
             return 0
 
         matches = response.css('.result-summary-container ::text').re(
-            'Showing \d+ of (\d+) results')
+            'Showing \d+ of (.+) results')
         if matches:
-            num_results = int(matches[0])
+            num_results = matches[0].replace(',', '')
+            num_results = int(num_results)
         else:
             num_results = None
             self.log(
@@ -211,6 +324,13 @@ class WalmartProductsSpider(BaseProductsSpider):
                 ERROR
             )
         return num_results
+
+    def _scrape_results_per_page(self, response):
+        num = response.css('.result-summary-container ::text').re(
+            'Showing (\d+) of')
+        if num:
+            return int(num[0])
+        return None
 
     def _scrape_product_links(self, response):
         links = response.css('a.js-product-title ::attr(href)').extract()

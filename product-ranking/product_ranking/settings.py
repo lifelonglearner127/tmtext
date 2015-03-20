@@ -12,6 +12,7 @@ SPIDER_MODULES = ['product_ranking.spiders']
 NEWSPIDER_MODULE = 'product_ranking.spiders'
 
 ITEM_PIPELINES = {
+    'product_ranking.pipelines.CutFromTitleTagsAndReturnStringOnly': 300,
     'product_ranking.pipelines.AddSearchTermInTitleFields': 300,
 }
 
@@ -27,3 +28,17 @@ AMAZONFRESH_LOCATION = {
     "northern_cali": "A3FX2TOAMS7SFL",
     "seattle": "A83PXQN2224PA"
 }
+
+if not 'EXTENSIONS' in globals():
+    EXTENSIONS = {}
+EXTENSIONS['product_ranking.extensions.StatsCollector'] = 500
+
+# memory limit
+EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
+MEMUSAGE_LIMIT_MB = 256
+MEMUSAGE_ENABLED = True
+
+try:
+    from settings_local import *
+except ImportError:
+    pass
