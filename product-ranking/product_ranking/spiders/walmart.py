@@ -4,7 +4,6 @@ import json
 import pprint
 import re
 import urlparse
-import requests
 import uuid
 
 from scrapy import Selector
@@ -36,7 +35,7 @@ class WalmartProductsSpider(BaseProductsSpider):
     FIXME: Currently we redirect infinitely, which could be a problem.
     """
     name = 'walmart_products'
-    allowed_domains = ["walmart.com"]
+    allowed_domains = ["walmart.com", "msn.com"]
 
     SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
         "&_refineresult=true&ic=16_0&search_constraint=0" \
@@ -66,6 +65,7 @@ class WalmartProductsSpider(BaseProductsSpider):
         if search_sort == 'best_sellers':
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         super(WalmartProductsSpider, self).__init__(
+            site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
@@ -80,7 +80,8 @@ class WalmartProductsSpider(BaseProductsSpider):
             yield Request(url=url, callback=self.get_sponsored_links)
 
     def get_sponsored_links(self, response):
-        arr = []
+        reql = []
+        self.sponsored_links = []
         for link in response.xpath('//div[contains(@class, "yahoo_sponsored_link")]' \
             '/div[contains(@class, "yahoo_sponsored_link")]'):
             ad_title = is_empty(
@@ -91,28 +92,31 @@ class WalmartProductsSpider(BaseProductsSpider):
                 get_string_from_html('div/span[@class="host"]/a', link))
             actual_url = is_empty(
                 link.xpath('div/span[@class="title"]/a/@href').extract())
+            sld = {"ad_title": ad_title,
+                   "ad_text": ad_text,
+                   "visible_url": visible_url,
+                   "actual_url": actual_url,
+                   }
+            new_meta = response.meta.copy()
+            new_meta['sld'] = sld
+            reql.append(Request(actual_url, callback=self.parse_sponsored_links, meta=new_meta))
+        req1 = reql.pop(0)
+        new_meta = req1.meta
+        new_meta['reql'] = reql
+        return req1.replace(meta=new_meta)
 
-            try:
-                r = requests.get(actual_url, headers={
-                    "User-Agent": "Mozilla/5.0 (X11; Linux i686 (x86_64)) " \
-                    "AppleWebKit/537.36 (KHTML, like Gecko) " \
-                    "Chrome/37.0.2062.120 Safari/537.36"
-                    }
-                )
-                actual_url = r.url
-            except Exception:
-                pass
+    def parse_sponsored_links(self, response):
+        sld = response.meta['sld']
+        reql = response.meta['reql']
+        if response.status == 200:
+            sld['actual_url'] = response.url
+            self.sponsored_links.append(sld)
 
-            sld = {
-                    "ad_title" : ad_title,
-                    "ad_text" : ad_text,
-                    "visible_url" : visible_url,
-                    "actual_url" : actual_url,
-            }
-            arr.append(sld)
-
-        self.sponsored_links = arr
-
+        if reql:
+            req1 = reql.pop(0)
+            new_meta = req1.meta
+            new_meta['reql'] = reql
+            return req1.replace(meta=new_meta)
         return super(WalmartProductsSpider, self).start_requests()
 
     def parse_product(self, response):
