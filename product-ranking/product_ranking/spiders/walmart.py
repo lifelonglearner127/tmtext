@@ -262,6 +262,8 @@ class WalmartProductsSpider(BaseProductsSpider):
             'is_in_store_only',
             data['buyingOptions']['storeOnlyItem'],
         )
+        if 'only available at a Walmart store' in response.body_as_unicode():
+            product['is_in_store_only'] = True
         if available:
             price_block = None
             try:
