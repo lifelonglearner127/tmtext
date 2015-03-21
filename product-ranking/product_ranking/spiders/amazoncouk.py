@@ -5,7 +5,7 @@ import re
 import json
 
 from scrapy.http import Request
-from scrapy.log import ERROR
+from scrapy.log import ERROR, WARNING
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
@@ -16,6 +16,7 @@ from product_ranking.amazon_bestsellers import amazon_parse_department
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
+is_empty = lambda x, y: x[0] if x else y
 
 class AmazonCoUkProductsSpider(BaseProductsSpider):
     name = "amazoncouk_products"
@@ -203,12 +204,30 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         return total_matches
 
     def _scrape_product_links(self, response):
-        links = response.xpath(
-            '//div[contains(@class, "s-item-container")]'
-            '//a[contains(@class, "s-access-detail-page")]/@href'
-        ).extract()
-        for link in links:
-            yield link, SiteProductItem()
+        lis = response.xpath("//ul/li[@class='s-result-item']")
+        links = []
+        for no, li in enumerate(lis):
+            href = li.xpath(
+                ".//a[contains(@class,'s-access-detail-page')]"
+                "/@href").extract()
+            if href:
+                href = href[0]
+                is_prime = li.xpath(
+                    "*/descendant::i[contains(concat(' ',@class,' '),"
+                    "' a-icon-prime ')]").extract()
+                is_prime_pantry = li.xpath(
+                    "*/descendant::i[contains(concat(' ',@class,' '),"
+                    "' a-icon-prime-pantry ')]").extract()
+                links.append((href, is_prime, is_prime_pantry))
+        if not links:
+            self.log("Found no product links.", WARNING)
+        for link, is_prime, is_prime_pantry in links:
+            prime = None
+            if is_prime:
+                prime = 'Prime'
+            if is_prime_pantry:
+                prime = 'PrimePantry'
+            yield link, SiteProductItem(prime=prime)
 
     def _scrape_next_results_page_link(self, response):
         links = response.xpath(
@@ -217,6 +236,32 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         if links:
             return links.extract()[0].strip()
         return None
+
+    def _calculate_buyer_reviews_from_percents(self, total_reviews, table):
+        rating_by_star = {}
+        for title in table.xpath('.//a/@title'):
+            title = title.extract()
+            _match = re.search('(\d+)% of reviews have (\d+) star', title)
+            if _match:
+                _percent, _star = _match.group(1), _match.group(2)
+                if not _star.isdigit() or not _percent.isdigit():
+                    continue
+                rating_by_star[_star] = int(_percent)
+            else:
+                continue
+        # check if some stars are missing (that means, percent is 0)
+        for _star in range(1, 5):
+            if _star not in rating_by_star and str(_star) not in rating_by_star:
+                rating_by_star[str(_star)] = 0
+        # turn percents into numbers
+        for _star, _percent in rating_by_star.items():
+            if int(total_reviews) == 0:  # avoid division by zero
+                rating_by_star[_star] = 0
+            else:
+                rating_by_star[_star] \
+                    = float(int(total_reviews)) * (float(_percent) / 100)
+                rating_by_star[_star] = int(round(rating_by_star[_star]))
+        return rating_by_star
 
     def _buyer_reviews_from_html(self, response, product):
         stars_regexp = r'% .+ (\d[\d, ]*) '
@@ -232,16 +277,34 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         for row in response.css('.a-histogram-row .a-span10 ~ td a'):
             title = row.css('::attr(title)').extract()
             text = row.css('::text').extract()
-            stars = re.search(stars_regexp, title[0]) \
-                if text and text[0].isdigit() and title else None
+            stars = re.search(stars_regexp, title[0])
             if stars:
                 stars = int(re.sub('[ ,]+', '', stars.group(1)))
-                ratings[stars] = int(text[0])
+                ratings[stars] = int(text[0].replace(",", ""))
         if not total:
             total = sum(ratings.itervalues()) if ratings else 0
         if not average:
             average = sum(k * v for k, v in
                           ratings.iteritems()) / total if ratings else 0
+        if not ratings:
+            ratings = self._calculate_buyer_reviews_from_percents(
+                total, response.css('.a-histogram-row .a-span10 ~ td a'))
+
+        #For another HTML makeup
+        if not total:
+            ratings = {}
+            average = 0
+            total = int(is_empty(response.xpath(
+                "//span[contains(@class, 'tiny')]/span[@class='crAvgStars']/a/text()"
+            ).re("\d+"), 0))
+            for rev in response.xpath('//span[contains(@class, "tiny")]//div[contains(@class, "custRevHistogramPopId")]/table/tr'):
+                star = is_empty(rev.xpath('td/a/text()').re("\d+"), None)
+                if star:
+                    ratings[star] = int(is_empty(rev.xpath('td[last()]/text()').re("\d+"), 0))
+            if ratings:
+                average = sum(int(k) * int(v) for k, v in
+                              ratings.iteritems()) / int(total) if ratings else 0
+                average = float("%.2f" % round(average, 2))
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)

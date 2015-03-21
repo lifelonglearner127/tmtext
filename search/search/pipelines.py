@@ -36,9 +36,11 @@ class URLsPipeline(object):
             # write headers row
             titles = []
             if int(spider.output) in [2,3]:
+                titles.append("Product_name")
                 titles.append("Original_URL")
             if int(spider.output) == 4:
                 titles.append("Original_UPC")
+                titles.append("Product_name")
 
             # TODO: uncomment.
             # if int(spider.output) == 3:
@@ -84,9 +86,9 @@ class URLsPipeline(object):
         else:
             # for option 4, use UPC instead of URL for origin product
             if option == 4 and 'origin_upc' in item:
-                fields = [item['origin_upc']]
+                fields = [item['origin_upc'][0], json.dumps(item['origin_name'])]
             else:
-                fields = [item['origin_url'], item['origin_name']]
+                fields = [json.dumps(item['origin_name']), item['origin_url']]
 
             # TODO. uncomment
             # # if output type is 3, add additional fields
@@ -140,8 +142,8 @@ class URLsPipeline(object):
         # (Output 3 not supported for manufacturer spider)
 
         if int(spider.output) == 2:
-            fields.append(item['origin_url'])
             fields.append(item['origin_name'])
+            fields.append(item['origin_url'])
         if 'product_url' in item:
             fields.append(item['product_url'])
             # write unmatched products to second file

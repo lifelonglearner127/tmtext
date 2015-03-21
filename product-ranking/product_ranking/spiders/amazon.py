@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 
@@ -294,6 +295,32 @@ class AmazonProductsSpider(BaseProductsSpider):
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
 
+    def _calculate_buyer_reviews_from_percents(self, total_reviews, table):
+        rating_by_star = {}
+        for title in table.xpath('.//a/@title'):
+            title = title.extract()
+            _match = re.search('(\d+)% of reviews have (\d+) star', title)
+            if _match:
+                _percent, _star = _match.group(1), _match.group(2)
+                if not _star.isdigit() or not _percent.isdigit():
+                    continue
+                rating_by_star[_star] = int(_percent)
+            else:
+                continue
+        # check if some stars are missing (that means, percent is 0)
+        for _star in range(1, 5):
+            if _star not in rating_by_star and str(_star) not in rating_by_star:
+                rating_by_star[str(_star)] = 0
+        # turn percents into numbers
+        for _star, _percent in rating_by_star.items():
+            if int(total_reviews) == 0:  # avoid division by zero
+                rating_by_star[_star] = 0
+            else:
+                rating_by_star[_star] \
+                    = float(int(total_reviews)) * (float(_percent) / 100)
+                rating_by_star[_star] = int(round(rating_by_star[_star]))
+        return rating_by_star
+
     def _build_buyer_reviews(self, response):
         buyer_reviews = {}
 
@@ -328,6 +355,10 @@ class AmazonProductsSpider(BaseProductsSpider):
                     'string(.//td[1])').re(FLOATING_POINT_RGEX))
                 number = is_empty(tr.xpath(
                     'string(.//td[last()])').re(FLOATING_POINT_RGEX))
+                is_perc = is_empty(tr.xpath(
+                    'string(.//td[last()])').extract())
+                if "%" in is_perc:
+                    break
                 if number:
                     buyer_reviews['rating_by_star'][rating] = int(
                         number.replace(',', '')
@@ -346,6 +377,11 @@ class AmazonProductsSpider(BaseProductsSpider):
                 buyer_reviews['rating_by_star'][rating] = int(
                     number.replace(',', '')
                 )
+
+        if not buyer_reviews.get('rating_by_star'):
+            buyer_reviews['rating_by_star'] \
+                = self._calculate_buyer_reviews_from_percents(
+                    buyer_reviews['num_of_reviews'], table)
 
         return BuyerReviews(**buyer_reviews)
 
@@ -405,11 +441,13 @@ class AmazonProductsSpider(BaseProductsSpider):
         last_idx = -1
         for li in lis:
             try:
+                is_prime = li.xpath("*/descendant::i[contains(concat(' ',@class,' '),' a-icon-prime ')]")
+                is_prime_pantry = li.xpath("*/descendant::i[contains(concat(' ',@class,' '),' a-icon-prime-pantry ')]")
                 data_asin = li.xpath('@id').extract()[0]
                 idx = int(re.findall(r'\d+', data_asin)[0])
                 if idx > last_idx:
                     link = li.xpath(".//a[contains(@class,'s-access-detail-page')]/@href").extract()[0]
-                    links.append(link)
+                    links.append((link, is_prime, is_prime_pantry))
                 else:
                     break
                 last_idx = idx
@@ -419,8 +457,13 @@ class AmazonProductsSpider(BaseProductsSpider):
         if len(links) < 1:
             self.log("Found no product links.", WARNING)
 
-        for link in links:
-            yield link, SiteProductItem()
+        for link, is_prime, is_prime_pantry in links:
+            prime = None
+            if is_prime:
+                prime = 'Prime'
+            if is_prime_pantry:
+                prime = 'PrimePantry'
+            yield link, SiteProductItem(prime=prime)
 
     def _scrape_next_results_page_link(self, response):
         next_pages = response.css('#pagnNextLink ::attr(href)').extract()

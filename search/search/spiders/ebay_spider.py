@@ -94,6 +94,7 @@ class EbaySpider(SearchSpider):
         item['product_url'] = response.url
         #item['origin_site'] = site
         item['origin_url'] = origin_url
+        item['origin_name'] = response.meta['origin_name']
 
         # extract product name
         product_name = hxs.select("//h1[@id='itemTitle']/text()").extract()

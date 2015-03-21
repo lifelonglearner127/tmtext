@@ -116,3 +116,5 @@ class SiteProductItem(Item):
     is_mobile_agent = Field()  # if the spider was in the mobile mode
 
     limited_stock = Field() # see LimitedStock obj
+
+    prime = Field()  # amazon Prime program: Prime/PrimePantry/None
