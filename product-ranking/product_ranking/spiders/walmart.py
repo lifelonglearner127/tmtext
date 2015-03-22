@@ -99,6 +99,7 @@ class WalmartProductsSpider(BaseProductsSpider):
                    }
             new_meta = response.meta.copy()
             new_meta['sld'] = sld
+            new_meta['handle_httpstatus_list'] = [403, 404, 405]
             reql.append(Request(actual_url, callback=self.parse_sponsored_links, meta=new_meta))
         req1 = reql.pop(0)
         new_meta = req1.meta
