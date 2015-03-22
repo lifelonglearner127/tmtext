@@ -183,16 +183,16 @@ class AmazonSpider(SearchSpider):
 
             # log this error:
             # if number of retries were not exhausted, it might just be a captcha page, not an insurmonutable error
-            if 'captcha_retries' not in response.meta \
-                or 'captcha_retries' in response.meta and response.meta['captcha_retries'] <= self.MAX_CAPTCHA_RETRIES:
+            if 'captcha_retries' in response.meta and response.meta['captcha_retries'] <= self.MAX_CAPTCHA_RETRIES:
                 
                 self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.WARNING)
             else:
                 # if it comes from a solved captcha page, then it's an error if it's still not found                
                 self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.ERROR)
 
-                if response.meta['captcha_retries'] > self.MAX_CAPTCHA_RETRIES:
-                    del response.meta['captcha_retries']
+                # try this: don't remove captcha_retries from meta, may cause infinite loops, works
+                # if response.meta['captcha_retries'] > self.MAX_CAPTCHA_RETRIES:
+                    # del response.meta['captcha_retries']
             # if we have reached maximum number of retries, do nothing (item just won't be added to the "items" list)
 
 
