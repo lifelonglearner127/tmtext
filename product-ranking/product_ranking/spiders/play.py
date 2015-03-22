@@ -116,6 +116,8 @@ class PlayProductsSpider(BaseProductsSpider):
                     for itm in jdata['DisplayProducts']:
                         title = itm['Title']
                         href = itm['ProductUrl']
+                        if not href.startswith('http'):
+                            href = 'http://www.play.com' + href
                         related.append(RelatedProduct(title, href))
                     if related:
                         product['related_products'] = {
