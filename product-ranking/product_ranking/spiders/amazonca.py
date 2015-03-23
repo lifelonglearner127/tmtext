@@ -364,7 +364,42 @@ class AmazonProductsSpider(BaseProductsSpider):
         if not average:
             average = sum(k * v for k, v in
                           ratings.iteritems()) / total if ratings else 0
+
+        if not ratings:
+            table = response.xpath(
+                '//table[@id="histogramTable"]'
+                '/tr[@class="a-histogram-row"]')
+            ratings \
+                = self._calculate_buyer_reviews_from_percents(
+                    total, table)
+
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)
         cond_set_value(product, 'buyer_reviews', buyer_reviews)
+
+    def _calculate_buyer_reviews_from_percents(self, total_reviews, table):
+        rating_by_star = {}
+        for title in table.xpath('.//a/@title'):
+            title = title.extract()
+            _match = re.search('(\d+)% of reviews have (\d+) star', title)
+            if _match:
+                _percent, _star = _match.group(1), _match.group(2)
+                if not _star.isdigit() or not _percent.isdigit():
+                    continue
+                rating_by_star[_star] = int(_percent)
+            else:
+                continue
+        # check if some stars are missing (that means, percent is 0)
+        for _star in range(1, 5):
+            if _star not in rating_by_star and str(_star) not in rating_by_star:
+                rating_by_star[str(_star)] = 0
+        # turn percents into numbers
+        for _star, _percent in rating_by_star.items():
+            if int(total_reviews) == 0:  # avoid division by zero
+                rating_by_star[_star] = 0
+            else:
+                rating_by_star[_star] \
+                    = float(int(total_reviews)) * (float(_percent) / 100)
+                rating_by_star[_star] = int(round(rating_by_star[_star]))
+        return rating_by_star
