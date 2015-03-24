@@ -45,6 +45,9 @@ class AmazonSpider(SearchSpider):
 
     # check if a certain URL is valid or gets a 404 response
     def is_valid_url(self, URL):
+        # this causes 404s
+        if URL == "http://www.amazon.com/gp/slredirect/redirect.html":
+            return False
         try:
             # disable this for now. without user agent set, it only causes 500s. and it slows everything down. just return True for all
             #return True
