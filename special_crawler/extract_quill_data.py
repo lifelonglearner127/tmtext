@@ -451,6 +451,16 @@ class QuillScraper(Scraper):
         return self._categories()[-1]
 
     def _brand(self):
+        if self.feature_count is None:
+            self._features()
+        for item in self.features:
+            if "Brand :" in item or "brand :" in item or "Brand:" in item or "brand:" in item:
+                brand = item.replace("Brand :", "")
+                brand = brand.replace("Brand:", "")
+                brand = brand.replace("brand :", "")
+                brand = brand.replace("brand", "")
+                brand = brand.strip()
+                return brand
         return None
 
     ##########################################
