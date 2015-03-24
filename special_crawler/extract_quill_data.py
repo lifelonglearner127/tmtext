@@ -90,17 +90,47 @@ class QuillScraper(Scraper):
         if self.feature_count is not None:
             return self.features
         self.feature_count = 0
-        rows = self.tree_html.xpath("//div[@id='divSpecifications']//dd")
+        rows = self.tree_html.xpath("//div[@id='skuTabSpecifications']//table//tr")
         line_txts = []
         for row in rows:
-            txt = "".join([r for r in row.xpath(".//text()") if len(self._clean_text(r)) > 0]).strip()
-            if len(txt) > 0:
-                line_txts.append(txt)
+            cols = row.xpath(".//td")
+            line_txt = ""
+            idx = 0
+            for col in cols:
+                if idx == 0:
+                    idx += 1
+                    continue
+                idx += 1
+                col_txt = "".join(col.xpath("./text()"))
+                try:
+                    cls = col.xpath("./@class")[0].strip()
+                except IndexError:
+                    cls = []
+                if ("attrname" in cls or "attrName" in cls) and len(col_txt) > 0:
+                    line_txt += col_txt
+                elif ("attrval" in cls or "attrVal" in cls) and len(col_txt) > 0:
+                    line_txt += " " +col_txt
+                    line_txts.append(line_txt)
+                    line_txt = ""
         if len(line_txts) < 1:
             return None
         self.feature_count = len(line_txts)
         self.features = line_txts
         return self.features
+        # if self.feature_count is not None:
+        #     return self.features
+        # self.feature_count = 0
+        # rows = self.tree_html.xpath("//div[@id='divSpecifications']//dd")
+        # line_txts = []
+        # for row in rows:
+        #     txt = "".join([r for r in row.xpath(".//text()") if len(self._clean_text(r)) > 0]).strip()
+        #     if len(txt) > 0:
+        #         line_txts.append(txt)
+        # if len(line_txts) < 1:
+        #     return None
+        # self.feature_count = len(line_txts)
+        # self.features = line_txts
+        # return self.features
 
     def _feature_count(self):
         if self.feature_count is None:
@@ -118,13 +148,21 @@ class QuillScraper(Scraper):
 
     def _description_helper(self):
         description = ""
-        rows = self.tree_html.xpath("//div[@class='skuDetailsScene7']//div[contains(@class,'formRow darkGray')]//text()")
+        rows = self.tree_html.xpath("//div[contains(@class,'skuDetailsRow')]//ul//li//text()")
         rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
         if len(rows) > 0:
             description += "\n".join(rows)
         if len(description) < 1:
             return None
         return description
+        # description = ""
+        # rows = self.tree_html.xpath("//div[@class='skuDetailsScene7']//div[contains(@class,'formRow darkGray')]//text()")
+        # rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+        # if len(rows) > 0:
+        #     description += "\n".join(rows)
+        # if len(description) < 1:
+        #     return None
+        # return description
 
     def _long_description(self):
         description = self._description_helper()
@@ -133,16 +171,25 @@ class QuillScraper(Scraper):
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        rows = self.tree_html.xpath("//div[@id='divDescription']//ul//li")
+        rows = self.tree_html.xpath("//div[@id='SkuTabDescription']//div[contains(@class,'accTabPanel')]//text()")
         line_txts = []
-        for row in rows:
-            txt = "".join([r for r in row.xpath(".//text()") if len(self._clean_text(r)) > 0]).strip()
-            if len(txt) > 0:
-                line_txts.append(txt)
+        txt = "".join([r for r in rows if len(self._clean_text(r)) > 0]).strip()
+        if len(txt) > 0:
+            line_txts.append(txt)
         if len(line_txts) < 1:
             return None
         description = "\n".join(line_txts)
         return description
+        # rows = self.tree_html.xpath("//div[@id='divDescription']//ul//li")
+        # line_txts = []
+        # for row in rows:
+        #     txt = "".join([r for r in row.xpath(".//text()") if len(self._clean_text(r)) > 0]).strip()
+        #     if len(txt) > 0:
+        #         line_txts.append(txt)
+        # if len(line_txts) < 1:
+        #     return None
+        # description = "\n".join(line_txts)
+        # return description
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
