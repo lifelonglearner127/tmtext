@@ -335,12 +335,22 @@ class WalmartProductsSpider(BaseProductsSpider):
         return None
 
     def _scrape_product_links(self, response):
-        links = response.css('a.js-product-title ::attr(href)').extract()
-        if not links:
+        items = response.xpath('//div[@class="js-tile tile-landscape"]')
+        if not items:
             self.log("Found no product links in %r." % response.url, INFO)
 
-        for link in links:
-            yield link, SiteProductItem()
+        for item in items:
+            link = item.css('a.js-product-title ::attr(href)')[0].extract()
+
+            if item.css('div.pick-up-only').xpath('text()').extract():
+                is_pickup_only = True
+            else:
+                is_pickup_only = False
+
+            res_item = SiteProductItem()
+            res_item['is_pickup_only'] = is_pickup_only
+
+            yield link, res_item
 
     def _scrape_next_results_page_link(self, response):
         next_page = None
