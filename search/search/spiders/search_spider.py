@@ -13,6 +13,7 @@ from search.matching_utils import ProcessText
 import re
 import sys
 import json
+import csv
 
 # from selenium import webdriver
 # import time
@@ -145,24 +146,29 @@ class SearchSpider(BaseSpider):
         products = []
         with open(products_file) as f:
             # skip first line
-            f.readline()
+            # f.readline()
 
             # TODO: make this more general
-            for line in f:
-                product_info = line.split(",")
-                product = {}
-                product['product_name'] = product_info[0]
-                product['product_price'] = product_info[-1]
-                if product['product_price'].startswith('$'):
-                    product['product_price'] = product['product_price'][1:]
-                product['product_price'] = float(product['product_price'])
+            # for line in f:
+     
+                # product['product_name'] = product_info[0]
+                # product['product_price'] = product_info[-1]
+                # if product['product_price'].startswith('$'):
+                #     product['product_price'] = product['product_price'][1:]
+                # product['product_price'] = float(product['product_price'])
 
-                # for target, get DCPI column as model number
-                # TODO: horrible hack
-                if self.target_site == 'target':
-                    product['product_upc'] = product_info[1]
+                # # for target, get DCPI column as model number
+                # # TODO: horrible hack
+                # if self.target_site == 'target':
+                #     product['product_upc'] = product_info[1]
 
-                products.append(product)
+                reader = csv.reader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+                
+                for row in reader:
+                    product = {}
+                    product['product_name'] = row[1]
+                    product['product_upc'] = row[0]
+                    products.append(product)
 
         return products
 

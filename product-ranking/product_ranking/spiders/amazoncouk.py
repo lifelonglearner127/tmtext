@@ -5,7 +5,7 @@ import re
 import json
 
 from scrapy.http import Request
-from scrapy.log import ERROR
+from scrapy.log import ERROR, WARNING
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
@@ -16,6 +16,7 @@ from product_ranking.amazon_bestsellers import amazon_parse_department
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
+is_empty = lambda x, y: x[0] if x else y
 
 class AmazonCoUkProductsSpider(BaseProductsSpider):
     name = "amazoncouk_products"
@@ -276,11 +277,10 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         for row in response.css('.a-histogram-row .a-span10 ~ td a'):
             title = row.css('::attr(title)').extract()
             text = row.css('::text').extract()
-            stars = re.search(stars_regexp, title[0]) \
-                if text and text[0].isdigit() and title else None
+            stars = re.search(stars_regexp, title[0])
             if stars:
                 stars = int(re.sub('[ ,]+', '', stars.group(1)))
-                ratings[stars] = int(text[0])
+                ratings[stars] = int(text[0].replace(",", ""))
         if not total:
             total = sum(ratings.itervalues()) if ratings else 0
         if not average:
@@ -289,6 +289,22 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         if not ratings:
             ratings = self._calculate_buyer_reviews_from_percents(
                 total, response.css('.a-histogram-row .a-span10 ~ td a'))
+
+        #For another HTML makeup
+        if not total:
+            ratings = {}
+            average = 0
+            total = int(is_empty(response.xpath(
+                "//span[contains(@class, 'tiny')]/span[@class='crAvgStars']/a/text()"
+            ).re("\d+"), 0))
+            for rev in response.xpath('//span[contains(@class, "tiny")]//div[contains(@class, "custRevHistogramPopId")]/table/tr'):
+                star = is_empty(rev.xpath('td/a/text()').re("\d+"), None)
+                if star:
+                    ratings[star] = int(is_empty(rev.xpath('td[last()]/text()').re("\d+"), 0))
+            if ratings:
+                average = sum(int(k) * int(v) for k, v in
+                              ratings.iteritems()) / int(total) if ratings else 0
+                average = float("%.2f" % round(average, 2))
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)

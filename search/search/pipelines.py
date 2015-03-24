@@ -40,6 +40,7 @@ class URLsPipeline(object):
                 titles.append("Original_URL")
             if int(spider.output) == 4:
                 titles.append("Original_UPC")
+                titles.append("Product_name")
 
             # TODO: uncomment.
             # if int(spider.output) == 3:
@@ -85,7 +86,7 @@ class URLsPipeline(object):
         else:
             # for option 4, use UPC instead of URL for origin product
             if option == 4 and 'origin_upc' in item:
-                fields = [item['origin_upc']]
+                fields = [item['origin_upc'][0], json.dumps(item['origin_name'])]
             else:
                 fields = [json.dumps(item['origin_name']), item['origin_url']]
 

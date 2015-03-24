@@ -165,6 +165,7 @@ class AmazonSpider(SearchSpider):
         #TODO: to test this
         #product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
         product_name_node = hxs.select('//h1[@id="title"]/span[@id="productTitle"]/text()').extract()
+        product_name = None
         if not product_name_node:
             product_name_node = hxs.select('//h1[@id="aiv-content-title"]//text()').extract()
         if not product_name_node:
