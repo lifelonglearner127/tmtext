@@ -47,7 +47,7 @@ class AmazonSpider(SearchSpider):
     def is_valid_url(self, URL):
         try:
             # disable this for now. without user agent set, it only causes 500s. and it slows everything down. just return True for all
-            return True
+            #return True
             resp = urllib2.urlopen(URL, timeout=5)
             return (resp.getcode() != 404)
         except Exception, e:
