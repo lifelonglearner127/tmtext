@@ -118,6 +118,8 @@ class WalmartSpider(SearchSpider):
 
         if 'origin_model' in response.meta:
             item['origin_model'] = response.meta['origin_model']
+        if 'origin_upc' in response.meta:
+            item['origin_upc'] = response.meta['origin_upc']
 
         # assume new design of walmart product page
         product_name_node = hxs.select("//h1[contains(@class, 'product-name')]//text()").extract()
@@ -151,6 +153,10 @@ class WalmartSpider(SearchSpider):
                 item['product_model'] = product_model
             except:
                 pass
+
+        upc_node = hxs.select("//meta[@itemprop='productID']/@content")
+        if upc_node:
+            item['product_upc'] = [upc_node.extract()[0]]
 
 
         brand_holder = hxs.select("//meta[@itemprop='brand']/@content").extract()
@@ -189,9 +195,6 @@ class WalmartSpider(SearchSpider):
         if product_urls:
             next_product_url = product_urls.pop()
 
-        # handle corner case of bad next product url
-        if not product_urls and next_product_url:
-            next_product_url = None
 
         # if a next product url was found, send new request back to parse_product_url
         if next_product_url:

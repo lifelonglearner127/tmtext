@@ -12,6 +12,7 @@ from product_ranking.spiders import cond_replace, cond_replace_value
 from product_ranking.spiders import cond_set_value, cond_set
 from contrib.product_spider import ProductsSpider
 from product_ranking.items import Price, BuyerReviews
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 
 SYM_GBP = '£'
@@ -140,6 +141,8 @@ class SainsburysProductSpider(ProductsSpider):
     ROOT_REVS_URL = "http://sainsburysgrocery.ugc.bazaarvoice.com/"\
                     "{code}/{prod_id}/reviews.djs?format=embeddedhtml"
 
+    HARDCODED_FIELDS = {'locale': 'en_GB'}
+
     def parse(self, response):
         if '/groceries/' in response.url:
             if 'orderBy' not in response.url:
@@ -153,7 +156,7 @@ class SainsburysProductSpider(ProductsSpider):
             '//div[@class="section"]/h1[@id="resultsHeading"]/text()'
         ).extract()
         if text:
-            matches = re.findall(r'(\d+)\sproducts', text[0])
+            matches = re.findall(r'(\d+)\sproduct', text[0])
             if matches:
                 matches = matches[0]
         else:
@@ -216,6 +219,9 @@ class SainsburysProductSpider(ProductsSpider):
                      response.css('#productImageHolder img::attr(src)')
                      .extract(),
                      lambda url: urlparse.urljoin(response.url, url))
+        title = product['title']
+        brand = guess_brand_from_first_words(title, max_words=15)
+        cond_set_value(product, 'brand', brand)
         self._unify_price(product)
 
     def _unify_price(self, product):
@@ -255,14 +261,29 @@ class SainsburysProductSpider(ProductsSpider):
                 pattern = str(number)
                 quantity = all_revs.count(pattern)
                 stars[number] = quantity
-        if not response.meta.get('not_populate_more'):
-            if total > 8:
-                next_page = response.url + "&page=2"
-                meta = response.meta.copy()
-                meta['not_populate_more'] = True
+        # Buyer reviews populated on page by 8, 9-38, 39-68..
+        if total > 8:
+            counter = (total-9) / 30
+            page_counter = counter + 2
+            meta = response.meta.copy()
+            page_populated = 2
+            if not response.meta.get('page_populated'):
+                meta['page_populated'] = page_populated
+            else:
+                page_populated = int(response.meta['page_populated']) + 1
+                meta['page_populated'] = page_populated
+
+            initial_url = response.meta.get('initial_url')
+            if not initial_url:
+                initial_url = response.url
+                meta['initial_url'] = initial_url
+            if page_populated <= page_counter:
                 meta['all_revs'] = all_revs
+                next_page_url_part = "&page=%s" % page_populated
+                next_page = initial_url + next_page_url_part
                 return Request(next_page, callback=self._parse_reviews,
                                meta=meta)
+
         product = response.meta['product']
         cond_set_value(product, 'buyer_reviews',
                        BuyerReviews(total, avg, stars))

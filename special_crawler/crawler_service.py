@@ -34,6 +34,7 @@ from extract_quill_data import QuillScraper
 from extract_hersheys_data import HersheysScraper
 from extract_freshamazon_data import FreshAmazonScraper
 from extract_george_data import GeorgeScraper
+from extract_bloomingdales_data import BloomingdalesScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -80,6 +81,7 @@ SUPPORTED_SITES = {
                     "quill" : QuillScraper,
                     "george" : GeorgeScraper,
                     "peapod" : PeapodScraper,
+                    "bloomingdales" : BloomingdalesScraper,
                     }
 
 # add logger
@@ -147,7 +149,7 @@ def extract_domain(url):
         return 'souq'
     if 'direct.asda.com' in url:
         return 'george'
-    m = re.match("^https?://(www|shop)\.([^/\.]+)\..*$", url)
+    m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)
     # TODO: return error message about bad URL if it does not match the regex

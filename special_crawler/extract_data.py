@@ -72,7 +72,7 @@ class Scraper():
             "nutrition_facts", # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries) 
                                # containing nutrition facts
             "nutrition_fact_count", # number of nutrition facts (of elements in the nutrition_facts list) - integer
-
+            "rollback", # binary (0/1), whether product is rollback or not
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
@@ -160,7 +160,7 @@ class Scraper():
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
                         "features", "feature_count", "model_meta", "description", "long_description",
-                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count"],
+                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "rollback"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls",\
                             "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \

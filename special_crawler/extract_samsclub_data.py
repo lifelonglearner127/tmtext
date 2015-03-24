@@ -38,6 +38,8 @@ class SamsclubScraper(Scraper):
     price_currency = None
     video_count = None
     video_urls = None
+    pdf_count = None
+    pdf_urls = None
 
     def check_url_format(self):
         # for ex: http://www.samsclub.com/sams/dawson-fireplace-fall-2014/prod14520017.ip?origin=item_page.rr1&campaign=rr&sn=ClickCP&campaign_data=prod14170040
@@ -280,6 +282,9 @@ class SamsclubScraper(Scraper):
         return self.video_count
 
     def _pdf_urls(self):
+        if self.pdf_count is not None:
+            return self.pdf_urls
+        self.pdf_count = 0
         pdf_hrefs = []
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
         for pdf in pdfs:
@@ -329,13 +334,14 @@ class SamsclubScraper(Scraper):
         pdf_hrefs = [r for r in pdf_hrefs if "JewelryDeliveryTimeline.pdf" not in r]
         if len(pdf_hrefs) < 1:
             return None
+        self.pdf_urls = pdf_hrefs
+        self.pdf_count = len(self.pdf_urls)
         return pdf_hrefs
 
     def _pdf_count(self):
-        urls = self._pdf_urls()
-        if urls:
-            return len(urls)
-        return 0
+        if self.pdf_count is None:
+            self._pdf_urls()
+        return self.pdf_count
 
     def _webcollage(self):
         # http://content.webcollage.net/sc/smart-button?ird=true&channel-product-id=prod10740044
@@ -519,6 +525,9 @@ class SamsclubScraper(Scraper):
             return 1
         rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
         if "See online price in cart" in rows:
+            return 1
+        rows = self.tree_html.xpath("//button[@class='biggreenbtn']//text()")
+        if len(rows) > 0:
             return 1
         return 0
         #

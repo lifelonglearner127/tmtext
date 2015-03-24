@@ -380,6 +380,20 @@ class TargetScraper(Scraper):
         return universal_variable
 
     def _brand(self):
+        # http://www.target.com/s?searchTerm=Target+toys+outdoor+toys+lawn+games+Wubble+Bubble
+        url = "http://www.target.com/s?searchTerm=%s" % self._product_name()
+        contents = urllib.urlopen(url.encode('utf8')).read()
+        tree = html.fromstring(contents)
+        lis = tree.xpath("//ul[contains(@class,'productsListView')]//li[contains(@class,'tile standard')]")
+        for li in lis:
+            try:
+                title = li.xpath("//a[contains(@class,'productTitle')]//text()")[0].strip()
+                title = title.replace("...", "")
+                if title in self._product_name():
+                    brand = li.xpath("//a[contains(@class,'productBrand')]//text()")[0].strip()
+                    return brand
+            except:
+                pass
         return None
 
     ##########################################
