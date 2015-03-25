@@ -134,7 +134,7 @@ class SoapScraper(Scraper):
             product_ids = self.tree_html.xpath("//table[contains(@class,'gridItemList')]//input[@class='skuHidden']/@productid")
         except:
             product_ids = []
-        if self._product_id() in product_ids:
+        if self._product_id() in product_ids or len(product_ids) < 1:
             product_id = self._product_id()
         else:
             product_id = product_ids[0]
