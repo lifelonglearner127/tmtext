@@ -358,6 +358,10 @@ class StaplesScraper(Scraper):
         rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
         if "Out of stock online" in rows:
             return 1
+        rows = self.tree_html.xpath("//p[contains(@class,'stockMessage')]//text()")
+        rows = [r for r in rows if "Currently Out of Stock" in r]
+        if len(rows):
+            return 1
         return 0
 
     def _in_stores_out_of_stock(self):
