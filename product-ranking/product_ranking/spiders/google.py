@@ -341,9 +341,10 @@ class GoogleProductsSpider(BaseProductsSpider):
                             'price': source_price,
                             'currency': priceCurrency
                         }
-                        source_site = '{"%s":%s}' % (source_site, data)
+                        source_site = {source_site:data}
                 else:
-                    source_site = '{"%s":{}}' % source_site
+                    source_site = {source_site:{}}
+                source_site = json.dumps(source_site)
 
             yield redirect, SiteProductItem(
                 url=url,
