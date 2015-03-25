@@ -6,6 +6,7 @@ from __future__ import division, absolute_import, unicode_literals
 
 import string
 import unittest
+import json
 
 from scrapy import Selector
 from scrapy.exceptions import DropItem
@@ -13,6 +14,19 @@ try:
     import mock
 except ImportError:
     pass  # Optional import for test.
+
+
+class CheckGoogleSourceSiteFieldIsCorrectJson(object):
+
+    def process_item(self, item, spider):
+        google_source_site = item.get('google_source_site')
+        if google_source_site:
+            try:
+                json.loads(google_source_site)
+            except:
+                raise DropItem("Invalid JSON format at 'google_source_site'"
+                               " field at item: %s" % item)
+        return item
 
 
 class CutFromTitleTagsAndReturnStringOnly(object):

@@ -14,6 +14,7 @@ NEWSPIDER_MODULE = 'product_ranking.spiders'
 ITEM_PIPELINES = {
     'product_ranking.pipelines.CutFromTitleTagsAndReturnStringOnly': 300,
     'product_ranking.pipelines.AddSearchTermInTitleFields': 300,
+    'product_ranking.pipelines.CheckGoogleSourceSiteFieldIsCorrectJson': 400,
 }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
