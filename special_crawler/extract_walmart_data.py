@@ -13,7 +13,7 @@ import time
 import requests
 
 from extract_data import Scraper
-
+from compare_images import compare_images
 
 class WalmartScraper(Scraper):
 
@@ -467,15 +467,14 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        short_description = "".join(map(lambda li_element: etree.tostring(li_element), \
-            self.tree_html.xpath("//div[@class='product-short-description module']//li | " +\
-                "//div[starts-with(@class, 'choice-short-description')]//li")\
-            ))
+        description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]"
+                                                    "/div[contains(@class, 'js-ellipsis')]")[0]
+        short_description = ""
 
-        # try with just the text
-        if not short_description.strip():
-            short_description = " ".join(self.tree_html.xpath("//div[@class='product-short-description module']//text() | " + \
-                "//div[starts-with(@class, 'choice-short-description')]//text()"))
+        for description_element in description_elements:
+            if "<b>" in lxml.html.tostring(description_element):
+                break;
+            short_description += lxml.html.tostring(description_element)
 
         # try to extract from old page structure - in case walmart is
         # returning an old type of page
@@ -503,21 +502,6 @@ class WalmartScraper(Scraper):
             short_description = self._short_description_from_tree()
         except:
             short_description = None
-
-        if not short_description:
-            # get everything before and including <li> tags from long description.
-            short_description = " ".join(self.tree_html.xpath("//div[@class='js-ellipsis module']//*[following-sibling::li|self::li|following-sibling::ul]//text()")).strip()
-
-            # hack: remove everything after "Ingredients", cause sometimes they're still there...
-            try:
-                ingredients_index = short_description.index("Ingredients:")
-                short_description = short_description[: ingredients_index].strip()
-            except Exception:
-                pass
-
-        if not short_description.strip():
-            # if there are no bullets either, get the entire long description text
-            short_description = self._long_description()
 
         return short_description
 
@@ -550,8 +534,40 @@ class WalmartScraper(Scraper):
                                                     "/div[contains(@class, 'js-ellipsis')]")[0]
         full_description = ""
 
+        long_description_start = False
+        ingredients_description = False
+
         for description_element in description_elements:
-            full_description += lxml.html.tostring(description_element)
+            if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
+                    (not long_description_start and "<ul>" in lxml.html.tostring(description_element)):
+                long_description_start = True
+
+            if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
+                    lxml.html.tostring(description_element):
+                ingredients_description = True
+            else:
+                ingredients_description = False
+
+            if long_description_start and not ingredients_description:
+                full_description += lxml.html.tostring(description_element)
+
+        if self.product_page_url[self.product_page_url.rfind("/") + 1:].isnumeric():
+            url = "http://www.walmart-content.com/product/idml/emc/" + \
+                  self.product_page_url[self.product_page_url.rfind("/") + 1:]
+            contents = requests.get(url).text
+            tree = html.fromstring(contents)
+            description_elements = tree.xpath("//div[@id='js-marketing-content']//*")
+
+            long_description_start = False
+
+            for description_element in description_elements:
+                if not long_description_start and "<h2>Product Description</h2>" in \
+                        lxml.html.tostring(description_element):
+                    long_description_start = True
+
+                if long_description_start and "<h2>Product Description</h2>" not in lxml.html.tostring(description_element) \
+                        and (description_element.tag == "p" or description_element.tag == "h2" or (description_element.tag == "ul" and not description_element.get("class"))):
+                    full_description += lxml.html.tostring(description_element)
 
         # return None if empty
         if not full_description:
@@ -593,21 +609,7 @@ class WalmartScraper(Scraper):
 
         # if short description is null, it probably returned some part of long description
         # so change strategy for returning long description
-        short_description = self._short_description_from_tree()
         long_description = self._long_description()
-
-        if short_description is None:
-
-            # get all long description text that is not in long description
-            all_long_description_text = " ".join(self.tree_html.xpath("//div[@class='js-ellipsis module']//text()")).strip()
-            short_description_text = self._short_description_wrapper()
-
-            # normalize spaces
-            all_long_description_text = re.sub("\s+", " ", all_long_description_text)
-            short_description_text = re.sub("\s+", " ", short_description_text)
-
-            # substract the 2 strings
-            long_description = "".join(all_long_description_text.rsplit(short_description_text)).strip()
 
         return long_description
 
@@ -940,7 +942,7 @@ class WalmartScraper(Scraper):
             int containing total nr of reviews
         """
 
-        nr_reviews_str = self.tree_html.xpath("//div[@class='review-summary grid grid-padded']\
+        nr_reviews_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
             //p[@class='heading-e']/span[1]/text()")
         nr_reviews = int(nr_reviews_str[0])
 
@@ -1008,8 +1010,7 @@ class WalmartScraper(Scraper):
         Returns:
             float containing average value of reviews
         """
-
-        average_review_str = self.tree_html.xpath("//div[@class='review-summary grid grid-padded']\
+        average_review_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
             //p[@class='heading-e']/span[2]/text()")
         average_review = float(average_review_str[0])
 
@@ -1078,6 +1079,15 @@ class WalmartScraper(Scraper):
             return self._nr_reviews_old()
 
         return nr_reviews
+
+    def _rollback(self):
+        rollback = self.tree_html.xpath('//div[@class="js-product-offer-summary"]//'
+                                        'span[contains(@class,"flag-rollback")]')
+
+        if not rollback:
+            return 0
+        else:
+            return 1
 
     def _no_image(self, url):
         """Overwrites the _no_image
@@ -1247,10 +1257,14 @@ class WalmartScraper(Scraper):
         img = self._image_urls()
 
         if mobile_img and img:
-            if mobile_img[0] == img[0]:
-                return 1
+            if len(mobile_img) > 0 and len(img) > 0:
+                try:
+                    similarity = compare_images(img[0], mobile_img[0])
+                    return similarity
+                except:
+                    return None
             else:
-                return 0
+                return None
         else:
             return None # no images found to compare
 
@@ -1689,7 +1703,7 @@ class WalmartScraper(Scraper):
 
     def  _ingredients(self):
         # list of ingredients - list of strings
-        ingr=self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+        ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
         if len(ingr) > 0:
             res = []
             w = ''
@@ -1711,6 +1725,18 @@ class WalmartScraper(Scraper):
                 res.append(w.strip())
             self.ing_count = len(res)
             return res
+        ingr=self.tree_html.xpath("//p[@class='ProductIngredients']//text()")
+        if len(ingr) >0 :
+            res = ingr[0].split(',')
+            self.ing_count = len(res)
+            return res
+        ingr = self.tree_html.xpath("//b[contains(text(),'Ingredients:')]")
+        if len(ingr) > 0:
+            ingr = ingr[0].tail
+            ingr = ingr.split(",")
+            ingr = map(lambda e: e.strip(), ingr)
+            self.ing_count = len(ingr)
+            return ingr
         self.ing_count = None
         return None
 
@@ -1829,6 +1855,7 @@ class WalmartScraper(Scraper):
         "features" : _features_from_tree, \
         "feature_count" : _nr_features_from_tree, \
         "title_seo" : _title_from_tree, \
+        "rollback" : _rollback, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title" : _product_name_from_tree, \
         "owned": _owned, \

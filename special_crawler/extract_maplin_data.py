@@ -211,6 +211,9 @@ class MaplinScraper(Scraper):
         rows = self.tree_html.xpath("//input[contains(@class,'grey discontinued')]")
         if len(rows) > 0:
             return 0
+        rows = self.tree_html.xpath("//div[contains(@class,'prod_add_to_cart')]//input[contains(@class,'emailwhenstock')]")
+        if len(rows) > 0:
+            return 0
         return 1
 
     def _marketplace(self):
@@ -243,6 +246,9 @@ class MaplinScraper(Scraper):
         rows = self.tree_html.xpath("//input[contains(@class,'grey discontinued')]")
         if len(rows) > 0:
             return 1
+        rows = self.tree_html.xpath("//div[contains(@class,'prod_add_to_cart')]//input[contains(@class,'emailwhenstock')]")
+        if len(rows) > 0:
+            return 1
         lis = self.tree_html.xpath("//ul[contains(@class,'stock-status')]//li")
         for li in lis:
             txt = li.xpath(".//text()")[0].strip()
@@ -258,6 +264,9 @@ class MaplinScraper(Scraper):
         if self._site_online() == 0:
             return None
         rows = self.tree_html.xpath("//input[contains(@class,'grey discontinued')]")
+        if len(rows) > 0:
+            return 1
+        rows = self.tree_html.xpath("//div[contains(@class,'prod_add_to_cart')]//input[contains(@class,'emailwhenstock')]")
         if len(rows) > 0:
             return 1
         lis = self.tree_html.xpath("//ul[contains(@class,'stock-status')]//li")

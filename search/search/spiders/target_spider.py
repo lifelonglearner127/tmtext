@@ -249,7 +249,7 @@ class TargetSpider(SearchSpider):
                 DPCI_holder = hxs.select("//input[@id='dpciHidden']/@value").extract()
 
             if DPCI_holder:
-                item['product_upc'] = DPCI_holder[0].strip()
+                item['product_upc'] = [DPCI_holder[0].strip()]
             # if no product model explicitly on the page, try to extract it from name
             
             # no model to extract directly from page for target            

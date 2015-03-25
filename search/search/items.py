@@ -21,8 +21,8 @@ class SearchItem(Item):
     origin_brand = Field() # original (source) product brand
     origin_brand_extracted = Field() # source product brand - as extracted from product name: not guaranteed to be correct
 
-    product_origin_price = Field() # price of product on origin site
-    product_target_price = Field() # price of product on target site
+    product_origin_price = Field() # price of product on origin site, in dollars
+    product_target_price = Field() # price of product on target site, in dollars
 
     product_images = Field() # for manufacturer spider: nr of product images on target (manufacturer) site
     product_videos = Field() # for manufacturer spider: nr of product videos on target (manufacturer) site

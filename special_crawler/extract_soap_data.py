@@ -121,17 +121,59 @@ class SoapScraper(Scraper):
     def _description_helper(self):
         divs = self.tree_html.xpath("//div[@class='naturalBadgeContent']")
         description = ""
+        rows = []
+        flag = False
         for div in divs:
             rows = div.xpath(".//text()")
             rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
             description += "\n".join(rows)
+            # flag = True
             break
 
-        rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='Tab1DetailInfo']//text()")
-        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-        if len(rows) > 0:
-            description += "\n" + "\n".join(rows)
-        description = description.replace("\n.", ".")
+        try:
+            product_ids = self.tree_html.xpath("//table[contains(@class,'gridItemList')]//input[@class='skuHidden']/@productid")
+        except:
+            product_ids = []
+        if self._product_id() in product_ids:
+            product_id = self._product_id()
+        else:
+            product_id = product_ids[0]
+        try:
+            tabid = self.tree_html.xpath("//li[@productid='%s']//a/@id" % product_id)[0].strip()
+        except IndexError:
+            tabid = None
+
+        # if len(rows) < 1 and not flag:
+        if not flag:
+            try:
+                idx = re.findall(r"\d+", tabid)[0]
+            except IndexError:
+                idx = "1"
+            rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='Tab%sDetailInfo']//text()" % idx)
+            rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+            if len(rows) > 0:
+                description += "\n" + "\n".join(rows)
+            description = description.replace("\n.", ".")
+
+
+        # rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='Tab1DetailInfo']//div[contains(@class,'descriptContentBox')]//div[contains(@class,'pIdDesContent')]//p")
+        # if not flag:
+        #     str_cmp1 = " ".join(self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='Tab1DetailInfo']//div[contains(@class,'descriptContentBox')]//div[contains(@class,'pIdDesContent')]//p//text()"))
+        #     str_cmp2 = " ".join(self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='Tab1DetailInfo']//div[contains(@class,'descriptContentBox')]//div[contains(@class,'pIdDesContent')]//p/text()"))
+        #     if str_cmp1 == str_cmp2:
+        #         flag = False
+        #     else:
+        #         flag = True
+        # if len(rows) == 1 and not flag:
+        #     try:
+        #         rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='Tab2DetailInfo']//text()")
+        #         rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+        #         if len(rows) > 0:
+        #             description = "\n" + "\n".join(rows)
+        #         description = description.replace("\n.", ".")
+        #     except IndexError:
+        #         pass
+
         if len(description) < 1:
             return None
         return description
@@ -140,28 +182,29 @@ class SoapScraper(Scraper):
         description = self._description_helper()
         if description is None or len(description) < 1:
             return None
-        return self._long_description_helper()
+        long_desc = self._long_description_helper()
+        if description == long_desc:
+            return None
+        return long_desc
 
     def _long_description_helper(self):
         tab_headers = self.tree_html.xpath("//ul[contains(@class,'descriptTab')]//li")
-        txts = []
-        ids = []
         description = ""
         for tab_header in tab_headers:
             txt = "".join(tab_header.xpath(".//text()")).strip()
-            if txt == "Description" or txt in txts:
+            if txt == "Description":
                 continue
-            txts.append(txt)
             try:
-                id = tab_header.xpath(".//a/@id")[0].strip()
-                id = re.findall(r"\d+", id)[0]
-                id = "Tab%sDetailInfo" % id
-                ids.append(id)
-                rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='%s']//text()" % id)
-                rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-                if len(rows) > 0:
-                    description += "\n" + "\n".join(rows)
-                description = description.replace("\n.", ".")
+                productid = tab_header.xpath("./@productid")[0].strip()
+                if productid == self._product_id():
+                    id = tab_header.xpath(".//a/@id")[0].strip()
+                    id = re.findall(r"\d+", id)[0]
+                    id = "Tab%sDetailInfo" % id
+                    rows = self.tree_html.xpath("//dl[@class='descriptTabContent']//dd[@id='%s']//text()" % id)
+                    rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+                    if len(rows) > 0:
+                        description += "\n" + "\n".join(rows)
+                    description = description.replace("\n.", ".")
             except:
                 pass
 

@@ -8,7 +8,7 @@ VAGRANTFILE_API_VERSION = "2"
 Vagrant.configure("2") do |config|
   config.vm.box = "aws001"
   #config.vm.synced_folder "shared/", "/home/ubuntu/shared"
-  config.vm.synced_folder "../../tmtext/", "/home/ubuntu/tmtext"
+  config.vm.synced_folder "../../tmtext/search", "/home/ubuntu/tmtext/search"
   config.vm.synced_folder "nltk_data/", "/home/ubuntu/nltk_data"
 
   # before provisioning with puppet, install puppet
