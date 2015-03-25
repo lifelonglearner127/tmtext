@@ -502,6 +502,9 @@ class AmazonScraper(Scraper):
         price = self.tree_html.xpath("//span[@id='actualPriceValue']/b/text()")
         if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
             return price[0].strip()
+        price = self.tree_html.xpath("//*[@id='priceblock_ourprice']//text()")#
+        if len(price)>0 and len(price[0].strip())<12  and price[0].strip()!="":
+            return price[0].strip()
         price = self.tree_html.xpath("//*[contains(@id, 'priceblock_')]//text()")#priceblock_ can usually have a few things after it
         if len(price)>0 and len(price[0].strip())<12  and price[0].strip()!="":
             return price[0].strip()
