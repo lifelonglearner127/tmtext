@@ -76,7 +76,7 @@ class MothercareProductsSpider(ProductsSpider):
 
     def _total_matches_from_html(self, response):
         total = response.css('.resultshits::text').re('of ([\d ,]+)')
-        return int(re.sub(', ', '', total[0])) if total else 0
+        return int(re.sub(',', '', total[0])) if total else 0
 
     def _scrape_next_results_page_link(self, response):
         link = response.css('.pagenext::attr(href)').extract()
@@ -194,10 +194,29 @@ class MothercareProductsSpider(ProductsSpider):
 
 
     def _request_buyer_reviews(self, response):
-        sku = response.css('p.productid::attr(class)').re('p_(\d+)')
-        sku = sku[0] if sku else re.search('.+/([^,]+)', response.url).group(1)
-        url = self.REVOO_URL.format(sku=sku)
-        return url
+        anonim_reviews = response.xpath('//div[@class="reevooReview"]')
+        if anonim_reviews:
+            total = len(anonim_reviews)
+            stars = {}
+            for review in anonim_reviews:
+                regex = 'Score is (\d+)'
+                count = review.xpath('//div[@class="unverified_stars"]/@title').re(regex)[0]
+                if count in stars.keys():
+                    stars[count] += 1
+                else:
+                    stars[count] = 1
+            sum = 0
+            for k, v in stars.iteritems():
+                sum += int(k)*v
+            avg = float(sum)/float(total)
+            res = BuyerReviews(num_of_reviews=total, average_rating=avg,
+                               rating_by_star=stars)
+            response.meta['product']['buyer_reviews'] = res
+        else:
+            sku = response.css('p.productid::attr(class)').re('p_(\d+)')
+            sku = sku[0] if sku else re.search('.+/([^,]+)', response.url).group(1)
+            url = self.REVOO_URL.format(sku=sku)
+            return url
 
     def _scrape_review_summary(self, response):
         regex = 'Score is ([\d.]+) out of \d+ from (\d+)'
