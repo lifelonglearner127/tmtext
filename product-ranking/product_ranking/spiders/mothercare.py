@@ -82,6 +82,10 @@ class MothercareProductsSpider(ProductsSpider):
         link = response.css('.pagenext::attr(href)').extract()
         return link[0] + '&format=ajax' if link else None
 
+    def _scrape_results_per_page(self, response):
+        return response.css('#itemsperpagetop '
+                            'option[selected=selected]::text').extract()[0]
+
     def _fetch_product_boxes(self, response):
         return response.css('.producttile')
 
