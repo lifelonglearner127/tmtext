@@ -144,10 +144,13 @@ class GoogleProductsSpider(BaseProductsSpider):
         redirect_pattern = r'&adurl=(.*)'
         res = re.findall(redirect_pattern, product['url'])
         if res:
-            req_url = urllib.unquote(res[0])
-            res = urllib.urlopen(req_url)
-            url_not_stripped = res.geturl()
-            product['url'] = url_not_stripped
+            try:
+                req_url = urllib.unquote(res[0])
+                res = urllib.urlopen(req_url)
+                url_not_stripped = res.geturl()
+                product['url'] = url_not_stripped
+            except:
+                pass
             review_link = product['buyer_reviews']
             if review_link:
                 link = 'https://www.google.co.uk' + review_link
@@ -238,7 +241,7 @@ class GoogleProductsSpider(BaseProductsSpider):
             items = response.css('ol.product-results li.psgi')
 
         if not items:
-            self.log("Found no product links.", DEBUG)
+            self.log("Found no product links.", WARNING)
         # try to get data from json
         script = response.xpath(
             '//div[@id="xjsi"]/script/text()').extract()
@@ -261,7 +264,7 @@ class GoogleProductsSpider(BaseProductsSpider):
             try:
                 json_data = json.loads(cleansed)
             except:
-                self.log('Failed to process json data', ERROR)
+                self.log('Failed to process json data', WARNING)
 
             try:
                 json_data = json_data['spop']['r']
