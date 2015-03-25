@@ -190,7 +190,8 @@ class MothercareProductsSpider(ProductsSpider):
 
 
     def _request_buyer_reviews(self, response):
-        sku = re.search('.+/([^,]+)', response.url).group(1)
+        sku = response.css('p.productid::attr(class)').re('p_(\d+)')
+        sku = sku[0] if sku else re.search('.+/([^,]+)', response.url).group(1)
         url = self.REVOO_URL.format(sku=sku)
         return url
 
