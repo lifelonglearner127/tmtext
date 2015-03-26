@@ -262,8 +262,6 @@ class WalmartProductsSpider(BaseProductsSpider):
             'is_in_store_only',
             data['buyingOptions']['storeOnlyItem'],
         )
-        if 'only available at a Walmart store' in response.body_as_unicode():
-            product['is_in_store_only'] = True
         if available:
             price_block = None
             try:
@@ -347,8 +345,17 @@ class WalmartProductsSpider(BaseProductsSpider):
             else:
                 is_pickup_only = False
 
+            if item.xpath(
+                './/div[@class="tile-row"]'
+                '/span[@class="in-store-only"]/text()'
+            ).extract():
+                is_in_store_only = True
+            else:
+                is_in_store_only = False
+
             res_item = SiteProductItem()
             res_item['is_pickup_only'] = is_pickup_only
+            res_item['is_in_store_only'] = is_in_store_only
 
             yield link, res_item
 
