@@ -431,6 +431,7 @@ class SearchSpider(BaseSpider):
             item = SearchItem()
             #item['origin_site'] = site
             item['origin_url'] = response.url
+            item['origin_name'] = ''
 
             #TODO: move this somewhere more relevant
             # remove unnecessary parameters for walmart links

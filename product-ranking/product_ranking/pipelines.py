@@ -6,13 +6,38 @@ from __future__ import division, absolute_import, unicode_literals
 
 import string
 import unittest
+import json
 
 from scrapy import Selector
 from scrapy.exceptions import DropItem
+from scrapy import logformatter
+from scrapy import log
 try:
     import mock
 except ImportError:
     pass  # Optional import for test.
+
+
+class PipelineFormatter(logformatter.LogFormatter):
+    # redefine this method to change log level for DropItem exception
+    def dropped(self, item, exception, response, spider):
+        log_format = super(PipelineFormatter, self).dropped(
+            item, exception, response, spider)
+        log_format['level'] = log.ERROR
+        return log_format
+
+
+class CheckGoogleSourceSiteFieldIsCorrectJson(object):
+
+    def process_item(self, item, spider):
+        google_source_site = item.get('google_source_site')
+        if google_source_site:
+            try:
+                json.loads(google_source_site)
+            except:
+                raise DropItem("Invalid JSON format at 'google_source_site'"
+                               " field at item:")
+        return item
 
 
 class CutFromTitleTagsAndReturnStringOnly(object):

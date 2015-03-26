@@ -127,15 +127,24 @@ class SoapScraper(Scraper):
             rows = div.xpath(".//text()")
             rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
             description += "\n".join(rows)
-            flag = True
+            # flag = True
             break
 
         try:
-            tabid = self.tree_html.xpath("//li[@productid='%s']//a/@id" % self._product_id())[0].strip()
+            product_ids = self.tree_html.xpath("//table[contains(@class,'gridItemList')]//input[@class='skuHidden']/@productid")
+        except:
+            product_ids = []
+        if self._product_id() in product_ids or len(product_ids) < 1:
+            product_id = self._product_id()
+        else:
+            product_id = product_ids[0]
+        try:
+            tabid = self.tree_html.xpath("//li[@productid='%s']//a/@id" % product_id)[0].strip()
         except IndexError:
             tabid = None
 
-        if len(rows) < 1 and not flag:
+        # if len(rows) < 1 and not flag:
+        if not flag:
             try:
                 idx = re.findall(r"\d+", tabid)[0]
             except IndexError:
