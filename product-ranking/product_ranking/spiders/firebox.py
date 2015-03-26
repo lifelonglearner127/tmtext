@@ -23,13 +23,13 @@ class FireboxProductSpider(BaseProductsSpider):
     name = 'firebox_products'
     allowed_domains = ["www.firebox.com"]
     start_urls = []
-
     SEARCH_URL = "http://www.firebox.com/firebox/search?searchstring={search_term}"
 
-    product_link = "http://www.firebox.com"
-
-    def __init__(self, *args, **kwargs):
-        super(FireboxProductSpider, self).__init__(*args, **kwargs)
+    convert_currency = {
+        u'\u00a3':  'GBP',
+        u'\u20ac':  'EUR',
+        u'$':       'USD'
+    }
 
     def parse_product(self, response):
         prod = response.meta['product']
@@ -42,6 +42,9 @@ class FireboxProductSpider(BaseProductsSpider):
 
             for review in reviews:
                 stars_count = len(review.xpath('./i[@class="icon-star"]'))
+                if stars_count == 0:
+                    total -= 1
+                    continue
                 stars[stars_count] += 1
                 sum += stars_count
             avg = float(sum)/float(total)
@@ -52,16 +55,14 @@ class FireboxProductSpider(BaseProductsSpider):
         ).extract()
         cond_set(prod, 'title', title)
 
-        price = response.xpath(
-            '//meta[@property="og:price:amount"]/@content'
-        ).extract()
-        priceCurrency = response.xpath(
-            '//meta[@property="og:price:currency"]/@content'
-        ).extract()
-        if price and priceCurrency:
-            if re.match("\d+(.\d+){0,1}", price[0]):
-                prod["price"] = Price(priceCurrency=priceCurrency[0],
-                                      price=price[0])
+        price = re.findall('(.?)(\d+.\d+)',
+                           response.xpath('//div[@class="price"]/text() |'
+                                          ' //div[@class="price"]/div/text()')[0]
+                           .extract())[0]
+        if price:
+            priceCurrency = self.convert_currency[price[0]]
+            prod["price"] = Price(priceCurrency=priceCurrency,
+                                  price=price[1])
 
         des = response.xpath(
             '//div[@class="clearfix text_box margin_after bg_white"]'
@@ -88,7 +89,7 @@ class FireboxProductSpider(BaseProductsSpider):
                 link = link[0]
                 related.append(RelatedProduct(title=name, url=link))
 
-        prod['related_products'] = related
+        prod['related_products'] = {'Similar Products': related}
 
         available = response.xpath(
             '//meta[@property="og:price:availability"]/@content'
@@ -100,12 +101,12 @@ class FireboxProductSpider(BaseProductsSpider):
 
         return prod
 
-
     def _scrape_total_matches(self, response):
         total_matches = None
-        if 'NO RESULTS'\
-                in response.body_as_unicode():
-            total_matches = 0
+        if response.xpath(
+                '//div[@class="searchtitle"]/text()[contains(., "No result")]'):
+            print 'Not found'
+            return 0
         total = response.xpath('//div[@class="searchtitle"]/text()').extract()
         if total:
             total = re.findall("(\d+)", total[0])
@@ -114,8 +115,11 @@ class FireboxProductSpider(BaseProductsSpider):
         return total_matches
 
     def _scrape_product_links(self, response):
-        links = response.xpath(
-            '//div[@class="block"]/div/a[1]/@href').extract()
-        print 'LENGHT:', len(links)
-        for link in links:
-            yield self.product_link + link, SiteProductItem()
+        if self._scrape_total_matches(response) == 0:
+            return
+        items = json.loads(re.findall('\[.*\]', response.xpath('//div[@class="page"]/script/text()')[0].extract())[0])
+        for item in items:
+            yield item['link'], SiteProductItem()
+
+    def _scrape_next_results_page_link(self, response):
+        return None
