@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 
-import urllib
+import urllib, urllib2
 import re
 import sys
 import json
@@ -10,6 +10,7 @@ from lxml import html
 import time
 import requests
 from extract_data import Scraper
+import captcha_solver
 
 class AmazonScraper(Scraper):
 
@@ -18,6 +19,97 @@ class AmazonScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id> or http://www.amazon.co.uk/dp/<product-id>"
+    CB = captcha_solver.CaptchaBreakerWrapper()
+    MAX_CAPTCHA_RETRIES = 10
+
+    # method that returns xml tree of page, to extract the desired elemets from
+    # special implementation for amazon - handling captcha pages
+    def _extract_page_tree(self, captcha_data=None, retries=0):
+        """Builds and sets as instance variable the xml tree of the product page
+        :param captcha_data: dictionary containing the data to be sent to the form for captcha solving
+        This method will be used either to get a product page directly (null captcha_data),
+        or to solve the form and get the product page this way, in which case it will use captcha_data
+        :param retries: number of retries to solve captcha so far; relevant only if solving captcha form
+        Returns:
+            lxml tree object
+        """
+
+        # TODO: implement maximum number of retries
+        if captcha_data:
+            data = urllib.urlencode(captcha_data)
+            request = urllib2.Request(self.product_page_url, data)
+        else:
+            request = urllib2.Request(self.product_page_url)
+
+        # set user agent to avoid blocking
+        agent = ''
+        if self.bot_type == "google":
+            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
+            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        else:
+            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+        request.add_header('User-Agent', agent)
+
+        for i in range(self.MAX_RETRIES):
+            try:
+                contents = urllib2.urlopen(request).read()
+
+            # handle urls with special characters
+            except UnicodeEncodeError, e:
+
+                if captcha_data:
+                    request = urllib2.Request(self.product_page_url.encode("utf-8"), data)
+                else:
+                    request = urllib2.Request(self.product_page_url.encode("utf-8"))
+                request.add_header('User-Agent', agent)
+                contents = urllib2.urlopen(request).read()
+
+            except IncompleteRead, e:
+                continue
+
+
+            try:
+                # replace NULL characters
+                contents = self._clean_null(contents)
+
+                self.tree_html = html.fromstring(contents.decode("utf8"))
+            except UnicodeError, e:
+                # if string was not utf8, don't deocde it
+                print "Warning creating html tree from page content: ", e.message
+
+                # replace NULL characters
+                contents = self._clean_null(contents)
+
+                self.tree_html = html.fromstring(contents)
+
+            # it's a captcha page
+            if self.tree_html.xpath("//form[contains(@action,'Captcha')]") and retries <= self.MAX_CAPTCHA_RETRIES:
+                image = self.tree_html.xpath(".//img/@src")
+                if image:
+                    captcha_text = self.CB.solve_captcha(image[0])
+
+                # value to use if there was an exception
+                if not captcha_text:
+                    captcha_text = ''
+
+                retries += 1
+                return self._extract_page_tree(captcha_data={'field-keywords' : captcha_text}, retries=retries)
+
+            # if we got it we can exit the loop and stop retrying
+            return
+
+
+            # try getting it again, without catching exception.
+            # if it had worked by now, it would have returned.
+            # if it still doesn't work, it will throw exception.
+            # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
+
+            contents = urllib2.urlopen(request).read()
+            # replace NULL characters
+            contents = self._clean_null(contents)
+            self.tree_html = html.fromstring(contents)
+
+
 
     def check_url_format(self):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
