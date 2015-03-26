@@ -3,6 +3,9 @@
 
 import re
 import urlparse
+import time
+
+from scrapy import Request
 
 from product_ranking.items import RelatedProduct, BuyerReviews, Price
 from product_ranking.spiders import cond_set, cond_set_value, \
@@ -11,8 +14,10 @@ from product_ranking.spiders.contrib.product_spider import ProductsSpider
 
 
 def _itemprop(response, prop, extract=True):
-    result = response.css('[itemprop="%s"]::text' % prop)
-    return result.extract() if extract else result
+    if extract:
+        return response.css('[itemprop="%s"]::text' % prop).extract()
+    else:
+        return response.css('[itemprop="%s"]' % prop)
 
 
 class UkRsOnlineProductsSpider(ProductsSpider):
@@ -32,6 +37,9 @@ class UkRsOnlineProductsSpider(ProductsSpider):
 
     SEARCH_URL = "http://uk.rs-online.com/web/c/?searchTerm={search_term}" \
                  "&sra=oss&r=t&vn=1"
+
+    user_agent = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:35.0) Gecko'
+                  '/20100101 Firefox/35.0')
 
     def _is_product_page(self, response):
         return response.url.startswith('http://uk.rs-online.com/web/p')
@@ -58,6 +66,16 @@ class UkRsOnlineProductsSpider(ProductsSpider):
     def _link_from_box(self, box):
         return box.css('.srDescDiv a::attr(href), '
                        '.tnProdDesc::attr(href)')[0].extract()
+
+    def parse_product(self, response):
+        if response.url.startswith('http://uk.rs-online.com/web/app/error'):
+            self.log('Error detected, 1 second delay')
+            time.sleep(1)
+            return [Request(response.request.url, callback=self.parse_product,
+                            meta=response.meta)]
+        else:
+            return list(
+                super(UkRsOnlineProductsSpider, self).parse_product(response))
 
     def _populate_from_box(self, response, box, product):
         if self._is_product_page(response):
@@ -92,8 +110,8 @@ class UkRsOnlineProductsSpider(ProductsSpider):
                        bool)
         details = response.css('.prodDetailsContainer').xpath(
             'node()[normalize-space()]')
-        details = [d.extract() for d in details if not d.css(
-            '.heading , form')]
+        details = [d.extract() for d in details if
+                   not d.css('.heading , form')]
         if details:
             cond_set_value(product, 'description', details, ''.join)
         self._populate_related_products(response, product)
