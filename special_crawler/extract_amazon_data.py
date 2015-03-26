@@ -19,8 +19,18 @@ class AmazonScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id> or http://www.amazon.co.uk/dp/<product-id>"
+
+    def _captchas_dir():
+        import os
+        homedir = os.getenv("HOME")
+        captchas_dir = homedir + '/captchas'
+        return captchas_dir
+
     CB = captcha_solver.CaptchaBreakerWrapper()
+    # special dir path to store the captchas, so that the service has permissions to create it on the scraper instances
+    CB.CAPTCHAS_DIR = _captchas_dir()
     MAX_CAPTCHA_RETRIES = 10
+
 
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
