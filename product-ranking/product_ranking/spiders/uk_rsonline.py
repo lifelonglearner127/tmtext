@@ -71,7 +71,8 @@ class UkRsOnlineProductsSpider(ProductsSpider):
         if response.url.startswith('http://uk.rs-online.com/web/app/error'):
             self.log('Error detected, 1 second delay')
             time.sleep(1)
-            return [Request(response.request.url, callback=self.parse_product,
+            return [Request(response.meta['product']['url'],
+                            callback=self.parse_product,
                             meta=response.meta)]
         else:
             return list(
