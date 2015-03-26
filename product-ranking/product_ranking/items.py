@@ -111,6 +111,7 @@ class SiteProductItem(Item):
     search_term_in_title_interleaved = Field()  # Bool
 
     # For google.co.uk, google.com products
+    # Should be provided in valid JSON format
     google_source_site = Field()
 
     is_mobile_agent = Field()  # if the spider was in the mobile mode
