@@ -243,6 +243,7 @@ class BaseProductsSpider(Spider):
         if self.product_url:
             prod = SiteProductItem()
             prod['is_single_result'] = True
+            prod['url'] = self.product_url
             yield Request(self.product_url,
                           self._parse_single_product,
                           meta={'product': prod})
