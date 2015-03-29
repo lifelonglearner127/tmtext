@@ -11,6 +11,7 @@ from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO
 
+from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
                                    BuyerReviews, Price)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
@@ -92,7 +93,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             ad_text = is_empty(
                 get_string_from_html('div/span[@class="desc"]/a', link))
             visible_url = is_empty(
-                get_string_from_html('div/span[@class="host"]/a', link))
+                get_string_from_html('div/span/span[@class="host"]/a', link))
             actual_url = is_empty(
                 link.xpath('div/span[@class="title"]/a/@href').extract())
             sld = {"ad_title": ad_title,
@@ -206,7 +207,11 @@ class WalmartProductsSpider(BaseProductsSpider):
             'brand',
             response.xpath(
                 "//div[@class='product-subhead-section']"
-                "/a[@id='WMItemBrandLnk']/text()").extract())
+                "/a[@id='WMItemBrandLnk']/text()").extract())     
+        if not product.get("brand"):
+            brand = is_empty(response.xpath(
+                "//h1[contains(@class, 'product-name product-heading')]/text()").extract())
+            cond_set(product, 'brand', (guess_brand_from_first_words(brand.strip()),))
         also_considered = self._build_related_products(
             response.url,
             response.css('.top-product-recommendations .tile-heading'),
