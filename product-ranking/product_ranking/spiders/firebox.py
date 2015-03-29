@@ -23,14 +23,7 @@ class FireboxProductSpider(BaseProductsSpider):
         u'$':       'USD'
     }
 
-    currency_opts = ['GBP', 'USD', 'EUR']
-
-    def __init__(self, currency=None, *args, **kwargs):
-        super(FireboxProductSpider, self).__init__(*args, **kwargs)
-        self.currency = self.currency_opts.index(
-            currency) if currency else None
-
-
+    currency = 1
 
     def parse_product(self, response):
         prod = response.meta['product']
@@ -123,15 +116,12 @@ class FireboxProductSpider(BaseProductsSpider):
                                       response.xpath(xpath)[0].extract())[0])
         for item in items:
             url = item['link']
-            if self.currency is not None:
-                meta = response.meta.copy()
-                meta['product'] = SiteProductItem()
-                formdata = {'new_currency_id': str(self.currency)}
-                request = FormRequest(url=url, formdata=formdata,
-                                      callback=self.parse_product, meta=meta)
-                yield request, meta['product']
-            else:
-                yield url, SiteProductItem()
+            meta = response.meta.copy()
+            meta['product'] = SiteProductItem()
+            formdata = {'new_currency_id': str(self.currency)}
+            request = FormRequest(url=url, formdata=formdata,
+                                  callback=self.parse_product, meta=meta)
+            yield request, meta['product']
 
     def _scrape_next_results_page_link(self, response):
         return None
