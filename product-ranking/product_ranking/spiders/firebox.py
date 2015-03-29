@@ -1,22 +1,14 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
 
-from itertools import islice
 import json
 import re
-import string
-import urllib
-import urllib2
-import urlparse
 
-from scrapy import Selector
-from scrapy.http import FormRequest, Request
-from scrapy.log import DEBUG, INFO
+from scrapy.http import FormRequest
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set_value, populate_from_open_graph
+from product_ranking.spiders import BaseProductsSpider, cond_set
 
 
 class FireboxProductSpider(BaseProductsSpider):
@@ -30,6 +22,15 @@ class FireboxProductSpider(BaseProductsSpider):
         u'\u20ac':  'EUR',
         u'$':       'USD'
     }
+
+    currency_opts = ['GBP', 'USD', 'EUR']
+
+    def __init__(self, currency=None, *args, **kwargs):
+        super(FireboxProductSpider, self).__init__(*args, **kwargs)
+        self.currency = self.currency_opts.index(
+            currency) if currency else None
+
+
 
     def parse_product(self, response):
         prod = response.meta['product']
@@ -117,9 +118,20 @@ class FireboxProductSpider(BaseProductsSpider):
     def _scrape_product_links(self, response):
         if self._scrape_total_matches(response) == 0:
             return
-        items = json.loads(re.findall('\[.*\]', response.xpath('//div[@class="page"]/script/text()')[0].extract())[0])
+        xpath = '//div[@class="page"]/script/text()'
+        items = json.loads(re.findall('\[.*\]',
+                                      response.xpath(xpath)[0].extract())[0])
         for item in items:
-            yield item['link'], SiteProductItem()
+            url = item['link']
+            if self.currency is not None:
+                meta = response.meta.copy()
+                meta['product'] = SiteProductItem()
+                formdata = {'new_currency_id': str(self.currency)}
+                request = FormRequest(url=url, formdata=formdata,
+                                      callback=self.parse_product, meta=meta)
+                yield request, meta['product']
+            else:
+                yield url, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
         return None
