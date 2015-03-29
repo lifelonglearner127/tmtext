@@ -189,3 +189,6 @@ class GandermountainProductsSpider(BaseProductsSpider):
         if link:
             return self.product_link_next_page + link.extract()[0].strip()
         return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
