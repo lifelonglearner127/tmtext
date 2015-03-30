@@ -153,3 +153,6 @@ class UkRsOnlineProductsSpider(ProductsSpider):
                        BuyerReviews(num_of_reviews=total,
                                     average_rating=average,
                                     rating_by_star=by_star))
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
