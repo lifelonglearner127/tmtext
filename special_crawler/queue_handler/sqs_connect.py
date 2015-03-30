@@ -50,7 +50,7 @@ class SQS_Queue():
             if isinstance(message, str):
                 m.set_body(message)
                 self.q.write(m)
-        elif isinstance(message, list) | isinstance(message, tuple):
+        if isinstance(message, list) | isinstance(message, tuple):
             for row in message:
                 m.set_body(row)
                 self.q.write(m)
