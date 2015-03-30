@@ -30,6 +30,7 @@ class BestbuySpider(SearchSpider):
         #site = response.meta['origin_site']
         origin_name = response.meta['origin_name']
         origin_model = response.meta['origin_model']
+        origin_url = response.meta['origin_url']
 
         # if this comes from a previous request, get last request's items and add to them the results
 
@@ -44,7 +45,12 @@ class BestbuySpider(SearchSpider):
         for result in results:
             item = SearchItem()
             #item['origin_site'] = site
-            item['product_name'] = result.select("text()").extract()[0].strip()
+            product_name_holder = result.select("text()").extract()
+            if product_name_holder:
+                item['product_name'] = product_name_holder[0].strip()
+            else:
+                self.log("Error: No product name: " + str(response.url) + " from product: " + origin_url, level=log.ERROR)
+
             item['product_url'] = Utils.clean_url(Utils.add_domain(result.select("@href").extract()[0], "http://www.bestbuy.com"))
 
             if 'origin_url' in response.meta:
