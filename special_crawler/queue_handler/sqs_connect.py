@@ -1,4 +1,4 @@
-#!usr/bin/env python
+#!usr/bin/env python3
 
 
 """ 
@@ -42,9 +42,14 @@ class SQS_Queue():
     # Messages are strings (or at least serialized to strings)
     def put(self, message):
         m = Message()
-        if isinstance(message, str):
-            m.set_body(message)
-            self.q.write(m)
+        try:
+            if isinstance(message, basestring):
+                m.set_body(message)
+                self.q.write(m)
+        except NameError:
+            if isinstance(message, str):
+                m.set_body(message)
+                self.q.write(m)
         elif isinstance(message, list) | isinstance(message, tuple):
             for row in message:
                 m.set_body(row)
