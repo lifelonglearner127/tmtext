@@ -39,7 +39,7 @@ class BestbuySpider(SearchSpider):
             items = set()
 
 
-        results = hxs.select("//div[@class='hproduct']/div[@class='info-main']/h3/a")
+        results = hxs.select("//div[@class='list-item-info']/div[@class='sku-title']/h4/a")
 
         for result in results:
             item = SearchItem()
@@ -50,16 +50,22 @@ class BestbuySpider(SearchSpider):
             if 'origin_url' in response.meta:
                 item['origin_url'] = response.meta['origin_url']
 
-            if 'origin_id' in response.meta:
-                request.meta['origin_id'] = response.meta['origin_id']
-            #     assert self.by_id
-            # else:
-            #     assert not self.by_id
+            if 'origin_name' in response.meta:
+                item['origin_name'] = response.meta['origin_name']
 
+            if 'origin_model' in response.meta:
+                item['origin_model'] = response.meta['origin_model']                
 
-            model_holder = result.select("parent::node()/parent::node()//strong[@itemprop='model']/text()").extract()
+            model_holder = result.select("../../../div[@class='sku-model']/ul/li[@class='model-number']/span[@id='model-value']/text()").extract()
             if model_holder:
                 item['product_model'] = model_holder[0]
+
+            price_holder = result.select("../../../../div[@class='list-item-price']//div[@class='price-block']//div[@class='medium-item-price']/text()[normalize-space()]").extract()
+            if price_holder:
+                price = price_holder[0].strip()
+                price = re.sub(",", "", price)
+                price = float(price)
+                item['product_target_price'] = price
 
             items.add(item)
 
