@@ -186,24 +186,6 @@ class TargetProductSpider(BaseProductsSpider):
             conv=string.strip
         )
 
-        price = response.xpath(
-            "//span[@itemprop='price']/text()"
-            "|//*[@id='see-low-price']/a/text()"
-            "|//span[@itemprop='lowPrice']/text()"
-        ).extract()
-        if not price or price[0] == 'See Low Price in Cart':
-            cond_set(product, 'price', ['$0.00'])
-        else:
-            cond_set(product, 'price', price)
-        price = product.get('price', None)
-        if price:
-            mp = re.search(FLOATING_POINT_RGEX, price)
-            if mp:
-                price = mp.group(0)
-            else:
-                price = 0.0
-            product['price'] = Price(
-                price=price, priceCurrency='USD')
         desc = product.get('description')
         if desc:
             desc = desc.replace("\n", "")
@@ -486,7 +468,18 @@ class TargetProductSpider(BaseProductsSpider):
                 isonline = isonline[0].strip()
             # TODO: isonline: u'out of stock online'
             # ==  'out of stock' & 'online'
-            bi_list.append((brand, link, isonline))
+            price = ci.xpath(
+                './div[@class="pricecontainer"]/p/text()').re(FLOATING_POINT_RGEX)
+            if price:
+                price = price[0]
+            else:
+                price = ci.xpath(
+                    './div[@class="pricecontainer"]/span[@class="map"]/following::p/span/text()')\
+                    .re(FLOATING_POINT_RGEX)
+                if price:
+                    price = price[0]
+
+            bi_list.append((brand, link, isonline, price))
         return bi_list
 
     def _scrape_product_links(self, response):
@@ -555,12 +548,14 @@ class TargetProductSpider(BaseProductsSpider):
             yield post_req, SiteProductItem()
             return
 
-        for brand, link, isonline in bi_list:
+        for brand, link, isonline, price in bi_list:
             product = SiteProductItem(brand=brand)
             if 'out of stock' in isonline:
                 product['is_out_of_stock'] = True
             if 'in stores only' in isonline:
                 product['is_in_store_only'] = True
+            if price:
+                product['price'] = Price(price=price, priceCurrency='USD')
 
             # FIXME: 'onilne_only' status
             # if 'online only' in isonline:
@@ -666,7 +661,7 @@ class TargetProductSpider(BaseProductsSpider):
                 requests.append(self._gen_next_request(
                     response, next_page, remaining=new_remaining))
 
-        for i, (brand, url, isonline) in enumerate(islice(links, 0, remaining)):
+        for i, (brand, url, isonline, price) in enumerate(islice(links, 0, remaining)):
             new_meta = response.meta.copy()
             product = SiteProductItem(brand=brand)
             product['search_term'] = response.meta.get('search_term')
