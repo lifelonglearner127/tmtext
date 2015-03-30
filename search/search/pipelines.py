@@ -88,7 +88,7 @@ class URLsPipeline(object):
             if option == 4 and 'origin_upc' in item:
                 fields = [item['origin_upc'][0], json.dumps(item['origin_name'])]
             else:
-                fields = [json.dumps(item['origin_name']), item['origin_url']]
+                fields = [item['origin_url']]
 
             # TODO. uncomment
             # # if output type is 3, add additional fields
