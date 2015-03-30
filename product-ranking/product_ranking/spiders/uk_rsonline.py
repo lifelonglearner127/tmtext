@@ -162,7 +162,7 @@ class UkRsOnlineProductsSpider(ProductsSpider):
             'node()[normalize-space()]')
         details = [d.extract() for d in details if not d.css('form')]
         if details:
-            cond_set_value(product, 'description', details, ''.join)
+            cond_set_value(product, 'description', details, conv=''.join)
         self._populate_related_products(response, product)
         self._populate_buyer_reviews(response, product)
         price = product.get('price', None)
