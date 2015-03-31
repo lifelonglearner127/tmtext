@@ -13,6 +13,15 @@ from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import cond_set_value
 
 
+
+# FIXME Read only first 24 items for 'toothpaste'.
+# FIXME No results sorting.
+# FIXME No reviews for page http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
+# FIXME No 'also viewed' related products for http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
+# FIXME Empty 'brand' field.
+# FIXME Empty 'locale' field.
+# FIXME Field image_url not started with 'http:' u'//d3l6n8hsebkot8.cloudfront.net/images/products/9/LN_504898_BP_9.jpg'
+
 class WaitroseProductsSpider(BaseProductsSpider):
     name = "waitrose_products"
     allowed_domains = ["waitrose.com"]
@@ -32,17 +41,7 @@ class WaitroseProductsSpider(BaseProductsSpider):
 
     @staticmethod
     def _get_data(response):
-        """Helper function that parses JSON data from the response's body using
-        a cache.
-        """
-        try:
-            data = response.meta['parsed_data']
-        except KeyError:
-            data = json.loads(response.body_as_unicode())
-            # Cache the parsed data.
-            response.meta['parsed_data'] = data
-
-        return data
+        return json.loads(response.body_as_unicode())
 
     @staticmethod
     def _create_request(meta):
