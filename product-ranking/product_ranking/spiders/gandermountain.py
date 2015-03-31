@@ -8,6 +8,7 @@ from product_ranking.items import Price, BuyerReviews
 from product_ranking.spiders import cond_set, \
     cond_set_value
 
+
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
 
@@ -27,7 +28,19 @@ class GandermountainProductsSpider(ProductsSpider):
                  "&page={page}"
 
     SORT_MODES = {
-        'default': ''
+        'default': '',
+        'relevance': 'relevance',
+        'new': 'dateNew',
+        'price_desc': 'priceSortHigh',
+        'price_asc': 'priceSortLow',
+        'brand_asc': 'brand',
+        'brand_desc': 'brand_r',
+        'rating': 'averageReviewScore',
+        'best': 'SC_Units'
+    }
+
+    HARDCODED_FIELDS = {
+        'locale': 'en-US'
     }
 
     def __init__(self, *args, **kwargs):
@@ -67,6 +80,8 @@ class GandermountainProductsSpider(ProductsSpider):
     def _populate_from_box(self, response, box, product):
         cond_set(product, 'title',
                  box.css('a[data-item-number]::attr(title)').extract())
+        cond_set(product, 'price',
+                 box.css('.price-point font::text').re('\$([\d ,.]+)'))
         cond_set(product, 'price',
                  box.css('.red-message.price-point::text').re('\$([\d ,.]+)'))
         cond_set(product, 'price',
@@ -114,3 +129,7 @@ class GandermountainProductsSpider(ProductsSpider):
                                     average_rating=avg,
                                     rating_by_star=by_star))
 
+    def _scrape_results_per_page(self, response):
+        per_page = response.css('.per-page option[selected=true]::text')
+        per_page = per_page.re('\d+')
+        return int(per_page[0]) if per_page else None
