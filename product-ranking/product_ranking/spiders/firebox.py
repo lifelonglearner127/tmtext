@@ -41,7 +41,10 @@ class FireboxProductSpider(BaseProductsSpider):
                     continue
                 stars[stars_count] += 1
                 sum += stars_count
-            avg = float(sum)/float(total)
+            try:
+                avg = float(sum)/float(total)
+            except ZeroDivisionError:
+                avg = float(0)
             prod['buyer_reviews'] = BuyerReviews(total, avg, stars)
 
         title = response.xpath(
@@ -71,7 +74,12 @@ class FireboxProductSpider(BaseProductsSpider):
 
         cond_set(prod, 'locale', ['en-US'])
 
-        prod['url'] = response.url
+        cond_set(prod, 'brand', ['NO BRAND'])
+
+        prod['url'] = unicode(response.url)
+
+        cond_set(prod, 'upc',response.xpath(
+            "//script[contains(text(),'window.product = ')]").re(r"'id' : \"(\d+)\""))
 
         items = response.xpath('//a[contains(@class,"g-med")] | //a[contains(@class,"g-large")]')
         related = []
