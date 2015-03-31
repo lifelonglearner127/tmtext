@@ -250,7 +250,17 @@ class SoapScraper(Scraper):
             return self.image_urls
         self.image_count = 0
         image_url = self.tree_html.xpath("//div[contains(@class,'magicThumbBox')]/a/@href")
-        image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
+        image_url_tmp = ["http:%s" % self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
+        image_url = []
+        for item in image_url_tmp:
+            try:
+                if self._no_image(item):
+                    pass
+                else:
+                    image_url.append(item)
+            except Exception, e:
+                image_url.append(item)
+
         if len(image_url) < 1:
             skuhdn = self.tree_html.xpath("//input[@id='clothSkuHidden']/@value")[0].strip()
             skuhdn = skuhdn.lower()
