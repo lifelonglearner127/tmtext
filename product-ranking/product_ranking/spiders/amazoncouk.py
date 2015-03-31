@@ -293,15 +293,18 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         #For another HTML makeup
         if not total:
             ratings = {}
+            average = 0
             total = int(is_empty(response.xpath(
                 "//span[contains(@class, 'tiny')]/span[@class='crAvgStars']/a/text()"
             ).re("\d+"), 0))
             for rev in response.xpath('//span[contains(@class, "tiny")]//div[contains(@class, "custRevHistogramPopId")]/table/tr'):
                 star = is_empty(rev.xpath('td/a/text()').re("\d+"), None)
-                ratings[star] = int(is_empty(rev.xpath('td[last()]/text()').re("\d+"), 0))
-            average = sum(int(k) * int(v) for k, v in
-                          ratings.iteritems()) / int(total) if ratings else 0
-            average = float("%.2f" % round(average, 2))
+                if star:
+                    ratings[star] = int(is_empty(rev.xpath('td[last()]/text()').re("\d+"), 0))
+            if ratings:
+                average = sum(int(k) * int(v) for k, v in
+                              ratings.iteritems()) / int(total) if ratings else 0
+                average = float("%.2f" % round(average, 2))
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)

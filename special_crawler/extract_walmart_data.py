@@ -1704,14 +1704,6 @@ class WalmartScraper(Scraper):
     def  _ingredients(self):
         # list of ingredients - list of strings
         ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
-
-        if not ingr:
-            ingr = self.tree_html.xpath("//b[contains(text(),'Ingredients:')]")[0].tail
-            ingr = ingr.split(",")
-            ingr = map(lambda e: e.strip(), ingr)
-            self.ing_count = len(ingr)
-            return ingr
-
         if len(ingr) > 0:
             res = []
             w = ''
@@ -1733,6 +1725,18 @@ class WalmartScraper(Scraper):
                 res.append(w.strip())
             self.ing_count = len(res)
             return res
+        ingr=self.tree_html.xpath("//p[@class='ProductIngredients']//text()")
+        if len(ingr) >0 :
+            res = ingr[0].split(',')
+            self.ing_count = len(res)
+            return res
+        ingr = self.tree_html.xpath("//b[contains(text(),'Ingredients:')]")
+        if len(ingr) > 0:
+            ingr = ingr[0].tail
+            ingr = ingr.split(",")
+            ingr = map(lambda e: e.strip(), ingr)
+            self.ing_count = len(ingr)
+            return ingr
         self.ing_count = None
         return None
 

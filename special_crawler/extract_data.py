@@ -381,11 +381,11 @@ class Scraper():
             # if it still doesn't work, it will throw exception.
             # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
 
+            contents = urllib2.urlopen(request).read()
             # replace NULL characters
             contents = self._clean_null(contents)
-
-            contents = urllib2.urlopen(request).read()
             self.tree_html = html.fromstring(contents)
+
 
     def _clean_null(self, text):
         '''Remove NULL characters from text if any.
