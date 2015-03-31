@@ -253,7 +253,7 @@ def put_file_into_s3(bucket_name, fname,
                 "Check file path and amazon keys/permissions.")
 
 
-def _check_if_log_file_contains_end_marker(log_file):
+def _check_if_log_file_contains_end_marker(log_file, data_bs_file):
     if not os.path.exists(log_file):
         return
     try:
@@ -268,8 +268,15 @@ def _check_if_log_file_contains_end_marker(log_file):
         lines = f.readlines()
         f.close()
         if 'INFO: Spider closed (finished)' in lines[-1]:
+            if data_bs_file:
+                temp_file = '%s/%s' % (os.path.expanduser(JOB_OUTPUT_PATH), "temp_file.jl")
+                os.system(REPO_BASE_PATH+"/product-ranking/add-best-seller.py "+log_file[:-4]+".jl "+data_bs_file+" >"+temp_file)
+                with open(temp_file) as f:
+                    lines = f.readlines()
+                    with open(log_file[:-4]+".jl", "w") as f1:
+                        f1.writelines(lines)
+                os.remove(temp_file)
             return True
-
 
 def _check_num_of_products(data_file):
     if not os.path.exists(data_file):
@@ -289,7 +296,7 @@ def generate_msg(metadata, progress):
     }
     return _msg
 
-def report_progress_and_wait(data_file, log_file, metadata,
+def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
                              initial_sleep_time=15, sleep_time=15):
     time.sleep(initial_sleep_time)
     # if the data file does not exist - try to wait a bit longer
@@ -326,7 +333,7 @@ def report_progress_and_wait(data_file, log_file, metadata,
             write_msg_to_sqs(
                 metadata['server_name']+PROGRESS_QUEUE_NAME, _msg)
 
-        if _check_if_log_file_contains_end_marker(log_file):
+        if _check_if_log_file_contains_end_marker(log_file, data_bs_file):
             logger.info("Spider task was completed.")
             _msg = generate_msg(metadata, 'finished')
             if TEST_MODE:
@@ -355,7 +362,7 @@ def execute_task_from_sqs():
                                     #  later
         break
     # due to task performance may take more than 12 hrs remove task immediately
-    task_queue.task_done()
+    #task_queue.task_done()
     logger.info("Task message was successfully received and "
                 "removed form queue.")
     task_id = metadata.get('task_id', metadata.get('task', None))
@@ -379,6 +386,7 @@ def execute_task_from_sqs():
            ' -s LOG_FILE=%s -o %s &')
     # prepare command-line arguments
     options = ' '
+
     for key, value in cmd_line_args.items():
         options += ' -a %s=%s' % (key, value)
     if searchterms_str:
@@ -392,10 +400,23 @@ def execute_task_from_sqs():
         options, output_path+'.log', output_path+'.jl'
     )
     logger.info("Runing %s", cmd)
+
+    data_bs_file = None
+    if "with_best_seller_ranking" in cmd_line_args \
+            and cmd_line_args["with_best_seller_ranking"]:
+        data_bs_file = output_path + '_bs.jl'
+        cmdbs = ('cd %s/product-ranking'
+                 ' && scrapy crawl %s -a %s="%s" %s'
+                 ' -a search_sort=%s -s LOG_FILE=%s -o %s &') % (
+            REPO_BASE_PATH, site + '_products', arg_name, arg_value,
+            options, "best_sellers", output_path + '_bs.log', data_bs_file
+        )
+
+        pbs = Popen(cmdbs, shell=True, stdout=PIPE, stderr=PIPE)
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 
     # report progress and wait until the task is done
-    report_progress_and_wait(output_path+'.jl', output_path+'.log', metadata)
+    report_progress_and_wait(output_path+'.jl', output_path+'.log', data_bs_file, metadata)
     # upload the files to SQS and S3
     data_key = put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.jl')
     logs_key = put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.log')
@@ -416,10 +437,14 @@ def prepare_test_data():
     # prepare incoming tasks
     with open('/tmp/sqs_ranking_spiders_tasks', 'w') as fh:
         msg = {
-            'task_id': 4444, 'site': 'amazon', 'searchterms_str': 'water',
+            'task_id': 4444, 'site': 'walmart', 'searchterms_str': 'iphone',
             'server_name': 'test_server_name',
             # "url": "http://www.walmart.com/ip/42211446?productRedirect=true",
-            'cmd_args': {'quantity': 20}
+            'cmd_args':
+                {
+                    'quantity': 20,
+                    'with_best_seller_ranking': True
+                }
         }
         fh.write(json.dumps(msg, default=json_serializer))
 
