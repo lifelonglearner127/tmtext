@@ -10,10 +10,21 @@ import json
 
 from scrapy import Selector
 from scrapy.exceptions import DropItem
+from scrapy import logformatter
+from scrapy import log
 try:
     import mock
 except ImportError:
     pass  # Optional import for test.
+
+
+class PipelineFormatter(logformatter.LogFormatter):
+    # redefine this method to change log level for DropItem exception
+    def dropped(self, item, exception, response, spider):
+        log_format = super(PipelineFormatter, self).dropped(
+            item, exception, response, spider)
+        log_format['level'] = log.ERROR
+        return log_format
 
 
 class CheckGoogleSourceSiteFieldIsCorrectJson(object):
@@ -25,7 +36,7 @@ class CheckGoogleSourceSiteFieldIsCorrectJson(object):
                 json.loads(google_source_site)
             except:
                 raise DropItem("Invalid JSON format at 'google_source_site'"
-                               " field at item: %s" % item)
+                               " field at item:")
         return item
 
 

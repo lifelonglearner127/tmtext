@@ -39,6 +39,9 @@ EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
 MEMUSAGE_LIMIT_MB = 256
 MEMUSAGE_ENABLED = True
 
+# redefine log foramtter. DropItem exception provided with ERROR level
+LOG_FORMATTER = 'product_ranking.pipelines.PipelineFormatter'
+
 try:
     from settings_local import *
 except ImportError:
