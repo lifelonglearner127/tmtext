@@ -256,10 +256,33 @@ def put_file_into_s3(bucket_name, fname,
 def _check_if_log_file_contains_end_marker(log_file, data_bs_file):
     if not os.path.exists(log_file):
         return
+    lines = get_lines_from_file(log_file)
+    if lines:
+        if 'INFO: Spider closed (finished)' in lines[-1]:
+            if data_bs_file:
+                lines = get_lines_from_file(data_bs_file[:-3] + ".log")
+                if not 'INFO: Spider closed (finished)' in lines[-1]:
+                    return
+                temp_file = '%s/%s' % (
+                    os.path.expanduser(JOB_OUTPUT_PATH),
+                    "temp_file.jl"
+                )
+                os.system(
+                    REPO_BASE_PATH + "/product-ranking/add-best-seller.py " +
+                    log_file[:-4] + ".jl " + data_bs_file + " >" + temp_file
+                )
+                with open(temp_file) as bs_file:
+                    lines = bs_file.readlines()
+                    with open(log_file[:-4]+".jl", "w") as main_file:
+                        main_file.writelines(lines)
+                os.remove(temp_file)
+            return True
+
+def get_lines_from_file(get_file):
     try:
-        f = open(log_file,'r')
+        f = open(get_file,'r')
     except IOError:
-        logger.error("Failed to open log file %s", log_file)
+        logger.error("Failed to open log file %s", get_file)
         return  # error - can't open the log file
     else:
         f.seek(0, 2)
@@ -267,16 +290,8 @@ def _check_if_log_file_contains_end_marker(log_file, data_bs_file):
         f.seek(max(fsize-1024, 0), 0)
         lines = f.readlines()
         f.close()
-        if 'INFO: Spider closed (finished)' in lines[-1]:
-            if data_bs_file:
-                temp_file = '%s/%s' % (os.path.expanduser(JOB_OUTPUT_PATH), "temp_file.jl")
-                os.system(REPO_BASE_PATH+"/product-ranking/add-best-seller.py "+log_file[:-4]+".jl "+data_bs_file+" >"+temp_file)
-                with open(temp_file) as f:
-                    lines = f.readlines()
-                    with open(log_file[:-4]+".jl", "w") as f1:
-                        f1.writelines(lines)
-                os.remove(temp_file)
-            return True
+        return lines
+    return False
 
 def _check_num_of_products(data_file):
     if not os.path.exists(data_file):
@@ -402,8 +417,8 @@ def execute_task_from_sqs():
     logger.info("Runing %s", cmd)
 
     data_bs_file = None
-    if "with_best_seller_ranking" in cmd_line_args \
-            and cmd_line_args["with_best_seller_ranking"]:
+    if "with_best_seller_ranking" in metadata \
+            and metadata["with_best_seller_ranking"]:
         data_bs_file = output_path + '_bs.jl'
         cmdbs = ('cd %s/product-ranking'
                  ' && scrapy crawl %s -a %s="%s" %s'
@@ -440,10 +455,10 @@ def prepare_test_data():
             'task_id': 4444, 'site': 'walmart', 'searchterms_str': 'iphone',
             'server_name': 'test_server_name',
             # "url": "http://www.walmart.com/ip/42211446?productRedirect=true",
+            'with_best_seller_ranking': True,
             'cmd_args':
                 {
                     'quantity': 20,
-                    'with_best_seller_ranking': True
                 }
         }
         fh.write(json.dumps(msg, default=json_serializer))
