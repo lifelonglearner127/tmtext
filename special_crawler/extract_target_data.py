@@ -335,6 +335,9 @@ class TargetScraper(Scraper):
     ##########################################
     def _price(self):
         price = self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
+        temp_price_cut = self.tree_html.xpath("//div[@id='price_main']//div[contains(@class,'price')]//ul//li[contains(@class,'eyebrow')]//text()")
+        if "TEMP PRICE CUT" in temp_price_cut:
+            price = "%s - Temp Price Cut" % price
         return price
 
     def _in_stores_only(self):
