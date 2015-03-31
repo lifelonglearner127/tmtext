@@ -14,8 +14,8 @@ from product_ranking.spiders import cond_set_value
 
 
 
-# FIXME Read only first 24 items for 'toothpaste'.
-# FIXME No results sorting.
+
+# FIXME "95p" prices - http://www.waitrose.com/shop/DisplayProductFlyout?productId=299301
 # FIXME No reviews for page http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
 # FIXME No 'also viewed' related products for http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
 # FIXME Empty 'brand' field.
@@ -28,8 +28,8 @@ class WaitroseProductsSpider(BaseProductsSpider):
     start_urls = []
 
     SEARCH_URL = "http://www.waitrose.com/shop/BrowseAjaxCmd"
-    _DATA = "Groceries/refined_by/search_term/{search_term}/sort_by/NONE" \
-        "/sort_direction/descending/page/{page}"
+    _DATA = "Groceries/refined_by/search_term/{search_term}/sort_by/{order}" \
+            "/sort_direction/{direction}/page/{page}"
 
     _PRODUCT_TO_DATA_KEYS = {
         'title': 'name',
@@ -39,17 +39,36 @@ class WaitroseProductsSpider(BaseProductsSpider):
         'description': 'summary',
     }
 
+    SORT_MODES = {
+        'default': ('NONE', 'descending'),
+        'popularity': ('popularity', 'descending'),
+        'rating': ('averagerating', 'descending'),
+        'name_asc': ('name', 'ascending'),
+        'name_desc': ('name', 'descending'),
+        'price_asc': ('price', 'ascending'),
+        'price_desc': ('price', 'descending')
+    }
+
+    def __init__(self, order='default', *args, **kwargs):
+        super(WaitroseProductsSpider, self).__init__(*args, **kwargs)
+        if order not in self.SORT_MODES:
+            raise Exception('Sort mode %s not found' % order)
+        self._sort_order = order
+
     @staticmethod
     def _get_data(response):
         return json.loads(response.body_as_unicode())
 
-    @staticmethod
-    def _create_request(meta):
+    def _create_request(self, meta):
+        order, direction = self.SORT_MODES[self._sort_order]
         return FormRequest(
             url=WaitroseProductsSpider.SEARCH_URL,
             formdata={
                 'browse': WaitroseProductsSpider._DATA.format(
-                    search_term=meta['search_term'], page=meta['current_page']),
+                    search_term=meta['search_term'],
+                    page=meta['current_page'],
+                    order=order,
+                    direction=direction)
             },
             meta=meta,
         )
