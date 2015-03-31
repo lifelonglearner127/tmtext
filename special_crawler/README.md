@@ -5,6 +5,7 @@ The service is implemented in python 2.7.
 ## Dependencies:
 
 - libjpeg-dev
+- python-opencv
 
 ## Dependencies (python packages):
 
