@@ -30,7 +30,8 @@ queue_names = {
     "IntegrationTest": "integration_test_scrape", 
     "RegressionTest": "test_scrape",
     "Demo": "demo_scrape", 
-    "Production": "production_scrape"}
+    "Production": "production_scrape",
+    "Walmartfullsite": "walmart-fullsite_scrape"}
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
 
