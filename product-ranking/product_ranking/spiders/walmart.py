@@ -6,6 +6,7 @@ import re
 import urlparse
 import uuid
 import string
+import datetime
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -155,9 +156,25 @@ class WalmartProductsSpider(BaseProductsSpider):
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
         self._gen_related_req(response)
+
+        id = re.findall('\/(\d+)', response.url)
+        if id:
+            url = 'http://www.walmart.com/reviews/api/questions/{0}?' \
+                  'sort=mostRecentQuestions&pageNumber=1'.format(id[0])
+            new_meta = response.meta.copy()
+            yield Request(url=url, meta=new_meta, callback=self._get_date)
+
         if not product.get('price'):
-            return self._gen_location_request(response)
-        return self._start_related(response)
+            yield self._gen_location_request(response)
+            return
+        yield self._start_related(response)
+
+    def _get_date(self, response):
+        product = response.meta['product']
+        data = json.loads(response.body_as_unicode())
+        if 'questionDetails' in data and len(data['questionDetails']) > 0:
+            date = str(datetime.datetime.strptime(data['questionDetails'][0]['submissionDate'], "%m/%d/%Y").date())
+            product['date_of_last_question'] = date
 
     def _parse_single_product(self, response):
         return self.parse_product(response)

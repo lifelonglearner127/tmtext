@@ -122,3 +122,4 @@ class SiteProductItem(Item):
 
     is_pickup_only = Field()   # now for Walmart only; may change in the future
 
+    date_of_last_question = Field()   # now for Walmart only; may change in the future
