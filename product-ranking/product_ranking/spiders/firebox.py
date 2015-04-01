@@ -65,6 +65,10 @@ class FireboxProductSpider(BaseProductsSpider):
             '//div[@class="clearfix text_box margin_after bg_white"]'
             '| //div[@class="wide_page"]'
         ).extract()
+        if len(des) < 1:
+            des = response.xpath(
+                "//span[contains(@class,'product_smallprint')]"
+            ).extract()
         cond_set(prod, 'description', des)
 
         img_url = response.xpath(
