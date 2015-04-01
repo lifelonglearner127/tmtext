@@ -29,7 +29,7 @@ class WalmartScraper(Scraper):
                                  should contain information on what the expected format for the
                                  input URL is.
 
-            BASE_URL_VIDEOREQ_WEBCOLLAGE (string):
+            BASE_URL_REQ_WEBCOLLAGE (string):
             BASE_URL_PDFREQ_WEBCOLLAGE (string):
             BASE_URL_REVIEWSREQ (string):   strings containing necessary hardcoded URLs for extracting walmart
                                             videos, pdfs and reviews
@@ -233,6 +233,23 @@ class WalmartScraper(Scraper):
             self._extract_video_urls()
 
         return self.video_urls
+
+    def _360view_count(self):
+        """Return 360view count for a given walmart product in new walmart design
+        Returns:
+            number of 360view
+            or None if none found
+        """
+        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+                                str(self._extract_product_id()) + "/Webcollage360View").text
+
+        tree = html.fromstring(contents)
+        existance_360view = tree.xpath("//div[@class='wc-360']")
+
+        if not existance_360view:
+            return 0
+        else:
+            len(existance_360view)
 
     def _pdf_urls(self):
         """Extracts pdf URLs for a given walmart product, puts them in an instance variable
@@ -1876,6 +1893,7 @@ class WalmartScraper(Scraper):
         # video needs both page source and separate requests
         "video_count" : _product_has_video, \
         "video_urls" : _video_urls, \
+        "360view_count" : _360view_count, \
         "webcollage" : _product_has_webcollage, \
         "sellpoints" : _product_has_sellpoints, \
 
