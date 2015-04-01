@@ -251,6 +251,16 @@ class WalmartScraper(Scraper):
         else:
             len(existance_360view)
 
+    def _emc(self):
+        emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
+
+        if not emc:
+            return 0
+        else:
+            return 1
+
+
+
     def _pdf_urls(self):
         """Extracts pdf URLs for a given walmart product, puts them in an instance variable
         Returns:
@@ -1894,6 +1904,7 @@ class WalmartScraper(Scraper):
         "video_count" : _product_has_video, \
         "video_urls" : _video_urls, \
         "360view_count" : _360view_count, \
+        "emc": _emc,
         "webcollage" : _product_has_webcollage, \
         "sellpoints" : _product_has_sellpoints, \
 
