@@ -10,6 +10,8 @@ from lxml import html
 import time
 import requests
 from extract_data import Scraper
+import os
+sys.path.append(os.path.abspath('../search'))
 import captcha_solver
 
 class AmazonScraper(Scraper):
@@ -24,7 +26,7 @@ class AmazonScraper(Scraper):
     # special dir path to store the captchas, so that the service has permissions to create it on the scraper instances
     CB.CAPTCHAS_DIR = '/tmp/captchas'
     CB.SOLVED_CAPTCHAS_DIR = '/tmp/solved_captchas'
-    
+
     MAX_CAPTCHA_RETRIES = 10
 
 
@@ -256,27 +258,40 @@ class AmazonScraper(Scraper):
         desc = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
         if desc is not None and len(desc)>5:
             return desc
-
         desc = " ".join(self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript//text()')).strip()
         if desc is not None and len(desc)>5:
             return desc
-
         pd = self.tree_html.xpath("//h2[contains(text(),'Product Description')]/following-sibling::*//text()")
         if len(pd)>0:
             desc = " ".join(pd).strip()
             if desc is not None and len(desc)>0:
                 return  self._clean_text(desc)
-
         desc = '\n'.join(self.tree_html.xpath('//script//text()'))
         desc = re.findall(r'var iframeContent = "(.*)";', desc)
         desc = urllib.unquote_plus(str(desc))
         desc = html.fromstring(desc)
-        desc = self._clean_text(' '.join(desc.xpath('//div[@class="productDescriptionWrapper"]//text()')))
-        if desc=="" : return None
-        return desc
+        dsw = desc.xpath('//div[@class="productDescriptionWrapper"]')
+        res = ""
+        for d in dsw:
+            if len(d.xpath('.//div[@class="aplus"]'))==0:
+                res += self._clean_text(' '.join(d.xpath('.//text()')))+" "
+        if res != "" :
+            return res
+        return None
 
 
-
+    def _apluscontent_desc(self):
+        res = self._clean_text(' '.join(self.tree_html.xpath('//div[@id="aplusProductDescription"]//text()')))
+        if res != "" : return res
+        desc = '\n'.join(self.tree_html.xpath('//script//text()'))
+        desc = re.findall(r'var iframeContent = "(.*)";', desc)
+        desc = urllib.unquote_plus(str(desc))
+        desc = html.fromstring(desc)
+        res = self._clean_text(' '.join(desc.xpath('//div[@id="aplusProductDescription"]//text()')))
+        if res != "" : return res
+        res = self._clean_text(' '.join(desc.xpath('//div[@class="productDescriptionWrapper"]/div[@class="aplus"]//text()')))
+        if res != "" : return res
+        return None
 
 
     ##########################################
@@ -801,7 +816,9 @@ class AmazonScraper(Scraper):
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
-        return re.sub("&nbsp;", " ", text).strip()
+        text = text.replace("<br />"," ").replace("\n"," ").replace("\t"," ").replace("\r"," ")
+       	text = re.sub("&nbsp;", " ", text).strip()
+        return  re.sub(r'\s+', ' ', text)
 
 
 
@@ -830,6 +847,7 @@ class AmazonScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
+        "apluscontent_desc" : _apluscontent_desc, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
