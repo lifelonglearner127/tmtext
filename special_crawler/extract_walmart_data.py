@@ -249,7 +249,7 @@ class WalmartScraper(Scraper):
         if not existance_360view:
             return 0
         else:
-            len(existance_360view)
+            return len(existance_360view)
 
     def _emc(self):
         emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
