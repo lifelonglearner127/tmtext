@@ -171,7 +171,7 @@ class WalmartScraper(Scraper):
                     self.has_webcollage_media = True
                     self.has_video = True
                     self.video_urls.append(video_url_candidate)
-                    break
+#                    break
 
                 # if it doesn't, it may be a url to make another request to, to get customer reviews video
                 if "client.expotv.com" in video_url_candidate:
@@ -396,7 +396,7 @@ class WalmartScraper(Scraper):
 
         return 0
 
-    def _product_has_video(self):
+    def _video_count(self):
         """Whether product has video
         To be replaced with function that actually counts
         number of videos for this product
@@ -408,10 +408,10 @@ class WalmartScraper(Scraper):
         if not self.extracted_video_urls:
             self._extract_video_urls()
 
-        if self.has_video:
-            return 1
-        else:
+        if not self.video_urls:
             return 0
+        else:
+            return len(self.video_urls)
 
     def _pdf_count(self):
         """Returns the number of pdf
@@ -1901,7 +1901,7 @@ class WalmartScraper(Scraper):
         "min_review" : _min_review, \
         "reviews" : _reviews, \
         # video needs both page source and separate requests
-        "video_count" : _product_has_video, \
+        "video_count" : _video_count, \
         "video_urls" : _video_urls, \
         "360view_count" : _360view_count, \
         "emc": _emc,
