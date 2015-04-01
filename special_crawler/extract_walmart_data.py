@@ -259,7 +259,11 @@ class WalmartScraper(Scraper):
         else:
             return 1
 
-
+    def _flixmedia(self):
+        if "media.flix" in etree.tostring(self.tree_html):
+            return 1
+        else:
+            return 0
 
     def _pdf_urls(self):
         """Extracts pdf URLs for a given walmart product, puts them in an instance variable
@@ -1904,7 +1908,8 @@ class WalmartScraper(Scraper):
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
         "360view_count" : _360view_count, \
-        "emc": _emc,
+        "emc": _emc, \
+        "flixmedia": _flixmedia, \
         "webcollage" : _product_has_webcollage, \
         "sellpoints" : _product_has_sellpoints, \
 

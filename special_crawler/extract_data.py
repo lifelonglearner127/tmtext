@@ -82,6 +82,7 @@ class Scraper():
             "video_urls", # urls of product videos, list of strings
             "360view_count",
             "emc",
+            "flixmedia",
             "pdf_count", # nr of pdfs, string
             "pdf_urls", # urls of product pdfs, list of strings
             "webcollage", # whether page contains webcollage content, 1/0
@@ -165,7 +166,7 @@ class Scraper():
                         "features", "feature_count", "model_meta", "description", "long_description","apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "rollback"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "360view_count", \
-                            "emc", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
+                            "emc", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
                             "image_hashes", "thumbnail", "sellpoints"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
