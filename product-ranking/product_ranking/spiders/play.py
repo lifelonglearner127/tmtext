@@ -89,6 +89,8 @@ class PlayProductsSpider(BaseProductsSpider):
             "//figure[@class='product-images']/a/img/@src").extract())
         cond_set(product, 'description', response.xpath(
             "//section[@id='Description']").extract())
+        cond_set(product, 'description', response.xpath(
+            "//section[@id='InfoAndCare']").extract())
         if prodid or parentprodid:
             sess = int((datetime.utcnow() - datetime(
                 1970, 1, 1)).total_seconds())

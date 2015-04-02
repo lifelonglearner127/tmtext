@@ -67,9 +67,10 @@ class Scraper():
             "model_meta", # model from meta, string
             "description", # short description / entire description if no short available, string
             "long_description", # long description / null if description above is entire description, string
+            "apluscontent_desc", #aplus description
             "ingredients", # list of ingredients - list of strings
             "ingredient_count", # number of ingredients - integer
-            "nutrition_facts", # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries) 
+            "nutrition_facts", # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
                                # containing nutrition facts
             "nutrition_fact_count", # number of nutrition facts (of elements in the nutrition_facts list) - integer
             "rollback", # binary (0/1), whether product is rollback or not
@@ -79,6 +80,8 @@ class Scraper():
             "image_urls", # urls of product images, list of strings
             "video_count", # nr of videos, int
             "video_urls", # urls of product videos, list of strings
+            "360view_count",
+            "emc",
             "pdf_count", # nr of pdfs, string
             "pdf_urls", # urls of product pdfs, list of strings
             "webcollage", # whether page contains webcollage content, 1/0
@@ -92,14 +95,14 @@ class Scraper():
             "image_hashes", # list of hash values of images as returned by _image_hash() function - list of strings (the same order as image_urls)
             "thumbnail", # thumbnail of the main product image on the page - tbd
 
-            
+
             # reviews
             "review_count", # total number of reviews, int
             "average_review", # average value of review, float
             "max_review", # highest review score, float
             "min_review", # lowest review score, float
             "reviews", # review list
-            
+
             # sellers
             "price", # price, string including currency
             "price_amount", # price, float
@@ -123,7 +126,7 @@ class Scraper():
             # legacy
             "owned", # whether product is owned by site, 1/0
             "owned_out_of_stock", # whether product is owned and out of stock, 1/0
-            
+
             # classification
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
             "category_name", # category for this product, string
@@ -143,7 +146,7 @@ class Scraper():
     # (to handle subclasses where the extraction is not implemented)
     # and their definition will be overwritten in subclasses where the extraction is implemented;
     # or data types will be added to the structure below
-    # 
+    #
     # "loaded_in_seconds" needs to always have a value of None (no need to implement extraction)
     # TODO: date should be implemented here
     BASE_DATA_TYPES = {
@@ -160,10 +163,10 @@ class Scraper():
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
-                        "features", "feature_count", "model_meta", "description", "long_description",
+                        "features", "feature_count", "model_meta", "description", "long_description","apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "rollback"],
-        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls",\
-                            "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "360view_count", \
+                            "emc", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
                             "image_hashes", "thumbnail", "sellpoints"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
@@ -195,7 +198,7 @@ class Scraper():
             f = open(path, 'r')
             s = f.read()
             if len(s) > 1:
-                no_img_list = json.loads(s)    
+                no_img_list = json.loads(s)
             f.close()
         return no_img_list
 
@@ -228,7 +231,7 @@ class Scraper():
             self.DATA_TYPES_SPECIAL = {}
         self.ALL_DATA_TYPES = dict(self.BASE_DATA_TYPES.items() + self.DATA_TYPES.items() + self.DATA_TYPES_SPECIAL.items())
         # remove data types that were not declared in this superclass
-    
+
         # TODO: do this more efficiently?
         for key in list(self.ALL_DATA_TYPES.keys()):
             if key not in self.BASE_DATA_TYPES:
@@ -269,7 +272,7 @@ class Scraper():
         self.BASE_DATA_TYPES['meta_tag_count'] = lambda c: self._meta_tag_count()
 
         # Set fields for error response
-        
+
         # Set date
         self.ERROR_RESPONSE['date'] = current_date
         # Set url
@@ -299,7 +302,7 @@ class Scraper():
         if not info_type_list:
             info_type_list = self.ALL_DATA_TYPES.keys()
 
-        
+
         # copy of info list to send to _extract_product_data
         info_type_list_copy = list(info_type_list)
 
@@ -396,7 +399,7 @@ class Scraper():
             print "WARNING: page contained NULL characters. Removed"
             text = text.replace('\00','')
         return text
-            
+
 
     # Extract product info given a list of the type of info needed.
     # Return dictionary containing type of info as keys and extracted info as values.
@@ -491,7 +494,7 @@ class Scraper():
         :param image_url: url of image to be hashed
         """
         return str(MurmurHash.hash(fetch_bytes(image_url)))
-    
+
     # Checks if image given as parameter is "no  image" image
     # To be used by subscrapers
     def _no_image(self, image_url):
@@ -499,7 +502,7 @@ class Scraper():
         a "no image" image.
 
         Certain products have an image that indicates "there is no image available"
-        a hash of these "no-images" is saved to a json file 
+        a hash of these "no-images" is saved to a json file
         and new images are compared to see if they're the same.
 
         Uses "fetch_bytes" function from the script used to compute
@@ -761,6 +764,6 @@ class Scraper():
         return ''.join(filter(None, parts))
 
 
-    
+
 if __name__=="__main__":
     print main(sys.argv)
