@@ -18,10 +18,9 @@ from product_ranking.spiders import cond_set_value
 
 
 
+
 # FIXME No reviews for page http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
 # FIXME No 'also viewed' related products for http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
-# FIXME Empty 'locale' field.
-# FIXME Field image_url not started with 'http:' u'//d3l6n8hsebkot8.cloudfront.net/images/products/9/LN_504898_BP_9.jpg'
 
 class WaitroseProductsSpider(BaseProductsSpider):
     name = "waitrose_products"
@@ -112,6 +111,10 @@ class WaitroseProductsSpider(BaseProductsSpider):
                     product[product_key] = product_data[data_key]
                 else:
                     missing_values = True
+
+            image_url = product.get('image_url', 'None')
+            if image_url:
+                product['image_url'] = urlparse.urljoin('http://', image_url)
 
             # This one is not in the mapping since it requires transformation.
             product['upc'] = int(product_data['productid'])
