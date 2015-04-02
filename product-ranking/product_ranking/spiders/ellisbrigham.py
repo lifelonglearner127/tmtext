@@ -18,6 +18,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 
 
 
+
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
 currencys = {"£": "GBP","€": "EUR","$": "USD"}
@@ -29,7 +30,6 @@ user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36" \
 
 
 # FIXME brand not scraped: http://www.ellis-brigham.com/products/norrona/mens-lofoten-gtx-pro-onepiece/339400
-# FIXME buyer_reviews rating_by_star not scraped (always None)
 
 class EllisbrighamProductsSpider(BaseProductsSpider):
     name = "ellisbrigham_products"
@@ -131,11 +131,14 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
         if average_rating:
             average_rating = re.findall("star-(\d+)", average_rating[0])
         num_of_reviews = reviews.xpath('text()').re(FLOATING_POINT_RGEX)
+        css = 'img[id*=_rptReviews_imgStarImage]::attr(src)'
+        by_star = response.css(css).re('/img/rating/star-(\d+).png')
+        by_star = {int(stars): by_star.count(stars) for stars in by_star}
         if num_of_reviews or average_rating:
             prod["buyer_reviews"] = BuyerReviews(
                 num_of_reviews=int(is_empty(num_of_reviews)),
                 average_rating=float(is_empty(average_rating)),
-                rating_by_star=None
+                rating_by_star=by_star
             )
 
         prod["locale"] = "en_GB"
