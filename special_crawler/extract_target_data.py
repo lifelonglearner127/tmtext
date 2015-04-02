@@ -71,7 +71,7 @@ class TargetScraper(Scraper):
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
-    
+
     def _model(self):
         return None
 
@@ -333,11 +333,14 @@ class TargetScraper(Scraper):
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
-    def _price(self):
-        price = self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
+    def _temp_price_cut(self):
         temp_price_cut = self.tree_html.xpath("//div[@id='price_main']//div[contains(@class,'price')]//ul//li[contains(@class,'eyebrow')]//text()")
         if "TEMP PRICE CUT" in temp_price_cut:
-            price = "%s - Temp Price Cut" % price
+            return 1
+        return 0
+
+    def _price(self):
+        price = self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
         return price
 
     def _price_amount(self):
@@ -480,6 +483,7 @@ class TargetScraper(Scraper):
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
+        "temp_price_cut" : _temp_price_cut, \
         "in_stores" : _in_stores, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
@@ -487,6 +491,7 @@ class TargetScraper(Scraper):
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
+        "temp_price_cut": _temp_price_cut, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
