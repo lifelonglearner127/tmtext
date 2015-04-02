@@ -1,12 +1,12 @@
 # coding=utf-8
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 import json
 import urllib
+from urlparse import urljoin
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 
 
@@ -30,7 +30,6 @@ class LLBeanProductsSpider(BaseProductsSpider):
     }
 
     image_url = "http://cdni.llbean.com/is/image/wim/"
-    product_url = "http://www.llbean.com/"
 
     def __init__(self, search_sort='best_match', *args, **kwargs):
         super(LLBeanProductsSpider, self).__init__(
@@ -64,7 +63,7 @@ class LLBeanProductsSpider(BaseProductsSpider):
             prod['description'] = item['qrtxt']
             prod['upc'] = item['item'][0]['prodId']
             prod['image_url'] = self.image_url + item['img']
-            prod['url'] = self.product_url + item['displayUrl']
+            prod['url'] = urljoin(response.url, item['displayUrl'])
             if item['item'][0]['stock'] == "IN":
                 prod['is_out_of_stock'] = True
             else:
