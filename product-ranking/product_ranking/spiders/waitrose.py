@@ -9,8 +9,9 @@ import urlparse
 from scrapy.http.request.form import FormRequest
 
 from product_ranking.items import SiteProductItem, Price
-from product_ranking.spiders import BaseProductsSpider
+from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.spiders import cond_set_value
+
 
 
 
@@ -90,6 +91,8 @@ class WaitroseProductsSpider(BaseProductsSpider):
         xpath = '//div[@class="product_disclaimer"]/node()[normalize-space()]'
         cond_set_value(product, 'description', response.xpath(xpath).extract(),
                        ''.join)
+        cond_set(product, 'brand',
+                 response.css('.at-a-glance span::text').re('Brand (.+)'))
         return product
 
     def _scrape_total_matches(self, response):
