@@ -4,29 +4,23 @@ from __future__ import division, absolute_import, unicode_literals
 
 import json
 import re
+from urllib import urlencode
 import urlparse
 
 from scrapy import Request
 from scrapy.http.request.form import FormRequest
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
+    RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.spiders import cond_set_value
 
 
-
-
-
-
-
-
-
-# FIXME No reviews for page http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
-# FIXME No 'also viewed' related products for http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
-
 class WaitroseProductsSpider(BaseProductsSpider):
     name = "waitrose_products"
-    allowed_domains = ["waitrose.com", 'api.bazaarvoice.com']
+    allowed_domains = ["waitrose.com",
+                       'api.bazaarvoice.com',
+                       'recs.richrelevance.com']
     start_urls = []
 
 
@@ -59,6 +53,17 @@ class WaitroseProductsSpider(BaseProductsSpider):
                      "&filteredstats.q0=reviews"
 
     REVIEW_API_PASS = "ixky61huptwfdsu0v9cclqjuj"
+
+    RR_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js" \
+             "?a=141924517b5442cd" \
+             "&p={model}" \
+             "&n={title}" \
+             "&pt=|item_page.recs_1" \
+             "&cts=http%3A%2F%2Fwww.waitrose.com" \
+             "&flv=0.0.0&l=1"
+
+    PROD_LOOKUP_URL = "http://www.waitrose.com/shop/LineLookUp?%s"
+
 
     def __init__(self, order='default', *args, **kwargs):
         cond_set_value(kwargs, 'site_name', 'waitrose.com')
@@ -120,6 +125,7 @@ class WaitroseProductsSpider(BaseProductsSpider):
                  response.css('.at-a-glance span::text').re('Brand (.+)'))
         cond_set_value(product, 'locale', u'en-GB')
         requests = [self._request_buyer_reviews(response)]
+        requests.append(self._request_related_products(response))
         return requests or product
 
     def _scrape_total_matches(self, response):
@@ -212,4 +218,42 @@ class WaitroseProductsSpider(BaseProductsSpider):
             assert round(avg, 1) == round(float(average), 1)
 
         cond_set_value(product, 'buyer_reviews', reviews)
+        return self._complete_additional_data(response)
+
+    def _request_related_products(self, response):
+        model = response.css('.product-detail::attr(partnumber)').extract()
+        if not model:
+            model = response.css('.product-detail::attr(partNumber)').extract()
+        if not model:
+            self.log('Could not find partNumber')
+            return
+        title = response.meta['product'].get('title')
+        if not title:
+            self.log('Could not find product title')
+            return
+        url = self.RR_URL.format(model=model[0], title=title)
+        request = Request(url, self._parse_related_products, dont_filter=True)
+        return self._request_additional_data(response, request)
+
+    def _parse_related_products(self, response):
+        relation = re.findall('"message": *"([^"]+)', response.body)[0]
+        ids = re.findall('"id": "([^"]+)', response.body)
+        args = {'lineNumber_%i' % (i + 1): pid for i, pid in enumerate(ids)}
+        args.update({'_method': 'GET'})
+        args = urlencode(args)
+        url = self.PROD_LOOKUP_URL % args
+        request = Request(url, self._parse_rp_lookup, dont_filter=True,
+                          meta={'relation': relation})
+        return self._request_additional_data(response, request)
+
+    def _parse_rp_lookup(self, response):
+        baseurl = 'http://waitrose.com'
+        jsondata = json.loads(response.body_as_unicode())
+        products = [
+            RelatedProduct(title=p['name'],
+                           url=urlparse.urljoin(baseurl, p['url']))
+            for p in jsondata['products']
+        ]
+        cond_set_value(response.meta['product'], 'related_products',
+                       {response.meta['relation']: products})
         return self._complete_additional_data(response)
