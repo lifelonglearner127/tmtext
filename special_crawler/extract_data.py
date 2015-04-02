@@ -108,6 +108,7 @@ class Scraper():
             "price", # price, string including currency
             "price_amount", # price, float
             "price_currency", # currency for price, string of max 3 chars
+            "temp_price_cut", # Temp Price Cut, 1/0
             "in_stores", # available to purchase in stores, 1/0
             "in_stores_only", # whether product can be found in stores only, 1/0
             "marketplace", # whether product can be found on marketplace, 1/0
@@ -170,7 +171,7 @@ class Scraper():
                             "meta_tags","meta_tag_count", \
                             "image_hashes", "thumbnail", "sellpoints"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
-        "sellers": ["price", "price_amount", "price_currency", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
+        "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock", \
                     "site_online", "site_online_in_stock", "site_online_out_of_stock", "marketplace_in_stock", \
                     "marketplace_out_of_stock", "marketplace_prices", "in_stores_in_stock", \
