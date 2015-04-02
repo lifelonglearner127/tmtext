@@ -491,7 +491,6 @@ class TargetScraper(Scraper):
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
-        "temp_price_cut": _temp_price_cut, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
