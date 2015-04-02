@@ -17,9 +17,9 @@ from product_ranking.spiders import cond_set_value
 
 
 
+
 # FIXME No reviews for page http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
 # FIXME No 'also viewed' related products for http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
-# FIXME Empty 'brand' field.
 # FIXME Empty 'locale' field.
 # FIXME Field image_url not started with 'http:' u'//d3l6n8hsebkot8.cloudfront.net/images/products/9/LN_504898_BP_9.jpg'
 
@@ -93,6 +93,7 @@ class WaitroseProductsSpider(BaseProductsSpider):
                        ''.join)
         cond_set(product, 'brand',
                  response.css('.at-a-glance span::text').re('Brand (.+)'))
+        cond_set_value(product, 'locale', u'en-GB')
         return product
 
     def _scrape_total_matches(self, response):
