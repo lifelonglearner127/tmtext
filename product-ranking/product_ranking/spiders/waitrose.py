@@ -6,11 +6,13 @@ import json
 import re
 import urlparse
 
+from scrapy import Request
 from scrapy.http.request.form import FormRequest
 
-from product_ranking.items import SiteProductItem, Price
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.spiders import cond_set_value
+
 
 
 
@@ -24,7 +26,7 @@ from product_ranking.spiders import cond_set_value
 
 class WaitroseProductsSpider(BaseProductsSpider):
     name = "waitrose_products"
-    allowed_domains = ["waitrose.com"]
+    allowed_domains = ["waitrose.com", 'api.bazaarvoice.com']
     start_urls = []
 
 
@@ -50,11 +52,35 @@ class WaitroseProductsSpider(BaseProductsSpider):
         'price_desc': ('price', 'descending')
     }
 
+    REVIEW_API_URL = "http://api.bazaarvoice.com/data/batch.json" \
+                     "?passkey={apipass}&apiversion=5.5" \
+                     "&displaycode=17263-en_gb&resource.q0=products" \
+                     "&filter.q0=id%3Aeq%3A{model}&stats.q0=reviews" \
+                     "&filteredstats.q0=reviews"
+
+    REVIEW_API_PASS = "ixky61huptwfdsu0v9cclqjuj"
+
     def __init__(self, order='default', *args, **kwargs):
+        cond_set_value(kwargs, 'site_name', 'waitrose.com')
         super(WaitroseProductsSpider, self).__init__(*args, **kwargs)
         if order not in self.SORT_MODES:
             raise Exception('Sort mode %s not found' % order)
         self._sort_order = order
+
+    def _request_additional_data(self, response, request):
+        request.meta.update(response.meta)
+        meta = request.meta
+        if not 'addinfo' in meta:
+            meta['addinfo'] = set()
+        meta['addinfo'].add(id(request))
+        meta['request_addinfo'] = id(request)
+        return request
+
+    def _complete_additional_data(self, response):
+        addinfo = response.meta['addinfo']
+        addinfo.remove(response.meta['request_addinfo'])
+        if not addinfo:
+            return response.meta['product']
 
     @staticmethod
     def _get_data(response):
@@ -93,7 +119,8 @@ class WaitroseProductsSpider(BaseProductsSpider):
         cond_set(product, 'brand',
                  response.css('.at-a-glance span::text').re('Brand (.+)'))
         cond_set_value(product, 'locale', u'en-GB')
-        return product
+        requests = [self._request_buyer_reviews(response)]
+        return requests or product
 
     def _scrape_total_matches(self, response):
         data = WaitroseProductsSpider._get_data(response)
@@ -103,14 +130,11 @@ class WaitroseProductsSpider(BaseProductsSpider):
         data = WaitroseProductsSpider._get_data(response)
         for product_data in data['products']:
             product = SiteProductItem()
-            missing_values = False
 
             for product_key, data_key in self._PRODUCT_TO_DATA_KEYS.items():
                 value = product_data.get(data_key, 'null')
                 if value != 'null':
                     product[product_key] = product_data[data_key]
-                else:
-                    missing_values = True
 
             image_url = product.get('image_url', 'None')
             if image_url:
@@ -139,10 +163,7 @@ class WaitroseProductsSpider(BaseProductsSpider):
                 product['url'] = urlparse.urljoin(
                     'http://www.waitrose.com', product['url'])
 
-            if missing_values:
-                yield product['url'], product
-            else:
-                yield None, product
+            yield product['url'], product
 
     def _scrape_next_results_page_link(self, response):
         data = WaitroseProductsSpider._get_data(response)
@@ -154,3 +175,41 @@ class WaitroseProductsSpider(BaseProductsSpider):
             request = self._create_request(meta)
 
         return request
+
+    def _request_buyer_reviews(self, response):
+        model = response.css('.product-detail::attr(partnumber)').extract()
+        if not model:
+            model = response.css('.product-detail::attr(partNumber)').extract()
+        if not model:
+            self.log('Could not find partNumber')
+            return
+        url = self.REVIEW_API_URL.format(model=model[0],
+                                         apipass=self.REVIEW_API_PASS)
+        request = Request(url, callback=self._parse_buyer_reviews,
+                          dont_filter=True)
+        return self._request_additional_data(response, request)
+
+    def _parse_buyer_reviews(self, response):
+        product = response.meta['product']
+        data = json.loads(response.body_as_unicode())
+        data = data.get('BatchedResults', {}).get('q0', {})
+        data = (data.get('Results') or [{}])[0]
+        data = data.get('FilteredReviewStatistics', {})
+        average = data.get('AverageOverallRating')
+        total = data.get('TotalReviewCount')
+        if average is None or total is None:
+            return self._complete_additional_data(response)
+        distribution = data.get('RatingDistribution', [])
+        distribution = {d['RatingValue']: d['Count']
+                        for d in data.get('RatingDistribution', [])}
+        reviews = BuyerReviews(total, average, distribution)
+
+        # sanity check
+        assert sum(distribution.values()) == total
+        if total:
+            avg = sum([k * v for k, v
+                       in distribution.items()]) / float(total)
+            assert round(avg, 1) == round(float(average), 1)
+
+        cond_set_value(product, 'buyer_reviews', reviews)
+        return self._complete_additional_data(response)
