@@ -178,7 +178,10 @@ class WalmartProductsSpider(BaseProductsSpider):
     def _get_date(self, response):
         data = json.loads(response)
         if 'questionDetails' in data and len(data['questionDetails']) > 0:
-            date = str(datetime.datetime.strptime(data['questionDetails'][0]['submissionDate'], "%m/%d/%Y").date())
+            date = str(datetime.datetime.strptime(
+                data['questionDetails'][0]['submissionDate'], "%m/%d/%Y"
+            ).date()
+            )
             date_of_last_question = date
             return date_of_last_question
         return 
@@ -241,8 +244,13 @@ class WalmartProductsSpider(BaseProductsSpider):
                 "/a[@id='WMItemBrandLnk']/text()").extract())     
         if not product.get("brand"):
             brand = is_empty(response.xpath(
-                "//h1[contains(@class, 'product-name product-heading')]/text()").extract())
-            cond_set(product, 'brand', (guess_brand_from_first_words(brand.strip()),))
+                "//h1[contains(@class, 'product-name product-heading')]/text()"
+            ).extract())
+            cond_set(
+                product,
+                'brand',
+                (guess_brand_from_first_words(brand.strip()),)
+            )
         also_considered = self._build_related_products(
             response.url,
             response.css('.top-product-recommendations .tile-heading'),
