@@ -41,18 +41,16 @@ sys.path.insert(2, os.path.join(CWD, '..', '..', 'special_crawler',
 sys.path.insert(1, os.path.join(path, '..'))
 sys.path.insert(2, os.path.join(path, '..', '..', 'special_crawler',
                                 'queue_handler'))
+from sqs_ranking_spiders.task_id_generator import \
+    generate_hash_datestamp_data, load_data_from_hash_datestamp_data
 try:
     # try local mode (we're in the deploy dir)
     from sqs_ranking_spiders.remote_instance_starter import REPO_BASE_PATH,\
         logging, AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
-    from sqs_ranking_spiders.task_id_generator import \
-        generate_hash_datestamp_data, load_data_from_hash_datestamp_data
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
         AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
-    from repo.task_id_generator import \
-        generate_hash_datestamp_data, load_data_from_hash_datestamp_data
 sys.path.insert(
     3, os.path.join(REPO_BASE_PATH, 'special_crawler', 'queue_handler'))
 from sqs_connect import SQS_Queue
