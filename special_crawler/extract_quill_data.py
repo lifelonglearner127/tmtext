@@ -200,12 +200,28 @@ class QuillScraper(Scraper):
 
     def _image_urls(self):
         image_url = self.tree_html.xpath("//div[@class='s7Thumbs']//div[@class='carouselWrap']//img/@src")
-        image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
+        image_url_tmp = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
+        if len(image_url_tmp) < 1:
+            image_url_tmp = self.tree_html.xpath("//div[contains(@class,'skuImgColScene7')]//div[contains(@class,'skuImageInner')]//img[contains(@class,'skuImageSTD')]/@src")
+        image_url = []
+        for r in image_url_tmp:
+            if "https:" in r:
+                image_url.append(r)
+            elif "http:" not in r:
+                image_url.append("http:%s" % r)
+            else:
+                image_url.append(r)
         if len(image_url) < 1:
             image_url = self.tree_html.xpath("//div[@class='skuImgColScene7']//div[@class='skuImageZoom']//img/@src")
             image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
             if len(image_url) < 1:
                 return None
+        if len(image_url) == 1:
+            try:
+                if self._no_image(image_url[0]):
+                    return None
+            except Exception, e:
+                print "WARNING: ", e.message
         return image_url
 
     def _image_count(self):
