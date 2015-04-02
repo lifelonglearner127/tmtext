@@ -15,7 +15,7 @@ from product_ranking.spiders import cond_set_value
 
 
 
-# FIXME "95p" prices - http://www.waitrose.com/shop/DisplayProductFlyout?productId=299301
+
 # FIXME No reviews for page http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
 # FIXME No 'also viewed' related products for http://www.waitrose.com/shop/DisplayProductFlyout?productId=71298
 # FIXME Empty 'brand' field.
@@ -26,6 +26,7 @@ class WaitroseProductsSpider(BaseProductsSpider):
     name = "waitrose_products"
     allowed_domains = ["waitrose.com"]
     start_urls = []
+
 
     SEARCH_URL = "http://www.waitrose.com/shop/BrowseAjaxCmd"
     _DATA = "Groceries/refined_by/search_term/{search_term}/sort_by/{order}" \
@@ -114,8 +115,10 @@ class WaitroseProductsSpider(BaseProductsSpider):
             if product.get('price', None):
                 price = product['price']
                 price = price.replace('&pound;', 'p')
-                price = re.findall('p? *[\d ,.]+ *p? *', price)
+                price = re.findall('(p? *[\d ,.]+ *p?) *', price)
                 price = price[0] if price else ''
+                if price.endswith('p'):
+                    price = '0.' + price.strip()
                 if 'p' in price:
                     price = re.sub('[p ,]', '', price)
                     product['price'] = Price(
