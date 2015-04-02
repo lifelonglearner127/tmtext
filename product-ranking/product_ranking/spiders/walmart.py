@@ -6,6 +6,8 @@ import re
 import urlparse
 import uuid
 import string
+import datetime
+import requests
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -155,9 +157,31 @@ class WalmartProductsSpider(BaseProductsSpider):
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
         self._gen_related_req(response)
+
+        id = re.findall('\/(\d+)', response.url)
+        if id:
+            url = 'http://www.walmart.com/reviews/api/questions/{0}?' \
+                  'sort=mostRecentQuestions&pageNumber=1'.format(id[0])
+            try:
+                r = requests.get(url, timeout=2)
+                date_of_last_question = self._get_date(r.text)
+                if date_of_last_question:
+                    product["date_of_last_question"] = date_of_last_question
+            except Exception:
+               self.log("Can't get 'date_of_last_question'", ERROR)
+            
         if not product.get('price'):
-            return self._gen_location_request(response)
-        return self._start_related(response)
+            yield self._gen_location_request(response)
+            return
+        yield self._start_related(response)
+
+    def _get_date(self, response):
+        data = json.loads(response)
+        if 'questionDetails' in data and len(data['questionDetails']) > 0:
+            date = str(datetime.datetime.strptime(data['questionDetails'][0]['submissionDate'], "%m/%d/%Y").date())
+            date_of_last_question = date
+            return date_of_last_question
+        return 
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -367,6 +391,7 @@ class WalmartProductsSpider(BaseProductsSpider):
         return self._start_related(response)
 
     def _populate_from_js(self, response, product):
+        data = {}
         m = re.search(
             self._JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
         if m:
@@ -374,7 +399,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             try:
                 data = json.loads(text)
             except ValueError:
-                data = {}
+                pass
         if not data:
             self.log("No JS matched in %r." % response.url, ERROR)
             return
