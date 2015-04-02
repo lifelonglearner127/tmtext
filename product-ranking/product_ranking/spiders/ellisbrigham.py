@@ -19,6 +19,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 
 
 
+
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
 currencys = {"£": "GBP","€": "EUR","$": "USD"}
@@ -28,8 +29,6 @@ is_empty = lambda x: x[0] if x else ""
 user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36" \
     " (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"
 
-
-# FIXME brand not scraped: http://www.ellis-brigham.com/products/norrona/mens-lofoten-gtx-pro-onepiece/339400
 
 class EllisbrighamProductsSpider(BaseProductsSpider):
     name = "ellisbrigham_products"
@@ -154,10 +153,12 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
         return 0
 
     def _scrape_product_links(self, response):
-        links = response.xpath(
-            '//div[@class="product-description"]/h3/a/@href').extract()
-        for link in links:
-            yield link, SiteProductItem()
+        boxes = response.css('.product-description')
+        for box in boxes:
+            product = SiteProductItem()
+            url = box.xpath('h3/a/@href').extract()
+            cond_set(product, 'brand', box.xpath('p/text()').extract())
+            yield url[0], product
 
     def _scrape_next_results_page_link(self, response):
         if not self._scrape_total_matches(response):
