@@ -111,10 +111,15 @@ class SiteProductItem(Item):
     search_term_in_title_interleaved = Field()  # Bool
 
     # For google.co.uk, google.com products
+    # Should be provided in valid JSON format
     google_source_site = Field()
 
     is_mobile_agent = Field()  # if the spider was in the mobile mode
 
-    limited_stock = Field() # see LimitedStock obj
+    limited_stock = Field()   # see LimitedStock obj
 
     prime = Field()  # amazon Prime program: Prime/PrimePantry/None
+
+    is_pickup_only = Field()   # now for Walmart only; may change in the future
+
+    date_of_last_question = Field()   # now for Walmart only; may change in the future
