@@ -1,28 +1,22 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 import urllib
 import urlparse
 
 from scrapy.log import ERROR
-from scrapy.selector import Selector
-
-
-
-
 from scrapy.http.cookies import CookieJar
-
-
-
-
 from scrapy.http import Request
+
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FormatterWithDefaults, FLOATING_POINT_RGEX
+    FLOATING_POINT_RGEX, cond_set_value
+
+
+
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
@@ -32,6 +26,10 @@ is_empty = lambda x: x[0] if x else ""
 
 user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36" \
     " (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"
+
+
+# FIXME brand not scraped: http://www.ellis-brigham.com/products/norrona/mens-lofoten-gtx-pro-onepiece/339400
+# FIXME buyer_reviews rating_by_star not scraped (always None)
 
 class EllisbrighamProductsSpider(BaseProductsSpider):
     name = "ellisbrigham_products"
@@ -71,7 +69,8 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
     def set_sort(self, response):
         EVT = "ctl00$ctl00$ContentPlaceHolder1$SearchResults_1$rptSort$ctl%s$lbtnSortBy" % (self.sort_url,)
         CTL = "ctl00$ctl00$ContentPlaceHolder1$SearchResults_1$upSearch|"
-        data = urllib.urlencode(self.collect_data_for_request(response, EVT, CTL))
+        data = urllib.urlencode(
+            self.collect_data_for_request(response, EVT, CTL))
         return self.compose_request(response, self.scrape_requests, data)
 
     def scrape_requests(self, response):
@@ -88,14 +87,17 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
-        title = response.xpath('//div[contains(@class, "product-detail")]/h1/text()').extract()
+        title = response.xpath(
+            '//div[contains(@class, "product-detail")]/h1/text()').extract()
         if title:
             cond_set(prod, 'title', (title[0].strip(),))
         brand = response.xpath('//title/text()').extract()
         if brand:
-            cond_set(prod, 'brand', (guess_brand_from_first_words(brand[0].strip()),))
+            cond_set(prod, 'brand',
+                     (guess_brand_from_first_words(brand[0].strip()),))
 
-        price = response.xpath('//div[@class="product-detail"]/h2/span[@class="price"]/text()').extract()
+        xpath = '//div[@class="product-detail"]/h2/span[@class="price"]/text()'
+        price = response.xpath(xpath).extract()
         if price:
             price = price[0].strip().replace(',', '').strip()
             currency = is_empty(re.findall("£|€|$", price[0]))
@@ -109,15 +111,18 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
                     price=price[0]
                 )
 
-        image_url = response.xpath('//div[@class="product-detail-zoom"]/a/@href').extract()
+        xpath = '//div[@class="product-detail-zoom"]/a/@href'
+        image_url = response.xpath(xpath).extract()
         if image_url:
             image_url = "http:" + image_url[0]
         else:
-            image_url = response.xpath('//div[@class="product-detail-zoom"]/img/@src').extract()
+            xpath = '//div[@class="product-detail-zoom"]/img/@src'
+            image_url = response.xpath(xpath).extract()
             image_url = "http:" + image_url[0]
         cond_set(prod, "image_url", (image_url,))
 
-        desc = response.xpath('//div[@class="product-detail"]/p/text()').extract()
+        xpath = '//div[@class="product-detail"]/p/text()'
+        desc = response.xpath(xpath).extract()
         if desc:
             cond_set(prod, 'description', (desc[0].strip(),))
 
@@ -133,24 +138,14 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
                 rating_by_star=None
             )
 
-        rp = []
-        for el in response.xpath('//ul[@class="product-recommend"]/li'):
-            title = is_empty(el.xpath('div//a/text()').extract())
-            url = is_empty(el.xpath('div//a/@href').extract())
-            if url:
-                url = str(self.add_url + url)
-            if title or url:
-                item = RelatedProduct(title=title, url=url)
-                if item not in rp:
-                    rp.append(item)
-        prod["related_products"] = rp
-
         prod["locale"] = "en_GB"
         prod['url'] = response.url
+        self._populate_related_products(response, prod)
         return prod
 
     def _scrape_total_matches(self, response):
-        total_matches = response.xpath('//li[@class="search-results"]/text()').re(FLOATING_POINT_RGEX)
+        xpath = '//li[@class="search-results"]/text()'
+        total_matches = response.xpath(xpath).re(FLOATING_POINT_RGEX)
         if total_matches:
             return int(total_matches[0])    
         return 0
@@ -162,7 +157,10 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
-        if response.xpath('//div[@class="pagination-right"]/a[last()]/@href').extract():
+        if not self._scrape_total_matches(response):
+            return None
+        xpath = '//div[@class="pagination-right"]/a[last()]/@href'
+        if response.xpath(xpath).extract():
             EVT = "ctl00$ctl00$ContentPlaceHolder1$SearchResults_1$PagingCtrl1$lbtnNext"
             CTL = "ctl00$ctl00$ContentPlaceHolder1$SearchResults_1$upnlFilter|"
             data = urllib.urlencode(self.collect_data_for_request(response, EVT, CTL))
@@ -170,12 +168,15 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
         return None
 
     def collect_data_for_request(self, response, EVT, CTL):
-        VS = is_empty(response.xpath('//input[@id="__VIEWSTATE"]/@value').extract())
-        VSG = is_empty(response.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value').extract())
+        VS = is_empty(
+            response.xpath('//input[@id="__VIEWSTATE"]/@value').extract())
+        VSG = is_empty(response.xpath(
+            '//input[@id="__VIEWSTATEGENERATOR"]/@value').extract())
 
         if not VS:
             VS = is_empty(re.findall("__VIEWSTATE\|([^\|]*)", response.body))
-            VSG = is_empty(re.findall("__VIEWSTATEGENERATOR\|([^\|]*)", response.body))
+            VSG = is_empty(
+                re.findall("__VIEWSTATEGENERATOR\|([^\|]*)", response.body))
 
         data = {
             "__EVENTTARGET": EVT,
@@ -194,10 +195,33 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
                 meta=response.meta,
                 method="POST",
                 headers={
-                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "Content-Type":
+                        "application/x-www-form-urlencoded; charset=UTF-8",
                     "User-Agent": user_agent,
                 },
                 body=data,
                 callback=callback1,
                 dont_filter=True,
             )
+
+    def _populate_related_products(self, response, product):
+        rp_placeholders = response.css('li::attr(id)').re(
+            'ContentPlaceHolder\d+_RecommendedSummary\d+')
+        related_products = {}
+        for placeholder in rp_placeholders:
+            rel_cls = "%s_RecommendedListItem" % placeholder
+            xpath = '//li[@class="%s"]/h2/cufon/cufontext/text()' % rel_cls
+            relation = u''.join(response.xpath(xpath).extract())
+            prod_cls = '%s_rptRecommended_hlProductLink' % placeholder
+            products = []
+            for prod_elt in response.css('a[id*=%s]' % prod_cls):
+                title = prod_elt.css('::text').extract()
+                url = prod_elt.css('::attr(href)').extract()
+                if not (title and url):
+                    continue
+                title = title[0]
+                url = url[0]
+                url = urlparse.urljoin(response.url, url)
+                products.append(RelatedProduct(title=title, url=url))
+            related_products[relation] = products
+        cond_set_value(product, 'related_products', related_products)
