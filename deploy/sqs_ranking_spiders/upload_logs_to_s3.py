@@ -12,18 +12,16 @@ path = os.path.expanduser('~/repo')
 sys.path.insert(1, os.path.join(CWD, '..'))
 #for server side
 sys.path.insert(1, os.path.join(path, '..'))
+from sqs_ranking_spiders.task_id_generator import \
+    generate_hash_datestamp_data, load_data_from_hash_datestamp_data
 try:
     # try local mode
     from sqs_ranking_spiders.remote_instance_starter import log_file_path,\
         logging, AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
-    from sqs_ranking_spiders.task_id_generator import \
-        generate_hash_datestamp_data, load_data_from_hash_datestamp_data
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import log_file_path, logging, \
         AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
-    from repo.task_id_generator import generate_hash_datestamp_data,\
-        load_data_from_hash_datestamp_data
 
 logger = logging.getLogger('main_log')
 log_mod_time_flag_path = '/tmp/log_mod_time_flag'
