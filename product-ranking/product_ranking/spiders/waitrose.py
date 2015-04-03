@@ -15,6 +15,7 @@ from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.spiders import cond_set_value
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 class WaitroseProductsSpider(BaseProductsSpider):
     name = "waitrose_products"
@@ -236,7 +237,7 @@ class WaitroseProductsSpider(BaseProductsSpider):
         return self._request_additional_data(response, request)
 
     def _parse_related_products(self, response):
-        relation = re.findall('"message": *"([^"]+)', response.body)[0]
+        relation = is_empty(re.findall('"message": *"([^"]+)', response.body))
         ids = re.findall('"id": "([^"]+)', response.body)
         args = {'lineNumber_%i' % (i + 1): pid for i, pid in enumerate(ids)}
         args.update({'_method': 'GET'})
