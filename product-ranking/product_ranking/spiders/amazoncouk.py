@@ -294,13 +294,28 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         if not total:
             ratings = {}
             average = 0
-            total = int(is_empty(response.xpath(
-                "//span[contains(@class, 'tiny')]/span[@class='crAvgStars']/a/text()"
-            ).re("\d+"), 0))
-            for rev in response.xpath('//span[contains(@class, "tiny")]//div[contains(@class, "custRevHistogramPopId")]/table/tr'):
+            total = is_empty(
+                response.xpath(
+                    "//span[contains(@class, 'tiny')]"
+                    "/span[@class='crAvgStars']/a/text()"
+                ).re("[\d\.\,]+"),
+                0
+            )
+            if total:
+                if isinstance(total, (str, unicode)):
+                    total = int(total.replace(',', '').replace('.', '').strip())
+            for rev in response.xpath(
+                    '//span[contains(@class, "tiny")]'
+                    '//div[contains(@class, "custRevHistogramPopId")]/table/tr'):
                 star = is_empty(rev.xpath('td/a/text()').re("\d+"), None)
                 if star:
-                    ratings[star] = int(is_empty(rev.xpath('td[last()]/text()').re("\d+"), 0))
+                    ratings[star] = is_empty(
+                        rev.xpath('td[last()]/text()').re("[\d\.\,]+"), 0)
+                    if ratings[star]:
+                        if isinstance(ratings[star], (str, unicode)):
+                            ratings[star] = int(
+                                ratings[star].replace(',', '').replace('.', '').strip()
+                            )
             if ratings:
                 average = sum(int(k) * int(v) for k, v in
                               ratings.iteritems()) / int(total) if ratings else 0
