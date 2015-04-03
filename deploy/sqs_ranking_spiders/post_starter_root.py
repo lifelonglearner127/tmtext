@@ -23,7 +23,7 @@ def mark_as_finished():
 
 
 def main():
-    f = open('/tmp/check_file_post_starter_root', 'w')
+    f = open('/tmp/check_file_post_starter_root_new', 'w')
     f.write('1')
     f.close()
     # put anything you want here...
