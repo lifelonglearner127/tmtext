@@ -270,10 +270,31 @@ class WalmartScraper(Scraper):
             1 if video exists
             or 0 if none found
         """
-        if self._video_count() > 0:
-            return 1
-        else:
-            return 0
+
+        video_urls = self._video_urls()
+
+        if video_urls:
+            for item in video_urls:
+                if "webcollage" in item.lower():
+                    return 1
+
+        return 0
+
+    def _wc_pdf(self):
+        """Return pdf existence for a given walmart product in new walmart design
+        Returns:
+            1 if pdf exists
+            or 0 if none found
+        """
+
+        pdf_urls = self._pdf_urls()
+
+        if pdf_urls:
+            for item in pdf_urls:
+                if "webcollage" in item.lower():
+                    return 1
+
+        return 0
 
     def _wc_prodtour(self):
         """Return product tour existence for a given walmart product in new walmart design
@@ -1943,7 +1964,7 @@ class WalmartScraper(Scraper):
         "wc_360" : _wc_360, \
         "wc_emc": _wc_emc, \
         "wc_video": _wc_video, \
-        "wc_pdf": _product_has_pdf, \
+        "wc_pdf": _wc_pdf, \
         "wc_prodtour": _wc_prodtour, \
         "flixmedia": _flixmedia, \
         "webcollage" : _product_has_webcollage, \
