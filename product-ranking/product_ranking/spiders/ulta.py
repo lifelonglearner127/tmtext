@@ -192,8 +192,11 @@ class UltaProductSpider(BaseProductsSpider):
             ).extract()
             products = []
             for j in range(0, len(titles)):
-                url = requests.get(links[j], timeout=2).url or links[j]
-                products.append(RelatedProduct(titles[j].strip(), url))
+                try:
+                    url = requests.get(links[j], timeout=5).url or links[j]
+                    products.append(RelatedProduct(titles[j].strip(), url))
+                except Exception:
+                    self.log("Can't get related product!!!")                
             related_products[key] = products
         product['related_products'] = related_products
 
