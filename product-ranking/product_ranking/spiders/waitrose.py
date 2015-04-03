@@ -73,21 +73,6 @@ class WaitroseProductsSpider(BaseProductsSpider):
             raise Exception('Sort mode %s not found' % order)
         self._sort_order = order
 
-    def _request_additional_data(self, response, request):
-        request.meta.update(response.meta)
-        meta = request.meta
-        if not 'addinfo' in meta:
-            meta['addinfo'] = set()
-        meta['addinfo'].add(id(request))
-        meta['request_addinfo'] = id(request)
-        return request
-
-    def _complete_additional_data(self, response):
-        addinfo = response.meta['addinfo']
-        addinfo.remove(response.meta['request_addinfo'])
-        if not addinfo:
-            return response.meta['product']
-
     @staticmethod
     def _get_data(response):
         return json.loads(response.body_as_unicode())
@@ -125,9 +110,98 @@ class WaitroseProductsSpider(BaseProductsSpider):
         cond_set(product, 'brand',
                  response.css('.at-a-glance span::text').re('Brand (.+)'))
         cond_set_value(product, 'locale', u'en-GB')
-        requests = [self._request_buyer_reviews(response)]
-        requests.append(self._request_related_products(response))
-        return requests or product
+
+        model = response.css('.product-detail::attr(partnumber)').extract()
+        if not model:
+            model = response.css('.product-detail::attr(partNumber)').extract()
+        if not model:
+            self.log('Could not find partNumber')
+            return
+        if model:
+            product["model"] = is_empty(model)
+
+        url = self.REVIEW_API_URL.format(model=model[0],
+                                         apipass=self.REVIEW_API_PASS)
+        if url:
+            meta = {"product": product}
+            return Request(
+                url,
+                callback=self.parse_buyer_reviews,
+                dont_filter=True,
+                meta=meta,
+            )
+
+        return product
+
+    def parse_buyer_reviews(self, response):
+        product = response.meta["product"]
+        data = json.loads(response.body_as_unicode())
+        data = data.get('BatchedResults', {}).get('q0', {})
+        data = (data.get('Results') or [{}])[0]
+        
+        if "ImageUrl" in data:
+            product["image_url"] = data["ImageUrl"]
+        
+        data = data.get('FilteredReviewStatistics', {})
+        average = data.get('AverageOverallRating')
+        total = data.get('TotalReviewCount')
+        distribution = data.get('RatingDistribution', [])
+        distribution = {d['RatingValue']: d['Count']
+                        for d in data.get('RatingDistribution', [])}
+        reviews = BuyerReviews(total, average, distribution)
+
+        # sanity check
+        assert sum(distribution.values()) == total
+        if total:
+            avg = sum([k * v for k, v
+                       in distribution.items()]) / float(total)
+            assert round(avg, 1) == round(float(average), 1)
+
+        cond_set_value(product, 'buyer_reviews', reviews)
+        
+        url = ""
+        model = product.get("model", None)
+        title = product.get("title", None).strip()
+        if model and title:
+            url = self.RR_URL.format(model=model, title='')
+        if url:
+            meta = {"product": product}
+            return Request(
+                url, self.parse_related_products,
+                dont_filter=True, meta=meta
+            )
+
+        return product
+
+    def parse_related_products(self, response):
+        product = response.meta["product"]
+
+        relation = is_empty(re.findall('"message": *"([^"]+)', response.body))
+        ids = re.findall('"id": "([^"]+)', response.body)
+        args = {'lineNumber_%i' % (i + 1): pid for i, pid in enumerate(ids)}
+        args.update({'_method': 'GET'})
+        args = urlencode(args)
+        url = self.PROD_LOOKUP_URL % args
+
+        if url:
+            meta = {'relation': relation, "product": product}
+            return Request(url, self.parse_rp_lookup, dont_filter=True,
+                          meta=meta)
+
+        return product
+
+    def parse_rp_lookup(self, response):
+        baseurl = 'http://waitrose.com'
+        jsondata = json.loads(response.body_as_unicode())
+        products = [
+            RelatedProduct(title=p['name'],
+                           url=urlparse.urljoin(baseurl, p['url']))
+            for p in jsondata['products']
+        ]
+        cond_set_value(response.meta['product'], 'related_products',
+                       {response.meta['relation']: products})
+
+        return response.meta['product']
 
     def _scrape_total_matches(self, response):
         data = WaitroseProductsSpider._get_data(response)
@@ -148,7 +222,7 @@ class WaitroseProductsSpider(BaseProductsSpider):
                 product['image_url'] = urlparse.urljoin('http://', image_url)
 
             # This one is not in the mapping since it requires transformation.
-            product['upc'] = int(product_data['productid'])
+            #product['upc'] = int(product_data['productid'])
 
             if product.get('price', None):
                 price = product['price']
@@ -182,79 +256,3 @@ class WaitroseProductsSpider(BaseProductsSpider):
             request = self._create_request(meta)
 
         return request
-
-    def _request_buyer_reviews(self, response):
-        model = response.css('.product-detail::attr(partnumber)').extract()
-        if not model:
-            model = response.css('.product-detail::attr(partNumber)').extract()
-        if not model:
-            self.log('Could not find partNumber')
-            return
-        url = self.REVIEW_API_URL.format(model=model[0],
-                                         apipass=self.REVIEW_API_PASS)
-        request = Request(url, callback=self._parse_buyer_reviews,
-                          dont_filter=True)
-        return self._request_additional_data(response, request)
-
-    def _parse_buyer_reviews(self, response):
-        product = response.meta['product']
-        data = json.loads(response.body_as_unicode())
-        data = data.get('BatchedResults', {}).get('q0', {})
-        data = (data.get('Results') or [{}])[0]
-        data = data.get('FilteredReviewStatistics', {})
-        average = data.get('AverageOverallRating')
-        total = data.get('TotalReviewCount')
-        if average is None or total is None:
-            return self._complete_additional_data(response)
-        distribution = data.get('RatingDistribution', [])
-        distribution = {d['RatingValue']: d['Count']
-                        for d in data.get('RatingDistribution', [])}
-        reviews = BuyerReviews(total, average, distribution)
-
-        # sanity check
-        assert sum(distribution.values()) == total
-        if total:
-            avg = sum([k * v for k, v
-                       in distribution.items()]) / float(total)
-            assert round(avg, 1) == round(float(average), 1)
-
-        cond_set_value(product, 'buyer_reviews', reviews)
-        return self._complete_additional_data(response)
-
-    def _request_related_products(self, response):
-        model = response.css('.product-detail::attr(partnumber)').extract()
-        if not model:
-            model = response.css('.product-detail::attr(partNumber)').extract()
-        if not model:
-            self.log('Could not find partNumber')
-            return
-        title = response.meta['product'].get('title')
-        if not title:
-            self.log('Could not find product title')
-            return
-        url = self.RR_URL.format(model=model[0], title=title)
-        request = Request(url, self._parse_related_products, dont_filter=True)
-        return self._request_additional_data(response, request)
-
-    def _parse_related_products(self, response):
-        relation = is_empty(re.findall('"message": *"([^"]+)', response.body))
-        ids = re.findall('"id": "([^"]+)', response.body)
-        args = {'lineNumber_%i' % (i + 1): pid for i, pid in enumerate(ids)}
-        args.update({'_method': 'GET'})
-        args = urlencode(args)
-        url = self.PROD_LOOKUP_URL % args
-        request = Request(url, self._parse_rp_lookup, dont_filter=True,
-                          meta={'relation': relation})
-        return self._request_additional_data(response, request)
-
-    def _parse_rp_lookup(self, response):
-        baseurl = 'http://waitrose.com'
-        jsondata = json.loads(response.body_as_unicode())
-        products = [
-            RelatedProduct(title=p['name'],
-                           url=urlparse.urljoin(baseurl, p['url']))
-            for p in jsondata['products']
-        ]
-        cond_set_value(response.meta['product'], 'related_products',
-                       {response.meta['relation']: products})
-        return self._complete_additional_data(response)
