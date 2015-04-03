@@ -309,3 +309,6 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
                                      average_rating=average,
                                      rating_by_star=ratings)
         cond_set_value(product, 'buyer_reviews', buyer_reviews)
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
