@@ -27,8 +27,7 @@ TASK_QUEUES_LIST = [
     'sqs_ranking_spiders_tasks_dev',  # development one
     'sqs_ranking_spiders_tasks_tests',  # test one
 ]
-DATA_QUEUE_NAME = 'sqs_ranking_spiders_data'  # output data
-LOGS_QUEUE_NAME = 'sqs_ranking_spiders_logs'  # output logs
+OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
 PROGRESS_QUEUE_NAME = 'sqs_ranking_spiders_progress'  # progress reports
 JOB_OUTPUT_PATH = '~/job_output'  # local dir
 CWD = os.path.dirname(os.path.abspath(__file__))
@@ -95,16 +94,6 @@ def job_to_fname(metadata):
     job_name += '____' + additional_part + '____' + site
     # job_name += '____' + site + '____' + get_random_hash()
     return job_name
-
-
-def read_file_by_parts(fname, part_size=1024*128):
-    """ Reads the file and returns iterator of its content """
-    fh = open(fname, 'rb')
-    while True:
-        part = fh.read(part_size)
-        if not part:
-            break
-        yield part
 
 
 def read_msg_from_sqs(queue_name_or_instance):
@@ -191,21 +180,24 @@ def write_msg_to_sqs(queue_name_or_instance, msg):
                       queue_name_or_instance, str(e))
 
 
-def put_file_into_sqs(fname, queue_name, metadata):
-    for part_num, part_data in enumerate(read_file_by_parts(fname)):
-        msg = {
-            '_msg_id': metadata.get('task_id', metadata.get('task', None)),
-            'type': 'ranking_spiders',
-            'filename': fname,
-            'utc_datetime': datetime.datetime.utcnow(),
-            'part_num': part_num,
-            'part_data': part_data
-        }
-        msg.update(metadata)
-        if TEST_MODE:
-            test_write_msg_to_fs(queue_name, msg)
-        else:
-            write_msg_to_sqs(queue_name, msg)
+def dump_result_data_into_sqs(data_key, logs_key, queue_name, metadata):
+    instance_log_filename = DATESTAMP + '____' + RANDOM_HASH + '____' + \
+        'remote_instance_starter2.log'
+    s3_key_instance_starter_logs = (FOLDERS_PATH + instance_log_filename)
+    msg = {
+        '_msg_id': metadata.get('task_id', metadata.get('task', None)),
+        'type': 'ranking_spiders',
+        's3_key_data': data_key.key,
+        's3_key_logs': logs_key.key,
+        'bucket_name': data_key.bucket.name,
+        'utc_datetime': datetime.datetime.utcnow(),
+        's3_key_instance_starter_logs': s3_key_instance_starter_logs,
+    }
+    logger.info("Provide result msg %s to queue '%s'", msg, queue_name)
+    if TEST_MODE:
+        test_write_msg_to_fs(queue_name, msg)
+    else:
+        write_msg_to_sqs(queue_name, msg)
 
 
 def put_file_into_s3(bucket_name, fname,
@@ -254,6 +246,8 @@ def put_file_into_s3(bucket_name, fname,
         k.set_contents_from_filename(fname)
         # Download file from S3
         #k.get_contents_to_filename('bar.csv')
+        # key will be used to provide path at S3 for UI side
+        return k
     except Exception:
         logger.warning("Failed to load files to S3. "
                 "Check file path and amazon keys/permissions.")
@@ -403,11 +397,15 @@ def execute_task_from_sqs():
     # report progress and wait until the task is done
     report_progress_and_wait(output_path+'.jl', output_path+'.log', metadata)
     # upload the files to SQS and S3
-    put_file_into_sqs(output_path+'.jl', server_name+DATA_QUEUE_NAME, metadata)
-    put_file_into_sqs(output_path+'.log', server_name+LOGS_QUEUE_NAME,
-                      metadata)
-    put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.jl')
-    put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.log')
+    data_key = put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.jl')
+    logs_key = put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.log')
+
+    if data_key and logs_key:
+        dump_result_data_into_sqs(data_key, logs_key,
+            server_name+OUTPUT_QUEUE_NAME, metadata)
+    else:
+        logger.error("Failed to load info to results sqs. Amazon keys "
+                     "wasn't received")
     logger.info("Spider default output:\n%s%s",
                 p.stderr.read(),
                 p.stdout.read().strip())
