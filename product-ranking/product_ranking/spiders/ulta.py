@@ -4,6 +4,7 @@ from __future__ import division, absolute_import, unicode_literals
 import re
 import string
 import urllib
+import requests
 
 from scrapy.http import Request
 from scrapy.log import DEBUG, INFO
@@ -191,7 +192,8 @@ class UltaProductSpider(BaseProductsSpider):
             ).extract()
             products = []
             for j in range(0, len(titles)):
-                products.append(RelatedProduct(titles[j].strip(), links[j]))
+                url = requests.get(links[j], timeout=2).url or links[j]
+                products.append(RelatedProduct(titles[j].strip(), url))
             related_products[key] = products
         product['related_products'] = related_products
 
@@ -276,7 +278,4 @@ class UltaProductSpider(BaseProductsSpider):
         ).extract()
         if next_page:
             next_page = next_page[0]
-            new_meta = response.meta.copy()
-            if 'total_matches' not in new_meta:
-                new_meta['total_matches'] = self._scrape_total_matches(response)
-            return Request(url=next_page, meta=new_meta, callback=self._scrape_product_links)
+            return next_page
