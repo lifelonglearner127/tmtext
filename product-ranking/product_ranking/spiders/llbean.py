@@ -57,6 +57,11 @@ class LLBeanProductsSpider(BaseProductsSpider):
             **kwargs)
 
     def parse_product(self, response):
+        product = response.meta['product']
+        elts = response.xpath('//div[@id="ppDetails"]/node()')
+        elts = [elt.extract()
+                for elt in elts if not elt.css('#ppPremiseStatement')]
+        cond_set_value(product, 'description', elts, ''.join)
         self._populate_buyer_reviews(response)
         return self._request_related_products(response)
 
@@ -78,7 +83,6 @@ class LLBeanProductsSpider(BaseProductsSpider):
                 if re.match("\d+(.\d+){0,1}", item['swatchPrice'][0]['val']):
                     price = item['swatchPrice'][0]['val']
                 prod['price'] = Price(priceCurrency="USD", price=price)
-            prod['description'] = item['qrtxt']
             prod['upc'] = item['item'][0]['prodId']
             prod['image_url'] = self.image_url + item['img']
             if item['item'][0]['stock'] == "IN":
