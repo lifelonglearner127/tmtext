@@ -137,3 +137,7 @@ class FireboxProductSpider(BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+       
