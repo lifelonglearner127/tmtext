@@ -85,6 +85,8 @@ class LLBeanProductsSpider(BaseProductsSpider):
                 prod['price'] = Price(priceCurrency="USD", price=price)
             prod['upc'] = item['item'][0]['prodId']
             prod['image_url'] = self.image_url + item['img']
+            cond_set_value(prod, 'is_out_of_stock',
+                           item['item'][0]['stock'] != "IN")
             prod['locale'] = "en-US"
             url = urljoin(response.url, item['displayUrl'])
             yield url, prod
