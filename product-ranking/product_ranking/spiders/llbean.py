@@ -73,17 +73,17 @@ class LLBeanProductsSpider(BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         data = json.loads(response.body_as_unicode())
-
         for item in data[0]['products']:
             prod = SiteProductItem()
             prod['title'] = item['name']
             cond_set_value(prod, 'brand',
                            item['brand'] if item['brand'] != '0' else None)
-            price=None
-            if item['swatchPrice']:
-                if re.match("\d+(.\d+){0,1}", item['swatchPrice'][0]['val']):
-                    price = item['swatchPrice'][0]['val']
-                prod['price'] = Price(priceCurrency="USD", price=price)
+            price = min(filter(re.compile("\d+(.\d+){0,1}").match,
+                               (val['val'] for val in item['swatchPrice']))
+                        or (0, 0), key=float)
+            cond_set_value(prod, 'price',
+                           Price(priceCurrency='USD', price=price)
+                           if price else None)
             prod['upc'] = item['item'][0]['prodId']
             prod['image_url'] = self.image_url + item['img']
             cond_set_value(prod, 'is_out_of_stock',
