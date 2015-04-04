@@ -26,11 +26,11 @@ class LLBeanProductsSpider(BaseProductsSpider):
 
     SEARCH_SORT = {
         'best_match': 'Relevance',
-        'high_price': 'Price+(Descending)',
-        'low_price': 'Price+(Ascending)',
+        'high_price': 'Price (Descending)',
+        'low_price': 'Price (Ascending)',
         'best_sellers': 'Num_Of_Orders',
-        'avg_review': 'Grade+(Descending)',
-        'product_az': 'Name+(Ascending)',
+        'avg_review': 'Grade (Descending)',
+        'product_az': 'Name (Ascending)',
     }
 
     RR_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js" \
@@ -51,7 +51,8 @@ class LLBeanProductsSpider(BaseProductsSpider):
     def __init__(self, search_sort='best_match', *args, **kwargs):
         super(LLBeanProductsSpider, self).__init__(
             url_formatter=FormatterWithDefaults(pagenum=1,
-                                                search_sort=self.SEARCH_SORT[search_sort]
+                                                search_sort=self.SEARCH_SORT[
+                                                    search_sort]
             ),
             *args,
             **kwargs)
@@ -62,6 +63,13 @@ class LLBeanProductsSpider(BaseProductsSpider):
         elts = [elt.extract()
                 for elt in elts if not elt.css('#ppPremiseStatement')]
         cond_set_value(product, 'description', elts, ''.join)
+        regexp = '\$([\d ,.]+)'
+        price = response.css('.toOrderItemSalePrice::text').re(regexp) or []
+        price += response.css('.toOrderItemPrice::text').re(regexp)
+        price = min([re.sub('[, ]', '', p) for p in price] or (0, 0),
+                    key=float)
+        if price:
+            product['price'] = Price(priceCurrency='USD', price=price)
         self._populate_buyer_reviews(response)
         return self._request_related_products(response)
 
@@ -78,12 +86,7 @@ class LLBeanProductsSpider(BaseProductsSpider):
             prod['title'] = item['name']
             cond_set_value(prod, 'brand',
                            item['brand'] if item['brand'] != '0' else None)
-            price = min(filter(re.compile("\d+(.\d+){0,1}").match,
-                               (val['val'] for val in item['swatchPrice']))
-                        or (0, 0), key=float)
-            cond_set_value(prod, 'price',
-                           Price(priceCurrency='USD', price=price)
-                           if price else None)
+
             prod['upc'] = item['item'][0]['prodId']
             prod['image_url'] = self.image_url + item['img']
             cond_set_value(prod, 'is_out_of_stock',
