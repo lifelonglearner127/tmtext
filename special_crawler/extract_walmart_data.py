@@ -234,11 +234,11 @@ class WalmartScraper(Scraper):
 
         return self.video_urls
 
-    def _360view_count(self):
-        """Return 360view count for a given walmart product in new walmart design
+    def _wc_360(self):
+        """Return 360view existence for a given walmart product in new walmart design
         Returns:
-            number of 360view
-            or None if none found
+            1 if 360view exists
+            or 0 if none found
         """
         contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
                                 str(self._extract_product_id()) + "/Webcollage360View").text
@@ -249,9 +249,14 @@ class WalmartScraper(Scraper):
         if not existance_360view:
             return 0
         else:
-            return len(existance_360view)
+            return 1
 
-    def _emc(self):
+    def _wc_emc(self):
+        """Return EMC (Extended Manufacturer Content) existence for a given walmart product in new walmart design
+        Returns:
+            1 if EMC exists
+            or 0 if none found
+        """
         emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
 
         if not emc:
@@ -259,6 +264,55 @@ class WalmartScraper(Scraper):
         else:
             return 1
 
+    def _wc_video(self):
+        """Return video existence for a given walmart product in new walmart design
+        Returns:
+            1 if video exists
+            or 0 if none found
+        """
+
+        video_urls = self._video_urls()
+
+        if video_urls:
+            for item in video_urls:
+                if "webcollage" in item.lower():
+                    return 1
+
+        return 0
+
+    def _wc_pdf(self):
+        """Return pdf existence for a given walmart product in new walmart design
+        Returns:
+            1 if pdf exists
+            or 0 if none found
+        """
+
+        pdf_urls = self._pdf_urls()
+
+        if pdf_urls:
+            for item in pdf_urls:
+                if "webcollage" in item.lower():
+                    return 1
+
+        return 0
+
+    def _wc_prodtour(self):
+        """Return product tour existence for a given walmart product in new walmart design
+        Returns:
+            1 if product tour exists
+            or 0 if none found
+        """
+
+        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+                                str(self._extract_product_id()) + "/WebcollageInteractiveTour").text
+
+        tree = html.fromstring(contents)
+        existance_product_tour = tree.xpath("//div[contains(@class, 'wc-aplus-body')]")
+
+        if not existance_product_tour:
+            return 0
+        else:
+            return 1
     def _flixmedia(self):
         if "media.flix" in etree.tostring(self.tree_html):
             return 1
@@ -1907,8 +1961,11 @@ class WalmartScraper(Scraper):
         # video needs both page source and separate requests
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
-        "360view_count" : _360view_count, \
-        "emc": _emc, \
+        "wc_360" : _wc_360, \
+        "wc_emc": _wc_emc, \
+        "wc_video": _wc_video, \
+        "wc_pdf": _wc_pdf, \
+        "wc_prodtour": _wc_prodtour, \
         "flixmedia": _flixmedia, \
         "webcollage" : _product_has_webcollage, \
         "sellpoints" : _product_has_sellpoints, \
