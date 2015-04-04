@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
-
 from datetime import datetime
 import json
 import random
@@ -10,13 +9,19 @@ import string
 import urllib
 import urlparse
 
+from scrapy.http import Request
+from scrapy.log import DEBUG
+from scrapy.selector import Selector
+
 from product_ranking.items import Price
 from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
-from scrapy.http import Request
-from scrapy.log import DEBUG
-from scrapy.selector import Selector
+
+
+# FIXME duplicate requests on redirects
+# FIXME remove prints
+
 
 
 # from http://assets.bloomingdales.com/navapp/web20/assets/combo
@@ -306,7 +311,8 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
                             req = reqs.pop(0)
                             return req
                         if rel:
-                            product['related_products'] = {"recommended": rel}
+                            product['related_products'] = {
+                                "you might also like": rel}
                         return product
 
                     reqs.append(self._gen_product_request(
