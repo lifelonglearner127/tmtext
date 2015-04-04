@@ -77,7 +77,8 @@ class LLBeanProductsSpider(BaseProductsSpider):
         for item in data[0]['products']:
             prod = SiteProductItem()
             prod['title'] = item['name']
-            prod['brand'] = item['brand']
+            cond_set_value(prod, 'brand',
+                           item['brand'] if item['brand'] != '0' else None)
             price=None
             if item['swatchPrice']:
                 if re.match("\d+(.\d+){0,1}", item['swatchPrice'][0]['val']):
