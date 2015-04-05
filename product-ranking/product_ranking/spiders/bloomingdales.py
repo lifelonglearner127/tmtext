@@ -19,7 +19,7 @@ from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 
 
-# FIXME duplicate requests on redirects
+
 # FIXME remove prints
 
 
@@ -98,9 +98,14 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
 
     def start_requests(self):
         for request in super(BloomingdalesProductsSpider, self).start_requests():
+            request.meta['dont_redirect'] = True
+            request.meta['handle_httpstatus_list'] = [302]
             yield request.replace(callback=self.start1)
 
     def start1(self, response):
+        if response.status == 302:
+            return Request(response.url, self.start1, dont_filter=True,
+                           meta=response.meta)
         if self._check_alert(response):
             return
         total = self._scrape_total_matches(response)
