@@ -20,6 +20,7 @@ from product_ranking.spiders import cond_set, cond_set_value
 
 
 
+
 # FIXME remove prints
 
 
@@ -132,6 +133,8 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
         price = response.xpath(
             "//div[@class='singleTierPrice']/span[@itemprop='price']"
             "/text()").re(FLOATING_POINT_RGEX)
+        if not price:
+            price = product.get('price')
         if price:
             price = price[0].replace(',', '')
             product['price'] = Price(
@@ -141,14 +144,20 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
             "/img/@src").extract())
         cond_set(product, 'description', response.xpath(
             "//div[@id='pdp_tabs_body_left']").extract())
+        cond_set(product, 'description',
+                 response.css(
+                     '.pdp_longDescription[itemprop=description]').extract())
         cond_set_value(product, 'locale', "en-GB")
 
         productid = response.xpath(
             "//div[@id='productContainer']/input[@id='productId']"
-            "/@value").extract()
+            "/@value").extract() or response.css(
+            '#productId::attr(value)').extract()
         catid = response.xpath(
             "//script[contains(text(),'BLOOMIES.pdp.categoryId = ')]").re(
             r"BLOOMIES.pdp.categoryId = \"(.*)\";")
+        if not catid:
+            catid = re.findall('CategoryID=(\d+)', response.url)
         if catid:
             catid = catid[0]
             response.meta['catid'] = catid
@@ -251,16 +260,21 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
                     reviews = BuyerReviews(total, avrg, distribution)
                     cond_set_value(product, 'buyer_reviews', reviews)
         productid = product['upc']
-        return self._gen_rel_request(response, productid)
+        vertical = self._gen_rel_request(response, productid, 'PDP_ZONE_A',
+                                         'Customers Also Viewed')
+        return self._gen_rel_request(response, productid, 'PDP_ZONE_B',
+                                     'You Might Also Like', vertical)
 
-    def _gen_rel_request(self, response, productid):
+    def _gen_rel_request(self, response, productid, context, relation,
+                         follow=None):
         url = "http://www1.bloomingdales.com/sdp/rto/request/recommendations"
         ptype = response.meta['ptype']
         catid = response.meta['catid']
         body = {
             'productId': productid,
             'categoryId': catid,
-            'context': 'PDP_ZONE_B',   # YOU MIGHT ALSO LIKE hor.
+            'context': context,
+            # 'context': 'PDP_ZONE_B',   # YOU MIGHT ALSO LIKE hor.
             # 'context': 'PDP_ZONE_A',    # CUSTOMERS ALSO VIEWED - vertical
             'requester': 'BCOM-NAVAPP',
             'visitorId': self.rtd.getRTD(),
@@ -273,8 +287,9 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
         }
 
         new_meta = response.meta.copy()
+        new_meta['relation'] = relation
         new_meta['handle_httpstatus_list'] = [404, 415]
-
+        new_meta['follow'] = follow
         req = Request(
             url, body=urllib.urlencode(body),
             method='POST',
@@ -316,16 +331,19 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
                             req = reqs.pop(0)
                             return req
                         if rel:
-                            product['related_products'] = {
-                                "you might also like": rel}
-                        return product
+                            relation = response.meta['relation']
+                            related_products = product.get('related_products',
+                                {})
+                            related_products[relation] = rel
+                            product['related_products'] = related_products
+                        return response.meta['follow'] or product
 
                     reqs.append(self._gen_product_request(
                         response, itemno, cb))
                 if reqs:
                     req = reqs.pop(0)
                     return req
-        return product
+        return response.meta['follow'] or product
 
     def _check_alert(self, response):
         alert = response.xpath(
@@ -348,21 +366,16 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
         return 0
 
     def _scrape_product_links(self, response):
-        def full_url(url):
-            return urlparse.urljoin(response.url, url)
-        if self._check_alert(response):
-            return
-        links = response.xpath(
-            "//ul[@id='thumbnails']/li[@class='thumbnailItem']"
-            "/div/div[@class='shortDescription']/a/@href").extract()
-        if not links:
-            links = response.xpath(
-                "//div[contains(@class,'productThumbnail')]"
-                "/div[@class='shortDescription']/a/@href").extract()
-        if not links:
+        boxes = response.css('#thumbnails .thumbnailItem')
+        boxes = boxes or response.css('div[class*=productThumbnail]')
+        if not boxes:
             self.log("Found no product links.", DEBUG)
-        for link in links:
-            yield link, SiteProductItem()
+        for box in boxes:
+            link = box.css('.shortDescription a::attr(href)')[0].extract()
+            product = SiteProductItem()
+            cond_set_value(product, 'price',
+                           box.css('.priceBig::text').re('([\d,.]+)'))
+            yield link, product
 
     def _scrape_next_results_page_link(self, response):
         def full_url(url):
