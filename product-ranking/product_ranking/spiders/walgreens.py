@@ -92,3 +92,6 @@ class WalGreensProductsSpider(BaseProductsSpider):
         if links:
             return urlparse.urljoin(response.url, links[0])
         return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
