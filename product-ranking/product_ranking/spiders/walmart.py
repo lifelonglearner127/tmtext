@@ -7,7 +7,6 @@ import urlparse
 import uuid
 import string
 import datetime
-import requests
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -162,18 +161,26 @@ class WalmartProductsSpider(BaseProductsSpider):
         if id:
             url = 'http://www.walmart.com/reviews/api/questions/{0}?' \
                   'sort=mostRecentQuestions&pageNumber=1'.format(id[0])
-            try:
-                r = requests.get(url, timeout=2)  # TODO: rewrite using the standard Scrapy fetcher, yield Request
-                date_of_last_question = self._get_date(r.text)
-                if date_of_last_question:
-                    product["date_of_last_question"] = date_of_last_question
-            except Exception:
-               self.log("Can't get 'date_of_last_question'", ERROR)
+            meta = {
+                "product": product,
+                "relreql": response.meta["relreql"],
+                "response": response
+            }
+
+
+            return Request(url=url, meta=meta, callback=self.get_questions)
             
+        return self._start_related(response)
+
+    def get_questions(self, response):
+        product = response.meta.get("product")
+        date_of_last_question = self._get_date(response.body)
+        if date_of_last_question:
+            product["date_of_last_question"] = date_of_last_question
+
         if not product.get('price'):
-            yield self._gen_location_request(response)
-            return
-        yield self._start_related(response)
+            return self._gen_location_request(response.meta["response"])
+        return self._start_related(response)
 
     def _get_date(self, response):
         data = json.loads(response)
