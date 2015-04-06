@@ -281,7 +281,7 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
 
         new_meta = response.meta.copy()
         new_meta['relation'] = relation
-        new_meta['handle_httpstatus_list'] = [404, 415]
+        new_meta['handle_httpstatus_list'] = [404]
         new_meta['follow'] = follow
         req = Request(
             url, body=urllib.urlencode(body),
@@ -290,9 +290,8 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
             callback=self._parse_related,
             headers={
                 'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36',
-                }
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            }
         )
         return req
 
@@ -301,16 +300,10 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
             return urlparse.urljoin(response.url, url)
         product = response.meta['product']
         text = response.body_as_unicode().encode('utf-8')
-        # print "-"*50
-        # print response.status
-        # print "-"*50
-        if response.status in (200, 415):
+        if response.status == 200:
             jdata = json.loads(text)
             reqs = []
             rel = []
-            # print "+"*50
-            # print jdata
-            # print "+"*50
             if jdata.get('recommendedItems'):
                 for el in jdata.get('recommendedItems'):
                     itemno = el.get('productId')
