@@ -163,7 +163,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             url = 'http://www.walmart.com/reviews/api/questions/{0}?' \
                   'sort=mostRecentQuestions&pageNumber=1'.format(id[0])
             try:
-                r = requests.get(url, timeout=2)
+                r = requests.get(url, timeout=2)  # TODO: rewrite using the standard Scrapy fetcher, yield Request
                 date_of_last_question = self._get_date(r.text)
                 if date_of_last_question:
                     product["date_of_last_question"] = date_of_last_question
