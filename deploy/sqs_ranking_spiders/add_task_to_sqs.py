@@ -1,6 +1,8 @@
 import sys
 import json
 import random
+import os
+import ConfigParser
 
 from boto.sqs.message import Message
 import boto.sqs
@@ -12,11 +14,26 @@ TASK_QUEUES_LIST = {
     'test': 'sqs_ranking_spiders_tasks_tests'
 }
 
+CREDENTIALS_FILE = '~/.sqs_credentials'  # u have to create it to test locally
+
 ### Script can be run with 'manual' argument to provide manual edditing
 # of task message
 
+
+def read_access_and_secret_keys(fname=CREDENTIALS_FILE):
+    config = ConfigParser.ConfigParser()
+    config.read(['site.cfg', os.path.expanduser(fname)])
+    return [config.get('default', 'aws_access_key_id'),
+            config.get('default', 'aws_secret_access_key')]
+
+
 def put_msg_to_sqs(message, queue_name=TASK_QUEUES_LIST['test']):
-    conn = boto.sqs.connect_to_region("us-east-1")
+    conf = read_access_and_secret_keys()
+    conn = boto.sqs.connect_to_region(
+        "us-east-1",
+        aws_access_key_id=conf[0],
+        aws_secret_access_key=conf[1]
+    )
     q = conn.get_queue(queue_name)
     m = Message()
     m.set_body(json.dumps(message))
@@ -55,4 +72,15 @@ if __name__ == '__main__':
         }
     if 'manual' in [a.lower().strip() for a in sys.argv]:
         edit_message(msg)
+
+    # you can pass additional args like task_id=123 or searchterms_str=cola
+    for arg in sys.argv:
+        if 'task_id=' in arg:
+            extra_marker, extra_marker_value = arg.split('=')
+            if not 'cmd_args' in msg:
+                msg['cmd_args'] = {}
+            msg['task_id'] = extra_marker_value.strip()
+        if 'searchterms_str=' in arg:
+            _str, _st_value = arg.split('=')
+            msg['searchterms_str'] = _st_value.strip()
     put_msg_to_sqs(msg)
