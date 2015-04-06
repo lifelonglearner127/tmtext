@@ -169,7 +169,9 @@ class WalmartProductsSpider(BaseProductsSpider):
 
 
             return Request(url=url, meta=meta, callback=self.get_questions)
-            
+        
+        if not product.get('price'):
+            return self._gen_location_request(response)
         return self._start_related(response)
 
     def get_questions(self, response):
