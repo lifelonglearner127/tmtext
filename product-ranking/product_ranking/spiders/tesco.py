@@ -21,6 +21,16 @@ def brand_at_start(brand):
 
 
 class TescoProductsSpider(BaseProductsSpider):
+    """ tesco.com product ranking spider
+
+    There are following caveats:
+
+    - always add -a user_agent='android_pad',
+      sample reverse calling
+        scrapy crawl tesco_products -a product_url='http://www.tesco.com/groceries/product/details/?id=286394325' \
+            -a user_agent='android_pad'
+    """
+
     name = 'tesco_products'
     allowed_domains = ["tesco.com"]
 
@@ -206,5 +216,8 @@ class TescoProductsSpider(BaseProductsSpider):
 
         desc = response.xpath('string(//p[@class="descriptionText"])').extract()
         cond_set(prod, "description", desc)
-
         return prod
+
+    def _parse_single_product(self, response):
+        #return self.parse_product(response)
+        return self.parse_product_mobile(response)
