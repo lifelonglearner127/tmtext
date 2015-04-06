@@ -160,3 +160,6 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
         if links:
             return links.extract()[0].strip()
         return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
