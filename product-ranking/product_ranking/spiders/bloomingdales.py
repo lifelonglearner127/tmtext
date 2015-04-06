@@ -13,16 +13,10 @@ from scrapy.http import Request
 from scrapy.log import DEBUG
 from scrapy.selector import Selector
 
-from product_ranking.items import Price
-from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
-
-
-
-
-# FIXME remove prints
-
+from product_ranking.items import SiteProductItem, RelatedProduct, \
+    BuyerReviews, Price
+from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX, \
+    cond_set, cond_set_value
 
 
 # from http://assets.bloomingdales.com/navapp/web20/assets/combo
@@ -100,7 +94,7 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
     def start_requests(self):
         for request in super(BloomingdalesProductsSpider, self).start_requests():
             request.meta['dont_redirect'] = True
-            request.meta['handle_httpstatus_list'] = [302]
+            request.meta['handle_httpstatus_list'] = [302, 301]
             yield request.replace(callback=self.start1)
 
     def start1(self, response):
@@ -112,9 +106,6 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
         total = self._scrape_total_matches(response)
         response.meta['total_matches'] = total
         url = self._gen_req_url(response)
-        remaining = response.meta.get('remaining')
-        if total < remaining:
-            response.meta['remaining'] = total
         return Request(
             url, meta=response.meta.copy(), callback=self._parse_next)
 
@@ -147,7 +138,7 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
         cond_set(product, 'description',
                  response.css(
                      '.pdp_longDescription[itemprop=description]').extract())
-        cond_set_value(product, 'locale', "en-GB")
+        cond_set_value(product, 'locale', "en-US")
 
         productid = response.xpath(
             "//div[@id='productContainer']/input[@id='productId']"
@@ -169,7 +160,7 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
             response.meta['ptype'] = ptype
         if productid:
             productid = productid[0]
-            cond_set_value(product, 'upc', productid)
+            cond_set_value(product, 'model', productid)
 
             def cb(self, response):
                 text = response.body_as_unicode().encode('utf-8')
@@ -177,10 +168,11 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
                 try:
                     brand = jdata['productThumbnail']['brand']
                 except KeyError:
-                    brand = "UNKNOWN"
-                cond_set_value(product, 'brand', brand)
+                    brand = None
+                if brand:
+                    cond_set_value(product, 'brand', brand)
 
-                url = self.RATING_URL.format(prodid=product['upc'])
+                url = self.RATING_URL.format(prodid=product['model'])
                 return Request(
                     url,
                     meta=response.meta.copy(),
@@ -197,6 +189,7 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
     def _parse_prodjson(self, response):
         callback = response.meta.get('prodcallback')
         if callback:
+            #return self._parse_bazaarv(response)
             return callback(self, response)
         raise AssertionError("_parse_prodjson")
 
@@ -259,7 +252,7 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
                 if distribution:
                     reviews = BuyerReviews(total, avrg, distribution)
                     cond_set_value(product, 'buyer_reviews', reviews)
-        productid = product['upc']
+        productid = product['model']
         vertical = self._gen_rel_request(response, productid, 'PDP_ZONE_A',
                                          'Customers Also Viewed')
         return self._gen_rel_request(response, productid, 'PDP_ZONE_B',
@@ -297,7 +290,9 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
             callback=self._parse_related,
             headers={
                 'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36',
+                }
         )
         return req
 
@@ -306,10 +301,16 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
             return urlparse.urljoin(response.url, url)
         product = response.meta['product']
         text = response.body_as_unicode().encode('utf-8')
-        if response.status == 200:
+        # print "-"*50
+        # print response.status
+        # print "-"*50
+        if response.status in (200, 415):
             jdata = json.loads(text)
             reqs = []
             rel = []
+            # print "+"*50
+            # print jdata
+            # print "+"*50
             if jdata.get('recommendedItems'):
                 for el in jdata.get('recommendedItems'):
                     itemno = el.get('productId')
@@ -322,10 +323,6 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
                             url = jdata['productThumbnail']['siteSemanticURL']
                             rel.append(RelatedProduct(title, full_url(url)))
                         except TypeError:
-                            # self.log("SKIPPED %s" % response.url, DEBUG)
-                            # self.log("PRODUCT=%s ranking=%s" % (product['url'], product['ranking']), DEBUG)
-                            # self.log("BAD JDATA= %s" % jdata, DEBUG)
-                            # rel.append(RelatedProduct("Skipped %s" % response.url, ""))
                             pass
                         if reqs:
                             req = reqs.pop(0)
@@ -349,13 +346,9 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
         alert = response.xpath(
             "//div[@id='breadcrumbs']/text()").re(
             r"We couldn't find a match for")
-        # print "ALERT=", alert
         return alert
 
     def _scrape_total_matches(self, response):
-        # alert = self._check_alert(response)
-        # if alert:
-        #     return 0
         total = response.xpath(
             "//h2[@id='productCount']/span/text()").extract()
         if total:
@@ -378,8 +371,6 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
             yield link, product
 
     def _scrape_next_results_page_link(self, response):
-        def full_url(url):
-            return urlparse.urljoin(response.url, url)
         if self._check_alert(response):
             return
         self.pageno += 1
@@ -391,12 +382,15 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
         text = response.body_as_unicode().encode('utf-8')
         sel = Selector(text=text)
         plist = sel.xpath("//div[@id='metaProductIds']/text()").extract()
-        jdata = json.loads(plist[0])
+        if plist:
+            jdata = json.loads(plist[0])
+        else:
+            jdata = []
+            self.log("Sorry it part of site not implemented in spider")
         remaining = response.meta.get('remaining')
         if (len(jdata) > remaining):
             jdata = jdata[:remaining]
         for no in jdata:
-            print "ID=", no
             if no in self.prodnos:
                 raise ValueError("DUPLICATE %s " % no)
             self.prodnos.add(no)
