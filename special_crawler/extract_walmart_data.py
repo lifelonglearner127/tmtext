@@ -68,6 +68,31 @@ class WalmartScraper(Scraper):
         # whether product has any videos
         self.has_video = False
 
+        # whether webcollage 360 view were extracted
+        self.extracted_webcollage_360_view = False
+        # whether product has webcollage 360 view
+        self.has_webcollage_360_view = False
+
+        # whether webcollage emc view were extracted
+        self.extracted_webcollage_emc_view = False
+        # whether product has webcollage emc view
+        self.has_webcollage_emc_view = False
+
+        # whether webcollage video view were extracted
+        self.extracted_webcollage_video_view = False
+        # whether product has webcollage video view
+        self.has_webcollage_video_view = False
+
+        # whether webcollage pdf view were extracted
+        self.extracted_webcollage_pdf = False
+        # whether product has webcollage pdf view
+        self.has_webcollage_pdf = False
+
+        # whether webcollage product tour view were extracted
+        self.extracted_webcollage_product_tour_view = False
+        # whether product has webcollage product tour view
+        self.has_webcollage_product_tour_view = False
+
         # javascript function found in a script tag
         # containing various info on the product.
         # Currently used for seller info (but useful for others as well)
@@ -212,6 +237,9 @@ class WalmartScraper(Scraper):
                 contents = requests.get("http://www.walmart.com/product/idml/video/" +
                                         str(self._extract_product_id()) + "/WebcollageVideos").text
 
+                if not contents:
+                    return None
+
                 tree = html.fromstring(contents)
                 video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
                 video_relative_path = video_json["videos"][0]["sources"][0]["src"]
@@ -220,7 +248,6 @@ class WalmartScraper(Scraper):
                 self.has_video = True
             else:
                 self.video_urls = None
-
 
     def _video_urls(self):
         """Extracts video URLs for a given walmart product
@@ -240,6 +267,9 @@ class WalmartScraper(Scraper):
             1 if 360view exists
             or 0 if none found
         """
+
+        self.extracted_webcollage_360_view = True
+
         contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
                                 str(self._extract_product_id()) + "/Webcollage360View").text
 
@@ -249,6 +279,7 @@ class WalmartScraper(Scraper):
         if not existance_360view:
             return 0
         else:
+            self.has_webcollage_360_view = True
             return 1
 
     def _wc_emc(self):
@@ -257,11 +288,15 @@ class WalmartScraper(Scraper):
             1 if EMC exists
             or 0 if none found
         """
+
+        self.extracted_webcollage_emc_view = True
+
         emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
 
         if not emc:
             return 0
         else:
+            self.has_webcollage_emc_view = True
             return 1
 
     def _wc_video(self):
@@ -271,14 +306,19 @@ class WalmartScraper(Scraper):
             or 0 if none found
         """
 
-        video_urls = self._video_urls()
+        self.extracted_webcollage_video_view= True
 
-        if video_urls:
-            for item in video_urls:
-                if "webcollage" in item.lower():
-                    return 1
+        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+                                str(self._extract_product_id()) + "/WebcollageVideos").text
 
-        return 0
+        tree = html.fromstring(contents)
+        existance_webcollage_video = tree.xpath("//div[@class='wc-fragment']")
+
+        if not existance_webcollage_video:
+            return 0
+        else:
+            self.has_webcollage_video_view = True
+            return 1
 
     def _wc_pdf(self):
         """Return pdf existence for a given walmart product in new walmart design
@@ -287,11 +327,14 @@ class WalmartScraper(Scraper):
             or 0 if none found
         """
 
+        self.extracted_webcollage_pdf = True
+
         pdf_urls = self._pdf_urls()
 
         if pdf_urls:
             for item in pdf_urls:
                 if "webcollage" in item.lower():
+                    self.has_webcollage_pdf = True
                     return 1
 
         return 0
@@ -303,6 +346,8 @@ class WalmartScraper(Scraper):
             or 0 if none found
         """
 
+        self.extracted_webcollage_product_tour_view = True
+
         contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
                                 str(self._extract_product_id()) + "/WebcollageInteractiveTour").text
 
@@ -312,7 +357,9 @@ class WalmartScraper(Scraper):
         if not existance_product_tour:
             return 0
         else:
+            self.has_webcollage_product_tour_view = True
             return 1
+
     def _flixmedia(self):
         if "media.flix" in etree.tostring(self.tree_html):
             return 1
@@ -418,16 +465,22 @@ class WalmartScraper(Scraper):
             0 otherwise
         """
 
-        if not self.extracted_video_urls:
-            self._extract_video_urls()
+        if not self.extracted_webcollage_360_view:
+            self._wc_360()
 
-        if not self.extracted_pdf_urls:
-            self._pdf_urls()
+        if not self.extracted_webcollage_product_tour_view:
+            self._wc_prodtour()
 
-        if self.has_webcollage_media:
-            return 1
+        if not self.extracted_webcollage_pdf:
+            self._wc_pdf()
 
-        if self._has_webcollage_iframe():
+        if not self.extracted_webcollage_emc_view:
+            self._wc_emc()
+
+        if not self.extracted_webcollage_video_view:
+            self._wc_video()
+
+        if self.has_webcollage_product_tour_view or self.has_webcollage_pdf or self.has_webcollage_video_view or self.has_webcollage_emc_view or self.has_webcollage_360_view:
             return 1
 
         return 0
