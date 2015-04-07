@@ -32,7 +32,7 @@ PROGRESS_QUEUE_NAME = 'sqs_ranking_spiders_progress'  # progress reports
 JOB_OUTPUT_PATH = '~/job_output'  # local dir
 CWD = os.path.dirname(os.path.abspath(__file__))
 path = os.path.expanduser('~/repo')
-# fo local mode
+# for local mode
 sys.path.insert(1, os.path.join(CWD, '..'))
 sys.path.insert(2, os.path.join(CWD, '..', '..', 'special_crawler',
                                 'queue_handler'))
@@ -85,6 +85,9 @@ def job_to_fname(metadata):
         searchterms_str = searchterms_str.decode('utf8')
     # job_name = datetime.datetime.utcnow().strftime('%d-%m-%Y')
     job_name = DATESTAMP + '____' + RANDOM_HASH
+    task_id = metadata.get('task_id', metadata.get('task', None))
+    if task_id:
+        job_name += '____' + str(task_id)
     if searchterms_str:
         additional_part = unidecode.unidecode(
             searchterms_str).replace(' ', '-')
