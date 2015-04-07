@@ -39,6 +39,8 @@ class WalmartScraper(Scraper):
     BASE_URL_VIDEOREQ_WEBCOLLAGE = "http://json.webcollage.net/apps/json/walmart?callback=jsonCallback&environment-id=live&cpi="
     # base URL for request containing video URL from sellpoints
     BASE_URL_VIDEOREQ_SELLPOINTS = "http://www.walmart.com/product/idml/video/%s/SellPointsVideos"
+    # base URL for request containing video URL from sellpoints
+    BASE_URL_VIDEOREQ_SELLPOINTS_NEW = "http://www.walmart-content.com/product/idml/video/%s/SellPointsVideos"
     # base URL for request containing pdf URL from webcollage
     BASE_URL_PDFREQ_WEBCOLLAGE = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
     # base URL for request for product reviews - formatted string
@@ -67,6 +69,8 @@ class WalmartScraper(Scraper):
         self.has_pdf = False
         # whether product has any videos
         self.has_video = False
+        # whether product has any streaming video
+        self.has_streaming_video = False
 
         # whether webcollage 360 view were extracted
         self.extracted_webcollage_360_view = False
@@ -154,7 +158,7 @@ class WalmartScraper(Scraper):
             richMedia_element = richMedia_elements[0]
             elements_onclick = richMedia_element.xpath(".//li/@onclick")
             # any of the "onclick" attributes of the richMedia <li> tags contains "video')"
-            has_video =  any(map(lambda el: "video')" in el, elements_onclick))
+            has_video = any(map(lambda el: "video')" in el, elements_onclick))
 
             return has_video
 
@@ -232,13 +236,23 @@ class WalmartScraper(Scraper):
                     self.video_urls.append(video_url_candidate)
                     break
 
+        # check sellpoints media if webcollage media doesn't exist
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % self._extract_product_id()
+        # TODO: handle errors
+        response_text = urllib.urlopen(request_url).read()
+        tree = html.fromstring(response_text)
+        if tree.xpath("//div[@id='iframe-video-content']"):
+            self.has_video = True
+            self.has_sellpoints_media = True
+
         if len(self.video_urls) == 0:
             if self.tree_html.xpath("//div[starts-with(@class,'js-idml-video-container')]"):
                 contents = requests.get("http://www.walmart.com/product/idml/video/" +
                                         str(self._extract_product_id()) + "/WebcollageVideos").text
 
                 if not contents:
-                    return None
+                    self.video_urls = None
+                    return
 
                 tree = html.fromstring(contents)
                 video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
@@ -520,7 +534,10 @@ class WalmartScraper(Scraper):
             self._extract_video_urls()
 
         if not self.video_urls:
-            return 0
+            if self.has_video:
+                return 1
+            else:
+                return 0
         else:
             return len(self.video_urls)
 
