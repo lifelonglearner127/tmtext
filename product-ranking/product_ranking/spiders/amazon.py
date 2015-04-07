@@ -325,9 +325,9 @@ class AmazonProductsSpider(BaseProductsSpider):
         rev_sum = 0
         for k, v in rating_by_star.items(): 
             rev_sum += v
-        if rev_sum != total_reviews:
-            return Request(url=link, callback=self.get_buyer_reviews)
-        return rating_by_star
+        #if rev_sum != total_reviews:
+        return Request(url=link, callback=self.get_buyer_reviews)
+        #return rating_by_star
 
     def get_buyer_reviews(self, response):
         product = response.meta["product"]
@@ -345,6 +345,8 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         buyer_reviews["rating_by_star"] = {}
         buyer_reviews = self.get_rating_by_star(response, buyer_reviews)[0]
+
+        #print('*' * 20, 'parsing buyer reviews from', response.url)
 
         product["buyer_reviews"] = buyer_reviews
 
