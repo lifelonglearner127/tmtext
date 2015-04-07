@@ -91,7 +91,7 @@ class WalmartProductsSpider(BaseProductsSpider):
                           meta={'product': prod})
 
     def get_sponsored_links(self, response):
-        reql = []
+        self.reql = []
         self.sponsored_links = []
         for link in response.xpath(
             '//div[contains(@class, "yahoo_sponsored_link")]'
@@ -110,32 +110,46 @@ class WalmartProductsSpider(BaseProductsSpider):
                    "actual_url": actual_url,
                    }
             new_meta = response.meta.copy()
-            new_meta['sld'] = sld
+            new_meta["sld"] = sld
             new_meta['handle_httpstatus_list'] = [400, 403, 404, 405]
-            reql.append(Request(
+            self.reql.append(Request(
                 actual_url,
                 callback=self.parse_sponsored_links,
+                errback=self.parse_sponsored_links,
                 meta=new_meta,
                 dont_filter=True))
-        if reql:
-            req1 = reql.pop(0)
+        if self.reql:
+            req1 = self.reql.pop(0)
             new_meta = req1.meta
-            new_meta['reql'] = reql
+            new_meta['reql'] = self.reql
+            self.sld = new_meta["sld"]
             return req1.replace(meta=new_meta)
         return super(WalmartProductsSpider, self).start_requests()
 
     def parse_sponsored_links(self, response):
-        sld = response.meta['sld']
-        reql = response.meta['reql']
-        if response.status == 200:
-            sld['actual_url'] = response.url
-            self.sponsored_links.append(sld)
+        if hasattr(response, "meta"):
+            if response.status == 200:
+                self.sld['actual_url'] = response.url
+                self.sponsored_links.append(self.sld)
 
-        if reql:
-            req1 = reql.pop(0)
+            if self.reql:
+                req1 = self.reql.pop(0)
+                new_meta = req1.meta
+                new_meta['reql'] = self.reql
+                self.temp_spons_link = req1.url
+                self.sld = new_meta["sld"]
+                return req1.replace(meta=new_meta)
+        else:
+            self.sld['actual_url'] = self.temp_spons_link
+            self.sponsored_links.append(self.sld)
+
+            req1 = self.reql.pop(0)
             new_meta = req1.meta
-            new_meta['reql'] = reql
+            new_meta['reql'] = self.reql
+            self.temp_spons_link = req1.url
+            self.sld = new_meta["sld"]
             return req1.replace(meta=new_meta)
+        del self.temp_spons_link, self.sld, self.reql
         return super(WalmartProductsSpider, self).start_requests()
 
     def parse_product(self, response):
