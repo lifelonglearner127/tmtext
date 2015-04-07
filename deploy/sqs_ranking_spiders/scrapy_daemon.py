@@ -217,10 +217,6 @@ def put_file_into_s3(bucket_name, fname,
     bucket = conn.get_bucket(bucket_name, validate=False)
     # Cut out file name
     filename = os.path.basename(fname)
-    # Generate file path for S3
-    # folders = ("/" + datetime.datetime.utcnow().strftime('%Y/%m/%d')
-    #            + "/" + filename)
-    folders = (FOLDERS_PATH + filename)
     if compress:
         try:
             import zlib
@@ -228,18 +224,23 @@ def put_file_into_s3(bucket_name, fname,
         except ImportError:
             mode = zipfile.ZIP_STORED
         archive_name = filename + '.zip'
-        zf = zipfile.ZipFile(archive_name, 'w', mode)
+        archive_path = fname + '.zip'
+        zf = zipfile.ZipFile(archive_path, 'w', mode)
         try:
-            zf.write(fname)
+            zf.write(filename=fname, arcname=filename)
             logger.info("Adding %s to archive", filename)
         finally:
             zf.close()
 
         filename = archive_name
+        fname = archive_path
         # folders = ("/" + datetime.datetime.utcnow().strftime('%Y/%m/%d')
         #            + "/" + archive_name)
-        folders = (FOLDERS_PATH + archive_name)
 
+    # Generate file path for S3
+    # folders = ("/" + datetime.datetime.utcnow().strftime('%Y/%m/%d')
+    #            + "/" + filename)
+    folders = (FOLDERS_PATH + filename)
     logger.info("Uploading %s to Amazon S3 bucket %s", filename, bucket_name)
     k = Key(bucket)
     #Set path to file on S3
