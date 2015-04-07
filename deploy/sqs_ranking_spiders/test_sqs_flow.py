@@ -1,4 +1,9 @@
 
+# TODO:
+# * individual URL mode
+# * add-best-seller.py hack
+# ...
+
 import os
 import sys
 import random
