@@ -69,8 +69,6 @@ class WalmartScraper(Scraper):
         self.has_pdf = False
         # whether product has any videos
         self.has_video = False
-        # whether product has any streaming video
-        self.has_streaming_video = False
 
         # whether webcollage 360 view were extracted
         self.extracted_webcollage_360_view = False
@@ -442,34 +440,6 @@ class WalmartScraper(Scraper):
         except Exception, e:
             return {"reviews" : {"total_reviews": None, "average_review": None}}
         return {"reviews" : {"total_reviews": reviews_count, "average_review": average_review}}
-
-    def _has_webcollage_iframe(self):
-        """Extracts webcollage links from an iframe on the page.
-        (Example: http://www.walmart.com/ip/Trix-Wildberry-Red-Swirls-Cereal-22.7-oz/25847976
-            has some webcollage images)
-        Returns:
-            1 if page has iframe with webcollage images, 0 otherwise
-        """
-
-        # assume only 1 iframe
-        # TODO: identify it by class or smth?
-        try:
-            iframe_link = self.tree_html.xpath("//iframe/@src")[0]
-            if iframe_link.startswith("/"):
-                # append scheme
-                iframe_link = "http:" + iframe_link
-
-            # get contents of iframe
-            contents = urllib.urlopen(iframe_link).read()
-            # get webcollage content from iframe
-            # TODO: what if they are in comments?
-            if "media.webcollage.net" in contents:
-                return 1
-
-        except Exception, e:
-            return 0
-
-        return 0
 
     def _product_has_webcollage(self):
         """Uses video and pdf information
