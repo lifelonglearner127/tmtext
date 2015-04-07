@@ -18,6 +18,8 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
 from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 
+is_empty = lambda x, y=None: x[0] if x else y
+
 
 class TargetProductSpider(BaseProductsSpider):
     name = 'target_products'
@@ -117,6 +119,15 @@ class TargetProductSpider(BaseProductsSpider):
             '//meta[@property="og:url"]/@content'
         ).extract()
         prod = response.meta['product']
+
+        price = is_empty(response.xpath(
+            '//p[contains(@class, "price")]/span/text()').extract())
+        if price:
+            prod['price'] = Price(
+                price=price.replace('$', '').replace(',', '').strip(),
+                priceCurrency='USD'
+            )
+
         old_url = prod['url'].rsplit('#', 1)[0]
         prod['url'] = None
         populate_from_open_graph(response, prod)
@@ -221,6 +232,8 @@ class TargetProductSpider(BaseProductsSpider):
                     except KeyError:
                         color = ""
                     price = item['Attributes']['price']['formattedOfferPrice']
+                    if not price:
+                        price = item['Attributes']['price']['offerPriceMin']
                     code = item['Attributes']['partNumber']
                     variants.append((itype, color, price, code))
                 except KeyError:
@@ -382,6 +395,7 @@ class TargetProductSpider(BaseProductsSpider):
 
 
         variants = response.meta.get('variants')
+
         if self.POPULATE_REVIEWS:
             canonical_url = response.meta['canonical_url']
             return self._request_reviews(response, product, canonical_url)
@@ -505,7 +519,10 @@ class TargetProductSpider(BaseProductsSpider):
                 if amount == 'Too low to display':
                     price = None
                 else:
-                    amount = re.sub('[^0-9.]', '', priceattr['amount'])
+                    print "-"*50
+                    print priceattr['amount']
+                    print "-"*50
+                    amount = re.sub('\d+\.{0,1}\d+', '', priceattr['amount'])
                     price = Price(priceCurrency=currency, price=amount)
                 cond_set_value(product, 'price', price)
             yield url, product
@@ -738,19 +755,21 @@ class TargetProductSpider(BaseProductsSpider):
         data = data.get('FilteredReviewStatistics', {})
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
-        if average is None or total is None:
-            return product
-        distribution = data.get('RatingDistribution', [])
-        distribution = {d['RatingValue']: d['Count']
-                        for d in data.get('RatingDistribution', [])}
-        fdist = {i: 0 for i in range(1, 6)}
-        for i in range(1, 6):
-            if i in distribution:
-                fdist[i] = distribution[i]
-        reviews = BuyerReviews(total, average, fdist)
-        cond_set_value(product, 'buyer_reviews', reviews)
+        
+        if average and total:
+            distribution = data.get('RatingDistribution', [])
+            distribution = {d['RatingValue']: d['Count']
+                            for d in data.get('RatingDistribution', [])}
+            fdist = {i: 0 for i in range(1, 6)}
+            for i in range(1, 6):
+                if i in distribution:
+                    fdist[i] = distribution[i]
+            reviews = BuyerReviews(total, average, fdist)
+            cond_set_value(product, 'buyer_reviews', reviews)
+        
         variants = response.meta.get('variants')
-        if variants and self.POPULATE_VARIANTS:
+        
+        if variants: #and self.POPULATE_VARIANTS:
             return self._populate_variants(response, product, variants)
         return product
 
