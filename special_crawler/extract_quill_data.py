@@ -38,6 +38,8 @@ class QuillScraper(Scraper):
     video_count = None
     pdf_urls = None
     pdf_count = None
+    image_urls = None
+    image_count = None
 
     def check_url_format(self):
         # for ex: http://www.quill.com/clorox-toilet-bowl-cleaner-bleach/cbs/040672.html#SkuTabs
@@ -199,6 +201,9 @@ class QuillScraper(Scraper):
         return None
 
     def _image_urls(self):
+        if self.image_count is not None:
+            return self.image_urls
+        self.image_count = 0
         image_url = self.tree_html.xpath("//div[@class='s7Thumbs']//div[@class='carouselWrap']//img/@src")
         image_url_tmp = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url_tmp) < 1:
@@ -225,8 +230,9 @@ class QuillScraper(Scraper):
         return image_url
 
     def _image_count(self):
-        image_urls = self._image_urls()
-        return len(image_urls)
+        if self.image_count is None:
+            self._image_urls()
+        return self.image_count
 
     def _video_urls(self):
         if self.video_count is not None:
@@ -312,6 +318,26 @@ class QuillScraper(Scraper):
         wc_pdfs = re.findall(r'wcobj="(.*?)"', contents, re.DOTALL)
         wc_pdfs = [r.replace("\\", "") for r in wc_pdfs if r.endswith(".pdf")]
         pdf_hrefs += wc_pdfs
+
+        # Request URL:http://media.flixcar.com/delivery/inpage/show/751/us/846426/json?c=jsonpcar751us846426&complimentary=0&type=.html
+        # Request URL:http://media.flixcar.com/delivery/inpage/show/751/us/833093/json?c=jsonpcar751us833093&complimentary=0&type=.html
+        # http://media.flixcar.com/delivery/js/minisite/751/us/mpn/E3E02A%23B1H/null/50686187?d=751&l=us&mpn=E3E02A%23B1H&sku=50686187&dom=flix-minisite&fl=en&ext=.js
+        try:
+            data_flix_mpn = self.tree_html.xpath("//div[@id='Quill']//script/@data-flix-mpn")[0].strip()
+            data_flix_mpn = data_flix_mpn.replace('#', '%23')
+            url = "http://media.flixcar.com/delivery/js/minisite/751/us/mpn/%s/null/%s" % (data_flix_mpn, self._product_id())
+            contents = urllib.urlopen(url).read()
+            ff_id = re.findall(r'_FFMatcher\._FFmain\((.*?)\)', contents, re.DOTALL)[0].strip()
+            ff_id = re.findall(r"'us','(.*?)'", ff_id, re.DOTALL)[0].strip()
+            url = "http://media.flixcar.com/delivery/inpage/show/751/us/%s/" % ff_id
+            contents = urllib.urlopen(url).read()
+            tree = html.fromstring(contents)
+            ff_pdfs = tree.xpath("//div[contains(@class,'inpage_cap_more-info')]//a/@href")
+            ff_pdfs = list(set(ff_pdfs))
+            pdf_hrefs += ff_pdfs
+        except IndexError:
+            pass
+
         if len(pdf_hrefs) < 1:
             return None
         self.pdf_count = len(pdf_hrefs)
