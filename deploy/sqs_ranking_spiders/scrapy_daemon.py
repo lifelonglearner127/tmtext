@@ -377,7 +377,7 @@ def execute_task_from_sqs():
                                     #  later
         break
     # due to task performance may take more than 12 hrs remove task immediately
-    #task_queue.task_done()
+    task_queue.task_done()
     logger.info("Task message was successfully received and "
                 "removed form queue.")
     task_id = metadata.get('task_id', metadata.get('task', None))
