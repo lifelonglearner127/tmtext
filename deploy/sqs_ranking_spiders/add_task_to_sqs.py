@@ -83,4 +83,7 @@ if __name__ == '__main__':
         if 'searchterms_str=' in arg:
             _str, _st_value = arg.split('=')
             msg['searchterms_str'] = _st_value.strip()
+        if 'server_name=' in arg:
+            _str, _st_value = arg.split('=')
+            msg['server_name'] = _st_value.strip()
     put_msg_to_sqs(msg)

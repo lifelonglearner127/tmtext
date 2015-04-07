@@ -32,7 +32,7 @@ PROGRESS_QUEUE_NAME = 'sqs_ranking_spiders_progress'  # progress reports
 JOB_OUTPUT_PATH = '~/job_output'  # local dir
 CWD = os.path.dirname(os.path.abspath(__file__))
 path = os.path.expanduser('~/repo')
-# fo local mode
+# for local mode
 sys.path.insert(1, os.path.join(CWD, '..'))
 sys.path.insert(2, os.path.join(CWD, '..', '..', 'special_crawler',
                                 'queue_handler'))
@@ -85,6 +85,9 @@ def job_to_fname(metadata):
         searchterms_str = searchterms_str.decode('utf8')
     # job_name = datetime.datetime.utcnow().strftime('%d-%m-%Y')
     job_name = DATESTAMP + '____' + RANDOM_HASH
+    task_id = metadata.get('task_id', metadata.get('task', None))
+    if task_id:
+        job_name += '____' + str(task_id)
     if searchterms_str:
         additional_part = unidecode.unidecode(
             searchterms_str).replace(' ', '-')
@@ -253,13 +256,36 @@ def put_file_into_s3(bucket_name, fname,
                 "Check file path and amazon keys/permissions.")
 
 
-def _check_if_log_file_contains_end_marker(log_file):
+def _check_if_log_file_contains_end_marker(log_file, data_bs_file):
     if not os.path.exists(log_file):
         return
+    lines = get_lines_from_file(log_file)
+    if lines:
+        if 'INFO: Spider closed (finished)' in lines[-1]:
+            if data_bs_file:
+                lines = get_lines_from_file(data_bs_file[:-3] + ".log")
+                if not 'INFO: Spider closed (finished)' in lines[-1]:
+                    return
+                temp_file = '%s/%s' % (
+                    os.path.expanduser(JOB_OUTPUT_PATH),
+                    "temp_file.jl"
+                )
+                os.system(
+                    REPO_BASE_PATH + "/product-ranking/add-best-seller.py " +
+                    log_file[:-4] + ".jl " + data_bs_file + " >" + temp_file
+                )
+                with open(temp_file) as bs_file:
+                    lines = bs_file.readlines()
+                    with open(log_file[:-4]+".jl", "w") as main_file:
+                        main_file.writelines(lines)
+                os.remove(temp_file)
+            return True
+
+def get_lines_from_file(get_file):
     try:
-        f = open(log_file,'r')
+        f = open(get_file,'r')
     except IOError:
-        logger.error("Failed to open log file %s", log_file)
+        logger.error("Failed to open log file %s", get_file)
         return  # error - can't open the log file
     else:
         f.seek(0, 2)
@@ -267,9 +293,8 @@ def _check_if_log_file_contains_end_marker(log_file):
         f.seek(max(fsize-1024, 0), 0)
         lines = f.readlines()
         f.close()
-        if 'INFO: Spider closed (finished)' in lines[-1]:
-            return True
-
+        return lines
+    return False
 
 def _check_num_of_products(data_file):
     if not os.path.exists(data_file):
@@ -289,7 +314,7 @@ def generate_msg(metadata, progress):
     }
     return _msg
 
-def report_progress_and_wait(data_file, log_file, metadata,
+def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
                              initial_sleep_time=15, sleep_time=15):
     time.sleep(initial_sleep_time)
     # if the data file does not exist - try to wait a bit longer
@@ -326,7 +351,7 @@ def report_progress_and_wait(data_file, log_file, metadata,
             write_msg_to_sqs(
                 metadata['server_name']+PROGRESS_QUEUE_NAME, _msg)
 
-        if _check_if_log_file_contains_end_marker(log_file):
+        if _check_if_log_file_contains_end_marker(log_file, data_bs_file):
             logger.info("Spider task was completed.")
             _msg = generate_msg(metadata, 'finished')
             if TEST_MODE:
@@ -379,6 +404,7 @@ def execute_task_from_sqs():
            ' -s LOG_FILE=%s -o %s &')
     # prepare command-line arguments
     options = ' '
+
     for key, value in cmd_line_args.items():
         options += ' -a %s=%s' % (key, value)
     if searchterms_str:
@@ -392,10 +418,23 @@ def execute_task_from_sqs():
         options, output_path+'.log', output_path+'.jl'
     )
     logger.info("Runing %s", cmd)
+
+    data_bs_file = None
+    if "with_best_seller_ranking" in metadata \
+            and metadata["with_best_seller_ranking"]:
+        data_bs_file = output_path + '_bs.jl'
+        cmdbs = ('cd %s/product-ranking'
+                 ' && scrapy crawl %s -a %s="%s" %s'
+                 ' -a search_sort=%s -s LOG_FILE=%s -o %s &') % (
+            REPO_BASE_PATH, site + '_products', arg_name, arg_value,
+            options, "best_sellers", output_path + '_bs.log', data_bs_file
+        )
+
+        pbs = Popen(cmdbs, shell=True, stdout=PIPE, stderr=PIPE)
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 
     # report progress and wait until the task is done
-    report_progress_and_wait(output_path+'.jl', output_path+'.log', metadata)
+    report_progress_and_wait(output_path+'.jl', output_path+'.log', data_bs_file, metadata)
     # upload the files to SQS and S3
     data_key = put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.jl')
     logs_key = put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.log')
@@ -416,10 +455,14 @@ def prepare_test_data():
     # prepare incoming tasks
     with open('/tmp/sqs_ranking_spiders_tasks', 'w') as fh:
         msg = {
-            'task_id': 4444, 'site': 'amazon', 'searchterms_str': 'water',
+            'task_id': 4444, 'site': 'walmart', 'searchterms_str': 'iphone',
             'server_name': 'test_server_name',
             # "url": "http://www.walmart.com/ip/42211446?productRedirect=true",
-            'cmd_args': {'quantity': 20}
+            'with_best_seller_ranking': True,
+            'cmd_args':
+                {
+                    'quantity': 20,
+                }
         }
         fh.write(json.dumps(msg, default=json_serializer))
 
