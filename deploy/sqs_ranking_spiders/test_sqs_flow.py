@@ -98,14 +98,14 @@ if __name__ == '__main__':
     _create_sqs_queue(test_server_name+'sqs_ranking_spiders_output',
                       visib_timeout=30)
 
-
     # 0. Generate random marker to identify the test task
     random_id = str(random.randint(100000, 200000))
     print 'RANDOM ID FOR THIS TASK:', random_id
 
     # 1. Create a new message in the input queue to start crawling
-    cmd = 'python add_task_to_sqs.py task_id=%s searchterms_str=%s'
-    cmd = cmd % (random_id, search_term)
+    cmd = ('python add_task_to_sqs.py task_id=%s'
+           ' searchterms_str=%s server_name=%s')
+    cmd = cmd % (random_id, search_term, test_server_name)
     print '    ...executing:', cmd
     os.system(cmd)
 
