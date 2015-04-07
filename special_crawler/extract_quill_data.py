@@ -322,6 +322,22 @@ class QuillScraper(Scraper):
         # Request URL:http://media.flixcar.com/delivery/inpage/show/751/us/846426/json?c=jsonpcar751us846426&complimentary=0&type=.html
         # Request URL:http://media.flixcar.com/delivery/inpage/show/751/us/833093/json?c=jsonpcar751us833093&complimentary=0&type=.html
         # http://media.flixcar.com/delivery/js/minisite/751/us/mpn/E3E02A%23B1H/null/50686187?d=751&l=us&mpn=E3E02A%23B1H&sku=50686187&dom=flix-minisite&fl=en&ext=.js
+        try:
+            data_flix_mpn = self.tree_html.xpath("//div[@id='Quill']//script/@data-flix-mpn")[0].strip()
+            data_flix_mpn = data_flix_mpn.replace('#', '%23')
+            url = "http://media.flixcar.com/delivery/js/minisite/751/us/mpn/%s/null/%s" % (data_flix_mpn, self._product_id())
+            contents = urllib.urlopen(url).read()
+            ff_id = re.findall(r'_FFMatcher\._FFmain\((.*?)\)', contents, re.DOTALL)[0].strip()
+            ff_id = re.findall(r"'us','(.*?)'", ff_id, re.DOTALL)[0].strip()
+            url = "http://media.flixcar.com/delivery/inpage/show/751/us/%s/" % ff_id
+            contents = urllib.urlopen(url).read()
+            tree = html.fromstring(contents)
+            ff_pdfs = tree.xpath("//div[contains(@class,'inpage_cap_more-info')]//a/@href")
+            ff_pdfs = list(set(ff_pdfs))
+            pdf_hrefs += ff_pdfs
+        except IndexError:
+            pass
+
         if len(pdf_hrefs) < 1:
             return None
         self.pdf_count = len(pdf_hrefs)
