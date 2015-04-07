@@ -69,8 +69,14 @@ class AsdaProductsSpider(BaseProductsSpider):
             # FIXME Verify by comparing a prod in another site.
             prod['upc'] = int(item['cin'])
             prod['model'] = item['id']
-            prod['image_url'] = item['imageURL']
+            image_url = item.get('imageURL')
+            if not image_url:
+                image_url = item.get('images').get('largeImage')
+            prod['image_url'] = image_url
+
             prod['url'] = item['productURL']
+            if 'search_term' not in prod:
+                prod['search_term'] = ''
 
             prod['locale'] = "en-GB"
 
@@ -88,3 +94,8 @@ class AsdaProductsSpider(BaseProductsSpider):
         return self.url_formatter.format(self.SEARCH_URL,
                                          search_term=st,
                                          pagenum=cur_page + 1)
+
+    def _parse_single_product(self, response):
+        products = list(self._scrape_product_links(response))
+        if products:
+            return products[0]
