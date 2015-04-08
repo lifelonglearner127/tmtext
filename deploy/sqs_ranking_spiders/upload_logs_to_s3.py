@@ -26,17 +26,24 @@ except ImportError:
 logger = logging.getLogger('main_log')
 log_mod_time_flag_path = '/tmp/log_mod_time_flag'
 
+RANDOM_HASH = None
+DATESTAMP = None
+FOLDERS_PATH = None
+
+
 def set_global_variables_from_data_file():
     try:
         json_data = load_data_from_hash_datestamp_data()
-        globals()['RANDOM_HASH'] = json_data['random_hash']
-        globals()['DATESTAMP'] = json_data['datestamp']
-        globals()['FOLDERS_PATH'] = json_data['folders_path']
+        global RANDOM_HASH, DATESTAMP, FOLDERS_PATH
+        RANDOM_HASH = json_data['random_hash']
+        DATESTAMP = json_data['datestamp']
+        FOLDERS_PATH = json_data['folders_path']
     except:
         generate_hash_datestamp_data()
         set_global_variables_from_data_file()
 
 def upload_logs_into_s3(bucket_name):
+    global RANDOM_HASH, DATESTAMP, FOLDERS_PATH
     conn = boto.connect_s3(
         aws_access_key_id=AMAZON_ACCESS_KEY,
         aws_secret_access_key=AMAZON_SECRET_KEY,

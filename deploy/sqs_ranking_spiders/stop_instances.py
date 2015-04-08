@@ -63,10 +63,12 @@ logger = logging.getLogger('killer_log')
 BUCKET_NAME = 'spyder-bucket'
 BUCKET_KEY = 'instances_killer_logs'
 TOTAL_WAS_TERMINATED = 0
+autoscale_conn = None
 
 def get_all_group_instances_and_conn():
     conn = AutoScaleConnection()
-    globals()['conn'] = conn
+    global autoscale_conn
+    autoscale_conn = conn
     ec2 = boto.ec2.connect_to_region('us-east-1')
     group = conn.get_all_groups(names=['SCCluster1'])[0]
     if not group.instances:
@@ -110,7 +112,8 @@ def check_logs_status(file_path):
 
 
 def teminate_instance_and_log_it(inst_ip, inst_id, reason):
-    conn.terminate_instance(inst_id, decrement_capacity=True)
+    global autoscale_conn
+    autoscale_conn.terminate_instance(inst_id, decrement_capacity=True)
     logger.warning("Instance with ip=%s and id=%s was terminated"
                    " due to reason='%s'.", inst_ip, inst_id, reason)
     globals()['TOTAL_WAS_TERMINATED'] += 1

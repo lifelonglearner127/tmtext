@@ -58,13 +58,17 @@ TEST_MODE = False  # if we should perform local file tests
 
 logger = logging.getLogger('main_log')
 
+RANDOM_HASH = None
+DATESTAMP = None
+FOLDERS_PATH = None
 
 def set_global_variables_from_data_file():
     try:
         json_data = load_data_from_hash_datestamp_data()
-        globals()['RANDOM_HASH'] = json_data['random_hash']
-        globals()['DATESTAMP'] = json_data['datestamp']
-        globals()['FOLDERS_PATH'] = json_data['folders_path']
+        global RANDOM_HASH, DATESTAMP, FOLDERS_PATH
+        RANDOM_HASH = json_data['random_hash']
+        DATESTAMP = json_data['datestamp']
+        FOLDERS_PATH = json_data['folders_path']
     except:
         logger.error("Required hash_datestamp_data wasn't created."
                      "Create it now.")
@@ -79,6 +83,7 @@ def json_serializer(obj):
 
 
 def job_to_fname(metadata):
+    global RANDOM_HASH, DATESTAMP
     searchterms_str = metadata.get('searchterms_str', None)
     site = metadata['site']
     if isinstance(searchterms_str, (str, unicode)):
@@ -184,6 +189,7 @@ def write_msg_to_sqs(queue_name_or_instance, msg):
 
 
 def dump_result_data_into_sqs(data_key, logs_key, queue_name, metadata):
+    global RANDOM_HASH, DATESTAMP, FOLDERS_PATH
     instance_log_filename = DATESTAMP + '____' + RANDOM_HASH + '____' + \
         'remote_instance_starter2.log'
     s3_key_instance_starter_logs = (FOLDERS_PATH + instance_log_filename)
@@ -240,6 +246,7 @@ def put_file_into_s3(bucket_name, fname,
     # Generate file path for S3
     # folders = ("/" + datetime.datetime.utcnow().strftime('%Y/%m/%d')
     #            + "/" + filename)
+    global FOLDERS_PATH
     folders = (FOLDERS_PATH + filename)
     logger.info("Uploading %s to Amazon S3 bucket %s", filename, bucket_name)
     k = Key(bucket)
