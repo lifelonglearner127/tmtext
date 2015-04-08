@@ -151,20 +151,31 @@ def unzip_file(file_path, unzip_path=LOCAL_DUMP_PATH):
     return unzipped_file_path
 
 
-if __name__ == '__main__':
-    product_url_flag = False
-    for arg in sys.argv:
-        if 'test_single_result' in arg:
-            product_url_flag = True
-
+def main_loop(flag):
+    additional_commands = {
+        'search_term': ' searchterms_str=%s',
+        'test_single_result': ' product_url=%s',
+    }
+    additional_args = {
+        'search_term': 'asus',
+        'test_single_result': (
+            'http://www.amazon.com/Panasonic-Expandable-Cordless-KX-'
+            'TG6512B-Handsets/dp/B0036D9YKU/ref=sr_1_4?ie=UTF8&qid='
+            '1428478402&sr=8-4&keywords=phone'
+        )
+    }
+    validated_fields = {
+        'search_term': 'search_term',
+        'test_single_result': 'is_single_result'
+    }
+    search_term = additional_args[flag]
+    fields_patterns = {
+        'search_term': search_term,
+        'test_single_result': True
+    }
     test_server_name = 'test_server'
     test_queue_name = 'sqs_ranking_spiders_tasks_tests'
-    search_term = 'asus'
-    product_url = 'http://www.amazon.com/Panasonic-Expandable-Cordless-KX-'\
-                  'TG6512B-Handsets/dp/B0036D9YKU/ref=sr_1_4?ie=UTF8&qid='\
-                  '1428478402&sr=8-4&keywords=phone'
     local_data_file = '/tmp/_s3_data_file.zip'
-
     # create output 'queues' for this server
     _create_sqs_queue(test_server_name+'sqs_ranking_spiders_progress',
                       visib_timeout=30)
@@ -179,10 +190,7 @@ if __name__ == '__main__':
     cmd = ('python add_task_to_sqs.py task_id=%s'
            ' server_name=%s')
     cmd = cmd % (random_id, test_server_name)
-    if product_url_flag:
-        cmd += ' product_url=%s' % product_url
-    else:
-        cmd += ' searchterms_str=%s' % search_term
+    cmd += additional_commands[flag] % additional_args[flag]
     print '    ...executing:', cmd
     os.system(cmd)
 
@@ -215,19 +223,19 @@ if __name__ == '__main__':
         local_data_file = unzip_file(local_data_file)
     if not is_plain_jsonlist_file(local_data_file):
         assert False, 'Failed to unzip data file!'
-    if product_url_flag:
-        validator = validate_data_file(
-            local_data_file,
-            validated_fileld='is_single_result',
-            field_pattern=True
-        )
-    else:
-        validator = validate_data_file(
-            local_data_file,
-            validated_fileld='search_term',
-            field_pattern=search_term
+    validator = validate_data_file(
+        local_data_file,
+        validated_fileld=validated_fields[flag],
+        field_pattern=fields_patterns[flag]
         )
     if validator:
         print 'EVERYTHING IS OK'
+        # removed unzipped data file
+        os.system('rm %s' % local_data_file)
     else:
         print 'DATA FILE CHECK FAILED'
+
+
+if __name__ == '__main__':
+    main_loop('search_term')
+    main_loop('test_single_result')
