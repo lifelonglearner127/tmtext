@@ -69,6 +69,10 @@ def get_all_group_instances_and_conn():
     globals()['conn'] = conn
     ec2 = boto.ec2.connect_to_region('us-east-1')
     group = conn.get_all_groups(names=['SCCluster1'])[0]
+    if not group.instances:
+        logger.info("No any working instances at the group 'SCCluster1'")
+        upload_logs_to_s3()
+        sys.exit()
     instance_ids = [i.instance_id for i in group.instances]
     instances = ec2.get_only_instances(instance_ids)
     return instances, conn
