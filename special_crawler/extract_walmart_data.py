@@ -598,7 +598,12 @@ class WalmartScraper(Scraper):
 
         for description_element in description_elements:
             if "<b>" in lxml.html.tostring(description_element):
-                break;
+                break
+
+            if "<ul>" in lxml.html.tostring(description_element):
+                short_description = ""
+                break
+
             short_description += lxml.html.tostring(description_element)
 
         # try to extract from old page structure - in case walmart is
