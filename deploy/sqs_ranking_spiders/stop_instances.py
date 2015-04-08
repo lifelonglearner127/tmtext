@@ -112,11 +112,11 @@ def check_logs_status(file_path):
 
 
 def teminate_instance_and_log_it(inst_ip, inst_id, reason):
-    global autoscale_conn
+    global autoscale_conn, TOTAL_WAS_TERMINATED
     autoscale_conn.terminate_instance(inst_id, decrement_capacity=True)
     logger.warning("Instance with ip=%s and id=%s was terminated"
                    " due to reason='%s'.", inst_ip, inst_id, reason)
-    globals()['TOTAL_WAS_TERMINATED'] += 1
+    TOTAL_WAS_TERMINATED += 1
 
 
 def stop_if_required(inst_ip, inst_id):
