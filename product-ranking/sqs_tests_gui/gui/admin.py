@@ -1,0 +1,25 @@
+from django.contrib import admin
+
+# Register your models here.
+from .models import Job
+from .forms import JobForm
+
+
+def link_to_csv_data_file(job):
+    # TODO: implement
+    return job.id
+
+
+def link_to_log_file(job):
+    # TODO: implement
+    return job.id
+
+
+class JobAdmin(admin.ModelAdmin):
+    list_display = (
+        'task_id', 'spider', 'name', 'status', 'created', 'finished',
+        link_to_csv_data_file, link_to_log_file
+    )
+    form = JobForm
+
+admin.site.register(Job, JobAdmin)
