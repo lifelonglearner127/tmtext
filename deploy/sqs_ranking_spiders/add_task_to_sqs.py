@@ -86,4 +86,15 @@ if __name__ == '__main__':
         if 'server_name=' in arg:
             _str, _st_value = arg.split('=')
             msg['server_name'] = _st_value.strip()
+        if 'product_url=' in arg:
+            _str, _st_value = arg.split('=', 1)
+            msg['url'] = _st_value.strip()
+            try:
+                del msg['searchterms_str']
+            except Exception as e:
+                print e
+            try:
+                del msg['cmd_args']['quantity']
+            except Exception as e:
+                print e
     put_msg_to_sqs(msg)

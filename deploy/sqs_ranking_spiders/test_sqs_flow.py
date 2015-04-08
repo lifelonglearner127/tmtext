@@ -113,7 +113,7 @@ def download_s3_file(bucket, s3_path, local_path):
     key.get_contents_to_filename(local_path)
 
 
-def validate_data_file(fname, search_term):
+def validate_data_file(fname, validated_fileld, field_pattern):
     """ Checks the local data file (downloaded from S3) """
     all_lines_are_jsons = True
     with open(fname, 'r') as fh:
@@ -127,8 +127,9 @@ def validate_data_file(fname, search_term):
                 print 'LINE %i is not JSON!' % line_no
                 all_lines_are_jsons = False
                 continue
-            if line.get('search_term', '') != search_term:
-                print 'SEARCH TERMS DO NOT MARCH AT LINE %i' % line_no
+            if line.get(validated_fileld, '') != field_pattern:
+                print ('%s DO NOT MARCH AT LINE %i' %
+                    (validated_fileld.upper(), line_no))
                 return False
     return all_lines_are_jsons
 
@@ -151,9 +152,17 @@ def unzip_file(file_path, unzip_path=LOCAL_DUMP_PATH):
 
 
 if __name__ == '__main__':
+    product_url_flag = False
+    for arg in sys.argv:
+        if 'test_single_result' in arg:
+            product_url_flag = True
+
     test_server_name = 'test_server'
     test_queue_name = 'sqs_ranking_spiders_tasks_tests'
     search_term = 'asus'
+    product_url = 'http://www.amazon.com/Panasonic-Expandable-Cordless-KX-'\
+                  'TG6512B-Handsets/dp/B0036D9YKU/ref=sr_1_4?ie=UTF8&qid='\
+                  '1428478402&sr=8-4&keywords=phone'
     local_data_file = '/tmp/_s3_data_file.zip'
 
     # create output 'queues' for this server
@@ -168,8 +177,12 @@ if __name__ == '__main__':
 
     # 1. Create a new message in the input queue to start crawling
     cmd = ('python add_task_to_sqs.py task_id=%s'
-           ' searchterms_str=%s server_name=%s')
-    cmd = cmd % (random_id, search_term, test_server_name)
+           ' server_name=%s')
+    cmd = cmd % (random_id, test_server_name)
+    if product_url_flag:
+        cmd += ' product_url=%s' % product_url
+    else:
+        cmd += ' searchterms_str=%s' % search_term
     print '    ...executing:', cmd
     os.system(cmd)
 
@@ -202,7 +215,19 @@ if __name__ == '__main__':
         local_data_file = unzip_file(local_data_file)
     if not is_plain_jsonlist_file(local_data_file):
         assert False, 'Failed to unzip data file!'
-    if validate_data_file(local_data_file, search_term):
+    if product_url_flag:
+        validator = validate_data_file(
+            local_data_file,
+            validated_fileld='is_single_result',
+            field_pattern=True
+        )
+    else:
+        validator = validate_data_file(
+            local_data_file,
+            validated_fileld='search_term',
+            field_pattern=search_term
+        )
+    if validator:
         print 'EVERYTHING IS OK'
     else:
         print 'DATA FILE CHECK FAILED'
