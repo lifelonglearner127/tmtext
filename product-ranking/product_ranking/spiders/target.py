@@ -123,6 +123,7 @@ class TargetProductSpider(BaseProductsSpider):
         price = is_empty(response.xpath(
             '//p[contains(@class, "price")]/span/text()').extract())
         if price:
+            price = is_empty(re.findall("\d+\.{0,1}\d+", price))
             prod['price'] = Price(
                 price=price.replace('$', '').replace(',', '').strip(),
                 priceCurrency='USD'
@@ -247,9 +248,11 @@ class TargetProductSpider(BaseProductsSpider):
                 new_product = product.copy()
                 new_product['price'] = price
                 if not isinstance(new_product, Price):
+                    price = new_product['price'].replace(
+                        '$', '').replace(',', '').strip()
+                    price = is_empty(re.findall("\d+\.{0,1}\d+", price), 0)
                     new_product['price'] = Price(
-                        price=new_product['price'].replace(
-                            '$', '').replace(',', '').strip(),
+                        price=price,
                         priceCurrency='USD'
                     )
                 new_product['model'] = color
@@ -393,7 +396,6 @@ class TargetProductSpider(BaseProductsSpider):
                 self._parse_recomm_json,
                 meta=new_meta)
 
-
         variants = response.meta.get('variants')
 
         if self.POPULATE_REVIEWS:
@@ -519,10 +521,9 @@ class TargetProductSpider(BaseProductsSpider):
                 if amount == 'Too low to display':
                     price = None
                 else:
-                    print "-"*50
-                    print priceattr['amount']
-                    print "-"*50
-                    amount = re.sub('\d+\.{0,1}\d+', '', priceattr['amount'])
+                    amount = is_empty(re.findall(
+                        '\d+\.{0,1}\d+', priceattr['amount']
+                    ))                   
                     price = Price(priceCurrency=currency, price=amount)
                 cond_set_value(product, 'price', price)
             yield url, product
@@ -769,7 +770,7 @@ class TargetProductSpider(BaseProductsSpider):
         
         variants = response.meta.get('variants')
         
-        if variants: #and self.POPULATE_VARIANTS:
+        if variants and self.POPULATE_VARIANTS:
             return self._populate_variants(response, product, variants)
         return product
 
