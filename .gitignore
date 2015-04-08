@@ -50,3 +50,4 @@ dist
 settings_ses.p*
 *.swp
 product-ranking/product_ranking/settings_local.py
+*.sqlit*
