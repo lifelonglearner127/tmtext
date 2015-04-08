@@ -9,6 +9,7 @@ import sys
 import random
 import time
 import json
+import zipfile
 
 import boto
 import boto.sqs
@@ -140,6 +141,15 @@ def is_plain_jsonlist_file(fname):
     return cont[0] == '{'
 
 
+def unzip_file(file_path, unzip_path=LOCAL_DUMP_PATH):
+    zf = zipfile.ZipFile(file_path)
+    content_fielname = zf.namelist()[0]
+    path = os.path.dirname(unzip_path)
+    zf.extractall(path)
+    unzipped_file_path = os.path.join(path, content_fielname)
+    return unzipped_file_path
+
+
 if __name__ == '__main__':
     test_server_name = 'test_server'
     test_queue_name = 'sqs_ranking_spiders_tasks_tests'
@@ -187,8 +197,11 @@ if __name__ == '__main__':
     download_s3_file(
         AMAZON_BUCKET_NAME, msg_data['s3_key_data'], local_data_file)
     if not is_plain_jsonlist_file(local_data_file):
-        # TODO: unpack files if needed!
-        assert False, 'zip extraction is not implemented yet - do it!'
+        assert zipfile.is_zipfile(local_data_file), \
+            'data file was received not in zip!'
+        local_data_file = unzip_file(local_data_file)
+    if not is_plain_jsonlist_file(local_data_file):
+        assert False, 'Failed to unzip data file!'
     if validate_data_file(local_data_file, search_term):
         print 'EVERYTHING IS OK'
     else:
