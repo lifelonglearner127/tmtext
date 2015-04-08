@@ -36,6 +36,7 @@ from extract_freshamazon_data import FreshAmazonScraper
 from extract_george_data import GeorgeScraper
 from extract_bloomingdales_data import BloomingdalesScraper
 from extract_macys_data import MacysScraper
+from extract_newegg_data import NeweggScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -84,6 +85,7 @@ SUPPORTED_SITES = {
                     "peapod" : PeapodScraper,
                     "bloomingdales" : BloomingdalesScraper,
                     "macys" : MacysScraper,
+                    "newegg": NeweggScraper,
                     }
 
 # add logger
