@@ -97,4 +97,7 @@ if __name__ == '__main__':
                 del msg['cmd_args']['quantity']
             except Exception as e:
                 print e
+        if 'with_best_seller_ranking=' in arg:
+            _str, _st_value = arg.split('=')
+            msg['with_best_seller_ranking'] = _st_value.strip()
     put_msg_to_sqs(msg)

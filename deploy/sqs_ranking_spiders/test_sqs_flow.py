@@ -1,7 +1,5 @@
 
 # TODO:
-# * individual URL mode
-# * add-best-seller.py hack
 # ...
 
 import os
@@ -127,10 +125,16 @@ def validate_data_file(fname, validated_fileld, field_pattern):
                 print 'LINE %i is not JSON!' % line_no
                 all_lines_are_jsons = False
                 continue
-            if line.get(validated_fileld, '') != field_pattern:
-                print ('%s DO NOT MARCH AT LINE %i' %
-                    (validated_fileld.upper(), line_no))
-                return False
+            if field_pattern:
+                if line.get(validated_fileld, '') != field_pattern:
+                    print ('%s DO NOT MARCH AT LINE %i' %
+                        (validated_fileld.upper(), line_no))
+                    return False
+            else:
+                if not validated_fileld in line:
+                    print ('%s DO NOT EXIST AT THE LINE %i' %
+                           (validated_fileld.upper(), line_no))
+                    return False
     return all_lines_are_jsons
 
 
@@ -155,6 +159,8 @@ def main_loop(flag):
     additional_commands = {
         'search_term': ' searchterms_str=%s',
         'test_single_result': ' product_url=%s',
+        'test_best_seller_ranking': (
+            ' searchterms_str=%s with_best_seller_ranking=True')
     }
     additional_args = {
         'search_term': 'asus',
@@ -162,16 +168,19 @@ def main_loop(flag):
             'http://www.amazon.com/Panasonic-Expandable-Cordless-KX-'
             'TG6512B-Handsets/dp/B0036D9YKU/ref=sr_1_4?ie=UTF8&qid='
             '1428478402&sr=8-4&keywords=phone'
-        )
+        ),
+        'test_best_seller_ranking': 'laptop'
     }
     validated_fields = {
         'search_term': 'search_term',
-        'test_single_result': 'is_single_result'
+        'test_single_result': 'is_single_result',
+        'test_best_seller_ranking': 'best_seller_ranking'
     }
     search_term = additional_args[flag]
     fields_patterns = {
         'search_term': search_term,
-        'test_single_result': True
+        'test_single_result': True,
+        'test_best_seller_ranking': None
     }
     test_server_name = 'test_server'
     test_queue_name = 'sqs_ranking_spiders_tasks_tests'
@@ -237,5 +246,9 @@ def main_loop(flag):
 
 
 if __name__ == '__main__':
+    print("\nCheck SQS with search term")
     main_loop('search_term')
+    print("\nCheck SQS with single product_url")
     main_loop('test_single_result')
+    print("\nCHeck SQS with search term and best_seller_ranking flag")
+    main_loop('test_best_seller_ranking')

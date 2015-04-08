@@ -422,7 +422,7 @@ def execute_task_from_sqs():
 
     data_bs_file = None
     if "with_best_seller_ranking" in metadata \
-            and metadata["with_best_seller_ranking"]:
+            and bool(metadata["with_best_seller_ranking"]):
         data_bs_file = output_path + '_bs.jl'
         cmdbs = ('cd %s/product-ranking'
                  ' && scrapy crawl %s -a %s="%s" %s'
