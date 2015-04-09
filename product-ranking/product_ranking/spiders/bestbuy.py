@@ -111,3 +111,6 @@ class BestBuyProductSpider(ProductsSpider):
         price = price_match.group(1)
         price = ''.join(re.split('[ ,]+', price))
         cond_replace_value(product, 'price', Price('USD', price))
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
