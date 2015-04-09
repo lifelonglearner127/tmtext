@@ -3,6 +3,7 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import re
 import json
 import urllib
 
@@ -11,6 +12,7 @@ from scrapy.log import WARNING, ERROR
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 class AsdaProductsSpider(BaseProductsSpider):
     name = 'asda_products'
@@ -22,6 +24,10 @@ class AsdaProductsSpider(BaseProductsSpider):
         "&keyword={search_term}&contentid=New_IM_Search_WithResults_promo_1" \
         "&htmlassociationtype=0&listType=12&sortby=relevance+desc" \
         "&cacheable=true&fromgi=gi&requestorigin=gi"
+
+    PRODUCT_LINK = "http://groceries.asda.com/asda-webstore/landing" \
+        "/home.shtml?cmpid=ahc-_-ghs-d1-_-asdacom-dsk-_-hp" \
+        "/search/%s#/product/%s"
 
     def __init__(self, *args, **kwargs):
         super(AsdaProductsSpider, self).__init__(
@@ -69,8 +75,18 @@ class AsdaProductsSpider(BaseProductsSpider):
             # FIXME Verify by comparing a prod in another site.
             prod['upc'] = int(item['cin'])
             prod['model'] = item['id']
-            prod['image_url'] = item['imageURL']
-            prod['url'] = item['productURL']
+
+            image_url = item.get('imageURL')
+            if not image_url and "images" in item:
+                image_url = item.get('images').get('largeImage')
+            prod['image_url'] = image_url
+
+            pId = is_empty(re.findall("itemid=(\d+)", item['productURL']))
+            if pId and "search_term" in response.meta:
+                prod['url'] = self.PRODUCT_LINK % (
+                    response.meta["search_term"], pId)
+            else:
+                prod["url"] = item['imageURL']
 
             prod['locale'] = "en-GB"
 
