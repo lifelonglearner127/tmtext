@@ -10,6 +10,8 @@ import sys
 import random
 import time
 import zipfile
+import codecs
+import csv
 from subprocess import Popen, PIPE
 
 import boto
@@ -61,6 +63,8 @@ logger = logging.getLogger('main_log')
 RANDOM_HASH = None
 DATESTAMP = None
 FOLDERS_PATH = None
+
+CONVERT_TO_CSV = True
 
 def set_global_variables_from_data_file():
     try:
@@ -188,7 +192,8 @@ def write_msg_to_sqs(queue_name_or_instance, msg):
                       queue_name_or_instance, str(e))
 
 
-def dump_result_data_into_sqs(data_key, logs_key, queue_name, metadata):
+def dump_result_data_into_sqs(data_key, logs_key, csv_data_key,
+                              queue_name, metadata):
     global RANDOM_HASH, DATESTAMP, FOLDERS_PATH
     instance_log_filename = DATESTAMP + '____' + RANDOM_HASH + '____' + \
         'remote_instance_starter2.log'
@@ -202,6 +207,8 @@ def dump_result_data_into_sqs(data_key, logs_key, queue_name, metadata):
         'utc_datetime': datetime.datetime.utcnow(),
         's3_key_instance_starter_logs': s3_key_instance_starter_logs,
     }
+    if csv_data_key:
+        msg['csv_data_key'] = csv_data_key.key
     logger.info("Provide result msg %s to queue '%s'", msg, queue_name)
     if TEST_MODE:
         test_write_msg_to_fs(queue_name, msg)
@@ -321,6 +328,44 @@ def generate_msg(metadata, progress):
         'progress': progress
     }
     return _msg
+
+
+def convert_json_to_csv(filepath):
+    json_filepath = filepath + '.jl'
+    logger.info("Convert %s to .csv", json_filepath)
+    field_names = set()
+    items = []
+    with codecs.open(json_filepath, "r", "utf-8") as jsonfile:
+        for line in jsonfile:
+            item = json.loads(line.strip())
+            items.append(item)
+            fields = [name for name, val in item.items()]
+            field_names = field_names | set(fields)
+
+    csv.register_dialect(
+        'json',
+        delimiter=',',
+        doublequote=True,
+        quoting=csv.QUOTE_ALL)
+
+    csv_filepath = filepath + '.csv'
+
+    with open(csv_filepath, "w") as csv_out_file:
+        csv_out_file.write(codecs.BOM_UTF8)
+        writer = csv.writer(csv_out_file, 'json')
+        writer.writerow(list(field_names))
+        for item in items:
+            vals = []
+            for name in field_names:
+                val = item.get(name, '')
+                if name == 'description':
+                    val = val.replace("\n", '\\n')
+                if type(val) == type(unicode("")):
+                    val = val.encode('utf-8')
+                vals.append(val)
+            writer.writerow(vals)
+    return csv_filepath
+
 
 def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
                              initial_sleep_time=15, sleep_time=15):
@@ -447,12 +492,22 @@ def execute_task_from_sqs():
     data_key = put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.jl')
     logs_key = put_file_into_s3(AMAZON_BUCKET_NAME, output_path+'.log')
 
+    csv_data_key = None
+    global CONVERT_TO_CSV
+    if CONVERT_TO_CSV:
+        try:
+            csv_filepath = convert_json_to_csv(output_path)
+            csv_data_key = put_file_into_s3(AMAZON_BUCKET_NAME, csv_filepath)
+        except Exception as e:
+            logger.warning("CSV converter failed with exception: %s", str(e))
+
     if data_key and logs_key:
-        dump_result_data_into_sqs(data_key, logs_key,
+        dump_result_data_into_sqs(data_key, logs_key, csv_data_key,
             server_name+OUTPUT_QUEUE_NAME, metadata)
     else:
         logger.error("Failed to load info to results sqs. Amazon keys "
                      "wasn't received")
+
     logger.info("Spider default output:\n%s%s",
                 p.stderr.read(),
                 p.stdout.read().strip())
