@@ -1647,6 +1647,9 @@ class WalmartScraper(Scraper):
             1/0 (owned/not owned)
         """
 
+        if self._in_stores:
+            return 1
+
         # assume new design
         # _owned_from_script() may throw exception if extraction fails
         # (causing the service to return None for "owned")
