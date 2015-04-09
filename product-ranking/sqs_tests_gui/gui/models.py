@@ -10,6 +10,28 @@ from django.db import models
 # 4) pull data file if needed
 
 
+def get_data_filename(job):
+    """ Returns local job filename relative to STATIC """
+    try:
+        job = int(job)
+    except TypeError:
+        pass
+    if not isinstance(job, int):
+        job = job.pk
+    return '/%s/data_file.csv' % job
+
+
+def get_log_filename(job):
+    """ Returns local job logs relative to STATIC """
+    try:
+        job = int(job)
+    except TypeError:
+        pass
+    if not isinstance(job, int):
+        job = job.pk
+    return '/%s/log.log' % job
+
+
 class Job(models.Model):
     _status_choices = [
         ('created', 'created'),
