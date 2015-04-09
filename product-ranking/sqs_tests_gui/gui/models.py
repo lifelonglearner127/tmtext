@@ -65,3 +65,8 @@ class Job(models.Model):
 
     status = models.CharField(max_length=100, choices=_status_choices,
                               default='created')
+
+    def searchterm_or_url(self):
+        return ('SearchTerm [%s]' % self.search_term if self.search_term
+                else 'URL')
+    searchterm_or_url.short_description = 'Type'

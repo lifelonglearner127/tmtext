@@ -30,7 +30,8 @@ admin_link_to_log_file.allow_tags = True
 
 class JobAdmin(admin.ModelAdmin):
     list_display = (
-        'task_id', 'spider', 'name', 'status', 'created', 'finished',
+        'task_id', 'spider', 'name', 'searchterm_or_url', 'status', 'created',
+        'finished',
         admin_link_to_csv_data_file, admin_link_to_log_file
     )
     list_filter = ('status', 'created', 'finished')
