@@ -3,12 +3,18 @@ import random
 from django.db import models
 
 # Create your models here.
+# TODO:
+# 1) push into SQS
+# 2) monitor progress queue
+# 3) monitor output data queue
+# 4) pull data file if needed
 
 
 class Job(models.Model):
     _status_choices = [
         ('created', 'created'),
-        ('in work', 'in work'),
+        ('pushed into sqs', 'pushed into sqs'),
+        ('in progress', 'in progress'),
         ('finished', 'finished'),
         ('failed', 'failed')
     ]
