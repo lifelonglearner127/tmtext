@@ -40,10 +40,12 @@ log_settings = {
     },
     'handlers': {
         'to_log_file': {
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'level': 'DEBUG',
             'formatter': 'default',
-            'filename': log_file_path
+            'filename': log_file_path,
+            'maxBytes': 1024*1024*1024, # 1GB
+            'backupCount': 1,
         },
         'console':{
             'level':'DEBUG',
