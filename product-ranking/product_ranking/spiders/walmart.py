@@ -6,7 +6,7 @@ import re
 import urlparse
 import uuid
 import string
-import datetime
+from datetime import datetime
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -14,9 +14,11 @@ from scrapy.log import ERROR, INFO
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
-                                   BuyerReviews, Price)
+                                   BuyerReviews, Price, Questions,
+                                   QuestionsData)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
+
 
 is_empty = lambda x: x[0] if x else ""
 
@@ -46,6 +48,11 @@ class WalmartProductsSpider(BaseProductsSpider):
 
     LOCATION_URL = "http://www.walmart.com/location"
 
+    QA_URL = "http://www.walmart.com/reviews/api/questions" \
+             "/{product_id}?sort=mostRecentQuestions&pageNumber={page}"
+
+    QA_LIMIT = 0xffffffff
+
     _SEARCH_SORT = {
         'best_match': 0,
         'high_price': 'price_high',
@@ -61,6 +68,7 @@ class WalmartProductsSpider(BaseProductsSpider):
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
     user_agent = 'default'
+
 
     def __init__(self, search_sort='best_match', zipcode='94117',
                  *args, **kwargs):
@@ -172,42 +180,21 @@ class WalmartProductsSpider(BaseProductsSpider):
         self._gen_related_req(response)
 
         id = re.findall('\/(\d+)', response.url)
-        if id:
-            url = 'http://www.walmart.com/reviews/api/questions/{0}?' \
-                  'sort=mostRecentQuestions&pageNumber=1'.format(id[0])
-            meta = {
-                "product": product,
-                "relreql": response.meta["relreql"],
-                "response": response
-            }
+        response.meta['product_id'] = id[0] if id else None
+        # if id:
+        #    url = 'http://www.walmart.com/reviews/api/questions/{0}?' \
+        #          'sort=mostRecentQuestions&pageNumber=1'.format(id[0])
+        #    meta = {
+        #        "product": product,
+        #        "relreql": response.meta["relreql"],
+        #        "response": response
+        #    }
 
+        #    return Request(url=url, meta=meta, callback=self.get_questions)
 
-            return Request(url=url, meta=meta, callback=self.get_questions)
-        
         if not product.get('price'):
             return self._gen_location_request(response)
         return self._start_related(response)
-
-    def get_questions(self, response):
-        product = response.meta.get("product")
-        date_of_last_question = self._get_date(response.body)
-        if date_of_last_question:
-            product["date_of_last_question"] = date_of_last_question
-
-        if not product.get('price'):
-            return self._gen_location_request(response.meta["response"])
-        return self._start_related(response)
-
-    def _get_date(self, response):
-        data = json.loads(response)
-        if 'questionDetails' in data and len(data['questionDetails']) > 0:
-            date = str(datetime.datetime.strptime(
-                data['questionDetails'][0]['submissionDate'], "%m/%d/%Y"
-            ).date()
-            )
-            date_of_last_question = date
-            return date_of_last_question
-        return 
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -347,7 +334,8 @@ class WalmartProductsSpider(BaseProductsSpider):
         product = response.meta['product']
         reql = response.meta.get('relreql')
         if not reql:
-            return product
+            return self._request_questions_info(response)
+            #return product
         (url, proc) = reql.pop(0)
         response.meta['relreql'] = reql
         return Request(
@@ -582,3 +570,47 @@ class WalmartProductsSpider(BaseProductsSpider):
             )
 
         return next_page
+
+    def _request_questions_info(self, response):
+        product_id = response.meta['product_id']
+        if product_id is None:
+            return response.meta['product']
+        url = self.QA_URL.format(product_id=product_id, page=1)
+        return Request(url, self._parse_questions,
+                       meta=response.meta, dont_filter=True)
+
+    def _parse_questions(self, response):
+        data = json.loads(response.body_as_unicode())
+        product = response.meta['product']
+        questions = product.get('questions', {})
+        dateconv = lambda date: datetime.strptime(date, '%m/%d/%Y').date()
+        for question_data in data.get('questionDetails', []):
+            date = dateconv(question_data['submissionDate'])
+            text = question_data['questionSummary']
+            questions_for_date = questions.get(date, [])
+            questions_for_date.append(text)
+            questions[date] = questions_for_date
+        if questions:
+            product['questions'] = questions
+        total_pages = min(self.QA_LIMIT,
+                          data['pagination']['pages'][-1]['num'])
+        current_page = response.meta.get('current_qa_page', 1)
+        if current_page < total_pages:
+            url = self.QA_URL.format(product_id=response.meta['product_id'],
+                                     page=current_page + 1)
+            response.meta['current_qa_page'] = current_page + 1
+            return Request(url, self._parse_questions, meta=response.meta,
+                           dont_filter=True)
+        elif questions:
+            total = data['totalResults']
+            dates_sorted = sorted(product['questions'].keys(), reverse=True)
+            last_question_date = str(dates_sorted[0])
+            by_date = []
+            for date in dates_sorted:
+                by_date.append(Questions(date=str(date),
+                                         questions=questions[date]))
+            result = QuestionsData(total_questions=total,
+                                   last_question_date=last_question_date,
+                                   questions_by_date=by_date)
+            product['questions'] = result
+        return product

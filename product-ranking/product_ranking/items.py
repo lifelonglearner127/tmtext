@@ -8,6 +8,10 @@ from scrapy.item import Item, Field
 
 RelatedProduct = collections.namedtuple("RelatedProduct", ['title', 'url'])
 
+QuestionsData = collections.namedtuple("QuestionsData", ['total_questions',
+                                                         'last_question_date',
+                                                         'questions_by_date'])
+Questions = collections.namedtuple('Questions', ['date', 'questions'])
 #SponsoredLinks = collections.namedtuple("SponsoredLinks", ['ad_text', 'ad_url'])
 
 LimitedStock = collections.namedtuple("LimitedStock",
@@ -122,4 +126,4 @@ class SiteProductItem(Item):
 
     is_pickup_only = Field()   # now for Walmart only; may change in the future
 
-    date_of_last_question = Field()   # now for Walmart only; may change in the future
+    questions = Field()  # now for Walmart only; may change in the future
