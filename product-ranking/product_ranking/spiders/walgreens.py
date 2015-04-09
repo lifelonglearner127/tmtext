@@ -188,6 +188,7 @@ class WalGreensProductsSpider(BaseProductsSpider):
                 yield full_link, product
 
     def _scrape_next_results_page_link(self, response):
+<<<<<<< HEAD
         data = json.loads(response.body)
         if 'products' in data:
             self.page += 1
@@ -258,3 +259,14 @@ class WalGreensProductsSpider(BaseProductsSpider):
                                                 rating_by_star=by_star)
 
         return product
+=======
+        links = response.xpath(
+            '//div[contains(@class,"pagination")]//a[@title="Next Page"]/@href'
+        ).extract()
+        if links:
+            return urlparse.urljoin(response.url, links[0])
+        return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+>>>>>>> 68ba28f31b5e5d906a9eb9307dac4009420b4c25
