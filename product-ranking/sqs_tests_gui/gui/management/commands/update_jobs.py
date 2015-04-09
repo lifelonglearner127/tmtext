@@ -1,6 +1,7 @@
 import os
 import sys
 import datetime
+import zipfile
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
@@ -8,14 +9,14 @@ from django.db.models import Q
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 
-from settings import STATIC_ROOT
+from settings import MEDIA_ROOT
 from gui.models import Job, get_data_filename, get_log_filename
 
 
 sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
 import scrapy_daemon
-from test_sqs_flow import download_s3_file, AMAZON_BUCKET_NAME
+from test_sqs_flow import download_s3_file, AMAZON_BUCKET_NAME, unzip_file
 from list_all_files_in_s3_bucket import list_files_in_bucket, \
         AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
 
@@ -43,6 +44,16 @@ def get_filenames_for_task_id(task_id, local_fname=LOCAL_AMAZON_LIST_CACHE):
                 yield line.strip()
 
 
+def rename_first_file_with_extension(base_dir, new_fname, extension='.csv'):
+    for filename in os.listdir(base_dir):
+        if filename.lower().endswith(extension):
+            os.rename(
+                os.path.join(base_dir, filename),
+                os.path.join(base_dir, new_fname)
+            )
+            return
+
+
 class Command(BaseCommand):
     help = 'Updates 10 random jobs, downloading their files if ready'
 
@@ -50,14 +61,54 @@ class Command(BaseCommand):
         jobs = Job.objects.filter(
             Q(status='pushed into sqs') | Q(status='in progress')
         ).order_by('?').distinct()[0:10]
-        list_amazon_bucket()  # get list of files from S3
+        if jobs:
+            list_amazon_bucket()  # get list of files from S3
         for job in jobs:
             # try to find the appropriate S3 file by task ID
             amazon_fnames = get_filenames_for_task_id(job.task_id)
+            if not isinstance(amazon_fnames, (list, tuple)):  # generator?
+                amazon_fnames = list(amazon_fnames)
             amazon_data_file = [f for f in amazon_fnames if '.csv' in f]
-            if not amazon_data_file:
+            amazon_log_file = [f for f in amazon_fnames if '.log' in f]
+            if not amazon_data_file or not amazon_log_file:
                 continue
             amazon_data_file = amazon_data_file[0]
+            amazon_log_file = amazon_log_file[0]
             print 'For job with task ID %s we found amazon fname [%s]' % (
                 job.task_id, amazon_data_file)
-            #TODO: download the data and log files, put them into an appropriate path, and update the job status
+            full_local_data_path = MEDIA_ROOT + get_data_filename(job)
+            full_local_log_path = MEDIA_ROOT + get_log_filename(job)
+            if not os.path.exists(os.path.dirname(full_local_data_path)):
+                os.makedirs(os.path.dirname(full_local_data_path))
+            if not os.path.exists(os.path.dirname(full_local_log_path)):
+                os.makedirs(os.path.dirname(full_local_log_path))
+            download_s3_file(AMAZON_BUCKET_NAME, amazon_data_file,
+                             full_local_data_path)
+            download_s3_file(AMAZON_BUCKET_NAME, amazon_log_file,
+                             full_local_log_path)
+            if zipfile.is_zipfile(full_local_data_path):
+                unzip_file(full_local_data_path,
+                           unzip_path=full_local_data_path)
+                os.remove(full_local_data_path)
+                rename_first_file_with_extension(
+                    os.path.dirname(full_local_data_path),
+                    'data_file.csv',
+                    '.csv'
+                )
+            if zipfile.is_zipfile(full_local_log_path):
+                unzip_file(full_local_log_path,
+                           unzip_path=full_local_log_path)
+                os.remove(full_local_log_path)
+                rename_first_file_with_extension(
+                    os.path.dirname(full_local_data_path),
+                    'log.log',
+                    '.log'
+                )
+            with open(full_local_log_path, 'r') as fh:
+                cont = fh.read()
+                if not "'finish_reason': 'finished'" in cont:
+                    job.status = 'failed'
+                    job.save()
+                    continue
+            job.status = 'finished'
+            job.save()

@@ -2,7 +2,10 @@ from django.conf.urls import include, url
 from django.contrib import admin
 
 from gui.views import LogFileView, CSVDataFileView
-from settings import STATIC_URL
+
+
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 urlpatterns = [
@@ -17,3 +20,9 @@ urlpatterns = [
     url(r'^data/(?P<job>[0-9]+)/$', CSVDataFileView.as_view(),
         name='csv_data_file_view'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL,
+                          document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)

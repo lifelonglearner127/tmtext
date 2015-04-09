@@ -2,9 +2,9 @@ from django.views.generic import RedirectView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
-from django.templatetags.static import static
 
 from .models import get_data_filename, get_log_filename
+import settings
 
 
 class AdminOnlyMixin(object):
@@ -20,7 +20,7 @@ class CSVDataFileView(AdminOnlyMixin, RedirectView):
         data_fname = get_data_filename(kwargs['job'])
         if data_fname.startswith('/'):
             data_fname = data_fname[1:]
-        return static(data_fname)
+        return settings.MEDIA_URL + data_fname
 
 
 class LogFileView(AdminOnlyMixin, RedirectView):
@@ -28,4 +28,4 @@ class LogFileView(AdminOnlyMixin, RedirectView):
         log_fname = get_log_filename(kwargs['job'])
         if log_fname.startswith('/'):
             log_fname = log_fname[1:]
-        return static(log_fname)
+        return settings.MEDIA_URL + log_fname

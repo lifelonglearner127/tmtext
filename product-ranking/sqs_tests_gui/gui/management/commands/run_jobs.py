@@ -6,7 +6,6 @@ from django.core.management.base import BaseCommand, CommandError
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 
-from settings import STATIC_ROOT
 from gui.models import Job, get_data_filename, get_log_filename
 
 

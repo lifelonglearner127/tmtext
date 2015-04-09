@@ -39,4 +39,12 @@ class JobAdmin(admin.ModelAdmin):
                      'server_name')
     form = JobForm
 
+    def reset_status_to_created(self, request, qs, *args, **kwargs):
+        qs.update(status='created')
+
+    def reset_status_to_pushed_into_sqs(self, request, qs, *args, **kwargs):
+        qs.update(status='pushed into sqs')
+
+    actions = (reset_status_to_created, reset_status_to_pushed_into_sqs)
+
 admin.site.register(Job, JobAdmin)

@@ -11,7 +11,7 @@ from django.db import models
 
 
 def get_data_filename(job):
-    """ Returns local job filename relative to STATIC """
+    """ Returns local job filename relative to MEDIA """
     try:
         job = int(job)
     except TypeError:
@@ -22,7 +22,7 @@ def get_data_filename(job):
 
 
 def get_log_filename(job):
-    """ Returns local job logs relative to STATIC """
+    """ Returns local job logs relative to MEDIA """
     try:
         job = int(job)
     except TypeError:
