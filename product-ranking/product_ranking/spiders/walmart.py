@@ -14,8 +14,7 @@ from scrapy.log import ERROR, INFO
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
-                                   BuyerReviews, Price, Questions,
-                                   QuestionsData)
+                                   BuyerReviews, Price)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
 
@@ -575,6 +574,7 @@ class WalmartProductsSpider(BaseProductsSpider):
         product_id = response.meta['product_id']
         if product_id is None:
             return response.meta['product']
+        response.meta['product']['recent_questions'] = []
         url = self.QA_URL.format(product_id=product_id, page=1)
         return Request(url, self._parse_questions,
                        meta=response.meta, dont_filter=True)
@@ -582,35 +582,31 @@ class WalmartProductsSpider(BaseProductsSpider):
     def _parse_questions(self, response):
         data = json.loads(response.body_as_unicode())
         product = response.meta['product']
-        questions = product.get('questions', {})
+        last_date = product.get('date_of_last_question')
+        questions = product['recent_questions']
         dateconv = lambda date: datetime.strptime(date, '%m/%d/%Y').date()
         for question_data in data.get('questionDetails', []):
             date = dateconv(question_data['submissionDate'])
-            text = question_data['questionSummary']
-            questions_for_date = questions.get(date, [])
-            questions_for_date.append(text)
-            questions[date] = questions_for_date
-        if questions:
-            product['questions'] = questions
-        total_pages = min(self.QA_LIMIT,
-                          data['pagination']['pages'][-1]['num'])
-        current_page = response.meta.get('current_qa_page', 1)
-        if current_page < total_pages:
-            url = self.QA_URL.format(product_id=response.meta['product_id'],
-                                     page=current_page + 1)
-            response.meta['current_qa_page'] = current_page + 1
-            return Request(url, self._parse_questions, meta=response.meta,
-                           dont_filter=True)
-        elif questions:
-            total = data['totalResults']
-            dates_sorted = sorted(product['questions'].keys(), reverse=True)
-            last_question_date = str(dates_sorted[0])
-            by_date = []
-            for date in dates_sorted:
-                by_date.append(Questions(date=str(date),
-                                         questions=questions[date]))
-            result = QuestionsData(total_questions=total,
-                                   last_question_date=last_question_date,
-                                   questions_by_date=by_date)
-            product['questions'] = result
+            if last_date is None:
+                product['date_of_last_question'] = last_date = date
+            if date == last_date:
+                text = question_data['questionSummary']
+                questions.append(text)
+            else:
+                break
+        else:
+            total_pages = min(self.QA_LIMIT,
+                              data['pagination']['pages'][-1]['num'])
+            current_page = response.meta.get('current_qa_page', 1)
+            if current_page < total_pages:
+                url = self.QA_URL.format(
+                    product_id=response.meta['product_id'],
+                    page=current_page + 1)
+                response.meta['current_qa_page'] = current_page + 1
+                return Request(url, self._parse_questions, meta=response.meta,
+                               dont_filter=True)
+        if not questions:
+            del product['recent_questions']
+        else:
+            product['date_of_last_question'] = str(last_date)
         return product
