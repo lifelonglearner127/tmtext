@@ -590,8 +590,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             if last_date is None:
                 product['date_of_last_question'] = last_date = date
             if date == last_date:
-                text = question_data['questionSummary']
-                questions.append(text)
+                questions.append(question_data)
             else:
                 break
         else:
