@@ -38,6 +38,14 @@ EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
 MEMUSAGE_LIMIT_MB = 256
 MEMUSAGE_ENABLED = True
 
+AMAZON_SES_KEY = "AKIAIB35OIAQMWDZ45GA"
+AMAZON_SES_SECRET = "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"
+AMAZON_SES_TO_ADDRESSES = [
+    'Klaus Hoffmann <klaus.gehoffmann@gmail.com>',
+]
+AMAZON_SES_BCC_ADDRESSES = []
+AUTO_TEST_POSTGRES_DB_CONN_STR = "dbname='page_ranking_auto_test' user='pruser' host='52.1.13.180' password='password'"
+
 # TODO: move out from this file! should be set dynamically in the __init__ method of the BaseValidator class
 # The piece of code below is awful, need to get rid of it asap.
 # I have warned you. Better don't look there at all.
