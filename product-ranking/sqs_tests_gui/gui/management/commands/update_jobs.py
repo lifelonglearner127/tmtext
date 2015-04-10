@@ -1,3 +1,5 @@
+# TODO: bestsellers check
+
 import os
 import sys
 import datetime
@@ -5,6 +7,7 @@ import zipfile
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
+from django.utils.timezone import now
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
@@ -111,4 +114,5 @@ class Command(BaseCommand):
                     job.save()
                     continue
             job.status = 'finished'
+            job.finished = now()
             job.save()
