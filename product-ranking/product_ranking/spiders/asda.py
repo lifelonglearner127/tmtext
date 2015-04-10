@@ -3,14 +3,17 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import re
 import json
 import urllib
 
+from scrapy.http import Request
 from scrapy.log import WARNING, ERROR
 
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 class AsdaProductsSpider(BaseProductsSpider):
     name = 'asda_products'
@@ -27,6 +30,31 @@ class AsdaProductsSpider(BaseProductsSpider):
         super(AsdaProductsSpider, self).__init__(
             url_formatter=FormatterWithDefaults(pagenum=1, prods_per_page=32),
             *args, **kwargs)
+
+    def start_requests(self):
+        for st in self.searchterms:
+            yield Request(
+                self.url_formatter.format(
+                    self.SEARCH_URL,
+                    search_term=urllib.quote_plus(st.encode('utf-8')),
+                ),
+                meta={'search_term': st, 'remaining': self.quantity},
+            )
+
+        if self.product_url:
+            pId = is_empty(re.findall("product/(\d+)", self.product_url))
+            url = "http://groceries.asda.com/api/items/view?" \
+                "itemid=" + pId + "&responsegroup=extended" \
+                "&cacheable=true&shipdate=currentDate" \
+                "&requestorigin=gi"
+
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod["url"] = self.product_url
+            yield Request(url,
+                          self._parse_single_product,
+                          meta={'product': prod})
+
 
     def parse_product(self, response):
         raise AssertionError("This method should never be called.")
@@ -96,6 +124,10 @@ class AsdaProductsSpider(BaseProductsSpider):
                                          pagenum=cur_page + 1)
 
     def _parse_single_product(self, response):
-        products = list(self._scrape_product_links(response))
-        if products:
-            return products[0]
+        product = response.meta["product"]
+        result = self._scrape_product_links(response)
+        for p in result:
+            for p2 in p:
+                if p2:
+                    del p2["search_term"]
+                    return SiteProductItem(dict(p2.items() + product.items()))
