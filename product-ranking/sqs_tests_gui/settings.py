@@ -106,3 +106,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+#TODO: logs, static & media root'
+#TODO: nginx http AUTH
+#TODO: best sellers support
