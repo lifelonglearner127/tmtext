@@ -110,3 +110,4 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 #TODO: logs, static & media root'
 #TODO: nginx http AUTH
 #TODO: best sellers support
+#TODO: delete old files, delete_old_logs_and_data_files.py
