@@ -1,13 +1,4 @@
-import random
-
 from django.db import models
-
-# Create your models here.
-# TODO:
-# 1) push into SQS
-# 2) monitor progress queue
-# 3) monitor output data queue
-# 4) pull data file if needed
 
 
 def get_data_filename(job):
