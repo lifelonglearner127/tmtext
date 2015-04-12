@@ -36,6 +36,8 @@ class Command(BaseCommand):
                 msg['searchterms_str'] = job.search_term
             elif job.product_url:
                 msg['url'] = job.product_url
+            if job.with_best_seller_ranking:
+                msg['with_best_seller_ranking'] = True
             put_msg_to_sqs(msg)
             job.status = 'pushed into sqs'
             job.save()
