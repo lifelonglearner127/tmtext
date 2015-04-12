@@ -40,15 +40,16 @@ class ArgosUKProductsSpider(BaseProductsSpider):
 
     allowed_domains = ["www.argos.co.uk", "service.avail.net"]
 
-    SEARCH_URL = "http://www.argos.co.uk/webapp/wcs/stores/servlet/Search" \
-                 "?s={sort_mode}&q={search_term}&storeId={store_id}" \
-                 "&catalogId={catalog_id}&langId={lang_id}"
+    SEARCH_URL = 'http://www.argos.co.uk/static/Search/searchTerm/{search_term}.htm'
+
+    SORT_SEARCH_URL = "http://www.argos.co.uk/webapp/wcs/stores/servlet/Search" \
+                      "?s={sort_mode}&q={search_term}&storeId={store_id}" \
+                      "&catalogId={catalog_id}&langId={lang_id}&authToken="
 
     PAGE_URL = "http://www.argos.co.uk/static/Search/fs/0/p/{start_from}/pp" \
                "/{products_per_page}/q/{search_term}/s/{sort_mode}.htm"
 
     SORT_MODES = {
-        "default": "Relevance",
         "relevance": "Relevance",
         "price_asc": "Price: Low - High",
         "price_desc": "Price: High - Low",
@@ -56,20 +57,22 @@ class ArgosUKProductsSpider(BaseProductsSpider):
         "rating": "Average Rating"
     }
 
-    def __init__(self, sort_mode="default", fetch_related_products=True,
+    def __init__(self, sort_mode=None, fetch_related_products=True,
                  store_id=10151,
                  catalog_id=24551,
                  lang_id=110, *args, **kwargs):
         self.fetch_related_products = fetch_related_products
         if sort_mode in self.SORT_MODES:
             sort_mode = self.SORT_MODES[sort_mode]
+            self.SEARCH_URL = self.SORT_SEARCH_URL
+            formatter = FormatterWithDefaults(sort_mode=sort_mode,
+                                              store_id=store_id,
+                                              catalog_id=catalog_id,
+                                              lang_id=lang_id)
         else:
             self.log('"%s" not in SORT_MODES')
-            sort_mode = self.SORT_MODES['default']
-        formatter = FormatterWithDefaults(sort_mode=sort_mode,
-                                          store_id=store_id,
-                                          catalog_id=catalog_id,
-                                          lang_id=lang_id)
+            # sort_mode = self.SORT_MODES['default']
+            formatter = FormatterWithDefaults()
         cond_set_value(kwargs, 'site_name', 'argos.co.uk')
         super(ArgosUKProductsSpider, self).__init__(formatter, *args, **kwargs)
 
@@ -150,6 +153,11 @@ class ArgosUKProductsSpider(BaseProductsSpider):
                  bool)
         # Hardcoded
         cond_set_value(product, 'locale', 'en-GB')
+
+        cond_set(product, 'model',
+                 response.xpath(
+                     '//div[@class="fullDetails"]/ul/li/text()').re('EAN:\s(.*).'))
+
         if self.fetch_related_products:
             return self._request_related_products(response)
         else:
