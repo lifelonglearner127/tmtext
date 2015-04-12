@@ -48,6 +48,8 @@ class Job(models.Model):
         blank=True, null=True, default=20,
         help_text='Leave blank for unlimited results (slow!)'
     )
+    with_best_seller_ranking = models.BooleanField(
+        default=False, help_text='For Amazon bestsellers')
     task_id = models.IntegerField(default=100000)
     server_name = models.CharField(max_length=100, default='test_server')
 
