@@ -348,7 +348,7 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         #print('*' * 20, 'parsing buyer reviews from', response.url)
 
-        product["buyer_reviews"] = buyer_reviews
+        product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
         return product
 
@@ -427,6 +427,8 @@ class AmazonProductsSpider(BaseProductsSpider):
                 buyer_reviews['rating_by_star'][rating] = int(
                     number.replace(',', '')
                 )
+        if isinstance(buyer_reviews, dict):
+            buyer_reviews = BuyerReviews(**buyer_reviews)
         return (buyer_reviews, table)
 
     def _scrape_total_matches(self, response):
