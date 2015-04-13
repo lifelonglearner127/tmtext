@@ -49,7 +49,7 @@ class Job(models.Model):
         help_text='Leave blank for unlimited results (slow!)'
     )
     with_best_seller_ranking = models.BooleanField(
-        default=False, help_text='For Amazon bestsellers')
+        default=False, help_text='For Walmart bestsellers matching')
     task_id = models.IntegerField(default=100000)
     server_name = models.CharField(max_length=100, default='test_server')
 
