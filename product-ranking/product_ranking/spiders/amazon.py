@@ -427,9 +427,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 buyer_reviews['rating_by_star'][rating] = int(
                     number.replace(',', '')
                 )
-        if isinstance(buyer_reviews, dict):
-            buyer_reviews = BuyerReviews(**buyer_reviews)
-        return (buyer_reviews, table)
+        return buyer_reviews, table
 
     def _scrape_total_matches(self, response):
         # Where this value appears is a little weird and changes a bit so we
