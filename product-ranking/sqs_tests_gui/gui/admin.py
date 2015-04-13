@@ -6,6 +6,21 @@ from .models import Job
 from .forms import JobForm
 
 
+COLORS = {
+    'error': 'red',
+    'success': 'green'
+}
+
+
+def _get_color_for_job(job):
+    if isinstance(job, int):
+        job = Job.objects.get(pk=job)
+    if job.status.lower() == 'finished':
+        return COLORS['success']
+    elif job.status.lower() == 'failed':
+        return COLORS['error']
+
+
 def link_to_csv_data_file(job):
     if not isinstance(job, int):
         job = job.pk
@@ -13,7 +28,8 @@ def link_to_csv_data_file(job):
 
 
 def admin_link_to_csv_data_file(job):
-    return "<a href='%s'>CSV</a>" % (link_to_csv_data_file(job))
+    return "<a href='%s' style='color:%s'>CSV</a>" % (
+        link_to_csv_data_file(job), _get_color_for_job(job))
 admin_link_to_csv_data_file.allow_tags = True
 
 
@@ -24,7 +40,8 @@ def link_to_log_file(job):
 
 
 def admin_link_to_log_file(job):
-    return "<a href='%s'>Log</a>" % (link_to_log_file(job))
+    return "<a href='%s' style='color:%s'>Log</a>" % (
+        link_to_log_file(job), _get_color_for_job(job))
 admin_link_to_log_file.allow_tags = True
 
 
