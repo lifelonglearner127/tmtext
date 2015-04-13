@@ -42,6 +42,7 @@ def admin_status(job):
         return _template % ('red', '', job.status)
     elif job.status.lower() == 'pushed into sqs':
         return _template % ('', 'bold', job.status)
+    return job.status
 admin_status.allow_tags = True
 
 
