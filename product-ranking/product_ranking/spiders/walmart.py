@@ -547,7 +547,9 @@ class WalmartProductsSpider(BaseProductsSpider):
             res_item = SiteProductItem()
             res_item['is_pickup_only'] = is_pickup_only
             res_item['is_in_store_only'] = is_in_store_only
-
+            bs_css = '.flag-bestseller + .flag-link .js-flag-link::text'
+            cond_set(res_item, 'bestseller_rank', item.css(bs_css).extract(),
+                     lambda bs: {bs: 1})
             yield link, res_item
 
     def _scrape_next_results_page_link(self, response):
