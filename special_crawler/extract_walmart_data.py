@@ -600,8 +600,13 @@ class WalmartScraper(Scraper):
             if "<b>" in lxml.html.tostring(description_element):
                 break
 
-            if "<ul>" in lxml.html.tostring(description_element):
-                short_description = ""
+            if "<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element):
+                tree = html.fromstring(short_description)
+                innerText = tree.xpath("//text()")
+
+                if not innerText:
+                    short_description = ""
+
                 break
 
             short_description += lxml.html.tostring(description_element)
@@ -669,7 +674,7 @@ class WalmartScraper(Scraper):
 
         for description_element in description_elements:
             if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
-                    (not long_description_start and "<ul>" in lxml.html.tostring(description_element)):
+                    (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element))):
                 long_description_start = True
 
             if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
