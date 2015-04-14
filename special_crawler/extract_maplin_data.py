@@ -285,6 +285,12 @@ class MaplinScraper(Scraper):
         '''
         return None
 
+    def _web_only(self):
+        txts = self.tree_html.xpath("//div[contains(@class,'product-images')]//p[contains(@class,'tab-webonly')]//text()")
+        if "Web only" in txts:
+            return 1
+        return 0
+
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
@@ -357,6 +363,7 @@ class MaplinScraper(Scraper):
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
+        "web_only" : _web_only, \
         "in_stores" : _in_stores, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
