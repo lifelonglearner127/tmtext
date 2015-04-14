@@ -56,6 +56,10 @@ def get_data_from_cache_hash(hash_name, key, database):
     return database.hget(hash_name, key)
 
 
+def add_data_to_cache_hash(hash_name, key, value, database):
+    return database.hset(hash_name, key, value)
+
+
 def get_requests_from_cache(task_stamp, database):
     # requests_store = {
     #    'term/url:site:arguments': '[(time:server), (time:server)]'}
@@ -142,16 +146,30 @@ def load_cache_response_to_sqs(data, sqs_name):
 
 
 def generate_task_stamp(task_message):
-    # TODO: handle single urls // If they are required
-    # TODO: store additional arguments
     logger.info("Generate task stamp for task")
-    searchterms_str = task_message['searchterms_str']
     site = task_message['site']
-    cmd_args = task_message.get('cmd_args', {})
-    stamp = "{term}:{site}".format(term=searchterms_str,
-                                   site=site)
-    for key, value in cmd_args.items():
-        stamp += ':{key}:{value}'.format(key=key, value=value)
+    url = task_message.get('url')
+    if url:
+        additional_part = 'url:%s' % url
+    searchterms_str = task_message.get('searchterms_str')
+    if searchterms_str:
+        additional_part = 'st:%s' % searchterms_str
+        cmd_args = task_message.get('cmd_args', {})
+        if cmd_args:
+            keys = cmd_args.keys()
+            keys.sort()
+        for key in keys:
+            additional_part += ':{key}:{value}'.format(
+                key=key,
+                value=cmd_args[key]
+            )
+    stamp = "{site}:{additional_part}".format(
+        site=site,
+        additional_part=additional_part
+    )
+    branch_name = task_message.get('branch_name')
+    if branch_name:
+        stamp += ':branch:%s' % branch_name
     return stamp
 
 
@@ -160,28 +178,38 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
     response_will_be_provided_by_another_daemon = False
     server_name = task_message['server_name']
     request_item = (time.time(), server_name)
-    requests = get_requests_from_cache(task_stamp, cache_db)
+    last_request = get_data_from_cache_hash('last_request',
+        task_stamp, cache_db)
+
+    # check what was the latest sended to SQS request for this task
+    if last_request:  # request hash entry existing in database
+        logger.info("Last request was found")
+        # last Request is older than 1 hour
+        if time.time() - float(last_request) > 3600:
+            logger.info("Last request is very old")
+            logger.info("Provide new task to spiders SQS")
+            put_message_into_sqs(task_message, SPIDERS_TASKS_SQS)
+            add_data_to_cache_hash('last_request', task_stamp,
+                time.time(), cache_db)
+        else:
+            logger.info("Last request fresh enough")
+            response_will_be_provided_by_another_daemon = True
+    else:
+        logger.info("Last request wasn't found in cache. Create new one.")
+        put_message_into_sqs(task_message, SPIDERS_TASKS_SQS)
+        add_data_to_cache_hash('last_request', task_stamp,
+                time.time(), cache_db)
+
+    # add request to waitng list in any case
+    logger.info("Add request to waiting list")
+    requests = get_data_from_cache_hash('requests', task_stamp, cache_db)
     if requests:  # request hash entry existing in database
         requests = pickle.loads(requests)
-        if requests:  # request hash not blank
-            logger.info("Previous requests were found")
-            last_request_time = requests[-1][0]
-            # last Request is older than 1 hour
-            # we need check only added to spider TASKS SQS request time, not just last
-            if time.time() - last_request_time > 3600:
-                logger.info("Last request is very old")
-                logger.info("Provide new task to spiders SQS")
-                put_message_into_sqs(task_message, SPIDERS_TASKS_SQS)
-            else:
-                logger.info("Last request fresh enough")
-                response_will_be_provided_by_another_daemon = True
     else:
-        logger.info("No requests were found in cache. Create new one.")
         requests = []
-        put_message_into_sqs(task_message, SPIDERS_TASKS_SQS)
     requests.append(request_item)
     pickled_requests = pickle.dumps(requests)
-    put_requests_into_cache(task_stamp, pickled_requests, cache_db)
+    add_data_to_cache_hash('requests', task_stamp, pickled_requests, cache_db)
     if response_will_be_provided_by_another_daemon:
         sys.exit()
 
@@ -258,11 +286,12 @@ def main(queue_name):
     logger.info("Task was succesfully received:\n%s", task_message)
     task_stamp = generate_task_stamp(task_message)
     logger.debug("Task stamp:     %s", task_stamp)
-    response = get_data_from_cache_hash('responses', task_stamp, cache_db)
     server_name = task_message['server_name']
-    # freshness = task_message['freshness']
-    freshness = 30*60 # 12*60*60 // 3.5*12*60*60
+    freshness = task_message.get('freshness')
+    if not freshness:
+        freshness = 30*60 # 12*60*60 // 3.5*12*60*60
 
+    response = get_data_from_cache_hash('responses', task_stamp, cache_db)
     if response:
         logger.info("Use existing response")
         timestamp, output = unpickle_data(response)
