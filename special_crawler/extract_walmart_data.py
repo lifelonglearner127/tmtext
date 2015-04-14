@@ -1322,7 +1322,7 @@ class WalmartScraper(Scraper):
             else:
                 return relative_url
 
-        images_carousel = self.tree_html.xpath("//div[starts-with(@class,'product-carousel-wrapper')]//a/@href")
+        images_carousel = self.tree_html.xpath("//div[contains(@class,'product-carousel-wrapper')]//a/@data-hero-image")
         if images_carousel:
             # fix relative urls
             images_carousel = map(_fix_relative_url, images_carousel)
