@@ -231,7 +231,13 @@ class QuillScraper(Scraper):
                     return None
             except Exception, e:
                 print "WARNING: ", e.message
-        return image_url
+
+        if len(image_url) < 1:
+            return None
+        self.image_urls = image_url
+        self.image_count = len(self.image_urls)
+
+        return self.image_urls
 
     def _image_count(self):
         if self.image_count is None:
