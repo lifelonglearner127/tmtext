@@ -367,6 +367,16 @@ def convert_json_to_csv(filepath):
     return csv_filepath
 
 
+def switch_branch_if_required(metadata):
+    branch_name = metadata.get('branch_name')
+    if branch_name:
+        logger.info("Checkout to branch %s", branch_name)
+        cmd = 'git checkout -f {branch} && git pull origin {branch}'
+        cmd = cmd.format(branch=branch_name)
+        logger.info("Run '%s'", cmd)
+        os.system(cmd)
+
+
 def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
                              initial_sleep_time=15, sleep_time=15):
     time.sleep(initial_sleep_time)
@@ -436,6 +446,7 @@ def execute_task_from_sqs():
     task_queue.task_done()
     logger.info("Task message was successfully received and "
                 "removed form queue.")
+    switch_branch_if_required(metadata)
     task_id = metadata.get('task_id', metadata.get('task', None))
     searchterms_str = metadata.get('searchterms_str', None)
     url = metadata.get('url', None)
