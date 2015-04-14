@@ -38,6 +38,8 @@ class Command(BaseCommand):
                 msg['url'] = job.product_url
             if job.with_best_seller_ranking:
                 msg['with_best_seller_ranking'] = True
+            if job.branch_name:
+                msg['branch_name'] = job.branch_name
             put_msg_to_sqs(msg)
             job.status = 'pushed into sqs'
             job.save()

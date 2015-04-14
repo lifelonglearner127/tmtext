@@ -52,6 +52,10 @@ class Job(models.Model):
         default=False, help_text='For Walmart bestsellers matching')
     task_id = models.IntegerField(default=100000)
     server_name = models.CharField(max_length=100, default='test_server')
+    branch_name = models.CharField(
+        max_length=100, blank=True, null=True,
+        help_text='Branch to use at the instance(s); leave blank for master'
+    )
 
     created = models.DateTimeField(auto_now_add=True)
     finished = models.DateTimeField(blank=True, null=True)

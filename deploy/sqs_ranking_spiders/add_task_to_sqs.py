@@ -100,4 +100,7 @@ if __name__ == '__main__':
         if 'with_best_seller_ranking=' in arg:
             _str, _st_value = arg.split('=')
             msg['with_best_seller_ranking'] = _st_value.strip()
+        if 'branch_name=' in arg:
+            _str, _st_value = arg.split('=')
+            msg['branch_name'] = _st_value.strip()
     put_msg_to_sqs(msg)
