@@ -14,6 +14,7 @@ from product_ranking.spiders import FormatterWithDefaults
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.guess_brand import guess_brand_from_first_words
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 def _inner_html(tag_str):
     return re.match('\A<[^<]+>(.+?)<[^>]+>\Z',
@@ -122,6 +123,9 @@ class ArgosUKProductsSpider(BaseProductsSpider):
             )
             yield url, product
 
+    def _parse_single_product(self, response):
+      return self.parse_product(response)
+
     def parse_product(self, response):
         product = response.meta['product']
         cond_set(
@@ -129,22 +133,22 @@ class ArgosUKProductsSpider(BaseProductsSpider):
             lambda s: string.strip(s, ' \n')
         )
         if not product.get('brand', None):
-            brand = guess_brand_from_first_words(product['title'])
+            brand = guess_brand_from_first_words(product['title'].strip())
             if brand:
                 product['brand'] = brand
         if product.get('price') is None:
-            currency = (response.css('.currency::text').extract()[''])[0]
+            currency = is_empty(response.xpath(
+              '//abbr[contains(@class, "currency")]/@title').extract(), "GBP")
             price = re.search(
-                '\d+', response.css('.actualprice .price::text').extract()[0]
+                '\d+', 
+                is_empty(response.css('.actualprice .price::text').extract()),
             ).group()
-            cond_set_value(product, 'price', currency + price)
-        if not u'£' in product.get('price', ''):
-            self.log('Invalid price at: %s' % response.url, level=ERROR)
-        else:
+
             product['price'] = Price(
-                price=product['price'].replace(u'£', '').strip(),
-                priceCurrency='GBP'
+                price=price.strip(),
+                priceCurrency=currency,
             )
+
         cond_set(
             product, 'image_url',
             response.css('#mainimage.photo::attr(src)').extract(),
