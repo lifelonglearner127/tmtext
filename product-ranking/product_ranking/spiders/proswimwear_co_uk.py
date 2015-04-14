@@ -7,24 +7,41 @@
 
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 
-from scrapy.log import ERROR, DEBUG
+from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem, Price
+from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
+    RelatedProduct
 from product_ranking.spiders import (BaseProductsSpider, FormatterWithDefaults,
                                      cond_set, cond_set_value)
 
 
 class ProswimwearCoUkSpider(BaseProductsSpider):
-    name = 'proswimweark_co_uk_products'
+    name = 'proswimwear_co_uk_products'
     allowed_domains = ["proswimwear.co.uk"]
     start_urls = []
 
     SEARCH_URL = ('http://www.proswimwear.co.uk/catalogsearch/result/'
-                  '?category=&q={search_term}')
+                  '?category=&q={search_term}&dir=asc&order={sort_mode}')
+
+    SORT_MODES = {
+        'default': 'relevance',
+        'relevance': 'relevance',
+        'name': 'name',
+        'price': 'price'
+    }
+
+    def __init__(self, order="default", *args, **kwargs):
+        sort_mode = self.SORT_MODES.get(order)
+        if sort_mode is None:
+            raise Exception('%s sorting mode is not defined' % order)
+        formatter = FormatterWithDefaults(sort_mode=sort_mode)
+        super(ProswimwearCoUkSpider, self).__init__(formatter, *args, **kwargs)
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
 
     def _scrape_product_links(self, response):
         links = response.xpath(
@@ -70,8 +87,66 @@ class ProswimwearCoUkSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
+        cond_set_value(product, 'locale', 'en-GB')
 
         title = response.css('.product-name h1').extract()
         cond_set(product, 'title', title)
 
+        image_url = response.css('#zoom1 img::attr(src)').extract()
+        cond_set(product, 'image_url', image_url)
+
+        brand = response.css('.box-brand a img::attr(alt)').extract()
+        cond_set(product, 'brand', brand)
+
+        # Is_out_of_stock
+        xpath = '//span[@id="availability-box" and text()="Out of stock"]'
+        cond_set_value(product, 'is_out_of_stock', response.xpath(xpath), bool)
+
+        # Description
+        selection = response.css('.tabs-panels .std .content-wrapper')
+        if selection:
+            selection = selection[0].xpath('node()[normalize-space()]')
+            cond_set_value(product, 'description', selection.extract(),
+                           u''.join)
+
+        # Price
+        price = response.css('[itemprop=price]::attr(content)')
+        currency = response.css('[itemprop=priceCurrency]::attr(content)')
+        if price and float(price[0].extract()) and currency:
+            cond_set_value(product, 'price', Price(price=price[0].extract(),
+                                                   priceCurrency=currency[
+                                                       0].extract()))
+
+        self._populate_buyer_reviews(response, product)
+        self._populate_related_products(response, product)
+
         return product
+
+    def _populate_buyer_reviews(self, response, product):
+        css = '#customer-reviews .rating::attr(style)'
+        values = response.css(css).re('width:(\d+)')
+        if not values:
+            return
+        values = [int(value) / 20 for value in values]
+        total = len(values)
+        avg = sum(values) / total
+        by_star = {value: values.count(value) for value in values}
+        cond_set_value(product, 'buyer_reviews',
+                       BuyerReviews(num_of_reviews=total, average_rating=avg,
+                                    rating_by_star=by_star))
+
+    def _populate_related_products(self, response, product):
+        result = {}
+        for section in response.css('.box-additional'):
+            relation = section.css('.section-title::text').extract()
+            if not relation or not relation[0].strip():
+                continue
+            relation = relation[0].strip()
+            links = section.css('.item .product-name a')
+            products = [RelatedProduct(title=lnk.css('::text')[0].extract(),
+                                       url=lnk.css('::attr(href)')[
+                                           0].extract().split('?')[0])
+                        for lnk in links]
+            if products:
+                result[relation] = products
+        cond_set_value(product, 'related_products', result or None)
