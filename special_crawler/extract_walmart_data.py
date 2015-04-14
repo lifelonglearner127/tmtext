@@ -239,7 +239,7 @@ class WalmartScraper(Scraper):
         # TODO: handle errors
         response_text = urllib.urlopen(request_url).read()
         tree = html.fromstring(response_text)
-        if tree.xpath("//div[@id='iframe-video-content']"):
+        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']"):
             self.has_video = True
             self.has_sellpoints_media = True
 
