@@ -18,21 +18,25 @@ def file_is_bzip2(fname):
         return False
 
 
-def compress_and_rename_old(fname):
-    if file_is_bzip2(fname):
-        return  # compressed already
-    os.system('bzip2 "%s"' % fname)
-    os.rename(fname+'.bz2', fname)
-    print '  File compressed:', fname
+def is_plain_json_list(fname):
+    with open(fname, 'r') as fh:
+        cont = fh.read(1024)
+    cont = cont.strip()
+    if not cont:
+        return True
+    return cont[0] == '{'
 
 
-def uncompress_and_rename_old(fname):
-    if not file_is_bzip2(fname):
-        return  # uncompressed already
-    os.system('bzip2 -d "%s"' % fname)
-    if os.path.exists(fname+'.out'):
-        os.rename(fname+'.out', fname)
-    print '  File uncompressed:', fname
+def unbzip(f1, f2):
+    try:
+        f = bz2.BZ2File(f1)
+        cont = f.read()
+    except:
+        return False
+    f.close()
+    with open(f2, 'wb') as fh:
+        fh.write(cont)
+    return True
 
 
 def change_buyer_reviews(line):
@@ -74,6 +78,14 @@ def change_br_in_file(fname):
 
 if __name__ == '__main__':
     DIR = '/home/web_runner/virtual-environments/scrapyd/items/product_ranking/amazon_products/'
+    BACKUP_DIR = '/home/ubuntu/amazon_products/'
+
+    if not os.path.exists(BACKUP_DIR):
+        os.makedirs(BACKUP_DIR)
+        cmd = 'cp %s* %s' % (DIR, BACKUP_DIR)
+        print cmd
+        os.system(cmd)
+
     matches = []
     for root, dirnames, filenames in os.walk(DIR):
         for filename in fnmatch.filter(filenames, '*.jl'):
@@ -83,5 +95,10 @@ if __name__ == '__main__':
     for m in matches:
         if file_is_bzip2(m):
             print 'File [%s] compressed, decompressing...' % m
-            uncompress_and_rename_old(m)
+            result1 = unbzip(m, m)
+            while result1:
+                result1 = unbzip(m, m)
+                print '  RECURSIVE BZIP DETECTED', m
             change_br_in_file(m)
+
+    os.system('sudo chmod 777 -R "%s"' % DIR)
