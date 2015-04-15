@@ -424,7 +424,9 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         if not buyer_reviews.get('rating_by_star'):
             buyer_rev_link = is_empty(response.xpath(
-                '//div[@id="revSum"]//a[contains(text(), "See all")]/@href'
+                '//div[@id="revSum"]//a[contains(text(), "See all")' \
+                ' or contains(text(), "See the customer review")' \
+                ' or contains(text(), "See both customer reviews")]/@href'
             ).extract())
             buyer_reviews['rating_by_star'] \
                 = self._calculate_buyer_reviews_from_percents(
