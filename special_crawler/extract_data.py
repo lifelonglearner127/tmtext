@@ -80,6 +80,12 @@ class Scraper():
             "image_urls", # urls of product images, list of strings
             "video_count", # nr of videos, int
             "video_urls", # urls of product videos, list of strings
+            "wc_360", # binary (0/1), whether 360 view exists or not
+            "wc_emc", # binary (0/1), whether emc exists or not
+            "wc_video", # binary (0/1), whether video exists or not
+            "wc_pdf", # binary (0/1), whether pdfexists or not
+            "wc_prodtour", # binary (0/1), whether product tour view exists or not
+            "flixmedia",
             "pdf_count", # nr of pdfs, string
             "pdf_urls", # urls of product pdfs, list of strings
             "webcollage", # whether page contains webcollage content, 1/0
@@ -105,6 +111,8 @@ class Scraper():
             "price", # price, string including currency
             "price_amount", # price, float
             "price_currency", # currency for price, string of max 3 chars
+            "temp_price_cut", # Temp Price Cut, 1/0
+            "web_only", # Web only, 1/0
             "in_stores", # available to purchase in stores, 1/0
             "in_stores_only", # whether product can be found in stores only, 1/0
             "marketplace", # whether product can be found on marketplace, 1/0
@@ -162,12 +170,12 @@ class Scraper():
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
                         "features", "feature_count", "model_meta", "description", "long_description","apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "rollback"],
-        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls",\
-                            "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
+                            "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
                             "image_hashes", "thumbnail", "sellpoints"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
-        "sellers": ["price", "price_amount", "price_currency", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
+        "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock", \
                     "site_online", "site_online_in_stock", "site_online_out_of_stock", "marketplace_in_stock", \
                     "marketplace_out_of_stock", "marketplace_prices", "in_stores_in_stock", \

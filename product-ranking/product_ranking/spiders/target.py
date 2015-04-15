@@ -18,6 +18,8 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
 from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 
+is_empty = lambda x, y=None: x[0] if x else y
+
 
 class TargetProductSpider(BaseProductsSpider):
     name = 'target_products'
@@ -117,6 +119,16 @@ class TargetProductSpider(BaseProductsSpider):
             '//meta[@property="og:url"]/@content'
         ).extract()
         prod = response.meta['product']
+
+        price = is_empty(response.xpath(
+            '//p[contains(@class, "price")]/span/text()').extract())
+        if price:
+            price = is_empty(re.findall("\d+\.{0,1}\d+", price))
+            prod['price'] = Price(
+                price=price.replace('$', '').replace(',', '').strip(),
+                priceCurrency='USD'
+            )
+
         old_url = prod['url'].rsplit('#', 1)[0]
         prod['url'] = None
         populate_from_open_graph(response, prod)
@@ -186,24 +198,6 @@ class TargetProductSpider(BaseProductsSpider):
             conv=string.strip
         )
 
-        price = response.xpath(
-            "//span[@itemprop='price']/text()"
-            "|//*[@id='see-low-price']/a/text()"
-            "|//span[@itemprop='lowPrice']/text()"
-        ).extract()
-        if not price or price[0] == 'See Low Price in Cart':
-            cond_set(product, 'price', ['$0.00'])
-        else:
-            cond_set(product, 'price', price)
-        price = product.get('price', None)
-        if price:
-            mp = re.search(FLOATING_POINT_RGEX, price)
-            if mp:
-                price = mp.group(0)
-            else:
-                price = 0.0
-            product['price'] = Price(
-                price=price, priceCurrency='USD')
         desc = product.get('description')
         if desc:
             desc = desc.replace("\n", "")
@@ -239,6 +233,8 @@ class TargetProductSpider(BaseProductsSpider):
                     except KeyError:
                         color = ""
                     price = item['Attributes']['price']['formattedOfferPrice']
+                    if not price:
+                        price = item['Attributes']['price']['offerPriceMin']
                     code = item['Attributes']['partNumber']
                     variants.append((itype, color, price, code))
                 except KeyError:
@@ -252,9 +248,11 @@ class TargetProductSpider(BaseProductsSpider):
                 new_product = product.copy()
                 new_product['price'] = price
                 if not isinstance(new_product, Price):
+                    price = new_product['price'].replace(
+                        '$', '').replace(',', '').strip()
+                    price = is_empty(re.findall("\d+\.{0,1}\d+", price), 0)
                     new_product['price'] = Price(
-                        price=new_product['price'].replace(
-                            '$', '').replace(',', '').strip(),
+                        price=price,
                         priceCurrency='USD'
                     )
                 new_product['model'] = color
@@ -398,8 +396,8 @@ class TargetProductSpider(BaseProductsSpider):
                 self._parse_recomm_json,
                 meta=new_meta)
 
-
         variants = response.meta.get('variants')
+
         if self.POPULATE_REVIEWS:
             canonical_url = response.meta['canonical_url']
             return self._request_reviews(response, product, canonical_url)
@@ -486,7 +484,18 @@ class TargetProductSpider(BaseProductsSpider):
                 isonline = isonline[0].strip()
             # TODO: isonline: u'out of stock online'
             # ==  'out of stock' & 'online'
-            bi_list.append((brand, link, isonline))
+            price = ci.xpath(
+                './div[@class="pricecontainer"]/p/text()').re(FLOATING_POINT_RGEX)
+            if price:
+                price = price[0]
+            else:
+                price = ci.xpath(
+                    './div[@class="pricecontainer"]/span[@class="map"]/following::p/span/text()')\
+                    .re(FLOATING_POINT_RGEX)
+                if price:
+                    price = price[0]
+
+            bi_list.append((brand, link, isonline, price))
         return bi_list
 
     def _scrape_product_links(self, response):
@@ -512,7 +521,9 @@ class TargetProductSpider(BaseProductsSpider):
                 if amount == 'Too low to display':
                     price = None
                 else:
-                    amount = re.sub('[^0-9.]', '', priceattr['amount'])
+                    amount = is_empty(re.findall(
+                        '\d+\.{0,1}\d+', priceattr['amount']
+                    ))                   
                     price = Price(priceCurrency=currency, price=amount)
                 cond_set_value(product, 'price', price)
             yield url, product
@@ -555,12 +566,14 @@ class TargetProductSpider(BaseProductsSpider):
             yield post_req, SiteProductItem()
             return
 
-        for brand, link, isonline in bi_list:
+        for brand, link, isonline, price in bi_list:
             product = SiteProductItem(brand=brand)
             if 'out of stock' in isonline:
                 product['is_out_of_stock'] = True
             if 'in stores only' in isonline:
                 product['is_in_store_only'] = True
+            if price:
+                product['price'] = Price(price=price, priceCurrency='USD')
 
             # FIXME: 'onilne_only' status
             # if 'online only' in isonline:
@@ -666,7 +679,7 @@ class TargetProductSpider(BaseProductsSpider):
                 requests.append(self._gen_next_request(
                     response, next_page, remaining=new_remaining))
 
-        for i, (brand, url, isonline) in enumerate(islice(links, 0, remaining)):
+        for i, (brand, url, isonline, price) in enumerate(islice(links, 0, remaining)):
             new_meta = response.meta.copy()
             product = SiteProductItem(brand=brand)
             product['search_term'] = response.meta.get('search_term')
@@ -743,18 +756,20 @@ class TargetProductSpider(BaseProductsSpider):
         data = data.get('FilteredReviewStatistics', {})
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
-        if average is None or total is None:
-            return product
-        distribution = data.get('RatingDistribution', [])
-        distribution = {d['RatingValue']: d['Count']
-                        for d in data.get('RatingDistribution', [])}
-        fdist = {i: 0 for i in range(1, 6)}
-        for i in range(1, 6):
-            if i in distribution:
-                fdist[i] = distribution[i]
-        reviews = BuyerReviews(total, average, fdist)
-        cond_set_value(product, 'buyer_reviews', reviews)
+        
+        if average and total:
+            distribution = data.get('RatingDistribution', [])
+            distribution = {d['RatingValue']: d['Count']
+                            for d in data.get('RatingDistribution', [])}
+            fdist = {i: 0 for i in range(1, 6)}
+            for i in range(1, 6):
+                if i in distribution:
+                    fdist[i] = distribution[i]
+            reviews = BuyerReviews(total, average, fdist)
+            cond_set_value(product, 'buyer_reviews', reviews)
+        
         variants = response.meta.get('variants')
+        
         if variants and self.POPULATE_VARIANTS:
             return self._populate_variants(response, product, variants)
         return product

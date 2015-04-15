@@ -11,7 +11,8 @@ from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
+    MarketplaceSeller
 from product_ranking.spiders import BaseProductsSpider, cond_set,\
     cond_set_value, FLOATING_POINT_RGEX
 
@@ -165,6 +166,48 @@ class AmazonProductsSpider(BaseProductsSpider):
                     price=price,
                     priceCurrency='EUR'
                 )
+
+        seller = None
+        other_products = None
+
+        seller = response.xpath(
+            '//div[@id="kindle-av-div"]/div[@class="buying"]/b/text() |'
+            '//div[@class="buying"]/b/text()'
+        ).extract()
+
+        if not seller:
+            seller_all = response.xpath('//div[@class="buying"]/b/a')#tr/td/
+            seller = seller_all.xpath('text()').extract()   
+            other_products = seller_all.xpath('@href').extract()
+        if not seller:
+            seller_all = response.xpath('//div[@id="merchant-info"]/a[1]')
+            other_products = seller_all.xpath('@href').extract()
+            seller = seller_all.xpath('text()').extract()
+        #seller in description as text
+        if not seller:
+            seller = response.xpath(
+                '//li[@id="sold-by-merchant"]/text()'
+            ).extract()
+            seller = ''.join(seller).strip()
+        #simple text seller
+        if not seller:
+            seller = response.xpath('//div[@id="merchant-info"]/text()').extract()
+            if seller:
+                seller = re.findall("vendu par([^\.]*)", seller[0])
+        if not seller:
+            seller_all = response.xpath('//div[@id="usedbuyBox"]/div/div/a')
+            other_products = seller_all.xpath('@href').extract()
+            seller = seller_all.xpath('text()').extract()
+
+        if seller and isinstance(seller, list):
+            seller = seller[0].strip()
+        if other_products:
+            other_products = "amazon.fr" + other_products[0]
+
+        if seller or other_products:
+            product["marketplace"] = MarketplaceSeller(
+                seller=seller, other_products=other_products
+            )
 
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
@@ -397,13 +440,28 @@ class AmazonProductsSpider(BaseProductsSpider):
         if not total:
             ratings = {}
             average = 0
-            total = int(is_empty(response.xpath(
-                "//span[contains(@class, 'tiny')]/span[@class='crAvgStars']/a/text()"
-            ).re("\d+"), 0))
-            for rev in response.xpath('//span[contains(@class, "tiny")]//div[contains(@class, "custRevHistogramPopId")]/table/tr'):
+            total = is_empty(
+                response.xpath(
+                    "//span[contains(@class, 'tiny')]"
+                    "/span[@class='crAvgStars']/a/text()"
+                ).re("[\d\.\,]+"),
+                0
+            )
+            if total:
+                if isinstance(total, (str, unicode)):
+                    total = int(total.replace(',', '').replace('.', '').strip())
+            for rev in response.xpath(
+                    '//span[contains(@class, "tiny")]'
+                    '//div[contains(@class, "custRevHistogramPopId")]/table/tr'):
                 star = is_empty(rev.xpath('td/a/text()').re("\d+"), None)
                 if star:
-                    ratings[star] = int(is_empty(rev.xpath('td[last()]/text()').re("\d+"), 0))
+                    ratings[star] = is_empty(
+                        rev.xpath('td[last()]/text()').re("[\d\.\,]+"), 0)
+                    if ratings[star]:
+                        if isinstance(ratings[star], (str, unicode)):
+                            ratings[star] = int(
+                                ratings[star].replace(',', '').replace('.', '').strip()
+                            )
             if ratings:
                 average = sum(int(k) * int(v) for k, v in
                               ratings.iteritems()) / int(total) if ratings else 0

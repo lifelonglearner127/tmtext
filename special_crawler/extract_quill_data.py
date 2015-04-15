@@ -38,6 +38,8 @@ class QuillScraper(Scraper):
     video_count = None
     pdf_urls = None
     pdf_count = None
+    image_urls = None
+    image_count = None
 
     def check_url_format(self):
         # for ex: http://www.quill.com/clorox-toilet-bowl-cleaner-bleach/cbs/040672.html#SkuTabs
@@ -63,7 +65,11 @@ class QuillScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//input[@id='SkuData_Sku']//@value")[0].strip()
+        try:
+            product_id = self.tree_html.xpath("//input[@id='SkuData_Sku']//@value")[0].strip()
+        except IndexError:
+            # http://www.quill.com/hp-elitebook-840-g1-notebook-pc-i5-4300u/cbs/627840.html
+            product_id = re.findall(r"(\d*?)\.html", self._url())[0].strip()
         return product_id
 
     ##########################################
@@ -199,18 +205,44 @@ class QuillScraper(Scraper):
         return None
 
     def _image_urls(self):
+        if self.image_count is not None:
+            return self.image_urls
+        self.image_count = 0
         image_url = self.tree_html.xpath("//div[@class='s7Thumbs']//div[@class='carouselWrap']//img/@src")
-        image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
+        image_url_tmp = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
+        if len(image_url_tmp) < 1:
+            image_url_tmp = self.tree_html.xpath("//div[contains(@class,'skuImgColScene7')]//div[contains(@class,'skuImageInner')]//img[contains(@class,'skuImageSTD')]/@src")
+        image_url = []
+        for r in image_url_tmp:
+            if "https:" in r:
+                image_url.append(r)
+            elif "http:" not in r:
+                image_url.append("http:%s" % r)
+            else:
+                image_url.append(r)
         if len(image_url) < 1:
             image_url = self.tree_html.xpath("//div[@class='skuImgColScene7']//div[@class='skuImageZoom']//img/@src")
             image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
             if len(image_url) < 1:
                 return None
-        return image_url
+        if len(image_url) == 1:
+            try:
+                if self._no_image(image_url[0]):
+                    return None
+            except Exception, e:
+                print "WARNING: ", e.message
+
+        if len(image_url) < 1:
+            return None
+        self.image_urls = image_url
+        self.image_count = len(self.image_urls)
+
+        return self.image_urls
 
     def _image_count(self):
-        image_urls = self._image_urls()
-        return len(image_urls)
+        if self.image_count is None:
+            self._image_urls()
+        return self.image_count
 
     def _video_urls(self):
         if self.video_count is not None:
@@ -218,49 +250,61 @@ class QuillScraper(Scraper):
         self.video_count = 0
         video_urls = []
         # Request URL:http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=267655
-        sku_data = self.tree_html.xpath("//input[@id='SkuData_Sku']/@value")[0].strip()
-        url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % sku_data
-        contents = urllib.urlopen(url).read()
-        # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
-        # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
-        m = re.findall(r'"src":"([^"]*?\.flv)",', contents.replace("\\",""), re.DOTALL)
-        m = ["http://content.webcollage.net%s" % r for r in m]
-        if len(m) > 0:
-            video_urls += m
+        try:
+            sku_data = self.tree_html.xpath("//input[@id='SkuData_Sku']/@value")[0].strip()
+        except IndexError:
+            sku_data = None
 
-        m = re.findall(r'wcobj="(.*?)"', contents.replace("\\",""), re.DOTALL)
-        if len(m) > 0:
-            url_wc = m[0]
-            contents_wc = urllib.urlopen(url_wc).read()
-            # document.location.replace('
-            tree = html.fromstring(contents_wc)
-            try:
-                playerKey = tree.xpath("//param[@name='playerKey']/@value")[0].strip()
-                videos = tree.xpath("//li[contains(@class,'video_slider_item')]/@video_id")
-                for video in videos:
-                    # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
-                    url_wc2 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
-                    contents_wc2 = urllib.urlopen(url_wc2).read()
-                    jsn = json.loads(contents_wc2)
-                    jsn = jsn["sources"]
-                    for item in jsn:
-                        try:
-                            file_name = item['file']
-                            video_urls.append(file_name)
-                            break
-                        except:
-                            pass
-            except IndexError:
-                pass
+        if sku_data is not None:
+            url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % sku_data
+            contents = urllib.urlopen(url).read()
+            # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
+            # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
+            m = re.findall(r'"src":"([^"]*?\.flv)",', contents.replace("\\",""), re.DOTALL)
+            m = ["http://content.webcollage.net%s" % r for r in m]
+            if len(m) > 0:
+                video_urls += m
 
-        # http://media.flixcar.com/delivery/inpage/show/751/us/621726/json?c=jsonpcar751us621726&complimentary=0&type=.html
+            m = re.findall(r'wcobj="(.*?)"', contents.replace("\\",""), re.DOTALL)
+            if len(m) > 0:
+                url_wc = m[0]
+                contents_wc = urllib.urlopen(url_wc).read()
+                # document.location.replace('
+                tree = html.fromstring(contents_wc)
+                try:
+                    playerKey = tree.xpath("//param[@name='playerKey']/@value")[0].strip()
+                    videos = tree.xpath("//li[contains(@class,'video_slider_item')]/@video_id")
+                    for video in videos:
+                        # http://client.expotv.com/video/config/539028/4ac5922e8961d0cbec0cc659740a5398
+                        url_wc2 = "http://client.expotv.com/video/config/%s/%s" % (video, playerKey)
+                        contents_wc2 = urllib.urlopen(url_wc2).read()
+                        jsn = json.loads(contents_wc2)
+                        jsn = jsn["sources"]
+                        for item in jsn:
+                            try:
+                                file_name = item['file']
+                                video_urls.append(file_name)
+                                break
+                            except:
+                                pass
+                except IndexError:
+                    pass
+
+        # http://media.flixcar.com/delivery/inpage/show/751/us/846426/json?c=jsonpcar751us846426&complimentary=0&type=.html
         # data-flix-distributor="751"
         try:
             flix_distributor = self.tree_html.xpath("//div[@id='Quill']//script/@data-flix-distributor")[0].strip()
             flix_lang = self.tree_html.xpath("//div[@id='Quill']//script/@data-flix-language")[0].strip()
-            url_flix = "http://media.flixcar.com/delivery/inpage/show/%s/%s/621726/json" % (flix_distributor, flix_lang)
-            contents_flix = urllib.urlopen(url_flix).read()
-            tree_flix = html.fromstring(contents_flix.replace("\\",""))
+            data_flix_mpn = self.tree_html.xpath("//div[@id='Quill']//script/@data-flix-mpn")[0].strip()
+            data_flix_mpn = data_flix_mpn.replace('#', '%23')
+            url = "http://media.flixcar.com/delivery/js/minisite/%s/%s/mpn/%s/null/%s" % (flix_distributor, flix_lang, data_flix_mpn, self._product_id())
+            contents = urllib.urlopen(url).read()
+            ff_id = re.findall(r'_FFMatcher\._FFmain\((.*?)\)', contents, re.DOTALL)[0].strip()
+            ff_id = re.findall(r"'us','(.*?)'", ff_id, re.DOTALL)[0].strip()
+            url_flix = "http://media.flixcar.com/delivery/inpage/show/%s/%s/%s/" % (flix_distributor, flix_lang, ff_id)
+            # contents_flix = urllib.urlopen(url_flix).read()
+            contents_flix = requests.get(url_flix).text
+            tree_flix = html.fromstring(contents_flix)
             videos = tree_flix.xpath("//div[contains(@class,'inpage_cap_videos')]//ul[contains(@class,'inpage_block_inner')]/li[contains(@class,'inpage_cap_gallery_link')]/a/@href")
             video_urls += videos
         except IndexError:
@@ -296,6 +340,30 @@ class QuillScraper(Scraper):
         wc_pdfs = re.findall(r'wcobj="(.*?)"', contents, re.DOTALL)
         wc_pdfs = [r.replace("\\", "") for r in wc_pdfs if r.endswith(".pdf")]
         pdf_hrefs += wc_pdfs
+
+        # Request URL:http://media.flixcar.com/delivery/inpage/show/751/us/833093/json?c=jsonpcar751us833093&complimentary=0&type=.html
+        # Request URL:http://media.flixcar.com/delivery/inpage/show/751/us/833093/json?c=jsonpcar751us833093&complimentary=0&type=.html
+        # http://media.flixcar.com/delivery/js/minisite/751/us/mpn/E3E02A%23B1H/null/50686187?d=751&l=us&mpn=E3E02A%23B1H&sku=50686187&dom=flix-minisite&fl=en&ext=.js
+        try:
+            flix_distributor = self.tree_html.xpath("//div[@id='Quill']//script/@data-flix-distributor")[0].strip()
+            flix_lang = self.tree_html.xpath("//div[@id='Quill']//script/@data-flix-language")[0].strip()
+            data_flix_mpn = self.tree_html.xpath("//div[@id='Quill']//script/@data-flix-mpn")[0].strip()
+            data_flix_mpn = data_flix_mpn.replace('#', '%23')
+            url = "http://media.flixcar.com/delivery/js/minisite/%s/%s/mpn/%s/null/%s" % (flix_distributor, flix_lang, data_flix_mpn, self._product_id())
+            contents = urllib.urlopen(url).read()
+            ff_id = re.findall(r'_FFMatcher\._FFmain\((.*?)\)', contents, re.DOTALL)[0].strip()
+            ff_id = re.findall(r"'us','(.*?)'", ff_id, re.DOTALL)[0].strip()
+            url = "http://media.flixcar.com/delivery/inpage/show/%s/%s/%s/json?c=jsonpcar%s%s%s&complimentary=0&type=.html" % \
+                  (flix_distributor, flix_lang, ff_id, flix_distributor, flix_lang, ff_id)
+            # contents = urllib.urlopen(url).read()
+            contents = requests.get(url).text
+            tree = html.fromstring(contents.replace("\\", ""))
+            ff_pdfs = tree.xpath("//div[contains(@class,'inpage_cap_more-info')]//a/@href")
+            ff_pdfs = list(set(ff_pdfs))
+            pdf_hrefs += ff_pdfs
+        except IndexError:
+            pass
+
         if len(pdf_hrefs) < 1:
             return None
         self.pdf_count = len(pdf_hrefs)

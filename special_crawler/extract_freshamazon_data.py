@@ -352,9 +352,6 @@ class FreshAmazonScraper(Scraper):
             return "USD"
         return curr
 
-    def _in_stores_only(self):
-        return None
-
     def _in_stores(self):
         return 0
 
@@ -593,8 +590,6 @@ class FreshAmazonScraper(Scraper):
         "price" : _price, \
         "price_amount": _price_amount, \
         "price_currency": _price_currency, \
- #       "in_stock" : _in_stock, \
-        "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
 #        "owned" : _owned, \
 #        "owned_out_of_stock" : _owned_out_of_stock, \

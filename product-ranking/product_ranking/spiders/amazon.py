@@ -11,7 +11,8 @@ from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
+    MarketplaceSeller
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 
@@ -82,6 +83,10 @@ class AmazonProductsSpider(BaseProductsSpider):
             self._populate_from_html(response, prod)
 
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
+
+            if isinstance(prod["buyer_reviews"], Request):
+                meta = {"product": prod}
+                return prod["buyer_reviews"].replace(meta=meta)
 
             result = prod
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
@@ -174,6 +179,49 @@ class AmazonProductsSpider(BaseProductsSpider):
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         self._get_price(response, product)
+
+        seller = None
+        other_products = None
+
+        seller = response.xpath(
+            '//div[@id="kindle-av-div"]/div[@class="buying"]/b/text() |'
+            '//div[@class="buying"]/b/text()'
+        ).extract()
+
+        if not seller:
+            seller_all = response.xpath('//div[@class="buying"]/b/a')#tr/td/
+            seller = seller_all.xpath('text()').extract()   
+            other_products = seller_all.xpath('@href').extract()
+        if not seller:
+            seller_all = response.xpath('//div[@id="merchant-info"]/a[1]')
+            other_products = seller_all.xpath('@href').extract()
+            seller = seller_all.xpath('text()').extract()
+        #seller in description as text
+        if not seller:
+            seller = response.xpath(
+                '//li[@id="sold-by-merchant"]/text()'
+            ).extract()
+            seller = ''.join(seller).strip()
+        #simple text seller
+        if not seller:
+            seller = response.xpath('//div[@id="merchant-info"]/text()').extract()
+            if seller:
+                seller = re.findall("sold by([^\.]*)", seller[0])
+        if not seller:
+            seller_all = response.xpath('//div[@id="usedbuyBox"]/div/div/a')
+            other_products = seller_all.xpath('@href').extract()
+            seller = seller_all.xpath('text()').extract()
+
+        if seller and isinstance(seller, list):
+            seller = seller[0].strip()
+        if other_products:
+            other_products = "www.amazon.com" + other_products[0]
+
+        if seller or other_products:
+            product["marketplace"] = MarketplaceSeller(
+                seller=seller, other_products=other_products
+            )
+        
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
             iframe_content = re.findall(
@@ -294,7 +342,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
 
-    def _calculate_buyer_reviews_from_percents(self, total_reviews, table):
+    def _calculate_buyer_reviews_from_percents(self, total_reviews, table, link):
         rating_by_star = {}
         for title in table.xpath('.//a/@title'):
             title = title.extract()
@@ -318,7 +366,35 @@ class AmazonProductsSpider(BaseProductsSpider):
                 rating_by_star[_star] \
                     = float(int(total_reviews)) * (float(_percent) / 100)
                 rating_by_star[_star] = int(round(rating_by_star[_star]))
-        return rating_by_star
+        rev_sum = 0
+        for k, v in rating_by_star.items(): 
+            rev_sum += v
+        #if rev_sum != total_reviews:
+        return Request(url=link, callback=self.get_buyer_reviews)
+        #return rating_by_star
+
+    def get_buyer_reviews(self, response):
+        product = response.meta["product"]
+        buyer_reviews = {}
+        product["buyer_reviews"] = {}
+        buyer_reviews["num_of_reviews"] = is_empty(response.xpath(
+            '//span[contains(@class, "totalReviewCount")]/text()').extract()
+        ).replace(",", "")
+        average = is_empty(response.xpath(
+            '//div[contains(@class, "averageStarRatingNumerical")]/span/text()'
+        ).extract())
+
+        buyer_reviews["average_rating"] = \
+            average.replace('out of 5 stars', '')
+
+        buyer_reviews["rating_by_star"] = {}
+        buyer_reviews = self.get_rating_by_star(response, buyer_reviews)[0]
+
+        #print('*' * 20, 'parsing buyer reviews from', response.url)
+
+        product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
+
+        return product
 
     def _build_buyer_reviews(self, response):
         buyer_reviews = {}
@@ -345,6 +421,27 @@ class AmazonProductsSpider(BaseProductsSpider):
         buyer_reviews['average_rating'] = float(average)
 
         buyer_reviews['rating_by_star'] = {}
+        buyer_reviews, table = self.get_rating_by_star(response, buyer_reviews)
+
+        if not buyer_reviews.get('rating_by_star'):
+            buyer_rev_link = is_empty(response.xpath(
+                '//div[@id="revSum"]//a[contains(text(), "See all")' \
+                ' or contains(text(), "See the customer review")' \
+                ' or contains(text(), "See both customer reviews")]/@href'
+            ).extract())
+            buyer_reviews['rating_by_star'] \
+                = self._calculate_buyer_reviews_from_percents(
+                    buyer_reviews['num_of_reviews'], table,  buyer_rev_link)
+            if isinstance(buyer_reviews["rating_by_star"], Request):
+                meta = {
+                    "average_rating": buyer_reviews["average_rating"], 
+                    "num_of_reviews": buyer_reviews["num_of_reviews"] 
+                }
+                return buyer_reviews["rating_by_star"].replace(meta=meta)
+
+        return BuyerReviews(**buyer_reviews)
+
+    def get_rating_by_star(self, response, buyer_reviews):
         table = response.xpath(
             '//table[@id="histogramTable"]'
             '/tr[@class="a-histogram-row"]')
@@ -376,13 +473,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 buyer_reviews['rating_by_star'][rating] = int(
                     number.replace(',', '')
                 )
-
-        if not buyer_reviews.get('rating_by_star'):
-            buyer_reviews['rating_by_star'] \
-                = self._calculate_buyer_reviews_from_percents(
-                    buyer_reviews['num_of_reviews'], table)
-
-        return BuyerReviews(**buyer_reviews)
+        return buyer_reviews, table
 
     def _scrape_total_matches(self, response):
         # Where this value appears is a little weird and changes a bit so we

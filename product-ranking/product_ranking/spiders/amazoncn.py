@@ -11,7 +11,8 @@ from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
+    MarketplaceSeller
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
                                      cond_set_value, FormatterWithDefaults,
                                      FLOATING_POINT_RGEX)
@@ -168,6 +169,19 @@ class AmazonProductsSpider(BaseProductsSpider):
                     price=price.replace(' ', '').replace(',', '').strip(),
                     priceCurrency='CNY'
                 )
+
+        other_products = []
+        merchantId = response.xpath('//input[@id="merchantID"]/@value').extract()
+        if merchantId:
+            other_products = "www.amazon.cn/gp/help/seller/at-a-glance.html" \
+                "?seller=%s&isAmazonFulfilled=" % (merchantId[0],) 
+        seller = response.xpath(
+            '//div[@id="soldByThirdParty"]/b/text()').extract()
+        if seller:
+            product["marketplace"] = MarketplaceSeller(
+                seller=seller[0],
+                other_products=other_products
+            )
 
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
@@ -412,16 +426,28 @@ class AmazonProductsSpider(BaseProductsSpider):
         if not total:
             ratings = {}
             average = 0
-            total = int(is_empty(response.xpath(
-                "//span[contains(@class, 'tiny')]" \
-                "/span[@class='crAvgStars']/a/text()"
-            ).re("\d+"), 0))
-            for rev in response.xpath('//span[contains(@class, "tiny")]' \
-                '//div[contains(@class, "custRevHistogramPopId")]/table/tr'):
+            total = is_empty(
+                response.xpath(
+                    "//span[contains(@class, 'tiny')]"
+                    "/span[@class='crAvgStars']/a/text()"
+                ).re("[\d\.\,]+"),
+                0
+            )
+            if total:
+                if isinstance(total, (str, unicode)):
+                    total = int(total.replace(',', '').replace('.', '').strip())
+            for rev in response.xpath(
+                    '//span[contains(@class, "tiny")]'
+                    '//div[contains(@class, "custRevHistogramPopId")]/table/tr'):
                 star = is_empty(rev.xpath('td/a/text()').re("\d+"), None)
                 if star:
-                    ratings[star] = int(is_empty(rev.xpath(
-                        'td[last()]/text()').re("\d+"), 0))
+                    ratings[star] = is_empty(
+                        rev.xpath('td[last()]/text()').re("[\d\.\,]+"), 0)
+                    if ratings[star]:
+                        if isinstance(ratings[star], (str, unicode)):
+                            ratings[star] = int(
+                                ratings[star].replace(',', '').replace('.', '').strip()
+                            )
             if ratings:
                 average = sum(int(k) * int(v) for k, v in
                               ratings.iteritems()) / int(total) if ratings else 0

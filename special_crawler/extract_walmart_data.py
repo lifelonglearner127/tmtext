@@ -29,7 +29,7 @@ class WalmartScraper(Scraper):
                                  should contain information on what the expected format for the
                                  input URL is.
 
-            BASE_URL_VIDEOREQ_WEBCOLLAGE (string):
+            BASE_URL_REQ_WEBCOLLAGE (string):
             BASE_URL_PDFREQ_WEBCOLLAGE (string):
             BASE_URL_REVIEWSREQ (string):   strings containing necessary hardcoded URLs for extracting walmart
                                             videos, pdfs and reviews
@@ -39,6 +39,8 @@ class WalmartScraper(Scraper):
     BASE_URL_VIDEOREQ_WEBCOLLAGE = "http://json.webcollage.net/apps/json/walmart?callback=jsonCallback&environment-id=live&cpi="
     # base URL for request containing video URL from sellpoints
     BASE_URL_VIDEOREQ_SELLPOINTS = "http://www.walmart.com/product/idml/video/%s/SellPointsVideos"
+    # base URL for request containing video URL from sellpoints
+    BASE_URL_VIDEOREQ_SELLPOINTS_NEW = "http://www.walmart-content.com/product/idml/video/%s/SellPointsVideos"
     # base URL for request containing pdf URL from webcollage
     BASE_URL_PDFREQ_WEBCOLLAGE = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
     # base URL for request for product reviews - formatted string
@@ -67,6 +69,31 @@ class WalmartScraper(Scraper):
         self.has_pdf = False
         # whether product has any videos
         self.has_video = False
+
+        # whether webcollage 360 view were extracted
+        self.extracted_webcollage_360_view = False
+        # whether product has webcollage 360 view
+        self.has_webcollage_360_view = False
+
+        # whether webcollage emc view were extracted
+        self.extracted_webcollage_emc_view = False
+        # whether product has webcollage emc view
+        self.has_webcollage_emc_view = False
+
+        # whether webcollage video view were extracted
+        self.extracted_webcollage_video_view = False
+        # whether product has webcollage video view
+        self.has_webcollage_video_view = False
+
+        # whether webcollage pdf view were extracted
+        self.extracted_webcollage_pdf = False
+        # whether product has webcollage pdf view
+        self.has_webcollage_pdf = False
+
+        # whether webcollage product tour view were extracted
+        self.extracted_webcollage_product_tour_view = False
+        # whether product has webcollage product tour view
+        self.has_webcollage_product_tour_view = False
 
         # javascript function found in a script tag
         # containing various info on the product.
@@ -129,7 +156,7 @@ class WalmartScraper(Scraper):
             richMedia_element = richMedia_elements[0]
             elements_onclick = richMedia_element.xpath(".//li/@onclick")
             # any of the "onclick" attributes of the richMedia <li> tags contains "video')"
-            has_video =  any(map(lambda el: "video')" in el, elements_onclick))
+            has_video = any(map(lambda el: "video')" in el, elements_onclick))
 
             return has_video
 
@@ -171,7 +198,7 @@ class WalmartScraper(Scraper):
                     self.has_webcollage_media = True
                     self.has_video = True
                     self.video_urls.append(video_url_candidate)
-                    break
+#                    break
 
                 # if it doesn't, it may be a url to make another request to, to get customer reviews video
                 if "client.expotv.com" in video_url_candidate:
@@ -207,10 +234,23 @@ class WalmartScraper(Scraper):
                     self.video_urls.append(video_url_candidate)
                     break
 
+        # check sellpoints media if webcollage media doesn't exist
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % self._extract_product_id()
+        # TODO: handle errors
+        response_text = urllib.urlopen(request_url).read()
+        tree = html.fromstring(response_text)
+        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']"):
+            self.has_video = True
+            self.has_sellpoints_media = True
+
         if len(self.video_urls) == 0:
             if self.tree_html.xpath("//div[starts-with(@class,'js-idml-video-container')]"):
                 contents = requests.get("http://www.walmart.com/product/idml/video/" +
                                         str(self._extract_product_id()) + "/WebcollageVideos").text
+
+                if not contents:
+                    self.video_urls = None
+                    return
 
                 tree = html.fromstring(contents)
                 video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
@@ -220,7 +260,6 @@ class WalmartScraper(Scraper):
                 self.has_video = True
             else:
                 self.video_urls = None
-
 
     def _video_urls(self):
         """Extracts video URLs for a given walmart product
@@ -233,6 +272,111 @@ class WalmartScraper(Scraper):
             self._extract_video_urls()
 
         return self.video_urls
+
+    def _wc_360(self):
+        """Return 360view existence for a given walmart product in new walmart design
+        Returns:
+            1 if 360view exists
+            or 0 if none found
+        """
+
+        self.extracted_webcollage_360_view = True
+
+        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+                                str(self._extract_product_id()) + "/Webcollage360View").text
+
+        tree = html.fromstring(contents)
+        existance_360view = tree.xpath("//div[@class='wc-360']")
+
+        if not existance_360view:
+            return 0
+        else:
+            self.has_webcollage_360_view = True
+            return 1
+
+    def _wc_emc(self):
+        """Return EMC (Extended Manufacturer Content) existence for a given walmart product in new walmart design
+        Returns:
+            1 if EMC exists
+            or 0 if none found
+        """
+
+        self.extracted_webcollage_emc_view = True
+
+        emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
+
+        if not emc:
+            return 0
+        else:
+            self.has_webcollage_emc_view = True
+            return 1
+
+    def _wc_video(self):
+        """Return video existence for a given walmart product in new walmart design
+        Returns:
+            1 if video exists
+            or 0 if none found
+        """
+
+        self.extracted_webcollage_video_view= True
+
+        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+                                str(self._extract_product_id()) + "/WebcollageVideos").text
+
+        tree = html.fromstring(contents)
+        existance_webcollage_video = tree.xpath("//div[@class='wc-fragment']")
+
+        if not existance_webcollage_video:
+            return 0
+        else:
+            self.has_webcollage_video_view = True
+            return 1
+
+    def _wc_pdf(self):
+        """Return pdf existence for a given walmart product in new walmart design
+        Returns:
+            1 if pdf exists
+            or 0 if none found
+        """
+
+        self.extracted_webcollage_pdf = True
+
+        pdf_urls = self._pdf_urls()
+
+        if pdf_urls:
+            for item in pdf_urls:
+                if "webcollage" in item.lower():
+                    self.has_webcollage_pdf = True
+                    return 1
+
+        return 0
+
+    def _wc_prodtour(self):
+        """Return product tour existence for a given walmart product in new walmart design
+        Returns:
+            1 if product tour exists
+            or 0 if none found
+        """
+
+        self.extracted_webcollage_product_tour_view = True
+
+        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+                                str(self._extract_product_id()) + "/WebcollageInteractiveTour").text
+
+        tree = html.fromstring(contents)
+        existance_product_tour = tree.xpath("//div[contains(@class, 'wc-aplus-body')]")
+
+        if not existance_product_tour:
+            return 0
+        else:
+            self.has_webcollage_product_tour_view = True
+            return 1
+
+    def _flixmedia(self):
+        if "media.flix" in etree.tostring(self.tree_html):
+            return 1
+        else:
+            return 0
 
     def _pdf_urls(self):
         """Extracts pdf URLs for a given walmart product, puts them in an instance variable
@@ -297,34 +441,6 @@ class WalmartScraper(Scraper):
             return {"reviews" : {"total_reviews": None, "average_review": None}}
         return {"reviews" : {"total_reviews": reviews_count, "average_review": average_review}}
 
-    def _has_webcollage_iframe(self):
-        """Extracts webcollage links from an iframe on the page.
-        (Example: http://www.walmart.com/ip/Trix-Wildberry-Red-Swirls-Cereal-22.7-oz/25847976
-            has some webcollage images)
-        Returns:
-            1 if page has iframe with webcollage images, 0 otherwise
-        """
-
-        # assume only 1 iframe
-        # TODO: identify it by class or smth?
-        try:
-            iframe_link = self.tree_html.xpath("//iframe/@src")[0]
-            if iframe_link.startswith("/"):
-                # append scheme
-                iframe_link = "http:" + iframe_link
-
-            # get contents of iframe
-            contents = urllib.urlopen(iframe_link).read()
-            # get webcollage content from iframe
-            # TODO: what if they are in comments?
-            if "media.webcollage.net" in contents:
-                return 1
-
-        except Exception, e:
-            return 0
-
-        return 0
-
     def _product_has_webcollage(self):
         """Uses video and pdf information
         to check whether product has any media from webcollage.
@@ -333,16 +449,22 @@ class WalmartScraper(Scraper):
             0 otherwise
         """
 
-        if not self.extracted_video_urls:
-            self._extract_video_urls()
+        if not self.extracted_webcollage_360_view:
+            self._wc_360()
 
-        if not self.extracted_pdf_urls:
-            self._pdf_urls()
+        if not self.extracted_webcollage_product_tour_view:
+            self._wc_prodtour()
 
-        if self.has_webcollage_media:
-            return 1
+        if not self.extracted_webcollage_pdf:
+            self._wc_pdf()
 
-        if self._has_webcollage_iframe():
+        if not self.extracted_webcollage_emc_view:
+            self._wc_emc()
+
+        if not self.extracted_webcollage_video_view:
+            self._wc_video()
+
+        if self.has_webcollage_product_tour_view or self.has_webcollage_pdf or self.has_webcollage_video_view or self.has_webcollage_emc_view or self.has_webcollage_360_view:
             return 1
 
         return 0
@@ -369,7 +491,7 @@ class WalmartScraper(Scraper):
 
         return 0
 
-    def _product_has_video(self):
+    def _video_count(self):
         """Whether product has video
         To be replaced with function that actually counts
         number of videos for this product
@@ -381,10 +503,13 @@ class WalmartScraper(Scraper):
         if not self.extracted_video_urls:
             self._extract_video_urls()
 
-        if self.has_video:
-            return 1
+        if not self.video_urls:
+            if self.has_video:
+                return 1
+            else:
+                return 0
         else:
-            return 0
+            return len(self.video_urls)
 
     def _pdf_count(self):
         """Returns the number of pdf
@@ -473,7 +598,17 @@ class WalmartScraper(Scraper):
 
         for description_element in description_elements:
             if "<b>" in lxml.html.tostring(description_element):
-                break;
+                break
+
+            if "<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element):
+                tree = html.fromstring(short_description)
+                innerText = tree.xpath("//text()")
+
+                if not innerText:
+                    short_description = ""
+
+                break
+
             short_description += lxml.html.tostring(description_element)
 
         # try to extract from old page structure - in case walmart is
@@ -539,7 +674,7 @@ class WalmartScraper(Scraper):
 
         for description_element in description_elements:
             if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
-                    (not long_description_start and "<ul>" in lxml.html.tostring(description_element)):
+                    (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element))):
                 long_description_start = True
 
             if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
@@ -1187,7 +1322,7 @@ class WalmartScraper(Scraper):
             else:
                 return relative_url
 
-        images_carousel = self.tree_html.xpath("//div[starts-with(@class,'product-carousel-wrapper')]//a/@href")
+        images_carousel = self.tree_html.xpath("//div[contains(@class,'product-carousel-wrapper')]//a/@data-hero-image")
         if images_carousel:
             # fix relative urls
             images_carousel = map(_fix_relative_url, images_carousel)
@@ -1516,6 +1651,9 @@ class WalmartScraper(Scraper):
         Returns:
             1/0 (owned/not owned)
         """
+
+        if self._in_stores:
+            return 1
 
         # assume new design
         # _owned_from_script() may throw exception if extraction fails
@@ -1874,8 +2012,14 @@ class WalmartScraper(Scraper):
         "min_review" : _min_review, \
         "reviews" : _reviews, \
         # video needs both page source and separate requests
-        "video_count" : _product_has_video, \
+        "video_count" : _video_count, \
         "video_urls" : _video_urls, \
+        "wc_360" : _wc_360, \
+        "wc_emc": _wc_emc, \
+        "wc_video": _wc_video, \
+        "wc_pdf": _wc_pdf, \
+        "wc_prodtour": _wc_prodtour, \
+        "flixmedia": _flixmedia, \
         "webcollage" : _product_has_webcollage, \
         "sellpoints" : _product_has_sellpoints, \
 

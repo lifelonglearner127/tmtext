@@ -6,6 +6,7 @@ import re
 import urlparse
 import uuid
 import string
+from datetime import datetime
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -13,9 +14,10 @@ from scrapy.log import ERROR, INFO
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
-                                   BuyerReviews, Price)
+                                   BuyerReviews, Price, MarketplaceSeller)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
+
 
 is_empty = lambda x: x[0] if x else ""
 
@@ -45,6 +47,11 @@ class WalmartProductsSpider(BaseProductsSpider):
 
     LOCATION_URL = "http://www.walmart.com/location"
 
+    QA_URL = "http://www.walmart.com/reviews/api/questions" \
+             "/{product_id}?sort=mostRecentQuestions&pageNumber={page}"
+
+    QA_LIMIT = 0xffffffff
+
     _SEARCH_SORT = {
         'best_match': 0,
         'high_price': 'price_high',
@@ -60,6 +67,7 @@ class WalmartProductsSpider(BaseProductsSpider):
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
     user_agent = 'default'
+
 
     def __init__(self, search_sort='best_match', zipcode='94117',
                  *args, **kwargs):
@@ -90,7 +98,7 @@ class WalmartProductsSpider(BaseProductsSpider):
                           meta={'product': prod})
 
     def get_sponsored_links(self, response):
-        reql = []
+        self.reql = []
         self.sponsored_links = []
         for link in response.xpath(
             '//div[contains(@class, "yahoo_sponsored_link")]'
@@ -109,32 +117,47 @@ class WalmartProductsSpider(BaseProductsSpider):
                    "actual_url": actual_url,
                    }
             new_meta = response.meta.copy()
-            new_meta['sld'] = sld
+            new_meta["sld"] = sld
             new_meta['handle_httpstatus_list'] = [400, 403, 404, 405]
-            reql.append(Request(
+            self.reql.append(Request(
                 actual_url,
                 callback=self.parse_sponsored_links,
+                errback=self.parse_sponsored_links,
                 meta=new_meta,
                 dont_filter=True))
-        if reql:
-            req1 = reql.pop(0)
+        if self.reql:
+            req1 = self.reql.pop(0)
             new_meta = req1.meta
-            new_meta['reql'] = reql
+            new_meta['reql'] = self.reql
+            self.sld = new_meta["sld"]
             return req1.replace(meta=new_meta)
         return super(WalmartProductsSpider, self).start_requests()
 
     def parse_sponsored_links(self, response):
-        sld = response.meta['sld']
-        reql = response.meta['reql']
-        if response.status == 200:
-            sld['actual_url'] = response.url
-            self.sponsored_links.append(sld)
+        self.temp_spons_link = None
+        if hasattr(response, "meta"):
+            if response.status == 200:
+                self.sld['actual_url'] = response.url
+                self.sponsored_links.append(self.sld)
 
-        if reql:
-            req1 = reql.pop(0)
+            if self.reql:
+                req1 = self.reql.pop(0)
+                new_meta = req1.meta
+                new_meta['reql'] = self.reql
+                self.temp_spons_link = req1.url
+                self.sld = new_meta["sld"]
+                return req1.replace(meta=new_meta)
+        else:
+            self.sld['actual_url'] = self.temp_spons_link
+            self.sponsored_links.append(self.sld)
+
+            req1 = self.reql.pop(0)
             new_meta = req1.meta
-            new_meta['reql'] = reql
+            new_meta['reql'] = self.reql
+            self.temp_spons_link = req1.url
+            self.sld = new_meta["sld"]
             return req1.replace(meta=new_meta)
+        del self.temp_spons_link, self.sld, self.reql
         return super(WalmartProductsSpider, self).start_requests()
 
     def parse_product(self, response):
@@ -155,6 +178,20 @@ class WalmartProductsSpider(BaseProductsSpider):
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
         self._gen_related_req(response)
+
+        id = re.findall('\/(\d+)', response.url)
+        response.meta['product_id'] = id[0] if id else None
+        # if id:
+        #    url = 'http://www.walmart.com/reviews/api/questions/{0}?' \
+        #          'sort=mostRecentQuestions&pageNumber=1'.format(id[0])
+        #    meta = {
+        #        "product": product,
+        #        "relreql": response.meta["relreql"],
+        #        "response": response
+        #    }
+
+        #    return Request(url=url, meta=meta, callback=self.get_questions)
+
         if not product.get('price'):
             return self._gen_location_request(response)
         return self._start_related(response)
@@ -217,8 +254,30 @@ class WalmartProductsSpider(BaseProductsSpider):
                 "/a[@id='WMItemBrandLnk']/text()").extract())     
         if not product.get("brand"):
             brand = is_empty(response.xpath(
-                "//h1[contains(@class, 'product-name product-heading')]/text()").extract())
-            cond_set(product, 'brand', (guess_brand_from_first_words(brand.strip()),))
+                "//h1[contains(@class, 'product-name product-heading')]/text()"
+            ).extract())
+            cond_set(
+                product,
+                'brand',
+                (guess_brand_from_first_words(brand.strip()),)
+            )
+
+        other_products = []
+        seller = response.xpath(
+            '//div[@class="product-seller"]/div/' \
+            'span[contains(@class, "primary-seller")]/b/text()'
+        ).extract()
+        if not seller:
+            seller_all = response.xpath(
+                '//div[@class="product-seller"]/div/' \
+                'span[contains(@class, "primary-seller")]/a'
+            )
+            seller = seller_all.xpath('b/text()').extract()
+        if seller:
+            product["marketplace"] = MarketplaceSeller(
+                seller=seller[0], other_products=other_products
+            )
+
         also_considered = self._build_related_products(
             response.url,
             response.css('.top-product-recommendations .tile-heading'),
@@ -292,7 +351,8 @@ class WalmartProductsSpider(BaseProductsSpider):
         product = response.meta['product']
         reql = response.meta.get('relreql')
         if not reql:
-            return product
+            return self._request_questions_info(response)
+            #return product
         (url, proc) = reql.pop(0)
         response.meta['relreql'] = reql
         return Request(
@@ -367,6 +427,7 @@ class WalmartProductsSpider(BaseProductsSpider):
         return self._start_related(response)
 
     def _populate_from_js(self, response, product):
+        data = {}
         m = re.search(
             self._JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
         if m:
@@ -374,7 +435,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             try:
                 data = json.loads(text)
             except ValueError:
-                data = {}
+                pass
         if not data:
             self.log("No JS matched in %r." % response.url, ERROR)
             return
@@ -526,3 +587,43 @@ class WalmartProductsSpider(BaseProductsSpider):
             )
 
         return next_page
+
+    def _request_questions_info(self, response):
+        product_id = response.meta['product_id']
+        if product_id is None:
+            return response.meta['product']
+        response.meta['product']['recent_questions'] = []
+        url = self.QA_URL.format(product_id=product_id, page=1)
+        return Request(url, self._parse_questions,
+                       meta=response.meta, dont_filter=True)
+
+    def _parse_questions(self, response):
+        data = json.loads(response.body_as_unicode())
+        product = response.meta['product']
+        last_date = product.get('date_of_last_question')
+        questions = product['recent_questions']
+        dateconv = lambda date: datetime.strptime(date, '%m/%d/%Y').date()
+        for question_data in data.get('questionDetails', []):
+            date = dateconv(question_data['submissionDate'])
+            if last_date is None:
+                product['date_of_last_question'] = last_date = date
+            if date == last_date:
+                questions.append(question_data)
+            else:
+                break
+        else:
+            total_pages = min(self.QA_LIMIT,
+                              data['pagination']['pages'][-1]['num'])
+            current_page = response.meta.get('current_qa_page', 1)
+            if current_page < total_pages:
+                url = self.QA_URL.format(
+                    product_id=response.meta['product_id'],
+                    page=current_page + 1)
+                response.meta['current_qa_page'] = current_page + 1
+                return Request(url, self._parse_questions, meta=response.meta,
+                               dont_filter=True)
+        if not questions:
+            del product['recent_questions']
+        else:
+            product['date_of_last_question'] = str(last_date)
+        return product
