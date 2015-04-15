@@ -120,7 +120,7 @@ def fix_double_bzip_in_dir(d, min_age, max_age):
 if __name__ == '__main__':
     DIR = '/home/web_runner/virtual-environments/scrapyd/items/product_ranking/amazon_products/'
     BACKUP_DIR = '/home/ubuntu/amazon_products/'
-    FIX_DOUBLE_BZIP_DIR = '/home/web_runner/virtual-environments/scrapyd/items/product_ranking/walmart_products/'
+    FIX_DOUBLE_BZIP_DIR = '/home/web_runner/virtual-environments/scrapyd/items/product_ranking/'
     MIN_AGE = 86400
     MAX_AGE = 86400*15
 
@@ -131,7 +131,6 @@ if __name__ == '__main__':
         os.system(cmd)
 
     fix_double_bzip_in_dir(FIX_DOUBLE_BZIP_DIR, MIN_AGE, MAX_AGE)
-    assert False, 'ok'
 
     matches = []
     for root, dirnames, filenames in os.walk(DIR):
