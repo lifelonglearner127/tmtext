@@ -98,6 +98,9 @@ class ProswimwearCoUkSpider(BaseProductsSpider):
         brand = response.css('.box-brand a img::attr(alt)').extract()
         cond_set(product, 'brand', brand)
 
+        model = response.xpath('//div[@itemprop="name"]/p/text()').extract()
+        cond_set(product, 'model', model)
+
         # Is_out_of_stock
         xpath = '//span[@id="availability-box" and text()="Out of stock"]'
         cond_set_value(product, 'is_out_of_stock', response.xpath(xpath), bool)
