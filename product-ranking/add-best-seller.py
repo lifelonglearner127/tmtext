@@ -6,6 +6,35 @@ from __future__ import print_function
 from future_builtins import *
 
 import json
+import bz2
+
+
+def is_plain_json_list(fname):
+    with open(fname, 'r') as fh:
+        cont = fh.read(1024)
+    cont = cont.strip()
+    if not cont:
+        return True
+    return cont[0] == '{'
+
+
+def unbzip(f1, f2):
+    try:
+        f = bz2.BZ2File(f1)
+        cont = f.read()
+    except:
+        return False
+    f.close()
+    with open(f2, 'wb') as fh:
+        fh.write(cont)
+    return True
+
+
+def fix_double_bzip_in_file(fname):
+    if not is_plain_json_list(fname):
+        result1 = unbzip(fname, fname)
+        while result1:
+            result1 = unbzip(fname, fname)
 
 
 def parse_arguments():
@@ -26,29 +55,38 @@ def main():
 
     # Load best seller ranked products.
     best_seller_rankings = {}
-    with open(args.best_seller_ranking) as best_seller_f:
-        for line in best_seller_f:
+    if not is_plain_json_list(args.best_seller_ranking):
+        fix_double_bzip_in_file(args.best_seller_ranking)
+    best_seller_f = open(args.best_seller_ranking)
+    for line in best_seller_f:
+        try:
             product = json.loads(line)
-            url = product['url']
-            ranking = product['ranking']
-            if url in best_seller_rankings \
-                    and ranking != best_seller_rankings[url]:
-                print("Found product with more than one best sellers ranking."
-                      " '%s' has %d and %d. Using lowest."
-                      % (url, best_seller_rankings[url], ranking),
-                      file=sys.stderr)
-                ranking = min(best_seller_rankings[url], ranking)
-            best_seller_rankings[url] = ranking
+        except Exception, e:
+            with open('/tmp/_line', 'wb') as fh:
+                fh.write(str(line))
+            assert False
+        url = product['url']
+        ranking = product['ranking']
+        if url in best_seller_rankings \
+                and ranking != best_seller_rankings[url]:
+            print("Found product with more than one best sellers ranking."
+                  " '%s' has %d and %d. Using lowest."
+                  % (url, best_seller_rankings[url], ranking),
+                  file=sys.stderr)
+            ranking = min(best_seller_rankings[url], ranking)
+        best_seller_rankings[url] = ranking
 
     # Update first data set with best seller's ranking.
-    with open(args.ranking) as ranking_f:
-        for line in ranking_f:
-            product = json.loads(line)
-            product['best_seller_ranking'] = best_seller_rankings.get(
-                product['url'])
+    if not is_plain_json_list(args.ranking):
+        fix_double_bzip_in_file(args.ranking)
+    ranking_f = open(args.ranking)
+    for line in ranking_f:
+        product = json.loads(line)
+        product['best_seller_ranking'] = best_seller_rankings.get(
+            product['url'])
 
-            json.dump(product, sys.stdout, sort_keys=True)
-            sys.stdout.write(b'\n')
+        json.dump(product, sys.stdout, sort_keys=True)
+        sys.stdout.write(b'\n')
 
     return 0
 
