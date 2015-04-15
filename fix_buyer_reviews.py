@@ -2,6 +2,8 @@ import fnmatch
 import os
 import bz2
 import json
+import time
+import stat
 
 
 def file_is_bzip2(fname):
@@ -76,15 +78,60 @@ def change_br_in_file(fname):
             fh.write(line.strip()+'\n')
 
 
+def file_age_in_seconds(pathname):
+    return time.time() - os.stat(pathname)[stat.ST_MTIME]
+
+
+def fix_double_bzip_in_file(fname):
+    if file_is_bzip2(fname):
+        print 'File [%s] compressed, decompressing...' % fname
+        result1 = unbzip(fname, fname)
+        while result1:
+            result1 = unbzip(fname, fname)
+            print '  RECURSIVE BZIP DETECTED', fname
+
+
+def compress_and_rename_old(fname):
+    if file_is_bzip2(fname):
+        return  # compressed already
+    if not is_plain_json_list(fname):
+        return  # compressed already
+    if file_age_in_seconds(fname) < 2*86400:
+        return  # not old
+    os.system('bzip2 "%s"' % fname)
+    os.rename(fname+'.bz2', fname)
+    print '  File compressed:', fname
+
+
+def fix_double_bzip_in_dir(d, min_age, max_age):
+    for root, dirnames, filenames in os.walk(d):
+        for filename in fnmatch.filter(filenames, '*.jl'):
+            full_name = os.path.join(root, filename)
+            if not os.path.isfile(full_name):
+                continue
+            if file_age_in_seconds(full_name) < min_age:
+                continue
+            if file_age_in_seconds(full_name) > max_age:
+                continue
+            fix_double_bzip_in_file(full_name)
+            compress_and_rename_old(full_name)
+
+
 if __name__ == '__main__':
     DIR = '/home/web_runner/virtual-environments/scrapyd/items/product_ranking/amazon_products/'
     BACKUP_DIR = '/home/ubuntu/amazon_products/'
+    FIX_DOUBLE_BZIP_DIR = '/home/web_runner/virtual-environments/scrapyd/items/product_ranking/walmart_products/'
+    MIN_AGE = 86400
+    MAX_AGE = 86400*15
 
     if not os.path.exists(BACKUP_DIR):
         os.makedirs(BACKUP_DIR)
         cmd = 'cp %s* %s' % (DIR, BACKUP_DIR)
         print cmd
         os.system(cmd)
+
+    fix_double_bzip_in_dir(FIX_DOUBLE_BZIP_DIR, MIN_AGE, MAX_AGE)
+    assert False, 'ok'
 
     matches = []
     for root, dirnames, filenames in os.walk(DIR):
