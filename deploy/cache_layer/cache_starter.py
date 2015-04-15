@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import random
 import logging
 import logging.config
 
@@ -45,8 +46,17 @@ log_settings = {
 }
 
 
+def can_run():
+    return not os.path.exists(os.path.join(os.getcwd(), __file__+'.running'))
+
+
+def mark_as_running():
+    with open(os.path.join(os.getcwd(), __file__+'.running'), 'w') as fh:
+        fh.write('1')
+
+
 def main_starter(TASK_QUEUES_LIST):
-    conn = boto.sqs.connect_to_region("us-west-2")  #should be us-east-1
+    conn = boto.sqs.connect_to_region("us-east-1")  #should be us-east-1
     cmd = 'python sqs_cache.py %s &'
     while True:
         for queue_name in TASK_QUEUES_LIST:
@@ -58,11 +68,17 @@ def main_starter(TASK_QUEUES_LIST):
                     os.system(run_cmd)
             except AttributeError:
                 logger.info("Queue '%s' does not exists", queue_name)
+                conn.create_queue(queue_name)
                 continue
         time.sleep(3)
 
 
 if (__name__ == '__main__'):
+    # uncomment for production
+    # time.sleep(random.randrange(10))
+    # if not can_run():
+    #     sys.exit()
+    # mark_as_running()
     logging.config.dictConfig(log_settings)
     logger = logging.getLogger('cache_log')
     main_starter(TASK_QUEUES_LIST)

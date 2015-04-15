@@ -3,6 +3,7 @@ import sys
 import json
 import time
 import pickle
+import datetime
 import logging
 import logging.config
 
@@ -17,12 +18,13 @@ from cache_starter import log_settings
 
 CACHE_TASKS_SQS = 'cache_sqs_ranking_spiders_tasks' # received_requests
 CACHE_OUTPUT_QUEUE_NAME = 'cache_sqs_ranking_spiders_output'
+CACHE_PROGRESS_QUEUE = 'cache_sqs_ranking_spiders_progress'
 
 SPIDERS_TASKS_SQS = 'sqs_ranking_spiders_tasks_tests'  # tasks to spiders
 SPIDERS_PROGRESS_QUEUE_NAME = 'sqs_ranking_spiders_progress'  # rcvd progress report from spiders 
 SPIDERS_OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
 
-# we will redefine it's in set_logger funcion after task will be received
+# we will redefine it's in set_logger function after task will be received
 logger = None
 
 def connect_to_redis_database():
@@ -53,21 +55,13 @@ def receive_task_from_server(queue_name=CACHE_TASKS_SQS):
 def get_data_from_cache_hash(hash_name, key, database):
     # responses_store = {
     #    'term/url:site:arguments': '(time:response)'}
+    # requests_store = {
+    #    'term/url:site:arguments': '[(time:server), (time:server)]'}
     return database.hget(hash_name, key)
 
 
 def add_data_to_cache_hash(hash_name, key, value, database):
     return database.hset(hash_name, key, value)
-
-
-def get_requests_from_cache(task_stamp, database):
-    # requests_store = {
-    #    'term/url:site:arguments': '[(time:server), (time:server)]'}
-    return database.hget('requests', task_stamp)
-
-
-def put_requests_into_cache(task_stamp, requests, database):
-    database.hmset('requests', {task_stamp: requests})
 
 
 def put_message_into_sqs(message, sqs_name):
@@ -106,10 +100,11 @@ def get_spiders_results(sqs_name):
     output = None
     sqs_queue = SQS_Queue(sqs_name)
     attemps = 0
-    while attemps < 6:
+    while attemps < 20:
         if sqs_queue.q is None:
             logger.error("Queue %s doesn't exist" % sqs_name)
             time.sleep(5)
+            sqs_queue = SQS_Queue(sqs_name)
             continue
         try:
             output = sqs_queue.get()
@@ -146,7 +141,6 @@ def load_cache_response_to_sqs(data, sqs_name):
 
 
 def generate_task_stamp(task_message):
-    logger.info("Generate task stamp for task")
     site = task_message['site']
     url = task_message.get('url')
     if url:
@@ -173,6 +167,15 @@ def generate_task_stamp(task_message):
     return stamp
 
 
+def send_status_back_to_server(status, server_name):
+    msg = {
+        "utc_datetime": datetime.datetime.utcnow().isoformat(),
+        "status": status
+    }
+    queue_name = server_name + CACHE_PROGRESS_QUEUE
+    put_message_into_sqs(msg, queue_name)
+
+
 def generate_and_handle_new_request(task_stamp, task_message, cache_db):
     logger.info("Generate and handle new request")
     response_will_be_provided_by_another_daemon = False
@@ -181,7 +184,7 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
     last_request = get_data_from_cache_hash('last_request',
         task_stamp, cache_db)
 
-    # check what was the latest sended to SQS request for this task
+    # check what was the latest sent to SQS request for this task
     if last_request:  # request hash entry existing in database
         logger.info("Last request was found")
         # last Request is older than 1 hour
@@ -189,18 +192,26 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
             logger.info("Last request is very old")
             logger.info("Provide new task to spiders SQS")
             put_message_into_sqs(task_message, SPIDERS_TASKS_SQS)
+            send_status_back_to_server("Request for this task was found but"
+                " it was sent more than 1 hour ago.", server_name)
+            send_status_back_to_server("Redirect request to spiders sqs.",
+                                       server_name)
             add_data_to_cache_hash('last_request', task_stamp,
                 time.time(), cache_db)
         else:
             logger.info("Last request fresh enough")
+            send_status_back_to_server("Wait for request from other instance.",
+                                       server_name)
             response_will_be_provided_by_another_daemon = True
     else:
         logger.info("Last request wasn't found in cache. Create new one.")
         put_message_into_sqs(task_message, SPIDERS_TASKS_SQS)
+        send_status_back_to_server("Redirect request to spiders sqs.",
+                                   server_name)
         add_data_to_cache_hash('last_request', task_stamp,
                 time.time(), cache_db)
 
-    # add request to waitng list in any case
+    # add request to waiting list in any case
     logger.info("Add request to waiting list")
     requests = get_data_from_cache_hash('requests', task_stamp, cache_db)
     if requests:  # request hash entry existing in database
@@ -244,7 +255,7 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
         task_stamp, pickled_output, 'responses', cache_db)
 
     logger.info("Renew requests list")
-    requests = get_requests_from_cache(task_stamp, cache_db)
+    requests = get_data_from_cache_hash('requests', task_stamp, cache_db)
     requests = pickle.loads(requests)
     logger.info("Return data to all requests/servers")
     while requests:
@@ -254,6 +265,7 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
         cache_output_queue = server_name + CACHE_OUTPUT_QUEUE_NAME
         logger.info("Uploading response data to server queue")
         put_message_into_sqs(output, cache_output_queue)
+        send_status_back_to_server("Finished.", server_name)
         
     logger.info("Update requests database entry with blank requests list")
     requests = pickle.dumps(requests)
@@ -283,10 +295,14 @@ def main(queue_name):
         # no any messages was found - this is duplicated instance
         sys.exit()
     set_logger(task_message)
-    logger.info("Task was succesfully received:\n%s", task_message)
+    logger.info("Task was successfully received:\n%s", task_message)
+    status = "Ok. Task was received."
+    server_name = task_message['server_name']
+    send_status_back_to_server(status, server_name)
+
+    logger.info("Generate task stamp for task")
     task_stamp = generate_task_stamp(task_message)
     logger.debug("Task stamp:     %s", task_stamp)
-    server_name = task_message['server_name']
     freshness = task_message.get('freshness')
     if not freshness:
         freshness = 30*60 # 12*60*60 // 3.5*12*60*60
@@ -295,14 +311,16 @@ def main(queue_name):
     if response:
         logger.info("Use existing response")
         timestamp, output = unpickle_data(response)
-        if time.time() - timestamp < freshness:
+        if time.time() - timestamp < int(freshness):
             logger.info("Existing response fresh enough")
             # change _msg_id for output msg
             json_output = json.loads(output)
             json_output['_msg_id'] = task_message.get('task_id', None)
+            json_output['cached'] = True
             cache_output_queue = server_name + CACHE_OUTPUT_QUEUE_NAME
             logger.info("Uploading response data to servers queue")
             put_message_into_sqs(json_output, cache_output_queue)
+            send_status_back_to_server("Finished.", server_name)
         # Response exist but it's too old
         else:
             logger.info("Existing response not satisfy freshness")
