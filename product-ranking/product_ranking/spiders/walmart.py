@@ -14,7 +14,7 @@ from scrapy.log import ERROR, INFO
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
-                                   BuyerReviews, Price)
+                                   BuyerReviews, Price, MarketplaceSeller)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
 
@@ -134,6 +134,7 @@ class WalmartProductsSpider(BaseProductsSpider):
         return super(WalmartProductsSpider, self).start_requests()
 
     def parse_sponsored_links(self, response):
+        self.temp_spons_link = None
         if hasattr(response, "meta"):
             if response.status == 200:
                 self.sld['actual_url'] = response.url
@@ -260,6 +261,23 @@ class WalmartProductsSpider(BaseProductsSpider):
                 'brand',
                 (guess_brand_from_first_words(brand.strip()),)
             )
+
+        other_products = []
+        seller = response.xpath(
+            '//div[@class="product-seller"]/div/' \
+            'span[contains(@class, "primary-seller")]/b/text()'
+        ).extract()
+        if not seller:
+            seller_all = response.xpath(
+                '//div[@class="product-seller"]/div/' \
+                'span[contains(@class, "primary-seller")]/a'
+            )
+            seller = seller_all.xpath('b/text()').extract()
+        if seller:
+            product["marketplace"] = MarketplaceSeller(
+                seller=seller[0], other_products=other_products
+            )
+
         also_considered = self._build_related_products(
             response.url,
             response.css('.top-product-recommendations .tile-heading'),

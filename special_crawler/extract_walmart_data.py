@@ -239,7 +239,7 @@ class WalmartScraper(Scraper):
         # TODO: handle errors
         response_text = urllib.urlopen(request_url).read()
         tree = html.fromstring(response_text)
-        if tree.xpath("//div[@id='iframe-video-content']"):
+        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']"):
             self.has_video = True
             self.has_sellpoints_media = True
 
@@ -1322,7 +1322,7 @@ class WalmartScraper(Scraper):
             else:
                 return relative_url
 
-        images_carousel = self.tree_html.xpath("//div[starts-with(@class,'product-carousel-wrapper')]//a/@href")
+        images_carousel = self.tree_html.xpath("//div[contains(@class,'product-carousel-wrapper')]//a/@data-hero-image")
         if images_carousel:
             # fix relative urls
             images_carousel = map(_fix_relative_url, images_carousel)

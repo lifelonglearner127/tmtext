@@ -11,7 +11,8 @@ from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
+    MarketplaceSeller
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 
@@ -178,6 +179,49 @@ class AmazonProductsSpider(BaseProductsSpider):
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         self._get_price(response, product)
+
+        seller = None
+        other_products = None
+
+        seller = response.xpath(
+            '//div[@id="kindle-av-div"]/div[@class="buying"]/b/text() |'
+            '//div[@class="buying"]/b/text()'
+        ).extract()
+
+        if not seller:
+            seller_all = response.xpath('//div[@class="buying"]/b/a')#tr/td/
+            seller = seller_all.xpath('text()').extract()   
+            other_products = seller_all.xpath('@href').extract()
+        if not seller:
+            seller_all = response.xpath('//div[@id="merchant-info"]/a[1]')
+            other_products = seller_all.xpath('@href').extract()
+            seller = seller_all.xpath('text()').extract()
+        #seller in description as text
+        if not seller:
+            seller = response.xpath(
+                '//li[@id="sold-by-merchant"]/text()'
+            ).extract()
+            seller = ''.join(seller).strip()
+        #simple text seller
+        if not seller:
+            seller = response.xpath('//div[@id="merchant-info"]/text()').extract()
+            if seller:
+                seller = re.findall("sold by([^\.]*)", seller[0])
+        if not seller:
+            seller_all = response.xpath('//div[@id="usedbuyBox"]/div/div/a')
+            other_products = seller_all.xpath('@href').extract()
+            seller = seller_all.xpath('text()').extract()
+
+        if seller and isinstance(seller, list):
+            seller = seller[0].strip()
+        if other_products:
+            other_products = "www.amazon.com" + other_products[0]
+
+        if seller or other_products:
+            product["marketplace"] = MarketplaceSeller(
+                seller=seller, other_products=other_products
+            )
+        
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
             iframe_content = re.findall(
@@ -381,7 +425,9 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         if not buyer_reviews.get('rating_by_star'):
             buyer_rev_link = is_empty(response.xpath(
-                '//div[@id="revSum"]//a[contains(text(), "See all")]/@href'
+                '//div[@id="revSum"]//a[contains(text(), "See all")' \
+                ' or contains(text(), "See the customer review")' \
+                ' or contains(text(), "See both customer reviews")]/@href'
             ).extract())
             buyer_reviews['rating_by_star'] \
                 = self._calculate_buyer_reviews_from_percents(

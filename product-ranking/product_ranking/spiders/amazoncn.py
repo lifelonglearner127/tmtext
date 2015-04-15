@@ -11,7 +11,8 @@ from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
+    MarketplaceSeller
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
                                      cond_set_value, FormatterWithDefaults,
                                      FLOATING_POINT_RGEX)
@@ -168,6 +169,19 @@ class AmazonProductsSpider(BaseProductsSpider):
                     price=price.replace(' ', '').replace(',', '').strip(),
                     priceCurrency='CNY'
                 )
+
+        other_products = []
+        merchantId = response.xpath('//input[@id="merchantID"]/@value').extract()
+        if merchantId:
+            other_products = "www.amazon.cn/gp/help/seller/at-a-glance.html" \
+                "?seller=%s&isAmazonFulfilled=" % (merchantId[0],) 
+        seller = response.xpath(
+            '//div[@id="soldByThirdParty"]/b/text()').extract()
+        if seller:
+            product["marketplace"] = MarketplaceSeller(
+                seller=seller[0],
+                other_products=other_products
+            )
 
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
