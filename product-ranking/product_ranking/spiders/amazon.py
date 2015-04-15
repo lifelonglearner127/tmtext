@@ -184,7 +184,8 @@ class AmazonProductsSpider(BaseProductsSpider):
         other_products = None
 
         seller = response.xpath(
-            '//div[@id="kindle-av-div"]/div[@class="buying"]/b/text()'
+            '//div[@id="kindle-av-div"]/div[@class="buying"]/b/text() |'
+            '//div[@class="buying"]/b/text()'
         ).extract()
 
         if not seller:
