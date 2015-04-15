@@ -134,6 +134,7 @@ class WalmartProductsSpider(BaseProductsSpider):
         return super(WalmartProductsSpider, self).start_requests()
 
     def parse_sponsored_links(self, response):
+        self.temp_spons_link = None
         if hasattr(response, "meta"):
             if response.status == 200:
                 self.sld['actual_url'] = response.url
