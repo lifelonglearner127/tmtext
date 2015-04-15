@@ -147,4 +147,4 @@ if __name__ == '__main__':
                 print '  RECURSIVE BZIP DETECTED', m
             change_br_in_file(m)
 
-    os.system('sudo chmod 777 -R "%s"' % DIR)
+    os.system('sudo chmod 777 -R "%s"' % FIX_DOUBLE_BZIP_DIR)
