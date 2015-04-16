@@ -14,7 +14,7 @@ from scrapy import Request
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import SiteProductItem, \
-    Price, RelatedProduct, BuyerReviews
+    Price, RelatedProduct, BuyerReviews, MarketplaceSeller
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set_value, cond_set, FLOATING_POINT_RGEX
 
@@ -236,6 +236,16 @@ class TescoDirectProductsSpider(BaseProductsSpider):
             '//p[@class="current-price"]/text()').re(FLOATING_POINT_RGEX)
         if price:
             product["price"] = Price(price=price[0], priceCurrency="GBP")
+
+        title_marketplace = response.xpath(
+            '//div[@class="header-wrapper"]/span[@class="available-from"]/text()').extract()
+        if title_marketplace:
+            title_marketplace = re.findall("Available from (.*)", title_marketplace[0])
+            if title_marketplace:
+                product["marketplace"] = MarketplaceSeller(
+                    seller=title_marketplace[0],
+                    other_products=None
+                )
 
         desc = response.xpath(
             '//section[@id="product-details-link"]'
