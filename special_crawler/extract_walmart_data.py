@@ -593,32 +593,36 @@ class WalmartScraper(Scraper):
         """
 
         description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]"
-                                                    "/div[contains(@class, 'js-ellipsis')]")[0]
+                                                    "/div[contains(@class, 'js-ellipsis')]")
+
         short_description = ""
 
-        for description_element in description_elements:
-            if "<b>" in lxml.html.tostring(description_element):
-                break
+        if description_elements:
+            description_elements = description_elements[0]
 
-            if "<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element):
-                tree = html.fromstring(short_description)
-                innerText = tree.xpath("//text()")
+            for description_element in description_elements:
+                if "<b>" in lxml.html.tostring(description_element):
+                    break
 
-                if not innerText:
-                    short_description = ""
+                if "<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element):
+                    tree = html.fromstring(short_description)
+                    innerText = tree.xpath("//text()")
 
-                break
+                    if not innerText:
+                        short_description = ""
 
-            short_description += lxml.html.tostring(description_element)
+                    break
 
-        # try to extract from old page structure - in case walmart is
-        # returning an old type of page
-        if not short_description:
-            short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
+                short_description += lxml.html.tostring(description_element)
+        else:
+            # try to extract from old page structure - in case walmart is
+            # returning an old type of page
+            if not short_description:
+                short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
 
-        # if no short description, return the long description
-        if not short_description.strip():
-            return None
+            # if no short description, return the long description
+            if not short_description.strip():
+                return None
 
         return short_description.strip()
 
