@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 from product_ranking.items import RelatedProduct, valid_currency_codes
 from product_ranking.spiders import cond_set, cond_replace, cond_set_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
-from product_ranking.items import Price
+from product_ranking.items import Price, MarketplaceSeller
 
 
 SYM_USD = '$'
@@ -177,6 +177,22 @@ class EbayUkProductsSpider(ProductsSpider):
                  response.css('[itemprop=price]::text , '
                               '#mm-saleDscPrc::text').extract(),
                  self._unify_price)
+
+        seller = response.xpath(
+            '//div[@class="mbg"]/a/span/text()'
+        ).extract()
+
+        other_products = response.xpath(
+            '//div[@class="si-pd-a"]/a/@href'
+        ).extract()
+        if other_products:
+            other_products = other_products[0]
+        if seller:
+            seller = seller[0].strip()
+            product["marketplace"] = MarketplaceSeller(
+                seller=seller, other_products=other_products
+            )
+        
         cond_replace(product, 'image_url',
                      response.css('[itemprop=image]::attr(src)').extract())
         xpath = '//*[@id="vi-desc-maincntr"]/node()[normalize-space()]'
