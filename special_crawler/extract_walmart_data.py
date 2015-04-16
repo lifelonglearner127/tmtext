@@ -1660,7 +1660,7 @@ class WalmartScraper(Scraper):
             1/0 (owned/not owned)
         """
 
-        if self._in_stores_in_stock() or self._site_online_in_stock():
+        if not self._marketplace() or self._marketplace() == 0:
             return 1
 
         # assume new design
