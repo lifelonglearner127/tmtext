@@ -82,8 +82,8 @@ def compress_and_rename_old(fname):
         return  # compressed already
     if not is_plain_json_list(fname):
         return  # compressed already
-    if file_age_in_seconds(fname) < 2*86400:
-        return  # not old
+    #if file_age_in_seconds(fname) < 2*86400:
+    #    return  # not old
     os.system('bzip2 "%s"' % fname)
     os.rename(fname+'.bz2', fname)
     print '  File compressed:', fname
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     DIR = '/home/web_runner/virtual-environments/scrapyd/items/product_ranking/amazon_products/'
     BACKUP_DIR = '/home/ubuntu/amazon_products/'
     FIX_DOUBLE_BZIP_DIR = '/home/web_runner/virtual-environments/scrapyd/items/product_ranking/'
-    MIN_AGE = 86400
+    MIN_AGE = 0#86400
     MAX_AGE = 86400*15
 
     if not os.path.exists(BACKUP_DIR):
@@ -132,5 +132,6 @@ if __name__ == '__main__':
                 result1 = unbzip(m, m)
                 print '  RECURSIVE BZIP DETECTED', m
             change_br_in_file(m)
+        compress_and_rename_old(m)  
 
     os.system('sudo chmod 777 -R "%s"' % FIX_DOUBLE_BZIP_DIR)
