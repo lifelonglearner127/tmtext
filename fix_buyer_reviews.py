@@ -6,20 +6,6 @@ import time
 import stat
 
 
-def file_is_bzip2(fname):
-    """ Tests if the given file is bzipped """
-    if not os.path.exists(fname):
-        return
-    fh = bz2.BZ2File(fname)
-    try:
-        _ = fh.next()
-        fh.close()
-        return True
-    except Exception, e:
-        fh.close()
-        return False
-
-
 def is_plain_json_list(fname):
     with open(fname, 'r') as fh:
         cont = fh.read(1024)
@@ -83,7 +69,7 @@ def file_age_in_seconds(pathname):
 
 
 def fix_double_bzip_in_file(fname):
-    if file_is_bzip2(fname):
+    if not is_plain_json_list(fname):
         print 'File [%s] compressed, decompressing...' % fname
         result1 = unbzip(fname, fname)
         while result1:
@@ -92,7 +78,7 @@ def fix_double_bzip_in_file(fname):
 
 
 def compress_and_rename_old(fname):
-    if file_is_bzip2(fname):
+    if not is_plain_json_list(fname):
         return  # compressed already
     if not is_plain_json_list(fname):
         return  # compressed already
@@ -139,7 +125,7 @@ if __name__ == '__main__':
 
     print 'Found %i files totally' % len(matches)
     for m in matches:
-        if file_is_bzip2(m):
+        if not is_plain_json_list(m):
             print 'File [%s] compressed, decompressing...' % m
             result1 = unbzip(m, m)
             while result1:
