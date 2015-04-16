@@ -4,7 +4,8 @@ import string
 
 from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price
+from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
+    MarketplaceSeller
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value, \
     cond_replace_value, cond_replace
@@ -57,6 +58,18 @@ class BolProductsSpider(BaseProductsSpider):
         )
 
         cond_set(product, 'locale', response.xpath("//html/@lang").extract())
+
+        seller = response.xpath(
+            '//p[@class="bottom_xs"]/strong/text()'
+        ).extract()
+        if not seller:
+            seller = response.xpath(
+                '//div[@class="ratinglabel_text"]/a/text() |'
+                '//div[contains(@class, "seller_popup_wrapper")]/a/text()'
+            ).extract()
+        if seller:
+            seller = seller[0].strip()
+            product["marketplace"] = MarketplaceSeller(seller=seller, other_products=None)
 
         rel = response.xpath(
             "//div[contains(@class,'tst_inview_box')]/div"
