@@ -1064,7 +1064,8 @@ class WalmartScraper(Scraper):
         # remove Walmart key as we already checked for it
         if 'Walmart.com' in sellers.keys():
             del sellers['Walmart.com']
-        seller_info['marketplace'] = 1 if (len(sellers.keys()) > 0 and any(sellers.values())) else 0
+        # seller_info['marketplace'] = 1 if (len(sellers.keys()) > 0 and any(sellers.values())) else 0
+        seller_info['marketplace'] = 1 if len(sellers.keys()) > 0 else 0
 
         return seller_info
 
@@ -1652,8 +1653,8 @@ class WalmartScraper(Scraper):
             1/0 (owned/not owned)
         """
 
-        if self._in_stores:
-            return 1
+        # if self._in_stores:
+        #     return 1
 
         # assume new design
         # _owned_from_script() may throw exception if extraction fails
