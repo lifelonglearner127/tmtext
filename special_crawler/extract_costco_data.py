@@ -86,9 +86,7 @@ class CostcoScraper(Scraper):
 
 
     def _model(self):
-        if self.prod_help==None:
-            self.prod_help = self._product_helper()
-        return self.prod_help.get('product_model',None)
+        return None
 
 
     def _features(self):
@@ -110,6 +108,9 @@ class CostcoScraper(Scraper):
 
 
     def _description(self):
+        short_description = " ".join(self.tree_html.xpath('//div[@class="tireDetails"]//text()[normalize-space()]')).strip()
+        if short_description != None and  short_description != "":
+            return  self._clean_text(short_description)
         short_description = " ".join(self.tree_html.xpath('//div[@class="features"]//text()[normalize-space()]')).strip()
         if short_description != None and  short_description != "":
             return  self._clean_text(short_description)
@@ -121,6 +122,9 @@ class CostcoScraper(Scraper):
         if long_description != None and  long_description != "":
             return  self._clean_text(long_description)
         long_description =  " ".join(self.tree_html.xpath('//div[@id="product-tab1"]//text()[normalize-space()]')).strip()
+        if long_description != None and  long_description != "":
+            return  self._clean_text(long_description)
+        long_description =  " ".join(self.tree_html.xpath('//div[@class="TireLandDesc"]//text()[normalize-space()]')).strip()
         if long_description != None and  long_description != "":
             return  self._clean_text(long_description)
         return None
@@ -173,54 +177,21 @@ class CostcoScraper(Scraper):
                 return self.image_urls
             a = 1
             tree = self.tree_html
-        img_link = tree.xpath('//script[contains(@src,"costco-static.com")]/@src')[0]
-        imgs = requests.get(img_link).text
-        img_url = re.findall(r"image\:(.+?)\,+?",imgs)
-        img_url = ["http://images.costco-static.com/image/media/"+b.replace("'","").strip()+".jpg" for b in img_url]
+        img_link = tree.xpath('//script[contains(@src,"costco-static.com")]/@src')
+        if len(img_link) > 0:
+            imgs = requests.get(img_link[0]).text
+            img_url = re.findall(r"image\:(.+?)\,+?",imgs)
+            img_url = ["http://images.costco-static.com/image/media/"+b.replace("'","").strip()+".jpg" for b in img_url]
+            if len(img_url) > 0:
+                self.image_urls = img_url
+                return img_url
+        img_url = tree.xpath('//div[@class="seasonTire"]//img/@src')
         if len(img_url) > 0:
             self.image_urls = img_url
             return img_url
         if a == 1:
             self.image_urls = None
         return None
-
-
-    def _image_helper(self, tree):
-        res = {}
-        try:
-            all_scripts = tree.xpath('//script[@type="text/javascript"]//text()')
-            for s in all_scripts:
-                st = s.find('imgGalleryConfig.BaseUrlForS7')
-                if st >= 0:
-                    st = s.find('"',st)
-                    if st > 0:
-                        ft =s.find('";',st+1)
-                        if ft > st:
-                            res["BaseUrlForS7"] = s[st+1:ft]
-
-                st = s.find('imgGalleryConfig.SmallImageUrl')
-                if st >= 0:
-                    st = s.find('"',st)
-                    if st > 0:
-                        ft =s.find('";',st+1)
-                        if ft > st:
-                            res["SmallImageUrl"] = s[st+1:ft]
-                st = s.find('var imgGalleryConfig')
-                if st >= 0:
-                    st = s.find('imgGalleryConfig.Items',st)
-                    if st >= 0:
-                        st = s.find('[{',st)
-                        if st >= 0:
-                            ft = s.find('}];',st)
-                            if ft > st:
-                                itm = s[st:ft+2]
-                                items = json.loads(itm)
-                                res['Items'] = items
-                                return res
-                                break
-        except Exception as ex:
-            print ex
-        return res
 
 
     def _mobile_image_url(self, tree = None):
@@ -351,58 +322,6 @@ class CostcoScraper(Scraper):
     ################ CONTAINER : SELLERS
     ##########################################
 
-    # extract product information from javascript
-    def _product_helper(self):
-        res = {}
-        try:
-            all_scripts = self.tree_html.xpath('//script[@type="text/javascript"]//text()')
-            for s in all_scripts:
-                st = s.find('scp.sellerName')
-                if st > 0:
-                    st = s.find('"',st)
-                    if st > 0:
-                        st +=1
-                        ft = s.find('"',st)
-                        if ft > st:
-                            res['seller'] = s[st:ft]
-                st = s.find('var utag_data = {')
-                if st >= 0:
-                    price = self._get_param(s,'product_sale_price:',st)
-                    price_currency = self._get_param(s,'site_currency:',st,False)
-                    res['category'] = self._get_param(s,'product_category_name',st)
-                    res['subcategory'] = self._get_param(s,'product_subcategory_name',st)
-                    res['product_id'] = self._get_param(s,'product_id',st)
-                    res['product_web_id'] = self._get_param(s,'product_web_id',st)
-                    res['product_title'] = self._get_param(s,'product_title',st)
-                    res['product_manufacture'] = self._get_param(s,'product_manufacture',st)
-                    res['product_model'] = self._get_param(s,'product_model',st)
-                    res['product_instock'] = self._get_param(s,'product_instock',st)
-                    res['page_name'] = self._get_param(s,'page_name',st,False)
-                    res['page_type'] = self._get_param(s,'page_type',False)
-                    res['price_amount'] = self._tofloat(price)
-                    res['price_currency'] = price_currency
-                    res['price'] = price
-                    break
-        except Exception as ex:
-            print ex
-        return res
-
-
-    def _get_param(self,s,param,st,inlist=True):
-        #get a parameter from a string in javascript
-        bt = s.find(param,st)
-        res = ""
-        if bt >= 0:
-            if inlist:
-                bt = s.find("['",bt) + 2
-                ft = s.find("']",bt)
-            else:
-                bt = s.find("'",bt) + 1
-                ft = s.find("'",bt)
-            if ft > bt:
-                res = s[bt:ft]
-        return res
-
     # extract product price
     def _price(self):
         pr = self.tree_html.xpath('//div[@class="your-price"]//span[@class="currency"]//text()')
@@ -429,8 +348,8 @@ class CostcoScraper(Scraper):
         return curr
 
 
-    def _in_stores_only(self):
-        return None
+##    def _in_stores_only(self):
+##        return None
 
     def _in_stores(self):
         return 0
@@ -440,36 +359,19 @@ class CostcoScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        if self.prod_help==None:
-            self.prod_help = self._product_helper()
-        if self._marketplace() == 1: return None
-        in_stock = self.prod_help.get('product_instock','')
-        if in_stock == '0' : return 1
         return 0
 
     def _marketplace(self):
-        if self.prod_help==None:
-            self.prod_help = self._product_helper()
-        seller = self.prod_help.get('seller','')
-        if len(seller) > 0 : return 1
         return 0
 
 
     def _marketplace_sellers(self):
-        if self.prod_help==None:
-            self.prod_help = self._product_helper()
-        seller = self.prod_help.get('seller','')
-        if seller != "":
-            return seller.split(',')
-        return None
+         return None
 
     def _marketplace_lowest_price(self):
         return None
 
     def _marketplace_out_of_stock(self):
-        if self._marketplace() == 0: return None
-        in_stock = self.prod_help.get('product_instock','')
-        if in_stock == '0' : return 1
         return 0
 
 
@@ -570,7 +472,6 @@ class CostcoScraper(Scraper):
         "price" : _price, \
         "price_amount": _price_amount, \
         "price_currency": _price_currency, \
-         "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
         "marketplace" : _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
