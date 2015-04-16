@@ -15,6 +15,7 @@ sys.path.insert(2, os.path.join(CWD, '..', '..', 'special_crawler',
 from sqs_connect import SQS_Queue
 
 from cache_starter import log_settings
+from simmetrica_class import Simmetrica
 
 CACHE_TASKS_SQS = 'cache_sqs_ranking_spiders_tasks' # received_requests
 CACHE_OUTPUT_QUEUE_NAME = 'cache_sqs_ranking_spiders_output'
@@ -26,6 +27,7 @@ SPIDERS_OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
 
 # we will redefine it's in set_logger function after task will be received
 logger = None
+simmetrica = Simmetrica()
 
 def connect_to_redis_database():
     # db = redis.StrictRedis(
@@ -266,6 +268,8 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
         logger.info("Uploading response data to server queue")
         put_message_into_sqs(output, cache_output_queue)
         send_status_back_to_server("Finished.", server_name)
+        simmetrica.set_time_of_newest_resp()
+        simmetrica.set_time_of_oldest_resp()
         
     logger.info("Update requests database entry with blank requests list")
     requests = pickle.dumps(requests)
@@ -299,6 +303,7 @@ def main(queue_name):
     status = "Ok. Task was received."
     server_name = task_message['server_name']
     send_status_back_to_server(status, server_name)
+    simmetrica.increment_received_req_set()
 
     logger.info("Generate task stamp for task")
     task_stamp = generate_task_stamp(task_message)
@@ -321,6 +326,7 @@ def main(queue_name):
             logger.info("Uploading response data to servers queue")
             put_message_into_sqs(json_output, cache_output_queue)
             send_status_back_to_server("Finished.", server_name)
+            simmetrica.increment_returned_resp_set(task_stamp)
         # Response exist but it's too old
         else:
             logger.info("Existing response not satisfy freshness")
