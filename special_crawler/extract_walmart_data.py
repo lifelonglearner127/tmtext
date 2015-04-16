@@ -593,32 +593,36 @@ class WalmartScraper(Scraper):
         """
 
         description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]"
-                                                    "/div[contains(@class, 'js-ellipsis')]")[0]
+                                                    "/div[contains(@class, 'js-ellipsis')]")
+
         short_description = ""
 
-        for description_element in description_elements:
-            if "<b>" in lxml.html.tostring(description_element):
-                break
+        if description_elements:
+            description_elements = description_elements[0]
 
-            if "<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element):
-                tree = html.fromstring(short_description)
-                innerText = tree.xpath("//text()")
+            for description_element in description_elements:
+                if "<b>" in lxml.html.tostring(description_element):
+                    break
 
-                if not innerText:
-                    short_description = ""
+                if "<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element):
+                    tree = html.fromstring(short_description)
+                    innerText = tree.xpath("//text()")
 
-                break
+                    if not innerText:
+                        short_description = ""
 
-            short_description += lxml.html.tostring(description_element)
+                    break
 
-        # try to extract from old page structure - in case walmart is
-        # returning an old type of page
-        if not short_description:
-            short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
+                short_description += lxml.html.tostring(description_element)
+        else:
+            # try to extract from old page structure - in case walmart is
+            # returning an old type of page
+            if not short_description:
+                short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
 
-        # if no short description, return the long description
-        if not short_description.strip():
-            return None
+            # if no short description, return the long description
+            if not short_description.strip():
+                return None
 
         return short_description.strip()
 
@@ -649,12 +653,15 @@ class WalmartScraper(Scraper):
         Returns:
             string containing the text content of the product's description, or None
         """
+        long_description_elements = self.tree_html.xpath("//div[@itemprop='description']/div")[1]
+        full_description = ""
 
-        # select text in nodes under @itemprop='description' that don't have an ancestor @class='ql-details-short-desc' (that's where short description is)
-        full_description = " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()[not(ancestor::*[@class='ql-details-short-desc'])]")).strip()
-        # return None if empty
+        for description_element in long_description_elements:
+            full_description += lxml.html.tostring(description_element)
+
         if not full_description:
             return None
+
         return full_description
 
     # ! may throw exception if not found
@@ -1064,7 +1071,8 @@ class WalmartScraper(Scraper):
         # remove Walmart key as we already checked for it
         if 'Walmart.com' in sellers.keys():
             del sellers['Walmart.com']
-        seller_info['marketplace'] = 1 if (len(sellers.keys()) > 0 and any(sellers.values())) else 0
+        # seller_info['marketplace'] = 1 if (len(sellers.keys()) > 0 and any(sellers.values())) else 0
+        seller_info['marketplace'] = 1 if len(sellers.keys()) > 0 else 0
 
         return seller_info
 
@@ -1652,8 +1660,8 @@ class WalmartScraper(Scraper):
             1/0 (owned/not owned)
         """
 
-        if self._in_stores:
-            return 1
+        # if self._in_stores:
+        #     return 1
 
         # assume new design
         # _owned_from_script() may throw exception if extraction fails
