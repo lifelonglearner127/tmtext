@@ -272,7 +272,12 @@ class TescoDirectProductsSpider(BaseProductsSpider):
         l = "&l=1"
         chi = re.findall("addCategoryHintId\(\'(.*)\'", response.body)
         if chi:
-            chi = "&chi=|" + chi[0] 
+            chi = "&chi=|" + chi[0]
+        else:
+            chi = response.xpath(
+                '//meta[contains(@name, "parent_category")]/@content').extract()
+            chi = "&chi=|" + chi[0] if chi else ""
+
         resc_url = resc_url + apiKey + pt + l + chi
         ajax = urllib2.urlopen(resc_url)
         resp = ajax.read()
