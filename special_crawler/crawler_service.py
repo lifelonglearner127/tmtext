@@ -87,7 +87,7 @@ SUPPORTED_SITES = {
                     "bloomingdales" : BloomingdalesScraper,
                     "macys" : MacysScraper,
                     "newegg": NeweggScraper,
-                   "costco": CostcoScraper,
+                    "costco": CostcoScraper,
                     }
 
 # add logger
