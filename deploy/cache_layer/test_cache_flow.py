@@ -116,8 +116,10 @@ class TestSQSCache(unittest.TestCase):
             'Redirect request to spiders sqs.',
         ]
         status = self.check_status(queue_name)
+        print ("Rcvd status: '%s'" % status)
         self.assertTrue(status in status_list)
         status2 = self.check_status(queue_name)
+        print ("Rcvd status: '%s'" % status2)
         self.assertTrue(status2 in status_list)
 
         # response not exist, request exist and fresh enough
@@ -133,12 +135,14 @@ class TestSQSCache(unittest.TestCase):
             'Wait for request from other instance.',
         ]
         status = self.check_status(second_server_q)
+        print ("Rcvd status: '%s'" % status)
         self.assertTrue(status in status_list_for_second_server)
         status2 = self.check_status(second_server_q)
+        print ("Rcvd status: '%s'" % status2)
         self.assertTrue(status2 in status_list_for_second_server)
 
         print("Now wait until scrapy_daemon/cache will finish their work")
-        print("It may take about 15-20 minutes")
+        print("It may take about 20-30 minutes")
         while True:
             status = self.check_status(queue_name)
             if status:
@@ -156,8 +160,10 @@ class TestSQSCache(unittest.TestCase):
             'Finished.',
         ]
         status = self.check_status(queue_name)
+        print ("Rcvd status: '%s'" % status)
         self.assertTrue(status in status_list)
         status2 = self.check_status(queue_name)
+        print ("Rcvd status: '%s'" % status2)
         self.assertTrue(status2 in status_list)
 
         self.check_cache_results(msg, cached=True)
@@ -178,14 +184,18 @@ class TestSQSCache(unittest.TestCase):
         print("Now send task to cache.")
         self.provide_msg_to_queue(msg, self.cache_task_queue)
         queue_name = msg['server_name'] + self.cache_progress_queue
-        self.assertEqual(self.check_status(queue_name),
-                         'Ok. Task was received.')
-        status = self.check_status(queue_name)
-        self.assertTrue('was sent more than 1 hour ago' in status)
-        self.assertEqual(self.check_status(queue_name),
-                         'Redirect request to spiders sqs.')
+        status_list = [
+            'Ok. Task was received.',
+            'Request for this task was found but '\
+            'it was sent more than 1 hour ago.',
+            'Redirect request to spiders sqs.',
+        ]
+        for i in range(3):
+            status = self.check_status(queue_name)
+            print ("Rcvd status: '%s'" % status)
+            self.assertTrue(status in status_list)
         print("Now wait until scrapy_daemon/cache will finish their work")
-        print("It may take about 15-20 minutes")
+        print("It may take about 20-30 minutes")
         while True:
             status = self.check_status(queue_name)
             if status:
@@ -211,12 +221,14 @@ class TestSQSCache(unittest.TestCase):
             'Redirect request to spiders sqs.',
         ]
         status = self.check_status(queue_name)
+        print ("Rcvd status: '%s'" % status)
         self.assertTrue(status in status_list)
         status2 = self.check_status(queue_name)
+        print ("Rcvd status: '%s'" % status2)
         self.assertTrue(status2 in status_list)
 
         print("Now wait until scrapy_daemon/cache will finish their work")
-        print("It may take about 15-20 minutes")
+        print("It may take about 20-30 minutes")
         while True:
             status = self.check_status(queue_name)
             if status:
@@ -240,11 +252,12 @@ class TestSQSCache(unittest.TestCase):
             name2+sqs_cache.CACHE_PROGRESS_QUEUE,
         ]
         for name in names:
-            print name
             try:
                 q = cls.sqs_conn.get_queue(name)
                 q.delete()
-            except:
+                print("'%s' queue was deleted." % name)
+            except Exception as e:
+                print(e)
                 pass
 
 
