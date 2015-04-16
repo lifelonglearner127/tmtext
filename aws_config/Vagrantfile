@@ -41,7 +41,7 @@ Vagrant.configure("2") do |config|
       aws.ami = "ami-a73264ce"
 
       override.ssh.username = "ubuntu"
-      override.ssh.private_key_path = "/home/ana/.ssh/Ana.pem"
+      override.ssh.private_key_path = ENV["HOME"] + "/.ssh/Ana.pem"
     end
 
   config.vm.define :node1 do |n1|

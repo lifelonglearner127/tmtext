@@ -1,9 +1,9 @@
 #!/bin/bash
 
-INPUT="clorox_autit_products"
-SITE="target"
+INPUT="walmart_laptops"
+SITE="bestbuy"
 
 for node in "$@"
 do
-vagrant ssh  node$node -c "screen -dm /bin/bash /home/ubuntu/tmtext/aws_config/run_crawler.sh $node $INPUT $SITE; sleep 5";
+vagrant ssh  node$node -c "screen -dm /bin/bash /home/ubuntu/shared_sshfs/run_crawler.sh $node $INPUT $SITE; sleep 5";
 done
