@@ -7,6 +7,8 @@ import stat
 
 
 def is_plain_json_list(fname):
+    if not os.path.exists(fname):
+        return -1
     with open(fname, 'r') as fh:
         cont = fh.read(1024)
     cont = cont.strip()
@@ -31,7 +33,10 @@ def change_buyer_reviews(line):
     line = line.strip()
     if not 'average_rating' in line:
         return line  # nothing to fix
-    line = json.loads(line)
+    try:
+        line = json.loads(line)
+    except:
+        return
     br = line.get('buyer_reviews', '')
     if not br:
         return line  # nothing no fix
@@ -43,8 +48,11 @@ def change_buyer_reviews(line):
 
 
 def validate_2_lines(line1, line2):
-    line1 = json.loads(line1)
-    line2 = json.loads(line2)
+    try:
+        line1 = json.loads(line1)
+        line2 = json.loads(line2)
+    except:
+        return
     line1.pop('buyer_reviews')
     line2.pop('buyer_reviews')
     return line1 == line2
@@ -55,10 +63,12 @@ def change_br_in_file(fname):
         lines = fh.readlines()
     lines_replaced = [change_buyer_reviews(line) for line in lines]
     if len(lines_replaced) != len(lines):
-        assert False, 'arrays length mismatch!'
+        print 'arrays length mismatch!'
+        return
     for i in range(len(lines)):
         if not validate_2_lines(lines[i], lines_replaced[i]):
-            assert False, 'lines mismatch'
+            print 'lines mismatch'
+            return
     with open(fname, 'w') as fh:
         for line in lines_replaced:
             fh.write(line.strip()+'\n')
@@ -72,12 +82,17 @@ def fix_double_bzip_in_file(fname):
     if not is_plain_json_list(fname):
         print 'File [%s] compressed, decompressing...' % fname
         result1 = unbzip(fname, fname)
+        iters = 0
         while result1:
             result1 = unbzip(fname, fname)
-            print '  RECURSIVE BZIP DETECTED', fname
+            iters += 1
+            if iters > 1:
+                print '  RECURSIVE BZIP DETECTED', fname
 
 
 def compress_and_rename_old(fname):
+    if is_plain_json_list(fname) == -1:
+        return  # file does not exists?
     if not is_plain_json_list(fname):
         return  # compressed already
     if not is_plain_json_list(fname):
@@ -110,6 +125,8 @@ if __name__ == '__main__':
     MIN_AGE = 0#86400
     MAX_AGE = 86400*15
 
+    os.system('sudo chmod 777 -R "%s"' % FIX_DOUBLE_BZIP_DIR)
+
     if not os.path.exists(BACKUP_DIR):
         os.makedirs(BACKUP_DIR)
         cmd = 'cp %s* %s' % (DIR, BACKUP_DIR)
@@ -126,12 +143,12 @@ if __name__ == '__main__':
     print 'Found %i files totally' % len(matches)
     for m in matches:
         if not is_plain_json_list(m):
+            if is_plain_json_list(m) == -1:
+                continue
             print 'File [%s] compressed, decompressing...' % m
             result1 = unbzip(m, m)
             while result1:
                 result1 = unbzip(m, m)
                 print '  RECURSIVE BZIP DETECTED', m
             change_br_in_file(m)
-        compress_and_rename_old(m)  
-
-    os.system('sudo chmod 777 -R "%s"' % FIX_DOUBLE_BZIP_DIR)
+        compress_and_rename_old(m)
