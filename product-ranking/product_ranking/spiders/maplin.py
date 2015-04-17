@@ -1,18 +1,14 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
-import urllib
-import urlparse
-
-from scrapy.log import ERROR
-from scrapy.selector import Selector
 
 from scrapy.http import Request
+
 from product_ranking.items import SiteProductItem, Price, BuyerReviews,\
     RelatedProduct, LimitedStock
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FormatterWithDefaults
+    FormatterWithDefaults, cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 
@@ -54,6 +50,8 @@ class GandermountainProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         reviewed = response.meta.get('reviewed')
+        prod = response.meta['product']
+
         # if there was no any request for item review try to send it
         if not reviewed:
             revs_a = response.xpath(
@@ -73,8 +71,8 @@ class GandermountainProductsSpider(BaseProductsSpider):
                 meta['initial_response'] = response
                 return Request(rev_url, callback=self.populate_reviews,
                                meta=meta)
-
-        prod = response.meta['product']
+            else:
+                cond_set_value(prod, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         title = response.xpath(
             '//div[@class="product-summary"]/h1/text()'
         ).extract()
@@ -155,7 +153,10 @@ class GandermountainProductsSpider(BaseProductsSpider):
             quantity = all_revs.count(pattern)
             stars[number] = quantity
 
-        product['buyer_reviews'] = BuyerReviews(total, avg, stars)
+        if total:
+            product['buyer_reviews'] = BuyerReviews(total, avg, stars)
+        else:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
 
         initial_response = response.meta['initial_response']
         initial_response.meta['reviewed'] = True
