@@ -533,7 +533,7 @@ class Scraper():
 
         # extract site_online_in_stock and stores_in_stock
         # owned will be 1 if any of these is 1
-        return (self.ALL_DATA_TYPES['site_online_in_stock'](self) or self.ALL_DATA_TYPES['in_stores_in_stock'](self))
+        return (self.ALL_DATA_TYPES['site_online'](self) or self.ALL_DATA_TYPES['in_stores'](self))
 
 
     def _owned_out_of_stock(self):
