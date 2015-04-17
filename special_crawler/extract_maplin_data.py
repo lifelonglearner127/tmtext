@@ -25,6 +25,12 @@ class MaplinScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.maplin.co.uk/p/<product-id>"
 
+    max_score = None
+    min_score = None
+    review_count = 0
+    average_review = None
+    reviews = None
+
     def check_url_format(self):
         #for ex: http://www.maplin.co.uk/p/black-heated-socks-1-pair-n57ds
         m = re.match(r"^http://www\.maplin\.co\.uk/p/([a-zA-Z0-9\-]+)?$", self.product_page_url)
@@ -87,15 +93,30 @@ class MaplinScraper(Scraper):
     def _model_meta(self):
         return None
 
-    def _description(self):
-        description = "\n".join(self.tree_html.xpath("//div[@class='product-summary']//ul[1]//li//text()")).strip()
+    def _description_helper(self):
+        description = "\n".join(self.tree_html.xpath("(//div[@class='product-summary']//ul)[2]//li//text()")).strip()
         return description
 
-    def _long_description(self):
+    def _description(self):
+        description = self._description_helper()
+        if len(description) < 1:
+            return self._long_description_helper()
+        return description
+
+    def _long_description_helper(self):
         long_description = "\n".join(self.tree_html.xpath("//div[@class='productDescription']//text()")).strip()
         script = "\n".join(self.tree_html.xpath("//div[@class='productDescription']//script//text()")).strip()
+        h4_txt = "\n".join(self.tree_html.xpath("//div[@id='tab_overview']//h4//text()")).strip()
         long_description = long_description.replace(script, "")
+        if len(h4_txt) > 0:
+            long_description = h4_txt + "\n" + long_description
         return long_description
+
+    def _long_description(self):
+        description = self._description_helper()
+        if len(description) < 1:
+            return None
+        return self._long_description_helper()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -160,23 +181,75 @@ class MaplinScraper(Scraper):
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
+    def _load_reviews(self):
+        try:
+            if not self.max_score or not self.min_score:
+                # for ex: http://samsclub.ugc.bazaarvoice.com/1337/prod12250457/reviews.djs?format=embeddedhtml
+                url = "http://api.bazaarvoice.com/data/batch.json?passkey=p8bkgbkwhg9r9mcerwvg75ebc&apiversion=5.5" \
+                      "&displaycode=19113-en_gb&resource.q0=products&filter.q0=id%3Aeq%3A"
+                url = url + self.tree_html.xpath("//input[@name='productCodePost']//@value")[0].strip()
+                url = url + "&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews" \
+                            "&filter_questions.q0=contentlocale%3Aeq%3Aen_GB%2Cen_US" \
+                            "&filter_answers.q0=contentlocale%3Aeq%3Aen_GB%2Cen_US" \
+                            "&filter_reviews.q0=contentlocale%3Aeq%3Aen_GB%2Cen_US" \
+                            "&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_GB%2Cen_US"
+                contents = urllib.urlopen(url).read()
+                jsn = json.loads(contents)
+                jsn = jsn["BatchedResults"]
+                jsn = jsn["q0"]["Results"][0]["FilteredReviewStatistics"]
+                self.review_count = int(jsn["TotalReviewCount"])
+                self.reviews = []
+                for item in jsn["RatingDistribution"]:
+                    try:
+                        score = item['RatingValue']
+                        score_cnt = item['Count']
+                        self.reviews.append([int(score), int(score_cnt)])
+                    except:
+                        pass
+                reviews = self.reviews
+                for idx in range(1,6,1):
+                    flag = False
+                    for k, v in reviews:
+                        if k == idx:
+                            flag = True
+                            break
+                    if flag == False:
+                        self.reviews.insert(idx-1, [idx, 0])
+
+                for k, v in reversed(self.reviews):
+                    if int(v) > 0:
+                        self.max_score = k
+                        break
+
+                for k, v in self.reviews:
+                    if int(v) > 0:
+                        self.min_score = k
+                        break
+                self.average_review = float(jsn["AverageOverallRating"])
+        except:
+            pass
+
     def _average_review(self):
-        average_review = self.tree_html.xpath("//span[@itemprop='ratingValue']//text()")[0].strip()
-        return average_review
+        self._load_reviews()
+        return "%.2f" % self.average_review
 
     def _review_count(self):
-        try:
-            review_count = self.tree_html.xpath("//span[@itemprop='ratingCount']//text()")[0].strip()
-            return review_count
-        except IndexError:
-            return 0
+        self._load_reviews()
+        return self.review_count
 
     def _max_review(self):
-        average_review = self.tree_html.xpath("//span[@itemprop='bestRating']//text()")[0].strip()
-        return average_review
+        self._load_reviews()
+        return self.max_score
 
     def _min_review(self):
-        return None
+        self._load_reviews()
+        return self.min_score
+
+    def _reviews(self):
+        self._load_reviews()
+        if len(self.reviews) < 1:
+            return None
+        return self.reviews
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -353,12 +426,6 @@ class MaplinScraper(Scraper):
         "pdf_count" : _pdf_count, \
         "mobile_image_same" : _mobile_image_same, \
 
-        # CONTAINER : REVIEWS
-        "average_review" : _average_review, \
-        "review_count" : _review_count, \
-        "max_review" : _max_review, \
-        "min_review" : _min_review, \
-
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \
@@ -384,5 +451,12 @@ class MaplinScraper(Scraper):
     DATA_TYPES_SPECIAL = { \
         # CONTAINER : CLASSIFICATION
         "brand" : _brand, \
+
+        # CONTAINER : REVIEWS
+        "average_review" : _average_review, \
+        "review_count" : _review_count, \
+        "max_review" : _max_review, \
+        "min_review" : _min_review, \
+        "reviews" : _reviews, \
     }
 
