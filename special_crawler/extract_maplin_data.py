@@ -93,15 +93,30 @@ class MaplinScraper(Scraper):
     def _model_meta(self):
         return None
 
-    def _description(self):
-        description = "\n".join(self.tree_html.xpath("//div[@class='product-summary']//ul[1]//li//text()")).strip()
+    def _description_helper(self):
+        description = "\n".join(self.tree_html.xpath("(//div[@class='product-summary']//ul)[2]//li//text()")).strip()
         return description
 
-    def _long_description(self):
+    def _description(self):
+        description = self._description_helper()
+        if len(description) < 1:
+            return self._long_description_helper()
+        return description
+
+    def _long_description_helper(self):
         long_description = "\n".join(self.tree_html.xpath("//div[@class='productDescription']//text()")).strip()
         script = "\n".join(self.tree_html.xpath("//div[@class='productDescription']//script//text()")).strip()
+        h4_txt = "\n".join(self.tree_html.xpath("//div[@id='tab_overview']//h4//text()")).strip()
         long_description = long_description.replace(script, "")
+        if len(h4_txt) > 0:
+            long_description = h4_txt + "\n" + long_description
         return long_description
+
+    def _long_description(self):
+        description = self._description_helper()
+        if len(description) < 1:
+            return None
+        return self._long_description_helper()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
