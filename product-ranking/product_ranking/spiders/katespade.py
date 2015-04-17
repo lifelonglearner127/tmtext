@@ -1,18 +1,20 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import json
 import re
 import string
 import urlparse
 
-from product_ranking.items import Price
-from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.http import Request
 from scrapy.log import DEBUG
 from scrapy.selector import Selector
+
+from product_ranking.items import Price
+from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
+from product_ranking.spiders import cond_set, cond_set_value
+
 
 LEVEL_MAX = 4       # Max deep of upc lookup
 
@@ -137,6 +139,8 @@ class KatespadeProductsSpider(BaseProductsSpider):
             buyer_reviews = self._extract_ratings(sel)
             if buyer_reviews:
                 cond_set_value(product, 'buyer_reviews', buyer_reviews)
+            else:
+                cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         return self._product_or_upcreq(response)
 
     def _extract_upc_callback(self, response):
@@ -211,6 +215,8 @@ class KatespadeProductsSpider(BaseProductsSpider):
                     except ValueError:
                         return
                     ratings[label] = hcount
+        if not rcount:
+            return ZERO_REVIEWS_VALUE
         return BuyerReviews(
             num_of_reviews=rcount,
             average_rating=avrg,
