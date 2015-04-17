@@ -15,8 +15,9 @@ from scrapy import Request
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import SiteProductItem, \
     Price, RelatedProduct, BuyerReviews, MarketplaceSeller
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, \
-    cond_set_value, cond_set, FLOATING_POINT_RGEX
+    cond_set, FLOATING_POINT_RGEX
 
 is_empty = lambda x: x[0] if x else None
 
@@ -379,6 +380,8 @@ class TescoDirectProductsSpider(BaseProductsSpider):
                     num_of_reviews=num_of_reviews,
                     rating_by_star=rating_by_star,
                 )
+            else:
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
 
         product["locale"] = "en_GB"
 
