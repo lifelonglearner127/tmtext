@@ -161,6 +161,7 @@ class SouqProductsSpider(BaseProductsSpider):
         total = is_empty(response.xpath(
             '//span[contains(@class, "listing-page-text")]/text()'
         ).re(FLOATING_POINT_RGEX))
+        self.total = int(total) or 0
         if total:
             return int(total)
         self.log("No products found.", INFO)
@@ -182,4 +183,6 @@ class SouqProductsSpider(BaseProductsSpider):
             url = re.sub("page=(\d+)", "", url) + "page=" + str(self.counter)
         else:
             url += "&page=2"
-        return url
+        if self.total / 15 + 1 > self.counter:
+            return url
+        return None
