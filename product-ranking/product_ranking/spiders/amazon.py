@@ -15,8 +15,8 @@ from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     MarketplaceSeller
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
-
 from product_ranking.amazon_bestsellers import amazon_parse_department
+
 
 is_empty = lambda x: x[0] if x else None
 
@@ -407,7 +407,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 '/div[contains(@class, "acrCount")])'
             ).re(FLOATING_POINT_RGEX)
             if not total:
-                return
+                return 0
         buyer_reviews['num_of_reviews'] = int(total[0].replace(',', ''))
 
         average = response.xpath(
