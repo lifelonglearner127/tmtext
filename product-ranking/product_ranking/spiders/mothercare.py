@@ -6,6 +6,7 @@ from urlparse import urljoin
 from scrapy import Request
 
 from product_ranking.items import Price, RelatedProduct, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import cond_set, cond_set_value, \
     cond_replace_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
@@ -83,8 +84,9 @@ class MothercareProductsSpider(ProductsSpider):
         return link[0] + '&format=ajax' if link else None
 
     def _scrape_results_per_page(self, response):
-        return response.css('#itemsperpagetop '
-                            'option[selected=selected]::text').extract()[0]
+        result = response.css('#itemsperpagetop '
+                              'option[selected=selected]::text').extract()
+        return result[0] if result else 0
 
     def _fetch_product_boxes(self, response):
         return response.css('.producttile')
@@ -211,7 +213,10 @@ class MothercareProductsSpider(ProductsSpider):
             avg = float(sum)/float(total)
             res = BuyerReviews(num_of_reviews=total, average_rating=avg,
                                rating_by_star=stars)
-            response.meta['product']['buyer_reviews'] = res
+            if total:
+                response.meta['product']['buyer_reviews'] = res
+            else:
+                return ZERO_REVIEWS_VALUE
         else:
             sku = response.css('p.productid::attr(class)').re('p_(\d+)')
             sku = sku[0] if sku else re.search('.+/([^,]+)', response.url).group(1)
@@ -238,14 +243,11 @@ class MothercareProductsSpider(ProductsSpider):
         except ValueError:
             return
         if not total:
+            response.meta['product']['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return
         avg = float(avg)
         total = int(total)
         by_star = {score: scores.count(score) for score in scores}
-        total_calculated = len(scores)
-        avg_calculated = round(float(sum(scores)) / total, 1)
-        assert total_calculated == total
-        assert avg_calculated == avg
         res = BuyerReviews(num_of_reviews=total, average_rating=avg,
                            rating_by_star=by_star)
         response.meta['product']['buyer_reviews'] = res
