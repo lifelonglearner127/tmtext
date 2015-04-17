@@ -8,6 +8,7 @@ from scrapy import Request
 
 from product_ranking.items import SiteProductItem, RelatedProduct, \
     Price, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
 
@@ -75,7 +76,10 @@ class ShopNordstromProductsSpider(BaseProductsSpider):
                 average_rating,
                 rating_by_star
             )
-            cond_set_value(product, 'buyer_reviews', br)
+            cond_set_value(product, 'buyer_reviews',
+                           br if num_of_reviews else ZERO_REVIEWS_VALUE)
+        else:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         return product
 
     def _request_related_products(self, response, item_num):
