@@ -18,10 +18,29 @@ import requests.exceptions
 import repoze.lru
 
 from .util import string_from_local2utc as local2utc
-from .util import file_is_bzip2
+from .util import is_plain_json_list
 
 
 LOG = logging.getLogger(__name__)
+
+
+def unbzip(f1, f2):
+    try:
+        f = bz2.BZ2File(f1)
+        cont = f.read()
+    except:
+        return False
+    f.close()
+    with open(f2, 'wb') as fh:
+        fh.write(cont)
+    return True
+
+
+def fix_double_bzip_in_file(fname):
+    if not is_plain_json_list(fname):
+        result1 = unbzip(fname, fname)
+        while result1:
+            result1 = unbzip(fname, fname)
 
 
 class ScrapydJobException(Exception):
@@ -124,8 +143,9 @@ class ScrapydJobHelper(object):
     def retrieve_job_data(self, jobid):
         """Returns a file like object with the job's result."""
         job_output_file = self.retrieve_job_data_fn(jobid)
+        fix_double_bzip_in_file(job_output_file)
         try:
-            if file_is_bzip2(job_output_file):
+            if not is_plain_json_list(job_output_file):
                 return bz2.BZ2File(job_output_file)
             else:
                 return open(job_output_file)

@@ -153,6 +153,15 @@ def file_age_in_seconds(pathname):
     return time.time() - os.stat(pathname)[stat.ST_MTIME]
 
 
+def is_plain_json_list(fname):
+    with open(fname, 'r') as fh:
+        cont = fh.read(1024)
+    cont = cont.strip()
+    if not cont:
+        return True  # treat empty files as json lists
+    return cont[0] == '{'
+
+
 def run(command, shell=None):
     """ Run the given command and return its output
     """
