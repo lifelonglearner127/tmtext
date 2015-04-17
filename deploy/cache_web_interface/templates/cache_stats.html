@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+
+<body>
+    <h1>Cache simmetrica stats</h1>
+    <div>
+        {% if not total_cached_items %}
+        No any items were found in cache.
+        {% else %}
+        <ul>
+            <li>Total items in cache: {{total_cached_items}}</li>
+            <li>Age of newest item: {{age_newest_item}} hours. Was created at {{newest_item_dt}}.</li>
+            <li>Age of oldest item: {{age_oldest_item}} hours. Was created at {{oldest_item_dt}}.</li>
+        </ul>
+        {% endif %}
+    </div>
+    <div>
+        <h3>Percent and quantity of items served from cache for last {{time_range}}:</h3>
+        <ul>
+            <li>Total received requests: {{total_requests}}</li>
+            <li>Total responses sent from cache: {{total_responses}}</li>
+            <li>Correlation: {{correlation}}</li>
+        </ul>
+    </div>
+    <div>
+        <h3>5 most popular cached responses for last {{time_range}}:</h3>
+        format: 'task stamp for request' -- 'quantity'
+        {% if not most_recent_resp %}
+            <p>No any responses were served from cache during this time limit</p>
+        {% else %}
+        <ul>
+            {% for resp in most_recent_resp %}
+                <li>{{resp[0]}} -- {{resp[1]}}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    <div>
+    <h3>Choose required time limit</h3>
+    <form action="/cache-stats" method="post">
+        <select name="required_hours">
+            <option value="1">1 hour</option>
+            <option value="24">24 hours</option>
+            <option value="168">7 days</option>
+            <option value="720">30 days</option>
+        <select>
+        <input type="submit" value="Update metrics">
+    </form>
+    </div>
+    <p>
+        <a href="/add-task">Add new task to cache</a>
+    </p>
+</body>
+</html>

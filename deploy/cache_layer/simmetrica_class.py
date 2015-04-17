@@ -65,6 +65,7 @@ class Simmetrica(object):
         total_resp = len(
             self.get_range_of_returned_resp(hours_range))
         percents = total_resp * 100.0 / total_req
+        # (21.1244, 78)
         return percents, total_resp
 
     def remove_old_req_and_resp(self):
@@ -75,6 +76,7 @@ class Simmetrica(object):
     def get_most_recent_resp(self, hours_range, quantity=5):
         resp_set = self.get_range_of_returned_resp(hours_range)
         resp = [r.split('-', 1)[1] for r in resp_set]
+        # [('walmart:st:water:quantity:5', 2)]
         return Counter(resp).most_common(quantity)
 
     @staticmethod
