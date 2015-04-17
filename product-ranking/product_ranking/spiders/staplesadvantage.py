@@ -55,6 +55,10 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         'buyer_reviews': True
     }
 
+    HARDCODED_FIELDS = {
+        'locale': 'en_US'
+    }
+
     def __init__(self, *args, **kwargs):
         super(StaplesadvantageProductsSpider, self).__init__(*args, **kwargs)
         self.url_formatter.defaults['page'] = 1
@@ -89,6 +93,10 @@ class StaplesadvantageProductsSpider(ProductsSpider):
 
     def _total_matches_from_html(self, response):
         total = response.css('.didYouMeanNoOfItems').extract()
+        if not total:
+            total = response.xpath(
+                '//span[@class="search-mean-count"]/text()'
+            ).extract()
         if not total: return 0
         total = re.search('[\d,]+', total[0])
         return int(total.group().replace(',', '')) if total else 0
@@ -108,22 +116,43 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         return url
 
     def _fetch_product_boxes(self, response):
-        return response.css('.productdescription')
+        # return response.css('.productdescription')
+        return response.xpath('//div[@class="search-prod-info"]')
 
     def _link_from_box(self, box):
-        return box.css('.plainlink::attr(href)')[0].extract()
+        # return box.css('.plainlink::attr(href)')[0].extract()
+        return box.xpath(
+            './/a[contains(@class, "search-prod-desc")]/@href'
+        ).extract()[0]
 
     def _populate_from_box(self, response, box, product):
-        cond_set(product, 'title', box.css('.plainlink::text').extract(),
+        title = box.css('.plainlink::text').extract()
+        if not title:
+            title = box.xpath(
+            './/a[contains(@class, "search-prod-desc")]/text()'
+        ).extract()
+        cond_set(product, 'title', title,
                  unicode.strip)
 
     def _populate_from_html(self, response, product):
         xpath = '//div[@id="dotcombrand"]/../preceding-sibling::li[1]/text()'
-        cond_set(product, 'brand', response.xpath(xpath).extract())
+        brand = response.xpath(xpath).extract()
+        if not brand:
+            brand = response.xpath(
+                '//p[@class="brand-name"]/text()'
+            ).extract()
+            if brand:
+                brand = brand[0].split(':')
+                if len(brand) == 1:
+                    brand = [brand[0]]
+                else:
+                    brand = [brand[1]]
+        cond_set(product, 'brand', brand)
         xpath = '//div[@class="tabs_instead_title" and text()="Description"]' \
-                '/following-sibling::*/node()[normalize-space()]'
-        cond_set_value(product, 'description', response.xpath(xpath).extract(),
-                       ''.join)
+                '/following-sibling::*/node()[normalize-space()] |' \
+                '//div[contains(@class, "product-details-desc")]'
+        desc = response.xpath(xpath).extract()
+        cond_set(product, 'description', desc)
         cond_set(product, 'image_url',
                  response.css('#enlImage::attr(src)').extract(),
                  lambda url: urljoin(response.url, url))
