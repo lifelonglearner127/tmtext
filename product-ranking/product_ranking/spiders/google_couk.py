@@ -12,6 +12,7 @@ from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import cond_set, cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -386,6 +387,7 @@ class GoogleProductsSpider(BaseProductsSpider):
             '//div[@class="_Ape"]/div/div/div[@class="_wpe"]/text()'
         ).extract()
         if not total:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return
         total = re.findall("\d*,?\d+", total[0])
         total = int(total[0].replace(',', ''))
