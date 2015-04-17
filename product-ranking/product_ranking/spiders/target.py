@@ -15,8 +15,10 @@ from scrapy.log import DEBUG, INFO
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
+
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -767,7 +769,8 @@ class TargetProductSpider(BaseProductsSpider):
                     fdist[i] = distribution[i]
             reviews = BuyerReviews(total, average, fdist)
             cond_set_value(product, 'buyer_reviews', reviews)
-        
+        else:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         variants = response.meta.get('variants')
         
         if variants and self.POPULATE_VARIANTS:
