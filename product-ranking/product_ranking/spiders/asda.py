@@ -10,7 +10,7 @@ import urllib
 from scrapy.http import Request
 from scrapy.log import WARNING, ERROR
 
-from product_ranking.items import SiteProductItem, Price
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -25,6 +25,15 @@ class AsdaProductsSpider(BaseProductsSpider):
         "&keyword={search_term}&contentid=New_IM_Search_WithResults_promo_1" \
         "&htmlassociationtype=0&listType=12&sortby=relevance+desc" \
         "&cacheable=true&fromgi=gi&requestorigin=gi"
+
+    PRODUCT_LINK = "http://groceries.asda.com/asda-webstore/landing" \
+                   "/home.shtml?cmpid=ahc-_-ghs-d1-_-asdacom-dsk-_-hp" \
+                   "/search/%s#/product/%s"
+
+    API_URL = "http://groceries.asda.com/api/items/view?" \
+              "itemid={id}&" \
+              "responsegroup=extended&cacheable=true&" \
+              "shipdate=currentDate&requestorigin=gi"
 
     def __init__(self, *args, **kwargs):
         super(AsdaProductsSpider, self).__init__(
@@ -83,6 +92,8 @@ class AsdaProductsSpider(BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         data = json.loads(response.body_as_unicode())
+        products = []
+        products_ids = ''
         for item in data['items']:
             prod = SiteProductItem()
             prod['title'] = item['itemName']
@@ -95,20 +106,38 @@ class AsdaProductsSpider(BaseProductsSpider):
                     priceCurrency='GBP'
                 )
             # FIXME Verify by comparing a prod in another site.
-            prod['upc'] = int(item['cin'])
-            prod['model'] = item['id']
+            total_stars = int(item['totalReviewCount'])
+            avg_stars = float(item['avgStarRating'])
+            prod['buyer_reviews'] = BuyerReviews(num_of_reviews=total_stars,
+                                                 average_rating=avg_stars,
+                                                 rating_by_star={})
+            prod['model'] = item['cin']
             image_url = item.get('imageURL')
-            if not image_url:
+            if not image_url and "images" in item:
                 image_url = item.get('images').get('largeImage')
             prod['image_url'] = image_url
 
-            prod['url'] = item['productURL']
-            if 'search_term' not in prod:
-                prod['search_term'] = ''
+            pId = is_empty(re.findall("itemid=(\d+)", item['productURL']))
+            if pId and "search_term" in response.meta:
+                prod['url'] = self.PRODUCT_LINK % (
+                   response.meta["search_term"], pId)
+            else:
+                prod["url"] = item['imageURL']
 
             prod['locale'] = "en-GB"
 
-            yield None, prod
+            products_ids += item['id']+','
+            products.append(prod)
+
+        url = self.API_URL.format(id=products_ids)
+        print url
+        content = urllib.urlopen(url).read()
+
+        data = json.loads(content)
+        items = data['items']
+        for i in range(0, len(products)):
+            products[i]['upc'] = items[i]['upcNumbers'][0]['upcNumber']
+            yield None, products[i]
 
     def _scrape_next_results_page_link(self, response):
         data = json.loads(response.body_as_unicode())
