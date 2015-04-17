@@ -10,9 +10,11 @@ from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     MarketplaceSeller
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
 from product_ranking.amazon_bestsellers import amazon_parse_department
+
 
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
@@ -367,7 +369,8 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)
-        cond_set_value(product, 'buyer_reviews', buyer_reviews if total else 0)
+        cond_set_value(product, 'buyer_reviews',
+                       buyer_reviews if total else ZERO_REVIEWS_VALUE)
 
     def _parse_single_product(self, response):
         return self.parse_product(response)

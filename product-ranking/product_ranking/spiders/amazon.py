@@ -13,6 +13,7 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     MarketplaceSeller
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.amazon_bestsellers import amazon_parse_department
@@ -407,7 +408,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 '/div[contains(@class, "acrCount")])'
             ).re(FLOATING_POINT_RGEX)
             if not total:
-                return 0
+                return ZERO_REVIEWS_VALUE
         buyer_reviews['num_of_reviews'] = int(total[0].replace(',', ''))
 
         average = response.xpath(
