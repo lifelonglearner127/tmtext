@@ -18,6 +18,14 @@ def is_plain_json_list(fname):
 
 
 def unbzip(f1, f2):
+    # check that the file is empty
+    with open(f1, 'rb') as fh:
+        cont = fh.read()
+    if not cont:
+        with open(f2, 'wb') as fh:
+            fh.write(cont)
+        return False
+    # unarchive
     try:
         f = bz2.BZ2File(f1)
         cont = f.read()
@@ -115,7 +123,10 @@ def fix_double_bzip_in_dir(d, min_age, max_age):
             if file_age_in_seconds(full_name) > max_age:
                 continue
             fix_double_bzip_in_file(full_name)
-            compress_and_rename_old(full_name)
+            with open(full_name, 'rb') as fh:
+                cont = fh.read()
+            if len(cont) > 15:  # do not compress empty (?) files
+                compress_and_rename_old(full_name)
 
 
 if __name__ == '__main__':
