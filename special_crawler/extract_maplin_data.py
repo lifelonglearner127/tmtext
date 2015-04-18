@@ -78,16 +78,14 @@ class MaplinScraper(Scraper):
                 ), \
             cells)
         all_features_text = rows_text
-
+        all_features_text = [r for r in all_features_text if len(self._clean_text(r)) > 0]
         # return dict with all features info
         return all_features_text
 
     def _feature_count(self):
-        rows = self.tree_html.xpath("//table[@class='product-specs']//tr")
-        cells = map(lambda row: row.xpath(".//*//text()"), rows)
-        # list of text in each row
-        if len(cells) > 0:
-            return len(cells) - 1
+        features = self._features()
+        if features:
+            return len(features)
         return 0
 
     def _model_meta(self):
@@ -149,10 +147,12 @@ class MaplinScraper(Scraper):
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
         pdf_hrefs = []
         for pdf in pdfs:
-            if pdf.attrib['title'] == 'Terms & Conditions':
+            try:
+                if pdf.attrib['title'] == 'Terms & Conditions':
+                    continue
+            except KeyError:
                 pass
-            else:
-                pdf_hrefs.append("http://www.maplin.co.uk%s" % pdf.attrib['href'])
+            pdf_hrefs.append("http://www.maplin.co.uk%s" % pdf.attrib['href'])
         if len(pdf_hrefs) == 0:
             return None
         return pdf_hrefs
@@ -364,6 +364,32 @@ class MaplinScraper(Scraper):
             return 1
         return 0
 
+    def _home_delivery(self):
+        rows = self.tree_html.xpath("//ul[contains(@class,'stock-status')]//li")
+        for row in rows:
+            txt = row.xpath(".//text()")[0].strip()
+            if "Home Delivery" in txt:
+                i_tag = row.xpath(".//i[contains(@class,'icon-ok-sign')]")
+                if len(i_tag) > 0:
+                    return 1
+        return 0
+
+    def _click_and_collect(self):
+        rows = self.tree_html.xpath("//ul[contains(@class,'stock-status')]//li")
+        for row in rows:
+            txt = row.xpath(".//text()")[0].strip()
+            if "Click & Collect" in txt:
+                i_tag = row.xpath(".//i[contains(@class,'icon-ok-sign')]")
+                if len(i_tag) > 0:
+                    return 1
+        return 0
+
+    def _dsv(self):
+        txts = self.tree_html.xpath("//div[@id='product-ctas']//div//text()")
+        if "Shipped from an alternative warehouse" in txts:
+            return 1
+        return 0
+
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
@@ -431,6 +457,9 @@ class MaplinScraper(Scraper):
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
         "web_only" : _web_only, \
+        "home_delivery" : _home_delivery, \
+        "click_and_collect" : _click_and_collect, \
+        "dsv" : _dsv, \
         "in_stores" : _in_stores, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
