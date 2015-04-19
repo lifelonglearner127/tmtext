@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-#
 import re
 import urlparse
 import string
 
 from contrib.product_spider import ProductsSpider
-from product_ranking.items import RelatedProduct, Price,  BuyerReviews
+from product_ranking.items import RelatedProduct, Price, BuyerReviews
 from product_ranking.spiders import cond_set, cond_set_value, \
     _populate_from_open_graph_product
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -115,7 +116,7 @@ class StaplesProductsSpider(ProductsSpider):
         description = desc.css('.layoutWidth06').extract()
         cond_set_value(product, 'description',
                        (headline or [''])[0] + (description or [''])[0])
-        _populate_from_open_graph_product(response, product)
+        #_populate_from_open_graph_product(response, product)
         cond_set(product, 'image_url',
                  response.css('#largeProductImage::attr(src)').extract())
         brand = response.xpath(
@@ -163,37 +164,46 @@ class StaplesProductsSpider(ProductsSpider):
 
     def _buyer_reviews_from_html(self, response, product):
         rarea = response.xpath(
-            "//div[@id='reviews_inline']")
+            "//div[contains(@class,'yotpo-regular-box') and contains(@class,'yotpo-bottomline')]")
         if rarea:
             rarea = rarea[0]
         else:
             return
-        total = rarea.xpath("//span[@class='count']/text()").extract()
-        if total:
-            try:
-                total = int(total[0])
-            except ValueError:
-                total = 0
-        else:
-            return
         avrg = rarea.xpath(
-            "//span[contains(@class,'average')]/text()").extract()
+            "//div[@class='yotpo-stars-and-sum-reviews']"
+            "/span[@class='yotpo-star-digits']/text()").extract()
         if avrg:
+            avrg = avrg[0].strip()
             try:
-                avrg = float(avrg[0])
+                avrg = float(avrg)
             except ValueError:
                 avrg = 0.0
         else:
             return
+        total = rarea.xpath(
+            "//div[@class='yotpo-stars-and-sum-reviews']"
+            "/span[@class='yotpo-sum-reviews']/span/text()").re("(\d+) Reviews")
+        if total:
+            total = total[0].strip()
+            try:
+                total = int(total)
+            except ValueError:
+                total = 0
+        else:
+            return
+
         ratings = {}
-        rat = rarea.xpath("//ul[@class='pr-ratings-histogram-content']/li")
+        rat = rarea.xpath(
+            "//div[@class='yotpo-star-distribution']"
+            "/div[@class='yotpo-star-distribution-content']"
+            "/div[@class='yotpo-distibutions-sum-reviews']/span")
         for irat in rat:
             label = irat.xpath(
-                "p[@class='pr-histogram-label']/span/text()").re("(\d) Stars")
+                "@data-score-distribution").extract()
             if label:
                 label = label[0]
             val = irat.xpath(
-                "p[@class='pr-histogram-count']/span/text()").re("\((\d+)\)")
+                "text()").re("\((\d+)\)")
             try:
                 val = int(val[0])
             except ValueError:
