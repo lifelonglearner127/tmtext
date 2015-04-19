@@ -30,8 +30,19 @@ LOGS_DIR = os.path.join(PATH_PREFIX, 'scrapyd/logs/product_ranking')
 N_DAYS = 2
 
 
+def is_plain_json_list(fname):
+    with open(fname, 'r') as fh:
+        cont = fh.read(1024)
+    cont = cont.strip()
+    if not cont:
+        return True
+    return cont[0] == '{'
+
+
 def compress_and_rename_old(fname):
     if file_is_bzip2(fname):
+        return  # compressed already
+    if not is_plain_json_list(fname):
         return  # compressed already
     if file_age_in_seconds(fname) < N_DAYS*86400:
         return  # not old
