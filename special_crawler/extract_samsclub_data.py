@@ -611,6 +611,13 @@ class SamsclubScraper(Scraper):
         "pdf_count" : _pdf_count, \
         "mobile_image_same" : _mobile_image_same, \
 
+        # CONTAINER : REVIEWS
+        "review_count" : _review_count, \
+        "average_review" : _average_review, \
+        "max_review" : _max_review, \
+        "min_review" : _min_review, \
+        "reviews" : _reviews, \
+
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \

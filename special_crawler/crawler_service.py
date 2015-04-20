@@ -37,7 +37,7 @@ from extract_george_data import GeorgeScraper
 from extract_bloomingdales_data import BloomingdalesScraper
 from extract_macys_data import MacysScraper
 from extract_newegg_data import NeweggScraper
-from extract_costco_data import CostcoScraper
+from extract_proswimwear_data import ProswimwearScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -87,7 +87,7 @@ SUPPORTED_SITES = {
                     "bloomingdales" : BloomingdalesScraper,
                     "macys" : MacysScraper,
                     "newegg": NeweggScraper,
-                    "costco": CostcoScraper,
+                    "proswimwear" : ProswimwearScraper,
                     }
 
 # add logger
@@ -155,8 +155,6 @@ def extract_domain(url):
         return 'souq'
     if 'direct.asda.com' in url:
         return 'george'
-    if 'costco.com' in url:
-        return 'costco'
     m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)
