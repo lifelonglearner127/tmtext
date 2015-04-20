@@ -193,18 +193,6 @@ class ProswimwearScraper(Scraper):
             self._pdf_urls()
         return self.pdf_count
 
-    def _webcollage(self):
-        # http://content.webcollage.net/pg-estore/power-page?ird=true&channel-product-id=037000864868
-        url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % self._product_id()
-        html = urllib.urlopen(url).read()
-        m = re.findall(r'_wccontent = (\{.*?\});', html, re.DOTALL)
-        try:
-            if ".webcollage.net" in m[0]:
-                return 1
-        except IndexError:
-            pass
-        return 0
-
     # extract htags (h1, h2) from its product product page tree
     def _htags(self):
         htags_dict = {}
@@ -396,12 +384,18 @@ class ProswimwearScraper(Scraper):
         "pdf_count" : _pdf_count, \
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
-        "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "mobile_image_same" : _mobile_image_same, \
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
+
+        # CONTAINER : REVIEWS
+        "review_count" : _review_count, \
+        "average_review" : _average_review, \
+        "max_review" : _max_review, \
+        "min_review" : _min_review, \
+        "reviews" : _reviews, \
 
         # CONTAINER : SELLERS
         "price" : _price, \
@@ -428,8 +422,6 @@ class ProswimwearScraper(Scraper):
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
-        # CONTAINER : PAGE_ATTRIBUTES
-        "webcollage" : _webcollage, \
     }
 
 
