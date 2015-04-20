@@ -20,6 +20,7 @@ class NeweggScraper(Scraper):
         m = re.match(r"^http://www\.newegg\.com/product/product(.*)", self.product_page_url.lower())
         self.image_urls = None
         self.prod_help = None
+        self.wc_content = None
         return (not not m)
 
     def not_a_product(self):
@@ -289,9 +290,44 @@ class NeweggScraper(Scraper):
             return len(urls)
         return 0
 
+
     def _webcollage(self):
-        wbc = self.tree_html.xpath("//img[contains(@src,'webcollage.net')]")
-        if len(wbc) > 0 : return 1
+        html = self._wc_content()
+        m = re.findall(r'_wccontent = (\{.*?\});', html, re.DOTALL)
+        try:
+            if ".webcollage.net" in m[0]:
+                return 1
+        except IndexError:
+            pass
+        return 0
+
+    def _wc_content(self):
+        if self.wc_content == None:
+            url = "http://content.webcollage.net/newegg/power-page?&ird=true&channel-product-id=%s" % self._site_id()
+            html = urllib.urlopen(url).read()
+            if "_wccontent" in html:
+                self.wc_content = html
+                return html
+            else:
+                self.wc_content = ""
+                return ""
+        return self.wc_content
+
+
+    def _wc_360(self):
+        html = self._wc_content()
+        if "wc-360" in html: return 1
+        return 0
+
+
+    def _wc_pdf(self):
+        html = self._wc_content()
+        if ".pdf" in html: return 1
+        return 0
+
+    def _wc_video(self):
+        html = self._wc_content()
+        if ".mp4" in html: return 1
         return 0
 
     # extract htags (h1, h2) from its product product page tree
@@ -571,6 +607,9 @@ class NeweggScraper(Scraper):
         "video_urls" : _video_urls, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
+        "wc_360" : _wc_360, \
+        "wc_pdf" : _wc_pdf, \
+        "wc_video" : _wc_video, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
