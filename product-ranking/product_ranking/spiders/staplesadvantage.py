@@ -11,6 +11,7 @@ import re
 from urlparse import urljoin
 
 from scrapy import Request
+from scrapy.log import WARNING
 
 from .contrib.product_spider import ProductsSpider
 from product_ranking.items import RelatedProduct, BuyerReviews
@@ -30,6 +31,8 @@ class StaplesadvantageProductsSpider(ProductsSpider):
 
     * `price`, `is_out_of_stock`, `is_in_store_only`, `upc`
     """
+    USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:10.0) "\
+                 "Gecko/20100101 Firefox/10.0"
 
     name = "staplesadvantage_products"
 
@@ -80,7 +83,7 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         css = '[id="%s"]::attr(value)' % self.sort_mode[1]
         magic = response.css(css)
         if not magic:
-            self.log('Could not apply ordering')
+            self.log('Could not apply ordering', WARNING)
             return
         magic = magic[0].extract()
         term = response.meta['search_term']
@@ -160,9 +163,12 @@ class StaplesadvantageProductsSpider(ProductsSpider):
 
     def _populate_related_products(self, response, product):
         products = []
-        for item in response.css('#moreproducts_id .productdescription h4 a'):
-            url = item.css('::attr(href)')
-            text = item.css('::text')
+        for item in response.xpath('//div[@class="related-products-container"]'
+            '//li[@class="deals-Blk"]//a[contains'
+            '(@class, "recent-purchase-product-desc")]'
+            ):
+            url = item.xpath('@href')
+            text = item.xpath('text()')
             if url and text:
                 products.append(
                     RelatedProduct(url=url[0].extract(),
