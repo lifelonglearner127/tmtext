@@ -64,9 +64,12 @@ class AsdaProductsSpider(BaseProductsSpider):
                           self._parse_single_product,
                           meta={'product': prod})
 
-
     def parse_product(self, response):
-        raise AssertionError("This method should never be called.")
+        product = response.meta['product']
+        data = json.loads(response.body_as_unicode())
+        item = data['items'][0]
+        product['upc'] = item['upcNumbers'][0]['upcNumber']
+        return product
 
     def _search_page_error(self, response):
         try:
@@ -92,8 +95,6 @@ class AsdaProductsSpider(BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         data = json.loads(response.body_as_unicode())
-        products = []
-        products_ids = ''
         for item in data['items']:
             prod = SiteProductItem()
             prod['title'] = item['itemName']
@@ -126,18 +127,10 @@ class AsdaProductsSpider(BaseProductsSpider):
 
             prod['locale'] = "en-GB"
 
-            products_ids += item['id']+','
-            products.append(prod)
+            products_ids = item['id']
+            url = self.API_URL.format(id=products_ids)
 
-        url = self.API_URL.format(id=products_ids)
-        print url
-        content = urllib.urlopen(url).read()
-
-        data = json.loads(content)
-        items = data['items']
-        for i in range(0, len(products)):
-            products[i]['upc'] = items[i]['upcNumbers'][0]['upcNumber']
-            yield None, products[i]
+            yield url, prod
 
     def _scrape_next_results_page_link(self, response):
         data = json.loads(response.body_as_unicode())
