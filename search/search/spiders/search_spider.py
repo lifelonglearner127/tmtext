@@ -50,7 +50,8 @@ class SearchSpider(BaseSpider):
 
     allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
-                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk", "pcworld.co.uk", "ebay.co.uk"]
+                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk", "pcworld.co.uk", "ebay.co.uk", \
+                       "argos.co.uk"]
 
     # pass product as argument to constructor - either product name or product URL
     # arguments:
@@ -131,7 +132,8 @@ class SearchSpider(BaseSpider):
                         "boots" : "http://www.boots.com/webapp/wcs/stores/servlet/EndecaSearchListerView?storeId=10052&searchTerm=%s" % search_query,
                         "currys" : "http://www.currys.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query,
                         "pcworld" : "http://www.pcworld.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query,
-                        "maplin" : "http://www.maplin.co.uk/search?text=%s" % search_query
+                        "maplin" : "http://www.maplin.co.uk/search?text=%s" % search_query, \
+                        "argos" : "http://www.argos.co.uk/static/Search/searchTerm/%s.htm" % search_query
                         }
 
         return search_pages
