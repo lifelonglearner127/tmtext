@@ -11,6 +11,7 @@ import re
 from urlparse import urljoin
 
 from scrapy import Request
+from scrapy.log import WARNING
 
 from .contrib.product_spider import ProductsSpider
 from product_ranking.items import RelatedProduct, BuyerReviews
@@ -30,6 +31,8 @@ class StaplesadvantageProductsSpider(ProductsSpider):
 
     * `price`, `is_out_of_stock`, `is_in_store_only`, `upc`
     """
+    USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:10.0) "\
+                 "Gecko/20100101 Firefox/10.0"
 
     name = "staplesadvantage_products"
 
@@ -55,6 +58,10 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         'buyer_reviews': True
     }
 
+    HARDCODED_FIELDS = {
+        'locale': 'en_US'
+    }
+
     def __init__(self, *args, **kwargs):
         super(StaplesadvantageProductsSpider, self).__init__(*args, **kwargs)
         self.url_formatter.defaults['page'] = 1
@@ -69,14 +76,17 @@ class StaplesadvantageProductsSpider(ProductsSpider):
             for request in response.meta['requests']:
                 yield request
         for request in response.meta['requests']:
-            request.callback = self._parse_unsorted
+            request.callback = self._parse_unsorted_first
             yield request
 
-    def _parse_unsorted(self, response):
+    def _parse_unsorted_first(self, response):
+        """This method will create first url for sorted results.
+        But response will be sorted in another orded.
+        """
         css = '[id="%s"]::attr(value)' % self.sort_mode[1]
         magic = response.css(css)
         if not magic:
-            self.log('Could not apply ordering')
+            self.log('Could not apply ordering', WARNING)
             return
         magic = magic[0].extract()
         term = response.meta['search_term']
@@ -85,10 +95,56 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                        'selSortOption': self.sort_mode[0],
                        'srchurl': magic})
         url = '%s&%s' % (self.BASE_URL, urlencode(fields))
-        yield Request(url, meta=response.meta)
+        yield Request(url, meta=response.meta,
+                      callback=self._parse_unsorted_again)
+
+    def generate_url_from_inputs(self, response, gallery_name):
+        """This method will create search url based on hidden
+        inputs on page. All data can be captured from inputs,
+        but not 'srchurl' because it dynamically added by javascript.
+        We should find it in another place.
+        """
+        inputs = response.xpath(
+            '//div[@class="secondary-search-filter text-upp clearfix"]'
+            '/form["%s"]/input' % gallery_name
+        )
+        additional_part = ''
+        for inp in inputs:
+            try:
+                name = inp.xpath('@name').extract()[0]
+            except:
+                name = inp.xpath('@id').extract()[0]
+            value = inp.xpath('@value').extract()[0]
+            if name != 'srchurl':
+                part = '&%s=%s' % (name, value)
+                additional_part += part
+        search_urls = response.xpath(
+            '//input[@name="srchurl"]/@value'
+        ).extract()
+        if gallery_name == 'galleryfullnav':
+            search_urls = [url for url in search_urls if url]
+        if gallery_name == 'gallerynav':
+            search_urls = re.findall(
+                r'f\.srchurl\.value\s=\s"(.*)";\sf.pgs',
+                response.body
+            )
+        search_url = quote(search_urls[0])
+        additional_part += '&srchurl=' + search_url
+        url = self.BASE_URL + additional_part
+        return url
+
+    def _parse_unsorted_again(self, response):
+        """Generate final sorted url based on data from page."""
+        url = self.generate_url_from_inputs(response, 'galleryfullnav')
+        return Request(url, meta=response.meta)
+
 
     def _total_matches_from_html(self, response):
         total = response.css('.didYouMeanNoOfItems').extract()
+        if not total:
+            total = response.xpath(
+                '//span[@class="search-mean-count"]/text()'
+            ).extract()
         if not total: return 0
         total = re.search('[\d,]+', total[0])
         return int(total.group().replace(',', '')) if total else 0
@@ -100,40 +156,76 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         return fields
 
     def _scrape_next_results_page_link(self, response):
-        if not self._fetch_product_boxes(response):
-            return None
-        fields = self._extract_fields(response)
-        fields['pg'] = str(int(fields['pg']) + 1)
-        url = '%s&%s' % (self.BASE_URL, urlencode(fields))
-        return url
+        if not self.sort_mode:
+            if not self._fetch_product_boxes(response):
+                return None
+            fields = self._extract_fields(response)
+            fields['pg'] = str(int(fields['pg']) + 1)
+            url = '%s&%s' % (self.BASE_URL, urlencode(fields))
+            return url
+        else:
+            url = self.generate_url_from_inputs(response, 'gallerynav')
+            page_number = re.findall(r'pg=(\d+)', url)[0]
+            next_page_number = int(page_number) + 1
+            next_page = 'pg=%s' % next_page_number
+            url = re.sub(r'(pg=\d+)', next_page, url)
+            return url
 
     def _fetch_product_boxes(self, response):
-        return response.css('.productdescription')
+        return response.xpath('//div[@class="search-prod-info"]')
 
     def _link_from_box(self, box):
-        return box.css('.plainlink::attr(href)')[0].extract()
+        return box.xpath(
+            './/a[contains(@class, "search-prod-desc")]/@href'
+        ).extract()[0]
 
     def _populate_from_box(self, response, box, product):
-        cond_set(product, 'title', box.css('.plainlink::text').extract(),
+        title = box.css('.plainlink::text').extract()
+        if not title:
+            title = box.xpath(
+            './/a[contains(@class, "search-prod-desc")]/text()'
+        ).extract()
+        cond_set(product, 'title', title,
                  unicode.strip)
 
     def _populate_from_html(self, response, product):
+        title = response.xpath('//p[contains(@class, "search-prod-desc")]'
+            '/@title'
+            ).extract()
+        cond_set(product, 'title', title)
         xpath = '//div[@id="dotcombrand"]/../preceding-sibling::li[1]/text()'
-        cond_set(product, 'brand', response.xpath(xpath).extract())
+        brand = response.xpath(xpath).extract()
+        if not brand:
+            brand = response.xpath(
+                '//p[@class="brand-name"]/text()'
+            ).extract()
+            if brand:
+                brand = brand[0].split(':')
+                if len(brand) == 1:
+                    brand = [brand[0]]
+                else:
+                    brand = [brand[1]]
+        cond_set(product, 'brand', brand)
         xpath = '//div[@class="tabs_instead_title" and text()="Description"]' \
-                '/following-sibling::*/node()[normalize-space()]'
-        cond_set_value(product, 'description', response.xpath(xpath).extract(),
-                       ''.join)
+                '/following-sibling::*/node()[normalize-space()] |' \
+                '//div[contains(@class, "product-details-desc")]'
+        desc = response.xpath(xpath).extract()
+        cond_set(product, 'description', desc)
         cond_set(product, 'image_url',
                  response.css('#enlImage::attr(src)').extract(),
                  lambda url: urljoin(response.url, url))
+        model = re.findall('var pr_page_id="(\d+)"', response.body)
+        cond_set(product, 'model', model)
         self._populate_related_products(response, product)
 
     def _populate_related_products(self, response, product):
         products = []
-        for item in response.css('#moreproducts_id .productdescription h4 a'):
-            url = item.css('::attr(href)')
-            text = item.css('::text')
+        for item in response.xpath('//div[@class="related-products-container"]'
+            '//li[@class="deals-Blk"]//a[contains'
+            '(@class, "recent-purchase-product-desc")]'
+            ):
+            url = item.xpath('@href')
+            text = item.xpath('text()')
             if url and text:
                 products.append(
                     RelatedProduct(url=url[0].extract(),
@@ -175,3 +267,6 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         total = data['review_count']
         cond_set_value(response.meta['product'], 'buyer_reviews',
                        BuyerReviews(total, avg, ratings))
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
