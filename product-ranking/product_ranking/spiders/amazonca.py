@@ -13,6 +13,7 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     MarketplaceSeller
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
                                      cond_set_value)
 from product_ranking.amazon_bestsellers import amazon_parse_department
@@ -421,7 +422,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                                      average_rating=average,
                                      rating_by_star=ratings)
         cond_set_value(product, 'buyer_reviews',
-                       buyer_reviews if total else None)
+                       buyer_reviews if total else ZERO_REVIEWS_VALUE)
 
     def _calculate_buyer_reviews_from_percents(self, total_reviews, table):
         rating_by_star = {}
