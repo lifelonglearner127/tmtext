@@ -31,6 +31,8 @@ N_DAYS = 2
 
 
 def is_plain_json_list(fname):
+    if not os.path.exists(fname):
+        return -1
     with open(fname, 'r') as fh:
         cont = fh.read(1024)
     cont = cont.strip()
@@ -44,6 +46,8 @@ def compress_and_rename_old(fname):
         return  # compressed already
     if not is_plain_json_list(fname):
         return  # compressed already
+    if is_plain_json_list(fname) == -1:
+        return  # file does not exist?
     if file_age_in_seconds(fname) < N_DAYS*86400:
         return  # not old
     os.system('bzip2 "%s"' % fname)
