@@ -11,7 +11,7 @@ from scrapy.log import DEBUG, INFO, ERROR
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    MarketplaceSeller, BuyerReviews
+    BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     populate_from_open_graph, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.spiders import FormatterWithDefaults
@@ -78,12 +78,11 @@ class SouqProductsSpider(BaseProductsSpider):
             "//dl[contains(@class, 'stats')]" \
             "/dt[contains(text(), 'Sold by:')]/following::dd/span/a")
         seller = is_empty(seller_all.xpath("text()").extract())
-        other_products = is_empty(seller_all.xpath("@href").extract())
         if seller:
-            product["marketplace"] = MarketplaceSeller(
-                seller=seller, 
-                other_products=other_products
-            )
+            product["marketplace"] = [{
+                "price": product["price"], 
+                "name": seller
+            }]
 
         product["model"] = is_empty(response.xpath(
             "//dl[contains(@class, 'stats')]/" \
@@ -128,7 +127,19 @@ class SouqProductsSpider(BaseProductsSpider):
             url = self._RECOM_URL + "&id_item=" + id_item
             if id_unit:
                 url += "&id_unit=" + id_unit
-            meta = {"product": product}
+
+            count = is_empty(response.xpath(
+                "//a[@id='MORE_OFFERS_LINK']/strong/text()"
+            ).re(FLOATING_POINT_RGEX))
+            meta = {
+                "product": product,
+            }
+            if count:
+                mtp_link = "http://uae.souq.com/ae-en/Action.php" \
+                    "?action=ajaxRemote&type=getUnitsCondition" \
+                    "&limit=%s&id_item=%s" % (count, id_item)
+                meta["mtp_link"] = mtp_link
+            
             return Request(url=url, callback=self._parse_recomendar, meta=meta)
 
         return product
@@ -154,6 +165,39 @@ class SouqProductsSpider(BaseProductsSpider):
             related_prod = dict(zip(iter(titles), iter(links)))
             related_prod = [RelatedProduct(title=k, url=v) for k, v in related_prod.items()]
             product["related_products"] = {tl: related_prod}
+
+        if "mtp_link" in response.meta:
+            meta = {"product": product}
+            return Request(url=response.meta["mtp_link"], callback=self.parse_marketplace, meta=meta)
+
+        return product
+
+    def parse_marketplace(self, response):
+        product = response.meta['product']
+
+        try: 
+            data = json.loads(response.body)
+        except ValueError:
+            return product
+
+        sel = Selector(text=data.get("html", ""))
+
+        marketplaces = []
+        for seller in sel.xpath("//div[contains(@class, 'unit')]"):
+            price = is_empty(seller.xpath(
+                "div/div/div[contains(@class, 'larg-price')]/text()"
+            ).re(FLOATING_POINT_RGEX))
+            name = is_empty(seller.xpath(
+                "div/div/span/a/text()"
+            ).extract())
+
+            marketplaces.append({
+                "price": Price(price=price, priceCurrency="AED"),
+                "name": name
+            })
+
+        if marketplaces:
+            product["marketplace"] = marketplaces
 
         return product
 
@@ -186,3 +230,6 @@ class SouqProductsSpider(BaseProductsSpider):
         if self.total / 15 + 1 > self.counter:
             return url
         return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
