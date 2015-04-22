@@ -56,6 +56,7 @@ class ArgosUKProductsSpider(BaseProductsSpider):
         "promotions": "Promotions",
         "rating": "Average Rating"
     }
+    SORTING = None
 
     def __init__(self, sort_mode=None, fetch_related_products=True,
                  store_id=10151,
@@ -65,13 +66,14 @@ class ArgosUKProductsSpider(BaseProductsSpider):
         if sort_mode in self.SORT_MODES:
             sort_mode = self.SORT_MODES[sort_mode]
             self.SEARCH_URL = self.SORT_SEARCH_URL
+            self.SORTING = sort_mode
             formatter = FormatterWithDefaults(sort_mode=sort_mode,
                                               store_id=store_id,
                                               catalog_id=catalog_id,
                                               lang_id=lang_id)
         else:
             self.log('"%s" not in SORT_MODES')
-            # sort_mode = self.SORT_MODES['default']
+            self.SORTING = self.SORT_MODES['relevance']
             formatter = FormatterWithDefaults()
         cond_set_value(kwargs, 'site_name', 'argos.co.uk')
         super(ArgosUKProductsSpider, self).__init__(formatter, *args, **kwargs)
@@ -99,10 +101,12 @@ class ArgosUKProductsSpider(BaseProductsSpider):
         if page > response.meta['total_matches']:
             return None
         result = self.url_formatter.format(self.PAGE_URL, start_from=page,
+                                           products_per_page=products_per_page,
                                            search_term=response.meta[
                                                'search_term'],
-                                           products_per_page=products_per_page)
+                                           sort_mode=self.SORTING)
         response.meta['page'] = page
+        result = result.replace(' ', '%2B')
         print 'RES', result, products_per_page, page
         return result
 
