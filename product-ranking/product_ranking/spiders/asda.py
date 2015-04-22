@@ -35,6 +35,12 @@ class AsdaProductsSpider(BaseProductsSpider):
               "responsegroup=extended&cacheable=true&" \
               "shipdate=currentDate&requestorigin=gi"
 
+    REVIEW_URL = "http://groceries.asda.com/review/reviews.json?" \
+                 "Filter=ProductId:%s&" \
+                 "Sort=SubmissionTime:desc&" \
+                 "apiversion=5.4&" \
+                 "passkey=92ffdz3h647mtzgbmu5vedbq"
+
     def __init__(self, *args, **kwargs):
         super(AsdaProductsSpider, self).__init__(
             url_formatter=FormatterWithDefaults(pagenum=1, prods_per_page=32),
@@ -69,7 +75,26 @@ class AsdaProductsSpider(BaseProductsSpider):
         data = json.loads(response.body_as_unicode())
         item = data['items'][0]
         product['upc'] = item['upcNumbers'][0]['upcNumber']
+
+        product_id = re.findall('itemid=(\d+)', response.url)
+        if product_id:
+            url = self.REVIEW_URL % product_id[0]
+            meta = {'product': product}
+            return Request(url=url, meta=meta, callback=self._parse_review)
         return product
+
+    def _parse_review(self, response):
+        prod = response.meta['product']
+        num, avg, by_star = prod['buyer_reviews']
+        data = json.loads(response.body_as_unicode())
+        by_star = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        reviews = data['Results']
+        for review in reviews:
+            by_star[review['Rating']] += 1
+
+        prod['buyer_reviews'] = BuyerReviews(num, avg, by_star)
+        return prod
+
 
     def _search_page_error(self, response):
         try:
@@ -121,7 +146,7 @@ class AsdaProductsSpider(BaseProductsSpider):
             pId = is_empty(re.findall("itemid=(\d+)", item['productURL']))
             if pId and "search_term" in response.meta:
                 prod['url'] = self.PRODUCT_LINK % (
-                   response.meta["search_term"], pId)
+                    urllib.quote(response.meta["search_term"]), pId)
             else:
                 prod["url"] = item['imageURL']
 
