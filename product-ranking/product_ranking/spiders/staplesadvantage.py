@@ -76,10 +76,13 @@ class StaplesadvantageProductsSpider(ProductsSpider):
             for request in response.meta['requests']:
                 yield request
         for request in response.meta['requests']:
-            request.callback = self._parse_unsorted
+            request.callback = self._parse_unsorted_first
             yield request
 
-    def _parse_unsorted(self, response):
+    def _parse_unsorted_first(self, response):
+        """This method will create first url for sorted results.
+        But response will be sorted in another orded.
+        """
         css = '[id="%s"]::attr(value)' % self.sort_mode[1]
         magic = response.css(css)
         if not magic:
@@ -92,7 +95,49 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                        'selSortOption': self.sort_mode[0],
                        'srchurl': magic})
         url = '%s&%s' % (self.BASE_URL, urlencode(fields))
-        yield Request(url, meta=response.meta)
+        yield Request(url, meta=response.meta,
+                      callback=self._parse_unsorted_again)
+
+    def generate_url_from_inputs(self, response, gallery_name):
+        """This method will create search url based on hidden
+        inputs on page. All data can be captured from inputs,
+        but not 'srchurl' because it dynamically added by javascript.
+        We should find it in another place.
+        """
+        inputs = response.xpath(
+            '//div[@class="secondary-search-filter text-upp clearfix"]'
+            '/form["%s"]/input' % gallery_name
+        )
+        additional_part = ''
+        for inp in inputs:
+            try:
+                name = inp.xpath('@name').extract()[0]
+            except:
+                name = inp.xpath('@id').extract()[0]
+            value = inp.xpath('@value').extract()[0]
+            if name != 'srchurl':
+                part = '&%s=%s' % (name, value)
+                additional_part += part
+        search_urls = response.xpath(
+            '//input[@name="srchurl"]/@value'
+        ).extract()
+        if gallery_name == 'galleryfullnav':
+            search_urls = [url for url in search_urls if url]
+        if gallery_name == 'gallerynav':
+            search_urls = re.findall(
+                r'f\.srchurl\.value\s=\s"(.*)";\sf.pgs',
+                response.body
+            )
+        search_url = quote(search_urls[0])
+        additional_part += '&srchurl=' + search_url
+        url = self.BASE_URL + additional_part
+        return url
+
+    def _parse_unsorted_again(self, response):
+        """Generate final sorted url based on data from page."""
+        url = self.generate_url_from_inputs(response, 'galleryfullnav')
+        return Request(url, meta=response.meta)
+
 
     def _total_matches_from_html(self, response):
         total = response.css('.didYouMeanNoOfItems').extract()
@@ -111,19 +156,25 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         return fields
 
     def _scrape_next_results_page_link(self, response):
-        if not self._fetch_product_boxes(response):
-            return None
-        fields = self._extract_fields(response)
-        fields['pg'] = str(int(fields['pg']) + 1)
-        url = '%s&%s' % (self.BASE_URL, urlencode(fields))
-        return url
+        if not self.sort_mode:
+            if not self._fetch_product_boxes(response):
+                return None
+            fields = self._extract_fields(response)
+            fields['pg'] = str(int(fields['pg']) + 1)
+            url = '%s&%s' % (self.BASE_URL, urlencode(fields))
+            return url
+        else:
+            url = self.generate_url_from_inputs(response, 'gallerynav')
+            page_number = re.findall(r'pg=(\d+)', url)[0]
+            next_page_number = int(page_number) + 1
+            next_page = 'pg=%s' % next_page_number
+            url = re.sub(r'(pg=\d+)', next_page, url)
+            return url
 
     def _fetch_product_boxes(self, response):
-        # return response.css('.productdescription')
         return response.xpath('//div[@class="search-prod-info"]')
 
     def _link_from_box(self, box):
-        # return box.css('.plainlink::attr(href)')[0].extract()
         return box.xpath(
             './/a[contains(@class, "search-prod-desc")]/@href'
         ).extract()[0]
@@ -159,6 +210,8 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         cond_set(product, 'image_url',
                  response.css('#enlImage::attr(src)').extract(),
                  lambda url: urljoin(response.url, url))
+        model = re.findall('var pr_page_id="(\d+)"', response.body)
+        cond_set(product, 'model', model)
         self._populate_related_products(response, product)
 
     def _populate_related_products(self, response, product):
