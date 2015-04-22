@@ -10,6 +10,7 @@ import time
 import thread
 import urllib
 import bz2
+import datetime
 
 import enum
 import pyramid.httpexceptions as exc
@@ -17,8 +18,28 @@ import requests
 import requests.exceptions
 import repoze.lru
 
-from .util import string_from_local2utc as local2utc
-from .util import is_plain_json_list
+
+def is_plain_json_list(fname):
+    with open(fname, 'r') as fh:
+        cont = fh.read(1024)
+    cont = cont.strip()
+    if not cont:
+        return True  # treat empty files as json lists
+    return cont[0] == '{'
+
+
+def local2utc(string, format='%Y-%m-%d %H:%M:%S.%f'):
+    """Convert a string with localtime to UTC"""
+    try:
+        offset = datetime.datetime.utcnow() - datetime.datetime.now()
+        local_datetime = datetime.datetime.strptime(string, format)
+        result_utc_datetime = local_datetime + offset
+        ret = result_utc_datetime.strftime(format)
+    except ValueError:
+        ret = None
+
+    return ret
+
 
 
 LOG = logging.getLogger(__name__)
