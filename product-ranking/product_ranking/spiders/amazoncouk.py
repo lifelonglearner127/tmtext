@@ -11,7 +11,7 @@ from scrapy.selector import Selector
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     MarketplaceSeller
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    cond_set_value
+    cond_set_value, FLOATING_POINT_RGEX
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 
@@ -215,8 +215,13 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         cond_set(prod, 'locale', ['en-US'])
 
         prod['url'] = response.url
-        self._buyer_reviews_from_html(response, prod)
         self._populate_bestseller_rank(prod, response)
+        revs = self._buyer_reviews_from_html(response)
+        if isinstance(revs, Request):
+            meta = {"product": prod}
+            return revs.replace(meta=meta)
+        else:
+            prod['buyer_reviews'] = revs
         return prod
 
     def _search_page_error(self, response):
@@ -281,33 +286,54 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
             return links.extract()[0].strip()
         return None
 
-    def _calculate_buyer_reviews_from_percents(self, total_reviews, table):
-        rating_by_star = {}
-        for title in table.xpath('.//a/@title'):
-            title = title.extract()
-            _match = re.search('(\d+)% of reviews have (\d+) star', title)
-            if _match:
-                _percent, _star = _match.group(1), _match.group(2)
-                if not _star.isdigit() or not _percent.isdigit():
-                    continue
-                rating_by_star[_star] = int(_percent)
-            else:
-                continue
-        # check if some stars are missing (that means, percent is 0)
-        for _star in range(1, 5):
-            if _star not in rating_by_star and str(_star) not in rating_by_star:
-                rating_by_star[str(_star)] = 0
-        # turn percents into numbers
-        for _star, _percent in rating_by_star.items():
-            if int(total_reviews) == 0:  # avoid division by zero
-                rating_by_star[_star] = 0
-            else:
-                rating_by_star[_star] \
-                    = float(int(total_reviews)) * (float(_percent) / 100)
-                rating_by_star[_star] = int(round(rating_by_star[_star]))
-        return rating_by_star
+    def get_buyer_reviews_from_2nd_page(self, response):
+        product = response.meta["product"]
+        buyer_reviews = {}
+        product["buyer_reviews"] = {}
+        total_revs = is_empty(response.xpath(
+            '//span[@class="crAvgStars"]/a/text()').extract(), ''
+        ).replace(",", "")
+        buyer_reviews["num_of_reviews"] = is_empty(
+                re.findall(FLOATING_POINT_RGEX, total_revs), 0
+            )
+        if int(buyer_reviews["num_of_reviews"]) == 0:
+            product["buyer_reviews"] = 0
+            return product
 
-    def _buyer_reviews_from_html(self, response, product):
+        buyer_reviews["rating_by_star"] = {}
+        buyer_reviews = self.get_rating_by_star(response, buyer_reviews)
+
+
+        product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
+
+        return product
+
+    def get_rating_by_star(self, response, buyer_reviews):
+        table = response.xpath(
+                '//table[@id="productSummary"]//'
+                'table[@cellspacing="1"]//tr'
+            )
+        total = 0
+        if table:
+            for tr in table[:5]:
+                rating = is_empty(tr.xpath(
+                    'string(.//td[1])').re(FLOATING_POINT_RGEX), '')
+                number = is_empty(tr.xpath(
+                    'string(.//td[last()])').re(FLOATING_POINT_RGEX), 0)
+                is_perc = is_empty(tr.xpath(
+                    'string(.//td[last()])').extract(), '')
+                if "%" in is_perc:
+                    break
+                if number:
+                    number = int(number.replace(',', ''))
+                    buyer_reviews['rating_by_star'][rating] = number
+                    total += number*int(rating)
+        if total > 0:
+            average = float(total)/ float(buyer_reviews['num_of_reviews'])
+            buyer_reviews['average_rating'] = round(average, 1)
+        return buyer_reviews
+
+    def _buyer_reviews_from_html(self, response):
         stars_regexp = r'% .+ (\d[\d, ]*) '
         total = ''.join(response.css('#summaryStars a::text').extract())
         total = re.search('\d[\d, ]*', total)
@@ -330,9 +356,6 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         if not average:
             average = sum(k * v for k, v in
                           ratings.iteritems()) / total if ratings else 0
-        if not ratings:
-            ratings = self._calculate_buyer_reviews_from_percents(
-                total, response.css('.a-histogram-row .a-span10 ~ td a'))
 
         #For another HTML makeup
         if not total:
@@ -367,7 +390,21 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)
-        cond_set_value(product, 'buyer_reviews', buyer_reviews)
+        if not ratings:
+            buyer_rev_link = response.xpath(
+                '//div[@id="revSum"]//a[contains(text(), "See all")' \
+                ' or contains(text(), "See the customer review")' \
+                ' or contains(text(), "See both customer reviews")]/@href'
+            ).extract()
+            if buyer_rev_link:
+                buyer_rev_req = Request(
+                    url=buyer_rev_link[0],
+                    callback=self.get_buyer_reviews_from_2nd_page
+                )
+                buyer_reviews = buyer_rev_req
+
+        return buyer_reviews
+        # cond_set_value(product, 'buyer_reviews', buyer_reviews)
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
