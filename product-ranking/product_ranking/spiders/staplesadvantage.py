@@ -189,6 +189,10 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                  unicode.strip)
 
     def _populate_from_html(self, response, product):
+        title = response.xpath('//p[contains(@class, "search-prod-desc")]'
+            '/@title'
+            ).extract()
+        cond_set(product, 'title', title)
         xpath = '//div[@id="dotcombrand"]/../preceding-sibling::li[1]/text()'
         brand = response.xpath(xpath).extract()
         if not brand:
@@ -263,3 +267,6 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         total = data['review_count']
         cond_set_value(response.meta['product'], 'buyer_reviews',
                        BuyerReviews(total, avg, ratings))
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
