@@ -6,6 +6,7 @@ import operator
 
 from contrib.product_spider import ProductsSpider
 from product_ranking.items import RelatedProduct, Price,  BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import cond_set, cond_set_value, \
     _populate_from_open_graph_product
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -147,8 +148,8 @@ class StaplesProductsSpider(ProductsSpider):
             cond_set_value(product, 'price', Price(currency[0], price[0]))
         self._populate_related_products(self, response, product)
         buyer_reviews = self._buyer_reviews_from_html(response)
-        if buyer_reviews:
-            cond_set_value(product, 'buyer_reviews', buyer_reviews)
+        cond_set_value(product, 'buyer_reviews',
+                       buyer_reviews or ZERO_REVIEWS_VALUE)
 
     def _populate_related_products(self, self1, response, product):
         xpath = '//*[@class="a200" and text()="Related Products"]' \
