@@ -24,7 +24,7 @@ class MacysScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www\.quill\.com/(.*)"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www1\.macys\.com/shop/product/(.*)"
 
     reviews_tree = None
     max_score = None
@@ -163,11 +163,23 @@ class MacysScraper(Scraper):
         image_url = self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img/@src")
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url) < 1:
-            return None
+            image_url = self.tree_html.xpath("//div[@class='productImageSection']//img/@src")
+            if len(image_url) < 1:
+                return None
+
+        if len(image_url) == 1:
+            try:
+                if self._no_image(image_url[0]):
+                    return None
+            except Exception, e:
+                print "WARNING: ", e.message
+
         return image_url
 
     def _image_count(self):
         image_urls = self._image_urls()
+        if image_urls is None:
+            return 0
         return len(image_urls)
 
     def _video_urls(self):
@@ -200,18 +212,6 @@ class MacysScraper(Scraper):
         if self.pdf_count is None:
             self._pdf_urls()
         return self.pdf_count
-
-    def _webcollage(self):
-        # http://content.webcollage.net/pg-estore/power-page?ird=true&channel-product-id=037000864868
-        url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % self._product_id()
-        html = urllib.urlopen(url).read()
-        m = re.findall(r'_wccontent = (\{.*?\});', html, re.DOTALL)
-        try:
-            if ".webcollage.net" in m[0]:
-                return 1
-        except IndexError:
-            pass
-        return 0
 
     # extract htags (h1, h2) from its product product page tree
     def _htags(self):
@@ -405,7 +405,6 @@ class MacysScraper(Scraper):
         "pdf_count" : _pdf_count, \
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
-        "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "mobile_image_same" : _mobile_image_same, \
@@ -444,9 +443,6 @@ class MacysScraper(Scraper):
         "max_review" : _max_review, \
         "min_review" : _min_review, \
         "reviews" : _reviews, \
-
-        # CONTAINER : PAGE_ATTRIBUTES
-        "webcollage" : _webcollage, \
     }
 
 
