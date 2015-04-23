@@ -291,6 +291,9 @@ class WalmartScraper(Scraper):
         if not existance_360view:
             return 0
         else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+                return 0
+
             self.has_webcollage_360_view = True
             return 1
 
@@ -303,7 +306,11 @@ class WalmartScraper(Scraper):
 
         self.extracted_webcollage_emc_view = True
 
-        emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
+        if self._version() == "Walmart v2":
+            emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
+
+        if self._version() == "Walmart v1":
+            emc = self.tree_html.xpath("//div[@id='manufacturer-content']")
 
         if not emc:
             return 0
@@ -329,6 +336,9 @@ class WalmartScraper(Scraper):
         if not existance_webcollage_video:
             return 0
         else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+                return 0
+
             self.has_webcollage_video_view = True
             return 1
 
@@ -369,6 +379,9 @@ class WalmartScraper(Scraper):
         if not existance_product_tour:
             return 0
         else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+                return 0
+
             self.has_webcollage_product_tour_view = True
             return 1
 
