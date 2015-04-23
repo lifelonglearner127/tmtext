@@ -884,10 +884,10 @@ class SearchSpider(BaseSpider):
                 if currency != "$":
                     price = Utils.convert_to_dollars(price, currency)
             else:
-                self.log("Didn't match product price: " + product_target_price + " " + response.url + "\n", level=log.WARNING)
+                self.log("Didn't match product price: " + product_target_price + " (" + product_name + ")\n", level=log.WARNING)
 
         else:
-            self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
+            self.log("Didn't find product price: (" + product_name + ")\n", level=log.INFO)
 
         return (product_name, product_model, price, None)
 
