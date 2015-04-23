@@ -55,6 +55,7 @@ class Price:
     def __str__(self):
         return self.__repr__()
 
+
 class MarketplaceSeller:
 
     seller = None
@@ -63,15 +64,18 @@ class MarketplaceSeller:
     def __init__(self, seller, other_products):
         self.seller = seller
         self.other_products = other_products
+        if not self.other_products:
+            self.other_products = None
 
     def __repr__(self):
-        return u'%s(name=%s, other_products=%s)' % (
-            self.__class__.__name__,
-            self.seller, self.other_products
-        )
+        return {
+            'seller': self.seller,
+            'other_products': self.other_products
+        }
 
     def __str__(self):
-        return  self.__repr__()
+        return self.__repr__()
+
 
 def scrapy_price_serializer(value):
     """ This method is required to correctly dump values while using JSON
