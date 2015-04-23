@@ -877,14 +877,17 @@ class SearchSpider(BaseSpider):
             product_target_price = price_holder[0].strip()
             # remove commas separating orders of magnitude (ex 2,000)
             product_target_price = re.sub(",","",product_target_price)
-            m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
+            m = re.match("(\$|\xa3)([0-9]+\.?[0-9]*)", product_target_price)
             if m:
-                price = float(m.group(1))
-        #     else:
-        #         self.log("Didn't match product price: " + price + " " + response.url + "\n", level=log.WARNING)
+                price = float(m.group(2))
+                currency = m.group(1)
+                if currency != "$":
+                    price = Utils.convert_to_dollars(price, currency)
+            else:
+                self.log("Didn't match product price: " + product_target_price + " " + response.url + "\n", level=log.WARNING)
 
-        # else:
-        #     self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
+        else:
+            self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
 
         return (product_name, product_model, price, None)
 
