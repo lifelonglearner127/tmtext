@@ -106,7 +106,10 @@ class AmazonProductsSpider(BaseProductsSpider):
 
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
-            result = prod
+            if isinstance(prod['buyer_reviews'], Request):
+                result =  prod['buyer_reviews']
+            else:
+                result = prod
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
             self.log("Giving up on trying to solve the captcha challenge after"
                      " %s tries for: %s" % (self.captcha_retries, prod['url']),
@@ -259,8 +262,14 @@ class AmazonProductsSpider(BaseProductsSpider):
             brand = guess_brand_from_first_words(product['title'])
             cond_set_value(product, 'brand', brand)
         cond_set(product, 'model', model, conv=string.strip)
-        self._buyer_reviews_from_html(response, product)
         self._populate_bestseller_rank(product, response)
+        revs = self._buyer_reviews_from_html(response)
+        if isinstance(revs, Request):
+            meta = {"product": product}
+            product['buyer_reviews'] = revs.replace(meta=meta)
+        else:
+            product['buyer_reviews'] = revs
+
 
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...
@@ -379,7 +388,7 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         return result
 
-    def _buyer_reviews_from_html(self, response, product):
+    def _buyer_reviews_from_html(self, response):
         stars_regexp = r'.+(\d[\d, ]*)'
         total = ''.join(response.css('#summaryStars a::text').extract())
         total = re.search('\d[\d, ]*', total)
@@ -454,40 +463,68 @@ class AmazonProductsSpider(BaseProductsSpider):
                 average = float("%.2f" % round(average, 2))
 
         if not ratings:
-            table = response.xpath(
-                '//table[@id="histogramTable"]'
-                '/tr[@class="a-histogram-row"]')
-            ratings \
-                = self._calculate_buyer_reviews_from_percents(
-                    total, table)
+            buyer_rev_link = response.xpath(
+                '//div[@id="summaryContainer"]//table[@id="histogramTable"]'
+                '/../a/@href'
+            ).extract()
+            if buyer_rev_link:
+                buyer_rev_req = Request(
+                    url=buyer_rev_link[0],
+                    callback=self.get_buyer_reviews_from_2nd_page
+                )
+                return buyer_rev_req
+            else:
+                return 0
 
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)
-        cond_set_value(product, 'buyer_reviews', buyer_reviews)
+        return buyer_reviews
 
-    def _calculate_buyer_reviews_from_percents(self, total_reviews, table):
-        rating_by_star = {}
-        for title in table.xpath('.//a/@title'):
-            title = title.extract()
-            _match = re.search('(\d+)% of reviews have (\d+) star', title)
-            if _match:
-                _percent, _star = _match.group(1), _match.group(2)
-                if not _star.isdigit() or not _percent.isdigit():
-                    continue
-                rating_by_star[_star] = int(_percent)
-            else:
-                continue
-        # check if some stars are missing (that means, percent is 0)
-        for _star in range(1, 5):
-            if _star not in rating_by_star and str(_star) not in rating_by_star:
-                rating_by_star[str(_star)] = 0
-        # turn percents into numbers
-        for _star, _percent in rating_by_star.items():
-            if int(total_reviews) == 0:  # avoid division by zero
-                rating_by_star[_star] = 0
-            else:
-                rating_by_star[_star] \
-                    = float(int(total_reviews)) * (float(_percent) / 100)
-                rating_by_star[_star] = int(round(rating_by_star[_star]))
-        return rating_by_star
+    def get_buyer_reviews_from_2nd_page(self, response):
+        product = response.meta["product"]
+        buyer_reviews = {}
+        product["buyer_reviews"] = {}
+        total_revs = is_empty(response.xpath(
+            '//table[@id="productSummary"]'
+            '//span[@class="crAvgStars"]/a/text()').extract(), ''
+        ).replace(",", "")
+        buyer_reviews["num_of_reviews"] = is_empty(
+                re.findall(FLOATING_POINT_RGEX, total_revs), 0
+            )
+        if int(buyer_reviews["num_of_reviews"]) == 0:
+            product["buyer_reviews"] = 0
+            return product
+
+        buyer_reviews["rating_by_star"] = {}
+        buyer_reviews = self.get_rating_by_star(response, buyer_reviews)
+
+
+        product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
+
+        return product
+
+    def get_rating_by_star(self, response, buyer_reviews):
+        table = response.xpath(
+                '//table[@id="productSummary"]//'
+                'table[@cellspacing="1"]//tr'
+            )
+        total = 0
+        if table:
+            for tr in table[:5]:
+                rating = is_empty(tr.xpath(
+                    'string(.//td[1])').re(FLOATING_POINT_RGEX), '')
+                number = is_empty(tr.xpath(
+                    'string(.//td[last()])').re(FLOATING_POINT_RGEX), 0)
+                is_perc = is_empty(tr.xpath(
+                    'string(.//td[last()])').extract(), '')
+                if "%" in is_perc:
+                    break
+                if number:
+                    number = int(number.replace(',', ''))
+                    buyer_reviews['rating_by_star'][rating] = number
+                    total += number*int(rating)
+        if total > 0:
+            average = float(total)/ float(buyer_reviews['num_of_reviews'])
+            buyer_reviews['average_rating'] = round(average, 1)
+        return buyer_reviews
