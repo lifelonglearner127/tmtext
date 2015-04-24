@@ -157,6 +157,8 @@ class GoogleProductsSpider(BaseProductsSpider):
                 link = 'https://www.google.co.uk' + review_link
                 return Request(link, callback=self.handle_reviews_request,
                                meta=response.meta)
+            else:
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
 
         # strip GET data from only google urls
         if 'google.co.uk/shopping/product' in product['url']:
@@ -382,6 +384,7 @@ class GoogleProductsSpider(BaseProductsSpider):
             '//div[@id="reviews"]/div[@id="reviews"]'
         )
         if not revs:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return
         total = response.xpath(
             '//div[@class="_Ape"]/div/div/div[@class="_wpe"]/text()'
