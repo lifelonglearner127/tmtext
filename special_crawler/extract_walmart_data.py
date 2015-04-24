@@ -179,7 +179,42 @@ class WalmartScraper(Scraper):
         if not self._has_video_button():
             return None
 
+        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE + self._extract_product_id()
+
         self.video_urls = []
+
+        #TODO: handle errors
+        response_text = urllib.urlopen(request_url).read()
+
+        # get first "src" value in response
+        # # webcollage videos
+        video_url_candidates = re.findall("src: \"([^\"]+)\"", response_text)
+
+        if video_url_candidates:
+            # remove escapes
+            #TODO: better way to do this?
+            for video_url_item in video_url_candidates:
+                video_url_candidate = re.sub('\\\\', "", video_url_item)
+
+                # if it ends in flv, it's a video, ok
+                if video_url_candidate.endswith(".flv"):
+                    self.has_webcollage_media = True
+                    self.has_video = True
+                    self.video_urls.append(video_url_candidate)
+#                    break
+
+                # if it doesn't, it may be a url to make another request to, to get customer reviews video
+                if "client.expotv.com" in video_url_candidate:
+                    new_response = urllib.urlopen(video_url_candidate).read()
+                    video_id_candidates = re.findall("param name=\"video\" value=\"(.*)\"", new_response)
+
+                    if video_id_candidates:
+                        video_id = video_id_candidates[0]
+
+                        video_url_req = "http://client.expotv.com/vurl/%s?output=mp4" % video_id
+                        video_url = urllib.urlopen(video_url_req).url
+                        self.has_video = True
+                        self.video_urls.append(video_url)
 
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
