@@ -378,9 +378,13 @@ class AmazonProductsSpider(BaseProductsSpider):
         product = response.meta["product"]
         buyer_reviews = {}
         product["buyer_reviews"] = {}
-        buyer_reviews["num_of_reviews"] = is_empty(response.xpath(
+        num_of_reviews = is_empty(response.xpath(
             '//span[contains(@class, "totalReviewCount")]/text()').extract()
-        ).replace(",", "")
+        )
+        if num_of_reviews:
+            buyer_reviews["num_of_reviews"] = num_of_reviews.replace(",", "")
+        else:
+            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
         average = is_empty(response.xpath(
             '//div[contains(@class, "averageStarRatingNumerical")]/span/text()'
         ).extract())
