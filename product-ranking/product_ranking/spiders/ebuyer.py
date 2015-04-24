@@ -260,6 +260,7 @@ class EBuyerProductSpider(BaseProductsSpider):
             '//div[@class="average_score"]/@title'
         ).extract()
         if not avg_total:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return product
         return self.populate_by_star(response)
 
