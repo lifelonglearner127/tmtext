@@ -179,6 +179,8 @@ class WalmartScraper(Scraper):
         if not self._has_video_button():
             return None
 
+        self.video_urls = []
+
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
         response_text = urllib.urlopen(request_url).read()
