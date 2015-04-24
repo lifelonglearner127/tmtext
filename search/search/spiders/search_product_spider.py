@@ -104,8 +104,9 @@ class SearchProductSpider(SearchSpider):
 
         item = self.extract_product_data(response, item)
 
-        # add result to items
-        items.add(item)
+        # add result to items (if it was successful)
+        if item:
+            items.add(item)
 
 
         product_urls = response.meta['search_results']
