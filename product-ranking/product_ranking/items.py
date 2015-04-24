@@ -89,17 +89,17 @@ def scrapy_price_serializer(value):
     else:
         return value
 
-def scrapy_marketplace_serializer(value):
-    """ This method is required to correctly dump values while using JSON
-        output (otherwise we'd have "can not serialize to JSON" error).
-        `value` can be a string, number, or a `MarketplaceSeller` instance.
-    :param value: str, url or a `MarketplaceSeller` instance
-    :return: str
-    """
-    if isinstance(value, MarketplaceSeller):
-        return value.__str__()
-    else:
-        return str(value)
+# def scrapy_marketplace_serializer(value):
+#     """ This method is required to correctly dump values while using JSON
+#         output (otherwise we'd have "can not serialize to JSON" error).
+#         `value` can be a string, number, or a `MarketplaceSeller` instance.
+#     :param value: str, url or a `MarketplaceSeller` instance
+#     :return: str
+#     """
+#     if isinstance(value, MarketplaceSeller):
+#         return value.__str__()
+#     else:
+#         return str(value)
 
 
 class SiteProductItem(Item):
@@ -122,7 +122,8 @@ class SiteProductItem(Item):
     description = Field()  # String with HTML tags.
     brand = Field()  # String.
     price = Field(serializer=scrapy_price_serializer)  # see Price obj
-    marketplace = Field(serializer=scrapy_marketplace_serializer) # see marketplace obj
+    #marketplace = Field(serializer=scrapy_marketplace_serializer) # see marketplace obj
+    marketplace = Field()
     locale = Field()  # String.
     # Dict of RelatedProducts. The key is the relation name.
     related_products = Field()

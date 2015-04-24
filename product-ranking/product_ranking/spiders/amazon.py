@@ -6,13 +6,13 @@ import json
 import string
 import re
 from urllib import unquote
+import urlparse
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
-    MarketplaceSeller
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 
@@ -84,9 +84,28 @@ class AmazonProductsSpider(BaseProductsSpider):
 
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
-            if isinstance(prod["buyer_reviews"], Request):  # re-crawl this Req
-                meta = {"product": prod}
+            mkt_place_link = urlparse.urljoin(
+                response.url,
+                is_empty(response.xpath(
+                    "//div[contains(@class, 'a-box-inner')]" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
+                    "//div[@id='secondaryUsedAndNew']" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
+                ).extract()))
+
+            meta = {"product": prod}
+
+            if isinstance(prod["buyer_reviews"], Request):
+                if mkt_place_link:
+                    meta["mkt_place_link"] = mkt_place_link
                 return prod["buyer_reviews"].replace(meta=meta)
+
+            if mkt_place_link:
+                return Request(
+                    url=mkt_place_link, 
+                    callback=self.parse_marketplace,
+                    meta=meta
+                )
 
             result = prod
 
@@ -180,48 +199,6 @@ class AmazonProductsSpider(BaseProductsSpider):
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         self._get_price(response, product)
-
-        seller = None
-        other_products = None
-
-        seller = response.xpath(
-            '//div[@id="kindle-av-div"]/div[@class="buying"]/b/text() |'
-            '//div[@class="buying"]/b/text()'
-        ).extract()
-
-        if not seller:
-            seller_all = response.xpath('//div[@class="buying"]/b/a')#tr/td/
-            seller = seller_all.xpath('text()').extract()   
-            other_products = seller_all.xpath('@href').extract()
-        if not seller:
-            seller_all = response.xpath('//div[@id="merchant-info"]/a[1]')
-            other_products = seller_all.xpath('@href').extract()
-            seller = seller_all.xpath('text()').extract()
-        #seller in description as text
-        if not seller:
-            seller = response.xpath(
-                '//li[@id="sold-by-merchant"]/text()'
-            ).extract()
-            seller = ''.join(seller).strip()
-        #simple text seller
-        if not seller:
-            seller = response.xpath('//div[@id="merchant-info"]/text()').extract()
-            if seller:
-                seller = re.findall("sold by([^\.]*)", seller[0])
-        if not seller:
-            seller_all = response.xpath('//div[@id="usedbuyBox"]/div/div/a')
-            other_products = seller_all.xpath('@href').extract()
-            seller = seller_all.xpath('text()').extract()
-
-        if seller and isinstance(seller, list):
-            seller = seller[0].strip()
-        if other_products:
-            other_products = "www.amazon.com" + other_products[0]
-
-        if seller or other_products:
-            product["marketplace"] = MarketplaceSeller(
-                seller=seller, other_products=other_products
-            )
         
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
@@ -363,6 +340,15 @@ class AmazonProductsSpider(BaseProductsSpider):
         #print('*' * 20, 'parsing buyer reviews from', response.url)
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
+
+        meta = {"product": product}
+        mkt_place_link = response.meta.get("mkt_place_link", None)
+        if mkt_place_link:
+            return Request(
+                url=mkt_place_link, 
+                callback=self.parse_marketplace,
+                meta=meta
+            )
 
         return product
 
@@ -585,3 +571,42 @@ class AmazonProductsSpider(BaseProductsSpider):
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
+
+    def parse_marketplace(self, response):
+        product = response.meta["product"]
+
+        marketplaces = response.meta.get("marketplaces", [])
+
+        for seller in response.xpath(
+            '//div[contains(@class, "a-section")]/' \
+            'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
+
+            price = is_empty(seller.xpath(
+                'div[contains(@class, "a-column")]' \
+                '/span[contains(@class, "price")]/text()'
+            ).re(FLOATING_POINT_RGEX))
+
+            name = is_empty(seller.xpath(
+                'div/p[contains(@class, "Name")]/span/a/text()').extract())
+
+            marketplaces.append({
+                "price": Price(price=price, priceCurrency="USD"), 
+                "name": name
+            })
+
+        next_link = is_empty(response.xpath(
+            "//ul[contains(@class, 'a-pagination')]" \
+            "/li[contains(@class, 'a-last')]/a/@href"
+        ).extract())
+
+        if next_link:
+            meta = {"product": product, "marketplaces": marketplaces}
+            return Request(
+                url=urlparse.urljoin(response.url, next_link), 
+                callback=self.parse_marketplace,
+                meta=meta
+            )
+
+        product["marketplace"] = marketplaces
+
+        return product

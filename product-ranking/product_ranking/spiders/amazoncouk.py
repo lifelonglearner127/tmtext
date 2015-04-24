@@ -3,13 +3,13 @@
 from __future__ import division, absolute_import, unicode_literals
 import re
 import json
+import urlparse
 
 from scrapy.http import Request
 from scrapy.log import ERROR, WARNING
 from scrapy.selector import Selector
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
-    MarketplaceSeller
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value, FLOATING_POINT_RGEX
 
@@ -17,7 +17,7 @@ from product_ranking.amazon_bestsellers import amazon_parse_department
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
-is_empty = lambda x, y: x[0] if x else y
+is_empty = lambda x, y=None: x[0] if x else y
 
 class AmazonCoUkProductsSpider(BaseProductsSpider):
     name = "amazoncouk_products"
@@ -123,49 +123,6 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
                     priceCurrency='GBP'
                 )
 
-        #Marketplace
-        seller = None
-        other_products = None
-
-        seller = response.xpath(
-            '//div[@id="kindle-av-div"]/div[@class="buying"]/b/text() |'
-            '//div[@class="buying"]/b/text()'
-        ).extract()
-
-        if not seller:
-            seller_all = response.xpath('//div[@class="buying"]/b/a')#tr/td/
-            seller = seller_all.xpath('text()').extract()   
-            other_products = seller_all.xpath('@href').extract()
-        if not seller:
-            seller_all = response.xpath('//div[@id="merchant-info"]/a[1]')
-            other_products = seller_all.xpath('@href').extract()
-            seller = seller_all.xpath('text()').extract()
-        #seller in description as text
-        if not seller:
-            seller = response.xpath(
-                '//li[@id="sold-by-merchant"]/text()'
-            ).extract()
-            seller = ''.join(seller).strip()
-        #simple text seller
-        if not seller:
-            seller = response.xpath('//div[@id="merchant-info"]/text()').extract()
-            if seller:
-                seller = re.findall("sold by([^\.]*)", seller[0])
-        if not seller:
-            seller_all = response.xpath('//div[@id="usedbuyBox"]/div/div/a')
-            other_products = seller_all.xpath('@href').extract()
-            seller = seller_all.xpath('text()').extract()
-
-        if seller and isinstance(seller, list):
-            seller = seller[0]
-        if other_products:
-            other_products = "www.amazon.co.uk/" + other_products[0]
-
-        if seller or other_products:
-            prod["marketplace"] = MarketplaceSeller(
-                seller=seller, other_products=other_products
-            )
-
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
             description = response.xpath(
@@ -216,12 +173,31 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
         prod['url'] = response.url
         self._populate_bestseller_rank(prod, response)
+
         revs = self._buyer_reviews_from_html(response)
         if isinstance(revs, Request):
             meta = {"product": prod}
             return revs.replace(meta=meta)
         else:
             prod['buyer_reviews'] = revs
+
+        mkt_place_link = urlparse.urljoin(
+                response.url,
+                is_empty(response.xpath(
+                    "//div[contains(@class, 'a-box-inner')]" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
+                    "//div[@id='secondaryUsedAndNew']" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
+                ).extract()))
+
+        if mkt_place_link:
+            meta = {"product": prod}
+            return Request(
+                url=mkt_place_link, 
+                callback=self.parse_marketplace,
+                meta=meta
+            )
+
         return prod
 
     def _search_page_error(self, response):
@@ -408,3 +384,83 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
+
+    def parse_marketplace(self, response):
+        if self._has_captcha(response):
+            result = self._handle_captcha(response, self.parse_marketplace)
+
+        product = response.meta["product"]
+
+        marketplaces = response.meta.get("marketplaces", [])
+
+        for seller in response.xpath(
+            '//div[contains(@class, "a-section")]/' \
+            'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
+
+            price = is_empty(seller.xpath(
+                'div[contains(@class, "a-column")]' \
+                '/span[contains(@class, "price")]/text()'
+            ).re(FLOATING_POINT_RGEX))
+
+            name = is_empty(seller.xpath(
+                'div/p[contains(@class, "Name")]/span/a/text()').extract())
+
+            marketplaces.append({
+                "price": Price(price=price, priceCurrency="USD"), 
+                "name": name
+            })
+
+        next_link = is_empty(response.xpath(
+            "//ul[contains(@class, 'a-pagination')]" \
+            "/li[contains(@class, 'a-last')]/a/@href"
+        ).extract())
+
+        if next_link:
+            meta = {"product": product, "marketplaces": marketplaces}
+            return Request(
+                url=urlparse.urljoin(response.url, next_link), 
+                callback=self.parse_marketplace,
+                meta=meta
+            )
+
+        product["marketplace"] = marketplaces
+
+        return product
+
+    def _handle_captcha(self, response, callback):
+        # FIXME This is untested and wrong.
+        captcha_solve_try = response.meta.get('captcha_solve_try', 0)
+        url = response.url
+        self.log("Captcha challenge for %s (try %d)."
+                 % (url, captcha_solve_try),
+                 level=INFO)
+
+        captcha = self._solve_captcha(response)
+
+        if captcha is None:
+            self.log(
+                "Failed to guess captcha for '%s' (try: %d)." % (
+                    url, captcha_solve_try),
+                level=ERROR
+            )
+            result = None
+        else:
+            self.log(
+                "On try %d, submitting captcha '%s' for '%s'." % (
+                    captcha_solve_try, captcha, url),
+                level=INFO
+            )
+            meta = response.meta.copy()
+            meta['captcha_solve_try'] = captcha_solve_try + 1
+            result = FormRequest.from_response(
+                response,
+                formname='',
+                formdata={'field-keywords': captcha},
+                callback=callback,
+                dont_filter=True,
+                meta=meta)
+
+        return result
+
+    def _has_captcha(self, response):
+        return '.images-amazon.com/captcha/' in response.body_as_unicode()
