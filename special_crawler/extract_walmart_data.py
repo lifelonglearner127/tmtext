@@ -37,6 +37,8 @@ class WalmartScraper(Scraper):
 
     # base URL for request containing video URL from webcollage
     BASE_URL_VIDEOREQ_WEBCOLLAGE = "http://json.webcollage.net/apps/json/walmart?callback=jsonCallback&environment-id=live&cpi="
+    # base URL for request containing video URL from webcollage
+    BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW = "http://www.walmart-content.com/product/idml/video/%s/WebcollageVideos"
     # base URL for request containing video URL from sellpoints
     BASE_URL_VIDEOREQ_SELLPOINTS = "http://www.walmart.com/product/idml/video/%s/SellPointsVideos"
     # base URL for request containing video URL from sellpoints
@@ -187,6 +189,7 @@ class WalmartScraper(Scraper):
         # get first "src" value in response
         # # webcollage videos
         video_url_candidates = re.findall("src: \"([^\"]+)\"", response_text)
+
         if video_url_candidates:
             # remove escapes
             #TODO: better way to do this?
@@ -212,6 +215,21 @@ class WalmartScraper(Scraper):
                         video_url = urllib.urlopen(video_url_req).url
                         self.has_video = True
                         self.video_urls.append(video_url)
+
+        # webcollage video info
+        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
+        response_text = urllib.urlopen(request_url).read()
+        tree = html.fromstring(response_text)
+
+        if tree.xpath("//div[@id='iframe-video-content']"):
+            video_base_path = tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base")[0]
+            sIndex = response_text.find('{"videos":[')
+            eIndex = response_text.find('}]}') + 3
+            jsonVideo = response_text[sIndex:eIndex]
+            jsonVideo = json.loads(jsonVideo)
+
+            if len(jsonVideo['videos']) > 0:
+                self.video_urls.append(video_base_path + jsonVideo['videos'][0]['src']['src'])
 
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
