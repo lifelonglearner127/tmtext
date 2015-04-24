@@ -229,7 +229,8 @@ class WalmartScraper(Scraper):
             jsonVideo = json.loads(jsonVideo)
 
             if len(jsonVideo['videos']) > 0:
-                self.video_urls.append(video_base_path + jsonVideo['videos'][0]['src']['src'])
+                for video_info in jsonVideo['videos']:
+                    self.video_urls.append(video_base_path + video_info['src']['src'])
 
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
