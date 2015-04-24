@@ -404,26 +404,45 @@ class WalmartScraper(Scraper):
         self.extracted_pdf_urls = True
         self.pdf_urls = []
 
-        pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+        if self._version() == "Walmart v1":
+            """Extracts pdf URL for a given walmart product
+            and puts them in instance variable.
+            """
 
-        for item in pdf_links:
-            if item.strip().endswith(".pdf"):
-                self.pdf_urls.append(item.strip()) if item.strip() not in self.pdf_urls else None
-
-        if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
-            request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
-            request_url = "http:" + request_url.strip()
+            request_url = self.BASE_URL_PDFREQ_WEBCOLLAGE + self._extract_product_id()
 
             response_text = urllib.urlopen(request_url).read().decode('string-escape')
 
-            pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
-
+            pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")',
+                                            response_text)
             if pdf_url_candidates:
-                self.has_webcollage_media = True
-                for item in pdf_url_candidates:
-                    # remove escapes
-                    pdf_url = re.sub('\\\\', "", item.strip())
-                    self.pdf_urls.append(pdf_url) if pdf_url not in self.pdf_urls else None
+                # remove escapes
+                for pdf_url in pdf_url_candidates:
+                    pdf_url = re.sub('\\\\', "", pdf_url)
+                    self.has_webcollage_media = True
+                    self.has_pdf = True
+                    self.pdf_urls.append(pdf_url)
+
+        if self._version() == "Walmart v2":
+            pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+            for item in pdf_links:
+                if item.strip().endswith(".pdf"):
+                    self.pdf_urls.append(item.strip()) if item.strip() not in self.pdf_urls else None
+
+            if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
+                request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
+                request_url = "http:" + request_url.strip()
+
+                response_text = urllib.urlopen(request_url).read().decode('string-escape')
+
+                pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
+
+                if pdf_url_candidates:
+                    self.has_webcollage_media = True
+                    for item in pdf_url_candidates:
+                        # remove escapes
+                        pdf_url = re.sub('\\\\', "", item.strip())
+                        self.pdf_urls.append(pdf_url) if pdf_url not in self.pdf_urls else None
 
         if self.pdf_urls:
             self.has_pdf = True
