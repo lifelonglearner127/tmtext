@@ -18,7 +18,7 @@ from product_ranking.spiders import BaseProductsSpider, \
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 
-is_empty = lambda x: x[0] if x else None
+is_empty = lambda x, y=None: x[0] if x else y
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -584,7 +584,7 @@ class AmazonProductsSpider(BaseProductsSpider):
             price = is_empty(seller.xpath(
                 'div[contains(@class, "a-column")]' \
                 '/span[contains(@class, "price")]/text()'
-            ).re(FLOATING_POINT_RGEX))
+            ).re(FLOATING_POINT_RGEX), 0)
 
             name = is_empty(seller.xpath(
                 'div/p[contains(@class, "Name")]/span/a/text()').extract())

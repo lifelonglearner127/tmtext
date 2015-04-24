@@ -400,7 +400,7 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
             price = is_empty(seller.xpath(
                 'div[contains(@class, "a-column")]' \
                 '/span[contains(@class, "price")]/text()'
-            ).re(FLOATING_POINT_RGEX))
+            ).re(FLOATING_POINT_RGEX), 0)
 
             name = is_empty(seller.xpath(
                 'div/p[contains(@class, "Name")]/span/a/text()').extract())
@@ -464,3 +464,13 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
     def _has_captcha(self, response):
         return '.images-amazon.com/captcha/' in response.body_as_unicode()
+
+    def _solve_captcha(self, response):
+        forms = response.xpath('//form')
+        assert len(forms) == 1, "More than one form found."
+
+        captcha_img = forms[0].xpath(
+            '//img[contains(@src, "/captcha/")]/@src').extract()[0]
+
+        self.log("Extracted capcha url: %s" % captcha_img, level=DEBUG)
+        return self._cbw.solve_captcha(captcha_img)
