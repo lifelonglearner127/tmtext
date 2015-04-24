@@ -74,11 +74,10 @@ def main_starter(TASK_QUEUES_LIST):
 
 
 if (__name__ == '__main__'):
-    # uncomment for production
-    # time.sleep(random.randrange(10))
-    # if not can_run():
-    #     sys.exit()
-    # mark_as_running()
+    time.sleep(random.randrange(10))
+    if not can_run():
+        sys.exit()
+    mark_as_running()
     logging.config.dictConfig(log_settings)
     logger = logging.getLogger('cache_log')
     main_starter(TASK_QUEUES_LIST)

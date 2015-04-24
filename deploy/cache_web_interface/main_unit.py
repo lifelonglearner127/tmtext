@@ -3,11 +3,12 @@ import sys
 import time
 import datetime
 import json
+import random
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
 
-from flask import Flask, request
+from flask import Flask, request, send_from_directory, send_file
 from flask import render_template
 from boto.sqs.message import Message
 import boto.sqs
@@ -16,6 +17,16 @@ from cache_layer.simmetrica_class import Simmetrica
 
 
 app = Flask(__name__)
+
+
+def send_msg_to_sqs(task):
+    sqs_conn = boto.sqs.connect_to_region("us-east-1")
+    queue = sqs_conn.get_queue('cache_sqs_ranking_spiders_tasks_tests')
+    m = Message()
+    dumped_task = json.dumps(task)
+    m.set_body(dumped_task)
+    queue.write(m)
+    return dumped_task
 
 
 @app.route('/cache-stats', methods=['GET', 'POST'])
@@ -84,7 +95,7 @@ def add_task():
         searchterms_str = data.get('searchterms_str')
         if searchterms_str:
             task['searchterms_str'] = searchterms_str
-        quantity = data['quantity']
+        quantity = data.get('quantity')
         if quantity:
             task['cmd_args'] = {'quantity': quantity}
 
@@ -95,15 +106,45 @@ def add_task():
         if branch_name:
             task['branch_name'] = branch_name
 
-        sqs_conn = boto.sqs.connect_to_region("us-east-1")
-        queue = sqs_conn.get_queue('cache_sqs_ranking_spiders_tasks_tests')
-        m = Message()
-        dumped_task = json.dumps(task)
-        m.set_body(dumped_task)
+        freshness = data.get('freshness')
+        if freshness:
+            task['freshness'] = freshness
 
+        dumped_task = send_msg_to_sqs(task)
         return render_template('success.html', task=dumped_task)
     else:
-        return render_template('add_task.html')
+        default_id = random.randrange(10000,90000)
+        return render_template('add_task.html', default_id=default_id)
+
+
+@app.route('/send-task-again', methods=['GET', 'POST'])
+def send_task_again():
+    if request.method == 'POST':
+        data = request.form
+        task = json.loads(data['task'])
+        task['task_id'] = random.randrange(10000,90000)
+        dumped_task = send_msg_to_sqs(task)
+        return render_template('success.html', task=dumped_task)
+
+
+@app.route('/all-logs')
+def list_all_logs():
+    path = '/tmp/cache_logs/'
+    l = os.listdir(path)
+    l.sort(reverse=True)
+    return render_template('all_logs.html', logs=l)
+
+
+@app.route('/cache-logs/<path:filename>')
+def cache_logs(filename):
+    log_folder = '/tmp/cache_logs/'
+    log_path = os.path.join(log_folder, filename)
+    if os.path.exists(log_path):
+        lines = open(log_path, 'r').readlines()
+        data = '<br>'.join(lines)
+        return data
+    else:
+        return 'Log file not exists'
 
 
 if __name__ == '__main__':

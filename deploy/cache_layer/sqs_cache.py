@@ -190,6 +190,8 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
     if last_request:  # request hash entry existing in database
         logger.info("Last request was found")
         # last Request is older than 1 hour
+        logger.info("time %s", time.time())
+        logger.info("last request time %s", float(last_request))
         if time.time() - float(last_request) > 3600:
             logger.info("Last request is very old")
             logger.info("Provide new task to spiders SQS")
@@ -260,6 +262,7 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
     requests = get_data_from_cache_hash('requests', task_stamp, cache_db)
     requests = pickle.loads(requests)
     logger.info("Return data to all requests/servers")
+    counter = 0
     while requests:
         item = requests.pop()
         logger.info("Request: %s", item)
@@ -270,10 +273,14 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
         send_status_back_to_server("Finished.", server_name)
         simmetrica.set_time_of_newest_resp()
         simmetrica.set_time_of_oldest_resp()
+        if counter >= 1:
+            simmetrica.increment_returned_resp_set(task_stamp)
+        counter += 1
         
     logger.info("Update requests database entry with blank requests list")
     requests = pickle.dumps(requests)
     cache_db.hmset('requests', {task_stamp: requests})
+    cache_db.hdel('last_request', task_stamp)
 
 
 def set_logger(task_message):
@@ -309,13 +316,16 @@ def main(queue_name):
     task_stamp = generate_task_stamp(task_message)
     logger.debug("Task stamp:     %s", task_stamp)
     freshness = task_message.get('freshness')
+    if freshness:
+        freshness = float(freshness) * 3600
     if not freshness:
-        freshness = 30*60 # 12*60*60 // 3.5*12*60*60
+        freshness = 60*60 # 12*60*60 // 3.5*12*60*60
 
     response = get_data_from_cache_hash('responses', task_stamp, cache_db)
     if response:
         logger.info("Use existing response")
         timestamp, output = unpickle_data(response)
+        # all comparison performed in seconds.
         if time.time() - timestamp < int(freshness):
             logger.info("Existing response fresh enough")
             # change _msg_id for output msg

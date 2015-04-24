@@ -4,7 +4,7 @@
 </head>
 
 <body>
-    <h1>Cache simmetrica stats</h1>
+    <h1>Cache simmetrica stats for {{time_range}}</h1>
     <div>
         {% if not total_cached_items %}
         No any items were found in cache.
@@ -17,7 +17,7 @@
         {% endif %}
     </div>
     <div>
-        <h3>Percent and quantity of items served from cache for last {{time_range}}:</h3>
+        <h3>Percents and quantity of items served from cache for last {{time_range}}:</h3>
         <ul>
             <li>Total received requests: {{total_requests}}</li>
             <li>Total responses sent from cache: {{total_responses}}</li>
@@ -51,6 +51,9 @@
     </div>
     <p>
         <a href="/add-task">Add new task to cache</a>
+    </p>
+    <p>
+        <a href="/all-logs">Display cache logs</a>
     </p>
 </body>
 </html>
