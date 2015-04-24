@@ -291,6 +291,9 @@ class WalmartScraper(Scraper):
         if not existance_360view:
             return 0
         else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+                return 0
+
             self.has_webcollage_360_view = True
             return 1
 
@@ -303,7 +306,11 @@ class WalmartScraper(Scraper):
 
         self.extracted_webcollage_emc_view = True
 
-        emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
+        if self._version() == "Walmart v2":
+            emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
+
+        if self._version() == "Walmart v1":
+            emc = self.tree_html.xpath("//div[@id='manufacturer-content']")
 
         if not emc:
             return 0
@@ -329,6 +336,9 @@ class WalmartScraper(Scraper):
         if not existance_webcollage_video:
             return 0
         else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+                return 0
+
             self.has_webcollage_video_view = True
             return 1
 
@@ -369,6 +379,9 @@ class WalmartScraper(Scraper):
         if not existance_product_tour:
             return 0
         else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+                return 0
+
             self.has_webcollage_product_tour_view = True
             return 1
 
@@ -391,26 +404,45 @@ class WalmartScraper(Scraper):
         self.extracted_pdf_urls = True
         self.pdf_urls = []
 
-        pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+        if self._version() == "Walmart v1":
+            """Extracts pdf URL for a given walmart product
+            and puts them in instance variable.
+            """
 
-        for item in pdf_links:
-            if item.strip().endswith(".pdf"):
-                self.pdf_urls.append(item.strip()) if item.strip() not in self.pdf_urls else None
-
-        if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
-            request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
-            request_url = "http:" + request_url.strip()
+            request_url = self.BASE_URL_PDFREQ_WEBCOLLAGE + self._extract_product_id()
 
             response_text = urllib.urlopen(request_url).read().decode('string-escape')
 
-            pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
-
+            pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")',
+                                            response_text)
             if pdf_url_candidates:
-                self.has_webcollage_media = True
-                for item in pdf_url_candidates:
-                    # remove escapes
-                    pdf_url = re.sub('\\\\', "", item.strip())
-                    self.pdf_urls.append(pdf_url) if pdf_url not in self.pdf_urls else None
+                # remove escapes
+                for pdf_url in pdf_url_candidates:
+                    pdf_url = re.sub('\\\\', "", pdf_url)
+                    self.has_webcollage_media = True
+                    self.has_pdf = True
+                    self.pdf_urls.append(pdf_url)
+
+        if self._version() == "Walmart v2":
+            pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+            for item in pdf_links:
+                if item.strip().endswith(".pdf"):
+                    self.pdf_urls.append(item.strip()) if item.strip() not in self.pdf_urls else None
+
+            if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
+                request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
+                request_url = "http:" + request_url.strip()
+
+                response_text = urllib.urlopen(request_url).read().decode('string-escape')
+
+                pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
+
+                if pdf_url_candidates:
+                    self.has_webcollage_media = True
+                    for item in pdf_url_candidates:
+                        # remove escapes
+                        pdf_url = re.sub('\\\\', "", item.strip())
+                        self.pdf_urls.append(pdf_url) if pdf_url not in self.pdf_urls else None
 
         if self.pdf_urls:
             self.has_pdf = True
@@ -621,7 +653,7 @@ class WalmartScraper(Scraper):
                 short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
 
             long_description_existence = self.tree_html.xpath('//*[contains(@class, "ItemSectionContent")]'
-                                                             '//*[contains(@itemprop, "description")]//ul')
+                                                              '//*[contains(@itemprop, "description")]//ul')
 
             if not short_description and not long_description_existence:
                 _desc = self.tree_html.xpath(
