@@ -176,7 +176,7 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
         revs = self._buyer_reviews_from_html(response)
         if isinstance(revs, Request):
-            meta = {"product": prod}
+            meta = {"product": prod, "mkt_place_link": mkt_place_link}
             return revs.replace(meta=meta)
         else:
             prod['buyer_reviews'] = revs
@@ -282,6 +282,14 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
+        if "mkt_place_link" in response.meta:
+            meta = {"product": product}
+            return Request(
+                url=response.meta["mkt_place_link"], 
+                callback=self.parse_marketplace,
+                meta=meta
+            )
+
         return product
 
     def get_rating_by_star(self, response, buyer_reviews):
@@ -375,7 +383,8 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
             if buyer_rev_link:
                 buyer_rev_req = Request(
                     url=buyer_rev_link[0],
-                    callback=self.get_buyer_reviews_from_2nd_page
+                    callback=self.get_buyer_reviews_from_2nd_page,
+                    meta=response.meta.copy()
                 )
                 buyer_reviews = buyer_rev_req
 
