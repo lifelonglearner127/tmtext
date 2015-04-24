@@ -216,7 +216,7 @@ class MothercareProductsSpider(ProductsSpider):
             if total:
                 response.meta['product']['buyer_reviews'] = res
             else:
-                return ZERO_REVIEWS_VALUE
+                response.meta['product']['buyer_reviews'] = ZERO_REVIEWS_VALUE
         else:
             sku = response.css('p.productid::attr(class)').re('p_(\d+)')
             sku = sku[0] if sku else re.search('.+/([^,]+)', response.url).group(1)
@@ -241,6 +241,7 @@ class MothercareProductsSpider(ProductsSpider):
         try:
             avg, total = self._scrape_review_summary(response)
         except ValueError:
+            response.meta['product']['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return
         if not total:
             response.meta['product']['buyer_reviews'] = ZERO_REVIEWS_VALUE
