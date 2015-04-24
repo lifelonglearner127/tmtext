@@ -620,7 +620,8 @@ class WalmartScraper(Scraper):
             if not short_description:
                 short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
 
-            long_description_existence= self.tree_html.xpath('//*[contains(@class, "ItemSectionContent")]//ul')
+            long_description_existence = self.tree_html.xpath('//*[contains(@class, "ItemSectionContent")]'
+                                                             '//*[contains(@itemprop, "description")]//ul')
 
             if not short_description and not long_description_existence:
                 _desc = self.tree_html.xpath(
