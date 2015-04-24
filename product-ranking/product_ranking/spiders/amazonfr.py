@@ -461,7 +461,8 @@ class AmazonProductsSpider(BaseProductsSpider):
             if buyer_rev_link:
                 buyer_rev_req = Request(
                     url=buyer_rev_link[0],
-                    callback=self.get_buyer_reviews_from_2nd_page
+                    callback=self.get_buyer_reviews_from_2nd_page,
+                    meta=response.meta.copy()
                 )
                 return buyer_rev_req
             else:
