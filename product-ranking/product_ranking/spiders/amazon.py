@@ -44,8 +44,9 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     ignore_log_duplications = False  # ... duplicated requests?
     ignore_log_filtered = False  # ... filtered requests?
     test_requests = {
-        'abrakadabra': 0,  # should return 'no products' or just 0 products
-        'nothing_found_123': 0,
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_fou'
+        'nd_123': 0,
         'iphone 9': [200, 800],  # spider should return from 200 to 800 products
         'a': [200, 800], 'b': [200, 800], 'c': [200, 800], 'd': [200, 800],
         'e': [200, 800], 'f': [200, 800], 'g': [200, 800],

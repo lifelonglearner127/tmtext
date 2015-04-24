@@ -449,6 +449,9 @@ class BaseValidator(object):
     def _validate_sponsored_links(self, val):
         return True
 
+    def _validate_category(self, val):
+        return True
+
     def _get_failed_fields(self, data, exclude_first_line=True,
                            add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
