@@ -177,60 +177,40 @@ class WalmartScraper(Scraper):
 
         # if there is no video button, return no video
         if not self._has_video_button():
-            return None
-
-        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE + self._extract_product_id()
+            return
 
         self.video_urls = []
 
-        #TODO: handle errors
-        response_text = urllib.urlopen(request_url).read()
-
-        # get first "src" value in response
-        # # webcollage videos
-        video_url_candidates = re.findall("src: \"([^\"]+)\"", response_text)
-
-        if video_url_candidates:
-            # remove escapes
-            #TODO: better way to do this?
-            for video_url_item in video_url_candidates:
-                video_url_candidate = re.sub('\\\\', "", video_url_item)
-
-                # if it ends in flv, it's a video, ok
-                if video_url_candidate.endswith(".flv"):
-                    self.has_webcollage_media = True
-                    self.has_video = True
-                    self.video_urls.append(video_url_candidate)
-#                    break
-
-                # if it doesn't, it may be a url to make another request to, to get customer reviews video
-                if "client.expotv.com" in video_url_candidate:
-                    new_response = urllib.urlopen(video_url_candidate).read()
-                    video_id_candidates = re.findall("param name=\"video\" value=\"(.*)\"", new_response)
-
-                    if video_id_candidates:
-                        video_id = video_id_candidates[0]
-
-                        video_url_req = "http://client.expotv.com/vurl/%s?output=mp4" % video_id
-                        video_url = urllib.urlopen(video_url_req).url
-                        self.has_video = True
-                        self.video_urls.append(video_url)
+        if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+            self.video_urls = None
+            return
 
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
         response_text = urllib.urlopen(request_url).read()
         tree = html.fromstring(response_text)
 
-        if tree.xpath("//div[@id='iframe-video-content']"):
+        if tree.xpath("//div[@id='iframe-video-content']") and \
+                tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base"):
             video_base_path = tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base")[0]
-            sIndex = response_text.find('{"videos":[')
-            eIndex = response_text.find('}]}') + 3
-            jsonVideo = response_text[sIndex:eIndex]
-            jsonVideo = json.loads(jsonVideo)
+            sIndex = 0
+            eIndex = 0
 
-            if len(jsonVideo['videos']) > 0:
-                for video_info in jsonVideo['videos']:
-                    self.video_urls.append(video_base_path + video_info['src']['src'])
+            while sIndex >= 0:
+                sIndex = response_text.find('{"videos":[', sIndex)
+                eIndex = response_text.find('}]}', sIndex) + 3
+
+                if sIndex < 0:
+                    break
+
+                jsonVideo = response_text[sIndex:eIndex]
+                jsonVideo = json.loads(jsonVideo)
+
+                if len(jsonVideo['videos']) > 0:
+                    for video_info in jsonVideo['videos']:
+                        self.video_urls.append(video_base_path + video_info['src']['src'])
+
+                sIndex = eIndex
 
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
