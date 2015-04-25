@@ -36,11 +36,13 @@ class URLsPipeline(object):
             # write headers row
             titles = []
             if int(spider.output) in [2,3]:
-                titles.append("Product_name")
                 titles.append("Original_URL")
             if int(spider.output) == 4:
                 titles.append("Original_UPC")
-                titles.append("Product_name")
+                titles.append("Product_Name")
+            if int(spider.output) == 5:
+                titles.append("Product_Name")
+                titles.append("Original_URL")
 
             # TODO: uncomment.
             # if int(spider.output) == 3:
@@ -57,7 +59,7 @@ class URLsPipeline(object):
                 titles.append("Product_images")
                 titles.append("Product_videos")
 
-            if int(spider.output) == 3:
+            if int(spider.output) >= 3:
                 titles.append("Confidence")
 
             self.file.write(",".join(titles) + "\n")
@@ -88,7 +90,10 @@ class URLsPipeline(object):
             if option == 4 and 'origin_upc' in item:
                 fields = [item['origin_upc'][0], json.dumps(item['origin_name'])]
             else:
-                fields = [item['origin_url']]
+                if option == 5:
+                    fields = [json.dumps(item['product_name']), item['origin_url']]
+                else:
+                    fields = [item['origin_url']]
 
             # TODO. uncomment
             # # if output type is 3, add additional fields

@@ -61,6 +61,7 @@ class SearchSpider(BaseSpider):
     #                output - integer(1/2/3/4) option indicating output type (either result URL (1), or result URL and source product URL (2))
     #                         3 - same as 2 but with extra field representing confidence score
     #                         4 - same as 3 but with origin products represented by UPC instead of URL
+    #                         5 - same as 3 but with product name as well, on first column (name from source site)
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
     def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
         output = 2, threshold = 1.0, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
