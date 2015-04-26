@@ -6,6 +6,7 @@ from __future__ import print_function
 import json
 import re
 import string
+import urlparse
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -14,10 +15,12 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     MarketplaceSeller
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
-                                     cond_set_value)
+                                     cond_set_value, FLOATING_POINT_RGEX)
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 
+
+is_empty = lambda x, y=None: x[0] if x else y
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -76,6 +79,23 @@ class AmazonProductsSpider(BaseProductsSpider):
             self._populate_from_html(response, prod)
 
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
+
+            mkt_place_link = urlparse.urljoin(
+                response.url,
+                is_empty(response.xpath(
+                    "//div[contains(@class, 'a-box-inner')]" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
+                    "//div[@id='secondaryUsedAndNew']" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
+                ).extract()))
+
+            if mkt_place_link:
+                meta = {"product": prod}
+                return Request(
+                    url=mkt_place_link, 
+                    callback=self.parse_marketplace,
+                    meta=meta
+                )
 
             result = prod
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
@@ -408,3 +428,45 @@ class AmazonProductsSpider(BaseProductsSpider):
                                      average_rating=average,
                                      rating_by_star=ratings)
         cond_set_value(product, 'buyer_reviews', buyer_reviews)
+
+    def parse_marketplace(self, response):
+        if self._has_captcha(response):
+            result = self._handle_captcha(response, self.parse_marketplace)
+
+        product = response.meta["product"]
+
+        marketplaces = response.meta.get("marketplaces", [])
+
+        for seller in response.xpath(
+            '//div[contains(@class, "a-section")]/' \
+            'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
+
+            price = is_empty(seller.xpath(
+                'div[contains(@class, "a-column")]' \
+                '/span[contains(@class, "price")]/text()'
+            ).re(FLOATING_POINT_RGEX), 0)
+
+            name = is_empty(seller.xpath(
+                'div/p[contains(@class, "Name")]/span/a/text()').extract())
+
+            marketplaces.append({
+                "price": Price(price=price, priceCurrency="USD"), 
+                "name": name
+            })
+
+        next_link = is_empty(response.xpath(
+            "//ul[contains(@class, 'a-pagination')]" \
+            "/li[contains(@class, 'a-last')]/a/@href"
+        ).extract())
+
+        if next_link:
+            meta = {"product": product, "marketplaces": marketplaces}
+            return Request(
+                url=urlparse.urljoin(response.url, next_link), 
+                callback=self.parse_marketplace,
+                meta=meta
+            )
+
+        product["marketplace"] = marketplaces
+
+        return product
