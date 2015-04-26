@@ -64,43 +64,44 @@ class ShopNordstromProductsSpider(BaseProductsSpider):
 
         if item_num:  # RelatedProduct
             rp = []
-            sessionId = re.findall("sessionId\"\:\s+\"([^\"]*)", response.body)
-            userId = re.findall("id\"\:\s+\"([^\"]*)", response.body)
-            url = "http://recs.richrelevance.com/rrserver/api/rrPlatform/recsForPlacements" \
-                "?jcb=process" \
-                "&apiClientKey=3c86c35d5f315680" \
-                "&sessionId=%s" \
-                "&userId=%s" \
-                "&apiKey=469cc5818c1eb6ac" \
-                "&chi=0" \
-                "&productId=%s" \
-                "&cts=http://shop.nordstrom.com/&categoryData=false" \
-                "&excludeHtml=true" \
-                "&pref=" \
-                "&ts=1423746984929" \
-                "&sgs=2M2:2M2" \
-                "&placements=item_page.PP_4|item_page.PP_3|item_page.PP_2|item_page.FTR" \
-                "&_=1423746984578" % (
-                    sessionId[0],
-                    userId[0],
-                    re.findall("\d+", item_num[0])[0],
-                    )
+            userId = re.findall("id\"\:\s?\"([^\"]*)", response.body)
+            sessionId = re.findall("sessionId\"\:\s?\"([^\"]*)", response.body)
+            if sessionId and userId:
+                url = "http://recs.richrelevance.com/rrserver/api/rrPlatform/recsForPlacements" \
+                    "?jcb=process" \
+                    "&apiClientKey=3c86c35d5f315680" \
+                    "&sessionId=%s" \
+                    "&userId=%s" \
+                    "&apiKey=469cc5818c1eb6ac" \
+                    "&chi=0" \
+                    "&productId=%s" \
+                    "&cts=http://shop.nordstrom.com/&categoryData=false" \
+                    "&excludeHtml=true" \
+                    "&pref=" \
+                    "&ts=1423746984929" \
+                    "&sgs=2M2:2M2" \
+                    "&placements=item_page.PP_4|item_page.PP_3|item_page.PP_2|item_page.FTR" \
+                    "&_=1423746984578" % (
+                        sessionId[0],
+                        userId[0],
+                        re.findall("\d+", item_num[0])[0],
+                        )
 
-            ajax = urllib2.urlopen(url)
-            rp_ajax = ajax.read()
-            ajax.close()
-            data = json.loads(rp_ajax)
+                ajax = urllib2.urlopen(url)
+                rp_ajax = ajax.read()
+                ajax.close()
+                data = json.loads(rp_ajax)
 
-            try:
-                part = data["placements"][0]["strategyMessage"]
-                related = ["People Also Purchased", "People Also Viewed", "Similar Items", "People Also Bought"]
-                if part in related:
-                    for li_prod in data["placements"][0]["recommendedProducts"]:
-                        title = li_prod.get("name", "")
-                        url = li_prod.get("clickURL", "")
-                        rp.append(RelatedProduct(title, url))
-            except Exception:
-                pass
+                try:
+                    part = data["placements"][0]["strategyMessage"]
+                    related = ["People Also Purchased", "People Also Viewed", "Similar Items", "People Also Bought"]
+                    if part in related:
+                        for li_prod in data["placements"][0]["recommendedProducts"]:
+                            title = li_prod.get("name", "")
+                            url = li_prod.get("clickURL", "")
+                            rp.append(RelatedProduct(title, url))
+                except Exception:
+                    pass
 
             cond_set_value(product, 'related_products', rp)
 
