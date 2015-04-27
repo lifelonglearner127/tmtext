@@ -98,7 +98,7 @@ class ProswimwearScraper(Scraper):
     def _feature_count(self):
         if self.feature_count is None:
             self._features()
-        return self.feature_count
+        return self.feature_count0
 
     def _model_meta(self):
         return None
@@ -342,6 +342,8 @@ class ProswimwearScraper(Scraper):
         all = self.tree_html.xpath("//div[contains(@class,'breadcrumbs')]//li//a//text()")
         out = [self._clean_text(r) for r in all]
         out = out[:-1]
+        if out[0] == "Home":
+            out = out[1:]
         if len(out) < 1:
             return None
         return out
