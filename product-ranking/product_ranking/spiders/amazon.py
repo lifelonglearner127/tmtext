@@ -17,8 +17,10 @@ from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 is_empty = lambda x, y=None: x[0] if x else y
+
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -327,6 +329,8 @@ class AmazonProductsSpider(BaseProductsSpider):
         buyer_reviews["num_of_reviews"] = is_empty(response.xpath(
             '//span[contains(@class, "totalReviewCount")]/text()').extract()
         ).replace(",", "")
+        if not buyer_reviews['num_of_reviews']:
+            buyer_reviews['num_of_reviews'] = ZERO_REVIEWS_VALUE
         average = is_empty(response.xpath(
             '//div[contains(@class, "averageStarRatingNumerical")]/span/text()'
         ).extract())
@@ -363,7 +367,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 '/div[contains(@class, "acrCount")])'
             ).re(FLOATING_POINT_RGEX)
             if not total:
-                return
+                return ZERO_REVIEWS_VALUE
         buyer_reviews['num_of_reviews'] = int(total[0].replace(',', ''))
 
         average = response.xpath(
