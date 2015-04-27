@@ -98,13 +98,14 @@ class AmazonProductsSpider(BaseProductsSpider):
             if isinstance(prod["buyer_reviews"], Request):
                 if mkt_place_link:
                     meta["mkt_place_link"] = mkt_place_link
-                return prod["buyer_reviews"].replace(meta=meta)
+                return prod["buyer_reviews"].replace(meta=meta,dont_filter=True)
 
             if mkt_place_link:
                 return Request(
                     url=mkt_place_link, 
                     callback=self.parse_marketplace,
-                    meta=meta
+                    meta=meta,
+                    dont_filter=True
                 )
 
             result = prod
@@ -508,7 +509,8 @@ class AmazonProductsSpider(BaseProductsSpider):
                 prime = 'Prime'
             if is_prime_pantry:
                 prime = 'PrimePantry'
-            yield link, SiteProductItem(prime=prime)
+            req = Request(url=link,meta=response.meta.copy(),dont_filter=True)
+            yield req, SiteProductItem(prime=prime)
 
     def _scrape_next_results_page_link(self, response):
         next_pages = response.css('#pagnNextLink ::attr(href)').extract()
