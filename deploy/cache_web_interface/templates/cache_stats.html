@@ -21,7 +21,8 @@
         <ul>
             <li>Total received requests: {{total_requests}}</li>
             <li>Total responses sent from cache: {{total_responses}}</li>
-            <li>Correlation: {{correlation}}</li>
+            <li>Correlation: {{correlation}}
+                {% if correlation %}%{% endif %}</li>
         </ul>
     </div>
     <div>

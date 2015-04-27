@@ -169,10 +169,11 @@ def generate_task_stamp(task_message):
     return stamp
 
 
-def send_status_back_to_server(status, server_name):
+def send_status_back_to_server(status, server_name, task_id=None):
     msg = {
+        "_msg_id": str(task_id),
         "utc_datetime": datetime.datetime.utcnow().isoformat(),
-        "status": status
+        "progress": status
     }
     queue_name = server_name + CACHE_PROGRESS_QUEUE
     put_message_into_sqs(msg, queue_name)
@@ -181,6 +182,7 @@ def send_status_back_to_server(status, server_name):
 def generate_and_handle_new_request(task_stamp, task_message, cache_db):
     logger.info("Generate and handle new request")
     response_will_be_provided_by_another_daemon = False
+    task_id = task_message['task_id']
     server_name = task_message['server_name']
     request_item = (time.time(), server_name)
     last_request = get_data_from_cache_hash('last_request',
@@ -197,21 +199,21 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
             logger.info("Provide new task to spiders SQS")
             put_message_into_sqs(task_message, SPIDERS_TASKS_SQS)
             send_status_back_to_server("Request for this task was found but"
-                " it was sent more than 1 hour ago.", server_name)
+                " it was sent more than 1 hour ago.", server_name, task_id)
             send_status_back_to_server("Redirect request to spiders sqs.",
-                                       server_name)
+                                       server_name, task_id)
             add_data_to_cache_hash('last_request', task_stamp,
                 time.time(), cache_db)
         else:
             logger.info("Last request fresh enough")
             send_status_back_to_server("Wait for request from other instance.",
-                                       server_name)
+                                       server_name, task_id)
             response_will_be_provided_by_another_daemon = True
     else:
         logger.info("Last request wasn't found in cache. Create new one.")
         put_message_into_sqs(task_message, SPIDERS_TASKS_SQS)
         send_status_back_to_server("Redirect request to spiders sqs.",
-                                   server_name)
+                                   server_name, task_id)
         add_data_to_cache_hash('last_request', task_stamp,
                 time.time(), cache_db)
 
@@ -234,6 +236,7 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
     counter = 0
     logger.info("Check for spider status")
     while True:
+        queue_name = server_name + CACHE_PROGRESS_QUEUE
         status = check_task_status(spiders_progress_queue)
         if status and 'failed' in status:
             counter += 1
@@ -243,9 +246,12 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
                 continue
             else:
                 logger.error("Spider still not working. Exit.")
+                put_message_into_sqs(status, queue_name)
                 sys.exit()
-        if status and 'finished' in status:
-            break
+        elif status:
+            put_message_into_sqs(status, queue_name)
+            if 'finished' in status:
+                break
 
     output = get_spiders_results(spiders_output_queue)
     if not output:
@@ -270,7 +276,7 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
         cache_output_queue = server_name + CACHE_OUTPUT_QUEUE_NAME
         logger.info("Uploading response data to server queue")
         put_message_into_sqs(output, cache_output_queue)
-        send_status_back_to_server("Finished.", server_name)
+        send_status_back_to_server("finished", server_name, task_id)
         simmetrica.set_time_of_newest_resp()
         simmetrica.set_time_of_oldest_resp()
         if counter >= 1:
@@ -309,7 +315,8 @@ def main(queue_name):
     logger.info("Task was successfully received:\n%s", task_message)
     status = "Ok. Task was received."
     server_name = task_message['server_name']
-    send_status_back_to_server(status, server_name)
+    task_id = task_message['task_id']
+    send_status_back_to_server(status, server_name, task_id)
     simmetrica.increment_received_req_set()
 
     logger.info("Generate task stamp for task")
@@ -335,7 +342,7 @@ def main(queue_name):
             cache_output_queue = server_name + CACHE_OUTPUT_QUEUE_NAME
             logger.info("Uploading response data to servers queue")
             put_message_into_sqs(json_output, cache_output_queue)
-            send_status_back_to_server("Finished.", server_name)
+            send_status_back_to_server("finished", server_name, task_id)
             simmetrica.increment_returned_resp_set(task_stamp)
         # Response exist but it's too old
         else:

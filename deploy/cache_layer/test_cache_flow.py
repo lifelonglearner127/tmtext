@@ -78,7 +78,9 @@ class TestSQSCache(unittest.TestCase):
                 string = m[0].get_body()
                 m[0].delete()
                 message = json.loads(string)
-                status = message['status']
+                status = message['progress']
+                if isinstance(status, int):
+                    continue
                 break
             except Exception as e:
                 print e
@@ -90,6 +92,9 @@ class TestSQSCache(unittest.TestCase):
         server_name = task_message['server_name']
         queue_name = server_name + sqs_cache.CACHE_OUTPUT_QUEUE_NAME
         q = self.sqs_conn.get_queue(queue_name)
+        # try to get one more time this queue if it not exist
+        if not q:
+            q = self.sqs_conn.get_queue(queue_name)
         self.assertEqual(q.count(), 1)
         m = q.get_messages()
         msg_body = m[0].get_body()
@@ -147,7 +152,7 @@ class TestSQSCache(unittest.TestCase):
         while True:
             status = self.check_status(queue_name)
             if status:
-                self.assertEqual(status, 'Finished.')
+                self.assertEqual(status, 'finished')
                 break
         self.check_cache_results(msg)
         self.check_cache_results(another_server_msg)
@@ -159,7 +164,7 @@ class TestSQSCache(unittest.TestCase):
         self.provide_msg_to_queue(msg, self.cache_task_queue)
         status_list = [
             'Ok. Task was received.',
-            'Finished.',
+            'finished',
         ]
         status = self.check_status(queue_name)
         print ("Rcvd status: '%s'" % status)
@@ -202,8 +207,11 @@ class TestSQSCache(unittest.TestCase):
         while True:
             status = self.check_status(queue_name)
             if status:
-                self.assertEqual(status, 'Finished.')
-                break
+                if isinstance(status, int):
+                    continue
+                else:
+                    self.assertEqual(status, 'finished')
+                    break
         self.check_cache_results(msg)
         self.db.hdel('responses', task_stamp)
         self.db.hdel('last_request', task_stamp)
@@ -236,8 +244,11 @@ class TestSQSCache(unittest.TestCase):
         while True:
             status = self.check_status(queue_name)
             if status:
-                self.assertEqual(status, 'Finished.')
-                break
+                if isinstance(status, int):
+                    continue
+                else:
+                    self.assertEqual(status, 'finished')
+                    break
         self.check_cache_results(msg)
         self.db.hdel('responses', task_stamp)
         self.db.hdel('last_request', task_stamp)
