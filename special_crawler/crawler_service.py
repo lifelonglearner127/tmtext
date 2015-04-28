@@ -36,6 +36,7 @@ from extract_freshamazon_data import FreshAmazonScraper
 from extract_george_data import GeorgeScraper
 from extract_bloomingdales_data import BloomingdalesScraper
 from extract_macys_data import MacysScraper
+from extract_frys_data import FrysScraper
 from extract_newegg_data import NeweggScraper
 from extract_costco_data import CostcoScraper
 from extract_proswimwear_data import ProswimwearScraper
@@ -87,6 +88,7 @@ SUPPORTED_SITES = {
                     "peapod" : PeapodScraper,
                     "bloomingdales" : BloomingdalesScraper,
                     "macys": MacysScraper,
+                    "frys": FrysScraper,
                     "newegg": NeweggScraper,
                     "costco": CostcoScraper,
                     "proswimwear": ProswimwearScraper
