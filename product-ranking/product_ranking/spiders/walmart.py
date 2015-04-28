@@ -192,9 +192,12 @@ class WalmartProductsSpider(BaseProductsSpider):
                 name = is_empty(seller.xpath(
                         "div/div/div[contains(@class, 'name')]/b/text()"
                 ).extract())
-            
+            if price:
+                price = Price(price=price, priceCurrency="USD")
+            else:
+                price = Price(price=0, priceCurrency="USD")
             marketplaces.append({
-                "price": Price(price=price, priceCurrency="USD"), 
+                "price": price,
                 "name": name
             })
         if marketplaces:
