@@ -42,6 +42,9 @@ MEMUSAGE_ENABLED = True
 # redefine log foramtter. DropItem exception provided with ERROR level
 LOG_FORMATTER = 'product_ranking.pipelines.PipelineFormatter'
 
+# Value to use for buyer_reviews if no reviews found
+ZERO_REVIEWS_VALUE = 0
+
 try:
     from settings_local import *
 except ImportError:
