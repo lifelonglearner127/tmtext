@@ -275,7 +275,10 @@ class ProswimwearScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//div[@itemprop='offers']//span[@class='regular-price']//span[@class='price']//text()")[0].strip()
+        try:
+            price = self.tree_html.xpath("//div[@itemprop='offers']//span[@class='regular-price']//span[@class='price']//text()")[0].strip()
+        except IndexError:
+            price = self.tree_html.xpath("//div[@itemprop='offers']//*[@class='special-price']//span[@class='price']//text()")[0].strip()
         return price
 
     def _price_amount(self):
@@ -291,7 +294,7 @@ class ProswimwearScraper(Scraper):
         price_currency = price.replace(price_amount, "")
         if price_currency == "$":
             return "USD"
-        elif price_currency == "£":
+        elif price_currency.encode("utf-8") == "£":
             return "GBP"
         return price_currency
 
@@ -325,7 +328,7 @@ class ProswimwearScraper(Scraper):
         if self._site_online() == 0:
             return None
         txt = self.tree_html.xpath("//span[@id='availability-box']//text()")[0].strip()
-        if "Out of stock" in txt:
+        if "Out of stock" in txt or "Back Order" in txt:
             return 1
         return 0
 
