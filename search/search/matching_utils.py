@@ -22,7 +22,7 @@ class ProcessText():
     NONWORD_MATCH_WEIGHT = 2
     DICTIONARY_WORD_MATCH_WEIGHT = 1
     # if price difference is above this value, consider score penalization
-    PRODUCT_PRICE_THRESHOLD = 30
+    PRODUCT_PRICE_THRESHOLD = 10
 
     # exception brands - are brands names but are also found in the dictionary
     brand_exceptions = ['philips', 'sharp', 'sceptre', 'westinghouse', 'element', 'curtis', 'emerson', 'xerox', 'kellogg']

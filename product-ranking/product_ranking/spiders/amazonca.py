@@ -6,6 +6,7 @@ from __future__ import print_function
 import json
 import re
 import string
+import urlparse
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -13,11 +14,13 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     MarketplaceSeller
-from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
-                                     cond_set_value)
+                                     cond_set_value, FLOATING_POINT_RGEX)
+
 from product_ranking.amazon_bestsellers import amazon_parse_department
 
+
+is_empty = lambda x, y=None: x[0] if x else y
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -77,6 +80,23 @@ class AmazonProductsSpider(BaseProductsSpider):
 
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
+            mkt_place_link = urlparse.urljoin(
+                response.url,
+                is_empty(response.xpath(
+                    "//div[contains(@class, 'a-box-inner')]" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
+                    "//div[@id='secondaryUsedAndNew']" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
+                ).extract()))
+
+            if mkt_place_link:
+                meta = {"product": prod}
+                return Request(
+                    url=mkt_place_link, 
+                    callback=self.parse_marketplace,
+                    meta=meta
+                )
+
             result = prod
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
             self.log(
@@ -113,7 +133,7 @@ class AmazonProductsSpider(BaseProductsSpider):
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
-
+        cond_set(product, 'brand', ['NO BRAND'])
         price = response.xpath(
             '//span[@id="priceblock_saleprice"]/text()'
         ).extract()
@@ -384,16 +404,15 @@ class AmazonProductsSpider(BaseProductsSpider):
 
     def _buyer_reviews_from_html(self, response, product):
         stars_regexp = r'.+(\d[\d, ]*)'
-        total = response.css('#summaryStars a::text')
-        total = total or response.css('#revSum a::text')
-        total = total.re('(\d[\d, ]*) reviews')
-        total = total[0] if total else None
+        total = ''.join(response.css('#summaryStars a::text').extract())
+        total = re.search('\d[\d, ]*', total)
+        total = total.group() if total else None
         total = int(re.sub('[ ,]+', '', total)) if total else None
-        average = response.css('#avgRating span::text')
-        average = average or response.css('acrRating')
-        average = average.re('\d[\d ,.]*')
-        average = float(average[0]) if average else None
-        ratings = {}
+        average = response.css('#avgRating span::text').extract()
+        average = re.search('\d[\d ,.]*', average[0] if average else '')
+        average = float(re.sub('[ ,]+', '',
+                               average.group())) if average else 0.0
+        ratings = {1: 0, 2: 0, 3: 0, 4: 0,5: 0}
         for row in response.css('.a-histogram-row .a-span10 ~ td a'):
             title = row.css('::attr(title)').extract()
             text = row.css('::text').extract()
@@ -402,53 +421,52 @@ class AmazonProductsSpider(BaseProductsSpider):
             if stars:
                 stars = int(re.sub('[ ,]+', '', stars.group(1)))
                 ratings[stars] = int(text[0])
-        if not ratings:
-            ratings = response.css('.histoCount::text').re('\d[\d ,]*')
-            ratings = [re.sub(', ', '', rating) for rating in ratings]
-            ratings = {star + 1: int(num)
-                       for star, num in enumerate(reversed(ratings))}
         if not total:
-            total = sum(ratings.itervalues()) if ratings else 0
-        if not average:
-            average = sum(k * v for k, v in
-                          ratings.iteritems()) / total if ratings else 0
+            total = sum(ratings.itervalues())
 
-        if not ratings:
-            table = response.xpath(
-                '//table[@id="histogramTable"]'
-                '/tr[@class="a-histogram-row"]')
-            ratings = self._calculate_buyer_reviews_from_percents(total, table)
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)
-        cond_set_value(product, 'buyer_reviews',
-                       buyer_reviews if total else ZERO_REVIEWS_VALUE)
+        cond_set_value(product, 'buyer_reviews', buyer_reviews)
 
-    def _calculate_buyer_reviews_from_percents(self, total_reviews, table):
-        rating_by_star = {}
-        for title in table.xpath('.//a/@title'):
-            title = title.extract()
-            _match = re.search('(\d+)% of reviews have (\d+) star', title)
-            if _match:
-                _percent, _star = _match.group(1), _match.group(2)
-                if not _star.isdigit() or not _percent.isdigit():
-                    continue
-                rating_by_star[_star] = int(_percent)
-            else:
-                continue
-        # check if some stars are missing (that means, percent is 0)
-        for _star in range(1, 5):
-            if _star not in rating_by_star and str(_star) not in rating_by_star:
-                rating_by_star[str(_star)] = 0
-        # turn percents into numbers
-        for _star, _percent in rating_by_star.items():
-            if int(total_reviews) == 0:  # avoid division by zero
-                rating_by_star[_star] = 0
-            else:
-                rating_by_star[_star] \
-                    = float(int(total_reviews)) * (float(_percent) / 100)
-                rating_by_star[_star] = int(round(rating_by_star[_star]))
-        return rating_by_star
+    def parse_marketplace(self, response):
+        if self._has_captcha(response):
+            result = self._handle_captcha(response, self.parse_marketplace)
 
-    def _parse_single_product(self, response):
-        return self.parse_product(response)
+        product = response.meta["product"]
+
+        marketplaces = response.meta.get("marketplaces", [])
+
+        for seller in response.xpath(
+            '//div[contains(@class, "a-section")]/' \
+            'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
+
+            price = is_empty(seller.xpath(
+                'div[contains(@class, "a-column")]' \
+                '/span[contains(@class, "price")]/text()'
+            ).re(FLOATING_POINT_RGEX), 0)
+
+            name = is_empty(seller.xpath(
+                'div/p[contains(@class, "Name")]/span/a/text()').extract())
+
+            marketplaces.append({
+                "price": Price(price=price, priceCurrency="USD"), 
+                "name": name
+            })
+
+        next_link = is_empty(response.xpath(
+            "//ul[contains(@class, 'a-pagination')]" \
+            "/li[contains(@class, 'a-last')]/a/@href"
+        ).extract())
+
+        if next_link:
+            meta = {"product": product, "marketplaces": marketplaces}
+            return Request(
+                url=urlparse.urljoin(response.url, next_link), 
+                callback=self.parse_marketplace,
+                meta=meta
+            )
+
+        product["marketplace"] = marketplaces
+
+        return product

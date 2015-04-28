@@ -265,6 +265,14 @@ class QuillScraper(Scraper):
             if len(m) > 0:
                 video_urls += m
 
+            m2 = re.findall(r'wc-media wc-iframe(.*?)>', contents.replace("\\",""), re.DOTALL)
+            try:
+                m = re.findall(r'data-asset-url="(.*?)"', m2[0], re.DOTALL)
+                if len(m) > 0:
+                    video_urls += m
+            except IndexError:
+                pass
+
             m = re.findall(r'wcobj="(.*?)"', contents.replace("\\",""), re.DOTALL)
             if len(m) > 0:
                 url_wc = m[0]

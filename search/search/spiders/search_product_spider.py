@@ -14,22 +14,14 @@ from search.matching_utils import ProcessText
 import re
 import sys
 
-class MaplinSpider(SearchSpider):
+'''Generic spider for target sites, that uses info extracted
+from the product page.
+To be used as parent class for new target sites.
+'''
 
-    name = "maplin"
-    # allow 404 so that it doesn't break the entire flow when one is encountered.
-    # Example: maplin search results pages when no results were found
-    handle_httpstatus_list = [404]
-
-    # initialize fields specific to this derived spider
-    def init_sub(self):
-        self.target_site = "maplin"
-        self.start_urls = [ "http://www.maplin.co.uk" ]
+class SearchProductSpider(SearchSpider):
 
     def parseResults(self, response):
-
-
-        hxs = HtmlXPathSelector(response)
 
         #site = response.meta['origin_site']
         origin_name = response.meta['origin_name']
@@ -49,15 +41,9 @@ class MaplinSpider(SearchSpider):
             product_urls = response.meta['search_results']
 
 
-        # TODO: check this xpath and extractions
-        results = hxs.select("//div[@class='tileinfo']/a")
-
+        results = self.extract_results(response)
         for result in results:
-
-            product_url = result.select("@href").extract()[0]
-            product_url = Utils.add_domain(product_url, "http://www.maplin.co.uk")
-            product_urls.add(product_url)
-
+            product_urls.add(result)
  
         # extract product info from product pages (send request to parse first URL in list)
         # add as meta all that was received as meta, will pass it on to reduceResults function in the end
@@ -68,7 +54,7 @@ class MaplinSpider(SearchSpider):
         # otherwise send them back to parseResults and wait for the next query, save all product URLs in search_results
         # this way we avoid duplicates
         if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
-            request = Request(product_urls.pop(), callback = self.parse_product_maplin, meta = response.meta)
+            request = Request(product_urls.pop(), callback = self.parse_product, meta = response.meta)
             request.meta['items'] = items
 
             # this will be the new product_urls list with the first item popped
@@ -96,11 +82,9 @@ class MaplinSpider(SearchSpider):
         # response.meta['parsed'] = items
         # return self.reduceResults(response)
     
-    # extract product info from a product page for maplin
+    # extract product info from a product page
     # keep product pages left to parse in 'search_results' meta key, send back to parseResults_new when done with all
-    def parse_product_maplin(self, response):
-
-        hxs = HtmlXPathSelector(response)
+    def parse_product(self, response):
 
         items = response.meta['items']
 
@@ -118,45 +102,11 @@ class MaplinSpider(SearchSpider):
         if 'origin_upc' in response.meta:
             item['origin_upc'] = response.meta['origin_upc']
 
+        item = self.extract_product_data(response, item)
 
-        product_name_node = hxs.select("//h1[@itemprop='name']/text()").extract()
-        if product_name_node:
-            product_name = product_name_node[0].strip()
-        else:
-            self.log("Error: No product name: " + str(response.url) + " for source product " + origin_url, level=log.ERROR)
-            # TODO:is this ok? I think so
-            return
-
-        item['product_name'] = product_name
-
-        # extract product model number
-        # TODO: no model?
-        # TODO: no upc?
-        # TODO: no brand?
-        # TODO: add code extraction
-        
-        # extract price
-        price_holder = hxs.select("//meta[@itemprop='price']/@content").extract()
-        # if we can't find it like above try other things:
-        if price_holder:
-            product_target_price = price_holder[0].strip()
-            # remove commas separating orders of magnitude (ex 2,000)
-            product_target_price = re.sub(",","",product_target_price)
-            try:
-                product_target_price = float(product_target_price)
-
-                # convert to dollars (assume pounds)
-                product_target_price = Utils.convert_to_dollars(product_target_price, u'\xa3')
-                item['product_target_price'] = product_target_price
-            except Exception, ex:
-                self.log("Couldn't convert product price: " + response.url + "\n", level=log.WARNING)
-
-        else:
-            self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
-
-
-        # add result to items
-        items.add(item)
+        # add result to items (if it was successful)
+        if item:
+            items.add(item)
 
 
         product_urls = response.meta['search_results']
@@ -169,9 +119,10 @@ class MaplinSpider(SearchSpider):
         if product_urls:
             next_product_url = product_urls.pop()
 
+
         # if a next product url was found, send new request back to parse_product_url
         if next_product_url:
-            request = Request(next_product_url, callback = self.parse_product_maplin, meta = response.meta)
+            request = Request(next_product_url, callback = self.parse_product, meta = response.meta)
             request.meta['items'] = items
             # eliminate next product from pending list (this will be the new list with the first item popped)
             request.meta['search_results'] = product_urls
@@ -189,5 +140,20 @@ class MaplinSpider(SearchSpider):
             response.meta['items'] = items
 
             return self.reduceResults(response)
+
+    def extract_results(self, response):
+        '''Abstract method to be overridden by derived classes.
+        Receives response of search results page
+        and returns list of product urls in the search results
+        '''
+        return []
+
+    def extract_product_data(self, response, item):
+        '''Abstract method to be overridden by derived classes.
+        Receives response of product page and the product's item
+        and returns the modified product item containing all the extracted data
+        (name, brand, price, model, upc etc)
+        '''
+        return item
 
 

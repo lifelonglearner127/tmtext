@@ -14,10 +14,9 @@ from scrapy.log import ERROR, INFO
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
-                                   BuyerReviews, Price, MarketplaceSeller)
-from product_ranking.settings import ZERO_REVIEWS_VALUE
+                                   BuyerReviews, Price)
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set, cond_set_value
+    cond_set, cond_set_value, FLOATING_POINT_RGEX
 
 
 is_empty = lambda x: x[0] if x else ""
@@ -180,6 +179,27 @@ class WalmartProductsSpider(BaseProductsSpider):
             cond_set_value(product, 'brand', u'NO BRAND')
         self._gen_related_req(response)
 
+        marketplaces = []
+        for seller in response.xpath(
+            "//ul[contains(@class, 'sellers-list')]/li[contains(@class, 'js-marketplace-seller')]/div"):
+            price = is_empty(seller.xpath(
+                "div[contains(@class, 'price')]/strong/text()"
+            ).re(FLOATING_POINT_RGEX))
+
+            name = is_empty(seller.xpath(
+                "div/div/div[contains(@class, 'name')]/a/b/text()").extract())
+            if not name:
+                name = is_empty(seller.xpath(
+                        "div/div/div[contains(@class, 'name')]/b/text()"
+                ).extract())
+            
+            marketplaces.append({
+                "price": Price(price=price, priceCurrency="USD"), 
+                "name": name
+            })
+        if marketplaces:
+            product["marketplace"] = marketplaces
+
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[0] if id else None
         # if id:
@@ -219,12 +239,10 @@ class WalmartProductsSpider(BaseProductsSpider):
         ).extract()
         overall_text = ' '.join(overall_block)
         if not overall_text.strip():
-            return ZERO_REVIEWS_VALUE
+            return
         buyer_reviews = {}
-        num_of_reviews = int(overall_text.split('review')[0].strip())
-        if not num_of_reviews:
-            return ZERO_REVIEWS_VALUE
-        buyer_reviews['num_of_reviews'] = num_of_reviews
+        buyer_reviews['num_of_reviews'] = int(
+            overall_text.split('review')[0].strip())
         buyer_reviews['average_rating'] = float(
             overall_text.split('|')[1].split('out')[0].strip())
         buyer_reviews['rating_by_star'] = {}
@@ -265,21 +283,22 @@ class WalmartProductsSpider(BaseProductsSpider):
                 (guess_brand_from_first_words(brand.strip()),)
             )
 
-        other_products = []
-        seller = response.xpath(
-            '//div[@class="product-seller"]/div/' \
-            'span[contains(@class, "primary-seller")]/b/text()'
-        ).extract()
-        if not seller:
-            seller_all = response.xpath(
+        if not "marketplace" in product:
+            seller = response.xpath(
                 '//div[@class="product-seller"]/div/' \
-                'span[contains(@class, "primary-seller")]/a'
-            )
-            seller = seller_all.xpath('b/text()').extract()
-        if seller:
-            product["marketplace"] = MarketplaceSeller(
-                seller=seller[0], other_products=other_products
-            )
+                'span[contains(@class, "primary-seller")]/b/text()'
+            ).extract()
+            if not seller:
+                seller_all = response.xpath(
+                    '//div[@class="product-seller"]/div/' \
+                    'span[contains(@class, "primary-seller")]/a'
+                )
+                seller = seller_all.xpath('b/text()').extract()
+            if seller and "price" in product:
+                product["marketplace"] = [{
+                    "price": product["price"],
+                    "name": is_empty(seller)
+                }]
 
         also_considered = self._build_related_products(
             response.url,
@@ -603,6 +622,8 @@ class WalmartProductsSpider(BaseProductsSpider):
     def _parse_questions(self, response):
         data = json.loads(response.body_as_unicode())
         product = response.meta['product']
+        if not data:
+            return product
         last_date = product.get('date_of_last_question')
         questions = product['recent_questions']
         dateconv = lambda date: datetime.strptime(date, '%m/%d/%Y').date()

@@ -305,6 +305,7 @@ def _setup_virtual_env_web_runner():
     with virtualenv(VENV_WEB_RUNNER):
         run('pip install wheel')
         run('pip install Paste')
+        run('pip install flask')
 
 
 def _setup_virtual_env_web_runner_web():
@@ -610,7 +611,7 @@ def test_scrapy():
         'water', 'guitar', 'gibson', 'toy', 'books', 'laptop', 'smartphone'
     )
     cmd = ("curl --verbose http://localhost:6543/ranking_data/"
-           "  -d 'site=amazon;searchterms_str=%s;quantity=100"
+           "  -d 'site=amazon;searchterms_str=%s;quantity=10"
            ";group_name=test'")
     run(cmd % random.choice(search_terms))
 
@@ -642,6 +643,20 @@ def fix_captchas():
 
     with virtualenv(VENV_SCRAPYD):
         run('pip install numpy')
+
+
+def tmp_mass_execute():
+    orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
+    env.user, env.password, env.key_filename = \
+        SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
+    env.warn_only = True
+    sudo('pkill -9 -f scrapyd')
+
+    run('sudo chmod 777 -R /scraper_data')
+    env.warn_only = False
+    env.user, env.password, env.key_filename = \
+        orig_user, orig_passw, orig_cert
+
 
 
 # vim: set expandtab ts=4 sw=4:

@@ -109,11 +109,15 @@ class GandermountainProductsSpider(BaseProductsSpider):
         prod['url'] = response.url
 
         available = response.xpath(
-            '//form[@id="addToCartFormA59LQ"]/input[@type="submit"]/@value'
+            '//form[contains(@id,"addToCartForm")]/input[@type="submit"]/@value'
         ).extract()
+
+        if available and 'Email when back in stock' in available[0]:
+            cond_set(prod, 'is_out_of_stock', [True])
+
         if available and 'Last few in store' in available[0]:
             lim = LimitedStock(is_limited=True,
-                               items_left=[])
+                               items_left=[1])
             cond_set(prod, 'limited_stock', [lim])
 
         prod_id = re.findall(r'"id":\s"(.*)",', response.body)

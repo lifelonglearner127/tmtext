@@ -37,6 +37,8 @@ class WalmartScraper(Scraper):
 
     # base URL for request containing video URL from webcollage
     BASE_URL_VIDEOREQ_WEBCOLLAGE = "http://json.webcollage.net/apps/json/walmart?callback=jsonCallback&environment-id=live&cpi="
+    # base URL for request containing video URL from webcollage
+    BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW = "http://www.walmart-content.com/product/idml/video/%s/WebcollageVideos"
     # base URL for request containing video URL from sellpoints
     BASE_URL_VIDEOREQ_SELLPOINTS = "http://www.walmart.com/product/idml/video/%s/SellPointsVideos"
     # base URL for request containing video URL from sellpoints
@@ -175,43 +177,40 @@ class WalmartScraper(Scraper):
 
         # if there is no video button, return no video
         if not self._has_video_button():
-            return None
-
-        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE + self._extract_product_id()
+            return
 
         self.video_urls = []
 
-        #TODO: handle errors
+        if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+            self.video_urls = None
+            return
+
+        # webcollage video info
+        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
         response_text = urllib.urlopen(request_url).read()
+        tree = html.fromstring(response_text)
 
-        # get first "src" value in response
-        # # webcollage videos
-        video_url_candidates = re.findall("src: \"([^\"]+)\"", response_text)
-        if video_url_candidates:
-            # remove escapes
-            #TODO: better way to do this?
-            for video_url_item in video_url_candidates:
-                video_url_candidate = re.sub('\\\\', "", video_url_item)
+        if tree.xpath("//div[@id='iframe-video-content']") and \
+                tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base"):
+            video_base_path = tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base")[0]
+            sIndex = 0
+            eIndex = 0
 
-                # if it ends in flv, it's a video, ok
-                if video_url_candidate.endswith(".flv"):
-                    self.has_webcollage_media = True
-                    self.has_video = True
-                    self.video_urls.append(video_url_candidate)
-#                    break
+            while sIndex >= 0:
+                sIndex = response_text.find('{"videos":[', sIndex)
+                eIndex = response_text.find('}]}', sIndex) + 3
 
-                # if it doesn't, it may be a url to make another request to, to get customer reviews video
-                if "client.expotv.com" in video_url_candidate:
-                    new_response = urllib.urlopen(video_url_candidate).read()
-                    video_id_candidates = re.findall("param name=\"video\" value=\"(.*)\"", new_response)
+                if sIndex < 0:
+                    break
 
-                    if video_id_candidates:
-                        video_id = video_id_candidates[0]
+                jsonVideo = response_text[sIndex:eIndex]
+                jsonVideo = json.loads(jsonVideo)
 
-                        video_url_req = "http://client.expotv.com/vurl/%s?output=mp4" % video_id
-                        video_url = urllib.urlopen(video_url_req).url
-                        self.has_video = True
-                        self.video_urls.append(video_url)
+                if len(jsonVideo['videos']) > 0:
+                    for video_info in jsonVideo['videos']:
+                        self.video_urls.append(video_base_path + video_info['src']['src'])
+
+                sIndex = eIndex
 
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
@@ -291,6 +290,9 @@ class WalmartScraper(Scraper):
         if not existance_360view:
             return 0
         else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+                return 0
+
             self.has_webcollage_360_view = True
             return 1
 
@@ -303,7 +305,11 @@ class WalmartScraper(Scraper):
 
         self.extracted_webcollage_emc_view = True
 
-        emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
+        if self._version() == "Walmart v2":
+            emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
+
+        if self._version() == "Walmart v1":
+            emc = self.tree_html.xpath("//div[@id='manufacturer-content']")
 
         if not emc:
             return 0
@@ -329,6 +335,9 @@ class WalmartScraper(Scraper):
         if not existance_webcollage_video:
             return 0
         else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+                return 0
+
             self.has_webcollage_video_view = True
             return 1
 
@@ -369,6 +378,9 @@ class WalmartScraper(Scraper):
         if not existance_product_tour:
             return 0
         else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+                return 0
+
             self.has_webcollage_product_tour_view = True
             return 1
 
@@ -391,26 +403,45 @@ class WalmartScraper(Scraper):
         self.extracted_pdf_urls = True
         self.pdf_urls = []
 
-        pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+        if self._version() == "Walmart v1":
+            """Extracts pdf URL for a given walmart product
+            and puts them in instance variable.
+            """
 
-        for item in pdf_links:
-            if item.strip().endswith(".pdf"):
-                self.pdf_urls.append(item.strip()) if item.strip() not in self.pdf_urls else None
-
-        if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
-            request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
-            request_url = "http:" + request_url.strip()
+            request_url = self.BASE_URL_PDFREQ_WEBCOLLAGE + self._extract_product_id()
 
             response_text = urllib.urlopen(request_url).read().decode('string-escape')
 
-            pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
-
+            pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")',
+                                            response_text)
             if pdf_url_candidates:
-                self.has_webcollage_media = True
-                for item in pdf_url_candidates:
-                    # remove escapes
-                    pdf_url = re.sub('\\\\', "", item.strip())
-                    self.pdf_urls.append(pdf_url) if pdf_url not in self.pdf_urls else None
+                # remove escapes
+                for pdf_url in pdf_url_candidates:
+                    pdf_url = re.sub('\\\\', "", pdf_url)
+                    self.has_webcollage_media = True
+                    self.has_pdf = True
+                    self.pdf_urls.append(pdf_url)
+
+        if self._version() == "Walmart v2":
+            pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+            for item in pdf_links:
+                if item.strip().endswith(".pdf"):
+                    self.pdf_urls.append(item.strip()) if item.strip() not in self.pdf_urls else None
+
+            if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
+                request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
+                request_url = "http:" + request_url.strip()
+
+                response_text = urllib.urlopen(request_url).read().decode('string-escape')
+
+                pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
+
+                if pdf_url_candidates:
+                    self.has_webcollage_media = True
+                    for item in pdf_url_candidates:
+                        # remove escapes
+                        pdf_url = re.sub('\\\\', "", item.strip())
+                        self.pdf_urls.append(pdf_url) if pdf_url not in self.pdf_urls else None
 
         if self.pdf_urls:
             self.has_pdf = True
@@ -619,6 +650,17 @@ class WalmartScraper(Scraper):
             # returning an old type of page
             if not short_description:
                 short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
+
+            long_description_existence = self.tree_html.xpath('//*[contains(@class, "ItemSectionContent")]'
+                                                              '//*[contains(@itemprop, "description")]//ul')
+
+            if not short_description and not long_description_existence:
+                _desc = self.tree_html.xpath(
+                    '//*[contains(@class, "ItemSectionContent")]'
+                    '//*[contains(@itemprop, "description")]//text()'
+                )
+                if _desc:
+                    short_description = " ".join(_desc).strip()
 
             # if no short description, return the long description
             if not short_description.strip():
