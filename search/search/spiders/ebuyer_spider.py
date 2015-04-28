@@ -33,17 +33,23 @@ class EbuyerSpider(SearchProductSpider):
 
         price_node = hxs.select("//p[@class='price']")
 
-        price_amount = price_node.select("span[@itemprop='price']/text()").extract()[0]
-        price_currency = price_node.select("span[@class='smaller']/text()").extract()[0]
-        price_amount = re.sub(",","",price_amount)
+        if price_node:
 
-        m1 = re.match("[0-9]+\.?[0-9]*", price_amount)
-        m2 = re.match("(\xa3)|(\$)", price_currency)
-        if not m1 or not m2:
-            self.log("Didn't match product price: " + price_amount + price_currency + " " + response.url + "\n", level=log.WARNING)
-        else:
-            price = Utils.convert_to_dollars(float(price_amount), price_currency)
-            item['product_target_price'] = price
+            try:
+                price_amount = price_node.select("span[@itemprop='price']/text()").extract()[0]
+                price_currency = price_node.select("span[@class='smaller']/text()").extract()[0]
+            
+                price_amount = re.sub(",","",price_amount)
+
+                m1 = re.match("[0-9]+\.?[0-9]*", price_amount)
+                m2 = re.match("(\xa3)|(\$)", price_currency)
+                if not m1 or not m2:
+                    self.log("Didn't match product price: " + price_amount + price_currency + " " + response.url + "\n", level=log.WARNING)
+                else:
+                    price = Utils.convert_to_dollars(float(price_amount), price_currency)
+                    item['product_target_price'] = price
+            except Exception:
+                self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
 
         try:
             item['product_model'] = hxs.select("//strong[@itemprop='mpn']/text()").extract()[0]
