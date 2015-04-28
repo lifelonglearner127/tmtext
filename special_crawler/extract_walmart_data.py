@@ -185,6 +185,20 @@ class WalmartScraper(Scraper):
             self.video_urls = None
             return
 
+        if self._version() == "Walmart v2":
+            emc_link = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]/@src")
+
+            if emc_link:
+                emc_link = "http:" + emc_link[0]
+                contents = requests.get(emc_link).text
+                tree = html.fromstring(contents)
+                wcobj_links = tree.xpath("//img[contains(@class, 'wc-media')]/@wcobj")
+
+                if wcobj_links:
+                    for wcobj_link in wcobj_links:
+                        if wcobj_link.endswith(".flv"):
+                            self.video_urls.append(wcobj_link)
+
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
         response_text = urllib.urlopen(request_url).read()
@@ -290,7 +304,7 @@ class WalmartScraper(Scraper):
         if not existance_360view:
             return 0
         else:
-            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()""") and not self.tree_html.xpath("//li[contains(@class, 'sp95_BTN_btn_360degree')]"):
                 return 0
 
             self.has_webcollage_360_view = True
@@ -407,6 +421,11 @@ class WalmartScraper(Scraper):
             """Extracts pdf URL for a given walmart product
             and puts them in instance variable.
             """
+
+            pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+            for item in pdf_links:
+                if item.strip().endswith(".pdf"):
+                    self.pdf_urls.append("http://www.walmart.com" + item.strip()) if item.strip() not in self.pdf_urls else None
 
             request_url = self.BASE_URL_PDFREQ_WEBCOLLAGE + self._extract_product_id()
 
