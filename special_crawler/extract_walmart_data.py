@@ -185,6 +185,20 @@ class WalmartScraper(Scraper):
             self.video_urls = None
             return
 
+        if self._version() == "Walmart v2":
+            emc_link = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]/@src")
+
+            if emc_link:
+                emc_link = "http:" + emc_link[0]
+                contents = requests.get(emc_link).text
+                tree = html.fromstring(contents)
+                wcobj_links = tree.xpath("//img[contains(@class, 'wc-media')]/@wcobj")
+
+                if wcobj_links:
+                    for wcobj_link in wcobj_links:
+                        if wcobj_link.endswith(".flv"):
+                            self.video_urls.append(wcobj_link)
+
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
         response_text = urllib.urlopen(request_url).read()
