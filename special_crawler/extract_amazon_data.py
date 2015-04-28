@@ -706,6 +706,15 @@ class AmazonScraper(Scraper):
     def _marketplace_lowest_price(self):
         return None
 
+    def _marketplace_out_of_stock(self):
+        """Extracts info on whether currently unavailable from any marketplace seller - binary
+        Uses functions that work on both old page design and new design.
+        Will choose whichever gives results.
+        Returns:
+            1/0
+        """
+        return None
+
     # extract product seller information from its product product page tree (using h2 visible tags)
     def _seller_from_tree(self):
         seller_info = {}
@@ -878,6 +887,7 @@ class AmazonScraper(Scraper):
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
+        "marketplace_out_of_stock" : _marketplace_out_of_stock, \
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
