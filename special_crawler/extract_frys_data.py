@@ -32,11 +32,7 @@ class FrysScraper(Scraper):
     video_count = None
     pdf_urls = None
     pdf_count = None
-    wc_360 = None
-    wc_pdf_count = None
-    wc_video_count = None
-    wc_emc = None
-    wc_prodtour = None
+    wc_content = None
 
     def check_url_format(self):
         # for ex: http://www.frys.com/product/8007994
@@ -192,26 +188,9 @@ class FrysScraper(Scraper):
         if self.video_count is not None:
             return self.video_urls
         self.video_count = 0
-        self.wc_360 = 0
-        self.wc_video_count = 0
-        self.wc_emc = 0
-        self.wc_prodtour = 0
-
         video_urls = []
-        # Request URL: http://content.webcollage.net/frys/smart-button?ird=true&channel-product-id=8007994
-        url = "http://content.webcollage.net/frys/smart-button?ird=true&channel-product-id=%s" % self._product_id()
-        contents = urllib.urlopen(url).read()
-        # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
-        # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
-        contents_replaced = contents.replace("\\","")
-        if "wc-360" in contents_replaced:
-            self.wc_360 = 1
-        if "wc-aplus" in contents_replaced:
-            self.wc_emc = 1
-        if 'id="wc-tour"' in contents_replaced:
-            self.wc_prodtour = 1
-
-        m = re.findall(r'"src":"([^"]*?\.flv)",', contents_replaced, re.DOTALL)
+        contents = self._wc_content()
+        m = re.findall(r'"src":"([^"]*?\.flv)",', contents, re.DOTALL)
         m = ["http://content.webcollage.net%s" % r for r in m]
         if len(m) > 0:
             video_urls += m
@@ -265,7 +244,6 @@ class FrysScraper(Scraper):
         if self.pdf_count is not None:
             return self.pdf_urls
         self.pdf_count = 0
-        self.wc_pdf_count = 0
         pdfs = self.tree_html.xpath("//div[@id='MainContainer']//a[contains(@href,'.pdf')]")
         pdf_hrefs = []
         for pdf in pdfs:
@@ -273,16 +251,11 @@ class FrysScraper(Scraper):
             if len(pdf_url_txts) > 0:
                 pdf_hrefs.append(pdf.attrib['href'])
 
-        # Request URL: http://content.webcollage.net/frys/smart-button?ird=true&channel-product-id=8007994
-        url = "http://content.webcollage.net/frys/smart-button?ird=true&channel-product-id=%s" % self._product_id()
-        contents = urllib.urlopen(url).read()
-        # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
-        # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
-        m = re.findall(r'wcobj="([^"]*?\.pdf)"', contents.replace("\\",""), re.DOTALL)
+        contents = self._wc_content()
+        m = re.findall(r'wcobj="([^"]*?\.pdf)"', contents, re.DOTALL)
         m = ["http://content.webcollage.net%s" % r for r in m]
         if len(m) > 0:
             pdf_hrefs += m
-        self.wc_pdf_count = len(m)
 
         if len(pdf_hrefs) < 1:
             return None
@@ -294,34 +267,43 @@ class FrysScraper(Scraper):
             self._pdf_urls()
         return self.pdf_count
 
-    def _wc_emc(self):
-        if self.video_count is None:
-            self._video_urls()
-        return self.wc_emc
+    def _wc_content(self):
+        if self.wc_content == None:
+            url = "http://content.webcollage.net/frys/smart-button?ird=true&channel-product-id=%s" % self._product_id()
+            html = urllib.urlopen(url).read()
+            if "_wccontent" in html:
+                self.wc_content = html.replace("\\","")
+                return self.wc_content
+            else:
+                self.wc_content = ""
+                return ""
+        return self.wc_content
 
     def _wc_360(self):
-        if self.video_count is None:
-            self._video_urls()
-        return self.wc_360
-
-    def _wc_video(self):
-        if self.wc_video_count is None:
-            self._video_urls()
-        if self.wc_video_count > 0:
-            return 1
+        html = self._wc_content()
+        if "wc-360" in html: return 1
         return 0
 
+
     def _wc_pdf(self):
-        if self.wc_pdf_count is None:
-            self._pdf_urls()
-        if self.wc_pdf_count > 0:
-            return 1
+        html = self._wc_content()
+        if ".pdf" in html: return 1
+        return 0
+
+    def _wc_video(self):
+        html = self._wc_content()
+        if ".mp4" in html: return 1
+        return 0
+
+    def _wc_emc(self):
+        html = self._wc_content()
+        if "wc-aplus" in html: return 1
         return 0
 
     def _wc_prodtour(self):
-        if self.video_count is None:
-            self._video_urls()
-        return self.wc_prodtour
+        html = self._wc_content()
+        if 'id="wc-tour"' in html: return 1
+        return 0
 
     def _flixmedia(self):
         if "media.flix" in etree.tostring(self.tree_html):
@@ -514,7 +496,7 @@ class FrysScraper(Scraper):
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
-        "_marketplace_out_of_stock" : _marketplace_out_of_stock, \
+        "marketplace_out_of_stock" : _marketplace_out_of_stock, \
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
