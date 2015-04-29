@@ -1490,9 +1490,11 @@ class WalmartScraper(Scraper):
         body_raw = "".join(self.tree_html.xpath("//section[@class='center']/script//text()"))
         body_clean = re.sub("\n", " ", body_raw)
         sIndex = body_clean.find(", ") + 2
-        eIndex = body_clean.find("}}]}}") + 5
-
+        eIndex = body_clean.rfind("// Invoke product.")
         body_clean = body_clean[sIndex:eIndex]
+        eIndex = body_clean.rfind(");")
+
+        body_clean = body_clean[:eIndex]
         # extract json part of function body
         body_dict = json.loads(body_clean)
 
