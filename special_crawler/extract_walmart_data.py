@@ -1448,12 +1448,11 @@ class WalmartScraper(Scraper):
             list of strings representing image urls
         """
 
-        # assume new version
-        image_list = self._image_urls_new()
-        if image_list is None:
+        if self._version() == "Walmart v1":
             return self._image_urls_old()
 
-        return image_list
+        if self._version() == "Walmart v2":
+            return self._image_urls_new()
 
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
     # might be outdated? (since walmart site redesign)
