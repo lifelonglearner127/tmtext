@@ -134,6 +134,7 @@ def populate_from_open_graph(response, product):
 
     See about the Open Graph Protocol at http://ogp.me/
     """
+
     metadata = _extract_open_graph_metadata(response)
 
     if 'type' not in metadata:
