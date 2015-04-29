@@ -522,15 +522,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 prime = 'Prime'
             if is_prime_pantry:
                 prime = 'PrimePantry'
-            # yield link, SiteProductItem(prime=prime)
-            new_meta = response.meta.copy()
-            item = SiteProductItem(url=link)
-            item['prime'] = prime
-            item['search_term'] = self.searchterms[0]
-            item['total_matches'] = self._scrape_total_matches(response)
-            new_meta['product'] = item
-            req = Request(url=link,meta=new_meta,dont_filter=True,callback=self.parse_product)
-            yield req, SiteProductItem(prime=prime)
+            yield link, SiteProductItem(prime=prime)
 
     def _scrape_next_results_page_link(self, response):
         next_pages = response.css('#pagnNextLink ::attr(href)').extract()
