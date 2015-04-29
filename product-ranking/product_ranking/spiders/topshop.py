@@ -5,8 +5,9 @@ import urlparse
 from scrapy.http import Request
 
 from product_ranking.items import BuyerReviews, Price
-from product_ranking.spiders import cond_set, cond_set_value, \
-    populate_from_open_graph, cond_replace_value
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.spiders import cond_set, populate_from_open_graph, \
+    cond_replace_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 from product_ranking.guess_brand import guess_brand_from_first_words
 
@@ -162,6 +163,7 @@ class TopshopProductsSpider(ProductsSpider):
         reviews_mapped = map(int, reviews)
         total = len(reviews_mapped)
         if not total:
+            response.meta['product']['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return
         by_star = {int(value): reviews.count(value) for value in reviews}
         avg = float(response.xpath(

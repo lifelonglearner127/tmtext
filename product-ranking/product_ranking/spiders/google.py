@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import string
 import urllib
@@ -13,7 +12,8 @@ from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price,\
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import cond_set, cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 
@@ -156,6 +156,8 @@ class GoogleProductsSpider(BaseProductsSpider):
                 link = 'https://www.google.com' + review_link
                 return Request(link, callback=self.handle_reviews_request,
                                meta=response.meta)
+            else:
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
 
         # strip GET data from only google urls
         if 'www.google.com/shopping/product' in product['url']:
@@ -378,11 +380,13 @@ class GoogleProductsSpider(BaseProductsSpider):
             '//div[@id="reviews"]/div[@id="reviews"]'
         )
         if not revs:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return
         total = response.xpath(
             '//div[@class="_Ape"]/div/div/div[@class="_wpe"]/text()'
         ).extract()
         if not total:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return
         total = re.findall("\d*,?\d+", total[0])
         total = int(total[0].replace(',', ''))

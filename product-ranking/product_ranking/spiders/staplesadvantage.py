@@ -15,6 +15,7 @@ from scrapy.log import WARNING
 
 from .contrib.product_spider import ProductsSpider
 from product_ranking.items import RelatedProduct, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import cond_set, cond_set_value
 
 
@@ -250,10 +251,12 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                        errback=self._handle_option_error, dont_filter=True)
 
     def _parse_buyer_reviews(self, response):
+        product = response.meta['product']
         json_str = re.search("POWERREVIEWS\.common\.gResult"
                              "\['content/\d+/\d+/contents.js'\] = (.+);",
                              response.body)
         if not json_str:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return
         data = json.loads(json_str.group(1))
         try:
@@ -261,12 +264,14 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                 'p' + str(response.meta['prod_id'])]
             data = data['reviews']
         except KeyError:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return
         ratings = {i + 1: val for i, val in enumerate(data['review_ratings'])}
         avg = float(data['avg'])
         total = data['review_count']
         cond_set_value(response.meta['product'], 'buyer_reviews',
-                       BuyerReviews(total, avg, ratings))
+                       BuyerReviews(total, avg,
+                                    ratings) if total else ZERO_REVIEWS_VALUE)
 
     def _parse_single_product(self, response):
         return self.parse_product(response)

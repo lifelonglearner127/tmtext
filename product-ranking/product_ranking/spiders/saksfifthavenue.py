@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-#
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 from datetime import datetime
 import json
 import re
 import string
 import urlparse
-import lxml.html
 
-from product_ranking.items import Price
-from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
+import lxml.html
 from scrapy import Selector
 from scrapy.http import Request
 from scrapy.log import DEBUG
+
+from product_ranking.items import Price
+from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
+from product_ranking.spiders import cond_set, cond_set_value
 
 
 def fromxml(stext):
@@ -338,6 +339,9 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
                 if distribution:
                     reviews = BuyerReviews(total, avrg, distribution)
                     cond_set_value(product, 'buyer_reviews', reviews)
+                elif not total:
+                    cond_set_value(product, 'buyer_reviews',
+                                   ZERO_REVIEWS_VALUE)
         return product
 
     def check_alert(self, response):
