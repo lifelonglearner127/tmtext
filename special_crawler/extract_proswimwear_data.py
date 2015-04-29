@@ -98,7 +98,7 @@ class ProswimwearScraper(Scraper):
     def _feature_count(self):
         if self.feature_count is None:
             self._features()
-        return self.feature_count0
+        return self.feature_count
 
     def _model_meta(self):
         return None
