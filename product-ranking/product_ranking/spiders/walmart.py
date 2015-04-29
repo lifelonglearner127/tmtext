@@ -15,6 +15,7 @@ from scrapy.log import ERROR, INFO
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
                                    BuyerReviews, Price)
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 
@@ -242,10 +243,12 @@ class WalmartProductsSpider(BaseProductsSpider):
         ).extract()
         overall_text = ' '.join(overall_block)
         if not overall_text.strip():
-            return
+            return ZERO_REVIEWS_VALUE
         buyer_reviews = {}
-        buyer_reviews['num_of_reviews'] = int(
-            overall_text.split('review')[0].strip())
+        num_of_reviews = int(overall_text.split('review')[0].strip())
+        if not num_of_reviews:
+            return ZERO_REVIEWS_VALUE
+        buyer_reviews['num_of_reviews'] = num_of_reviews
         buyer_reviews['average_rating'] = float(
             overall_text.split('|')[1].split('out')[0].strip())
         buyer_reviews['rating_by_star'] = {}

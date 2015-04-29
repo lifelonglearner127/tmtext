@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import urlparse
 import re
 import urllib
 
-from product_ranking.items import Price, BuyerReviews
-from product_ranking.items import SiteProductItem, RelatedProduct
-from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
 from scrapy import Selector
 from scrapy.http import Request
 from scrapy.log import DEBUG
+
+from product_ranking.items import Price, BuyerReviews
+from product_ranking.items import SiteProductItem, RelatedProduct
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
+from product_ranking.spiders import cond_set, cond_set_value
 
 
 class PcworldcoukProductsSpider(BaseProductsSpider):
@@ -286,8 +287,7 @@ class PcworldcoukProductsSpider(BaseProductsSpider):
             num_of_reviews=summary,
             average_rating=average,
             rating_by_star=dict(results))
-        if summary:
-            product['buyer_reviews'] = br
+        product['buyer_reviews'] = br if summary else ZERO_REVIEWS_VALUE
         return product
 
     def _scrape_total_matches(self, response):

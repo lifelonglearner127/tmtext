@@ -9,6 +9,7 @@ from scrapy import Request
 
 from product_ranking.items import RelatedProduct, BuyerReviews, Price, \
     SiteProductItem
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import cond_set, cond_set_value, \
     cond_replace_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
@@ -191,6 +192,7 @@ class UkRsOnlineProductsSpider(ProductsSpider):
                  '/stars-(\d+-\d+).gif'
         stars = response.css('img::attr(src)').re(regexp)
         if not stars:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return
         stars.pop(0)
         stars = map(float, (s.replace('-', '.') for s in stars))

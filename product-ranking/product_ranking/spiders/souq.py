@@ -1,20 +1,18 @@
 from __future__ import division, absolute_import, unicode_literals
 
 import re
-import ast
 import json
-import string
-import urlparse
 
 from scrapy.http import Request
-from scrapy.log import DEBUG, INFO, ERROR
+from scrapy.log import INFO
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    populate_from_open_graph, cond_set_value, FLOATING_POINT_RGEX
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import FormatterWithDefaults
+
 
 is_empty = lambda x,y=None: x[0] if x else y
 
@@ -114,7 +112,9 @@ class SouqProductsSpider(BaseProductsSpider):
                 average_rating=average,
                 num_of_reviews=num_of_reviews,
                 rating_by_star=rating_by_star
-            )
+            ) if num_of_reviews else ZERO_REVIEWS_VALUE
+        elif response.css('[data-dropdown=REVIEWS_POPUP_BOX]'):
+            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
 
         product["locale"] = "en-US"
 

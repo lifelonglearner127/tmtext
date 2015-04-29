@@ -1,9 +1,12 @@
+from itertools import starmap
 import re
 import urlparse
 import string
+import operator
 
 from contrib.product_spider import ProductsSpider
 from product_ranking.items import RelatedProduct, Price,  BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import cond_set, cond_set_value, \
     _populate_from_open_graph_product
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -115,7 +118,8 @@ class StaplesProductsSpider(ProductsSpider):
         description = desc.css('.layoutWidth06').extract()
         cond_set_value(product, 'description',
                        (headline or [''])[0] + (description or [''])[0])
-        _populate_from_open_graph_product(response, product)
+        _populate_from_open_graph_product(response, product,
+                                          metadata={'type': 'product'})
         cond_set(product, 'image_url',
                  response.css('#largeProductImage::attr(src)').extract())
         brand = response.xpath(
@@ -143,9 +147,9 @@ class StaplesProductsSpider(ProductsSpider):
         if price and currency:
             cond_set_value(product, 'price', Price(currency[0], price[0]))
         self._populate_related_products(self, response, product)
-        buyer_reviews = self._buyer_reviews_from_html(response, product)
-        if buyer_reviews:
-            cond_set_value(product, 'buyer_reviews', buyer_reviews)
+        buyer_reviews = self._buyer_reviews_from_html(response)
+        cond_set_value(product, 'buyer_reviews',
+                       buyer_reviews or ZERO_REVIEWS_VALUE)
 
     def _populate_related_products(self, self1, response, product):
         xpath = '//*[@class="a200" and text()="Related Products"]' \
@@ -161,9 +165,11 @@ class StaplesProductsSpider(ProductsSpider):
         cond_set_value(product, 'related_products',
                        {'Related Products': products})
 
-    def _buyer_reviews_from_html(self, response, product):
+    def _buyer_reviews_from_html(self, response):
         rarea = response.xpath(
             "//div[@id='reviews_inline']")
+        if not rarea:
+            return self._buyer_reviews_from_html_yotpo(response)
         if rarea:
             rarea = rarea[0]
         else:
@@ -203,3 +209,30 @@ class StaplesProductsSpider(ProductsSpider):
             num_of_reviews=total,
             average_rating=avrg,
             rating_by_star=ratings)
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
+    def _buyer_reviews_from_html_yotpo(self, response):
+        int_convert = lambda lst: int(re.sub('[, ]', '', lst[0]))
+        total = response.css('.yotpo-sum-reviews span::text').re('\d[\d ,]*')
+        if not total:
+            return
+        total = int_convert(total)
+        if not total:
+            return
+        avg = response.css('.yotpo-star-digits::text').re('[\d.]+')
+        avg = float(avg[0]) if avg else None
+        distribution = response.css('.yotpo-distibutions-sum-reviews '
+                                    '.yotpo-sum-reviews')
+        distribution = {
+            int(elt.css('::attr(data-score-distribution)').extract()[0]):
+                int_convert(elt.css('::text').re('\d[\d ,]*'))
+            for elt in distribution}
+        if not avg:
+            star_sum = sum(starmap(operator.__mul__, distribution.iteritems()))
+            avg = float(star_sum) / total
+        result = BuyerReviews(num_of_reviews=total,
+                              average_rating=avg,
+                              rating_by_star=distribution)
+        return result

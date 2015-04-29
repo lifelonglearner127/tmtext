@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 import urllib
@@ -10,6 +9,7 @@ from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem, Price, RelatedProduct, \
     BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider,FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 
@@ -139,6 +139,8 @@ class DrugstoreProductsSpider(BaseProductsSpider):
                 average_rating=float(average_rating[0]),
                 rating_by_star=rating_by_star,
             )
+        else:
+            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
 
         #related_products
         prod_id = re.findall('var dtmProductId\s+\=\s+\'(\d+)\'', response.body)

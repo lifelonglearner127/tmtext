@@ -4,15 +4,16 @@ from __future__ import division, absolute_import, unicode_literals
 import re
 import string
 import urllib
-import requests
 
+import requests
 from scrapy.http import Request
-from scrapy.log import DEBUG, INFO
+
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FLOATING_POINT_RGEX, FormatterWithDefaults
-from product_ranking.spiders import cond_set_value, populate_from_open_graph
+    FormatterWithDefaults
+from product_ranking.spiders import cond_set_value
 
 
 class UltaProductSpider(BaseProductsSpider):
@@ -205,10 +206,13 @@ class UltaProductSpider(BaseProductsSpider):
             '//span[@class="count"]/text()'
         ).extract()
         if len(total) == 0:
-            print('hello')
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return product
         else:
             total = int(total[0])
+        if total == 0:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+            return product
         new_meta = response.meta.copy()
         new_meta['product'] = product
         new_meta['total_stars'] = total

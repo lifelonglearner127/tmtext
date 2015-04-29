@@ -4,13 +4,16 @@ import json
 import urllib
 import urlparse
 
+from scrapy import Request
+from scrapy.log import ERROR, WARNING
+
 from product_ranking.items import RelatedProduct, BuyerReviews
 from product_ranking.items import SiteProductItem, Price
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
-from scrapy import Request
-from scrapy.log import ERROR, WARNING
+
 
 
 # From PowerReview.groupPath()
@@ -164,7 +167,9 @@ class SoapProductSpider(BaseProductsSpider):
                 num_of_reviews=int(num_of_reviews[0]), 
                 average_rating=float(average_rating[0]), 
                 rating_by_star=rating_by_star
-            ) 
+            )
+        else:
+            prod["buyer_reviews"] = ZERO_REVIEWS_VALUE
 
         if productid:
             productid = productid[0]

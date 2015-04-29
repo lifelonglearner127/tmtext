@@ -1,13 +1,13 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import urlparse
 import json
 import re
 
-from scrapy.log import ERROR
 from scrapy.http import Request
+
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value, FormatterWithDefaults
 
@@ -200,6 +200,7 @@ class WalGreensProductsSpider(BaseProductsSpider):
         total = data['BatchedResults']['q0']['Results'][0][
             'ReviewStatistics']['TotalReviewCount']
         if total == 0:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return product
 
         avg = round(data['BatchedResults']['q0']['Results'][0][
