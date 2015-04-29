@@ -490,7 +490,9 @@ class AmazonProductsSpider(BaseProductsSpider):
                              "//div[@id='mainResults']//ul//li"
                              "[contains(@id, 'result')] |"
                              "//div[@id='atfResults']//ul//li"
-                             "[contains(@id, 'result')] ")
+                             "[contains(@id, 'result')] |"
+                             "//div[@id='mainResults']//div"
+                             "[contains(@id, 'result')]")
         links = []
         last_idx = -1
         for li in lis:
