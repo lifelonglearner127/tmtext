@@ -527,6 +527,7 @@ class AmazonProductsSpider(BaseProductsSpider):
             item = SiteProductItem(url=link)
             item['prime'] = prime
             item['search_term'] = self.searchterms[0]
+            item['total_matches'] = self._scrape_total_matches(response)
             new_meta['product'] = item
             req = Request(url=link,meta=new_meta,dont_filter=True,callback=self.parse_product)
             yield req, SiteProductItem(prime=prime)
