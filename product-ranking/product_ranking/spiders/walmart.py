@@ -173,7 +173,11 @@ class WalmartProductsSpider(BaseProductsSpider):
 
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
-        product['buyer_reviews'] = self._build_buyer_reviews(response)
+        buyer_reviews = self._build_buyer_reviews(response)
+        if buyer_reviews:
+            product['buyer_reviews'] = buyer_reviews
+        else:
+            product['buyer_reviews'] = 0
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
@@ -232,8 +236,17 @@ class WalmartProductsSpider(BaseProductsSpider):
             })
             product["marketplace"] = marketplaces
 
-
-
+        model = is_empty(response.xpath('//tr[@class="js-product-specs-row"]/'
+                                        'td[contains(text(), "Model No")]/'
+                                        'following::td[1]/text()').extract())
+        if model:
+            product['model'] = model.strip()
+        else:
+            cond_set(product,
+                     'model',
+                     response.xpath(
+                         '//meta[@itemprop="model"]/@content'
+                     ).extract())
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[0] if id else None
         # if id:
