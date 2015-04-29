@@ -174,7 +174,11 @@ class WalmartProductsSpider(BaseProductsSpider):
 
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
-        product['buyer_reviews'] = self._build_buyer_reviews(response)
+        buyer_reviews = self._build_buyer_reviews(response)
+        if buyer_reviews:
+            product['buyer_reviews'] = buyer_reviews
+        else:
+            product['buyer_reviews'] = 0
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
@@ -182,16 +186,19 @@ class WalmartProductsSpider(BaseProductsSpider):
 
         marketplaces = []
         for seller in response.xpath(
-            "//ul[contains(@class, 'sellers-list')]/li[contains(@class, 'js-marketplace-seller')]/div"):
+            "//ul[contains(@class, 'sellers-list')]/li[contains(@class,"
+            "'js-marketplace-seller')]/div"):
             price = is_empty(seller.xpath(
                 "div[contains(@class, 'price')]/strong/text()"
             ).re(FLOATING_POINT_RGEX))
 
             name = is_empty(seller.xpath(
-                "div/div/div[contains(@class, 'name')]/a/b/text()").extract())
+                "div/div/div[contains(@class, 'name')]/a/text() |"
+                "div/div/div[contains(@class, 'name')]/a/b/text()"
+            ).extract())
             if not name:
                 name = is_empty(seller.xpath(
-                        "div/div/div[contains(@class, 'name')]/b/text()"
+                        "div/div/div[contains(@class, 'name')]/text()"
                 ).extract())
             if price:
                 price = Price(price=price, priceCurrency="USD")
@@ -199,11 +206,48 @@ class WalmartProductsSpider(BaseProductsSpider):
                 price = Price(price=0, priceCurrency="USD")
             marketplaces.append({
                 "price": price,
-                "name": name
+                "name": name.strip()
             })
         if marketplaces:
             product["marketplace"] = marketplaces
+        else:
+            name = is_empty(response.xpath(
+                '//div[@class="product-seller"]/div/span/b/text()'
+            ).extract())
+            if not name:
+                name = is_empty(response.xpath('//meta[@itemprop="seller"]'
+                                               '/@content').extract())
+            price_amount = is_empty(
+                response.xpath('//meta[@itemprop="price"]'
+                               '/@content').re(FLOATING_POINT_RGEX)
+            )
+            currency = is_empty(
+                response.xpath('//meta[@itemprop="priceCurrency"]'
+                               '/@content').extract()
+            )
+            if price_amount:
+                price = Price(price=price_amount,
+                              priceCurrency=currency)
+            else:
+                price = Price(price=0,
+                              priceCurrency=currency)
+            marketplaces.append({
+                "price": price,
+                "name": name
+            })
+            product["marketplace"] = marketplaces
 
+        model = is_empty(response.xpath('//tr[@class="js-product-specs-row"]/'
+                                        'td[contains(text(), "Model No")]/'
+                                        'following::td[1]/text()').extract())
+        if model:
+            product['model'] = model.strip()
+        else:
+            cond_set(product,
+                     'model',
+                     response.xpath(
+                         '//meta[@itemprop="model"]/@content'
+                     ).extract())
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[0] if id else None
         # if id:
@@ -231,9 +275,10 @@ class WalmartProductsSpider(BaseProductsSpider):
     def _build_related_products(self, url, related_product_nodes):
         also_considered = []
         for node in related_product_nodes:
-            link = urlparse.urljoin(url, node.xpath('../@href').extract()[0])
+            link = urlparse.urljoin(url, node.xpath('@href | ../@href').
+                                    extract()[0])
             title = node.xpath('text()').extract()[0]
-            also_considered.append(RelatedProduct(title, link))
+            also_considered.append(RelatedProduct(title.strip(), link))
         return also_considered
 
     def _build_buyer_reviews(self, response):
@@ -308,7 +353,8 @@ class WalmartProductsSpider(BaseProductsSpider):
 
         also_considered = self._build_related_products(
             response.url,
-            response.css('.top-product-recommendations .tile-heading'),
+            response.xpath('//*[@class="top-product-recommendations'
+                           ' tile-heading"]'),
         )
         if also_considered:
             product.setdefault(
@@ -318,7 +364,9 @@ class WalmartProductsSpider(BaseProductsSpider):
             response.url,
             response.xpath(
                 "//p[contains(text(), 'Check out these related products')]/.."
-                "//*[contains(@class, 'tile-heading')]"
+                "//*[contains(@class, 'tile-heading')] |"
+                "//div[@class='related-item']/a[2] |"
+                "//div[@class='rel0']/a"
             ),
         )
         if recommended:
