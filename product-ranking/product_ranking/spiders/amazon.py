@@ -490,7 +490,9 @@ class AmazonProductsSpider(BaseProductsSpider):
                              "//div[@id='mainResults']//ul//li"
                              "[contains(@id, 'result')] |"
                              "//div[@id='atfResults']//ul//li"
-                             "[contains(@id, 'result')] ")
+                             "[contains(@id, 'result')] |"
+                             "//div[@id='mainResults']//div"
+                             "[contains(@id, 'result')]")
         links = []
         last_idx = -1
         for li in lis:
@@ -520,14 +522,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 prime = 'Prime'
             if is_prime_pantry:
                 prime = 'PrimePantry'
-            # yield link, SiteProductItem(prime=prime)
-            new_meta = response.meta.copy()
-            item = SiteProductItem(url=link)
-            item['prime'] = prime
-            item['search_term'] = self.searchterms[0]
-            new_meta['product'] = item
-            req = Request(url=link,meta=new_meta,dont_filter=True,callback=self.parse_product)
-            yield req, SiteProductItem(prime=prime)
+            yield link, SiteProductItem(prime=prime)
 
     def _scrape_next_results_page_link(self, response):
         next_pages = response.css('#pagnNextLink ::attr(href)').extract()

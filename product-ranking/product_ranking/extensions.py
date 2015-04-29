@@ -49,16 +49,18 @@ def _stats_on_spider_close(spider, reason):
             'monitoring_spider_dupefilter_filtered_'+spider.name,
             increment_by=int(spider_stats['dupefilter/filtered'])
         )
-    push_simmetrica_event(
-        'monitoring_spider_downloader_request_count_'+spider.name,
-        increment_by=int(spider_stats['downloader/request_count'])
-    )
-    push_simmetrica_event(
-        'monitoring_spider_downloader_response_bytes_'+spider.name,
-        increment_by=int(
-            spider_stats['downloader/response_bytes'] / 1024 / 1024  # MBytes
+    if spider_stats.get('downloader/request_count', None):
+        push_simmetrica_event(
+            'monitoring_spider_downloader_request_count_'+spider.name,
+            increment_by=int(spider_stats['downloader/request_count'])
         )
-    )
+    if spider_stats.get('downloader/response_bytes', None):
+        push_simmetrica_event(
+            'monitoring_spider_downloader_response_bytes_'+spider.name,
+            increment_by=int(
+                spider_stats['downloader/response_bytes'] / 1024 / 1024  # MBytes
+            )
+        )
     print 'Simmetrica events have been pushed...'
 
 
