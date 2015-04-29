@@ -79,8 +79,8 @@ You will notice that all the process ids of the “Sl” processes have changed.
 
 9. when checking a new bug report, keep adding the problem urls to the csv list.  
 	- always check previously working urls to make sure new fix did not break working urls.
-	- I like adding a comment with a "#" to keep track of what scraper should exrract or what bug
-	is being fixed
+	- I like adding a comment with a "#" to keep track of what scraper should exrract or 
+          what bug is being fixed
 
 10. open/close/comment bug reports.
 	report issues with urls examples when finding problems with the scraper. 
@@ -91,22 +91,29 @@ Testing on elsa - large batch/all site crawl
 **********************************************
 
 1. log on to elsa
-	(elsa will pull scraper instances from master and it is ready for testing when
-	 code is in master)
-2. if not already there, load large batch or full-site url list onto server
+	(elsa will pull scraper code from master) 
+2. if batches you need are not already on elsa, load a batch or full-site url list onto server
+	(via content health/new batch gui)
 3. coordinate with Adriana before re-crawling
 4. do the crawl, do_stats, filter steps for the batch
+	(via system/site crawler, system/do_stats monitor, system/filters gui)
 5. analyze and sanity check the batch in general
+	(via content health gui)
+   look at filters/summary table
+   use result table to click on urls to verify
    look for problem areas/issues to see if they are fixed
    focus on issues being fixed/features being added
+   use categories/brands to isolate groups for testing	
    note anything suspicous by comparing numbers from current crawl to previous dates
    note any red flags items
-6. this is where another QA person would be great to help with sanity checking
+6. step 5 where another QA person would be great to help with sanity checking
+7. (the more eyes the better)
 
 
 **********************************************
 release to tmtext production
 **********************************************
 
-1. when scraper is fully verified with no issues, request a scraper release to production branch
-   the production branch will be automatically be used by all demo/sales/customer servers
+1. when scraper is fully verified with no issues with scraper testing & large batch testing on elsa, 
+   request a scraper release to production branch
+   the production branch will automatically be used by all demo/sales/customer servers
