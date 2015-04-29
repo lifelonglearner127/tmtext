@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import urlparse
 import re
 
-from product_ranking.items import Price
-from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.http import Request
 from scrapy.log import DEBUG
 from scrapy.selector import Selector
+
+from product_ranking.items import Price
+from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
+from product_ranking.spiders import cond_set, cond_set_value
 
 
 class ScrewfixProductsSpider(BaseProductsSpider):
@@ -144,6 +145,8 @@ class ScrewfixProductsSpider(BaseProductsSpider):
                 meta['product_id'] = product_id
                 return Request(rev_url, callback=self.populate_buyer_reviews,
                                meta=meta)
+            else:
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
 
         # case when we use this function second time after populating
         # buyer reviews

@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import urlparse
 import re
@@ -10,8 +9,9 @@ from scrapy.log import ERROR
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     MarketplaceSeller
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FormatterWithDefaults
+    FormatterWithDefaults, cond_set_value
 
 
 class AmazonFreshProductsSpider(BaseProductsSpider):
@@ -138,6 +138,7 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
                 avg = float(re.findall(r'search/(.*)-star', rating_pict)[0])
                 br = BuyerReviews(num_of_reviews, avg, {})
                 prod['buyer_reviews'] = br
+        cond_set_value(prod, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         return prod
 
     def _search_page_error(self, response):

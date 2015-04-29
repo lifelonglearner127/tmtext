@@ -8,6 +8,7 @@ from decimal import Decimal, InvalidOperation
 
 from scrapy.http import Request
 
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import cond_replace, cond_replace_value
 from product_ranking.spiders import cond_set_value, cond_set
 from contrib.product_spider import ProductsSpider
@@ -286,4 +287,5 @@ class SainsburysProductSpider(ProductsSpider):
 
         product = response.meta['product']
         cond_set_value(product, 'buyer_reviews',
-                       BuyerReviews(total, avg, stars))
+                       BuyerReviews(total, avg, stars)
+                       if total else ZERO_REVIEWS_VALUE)

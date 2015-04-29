@@ -14,6 +14,7 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     MarketplaceSeller
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
                                      cond_set_value, FLOATING_POINT_RGEX)
 
@@ -404,14 +405,15 @@ class AmazonProductsSpider(BaseProductsSpider):
 
     def _buyer_reviews_from_html(self, response, product):
         stars_regexp = r'.+(\d[\d, ]*)'
-        total = ''.join(response.css('#summaryStars a::text').extract())
-        total = re.search('\d[\d, ]*', total)
-        total = total.group() if total else None
+        total = response.css('#summaryStars a::text')
+        total = total or response.css('#revSum a::text')
+        total = total.re('(\d[\d, ]*) reviews')
+        total = total[0] if total else None
         total = int(re.sub('[ ,]+', '', total)) if total else None
-        average = response.css('#avgRating span::text').extract()
-        average = re.search('\d[\d ,.]*', average[0] if average else '')
-        average = float(re.sub('[ ,]+', '',
-                               average.group())) if average else 0.0
+        average = response.css('#avgRating span::text')
+        average = average or response.css('acrRating')
+        average = average.re('\d[\d ,.]*')
+        average = float(average[0]) if average else None
         ratings = {1: 0, 2: 0, 3: 0, 4: 0,5: 0}
         for row in response.css('.a-histogram-row .a-span10 ~ td a'):
             title = row.css('::attr(title)').extract()
@@ -421,13 +423,18 @@ class AmazonProductsSpider(BaseProductsSpider):
             if stars:
                 stars = int(re.sub('[ ,]+', '', stars.group(1)))
                 ratings[stars] = int(text[0])
+        if not sum(ratings.values()):
+            ratings = response.css('.histoCount::text').re('\d[\d ,]*')
+            ratings = [re.sub(', ', '', rating) for rating in ratings]
+            ratings = {star + 1: int(num)
+                       for star, num in enumerate(reversed(ratings))}
         if not total:
-            total = sum(ratings.itervalues())
-
+            total = sum(ratings.itervalues()) if ratings else 0
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)
-        cond_set_value(product, 'buyer_reviews', buyer_reviews)
+        cond_set_value(product, 'buyer_reviews',
+                       buyer_reviews if total else ZERO_REVIEWS_VALUE)
 
     def parse_marketplace(self, response):
         if self._has_captcha(response):
@@ -470,3 +477,6 @@ class AmazonProductsSpider(BaseProductsSpider):
         product["marketplace"] = marketplaces
 
         return product
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

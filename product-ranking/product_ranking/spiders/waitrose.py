@@ -12,8 +12,10 @@ from scrapy.http.request.form import FormRequest
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     RelatedProduct
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.spiders import cond_set_value
+
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -130,7 +132,8 @@ class WaitroseProductsSpider(BaseProductsSpider):
                 dont_filter=True,
                 meta=meta,
             )
-
+        else:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         return product
 
     def parse_buyer_reviews(self, response):
@@ -157,7 +160,8 @@ class WaitroseProductsSpider(BaseProductsSpider):
                        in distribution.items()]) / float(total)
             assert round(avg, 1) == round(float(average), 1)
 
-        cond_set_value(product, 'buyer_reviews', reviews)
+        cond_set_value(product, 'buyer_reviews',
+                       reviews if total else ZERO_REVIEWS_VALUE)
         
         url = ""
         model = product.get("model", None)

@@ -8,6 +8,7 @@ from scrapy.http import FormRequest
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set
 
 
@@ -46,7 +47,8 @@ class FireboxProductSpider(BaseProductsSpider):
             except ZeroDivisionError:
                 avg = float(0)
             prod['buyer_reviews'] = BuyerReviews(total, avg, stars)
-
+        else:
+            prod['buyer_reviews'] = ZERO_REVIEWS_VALUE
         title = response.xpath(
             '//h2[@class="product_name product_title"]/span[@itemprop="name"]/text()'
         ).extract()

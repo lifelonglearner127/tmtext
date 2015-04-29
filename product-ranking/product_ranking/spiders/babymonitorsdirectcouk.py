@@ -1,12 +1,13 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 import urllib
 
 from scrapy.http import Request
+
 from product_ranking.items import SiteProductItem, RelatedProduct, \
     Price, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults,\
     cond_set, cond_set_value
 
@@ -199,7 +200,8 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
                                      rating_by_star={})
         if average_rating or num_of_reviews:
             cond_set_value(product, 'buyer_reviews', buyer_reviews)
-
+        else:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         rp = []
         for prod in response.xpath('//ul[@class="ProductList"]/li'):
             prod_all = prod.xpath('div[@class="ProductDetails"]/strong/a')

@@ -3,17 +3,18 @@ import string
 import urlparse
 import json
 import re
+
 import requests
-
 from scrapy.log import INFO
-from scrapy import Request, FormRequest
+from scrapy import Request
 from scrapy import Selector
-
 from scrapy.selector import HtmlXPathSelector
+
 from product_ranking.items import SiteProductItem, RelatedProduct, \
     Price, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import cond_set, cond_set_value, \
-    FLOATING_POINT_RGEX, FormatterWithDefaults, cond_replace
+    FLOATING_POINT_RGEX, cond_replace
 from contrib.product_spider import ProductsSpider
 from product_ranking.guess_brand import guess_brand_from_first_words
 
@@ -244,6 +245,7 @@ class MacysProductsSpider(ProductsSpider):
                         )
 
                         cond_set_value(product, 'buyer_reviews', br)
+        cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         # Related Products
         if product_id:
             aj_url = "http://www1.macys.com/sdp/rto/request/recommendations"
