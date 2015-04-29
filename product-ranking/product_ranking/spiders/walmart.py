@@ -181,16 +181,19 @@ class WalmartProductsSpider(BaseProductsSpider):
 
         marketplaces = []
         for seller in response.xpath(
-            "//ul[contains(@class, 'sellers-list')]/li[contains(@class, 'js-marketplace-seller')]/div"):
+            "//ul[contains(@class, 'sellers-list')]/li[contains(@class,"
+            "'js-marketplace-seller')]/div"):
             price = is_empty(seller.xpath(
                 "div[contains(@class, 'price')]/strong/text()"
             ).re(FLOATING_POINT_RGEX))
 
             name = is_empty(seller.xpath(
-                "div/div/div[contains(@class, 'name')]/a/b/text()").extract())
+                "div/div/div[contains(@class, 'name')]/a/text() |"
+                "div/div/div[contains(@class, 'name')]/a/b/text()"
+            ).extract())
             if not name:
                 name = is_empty(seller.xpath(
-                        "div/div/div[contains(@class, 'name')]/b/text()"
+                        "div/div/div[contains(@class, 'name')]/text()"
                 ).extract())
             if price:
                 price = Price(price=price, priceCurrency="USD")
@@ -198,13 +201,17 @@ class WalmartProductsSpider(BaseProductsSpider):
                 price = Price(price=0, priceCurrency="USD")
             marketplaces.append({
                 "price": price,
-                "name": name
+                "name": name.strip()
             })
         if marketplaces:
             product["marketplace"] = marketplaces
         else:
-            name = is_empty(response.xpath('//meta[@itemprop="seller"]'
-                                           '/@content').extract())
+            name = is_empty(response.xpath(
+                '//div[@class="product-seller"]/div/span/b/text()'
+            ).extract())
+            if not name:
+                name = is_empty(response.xpath('//meta[@itemprop="seller"]'
+                                               '/@content').extract())
             price_amount = is_empty(
                 response.xpath('//meta[@itemprop="price"]'
                                '/@content').re(FLOATING_POINT_RGEX)
@@ -224,6 +231,8 @@ class WalmartProductsSpider(BaseProductsSpider):
                 "name": name
             })
             product["marketplace"] = marketplaces
+
+
 
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[0] if id else None
