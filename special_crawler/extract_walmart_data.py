@@ -1022,7 +1022,7 @@ class WalmartScraper(Scraper):
 
         # join all text in spec table; separate rows by newlines and eliminate spaces between cells
         # new page version:
-        rows = self.tree_html.xpath("//div[@class='specs-table']/table//tr")
+        rows = self.tree_html.xpath("//div[contains(@class, 'specs-table')]/table//tr")
         if not rows:
             # old page version:
             rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
@@ -1050,7 +1050,7 @@ class WalmartScraper(Scraper):
 
         # select table rows with more than 2 cells (the others are just headers), count them
         # new page version:
-        rows = self.tree_html.xpath("//div[@class='specs-table']/table//tr")
+        rows = self.tree_html.xpath("//div[contains(@class, 'specs-table')]/table//tr")
         if not rows:
             # old page version:
             rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
@@ -1391,11 +1391,17 @@ class WalmartScraper(Scraper):
             else:
                 return relative_url
 
-        images_carousel = self.tree_html.xpath("//div[contains(@class,'product-carousel-wrapper')]//a/@data-hero-image")
-        if images_carousel:
-            # fix relative urls
-            images_carousel = map(_fix_relative_url, images_carousel)
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
 
+        images_carousel = []
+
+        for item in pinfo_dict['imageAssets']:
+            images_carousel.append(item['versions']['hero'])
+
+        if images_carousel:
             # if there's only one image, check to see if it's a "no image"
             if len(images_carousel) == 1:
                 try:
@@ -1481,16 +1487,17 @@ class WalmartScraper(Scraper):
         Returns:
             function body as dictionary (containing various info on product)
         """
-
         body_raw = "".join(self.tree_html.xpath("//section[@class='center']/script//text()"))
         body_clean = re.sub("\n", " ", body_raw)
-        # extract json part of function body
-        body_jpart = re.findall("\{\"productName.*?\}\s*\);", body_clean)[0]
-        body_jpart = body_jpart[:-2].strip()
+        sIndex = body_clean.find(", ") + 2
+        eIndex = body_clean.find("}}]}}") + 5
 
-        body_dict = json.loads(body_jpart)
+        body_clean = body_clean[sIndex:eIndex]
+        # extract json part of function body
+        body_dict = json.loads(body_clean)
 
         self.js_entry_function_body = body_dict
+
         return body_dict
 
     # ! may throw exception if not found
