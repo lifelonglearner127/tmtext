@@ -51,7 +51,7 @@ class SearchSpider(BaseSpider):
     allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
                        "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk", "pcworld.co.uk", "ebay.co.uk", \
-                       "argos.co.uk", "ebuyer.com", "ebuyer.co.uk", "firebox.com", "rakuten.co.uk", "uk.rs-online.com"]
+                       "argos.co.uk", "ebuyer.com", "ebuyer.co.uk", "firebox.com", "rakuten.co.uk", "uk.rs-online.com", "screwfix.com"]
 
     # pass product as argument to constructor - either product name or product URL
     # arguments:
@@ -138,7 +138,8 @@ class SearchSpider(BaseSpider):
                         "ebuyer" : "http://www.ebuyer.com/search?q=%s" % search_query, \
                         "firebox" : "http://www.firebox.com/firebox/search?searchstring=%s" % search_query, \
                         "rakuten" : "http://www.rakuten.co.uk/search/%s/" % search_query, \
-                        "rscomponents" : "http://uk.rs-online.com/web/c/?searchTerm=%s" % search_query
+                        "rscomponents" : "http://uk.rs-online.com/web/c/?searchTerm=%s" % search_query, \
+                        "screwfix" : "http://www.screwfix.com/search?search=%s" % search_query
                         }
 
         return search_pages
