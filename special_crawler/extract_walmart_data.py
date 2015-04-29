@@ -909,7 +909,7 @@ class WalmartScraper(Scraper):
         # extract features table for new page version:
         # might cause exception if table node not found (and premature exit of function)
         try:
-            table_node = self.tree_html.xpath("//div[@class='specs-table']/table")[0]
+            table_node = self.tree_html.xpath("//div[contains(@class, 'specs-table')]/table")[0]
         except Exception:
             table_node = None
 
