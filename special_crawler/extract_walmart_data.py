@@ -714,6 +714,13 @@ class WalmartScraper(Scraper):
         Returns:
             string containing the text content of the product's description, or None
         """
+
+        long_description_existence = self.tree_html.xpath('//*[contains(@class, "ItemSectionContent")]'
+                                                  '//*[contains(@itemprop, "description")]//li')
+
+        if not long_description_existence:
+            return None
+
         long_description_elements = self.tree_html.xpath("//div[@itemprop='description']/div")[1]
         full_description = ""
 
