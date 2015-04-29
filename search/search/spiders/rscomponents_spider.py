@@ -28,6 +28,15 @@ class RSComponentsSpider(SearchResultsSpider):
             product_name = result.select("td[@class='descColHeader']//a[not(starts-with(text(), 'See similar'))]/text()").extract()
             product_url = result.select("td[@class='descColHeader']//a[not(starts-with(text(), 'See similar'))]/@href").extract()
 
+            # for category-specific search result pages
+            if not product_name:
+                product_name = result.select("td[@class='fixedCell']//" + \
+                    "a[not(starts-with(text(), 'See similar') or starts-with(text(), 'Quick View')" + \
+                    " or starts-with(text(), 'Check stock'))]/text()").extract()
+                product_url = result.select("td[@class='fixedCell']//" + \
+                    "a[not(starts-with(text(), 'See similar')" + \
+                    " or starts-with(text(), 'Quick View') or starts-with(text(), 'Check stock'))]/@href").extract()
+
             # quit if there is no product name
             if product_name and product_url:
                 item['product_url'] = "http://uk.rs-online.com" + product_url[0].strip()
