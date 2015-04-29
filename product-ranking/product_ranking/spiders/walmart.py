@@ -202,6 +202,28 @@ class WalmartProductsSpider(BaseProductsSpider):
             })
         if marketplaces:
             product["marketplace"] = marketplaces
+        else:
+            name = is_empty(response.xpath('//meta[@itemprop="seller"]'
+                                           '/@content').extract())
+            price_amount = is_empty(
+                response.xpath('//meta[@itemprop="price"]'
+                               '/@content').re(FLOATING_POINT_RGEX)
+            )
+            currency = is_empty(
+                response.xpath('//meta[@itemprop="priceCurrency"]'
+                               '/@content').extract()
+            )
+            if price_amount:
+                price = Price(price=price_amount,
+                              priceCurrency=currency)
+            else:
+                price = Price(price=0,
+                              priceCurrency=currency)
+            marketplaces.append({
+                "price": price,
+                "name": name
+            })
+            product["marketplace"] = marketplaces
 
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[0] if id else None
