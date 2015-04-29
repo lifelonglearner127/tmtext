@@ -230,9 +230,10 @@ class WalmartProductsSpider(BaseProductsSpider):
     def _build_related_products(self, url, related_product_nodes):
         also_considered = []
         for node in related_product_nodes:
-            link = urlparse.urljoin(url, node.xpath('../@href').extract()[0])
+            link = urlparse.urljoin(url, node.xpath('@href | ../@href').
+                                    extract()[0])
             title = node.xpath('text()').extract()[0]
-            also_considered.append(RelatedProduct(title, link))
+            also_considered.append(RelatedProduct(title.strip(), link))
         return also_considered
 
     def _build_buyer_reviews(self, response):
@@ -305,7 +306,8 @@ class WalmartProductsSpider(BaseProductsSpider):
 
         also_considered = self._build_related_products(
             response.url,
-            response.css('.top-product-recommendations .tile-heading'),
+            response.xpath('//*[@class="top-product-recommendations'
+                           ' tile-heading"]'),
         )
         if also_considered:
             product.setdefault(
@@ -315,7 +317,9 @@ class WalmartProductsSpider(BaseProductsSpider):
             response.url,
             response.xpath(
                 "//p[contains(text(), 'Check out these related products')]/.."
-                "//*[contains(@class, 'tile-heading')]"
+                "//*[contains(@class, 'tile-heading')] |"
+                "//div[@class='related-item']/a[2] |"
+                "//div[@class='rel0']/a"
             ),
         )
         if recommended:
