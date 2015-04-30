@@ -40,6 +40,13 @@ except ImportError as e:
     CaptchaBreakerWrapper = FakeCaptchaBreaker
 
 
+    class FakeCaptchaBreaker(object):
+        @staticmethod
+        def solve_captcha(url):
+            msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
+            return None
+    CaptchaBreakerWrapper = FakeCaptchaBreaker
+
 class AmazonCoUkProductsSpider(BaseProductsSpider):
     name = "amazoncouk_products"
     allowed_domains = ["www.amazon.co.uk"]
@@ -91,6 +98,13 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         prod = response.meta['product']
+
+        li_tags = response.xpath('//div[@class="content"]/ul/li')
+        for tag in li_tags:
+            text = is_empty(tag.xpath('b/text()').extract())
+            if text and 'Item model number:' in text:
+                possible_model = tag.xpath('text()').extract()
+                cond_set(prod, 'model', possible_model)
 
         title = response.xpath(
             '//span[@id="productTitle"]/text()[normalize-space()] |'
