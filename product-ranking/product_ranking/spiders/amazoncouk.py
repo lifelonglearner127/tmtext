@@ -44,6 +44,13 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
     _cbw = CaptchaBreakerWrapper()
 
+    def parse(self, response):
+        if self._has_captcha(response):
+            result = self._handle_captcha(response, self.parse)
+        else:
+            result = super(AmazonCoUkProductsSpider, self).parse(response)
+        return result
+
     def _get_products(self, response):
         result = super(AmazonCoUkProductsSpider, self)._get_products(response)
         for r in result:
@@ -211,7 +218,8 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
             return Request(
                 url=mkt_place_link, 
                 callback=self.parse_marketplace,
-                meta=meta
+                meta=meta,
+                dont_filter=True,
             )
 
         return prod
@@ -289,7 +297,7 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
                 re.findall(FLOATING_POINT_RGEX, total_revs), 0
             )
         if int(buyer_reviews["num_of_reviews"]) == 0:
-            product["buyer_reviews"] = 0
+            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
             return product
 
         buyer_reviews["rating_by_star"] = {}
@@ -303,7 +311,8 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
             return Request(
                 url=response.meta["mkt_place_link"], 
                 callback=self.parse_marketplace,
-                meta=meta
+                meta=meta,
+                dont_filter=True
             )
 
         return product
@@ -387,9 +396,12 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
                 average = sum(int(k) * int(v) for k, v in
                               ratings.iteritems()) / int(total) if ratings else 0
                 average = float("%.2f" % round(average, 2))
-        buyer_reviews = BuyerReviews(num_of_reviews=total,
-                                     average_rating=average,
-                                     rating_by_star=ratings)
+        if int(total) == 0:
+            buyer_reviews = ZERO_REVIEWS_VALUE
+        else:
+            buyer_reviews = BuyerReviews(num_of_reviews=total,
+                                         average_rating=average,
+                                         rating_by_star=ratings)
         if not ratings:
             buyer_rev_link = response.xpath(
                 '//div[@id="revSum"]//a[contains(text(), "See all")' \
