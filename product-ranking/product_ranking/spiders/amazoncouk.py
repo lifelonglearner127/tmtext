@@ -8,7 +8,7 @@ import urlparse
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
-from scrapy.log import ERROR, WARNING, INFO, DEBUG
+from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
@@ -32,6 +32,20 @@ except ImportError as e:
         e,
         file=sys.stderr,
     )
+    class FakeCaptchaBreaker(object):
+        @staticmethod
+        def solve_captcha(url):
+            msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
+            return None
+    CaptchaBreakerWrapper = FakeCaptchaBreaker
+
+
+    class FakeCaptchaBreaker(object):
+        @staticmethod
+        def solve_captcha(url):
+            msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
+            return None
+    CaptchaBreakerWrapper = FakeCaptchaBreaker
 
 class AmazonCoUkProductsSpider(BaseProductsSpider):
     name = "amazoncouk_products"
@@ -84,6 +98,13 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         prod = response.meta['product']
+
+        li_tags = response.xpath('//div[@class="content"]/ul/li')
+        for tag in li_tags:
+            text = is_empty(tag.xpath('b/text()').extract())
+            if text and 'Item model number:' in text:
+                possible_model = tag.xpath('text()').extract()
+                cond_set(prod, 'model', possible_model)
 
         title = response.xpath(
             '//span[@id="productTitle"]/text()[normalize-space()] |'

@@ -7,6 +7,7 @@ import urlparse
 import uuid
 import string
 from datetime import datetime
+from lxml import html
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -50,6 +51,9 @@ class WalmartProductsSpider(BaseProductsSpider):
 
     QA_URL = "http://www.walmart.com/reviews/api/questions" \
              "/{product_id}?sort=mostRecentQuestions&pageNumber={page}"
+
+    REVIEW_URL = 'http://walmart.ugc.bazaarvoice.com/1336/{product_id}/' \
+                 'reviews.djs?format=embeddedhtml&dir=desc&sort=relevancy'
 
     QA_LIMIT = 0xffffffff
 
@@ -212,7 +216,8 @@ class WalmartProductsSpider(BaseProductsSpider):
             product["marketplace"] = marketplaces
         else:
             name = is_empty(response.xpath(
-                '//div[@class="product-seller"]/div/span/b/text()'
+                '//div[@class="product-seller"]/div/span/b/text() |'
+                '//div[@class="product-seller"]/div/span/a/b/text() '
             ).extract())
             if not name:
                 name = is_empty(response.xpath('//meta[@itemprop="seller"]'
@@ -237,9 +242,13 @@ class WalmartProductsSpider(BaseProductsSpider):
             })
             product["marketplace"] = marketplaces
 
-        model = is_empty(response.xpath('//tr[@class="js-product-specs-row"]/'
-                                        'td[contains(text(), "Model No")]/'
-                                        'following::td[1]/text()').extract())
+        model = is_empty(
+            response.xpath('//tr[@class="js-product-specs-row"]/'
+                           'td[contains(text(), "Model No")]/'
+                           'following::td[1]/text() |'
+                           '//table[@class="SpecTable"]/tr/'
+                           'td[contains(text(), "Walmart No")]'
+                           '/following::td[1]/text()').extract())
         if model:
             product['model'] = model.strip()
         else:
@@ -249,7 +258,7 @@ class WalmartProductsSpider(BaseProductsSpider):
                          '//meta[@itemprop="model"]/@content'
                      ).extract())
         id = re.findall('\/(\d+)', response.url)
-        response.meta['product_id'] = id[0] if id else None
+        response.meta['product_id'] = id[-1] if id else None
         # if id:
         #    url = 'http://www.walmart.com/reviews/api/questions/{0}?' \
         #          'sort=mostRecentQuestions&pageNumber=1'.format(id[0])
@@ -286,6 +295,42 @@ class WalmartProductsSpider(BaseProductsSpider):
             also_considered.append(RelatedProduct(title.strip(), link))
         return also_considered
 
+    def _build_buyer_reviews_old(self, response):
+        product = response.meta['product']
+        buyer_reviews = {}
+        h = re.findall('"BVRRSecondaryRatingSummarySourceID":"(.*)",',
+                           response.body)
+        if len(h) > 0:
+            tree = html.fromstring(h[0])
+            if not tree.xpath(
+                    '//span[contains(@class,"BVRRCount")]/span/text()'):
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+                return product
+            num = int(is_empty(re.findall('\d+', tree.xpath(
+                '//span[contains(@class,"BVRRCount")]/span/text()')[0])))
+
+            if num == 0:
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+                return product
+            buyer_reviews['num_of_reviews'] = num
+            avg = float(is_empty(
+                re.findall(
+                    '\d+.\d+',
+                    tree.xpath('//div[contains(@class,'
+                               '"BVRRRatingNormalImage")]/img/@alt')[0])
+            ))
+            buyer_reviews['average_rating'] = avg
+            stars = tree.xpath(
+                '//span[contains(@class,"BVRRHistAbsLabel")]/text()')
+            by_star = {1: stars[4], 2: stars[3],
+                       3: stars[2], 4: stars[1],
+                       5: stars[0]}
+            buyer_reviews['rating_by_star'] = by_star
+            product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+        else:
+            product['buyer_reviews'] = 0
+        return product
+
     def _build_buyer_reviews(self, response):
         overall_block = response.xpath(
             '//*[contains(@class, "review-summary")]'
@@ -321,7 +366,8 @@ class WalmartProductsSpider(BaseProductsSpider):
             product,
             'title',
             response.xpath(
-                "//h1[contains(@class,'product-name')]/text()").extract(),
+                "//h1[contains(@class,'product-name')]/text() |"
+                "//h1[@class='productTitle']/text()").extract(),
             conv=string.strip)
         cond_set(
             product,
@@ -388,6 +434,13 @@ class WalmartProductsSpider(BaseProductsSpider):
                     price = price.replace(',', '').replace(' ', '')
                     cond_set_value(product, 'price',
                                    Price(priceCurrency=currency, price=price))
+
+        if not product.get('upc'):
+            cond_set(
+                product,
+                'upc',
+                response.xpath('//strong[@id="UPC_CODE"]/text()').extract()
+            )
 
     def _gen_location_request(self, response):
         data = {"postalCode": ""}
@@ -673,16 +726,26 @@ class WalmartProductsSpider(BaseProductsSpider):
         product_id = response.meta['product_id']
         if product_id is None:
             return response.meta['product']
-        response.meta['product']['recent_questions'] = []
+        new_meta = response.meta.copy()
+        new_meta['product']['recent_questions'] = []
         url = self.QA_URL.format(product_id=product_id, page=1)
         return Request(url, self._parse_questions,
-                       meta=response.meta, dont_filter=True)
+                       meta=new_meta, dont_filter=True)
 
     def _parse_questions(self, response):
         data = json.loads(response.body_as_unicode())
         product = response.meta['product']
         if not data:
-            return product
+            if not product.get('buyer_reviews') or\
+                            product.get('buyer_reviews') == 0:
+                new_meta = response.meta.copy()
+                return Request(url=self.REVIEW_URL.format(
+                    product_id=response.meta['product_id']),
+                               callback=self._build_buyer_reviews_old,
+                               meta=new_meta,
+                               dont_filter=True)
+            else:
+                return product
         last_date = product.get('date_of_last_question')
         questions = product['recent_questions']
         dateconv = lambda date: datetime.strptime(date, '%m/%d/%Y').date()
@@ -709,4 +772,12 @@ class WalmartProductsSpider(BaseProductsSpider):
             del product['recent_questions']
         else:
             product['date_of_last_question'] = str(last_date)
-        return product
+        if not product.get('buyer_reviews') or \
+                        product.get('buyer_reviews') == 0:
+            new_meta = response.meta.copy()
+            return Request(url=self.REVIEW_URL.format(
+                product_id=response.meta['product_id']),
+                           callback=self._build_buyer_reviews_old,
+                           meta=new_meta, dont_filter=True)
+        else:
+            return product
