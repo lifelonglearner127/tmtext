@@ -17,6 +17,7 @@ SUPPORTED_SITES = ["amazon", "bestbuy", "homedepot","statelinetack","tesco","wal
                     "samsclub","babysecurity","staples","soap","drugstore","staplesadvantage",
                     "freshamazon","souq","freshdirect","quill","george","peapod"]
 
+
 class JsonDiff:
     def __init__(self, sample_json, test_json, list_depth=0):
         self.log = ""
