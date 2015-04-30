@@ -527,6 +527,17 @@ class Scraper():
         else:
             return False
 
+    def is_energy_label(self, image_url):
+        """Verifies if image with URL given as argument is an
+        energy label image.
+
+        Returns:
+           True if it's an energy label image, False otherwise
+        """
+
+        # TODO: implement
+        return False
+
     def _owned(self):
         '''General function for setting value of legacy field "owned".
         It will be inferred from value of "site_online_in_stock" field.

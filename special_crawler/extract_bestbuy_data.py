@@ -16,6 +16,10 @@ class BestBuyScraper(Scraper):
     ############### PREP
     ##########################################
     INVALID_URL_MESSAGE = "Expected URL format is http://www.bestbuy.com/site/<product-name>/<product-id>.*"
+
+    feature_count = None
+    features = None
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
@@ -24,7 +28,17 @@ class BestBuyScraper(Scraper):
         m = re.match(r"^http://www.bestbuy.com/.*$", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        '''Overwrites parent class method that determines if current page
+        is not a product page.
+        Currently for Amazon it detects captcha validation forms,
+        and returns True if current page is one.
+        '''
 
+        txt = " ".join(self.tree_html.xpath("//div[contains(@class,'alert alert-warning')]//text()"))
+        if "This item is no longer available" in txt:
+            return True
+        return False
 
 
     ##########################################
@@ -68,22 +82,41 @@ class BestBuyScraper(Scraper):
         return self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-sku-id')[0]
 
     def _features(self):
-        rows = self.tree_html.xpath("//div[@id='features']")
-        # list of lists of cells (by rows)
-        cells = map(lambda row: row.xpath(".//div[@class='feature']//text()"), rows)
-        # list of text in each row
-        rows_text = map(\
-            lambda row: ":".join(\
-                map(lambda cell: cell.strip(), row)\
-                ), \
-            cells)
-        all_features_text = "\n".join(rows_text)
-        # return dict with all features info
-        return all_features_text
+        if self.feature_count is not None:
+            return self.features
+        self.feature_count = 0
+
+        # http://www.bestbuy.com/site/sony-65-class-64-1-2-diag--led-2160p-smart-3d-4k-ultra-hd-tv-black/5005015.p;template=_specificationsTab
+        url = None
+        data_tabs = self.tree_html.xpath("//div[@id='pdp-model-data']/@data-tabs")
+        jsn = json.loads(data_tabs[0])
+        for tab in jsn:
+            if tab["id"] == "specifications":
+                url = tab["fragmentUrl"]
+                url = "http://www.bestbuy.com%s" % url
+                break
+        line_txts = []
+        if url is not None:
+            contents = urllib.urlopen(url).read()
+            # document.location.replace('
+            tree = html.fromstring(contents)
+            rows = tree.xpath("//table//tbody//tr")
+            for r in rows:
+                th_txt = " ".join(r.xpath(".//th//text()"))
+                td_txt = " ".join(r.xpath(".//td//text()"))
+                if len(th_txt) > 0 and len(td_txt) > 0:
+                    line = "%s: %s" % (th_txt, td_txt)
+                    line_txts.append(line)
+        if len(line_txts) < 1:
+            return None
+        self.feature_count = len(line_txts)
+        self.features = line_txts
+        return self.features
 
     def _feature_count(self):
-        # select table rows with more than 2 cells (the others are just headers), count them
-        return len(filter(lambda row: len(row.xpath(".//text()"))>0, self.tree_html.xpath("//div[@id='features']/div[@class='feature']")))
+        if self.feature_count is None:
+            self._features()
+        return self.feature_count
 
     def _model_meta(self):
         return None

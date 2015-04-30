@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
+from __future__ import print_function
 import re
 import json
 import urlparse
 
 from scrapy.http import Request
-from scrapy.log import ERROR, WARNING
+from scrapy.http.request.form import FormRequest
+from scrapy.log import ERROR, WARNING, INFO, DEBUG
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
@@ -14,10 +16,22 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value, FLOATING_POINT_RGEX
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
 is_empty = lambda x, y=None: x[0] if x else y
+
+try:
+    from captcha_solver import CaptchaBreakerWrapper
+except ImportError as e:
+    import sys
+    print(
+        "### Failed to import CaptchaBreaker.",
+        "Will continue without solving captchas:",
+        e,
+        file=sys.stderr,
+    )
 
 class AmazonCoUkProductsSpider(BaseProductsSpider):
     name = "amazoncouk_products"
@@ -27,6 +41,8 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
     SEARCH_URL = ("http://www.amazon.co.uk/s/ref=nb_sb_noss?"
                   "url=search-alias=aps&field-keywords={search_term}&rh=i:aps,"
                   "k:{search_term}&ajr=0")
+
+    _cbw = CaptchaBreakerWrapper()
 
     def _get_products(self, response):
         result = super(AmazonCoUkProductsSpider, self)._get_products(response)
@@ -174,13 +190,6 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         prod['url'] = response.url
         self._populate_bestseller_rank(prod, response)
 
-        revs = self._buyer_reviews_from_html(response)
-        if isinstance(revs, Request):
-            meta = {"product": prod, "mkt_place_link": mkt_place_link}
-            return revs.replace(meta=meta)
-        else:
-            prod['buyer_reviews'] = revs
-
         mkt_place_link = urlparse.urljoin(
                 response.url,
                 is_empty(response.xpath(
@@ -189,6 +198,13 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
                     "//div[@id='secondaryUsedAndNew']" \
                     "//a[contains(@href, '/gp/offer-listing/')]/@href"
                 ).extract()))
+
+        revs = self._buyer_reviews_from_html(response)
+        if isinstance(revs, Request):
+            meta = {"product": prod, "mkt_place_link": mkt_place_link}
+            return revs.replace(meta=meta)
+        else:
+            prod['buyer_reviews'] = revs
 
         if mkt_place_link:
             meta = {"product": prod}

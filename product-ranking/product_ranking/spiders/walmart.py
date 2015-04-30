@@ -261,6 +261,11 @@ class WalmartProductsSpider(BaseProductsSpider):
 
         #    return Request(url=url, meta=meta, callback=self.get_questions)
 
+        if re.search(
+                "only available .{0,20} Walmart store",
+                response.body_as_unicode()):
+            product['is_in_store_only'] = True
+
         if not product.get('price'):
             return self._gen_location_request(response)
         return self._start_related(response)

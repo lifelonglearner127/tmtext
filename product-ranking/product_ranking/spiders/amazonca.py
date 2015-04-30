@@ -135,6 +135,8 @@ class AmazonProductsSpider(BaseProductsSpider):
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         cond_set(product, 'brand', ['NO BRAND'])
+        if '®' in product.get('brand', ''):
+            product['brand'] = product['brand'].replace('®', '')
         price = response.xpath(
             '//span[@id="priceblock_saleprice"]/text()'
         ).extract()
