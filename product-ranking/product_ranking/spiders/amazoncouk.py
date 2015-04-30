@@ -8,7 +8,7 @@ import urlparse
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
-from scrapy.log import ERROR, WARNING, INFO, DEBUG
+from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
@@ -32,6 +32,13 @@ except ImportError as e:
         e,
         file=sys.stderr,
     )
+    class FakeCaptchaBreaker(object):
+        @staticmethod
+        def solve_captcha(url):
+            msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
+            return None
+    CaptchaBreakerWrapper = FakeCaptchaBreaker
+
 
 class AmazonCoUkProductsSpider(BaseProductsSpider):
     name = "amazoncouk_products"
