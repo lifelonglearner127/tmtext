@@ -17,3 +17,11 @@ http://www.bestbuy.com/site/rachael-ray-8-quart-oval-stock-pot-green/1309349845.
 # item sold out/not available
 http://www.bestbuy.com/site/brinno-digital-camcorder-1-4-lcd-hd-green/1311145978.p?id=mp1311145978&skuId=1311145978
 http://www.bestbuy.com/site/pny-optima-120gb-internal-serial-ata-iii-solid-state-drive-for-laptops-multi/8191179.p?id=1219315690159
+# spec/features
+http://www.bestbuy.com/site/sony-65-class-64-1-2-diag--led-2160p-smart-3d-4k-ultra-hd-tv-black/5005015.p
+# unavail prod pages - should fail
+http://www.bestbuy.com/site/seismic-audio-2-100-foot-speakon-pa-dj-speaker-cable-black-black/1305637649.p
+# 4/30 missed video
+http://www.bestbuy.com/site/dell-xps-12-5-touch-screen-laptop-intel-core-i7-8gb-memory-256gb-solid-state-drive-carbon-fiber/6685362.p
+#4/30 missed wc_360
+http://www.bestbuy.com/site/dell-inspiron-17-3-laptop-intel-core-i7-8gb-memory-1tb-hard-drive-longitude-silver/3510945.p
