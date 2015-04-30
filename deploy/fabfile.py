@@ -217,6 +217,7 @@ def setup_packages():
     sudo('apt-get update --fix-missing')
     cuisine.package_ensure('python-software-properties')
     # TODO: verify if the repo must be added
+    cuisine.package_ensure('tesseract-ocr')
     #cuisine.repository_ensure_apt('ppa:fkrull/deadsnakes')
     cuisine.package_ensure('python3.4 python3.4-dev')
     cuisine.package_ensure('python-dev')
@@ -228,6 +229,7 @@ def setup_packages():
     cuisine.package_ensure('tmux')
     cuisine.package_ensure('mc htop iotop nano')  # just for convenience
     sudo('pip install virtualenv --upgrade')
+    sudo('pip install pytesseract')
 
     env.user, env.password, env.key_filename = \
         orig_user, orig_passw, orig_cert
