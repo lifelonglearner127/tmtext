@@ -19,6 +19,7 @@ from product_ranking.spiders import (BaseProductsSpider, cond_set,
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 
 try:
@@ -175,7 +176,8 @@ class AmazonProductsSpider(BaseProductsSpider):
                 '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]'
                 '/button/text() |'
                 '//li[@class="swatchElement selected"]'
-                '//span[@class="a-color-price"]/text()'
+                '//span[@class="a-color-price"]/text() |'
+                '//span[@id="ags_price_local"]/text()'
             ).extract()
 
         cond_set(
@@ -482,11 +484,14 @@ class AmazonProductsSpider(BaseProductsSpider):
                 )
                 return buyer_rev_req
             else:
-                return 0
+                return ZERO_REVIEWS_VALUE
 
-        buyer_reviews = BuyerReviews(num_of_reviews=total,
-                                     average_rating=average,
-                                     rating_by_star=ratings)
+        if int(total) == 0:
+            buyer_reviews = ZERO_REVIEWS_VALUE
+        else:
+            buyer_reviews = BuyerReviews(num_of_reviews=total,
+                                         average_rating=average,
+                                         rating_by_star=ratings)
         return buyer_reviews
 
     def get_buyer_reviews_from_2nd_page(self, response):
@@ -501,7 +506,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 re.findall(FLOATING_POINT_RGEX, total_revs), 0
             )
         if int(buyer_reviews["num_of_reviews"]) == 0:
-            product["buyer_reviews"] = 0
+            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
             return product
 
         buyer_reviews["rating_by_star"] = {}
