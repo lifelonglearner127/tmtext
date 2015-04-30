@@ -56,6 +56,27 @@ class Price:
         return self.__repr__()
 
 
+class MarketplaceSeller:
+
+    seller = None
+    other_products = None
+
+    def __init__(self, seller, other_products):
+        self.seller = seller
+        self.other_products = other_products
+        if not self.other_products:
+            self.other_products = None
+
+    def __repr__(self):
+        return {
+            'seller': self.seller,
+            'other_products': self.other_products
+        }
+
+    def __str__(self):
+        return self.__repr__()
+
+
 def scrapy_price_serializer(value):
     """ This method is required to correctly dump values while using JSON
         output (otherwise we'd have "can not serialize to JSON" error).
@@ -67,6 +88,19 @@ def scrapy_price_serializer(value):
         return value.__str__()
     else:
         return value
+
+
+def scrapy_marketplace_serializer(value):
+    """ This method is required to correctly dump values while using JSON
+        output (otherwise we'd have "can not serialize to JSON" error).
+        `value` can be a string, number, or a `MarketplaceSeller` instance.
+    :param value: str, url or a `MarketplaceSeller` instance
+    :return: str
+    """
+    if hasattr(value, '__str__'):
+        return value.__str__()
+    else:
+        return str(value)
 
 
 class SiteProductItem(Item):
@@ -89,6 +123,7 @@ class SiteProductItem(Item):
     description = Field()  # String with HTML tags.
     brand = Field()  # String.
     price = Field(serializer=scrapy_price_serializer)  # see Price obj
+    marketplace = Field(serializer=scrapy_marketplace_serializer)  # see marketplace obj
     locale = Field()  # String.
     # Dict of RelatedProducts. The key is the relation name.
     related_products = Field()
@@ -111,8 +146,16 @@ class SiteProductItem(Item):
     search_term_in_title_interleaved = Field()  # Bool
 
     # For google.co.uk, google.com products
+    # Should be provided in valid JSON format
     google_source_site = Field()
 
     is_mobile_agent = Field()  # if the spider was in the mobile mode
 
-    limited_stock = Field() # see LimitedStock obj
+    limited_stock = Field()   # see LimitedStock obj
+
+    prime = Field()  # amazon Prime program: Prime/PrimePantry/None
+
+    is_pickup_only = Field()   # now for Walmart only; may change in the future
+
+    date_of_last_question = Field()  # now for Walmart only
+    recent_questions = Field()  # now for Walmart only; may change in the future

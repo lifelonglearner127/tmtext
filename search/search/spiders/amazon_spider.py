@@ -45,10 +45,15 @@ class AmazonSpider(SearchSpider):
 
     # check if a certain URL is valid or gets a 404 response
     def is_valid_url(self, URL):
+        # this causes 404s
+        if URL == "http://www.amazon.com/gp/slredirect/redirect.html":
+            return False
         try:
             # disable this for now. without user agent set, it only causes 500s. and it slows everything down. just return True for all
-            return True
-            resp = urllib2.urlopen(URL, timeout=5)
+            #return True
+            request = urllib2.Request(URL)
+            request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')
+            resp = urllib2.urlopen(request, timeout=5)
             return (resp.getcode() != 404)
         except Exception, e:
             self.log("Error checking status code for " + URL + ": " + str(e), level=log.ERROR)
@@ -165,6 +170,7 @@ class AmazonSpider(SearchSpider):
         #TODO: to test this
         #product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
         product_name_node = hxs.select('//h1[@id="title"]/span[@id="productTitle"]/text()').extract()
+        product_name = None
         if not product_name_node:
             product_name_node = hxs.select('//h1[@id="aiv-content-title"]//text()').extract()
         if not product_name_node:
@@ -182,16 +188,16 @@ class AmazonSpider(SearchSpider):
 
             # log this error:
             # if number of retries were not exhausted, it might just be a captcha page, not an insurmonutable error
-            if 'captcha_retries' not in response.meta \
-                or 'captcha_retries' in response.meta and response.meta['captcha_retries'] <= self.MAX_CAPTCHA_RETRIES:
+            if 'captcha_retries' in response.meta and response.meta['captcha_retries'] <= self.MAX_CAPTCHA_RETRIES:
                 
                 self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.WARNING)
             else:
                 # if it comes from a solved captcha page, then it's an error if it's still not found                
                 self.log("Error: No product name: " + str(response.url) + " for walmart product " + origin_url, level=log.ERROR)
 
-                if response.meta['captcha_retries'] > self.MAX_CAPTCHA_RETRIES:
-                    del response.meta['captcha_retries']
+                # try this: don't remove captcha_retries from meta, may cause infinite loops, works
+                # if response.meta['captcha_retries'] > self.MAX_CAPTCHA_RETRIES:
+                    # del response.meta['captcha_retries']
             # if we have reached maximum number of retries, do nothing (item just won't be added to the "items" list)
 
 

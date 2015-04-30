@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import string
 import urllib
@@ -13,7 +12,8 @@ from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price,\
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import cond_set, cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 
@@ -144,15 +144,20 @@ class GoogleProductsSpider(BaseProductsSpider):
         redirect_pattern = r'(&adurl|\?url)=(.*)'
         res = re.findall(redirect_pattern, product['url'])
         if res:
-            req_url = urllib.unquote(res[0][1])
-            res = urllib.urlopen(req_url)
-            url_not_stripped = res.geturl()
-            product['url'] = url_not_stripped
+            try:
+                req_url = urllib.unquote(res[0][1])
+                res = urllib.urlopen(req_url)
+                url_not_stripped = res.geturl()
+                product['url'] = url_not_stripped
+            except:
+                pass
             review_link = product['buyer_reviews']
             if review_link:
                 link = 'https://www.google.com' + review_link
                 return Request(link, callback=self.handle_reviews_request,
                                meta=response.meta)
+            else:
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
 
         # strip GET data from only google urls
         if 'www.google.com/shopping/product' in product['url']:
@@ -237,7 +242,7 @@ class GoogleProductsSpider(BaseProductsSpider):
             items = response.css('ol.product-results li.psgi')
 
         if not items:
-            self.log("Found no product links.", DEBUG)
+            self.log("Found no product links.", WARNING)
         # try to get data from json
         script = response.xpath(
             '//div[@id="xjsi"]/script/text()').extract()
@@ -260,12 +265,12 @@ class GoogleProductsSpider(BaseProductsSpider):
             try:
                 json_data = json.loads(cleansed)
             except:
-                self.log('Failed to process json data', ERROR)
+                self.log('Failed to process json data', WARNING)
 
             try:
                 json_data = json_data['spop']['r']
             except:
-                self.log('JSON structure changed', ERROR)
+                self.log('Failed to find ["spop"]["r"] at json data', WARNING)
 
         for item in items:
             url = title = description = price = image_url = None
@@ -341,9 +346,10 @@ class GoogleProductsSpider(BaseProductsSpider):
                             'price': source_price,
                             'currency': priceCurrency
                         }
-                        source_site = '{"%s":%s}' % (source_site, data)
+                        source_site = {source_site:data}
                 else:
-                    source_site = '{"%s":{}}' % source_site
+                    source_site = {source_site:{}}
+                source_site = json.dumps(source_site)
 
             yield redirect, SiteProductItem(
                 url=url,
@@ -362,7 +368,7 @@ class GoogleProductsSpider(BaseProductsSpider):
 
         if not next:
             link = None
-            self.log('Next page link not found', ERROR)
+            self.log('Next page link not found', WARNING)
         else:
             link = urlparse.urljoin(response.url, next[0])
         return link
@@ -374,11 +380,13 @@ class GoogleProductsSpider(BaseProductsSpider):
             '//div[@id="reviews"]/div[@id="reviews"]'
         )
         if not revs:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return
         total = response.xpath(
             '//div[@class="_Ape"]/div/div/div[@class="_wpe"]/text()'
         ).extract()
         if not total:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return
         total = re.findall("\d*,?\d+", total[0])
         total = int(total[0].replace(',', ''))

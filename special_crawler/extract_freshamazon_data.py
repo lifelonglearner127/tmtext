@@ -194,6 +194,7 @@ class FreshAmazonScraper(Scraper):
             self.image_urls = image_url
         if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
             return image_url
+        self.image_urls = None
         return None
 
     def _image_helper(self):
@@ -208,7 +209,7 @@ class FreshAmazonScraper(Scraper):
 
     def _image_count(self):
         iu = self._image_urls()
-        if iu ==None:
+        if iu == None:
             return 0
         return len(iu)
 
@@ -351,11 +352,8 @@ class FreshAmazonScraper(Scraper):
             return "USD"
         return curr
 
-    def _in_stores_only(self):
-        return None
-
     def _in_stores(self):
-        return None
+        return 0
 
     def _site_online(self):
         if self._marketplace()==1: return 0
@@ -367,6 +365,7 @@ class FreshAmazonScraper(Scraper):
         if len(a) > 0 and a[0].find('Available by') >=0 : return 1
         a = self.tree_html.xpath('//div[@class="item"]')
         if len(a) > 0 and a[0].text_content().find('Out of stock') >=0 : return 1
+        if self._product_name().find("Not Available") >= 0: return 1
         return 0
 
     def _marketplace(self):
@@ -591,8 +590,6 @@ class FreshAmazonScraper(Scraper):
         "price" : _price, \
         "price_amount": _price_amount, \
         "price_currency": _price_currency, \
- #       "in_stock" : _in_stock, \
-        "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
 #        "owned" : _owned, \
 #        "owned_out_of_stock" : _owned_out_of_stock, \

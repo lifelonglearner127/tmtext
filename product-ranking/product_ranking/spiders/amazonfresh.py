@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import urlparse
 import re
@@ -8,9 +7,11 @@ from scrapy.http import Request
 from scrapy import FormRequest
 from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
+    MarketplaceSeller
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FormatterWithDefaults
+    FormatterWithDefaults, cond_set_value
 
 
 class AmazonFreshProductsSpider(BaseProductsSpider):
@@ -91,6 +92,24 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
                         ',', '').replace(' ', '').strip(),
                     priceCurrency='USD'
                 )
+
+        seller_all = response.xpath('//div[@class="messaging"]/p/strong/a')
+        print('-'*50)
+        print prod["ranking"]
+        print seller_all
+        print('-'*50)
+        if seller_all:
+            seller = seller_all.xpath('text()').extract()
+            other_products = seller_all.xpath('@href').extract()
+            if other_products:
+                other_products = "https://fresh.amazon.com/" + other_products[0]
+            else:
+                other_products = []
+            if seller:
+                prod["marketplace"] = MarketplaceSeller(
+                    seller=seller[0], other_products=other_products
+                )
+
         des = response.xpath('//div[@id="productDescription"]').extract()
         cond_set(prod, 'description', des)
         img_url = response.xpath(
@@ -119,6 +138,7 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
                 avg = float(re.findall(r'search/(.*)-star', rating_pict)[0])
                 br = BuyerReviews(num_of_reviews, avg, {})
                 prod['buyer_reviews'] = br
+        cond_set_value(prod, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         return prod
 
     def _search_page_error(self, response):

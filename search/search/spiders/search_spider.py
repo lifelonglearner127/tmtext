@@ -13,6 +13,7 @@ from search.matching_utils import ProcessText
 import re
 import sys
 import json
+import csv
 
 # from selenium import webdriver
 # import time
@@ -49,7 +50,8 @@ class SearchSpider(BaseSpider):
 
     allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
-                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk", "pcworld.co.uk", "ebay.co.uk"]
+                       "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk", "pcworld.co.uk", "ebay.co.uk", \
+                       "argos.co.uk", "ebuyer.com", "ebuyer.co.uk", "firebox.com", "rakuten.co.uk", "uk.rs-online.com", "screwfix.com"]
 
     # pass product as argument to constructor - either product name or product URL
     # arguments:
@@ -59,6 +61,7 @@ class SearchSpider(BaseSpider):
     #                output - integer(1/2/3/4) option indicating output type (either result URL (1), or result URL and source product URL (2))
     #                         3 - same as 2 but with extra field representing confidence score
     #                         4 - same as 3 but with origin products represented by UPC instead of URL
+    #                         5 - same as 3 but with product name as well, on first column (name from source site)
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
     def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
         output = 2, threshold = 1.0, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
@@ -130,7 +133,13 @@ class SearchSpider(BaseSpider):
                         "boots" : "http://www.boots.com/webapp/wcs/stores/servlet/EndecaSearchListerView?storeId=10052&searchTerm=%s" % search_query,
                         "currys" : "http://www.currys.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query,
                         "pcworld" : "http://www.pcworld.co.uk/gbuk/search-keywords/xx_xx_xx_xx_xx/%s/xx-criteria.html" % search_query,
-                        "maplin" : "http://www.maplin.co.uk/search?text=%s" % search_query
+                        "maplin" : "http://www.maplin.co.uk/search?text=%s" % search_query, \
+                        "argos" : "http://www.argos.co.uk/static/Search/searchTerm/%s.htm" % search_query, \
+                        "ebuyer" : "http://www.ebuyer.com/search?q=%s" % search_query, \
+                        "firebox" : "http://www.firebox.com/firebox/search?searchstring=%s" % search_query, \
+                        "rakuten" : "http://www.rakuten.co.uk/search/%s/" % search_query, \
+                        "rscomponents" : "http://uk.rs-online.com/web/c/?searchTerm=%s" % search_query, \
+                        "screwfix" : "http://www.screwfix.com/search?search=%s" % search_query
                         }
 
         return search_pages
@@ -145,24 +154,29 @@ class SearchSpider(BaseSpider):
         products = []
         with open(products_file) as f:
             # skip first line
-            f.readline()
+            # f.readline()
 
             # TODO: make this more general
-            for line in f:
-                product_info = line.split(",")
-                product = {}
-                product['product_name'] = product_info[0]
-                product['product_price'] = product_info[-1]
-                if product['product_price'].startswith('$'):
-                    product['product_price'] = product['product_price'][1:]
-                product['product_price'] = float(product['product_price'])
+            # for line in f:
+     
+                # product['product_name'] = product_info[0]
+                # product['product_price'] = product_info[-1]
+                # if product['product_price'].startswith('$'):
+                #     product['product_price'] = product['product_price'][1:]
+                # product['product_price'] = float(product['product_price'])
 
-                # for target, get DCPI column as model number
-                # TODO: horrible hack
-                if self.target_site == 'target':
-                    product['product_upc'] = product_info[1]
+                # # for target, get DCPI column as model number
+                # # TODO: horrible hack
+                # if self.target_site == 'target':
+                #     product['product_upc'] = product_info[1]
 
-                products.append(product)
+                reader = csv.reader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+                
+                for row in reader:
+                    product = {}
+                    product['product_name'] = row[1]
+                    product['product_upc'] = row[0]
+                    products.append(product)
 
         return products
 
@@ -425,6 +439,7 @@ class SearchSpider(BaseSpider):
             item = SearchItem()
             #item['origin_site'] = site
             item['origin_url'] = response.url
+            item['origin_name'] = ''
 
             #TODO: move this somewhere more relevant
             # remove unnecessary parameters for walmart links
@@ -868,14 +883,17 @@ class SearchSpider(BaseSpider):
             product_target_price = price_holder[0].strip()
             # remove commas separating orders of magnitude (ex 2,000)
             product_target_price = re.sub(",","",product_target_price)
-            m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
+            m = re.match("(\$|\xa3)([0-9]+\.?[0-9]*)", product_target_price)
             if m:
-                price = float(m.group(1))
-        #     else:
-        #         self.log("Didn't match product price: " + price + " " + response.url + "\n", level=log.WARNING)
+                price = float(m.group(2))
+                currency = m.group(1)
+                if currency != "$":
+                    price = Utils.convert_to_dollars(price, currency)
+            else:
+                self.log("Didn't match product price: " + product_target_price + " (" + product_name + ")\n", level=log.WARNING)
 
-        # else:
-        #     self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
+        else:
+            self.log("Didn't find product price: (" + product_name + ")\n", level=log.INFO)
 
         return (product_name, product_model, price, None)
 

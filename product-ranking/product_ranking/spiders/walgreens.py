@@ -1,59 +1,102 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import urlparse
+import json
+import re
 
-from scrapy.log import ERROR
+from scrapy.http import Request
 
-from product_ranking.items import SiteProductItem, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    cond_set_value, FormatterWithDefaults
 
 
 class WalGreensProductsSpider(BaseProductsSpider):
-    name = "walgreens_products"
-    allowed_domains = ["walgreens.com"]
-    start_urls = []
+    """ walgreens.com product ranking spider
 
-    SEARCH_URL = "http://www.walgreens.com/search/results.jsp?Ntt={search_term}"
+    Takes `order` argument with following possible values:
+
+    * `relevance`
+    * `top_sellers`
+    * `price_asc`, `price_desc`
+    * `product_name_asc`, `product_name_desc`
+    * `most_reviewed`
+    * `highest_rated`
+    * `most_viewed`
+    * `newest_arrival`
+
+    There are the following caveats:
+
+    * `upc`, `related_products`,`sponsored_links`  are not scraped
+    * `buyer_reviews`, `price` are not always scraped
+
+    """
+    name = "walgreens_products"
+    allowed_domains = ["walgreens.com", "api.bazaarvoice.com"]
+    start_urls = []
+    site = 'http://www.walgreens.com'
+    page = 1
+    SORTING = None
+    SORT_MODES = {
+        'relevance':         'relevance',  # default
+        'top_sellers':       'Top Sellers',
+        'price_asc':         'Price Low to High',
+        'price_desc':        'Price High to Low',
+        'product_name_asc':  'Product Name A-Z',
+        'product_name_desc': 'Product Name Z-A',
+        'most_reviewed':     'Most Reviewed',
+        'highest_rated':     'Highest Rated',
+        'most_viewed':       'Most Viewed',
+        'newest_arrival':    'Newest Arrival'
+    }
+
+    SEARCH_URL = "http://www.walgreens.com/svc/products/search?" \
+                 "requestType=search&" \
+                 "q={search_term}&" \
+                 "p={page}&" \
+                 "s=60&" \
+                 "deviceType=desktop&" \
+                 "closeMatch=false&" \
+                 "id=%5B%5D&" \
+                 "sort={sort_mode}&" \
+                 "view=allView"
+
+    REVIEW_API_URL = 'http://api.bazaarvoice.com/data/batch.json?' \
+                     'passkey=tpcm2y0z48bicyt0z3et5n2xf&' \
+                     'apiversion=5.5&' \
+                     'resource.q0=products&' \
+                     'filter.q0=id%3Aeq%3A{prod_id}&' \
+                     'stats.q0=reviews&' \
+                     'callback=BV._internal.dataHandler0'
+
+    def __init__(self, sort_mode=None, *args, **kwargs):
+        if sort_mode:
+            if sort_mode.lower() not in self.SORT_MODES:
+                self.log('"%s" not in SORT_MODES')
+            else:
+                self.SORTING = self.SORT_MODES[sort_mode.lower()]
+
+        super(WalGreensProductsSpider, self).__init__(
+            site_name=self.allowed_domains[0],
+            url_formatter=FormatterWithDefaults(
+                page=self.page,
+                sort_mode=self.SORTING or self.SORT_MODES['relevance'],),
+            *args,
+            **kwargs)
 
     def parse_product(self, response):
         prod = response.meta['product']
 
-        model = response.xpath('//input[@id="skuId"]/@value').extract()
-        cond_set(prod, 'model', model)
-
-        title = response.xpath('//h1[@itemprop="name"]/text()').extract()
+        title = response.xpath('//h2[@id="productName"]/text()').extract()
         if title:
             prod['title'] = title[0].strip()
-
-        price = response.xpath('//b[@itemprop="price"]//text()').extract()
-        if price:
-            prod['price'] = price[0].strip()
-
-        if prod.get('price'):
-            if not '$' in prod['price']:
-                self.log('Unknown currency at %s' % response.url, level=ERROR)
-            else:
-                prod['price'] = Price(
-                    priceCurrency='USD',
-                    price=prod['price'].replace(',', '').replace(
-                        ' ', '').replace('$', '').strip()
-                )
 
         img_url = response.xpath(
             '//img[@id="main-product-image"]/@src').extract()
         if img_url:
-            img_url = urlparse.urljoin(response.url, img_url[0])
+            img_url = urlparse.urljoin(self.site, img_url[0])
             prod['image_url'] = img_url
-
-        brand_text = response.xpath(
-            '//div[@id="vpd_shop_more_link"]'
-            '//div[contains(@class,"mrgTop5px")]//a/text()'
-        ).extract()
-        if brand_text:
-            brand_text = brand_text[0].replace('Shop all', '').replace(
-                'products', '')
-            prod['brand'] = brand_text.strip()
 
         prod['url'] = response.url
 
@@ -66,29 +109,105 @@ class WalGreensProductsSpider(BaseProductsSpider):
                 response.xpath('//div[@id="description-content"]').extract()),
         )
 
-        return prod
+        cond_set(
+            prod,
+            'model',
+            response.xpath(
+                '//section[@class="panel-body wag-colornone"]/text()'
+            ).re('Item Code: (\d+)')
+        )
+
+        prod_id = re.findall('ID=(.*)-', response.url)[0]
+        url = self.REVIEW_API_URL.format(prod_id=prod_id)
+        new_meta = response.meta.copy()
+        new_meta['product'] = prod
+        return Request(url, meta=new_meta, callback=self._parse_review_api)
 
     def _scrape_total_matches(self, response):
-        count = response.xpath(
-            '//a[@title="Products - Tab - Active"]/text()'
-        ).re('(\d+)')
-        if count:
-            return int(count[0])
-        return 0
+        data = json.loads(response.body)
+        count = int(data['summary']['productInfoCount'])
+        return count
 
     def _scrape_product_links(self, response):
-        links = response.xpath(
-            '//div[@class="prod-content-top"]'
-            '/div[contains(@class,"product-name")]/a/@href'
-        ).extract()
-        for link in links:
-            full_link = urlparse.urljoin(response.url, link)
-            yield full_link, SiteProductItem()
+        data = json.loads(response.body)
+        if 'products' in data:
+            items = data['products']
+            for item in items:
+                full_link = urlparse.urljoin(
+                    self.site,
+                    item['productInfo']['productURL'])
+                product = self._get_json_data(item)
+                yield full_link, product
 
     def _scrape_next_results_page_link(self, response):
-        links = response.xpath(
-            '//div[contains(@class,"pagination")]//a[@title="Next Page"]/@href'
-        ).extract()
-        if links:
-            return urlparse.urljoin(response.url, links[0])
-        return None
+        data = json.loads(response.body)
+        if 'products' in data:
+            self.page += 1
+            next_url = self.SEARCH_URL.format(
+                search_term=response.meta['search_term'],
+                page=self.page,
+                sort_mode=self.SORTING or self.SORT_MODES['relevance'])
+            return next_url
+        else:
+            return None
+
+    def _get_json_data(self, item):
+        product = SiteProductItem()
+        item = item['productInfo']
+
+        if 'salePrice' in item['priceInfo']:
+            price = re.findall('(/?\d+.\d+)',
+                               item['priceInfo']['salePrice'])
+            if len(price) == 1:
+                product['price'] = Price(price=float(price[0]),
+                                         priceCurrency='USD')
+            else:
+                product['price'] = Price(price=float(price[-1]),
+                                         priceCurrency='USD')
+        elif 'regularPrice' in item['priceInfo']:
+            price = re.findall('(/?\d+.\d+)',
+                               item['priceInfo']['regularPrice'])
+            if len(price) == 1:
+                product['price'] = Price(price=float(price[0]),
+                                         priceCurrency='USD')
+            else:
+                product['price'] = Price(price=float(price[-1]),
+                                         priceCurrency='USD')
+
+        messages = item['channelAvailability']
+        for mes in messages:
+            if 'displayText' in mes:
+                if 'Not sold online' in mes['displayText']:
+                    product['is_in_store_only'] = True
+                if 'Out of stock online' in mes['displayText']:
+                    product['is_out_of_stock'] = True
+
+        return product
+
+    def _parse_review_api(self, response):
+        product = response.meta['product']
+        res = re.findall('\{.*\}', response.body)[0]
+        data = json.loads(res)
+
+        product['brand'] = data['BatchedResults']['q0']['Results'][0]['Brand']['Name']
+
+        by_star = {}
+        stars = data['BatchedResults']['q0']['Results'][0][
+            'ReviewStatistics']['RatingDistribution']
+        for star in stars:
+            by_star[star['RatingValue']] = star['Count']
+
+        total = data['BatchedResults']['q0']['Results'][0][
+            'ReviewStatistics']['TotalReviewCount']
+        if total == 0:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+            return product
+
+        avg = round(data['BatchedResults']['q0']['Results'][0][
+                    'ReviewStatistics']['AverageOverallRating'], 1)
+
+        product['buyer_reviews'] = BuyerReviews(num_of_reviews=total,
+                                                average_rating=avg,
+                                                rating_by_star=by_star)
+
+        return product

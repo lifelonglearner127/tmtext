@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import urlparse
 import urllib
@@ -12,6 +11,7 @@ from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem, Price, RelatedProduct,\
     BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, \
     FormatterWithDefaults, FLOATING_POINT_RGEX
 
@@ -260,6 +260,7 @@ class EBuyerProductSpider(BaseProductsSpider):
             '//div[@class="average_score"]/@title'
         ).extract()
         if not avg_total:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return product
         return self.populate_by_star(response)
 
@@ -293,5 +294,8 @@ class EBuyerProductSpider(BaseProductsSpider):
         total = int(total[0])
 
         product = response.meta['product']
-        product['buyer_reviews'] = BuyerReviews(total, avg, stars)
+        if total:
+            product['buyer_reviews'] = BuyerReviews(total, avg, stars)
+        else:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
         return product

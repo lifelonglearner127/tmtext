@@ -14,9 +14,10 @@ from scrapy import Request
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import SiteProductItem, \
-    Price, RelatedProduct, BuyerReviews
+    Price, RelatedProduct, BuyerReviews, MarketplaceSeller
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, \
-    cond_set_value, cond_set, FLOATING_POINT_RGEX
+    cond_set, FLOATING_POINT_RGEX
 
 is_empty = lambda x: x[0] if x else None
 
@@ -63,7 +64,7 @@ class TescoDirectProductsSpider(BaseProductsSpider):
        "results.page?_DARGS=/blocks/common/flyoutSearch.jsp"
 
     def __init__(self, *args, **kwargs):
-        self.search = kwargs["searchterms_str"]
+        self.search = kwargs.get("searchterms_str")
         if "search_modes" in kwargs:
             self.sort_by = self.SORT_MODES[kwargs["search_modes"]]    
         super(TescoDirectProductsSpider, self).__init__(*args, **kwargs)
@@ -109,6 +110,14 @@ class TescoDirectProductsSpider(BaseProductsSpider):
                 headers={'Content-type': 'application/x-www-form-urlencoded'},
                 callback=self.handler,
             )
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod['url'] = self.product_url
+            yield Request(self.product_url,
+                          self._parse_single_product,
+                          meta={'product': prod})
+
 
     def handler(self, response):
         if not re.search("&sortBy=" + str(self.sort_by), response.url) \
@@ -229,6 +238,16 @@ class TescoDirectProductsSpider(BaseProductsSpider):
         if price:
             product["price"] = Price(price=price[0], priceCurrency="GBP")
 
+        title_marketplace = response.xpath(
+            '//div[@class="header-wrapper"]/span[@class="available-from"]/text()').extract()
+        if title_marketplace:
+            title_marketplace = re.findall("Available from (.*)", title_marketplace[0])
+            if title_marketplace:
+                product["marketplace"] = MarketplaceSeller(
+                    seller=title_marketplace[0],
+                    other_products=None
+                )
+
         desc = response.xpath(
             '//section[@id="product-details-link"]'
             '/section[@class="detailWrapper"]'
@@ -264,7 +283,12 @@ class TescoDirectProductsSpider(BaseProductsSpider):
         l = "&l=1"
         chi = re.findall("addCategoryHintId\(\'(.*)\'", response.body)
         if chi:
-            chi = "&chi=|" + chi[0] 
+            chi = "&chi=|" + chi[0]
+        else:
+            chi = response.xpath(
+                '//meta[contains(@name, "parent_category")]/@content').extract()
+            chi = "&chi=|" + chi[0] if chi else ""
+
         resc_url = resc_url + apiKey + pt + l + chi
         ajax = urllib2.urlopen(resc_url)
         resp = ajax.read()
@@ -356,6 +380,8 @@ class TescoDirectProductsSpider(BaseProductsSpider):
                     num_of_reviews=num_of_reviews,
                     rating_by_star=rating_by_star,
                 )
+            else:
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
 
         product["locale"] = "en_GB"
 
@@ -440,3 +466,6 @@ class TescoDirectProductsSpider(BaseProductsSpider):
             return link
         self.product_iteration = 1
         return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

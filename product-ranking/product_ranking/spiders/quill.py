@@ -4,10 +4,10 @@ from urlparse import urljoin
 import urllib
 import string
 
-from scrapy.log import WARNING
 from scrapy.http import Request
 
 from product_ranking.items import RelatedProduct, Price, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import cond_set, cond_set_value, \
     cond_replace_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
@@ -213,7 +213,8 @@ class QuillProductsSpider(ProductsSpider):
                 total = int(total[0])
             except ValueError:
                 total = 0
-        else:
+        if not total:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return
         avrg = rarea.xpath(
             "//span[contains(@class,'average')]/text()").extract()

@@ -17,6 +17,9 @@ import sys
 class MaplinSpider(SearchSpider):
 
     name = "maplin"
+    # allow 404 so that it doesn't break the entire flow when one is encountered.
+    # Example: maplin search results pages when no results were found
+    handle_httpstatus_list = [404]
 
     # initialize fields specific to this derived spider
     def init_sub(self):

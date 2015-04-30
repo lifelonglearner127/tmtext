@@ -6,6 +6,7 @@ from __future__ import print_function
 import json
 import re
 import string
+import urlparse
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -38,6 +39,7 @@ except ImportError as e:
             return None
     CaptchaBreakerWrapper = FakeCaptchaBreaker
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 class AmazonProductsSpider(BaseProductsSpider):
     name = 'amazoncn_products'
@@ -104,7 +106,30 @@ class AmazonProductsSpider(BaseProductsSpider):
 
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
-            result = prod
+            mkt_place_link = urlparse.urljoin(
+                response.url,
+                is_empty(response.xpath(
+                    "//div[contains(@class, 'a-box-inner')]" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
+                    "//div[@id='secondaryUsedAndNew']" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
+                ).extract()))
+
+            if isinstance(prod['buyer_reviews'], Request):
+                meta = prod['buyer_reviews'].meta
+                meta["mkt_place_link"] = mkt_place_link
+                result =  prod['buyer_reviews'].replace(meta=meta)
+            else:
+                result = prod
+
+            if mkt_place_link:
+                meta = {"product": prod}
+                return Request(
+                    url=mkt_place_link, 
+                    callback=self.parse_marketplace,
+                    meta=meta
+                )
+
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
             self.log("Giving up on trying to solve the captcha challenge after"
                      " %s tries for: %s" % (self.captcha_retries, prod['url']),
@@ -231,13 +256,12 @@ class AmazonProductsSpider(BaseProductsSpider):
 
             key = raw_keys[0].strip(' :').upper()
             if key == 'UPC':
-                # Some products have several UPCs. The first one is used.
+                # Some products have several UPCs.
                 raw_upc = li.xpath('text()').extract()[0]
-                cond_set(
+                cond_set_value(
                     product,
                     'upc',
-                    raw_upc.strip().split(' '),
-                    conv=int
+                    raw_upc.strip().replace(' ', ';'),
                 )
             elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
                 model = li.xpath('text()').extract()
@@ -245,8 +269,14 @@ class AmazonProductsSpider(BaseProductsSpider):
             brand = guess_brand_from_first_words(product['title'])
             cond_set_value(product, 'brand', brand)
         cond_set(product, 'model', model, conv=string.strip)
-        self._buyer_reviews_from_html(response, product)
         self._populate_bestseller_rank(product, response)
+        revs = self._buyer_reviews_from_html(response)
+        if isinstance(revs, Request):
+            meta = {"product": product}
+            product['buyer_reviews'] = revs.replace(meta=meta)
+        else:
+            product['buyer_reviews'] = revs
+
 
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...
@@ -279,14 +309,32 @@ class AmazonProductsSpider(BaseProductsSpider):
         return total_matches
 
     def _scrape_product_links(self, response):
-        links = response.xpath(
-            "//ul/li[@class='s-result-item']/div[1]/div[1]"
-            "//a[contains(@class,'a-link-normal a-text-normal')][1]/@href"
-        ).extract()
-        cleared_links = []
-        cleared_links = [link for link in links if link not in cleared_links]
-        for link in cleared_links:
-            yield link, SiteProductItem()
+        lis = response.xpath("//ul/li[@class='s-result-item']")
+        links = []
+        for no, li in enumerate(lis):
+            href = li.xpath(
+                ".//a[contains(@class,'s-access-detail-page')]"
+                "/@href").extract()
+            if href:
+                href = href[0]
+                is_prime = li.xpath(
+                    "*/descendant::i[contains(concat(' ',@class,' '),"
+                    "' a-icon-prime ')]").extract()
+                is_prime_pantry = li.xpath(
+                    "*/descendant::i[contains(concat(' ',@class,' '),"
+                    "' a-icon-prime-pantry ')]").extract()
+                links.append((href, is_prime, is_prime_pantry))
+
+        if not links:
+            self.log("Found no product links.", WARNING)
+
+        for link, is_prime, is_prime_pantry in links:
+            prime = None
+            if is_prime:
+                prime = 'Prime'
+            if is_prime_pantry:
+                prime = 'PrimePantry'
+            yield link, SiteProductItem(prime=prime)
 
     def _scrape_next_results_page_link(self, response):
         next_pages = response.css('#pagnNextLink ::attr(href)').extract()
@@ -347,7 +395,7 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         return result
 
-    def _buyer_reviews_from_html(self, response, product):
+    def _buyer_reviews_from_html(self, response):
         stars_regexp = r'.+(\d[\d, ]*)'
         total = ''.join(response.css('#summaryStars a::text').extract())
         total = re.search('\d[\d, ]*', total)
@@ -371,7 +419,170 @@ class AmazonProductsSpider(BaseProductsSpider):
         if not average:
             average = sum(k * v for k, v in
                           ratings.iteritems()) / total if ratings else 0
+
+        if not total:
+            ratings = {}
+            average = float(is_empty(response.xpath(
+                '//div[contains(@class, "a-fixed-left-grid")]'\
+                '//span[contains(@class, "a-size-base")]/text()'
+                ).re(FLOATING_POINT_RGEX), 0))
+            total = 0
+            for mark in response.xpath(
+                '//div[contains(@class, "a-fixed-left-grid")]/div'
+                '//table/tr[contains(@class, "a-histogram-row")]'):
+                star = is_empty(mark.xpath(
+                    'td[1]/span/text()').re(FLOATING_POINT_RGEX), 0)
+                if star:
+                    st = int(is_empty(mark.xpath(
+                        'td[last()]/text()').re("\d+"), 0))
+                    ratings[star] = st
+                    total += st
+
+        #For another HTML makeup
+        if not total:
+            ratings = {}
+            average = 0
+            total = is_empty(
+                response.xpath(
+                    "//span[contains(@class, 'tiny')]"
+                    "/span[@class='crAvgStars']/a/text()"
+                ).re("[\d\.\,]+"),
+                0
+            )
+            if total:
+                if isinstance(total, (str, unicode)):
+                    total = int(total.replace(',', '').replace('.', '').strip())
+            for rev in response.xpath(
+                    '//span[contains(@class, "tiny")]'
+                    '//div[contains(@class, "custRevHistogramPopId")]/table/tr'):
+                star = is_empty(rev.xpath('td/a/text()').re("\d+"), None)
+                if star:
+                    ratings[star] = is_empty(
+                        rev.xpath('td[last()]/text()').re("[\d\.\,]+"), 0)
+                    if ratings[star]:
+                        if isinstance(ratings[star], (str, unicode)):
+                            ratings[star] = int(
+                                ratings[star].replace(',', '').replace('.', '').strip()
+                            )
+            if ratings:
+                average = sum(int(k) * int(v) for k, v in
+                              ratings.iteritems()) / int(total) if ratings else 0
+                average = float("%.2f" % round(average, 2))
+
+        if not ratings:
+            buyer_rev_link = response.xpath(
+                '//div[@id="summaryContainer"]//table[@id="histogramTable"]'
+                '/../a/@href'
+            ).extract()
+            if buyer_rev_link:
+                buyer_rev_req = Request(
+                    url=buyer_rev_link[0],
+                    callback=self.get_buyer_reviews_from_2nd_page,
+                    meta=response.meta.copy()
+                )
+                return buyer_rev_req
+            else:
+                return 0
+
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)
-        cond_set_value(product, 'buyer_reviews', buyer_reviews)
+        return buyer_reviews
+
+    def get_buyer_reviews_from_2nd_page(self, response):
+        product = response.meta["product"]
+        buyer_reviews = {}
+        product["buyer_reviews"] = {}
+        total_revs = is_empty(response.xpath(
+            '//table[@id="productSummary"]'
+            '//span[@class="crAvgStars"]/a/text()').extract(), ''
+        ).replace(",", "")
+        buyer_reviews["num_of_reviews"] = is_empty(
+                re.findall(FLOATING_POINT_RGEX, total_revs), 0
+            )
+        if int(buyer_reviews["num_of_reviews"]) == 0:
+            product["buyer_reviews"] = 0
+            return product
+
+        buyer_reviews["rating_by_star"] = {}
+        buyer_reviews = self.get_rating_by_star(response, buyer_reviews)
+
+
+        product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
+
+        if "mkt_place_link" in response.meta:
+            meta = {"product": product}
+            return Request(
+                url=response.meta["mkt_place_link"], 
+                callback=self.parse_marketplace,
+                meta=meta
+            )
+
+        return product
+
+    def get_rating_by_star(self, response, buyer_reviews):
+        table = response.xpath(
+                '//table[@id="productSummary"]//'
+                'table[@cellspacing="1"]//tr'
+            )
+        total = 0
+        if table:
+            for tr in table[:5]:
+                rating = is_empty(tr.xpath(
+                    'string(.//td[1])').re(FLOATING_POINT_RGEX), '')
+                number = is_empty(tr.xpath(
+                    'string(.//td[last()])').re(FLOATING_POINT_RGEX), 0)
+                is_perc = is_empty(tr.xpath(
+                    'string(.//td[last()])').extract(), '')
+                if "%" in is_perc:
+                    break
+                if number:
+                    number = int(number.replace(',', ''))
+                    buyer_reviews['rating_by_star'][rating] = number
+                    total += number*int(rating)
+        if total > 0:
+            average = float(total)/ float(buyer_reviews['num_of_reviews'])
+            buyer_reviews['average_rating'] = round(average, 1)
+        return buyer_reviews
+
+    def parse_marketplace(self, response):
+        if self._has_captcha(response):
+            result = self._handle_captcha(response, self.parse_marketplace)
+
+        product = response.meta["product"]
+
+        marketplaces = response.meta.get("marketplaces", [])
+
+        for seller in response.xpath(
+            '//div[contains(@class, "a-section")]/' \
+            'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
+
+            price = is_empty(seller.xpath(
+                'div[contains(@class, "a-column")]' \
+                '/span[contains(@class, "price")]/text()'
+            ).re(FLOATING_POINT_RGEX), 0)
+
+            name = is_empty(seller.xpath(
+                'div/p[contains(@class, "Name")]/span/a/text()').extract())
+
+            marketplaces.append({
+                "price": Price(price=price, priceCurrency="USD"), 
+                "name": name
+            })
+
+        next_link = is_empty(response.xpath(
+            "//ul[contains(@class, 'a-pagination')]" \
+            "/li[contains(@class, 'a-last')]/a/@href"
+        ).extract())
+
+        if next_link:
+            meta = {"product": product, "marketplaces": marketplaces}
+            return Request(
+                url=urlparse.urljoin(response.url, next_link), 
+                callback=self.parse_marketplace,
+                meta=meta
+            )
+
+        product["marketplace"] = marketplaces
+
+        return product

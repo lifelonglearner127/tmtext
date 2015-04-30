@@ -9,12 +9,11 @@ from lxml import html, etree
 import lxml
 import urllib
 import lxml.html
+import time
 import requests
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+
 from extract_data import Scraper
 from compare_images import compare_images
-
 
 class WalmartScraper(Scraper):
 
@@ -30,7 +29,7 @@ class WalmartScraper(Scraper):
                                  should contain information on what the expected format for the
                                  input URL is.
 
-            BASE_URL_VIDEOREQ_WEBCOLLAGE (string):
+            BASE_URL_REQ_WEBCOLLAGE (string):
             BASE_URL_PDFREQ_WEBCOLLAGE (string):
             BASE_URL_REVIEWSREQ (string):   strings containing necessary hardcoded URLs for extracting walmart
                                             videos, pdfs and reviews
@@ -38,12 +37,17 @@ class WalmartScraper(Scraper):
 
     # base URL for request containing video URL from webcollage
     BASE_URL_VIDEOREQ_WEBCOLLAGE = "http://json.webcollage.net/apps/json/walmart?callback=jsonCallback&environment-id=live&cpi="
+    # base URL for request containing video URL from webcollage
+    BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW = "http://www.walmart-content.com/product/idml/video/%s/WebcollageVideos"
     # base URL for request containing video URL from sellpoints
     BASE_URL_VIDEOREQ_SELLPOINTS = "http://www.walmart.com/product/idml/video/%s/SellPointsVideos"
+    # base URL for request containing video URL from sellpoints
+    BASE_URL_VIDEOREQ_SELLPOINTS_NEW = "http://www.walmart-content.com/product/idml/video/%s/SellPointsVideos"
     # base URL for request containing pdf URL from webcollage
     BASE_URL_PDFREQ_WEBCOLLAGE = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
     # base URL for request for product reviews - formatted string
     BASE_URL_REVIEWSREQ = 'http://walmart.ugc.bazaarvoice.com/1336a/%20{0}/reviews.djs?format=embeddedhtml'
+
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
@@ -68,28 +72,35 @@ class WalmartScraper(Scraper):
         # whether product has any videos
         self.has_video = False
 
+        # whether webcollage 360 view were extracted
+        self.extracted_webcollage_360_view = False
+        # whether product has webcollage 360 view
+        self.has_webcollage_360_view = False
+
+        # whether webcollage emc view were extracted
+        self.extracted_webcollage_emc_view = False
+        # whether product has webcollage emc view
+        self.has_webcollage_emc_view = False
+
+        # whether webcollage video view were extracted
+        self.extracted_webcollage_video_view = False
+        # whether product has webcollage video view
+        self.has_webcollage_video_view = False
+
+        # whether webcollage pdf view were extracted
+        self.extracted_webcollage_pdf = False
+        # whether product has webcollage pdf view
+        self.has_webcollage_pdf = False
+
+        # whether webcollage product tour view were extracted
+        self.extracted_webcollage_product_tour_view = False
+        # whether product has webcollage product tour view
+        self.has_webcollage_product_tour_view = False
+
         # javascript function found in a script tag
         # containing various info on the product.
         # Currently used for seller info (but useful for others as well)
         self.js_entry_function_body = None
-
-        # whether the page has loaded in phantom
-        self.is_page_loaded_in_phantom = False
-
-        # special fields extracted via phantom
-        self.phantom_product_name_node = None
-
-        # wmnotavailableline info via phantom
-        self.phantom_wmnotavailableline_style = None
-
-        # onlinePriceLabel info via phantom
-        self.phantom_onlinepricelabel_style = None
-
-        # WM_ROW info via phantom
-        self.phantom_wm_row_style = None
-
-        # js-product-sellers-summary info via phantom
-        self.phantom_js_product_sellers_summary_style = None
 
     # checks input format
     def check_url_format(self):
@@ -147,7 +158,7 @@ class WalmartScraper(Scraper):
             richMedia_element = richMedia_elements[0]
             elements_onclick = richMedia_element.xpath(".//li/@onclick")
             # any of the "onclick" attributes of the richMedia <li> tags contains "video')"
-            has_video =  any(map(lambda el: "video')" in el, elements_onclick))
+            has_video = any(map(lambda el: "video')" in el, elements_onclick))
 
             return has_video
 
@@ -166,43 +177,54 @@ class WalmartScraper(Scraper):
 
         # if there is no video button, return no video
         if not self._has_video_button():
-            return None
-
-        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE + self._extract_product_id()
+            return
 
         self.video_urls = []
 
-        #TODO: handle errors
+        if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+            self.video_urls = None
+            return
+
+        if self._version() == "Walmart v2":
+            emc_link = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]/@src")
+
+            if emc_link:
+                emc_link = "http:" + emc_link[0]
+                contents = requests.get(emc_link).text
+                tree = html.fromstring(contents)
+                wcobj_links = tree.xpath("//img[contains(@class, 'wc-media')]/@wcobj")
+
+                if wcobj_links:
+                    for wcobj_link in wcobj_links:
+                        if wcobj_link.endswith(".flv"):
+                            self.video_urls.append(wcobj_link)
+
+        # webcollage video info
+        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
         response_text = urllib.urlopen(request_url).read()
+        tree = html.fromstring(response_text)
 
-        # get first "src" value in response
-        # # webcollage videos
-        video_url_candidates = re.findall("src: \"([^\"]+)\"", response_text)
-        if video_url_candidates:
-            # remove escapes
-            #TODO: better way to do this?
-            for video_url_item in video_url_candidates:
-                video_url_candidate = re.sub('\\\\', "", video_url_item)
+        if tree.xpath("//div[@id='iframe-video-content']") and \
+                tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base"):
+            video_base_path = tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base")[0]
+            sIndex = 0
+            eIndex = 0
 
-                # if it ends in flv, it's a video, ok
-                if video_url_candidate.endswith(".flv"):
-                    self.has_webcollage_media = True
-                    self.has_video = True
-                    self.video_urls.append(video_url_candidate)
+            while sIndex >= 0:
+                sIndex = response_text.find('{"videos":[', sIndex)
+                eIndex = response_text.find('}]}', sIndex) + 3
+
+                if sIndex < 0:
                     break
 
-                # if it doesn't, it may be a url to make another request to, to get customer reviews video
-                if "client.expotv.com" in video_url_candidate:
-                    new_response = urllib.urlopen(video_url_candidate).read()
-                    video_id_candidates = re.findall("param name=\"video\" value=\"(.*)\"", new_response)
+                jsonVideo = response_text[sIndex:eIndex]
+                jsonVideo = json.loads(jsonVideo)
 
-                    if video_id_candidates:
-                        video_id = video_id_candidates[0]
+                if len(jsonVideo['videos']) > 0:
+                    for video_info in jsonVideo['videos']:
+                        self.video_urls.append(video_base_path + video_info['src']['src'])
 
-                        video_url_req = "http://client.expotv.com/vurl/%s?output=mp4" % video_id
-                        video_url = urllib.urlopen(video_url_req).url
-                        self.has_video = True
-                        self.video_urls.append(video_url)
+                sIndex = eIndex
 
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
@@ -225,10 +247,23 @@ class WalmartScraper(Scraper):
                     self.video_urls.append(video_url_candidate)
                     break
 
+        # check sellpoints media if webcollage media doesn't exist
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % self._extract_product_id()
+        # TODO: handle errors
+        response_text = urllib.urlopen(request_url).read()
+        tree = html.fromstring(response_text)
+        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']"):
+            self.has_video = True
+            self.has_sellpoints_media = True
+
         if len(self.video_urls) == 0:
             if self.tree_html.xpath("//div[starts-with(@class,'js-idml-video-container')]"):
                 contents = requests.get("http://www.walmart.com/product/idml/video/" +
                                         str(self._extract_product_id()) + "/WebcollageVideos").text
+
+                if not contents:
+                    self.video_urls = None
+                    return
 
                 tree = html.fromstring(contents)
                 video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
@@ -251,6 +286,124 @@ class WalmartScraper(Scraper):
 
         return self.video_urls
 
+    def _wc_360(self):
+        """Return 360view existence for a given walmart product in new walmart design
+        Returns:
+            1 if 360view exists
+            or 0 if none found
+        """
+
+        self.extracted_webcollage_360_view = True
+
+        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+                                str(self._extract_product_id()) + "/Webcollage360View").text
+
+        tree = html.fromstring(contents)
+        existance_360view = tree.xpath("//div[@class='wc-360']")
+
+        if not existance_360view:
+            return 0
+        else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()""") and not self.tree_html.xpath("//li[contains(@class, 'sp95_BTN_btn_360degree')]"):
+                return 0
+
+            self.has_webcollage_360_view = True
+            return 1
+
+    def _wc_emc(self):
+        """Return EMC (Extended Manufacturer Content) existence for a given walmart product in new walmart design
+        Returns:
+            1 if EMC exists
+            or 0 if none found
+        """
+
+        self.extracted_webcollage_emc_view = True
+
+        if self._version() == "Walmart v2":
+            emc = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]")
+
+        if self._version() == "Walmart v1":
+            emc = self.tree_html.xpath("//div[@id='manufacturer-content']")
+
+        if not emc:
+            return 0
+        else:
+            self.has_webcollage_emc_view = True
+            return 1
+
+    def _wc_video(self):
+        """Return video existence for a given walmart product in new walmart design
+        Returns:
+            1 if video exists
+            or 0 if none found
+        """
+
+        self.extracted_webcollage_video_view= True
+
+        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+                                str(self._extract_product_id()) + "/WebcollageVideos").text
+
+        tree = html.fromstring(contents)
+        existance_webcollage_video = tree.xpath("//div[@class='wc-fragment']")
+
+        if not existance_webcollage_video:
+            return 0
+        else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+                return 0
+
+            self.has_webcollage_video_view = True
+            return 1
+
+    def _wc_pdf(self):
+        """Return pdf existence for a given walmart product in new walmart design
+        Returns:
+            1 if pdf exists
+            or 0 if none found
+        """
+
+        self.extracted_webcollage_pdf = True
+
+        pdf_urls = self._pdf_urls()
+
+        if pdf_urls:
+            for item in pdf_urls:
+                if "webcollage" in item.lower():
+                    self.has_webcollage_pdf = True
+                    return 1
+
+        return 0
+
+    def _wc_prodtour(self):
+        """Return product tour existence for a given walmart product in new walmart design
+        Returns:
+            1 if product tour exists
+            or 0 if none found
+        """
+
+        self.extracted_webcollage_product_tour_view = True
+
+        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+                                str(self._extract_product_id()) + "/WebcollageInteractiveTour").text
+
+        tree = html.fromstring(contents)
+        existance_product_tour = tree.xpath("//div[contains(@class, 'wc-aplus-body')]")
+
+        if not existance_product_tour:
+            return 0
+        else:
+            if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
+                return 0
+
+            self.has_webcollage_product_tour_view = True
+            return 1
+
+    def _flixmedia(self):
+        if "media.flix" in etree.tostring(self.tree_html):
+            return 1
+        else:
+            return 0
+
     def _pdf_urls(self):
         """Extracts pdf URLs for a given walmart product, puts them in an instance variable
         Returns:
@@ -264,26 +417,50 @@ class WalmartScraper(Scraper):
         self.extracted_pdf_urls = True
         self.pdf_urls = []
 
-        pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+        if self._version() == "Walmart v1":
+            """Extracts pdf URL for a given walmart product
+            and puts them in instance variable.
+            """
 
-        for item in pdf_links:
-            if item.strip().endswith(".pdf"):
-                self.pdf_urls.append(item.strip()) if item.strip() not in self.pdf_urls else None
+            pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+            for item in pdf_links:
+                if item.strip().endswith(".pdf"):
+                    self.pdf_urls.append("http://www.walmart.com" + item.strip()) if item.strip() not in self.pdf_urls else None
 
-        if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
-            request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
-            request_url = "http:" + request_url.strip()
+            request_url = self.BASE_URL_PDFREQ_WEBCOLLAGE + self._extract_product_id()
 
             response_text = urllib.urlopen(request_url).read().decode('string-escape')
 
-            pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
-
+            pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")',
+                                            response_text)
             if pdf_url_candidates:
-                self.has_webcollage_media = True
-                for item in pdf_url_candidates:
-                    # remove escapes
-                    pdf_url = re.sub('\\\\', "", item.strip())
-                    self.pdf_urls.append(pdf_url) if pdf_url not in self.pdf_urls else None
+                # remove escapes
+                for pdf_url in pdf_url_candidates:
+                    pdf_url = re.sub('\\\\', "", pdf_url)
+                    self.has_webcollage_media = True
+                    self.has_pdf = True
+                    self.pdf_urls.append(pdf_url)
+
+        if self._version() == "Walmart v2":
+            pdf_links = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
+            for item in pdf_links:
+                if item.strip().endswith(".pdf"):
+                    self.pdf_urls.append(item.strip()) if item.strip() not in self.pdf_urls else None
+
+            if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
+                request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
+                request_url = "http:" + request_url.strip()
+
+                response_text = urllib.urlopen(request_url).read().decode('string-escape')
+
+                pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
+
+                if pdf_url_candidates:
+                    self.has_webcollage_media = True
+                    for item in pdf_url_candidates:
+                        # remove escapes
+                        pdf_url = re.sub('\\\\', "", item.strip())
+                        self.pdf_urls.append(pdf_url) if pdf_url not in self.pdf_urls else None
 
         if self.pdf_urls:
             self.has_pdf = True
@@ -314,34 +491,6 @@ class WalmartScraper(Scraper):
             return {"reviews" : {"total_reviews": None, "average_review": None}}
         return {"reviews" : {"total_reviews": reviews_count, "average_review": average_review}}
 
-    def _has_webcollage_iframe(self):
-        """Extracts webcollage links from an iframe on the page.
-        (Example: http://www.walmart.com/ip/Trix-Wildberry-Red-Swirls-Cereal-22.7-oz/25847976
-            has some webcollage images)
-        Returns:
-            1 if page has iframe with webcollage images, 0 otherwise
-        """
-
-        # assume only 1 iframe
-        # TODO: identify it by class or smth?
-        try:
-            iframe_link = self.tree_html.xpath("//iframe/@src")[0]
-            if iframe_link.startswith("/"):
-                # append scheme
-                iframe_link = "http:" + iframe_link
-
-            # get contents of iframe
-            contents = urllib.urlopen(iframe_link).read()
-            # get webcollage content from iframe
-            # TODO: what if they are in comments?
-            if "media.webcollage.net" in contents:
-                return 1
-
-        except Exception, e:
-            return 0
-
-        return 0
-
     def _product_has_webcollage(self):
         """Uses video and pdf information
         to check whether product has any media from webcollage.
@@ -350,16 +499,22 @@ class WalmartScraper(Scraper):
             0 otherwise
         """
 
-        if not self.extracted_video_urls:
-            self._extract_video_urls()
+        if not self.extracted_webcollage_360_view:
+            self._wc_360()
 
-        if not self.extracted_pdf_urls:
-            self._pdf_urls()
+        if not self.extracted_webcollage_product_tour_view:
+            self._wc_prodtour()
 
-        if self.has_webcollage_media:
-            return 1
+        if not self.extracted_webcollage_pdf:
+            self._wc_pdf()
 
-        if self._has_webcollage_iframe():
+        if not self.extracted_webcollage_emc_view:
+            self._wc_emc()
+
+        if not self.extracted_webcollage_video_view:
+            self._wc_video()
+
+        if self.has_webcollage_product_tour_view or self.has_webcollage_pdf or self.has_webcollage_video_view or self.has_webcollage_emc_view or self.has_webcollage_360_view:
             return 1
 
         return 0
@@ -375,12 +530,18 @@ class WalmartScraper(Scraper):
         if not self.extracted_video_urls:
             self._extract_video_urls()
 
+#        if not self.extracted_pdf_urls:
+#            self._pdf_urls()
+
         if self.has_sellpoints_media:
             return 1
 
+#        if self._has_sellpoints_iframe():
+#            return 1
+
         return 0
 
-    def _product_has_video(self):
+    def _video_count(self):
         """Whether product has video
         To be replaced with function that actually counts
         number of videos for this product
@@ -392,10 +553,13 @@ class WalmartScraper(Scraper):
         if not self.extracted_video_urls:
             self._extract_video_urls()
 
-        if self.has_video:
-            return 1
+        if not self.video_urls:
+            if self.has_video:
+                return 1
+            else:
+                return 0
         else:
-            return 0
+            return len(self.video_urls)
 
     def _pdf_count(self):
         """Returns the number of pdf
@@ -436,10 +600,6 @@ class WalmartScraper(Scraper):
         if not product_name_node:
             # assume old design
             product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
-
-        if self.stringify_children(product_name_node[0]).strip() == '':
-            self.extract_specific_fields_via_phantom()
-            return self.phantom_product_name_node
 
         return self.stringify_children(product_name_node[0]).strip()
 
@@ -482,24 +642,48 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        short_description = "".join(map(lambda li_element: etree.tostring(li_element), \
-            self.tree_html.xpath("//div[@class='product-short-description module']//li | " +\
-                "//div[starts-with(@class, 'choice-short-description')]//li")\
-            ))
+        description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]"
+                                                    "/div[contains(@class, 'js-ellipsis')]")
 
-        # try with just the text
-        if not short_description.strip():
-            short_description = " ".join(self.tree_html.xpath("//div[@class='product-short-description module']//text() | " + \
-                "//div[starts-with(@class, 'choice-short-description')]//text()"))
+        short_description = ""
 
-        # try to extract from old page structure - in case walmart is
-        # returning an old type of page
-        if not short_description:
-            short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
+        if description_elements:
+            description_elements = description_elements[0]
 
-        # if no short description, return the long description
-        if not short_description.strip():
-            return None
+            for description_element in description_elements:
+                if "<b>" in lxml.html.tostring(description_element):
+                    break
+
+                if "<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element):
+                    tree = html.fromstring(short_description)
+                    innerText = tree.xpath("//text()")
+
+                    if not innerText:
+                        short_description = ""
+
+                    break
+
+                short_description += lxml.html.tostring(description_element)
+        else:
+            # try to extract from old page structure - in case walmart is
+            # returning an old type of page
+            if not short_description:
+                short_description = " ".join(self.tree_html.xpath("//span[@class='ql-details-short-desc']//text()")).strip()
+
+            long_description_existence = self.tree_html.xpath('//*[contains(@class, "ItemSectionContent")]'
+                                                              '//*[contains(@itemprop, "description")]//li')
+
+            if not short_description and not long_description_existence:
+                _desc = self.tree_html.xpath(
+                    '//*[contains(@class, "ItemSectionContent")]'
+                    '//*[contains(@itemprop, "description")]//text()'
+                )
+                if _desc:
+                    short_description = " ".join(_desc).strip()
+
+            # if no short description, return the long description
+            if not short_description.strip():
+                return None
 
         return short_description.strip()
 
@@ -519,21 +703,6 @@ class WalmartScraper(Scraper):
         except:
             short_description = None
 
-        if not short_description:
-            # get everything before and including <li> tags from long description.
-            short_description = " ".join(self.tree_html.xpath("//div[@class='js-ellipsis module']//*[following-sibling::li|self::li|following-sibling::ul]//text()")).strip()
-
-            # hack: remove everything after "Ingredients", cause sometimes they're still there...
-            try:
-                ingredients_index = short_description.index("Ingredients:")
-                short_description = short_description[: ingredients_index].strip()
-            except Exception:
-                pass
-
-        if not short_description.strip():
-            # if there are no bullets either, get the entire long description text
-            short_description = self._long_description()
-
         return short_description
 
     # ! may throw exception if not found
@@ -546,11 +715,21 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        # select text in nodes under @itemprop='description' that don't have an ancestor @class='ql-details-short-desc' (that's where short description is)
-        full_description = " ".join(self.tree_html.xpath("//div[@itemprop='description']//text()[not(ancestor::*[@class='ql-details-short-desc'])]")).strip()
-        # return None if empty
+        long_description_existence = self.tree_html.xpath('//*[contains(@class, "ItemSectionContent")]'
+                                                  '//*[contains(@itemprop, "description")]//li')
+
+        if not long_description_existence:
+            return None
+
+        long_description_elements = self.tree_html.xpath("//div[@itemprop='description']/div")[1]
+        full_description = ""
+
+        for description_element in long_description_elements:
+            full_description += lxml.html.tostring(description_element)
+
         if not full_description:
             return None
+
         return full_description
 
     # ! may throw exception if not found
@@ -565,8 +744,40 @@ class WalmartScraper(Scraper):
                                                     "/div[contains(@class, 'js-ellipsis')]")[0]
         full_description = ""
 
+        long_description_start = False
+        ingredients_description = False
+
         for description_element in description_elements:
-            full_description += lxml.html.tostring(description_element)
+            if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
+                    (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element))):
+                long_description_start = True
+
+            if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
+                    lxml.html.tostring(description_element):
+                ingredients_description = True
+            else:
+                ingredients_description = False
+
+            if long_description_start and not ingredients_description:
+                full_description += lxml.html.tostring(description_element)
+
+        if self.product_page_url[self.product_page_url.rfind("/") + 1:].isnumeric():
+            url = "http://www.walmart-content.com/product/idml/emc/" + \
+                  self.product_page_url[self.product_page_url.rfind("/") + 1:]
+            contents = requests.get(url).text
+            tree = html.fromstring(contents)
+            description_elements = tree.xpath("//div[@id='js-marketing-content']//*")
+
+            long_description_start = False
+
+            for description_element in description_elements:
+                if not long_description_start and "<h2>Product Description</h2>" in \
+                        lxml.html.tostring(description_element):
+                    long_description_start = True
+
+                if long_description_start and "<h2>Product Description</h2>" not in lxml.html.tostring(description_element) \
+                        and (description_element.tag == "p" or description_element.tag == "h2" or (description_element.tag == "ul" and not description_element.get("class"))):
+                    full_description += lxml.html.tostring(description_element)
 
         # return None if empty
         if not full_description:
@@ -608,21 +819,7 @@ class WalmartScraper(Scraper):
 
         # if short description is null, it probably returned some part of long description
         # so change strategy for returning long description
-        short_description = self._short_description_from_tree()
         long_description = self._long_description()
-
-        if short_description is None:
-
-            # get all long description text that is not in long description
-            all_long_description_text = " ".join(self.tree_html.xpath("//div[@class='js-ellipsis module']//text()")).strip()
-            short_description_text = self._short_description_wrapper()
-
-            # normalize spaces
-            all_long_description_text = re.sub("\s+", " ", all_long_description_text)
-            short_description_text = re.sub("\s+", " ", short_description_text)
-
-            # substract the 2 strings
-            long_description = "".join(all_long_description_text.rsplit(short_description_text)).strip()
 
         return long_description
 
@@ -719,7 +916,7 @@ class WalmartScraper(Scraper):
         # extract features table for new page version:
         # might cause exception if table node not found (and premature exit of function)
         try:
-            table_node = self.tree_html.xpath("//div[@class='specs-table']/table")[0]
+            table_node = self.tree_html.xpath("//div[contains(@class, 'specs-table')]/table")[0]
         except Exception:
             table_node = None
 
@@ -832,7 +1029,7 @@ class WalmartScraper(Scraper):
 
         # join all text in spec table; separate rows by newlines and eliminate spaces between cells
         # new page version:
-        rows = self.tree_html.xpath("//div[@class='specs-table']/table//tr")
+        rows = self.tree_html.xpath("//div[contains(@class, 'specs-table')]/table//tr")
         if not rows:
             # old page version:
             rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
@@ -860,7 +1057,7 @@ class WalmartScraper(Scraper):
 
         # select table rows with more than 2 cells (the others are just headers), count them
         # new page version:
-        rows = self.tree_html.xpath("//div[@class='specs-table']/table//tr")
+        rows = self.tree_html.xpath("//div[contains(@class, 'specs-table')]/table//tr")
         if not rows:
             # old page version:
             rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
@@ -942,7 +1139,8 @@ class WalmartScraper(Scraper):
         # remove Walmart key as we already checked for it
         if 'Walmart.com' in sellers.keys():
             del sellers['Walmart.com']
-        seller_info['marketplace'] = 1 if (len(sellers.keys()) > 0 and any(sellers.values())) else 0
+        # seller_info['marketplace'] = 1 if (len(sellers.keys()) > 0 and any(sellers.values())) else 0
+        seller_info['marketplace'] = 1 if len(sellers.keys()) > 0 else 0
 
         return seller_info
 
@@ -1023,7 +1221,6 @@ class WalmartScraper(Scraper):
         Returns:
             float containing average value of reviews
         """
-
         average_review_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
             //p[@class='heading-e']/span[2]/text()")
         average_review = float(average_review_str[0])
@@ -1093,6 +1290,15 @@ class WalmartScraper(Scraper):
             return self._nr_reviews_old()
 
         return nr_reviews
+
+    def _rollback(self):
+        rollback = self.tree_html.xpath('//div[@class="js-product-offer-summary"]//'
+                                        'span[contains(@class,"flag-rollback")]')
+
+        if not rollback:
+            return 0
+        else:
+            return 1
 
     def _no_image(self, url):
         """Overwrites the _no_image
@@ -1192,11 +1398,17 @@ class WalmartScraper(Scraper):
             else:
                 return relative_url
 
-        images_carousel = self.tree_html.xpath("//div[contains(@class,'product-carousel-wrapper')]//a/@href")
-        if images_carousel:
-            # fix relative urls
-            images_carousel = map(_fix_relative_url, images_carousel)
+        if not self.js_entry_function_body:
+            pinfo_dict = self._extract_jsfunction_body()
+        else:
+            pinfo_dict = self.js_entry_function_body
 
+        images_carousel = []
+
+        for item in pinfo_dict['imageAssets']:
+            images_carousel.append(item['versions']['hero'])
+
+        if images_carousel:
             # if there's only one image, check to see if it's a "no image"
             if len(images_carousel) == 1:
                 try:
@@ -1243,12 +1455,11 @@ class WalmartScraper(Scraper):
             list of strings representing image urls
         """
 
-        # assume new version
-        image_list = self._image_urls_new()
-        if image_list is None:
+        if self._version() == "Walmart v1":
             return self._image_urls_old()
 
-        return image_list
+        if self._version() == "Walmart v2":
+            return self._image_urls_new()
 
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
     # might be outdated? (since walmart site redesign)
@@ -1274,95 +1485,26 @@ class WalmartScraper(Scraper):
             return None # no images found to compare
 
     # ! may throw exception if json object not decoded properly
-    def _extract_productinfo_json_from_jsfunction_body_new(self):
+    def _extract_jsfunction_body(self):
         """Extracts body of javascript function
-        found in a script tag on each new product page,
+        found in a script tag on each product page,
         that contains various usable information about product.
         Stores function body as json decoded dictionary in instance variable.
         Returns:
             function body as dictionary (containing various info on product)
         """
-
         body_raw = "".join(self.tree_html.xpath("//section[@class='center']/script//text()"))
         body_clean = re.sub("\n", " ", body_raw)
-        # extract json part of function body
-        body_jpart = re.findall("\{\"productName.*?\}\s*\);", body_clean)[0]
-        body_jpart = body_jpart[:-2].strip()
+        sIndex = body_clean.find(", ") + 2
+        eIndex = body_clean.rfind("// Invoke product.")
+        body_clean = body_clean[sIndex:eIndex]
+        eIndex = body_clean.rfind(");")
 
-        body_dict = json.loads(body_jpart)
+        body_clean = body_clean[:eIndex]
+        # extract json part of function body
+        body_dict = json.loads(body_clean)
 
         self.js_entry_function_body = body_dict
-        return body_dict
-
-    # ! may throw exception if json object not decoded properly
-    def _extract_productinfo_json_from_jsfunction_body_old(self):
-        """Extracts body of javascript function
-        found in a script tag on each old product page,
-        that contains various usable information about product.
-        Stores function body as json decoded dictionary in instance variable.
-        Returns:
-            function body as dictionary (containing various info on product)
-        """
-
-        body_raw = "" . join(self.tree_html.xpath("//form[@name='SelectProductForm']//script/text()")).strip()
-        body_clean = re.sub("\n", " ", body_raw)
-        body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
-
-        body_dict = {}
-
-        sIndex = body_jpart.find("isInStore") + len("isInStore") + 2
-        if body_jpart[sIndex:sIndex + 1] == "t":
-            body_dict['isInStore'] = True
-        else:
-            body_dict['isInStore'] = False
-
-        sIndex = body_jpart.find("isInStock") + len("isInStock") + 2
-        if body_jpart[sIndex:sIndex + 1] == "t":
-            body_dict['isInStock'] = True
-        else:
-            body_dict['isInStock'] = False
-
-        sIndex = body_jpart.find("isRunout") + len("isRunout") + 2
-        if body_jpart[sIndex:sIndex + 1] == "t":
-            body_dict['isRunout'] = True
-        else:
-            body_dict['isRunout'] = False
-
-        sIndex = body_jpart.find("canAddtoCart") + len("canAddtoCart") + 2
-        if body_jpart[sIndex:sIndex + 1] == "t":
-            body_dict['canAddtoCart'] = True
-        else:
-            body_dict['canAddtoCart'] = False
-
-        sIndex = body_jpart.find("isEmailMe") + len("isEmailMe") + 2
-        if body_jpart[sIndex:sIndex + 1] == "t":
-            body_dict['isEmailMe'] = True
-        else:
-            body_dict['isEmailMe'] = False
-
-        sIndex = body_jpart.find("isPreOrder") + len("isPreOrder") + 2
-        if body_jpart[sIndex:sIndex + 1] == "t":
-            body_dict['isPreOrder'] = True
-        else:
-            body_dict['isPreOrder'] = False
-
-        sIndex = body_jpart.find("isPreOrderOOS") + len("isPreOrderOOS") + 2
-        if body_jpart[sIndex:sIndex + 1] == "t":
-            body_dict['isPreOrderOOS'] = True
-        else:
-            body_dict['isPreOrderOOS'] = False
-
-        sIndex = body_jpart.find("isComingSoon") + len("isComingSoon") + 2
-        if body_jpart[sIndex:sIndex + 1] == "t":
-            body_dict['isComingSoon'] = True
-        else:
-            body_dict['isComingSoon'] = False
-
-        sIndex = body_jpart.find("isDisplayable") + len("isDisplayable") + 2
-        if body_jpart[sIndex:sIndex + 1] == "t":
-            body_dict['isDisplayable'] = True
-        else:
-            body_dict['isDisplayable'] = False
 
         return body_dict
 
@@ -1375,7 +1517,7 @@ class WalmartScraper(Scraper):
         """
 
         if not self.js_entry_function_body:
-            pinfo_dict = self._extract_productinfo_json_from_jsfunction_body_new()
+            pinfo_dict = self._extract_jsfunction_body()
         else:
             pinfo_dict = self.js_entry_function_body
 
@@ -1396,7 +1538,7 @@ class WalmartScraper(Scraper):
         """
 
         if not self.js_entry_function_body:
-            pinfo_dict = self._extract_productinfo_json_from_jsfunction_body_new()
+            pinfo_dict = self._extract_jsfunction_body()
         else:
             pinfo_dict = self.js_entry_function_body
 
@@ -1451,6 +1593,7 @@ class WalmartScraper(Scraper):
                 body_raw = "".join(self.tree_html.xpath("//script//text()"))
                 body_clean = re.sub("\n", " ", body_raw)
                 # extract json part of function body
+#                body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
 
                 body_jpart = re.findall("\{\"query.*?\}", body_clean)[0]
                 body_dict = json.loads(body_jpart)
@@ -1462,14 +1605,15 @@ class WalmartScraper(Scraper):
 
         return in_stores
 
-    # override base class function
-    '''
+
     def _in_stores_only(self):
-        """
-        General function for setting value of field "in_stores_only".
+        '''General function for setting value of field "in_stores_only".
         It will be inferred from other sellers fields.
         Method can be overwritten by scraper class if different implementation is available.
-        """
+        '''
+
+        onlinePriceText = ""
+
         try:
             onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceWM']//text()"))
             if "In stores only" in onlinePriceText:
@@ -1484,76 +1628,7 @@ class WalmartScraper(Scraper):
         except Exception:
             pass
 
-#        return Scraper._in_stores_only(self)
-        return None
-        '''
-
-    def _in_stores_out_of_stock(self):
-        '''General function for setting value of field "in_stores_out_of_stock".
-        It will be inferred from other sellers fields.
-        Method can be overwritten by scraper class if different implementation is available.
-        '''
-
-        if self._in_stores():
-            try:
-                # old version
-                self.extract_specific_fields_via_phantom()
-
-                if "display: block;" in self.phantom_wmnotavailableline_style or "display: none;" not in \
-                        self.phantom_wmnotavailableline_style:
-                    WMNotAvailableLine_text = self.tree_html.xpath("//p[@id='WMNotAvailableLine']//text()")[0].strip()
-
-                    if "Not Available" in WMNotAvailableLine_text:
-                        return 1
-            except Exception:
-                pass
-
-        return None
-
-    def extract_specific_fields_via_phantom(self):
-        if not self.is_page_loaded_in_phantom:
-            driver = webdriver.PhantomJS(service_log_path='/var/log/flask-uwsgi/ghostdriver.log')
-            driver.get(self.product_page_url)
-
-            # special case for product name node
-            try:
-                self.phantom_product_name_node = driver.find_element(By.XPATH, "//h1[contains(@class, 'product-name')]").\
-                    text
-            except Exception, e:
-                pass
-
-            # WMNotAvailableLine info for old version
-            try:
-                self.phantom_wmnotavailableline_style = driver.find_element(By.XPATH, "//p[@id='WMNotAvailableLine']").\
-                    get_attribute("style").strip()
-            except Exception, e:
-                pass
-
-            # onlinePriceLabel info for old version
-            try:
-                self.phantom_onlinepricelabel_style = driver.find_element(By.XPATH, "//div[@id='onlinePriceLabel']").\
-                    get_attribute("style").strip()
-            except Exception, e:
-                pass
-
-            # WM_ROW info for old version
-            try:
-                self.phantom_wm_row_style = driver.find_element(By.XPATH, "//tr[@id='WM_ROW']").\
-                    get_attribute("style").strip()
-            except Exception, e:
-                pass
-
-            # js-product-sellers-summary info via phantom
-            try:
-                self.phantom_js_product_sellers_summary_style = driver.find_element(By.XPATH,
-                "//div[contains(@class, 'js-product-sellers-summary')]//"
-                "div[contains(@class, 'js-product-sellers')]").get_attribute("class").strip()
-            except Exception, e:
-                pass
-
-            self.is_page_loaded_in_phantom = True
-
-            driver.quit()
+        return 0
 
     def _stores_available_from_script_old_page(self):
         """Extracts whether product is available in stores.
@@ -1564,6 +1639,8 @@ class WalmartScraper(Scraper):
         body_raw = "" . join(self.tree_html.xpath("//form[@name='SelectProductForm']//script/text()")).strip()
         body_clean = re.sub("\n", " ", body_raw)
         body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
+
+#        body_dict = json.loads(body_jpart)
 
         sIndex = body_jpart.find("isInStore") + len("isInStore") + 2
         eIndex = body_jpart.find(",", sIndex)
@@ -1580,8 +1657,11 @@ class WalmartScraper(Scraper):
         Returns 1/0
         """
 
+#        if self._site_online():
+#           return 1
+
         if not self.js_entry_function_body:
-            pinfo_dict = self._extract_productinfo_json_from_jsfunction_body_new()
+            pinfo_dict = self._extract_jsfunction_body()
         else:
             pinfo_dict = self.js_entry_function_body
 
@@ -1599,7 +1679,7 @@ class WalmartScraper(Scraper):
         """
 
         if not self.js_entry_function_body:
-            pinfo_dict = self._extract_productinfo_json_from_jsfunction_body_new()
+            pinfo_dict = self._extract_jsfunction_body()
         else:
             pinfo_dict = self.js_entry_function_body
 
@@ -1608,24 +1688,6 @@ class WalmartScraper(Scraper):
 
         return sellers
 
-    # ! may throw exception if not found
-    def _seller_name_in_web_page(self):
-        """Extracts list of marketplace sellers for this product.
-        Works on new page version.
-        Returns:
-            seller name displayed in web page
-        """
-
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_productinfo_json_from_jsfunction_body_new()
-        else:
-            pinfo_dict = self.js_entry_function_body
-
-        seller_name = pinfo_dict["analyticsData"]["sellerName"]
-
-        return seller_name
-
-    '''
     # ! may throw exception if not found
     def _in_stock_from_script(self):
         """Extracts info on whether product is available to be
@@ -1636,16 +1698,14 @@ class WalmartScraper(Scraper):
         """
 
         if not self.js_entry_function_body:
-            pinfo_dict = self._extract_productinfo_json_from_jsfunction_body_new()
+            pinfo_dict = self._extract_jsfunction_body()
         else:
             pinfo_dict = self.js_entry_function_body
 
         available = pinfo_dict["analyticsData"]["onlineAvail"]
 
         return 1 if available else 0
-    '''
 
-    '''
     def _in_stock_old(self):
         """Extracts info on whether product is available to be
         bought on the site, from any seller (marketplace or owned).
@@ -1667,10 +1727,7 @@ class WalmartScraper(Scraper):
         available = any(sellers.values())
 
         return 1 if available else 0
-    '''
 
-    # override base class function
-    '''
     def _owned(self):
         """Extracts info on whether product is ownedby Walmart.com.
         Uses functions that work on both old page design and new design.
@@ -1678,6 +1735,9 @@ class WalmartScraper(Scraper):
         Returns:
             1/0 (owned/not owned)
         """
+
+        if not self._marketplace() or self._marketplace() == 0:
+            return 1
 
         # assume new design
         # _owned_from_script() may throw exception if extraction fails
@@ -1692,7 +1752,6 @@ class WalmartScraper(Scraper):
             return self._owned_meta_from_tree()
 
         return owned_new
-    '''
 
     def _marketplace(self):
         """Extracts info on whether product is found on marketplace
@@ -1705,10 +1764,16 @@ class WalmartScraper(Scraper):
         # assume new design
         # _owned_from_script() may throw exception if extraction fails
         # (causing the service to return None for "owned")
-        if self._marketplace_sellers():
-            return 1
+        try:
+            marketplace_new = self._marketplace_from_script()
+        except Exception:
+            marketplace_new = None
 
-        return 0
+        if marketplace_new is None:
+            # try to extract assuming old page structure
+            return self._marketplace_meta_from_tree()
+
+        return marketplace_new
 
     def _marketplace_sellers(self):
         """Extracts list of marketplace sellers for this product
@@ -1720,27 +1785,10 @@ class WalmartScraper(Scraper):
 
         # assume new page version
         try:
-            '''
             sellers = self._marketplace_sellers_from_script()
             # filter out walmart
-            sellers = filter(lambda s: s != "Walmart.com", sellers)
-            seller_name_displayed = self._seller_name_in_web_page()
-
-            if seller_name_displayed != "Walmart.com":
-                if len(sellers) == 1 and sellers[0] != seller_name_displayed:
-                    sellers[0] = seller_name_displayed
-            '''
-            self.extract_specific_fields_via_phantom()
-
-            if "hide-content" in self.phantom_js_product_sellers_summary_style:
-                return None
-
-            displayed_sellers = self.tree_html.xpath("//ul[contains(@class, 'js-marketplace-sellers-list')]//"
-                                                     "li[contains(@class, 'js-marketplace-seller')]//"
-                                                     "div[contains(@class, 'product-mp-seller-name')]//text()")
-            displayed_sellers = filter(lambda s: s != "Walmart.com" and s.strip() != "", displayed_sellers)
-
-            return displayed_sellers if displayed_sellers else None
+            sellers = filter(lambda s: s!="Walmart.com", sellers)
+            return sellers if sellers else None
         except:
             sellers = None
 
@@ -1764,19 +1812,8 @@ class WalmartScraper(Scraper):
             else:
                 return 0
 
-        # special case old version
-        try:
-            seller_meta_info = self._seller_meta_from_tree()
-
-            if self._in_stores_only() and ("Walmart.com" not in seller_meta_info.keys() and True not in seller_meta_info.values()):
-                return 1
-        except Exception, e:
-            pass
-
         return None
 
-    # override base class function
-    '''
     def _in_stock(self):
         """Extracts info on whether product is available to be
         bought on the site, from any seller (marketplace or owned).
@@ -1797,10 +1834,7 @@ class WalmartScraper(Scraper):
             in_stock_old = self._in_stock_old()
 
         return in_stock_old
-    '''
 
-    # override base class function
-    '''
     def _owned_out_of_stock(self):
         """Extracts whether product is owned and out of stock.
         Works on both old and new page version.
@@ -1814,7 +1848,6 @@ class WalmartScraper(Scraper):
             return 1
         else:
             return 0
-    '''
 
     def _site_online(self):
         """Extracts whether the item is sold by the site and delivered directly
@@ -1826,12 +1859,8 @@ class WalmartScraper(Scraper):
         #       e.g. http://www.walmart.com/ip/23149039
         try:
             #       new design
-            if ("" . join(self.tree_html.xpath("//strong[@class='js-pure-soi-flyout-header']/text()"))) == \
-                    "This item is only sold at a Walmart store.":
-                return 0
-
             if not self.js_entry_function_body:
-                pinfo_dict = self._extract_productinfo_json_from_jsfunction_body_new()
+                pinfo_dict = self._extract_jsfunction_body()
             else:
                 pinfo_dict = self.js_entry_function_body
 
@@ -1841,12 +1870,19 @@ class WalmartScraper(Scraper):
                 return 1
         except Exception:
             #       old design
-            self.extract_specific_fields_via_phantom()
+            if self.tree_html.xpath("//meta[@itemprop='seller']/@content")[0] == "Walmart.com":
+                if self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']"):
+                    if not self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style") or \
+                            "display:none" not in self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style")[0]:
+                        return 1
 
-            if "display: none;" not in self.phantom_wm_row_style and ("display: block;" in self.phantom_onlinepricelabel_style or "display: none;" not in \
-                    self.phantom_onlinepricelabel_style):
-                return 1
+                body_raw = "" . join(self.tree_html.xpath("//script/text()")).strip()
+                body_clean = re.sub("\n", " ", body_raw)
+                sIndex = body_clean.find("'item_online_availability'") + len("'item_online_availability'") + 2
+                eIndex = body_clean.find("']", sIndex)
 
+                if "camelPrice" not in body_clean[sIndex:eIndex] == "true":
+                    return 1
         return 0
 
     def _site_online_out_of_stock(self):
@@ -1886,9 +1922,10 @@ class WalmartScraper(Scraper):
         # we could not decide
         return None
 
-    def _ingredients(self):
+
+    def  _ingredients(self):
         # list of ingredients - list of strings
-        ingr=self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+        ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
         if len(ingr) > 0:
             res = []
             w = ''
@@ -1910,14 +1947,27 @@ class WalmartScraper(Scraper):
                 res.append(w.strip())
             self.ing_count = len(res)
             return res
+        ingr=self.tree_html.xpath("//p[@class='ProductIngredients']//text()")
+        if len(ingr) >0 :
+            res = ingr[0].split(',')
+            self.ing_count = len(res)
+            return res
+        ingr = self.tree_html.xpath("//b[contains(text(),'Ingredients:')]")
+        if len(ingr) > 0:
+            ingr = ingr[0].tail
+            ingr = ingr.split(",")
+            ingr = map(lambda e: e.strip(), ingr)
+            self.ing_count = len(ingr)
+            return ingr
         self.ing_count = None
         return None
 
-    def _ingredient_count(self):
-        # number of ingredients - integer
-        return self.ing_count
 
-    def _nutrition_facts(self):
+    def  _ingredient_count(self):
+        # number of ingredients - integer
+        return  self.ing_count
+
+    def  _nutrition_facts(self):
         # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
         # containing nutrition facts
         res=[]
@@ -1951,9 +2001,11 @@ class WalmartScraper(Scraper):
         self.nutr_count = None
         return None
 
-    def _nutrition_fact_count(self):
+
+    def  _nutrition_fact_count(self):
         # number of nutrition facts (of elements in the nutrition_facts list) - integer
         return self.nutr_count
+
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -2014,8 +2066,8 @@ class WalmartScraper(Scraper):
         "long_description" : _long_description_wrapper, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
-        "nutrition_facts": _nutrition_facts, \
-        "nutrition_fact_count": _nutrition_fact_count, \
+         "nutrition_facts": _nutrition_facts, \
+         "nutrition_fact_count": _nutrition_fact_count, \
         "price" : _price_from_tree, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
@@ -2025,17 +2077,17 @@ class WalmartScraper(Scraper):
         "features" : _features_from_tree, \
         "feature_count" : _nr_features_from_tree, \
         "title_seo" : _title_from_tree, \
+        "rollback" : _rollback, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title" : _product_name_from_tree, \
-#        "owned": _owned, \
-#        "owned_out_of_stock": _owned_out_of_stock, \
+        "owned": _owned, \
+        "owned_out_of_stock": _owned_out_of_stock, \
         "in_stores" : _in_stores, \
-        "in_stores_out_of_stock" : _in_stores_out_of_stock,
-#        "in_stores_only" : _in_stores_only, \
+        "in_stores_only" : _in_stores_only, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
-#        "in_stock": _in_stock, \
+        "in_stock": _in_stock, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "review_count": _nr_reviews, \
@@ -2044,8 +2096,14 @@ class WalmartScraper(Scraper):
         "min_review" : _min_review, \
         "reviews" : _reviews, \
         # video needs both page source and separate requests
-        "video_count" : _product_has_video, \
+        "video_count" : _video_count, \
         "video_urls" : _video_urls, \
+        "wc_360" : _wc_360, \
+        "wc_emc": _wc_emc, \
+        "wc_video": _wc_video, \
+        "wc_pdf": _wc_pdf, \
+        "wc_prodtour": _wc_prodtour, \
+        "flixmedia": _flixmedia, \
         "webcollage" : _product_has_webcollage, \
         "sellpoints" : _product_has_sellpoints, \
 
@@ -2107,4 +2165,4 @@ if __name__=="__main__":
 ##  - number of videos, URLs of videos if more than 1
 ##  - number of pdfs
 ##  - category info (name, code, parents)
-##  - minimum review value, maximum review value	
+##  - minimum review value, maximum review value

@@ -14,6 +14,7 @@ NEWSPIDER_MODULE = 'product_ranking.spiders'
 ITEM_PIPELINES = {
     'product_ranking.pipelines.CutFromTitleTagsAndReturnStringOnly': 300,
     'product_ranking.pipelines.AddSearchTermInTitleFields': 300,
+    'product_ranking.pipelines.CheckGoogleSourceSiteFieldIsCorrectJson': 400,
 }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -37,6 +38,12 @@ EXTENSIONS['product_ranking.extensions.StatsCollector'] = 500
 EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
 MEMUSAGE_LIMIT_MB = 256
 MEMUSAGE_ENABLED = True
+
+# redefine log foramtter. DropItem exception provided with ERROR level
+LOG_FORMATTER = 'product_ranking.pipelines.PipelineFormatter'
+
+# Value to use for buyer_reviews if no reviews found
+ZERO_REVIEWS_VALUE = 0
 
 try:
     from settings_local import *
