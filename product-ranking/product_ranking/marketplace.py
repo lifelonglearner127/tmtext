@@ -249,3 +249,49 @@ class Amazon_marketplace(object):
     def set_seller_amazon(self):
         return self.called_class.allowed_domains[0].replace(
                     "www.", "").replace("/", "")
+
+    def get_price_from_main_response(self, response, product):
+        seller = None
+        seller = response.xpath(
+            '//div[@id="kindle-av-div"]/div[@class="buying"]/b/text() |'
+            '//div[@class="buying"]/b/text()'
+        ).extract()
+
+        if not seller:
+            seller_all = response.xpath('//div[@class="buying"]/b/a')#tr/td/
+            seller = seller_all.xpath('text()').extract()
+        if not seller:
+            seller = self.is_empty(response.xpath(
+                '//div[@id="merchant-info"]/text()').extract())
+            if seller:
+                seller = re.findall("sold by\s+(.*)\s+in", seller)
+        if not seller:
+            seller = response.xpath(
+                '//div[@id="merchant-info"]/a[1]/text()').extract()
+        #seller in description as text
+        if not seller:
+            seller = response.xpath(
+                '//li[@id="sold-by-merchant"]/text()'
+            ).extract()
+            seller = ''.join(seller).strip()
+        #simple text seller
+        if not seller:
+            seller = response.xpath('//div[@id="merchant-info"]/text()').extract()
+            if seller:
+                seller = re.findall("sold by([^\.]*)", seller[0])
+            if seller and seller[0].strip() == "Amazon":
+                    seller[0] = "Amazon.com"
+        if not seller:
+            seller_all = response.xpath('//div[@id="usedbuyBox"]/div/div/a')
+            seller = seller_all.xpath('text()').extract()
+
+        if seller and isinstance(seller, list):
+            seller = seller[0].strip()
+
+        if seller:
+            product["marketplace"] = [
+                {
+                    "name": seller,
+                    "price": product["price"]
+                }
+            ]

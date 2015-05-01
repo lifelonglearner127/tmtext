@@ -200,47 +200,7 @@ class AmazonProductsSpider(BaseProductsSpider):
             product['department'] = None
         else:
             product['department'], product['bestseller_rank'] \
-                = department.items()[0]
-
-    def _get_seller(self, response, product):
-        seller = None
-        seller = response.xpath(
-            '//div[@id="kindle-av-div"]/div[@class="buying"]/b/text() |'
-            '//div[@class="buying"]/b/text()'
-        ).extract()
-
-        if not seller:
-            seller_all = response.xpath('//div[@class="buying"]/b/a')#tr/td/
-            seller = seller_all.xpath('text()').extract()
-        if not seller:
-            seller_all = response.xpath('//div[@id="merchant-info"]/a[1]')
-            seller = seller_all.xpath('text()').extract()
-        #seller in description as text
-        if not seller:
-            seller = response.xpath(
-                '//li[@id="sold-by-merchant"]/text()'
-            ).extract()
-            seller = ''.join(seller).strip()
-        #simple text seller
-        if not seller:
-            seller = response.xpath('//div[@id="merchant-info"]/text()').extract()
-            if seller:
-                seller = re.findall("sold by([^\.]*)", seller[0])
-        if not seller:
-            seller_all = response.xpath('//div[@id="usedbuyBox"]/div/div/a')
-            seller = seller_all.xpath('text()').extract()
-
-        if seller and isinstance(seller, list):
-            seller = seller[0].strip()
-
-        if seller:
-            product["marketplace"] = [
-                {
-                    "name": seller,
-                    "price": product["price"]
-                }
-            ]
-        return product
+                = department.items()[0]     
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
@@ -256,7 +216,7 @@ class AmazonProductsSpider(BaseProductsSpider):
             brand = brand_logo.split('/')[1]
             cond_set_value(product, 'brand', brand)
 
-        self._get_seller(response, product)
+        self.mtp_class.get_price_from_main_response(response, product)
 
         spans = response.xpath('//span[@class="a-text-bold"]')
         for span in spans:
