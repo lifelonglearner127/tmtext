@@ -11,7 +11,6 @@ import sys
 import urllib
 from datetime import date
 
-
 SUPPORTED_SITES = ["amazon", "bestbuy", "homedepot","statelinetack","tesco","walmart","argos",
                     "kmart","ozon","pgestore","pgshop","vitadepot","wayfair","impactgel",
                     "chicksaddlery","bhinneka","maplin","hersheysstore","target","chicago",
