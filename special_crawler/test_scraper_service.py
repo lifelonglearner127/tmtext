@@ -783,7 +783,6 @@ class ServiceScraperTest(unittest.TestCase):
             self._test("freshdirect", url)
 
 if __name__ == '__main__':
-
     specified_website = ""
 
     if len(sys.argv) == 2:
