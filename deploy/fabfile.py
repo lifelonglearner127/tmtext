@@ -275,6 +275,8 @@ def _setup_virtual_env_scrapyd():
         run('pip install scrapyd')
         run('pip install simplejson')
         run('pip install requests')
+        run('pip install Pillow')
+        run('pip install pytesseract')
 
     _setup_simmetrica_monitoring()
 
