@@ -18,6 +18,7 @@ from product_ranking.spiders import BaseProductsSpider, \
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.marketplace import Amazon_marketplace
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -55,6 +56,8 @@ class AmazonProductsSpider(BaseProductsSpider):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
 
         self.captcha_retries = int(captcha_retries)
+
+        self.mtp_class = Amazon_marketplace(self)
 
         self._cbw = CaptchaBreakerWrapper()
 
@@ -197,7 +200,7 @@ class AmazonProductsSpider(BaseProductsSpider):
             product['department'] = None
         else:
             product['department'], product['bestseller_rank'] \
-                = department.items()[0]
+                = department.items()[0]     
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
@@ -212,6 +215,8 @@ class AmazonProductsSpider(BaseProductsSpider):
         if brand_logo:
             brand = brand_logo.split('/')[1]
             cond_set_value(product, 'brand', brand)
+
+        self.mtp_class.get_price_from_main_response(response, product)
 
         spans = response.xpath('//span[@class="a-text-bold"]')
         for span in spans:
@@ -605,42 +610,13 @@ class AmazonProductsSpider(BaseProductsSpider):
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
-
     def parse_marketplace(self, response):
-        product = response.meta["product"]
+        response.meta["called_class"] = self
+        response.meta["next_req"] = None
+        return self.mtp_class.parse_marketplace(response)
 
-        marketplaces = response.meta.get("marketplaces", [])
-
-        for seller in response.xpath(
-            '//div[contains(@class, "a-section")]/' \
-            'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
-
-            price = is_empty(seller.xpath(
-                'div[contains(@class, "a-column")]' \
-                '/span[contains(@class, "price")]/text()'
-            ).re(FLOATING_POINT_RGEX), 0)
-
-            name = is_empty(seller.xpath(
-                'div/p[contains(@class, "Name")]/span/a/text()').extract())
-
-            marketplaces.append({
-                "price": Price(price=price, priceCurrency="USD"), 
-                "name": name
-            })
-
-        next_link = is_empty(response.xpath(
-            "//ul[contains(@class, 'a-pagination')]" \
-            "/li[contains(@class, 'a-last')]/a/@href"
-        ).extract())
-
-        if next_link:
-            meta = {"product": product, "marketplaces": marketplaces}
-            return Request(
-                url=urlparse.urljoin(response.url, next_link), 
-                callback=self.parse_marketplace,
-                meta=meta
-            )
-
-        product["marketplace"] = marketplaces
-
+    def exit_point(self, product, next_req):
+        if next_req:
+            next_req.replace(meta={"product": product})
+            return next_req
         return product
