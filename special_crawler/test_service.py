@@ -2,12 +2,6 @@
 #
 import unittest
 from extract_walmart_data import WalmartScraper
-from extract_tesco_data import TescoScraper
-from extract_amazon_data import AmazonScraper
-from extract_wayfair_data import WayfairScraper
-from extract_pgestore_data import PGEStore
-from extract_target_data import TargetScraper
-from extract_bestbuy_data import BestBuyScraper
 from crawler_service import SUPPORTED_SITES
 from tests_utils import StoreLogs
 import requests
