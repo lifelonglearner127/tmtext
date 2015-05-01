@@ -57,7 +57,7 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         self.captcha_retries = int(captcha_retries)
 
-        self.mtp_class = Amazon_marketplace()
+        self.mtp_class = Amazon_marketplace(self)
 
         self._cbw = CaptchaBreakerWrapper()
 

@@ -21,16 +21,16 @@ class Amazon_marketplace(object):
     NEW_IMG_FOLDER = "amazon_marketplace/new/"
 
     def __init__(self, *args, **kwargs):
-        self.is_empty = lambda x, y=None: x[0] if x else y
-
-    def parse_marketplace(self, response):
-        next_req = response.meta.get("next_req", None)
-        if response.meta.get("called_class"):
-            self.called_class = response.meta["called_class"]
+        if args:
+            self.called_class = args[0]
         elif not self.called_class:
             import inspect
             stack = inspect.stack()
             self.called_class = stack[1][0].f_locals["self"].__class__()
+        self.is_empty = lambda x, y=None: x[0] if x else y
+
+    def parse_marketplace(self, response):
+        next_req = response.meta.get("next_req", None)
 
         if self.called_class._has_captcha(response):
             return self.called_class._handle_captcha(response, self.parse_marketplace)
@@ -280,10 +280,13 @@ class Amazon_marketplace(object):
             if seller:
                 seller = re.findall("sold by([^\.]*)", seller[0])
             if seller and seller[0].strip() == "Amazon":
-                    seller[0] = "Amazon.com"
+                    seller[0] = self.set_seller_amazon()
         if not seller:
             seller_all = response.xpath('//div[@id="usedbuyBox"]/div/div/a')
             seller = seller_all.xpath('text()').extract()
+
+        if not seller:
+            seller = response.xpath("//span[contains(@id, 'soldby')]/text()").extract()
 
         if seller and isinstance(seller, list):
             seller = seller[0].strip()

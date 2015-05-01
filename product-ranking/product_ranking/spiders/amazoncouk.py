@@ -17,6 +17,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.marketplace import Amazon_marketplace
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
@@ -57,6 +58,11 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
                   "k:{search_term}&ajr=0")
 
     _cbw = CaptchaBreakerWrapper()
+
+    def __init__(self, captcha_retries='10', *args, **kwargs):
+        super(AmazonCoUkProductsSpider, self).__init__(*args, **kwargs)
+
+        self.mtp_class = Amazon_marketplace(self)
 
     def parse(self, response):
         if self._has_captcha(response):
@@ -167,6 +173,8 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
                     priceCurrency='GBP'
                 )
 
+        self.mtp_class.get_price_from_main_response(response, prod)
+
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
             description = response.xpath(
@@ -221,11 +229,13 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         mkt_place_link = urlparse.urljoin(
                 response.url,
                 is_empty(response.xpath(
-                    "//div[contains(@class, 'a-box-inner')]" \
                     "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
+                    "//div[contains(@class, 'a-box-inner')]" \
                     "//div[@id='secondaryUsedAndNew']" \
                     "//a[contains(@href, '/gp/offer-listing/')]/@href"
                 ).extract()))
+        if mkt_place_link and "condition=" in mkt_place_link:
+            mkt_place_link = re.sub("condition=([^\&]*)", "", mkt_place_link)
 
         revs = self._buyer_reviews_from_html(response)
         if isinstance(revs, Request):
@@ -444,45 +454,14 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
         return self.parse_product(response)
 
     def parse_marketplace(self, response):
-        if self._has_captcha(response):
-            result = self._handle_captcha(response, self.parse_marketplace)
+        response.meta["called_class"] = self
+        response.meta["next_req"] = None
+        return self.mtp_class.parse_marketplace(response)
 
-        product = response.meta["product"]
-
-        marketplaces = response.meta.get("marketplaces", [])
-
-        for seller in response.xpath(
-            '//div[contains(@class, "a-section")]/' \
-            'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
-
-            price = is_empty(seller.xpath(
-                'div[contains(@class, "a-column")]' \
-                '/span[contains(@class, "price")]/text()'
-            ).re(FLOATING_POINT_RGEX), 0)
-
-            name = is_empty(seller.xpath(
-                'div/p[contains(@class, "Name")]/span/a/text()').extract())
-
-            marketplaces.append({
-                "price": Price(price=price, priceCurrency="USD"), 
-                "name": name
-            })
-
-        next_link = is_empty(response.xpath(
-            "//ul[contains(@class, 'a-pagination')]" \
-            "/li[contains(@class, 'a-last')]/a/@href"
-        ).extract())
-
-        if next_link:
-            meta = {"product": product, "marketplaces": marketplaces}
-            return Request(
-                url=urlparse.urljoin(response.url, next_link), 
-                callback=self.parse_marketplace,
-                meta=meta
-            )
-
-        product["marketplace"] = marketplaces
-
+    def exit_point(self, product, next_req):
+        if next_req:
+            next_req.replace(meta={"product": product})
+            return next_req
         return product
 
     def _handle_captcha(self, response, callback):
