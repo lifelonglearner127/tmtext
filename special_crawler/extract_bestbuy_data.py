@@ -277,6 +277,7 @@ class BestBuyScraper(Scraper):
         if len(pdf_hrefs) < 1:
             return None
         self.pdf_count = len(pdf_hrefs)
+        self.pdf_urls = pdf_hrefs
         return pdf_hrefs
     
     def _pdf_count(self):
@@ -322,6 +323,9 @@ class BestBuyScraper(Scraper):
     def _wc_prodtour(self):
         content = self._wc_content()
         if "wc-tour" in content: return 1
+        tree = html.fromstring(content)
+        rows = tree.xpath("//div[@class='wc-ms-navbar']//li//a//text()")
+        if "Reading Your Card" in rows: return 1
         return 0
 
     def _flixmedia(self):
@@ -358,11 +362,6 @@ class BestBuyScraper(Scraper):
     def _no_image(self):
         None
 
-
-
-
-
-
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
@@ -377,10 +376,6 @@ class BestBuyScraper(Scraper):
 
     def _min_review(self):
         return None
-
-
-
-
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -408,11 +403,15 @@ class BestBuyScraper(Scraper):
         return price_currency
 
     def _in_stores(self):
+        rows = self.tree_html.xpath("//a[contains(@title,'Add to Registry')]")
+        if len(rows) > 0:
+            return 1
         return 0
 
     def _marketplace(self):
         rows = self.tree_html.xpath("//div[contains(@class,'marketplace-puck')]//a//text()")
-        if "Marketplace" in rows:
+        rows = [r for r in rows if "Marketplace" in r]
+        if len(rows) > 0:
             return 1
         return 0
 
@@ -452,7 +451,9 @@ class BestBuyScraper(Scraper):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
-        return None
+        if self._in_stores() == 0:
+            return None
+        return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
