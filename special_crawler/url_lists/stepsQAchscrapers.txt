@@ -86,15 +86,15 @@ You will notice that all the process ids of the “Sl” processes have changed.
 	report issues with urls examples when finding problems with the scraper. 
 
 
-**********************************************
-Testing on elsa - large batch/all site crawl 
-**********************************************
+*****************************************************
+Testing on phoenix/elsa - large batch/all site crawl 
+*****************************************************
 
-1. log on to elsa
-	(elsa will pull scraper code from master) 
-2. if batches you need are not already on elsa, load a batch or full-site url list onto server
+1. log on to server phoenix or elsa (as admin: bayclimber@gmail.com)
+	(both phoenix & elsa will pull scraper code from master) 
+2. if batches you need are not already on the server, load a batch or full-site url list onto server
 	(via content health/new batch gui)
-3. coordinate with Adriana before re-crawling
+3. coordinate with Adriana before re-crawling on elsa
 4. do the crawl, do_stats, filter steps for the batch
 	(via system/site crawler, system/do_stats monitor, system/filters gui)
 5. analyze and sanity check the batch in general
@@ -115,5 +115,6 @@ release to tmtext production
 **********************************************
 
 1. when scraper is fully verified with no issues with scraper testing & large batch testing on elsa, 
-   request a scraper release to production branch
+   request a scraper release to production branch 
+   when code is release to production branch, there should be an email to notify people of the release
    the production branch will automatically be used by all demo/sales/customer servers

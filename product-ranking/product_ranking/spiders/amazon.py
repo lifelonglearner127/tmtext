@@ -202,7 +202,26 @@ class AmazonProductsSpider(BaseProductsSpider):
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         self._get_price(response, product)
+
+        brand_name = is_empty(response.xpath('//a[@id="brand"]/text()').
+            extract())
+        cond_set(product, 'brand', brand_name)
         
+        brand_logo = is_empty(response.xpath('//a[@id="brand"]/@href')
+            .extract())
+        if brand_logo:
+            brand = brand_logo.split('/')[1]
+            cond_set_value(product, 'brand', brand)
+
+        spans = response.xpath('//span[@class="a-text-bold"]')
+        for span in spans:
+            text = is_empty(span.xpath('text()').extract())
+            if text and 'Item model number:' in text:
+                possible_model = span.xpath('../span/text()').extract()
+                if len(possible_model) > 1:
+                    model = possible_model[1]
+                    cond_set_value(product, 'model', model)
+
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
             iframe_content = re.findall(
@@ -352,7 +371,8 @@ class AmazonProductsSpider(BaseProductsSpider):
             return Request(
                 url=mkt_place_link, 
                 callback=self.parse_marketplace,
-                meta=meta
+                meta=meta,
+                dont_filter=True
             )
 
         return product

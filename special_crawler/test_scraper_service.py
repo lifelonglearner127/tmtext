@@ -17,6 +17,7 @@ SUPPORTED_SITES = ["amazon", "bestbuy", "homedepot","statelinetack","tesco","wal
                     "samsclub","babysecurity","staples","soap","drugstore","staplesadvantage",
                     "freshamazon","souq","freshdirect","quill","george","peapod"]
 
+
 class JsonDiff:
     def __init__(self, sample_json, test_json, list_depth=0):
         self.log = ""
@@ -783,6 +784,7 @@ class ServiceScraperTest(unittest.TestCase):
 
 if __name__ == '__main__':
     specified_website = ""
+
 
     if len(sys.argv) == 2:
         specified_website = sys.argv[1]
