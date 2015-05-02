@@ -785,7 +785,6 @@ class ServiceScraperTest(unittest.TestCase):
 if __name__ == '__main__':
     specified_website = ""
 
-
     if len(sys.argv) == 2:
         specified_website = sys.argv[1]
 
