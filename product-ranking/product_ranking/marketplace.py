@@ -111,7 +111,9 @@ class Amazon_marketplace(object):
                 return Request(url=img_link), None
         else:
             key = self.is_empty(re.findall("/shops/(.*)/", link))
-        return (Request(url=link), key)
+        if not link:
+            return None, None
+        return Request(url=link), key
 
     def get_seller_from_title(self, title):
         regexp = ["(.*)\s@\sAmazon.", "(.*)\:\s+Amazon"]
