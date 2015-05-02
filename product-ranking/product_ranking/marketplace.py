@@ -53,6 +53,15 @@ class Amazon_marketplace(object):
             name = self.is_empty(seller.xpath(
                 'div/p[contains(@class, "Name")]/span/a/text()').extract(), "")
 
+            condition = self.is_empty(
+                seller.xpath(
+                    './/*[contains(@class, "Condition")]/text()').extract()
+                ,
+                ""
+            )
+            if not 'new' in condition.strip().lower():
+                continue
+
             if not name.strip():
                 name = self.is_empty(seller.xpath(
                     'div/p[2]/span[2]/text()').extract(), "")
