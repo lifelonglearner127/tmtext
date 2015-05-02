@@ -19,7 +19,7 @@ from product_ranking.spiders import (BaseProductsSpider, cond_set,
                                      cond_set_value, FLOATING_POINT_RGEX)
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
-
+from product_ranking.marketplace import Amazon_marketplace
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -54,6 +54,8 @@ class AmazonProductsSpider(BaseProductsSpider):
         self.captcha_retries = int(captcha_retries)
 
         self._cbw = CaptchaBreakerWrapper()
+
+        self.mtp_class = Amazon_marketplace(self)
 
     def parse(self, response):
         if self._has_captcha(response):
@@ -179,47 +181,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                     priceCurrency='CAD'
                 )
 
-        seller = None
-        other_products = None
-
-        seller = response.xpath(
-            '//div[@id="kindle-av-div"]/div[@class="buying"]/b/text() |'
-            '//div[@class="buying"]/b/text()'
-        ).extract()
-
-        if not seller:
-            seller_all = response.xpath('//div[@class="buying"]/b/a')#tr/td/
-            seller = seller_all.xpath('text()').extract()   
-            other_products = seller_all.xpath('@href').extract()
-        if not seller:
-            seller_all = response.xpath('//div[@id="merchant-info"]/a[1]')
-            other_products = seller_all.xpath('@href').extract()
-            seller = seller_all.xpath('text()').extract()
-        #seller in description as text
-        if not seller:
-            seller = response.xpath(
-                '//li[@id="sold-by-merchant"]/text()'
-            ).extract()
-            seller = ''.join(seller).strip()
-        #simple text seller
-        if not seller:
-            seller = response.xpath('//div[@id="merchant-info"]/text()').extract()
-            if seller:
-                seller = re.findall("sold by([^\.]*)", seller[0])
-        if not seller:
-            seller_all = response.xpath('//div[@id="usedbuyBox"]/div/div/a')
-            other_products = seller_all.xpath('@href').extract()
-            seller = seller_all.xpath('text()').extract()
-
-        if seller and isinstance(seller, list):
-            seller = seller[0].strip()
-        if other_products:
-            other_products = "www.amazon.ca" + other_products[0]
-
-        if seller or other_products:
-            product["marketplace"] = MarketplaceSeller(
-                seller=seller, other_products=other_products
-            )
+        self.mtp_class.get_price_from_main_response(response, product)
 
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
@@ -439,45 +401,14 @@ class AmazonProductsSpider(BaseProductsSpider):
                        buyer_reviews if total else ZERO_REVIEWS_VALUE)
 
     def parse_marketplace(self, response):
-        if self._has_captcha(response):
-            result = self._handle_captcha(response, self.parse_marketplace)
+        response.meta["called_class"] = self
+        response.meta["next_req"] = None
+        return self.mtp_class.parse_marketplace(response)
 
-        product = response.meta["product"]
-
-        marketplaces = response.meta.get("marketplaces", [])
-
-        for seller in response.xpath(
-            '//div[contains(@class, "a-section")]/' \
-            'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
-
-            price = is_empty(seller.xpath(
-                'div[contains(@class, "a-column")]' \
-                '/span[contains(@class, "price")]/text()'
-            ).re(FLOATING_POINT_RGEX), 0)
-
-            name = is_empty(seller.xpath(
-                'div/p[contains(@class, "Name")]/span/a/text()').extract())
-
-            marketplaces.append({
-                "price": Price(price=price, priceCurrency="USD"), 
-                "name": name
-            })
-
-        next_link = is_empty(response.xpath(
-            "//ul[contains(@class, 'a-pagination')]" \
-            "/li[contains(@class, 'a-last')]/a/@href"
-        ).extract())
-
-        if next_link:
-            meta = {"product": product, "marketplaces": marketplaces}
-            return Request(
-                url=urlparse.urljoin(response.url, next_link), 
-                callback=self.parse_marketplace,
-                meta=meta
-            )
-
-        product["marketplace"] = marketplaces
-
+    def exit_point(self, product, next_req):
+        if next_req:
+            next_req.replace(meta={"product": product})
+            return next_req
         return product
 
     def _parse_single_product(self, response):
