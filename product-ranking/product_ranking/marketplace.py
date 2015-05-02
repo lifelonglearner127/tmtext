@@ -110,6 +110,7 @@ class Amazon_marketplace(object):
             if img_link:
                 return Request(url=img_link), None
         else:
+
             key = self.is_empty(re.findall("/shops/(.*)/", link))
         if not link:
             return None, None
