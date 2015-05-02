@@ -53,6 +53,15 @@ class Amazon_marketplace(object):
             name = self.is_empty(seller.xpath(
                 'div/p[contains(@class, "Name")]/span/a/text()').extract(), "")
 
+            condition = self.is_empty(
+                seller.xpath(
+                    './/*[contains(@class, "Condition")]/text()').extract()
+                ,
+                ""
+            )
+            if not 'new' in condition.strip().lower():
+                continue
+
             if not name.strip():
                 name = self.is_empty(seller.xpath(
                     'div/p[2]/span[2]/text()').extract(), "")
@@ -110,8 +119,11 @@ class Amazon_marketplace(object):
             if img_link:
                 return Request(url=img_link), None
         else:
+
             key = self.is_empty(re.findall("/shops/(.*)/", link))
-        return (Request(url=link), key)
+        if not link:
+            return None, None
+        return Request(url=link), key
 
     def get_seller_from_title(self, title):
         regexp = ["(.*)\s@\sAmazon.", "(.*)\:\s+Amazon"]
