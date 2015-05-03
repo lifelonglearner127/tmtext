@@ -20,7 +20,6 @@ import unidecode
 
 
 # list of all available incoming SQS with tasks
-from . import QUEUES_LIST
 OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
 PROGRESS_QUEUE_NAME = 'sqs_ranking_spiders_progress'  # progress reports
 JOB_OUTPUT_PATH = '~/job_output'  # local dir
@@ -40,10 +39,12 @@ try:
     # try local mode (we're in the deploy dir)
     from sqs_ranking_spiders.remote_instance_starter import REPO_BASE_PATH,\
         logging, AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+    from sqs_ranking_spiders import QUEUES_LIST
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
         AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+    from repo.remote_instance_starter import QUEUES_LIST
 sys.path.insert(
     3, os.path.join(REPO_BASE_PATH, 'special_crawler', 'queue_handler'))
 from sqs_connect import SQS_Queue
