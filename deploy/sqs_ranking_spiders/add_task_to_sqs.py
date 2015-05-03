@@ -7,7 +7,10 @@ import ConfigParser
 from boto.sqs.message import Message
 import boto.sqs
 
-from . import QUEUES_LIST
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(1, os.path.join(CWD, '..'))
+
+from sqs_ranking_spiders import QUEUES_LIST
 
 CREDENTIALS_FILE = '~/.sqs_credentials'  # u have to create it to test locally
 
