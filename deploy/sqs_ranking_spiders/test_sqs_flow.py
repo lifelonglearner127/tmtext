@@ -13,6 +13,7 @@ import boto
 import boto.sqs
 from boto.s3.connection import S3Connection
 
+from . import TASK_QUEUES_LIST
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
@@ -183,7 +184,7 @@ def main_loop(flag):
         'test_best_seller_ranking': None
     }
     test_server_name = 'test_server'
-    test_queue_name = 'sqs_ranking_spiders_tasks_tests'
+    test_queue_name = TASK_QUEUES_LIST['test']
     local_data_file = '/tmp/_s3_data_file.zip'
     # create output 'queues' for this server
     _create_sqs_queue(test_server_name+'sqs_ranking_spiders_progress',

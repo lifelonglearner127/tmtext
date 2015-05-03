@@ -19,16 +19,8 @@ from boto.s3.key import Key
 import unidecode
 
 
-# TODO:
-# * ...
-
-
 # list of all available incoming SQS with tasks
-TASK_QUEUES_LIST = [
-    'sqs_ranking_spiders_tasks',  # production one
-    'sqs_ranking_spiders_tasks_dev',  # development one
-    'sqs_ranking_spiders_tasks_tests',  # test one
-]
+from . import QUEUES_LIST
 OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
 PROGRESS_QUEUE_NAME = 'sqs_ranking_spiders_progress'  # progress reports
 JOB_OUTPUT_PATH = '~/job_output'  # local dir
@@ -432,7 +424,7 @@ def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
 def execute_task_from_sqs():
     set_global_variables_from_data_file()
     while 1:  # try to read from the queue until a new message arrives
-        TASK_QUEUE_NAME = random.choice(TASK_QUEUES_LIST)
+        TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])
         logger.info("Try to get task message from queue %s.",
                     TASK_QUEUE_NAME)
         if TEST_MODE:
