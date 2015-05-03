@@ -782,7 +782,6 @@ class ServiceScraperTest(unittest.TestCase):
         for url in self.urls_by_scraper["freshdirect"]:
             self._test("freshdirect", url)
 
-
 if __name__ == '__main__':
     specified_website = ""
 

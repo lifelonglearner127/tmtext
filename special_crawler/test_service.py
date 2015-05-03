@@ -9,7 +9,6 @@ import requests
 
 # TODO: fix to work with refactored service code
 
-
 # Test suite that thoroughly tests returned walmart data, its integrity and correctness
 class WalmartData_test(unittest.TestCase):
 
