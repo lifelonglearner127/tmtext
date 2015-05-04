@@ -17,6 +17,15 @@ class Amazon_marketplace(object):
     cache = {}
     called_class = None
 
+    currencys = {
+        "amazon.ca": "CAD", 
+        "amazon.com": "USD", 
+        "amazon.co.uk": "GBP",
+        "amazon.co.jp": "JPY",
+        "amazon.cn": "CNY",
+        "amazon.fr": "EUR"
+    }
+
     IMG_FOLDER = "amazon_marketplace/"
     NEW_IMG_FOLDER = "amazon_marketplace/new/"
 
@@ -62,6 +71,11 @@ class Amazon_marketplace(object):
             if not 'new' in condition.strip().lower():
                 continue
 
+            currencyKey = self.set_seller_amazon()
+            priceCurrency = "USD"
+            if currencyKey in self.currencys:
+                priceCurrency = self.currencys[currencyKey]
+
             if not name.strip():
                 name = self.is_empty(seller.xpath(
                     'div/p[2]/span[2]/text()').extract(), "")
@@ -75,12 +89,12 @@ class Amazon_marketplace(object):
                         link = "img_link"
                     name_links.append({
                         link: get_name_link,
-                        str("price"): Price(price=price, priceCurrency="USD"), 
+                        str("price"): Price(price=price, priceCurrency=priceCurrency), 
                         "name": key
                     })
             else:
                 marketplaces.append({
-                    str("price"): Price(price=price, priceCurrency="USD"), 
+                    str("price"): Price(price=price, priceCurrency=priceCurrency), 
                     str("name"): name.strip()
                 })
 
