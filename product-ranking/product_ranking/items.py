@@ -97,10 +97,15 @@ def scrapy_marketplace_serializer(value):
     :param value: str, url or a `MarketplaceSeller` instance
     :return: str
     """
-    if hasattr(value, '__str__'):
-        return value.__str__()
-    else:
-        return str(value)
+    try:
+        return [{u'price': float(rec['price'].price),
+                 u'currency': rec['price'].priceCurrency,
+                 u'name': rec['name']} for rec in value]
+    except KeyError:
+        if hasattr(value, '__str__'):
+            return value.__str__()
+        else:
+            return str(value)
 
 
 class SiteProductItem(Item):
