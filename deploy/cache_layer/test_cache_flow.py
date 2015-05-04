@@ -91,10 +91,10 @@ class TestSQSCache(unittest.TestCase):
     def check_cache_results(self, task_message, cached=False):
         server_name = task_message['server_name']
         queue_name = server_name + sqs_cache.CACHE_OUTPUT_QUEUE_NAME
-        q = self.sqs_conn.get_queue(queue_name)
-        # try to get one more time this queue if it not exist
-        if not q:
+        q = None
+        while not q:
             q = self.sqs_conn.get_queue(queue_name)
+            time.sleep(5)
         self.assertEqual(q.count(), 1)
         m = q.get_messages()
         msg_body = m[0].get_body()
@@ -239,6 +239,41 @@ class TestSQSCache(unittest.TestCase):
         print ("Rcvd status: '%s'" % status2)
         self.assertTrue(status2 in status_list)
 
+        print("Now wait until scrapy_daemon/cache will finish their work")
+        print("It may take about 20-30 minutes")
+        while True:
+            status = self.check_status(queue_name)
+            if status:
+                if isinstance(status, int):
+                    continue
+                else:
+                    self.assertEqual(status, 'finished')
+                    break
+        self.check_cache_results(msg)
+        self.db.hdel('responses', task_stamp)
+        self.db.hdel('last_request', task_stamp)
+
+    def test_forced_message(self):
+        print("\nTest forced task message")
+        msg = self.generate_message()
+        msg["forced_task"] = True
+        print("First create fake response for the same task.")
+        task_stamp = sqs_cache.generate_task_stamp(msg)
+        fake_response = pickle.dumps((time.time(), {}))
+        self.db.hset('responses', task_stamp, fake_response)
+        print("Send task to cache")
+        print(msg["task_id"])
+        self.provide_msg_to_queue(msg, self.cache_task_queue)
+
+        queue_name = msg['server_name'] + self.cache_progress_queue
+        status_list = [
+            'Ok. Task was received.',
+            'Redirect request to spiders sqs.',
+        ]
+        for i in range(2):
+            status = self.check_status(queue_name)
+            print ("Rcvd status: '%s'" % status)
+            self.assertTrue(status in status_list)
         print("Now wait until scrapy_daemon/cache will finish their work")
         print("It may take about 20-30 minutes")
         while True:

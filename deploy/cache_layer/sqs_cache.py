@@ -73,7 +73,12 @@ def put_message_into_sqs(message, sqs_name):
     if getattr(sqs_queue, 'q', '') is None:  # SQS with this name don't exist
         logger.warning(
             "Queue {name} not exist. Create new one".format(name=sqs_name))
-        sqs_queue.conn.create_queue(sqs_name)
+        try:
+            sqs_queue.conn.create_queue(sqs_name)
+        # For some reason queue was deleted and we should wait for 60 seconds
+        except:
+            time.sleep(62)
+            sqs_queue.conn.create_queue(sqs_name)
         time.sleep(5)
         sqs_queue = SQS_Queue(sqs_name)
     try:
@@ -115,6 +120,7 @@ def get_spiders_results(sqs_name):
             logger.info(str(e))
             attemps += 1
             time.sleep(5)
+            sqs_queue = SQS_Queue(sqs_name)
             continue
         else:
             break
@@ -179,7 +185,8 @@ def send_status_back_to_server(status, server_name, task_id=None):
     put_message_into_sqs(msg, queue_name)
 
 
-def generate_and_handle_new_request(task_stamp, task_message, cache_db):
+def generate_and_handle_new_request(task_stamp, task_message, cache_db,
+        forced=False):
     logger.info("Generate and handle new request")
     response_will_be_provided_by_another_daemon = False
     task_id = task_message['task_id']
@@ -194,7 +201,7 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db):
         # last Request is older than 1 hour
         logger.info("time %s", time.time())
         logger.info("last request time %s", float(last_request))
-        if time.time() - float(last_request) > 3600:
+        if (time.time() - float(last_request) > 3600) or forced:
             logger.info("Last request is very old")
             logger.info("Provide new task to spiders SQS")
             put_message_into_sqs(task_message, SPIDERS_TASKS_SQS)
@@ -322,11 +329,19 @@ def main(queue_name):
     logger.info("Generate task stamp for task")
     task_stamp = generate_task_stamp(task_message)
     logger.debug("Task stamp:     %s", task_stamp)
+
+    forced = bool(task_message.get('forced_task'))
+    if forced:
+        logger.info("Forced task was received")
+        generate_and_handle_new_request(
+            task_stamp, task_message, cache_db, forced)
+        sys.exit()
+
     freshness = task_message.get('freshness')
     if freshness:
         freshness = float(freshness) * 3600
     if not freshness:
-        freshness = 60*60 # 12*60*60 // 3.5*12*60*60
+        freshness = 12*60*60
 
     response = get_data_from_cache_hash('responses', task_stamp, cache_db)
     if response:

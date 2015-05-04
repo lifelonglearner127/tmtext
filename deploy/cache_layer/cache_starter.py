@@ -66,9 +66,13 @@ def main_starter(TASK_QUEUES_LIST):
                     logger.info("Start cache service for sqs '%s'", queue_name)
                     run_cmd = cmd % queue_name
                     os.system(run_cmd)
-            except AttributeError:
+            except Exception as e:
                 logger.info("Queue '%s' does not exists", queue_name)
-                conn.create_queue(queue_name)
+                logger.info("Exception: %s", e)
+                try:
+                    conn.create_queue(queue_name)
+                except:
+                    pass
                 continue
         time.sleep(3)
 
