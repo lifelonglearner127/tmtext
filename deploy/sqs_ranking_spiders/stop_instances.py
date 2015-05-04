@@ -6,6 +6,7 @@ import time
 import multiprocessing as mp
 import logging
 import logging.config
+import subprocess
 
 
 import boto
@@ -82,6 +83,17 @@ def get_all_group_instances_and_conn():
     return instances, conn
 
 
+def check_is_scrapy_daemon_not_running(ssh_key, inst_ip):
+    base_cmd = "ssh -o 'StrictHostKeyChecking no' -i %s ubuntu@%s 'ps aux'"
+    cmd = base_cmd % (ssh_key, inst_ip)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    out, err = p.communicate()
+    for line in out.splitlines():
+        if 'scrapy_daemon.py' in line:
+            return False
+    return True
+
+
 def check_logs_status(file_path):
     flag = False
     reason = ''
@@ -110,6 +122,9 @@ def check_logs_status(file_path):
                 if m1 in lines[-1] and m2 in lines[-2]:
                     reason = "No any tasks were received for long time"
                     flag = True
+    else:
+        reason = "No logs exist"
+        flag = True
     return flag, reason
 
 
@@ -122,6 +137,8 @@ def teminate_instance_and_log_it(inst_ip, inst_id, reason):
 
 
 def stop_if_required(inst_ip, inst_id):
+    """If this method return 'True' it will mean that script failed
+    to downoad or handle logs and the instance should be stopped"""
     tmp_file = '/tmp/tmp_file'
     # purge previous entry
     open(tmp_file, 'w').close()
@@ -148,7 +165,11 @@ def stop_if_required(inst_ip, inst_id):
         return True
     print(inst_id, inst_ip, flag, reason)
     if flag:
+        if reason == 'No logs exist':
+            return True
         teminate_instance_and_log_it(inst_ip, inst_id, reason)
+    else:
+        return check_is_scrapy_daemon_not_running(ssh_key, inst_ip)
 
 
 def update_unresponded_dict_or_terminate_instance(inst_ip, inst_id,
