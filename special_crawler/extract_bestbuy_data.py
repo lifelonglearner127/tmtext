@@ -222,7 +222,7 @@ class BestBuyScraper(Scraper):
                         except KeyError:
                             continue
         elif "syndicate.sellpoint.net" in url[0]:
-            contents = urllib.urlopen(url[0]).read()
+            # contents = urllib.urlopen(url[0]).read()
             # tree = html.fromstring(contents)
             # rows = tree.xpath("//div[@id='minisite_multiple_videos']//object/@data")
             # rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
