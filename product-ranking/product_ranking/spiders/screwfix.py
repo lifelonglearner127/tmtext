@@ -165,7 +165,8 @@ class ScrewfixProductsSpider(BaseProductsSpider):
             return Request(url, callback=self.populate_related,
                            meta={'product': product,
                                  'jsessionid': jsessionid,
-                                 'product_id': product_id})
+                                 'product_id': product_id},
+                           dont_filter=True)
         return product
 
     def populate_related(self, response):
@@ -199,7 +200,7 @@ class ScrewfixProductsSpider(BaseProductsSpider):
             scheme = 'v1_th_rr'
             url = self.generate_related_url(jsessionid, product_id, scheme)
             return Request(url, callback=self.populate_related,
-                           meta={'product': product})
+                           meta={'product': product}, dont_filter=True)
         return product
 
     def generate_related_url(self, jsessionid, product_id, scheme):
