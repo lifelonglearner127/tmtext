@@ -157,6 +157,9 @@ LOGGING = {
     },
 }
 
+TEST_QUEUE = QUEUES_LIST['test']
+TEST_CACHE_QUEUE =
+
 
 #TODO: nginx http AUTH
 #TODO: colored statuses, remove unnecessary statuses
