@@ -33,7 +33,7 @@ class TestSQSCache(unittest.TestCase):
     def setUpClass(cls):
         cls.db = sqs_cache.connect_to_redis_database()
         cls.sqs_conn = boto.sqs.connect_to_region("us-east-1")
-        cls.start_cache_queues_list = cache_starter.TASK_QUEUES_LIST
+        cls.start_cache_queues_list = cache_starter.CACHE_QUEUES_LIST
         cls.cache_task_queue = cls.start_cache_queues_list[2]  # test queue
         cls.cache_progress_queue = sqs_cache.CACHE_PROGRESS_QUEUE
 

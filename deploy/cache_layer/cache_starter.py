@@ -12,7 +12,7 @@ import boto.sqs
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
 
-from cache_layer import TASK_QUEUES_LIST
+from cache_layer import CACHE_QUEUES_LIST
 
 log_file_path = '/tmp/cache_logs/main_instance.log'
 if not os.path.exists(os.path.dirname(log_file_path)):
@@ -59,11 +59,11 @@ def can_run():
     return True
 
 
-def main_starter(TASK_QUEUES_LIST):
+def main_starter(CACHE_QUEUES_LIST):
     conn = boto.sqs.connect_to_region("us-east-1")  #should be us-east-1
     cmd = 'python sqs_cache.py %s &'
     while True:
-        for queue_name in TASK_QUEUES_LIST.values():
+        for queue_name in CACHE_QUEUES_LIST.values():
             queue = conn.get_queue(queue_name)
             try:
                 if queue.count() > 0:
@@ -87,4 +87,4 @@ if (__name__ == '__main__'):
         sys.exit()
     logging.config.dictConfig(log_settings)
     logger = logging.getLogger('cache_log')
-    main_starter(TASK_QUEUES_LIST)
+    main_starter(CACHE_QUEUES_LIST)
