@@ -1258,11 +1258,11 @@ class WalmartScraper(Scraper):
         nr_reviews = 0
 
         if self._version() == "Walmart v1":
+            if not self.tree_html.xpath("//div[@id='BVReviewsContainer']"):
+                return 0
+
             reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
             nr_reviews = reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")
-
-            if not nr_reviews:
-                return 0
 
             nr_reviews = int(nr_reviews[0])
 
