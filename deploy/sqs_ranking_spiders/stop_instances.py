@@ -178,14 +178,23 @@ def update_unresponded_dict_or_terminate_instance(inst_ip, inst_id,
         last_time = unresponded[inst_id][1]
         # if instance not responded for 15 minutes already
         if time.time() - int(last_time) > 15*60:
+            reason = "Instance not respond for 15 minutes or "\
+                     "failed to downoald logs"
             teminate_instance_and_log_it(
                 inst_ip,
                 inst_id,
-                reason="Instance not respond for 15 minutes"
+                reason=reason
             )
             del unresponded[inst_id]
     else:
         unresponded[inst_id] = [inst_ip, time.time()]
+
+
+def delete_old_unresponded_hosts(unresponded):
+    for inst_id in unresponded.keys():
+        last_time = unresponded[inst_id][1]
+        if time.time() - int(last_time) > 60*60*24*3:  # three day
+            del unresponded[inst_id]
 
 
 def upload_logs_to_s3():
@@ -227,6 +236,7 @@ def main():
                     inst_id,
                     unresponded
                 )
+    delete_old_unresponded_hosts(unresponded)
     with open(not_responded_hosts, 'w') as f:
         f.write(json.dumps(unresponded))
     logger.info("Were terminated %s instances from %s total.",
