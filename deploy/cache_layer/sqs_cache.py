@@ -341,7 +341,7 @@ def main(queue_name):
     if freshness:
         freshness = float(freshness) * 3600
     if not freshness:
-        freshness = 12*60*60
+        freshness = 60*60  # one hour
 
     response = get_data_from_cache_hash('responses', task_stamp, cache_db)
     if response:

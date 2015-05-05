@@ -4,15 +4,15 @@ import time
 import random
 import logging
 import logging.config
+import subprocess
+
 
 import boto.sqs
 
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(1, os.path.join(CWD, '..'))
 
-TASK_QUEUES_LIST = [
-    'cache_sqs_ranking_spiders_tasks',  # production one
-    'cache_sqs_ranking_spiders_tasks_dev',  # development one
-    'cache_sqs_ranking_spiders_tasks_tests',  # test one
-]
+from cache_layer import TASK_QUEUES_LIST
 
 log_file_path = '/tmp/cache_logs/main_instance.log'
 if not os.path.exists(os.path.dirname(log_file_path)):
@@ -47,19 +47,23 @@ log_settings = {
 
 
 def can_run():
-    return not os.path.exists(os.path.join(os.getcwd(), __file__+'.running'))
-
-
-def mark_as_running():
-    with open(os.path.join(os.getcwd(), __file__+'.running'), 'w') as fh:
-        fh.write('1')
+    cmd = 'ps aux'
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    out, err = p.communicate()
+    counter = 0
+    for line in out.splitlines():
+        if 'cache_starter.py' in line:
+            counter += 1
+    if counter >= 2:
+        return False
+    return True
 
 
 def main_starter(TASK_QUEUES_LIST):
     conn = boto.sqs.connect_to_region("us-east-1")  #should be us-east-1
     cmd = 'python sqs_cache.py %s &'
     while True:
-        for queue_name in TASK_QUEUES_LIST:
+        for queue_name in TASK_QUEUES_LIST.values():
             queue = conn.get_queue(queue_name)
             try:
                 if queue.count() > 0:
@@ -78,10 +82,9 @@ def main_starter(TASK_QUEUES_LIST):
 
 
 if (__name__ == '__main__'):
-    time.sleep(random.randrange(10))
+    # time.sleep(random.randrange(10))
     if not can_run():
         sys.exit()
-    mark_as_running()
     logging.config.dictConfig(log_settings)
     logger = logging.getLogger('cache_log')
     main_starter(TASK_QUEUES_LIST)
