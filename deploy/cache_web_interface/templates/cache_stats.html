@@ -6,6 +6,10 @@
 <body>
     <h1>Cache simmetrica stats for {{time_range}}</h1>
     <div>
+        <h3>Total memory used</h3>
+        <p>{{used_memory}}</p>
+    </div>
+    <div>
         {% if not total_cached_items %}
         No any items were found in cache.
         {% else %}
@@ -39,6 +43,19 @@
         {% endif %}
     </div>
     <div>
+        <h3>Current settings</h3>
+        <p>{{current_settings}}</p>
+        <a href="/update-settings">Update settings</a>
+
+    </div>
+    <div>
+        <h3>Clear cache for required time limit</h3>
+        <form action="/remove-old-resp" method="post">
+            <input type="submit" value="Remove responses older than X hours">
+            <input type="text" name="time_limit" value="12">
+        </form>
+    </div>
+    <div>
     <h3>Choose required time limit</h3>
     <form action="/cache-stats" method="post">
         <select name="required_hours">
@@ -56,5 +73,12 @@
     <p>
         <a href="/all-logs">Display cache logs</a>
     </p>
+    <br>
+    <br>
+    <div>
+        <form action="/flash-cache" method="post">
+            <input type="submit" value="Totally clear cache">
+        </form>
+    </div>
 </body>
 </html>

@@ -9,7 +9,7 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
 
 from flask import Flask, request, send_from_directory, send_file
-from flask import render_template
+from flask import render_template, redirect, url_for
 from boto.sqs.message import Message
 import boto.sqs
 
@@ -17,7 +17,7 @@ from cache_layer.simmetrica_class import Simmetrica
 
 
 app = Flask(__name__)
-
+s = Simmetrica()
 
 def send_msg_to_sqs(task):
     sqs_conn = boto.sqs.connect_to_region("us-east-1")
@@ -34,7 +34,7 @@ def cache_stats(hours=1):
     if request.method == 'POST':
         data = request.form
         hours = int(data['required_hours'])
-    s = Simmetrica()
+    global s
     
     try:
         total_cached_items = s.total_resp_in_cache()
@@ -67,6 +67,10 @@ def cache_stats(hours=1):
     else:
         time_range = '%s hours' % hours
 
+    used_memory = s.get_used_memory()
+
+    current_settings = s.get_settings()
+
     context = {
         'time_range': time_range,
         'total_cached_items': total_cached_items,
@@ -77,7 +81,9 @@ def cache_stats(hours=1):
         'total_requests': total_requests,
         'total_responses': total_responses,
         'correlation': correlation,
-        'most_recent_resp': most_recent_resp
+        'most_recent_resp': most_recent_resp,
+        'used_memory': used_memory,
+        'current_settings': current_settings
     }
     return render_template('cache_stats.html', **context)
 
@@ -145,6 +151,39 @@ def cache_logs(filename):
         return data
     else:
         return 'Log file not exists'
+
+
+@app.route('/update-settings', methods=['GET', 'POST'])
+def update_settings():
+    global s
+    if request.method == 'POST':
+        data = request.form
+        result_msg = s.update_settings(data)
+        return render_template('update_settings.html', result_msg=result_msg)
+    else:
+        current_settings = s.get_settings()
+        return render_template('update_settings.html',
+                               current_settings=current_settings)
+
+
+@app.route('/remove-old-resp', methods=['POST'])
+def remove_old_resp():
+    global s
+    data = request.form
+    try:
+        time_limit = int(data['time_limit'])
+    except:
+        time_limit = 12
+    print(time_limit)
+    s.delete_old_responses(time_limit)
+    return redirect(url_for('cache_stats'))
+
+
+@app.route('/flash-cache', methods=['POST'])
+def flash_cache():
+    global s
+    s.clear_cache()
+    return redirect(url_for('cache_stats'))
 
 
 if __name__ == '__main__':

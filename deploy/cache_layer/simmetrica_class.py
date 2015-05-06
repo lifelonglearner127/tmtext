@@ -1,6 +1,9 @@
 import time
 import random
 import string
+import json
+import os
+import pickle
 from collections import Counter
 
 import redis
@@ -24,18 +27,19 @@ class Simmetrica(object):
 
     def __init__(self, *args, **kwargs):
         self.db = redis.StrictRedis(host='localhost', port=6379, db=0)
+        self.CWD = os.path.dirname(os.path.abspath(__file__))
 
     def total_resp_in_cache(self):
         return self.db.hlen('responses')
 
-    def set_time_of_newest_resp(self):
-        self.db.set('simmetrica_newest_resp', time.time())
+    def set_time_of_newest_resp(self, time=time.time()):
+        self.db.set('simmetrica_newest_resp', time)
 
     def get_time_of_newest_resp(self):
         return self.db.get('simmetrica_newest_resp')
 
-    def set_time_of_oldest_resp(self):
-        self.db.setnx('simmetrica_oldest_resp', time.time())
+    def set_time_of_oldest_resp(self, time=time.time()):
+        self.db.setnx('simmetrica_oldest_resp', time)
 
     def get_time_of_oldest_resp(self):
         return self.db.get('simmetrica_oldest_resp')
@@ -68,8 +72,9 @@ class Simmetrica(object):
         # (21.1244, 78)
         return percents, total_resp
 
-    def remove_old_req_and_resp(self):
-        max_limit = time.time() - 3600*24*31  # older than 31 day
+    def remove_old_req_and_resp(self, hours_limit=12):
+        """This method will clear metrics, not responses from cache"""
+        max_limit = time.time() - 3600*int(hours_limit)
         self.db.zremrangebyscore('total_returned_resp', 0, max_limit)
         self.db.zremrangebyscore('total_received_req', 0, max_limit)
 
@@ -78,6 +83,55 @@ class Simmetrica(object):
         resp = [r.split('-', 1)[1] for r in resp_set]
         # [('walmart:st:water:quantity:5', 2)]
         return Counter(resp).most_common(quantity)
+
+    def get_used_memory(self):
+        info = self.db.info()
+        return info.get('used_memory_human')
+
+    def get_settings(self):
+        try:
+            path = os.path.join(self.CWD, 'settings')
+            settings_file = open(path, 'r')
+            settings_data = json.load(settings_file)
+            settings_file.close()
+            return settings_data
+        except Exception as e:
+            return("Failed to load settings file, %s" % e)
+
+    def update_settings(self, data):
+        try:
+            path = os.path.join(self.CWD, 'settings')
+            settings_file = open(path, 'w')
+            settings_data = json.dumps(data)
+            settings_file.write(settings_data)
+            settings_file.close()
+            msg = "Settings were successfully updated"
+            return msg
+        except Exception as e:
+            return("Failed to update settings file, %s" % e)
+
+    def delete_old_responses(self, time_limit=12):
+        """This method will remove old responses from cache"""
+        responses = self.db.hgetall('responses')
+        all_time_stamps = []
+        for key in responses.keys():
+            item = responses[key]
+            item_time = pickle.loads(item)[0]
+            if time.time() - float(item_time) > (time_limit*3600):
+                self.db.hdel('responses', key)
+            else:
+                all_time_stamps.append(item_time)
+        if all_time_stamps:
+            self.set_time_of_newest_resp(max(all_time_stamps))
+            self.db.set('simmetrica_oldest_resp', min(all_time_stamps))
+        else:
+            self.db.delete('simmetrica_newest_resp')
+            self.db.delete('simmetrica_oldest_resp')
+
+    def clear_cache(self):
+        self.db.delete('responses')
+        self.db.delete('simmetrica_newest_resp')
+        self.db.delete('simmetrica_oldest_resp')
 
     @staticmethod
     def random_generator(length=12):
@@ -88,4 +142,11 @@ class Simmetrica(object):
 
 if (__name__ == '__main__'):
     s = Simmetrica()
-    s.remove_old_req_and_resp()
+    hours_limit = 12
+    try:
+        settings = s.get_settings()
+        hours_limit = int(settings['hours_limit'])
+    except Exception as e:
+        print(e)
+    # s.remove_old_req_and_resp(hours_limit)
+    s.delete_old_responses(hours_limit)
