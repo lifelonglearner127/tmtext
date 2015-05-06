@@ -1,6 +1,10 @@
 #!/usr/bin/python
 
 import re
+import lxml
+import lxml.html
+
+from lxml import html, etree
 from extract_data import Scraper
 
 
@@ -64,20 +68,36 @@ class UltaScraper(Scraper):
         return self.tree_html.xpath('//meta[@name="title"]/@content')[0].strip()
 
     def _model(self):
-        return self.tree_html.xpath('//input[@id="pinBrand"]/@value')[0].strip()
+        return None
+
+    def _features(self):
+        return None
+
+    def _feature_count(self):
+        return 0
 
     def _description(self):
-        items = self.tree_html.xpath('//div[@class="brdrTopSolid prodInfoSection"]//text()')
+        description_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[@class="product-catalog-content"]')
 
-        if not items:
-            return None
+        short_description = ""
 
-        short_description = ''
+        if description_elements:
+            description_elements = description_elements[0]
 
-        for item in items:
-            if item.replace('\r','').replace('\n','').strip() == '':
-                continue
-            short_description += '\n' + item
+            for description_element in description_elements:
+                if "<b>" in lxml.html.tostring(description_element):
+                    break
+
+                if "<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element):
+                    tree = html.fromstring(short_description)
+                    innerText = tree.xpath("//text()")
+
+                    if not innerText:
+                        short_description = ""
+
+                    break
+
+                short_description += lxml.html.tostring(description_element)
 
         return short_description.strip()
 
@@ -86,18 +106,7 @@ class UltaScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        overview = self.tree_html.xpath('//li[contains(@id, "tabTitleItem")]/text()')[0]
-
-        if overview.strip() != "Overview":
-            return None
-
-        overview_tab_html = self.tree_html.xpath('//div[contains(@class, "tabContentSelected")]/div')
-        overview_tab_text = ""
-
-        for item in overview_tab_html:
-            overview_tab_text += (" " . join([x for x in item.itertext()]).strip())
-
-        return overview_tab_text.replace("\n","").replace("\r","")
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -106,46 +115,23 @@ class UltaScraper(Scraper):
         pass
         
     def _image_urls(self):
-        image_urls = self.tree_html.xpath('//div[@id="thumb"]/img/@src')
-
-        if not image_urls:
-            image_urls = self.tree_html.xpath('//div[@id="prodMedia"]/div/img/@src')
-
-        if len(image_urls) == 1 and "no_picture" in image_urls[0]:
-            return None
-
-        return image_urls
+        return None
 
     def _image_count(self):
-        if self._image_urls() == None:
-            return 0
+        return 0
 
-        return len(self._image_urls())
-    
     def _video_urls(self):
-        video_urls = self.tree_html.xpath("//iframe[@allowfullscreen]/@src")
-
-        if not video_urls:
-            return None
-
-        return video_urls
+        return None
 
     def _video_count(self):
-        return len(self._video_urls())
+        return 0
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
-        pdf_urls = self.tree_html.xpath('//a[contains(@href, ".pdf")]/@href')
-        pdf_urls[:] = ["http://www.bhinneka.com" + x for x in pdf_urls]
-
-        if not pdf_urls:
-            return None
-
-        return pdf_urls
+        return None
 
     def _pdf_count(self):
-        return len(self._pdf_urls())
-
+        return 0
 
     def _webcollage(self):
         return 0
@@ -160,90 +146,45 @@ class UltaScraper(Scraper):
     def _keywords(self):
         return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0].strip()
 
-
-
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
 
     def _average_review(self):
-        if not self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()'):
-            return None
-
-        return float(self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0])
+        return 0
 
     def _review_count(self):
-        review_rating_list= self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
-
-        if not review_rating_list:
-            return 0
-
-        return len(review_rating_list)
+        return 0
 
     def _max_review(self):
-        review_rating_list_text = self.tree_html.xpath('//div[@id="customerReviewContent"]//ul[@id="starRateContainer"]/li/div[contains(@class, "rateBarContainer")]/div[contains(@class,"rateBar")]/text()')
-        review_rating_list_int = []
-
-        if not review_rating_list_text:
-            return None
-
-        for index in range(5):
-            if int(review_rating_list_text[index]) > 0:
-                review_rating_list_int.append(5 - index)
-
-        if not review_rating_list_int:
-            return None
-
-        return float(max(review_rating_list_int))
+        return 0
 
     def _min_review(self):
-        review_rating_list_text = self.tree_html.xpath('//div[@id="customerReviewContent"]//ul[@id="starRateContainer"]/li/div[contains(@class, "rateBarContainer")]/div[contains(@class,"rateBar")]/text()')
-        review_rating_list_int = []
-
-        if not review_rating_list_text:
-            return None
-
-        for index in range(5):
-            if int(review_rating_list_text[index]) > 0:
-                review_rating_list_int.append(5 - index)
-
-        if not review_rating_list_int:
-            return None
-
-        return float(min(review_rating_list_int))
+        return 0
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath('//div[@id="ctl00_content_divPrice"]//text()')[0].strip()
+        return None
 
     def _owned(self):
-        if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() == 'Bhinneka.Com':
-            return 1
-        else:
-            return 0
+        return 0
 
     def _marketplace(self):
-        if self.tree_html.xpath('//meta[@itemprop="seller"]/@content')[0].strip() != 'Bhinneka.Com':
-            return 1
-        else:
-            return 0
+        return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        if self._brand().strip().lower() == self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[-1].strip().lower():
-            return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1:-1]
-
-        return self.tree_html.xpath('//div[@id="breadcrumb"]/a/text()')[1]
+        return None
 
     def _category_name(self):
-        return self._categories()[-1]
-    
+        return None
+
     def _brand(self):
-        return self.tree_html.xpath('//a[@id="ctl00_content_lnkBrand"]/@title')[0]
+        return self.tree_html.xpath('//input[@id="pinBrand"]/@value')[0].strip()
 
     ##########################################
     ################ HELPER FUNCTIONS
