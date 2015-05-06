@@ -20,7 +20,7 @@ class UltaScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.ulta.com/ulta/browse/productDetail.jsp?productId=.+\.$", self.product_page_url)
+        m = re.match(r"^http://www.ulta.com/ulta/browse/productDetail.jsp?productId=.+$", self.product_page_url)
 
         return not not m
 
