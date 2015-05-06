@@ -27,6 +27,8 @@ class BestBuyScraper(Scraper):
     wc_content = None
     wc_video = None
     wc_pdf = None
+    wc_prodtour = None
+    wc_360 = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -300,10 +302,9 @@ class BestBuyScraper(Scraper):
         return self.wc_content
 
     def _wc_360(self):
-        content = self._wc_content()
-        if "wc-360" in content: return 1
-        return 0
-
+        if self.wc_360 is None:
+            self._wc_prodtour()
+        return self.wc_360
 
     def _wc_pdf(self):
         if self.pdf_count is None:
@@ -316,17 +317,28 @@ class BestBuyScraper(Scraper):
         return self.wc_video
 
     def _wc_emc(self):
-        content = self._wc_content()
-        if "wc-aplus" in content: return 1
+        if self._webcollage() == 1:
+            return 1
         return 0
 
     def _wc_prodtour(self):
-        content = self._wc_content()
-        if "wc-tour" in content: return 1
-        tree = html.fromstring(content)
-        rows = tree.xpath("//div[@class='wc-ms-navbar']//li//a//text()")
-        if "Reading Your Card" in rows: return 1
-        return 0
+        if self.wc_prodtour is not None:
+            return self.wc_prodtour
+        redirect_contents = self._wc_content()
+        redirect_tree = html.fromstring(redirect_contents)
+        tabs = redirect_tree.xpath("//div[@class='wc-ms-navbar']//li//a")
+        self.wc_prodtour = 0
+        self.wc_360 = 0
+        for tab in tabs:
+            redirect_link2 = tab.xpath("./@href")[0]
+            redirect_link2 = "http://content.webcollage.net" + redirect_link2
+            redirect_contents2 = urllib.urlopen(redirect_link2).read()
+            redirect_tree2 = html.fromstring(redirect_contents2)
+            if len(redirect_tree2.xpath("//div[contains(@class,'wc-tour-inner-inline')]")) > 0:
+                self.wc_prodtour = 1
+            if len(redirect_tree2.xpath("//div[contains(@class,'wc-threeSixty')]")) > 0:
+                self.wc_360 = 1
+        return self.wc_prodtour
 
     def _flixmedia(self):
         url = self.tree_html.xpath("//ul[@id='media-links']//a/@href")
@@ -556,6 +568,7 @@ class BestBuyScraper(Scraper):
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
         "wc_emc" : _wc_emc, \
+        "wc_360" : _wc_360, \
         "wc_video" : _wc_video, \
         "wc_pdf" : _wc_pdf, \
         "wc_prodtour" : _wc_prodtour, \
