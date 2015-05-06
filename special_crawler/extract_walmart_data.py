@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import urllib
 import re
 import sys
 import json
@@ -9,11 +8,11 @@ from lxml import html, etree
 import lxml
 import urllib
 import lxml.html
-import time
 import requests
 
 from extract_data import Scraper
 from compare_images import compare_images
+
 
 class WalmartScraper(Scraper):
 
@@ -1591,7 +1590,6 @@ class WalmartScraper(Scraper):
 
         return in_stores
 
-
     def _in_stores_only(self):
         '''General function for setting value of field "in_stores_only".
         It will be inferred from other sellers fields.
@@ -1908,8 +1906,7 @@ class WalmartScraper(Scraper):
         # we could not decide
         return None
 
-
-    def  _ingredients(self):
+    def _ingredients(self):
         # list of ingredients - list of strings
         ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
         if len(ingr) > 0:
@@ -1948,12 +1945,11 @@ class WalmartScraper(Scraper):
         self.ing_count = None
         return None
 
-
-    def  _ingredient_count(self):
+    def _ingredient_count(self):
         # number of ingredients - integer
-        return  self.ing_count
+        return self.ing_count
 
-    def  _nutrition_facts(self):
+    def _nutrition_facts(self):
         # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
         # containing nutrition facts
         res=[]
@@ -1987,11 +1983,9 @@ class WalmartScraper(Scraper):
         self.nutr_count = None
         return None
 
-
-    def  _nutrition_fact_count(self):
+    def _nutrition_fact_count(self):
         # number of nutrition facts (of elements in the nutrition_facts list) - integer
         return self.nutr_count
-
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -2024,8 +2018,6 @@ class WalmartScraper(Scraper):
         #return json.dumps(media_for_url(product_page_url))
     #    return json.dumps(reviews_for_url(product_page_url))
 
-
-
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
     #
@@ -2052,8 +2044,8 @@ class WalmartScraper(Scraper):
         "long_description" : _long_description_wrapper, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
-         "nutrition_facts": _nutrition_facts, \
-         "nutrition_fact_count": _nutrition_fact_count, \
+        "nutrition_facts": _nutrition_facts, \
+        "nutrition_fact_count": _nutrition_fact_count, \
         "price" : _price_from_tree, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
