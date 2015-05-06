@@ -9,6 +9,8 @@ sys.path.append(os.path.join(CWD,  '..', '..', '..',
                              'deploy'))
 from sqs_ranking_spiders import QUEUES_LIST
 
+import settings
+
 
 def get_data_filename(job):
     """ Returns local job filename relative to MEDIA """
@@ -85,3 +87,10 @@ class Job(models.Model):
         return ('SearchTerm [%s]' % self.search_term if self.search_term
                 else 'URL')
     searchterm_or_url.short_description = 'Type'
+
+    def get_input_queue(self):
+        if self.mode == 'no cache':
+            return settings.TEST_QUEUE
+        elif self.mode == 'cache':
+            return settings.TEST_CACHE_QUEUE
+
