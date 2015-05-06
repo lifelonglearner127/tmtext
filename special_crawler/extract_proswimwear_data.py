@@ -170,6 +170,8 @@ class ProswimwearScraper(Scraper):
             return self.video_urls
         self.video_count = 0
         video_urls = self.tree_html.xpath("//div[contains(@class,'product-img-box')]//div[contains(@class,'markvideo')]//iframe/@src")
+        rows = self.tree_html.xpath("//div[contains(@class,'content-wrapper')]//iframe/@src")
+        video_urls += rows
         if len(video_urls) < 1:
             return None
         self.video_urls = video_urls
