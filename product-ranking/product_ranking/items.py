@@ -127,6 +127,19 @@ def scrapy_marketplace_serializer(value):
         result.append(converted)
     return result
 
+
+def scrapy_upc_serializer(value):
+    """ This method is required to correctly dump values while using JSON
+        output (otherwise we'd have "can not serialize to JSON" error).
+        `value` can be a string, number, or a `MarketplaceSeller` instance.
+    :param value: int, str
+    :return: str
+    """
+    value = str(value)
+    if len(value) > 12 and value.startswith('0'):
+        return '0' + value.lstrip('0')
+    return value
+
 class SiteProductItem(Item):
     # Search metadata.
     site = Field()  # String.
@@ -140,7 +153,7 @@ class SiteProductItem(Item):
 
     # Product data.
     title = Field()  # String.
-    upc = Field()  # Integer.
+    upc = Field(serializer=scrapy_upc_serializer)  # Integer.
     model = Field()  # String, alphanumeric code.
     url = Field()  # String, URL.
     image_url = Field()  # String, URL.
