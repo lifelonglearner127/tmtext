@@ -9,14 +9,14 @@ class UltaScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.bhinneka.com/products/<product-sku>/<product-name>.aspx"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.ulta.com/ulta/browse/productDetail.jsp?productId=<product-id>"
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.bhinneka.com/products/sku\d+/.+\.aspx$", self.product_page_url)
+        m = re.match(r"^http://www.ulta.com/ulta/browse/productDetail.jsp?productId=.+\$", self.product_page_url)
 
         return not not m
 
@@ -30,9 +30,9 @@ class UltaScraper(Scraper):
         """
 
         try:
-            itemtype = self.tree_html.xpath('//div[@id="ctl00_content_divfound"]/@itemtype')[0].strip()
+            itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
-            if itemtype != "http://schema.org/Product":
+            if itemtype != "product":
                 raise Exception()
 
         except Exception:
@@ -47,7 +47,7 @@ class UltaScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
+        product_id = self.tree_html.xpath("//input[@id='pinProduct']/@value")[0].strip()
 
         return product_id
 
@@ -55,39 +55,16 @@ class UltaScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
+        return self.tree_html.xpath('//input[@id="pinDisplay"]/@value')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
+        return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//head/title/text()')[0].strip()
+        return self.tree_html.xpath('//meta[@name="title"]/@content')[0].strip()
 
     def _model(self):
-        return self.tree_html.xpath('//meta[@itemprop="model"]/@content')[0]
-
-    def _features(self):
-        feature_html_list = self.tree_html.xpath('//table[@class="spesifications"]//tr')
-
-        if not feature_html_list:
-            return None
-
-        features = []
-
-        for feature in feature_html_list:
-            feature_row = ''
-            feature_row += " ".join([x for x in feature.itertext()])
-            features.append(feature_row.strip())
-
-        return features
-
-    def _feature_count(self):
-        feature_html_list = self.tree_html.xpath('//table[@class="spesifications"]//tr')
-
-        if not feature_html_list:
-            return 0
-
-        return len(feature_html_list)
+        return self.tree_html.xpath('//input[@id="pinBrand"]/@value')[0].strip()
 
     def _description(self):
         items = self.tree_html.xpath('//div[@class="brdrTopSolid prodInfoSection"]//text()')
