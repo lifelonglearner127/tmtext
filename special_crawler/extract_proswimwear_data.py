@@ -155,7 +155,10 @@ class ProswimwearScraper(Scraper):
         image_url = self.tree_html.xpath("//div[contains(@class,'product-img-box')]//ul//li//img/@src")
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url) < 1:
-            return None
+            image_url = self.tree_html.xpath("//div[contains(@class,'product-img-box')]//img[@itemprop='image']/@src")
+            image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
+            if len(image_url) < 1:
+                return None
         return image_url
 
     def _image_count(self):
