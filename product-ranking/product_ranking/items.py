@@ -135,7 +135,7 @@ def scrapy_upc_serializer(value):
     :param value: int, str
     :return: str
     """
-    value = str(value)
+    value = unicode(value)
     if len(value) > 12 and value.startswith('0'):
         return '0' + value.lstrip('0')
     return value
