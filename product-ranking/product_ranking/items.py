@@ -133,7 +133,7 @@ def scrapy_upc_serializer(value):
         output (otherwise we'd have "can not serialize to JSON" error).
         `value` can be a string, number, or a `MarketplaceSeller` instance.
     :param value: int, str
-    :return: str
+    :return: unicode
     """
     value = unicode(value)
     if len(value) > 12 and value.startswith('0'):
