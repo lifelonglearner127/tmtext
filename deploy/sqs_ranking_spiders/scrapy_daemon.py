@@ -19,16 +19,7 @@ from boto.s3.key import Key
 import unidecode
 
 
-# TODO:
-# * ...
-
-
 # list of all available incoming SQS with tasks
-TASK_QUEUES_LIST = [
-    'sqs_ranking_spiders_tasks',  # production one
-    'sqs_ranking_spiders_tasks_dev',  # development one
-    'sqs_ranking_spiders_tasks_tests',  # test one
-]
 OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
 PROGRESS_QUEUE_NAME = 'sqs_ranking_spiders_progress'  # progress reports
 JOB_OUTPUT_PATH = '~/job_output'  # local dir
@@ -48,10 +39,12 @@ try:
     # try local mode (we're in the deploy dir)
     from sqs_ranking_spiders.remote_instance_starter import REPO_BASE_PATH,\
         logging, AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+    from sqs_ranking_spiders import QUEUES_LIST
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
         AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+    from repo.remote_instance_starter import QUEUES_LIST
 sys.path.insert(
     3, os.path.join(REPO_BASE_PATH, 'special_crawler', 'queue_handler'))
 from sqs_connect import SQS_Queue
@@ -432,7 +425,7 @@ def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
 def execute_task_from_sqs():
     set_global_variables_from_data_file()
     while 1:  # try to read from the queue until a new message arrives
-        TASK_QUEUE_NAME = random.choice(TASK_QUEUES_LIST)
+        TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])
         logger.info("Try to get task message from queue %s.",
                     TASK_QUEUE_NAME)
         if TEST_MODE:

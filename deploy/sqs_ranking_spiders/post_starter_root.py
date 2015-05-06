@@ -22,12 +22,17 @@ def mark_as_finished():
         fh.write('1')
 
 
+def _install_system_package(package):
+    os.system('apt-get install -y %s')
+
+
 def main():
     f = open('/tmp/check_file_post_starter_root_new', 'w')
     f.write('1')
     f.close()
     # put anything you want here...
-    pass
+    # install extra system packages
+    _install_system_package('tesseract-ocr')
 
 
 if __name__ == '__main__':

@@ -1144,21 +1144,6 @@ class WalmartScraper(Scraper):
 
         return seller_info
 
-    # extract nr of product reviews information from its product page
-    # ! may throw exception if not found
-    def _nr_reviews_new(self):
-        """Extracts total nr of reviews info for walmart product using page source
-        Works for new walmart page structure
-        Returns:
-            int containing total nr of reviews
-        """
-
-        nr_reviews_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
-            //p[@class='heading-e']/span[1]/text()")
-        nr_reviews = int(nr_reviews_str[0])
-
-        return nr_reviews
-
     # extract max review information from its product page tree
     # ! may return None if not found or no review
     def _max_review(self):
@@ -1238,17 +1223,6 @@ class WalmartScraper(Scraper):
         average_review = float(reviews_info_node.xpath("span[@itemprop='ratingValue']/text()")[0])
         return average_review
 
-    # ! may throw exception if not found
-    def _nr_reviews_old(self):
-        """Extracts total nr of reviews info for walmart product using page source
-        Works for old walmart page structure
-        Returns:
-            int containing total nr of reviews
-        """
-        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
-        nr_reviews = int(reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")[0])
-        return nr_reviews
-
     def _avg_review(self):
         """Extracts average review value for walmart product
         Works for both new and old walmart page structure
@@ -1280,14 +1254,26 @@ class WalmartScraper(Scraper):
 
         # assume new page structure
         # extractor function may throw exception if extraction failed
-        try:
-            nr_reviews = self._nr_reviews_new()
-        except Exception:
-            nr_reviews = None
 
-        # extractor for new page structure failed. try with old
-        if nr_reviews is None:
-            return self._nr_reviews_old()
+        nr_reviews = 0
+
+        if self._version() == "Walmart v1":
+            if not self.tree_html.xpath("//div[@id='BVReviewsContainer']"):
+                return 0
+
+            reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
+            nr_reviews = reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")
+
+            nr_reviews = int(nr_reviews[0])
+
+        if self._version() == "Walmart v2":
+            nr_reviews_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
+                //p[@class='heading-e']/span[1]/text()")
+
+            if not nr_reviews_str:
+                return 0
+
+            nr_reviews = int(nr_reviews_str[0])
 
         return nr_reviews
 

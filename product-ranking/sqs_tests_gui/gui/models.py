@@ -1,4 +1,13 @@
+import os
+import sys
+
 from django.db import models
+
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CWD,  '..', '..', '..',
+                             'deploy'))
+from sqs_ranking_spiders import QUEUES_LIST
 
 
 def get_data_filename(job):
@@ -21,6 +30,11 @@ def get_log_filename(job):
     if not isinstance(job, int):
         job = job.pk
     return '/%s/log.log' % job
+
+
+def _get_queue_names():
+    t = [[v, v] for v in QUEUES_LIST.values()]
+    return sorted(t, key=lambda v: 'test' in v[0], reverse=True)
 
 
 class Job(models.Model):
@@ -55,6 +69,12 @@ class Job(models.Model):
     branch_name = models.CharField(
         max_length=100, blank=True, null=True,
         help_text='Branch to use at the instance(s); leave blank for master'
+    )
+
+    input_queue = models.CharField(
+        max_length=100, choices=_get_queue_names(),
+        default=_get_queue_names()[0],
+        help_text='Use test or dev branch!'
     )
 
     created = models.DateTimeField(auto_now_add=True)

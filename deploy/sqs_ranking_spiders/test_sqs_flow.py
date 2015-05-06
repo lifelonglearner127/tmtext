@@ -13,9 +13,10 @@ import boto
 import boto.sqs
 from boto.s3.connection import S3Connection
 
-
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
+
+from sqs_ranking_spiders import QUEUES_LIST
 
 try:
     # try local mode (we're in the deploy dir)
@@ -183,7 +184,7 @@ def main_loop(flag):
         'test_best_seller_ranking': None
     }
     test_server_name = 'test_server'
-    test_queue_name = 'sqs_ranking_spiders_tasks_tests'
+    test_queue_name = QUEUES_LIST['test']
     local_data_file = '/tmp/_s3_data_file.zip'
     # create output 'queues' for this server
     _create_sqs_queue(test_server_name+'sqs_ranking_spiders_progress',

@@ -23,12 +23,20 @@ def mark_as_finished():
         fh.write('1')
 
 
+def _install_pip_package(package):
+    VENV_PYTHON = '/home/spiders/virtual_environment/bin/python'
+    PIP_PATH = '/usr/local/bin/pip'
+    os.system('%s %s install %s' % (VENV_PYTHON, PIP_PATH, package))
+
+
 def main():
     f = open('/tmp/check_file_post_starter_spiders', 'w')
     f.write('1')
     f.close()
     # put anything you want here...
-    pass
+    # add new PIP packages
+    _install_pip_package('Pillow')
+    _install_pip_package('pytesseract')
 
 
 if __name__ == '__main__':

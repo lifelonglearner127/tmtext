@@ -7,12 +7,10 @@ import ConfigParser
 from boto.sqs.message import Message
 import boto.sqs
 
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(1, os.path.join(CWD, '..'))
 
-TASK_QUEUES_LIST = {
-    'production': 'sqs_ranking_spiders_tasks',
-    'dev': 'sqs_ranking_spiders_tasks_dev',
-    'test': 'sqs_ranking_spiders_tasks_tests'
-}
+from sqs_ranking_spiders import QUEUES_LIST
 
 CREDENTIALS_FILE = '~/.sqs_credentials'  # u have to create it to test locally
 
@@ -27,7 +25,7 @@ def read_access_and_secret_keys(fname=CREDENTIALS_FILE):
             config.get('default', 'aws_secret_access_key')]
 
 
-def put_msg_to_sqs(message, queue_name=TASK_QUEUES_LIST['test']):
+def put_msg_to_sqs(message, queue_name=QUEUES_LIST['test']):
     conf = read_access_and_secret_keys()
     conn = boto.sqs.connect_to_region(
         "us-east-1",
