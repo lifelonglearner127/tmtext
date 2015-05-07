@@ -757,8 +757,13 @@ class WalmartScraper(Scraper):
             else:
                 ingredients_description = False
 
-            if long_description_start and not ingredients_description:
-                full_description += lxml.html.tostring(description_element)
+            if long_description_start:
+                if not ingredients_description:
+                    full_description += lxml.html.tostring(description_element)
+                else:
+                    sub_description = lxml.html.tostring(description_element)
+                    description_end_index = sub_description.find('<section class="product-about js-ingredients health-about">')
+                    full_description += sub_description[:description_end_index]
 
         if self.product_page_url[self.product_page_url.rfind("/") + 1:].isnumeric():
             url = "http://www.walmart-content.com/product/idml/emc/" + \
