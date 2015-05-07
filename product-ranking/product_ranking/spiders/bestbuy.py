@@ -20,7 +20,7 @@ class BestBuyProductSpider(ProductsSpider):
         super(BestBuyProductSpider, self).__init__(*args, **kwargs)
         self.url_formatter.defaults['page'] = 1
 
-    def _total_matches_from_html(self, response):
+    def _scrape_total_matches(self, response):
         matches = response.css('.ui-state-active [data-facet-value=All]::text')
         if not matches:
             return 0
