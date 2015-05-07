@@ -147,7 +147,7 @@ class AsdaProductsSpider(BaseProductsSpider):
             if pId and "search_term" in response.meta:
                 prod['url'] = self.PRODUCT_LINK % (
                     urllib.quote(response.meta["search_term"]), pId)
-            else:
+            elif "imageURL" in item:
                 prod["url"] = item['imageURL']
 
             prod['locale'] = "en-GB"
@@ -175,6 +175,7 @@ class AsdaProductsSpider(BaseProductsSpider):
         result = self._scrape_product_links(response)
         for p in result:
             for p2 in p:
-                if p2:
-                    del p2["search_term"]
+                if isinstance(p2, SiteProductItem):
+                    if "search_term" in p2:
+                        del p2["search_term"]
                     return SiteProductItem(dict(p2.items() + product.items()))
