@@ -73,9 +73,7 @@ class Job(models.Model):
     )
 
     mode = models.CharField(
-        max_length=100, choices=cache_choices,
-        default=cache_choices[0], help_text='Use test or dev branch!'
-    )
+        max_length=100, choices=cache_choices, default=cache_choices[0])
 
     created = models.DateTimeField(auto_now_add=True)
     finished = models.DateTimeField(blank=True, null=True)
