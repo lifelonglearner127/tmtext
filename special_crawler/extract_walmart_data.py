@@ -645,15 +645,20 @@ class WalmartScraper(Scraper):
                                                     "/div[contains(@class, 'js-ellipsis')]")
 
         short_description = ""
+        short_description_end_index = -1
+        sub_description = ""
 
         if description_elements:
             description_elements = description_elements[0]
 
             for description_element in description_elements:
-                if "<b>" in lxml.html.tostring(description_element):
+                sub_description = lxml.html.tostring(description_element)
+
+                if "<b>" in sub_description:
+                    short_description_end_index = sub_description.find("<b>")
                     break
 
-                if "<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element):
+                if "<ul>" in sub_description or "<dl>" in sub_description:
                     tree = html.fromstring(short_description)
                     innerText = tree.xpath("//text()")
 
@@ -662,7 +667,14 @@ class WalmartScraper(Scraper):
 
                     break
 
-                short_description += lxml.html.tostring(description_element)
+                short_description += sub_description
+
+            if short_description_end_index > 0:
+                short_description =sub_description[:short_description_end_index] + short_description
+
+            # if no short description, return the long description
+            if not short_description.strip():
+                return None
         else:
             # try to extract from old page structure - in case walmart is
             # returning an old type of page
@@ -745,11 +757,22 @@ class WalmartScraper(Scraper):
 
         long_description_start = False
         ingredients_description = False
+        long_description_start_index = -2
 
         for description_element in description_elements:
             if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
                     (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element))):
                 long_description_start = True
+
+                sub_description = lxml.html.tostring(description_element)
+
+                if long_description_start_index == -2:
+                    if "<b>" in lxml.html.tostring(description_element):
+                        long_description_start_index = sub_description.find("<b>")
+                    elif "<ul>" in lxml.html.tostring(description_element):
+                        long_description_start_index = sub_description.find("<ul>")
+                    elif "<dl>" in lxml.html.tostring(description_element):
+                        long_description_start_index = sub_description.find("<dl>")
 
             if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
                     lxml.html.tostring(description_element):
@@ -758,10 +781,15 @@ class WalmartScraper(Scraper):
                 ingredients_description = False
 
             if long_description_start:
+                sub_description = lxml.html.tostring(description_element)
+
                 if not ingredients_description:
-                    full_description += lxml.html.tostring(description_element)
+                    if long_description_start_index > 0:
+                        full_description += sub_description[long_description_start_index:]
+                        long_description_start_index = -1
+                    else:
+                        full_description += sub_description
                 else:
-                    sub_description = lxml.html.tostring(description_element)
                     description_start_index = sub_description.find('<section class="product-about js-ingredients health-about">')
                     description_end_index = sub_description.find("</section>", description_start_index) + 10
                     full_description += (sub_description[:description_start_index] + sub_description[description_end_index:])
