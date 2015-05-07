@@ -42,6 +42,7 @@ AMAZON_SES_KEY = "AKIAIB35OIAQMWDZ45GA"
 AMAZON_SES_SECRET = "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"
 AMAZON_SES_TO_ADDRESSES = [
     'Klaus Hoffmann <klaus.gehoffmann@gmail.com>',
+    'Content Analytics Support Team<support@contentanalyticsinc.com>',
 ]
 AMAZON_SES_BCC_ADDRESSES = []
 AUTO_TEST_POSTGRES_DB_CONN_STR = "dbname='page_ranking_auto_test' user='pruser' host='52.1.13.180' password='password'"

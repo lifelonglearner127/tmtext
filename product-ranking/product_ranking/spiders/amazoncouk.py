@@ -9,8 +9,28 @@ from scrapy.selector import Selector
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
+from product_ranking.validation import BaseValidator
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
+
+
+class AmazoncoukValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['model', 'brand', 'description', 'price']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'buyer_reviews', 'google_source_site'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = False  # ... duplicated requests?
+    ignore_log_filtered = False  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_fou'
+        'nd_123': 0,
+        'iphone 9': [200, 800],  # spider should return from 200 to 800 products
+        'a': [200, 800], 'b': [200, 800], 'c': [200, 800], 'd': [200, 800],
+        'e': [200, 800], 'f': [200, 800], 'g': [200, 800],
+    }
 
 
 class AmazonCoUkProductsSpider(BaseProductsSpider):
@@ -21,6 +41,8 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
     SEARCH_URL = ("http://www.amazon.co.uk/s/ref=nb_sb_noss?"
                   "url=search-alias=aps&field-keywords={search_term}&rh=i:aps,"
                   "k:{search_term}&ajr=0")
+
+    settings = AmazoncoukValidatorSettings
 
     def __init__(self, *args, **kwargs):
         # locations = settings.get('AMAZONFRESH_LOCATION')
