@@ -550,7 +550,7 @@ class WalmartScraper(Scraper):
         b = requests.adapters.HTTPAdapter(max_retries=3)
         s.mount('http://', a)
         s.mount('https://', b)
-        content = s.get(request_url, timeout=5).text.decode('string-escape')
+        content = s.get(request_url, timeout=5).text
 
         try:
             reviews_count = re.findall(r"BVRRNonZeroCount\\\"><span class=\\\"BVRRNumber\\\">([0-9,]+)<", content)[0]
