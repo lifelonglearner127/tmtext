@@ -26,7 +26,11 @@ class Simmetrica(object):
     """
 
     def __init__(self, *args, **kwargs):
-        self.db = redis.StrictRedis(host='localhost', port=6379, db=0)
+        self.db = redis.StrictRedis(
+            host='sqs-cache.4a6nml.0001.use1.cache.amazonaws.com',
+            port=6379
+        )
+        # self.db = redis.StrictRedis(host='localhost', port=6379, db=0)
         self.CWD = os.path.dirname(os.path.abspath(__file__))
 
     def total_resp_in_cache(self):
