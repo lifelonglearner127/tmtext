@@ -654,23 +654,28 @@ class WalmartScraper(Scraper):
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
 
-                if "<b>" in sub_description:
-                    short_description_end_index = sub_description.find("<b>")
-                    break
-
-                if "<ul>" in sub_description or "<dl>" in sub_description:
+                if "<b>" in sub_description or "<ul>" in sub_description or "<dl>" in sub_description or "<li>" in sub_description:
                     tree = html.fromstring(short_description)
                     innerText = tree.xpath("//text()")
 
                     if not innerText:
                         short_description = ""
 
+                    if "<b>" in sub_description:
+                        short_description_end_index = sub_description.find("<b>")
+                    elif "<ul>" in sub_description:
+                        short_description_end_index = sub_description.find("<ul>")
+                    elif "<dl>" in sub_description:
+                        short_description_end_index = sub_description.find("<dl>")
+                    elif "<li>" in sub_description:
+                        short_description_end_index = sub_description.find("<li>")
+
                     break
 
                 short_description += sub_description
 
             if short_description_end_index > 0:
-                short_description =sub_description[:short_description_end_index] + short_description
+                short_description = sub_description[:short_description_end_index] + short_description
 
             # if no short description, return the long description
             if not short_description.strip():
@@ -761,7 +766,7 @@ class WalmartScraper(Scraper):
 
         for description_element in description_elements:
             if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
-                    (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element))):
+                    (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element) or "<li>" in lxml.html.tostring(description_element))):
                 long_description_start = True
 
                 sub_description = lxml.html.tostring(description_element)
@@ -773,6 +778,8 @@ class WalmartScraper(Scraper):
                         long_description_start_index = sub_description.find("<ul>")
                     elif "<dl>" in lxml.html.tostring(description_element):
                         long_description_start_index = sub_description.find("<dl>")
+                    elif "<li>" in lxml.html.tostring(description_element):
+                        long_description_start_index = sub_description.find("<li>")
 
             if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
                     lxml.html.tostring(description_element):
