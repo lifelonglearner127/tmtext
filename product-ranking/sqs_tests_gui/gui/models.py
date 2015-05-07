@@ -9,6 +9,8 @@ sys.path.append(os.path.join(CWD,  '..', '..', '..',
                              'deploy'))
 from sqs_ranking_spiders import QUEUES_LIST
 
+import settings
+
 
 def get_data_filename(job):
     """ Returns local job filename relative to MEDIA """
@@ -32,12 +34,11 @@ def get_log_filename(job):
     return '/%s/log.log' % job
 
 
-def _get_queue_names():
-    t = [[v, v] for v in QUEUES_LIST.values()]
-    return sorted(t, key=lambda v: 'test' in v[0], reverse=True)
-
-
 class Job(models.Model):
+    cache_choices = (
+        ('no cache', 'no cache'), ('cache', 'cache')
+    )
+
     _status_choices = [
         ('created', 'created'),
         ('pushed into sqs', 'pushed into sqs'),
@@ -71,10 +72,9 @@ class Job(models.Model):
         help_text='Branch to use at the instance(s); leave blank for master'
     )
 
-    input_queue = models.CharField(
-        max_length=100, choices=_get_queue_names(),
-        default=_get_queue_names()[0],
-        help_text='Use test or dev branch!'
+    mode = models.CharField(
+        max_length=100, choices=cache_choices,
+        default=cache_choices[0], help_text='Use test or dev branch!'
     )
 
     created = models.DateTimeField(auto_now_add=True)
@@ -87,3 +87,10 @@ class Job(models.Model):
         return ('SearchTerm [%s]' % self.search_term if self.search_term
                 else 'URL')
     searchterm_or_url.short_description = 'Type'
+
+    def get_input_queue(self):
+        if self.mode == 'no cache':
+            return settings.TEST_QUEUE
+        elif self.mode == 'cache':
+            return settings.TEST_CACHE_QUEUE
+

@@ -12,8 +12,12 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import sys
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(BASE_DIR, '..', '..', 'deploy'))
+from sqs_ranking_spiders import QUEUES_LIST
+from cache_layer import CACHE_QUEUES_LIST
 
 
 # Quick-start development settings - unsuitable for production
@@ -49,7 +53,6 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
@@ -156,6 +159,9 @@ LOGGING = {
         },
     },
 }
+
+TEST_QUEUE = QUEUES_LIST['test']
+TEST_CACHE_QUEUE = CACHE_QUEUES_LIST['test']
 
 
 #TODO: nginx http AUTH
