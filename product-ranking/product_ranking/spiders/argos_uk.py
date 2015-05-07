@@ -84,10 +84,22 @@ class ArgosUKProductsSpider(BaseProductsSpider):
             return 0
         if len(response.css('.noresultscontent')):
             return 0
-        return int(
-            re.search('\d+', response.css(
-                '.extrainfo.totalresults::text').extract()[0]).group()
-        )
+        total = is_empty(re.findall('\d+', is_empty(
+                response.xpath(
+                    '//div[@id="categorylist"]/h2/span/text()').extract(),
+                ""
+            )
+        ))
+        if not total:
+            total = is_empty(re.findall('\d+', is_empty(
+                    response.css(
+                      '.extrainfo.totalresults::text').extract(),
+                    ""
+                )
+            ))
+        if total:
+            return int(total)
+        return 0
 
     def _scrape_next_results_page_link_old(self, response):
         """Deprecated _scrape_next_results_page_link.
@@ -137,18 +149,18 @@ class ArgosUKProductsSpider(BaseProductsSpider):
             if brand:
                 product['brand'] = brand
         if product.get('price') is None:
-            currency = is_empty(response.xpath(
-              '//abbr[contains(@class, "currency")]/@title').extract(), "GBP")
+            currency = response.css('.currency::text').extract()[0]
             price = re.search(
-                '\d+', 
-                is_empty(response.css('.actualprice .price::text').extract()),
+                '\d+', response.css('.actualprice .price::text').extract()[0]
             ).group()
-
+            cond_set_value(product, 'price', currency + price)
+        if not u'£' in product.get('price', ''):
+            self.log('Invalid price at: %s' % response.url, level=ERROR)
+        else:
             product['price'] = Price(
-                price=price.strip(),
-                priceCurrency=currency,
+                price=product['price'].replace(u'£', '').strip(),
+                priceCurrency='GBP'
             )
-
         cond_set(
             product, 'image_url',
             response.css('#mainimage.photo::attr(src)').extract(),
