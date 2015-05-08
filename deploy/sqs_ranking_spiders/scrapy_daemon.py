@@ -17,6 +17,7 @@ from subprocess import Popen, PIPE
 import boto
 from boto.s3.key import Key
 import unidecode
+from boto.utils import get_instance_metadata
 
 
 # list of all available incoming SQS with tasks
@@ -423,6 +424,11 @@ def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
         time.sleep(sleep_time)
 
 def execute_task_from_sqs():
+    instance_meta = get_instance_metadata()
+    inst_ip = instance_meta.get('public-ipv4')
+    inst_id = instance_meta.get('instance-id')
+    logger.info("IMPORTANT: ip: %s, instance id: %s", inst_ip, inst_id)
+
     set_global_variables_from_data_file()
     while 1:  # try to read from the queue until a new message arrives
         TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])
