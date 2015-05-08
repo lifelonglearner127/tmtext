@@ -34,13 +34,15 @@ def list_amazon_bucket(bucket=AMAZON_BUCKET_NAME,
             fh.write(str(f)+'\n')
 
 
-def get_filenames_for_task_id(task_id, local_fname=LOCAL_AMAZON_LIST_CACHE):
+def get_filenames_for_task_id(task_id, server_name,
+                              local_fname=LOCAL_AMAZON_LIST_CACHE):
+    slug_server_name = scrapy_daemon.slugify(server_name)
     with open(local_fname, 'r') as fh:
         for line in fh:
             line = line.strip()
             if not line:
                 continue
-            if '____%s____' % task_id in line:
+            if '____%s--%s____' % (slug_server_name, task_id) in line:
                 if ',' in line:
                     line = line.split(',')[-1]
                 line = line.replace('<', '').replace('>', '')
@@ -68,7 +70,8 @@ class Command(BaseCommand):
             list_amazon_bucket()  # get list of files from S3
         for job in jobs:
             # try to find the appropriate S3 file by task ID
-            amazon_fnames = get_filenames_for_task_id(job.task_id)
+            amazon_fnames = get_filenames_for_task_id(job.task_id,
+                                                      job.server_name)
             if not isinstance(amazon_fnames, (list, tuple)):  # generator?
                 amazon_fnames = list(amazon_fnames)
             amazon_data_file = [f for f in amazon_fnames if '.csv' in f]
