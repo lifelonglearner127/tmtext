@@ -12,6 +12,7 @@ import time
 import zipfile
 import codecs
 import csv
+import string
 from subprocess import Popen, PIPE
 
 import boto
@@ -60,6 +61,22 @@ FOLDERS_PATH = None
 
 CONVERT_TO_CSV = True
 
+
+def slugify(s):
+    output = ''
+    for symbol in s:
+        if symbol.lower() not in string.lowercase and not \
+                symbol.lower() in string.digits:
+            output += '-'
+        else:
+            output += symbol
+    output = output.replace(' ', '-')
+    while '--' in output:
+        # to avoid reserved double-minus chars
+        output = output.replace('--', '-')
+    return output
+
+
 def set_global_variables_from_data_file():
     try:
         json_data = load_data_from_hash_datestamp_data()
@@ -87,10 +104,12 @@ def job_to_fname(metadata):
     if isinstance(searchterms_str, (str, unicode)):
         searchterms_str = searchterms_str.decode('utf8')
     # job_name = datetime.datetime.utcnow().strftime('%d-%m-%Y')
-    job_name = DATESTAMP + '____' + RANDOM_HASH
+    server_name = metadata['server_name']
+    server_name = slugify(server_name)
+    job_name = DATESTAMP + '____' + RANDOM_HASH + '____' + server_name + '--'
     task_id = metadata.get('task_id', metadata.get('task', None))
     if task_id:
-        job_name += '____' + str(task_id)
+        job_name += str(task_id)
     if searchterms_str:
         additional_part = unidecode.unidecode(
             searchterms_str).replace(' ', '-')
