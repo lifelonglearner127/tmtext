@@ -18,6 +18,9 @@ class FamousfootwearauProductsSpider(BaseProductsSpider):
 
     DEFAULT_CURRENCY = u'AUD'
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         def full_url(url):
             return urlparse.urljoin(response.url, url)
