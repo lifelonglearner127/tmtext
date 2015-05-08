@@ -544,6 +544,7 @@ class WalmartScraper(Scraper):
         """
 
         request_url = self.BASE_URL_REVIEWSREQ.format(self._extract_product_id())
+#        content = urllib.urlopen(request_url).read()
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=3)
         b = requests.adapters.HTTPAdapter(max_retries=3)
