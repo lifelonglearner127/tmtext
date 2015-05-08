@@ -149,8 +149,8 @@ def stop_if_required(inst_ip, inst_id):
     proc = mp.Process(target=os.system, args=(run_cmd,))
     proc.start()
     checker = 0
-    # it will give 30 second to downloads logs.
-    while checker < 30:
+    # it will give 60 seconds to downloads logs.
+    while checker < 60:
         if proc.is_alive():
             checker += 1
             time.sleep(1)
@@ -167,6 +167,8 @@ def stop_if_required(inst_ip, inst_id):
     if flag:
         if reason == 'No logs exist':
             return True
+        if reason == 'Task was finished':
+            time.sleep(30)
         teminate_instance_and_log_it(inst_ip, inst_id, reason)
     else:
         return check_is_scrapy_daemon_not_running(ssh_key, inst_ip)
@@ -176,9 +178,9 @@ def update_unresponded_dict_or_terminate_instance(inst_ip, inst_id,
                                                   unresponded):
     if inst_id in unresponded.keys():
         last_time = unresponded[inst_id][1]
-        # if instance not responded for 15 minutes already
-        if time.time() - int(last_time) > 15*60:
-            reason = "Instance not respond for 15 minutes or "\
+        # if instance not responded for 32 minutes already
+        if time.time() - int(last_time) > 32*60:
+            reason = "Instance not respond for 32 minutes or "\
                      "failed to downoald logs"
             teminate_instance_and_log_it(
                 inst_ip,
