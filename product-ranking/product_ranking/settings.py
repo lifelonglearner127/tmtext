@@ -51,11 +51,22 @@ AUTO_TEST_POSTGRES_DB_CONN_STR = "dbname='page_ranking_auto_test' user='pruser' 
 # The piece of code below is awful, need to get rid of it asap.
 # I have warned you. Better don't look there at all.
 import sys
+import os
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+
 _args_names = [arg.split('=')[0] if '=' in arg else arg for arg in sys.argv]
 if 'validate' in _args_names:
     ITEM_PIPELINES = {
         'product_ranking.validation.ValidatorPipeline': 100,
     }
+
+if 'enable_cache' in _args_names:
+    HTTPCACHE_ENABLED = True
+    HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.DummyPolicy'
+    HTTPCACHE_STORAGE = 'scrapy.contrib.httpcache.FilesystemCacheStorage'
+    HTTPCACHE_EXPIRATION_SECS = 0  # forever
+    HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_cache')
 
 try:
     from settings_local import *
