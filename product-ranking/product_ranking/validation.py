@@ -370,11 +370,11 @@ class BaseValidator(object):
     def _validate_price(self, val):
         if not bool(val.strip()):  # empty
             return False
-        if len(val.strip()) > 10:  # too long
-            return False
-        if val.strip().count(u' ') > 1:  # too many spaces
+        if len(val.strip()) > 50:  # too long
             return False
         if '<' in val or '>' in val:  # no tags
+            return False
+        if not re.match(r'Price\(priceCurrency=\w{2,3}, price=[\d.]{1,15}\)$', val):
             return False
         return True
 
@@ -401,9 +401,9 @@ class BaseValidator(object):
     def _validate_title(self, val):
         if not bool(val.strip()):  # empty
             return False
-        if len(val.strip()) > 150:  # too long
+        if len(val.strip()) > 300:  # too long
             return False
-        if val.strip().count(u' ') > 25:  # too many spaces
+        if val.strip().count(u' ') > 50:  # too many spaces
             return False
         if '<' in val or '>' in val:  # no tags
             return False
