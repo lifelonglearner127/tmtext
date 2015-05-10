@@ -18,7 +18,6 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
-    cond_set_value
 from product_ranking.validation import BaseValidator
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"

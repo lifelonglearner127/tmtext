@@ -19,8 +19,6 @@ from product_ranking.items import (SiteProductItem, RelatedProduct,
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
-
-    cond_set, cond_set_value
 from product_ranking.validation import BaseValidator
 
 is_empty = lambda x: x[0] if x else ""
