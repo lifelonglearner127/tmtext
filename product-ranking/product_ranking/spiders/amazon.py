@@ -359,6 +359,17 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         return result
 
+    def _validate_url(self, val):
+        if not bool(val.strip()):  # empty
+            return False
+        if len(val.strip()) > 1500:  # too long
+            return False
+        if val.strip().count(u' ') > 5:  # too many spaces
+            return False
+        if not val.strip().lower().startswith('http'):
+            return False
+        return True
+
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
