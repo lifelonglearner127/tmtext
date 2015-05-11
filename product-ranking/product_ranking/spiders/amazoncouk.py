@@ -18,6 +18,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
+from product_ranking.validation import BaseValidator
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
@@ -48,6 +49,26 @@ except ImportError as e:
             return None
     CaptchaBreakerWrapper = FakeCaptchaBreaker
 
+
+class AmazoncoukValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['model', 'brand', 'description', 'price']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'buyer_reviews', 'google_source_site'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = False  # ... duplicated requests?
+    ignore_log_filtered = False  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_fou'
+        'nd_123': 0,
+        'iphone 9': [200, 800],  # spider should return from 200 to 800 products
+        'a': [200, 800], 'b': [200, 800], 'c': [200, 800], 'd': [200, 800],
+        'e': [200, 800], 'f': [200, 800], 'g': [200, 800],
+    }
+
+
 class AmazonCoUkProductsSpider(BaseProductsSpider):
     name = "amazoncouk_products"
     allowed_domains = ["www.amazon.co.uk"]
@@ -59,7 +80,11 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
     _cbw = CaptchaBreakerWrapper()
 
-    def __init__(self, captcha_retries='10', *args, **kwargs):
+    settings = AmazoncoukValidatorSettings
+
+    def __init__(self, captcha_retries='10',*args, **kwargs):
+        # locations = settings.get('AMAZONFRESH_LOCATION')
+        # loc = locations.get(location, '')
         super(AmazonCoUkProductsSpider, self).__init__(*args, **kwargs)
 
         self.mtp_class = Amazon_marketplace(self)
