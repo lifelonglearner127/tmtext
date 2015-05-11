@@ -35,11 +35,11 @@
     <field name="review_count" version="1.1"></field>
     <field name="average_review" version="1.1"></field>
     <field name="max_review" version="1.1"></field>
-    <field name="min_review" version="1.1"></field>
+    <field name="min_review" version="2.1"></field>
     <field name="reviews" version="1.1"></field>
-    <field name="video_count" version="1.1"></field>
+    <field name="video_count" version="3.1"></field>
     <field name="video_urls" version="1.1"></field>
-    <field name="wc_360" version="1.1"></field>
+    <field name="wc_360" version="3.1"></field>
     <field name="wc_emc" version="1.1"></field>
     <field name="wc_pdf" version="1.1"></field>
     <field name="wc_prodtour" version="1.1"></field>
