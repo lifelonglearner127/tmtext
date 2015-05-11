@@ -75,6 +75,14 @@ class EBuyerProductSpider(BaseProductsSpider):
                 meta={'search_term': st, 'remaining': self.quantity},
             )
 
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod['url'] = self.product_url
+            yield Request(self.product_url,
+                          self._parse_single_product,
+                          meta={'product': prod})
+
     def sort_handling(self, response):
         parsed = urlparse.urlparse(response.url)
         qs = urlparse.parse_qs(parsed.query)
@@ -116,6 +124,9 @@ class EBuyerProductSpider(BaseProductsSpider):
             return urlparse.urljoin(response.url, next_url)
         else:
             return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
 
     def parse_product(self, response):
         prod = response.meta['product']
