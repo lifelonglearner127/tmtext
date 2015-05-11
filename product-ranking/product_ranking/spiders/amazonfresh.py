@@ -94,10 +94,7 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
                 )
 
         seller_all = response.xpath('//div[@class="messaging"]/p/strong/a')
-        print('-'*50)
-        print prod["ranking"]
-        print seller_all
-        print('-'*50)
+
         if seller_all:
             seller = seller_all.xpath('text()').extract()
             other_products = seller_all.xpath('@href').extract()
@@ -180,3 +177,6 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
         if links:
             return links.extract()[0].strip()
         return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
