@@ -55,9 +55,14 @@ class GapProductsSpider(BaseProductsSpider):
             return
 
         if not product.get("price"):
-            price = is_empty(response.xpath(
-                "//div[@id='tabWindow']/noscript").extract(), "")
-            price = is_empty(re.findall("\d+\.\d+", price[0]))
+            price = is_empty(
+                response.xpath(
+                    "//span[@id='priceText']/text() |" \
+                    "//div[@id='tabWindow']/noscript"
+                ).extract(),
+                ""
+            )
+            price = is_empty(re.findall("\d+\.\d+", price)[::-1])
             if price:
                 product["price"] = Price(price=price, priceCurrency="USD")
 
