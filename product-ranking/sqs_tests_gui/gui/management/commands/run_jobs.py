@@ -40,7 +40,7 @@ class Command(BaseCommand):
                 msg['with_best_seller_ranking'] = True
             if job.branch_name:
                 msg['branch_name'] = job.branch_name
-            put_msg_to_sqs(msg, job.input_queue)
+            put_msg_to_sqs(msg, job.get_input_queue())
             job.status = 'pushed into sqs'
             job.save()
 

@@ -20,6 +20,9 @@ class BolProductsSpider(BaseProductsSpider):
         "{search_term}/N/0/Nty/1/search/true/searchType/qck/sc/media_all/" \
         "index.html"
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         product = response.meta['product']
         cond_set(product, 'brand', response.xpath(

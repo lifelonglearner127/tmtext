@@ -39,6 +39,9 @@ class HomedepotProductsSpider(BaseProductsSpider):
             *args,
             **kwargs)
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         product = response.meta['product']
 
@@ -125,6 +128,10 @@ class HomedepotProductsSpider(BaseProductsSpider):
 
     def _gen_variants_requests(self, response, product, skus):
         reqs = []
+        print('+'*50)
+        print skus
+        print('+'*50)
+
         for _, sku in skus:
             new_product = product.copy()
             new_product['upc'] = sku
@@ -222,8 +229,8 @@ class HomedepotProductsSpider(BaseProductsSpider):
             # No further pages were found.
             return product
 
-        jsdata = json.loads(response.body_as_unicode())
         try:
+            jsdata = json.loads(response.body_as_unicode())
             storeskus = jsdata['storeSkus']
             price = storeskus['storeSku']['pricing']['originalPrice']
             product['price'] = price
@@ -255,7 +262,7 @@ class HomedepotProductsSpider(BaseProductsSpider):
                           if el['name'] == attrname]
             if colornames:
                 product['model'] = colornames[0]
-        except (KeyError, IndexError):
+        except (ValueError, KeyError, IndexError):
             self.log("Failed to parse SKU details.", DEBUG)
 
         return product
@@ -281,7 +288,7 @@ class HomedepotProductsSpider(BaseProductsSpider):
         links = response.xpath(
             "//div[contains(@class,'product') "
             "and contains(@class,'plp-grid')]"
-            "/descendant::a[@class='item_description']/@href").extract()
+            "//descendant::a[contains(@class, 'item_description')]/@href").extract()
 
         if not links:
             self.log("Found no product links.", DEBUG)

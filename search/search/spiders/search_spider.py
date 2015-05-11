@@ -772,7 +772,12 @@ class SearchSpider(BaseSpider):
         else:
             product_model = None
 
-        return (product_name, product_model, product_price, None)
+        upc = None
+        product_upc_holder = hxs.select("//meta[@itemprop='productID']/@content").extract()
+        if product_upc_holder:
+            upc = product_upc_holder[0].strip()
+
+        return (product_name, product_model, product_price, upc)
 
 #TODO: for the sites below, complete with missing logic, for not returning empty elements in manufacturer spider
     def parseURL_newegg(self, hxs):

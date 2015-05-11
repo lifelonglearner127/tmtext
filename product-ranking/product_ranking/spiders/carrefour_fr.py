@@ -3,6 +3,7 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
+import re
 import string
 
 from scrapy.log import ERROR, DEBUG
@@ -17,6 +18,9 @@ class CarrefourProductsSpider(BaseProductsSpider):
     start_urls = []
 
     SEARCH_URL = 'http://www.carrefour.fr/search/site/--{search_term}/100'
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
 
     def _scrape_product_links(self, response):
         products = response.xpath('//ol[contains(@class, "search-results")]'
@@ -135,4 +139,38 @@ class CarrefourProductsSpider(BaseProductsSpider):
                 u'Voir la fiche technique complète du produit</a>', ''
             )
 
+        if not product.get("title"):
+            cond_set(
+                product,
+                'title',
+                response.css('h1.page-title span::text').extract(),
+                conv=string.strip,
+            )
+
+        if not product.get("locale"):
+            cond_set(
+                product,
+                'locale',
+                response.xpath('//html/@lang').extract(),
+                conv=string.strip,
+            )
+
+        if not product.get("price"):
+            cond_set(
+                product,
+                'price',
+                response.css('div p strong::text').re('(\d.+)'),
+            )
+            if product.get('price', None):
+                if not '€' in product['price']:
+                    self.log('Unknown currency at' % response.url)
+                else:
+                    product['price'] = Price(
+                        price=str(product['price'].replace(
+                            "\xa0", "").replace(
+                            ',', '.').replace(
+                            '€', '').strip()),
+                        priceCurrency='EUR'
+                    )
+                    
         return product
