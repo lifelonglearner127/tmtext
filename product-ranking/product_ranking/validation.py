@@ -10,7 +10,6 @@ from pprint import pprint
 from collections import OrderedDict
 import logging
 import time
-import psycopg2
 import datetime
 from boto import ses
 
@@ -83,37 +82,6 @@ def _on_spider_close(spider, reason):
             to_addresses=settings.AMAZON_SES_TO_ADDRESSES,
             bcc_addresses=settings.AMAZON_SES_BCC_ADDRESSES
         )
-
-        # insert to postgres db
-        try:
-            conn = psycopg2.connect(
-                settings.AUTO_TEST_POSTGRES_DB_CONN_STR
-            )
-        except:
-            print "Auto test module can't " \
-                  "connect to the database."
-            return
-
-        cur = conn.cursor()
-
-        query = """INSERT INTO issue_report VALUES (
-            %(spider_name)s, %(timestamp)s, %(field_name)s,
-            %(field_issue)s, %(is_email_sent)s)"""
-        now = datetime.datetime.now()
-        rows = []
-        for k,v in validation_errors.items():
-            row = {
-                'spider_name': spider.name,
-                'timestamp': now,
-                'field_name': k,
-                'field_issue': v,
-                'is_email_sent': "1"
-            }
-            rows.append(row)
-        rows = tuple(rows)
-        cur.executemany(query, rows)
-        conn.commit()
-        conn.close()
     else:
         print bcolors.OKGREEN
         print 'NO ISSUES FOUND'
