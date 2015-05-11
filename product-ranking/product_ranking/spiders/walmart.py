@@ -296,6 +296,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             product['is_in_store_only'] = True
 
         if not product.get('price'):
+            cond_set_value(product, 'url', response.url)
             return self._gen_location_request(response)
         return self._start_related(response)
 
