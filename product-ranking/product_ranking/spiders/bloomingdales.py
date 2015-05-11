@@ -91,10 +91,20 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
             *args,
             **kwargs)
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def start_requests(self):
         for request in super(BloomingdalesProductsSpider, self).start_requests():
             request.meta['dont_redirect'] = True
             request.meta['handle_httpstatus_list'] = [302, 301]
+            if self.product_url:
+                prod = SiteProductItem()
+                prod['is_single_result'] = True
+                prod['url'] = self.product_url
+                yield Request(self.product_url,
+                              self._parse_single_product,
+                              meta={'product': prod})
             yield request.replace(callback=self.start1)
 
     def start1(self, response):
@@ -168,6 +178,8 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
                 try:
                     brand = jdata['productThumbnail']['brand']
                 except KeyError:
+                    brand = None
+                except TypeError:
                     brand = None
                 if brand:
                     cond_set_value(product, 'brand', brand)
@@ -281,7 +293,7 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
 
         new_meta = response.meta.copy()
         new_meta['relation'] = relation
-        new_meta['handle_httpstatus_list'] = [404]
+        new_meta['handle_httpstatus_list'] = [404, 415]
         new_meta['follow'] = follow
         req = Request(
             url, body=urllib.urlencode(body),

@@ -19,7 +19,7 @@ from product_ranking.items import (SiteProductItem, RelatedProduct,
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
-
+from product_ranking.validation import BaseValidator
 
 is_empty = lambda x: x[0] if x else ""
 
@@ -27,6 +27,25 @@ is_empty = lambda x: x[0] if x else ""
 def get_string_from_html(xp, link):
     loc = is_empty(link.xpath(xp).extract())
     return Selector(text=loc).xpath('string()').extract()
+
+
+class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['model', 'brand', 'description', 'price']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'buyer_reviews', 'google_source_site'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = False  # ... duplicated requests?
+    ignore_log_filtered = False  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_fou'
+        'nd_123': 0,
+        'iphone 9': [200, 800],  # spider should return from 200 to 800 products
+        'a': [200, 800], 'b': [200, 800], 'c': [200, 800], 'd': [200, 800],
+        'e': [200, 800], 'f': [200, 800], 'g': [200, 800],
+    }
 
 
 class WalmartProductsSpider(BaseProductsSpider):
@@ -66,13 +85,14 @@ class WalmartProductsSpider(BaseProductsSpider):
         'rating': 'rating_high',
     }
 
+    settings = WalmartValidatorSettings
+
     sponsored_links = []
 
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
     user_agent = 'default'
-
 
     def __init__(self, search_sort='best_match', zipcode='94117',
                  *args, **kwargs):
@@ -276,6 +296,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             product['is_in_store_only'] = True
 
         if not product.get('price'):
+            cond_set_value(product, 'url', response.url)
             return self._gen_location_request(response)
         return self._start_related(response)
 

@@ -72,6 +72,8 @@ class CvsProductsSpider(BaseProductsSpider):
                 desc, = descs.extract()
                 self._set_brand(product, desc, brands)
 
+        if 'brand' not in product and 'is_single_result' in product:
+            cond_set(product, 'brand', ['NOT RECOGNIZED FOR REQUEST BY URL.'])
         image_url = response.xpath(
             "//div[@class='productImage']/img/@src").extract()[0]
         product['image_url'] = urlparse.urljoin(response.url, image_url)
@@ -175,3 +177,6 @@ class CvsProductsSpider(BaseProductsSpider):
                 query=urllib.urlencode(query_string, True))
             link = urlparse.urlunsplit(url_parts)
         return link
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

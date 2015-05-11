@@ -305,3 +305,7 @@ class PeapodProductsSpider(BaseProductsSpider):
         if next_link:
             return next_link[0]
         return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+

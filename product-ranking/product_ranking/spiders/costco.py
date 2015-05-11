@@ -20,6 +20,9 @@ class CostcoProductsSpider(BaseProductsSpider):
 
     DEFAULT_CURRENCY = u'USD'
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         prod = response.meta['product']
 

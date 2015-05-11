@@ -250,3 +250,6 @@ class CurrysUkProductsSpider(ProductsSpider):
         scores = map(float, filter(unicode.isdigit,
                                    response.css(css).extract()))
         populate_reviews(response, scores)
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

@@ -15,6 +15,7 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
+from product_ranking.validation import BaseValidator
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
@@ -42,7 +43,26 @@ except ImportError as e:
     CaptchaBreakerWrapper = FakeCaptchaBreaker
 
 
-class AmazonProductsSpider(BaseProductsSpider):
+class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['model', 'brand', 'price', 'bestseller_rank']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'buyer_reviews', 'google_source_site', 'description'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = False  # ... duplicated requests?
+    ignore_log_filtered = False  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_fou'
+        'nd_123': 0,
+        'iphone 9': [200, 800],  # spider should return from 200 to 800 products
+        'a': [200, 800], 'b': [200, 800], 'c': [200, 800], 'd': [200, 800],
+        'e': [200, 800], 'f': [200, 800], 'g': [200, 800],
+    }
+
+
+class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'amazon_products'
     allowed_domains = ["amazon.com"]
 
@@ -51,6 +71,8 @@ class AmazonProductsSpider(BaseProductsSpider):
 
     SEARCH_URL = ('http://www.amazon.com/s/ref=nb_sb_noss_1?url=search-alias'
                   '%3Daps&field-keywords={search_term}')
+
+    settings = AmazonValidatorSettings
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
@@ -606,6 +628,17 @@ class AmazonProductsSpider(BaseProductsSpider):
                 meta=meta)
 
         return result
+
+    def _validate_url(self, val):
+        if not bool(val.strip()):  # empty
+            return False
+        if len(val.strip()) > 1500:  # too long
+            return False
+        if val.strip().count(u' ') > 5:  # too many spaces
+            return False
+        if not val.strip().lower().startswith('http'):
+            return False
+        return True
 
     def _parse_single_product(self, response):
         return self.parse_product(response)

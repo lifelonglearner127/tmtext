@@ -12,11 +12,13 @@ import time
 import zipfile
 import codecs
 import csv
+import string
 from subprocess import Popen, PIPE
 
 import boto
 from boto.s3.key import Key
 import unidecode
+from boto.utils import get_instance_metadata
 
 
 # list of all available incoming SQS with tasks
@@ -59,6 +61,22 @@ FOLDERS_PATH = None
 
 CONVERT_TO_CSV = True
 
+
+def slugify(s):
+    output = ''
+    for symbol in s:
+        if symbol.lower() not in string.lowercase and not \
+                symbol.lower() in string.digits:
+            output += '-'
+        else:
+            output += symbol
+    output = output.replace(' ', '-')
+    while '--' in output:
+        # to avoid reserved double-minus chars
+        output = output.replace('--', '-')
+    return output
+
+
 def set_global_variables_from_data_file():
     try:
         json_data = load_data_from_hash_datestamp_data()
@@ -86,10 +104,12 @@ def job_to_fname(metadata):
     if isinstance(searchterms_str, (str, unicode)):
         searchterms_str = searchterms_str.decode('utf8')
     # job_name = datetime.datetime.utcnow().strftime('%d-%m-%Y')
-    job_name = DATESTAMP + '____' + RANDOM_HASH
+    server_name = metadata['server_name']
+    server_name = slugify(server_name)
+    job_name = DATESTAMP + '____' + RANDOM_HASH + '____' + server_name + '--'
     task_id = metadata.get('task_id', metadata.get('task', None))
     if task_id:
-        job_name += '____' + str(task_id)
+        job_name += str(task_id)
     if searchterms_str:
         additional_part = unidecode.unidecode(
             searchterms_str).replace(' ', '-')
@@ -423,6 +443,11 @@ def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
         time.sleep(sleep_time)
 
 def execute_task_from_sqs():
+    instance_meta = get_instance_metadata()
+    inst_ip = instance_meta.get('public-ipv4')
+    inst_id = instance_meta.get('instance-id')
+    logger.info("IMPORTANT: ip: %s, instance id: %s", inst_ip, inst_id)
+
     set_global_variables_from_data_file()
     while 1:  # try to read from the queue until a new message arrives
         TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])

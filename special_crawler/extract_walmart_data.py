@@ -6,7 +6,6 @@ import json
 
 from lxml import html, etree
 import lxml
-import urllib
 import lxml.html
 import requests
 
@@ -189,7 +188,13 @@ class WalmartScraper(Scraper):
 
             if emc_link:
                 emc_link = "http:" + emc_link[0]
-                contents = requests.get(emc_link).text
+#                contents = requests.get(emc_link).text
+                s = requests.Session()
+                a = requests.adapters.HTTPAdapter(max_retries=3)
+                b = requests.adapters.HTTPAdapter(max_retries=3)
+                s.mount('http://', a)
+                s.mount('https://', b)
+                contents = s.get(emc_link, timeout=5).text
                 tree = html.fromstring(contents)
                 wcobj_links = tree.xpath("//img[contains(@class, 'wc-media')]/@wcobj")
 
@@ -200,7 +205,13 @@ class WalmartScraper(Scraper):
 
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
-        response_text = urllib.urlopen(request_url).read()
+#        response_text = urllib.urlopen(request_url).read()
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        response_text = s.get(request_url, timeout=5).text
         tree = html.fromstring(response_text)
 
         if tree.xpath("//div[@id='iframe-video-content']") and \
@@ -228,8 +239,13 @@ class WalmartScraper(Scraper):
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
         #TODO: handle errors
-        response_text = urllib.urlopen(request_url).read()
-
+#        response_text = urllib.urlopen(request_url).read()
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        response_text = s.get(request_url, timeout=5).text
         # get first "src" value in response
         # # webcollage videos
         video_url_candidates = re.findall("'file': '([^']+)'", response_text)
@@ -249,7 +265,13 @@ class WalmartScraper(Scraper):
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % self._extract_product_id()
         # TODO: handle errors
-        response_text = urllib.urlopen(request_url).read()
+#        response_text = urllib.urlopen(request_url).read()
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        response_text = s.get(request_url, timeout=5).text
         tree = html.fromstring(response_text)
         if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']"):
             self.has_video = True
@@ -257,8 +279,15 @@ class WalmartScraper(Scraper):
 
         if len(self.video_urls) == 0:
             if self.tree_html.xpath("//div[starts-with(@class,'js-idml-video-container')]"):
-                contents = requests.get("http://www.walmart.com/product/idml/video/" +
-                                        str(self._extract_product_id()) + "/WebcollageVideos").text
+#                contents = requests.get("http://www.walmart.com/product/idml/video/" +
+#                                        str(self._extract_product_id()) + "/WebcollageVideos").text
+                s = requests.Session()
+                a = requests.adapters.HTTPAdapter(max_retries=3)
+                b = requests.adapters.HTTPAdapter(max_retries=3)
+                s.mount('http://', a)
+                s.mount('https://', b)
+                contents = s.get("http://www.walmart.com/product/idml/video/" +
+                                 str(self._extract_product_id()) + "/WebcollageVideos", timeout=5).text
 
                 if not contents:
                     self.video_urls = None
@@ -294,8 +323,15 @@ class WalmartScraper(Scraper):
 
         self.extracted_webcollage_360_view = True
 
-        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
-                                str(self._extract_product_id()) + "/Webcollage360View").text
+#        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+#                                str(self._extract_product_id()) + "/Webcollage360View").text
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        contents = s.get("http://www.walmart-content.com/product/idml/video/" +
+                         str(self._extract_product_id()) + "/Webcollage360View", timeout=5).text
 
         tree = html.fromstring(contents)
         existance_360view = tree.xpath("//div[@class='wc-360']")
@@ -339,8 +375,15 @@ class WalmartScraper(Scraper):
 
         self.extracted_webcollage_video_view= True
 
-        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
-                                str(self._extract_product_id()) + "/WebcollageVideos").text
+#        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+#                                str(self._extract_product_id()) + "/WebcollageVideos").text
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        contents = s.get("http://www.walmart-content.com/product/idml/video/" +
+                         str(self._extract_product_id()) + "/WebcollageVideos", timeout=5).text
 
         tree = html.fromstring(contents)
         existance_webcollage_video = tree.xpath("//div[@class='wc-fragment']")
@@ -382,8 +425,15 @@ class WalmartScraper(Scraper):
 
         self.extracted_webcollage_product_tour_view = True
 
-        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
-                                str(self._extract_product_id()) + "/WebcollageInteractiveTour").text
+#        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
+#                                str(self._extract_product_id()) + "/WebcollageInteractiveTour").text
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        contents = s.get("http://www.walmart-content.com/product/idml/video/" +
+                         str(self._extract_product_id()) + "/WebcollageInteractiveTour", timeout=5).text
 
         tree = html.fromstring(contents)
         existance_product_tour = tree.xpath("//div[contains(@class, 'wc-aplus-body')]")
@@ -428,7 +478,13 @@ class WalmartScraper(Scraper):
 
             request_url = self.BASE_URL_PDFREQ_WEBCOLLAGE + self._extract_product_id()
 
-            response_text = urllib.urlopen(request_url).read().decode('string-escape')
+#            response_text = urllib.urlopen(request_url).read().decode('string-escape')
+            s = requests.Session()
+            a = requests.adapters.HTTPAdapter(max_retries=3)
+            b = requests.adapters.HTTPAdapter(max_retries=3)
+            s.mount('http://', a)
+            s.mount('https://', b)
+            response_text = s.get(request_url, timeout=5).text.decode('string-escape')
 
             pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")',
                                             response_text)
@@ -450,7 +506,13 @@ class WalmartScraper(Scraper):
                 request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
                 request_url = "http:" + request_url.strip()
 
-                response_text = urllib.urlopen(request_url).read().decode('string-escape')
+#                response_text = urllib.urlopen(request_url).read().decode('string-escape')
+                s = requests.Session()
+                a = requests.adapters.HTTPAdapter(max_retries=3)
+                b = requests.adapters.HTTPAdapter(max_retries=3)
+                s.mount('http://', a)
+                s.mount('https://', b)
+                response_text = s.get(request_url, timeout=5).text.decode('string-escape')
 
                 pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
 
@@ -482,7 +544,13 @@ class WalmartScraper(Scraper):
         """
 
         request_url = self.BASE_URL_REVIEWSREQ.format(self._extract_product_id())
-        content = urllib.urlopen(request_url).read()
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        content = s.get(request_url, timeout=5).text
+
         try:
             reviews_count = re.findall(r"BVRRNonZeroCount\\\"><span class=\\\"BVRRNumber\\\">([0-9,]+)<", content)[0]
             average_review = re.findall(r"class=\\\"BVRRRatingNormalOutOf\\\"> <span class=\\\"BVRRNumber BVRRRatingNumber\\\">([0-9\.]+)<", content)[0]
@@ -655,8 +723,13 @@ class WalmartScraper(Scraper):
                 sub_description = lxml.html.tostring(description_element)
 
                 if "<b>" in sub_description or "<ul>" in sub_description or "<dl>" in sub_description or "<li>" in sub_description:
-                    tree = html.fromstring(short_description)
-                    innerText = tree.xpath("//text()")
+                    innerText = ""
+
+                    try:
+                        tree = html.fromstring(short_description)
+                        innerText = tree.xpath("//text()")
+                    except Exception:
+                        pass
 
                     if not innerText:
                         short_description = ""
@@ -804,7 +877,14 @@ class WalmartScraper(Scraper):
         if self.product_page_url[self.product_page_url.rfind("/") + 1:].isnumeric():
             url = "http://www.walmart-content.com/product/idml/emc/" + \
                   self.product_page_url[self.product_page_url.rfind("/") + 1:]
-            contents = requests.get(url).text
+#            contents = requests.get(url).text
+            s = requests.Session()
+            a = requests.adapters.HTTPAdapter(max_retries=3)
+            b = requests.adapters.HTTPAdapter(max_retries=3)
+            s.mount('http://', a)
+            s.mount('https://', b)
+            contents = s.get(url, timeout=5).text
+
             tree = html.fromstring(contents)
             description_elements = tree.xpath("//div[@id='js-marketing-content']//*")
 

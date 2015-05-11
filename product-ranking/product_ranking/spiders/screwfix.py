@@ -282,3 +282,6 @@ class ScrewfixProductsSpider(BaseProductsSpider):
                 product['buyer_reviews'] = reviews
                 response.meta['after_reviews'] = True
                 return self.parse_product(response)
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
