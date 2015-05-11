@@ -94,9 +94,11 @@ class BestBuyProductSpider(ProductsSpider):
     def _populate_from_html(self, response, product):
         self._populate_from_schemaorg(response, product)
         title = response.css("#sku-title ::text").extract()[0]
-        brand, _ = re.split(r'\s+-\s+', title, 1)
+        if len(re.split(r'\s+-\s+ | -', title, 1)) > 1:
+            brand, _ = re.split(r'\s+-\s+', title, 1)
+            cond_set(product, 'brand', [brand])
+
         cond_set(product, 'title', [title])
-        cond_set(product, 'brand', [brand])
 
         cond_set(product, 'upc', response.css("#sku-value ::text").extract())
         cond_set(product, 'model',
