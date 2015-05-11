@@ -56,6 +56,13 @@ class DrugstoreProductsSpider(BaseProductsSpider):
                 ).replace("%2B", "+"),
                 meta={'search_term': st, 'remaining': self.quantity},
             )
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod['url'] = self.product_url
+            yield Request(self.product_url,
+                          self._parse_single_product,
+                          meta={'product': prod})
 
     def parse_product(self, response):
         product = response.meta['product']
@@ -66,7 +73,6 @@ class DrugstoreProductsSpider(BaseProductsSpider):
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='divPImage']//img/@src").extract())
 
-        
         price = response.xpath(
             "//div[@id='productprice']/*[@class='price']/text()").extract()
         if not price:
@@ -91,7 +97,9 @@ class DrugstoreProductsSpider(BaseProductsSpider):
         brand = response.xpath('//div[@id="brandStoreLink"]/a/text()').extract()
         if brand:
             brand = re.findall('see more from (.*)', brand[0])
-            cond_set_value(product, 'brand', brand)
+            if brand:
+                brand = brand[0]
+                cond_set_value(product, 'brand', brand)
 
         is_out_of_stock = response.xpath(
             '//div[@id="divAvailablity"]/text()').extract()
@@ -122,7 +130,7 @@ class DrugstoreProductsSpider(BaseProductsSpider):
         num_of_reviews = response.xpath(
             '//p[@class="pr-review-count"]/text()').re(FLOATING_POINT_RGEX)
 
-        rating_by_star = {1:0, 2:0, 3:0, 4:0, 5:0}
+        rating_by_star = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
         for li in response.xpath('//ul[@class="pr-ratings-histogram-content"]/li'):
             i = li.xpath(
                 'p[@class="pr-histogram-label"]/span/text()'
@@ -132,7 +140,7 @@ class DrugstoreProductsSpider(BaseProductsSpider):
             ).re(FLOATING_POINT_RGEX)
             if i and count:
                 rating_by_star[int(i[0])] = int(count[0])
-        
+
         if average_rating and num_of_reviews:
             product["buyer_reviews"] = BuyerReviews(
                 num_of_reviews=int(num_of_reviews[0]),
@@ -151,7 +159,7 @@ class DrugstoreProductsSpider(BaseProductsSpider):
                 "&re=True&pt=%7Citem_page.rr1" \
                 "&u=1EAFA20B71FE47DABCF769FC97F93858" \
                 "&s=EA668A065C864DCEAE8919DF1868FAA8" \
-                "&cv=0&l=1&p="+ prod_id[0]
+                "&cv=0&l=1&p=" + prod_id[0]
             return Request(
                 url,
                 meta={'product': product, 'remaining': self.quantity},
@@ -187,14 +195,13 @@ class DrugstoreProductsSpider(BaseProductsSpider):
         ).re(FLOATING_POINT_RGEX)
 
         if total_matches:
-            return int(total_matches[0].replace(',', ''))        
+            return int(total_matches[0].replace(',', ''))
         return 0
 
     def _scrape_product_links(self, response):
         items = response.css('div.itemGrid div.info')
         if not items:
             self.log("Found no product links.", ERROR)
-            
         for item in items:
             link = item.xpath('.//a/@href').extract()[0]
             brand = item.xpath('.//span[@class="name"]/text()').extract()[0]
@@ -205,7 +212,9 @@ class DrugstoreProductsSpider(BaseProductsSpider):
             '//table[@class="srdSrchNavigation"]'
             '//a[@class="nextpage"]/@href'
         ).extract()
-        
         if link:
             return link[0]
         return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
