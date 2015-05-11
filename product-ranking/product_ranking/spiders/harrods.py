@@ -52,6 +52,9 @@ class HarrodsProductsSpider(BaseProductsSpider):
             *args,
             **kwargs)
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse(self, response):
         def full_url(url):
             return urlparse.urljoin(response.url, url)
