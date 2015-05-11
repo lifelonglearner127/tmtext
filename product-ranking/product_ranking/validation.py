@@ -6,6 +6,7 @@
 
 import os
 import re
+import json
 from pprint import pprint
 from collections import OrderedDict
 import logging
@@ -16,7 +17,7 @@ from boto import ses
 from scrapy.log import INFO
 from scrapy import signals
 from scrapy.xlib.pydispatch import dispatcher
-from scrapy.contrib.exporter import CsvItemExporter
+from scrapy.contrib.exporter import JsonLinesItemExporter
 from twisted.python import log
 
 from product_ranking.items import SiteProductItem
@@ -45,7 +46,7 @@ def _on_spider_close(spider, reason):
 
     print bcolors.HEADER
     print 'Found', \
-        len(_csv_file_to_data(_get_spider_output_filename(spider))), \
+        len(_json_file_to_data(_get_spider_output_filename(spider))), \
         'products'
     print 'VALIDATION RESULTS:'
     print bcolors.ENDC
@@ -107,44 +108,41 @@ def _get_fields_to_check(cls):
     )
 
 
-def _csv_file_to_data(fname):
-    """ Returns CSV file as 2-dimensional array """
-    # we don't use python's csv module because it groups
-    #  values together for some reasons
+def _json_file_to_data(fname):
+    """ Returns JSON lines """
     data = []
-    with open(fname, 'rb') as csvfile:
-        for line in csvfile:
+    with open(fname, 'r') as f:
+        for line in f:
             if not line.strip():
                 continue
             line = line.strip()
-            data.append(line.split('`'))
+            data.append(json.loads(line))
     return data
 
 
-def _extract_ranking(csv_data):
+def _extract_ranking(json_data):
     """ Extracts and returns unordered `ranking` values.
         The first row must be the table header.
         Returns an empty list if no data provided,
          None if there is any error, and the list of values otherwise.
     """
-    if not csv_data:
+    if not json_data:
         return []  # no data provided
     column_index = None
     result_values = []
-    for i, field in enumerate(csv_data[0]):
-        if field.lower().strip() == 'ranking':
-            column_index = i
-    if column_index is None:
-        return
-    for row in csv_data:
-        result_values.append(row[column_index])
-    result_values = [int(r) for r in result_values if r.isdigit()]
+    for row in json_data:
+        try:
+            result_values.append(row['ranking'])
+        except:
+            assert False, str(row) + '_______________' + str(column_index)
+    result_values = [int(r) for r in result_values
+                     if isinstance(r, int) or r.isdigit()]
     return result_values
 
 
 def _get_spider_output_filename(spider):
     # not really cross-platform, but okay for *nix and Mac OS
-    return '/tmp/%s_output.csv' % spider.name
+    return '/tmp/%s_output.jl' % spider.name
 
 
 def _get_spider_log_filename(spider):
@@ -152,7 +150,7 @@ def _get_spider_log_filename(spider):
 
 
 class ValidatorPipeline(object):
-    """ Exports items in a temporary CSV file.
+    """ Exports items in a temporary JSON file.
         Unnecessary fields are excluded. """
 
     def __init__(self):
@@ -169,7 +167,7 @@ class ValidatorPipeline(object):
     def spider_opened(self, spider):
         fname = open(_get_spider_output_filename(spider), 'wb')
         self.files[spider] = fname
-        self.exporter = CsvItemExporter(fname, delimiter='`')
+        self.exporter = JsonLinesItemExporter(fname)
         self.exporter.fields_to_export = _get_fields_to_check(SiteProductItem)
         self.exporter.start_exporting()
 
@@ -185,7 +183,7 @@ class ValidatorPipeline(object):
 
 class BaseValidatorSettings(object):
 
-    # CSV output fields
+    # JSON output fields
     ignore_fields = []  # fields that shouldn't be validated at all
     optional_fields = []  # fields that should present at some\
                                      #  rows, but not in every row
@@ -214,7 +212,7 @@ class BaseValidator(object):
     """
 
     settings = BaseValidatorSettings  # you may add () to instantiate class
-    
+
     def __init__(self, *args, **kwargs):
         self.validate = kwargs.get('validate', False)
         if self.validate:
@@ -347,6 +345,8 @@ class BaseValidator(object):
         return True
 
     def _validate_ranking(self, val):
+        if isinstance(val, int):
+            return True
         if not val.strip().isdigit():
             return False
         return True
@@ -359,6 +359,7 @@ class BaseValidator(object):
         return True
 
     def _validate_results_per_page(self, val):
+        val = str(val)
         if not bool(val.strip()):  # empty
             return False
         if not val.strip().isdigit():
@@ -378,12 +379,13 @@ class BaseValidator(object):
         return True
 
     def _validate_total_matches(self, val):
+        val = str(val)
         if not bool(val.strip()):  # empty
             return False
         if not val.strip().isdigit():
             return False
         val = int(val.strip())
-        return 0 <= val < 9999999
+        return 0 <= val < 99999999
 
     def _validate_upc(self, val):
         return re.match(r'^\d{12}$', val.strip())
@@ -420,8 +422,60 @@ class BaseValidator(object):
     def _validate_category(self, val):
         return True
 
-    def _get_failed_fields(self, data, exclude_first_line=True,
-                           add_row_index=False):
+    def _validate_bestseller_rank(self, val):
+        if isinstance(val, int):
+            return True
+        if not val.isdigit():
+            return False
+        return True
+
+    def _validate_date_of_last_question(self, val):
+        if val in ('', None):
+            return True
+        try:
+            date = datetime.datetime.strptime(val, '%d-%m-%Y')
+        except:
+            return False
+        return True
+
+    def _validate_department(self, val):
+        val = str(val)
+        if len(val) > 100:
+            return False
+        return True
+
+    def _validate_is_pickup_only(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_limited_stock(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_marketplace(self, val):
+        if isinstance(val, (str, unicode)):
+            try:
+                val = json.loads(val)
+            except:
+                return False
+        for v in val:
+            if 'currency' not in v:
+                return False
+            if 'price' not in v:
+                return False
+            if 'name' not in v:
+                return False
+        return True
+
+    def _validate_prime(self, val):
+        if isinstance(val, (str, unicode)):
+            if 'Prime' in val:
+                return 4 < len(val) < 20
+        return val in (True, False, None, '')
+
+    def _validate_recent_questions(self, val):
+        # TODO! write method
+        return True
+
+    def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
         :param data: 2-dimensions list or str
         :param exclude_first_line: bool
@@ -431,10 +485,8 @@ class BaseValidator(object):
         failed_fields = []
         # validate each field in the row
         optional_ok_fields = []  # put fields there if at least 1 is ok
-        if exclude_first_line:
-            data = data[1:]
         for row_i, row in enumerate(data):
-            for field_i, field_name in enumerate(
+            for _, field_name in enumerate(
                     _get_fields_to_check(SiteProductItem)):
                 if field_name in self.settings.ignore_fields:
                     continue
@@ -444,8 +496,8 @@ class BaseValidator(object):
                     is_optional = True
                 field_validator = getattr(self, '_validate_'+field_name, None)
                 try:
-                    _value = row[field_i]
-                except IndexError:
+                    _value = row[field_name]
+                except (IndexError, KeyError):
                     _value = ''  # empty string if no such value at all
                 if isinstance(_value, str):
                     _value = _value.decode('utf8')  # avoid UnicodeDecodeError
@@ -470,9 +522,12 @@ class BaseValidator(object):
                 if isinstance(field_value, unicode):
                     field_value = field_value.encode('utf8')
                 failed_fields_with_values[field_name] = field_value
+                if not isinstance(failed_fields_with_values[field_name], str):
+                    failed_fields_with_values[field_name] \
+                        = str(failed_fields_with_values[field_name])
                 if add_row_index:
                     failed_fields_with_values[field_name] += \
-                        ' | ROW: %i' % (row_i + 2)
+                        ' | ROW: %i' % (row_i + 1)
 
         # save order
         failed_fields_with_values = OrderedDict(
@@ -511,7 +566,7 @@ class BaseValidator(object):
 
     def _validation_data(self):
         """ Just a useful wrapper """
-        return _csv_file_to_data(_get_spider_output_filename(self))
+        return _json_file_to_data(_get_spider_output_filename(self))
 
     def _validation_filename(self):
         """ Just a useful wrapper """
@@ -527,11 +582,10 @@ class BaseValidator(object):
         found_issues = OrderedDict()
 
         fname = _get_spider_output_filename(self)
-        data = _csv_file_to_data(fname)
+        data = _json_file_to_data(fname)
 
         # check wrong values (validates every row separately)
-        failed_fields = self._get_failed_fields(data, exclude_first_line=True,
-                                                add_row_index=True)
+        failed_fields = self._get_failed_fields(data, add_row_index=True)
 
         if failed_fields:
             found_issues.update(failed_fields)

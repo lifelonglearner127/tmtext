@@ -44,7 +44,7 @@ except ImportError as e:
 
 
 class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['model', 'brand', 'price']
+    optional_fields = ['model', 'brand', 'price', 'bestseller_rank']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
         'buyer_reviews', 'google_source_site', 'description'
