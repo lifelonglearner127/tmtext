@@ -9,7 +9,8 @@ from scrapy.http import FormRequest
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    dump_url_to_file
 
 
 class FireboxProductSpider(BaseProductsSpider):
@@ -81,6 +82,8 @@ class FireboxProductSpider(BaseProductsSpider):
         cond_set(prod, 'locale', ['en-US'])
 
         cond_set(prod, 'brand', ['NO BRAND'])
+        if not prod.get('brand', None):
+            dump_url_to_file(response.url)
 
         prod['url'] = unicode(response.url)
 

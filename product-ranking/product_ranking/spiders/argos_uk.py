@@ -10,7 +10,7 @@ from scrapy.log import ERROR
 
 from product_ranking.spiders import cond_set, cond_set_value
 from product_ranking.spiders import BaseProductsSpider
-from product_ranking.spiders import FormatterWithDefaults
+from product_ranking.spiders import FormatterWithDefaults, dump_url_to_file
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.guess_brand import guess_brand_from_first_words
 
@@ -132,6 +132,10 @@ class ArgosUKProductsSpider(BaseProductsSpider):
             brand = guess_brand_from_first_words(product['title'])
             if brand:
                 product['brand'] = brand
+
+        if not product.get('brand', None):
+            dump_url_to_file(response.url)
+
         if product.get('price') is None:
             currency = (response.css('.currency::text').extract()[''])[0]
             price = re.search(
