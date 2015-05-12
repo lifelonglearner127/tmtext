@@ -6,7 +6,7 @@
     <field name="title_seo" version="1.1"></field>
     <field name="features" version="1.1"></field>
     <field name="feature_count" version="1.1"></field>
-    <field name="description" version="1.1"></field>
+    <field name="description" version="4.1"></field>
     <field name="model" version="1.1"></field>
     <field name="long_description" version="1.1"></field>
     <field name="image_urls" version="1.1"></field>
@@ -22,7 +22,7 @@
     <field name="price" version="1.1"></field>
     <field name="price_amount" version="1.1"></field>
     <field name="in_stores" version="1.1"></field>
-    <field name="marketplace" version="1.1"></field>
+    <field name="marketplace" version="3.1"></field>
     <field name="marketplace_sellers" version="1.1"></field>
     <field name="marketplace_lowest_price" version="1.1"></field>
     <field name="site_online" version="1.1"></field>
@@ -36,5 +36,6 @@
     <field name="categories" version="1.1"></field>
     <field name="category_name" version="1.1"></field>
     <field name="brand" version="1.1"></field>
+    <field name="br33and" version="1.1"></field>
 
 </fields>
