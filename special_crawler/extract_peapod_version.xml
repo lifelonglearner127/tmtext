@@ -21,7 +21,7 @@
     <field name="mobile_image_same" version="1.1"></field>
     <field name="price" version="1.1"></field>
     <field name="price_amount" version="1.1"></field>
-    <field name="in_stores" version="31"></field>
+    <field name="in_stores" version="1.1"></field>
     <field name="marketplace" version="1.1"></field>
     <field name="marketplace_sellers" version="1.1"></field>
     <field name="marketplace_lowest_price" version="1.1"></field>
