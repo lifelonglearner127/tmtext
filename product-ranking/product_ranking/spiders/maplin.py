@@ -48,6 +48,9 @@ class GandermountainProductsSpider(BaseProductsSpider):
             ), *args, **kwargs
         )
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         reviewed = response.meta.get('reviewed')
         prod = response.meta['product']
