@@ -17,7 +17,7 @@ if not TO:
 
 END_DATE = datetime.datetime.now()
 START_DATE = END_DATE - datetime.timedelta(1)
-SUBJECT = "Simmetrica report from %s to %s" % (str(START_DATE), str(END_DATE))
+SUBJECT = " SQS cache service report from %s to %s" % (str(START_DATE), str(END_DATE))
 
 hours = 24
 
@@ -36,7 +36,7 @@ for item in most_recent_resp:
 used_memory = s.get_used_memory()
 
 text_draft = """
-Simmetrica report for last 24 hours from cache:
+SQS cache service report for last 24 hours:
 Total requests: %s 
 Total responses: %s 
 Correlation: %s \n
