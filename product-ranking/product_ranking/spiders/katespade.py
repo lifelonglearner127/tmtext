@@ -47,6 +47,9 @@ class KatespadeProductsSpider(BaseProductsSpider):
             *args,
             **kwargs)
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         def full_url(url):
             return urlparse.urljoin(response.url, url)
@@ -54,14 +57,20 @@ class KatespadeProductsSpider(BaseProductsSpider):
 
         cond_set(product, 'title', response.xpath(
             "//div[@id='product-content']"
-            "/h1[@itemprop='name']/text()").extract(),
+            "/h1[@itemprop='name']/text() | "
+            "//div[contains(@class, 'product-name')]"
+            "/a[contains(@class, 'item-name')]/text()"
+        ).extract(),
             conv=string.strip)
 
         price = response.xpath(
             "//div[@id='product-content']"
             "/div[contains(@class,'product-price')]"
-            "/span[@class='price-sales']"
-            "/text()").re(FLOATING_POINT_RGEX)
+            "/span[@class='price-sales']/text() | "
+            "//div[contains(@class, 'product-price')]"
+            "/span[contains(@class, 'price-sales')] |"
+            "//div[contains(@class, 'product-price ')]/div/text()"
+        ).re(FLOATING_POINT_RGEX)
         if price:
             product['price'] = Price(
                 price=price[0], priceCurrency='USD')
@@ -98,6 +107,11 @@ class KatespadeProductsSpider(BaseProductsSpider):
             r'configData\.productId = "(.*)";')
         if pname:
             pname = pname[0]
+        else:
+            pname = response.xpath('//input[@id="pid"]/@value').extract()
+            if pname:
+                pname = pname[0]
+
         script = response.xpath(
             "//script[contains(@src,'bazaarvoice')]/@src").extract()
         if script:
@@ -127,7 +141,7 @@ class KatespadeProductsSpider(BaseProductsSpider):
 
     def _extract_reviews(self, response):
         if response.status != 200:
-            return _product_or_upcreq(response)
+            return self._product_or_upcreq(response)
         product = response.meta['product']
         text = response.body_as_unicode().encode('utf-8')
         jstext = re.search("var materials=(.*)\,\s+initializers=", text, re.S)
@@ -157,7 +171,7 @@ class KatespadeProductsSpider(BaseProductsSpider):
                 return product
         link = self._extract_upc(response)
         if not link:
-            return
+            return product
         return Request(
             link,
             meta=response.meta.copy(),
