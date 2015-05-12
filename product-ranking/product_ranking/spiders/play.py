@@ -10,7 +10,7 @@ import urlparse
 from product_ranking.items import Price
 from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
+from product_ranking.spiders import cond_set, cond_set_value, dump_url_to_file
 from scrapy.http import Request
 from scrapy.log import DEBUG
 
@@ -99,6 +99,9 @@ class PlayProductsSpider(BaseProductsSpider):
             product["url"] = response.url
             product["brand"] = is_empty(response.xpath(
                 "//span[@itemprop='brand']/text()").extract())
+
+        if not product.get('brand', None):
+            dump_url_to_file(response.url)
 
         cond_set_value(product, 'locale', "en-GB")
 

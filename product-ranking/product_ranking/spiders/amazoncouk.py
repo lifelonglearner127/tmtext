@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utAmazon.co.ukf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
@@ -13,7 +13,7 @@ from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    cond_set_value, FLOATING_POINT_RGEX
+    cond_set_value, FLOATING_POINT_RGEX, dump_url_to_file
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
@@ -152,6 +152,9 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
         brand = response.xpath('//a[@id="brand"]/text()').extract()
         cond_set(prod, 'brand', brand)
+
+        if not prod.get('brand', None):
+            dump_url_to_file(response.url)
 
         cond_set(
             prod,

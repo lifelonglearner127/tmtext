@@ -6,7 +6,8 @@ from itertools import ifilter
 from decimal import Decimal, InvalidOperation
 
 from product_ranking.items import RelatedProduct, valid_currency_codes
-from product_ranking.spiders import cond_set, cond_replace, cond_set_value
+from product_ranking.spiders import cond_set, cond_replace, cond_set_value, \
+    dump_url_to_file
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 from product_ranking.items import Price, MarketplaceSeller
 
@@ -203,6 +204,8 @@ class EbayUkProductsSpider(ProductsSpider):
         xpath = '//td[@class="attrLabels" and contains(text(), "Brand:")]' \
                 '/following-sibling::td/span/text()'
         cond_set(product, 'brand', response.xpath(xpath).extract())
+        if not product.get('brand', None):
+            dump_url_to_file(response.url)
         xpath = '//td[@class="attrLabels" and contains(text(), "Model:")]' \
                 '/following-sibling::td/span/text()'
         cond_set(product, 'model', response.xpath(xpath).extract())
