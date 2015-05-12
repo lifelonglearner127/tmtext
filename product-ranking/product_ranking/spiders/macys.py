@@ -63,6 +63,17 @@ class MacysProductsSpider(ProductsSpider):
                 headers={"User-Agent": self.user_agent}
                 )
 
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod['url'] = self.product_url
+            yield Request(self.product_url,
+                          self._parse_single_product,
+                          meta={'product': prod})
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse(self, response):  # Stolen again
         if response.status == 302:
             yield self._create_from_redirect(response)
@@ -111,7 +122,6 @@ class MacysProductsSpider(ProductsSpider):
         if price:
             product['price'] = Price(price=price[0],
                                      priceCurrency='USD')
-
         path = '[id^=main_images_holder_] img[id^=image]::attr(src)'
         cond_set(product, 'image_url', box.css(path).extract())
         cond_set(product, 'is_out_of_stock', box.css('.notAvailable'), bool)
@@ -171,9 +181,20 @@ class MacysProductsSpider(ProductsSpider):
                 "//div[@id='memberProductList']/div[1]/"
                 "div[@class='productPriceSection']/div/span[last()]/text()"
             ).re(FLOATING_POINT_RGEX)
-            if price:
+            
+        else:
+            price = response.xpath(
+                "//div[@id='priceInfo']/div/span/text()"
+            ).re(FLOATING_POINT_RGEX)
+        if price:
                 product['price'] = Price(price=price[0],
                                          priceCurrency='USD')
+
+        if not product.get("image_url"):
+            image_url = response.xpath(
+                "//img[contains(@id, 'mainView')]/@src").extract()
+            if image_url:
+                product["image_url"] = image_url[0]
 
         title = response.css('#productTitle::text').extract()
         if title:
