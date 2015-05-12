@@ -8,7 +8,7 @@ from product_ranking.items import SiteProductItem, Price, BuyerReviews,\
     RelatedProduct, LimitedStock
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FormatterWithDefaults, cond_set_value
+    FormatterWithDefaults, cond_set_value, dump_url_to_file
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 
@@ -87,6 +87,9 @@ class GandermountainProductsSpider(BaseProductsSpider):
                 brand = [guess_brand_from_first_words(prod['title'])]
         if brand:
             cond_set(prod, 'brand', brand)
+
+        if not prod.get('brand', None):
+            dump_url_to_file(response.url)
 
         price = response.xpath(
             '//p[@class="new-price"]/meta[@itemprop="price"]/@content'
