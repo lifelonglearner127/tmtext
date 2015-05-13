@@ -14,7 +14,8 @@ setup(
         for root, _, files in itertools.chain(
             os.walk('train_captchas_data'),
             os.walk('product_ranking/data'),
-            os.walk('monitoring')
+            os.walk('monitoring'),
+            os.walk('../product_ranking_auto_tests')
         )
     ],
     install_requires=[

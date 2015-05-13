@@ -278,6 +278,10 @@ def _setup_virtual_env_scrapyd():
         run('pip install Pillow')
         run('pip install pytesseract')
         run('pip install boto')
+        run('pip install django')
+        run('pip install django-ses')
+        run('pip install django_adminplus')
+
 
     _setup_simmetrica_monitoring()
 
