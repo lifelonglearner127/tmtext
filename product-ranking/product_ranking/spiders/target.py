@@ -132,6 +132,12 @@ class TargetProductSpider(BaseProductsSpider):
                     priceCurrency='USD'
                 )
 
+        special_pricing = is_empty(response.xpath(
+            '//li[contains(@class, "eyebrow")]//text()').extract())
+        if special_pricing == "TEMP PRICE CUT":
+            prod['special_pricing'] = 1
+        else:
+            prod['special_pricing'] = 0
 
         if 'url' not in prod:
             prod['url'] = response.url

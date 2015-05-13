@@ -13,7 +13,7 @@ from product_ranking.items import Price, BuyerReviews
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
+from product_ranking.spiders import cond_set, cond_set_value, dump_url_to_file
 
 
 class PcworldcoukProductsSpider(BaseProductsSpider):
@@ -62,6 +62,9 @@ class PcworldcoukProductsSpider(BaseProductsSpider):
         cond_set(product, 'brand', response.xpath(
             "//section[@itemscope]/h1"
             "/span[@itemprop='brand']/text()").extract())
+
+        if not product.get('brand', None):
+            dump_url_to_file(response.url)
 
         cond_set(product, 'upc', response.xpath(
             "//section[@itemscope]/meta[@itemprop='identifier']"

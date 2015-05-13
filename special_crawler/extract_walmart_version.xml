@@ -11,7 +11,7 @@
     <field name="ingredients" version="1.1"></field>
     <field name="ingredient_count" version="1.1"></field>
     <field name="nutrition_facts" version="1.1"></field>
-    <field name="nutrition_fact_count" version="2.1"></field>
+    <field name="nutrition_fact_count" version="1.1"></field>
     <field name="price" version="1.1"></field>
     <field name="price_amount" version="1.1"></field>
     <field name="price_currency" version="1.1"></field>
@@ -21,7 +21,7 @@
     <field name="features" version="1.1"></field>
     <field name="feature_count" version="1.1"></field>
     <field name="title_seo" version="1.1"></field>
-    <field name="rollback" version="2.1"></field>
+    <field name="rollback" version="1.1"></field>
     <field name="product_title" version="1.1"></field>
     <field name="owned" version="1.1"></field>
     <field name="owned_out_of_stock" version="1.1"></field>

@@ -10,7 +10,7 @@ from scrapy import Request
 from product_ranking.items import SiteProductItem
 from product_ranking.items import valid_currency_codes
 from product_ranking.spiders import cond_set, cond_set_value, \
-    _populate_from_open_graph_product, cond_replace_value
+    _populate_from_open_graph_product, cond_replace_value, dump_url_to_file
 from product_ranking.spiders.contrib.contrib import populate_reviews
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 from product_ranking.items import Price
@@ -222,6 +222,9 @@ class CurrysUkProductsSpider(ProductsSpider):
                  unicode.strip)
         cond_set(product, 'brand',
                  response.css('[itemprop=brand]::text').extract())
+        if not product.get('brand', None):
+            dump_url_to_file(response.url)
+
         cond_set(product, 'title',
                  response.css('[itemprop=name]::text').extract())
         css = '#longDesc article'

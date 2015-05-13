@@ -148,6 +148,16 @@ def populate_from_open_graph(response, product):
         )
 
 
+def dump_url_to_file(url, fname='/home/web_runner/no_brands'):
+    """Helper function that stores a product URL to log file.
+    """
+    try:
+        with open(fname, 'a') as fh:
+            fh.write(url.strip()+'\n')
+    except Exception, e:
+        return
+
+
 class BaseProductsSpider(Spider):
     start_urls = []
 

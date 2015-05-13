@@ -295,9 +295,19 @@ class WalmartProductsSpider(BaseProductsSpider):
                 response.body_as_unicode()):
             product['is_in_store_only'] = True
 
+        special_pricing = response.xpath(
+            '//div[contains(@class, "price-flags")]//text()').extract()
+        special_pricing = [
+            r.strip() for r in special_pricing if len(r.strip())>0]
+        if 'Rollback' in special_pricing:
+            product['special_pricing'] = 1
+        else:
+            product['special_pricing'] = 0
+
         if not product.get('price'):
             cond_set_value(product, 'url', response.url)
             return self._gen_location_request(response)
+
         return self._start_related(response)
 
     def _parse_single_product(self, response):

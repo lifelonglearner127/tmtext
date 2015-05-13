@@ -277,6 +277,7 @@ def _setup_virtual_env_scrapyd():
         run('pip install requests')
         run('pip install Pillow')
         run('pip install pytesseract')
+        run('pip install boto')
 
     _setup_simmetrica_monitoring()
 
