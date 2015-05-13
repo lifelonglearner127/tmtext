@@ -173,6 +173,7 @@ class EbayUkProductsSpider(ProductsSpider):
         cond_set(product, 'image_url', box.css('img.img::attr(src)').extract())
 
     def _populate_from_html(self, response, product):
+        self._populate_hardcoded_fields(product)
         cond_set(product, 'title', response.css('#itemTitle::text').extract())
         cond_set(product, 'price',
                  response.css('[itemprop=price]::text , '
@@ -183,16 +184,12 @@ class EbayUkProductsSpider(ProductsSpider):
             '//div[@class="mbg"]/a/span/text()'
         ).extract()
 
-        other_products = response.xpath(
-            '//div[@class="si-pd-a"]/a/@href'
-        ).extract()
-        if other_products:
-            other_products = other_products[0]
         if seller:
             seller = seller[0].strip()
-            product["marketplace"] = MarketplaceSeller(
-                seller=seller, other_products=other_products
-            )
+            product["marketplace"] = [{
+                "name": seller,
+                "price": product.get("price", None)
+            }]
         
         cond_replace(product, 'image_url',
                      response.css('[itemprop=image]::attr(src)').extract())
@@ -254,3 +251,6 @@ class EbayUkProductsSpider(ProductsSpider):
             return None
         else:
             return price
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
