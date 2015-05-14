@@ -21,7 +21,7 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
 
-is_empty = lambda x: x[0] if x else ""
+is_empty = lambda x, y="": x[0] if x else y
 
 
 def get_string_from_html(xp, link):
@@ -207,60 +207,6 @@ class WalmartProductsSpider(BaseProductsSpider):
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
         self._gen_related_req(response)
-
-        marketplaces = []
-        for seller in response.xpath(
-            "//ul[contains(@class, 'sellers-list')]/li[contains(@class,"
-            "'js-marketplace-seller')]/div"):
-            price = is_empty(seller.xpath(
-                "div[contains(@class, 'price')]/strong/text()"
-            ).re(FLOATING_POINT_RGEX))
-
-            name = is_empty(seller.xpath(
-                "div/div/div[contains(@class, 'name')]/a/text() |"
-                "div/div/div[contains(@class, 'name')]/a/b/text()"
-            ).extract())
-            if not name:
-                name = is_empty(seller.xpath(
-                        "div/div/div[contains(@class, 'name')]/text()"
-                ).extract())
-            if price:
-                price = Price(price=price, priceCurrency="USD")
-            else:
-                price = Price(price=0, priceCurrency="USD")
-            marketplaces.append({
-                "price": price,
-                "name": name.strip()
-            })
-        if marketplaces:
-            product["marketplace"] = marketplaces
-        else:
-            name = is_empty(response.xpath(
-                '//div[@class="product-seller"]/div/span/b/text() |'
-                '//div[@class="product-seller"]/div/span/a/b/text() '
-            ).extract())
-            if not name:
-                name = is_empty(response.xpath('//meta[@itemprop="seller"]'
-                                               '/@content').extract())
-            price_amount = is_empty(
-                response.xpath('//meta[@itemprop="price"]'
-                               '/@content').re(FLOATING_POINT_RGEX)
-            )
-            currency = is_empty(
-                response.xpath('//meta[@itemprop="priceCurrency"]'
-                               '/@content').extract()
-            )
-            if price_amount:
-                price = Price(price=price_amount,
-                              priceCurrency=currency)
-            else:
-                price = Price(price=0,
-                              priceCurrency=currency)
-            marketplaces.append({
-                "price": price,
-                "name": name
-            })
-            product["marketplace"] = marketplaces
 
         model = is_empty(
             response.xpath('//tr[@class="js-product-specs-row"]/'
@@ -472,6 +418,63 @@ class WalmartProductsSpider(BaseProductsSpider):
                 'upc',
                 response.xpath('//strong[@id="UPC_CODE"]/text()').extract()
             )
+
+        marketplaces = []
+        for seller in response.xpath(
+            "//ul[contains(@class, 'sellers-list')]/li[contains(@class,"
+            "'js-marketplace-seller')]/div"):
+            price = is_empty(seller.xpath(
+                "div[contains(@class, 'price')]/strong/text()"
+            ).re(FLOATING_POINT_RGEX))
+
+            name = is_empty(seller.xpath(
+                "div/div/div[contains(@class, 'name')]/a/text() |"
+                "div/div/div[contains(@class, 'name')]/a/b/text()"
+            ).extract())
+            if not name:
+                name = is_empty(seller.xpath(
+                        "div/div/div[contains(@class, 'name')]/text()"
+                ).extract())
+            if price:
+                price = Price(price=price, priceCurrency="USD")
+            else:
+                price = Price(price=0, priceCurrency="USD")
+            marketplaces.append({
+                "price": price,
+                "name": name.strip()
+            })
+        if marketplaces:
+            product["marketplace"] = marketplaces
+        else:
+            name = is_empty(response.xpath(
+                '//div[@class="product-seller"]/div/span/b/text() |'
+                '//div[@class="product-seller"]/div/span/a/b/text()'
+            ).extract())
+            if not name:
+                name = is_empty(response.xpath(
+                    '//meta[@itemprop="seller"]/@content'
+                ).extract())
+            price_amount = is_empty(
+                response.xpath('//meta[@itemprop="price"]'
+                               '/@content').re(FLOATING_POINT_RGEX)
+            )
+            currency = is_empty(
+                response.xpath('//meta[@itemprop="priceCurrency"]'
+                               '/@content').extract(),
+                "USD"
+            )
+            if price_amount:
+                price = Price(price=price_amount,
+                              priceCurrency=currency)
+            else:
+                price = Price(price=0,
+                              priceCurrency=currency)
+            if name:
+                marketplaces.append({
+                    "price": price,
+                    "name": name
+                })
+            product["marketplace"] = marketplaces
 
     def _gen_location_request(self, response):
         data = {"postalCode": ""}
