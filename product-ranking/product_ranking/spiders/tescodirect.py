@@ -243,10 +243,10 @@ class TescoDirectProductsSpider(BaseProductsSpider):
         if title_marketplace:
             title_marketplace = re.findall("Available from (.*)", title_marketplace[0])
             if title_marketplace:
-                product["marketplace"] = MarketplaceSeller(
-                    seller=title_marketplace[0],
-                    other_products=None
-                )
+                product["marketplace"] = [{
+                    "name": title_marketplace[0],
+                    "price": product["price"]
+                }]
 
         desc = response.xpath(
             '//section[@id="product-details-link"]'
