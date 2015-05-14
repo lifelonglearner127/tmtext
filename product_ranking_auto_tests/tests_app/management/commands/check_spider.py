@@ -33,7 +33,8 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 from settings import (SPIDER_ROOT, MEDIA_ROOT, EMAIL_SUBJECT,
                       DEFAULT_FROM_EMAIL, HOST_NAME)
-from tests_app.models import Spider, TestRun, FailedRequest, Alert
+from tests_app.models import (Spider, TestRun, FailedRequest, Alert,
+                              ThresholdSettings)
 
 
 def run(command, shell=None):
@@ -140,7 +141,8 @@ def get_scrapy_spider_and_settings(spider):
     return scrapy_spider, validator
 
 
-def create_failed_request(test_run, scrapy_spider, request, error):
+def create_failed_request(test_run, scrapy_spider, request,
+                          error, html_error=None):
     """ Just a convenient wrapper to avoid 'repeating myself' """
     today = timezone.now().strftime('%d_%m_%Y')
     output_dir = os.path.join(MEDIA_ROOT, 'output', test_run.spider.name)
@@ -151,10 +153,12 @@ def create_failed_request(test_run, scrapy_spider, request, error):
                                str(test_run.pk)+'__'+fs_request+'.csv')
     log_file = os.path.join(output_dir, today,
                             str(test_run.pk)+'__'+fs_request+'.txt')
-    shutil.copy(scrapy_spider._validation_filename(), output_file)
+    if os.path.exists(scrapy_spider._validation_filename()):
+        shutil.copy(scrapy_spider._validation_filename(), output_file)
     shutil.copy(scrapy_spider._validation_log_filename(), log_file)
     fr = FailedRequest.objects.create(
-        test_run=test_run, request=request, error=error,
+        test_run=test_run, request=request,
+        error=error, error_html=html_error if html_error else "",
         result_file=os.path.relpath(output_file, MEDIA_ROOT),
         log_file=os.path.relpath(log_file, MEDIA_ROOT)
     )
@@ -216,24 +220,27 @@ def check_spider(spider):
     for req, req_range in spider_settings.test_requests.items():
         run_spider(spider, req)
         errors = scrapy_spider.errors()
+        html_errors = scrapy_spider.errors_html()
         output_data = scrapy_spider._validation_data()
         if errors:
             test_run.num_of_failed_requests += 1
-            create_failed_request(test_run, scrapy_spider, req, errors)
+            create_failed_request(test_run, scrapy_spider, req,
+                                  errors, html_errors)
             print ' '*7, 'request failed:', req
         elif (isinstance(req_range, int)
                 and len(output_data) != 0):
             test_run.num_of_failed_requests += 1
-            create_failed_request(test_run, scrapy_spider, req,
-                                  'must have empty output')
+            create_failed_request(
+                test_run, scrapy_spider, req,
+                'must have empty output', '<p>must have empty output</p>')
             print ' '*7, 'request failed:', req
         elif (isinstance(req_range, (list, tuple))
                 and not (req_range[0] < len(output_data) < req_range[1])):
             test_run.num_of_failed_requests += 1
+            _msg = 'must have output in range %s but got %i results' % (
+                        req_range, len(output_data))
             create_failed_request(
-                test_run, scrapy_spider, req,
-                'must have output in range %s but got %i results' % (
-                    req_range, len(output_data))
+                test_run, scrapy_spider, req, _msg, '<p>' + _msg + '</p>'
             )
             print ' '*7, 'request failed:', req
         else:
@@ -258,8 +265,9 @@ def wait_until_spider_finishes(spider):
 def run_spider(spider, search_term):
     old_cwd = os.getcwd()
     os.chdir(os.path.join(SPIDER_ROOT))
+    # add `-a quantity=10 -a enable_cache=1` below for easider debugging
     run(
-        'scrapy crawl %s -a searchterms_str="%s" -a quantity=10 -a validate=1' % (
+        'scrapy crawl %s -a searchterms_str="%s" -a validate=1' % (
             spider.name, search_term)
     )
     wait_until_spider_finishes(spider)
@@ -273,6 +281,10 @@ class Command(BaseCommand):
         parser.add_argument('spider_name', nargs='?', type=str)
 
     def handle(self, *args, **options):
+        # check ThresholdSettings
+        if not ThresholdSettings.objects.count():
+            print 'Create at least one ThresholdSettings!'
+            sys.exit()
         # get a spider to check
         spider = get_spider_to_check(options.get('spider_name', None))
         if spider is None:

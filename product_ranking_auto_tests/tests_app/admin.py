@@ -15,7 +15,10 @@ admin.site.register(ThresholdSettings, ThresholdSettingsAdmin)
 
 
 class FailedRequestAdmin(admin.ModelAdmin):
-    list_display = ['test_run', 'request', 'when_created']
+    def partial_error(self):
+        return self.error[0:50] + '...' if self.error else ''
+
+    list_display = ['test_run', 'request', partial_error, 'when_created']
     search_fields = ['test_run__spider__name']
     list_filter = ['test_run__spider']
     ordering = ['test_run', '-when_created']

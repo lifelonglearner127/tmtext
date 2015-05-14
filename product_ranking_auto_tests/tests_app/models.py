@@ -23,8 +23,7 @@ class ThresholdSettings(models.Model):
 class Spider(models.Model):
     name = models.CharField(max_length=100, unique=True,
                             help_text='Like walmart_products')
-    threshold_settings = models.ForeignKey(
-        ThresholdSettings, blank=True, null=True)
+    threshold_settings = models.ForeignKey(ThresholdSettings)
     n_errors_in_row = models.IntegerField(
         blank=True, null=True,
         help_text=('Num of consecutive errors before sending an alert '
@@ -131,6 +130,8 @@ class FailedRequest(models.Model):
     when_created = models.DateTimeField(auto_now_add=True)
     error = models.TextField(blank=True, null=True,
                              help_text='Found errors (if any)')
+    error_html = models.TextField(blank=True, null=True,
+                                  help_text='Found errors (in HTML format)')
     result_file = models.FileField(blank=True, null=True)
     log_file = models.FileField(blank=True, null=True)
 
