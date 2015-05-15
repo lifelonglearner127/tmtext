@@ -704,9 +704,24 @@ class AmazonScraper(Scraper):
         self.marketplace_prices = []
         mps = []
         mpp = []
-
+        a = self.tree_html.xpath('//div[@id="merchant-info"]//a//text()')
+        for m in a:
+            mps.append(m)
+        if len(mps) > 0:
+            b = self.tree_html.xpath('//span[@id="priceblock_ourprice"]//text()')
+            for p in b:
+                mpp.append(p)
+        b = self.tree_html.xpath('//div[contains(@class,"pa_mbc_on_amazon_offer")]//span[@class="a-size-medium a-color-price"]//text()')
+        for p in b:
+            mpp.append(p)
+        a = self.tree_html.xpath('//span[contains(@class,"mbcMerchantName")]//text()')
+        for m in a:
+            mps.append(m)
+        if len(mps) > 0:
+            self.marketplace_prices = mpp
+            return mps
         a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
-        if len(a)>0 and a[0].find('seller')>=0:
+        if len(a) > 0 and a[0].find('seller')>=0:
             domain=self.product_page_url.split("/")
             url =self.tree_html.xpath('//div[@id="availability"]//a/@href')
             if len(url)>0:
