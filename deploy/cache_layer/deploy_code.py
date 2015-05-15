@@ -12,6 +12,7 @@ env.host_string = env.hosts[0]
 VENV_DIR = 'virtual_env'
 VENV_PATH = '/home/%s/%s/' % (env.user, VENV_DIR)
 CACHE_ROOT_DIR = '/home/%s/cache' % env.user
+CACHE_LOGS_DIR = '/tmp/cache_logs/'
 
 
 @contextmanager
@@ -43,6 +44,8 @@ def copy_cache_scripts():
     for folder in sub_folders:
         local_path = os.path.join(main_dir, folder)
         put(local_path, CACHE_ROOT_DIR)
+    if not cuisine.dir_exists(CACHE_LOGS_DIR):
+        run('mkdir %s' % CACHE_LOGS_DIR)
 
 def setup_cron():
     required_scriptnames = [
