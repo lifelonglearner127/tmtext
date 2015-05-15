@@ -710,7 +710,11 @@ class WalmartProductsSpider(BaseProductsSpider):
         return None
 
     def _scrape_product_links(self, response):
-        items = response.xpath('//div[@class="js-tile tile-landscape"]')
+        items = response.xpath(
+            '//div[@class="js-tile tile-landscape"] | '
+            '//div[contains(@class, "js-tile js-tile-landscape")]'
+        )
+
         if not items:
             self.log("Found no product links in %r." % response.url, INFO)
 
