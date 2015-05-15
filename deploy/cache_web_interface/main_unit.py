@@ -14,6 +14,7 @@ from boto.sqs.message import Message
 import boto.sqs
 
 from cache_layer.simmetrica_class import Simmetrica
+from cache_layer import additional_sqs_metrics
 
 
 app = Flask(__name__)
@@ -71,6 +72,18 @@ def cache_stats(hours=1):
 
     current_settings = s.get_settings()
 
+    daily_sqs_instance_counter = 'Not available'
+    total_tasks_quantity = 'Not available'
+    try:
+        sqs_metrics = additional_sqs_metrics.get_sqs_metrics()
+        sqs_metrics = json.loads(sqs_metrics)
+        daily_sqs_instance_counter = sqs_metrics['daily_sqs_instance_counter']
+        total_tasks_quantity = sqs_metrics['total_tasks_quantity']
+    except Exception as e:
+        print e
+
+    sqs_instances_quantity = additional_sqs_metrics.check_instance_quantity()
+
     context = {
         'time_range': time_range,
         'total_cached_items': total_cached_items,
@@ -83,7 +96,10 @@ def cache_stats(hours=1):
         'correlation': correlation,
         'most_recent_resp': most_recent_resp,
         'used_memory': used_memory,
-        'current_settings': current_settings
+        'current_settings': current_settings,
+        'daily_sqs_instance_counter': daily_sqs_instance_counter,
+        'total_tasks_quantity': total_tasks_quantity,
+        'sqs_instances_quantity': sqs_instances_quantity
     }
     return render_template('cache_stats.html', **context)
 
@@ -184,6 +200,13 @@ def flash_cache():
     global s
     s.clear_cache()
     return redirect(url_for('cache_stats'))
+
+
+@app.route('/get_sqs_instances_quantity')
+def get_sqs_instances_quantity():
+    data = {'sqs_instances_quantity':
+                additional_sqs_metrics.check_instance_quantity()}
+    return json.dumps(data)
 
 
 if __name__ == '__main__':

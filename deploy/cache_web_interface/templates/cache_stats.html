@@ -4,8 +4,15 @@
 </head>
 
 <body>
-    <h1>Cache simmetrica stats for {{time_range}}</h1>
+    <h1>Cache and SQS metrics for {{time_range}}</h1>
     <div>
+        <h2>SQS metrics</h2>
+        <p>Instaces running at this moment at group: {{sqs_instances_quantity}}</p>
+        <p>Total tasks sent to SQS from 00.00 UTC: {{total_tasks_quantity}}</p>
+        <p>Total SQS instances spinned up from 00.00 UTC: {{sqs_instances_quantity}}</p>
+    </div>
+    <div>
+        <h2>Cache metrics</h2>
         <h3>Total memory used</h3>
         <p>{{used_memory}}</p>
     </div>

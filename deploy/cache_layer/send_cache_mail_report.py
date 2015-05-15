@@ -1,8 +1,10 @@
 import os
 import sys
 import datetime
+import json
 
 from simmetrica_class import Simmetrica
+from additional_sqs_metrics import get_sqs_metrics
 
 
 s = Simmetrica()
@@ -35,6 +37,17 @@ for item in most_recent_resp:
     most_recent_resp_str += pattern
 used_memory = s.get_used_memory()
 
+daily_sqs_instance_counter = 0
+total_tasks_quantity = 0
+
+try:
+    sqs_metrics = get_sqs_metrics(purge=True)
+    sqs_metrics = json.loads(sqs_metrics)
+    daily_sqs_instance_counter = sqs_metrics['daily_sqs_instance_counter']
+    total_tasks_quantity = sqs_metrics['total_tasks_quantity']
+except Exception as e:
+    print e
+
 text_draft = """
 SQS cache service report for last 24 hours:
 Total requests: %s 
@@ -45,10 +58,15 @@ Correlation: %s \n
 %s
 Total cached items at this moment: %s
 Total used memory: %s
+
+SQS metrics:
+Daily sqs instances counter: %s # this mean how many instances were rised up
+Total tasks received/executed during the day:%s
 """
 
 TEXT = text_draft % (total_requests, total_responses, correlation,
-    most_recent_resp_str, total_cached_items, used_memory)
+    most_recent_resp_str, total_cached_items, used_memory,
+    daily_sqs_instance_counter, total_tasks_quantity)
 
 message = """\
 From: %s
