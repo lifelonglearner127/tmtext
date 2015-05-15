@@ -12,6 +12,8 @@ from flask import Flask, request, send_from_directory, send_file
 from flask import render_template, redirect, url_for
 from boto.sqs.message import Message
 import boto.sqs
+import boto
+from boto.s3.key import Key
 
 from cache_layer.simmetrica_class import Simmetrica
 from cache_layer import additional_sqs_metrics
@@ -207,6 +209,84 @@ def get_sqs_instances_quantity():
     data = {'sqs_instances_quantity':
                 additional_sqs_metrics.check_instance_quantity()}
     return json.dumps(data)
+
+
+
+### This is additional functions for debugging SQS
+bucket_list = None
+enumerated_list = None
+AMAZON_BUCKET_NAME = 'spyder-bucket'
+
+def display_log_file(key):
+    filename = '/tmp/tmp_file'
+    key.get_contents_to_filename(filename)
+    lines = open(filename, 'r').readlines()
+    data = '<br>'.join(lines)
+    return data
+
+def get_list_of_bucket_items(striped=True):
+    global bucket_list
+    global enumerated_list
+    # bucket_list = None ## comment this to lower s3 load
+    if not bucket_list:
+        conn = boto.connect_s3()
+
+        bucket = conn.get_bucket(AMAZON_BUCKET_NAME, validate=False)
+        bucket_list = list(bucket.list())
+        if striped:
+            for k in bucket_list:
+                if '.zip' in k.name:
+                    try:
+                        unique_hash = k.name.split('____')[1]
+                        bucket_list = [k for k in bucket_list if unique_hash \
+                                       not in k.name]
+                    except Exception as e:
+                        print(e)
+        bucket_list.reverse()
+        enumerated_list = list(enumerate(bucket_list))
+    return enumerated_list
+
+@app.route('/')
+def get_all_list():
+    get_list_of_bucket_items()
+    return render_template('all_bucket_items.html',
+                           bucket_list=enumerated_list)
+
+@app.route('/get_logs_by_task_by_id', methods=['GET'])
+def get_logs_by_task_by_id():
+    task_id = request.args.get('task_id')
+    get_list_of_bucket_items(striped=False)
+    global enumerated_list
+    required_list = []
+    for item in enumerated_list:
+        name = item[1].name
+        if task_id in name:
+            required_list.append(item)
+    enumerated_list = required_list
+    return render_template('all_bucket_items.html',
+                           bucket_list=enumerated_list)
+
+@app.route('/get_log_body_by_task_id', methods=["GET"])
+def get_log_body_by_task_id():
+    task_id = request.args.get('task_id')
+    print task_id
+    get_list_of_bucket_items(striped=False)
+    global enumerated_list
+    for item in enumerated_list:
+        key = item[1]
+        if 'remote_instance_starter2' in key.name:
+            if task_id in key.get_contents_as_string():
+                return display_log_file(key)
+                break
+    return "Log was not found"
+
+
+@app.route('/get_content', methods=['GET'])
+def get_content():
+    item_number = int(request.args.get('item_number'))
+    key = enumerated_list[int(item_number)][1]
+    data = display_log_file(key)
+    return data
 
 
 if __name__ == '__main__':
