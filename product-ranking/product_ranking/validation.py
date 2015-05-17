@@ -34,7 +34,8 @@ class bcolors:  # constants to avoid using any 3rd-party lib
 
 def errors_to_html(errors):
     main_template = """<table>{rows_str}</table>"""
-    row_template = """<tr><th align="left">%s</th><td>%s</td></tr>"""
+    row_template = """<tr><th align="left">%s</th>
+<td class='value'>%s</td></tr>"""
     rows = []
     for error in errors.items():
         rows.append(row_template % (error[0], error[1]))
