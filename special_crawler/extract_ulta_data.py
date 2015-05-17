@@ -136,16 +136,44 @@ class UltaScraper(Scraper):
         pass
         
     def _image_urls(self):
-        return None
+        main_image_url = self.tree_html.xpath('//meta[@property="og:image"]/@content')[0]
+        thumb_image_urls = [main_image_url]
+        thumb_image_urls.extend(self.tree_html.xpath('//div[@class="product-detail-thumbnail-image"]//img/@alt'))
+
+        for idx, item in enumerate(thumb_image_urls):
+            if "http:" in item:
+                thumb_image_urls[idx] = item.strip()
+            else:
+                thumb_image_urls[idx] = "http:" + item.strip()
+
+        return thumb_image_urls
 
     def _image_count(self):
-        return 0
+        if not self._image_urls():
+            return 0
+
+        return len(self._image_urls())
 
     def _video_urls(self):
-        return None
+        video_urls = self.tree_html.xpath('//iframe/@src')
+        video_urls = [url for url in video_urls if "www.youtube.com" in url]
+
+        for idx, item in enumerate(video_urls):
+            if "http:" in item:
+                video_urls[idx] = item.strip()
+            else:
+                video_urls[idx] = "http:" + item.strip()
+
+        if not video_urls:
+            return None
+
+        return video_urls
 
     def _video_count(self):
-        return 0
+        if not self._video_urls():
+            return 0
+
+        return len(self._video_urls())
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
@@ -172,16 +200,39 @@ class UltaScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        return 0
+        if not self.tree_html.xpath('//div[@id="product-review-container"]/a[@id="reviews"]'):
+            return float(0.0)
+
+        return float(self.tree_html.xpath('//span[@class="pr-rating pr-rounded average"]/text()')[0])
 
     def _review_count(self):
-        return 0
+        if not self.tree_html.xpath('//div[@id="product-review-container"]/a[@id="reviews"]'):
+            return int(0)
+
+        return len(self._reviews())
 
     def _max_review(self):
-        return 0
+        if not self._reviews():
+            return 0.0
+
+        return max(self._reviews())
 
     def _min_review(self):
-        return 0
+        if not self._reviews():
+            return 0.0
+
+        return min(self._reviews())
+
+    def _reviews(self):
+        if not self.tree_html.xpath('//div[@id="product-review-container"]/a[@id="reviews"]'):
+            return None
+
+        reviews = self.tree_html.xpath('//span[@class="pr-rating pr-rounded"]/text()')
+
+        for idx, item in enumerate(reviews):
+            reviews[idx] = float(item)
+
+        return reviews
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -253,6 +304,7 @@ class UltaScraper(Scraper):
         "average_review" : _average_review, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
+        "reviews" : _reviews, \
         # CONTAINER : SELLERS
         "price" : _price, \
         "owned" : _owned, \
