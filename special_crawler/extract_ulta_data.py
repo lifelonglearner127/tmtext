@@ -119,7 +119,7 @@ class UltaScraper(Scraper):
                         or "<dl>" in lxml.html.tostring(description_element):
                     long_description_start = True
 
-                if long_description_start:
+                if long_description_start and "<iframe " not in lxml.html.tostring(description_element):
                     long_description += lxml.html.tostring(description_element)
 
         long_description = long_description.strip()
@@ -209,7 +209,7 @@ class UltaScraper(Scraper):
         if not self.tree_html.xpath('//div[@id="product-review-container"]/a[@id="reviews"]'):
             return int(0)
 
-        return len(self._reviews())
+        return int(self.tree_html.xpath('//p[@class="pr-snapshot-average-based-on-text"]/span[@class="count"]/text()')[0])
 
     def _max_review(self):
         if not self._reviews():
@@ -238,12 +238,79 @@ class UltaScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return None
+        currency = ""
+
+        if self._price_currency() == "USD":
+            currency = "$"
+
+        return currency + str(self._price_amount())
+
+    def _price_amount(self):
+        return float(self.tree_html.xpath("//meta[@property='product:price:amount']/@content")[0])
+
+    def _price_currency(self):
+        return self.tree_html.xpath("//meta[@property='product:price:currency']/@content")[0]
 
     def _owned(self):
         return 0
 
     def _marketplace(self):
+        return 0
+
+    def _site_online(self):
+        if self._in_stores_only() == 1:
+            return 0
+
+        if self._site_online_only() == 1:
+            return 1
+
+        return 1
+
+    def _site_online_only(self):
+        skuDisplayName = self.tree_html.xpath('//h6[@id="skuDisplayName"]/text()')
+
+        if skuDisplayName:
+            skuDisplayName = skuDisplayName[0]
+
+            if "Online Only" in skuDisplayName:
+                return 1
+
+        if self.tree_html.xpath('//div[@id="productBadge"]/img'):
+            productBadge = " " . join(self.tree_html.xpath('//div[@id="productBadge"]/img/@data-blzsrc'))
+
+            if "http://images.ulta.com/is/image/Ulta/badge-online-only" in productBadge:
+                return 1
+
+        return 0
+
+    def _in_stores(self):
+        if self._site_online_only() == 1:
+            return 0
+
+        if self._in_stores_only() == 1:
+            return 1
+
+        return 0
+
+    def _in_stores_only(self):
+        if self.tree_html.xpath('//div[@id="productBadge"]/img'):
+            productBadge = " " . join(self.tree_html.xpath('//div[@id="productBadge"]/img/@data-blzsrc'))
+
+            if "http://images.ulta.com/is/image/Ulta/badge-ulta-exclusive" in productBadge:
+                return 1
+
+        return 0
+
+    def _site_online_out_of_stock(self):
+        return 0
+
+    def _owned_out_of_stock(self):
+        return 0
+
+    def _marketplace_sellers(self):
+        return None
+
+    def _marketplace_out_of_stock(self):
         return 0
 
     ##########################################
@@ -307,8 +374,17 @@ class UltaScraper(Scraper):
         "reviews" : _reviews, \
         # CONTAINER : SELLERS
         "price" : _price, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
         "owned" : _owned, \
         "marketplace" : _marketplace, \
+        "site_online": _site_online, \
+        "site_online_out_of_stock": _site_online_out_of_stock, \
+        "in_stores" : _in_stores, \
+        "in_stores_only" : _in_stores_only, \
+        "owned_out_of_stock": _owned_out_of_stock, \
+        "marketplace_sellers" : _marketplace_sellers, \
+        "marketplace_out_of_stock": _marketplace_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
