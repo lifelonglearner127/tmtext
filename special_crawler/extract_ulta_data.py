@@ -77,36 +77,57 @@ class UltaScraper(Scraper):
         return 0
 
     def _description(self):
+
         description_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[@class="product-catalog-content"]')
 
-        short_description = ""
+        text_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[@class="product-catalog-content"]/text()')
+
+        short_description = "" . join(text_elements)
 
         if description_elements:
             description_elements = description_elements[0]
 
             for description_element in description_elements:
-                if "<b>" in lxml.html.tostring(description_element):
-                    break
-
-                if "<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element):
-                    tree = html.fromstring(short_description)
-                    innerText = tree.xpath("//text()")
-
-                    if not innerText:
-                        short_description = ""
-
+                if "<b>" in lxml.html.tostring(description_element) or "<ul>" in lxml.html.tostring(description_element) \
+                        or "<dl>" in lxml.html.tostring(description_element):
                     break
 
                 short_description += lxml.html.tostring(description_element)
 
-        return short_description.strip()
+        short_description = short_description.strip()
+
+        if not short_description:
+            return None
+        else:
+            return short_description
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        return None
+        description_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[@class="product-catalog-content"]')
+
+        long_description = ""
+        long_description_start = False
+
+        if description_elements:
+            description_elements = description_elements[0]
+
+            for description_element in description_elements:
+                if "<b>" in lxml.html.tostring(description_element) or "<ul>" in lxml.html.tostring(description_element) \
+                        or "<dl>" in lxml.html.tostring(description_element):
+                    long_description_start = True
+
+                if long_description_start:
+                    long_description += lxml.html.tostring(description_element)
+
+        long_description = long_description.strip()
+
+        if not long_description:
+            return None
+        else:
+            return long_description
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -178,10 +199,12 @@ class UltaScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return None
+        categories_text = self.tree_html.xpath('//div[@class="makeup-breadcrumb"]/ul/li/a/text()')
+
+        return categories_text
 
     def _category_name(self):
-        return None
+        return self._categories()[-1]
 
     def _brand(self):
         return self.tree_html.xpath('//input[@id="pinBrand"]/@value')[0].strip()
