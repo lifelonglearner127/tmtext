@@ -55,9 +55,14 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_123': 0,
-        'iphone 9': [200, 800],  # spider should return from 200 to 800 products
-        'a': [200, 800], 'b': [200, 800], 'c': [200, 800], 'd': [200, 800],
-        'e': [200, 800], 'f': [200, 800], 'g': [200, 800],
+        'samsung t9500 battery 2600 li-ion warranty': [50, 250],
+        'water pump bronze inch apollo': [2, 30],
+        'ceiling fan industrial white system': [5, 50],
+        'kaspersky total': [5, 50],
+        'car navigator garmin maps 44LM': [1, 20],
+        'yamaha drums midi': [50, 300],
+        'neural networks math book kindle': [5, 50],
+        'car audio equalizer pioneer mp3': [40, 150]
     }
 
 
