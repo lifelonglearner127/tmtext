@@ -20,6 +20,7 @@ class DashboardView(AuthViewMixin, TemplateView):
 
 class SpiderReview(AuthViewMixin, DetailView):
     model = Spider
+    template_name = 'spider.html'
 
     def get_context_data(self, **kwargs):
         context = super(SpiderReview, self).get_context_data(**kwargs)
