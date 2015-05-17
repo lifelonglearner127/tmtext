@@ -64,7 +64,7 @@ if 'validate' in _args_names:
 if 'enable_cache' in _args_names:
     HTTPCACHE_ENABLED = True
     HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.DummyPolicy'
-    HTTPCACHE_STORAGE = 'scrapy.contrib.httpcache.FilesystemCacheStorage'
+    HTTPCACHE_STORAGE = 'product_ranking.cache.CustomFilesystemCacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
     HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_cache')
 
