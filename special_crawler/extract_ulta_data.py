@@ -129,6 +129,28 @@ class UltaScraper(Scraper):
         else:
             return long_description
 
+    def _ingredients(self):
+        product_catalog_list = self.tree_html.xpath('//div[@class="product-catalog"]')
+
+        for product_catalog in product_catalog_list:
+            head_text = product_catalog.xpath("div[@class='product-catalog-head']/text()")
+
+            if head_text:
+                head_text = head_text[0].strip()
+
+                if "Ingredients" in head_text:
+                    ingredients = product_catalog.xpath("div[@class='product-catalog-content']/text()")[0].strip()
+
+                    return ingredients.split(', ')
+
+        return None
+
+    def _ingredients_count(self):
+        if not self._ingredients():
+            return 0
+
+        return len(self._ingredients())
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -354,6 +376,8 @@ class UltaScraper(Scraper):
         "feature_count" : _feature_count, \
         "description" : _description, \
         "long_description" : _long_description, \
+        "ingredients": _ingredients, \
+        "ingredient_count": _ingredients_count,
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
