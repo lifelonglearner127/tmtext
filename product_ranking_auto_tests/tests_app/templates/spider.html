@@ -28,8 +28,8 @@
                             <div id="failed_request_{{ failed_request.pk }}" style="display: none; margin-left:40px">
                                 <div>{{ failed_request.error_html|safe }}</div>
                                 <div>
-                                    <a href="{{ failed_request.result_file.url }}">Result file</a> |
-                                    <a href="{{ failed_request.log_file.url }}">Log file</a>
+                                    <a href="{{ failed_request.result_file.url }}" target="_blank">Result file</a> |
+                                    <a href="{{ failed_request.log_file.url }}" target="_blank">Log file</a>
                                 </div>
                             </div>
                         </li>
