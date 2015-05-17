@@ -1602,7 +1602,7 @@ class WalmartScraper(Scraper):
         body_raw = "".join(self.tree_html.xpath("//section[@class='center']/script//text()"))
         body_clean = re.sub("\n", " ", body_raw)
         sIndex = body_clean.find(", ") + 2
-        eIndex = body_clean.rfind("// Invoke product.")
+        eIndex = body_clean.rfind('define("athena/analytics-data"')
         body_clean = body_clean[sIndex:eIndex]
         eIndex = body_clean.rfind(");")
 
