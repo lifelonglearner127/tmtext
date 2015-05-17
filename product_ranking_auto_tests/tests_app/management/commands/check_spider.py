@@ -37,6 +37,9 @@ from tests_app.models import (Spider, TestRun, FailedRequest, Alert,
                               ThresholdSettings)
 
 
+ENABLE_CACHE = False
+
+
 def run(command, shell=None):
     """ Runs the given command and returns its output """
     out_stream = subprocess.PIPE
@@ -263,13 +266,15 @@ def wait_until_spider_finishes(spider):
 
 
 def run_spider(spider, search_term):
+    global ENABLE_CACHE
     old_cwd = os.getcwd()
     os.chdir(os.path.join(SPIDER_ROOT))
     # add `-a quantity=10 -a enable_cache=1` below for easider debugging
-    run(
-        'scrapy crawl %s -a searchterms_str="%s" -a validate=1' % (
-            spider.name, search_term)
-    )
+    cmd = 'scrapy crawl %s -a searchterms_str="%s" -a validate=1' % (
+        spider.name, search_term)
+    if ENABLE_CACHE:
+        cmd += ' -a enable_cache=1'
+    run(cmd)
     wait_until_spider_finishes(spider)
     os.chdir(old_cwd)
 
@@ -279,14 +284,18 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('spider_name', nargs='?', type=str)
+        parser.add_argument('enable_cache', nargs='?', type=str)
 
     def handle(self, *args, **options):
+        global ENABLE_CACHE
         # check ThresholdSettings
         if not ThresholdSettings.objects.count():
             print 'Create at least one ThresholdSettings!'
             sys.exit()
         # get a spider to check
         spider = get_spider_to_check(options.get('spider_name', None))
+        if options.get('enable_cache', None):
+            ENABLE_CACHE = True
         if spider is None:
             print 'No active spiders in the DB, or all of them are running'
             sys.exit()
