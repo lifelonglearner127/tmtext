@@ -40,6 +40,7 @@ from extract_frys_data import FrysScraper
 from extract_newegg_data import NeweggScraper
 from extract_costco_data import CostcoScraper
 from extract_proswimwear_data import ProswimwearScraper
+from extract_ulta_data import UltaScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -91,7 +92,8 @@ SUPPORTED_SITES = {
                     "frys": FrysScraper,
                     "newegg": NeweggScraper,
                     "costco": CostcoScraper,
-                    "proswimwear": ProswimwearScraper
+                    "proswimwear": ProswimwearScraper,
+                    "ulta": UltaScraper
                     }
 
 # add logger
