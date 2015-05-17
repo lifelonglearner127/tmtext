@@ -1,4 +1,4 @@
-#
+
 # This file takes the given spider and performs its check.
 # If no spidername given, it'll check a random spider
 #
@@ -19,6 +19,7 @@ import re
 import shutil
 import time
 import subprocess
+import shlex
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -270,12 +271,12 @@ def run_spider(spider, search_term):
     old_cwd = os.getcwd()
     os.chdir(os.path.join(SPIDER_ROOT))
     # add `-a quantity=10 -a enable_cache=1` below for easider debugging
-    cmd = 'scrapy crawl %s -a searchterms_str="%s" -a validate=1' % (
-        spider.name, search_term)
+    scrapy_path = '/home/web_runner/virtual-environments/web-runner/bin/scrapy'
+    cmd = '%s crawl %s -a searchterms_str="%s" -a validate=1' % (
+        scrapy_path, spider.name, search_term)
     if ENABLE_CACHE:
         cmd += ' -a enable_cache=1'
-    run(cmd)
-    wait_until_spider_finishes(spider)
+    subprocess.Popen(shlex.split(cmd), stdout=open(os.devnull, 'w')).wait()
     os.chdir(old_cwd)
 
 
