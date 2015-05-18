@@ -333,10 +333,11 @@ class WalmartProductsSpider(BaseProductsSpider):
         return BuyerReviews(**buyer_reviews)
 
     def _populate_from_html(self, response, product):
+        cond_set_value(product, 'url', response.url)
         cond_set(
             product,
             'description',
-            response.css('.about-product-section').extract(),
+            response.css('.about-product-section, #SITCC_1column').extract(),
             conv=''.join
         )
         cond_set(
@@ -351,10 +352,16 @@ class WalmartProductsSpider(BaseProductsSpider):
             'brand',
             response.xpath(
                 "//div[@class='product-subhead-section']"
-                "/a[@id='WMItemBrandLnk']/text()").extract())     
+                "/a[@id='WMItemBrandLnk']/text()").extract())
+        cond_set(
+            product,
+            'image_url',
+            response.xpath(
+                '//meta[@property="og:image"]/@content').extract())
         if not product.get("brand"):
             brand = is_empty(response.xpath(
                 "//h1[contains(@class, 'product-name product-heading')]/text()"
+                " | //h1[@class='productTitle']/text()"
             ).extract())
             cond_set(
                 product,
