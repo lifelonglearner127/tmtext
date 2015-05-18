@@ -441,6 +441,8 @@ class BaseValidator(object):
         return val in (True, False, None, '')
 
     def _validate_marketplace(self, val):
+        if val == '':
+            return True
         if isinstance(val, (str, unicode)):
             try:
                 val = json.loads(val)
