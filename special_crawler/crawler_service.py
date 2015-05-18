@@ -40,6 +40,7 @@ from extract_frys_data import FrysScraper
 from extract_newegg_data import NeweggScraper
 from extract_costco_data import CostcoScraper
 from extract_proswimwear_data import ProswimwearScraper
+from extract_amazonde_data import AmazonDEScraper
 from extract_ulta_data import UltaScraper
 
 from urllib2 import HTTPError
@@ -93,6 +94,7 @@ SUPPORTED_SITES = {
                     "newegg": NeweggScraper,
                     "costco": CostcoScraper,
                     "proswimwear": ProswimwearScraper,
+                    "amazonde": AmazonDEScraper,
                     "ulta": UltaScraper
                     }
 
@@ -163,6 +165,8 @@ def extract_domain(url):
         return 'george'
     if 'costco.com' in url:
         return 'costco'
+    if 'amazon.de' in url:
+        return 'amazonde'
     m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)
