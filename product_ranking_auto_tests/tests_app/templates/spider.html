@@ -15,9 +15,9 @@
 
 <h1>{{ object }}</h1>
 
-<h2>Failed test runs</h2>
+<h2>Failed test runs (200 latest)</h2>
 <ul>
-    {% for fr in failed_runs %}
+    {% for fr in failed_runs|slice:"0, 200" %}
         <li>
             <div>
                 <a href="#" onclick="$('#fr_{{ fr.pk }}').show(100); return false">{{ fr }}</a>,
