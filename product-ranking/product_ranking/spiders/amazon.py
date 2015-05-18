@@ -516,11 +516,12 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         if values:
             total_matches = int(values[0].replace(',', ''))
         else:
-            self.log(
-                "Failed to parse total number of matches for: %s"
-                % response.url,
-                level=ERROR
-            )
+            if not self.is_nothing_found(response):
+                self.log(
+                    "Failed to parse total number of matches for: %s"
+                    % response.url,
+                    level=ERROR
+                )
             total_matches = None
         return total_matches
 
@@ -677,3 +678,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             next_req.replace(meta={"product": product})
             return next_req
         return product
+
+    def is_nothing_found(self, response):
+        txt = response.xpath('//h1[@id="noResultsTitle"]/text()').extract()
+        txt = ''.join(txt)
+        return 'did not match any products' in txt

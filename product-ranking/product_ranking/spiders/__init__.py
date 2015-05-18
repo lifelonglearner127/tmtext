@@ -311,21 +311,22 @@ class BaseProductsSpider(Spider):
                     , INFO)
             else:
                 scraped_results_per_page = prods_per_page
-                self.log(
-                    "Failed to scrape number of products per page",
-                    ERROR)
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to scrape number of products per page", ERROR)
             response.meta['scraped_results_per_page'] = scraped_results_per_page
 
         if total_matches is None:
             total_matches = self._scrape_total_matches(response)
             if total_matches is not None:
                 response.meta['total_matches'] = total_matches
-                self.log("Found %d `     total matches." % total_matches, INFO)
+                self.log("Found %d total matches." % total_matches, INFO)
             else:
-                self.log(
-                    "Failed to parse total matches for %s" % response.url,
-                    ERROR
-                )
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to parse total matches for %s" % response.url,ERROR)
 
         if total_matches and not prods_per_page:
             # Parsing the page failed. Give up.
