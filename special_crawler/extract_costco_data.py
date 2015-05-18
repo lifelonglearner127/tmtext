@@ -234,23 +234,43 @@ class CostcoScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        vu = self.tree_html.xpath("//a[@class='video-link']/@href")
-##        sp = self._sp_content()
-##        if sp !=None and sp !="":
-##            m = re.findall(r'http://syndicate.sellpoint.net/lvp/.*?\&autoplay=true', sp, re.DOTALL)
-##            if len(m)>0:
-##                m = m[0:-1:2]
-##                vu.extend(m)
-        if len(vu)>0:
-            return vu
-        return None
+        webcollage_url = "http://content.webcollage.net/costco/smart-button?ird=true&channel-product-id=" + self._site_id()
+
+        webcollage_contents = requests.get(webcollage_url).text
+        webcollage_contents = webcollage_contents.decode("unicode-escape")
+
+        video_urls = []
+
+        if "_wccontent" in webcollage_contents:
+            wc_video_json_start_index = webcollage_contents.find('{"videos":[{')
+
+            if wc_video_json_start_index > 0:
+                wc_video_json_end_index = webcollage_contents.find('}]}', wc_video_json_start_index) + 3
+                wc_video_json = webcollage_contents[wc_video_json_start_index:wc_video_json_end_index]
+                wc_video_json = json.loads(wc_video_json.decode("unicode-escape"))
+
+                wc_video_base_url_start_index = webcollage_contents.rfind('data-resources-base="', 0, wc_video_json_start_index)
+                wc_video_base_url_start_index += len('data-resources-base="')
+                wc_video_base_url_end_index = webcollage_contents.find('"', wc_video_base_url_start_index)
+                wc_video_base_url = webcollage_contents[wc_video_base_url_start_index:wc_video_base_url_end_index]
+                wc_video_base_url = wc_video_base_url.replace("\\", "")
+
+                for video_item in wc_video_json["videos"]:
+                    video_urls.append(wc_video_base_url + video_item["src"]["src"])
+
+        if not video_urls:
+            return None
+
+        return video_urls
 
     def _video_count(self):
         sp = self._sp_content()
         n = 0
         m = sp.count('_spPlayMouseOver')
-        if self._video_urls()!=None:
+
+        if self._video_urls():
             n = len(self._video_urls())
+
         return m + n
 
     # return one element containing the PDF
