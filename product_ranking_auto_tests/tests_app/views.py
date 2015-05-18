@@ -14,7 +14,12 @@ class AuthViewMixin(object):
 
 
 class DashboardView(AuthViewMixin, TemplateView):
-    pass
+    template_name = 'spiders.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(DashboardView, self).get_context_data(**kwargs)
+        context['spiders'] = Spider.objects.all().order_by('name')
+        return context
     # TODO: failed\success spiders, num of spiders checked in the last 3 days, num of test runs performed in the last 3 days, num of alerts sent (?)
 
 

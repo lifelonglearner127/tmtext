@@ -16,6 +16,9 @@
 <h1>{{ object }}</h1>
 
 <h2>Failed test runs (200 latest)</h2>
+{% if not failed_runs %}
+    <div>No failed test runs found</div>
+{% endif %}
 <ul>
     {% for fr in failed_runs|slice:"0, 200" %}
         <li>

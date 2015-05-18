@@ -92,6 +92,9 @@ class Spider(models.Model):
         return self.spider_test_runs.filter(status='running')\
             .order_by('-when_finished')
 
+    def get_test_runs(self):
+        return self.spider_test_runs.order_by('-when_finished')
+
     def is_error(self):
         """ Returns True if the last test runs failed as many times
             as needed to send an alert
