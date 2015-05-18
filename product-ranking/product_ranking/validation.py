@@ -71,7 +71,7 @@ def _on_spider_close(spider, reason):
               "Thanks,\n" \
               "The Content Analytics AutoTester"
 
-        msg = msg_template % (
+        msg = msg_template % ( 
             spider.name,
             time.strftime("%c"),
             validation_errors.items()
@@ -344,6 +344,9 @@ class BaseValidator(object):
             return False
         return True
 
+    def _validate_special_pricing(self, val):
+        return val in (0,1)
+
     def _validate_ranking(self, val):
         if isinstance(val, int):
             return True
@@ -433,7 +436,7 @@ class BaseValidator(object):
         if val in ('', None):
             return True
         try:
-            date = datetime.datetime.strptime(val, '%d-%m-%Y')
+            date = datetime.datetime.strptime(val, '%Y-%m-%d')
         except:
             return False
         return True
@@ -480,11 +483,12 @@ class BaseValidator(object):
         :param data: 2-dimensions list or str
         :param exclude_first_line: bool
         :param add_row_index: bool (will add Row index to every wrong value)
-        :return: dict with fields {field_name: first_wrong_value,...} or None
+        :return: dict that contains dict with fields {field_name: first_wrong_value,...} or None
         """
         failed_fields = []
         # validate each field in the row
         optional_ok_fields = []  # put fields there if at least 1 is ok
+
         for row_i, row in enumerate(data):
             for _, field_name in enumerate(
                     _get_fields_to_check(SiteProductItem)):
@@ -514,20 +518,20 @@ class BaseValidator(object):
                 failed_fields):
             if field_name in optional_ok_fields and is_optional:
                 failed_fields[i] = None
+
         failed_fields = [f for f in failed_fields if f is not None]
 
         failed_fields_with_values = OrderedDict()
         for is_optional, row_i, field_name, field_value in failed_fields:
-            if field_name not in failed_fields_with_values.keys():
-                if isinstance(field_value, unicode):
-                    field_value = field_value.encode('utf8')
-                failed_fields_with_values[field_name] = field_value
-                if not isinstance(failed_fields_with_values[field_name], str):
-                    failed_fields_with_values[field_name] \
-                        = str(failed_fields_with_values[field_name])
-                if add_row_index:
-                    failed_fields_with_values[field_name] += \
-                        ' | ROW: %i' % (row_i + 1)
+            if isinstance(field_value, unicode):
+                field_value = field_value.encode('utf-8')
+            if row_i not in failed_fields_with_values.keys():
+                failed_fields_with_values[row_i] = {field_name: field_value}
+            else:
+                failed_fields_with_values[row_i][field_name] = field_value
+            if not isinstance(failed_fields_with_values[row_i][field_name], str):
+                failed_fields_with_values[row_i][field_name] \
+                    = str(failed_fields_with_values[row_i][field_name])
 
         # save order
         failed_fields_with_values = OrderedDict(
