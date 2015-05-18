@@ -656,9 +656,9 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
     def _validate_title(self, val):
         if not bool(val.strip()):  # empty
             return False
-        if len(val.strip()) > 500:  # too long
+        if len(val.strip()) > 1500:  # too long
             return False
-        if val.strip().count(u' ') > 100:  # too many spaces
+        if val.strip().count(u' ') > 300:  # too many spaces
             return False
         if '<' in val or '>' in val:  # no tags
             return False
