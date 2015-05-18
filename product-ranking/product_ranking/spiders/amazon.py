@@ -47,7 +47,7 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     optional_fields = ['model', 'brand', 'price', 'bestseller_rank']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'buyer_reviews', 'google_source_site', 'description'
+        'buyer_reviews', 'google_source_site', 'description', 'special_pricing'
     ]
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = False  # ... duplicated requests?
@@ -639,6 +639,26 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         if val.strip().count(u' ') > 5:  # too many spaces
             return False
         if not val.strip().lower().startswith('http'):
+            return False
+        return True
+
+    def _validate_image_url(self, val):
+        if not bool(val.strip()):  # empty
+            return False
+        if val.strip().count(u' ') > 5:  # too many spaces
+            return False
+        if not val.strip().lower().startswith(('http', 'data:image')):
+            return False
+        return True
+
+    def _validate_title(self, val):
+        if not bool(val.strip()):  # empty
+            return False
+        if len(val.strip()) > 500:  # too long
+            return False
+        if val.strip().count(u' ') > 100:  # too many spaces
+            return False
+        if '<' in val or '>' in val:  # no tags
             return False
         return True
 
