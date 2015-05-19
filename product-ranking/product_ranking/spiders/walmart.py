@@ -400,7 +400,8 @@ class WalmartProductsSpider(BaseProductsSpider):
             response.xpath(
                 "//p[contains(text(), 'Check out these related products')]/.."
                 "//*[contains(@class, 'tile-heading')] |"
-                "//div[@class='related-item']/a[2] |"
+                "//div[@class='related-item']/a[contains(@class,"
+                "'related-link')] |"
                 "//div[@class='rel0']/a"
             ),
         )
