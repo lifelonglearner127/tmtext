@@ -44,21 +44,26 @@ except ImportError as e:
 
 
 class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['model', 'brand', 'price', 'bestseller_rank']
+    optional_fields = ['model', 'brand', 'price', 'bestseller_rank',
+                       'buyer_reviews']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'buyer_reviews', 'google_source_site', 'description', 'special_pricing'
+        'google_source_site', 'description', 'special_pricing'
     ]
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = False  # ... duplicated requests?
     ignore_log_filtered = False  # ... filtered requests?
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
-        'nothing_fou'
-        'nd_123': 0,
-        'iphone 9': [200, 800],  # spider should return from 200 to 800 products
-        'a': [200, 800], 'b': [200, 800], 'c': [200, 800], 'd': [200, 800],
-        'e': [200, 800], 'f': [200, 800], 'g': [200, 800],
+        'nothing_found_1234654654': 0,
+        'samsung t9500 battery 2600 li-ion warranty': [30, 250],
+        'water pump bronze inch apollo': [2, 30],
+        'ceiling fan industrial white system': [5, 50],
+        'kaspersky total': [5, 50],
+        'car navigator garmin maps 44LM': [1, 20],
+        'yamaha drums midi': [50, 300],
+        'black men shoes size 8  red stripes': [50, 300],
+        'car audio equalizer pioneer mp3': [40, 150]
     }
 
 
@@ -371,7 +376,10 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
     def get_buyer_reviews_from_2nd_page(self, response):
         if self._has_captcha(response):
-            return self._handle_captcha(response, self.get_buyer_reviews_from_2nd_page)
+            return self._handle_captcha(
+                response, 
+                self.get_buyer_reviews_from_2nd_page
+            )
         product = response.meta["product"]
         buyer_reviews = {}
         product["buyer_reviews"] = {}
@@ -514,11 +522,12 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         if values:
             total_matches = int(values[0].replace(',', ''))
         else:
-            self.log(
-                "Failed to parse total number of matches for: %s"
-                % response.url,
-                level=ERROR
-            )
+            if not self.is_nothing_found(response):
+                self.log(
+                    "Failed to parse total number of matches for: %s"
+                    % response.url,
+                    level=ERROR
+                )
             total_matches = None
         return total_matches
 
@@ -581,6 +590,11 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         elif len(next_pages) > 1:
             self.log("Found more than one 'next page' link.", ERROR)
         return next_page_url
+
+    def _search_page_error(self, response):
+        body = response.body_as_unicode()
+        return "Your search" in body \
+            and  "did not match any products." in body
 
     # Captcha handling functions.
     def _has_captcha(self, response):
@@ -654,9 +668,9 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
     def _validate_title(self, val):
         if not bool(val.strip()):  # empty
             return False
-        if len(val.strip()) > 500:  # too long
+        if len(val.strip()) > 1500:  # too long
             return False
-        if val.strip().count(u' ') > 100:  # too many spaces
+        if val.strip().count(u' ') > 300:  # too many spaces
             return False
         if '<' in val or '>' in val:  # no tags
             return False
@@ -675,3 +689,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             next_req.replace(meta={"product": product})
             return next_req
         return product
+
+    def is_nothing_found(self, response):
+        txt = response.xpath('//h1[@id="noResultsTitle"]/text()').extract()
+        txt = ''.join(txt)
+        return 'did not match any products' in txt

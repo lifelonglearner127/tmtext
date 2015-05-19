@@ -46,16 +46,6 @@ LOG_FORMATTER = 'product_ranking.pipelines.PipelineFormatter'
 # Value to use for buyer_reviews if no reviews found
 ZERO_REVIEWS_VALUE = 0
 
-# TODO: move away these emails settings
-AMAZON_SES_KEY = "AKIAIB35OIAQMWDZ45GA"
-AMAZON_SES_SECRET = "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"
-AMAZON_SES_TO_ADDRESSES = [
-    'Klaus Hoffmann <klaus.gehoffmann@gmail.com>',
-    'Content Analytics Support Team<support@contentanalyticsinc.com>',
-]
-AMAZON_SES_BCC_ADDRESSES = []
-# TODO: move away these Postgres settings
-AUTO_TEST_POSTGRES_DB_CONN_STR = "dbname='page_ranking_auto_test' user='pruser' host='52.1.13.180' password='password'"
 
 # TODO: move out from this file! should be set dynamically in the __init__ method of the BaseValidator class
 # The piece of code below is awful, need to get rid of it asap.
@@ -74,7 +64,7 @@ if 'validate' in _args_names:
 if 'enable_cache' in _args_names:
     HTTPCACHE_ENABLED = True
     HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.DummyPolicy'
-    HTTPCACHE_STORAGE = 'scrapy.contrib.httpcache.FilesystemCacheStorage'
+    HTTPCACHE_STORAGE = 'product_ranking.cache.CustomFilesystemCacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
     HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_cache')
 

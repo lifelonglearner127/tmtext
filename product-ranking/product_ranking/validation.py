@@ -5,6 +5,7 @@
 #    - 'soft' alerts (sometimes something may fail but will be back to normal soon, so throw alerts only when some error is stable)
 
 import os
+import sys
 import re
 import json
 from pprint import pprint
@@ -12,7 +13,6 @@ from collections import OrderedDict
 import logging
 import time
 import datetime
-from boto import ses
 
 from scrapy.log import INFO
 from scrapy import signals
@@ -30,6 +30,18 @@ class bcolors:  # constants to avoid using any 3rd-party lib
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
+
+
+def errors_to_html(errors):
+    main_template = """<table>{rows_str}</table>"""
+    row_template = """<tr><th align="left">%s</th>
+<td class='value'>%s</td></tr>"""
+    rows = []
+    for error in errors.items():
+        rows.append(row_template % (error[0], error[1]))
+    rows_str = "".join(rows)
+    main_template = main_template.format(rows_str=rows_str)
+    return main_template
 
 
 def _on_spider_close(spider, reason):
@@ -55,34 +67,6 @@ def _on_spider_close(spider, reason):
         print 'ISSUES FOUND!'
         pprint(validation_errors.items())
         print bcolors.ENDC
-
-        # send report email
-        conn = ses.connect_to_region(
-            'us-east-1',
-            aws_access_key_id=settings.AMAZON_SES_KEY,
-            aws_secret_access_key=settings.AMAZON_SES_SECRET,
-        )
-        subject = "Issues found on %s" % spider.name
-        msg_template = "Hi Content Analytics Manager!\n" \
-              "Tested %s spider at %s" \
-              " and found following issues on this spider.\n\n" \
-              "Status:\n\n" \
-              "%s\n\n" \
-              "Thanks,\n" \
-              "The Content Analytics AutoTester"
-
-        msg = msg_template % ( 
-            spider.name,
-            time.strftime("%c"),
-            validation_errors.items()
-        )
-        print conn.send_email(
-            'contentanalyticsinc.autotests@gmail.com',
-            subject,
-            msg,
-            to_addresses=settings.AMAZON_SES_TO_ADDRESSES,
-            bcc_addresses=settings.AMAZON_SES_BCC_ADDRESSES
-        )
     else:
         print bcolors.OKGREEN
         print 'NO ISSUES FOUND'
@@ -111,6 +95,8 @@ def _get_fields_to_check(cls):
 def _json_file_to_data(fname):
     """ Returns JSON lines """
     data = []
+    if not os.path.exists(fname):
+        return []
     with open(fname, 'r') as f:
         for line in f:
             if not line.strip():
@@ -405,7 +391,39 @@ class BaseValidator(object):
         return True
 
     def _validate_buyer_reviews(self, val):
-        return 'BuyerReviews(' in val
+        #print 'VAL', val
+        #import pdb
+        #pdb.set_trace()
+        if val in (0, True, False, ''):
+            return True
+        if isinstance(val, (str, unicode)):
+            try:
+                val = json.loads(val)
+            except:
+                return False
+        if isinstance(val, dict):
+            val = val['buyer_reviews']
+        if isinstance(val, (unicode, str)):
+            val = json.loads(val)
+        if not val:
+            return True  # empty object?
+        if not isinstance(val, (list, tuple)):
+            return False
+        if len(val) != 3:
+            return False
+        if not isinstance(val[0], (int, float)):
+            return False
+        if not isinstance(val[1], (int, float)):
+            return False
+        if not val[2]:
+            return False
+        marks = sorted([int(m) for m in val[2].keys()])
+        if marks != range(1, 6):
+            return False
+        for mark_key, mark_value in val[2].items():
+            if int(mark_value) < 0 or int(mark_value) > 99999999:
+                return False
+        return True
 
     def _validate_google_source_site(self, val):
         return True
@@ -454,6 +472,8 @@ class BaseValidator(object):
         return val in (True, False, None, '')
 
     def _validate_marketplace(self, val):
+        if val == '':
+            return True
         if isinstance(val, (str, unicode)):
             try:
                 val = json.loads(val)
@@ -475,7 +495,16 @@ class BaseValidator(object):
         return val in (True, False, None, '')
 
     def _validate_recent_questions(self, val):
-        # TODO! write method
+        if val == '':
+            return True
+        if isinstance(val, (str, unicode)):
+            try:
+                val = json.loads(val)
+            except:
+                return False
+        for v in val:
+            if not 'date' in [k.lower() for k in val.keys()]:
+                return False
         return True
 
     def _get_failed_fields(self, data, add_row_index=False):
@@ -618,3 +647,9 @@ class BaseValidator(object):
                     OrderedDict(log_issues='offsite filtered requests found'))
 
         return found_issues if found_issues else None
+
+    def errors_html(self):
+        errors = self.errors()
+        if not errors:
+            errors = {}
+        return errors_to_html(errors)
