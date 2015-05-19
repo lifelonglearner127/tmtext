@@ -196,7 +196,7 @@ class CostcoScraper(Scraper):
         if len(img_link) > 0:
             imgs = requests.get(img_link[0]).text
             img_url = re.findall(r"image\:(.+?)\,+?",imgs)
-            img_url = ["http://images.costco-static.com/image/media/"+b.replace("'","").strip()+".jpg" for b in img_url]
+            img_url = ["http://images.costco-static.com/image/media/350-"+b.replace("'","").strip()+".jpg" for b in img_url]
             if len(img_url) > 0:
                 self.image_urls = img_url
                 return img_url
@@ -266,7 +266,7 @@ class CostcoScraper(Scraper):
     def _video_count(self):
         sp = self._sp_content()
         n = 0
-        m = sp.count('_spPlayMouseOver')
+        m = sp.count('autoplay=true') / 2
 
         if self._video_urls():
             n = len(self._video_urls())
@@ -289,9 +289,8 @@ class CostcoScraper(Scraper):
             m = sp.count('.pdf')
         if urls:
             n = len(urls)
-        if n > 0 : return n
-        return m
 
+        return m + n
 
     def _wc_content(self):
         if self.wc_content == None:
