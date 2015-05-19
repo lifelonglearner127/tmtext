@@ -12,7 +12,7 @@ then
 	RES=$FILE
 	if [ -f "$RES" ]
 	then
-		cat $RES | grep ",h" | wc -l
+		cat $RES | grep "[^\"],h" | wc -l
 	fi
 
 else
@@ -27,11 +27,11 @@ else
 		RES=shared_sshfs/"$FILE"_"$NR"_matches.csv
 		if [ -f "$RES" ]
 			then
-			printf "$NR "; cat $RES | grep ",h" | wc -l		
+			printf "$NR "; cat $RES | grep "[^\"],h" | wc -l		
 		fi	
 	done
 
 	echo "-------------------------"
-	printf "ALL "; cat shared_sshfs/"$FILE"_* | grep ",h" | wc -l
+	printf "ALL "; cat shared_sshfs/"$FILE"_* | grep "[^\"],h" | wc -l
 
 fi
