@@ -97,30 +97,36 @@ class BestBuyScraper(Scraper):
         self.feature_count = 0
 
         # http://www.bestbuy.com/site/sony-65-class-64-1-2-diag--led-2160p-smart-3d-4k-ultra-hd-tv-black/5005015.p;template=_specificationsTab
-        url = None
+        feature_urls = []
         data_tabs = self.tree_html.xpath("//div[@id='pdp-model-data']/@data-tabs")
         jsn = json.loads(data_tabs[0])
+
         for tab in jsn:
-            if tab["id"] == "specifications":
+            if tab["id"] == "specifications" or "Details" in tab["id"]:
                 url = tab["fragmentUrl"]
-                url = "http://www.bestbuy.com%s" % url
-                break
+                feature_urls.append("http://www.bestbuy.com%s" % url)
+
         line_txts = []
-        if url is not None:
-            contents = urllib.urlopen(url).read()
-            # document.location.replace('
-            tree = html.fromstring(contents)
-            rows = tree.xpath("//table//tbody//tr")
-            for r in rows:
-                th_txt = " ".join(r.xpath(".//th//text()"))
-                td_txt = " ".join(r.xpath(".//td//text()"))
-                if len(th_txt) > 0 and len(td_txt) > 0:
-                    line = "%s: %s" % (th_txt, td_txt)
-                    line_txts.append(line)
+
+        if feature_urls:
+            for url in feature_urls:
+                contents = urllib.urlopen(url).read()
+                # document.location.replace('
+                tree = html.fromstring(contents)
+                rows = tree.xpath("//table//tbody//tr")
+                for r in rows:
+                    th_txt = " ".join(r.xpath(".//th//text()"))
+                    td_txt = " ".join(r.xpath(".//td//text()"))
+                    if len(th_txt) > 0 and len(td_txt) > 0:
+                        line = "%s: %s" % (th_txt, td_txt)
+                        line_txts.append(line)
+
         if len(line_txts) < 1:
             return None
+
         self.feature_count = len(line_txts)
         self.features = line_txts
+
         return self.features
 
     def _feature_count(self):
@@ -475,8 +481,7 @@ class BestBuyScraper(Scraper):
         return all
 
     def _category_name(self):
-        dept = " ".join(self.tree_html.xpath("//ul[@id='breadcrumb-list']/li[1]/a/text()")).strip()
-        return dept
+        return self._categories()[-1]
     
     def _brand(self):
         return self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content')[0]
