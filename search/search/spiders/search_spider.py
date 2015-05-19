@@ -947,12 +947,18 @@ class SearchSpider(BaseSpider):
         price = None
         if price_holder:
             product_target_price = price_holder[0].strip()
-            # remove commas separating orders of magnitude (ex 2,000)
-            product_target_price = re.sub(",","",product_target_price)
-            price = float(product_target_price)
+            if product_target_price:
+                # remove commas separating orders of magnitude (ex 2,000)
+                product_target_price = re.sub(",","",product_target_price)
+                price = float(product_target_price)
 
-            # convert to dollars (assume pounds)
-            price = Utils.convert_to_dollars(price, u'\xa3')
+                try:
+                    currency = hxs.select("//meta[@itemprop='priceCurrency']/@content").extract()[0].strip()
+                    if currency == 'GBP':
+                        # convert to dollars
+                        price = Utils.convert_to_dollars(price, u'\xa3')
+                except Exception, e:
+                    self.log("Error extracting currency: " + str(e), level=log.DEBUG)
 
         upc = None
 
