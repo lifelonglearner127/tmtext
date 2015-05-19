@@ -279,8 +279,10 @@ class UltaScraper(Scraper):
         if self._in_stores_only() == 1:
             return 0
 
+        '''
         if self._site_online_only() == 1:
             return 1
+        '''
 
         return 1
 
@@ -305,16 +307,19 @@ class UltaScraper(Scraper):
         if self._site_online_only() == 1:
             return 0
 
+        '''
         if self._in_stores_only() == 1:
             return 1
+        '''
 
-        return 0
+        return 1
 
     def _in_stores_only(self):
         if self.tree_html.xpath('//div[@id="productBadge"]/img'):
             productBadge = " " . join(self.tree_html.xpath('//div[@id="productBadge"]/img/@data-blzsrc'))
 
-            if "http://images.ulta.com/is/image/Ulta/badge-ulta-exclusive" in productBadge:
+            if "http://images.ulta.com/is/image/Ulta/badge-ulta-exclusive" in productBadge or \
+                            "http://images.ulta.com/is/image/Ulta/badge-instore" in productBadge:
                 return 1
 
         return 0
