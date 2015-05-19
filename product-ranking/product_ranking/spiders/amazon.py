@@ -374,6 +374,12 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 conv=lambda (url, _): url)
 
     def get_buyer_reviews_from_2nd_page(self, response):
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response, 
+                self.get_buyer_reviews_from_2nd_page
+            )
+
         product = response.meta["product"]
         buyer_reviews = {}
         product["buyer_reviews"] = {}
@@ -584,6 +590,11 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         elif len(next_pages) > 1:
             self.log("Found more than one 'next page' link.", ERROR)
         return next_page_url
+
+    def _search_page_error(self, response):
+        body = response.body_as_unicode()
+        return "Your search" in body \
+            and  "did not match any products." in body
 
     # Captcha handling functions.
     def _has_captcha(self, response):
