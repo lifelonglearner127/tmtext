@@ -624,6 +624,9 @@ class WalmartProductsSpider(BaseProductsSpider):
                 'is_out_of_stock',
                 not available,
             )
+            # the next 2 lines of code should not be uncommented, see BZ #1459
+            #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
+            #    product['is_out_of_stock'] = False
             cond_set_value(
                 product,
                 'is_in_store_only',
