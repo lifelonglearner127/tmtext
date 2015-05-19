@@ -3,6 +3,7 @@
 import re
 import lxml
 import lxml.html
+from itertools import groupby
 
 from lxml import html, etree
 from extract_data import Scraper
@@ -88,9 +89,8 @@ class UltaScraper(Scraper):
             description_elements = description_elements[0]
 
             for description_element in description_elements:
-                if "<b>" in lxml.html.tostring(description_element) or "<ul>" in lxml.html.tostring(description_element) \
-                        or "<dl>" in lxml.html.tostring(description_element):
-                    break
+                if "<iframe " in lxml.html.tostring(description_element):
+                    continue
 
                 short_description += lxml.html.tostring(description_element)
 
@@ -106,28 +106,15 @@ class UltaScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[@class="product-catalog-content"]')
+        description_elements = self.tree_html.xpath('//div[@class="product-catalog"]')
 
-        long_description = ""
-        long_description_start = False
+        for description_element in description_elements:
+            if description_element.xpath("div[@class='product-catalog-head']/text()") and \
+                            "How to Use" in description_element.xpath("div[@class='product-catalog-head']/text()")[0]:
+                return lxml.html.tostring(description_element.xpath("div[@class='product-catalog-content']")[0]).\
+                    replace('<div class="product-catalog-content" style="display: none;">', "").replace("</div>", "")
 
-        if description_elements:
-            description_elements = description_elements[0]
-
-            for description_element in description_elements:
-                if "<b>" in lxml.html.tostring(description_element) or "<ul>" in lxml.html.tostring(description_element) \
-                        or "<dl>" in lxml.html.tostring(description_element):
-                    long_description_start = True
-
-                if long_description_start and "<iframe " not in lxml.html.tostring(description_element):
-                    long_description += lxml.html.tostring(description_element)
-
-        long_description = long_description.strip()
-
-        if not long_description:
-            return None
-        else:
-            return long_description
+        return None
 
     def _ingredients(self):
         product_catalog_list = self.tree_html.xpath('//div[@class="product-catalog"]')
@@ -246,6 +233,7 @@ class UltaScraper(Scraper):
         return min(self._reviews())
 
     def _reviews(self):
+        '''
         if not self.tree_html.xpath('//div[@id="product-review-container"]/a[@id="reviews"]'):
             return None
 
@@ -254,7 +242,15 @@ class UltaScraper(Scraper):
         for idx, item in enumerate(reviews):
             reviews[idx] = float(item)
 
+        reviews.sort()
+        review_count = [len(list(group)) for key, group in groupby(reviews)]
+        reviews = list(set(reviews))
+
+        reviews = [list(a) for a in zip(reviews, review_count)]
+
         return reviews
+        '''
+        return None
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -265,7 +261,7 @@ class UltaScraper(Scraper):
         if self._price_currency() == "USD":
             currency = "$"
 
-        return currency + str(self._price_amount())
+        return currency + "{0:.2f}".format(self._price_amount())
 
     def _price_amount(self):
         return float(self.tree_html.xpath("//meta[@property='product:price:amount']/@content")[0])
@@ -283,8 +279,10 @@ class UltaScraper(Scraper):
         if self._in_stores_only() == 1:
             return 0
 
+        '''
         if self._site_online_only() == 1:
             return 1
+        '''
 
         return 1
 
@@ -309,16 +307,19 @@ class UltaScraper(Scraper):
         if self._site_online_only() == 1:
             return 0
 
+        '''
         if self._in_stores_only() == 1:
             return 1
+        '''
 
-        return 0
+        return 1
 
     def _in_stores_only(self):
         if self.tree_html.xpath('//div[@id="productBadge"]/img'):
             productBadge = " " . join(self.tree_html.xpath('//div[@id="productBadge"]/img/@data-blzsrc'))
 
-            if "http://images.ulta.com/is/image/Ulta/badge-ulta-exclusive" in productBadge:
+            if "http://images.ulta.com/is/image/Ulta/badge-ulta-exclusive" in productBadge or \
+                            "http://images.ulta.com/is/image/Ulta/badge-instore" in productBadge:
                 return 1
 
         return 0
@@ -341,7 +342,7 @@ class UltaScraper(Scraper):
     def _categories(self):
         categories_text = self.tree_html.xpath('//div[@class="makeup-breadcrumb"]/ul/li/a/text()')
 
-        return categories_text
+        return categories_text[1:]
 
     def _category_name(self):
         return self._categories()[-1]
