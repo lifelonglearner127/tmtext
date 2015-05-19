@@ -196,7 +196,7 @@ class CostcoScraper(Scraper):
         if len(img_link) > 0:
             imgs = requests.get(img_link[0]).text
             img_url = re.findall(r"image\:(.+?)\,+?",imgs)
-            img_url = ["http://images.costco-static.com/image/media/"+b.replace("'","").strip()+".jpg" for b in img_url]
+            img_url = ["http://images.costco-static.com/image/media/350-"+b.replace("'","").strip()+".jpg" for b in img_url]
             if len(img_url) > 0:
                 self.image_urls = img_url
                 return img_url
@@ -234,23 +234,43 @@ class CostcoScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        vu = self.tree_html.xpath("//a[@class='video-link']/@href")
-##        sp = self._sp_content()
-##        if sp !=None and sp !="":
-##            m = re.findall(r'http://syndicate.sellpoint.net/lvp/.*?\&autoplay=true', sp, re.DOTALL)
-##            if len(m)>0:
-##                m = m[0:-1:2]
-##                vu.extend(m)
-        if len(vu)>0:
-            return vu
-        return None
+        webcollage_url = "http://content.webcollage.net/costco/smart-button?ird=true&channel-product-id=" + self._site_id()
+
+        webcollage_contents = requests.get(webcollage_url).text
+        webcollage_contents = webcollage_contents.decode("unicode-escape")
+
+        video_urls = []
+
+        if "_wccontent" in webcollage_contents:
+            wc_video_json_start_index = webcollage_contents.find('{"videos":[{')
+
+            if wc_video_json_start_index > 0:
+                wc_video_json_end_index = webcollage_contents.find('}]}', wc_video_json_start_index) + 3
+                wc_video_json = webcollage_contents[wc_video_json_start_index:wc_video_json_end_index]
+                wc_video_json = json.loads(wc_video_json.decode("unicode-escape"))
+
+                wc_video_base_url_start_index = webcollage_contents.rfind('data-resources-base="', 0, wc_video_json_start_index)
+                wc_video_base_url_start_index += len('data-resources-base="')
+                wc_video_base_url_end_index = webcollage_contents.find('"', wc_video_base_url_start_index)
+                wc_video_base_url = webcollage_contents[wc_video_base_url_start_index:wc_video_base_url_end_index]
+                wc_video_base_url = wc_video_base_url.replace("\\", "")
+
+                for video_item in wc_video_json["videos"]:
+                    video_urls.append(wc_video_base_url + video_item["src"]["src"])
+
+        if not video_urls:
+            return None
+
+        return video_urls
 
     def _video_count(self):
         sp = self._sp_content()
         n = 0
-        m = sp.count('_spPlayMouseOver')
-        if self._video_urls()!=None:
+        m = sp.count('autoplay=true') / 2
+
+        if self._video_urls():
             n = len(self._video_urls())
+
         return m + n
 
     # return one element containing the PDF
@@ -269,9 +289,8 @@ class CostcoScraper(Scraper):
             m = sp.count('.pdf')
         if urls:
             n = len(urls)
-        if n > 0 : return n
-        return m
 
+        return m + n
 
     def _wc_content(self):
         if self.wc_content == None:
