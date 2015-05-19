@@ -390,7 +390,7 @@ class CostcoScraper(Scraper):
     def _average_review(self):
         avr = self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
         if len(avr) > 0:
-            return self._tofloat(avr[0])
+            return round(self._tofloat(avr[0]), 1)
         return None
 
 
@@ -479,6 +479,9 @@ class CostcoScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
+        if self.tree_html.xpath('//span[contains(@class, "out-of-stock")]'):
+            return 1
+
         return 0
 
     def _marketplace(self):
