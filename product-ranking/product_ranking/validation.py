@@ -464,7 +464,16 @@ class BaseValidator(object):
         return val in (True, False, None, '')
 
     def _validate_recent_questions(self, val):
-        # TODO! write method
+        if val == '':
+            return True
+        if isinstance(val, (str, unicode)):
+            try:
+                val = json.loads(val)
+            except:
+                return False
+        for v in val:
+            if not 'date' in [k.lower() for k in val.keys()]:
+                return False
         return True
 
     def _get_failed_fields(self, data, add_row_index=False):
