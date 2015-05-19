@@ -392,6 +392,8 @@ class BaseValidator(object):
         return True
 
     def _validate_buyer_reviews(self, val):
+        if val in (0, True, False, ''):
+            return True
         return 'BuyerReviews(' in val
 
     def _validate_google_source_site(self, val):
