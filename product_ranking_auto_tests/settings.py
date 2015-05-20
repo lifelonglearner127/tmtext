@@ -107,3 +107,5 @@ except ImportError:
 
 
 EMAIL_SUBJECT = 'Keyword ranking spider alert: {spider_name}'
+
+LOGIN_REDIRECT_URL = '/tests/'

@@ -1,5 +1,5 @@
 from django.views.generic import DetailView, TemplateView, RedirectView
-from django.http.response import HttpResponse
+from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse_lazy
 
@@ -9,7 +9,9 @@ from .models import TestRun, Spider, FailedRequest
 class AuthViewMixin(object):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_superuser:
-            return HttpResponse('you must authenticate as a superuser')
+            return HttpResponseRedirect(
+                reverse_lazy('login_view')
+            )
         return super(AuthViewMixin, self).dispatch(request, *args, **kwargs)
 
 
