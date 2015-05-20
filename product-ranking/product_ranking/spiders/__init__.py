@@ -267,7 +267,7 @@ class BaseProductsSpider(Spider):
             self.log("For search term '%s' with %d items remaining,"
                      " failed to retrieve search page: %s"
                      % (search_term, remaining, response.request.url),
-                     ERROR)
+                     WARNING)
         else:
             prods_count = -1  # Also used after the loop.
             for prods_count, request_or_prod in enumerate(
