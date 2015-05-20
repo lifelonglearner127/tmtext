@@ -197,12 +197,14 @@ def create_alert_if_needed(test_run_or_spider, wait_time='12hrs'):
     # do not create new alerts for this spider too often, lets not be annoying
     if not 'hrs' in wait_time:
         print 'invalid wait time'
-        wait_time = 12
+        wait_time = 24
     wait_time = int(wait_time.replace('hrs', ''))
     wait_time = wait_time * 60 * 60  # convert to seconds
-    now = timezone.now()
-    if test_run.when_finished < now + datetime.timedelta(seconds=wait_time):
-        return
+    _last_alert = test_run.get_last_alert()
+    if _last_alert:
+        if (_last_alert.when_created
+                < timezone.now() + datetime.timedelta(seconds=wait_time)):
+            return
 
     msg = """
 The spider {spider_name} has:

@@ -122,6 +122,9 @@ class TestRun(models.Model):
     num_of_successful_requests = models.IntegerField(
         default=0, help_text='Num of successfull requests after testing')
 
+    def get_last_alert(self):
+        return self.test_run_alerts.all().order_by('-when_created').first()
+
     def __unicode__(self):
         return 'For [%s], started %s' % (self.spider.name, self.when_started)
 
@@ -142,3 +145,4 @@ class FailedRequest(models.Model):
 class Alert(models.Model):
     """ Store list of sent alerts to avoid sending tons of emails """
     test_run = models.ForeignKey(TestRun, related_name='test_run_alerts')
+    when_created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
