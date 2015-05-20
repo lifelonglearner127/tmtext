@@ -415,7 +415,6 @@ class UltaScraper(Scraper):
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores" : _in_stores, \
-        "in_stores_only" : _in_stores_only, \
         "owned_out_of_stock": _owned_out_of_stock, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
