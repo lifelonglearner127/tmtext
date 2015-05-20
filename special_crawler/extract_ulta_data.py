@@ -3,6 +3,8 @@
 import re
 import lxml
 import lxml.html
+import requests
+
 from itertools import groupby
 
 from lxml import html, etree
@@ -287,6 +289,7 @@ class UltaScraper(Scraper):
         return 1
 
     def _site_online_only(self):
+
         skuDisplayName = self.tree_html.xpath('//h6[@id="skuDisplayName"]/text()')
 
         if skuDisplayName:
@@ -295,8 +298,11 @@ class UltaScraper(Scraper):
             if "Online Only" in skuDisplayName:
                 return 1
 
-        if self.tree_html.xpath('//div[@id="productBadge"]/img'):
-            productBadge = " " . join(self.tree_html.xpath('//div[@id="productBadge"]/img/@data-blzsrc'))
+        contents = requests.get(self.product_page_url).text
+        tree = html.fromstring(contents)
+
+        if tree.xpath('//div[@id="productBadge"]/img'):
+            productBadge = " " . join(tree.xpath('//div[@id="productBadge"]/img/@data-blzsrc'))
 
             if "http://images.ulta.com/is/image/Ulta/badge-online-only" in productBadge:
                 return 1
@@ -315,8 +321,11 @@ class UltaScraper(Scraper):
         return 1
 
     def _in_stores_only(self):
-        if self.tree_html.xpath('//div[@id="productBadge"]/img'):
-            productBadge = " " . join(self.tree_html.xpath('//div[@id="productBadge"]/img/@data-blzsrc'))
+        contents = requests.get(self.product_page_url).text
+        tree = html.fromstring(contents)
+
+        if tree.xpath('//div[@id="productBadge"]/img'):
+            productBadge = " " . join(tree.xpath('//div[@id="productBadge"]/img/@data-blzsrc'))
 
             if "http://images.ulta.com/is/image/Ulta/badge-ulta-exclusive" in productBadge or \
                             "http://images.ulta.com/is/image/Ulta/badge-instore" in productBadge:
