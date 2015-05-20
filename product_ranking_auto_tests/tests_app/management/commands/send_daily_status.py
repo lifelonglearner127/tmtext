@@ -46,7 +46,7 @@ Test results:
             email_template += ". Details: %s" % spider.get_absolute_url()
             email_template += '\n\n'
 
-        email_template += "\n\nUTC time: %s" % datetime.datetime.utcnow()
+        email_subj += ", UTC time: %s" % datetime.datetime.utcnow()
 
         print email_template
 
