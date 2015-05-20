@@ -223,16 +223,22 @@ class UltaScraper(Scraper):
         return int(self.tree_html.xpath('//p[@class="pr-snapshot-average-based-on-text"]/span[@class="count"]/text()')[0])
 
     def _max_review(self):
+        '''
         if not self._reviews():
             return 0.0
 
         return max(self._reviews())
+        '''
+        return None
 
     def _min_review(self):
+        '''
         if not self._reviews():
             return 0.0
 
         return min(self._reviews())
+        '''
+        return None
 
     def _reviews(self):
         '''
