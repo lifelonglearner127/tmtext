@@ -212,7 +212,7 @@ class UltaScraper(Scraper):
 
     def _average_review(self):
         if not self.tree_html.xpath('//div[@id="product-review-container"]/a[@id="reviews"]'):
-            return float(0.0)
+            return None
 
         return float(self.tree_html.xpath('//span[@class="pr-rating pr-rounded average"]/text()')[0])
 
@@ -223,16 +223,22 @@ class UltaScraper(Scraper):
         return int(self.tree_html.xpath('//p[@class="pr-snapshot-average-based-on-text"]/span[@class="count"]/text()')[0])
 
     def _max_review(self):
+        '''
         if not self._reviews():
             return 0.0
 
         return max(self._reviews())
+        '''
+        return None
 
     def _min_review(self):
+        '''
         if not self._reviews():
             return 0.0
 
         return min(self._reviews())
+        '''
+        return None
 
     def _reviews(self):
         '''
@@ -327,8 +333,7 @@ class UltaScraper(Scraper):
         if tree.xpath('//div[@id="productBadge"]/img'):
             productBadge = " " . join(tree.xpath('//div[@id="productBadge"]/img/@src'))
 
-            if "http://images.ulta.com/is/image/Ulta/badge-ulta-exclusive" in productBadge or \
-                            "http://images.ulta.com/is/image/Ulta/badge-instore" in productBadge:
+            if "http://images.ulta.com/is/image/Ulta/badge-instore" in productBadge:
                 return 1
 
         return 0
