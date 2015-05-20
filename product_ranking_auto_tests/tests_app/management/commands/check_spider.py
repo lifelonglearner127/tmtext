@@ -146,7 +146,7 @@ def get_scrapy_spider_and_settings(spider):
     return scrapy_spider, validator
 
 
-def create_failed_request(test_run, scrapy_spider, request,
+def create_failed_request(test_run, scrapy_spider, request, log_fname,
                           error, html_error=None):
     """ Just a convenient wrapper to avoid 'repeating myself' """
     today = timezone.now().strftime('%d_%m_%Y')
@@ -156,16 +156,16 @@ def create_failed_request(test_run, scrapy_spider, request,
     fs_request = slugify(request)  # filesystem-friendly chars only
     output_file = os.path.join(output_dir, today,
                                str(test_run.pk)+'__'+fs_request+'.csv')
-    log_file = os.path.join(output_dir, today,
-                            str(test_run.pk)+'__'+fs_request+'.txt')
+    log_file_db = os.path.join(output_dir, today,
+                               str(test_run.pk)+'__'+fs_request+'.txt')
     if os.path.exists(scrapy_spider._validation_filename()):
         shutil.copy(scrapy_spider._validation_filename(), output_file)
-    shutil.copy(scrapy_spider._validation_log_filename(), log_file)
+    shutil.move(log_fname, log_file_db)
     fr = FailedRequest.objects.create(
         test_run=test_run, request=request,
         error=error, error_html=html_error if html_error else "",
         result_file=os.path.relpath(output_file, MEDIA_ROOT),
-        log_file=os.path.relpath(log_file, MEDIA_ROOT)
+        log_file=os.path.relpath(log_file_db, MEDIA_ROOT)
     )
     return fr
 
@@ -236,20 +236,20 @@ def check_spider(spider):
     scrapy_spider, spider_settings = get_scrapy_spider_and_settings(spider)
     scrapy_spider = scrapy_spider()  # instantiate class to use its methods
     for req, req_range in spider_settings.test_requests.items():
-        run_spider(spider, req, time_marker=timezone.now())
+        _log_fname = run_spider(spider, req, time_marker=timezone.now())
         errors = scrapy_spider.errors()
         html_errors = scrapy_spider.errors_html()
         output_data = scrapy_spider._validation_data()
         if errors:
             test_run.num_of_failed_requests += 1
-            create_failed_request(test_run, scrapy_spider, req,
+            create_failed_request(test_run, scrapy_spider, req, _log_fname,
                                   errors, html_errors)
             print ' '*7, 'request failed:', req
         elif (isinstance(req_range, int)
                 and len(output_data) != 0):
             test_run.num_of_failed_requests += 1
             create_failed_request(
-                test_run, scrapy_spider, req,
+                test_run, scrapy_spider, req, _log_fname,
                 'must have empty output', '<p>must have empty output</p>')
             print ' '*7, 'request failed:', req
         elif (isinstance(req_range, (list, tuple))
@@ -258,8 +258,8 @@ def check_spider(spider):
             _msg = 'must have output in range %s but got %i results' % (
                         req_range, len(output_data))
             create_failed_request(
-                test_run, scrapy_spider, req, _msg, '<p>' + _msg + '</p>'
-            )
+                test_run, scrapy_spider, req, _log_fname, _msg,
+                '<p>' + _msg + '</p>')
             print ' '*7, 'request failed:', req
         else:
             test_run.num_of_successful_requests += 1
@@ -281,7 +281,13 @@ def wait_until_spider_finishes(spider):
         time.sleep(1)
 
 
-def run_spider(spider, search_term, time_marker=None):
+def run_spider(spider, search_term, time_marker):
+    """ Executes spider
+    :param spider: DB spider instance
+    :param search_term: str, request to search
+    :param time_marker: datetime
+    :return: str, path to the temporary file
+    """
     global ENABLE_CACHE
     old_cwd = os.getcwd()
     os.chdir(os.path.join(SPIDER_ROOT))
@@ -293,12 +299,15 @@ def run_spider(spider, search_term, time_marker=None):
         scrapy_path, spider.name, search_term)
     if ENABLE_CACHE:
         cmd += ' -a enable_cache=1'
-    if time_marker:
+    if isinstance(time_marker, (datetime.date, datetime.datetime)):
         time_marker = slugify(str(time_marker))
-        cmd += ' -s LOG_FILE=/tmp/%s_%s.log' % (spider.name, time_marker)
+    _log_filename = '/tmp/%s__%s__%s.log' % (
+        spider.name, slugify(search_term), time_marker)
+    cmd += ' -s LOG_FILE=%s' % _log_filename
     cmd = str(cmd)  # avoid TypeError: must be encoded string without NULL ...
     subprocess.Popen(shlex.split(cmd), stdout=open(os.devnull, 'w')).wait()
     os.chdir(old_cwd)
+    return _log_filename
 
 
 class Command(BaseCommand):
