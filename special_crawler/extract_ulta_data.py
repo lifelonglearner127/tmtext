@@ -212,7 +212,7 @@ class UltaScraper(Scraper):
 
     def _average_review(self):
         if not self.tree_html.xpath('//div[@id="product-review-container"]/a[@id="reviews"]'):
-            return float(0.0)
+            return None
 
         return float(self.tree_html.xpath('//span[@class="pr-rating pr-rounded average"]/text()')[0])
 
