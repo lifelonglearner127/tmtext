@@ -236,7 +236,7 @@ def check_spider(spider):
     scrapy_spider, spider_settings = get_scrapy_spider_and_settings(spider)
     scrapy_spider = scrapy_spider()  # instantiate class to use its methods
     for req, req_range in spider_settings.test_requests.items():
-        run_spider(spider, req)
+        run_spider(spider, req, time_marker=timezone.now())
         errors = scrapy_spider.errors()
         html_errors = scrapy_spider.errors_html()
         output_data = scrapy_spider._validation_data()
@@ -281,7 +281,7 @@ def wait_until_spider_finishes(spider):
         time.sleep(1)
 
 
-def run_spider(spider, search_term):
+def run_spider(spider, search_term, time_marker=None):
     global ENABLE_CACHE
     old_cwd = os.getcwd()
     os.chdir(os.path.join(SPIDER_ROOT))
@@ -293,6 +293,9 @@ def run_spider(spider, search_term):
         scrapy_path, spider.name, search_term)
     if ENABLE_CACHE:
         cmd += ' -a enable_cache=1'
+    if time_marker:
+        time_marker = slugify(str(time_marker))
+        cmd += ' -s LOG_FILE=/tmp/%s_%s.log' % (spider.name, time_marker)
     cmd = str(cmd)  # avoid TypeError: must be encoded string without NULL ...
     subprocess.Popen(shlex.split(cmd), stdout=open(os.devnull, 'w')).wait()
     os.chdir(old_cwd)
