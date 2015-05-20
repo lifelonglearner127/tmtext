@@ -145,4 +145,5 @@ class FailedRequest(models.Model):
 class Alert(models.Model):
     """ Store list of sent alerts to avoid sending tons of emails """
     test_run = models.ForeignKey(TestRun, related_name='test_run_alerts')
-    when_created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    when_created = models.DateTimeField(auto_now_add=True,
+                                        blank=True, null=True)
