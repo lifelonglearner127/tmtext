@@ -241,7 +241,8 @@ class Amazon_marketplace(object):
             return Request(
                 url="http://" + self.called_class.allowed_domains[0] + url,
                 callback=function,
-                meta={"marketplaces": marketplaces, "product": product}
+                meta={"marketplaces": marketplaces, "product": product},
+                dont_filter=True
             )
         if marketplaces:
             product["marketplace"] = marketplaces

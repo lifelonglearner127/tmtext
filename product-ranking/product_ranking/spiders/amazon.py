@@ -15,7 +15,7 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
-from product_ranking.validation import BaseValidator
+from product_ranking.amazon_tests import AmazonTests
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
@@ -67,7 +67,7 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     }
 
 
-class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
+class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
     name = 'amazon_products'
     allowed_domains = ["amazon.com"]
 
@@ -644,37 +644,6 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 meta=meta)
 
         return result
-
-    def _validate_url(self, val):
-        if not bool(val.strip()):  # empty
-            return False
-        if len(val.strip()) > 1500:  # too long
-            return False
-        if val.strip().count(u' ') > 5:  # too many spaces
-            return False
-        if not val.strip().lower().startswith('http'):
-            return False
-        return True
-
-    def _validate_image_url(self, val):
-        if not bool(val.strip()):  # empty
-            return False
-        if val.strip().count(u' ') > 5:  # too many spaces
-            return False
-        if not val.strip().lower().startswith(('http', 'data:image')):
-            return False
-        return True
-
-    def _validate_title(self, val):
-        if not bool(val.strip()):  # empty
-            return False
-        if len(val.strip()) > 1500:  # too long
-            return False
-        if val.strip().count(u' ') > 300:  # too many spaces
-            return False
-        if '<' in val or '>' in val:  # no tags
-            return False
-        return True
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
