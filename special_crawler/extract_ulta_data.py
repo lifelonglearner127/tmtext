@@ -302,7 +302,7 @@ class UltaScraper(Scraper):
         tree = html.fromstring(contents)
 
         if tree.xpath('//div[@id="productBadge"]/img'):
-            productBadge = " " . join(tree.xpath('//div[@id="productBadge"]/img/@data-blzsrc'))
+            productBadge = " " . join(tree.xpath('//div[@id="productBadge"]/img/@src'))
 
             if "http://images.ulta.com/is/image/Ulta/badge-online-only" in productBadge:
                 return 1
@@ -325,7 +325,7 @@ class UltaScraper(Scraper):
         tree = html.fromstring(contents)
 
         if tree.xpath('//div[@id="productBadge"]/img'):
-            productBadge = " " . join(tree.xpath('//div[@id="productBadge"]/img/@data-blzsrc'))
+            productBadge = " " . join(tree.xpath('//div[@id="productBadge"]/img/@src'))
 
             if "http://images.ulta.com/is/image/Ulta/badge-ulta-exclusive" in productBadge or \
                             "http://images.ulta.com/is/image/Ulta/badge-instore" in productBadge:
