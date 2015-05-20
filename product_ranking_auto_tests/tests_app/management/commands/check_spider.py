@@ -33,8 +33,7 @@ sys.path.insert(1, os.path.join(CWD, '..', '..', '..'))
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from settings import (SPIDER_ROOT, MEDIA_ROOT, EMAIL_SUBJECT,
-                      DEFAULT_FROM_EMAIL, HOST_NAME)
+from settings import (SPIDER_ROOT, MEDIA_ROOT, HOST_NAME)
 from tests_app.models import (Spider, TestRun, FailedRequest, Alert,
                               ThresholdSettings)
 
@@ -205,31 +204,6 @@ def create_alert_if_needed(test_run_or_spider, wait_time='12hrs'):
         if (_last_alert.when_created
                 < timezone.now() + datetime.timedelta(seconds=wait_time)):
             return
-
-    msg = """
-The spider {spider_name} has:
-
-1) {failed_requests} failed requests
-2) {success_requests} success requests
-
-You can see more info here: {host_name}{failed_run}
-    """
-    """
-    msg.format(
-        spider_name=spider.name,
-        failed_requests=test_run.num_of_failed_requests,
-        success_requests=test_run.num_of_successful_requests,
-        host_name=HOST_NAME,
-        failed_run=reverse_lazy('tests_app_test_run_review',
-                                kwargs={'pk': test_run.pk})
-    )
-    recipients = [r.strip() for r in spider.get_notify().split(',')]
-    send_mail(
-        EMAIL_SUBJECT.format(spider_name=spider.name),
-        msg, DEFAULT_FROM_EMAIL, recipients,
-        fail_silently=False
-    )
-    """
     Alert.objects.create(test_run=test_run)
 
 

@@ -1,4 +1,7 @@
 from django.db import models
+from django.core.urlresolvers import reverse_lazy
+
+from settings import HOST_NAME, PORT
 
 
 class ThresholdSettings(models.Model):
@@ -94,6 +97,14 @@ class Spider(models.Model):
 
     def get_test_runs(self):
         return self.spider_test_runs.order_by('-when_finished')
+
+    def get_absolute_url(self):
+        if int(PORT) != 80:
+            _host = HOST_NAME + ':%s' % PORT
+        else:
+            _host = HOST_NAME
+        return 'http://' + _host + str(reverse_lazy(
+            'tests_app_spider_review', kwargs={'pk': self.pk}))
 
     def is_error(self):
         """ Returns True if the last test runs failed as many times
