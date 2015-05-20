@@ -65,7 +65,8 @@ class BestBuyScraper(Scraper):
         return prod_id
 
     def _site_id(self):
-        return None
+        site_id = re.findall("id=\d+", self.product_page_url)[0][3:]
+        return site_id
 
     def _status(self):
         return "success"
@@ -138,7 +139,7 @@ class BestBuyScraper(Scraper):
         return None
 
     def _description_helper(self):
-        rows = self.tree_html.xpath("//div[@id='long-description']//text()")
+        rows = self.tree_html.xpath("//div[@itemprop='description']//text()")
         rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
         description = "\n".join(rows)
         return description
@@ -366,7 +367,6 @@ class BestBuyScraper(Scraper):
                 return 1
         return 0
 
-
     def _htags(self):
         htags_dict = {}
         htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
@@ -387,13 +387,46 @@ class BestBuyScraper(Scraper):
         return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
 
     def _review_count(self):
-        return self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
+        if not self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content'):
+            return 0
+
+        return int(self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0])
  
     def _max_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        reviews = self._reviews()
+
+        for review in reviews:
+            if review[1] > 0:
+                return review[0]
 
     def _min_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        reviews = self._reviews()
+        reviews = reviews[::-1]
+
+        for review in reviews:
+            if review[1] > 0:
+                return review[0]
+
+    def _reviews(self):
+        if not self.tree_html.xpath('//div[@class="ratings-tooltip-content"]/div[@class="star-breakdowns"]'):
+            return None
+
+        reviews = [5, 4, 3, 2, 1]
+        review_count_list = self.tree_html.xpath('//div[@class="ratings-tooltip-content"]/div[@class="star-breakdowns"]')[0].\
+            xpath('div[@class="star-breakdown"]/div[@class="star-count"]/text()')
+
+        for i, review_count in enumerate(review_count_list):
+            review_count_list[i] = int(re.findall("\d+", review_count)[0])
+
+        reviews = [list(a) for a in zip(reviews, review_count_list)]
+
+        return reviews
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -484,10 +517,13 @@ class BestBuyScraper(Scraper):
         return self._categories()[-1]
     
     def _brand(self):
-        return self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content')[0]
+        if self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content'):
+            return self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content')[0]
     
+        if self.tree_html.xpath('//span[@id="publisher-value"]/text()'):
+            return self.tree_html.xpath('//span[@id="publisher-value"]/text()')[0]
 
-
+        return None
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -534,7 +570,7 @@ class BestBuyScraper(Scraper):
         "average_review" : _average_review, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
-
+        "reviews" : _reviews, \
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \
