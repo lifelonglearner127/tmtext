@@ -20,6 +20,7 @@ import shutil
 import time
 import subprocess
 import shlex
+import datetime
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -181,8 +182,8 @@ def is_test_run_passed(test_run):
     return percent_failed < percent_of_failed_requests
 
 
-def send_alert_if_needed(test_run_or_spider):
-    """ Send a notification if the threshold passed """
+def create_alert_if_needed(test_run_or_spider, wait_time='12hrs'):
+    """ Create a DB alert if the threshold passed """
     if isinstance(test_run_or_spider, TestRun):
         spider = test_run_or_spider.spider
     else:
@@ -192,6 +193,17 @@ def send_alert_if_needed(test_run_or_spider):
     test_run = spider.get_last_failed_test_run()
     if test_run.test_run_alerts.count():
         return  # the alert has already been sent
+
+    # do not create new alerts for this spider too often, lets not be annoying
+    if not 'hrs' in wait_time:
+        print 'invalid wait time'
+        wait_time = 12
+    wait_time = int(wait_time.replace('hrs', ''))
+    wait_time = wait_time * 60 * 60  # convert to seconds
+    now = timezone.now()
+    if test_run.when_finished < now + datetime.timedelta(seconds=wait_time):
+        return
+
     msg = """
 The spider {spider_name} has:
 
@@ -199,6 +211,7 @@ The spider {spider_name} has:
 2) {success_requests} success requests
 
 You can see more info here: {host_name}{failed_run}
+    """
     """
     msg.format(
         spider_name=spider.name,
@@ -214,6 +227,7 @@ You can see more info here: {host_name}{failed_run}
         msg, DEFAULT_FROM_EMAIL, recipients,
         fail_silently=False
     )
+    """
     Alert.objects.create(test_run=test_run)
 
 
@@ -257,6 +271,7 @@ def check_spider(spider):
     else:
         test_run.status = 'failed'
         print ' '*3, 'test run FAILED'
+        create_alert_if_needed(test_run)
     test_run.when_finished = timezone.now()
     test_run.save()
 
