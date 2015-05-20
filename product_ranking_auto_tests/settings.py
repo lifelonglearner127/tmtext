@@ -33,12 +33,6 @@ PORT = 9090
 DEFAULT_FROM_EMAIL = 'noreply@' + HOST_NAME
 AMAZON_SES_KEY = "AKIAIB35OIAQMWDZ45GA"
 AMAZON_SES_SECRET = "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"
-AMAZON_SES_TO_ADDRESSES = [
-    'no.andrey@gmail.com',
-    'seomaker@mail.ru'
-    #'Klaus Hoffmann <klaus.gehoffmann@gmail.com>',
-    #'Content Analytics Support Team<support@contentanalyticsinc.com>',
-]
 
 # Application definition
 

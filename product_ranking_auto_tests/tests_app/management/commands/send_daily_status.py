@@ -56,10 +56,15 @@ Test results:
             aws_access_key_id=settings.AMAZON_SES_KEY,
             aws_secret_access_key=settings.AMAZON_SES_SECRET,
         )
-        print conn.send_email(
-            'contentanalyticsinc.autotests@gmail.com',
-            email_subj,
-            email_template,
-            to_addresses=settings.AMAZON_SES_TO_ADDRESSES,
-            bcc_addresses=[]
-        )
+        to_email = ThresholdSettings.objects.all().first()
+        if to_email:
+            to_email = to_email.notify
+            to_email = [e.strip() for e in to_email.split(',')]
+            print "SENDING TO", to_email
+            print conn.send_email(
+                'contentanalyticsinc.autotests@gmail.com',
+                email_subj,
+                email_template,
+                to_addresses=to_email,
+                bcc_addresses=[]
+            )
