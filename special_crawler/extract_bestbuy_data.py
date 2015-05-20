@@ -390,7 +390,7 @@ class BestBuyScraper(Scraper):
         if not self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content'):
             return 0
 
-        return int(self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0])
+        return int(self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0].replace(',', ''))
  
     def _max_review(self):
         if self._review_count() == 0:
