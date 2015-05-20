@@ -24,6 +24,15 @@ class Command(BaseCommand):
         spiders = Spider.objects.filter(active=True)
         return [s for s in spiders if s.is_error()]
 
+    def _num_of_active_spiders(self):
+        return Spider.objects.filter(active=True).count()
+
+    def _num_of_failed_spiders(self):
+        return len(self._what_is_broken())
+
+    def _num_of_passed_spiders(self):
+        return self._num_of_active_spiders() - self._num_of_failed_spiders()
+
     def handle(self, *args, **options):
         # send a summary email
         email_subj = '[%s] SC Auto-tests: daily summary updates'
@@ -33,17 +42,23 @@ class Command(BaseCommand):
             email_subj %= 'PASSED'
 
         email_template = """
-%i spider(s) checked.
+%i spider(s) checked. %i Failed. %i Passed.
 
-Test results:
-""" % Spider.objects.filter(active=True).count()
+Detailed Results (tests passed / total):
+""" % (self._num_of_active_spiders(), self._num_of_failed_spiders(),
+       self._num_of_passed_spiders())
 
         for spider in Spider.objects.filter(active=True).order_by('name'):
+            _total_tr = spider.get_total_test_runs_for_24_hours().count()
+            _passed_tr = spider.get_passed_test_runs_for_24_hours().count()
             if spider.is_error():
-                email_template += "* [FAILED] %s" % spider.name
+                email_template += "* [FAILED] - %i/%i - %s." % (
+                    _passed_tr, _total_tr, spider.name)
             else:
-                email_template += "* [PASSED] %s" % spider.name
-            email_template += ". Details: %s" % spider.get_absolute_url()
+                email_template += "* [PASSED] - %i/%i - %s." % (
+                    _passed_tr, _total_tr, spider.name)
+
+            email_template += " Details: %s" % spider.get_absolute_url()
             email_template += '\n\n'
 
         email_subj += ", UTC time: %s" % datetime.datetime.utcnow()

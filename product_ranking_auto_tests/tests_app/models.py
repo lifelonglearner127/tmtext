@@ -1,5 +1,8 @@
+import datetime
+
 from django.db import models
 from django.core.urlresolvers import reverse_lazy
+from django.utils import timezone
 
 from settings import HOST_NAME, PORT
 
@@ -97,6 +100,24 @@ class Spider(models.Model):
 
     def get_test_runs(self):
         return self.spider_test_runs.order_by('-when_finished')
+
+    def get_passed_test_runs_for_24_hours(self):
+        hrs_24 = timezone.now() - datetime.timedelta(days=1)
+        return self.spider_test_runs.filter(
+            status='passed', when_finished__gte=hrs_24
+        ).order_by('-when_finished').distinct()
+
+    def get_failed_test_runs_for_24_hours(self):
+        hrs_24 = timezone.now() - datetime.timedelta(days=1)
+        return self.spider_test_runs.filter(
+            status='failed', when_finished__gte=hrs_24
+        ).order_by('-when_finished').distinct()
+
+    def get_total_test_runs_for_24_hours(self):
+        hrs_24 = timezone.now() - datetime.timedelta(days=1)
+        return self.spider_test_runs.filter(
+            when_finished__gte=hrs_24
+        ).order_by('-when_finished').distinct()
 
     def get_absolute_url(self):
         if int(PORT) != 80:
