@@ -155,7 +155,7 @@ def create_failed_request(test_run, scrapy_spider, request, log_fname,
         os.makedirs(os.path.join(output_dir, today))
     fs_request = slugify(request)  # filesystem-friendly chars only
     output_file = os.path.join(output_dir, today,
-                               str(test_run.pk)+'__'+fs_request+'.csv')
+                               str(test_run.pk)+'__'+fs_request+'.jl')
     log_file_db = os.path.join(output_dir, today,
                                str(test_run.pk)+'__'+fs_request+'.txt')
     if os.path.exists(scrapy_spider._validation_filename()):
