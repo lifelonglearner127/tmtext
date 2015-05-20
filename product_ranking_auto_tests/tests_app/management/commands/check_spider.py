@@ -265,6 +265,12 @@ def check_spider(spider):
             test_run.num_of_successful_requests += 1
             print ' '*7, 'request passed:', req
 
+        # remove the log file if it still exists (it happens if the request
+        # did not fail but completed successfully, and the log file was not
+        #  moved
+        if os.path.exists(_log_fname):
+            os.remove(_log_fname)
+
     if is_test_run_passed(test_run):
         test_run.status = 'passed'
         print ' '*3, 'test run PASSED'
@@ -272,6 +278,7 @@ def check_spider(spider):
         test_run.status = 'failed'
         print ' '*3, 'test run FAILED'
         create_alert_if_needed(test_run)
+
     test_run.when_finished = timezone.now()
     test_run.save()
 
