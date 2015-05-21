@@ -503,7 +503,7 @@ class BaseValidator(object):
             except:
                 return False
         for v in val:
-            if not 'date' in [k.lower() for k in val.keys()]:
+            if not 'date' in [k.lower() for k in v.keys()]:
                 return False
         return True
 
