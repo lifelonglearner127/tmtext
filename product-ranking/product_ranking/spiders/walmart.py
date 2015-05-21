@@ -30,25 +30,28 @@ def get_string_from_html(xp, link):
 
 
 class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['model', 'brand', 'description', 'price']
-    ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'buyer_reviews', 'google_source_site'
-    ]
+    optional_fields = ['model', 'brand', 'description', 'recent_questions',
+                       'related_products', 'upc', 'buyer_reviews']
+    ignore_fields = ['google_source_site', 'is_in_store_only', 'bestseller_rank',
+                     'is_out_of_stock']
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = False  # ... duplicated requests?
     ignore_log_filtered = False  # ... filtered requests?
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
-        'nothing_fou'
-        'nd_123': 0,
-        'iphone 9': [200, 800],  # spider should return from 200 to 800 products
-        'a': [200, 800], 'b': [200, 800], 'c': [200, 800], 'd': [200, 800],
-        'e': [200, 800], 'f': [200, 800], 'g': [200, 800],
+        'nothing_found_123': 0,
+        'chrysler spare parts': [10, 150],
+        'shampoo dry wash baby': [50, 250],
+        'macbook air thunderbolt': [10, 150],
+        'hexacore': [50, 250],
+        '300c': [50, 250],
+        'muay': [50, 200],
+        '14-pack': [1, 100],
+        'voltmeter': [50, 250]
     }
 
 
-class WalmartProductsSpider(BaseProductsSpider):
+class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     """Implements a spider for Walmart.com.
 
     This spider has 2 very peculiar things.
