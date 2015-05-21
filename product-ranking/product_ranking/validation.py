@@ -341,9 +341,9 @@ class BaseValidator(object):
         return True
 
     def _validate_related_products(self, val):
-        if not bool(val.strip()):  # empty
+        if not bool(str(val).strip()):  # empty
             return False
-        if not val.strip().startswith('{'):
+        if not str(val).strip().startswith('{'):
             return False
         return True
 
