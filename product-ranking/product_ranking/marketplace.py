@@ -117,7 +117,7 @@ class Amazon_marketplace(object):
             return Request(
                 url=urlparse.urljoin(response.url, next_link), 
                 callback=self.parse_marketplace,
-                meta=meta
+                meta=meta,
             )
         if marketplaces:
             product["marketplace"] = marketplaces
@@ -322,6 +322,6 @@ class Amazon_marketplace(object):
             product["marketplace"] = [
                 {
                     "name": seller,
-                    "price": product["price"]
+                    "price": product.get("price", 0)
                 }
             ]
