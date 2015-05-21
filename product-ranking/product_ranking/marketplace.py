@@ -13,7 +13,7 @@ from product_ranking.items import Price
 class Amazon_marketplace(object):
     """Scrape marketplace sellers for Amazons sites
     """
-    
+
     cache = {}
     called_class = None
 
@@ -23,7 +23,8 @@ class Amazon_marketplace(object):
         "amazon.co.uk": "GBP",
         "amazon.co.jp": "JPY",
         "amazon.cn": "CNY",
-        "amazon.fr": "EUR"
+        "amazon.fr": "EUR",
+        "amazon.de": "EUR"
     }
 
     IMG_FOLDER = "amazon_marketplace/"
