@@ -18,7 +18,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
-from product_ranking.validation import BaseValidator
+from product_ranking.amazon_tests import AmazonTests
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
@@ -51,25 +51,29 @@ except ImportError as e:
 
 
 class AmazoncoukValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['model', 'brand', 'description', 'price']
+    optional_fields = ['model', 'brand', 'description', 'price', 'bestseller_rank']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'buyer_reviews', 'google_source_site'
+        'buyer_reviews', 'google_source_site', 'special_pricing',
     ]
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = False  # ... duplicated requests?
     ignore_log_filtered = False  # ... filtered requests?
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
-        'nothing_fou'
-        'nd_123': 0,
-        'iphone 9': [200, 800],  # spider should return from 200 to 800 products
-        'a': [200, 800], 'b': [200, 800], 'c': [200, 800], 'd': [200, 800],
-        'e': [200, 800], 'f': [200, 800], 'g': [200, 800],
+        'nothing_found_1234654654': 0,
+        'nothing_fou': [5, 50],
+        'kaspersky total': [5, 50],
+        'gold sold fold': [5, 200],  # spider should return from 5 to 200 products
+        'yamaha drums midi': [5, 100],
+        'black men shoes size 8 red stripes': [5, 60],
+        'antoshka': [5, 800],
+        'apple ipod nano sold': [100, 300],
+        'avira 2': [200, 500],
     }
 
 
-class AmazonCoUkProductsSpider(BaseProductsSpider):
+class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
     name = "amazoncouk_products"
     allowed_domains = ["www.amazon.co.uk"]
     start_urls = []
@@ -136,6 +140,18 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
             if text and 'Item model number:' in text:
                 possible_model = tag.xpath('text()').extract()
                 cond_set(prod, 'model', possible_model)
+            if not prod.get('model'):
+                model = is_empty(response.xpath(
+                    '//div[contains(@class, "content")]/ul/'
+                    'li/b[contains(text(), "ASIN")]/../text() |'
+                    '//table/tbody/tr/'
+                    'td[contains(@class, "label") and contains(text(), "ASIN")]'
+                    '/../td[contains(@class, "value")]/text() |'
+                    '//div[contains(@class, "content")]/ul/'
+                    'li/b[contains(text(), "ISBN-10")]/../text()'
+                ).extract())
+                if model:
+                    cond_set(prod, 'model', model)
 
         title = response.xpath(
             '//span[@id="productTitle"]/text()[normalize-space()] |'
