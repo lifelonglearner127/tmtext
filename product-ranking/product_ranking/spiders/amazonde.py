@@ -15,7 +15,7 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set,\
     cond_set_value, FLOATING_POINT_RGEX
-
+from product_ranking.validation import BaseValidator
 from product_ranking.amazon_bestsellers import amazon_parse_department
 
 
@@ -40,11 +40,38 @@ except ImportError as e:
 
 is_empty = lambda x, y=None: x[0] if x else y
 
-class AmazonProductsSpider(BaseProductsSpider):
+
+class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['model', 'brand', 'price', 'buyer_reviews']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'google_source_site', 'description', 'special_pricing', 'bestseller_rank'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = False  # ... duplicated requests?
+    ignore_log_filtered = False  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_found_1234654654': 0,
+        'samsung t9500 battery 2600 li-ion warranty': [30, 250],
+        'water pump bronze inch apollo': [2, 30],
+        'ceiling fan industrial white system': [5, 50],
+        'kaspersky total': [5, 50],
+        'car navigator garmin maps 44LM': [1, 20],
+        'yamaha drums midi': [50, 300],
+        'black men shoes size 8  red stripes': [50, 300],
+        'car audio equalizer pioneer mp3': [40, 150]
+    }
+
+
+class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
+
     name = 'amazonde_products'
     allowed_domains = ["amazon.de"]
 
     SEARCH_URL = "http://www.amazon.de/s/?field-keywords={search_term}"
+
+    settings = AmazonDeValidatorSettings
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
@@ -101,7 +128,7 @@ class AmazonProductsSpider(BaseProductsSpider):
             if mkt_place_link:
                 meta = {"product": prod}
                 return Request(
-                    url=mkt_place_link, 
+                    url=mkt_place_link,
                     callback=self.parse_marketplace,
                     meta=meta,
                     dont_filter=True
@@ -501,7 +528,7 @@ class AmazonProductsSpider(BaseProductsSpider):
         if "mkt_place_link" in response.meta:
             meta = {"product": product}
             return Request(
-                url=response.meta["mkt_place_link"], 
+                url=response.meta["mkt_place_link"],
                 callback=self.parse_marketplace,
                 meta=meta
             )
@@ -554,7 +581,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 'div/p[contains(@class, "Name")]/span/a/text()').extract())
 
             marketplaces.append({
-                "price": Price(price=price, priceCurrency="USD"), 
+                "price": Price(price=price, priceCurrency="USD"),
                 "name": name
             })
 
@@ -566,7 +593,7 @@ class AmazonProductsSpider(BaseProductsSpider):
         if next_link:
             meta = {"product": product, "marketplaces": marketplaces}
             return Request(
-                url=urlparse.urljoin(response.url, next_link), 
+                url=urlparse.urljoin(response.url, next_link),
                 callback=self.parse_marketplace,
                 meta=meta
             )
