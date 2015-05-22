@@ -325,6 +325,10 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
                 total_matches = int(count_matches[-1].replace(',', ''))
             else:
                 total_matches = None
+        if not total_matches:
+            total_matches = int(is_empty(response.xpath(
+                '//h2[@id="s-result-count"]/text()'
+            ).re(FLOATING_POINT_RGEX), None))
         return total_matches
 
     def _scrape_product_links(self, response):
