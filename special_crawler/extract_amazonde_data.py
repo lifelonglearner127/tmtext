@@ -209,9 +209,10 @@ class AmazonDEScraper(Scraper):
         for row in rows:
             r = row.xpath(".//*[not(self::script)]//text()")
             if len(r)>0 and len(r[0])>1 and r[0].find('Customer Review') < 0 \
-               and r[0].find('function(') < 0 and  r[0].find('Delivery') < 0 \
+               and r[0].find('function(') < 0 and r[0].find('Delivery') < 0 \
                and r[0].find('Date ') < 0 and r[0].find('Best Seller') < 0 \
-               and r[0].find('Manufacturer ref') < 0 and r[0].find('ASIN') < 0:
+               and r[0].find('Manufacturer ref') < 0 and r[0].find('ASIN') < 0 \
+               and r[1].find('function(') < 0:
                 cells.append(r)
 #            cells = map(lambda row: row.xpath(".//*[not(self::script)]//text()"), rows)
         # list of text in each row
@@ -683,7 +684,6 @@ class AmazonDEScraper(Scraper):
         self.marketplace_prices = []
         mps = []
         mpp = []
-        return None
         a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
         if len(a)>0 and a[0].find('seller')>=0:
             domain=self.product_page_url.split("/")
