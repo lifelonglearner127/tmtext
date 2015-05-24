@@ -11,7 +11,7 @@ from lxml import html
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
-from scrapy.log import ERROR, INFO
+from scrapy.log import ERROR, INFO, WARNING
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
@@ -31,7 +31,7 @@ def get_string_from_html(xp, link):
 
 class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
     optional_fields = ['model', 'brand', 'description', 'recent_questions',
-                       'related_products', 'upc', 'buyer_reviews']
+                       'related_products', 'upc', 'buyer_reviews', 'price']
     ignore_fields = ['google_source_site', 'is_in_store_only', 'bestseller_rank',
                      'is_out_of_stock']
     ignore_log_errors = False  # don't check logs for errors?
@@ -178,7 +178,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             self.sld['actual_url'] = self.temp_spons_link
             self.sponsored_links.append(self.sld)
-
+            if not self.reql:
+                del self.temp_spons_link, self.sld, self.reql
+                return super(WalmartProductsSpider, self).start_requests()
             req1 = self.reql.pop(0)
             new_meta = req1.meta
             new_meta['reql'] = self.reql
@@ -296,9 +298,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             avg = float(is_empty(
                 re.findall(
                     '\d+.\d+',
-                    tree.xpath('//div[contains(@class,'
-                               '"BVRRRatingNormalImage")]/img/@alt')[0])
-            ))
+                    is_empty(tree.xpath('//div[contains(@class,'
+                               '"BVRRRatingNormalImage")]/img/@alt'), ""))
+            , 0))   
             buyer_reviews['average_rating'] = avg
             stars = tree.xpath(
                 '//span[contains(@class,"BVRRHistAbsLabel")]/text()')
@@ -343,13 +345,18 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             response.css('.about-product-section, #SITCC_1column').extract(),
             conv=''.join
         )
-        cond_set(
-            product,
-            'title',
-            response.xpath(
+
+        title = is_empty(response.xpath(
                 "//h1[contains(@class,'product-name')]/text() |"
-                "//h1[@class='productTitle']/text()").extract(),
-            conv=string.strip)
+                "//h1[@class='productTitle']/text()"
+        ).extract())
+        if title:
+            title = is_empty(Selector(text=title).xpath('string()').extract())
+            cond_set(
+                product,
+                'title',
+                title,
+                conv=string.strip)
         cond_set(
             product,
             'brand',
@@ -513,7 +520,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             if prodid:
                 prodid = prodid[0]
         if not prodid:
-            self.log("No PRODID in %r." % response.url, ERROR)
+            self.log("No PRODID in %r." % response.url, WARNING)
             return
         cid = uuid.uuid4()
         reql = []
@@ -616,11 +623,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             except ValueError:
                 pass
         if not data:
-            self.log("No JS matched in %r." % response.url, ERROR)
+            self.log("No JS matched in %r." % response.url, WARNING)
             return
         try:
             response.meta['productid'] = str(data['buyingOptions']['usItemId'])
-            cond_set_value(product, 'title', data['productName'])
+            title = is_empty(Selector(text=data['productName']).xpath(
+                'string()').extract())
+            cond_set_value(product, 'title', title)
             available = data['buyingOptions']['available']
             cond_set_value(
                 product,
@@ -650,7 +659,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                             "Product with unknown buyingOptions "
                             "structure: %s\n%s") % (
                                 response.url, pprint.pformat(data)),
-                            ERROR
+                            WARNING
                         )
                 if price_block:
                     try:
