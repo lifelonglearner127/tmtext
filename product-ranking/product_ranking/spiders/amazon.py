@@ -52,7 +52,7 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     ]
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = False  # ... filtered requests?
+    ignore_log_filtered = True  # ... filtered requests?
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
