@@ -4,6 +4,7 @@ import os
 import sys
 import datetime
 import zipfile
+import subprocess
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
@@ -24,6 +25,36 @@ from list_all_files_in_s3_bucket import list_files_in_bucket, \
         AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
 
 LOCAL_AMAZON_LIST_CACHE = os.path.join(CWD, '_amazon_listing.txt')
+
+
+def run(command, shell=None):
+    """ Run the given command and return its output
+    """
+    out_stream = subprocess.PIPE
+    err_stream = subprocess.PIPE
+
+    if shell is not None:
+        p = subprocess.Popen(command, shell=True, stdout=out_stream,
+                             stderr=err_stream, executable=shell)
+    else:
+        p = subprocess.Popen(command, shell=True, stdout=out_stream,
+                             stderr=err_stream)
+    (stdout, stderr) = p.communicate()
+
+    return stdout, stderr
+
+
+def num_of_running_instances(file_path):
+    """ Check how many instances of the given file are running """
+    processes = 0
+    output = run('ps aux')
+    output = ' '.join(output)
+    for line in output.split('\n'):
+        line = line.strip()
+        line = line.decode('utf-8')
+        if file_path in line and not '/bin/sh' in line:
+            processes += 1
+    return processes
 
 
 def list_amazon_bucket(bucket=AMAZON_BUCKET_NAME,
@@ -63,6 +94,9 @@ class Command(BaseCommand):
     help = 'Updates 10 random jobs, downloading their files if ready'
 
     def handle(self, *args, **options):
+        if num_of_running_instances('update_jobs.py') > 1:
+            print 'an instance of the script is already running...'
+            sys.exit()
         jobs = Job.objects.filter(
             Q(status='pushed into sqs') | Q(status='in progress')
         ).order_by('?').distinct()[0:10]
