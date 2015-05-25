@@ -11,8 +11,13 @@ import time
 import requests
 from extract_data import Scraper
 import os
+from PIL import Image
+import cStringIO # *much* faster than StringIO
+from pytesseract import image_to_string
+
 sys.path.append(os.path.abspath('../search'))
 import captcha_solver
+import compare_images
 
 class AmazonScraper(Scraper):
 
@@ -29,6 +34,7 @@ class AmazonScraper(Scraper):
 
     MAX_CAPTCHA_RETRIES = 10
 
+    marketplace_prices = None
 
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
@@ -316,7 +322,6 @@ class AmazonScraper(Scraper):
             contents = requests.get(url, headers=h).text
             tree = html.fromstring(contents)
             image_url = self._image_urls(tree)
-            print '\n\n\nImage URL:', image_url, '\n\n\n'
             img_list.extend(image_url)
         if len(img_list) == 2:
             return img_list[0] == img_list[1]
@@ -688,23 +693,93 @@ class AmazonScraper(Scraper):
         s = self._seller_from_tree()
         return s['marketplace']
 
+    def img_parse(self, img_url):
+        file = urllib.urlopen(img_url)
+        im = cStringIO.StringIO(file.read()) # constructs a StringIO holding the image
+        img = Image.open(im)
+        txt = image_to_string(img)
+        return txt
+
     def _marketplace_sellers(self):
+        self.marketplace_prices = []
+        mps = []
+        mpp = []
+        a = self.tree_html.xpath('//div[@id="merchant-info"]//a//text()')
+        for m in a:
+            mps.append(m)
+        if len(mps) > 0:
+            b = self.tree_html.xpath('//span[@id="priceblock_ourprice"]//text()')
+            for p in b:
+                mpp.append(p)
+        b = self.tree_html.xpath('//div[contains(@class,"pa_mbc_on_amazon_offer")]//span[@class="a-size-medium a-color-price"]//text()')
+        for p in b:
+            mpp.append(p)
+        a = self.tree_html.xpath('//span[contains(@class,"mbcMerchantName")]//text()')
+        for m in a:
+            mps.append(m)
+        if len(mps) > 0:
+            self.marketplace_prices = mpp
+            return mps
         a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
-        if len(a)>0 and a[0].find('seller')>=0:
+        if len(a) > 0 and a[0].find('seller')>=0:
             domain=self.product_page_url.split("/")
             url =self.tree_html.xpath('//div[@id="availability"]//a/@href')
             if len(url)>0:
                 url = domain[0]+"//"+domain[2]+url[0]
-                print "url",url
                 h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
                 contents = requests.get(url, headers=h).text
                 tree = html.fromstring(contents)
                 s = tree.xpath("//p[contains(@class,'SellerName')]//text()")
                 mps=[p.strip() for p in s if p.strip() != ""]
-                if len(mps)>0: return mps
+
+        urls = self.tree_html.xpath("//div[@id='moreBuyingChoices_feature_div']//div[@class='a-box']//span[contains(@class,'a-size-small')]//a/@href")
+        while len(urls) > 0:
+            domain = self.product_page_url.split("/")
+            url = domain[0]+"//"+domain[2]+urls[0]
+            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+            contents = requests.get(url, headers=h).text
+            tree = html.fromstring(contents)
+            rows = tree.xpath("//div[@id='olpTabContent']//div[contains(@class,'a-row') and contains(@class,'olpOffer')]")
+            for row in rows:
+                try:
+                    seller_price = row.xpath(".//span[contains(@class,'olpOfferPrice')]//text()")[0].strip()
+                    seller_price = seller_price.replace(",", "")
+                    seller_price = re.findall(r"[\d\.]+", seller_price)[0]
+                    seller_price = float(seller_price)
+                except IndexError:
+                    seller_price = 0.00
+
+                seller_names = row.xpath(".//p[contains(@class,'SellerName')]//text()")
+                seller_names = [self._clean_text(r) for r in seller_names if len(self._clean_text(r)) > 0]
+                try:
+                    seller_name = seller_names[0]
+                except IndexError:
+                    img_url = row.xpath(".//p[contains(@class,'SellerName')]//img/@src")[0].strip()
+                    if len(img_url) > 0:
+                        seller_name = self.img_parse(img_url)
+                        seller_name = seller_name.split("\n")[0]
+                mpp.append(seller_price)
+                mps.append(seller_name)
+            urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
+
+        if len(mps)>0:
+            self.marketplace_prices = mpp
+            return mps
+
+        return None
+
+    def _marketplace_prices(self):
+        if self.marketplace_prices is None:
+            self._marketplace_sellers()
+        if len(self.marketplace_prices) > 0:
+            return self.marketplace_prices
         return None
 
     def _marketplace_lowest_price(self):
+        if self.marketplace_prices is None:
+            self._marketplace_sellers()
+        if len(self.marketplace_prices) > 0:
+            return min(self.marketplace_prices)
         return None
 
     def _marketplace_out_of_stock(self):
@@ -887,6 +962,7 @@ class AmazonScraper(Scraper):
         "in_stores" : _in_stores, \
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
+        "marketplace_prices" : _marketplace_prices, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
         "marketplace_out_of_stock" : _marketplace_out_of_stock, \
         "site_online" : _site_online, \

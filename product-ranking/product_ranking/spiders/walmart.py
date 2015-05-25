@@ -11,7 +11,7 @@ from lxml import html
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
-from scrapy.log import ERROR, INFO
+from scrapy.log import ERROR, INFO, WARNING
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
@@ -19,9 +19,9 @@ from product_ranking.items import (SiteProductItem, RelatedProduct,
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
+from product_ranking.validation import BaseValidator
 
-
-is_empty = lambda x: x[0] if x else ""
+is_empty = lambda x, y="": x[0] if x else y
 
 
 def get_string_from_html(xp, link):
@@ -29,7 +29,29 @@ def get_string_from_html(xp, link):
     return Selector(text=loc).xpath('string()').extract()
 
 
-class WalmartProductsSpider(BaseProductsSpider):
+class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['model', 'brand', 'description', 'recent_questions',
+                       'related_products', 'upc', 'buyer_reviews', 'price']
+    ignore_fields = ['google_source_site', 'is_in_store_only', 'bestseller_rank',
+                     'is_out_of_stock']
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = False  # ... duplicated requests?
+    ignore_log_filtered = False  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_found_123': 0,
+        'chrysler spare parts': [10, 150],
+        'shampoo dry wash baby': [50, 250],
+        'macbook air thunderbolt': [10, 150],
+        'hexacore': [50, 250],
+        '300c': [50, 250],
+        'muay': [50, 200],
+        '14-pack': [1, 100],
+        'voltmeter': [50, 250]
+    }
+
+
+class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     """Implements a spider for Walmart.com.
 
     This spider has 2 very peculiar things.
@@ -66,13 +88,14 @@ class WalmartProductsSpider(BaseProductsSpider):
         'rating': 'rating_high',
     }
 
+    settings = WalmartValidatorSettings
+
     sponsored_links = []
 
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
     user_agent = 'default'
-
 
     def __init__(self, search_sort='best_match', zipcode='94117',
                  *args, **kwargs):
@@ -155,7 +178,9 @@ class WalmartProductsSpider(BaseProductsSpider):
         else:
             self.sld['actual_url'] = self.temp_spons_link
             self.sponsored_links.append(self.sld)
-
+            if not self.reql:
+                del self.temp_spons_link, self.sld, self.reql
+                return super(WalmartProductsSpider, self).start_requests()
             req1 = self.reql.pop(0)
             new_meta = req1.meta
             new_meta['reql'] = self.reql
@@ -187,60 +212,6 @@ class WalmartProductsSpider(BaseProductsSpider):
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
         self._gen_related_req(response)
-
-        marketplaces = []
-        for seller in response.xpath(
-            "//ul[contains(@class, 'sellers-list')]/li[contains(@class,"
-            "'js-marketplace-seller')]/div"):
-            price = is_empty(seller.xpath(
-                "div[contains(@class, 'price')]/strong/text()"
-            ).re(FLOATING_POINT_RGEX))
-
-            name = is_empty(seller.xpath(
-                "div/div/div[contains(@class, 'name')]/a/text() |"
-                "div/div/div[contains(@class, 'name')]/a/b/text()"
-            ).extract())
-            if not name:
-                name = is_empty(seller.xpath(
-                        "div/div/div[contains(@class, 'name')]/text()"
-                ).extract())
-            if price:
-                price = Price(price=price, priceCurrency="USD")
-            else:
-                price = Price(price=0, priceCurrency="USD")
-            marketplaces.append({
-                "price": price,
-                "name": name.strip()
-            })
-        if marketplaces:
-            product["marketplace"] = marketplaces
-        else:
-            name = is_empty(response.xpath(
-                '//div[@class="product-seller"]/div/span/b/text() |'
-                '//div[@class="product-seller"]/div/span/a/b/text() '
-            ).extract())
-            if not name:
-                name = is_empty(response.xpath('//meta[@itemprop="seller"]'
-                                               '/@content').extract())
-            price_amount = is_empty(
-                response.xpath('//meta[@itemprop="price"]'
-                               '/@content').re(FLOATING_POINT_RGEX)
-            )
-            currency = is_empty(
-                response.xpath('//meta[@itemprop="priceCurrency"]'
-                               '/@content').extract()
-            )
-            if price_amount:
-                price = Price(price=price_amount,
-                              priceCurrency=currency)
-            else:
-                price = Price(price=0,
-                              priceCurrency=currency)
-            marketplaces.append({
-                "price": price,
-                "name": name
-            })
-            product["marketplace"] = marketplaces
 
         model = is_empty(
             response.xpath('//tr[@class="js-product-specs-row"]/'
@@ -275,8 +246,19 @@ class WalmartProductsSpider(BaseProductsSpider):
                 response.body_as_unicode()):
             product['is_in_store_only'] = True
 
+        special_pricing = response.xpath(
+            '//div[contains(@class, "price-flags")]//text()').extract()
+        special_pricing = [
+            r.strip() for r in special_pricing if len(r.strip())>0]
+        if 'Rollback' in special_pricing:
+            product['special_pricing'] = 1
+        else:
+            product['special_pricing'] = 0
+
         if not product.get('price'):
+            cond_set_value(product, 'url', response.url)
             return self._gen_location_request(response)
+
         return self._start_related(response)
 
     def _parse_single_product(self, response):
@@ -316,9 +298,9 @@ class WalmartProductsSpider(BaseProductsSpider):
             avg = float(is_empty(
                 re.findall(
                     '\d+.\d+',
-                    tree.xpath('//div[contains(@class,'
-                               '"BVRRRatingNormalImage")]/img/@alt')[0])
-            ))
+                    is_empty(tree.xpath('//div[contains(@class,'
+                               '"BVRRRatingNormalImage")]/img/@alt'), ""))
+            , 0))   
             buyer_reviews['average_rating'] = avg
             stars = tree.xpath(
                 '//span[contains(@class,"BVRRHistAbsLabel")]/text()')
@@ -356,28 +338,40 @@ class WalmartProductsSpider(BaseProductsSpider):
         return BuyerReviews(**buyer_reviews)
 
     def _populate_from_html(self, response, product):
+        cond_set_value(product, 'url', response.url)
         cond_set(
             product,
             'description',
-            response.css('.about-product-section').extract(),
+            response.css('.about-product-section, #SITCC_1column').extract(),
             conv=''.join
         )
-        cond_set(
-            product,
-            'title',
-            response.xpath(
+
+        title = is_empty(response.xpath(
                 "//h1[contains(@class,'product-name')]/text() |"
-                "//h1[@class='productTitle']/text()").extract(),
-            conv=string.strip)
+                "//h1[@class='productTitle']/text()"
+        ).extract())
+        if title:
+            title = is_empty(Selector(text=title).xpath('string()').extract())
+            cond_set(
+                product,
+                'title',
+                title,
+                conv=string.strip)
         cond_set(
             product,
             'brand',
             response.xpath(
                 "//div[@class='product-subhead-section']"
-                "/a[@id='WMItemBrandLnk']/text()").extract())     
+                "/a[@id='WMItemBrandLnk']/text()").extract())
+        cond_set(
+            product,
+            'image_url',
+            response.xpath(
+                '//meta[@property="og:image"]/@content').extract())
         if not product.get("brand"):
             brand = is_empty(response.xpath(
                 "//h1[contains(@class, 'product-name product-heading')]/text()"
+                " | //h1[@class='productTitle']/text()"
             ).extract())
             cond_set(
                 product,
@@ -416,7 +410,8 @@ class WalmartProductsSpider(BaseProductsSpider):
             response.xpath(
                 "//p[contains(text(), 'Check out these related products')]/.."
                 "//*[contains(@class, 'tile-heading')] |"
-                "//div[@class='related-item']/a[2] |"
+                "//div[@class='related-item']/a[contains(@class,"
+                "'related-link')] |"
                 "//div[@class='rel0']/a"
             ),
         )
@@ -441,6 +436,63 @@ class WalmartProductsSpider(BaseProductsSpider):
                 'upc',
                 response.xpath('//strong[@id="UPC_CODE"]/text()').extract()
             )
+
+        marketplaces = []
+        for seller in response.xpath(
+            "//ul[contains(@class, 'sellers-list')]/li[contains(@class,"
+            "'js-marketplace-seller')]/div"):
+            price = is_empty(seller.xpath(
+                "div[contains(@class, 'price')]/strong/text()"
+            ).re(FLOATING_POINT_RGEX))
+
+            name = is_empty(seller.xpath(
+                "div/div/div[contains(@class, 'name')]/a/text() |"
+                "div/div/div[contains(@class, 'name')]/a/b/text()"
+            ).extract())
+            if not name:
+                name = is_empty(seller.xpath(
+                        "div/div/div[contains(@class, 'name')]/text()"
+                ).extract())
+            if price:
+                price = Price(price=price, priceCurrency="USD")
+            else:
+                price = Price(price=0, priceCurrency="USD")
+            marketplaces.append({
+                "price": price,
+                "name": name.strip()
+            })
+        if marketplaces:
+            product["marketplace"] = marketplaces
+        else:
+            name = is_empty(response.xpath(
+                '//div[@class="product-seller"]/div/span/b/text() |'
+                '//div[@class="product-seller"]/div/span/a/b/text()'
+            ).extract())
+            if not name:
+                name = is_empty(response.xpath(
+                    '//meta[@itemprop="seller"]/@content'
+                ).extract())
+            price_amount = is_empty(
+                response.xpath('//meta[@itemprop="price"]'
+                               '/@content').re(FLOATING_POINT_RGEX)
+            )
+            currency = is_empty(
+                response.xpath('//meta[@itemprop="priceCurrency"]'
+                               '/@content').extract(),
+                "USD"
+            )
+            if price_amount:
+                price = Price(price=price_amount,
+                              priceCurrency=currency)
+            else:
+                price = Price(price=0,
+                              priceCurrency=currency)
+            if name:
+                marketplaces.append({
+                    "price": price,
+                    "name": name
+                })
+            product["marketplace"] = marketplaces
 
     def _gen_location_request(self, response):
         data = {"postalCode": ""}
@@ -468,7 +520,7 @@ class WalmartProductsSpider(BaseProductsSpider):
             if prodid:
                 prodid = prodid[0]
         if not prodid:
-            self.log("No PRODID in %r." % response.url, ERROR)
+            self.log("No PRODID in %r." % response.url, WARNING)
             return
         cid = uuid.uuid4()
         reql = []
@@ -571,17 +623,22 @@ class WalmartProductsSpider(BaseProductsSpider):
             except ValueError:
                 pass
         if not data:
-            self.log("No JS matched in %r." % response.url, ERROR)
+            self.log("No JS matched in %r." % response.url, WARNING)
             return
         try:
             response.meta['productid'] = str(data['buyingOptions']['usItemId'])
-            cond_set_value(product, 'title', data['productName'])
+            title = is_empty(Selector(text=data['productName']).xpath(
+                'string()').extract())
+            cond_set_value(product, 'title', title)
             available = data['buyingOptions']['available']
             cond_set_value(
                 product,
                 'is_out_of_stock',
                 not available,
             )
+            # the next 2 lines of code should not be uncommented, see BZ #1459
+            #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
+            #    product['is_out_of_stock'] = False
             cond_set_value(
                 product,
                 'is_in_store_only',
@@ -602,7 +659,7 @@ class WalmartProductsSpider(BaseProductsSpider):
                             "Product with unknown buyingOptions "
                             "structure: %s\n%s") % (
                                 response.url, pprint.pformat(data)),
-                            ERROR
+                            WARNING
                         )
                 if price_block:
                     try:
@@ -676,7 +733,11 @@ class WalmartProductsSpider(BaseProductsSpider):
         return None
 
     def _scrape_product_links(self, response):
-        items = response.xpath('//div[@class="js-tile tile-landscape"]')
+        items = response.xpath(
+            '//div[@class="js-tile tile-landscape"] | '
+            '//div[contains(@class, "js-tile js-tile-landscape")]'
+        )
+
         if not items:
             self.log("Found no product links in %r." % response.url, INFO)
 

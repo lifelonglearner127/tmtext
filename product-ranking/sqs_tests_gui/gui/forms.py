@@ -39,7 +39,7 @@ class JobForm(forms.ModelForm):
         super(JobForm, self).__init__(*args, **kwargs)
         self.fields['task_id'].initial = self.fields['task_id'].initial + random.randint(10000, 99999)
         self.fields['spider'] = forms.ChoiceField(
-            choices=generate_spider_choices)
+            choices=generate_spider_choices())
         if self.instance and self.instance.pk:
             for field in self.fields.keys():
                 self.fields[field].widget = ReadOnlyWidget()

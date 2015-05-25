@@ -126,10 +126,21 @@ class TargetProductSpider(BaseProductsSpider):
             '//p[contains(@class, "price")]/span/text()').extract())
         if price:
             price = is_empty(re.findall("\d+\.{0,1}\d+", price))
-            prod['price'] = Price(
-                price=price.replace('$', '').replace(',', '').strip(),
-                priceCurrency='USD'
-            )
+            if price:
+                prod['price'] = Price(
+                    price=price.replace('$', '').replace(',', '').strip(),
+                    priceCurrency='USD'
+                )
+
+        special_pricing = is_empty(response.xpath(
+            '//li[contains(@class, "eyebrow")]//text()').extract())
+        if special_pricing == "TEMP PRICE CUT":
+            prod['special_pricing'] = 1
+        else:
+            prod['special_pricing'] = 0
+
+        if 'url' not in prod:
+            prod['url'] = response.url
 
         old_url = prod['url'].rsplit('#', 1)[0]
         prod['url'] = None
@@ -143,6 +154,8 @@ class TargetProductSpider(BaseProductsSpider):
         # fiME: brand=None
         if 'brand' in prod and len(prod['brand']) == 0:
             prod['brand'] = 'No brand'
+        if 'brand' not in prod:
+            prod['brand'] = 'No brand for single result'    
         variants = self._extract_variants(response, prod)
         payload = self._extract_rr_parms(response)
 
@@ -704,7 +717,7 @@ class TargetProductSpider(BaseProductsSpider):
         return requests
 
     def _scrape_next_results_page_link(self, response):
-        if self.SORTING != None and response.meta.get('search_start'):
+        if self.SORTING is not None and response.meta.get('search_start'):
             return
         if response.meta.get('json'):
             return self._scrape_next_results_page_link_json(response)
@@ -788,3 +801,6 @@ class TargetProductSpider(BaseProductsSpider):
             if name and link:
                 rp.append(RelatedProduct(name[0].strip(), link))
         prod['related_products'] = {'recommended': rp}
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

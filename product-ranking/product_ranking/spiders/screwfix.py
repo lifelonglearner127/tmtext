@@ -12,7 +12,7 @@ from product_ranking.items import Price
 from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
+from product_ranking.spiders import cond_set, cond_set_value, dump_url_to_file
 
 
 class ScrewfixProductsSpider(BaseProductsSpider):
@@ -94,6 +94,9 @@ class ScrewfixProductsSpider(BaseProductsSpider):
                 "//div[@class='product-media-top']/"
                 "img[@id='product_brand_img']/@alt"
             ).extract())
+
+            if not product.get('brand', None):
+                dump_url_to_file(response.url)
 
             cond_set(product, 'image_url', response.xpath(
                 "//div[@class='product-media-top']/noscript"
@@ -279,3 +282,6 @@ class ScrewfixProductsSpider(BaseProductsSpider):
                 product['buyer_reviews'] = reviews
                 response.meta['after_reviews'] = True
                 return self.parse_product(response)
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

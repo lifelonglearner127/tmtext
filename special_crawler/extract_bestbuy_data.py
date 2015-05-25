@@ -27,6 +27,8 @@ class BestBuyScraper(Scraper):
     wc_content = None
     wc_video = None
     wc_pdf = None
+    wc_prodtour = None
+    wc_360 = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -63,7 +65,8 @@ class BestBuyScraper(Scraper):
         return prod_id
 
     def _site_id(self):
-        return None
+        site_id = re.findall("id=\d+", self.product_page_url)[0][3:]
+        return site_id
 
     def _status(self):
         return "success"
@@ -95,30 +98,36 @@ class BestBuyScraper(Scraper):
         self.feature_count = 0
 
         # http://www.bestbuy.com/site/sony-65-class-64-1-2-diag--led-2160p-smart-3d-4k-ultra-hd-tv-black/5005015.p;template=_specificationsTab
-        url = None
+        feature_urls = []
         data_tabs = self.tree_html.xpath("//div[@id='pdp-model-data']/@data-tabs")
         jsn = json.loads(data_tabs[0])
+
         for tab in jsn:
-            if tab["id"] == "specifications":
+            if tab["id"] == "specifications" or "Details" in tab["id"]:
                 url = tab["fragmentUrl"]
-                url = "http://www.bestbuy.com%s" % url
-                break
+                feature_urls.append("http://www.bestbuy.com%s" % url)
+
         line_txts = []
-        if url is not None:
-            contents = urllib.urlopen(url).read()
-            # document.location.replace('
-            tree = html.fromstring(contents)
-            rows = tree.xpath("//table//tbody//tr")
-            for r in rows:
-                th_txt = " ".join(r.xpath(".//th//text()"))
-                td_txt = " ".join(r.xpath(".//td//text()"))
-                if len(th_txt) > 0 and len(td_txt) > 0:
-                    line = "%s: %s" % (th_txt, td_txt)
-                    line_txts.append(line)
+
+        if feature_urls:
+            for url in feature_urls:
+                contents = urllib.urlopen(url).read()
+                # document.location.replace('
+                tree = html.fromstring(contents)
+                rows = tree.xpath("//table//tbody//tr")
+                for r in rows:
+                    th_txt = " ".join(r.xpath(".//th//text()"))
+                    td_txt = " ".join(r.xpath(".//td//text()"))
+                    if len(th_txt) > 0 and len(td_txt) > 0:
+                        line = "%s: %s" % (th_txt, td_txt)
+                        line_txts.append(line)
+
         if len(line_txts) < 1:
             return None
+
         self.feature_count = len(line_txts)
         self.features = line_txts
+
         return self.features
 
     def _feature_count(self):
@@ -130,7 +139,7 @@ class BestBuyScraper(Scraper):
         return None
 
     def _description_helper(self):
-        rows = self.tree_html.xpath("//div[@id='long-description']//text()")
+        rows = self.tree_html.xpath("//div[@itemprop='description']//text()")
         rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
         description = "\n".join(rows)
         return description
@@ -222,7 +231,7 @@ class BestBuyScraper(Scraper):
                         except KeyError:
                             continue
         elif "syndicate.sellpoint.net" in url[0]:
-            contents = urllib.urlopen(url[0]).read()
+            # contents = urllib.urlopen(url[0]).read()
             # tree = html.fromstring(contents)
             # rows = tree.xpath("//div[@id='minisite_multiple_videos']//object/@data")
             # rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
@@ -300,10 +309,9 @@ class BestBuyScraper(Scraper):
         return self.wc_content
 
     def _wc_360(self):
-        content = self._wc_content()
-        if "wc-360" in content: return 1
-        return 0
-
+        if self.wc_360 is None:
+            self._wc_prodtour()
+        return self.wc_360
 
     def _wc_pdf(self):
         if self.pdf_count is None:
@@ -316,17 +324,28 @@ class BestBuyScraper(Scraper):
         return self.wc_video
 
     def _wc_emc(self):
-        content = self._wc_content()
-        if "wc-aplus" in content: return 1
+        if self._webcollage() == 1:
+            return 1
         return 0
 
     def _wc_prodtour(self):
-        content = self._wc_content()
-        if "wc-tour" in content: return 1
-        tree = html.fromstring(content)
-        rows = tree.xpath("//div[@class='wc-ms-navbar']//li//a//text()")
-        if "Reading Your Card" in rows: return 1
-        return 0
+        if self.wc_prodtour is not None:
+            return self.wc_prodtour
+        redirect_contents = self._wc_content()
+        redirect_tree = html.fromstring(redirect_contents)
+        tabs = redirect_tree.xpath("//div[@class='wc-ms-navbar']//li//a")
+        self.wc_prodtour = 0
+        self.wc_360 = 0
+        for tab in tabs:
+            redirect_link2 = tab.xpath("./@href")[0]
+            redirect_link2 = "http://content.webcollage.net" + redirect_link2
+            redirect_contents2 = urllib.urlopen(redirect_link2).read()
+            redirect_tree2 = html.fromstring(redirect_contents2)
+            if len(redirect_tree2.xpath("//div[contains(@class,'wc-tour-inner-inline')]")) > 0:
+                self.wc_prodtour = 1
+            if len(redirect_tree2.xpath("//div[contains(@class,'wc-threeSixty')]")) > 0:
+                self.wc_360 = 1
+        return self.wc_prodtour
 
     def _flixmedia(self):
         url = self.tree_html.xpath("//ul[@id='media-links']//a/@href")
@@ -348,7 +367,6 @@ class BestBuyScraper(Scraper):
                 return 1
         return 0
 
-
     def _htags(self):
         htags_dict = {}
         htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
@@ -369,13 +387,46 @@ class BestBuyScraper(Scraper):
         return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
 
     def _review_count(self):
-        return self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
+        if not self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content'):
+            return 0
+
+        return int(self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0].replace(',', ''))
  
     def _max_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        reviews = self._reviews()
+
+        for review in reviews:
+            if review[1] > 0:
+                return review[0]
 
     def _min_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        reviews = self._reviews()
+        reviews = reviews[::-1]
+
+        for review in reviews:
+            if review[1] > 0:
+                return review[0]
+
+    def _reviews(self):
+        if not self.tree_html.xpath('//div[@class="ratings-tooltip-content"]/div[@class="star-breakdowns"]'):
+            return None
+
+        reviews = [5, 4, 3, 2, 1]
+        review_count_list = self.tree_html.xpath('//div[@class="ratings-tooltip-content"]/div[@class="star-breakdowns"]')[0].\
+            xpath('div[@class="star-breakdown"]/div[@class="star-count"]/text()')
+
+        for i, review_count in enumerate(review_count_list):
+            review_count_list[i] = int(re.findall("\d+", review_count)[0])
+
+        reviews = [list(a) for a in zip(reviews, review_count_list)]
+
+        return reviews
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -463,14 +514,16 @@ class BestBuyScraper(Scraper):
         return all
 
     def _category_name(self):
-        dept = " ".join(self.tree_html.xpath("//ul[@id='breadcrumb-list']/li[1]/a/text()")).strip()
-        return dept
+        return self._categories()[-1]
     
     def _brand(self):
-        return self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content')[0]
+        if self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content'):
+            return self.tree_html.xpath('//meta[@id="schemaorg-brand-name"]/@content')[0]
     
+        if self.tree_html.xpath('//span[@id="publisher-value"]/text()'):
+            return self.tree_html.xpath('//span[@id="publisher-value"]/text()')[0]
 
-
+        return None
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -517,7 +570,7 @@ class BestBuyScraper(Scraper):
         "average_review" : _average_review, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
-
+        "reviews" : _reviews, \
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \
@@ -556,6 +609,7 @@ class BestBuyScraper(Scraper):
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
         "wc_emc" : _wc_emc, \
+        "wc_360" : _wc_360, \
         "wc_video" : _wc_video, \
         "wc_pdf" : _wc_pdf, \
         "wc_prodtour" : _wc_prodtour, \

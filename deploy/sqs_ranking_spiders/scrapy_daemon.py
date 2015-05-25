@@ -12,11 +12,13 @@ import time
 import zipfile
 import codecs
 import csv
+import string
 from subprocess import Popen, PIPE
 
 import boto
 from boto.s3.key import Key
 import unidecode
+from boto.utils import get_instance_metadata
 
 
 # list of all available incoming SQS with tasks
@@ -59,6 +61,31 @@ FOLDERS_PATH = None
 
 CONVERT_TO_CSV = True
 
+# Connect to S3
+S3_CONN = boto.connect_s3(
+    aws_access_key_id=AMAZON_ACCESS_KEY,
+    aws_secret_access_key=AMAZON_SECRET_KEY,
+    is_secure=False,  # uncomment if you are not using ssl
+)
+# Get current bucket
+S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
+
+
+def slugify(s):
+    output = ''
+    for symbol in s:
+        if symbol.lower() not in string.lowercase and not \
+                symbol.lower() in string.digits:
+            output += '-'
+        else:
+            output += symbol
+    output = output.replace(' ', '-')
+    while '--' in output:
+        # to avoid reserved double-minus chars
+        output = output.replace('--', '-')
+    return output
+
+
 def set_global_variables_from_data_file():
     try:
         json_data = load_data_from_hash_datestamp_data()
@@ -86,10 +113,12 @@ def job_to_fname(metadata):
     if isinstance(searchterms_str, (str, unicode)):
         searchterms_str = searchterms_str.decode('utf8')
     # job_name = datetime.datetime.utcnow().strftime('%d-%m-%Y')
-    job_name = DATESTAMP + '____' + RANDOM_HASH
+    server_name = metadata['server_name']
+    server_name = slugify(server_name)
+    job_name = DATESTAMP + '____' + RANDOM_HASH + '____' + server_name + '--'
     task_id = metadata.get('task_id', metadata.get('task', None))
     if task_id:
-        job_name += '____' + str(task_id)
+        job_name += str(task_id)
     if searchterms_str:
         additional_part = unidecode.unidecode(
             searchterms_str).replace(' ', '-')
@@ -213,14 +242,7 @@ def put_file_into_s3(bucket_name, fname,
                      amazon_public_key=AMAZON_ACCESS_KEY,
                      amazon_secret_key=AMAZON_SECRET_KEY,
                      compress=True):
-    # Connect to S3
-    conn = boto.connect_s3(
-        aws_access_key_id=amazon_public_key,
-        aws_secret_access_key=amazon_secret_key,
-        is_secure=False,  # uncomment if you are not using ssl
-    )
-    # Get current bucket
-    bucket = conn.get_bucket(bucket_name, validate=False)
+    global S3_CONN, S3_BUCKET
     # Cut out file name
     filename = os.path.basename(fname)
     if compress:
@@ -249,7 +271,7 @@ def put_file_into_s3(bucket_name, fname,
     global FOLDERS_PATH
     folders = (FOLDERS_PATH + filename)
     logger.info("Uploading %s to Amazon S3 bucket %s", filename, bucket_name)
-    k = Key(bucket)
+    k = Key(S3_BUCKET)
     #Set path to file on S3
     k.key = folders
     try:
@@ -373,6 +395,16 @@ def switch_branch_if_required(metadata):
         os.system(cmd)
 
 
+def increment_s3_counter(key_name):
+    global S3_CONN, S3_BUCKET
+    k = Key(S3_BUCKET)
+    k.key = key_name
+    try:
+        k.set_contents_from_string(str(int(k.get_contents_as_string()) + 1))
+    except:
+        k.set_contents_from_string('1')
+
+
 def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
                              initial_sleep_time=15, sleep_time=15):
     time.sleep(initial_sleep_time)
@@ -423,6 +455,13 @@ def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
         time.sleep(sleep_time)
 
 def execute_task_from_sqs():
+    instance_meta = get_instance_metadata()
+    inst_ip = instance_meta.get('public-ipv4')
+    inst_id = instance_meta.get('instance-id')
+    logger.info("IMPORTANT: ip: %s, instance id: %s", inst_ip, inst_id)
+    # increment quantity of instances spinned up during the day.
+    increment_s3_counter('daily_sqs_instance_counter')
+
     set_global_variables_from_data_file()
     while 1:  # try to read from the queue until a new message arrives
         TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])
@@ -442,6 +481,7 @@ def execute_task_from_sqs():
     task_queue.task_done()
     logger.info("Task message was successfully received and "
                 "removed form queue.")
+    increment_s3_counter('daily_sqs_executed_tasks')
     switch_branch_if_required(metadata)
     task_id = metadata.get('task_id', metadata.get('task', None))
     searchterms_str = metadata.get('searchterms_str', None)

@@ -6,6 +6,7 @@ import time
 import multiprocessing as mp
 import logging
 import logging.config
+import subprocess
 
 
 import boto
@@ -82,6 +83,17 @@ def get_all_group_instances_and_conn():
     return instances, conn
 
 
+def check_is_scrapy_daemon_not_running(ssh_key, inst_ip):
+    base_cmd = "ssh -o 'StrictHostKeyChecking no' -i %s ubuntu@%s 'ps aux'"
+    cmd = base_cmd % (ssh_key, inst_ip)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    out, err = p.communicate()
+    for line in out.splitlines():
+        if 'scrapy_daemon.py' in line:
+            return False
+    return True
+
+
 def check_logs_status(file_path):
     flag = False
     reason = ''
@@ -110,18 +122,23 @@ def check_logs_status(file_path):
                 if m1 in lines[-1] and m2 in lines[-2]:
                     reason = "No any tasks were received for long time"
                     flag = True
+    else:
+        reason = "No logs exist"
+        flag = True
     return flag, reason
 
 
 def teminate_instance_and_log_it(inst_ip, inst_id, reason):
     global autoscale_conn, TOTAL_WAS_TERMINATED
-    autoscale_conn.terminate_instance(inst_id, decrement_capacity=True)
     logger.warning("Instance with ip=%s and id=%s was terminated"
                    " due to reason='%s'.", inst_ip, inst_id, reason)
+    autoscale_conn.terminate_instance(inst_id, decrement_capacity=True)
     TOTAL_WAS_TERMINATED += 1
 
 
 def stop_if_required(inst_ip, inst_id):
+    """If this method return 'True' it will mean that script failed
+    to downoad or handle logs and the instance should be stopped"""
     tmp_file = '/tmp/tmp_file'
     # purge previous entry
     open(tmp_file, 'w').close()
@@ -132,8 +149,8 @@ def stop_if_required(inst_ip, inst_id):
     proc = mp.Process(target=os.system, args=(run_cmd,))
     proc.start()
     checker = 0
-    # it will give 30 second to downloads logs.
-    while checker < 30:
+    # it will give 60 seconds to downloads logs.
+    while checker < 60:
         if proc.is_alive():
             checker += 1
             time.sleep(1)
@@ -148,23 +165,38 @@ def stop_if_required(inst_ip, inst_id):
         return True
     print(inst_id, inst_ip, flag, reason)
     if flag:
+        if reason == 'No logs exist':
+            return True
+        if reason == 'Task was finished':
+            time.sleep(30)
         teminate_instance_and_log_it(inst_ip, inst_id, reason)
+    else:
+        return check_is_scrapy_daemon_not_running(ssh_key, inst_ip)
 
 
 def update_unresponded_dict_or_terminate_instance(inst_ip, inst_id,
                                                   unresponded):
     if inst_id in unresponded.keys():
         last_time = unresponded[inst_id][1]
-        # if instance not responded for 15 minutes already
-        if time.time() - int(last_time) > 15*60:
+        # if instance not responded for 32 minutes already
+        if time.time() - int(last_time) > 32*60:
+            reason = "Instance not respond for 32 minutes or "\
+                     "failed to downoald logs"
             teminate_instance_and_log_it(
                 inst_ip,
                 inst_id,
-                reason="Instance not respond for 15 minutes"
+                reason=reason
             )
             del unresponded[inst_id]
     else:
         unresponded[inst_id] = [inst_ip, time.time()]
+
+
+def delete_old_unresponded_hosts(unresponded):
+    for inst_id in unresponded.keys():
+        last_time = unresponded[inst_id][1]
+        if time.time() - int(last_time) > 60*60*24*3:  # three day
+            del unresponded[inst_id]
 
 
 def upload_logs_to_s3():
@@ -177,6 +209,8 @@ def upload_logs_to_s3():
 
 def main():
     instances, conn = get_all_group_instances_and_conn()
+    names = ', '.join([inst.id for inst in instances])
+    logger.info("Instances running at this moment: %s", names)
     total_instances = len(instances)
     not_responded_hosts = '/tmp/not_responded_hosts'
     if not os.path.exists(not_responded_hosts):
@@ -206,6 +240,7 @@ def main():
                     inst_id,
                     unresponded
                 )
+    delete_old_unresponded_hosts(unresponded)
     with open(not_responded_hosts, 'w') as f:
         f.write(json.dumps(unresponded))
     logger.info("Were terminated %s instances from %s total.",

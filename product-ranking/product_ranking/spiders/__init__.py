@@ -134,6 +134,7 @@ def populate_from_open_graph(response, product):
 
     See about the Open Graph Protocol at http://ogp.me/
     """
+
     metadata = _extract_open_graph_metadata(response)
 
     if 'type' not in metadata:
@@ -145,6 +146,16 @@ def populate_from_open_graph(response, product):
             "Unknown Open Graph type: %s" % metadata['type'],
             WARNING,
         )
+
+
+def dump_url_to_file(url, fname='/home/web_runner/no_brands'):
+    """Helper function that stores a product URL to log file.
+    """
+    try:
+        with open(fname, 'a') as fh:
+            fh.write(url.strip()+'\n')
+    except Exception, e:
+        return
 
 
 class BaseProductsSpider(Spider):
@@ -256,7 +267,7 @@ class BaseProductsSpider(Spider):
             self.log("For search term '%s' with %d items remaining,"
                      " failed to retrieve search page: %s"
                      % (search_term, remaining, response.request.url),
-                     ERROR)
+                     WARNING)
         else:
             prods_count = -1  # Also used after the loop.
             for prods_count, request_or_prod in enumerate(
@@ -300,21 +311,22 @@ class BaseProductsSpider(Spider):
                     , INFO)
             else:
                 scraped_results_per_page = prods_per_page
-                self.log(
-                    "Failed to scrape number of products per page",
-                    ERROR)
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to scrape number of products per page", ERROR)
             response.meta['scraped_results_per_page'] = scraped_results_per_page
 
         if total_matches is None:
             total_matches = self._scrape_total_matches(response)
             if total_matches is not None:
                 response.meta['total_matches'] = total_matches
-                self.log("Found %d `     total matches." % total_matches, INFO)
+                self.log("Found %d total matches." % total_matches, INFO)
             else:
-                self.log(
-                    "Failed to parse total matches for %s" % response.url,
-                    ERROR
-                )
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to parse total matches for %s" % response.url,ERROR)
 
         if total_matches and not prods_per_page:
             # Parsing the page failed. Give up.

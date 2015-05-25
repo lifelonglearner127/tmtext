@@ -57,6 +57,9 @@ class QuillProductsSpider(ProductsSpider):
         'rating_asc': 'p.avg_rating|101|1|:'
     }
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse(self, response):
         redirected_url = response.request.meta.get('redirect_urls')
         if redirected_url:
@@ -134,6 +137,11 @@ class QuillProductsSpider(ProductsSpider):
                 '/node()[normalize-space()]'
         cond_set_value(product, 'description',
                        response.xpath(xpath).extract(), ''.join)
+
+        if not product.get("description"):
+            desc = response.xpath("//div[@id='SkuTabDescription']").extract()
+            if desc:
+                product["description"] = desc[0]
         cond_set(
             product, 'brand',
             filter(product.get('title', '').startswith,
@@ -164,6 +172,15 @@ class QuillProductsSpider(ProductsSpider):
 
         locale = j['culturecode']
         cond_set_value(product, 'locale', locale)
+
+        if not product.get("is_out_of_stock"):
+            red_span = response.xpath('//span[@class="red"]/text()').extract()
+            if red_span:
+                s = 'Currently out of stock'
+                if s in red_span[0]:
+                    cond_set_value(product, 'is_out_of_stock', True)
+            else:
+                cond_set_value(product, 'is_out_of_stock', False)
 
     def _populate_related_products(self, response, product):
         related_products = {}
