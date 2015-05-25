@@ -585,9 +585,12 @@ class ServiceScraperTest(unittest.TestCase):
             for row in self.cur:
                 self.urls.extend(row[0].splitlines())
 
+            self.urls = list(set(self.urls))
+
             print "Loading urls..."
 
             for url in self.urls:
+                url = url.strip()
                 self.cur.execute("select * from console_urlsample where url='%s'" % url)
                 row = self.cur.fetchall()
 
@@ -685,6 +688,10 @@ class ServiceScraperTest(unittest.TestCase):
             self.cur.execute(sql)
             self.con.commit()
 
+            self.cur.execute("update console_urlsample set json=$$%s$$, qualified_date='%s' where url='%s'"
+                             % (test_json_str, today.isoformat(), sample_url))
+            self.con.commit()
+
     # test all keys are in the response for simple (all-data) request for bhinneka
     # (using template function)
     def test_bhinneka(self):
@@ -762,7 +769,6 @@ class ServiceScraperTest(unittest.TestCase):
     def test_samsclub(self):
         for url in self.urls_by_scraper["samsclub"]:
             self._test("samsclub", url)
-
 
     # test all keys are in the response for simple (all-data) request for quill
     # (using template function)
