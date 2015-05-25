@@ -681,6 +681,8 @@ class AmazonDEScraper(Scraper):
         return txt
 
     def _marketplace_sellers(self):
+        return None
+
         self.marketplace_prices = []
         mps = []
         mpp = []
