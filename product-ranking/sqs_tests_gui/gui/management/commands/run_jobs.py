@@ -36,8 +36,8 @@ class Command(BaseCommand):
                 msg['searchterms_str'] = job.search_term
             elif job.product_url:
                 msg['url'] = job.product_url
-            elif job.products_url:
-                msg['urls'] = job.products_url
+            elif job.product_urls:
+                msg['urls'] = job.product_urls
             if job.with_best_seller_ranking:
                 msg['with_best_seller_ranking'] = True
             if job.branch_name:
