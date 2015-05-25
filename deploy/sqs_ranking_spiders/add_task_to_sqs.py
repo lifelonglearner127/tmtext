@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
     # you can pass additional args like task_id=123 or searchterms_str=cola
     for arg in sys.argv:
-        # TODO: SC+CH "batch" URL support (like -a product_urls=url1||||url2||||url3)
+        # TODO: SC+CH "batch" URL support (like -a products_url=url1||||url2||||url3)
         if 'task_id=' in arg:
             extra_marker, extra_marker_value = arg.split('=')
             if not 'cmd_args' in msg:

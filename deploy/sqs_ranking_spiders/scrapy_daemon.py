@@ -515,7 +515,7 @@ def execute_task_from_sqs():
         arg_name = 'product_url'
         arg_value = url
     if urls:
-        arg_name = 'product_urls'
+        arg_name = 'products_url'
         arg_value = urls
     cmd = cmd % (
         REPO_BASE_PATH, site+'_products', arg_name, arg_value,
