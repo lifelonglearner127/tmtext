@@ -118,6 +118,7 @@ class Amazon_marketplace(object):
                 url=urlparse.urljoin(response.url, next_link), 
                 callback=self.parse_marketplace,
                 meta=meta,
+                dont_filter=True,
             )
         if marketplaces:
             product["marketplace"] = marketplaces

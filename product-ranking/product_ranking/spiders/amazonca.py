@@ -456,3 +456,15 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
+
+    def _validate_title(self, val):
+        if not bool(val.strip()):  # empty
+            return False
+        if len(val.strip()) > 2500:  # too long
+            return False
+        if val.strip().count(u' ') > 600:  # too many spaces
+            return False
+        if '<' in val or '>' in val:  # no tags
+            if not re.search("(\<\s?\d)|(\>\s?\d)", val):
+                return False
+        return True
