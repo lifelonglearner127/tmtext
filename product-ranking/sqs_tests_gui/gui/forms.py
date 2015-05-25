@@ -49,8 +49,9 @@ class JobForm(forms.ModelForm):
     def clean(self, *args, **kwargs):
         data = self.cleaned_data
         product_url = data.get('product_url', '')
+        products_url = data.get('products_url', '')
         search_term = data.get('search_term', '')
-        if not product_url and not search_term:
+        if not product_url and not search_term and not products_url:
             raise forms.ValidationError(
                 'You should enter Product url OR search term')
         return data
@@ -63,6 +64,16 @@ class JobForm(forms.ModelForm):
                 if not product_url.lower().startswith('https://'):
                     raise forms.ValidationError('Invalid URL')
         return product_url
+
+    def clean_products_url(self, *args, **kwargs):
+        data = self.cleaned_data
+        products_url = data.get('products_url', '')
+        if products_url:
+            for prod_url in products_url.split('||||'):
+                if not prod_url.lower().startswith('http://'):
+                    if not prod_url.lower().startswith('https://'):
+                        raise forms.ValidationError('Invalid URL: ' + prod_url)
+        return products_url
 
     class Meta:
         model = Job

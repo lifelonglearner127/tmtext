@@ -36,10 +36,20 @@ class Command(BaseCommand):
                 msg['searchterms_str'] = job.search_term
             elif job.product_url:
                 msg['url'] = job.product_url
+            elif job.products_url:
+                msg['urls'] = job.products_url
             if job.with_best_seller_ranking:
                 msg['with_best_seller_ranking'] = True
             if job.branch_name:
                 msg['branch_name'] = job.branch_name
+            if job.extra_cmd_args.strip():
+                for _arg in job.extra_cmd_args.split('\n'):
+                    extra_arg_name, extra_arg_value = _arg.split('=')
+                    extra_arg_name = extra_arg_name.strip()
+                    extra_arg_value = extra_arg_value.strip()
+                    if not 'cmd_args' in msg:
+                        msg['cmd_args'] = {}
+                    msg['cmd_args'][extra_arg_name] = extra_arg_value
             put_msg_to_sqs(msg, job.get_input_queue())
             job.status = 'pushed into sqs'
             job.save()
