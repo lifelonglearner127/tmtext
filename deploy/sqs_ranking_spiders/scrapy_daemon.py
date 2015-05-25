@@ -486,6 +486,7 @@ def execute_task_from_sqs():
     task_id = metadata.get('task_id', metadata.get('task', None))
     searchterms_str = metadata.get('searchterms_str', None)
     url = metadata.get('url', None)
+    urls = metadata.get('urls', None)
     site = metadata['site']
     server_name = metadata['server_name']
     cmd_line_args = metadata.get('cmd_args', {})  # dict of extra command-line
@@ -513,6 +514,9 @@ def execute_task_from_sqs():
     if url:
         arg_name = 'product_url'
         arg_value = url
+    if urls:
+        arg_name = 'product_urls'
+        arg_value = urls
     cmd = cmd % (
         REPO_BASE_PATH, site+'_products', arg_name, arg_value,
         options, output_path+'.log', output_path+'.jl'
