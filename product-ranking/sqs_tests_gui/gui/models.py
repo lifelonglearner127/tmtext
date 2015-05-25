@@ -59,7 +59,7 @@ class Job(models.Model):
         max_length=500, blank=True, null=True,
         help_text='Enter this OR search term above OR products URL below'
     )
-    product_urls = models.URLField(
+    product_urls = models.CharField(
         max_length=1500, blank=True, null=True,
         help_text=('Enter this OR search term above OR product_url.'
                    ' Only for the CH+SC mode!')

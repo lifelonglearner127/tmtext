@@ -53,7 +53,7 @@ class JobForm(forms.ModelForm):
         search_term = data.get('search_term', '')
         if not product_url and not search_term and not products_url:
             raise forms.ValidationError(
-                'You should enter Product url OR search term')
+                'You should enter Product url OR search term OR products_url')
         return data
 
     def clean_product_url(self, *args, **kwargs):
