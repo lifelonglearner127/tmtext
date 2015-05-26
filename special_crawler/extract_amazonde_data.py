@@ -208,25 +208,10 @@ class AmazonDEScraper(Scraper):
         # list of lists of cells (by rows)
         cells=[]
         for row in rows:
-            r = row.xpath(".//*[not(self::script)]//text()")
-            if len(r)>0 and len(r[0])>1 and r[0].find('Customer Review') < 0 \
-               and r[0].find('function(') < 0 and r[0].find('Delivery') < 0 \
-               and r[0].find('Date ') < 0 and r[0].find('Best Seller') < 0 \
-               and r[0].find('Manufacturer ref') < 0 and r[0].find('ASIN') < 0 \
-               and r[1].find('function(') < 0:
-                cells.append(r)
-#            cells = map(lambda row: row.xpath(".//*[not(self::script)]//text()"), rows)
-        # list of text in each row
-        rows_text = map(\
-            lambda row: ":".join(\
-                map(lambda cell: cell.strip(), row)\
-                ), \
-            cells)
-        all_features_text = "\n".join(rows_text)
-        # return dict with all features info
-     #   return all_features_text
-        return rows_text
-
+            r = row.text_content() #  xpath(".//*[not(self::script)]//text()")
+            if len(r)>0 and r.find('function') < 0 and r.find('padding') < 0:
+                cells.append(self._clean_text(r))
+        return cells
 
     def _feature_count(self): # extract number of features from tree
         rows = self._features()
