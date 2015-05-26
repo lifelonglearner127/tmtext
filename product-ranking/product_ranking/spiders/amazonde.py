@@ -341,6 +341,14 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                     u' ', '').replace(u'\xa0', ''))
             else:
                 total_matches = None
+            if not total_matches:
+                count_matches = response.xpath(
+                    '//h2[@id="s-result-count"]/text()').re('von ([\d\.]+)')
+                if count_matches:
+                    total_matches = int(
+                        count_matches[0].strip().replace('.', ''))
+                else:
+                    total_matches = None
         return total_matches
 
     def _scrape_product_links(self, response):
