@@ -424,12 +424,12 @@ class SearchSpider(BaseSpider):
 
 
         if site in self.parse_url_functions:
-            (product_name, product_model, product_price, product_upc) = self.parse_url_functions[site](hxs)
+            (product_name, product_model, product_price, product_upc, product_manufacturer_code) = self.parse_url_functions[site](hxs)
 
         else:
             raise CloseSpider("Unsupported site: " + site)
 
-        product_manufacturer_code = None # temporary
+        # product_manufacturer_code = None # temporary
         # replace None attributes with the empty string - for output purposes (log mainly)
         for attribute in (product_name, product_model, product_price, product_upc, product_manufacturer_code):
             if not attribute:
@@ -714,7 +714,7 @@ class SearchSpider(BaseSpider):
             if m:
                 product_model = m.group(2).strip()
 
-        return (product_name, product_model, None, None)
+        return (product_name, product_model, None, None, None)
 
 
 
@@ -784,7 +784,7 @@ class SearchSpider(BaseSpider):
         if product_upc_holder:
             upc = product_upc_holder[0].strip()
 
-        return (product_name, product_model, product_price, upc)
+        return (product_name, product_model, product_price, upc, None)
 
 #TODO: for the sites below, complete with missing logic, for not returning empty elements in manufacturer spider
     def parseURL_newegg(self, hxs):
@@ -808,7 +808,7 @@ class SearchSpider(BaseSpider):
         else:
             product_model = None
 
-        return (product_name, product_model, None, None)
+        return (product_name, product_model, None, None, None)
 
     #TODO: add price info? product model? brand?
     def parseURL_boots(self, hxs):
@@ -829,7 +829,7 @@ class SearchSpider(BaseSpider):
         if not product_name:
             product_name = None
 
-        return (product_name, None, None, None)
+        return (product_name, None, None, None, None)
 
     #TODO: add price info? product model? brand
     def parseURL_tesco(self, hxs):
@@ -840,7 +840,7 @@ class SearchSpider(BaseSpider):
         else:
             product_name_holder = None
 
-        return (product_name, None, None, None)
+        return (product_name, None, None, None, None)
 
     def parseURL_amazon(self, hxs):
         # works for amazon.com and amazon.co.uk
@@ -907,7 +907,7 @@ class SearchSpider(BaseSpider):
         else:
             self.log("Didn't find product price: (" + product_name + ")\n", level=log.INFO)
 
-        return (product_name, product_model, price, None)
+        return (product_name, product_model, price, None, None)
 
     def parseURL_target(self, hxs):
         product_name_holder = hxs.select("//h2[@class='product-name item']/span[@itemprop='name']/text()").extract()
@@ -938,7 +938,7 @@ class SearchSpider(BaseSpider):
         if upc_node:
             upc = upc_node[0]
 
-        return (product_name, None, price, upc)
+        return (product_name, None, price, upc, None)
 
 
     def parseURL_maplin(self, hxs):
@@ -969,7 +969,7 @@ class SearchSpider(BaseSpider):
 
         upc = None
 
-        return (product_name, None, price, upc)
+        return (product_name, None, price, upc, None)
 
 
     # accumulate results for each (sending the pending requests and the partial results as metadata),
