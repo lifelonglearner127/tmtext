@@ -3,6 +3,7 @@ import re
 import nltk
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet
+from string import lower
 from scrapy import log
 import unicodedata
 import itertools
