@@ -21,6 +21,7 @@ sql = "select sample_url from console_reportresult where changes_in_structure > 
 
 cur.execute(sql)
 rows = cur.fetchall()
+rows = list(set(rows))
 urls = []
 
 for row in rows:
