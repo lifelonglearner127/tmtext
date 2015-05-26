@@ -15,6 +15,7 @@ class ProcessText():
     # value to outweight any theoretical possible threshold. If UPC matches, products should match.
     # TODO: finetune
     UPC_MATCH_WEIGHT = 20
+    MANUFACTURER_CODE_MATCH_WEIGHT = 10 # TODO: finetune
     MODEL_MATCH_WEIGHT = 9
     ALT_MODEL_MATCH_WEIGHT = 7
     BRAND_MATCH_WEIGHT = 5
@@ -140,7 +141,7 @@ class ProcessText():
     #            param - threshold for accepting a product name as similar or not (float between 0-1)
     
     @staticmethod
-    def similar(product_name, product_model, product_price, product_upc, products2, param):
+    def similar(product_name, product_model, product_price, product_upc, product1_mancode, products2, param):
         result = None
         products_found = []
         for product2 in products2:
@@ -156,6 +157,11 @@ class ProcessText():
                 product2_upc = product2['product_upc']
             else:
                 product2_upc = None
+
+            if 'manufacturer_code' in product2:
+                product2_mancode = product2['manufacturer_code']
+            else:
+                product2_mancode = None
 
             #TODO: currently only considering brand for target products
             # and only available for Amazon
@@ -209,6 +215,9 @@ class ProcessText():
             # check if product UPCs match
             upc_matched = ProcessText.upcs_match(product_upc, product2_upc)
 
+            # check if manufacturer codes match
+            manufacturer_code_matched = ProcessText.manufacturer_code_match(product1_mancode, product2_mancode)
+
             # check if product names match (a similarity score)
             # use copies of brands names with model number replaced with a placeholder
             score = ProcessText.similar_names(words1_copy, words2_copy)
@@ -223,6 +232,9 @@ class ProcessText():
             # add score for matched UPC
             if upc_matched:
                 score += ProcessText.UPC_MATCH_WEIGHT
+
+            if manufacturer_code_matched:
+                score += ProcessText.MANUFACTURER_CODE_MATCH_WEIGHTr
 
             # add model matching score
             if model_matched:
@@ -539,6 +551,22 @@ class ProcessText():
         else:
             log.msg("UPC NOT MATCHED: " + str(upc1) + " " + str(upc2) + " " + str(list(set(upc1).intersection(set(upc2)))) + "\n", level=log.INFO)
             return False
+
+    @staticmethod
+    # check if 2 manufacturer codes match
+    # can be enirched in the future with more sophisticated checks
+    def manufacturer_code_match(code1, code2):
+        # upcs are lists of upcs for each product
+        if not code1 or not code2:
+            log.msg("MANUFACTURER CODE NOT MATCHED: " + str(code1) + " " + str(code2) + "\n", level=log.INFO)
+            return False
+        if lower(code1) == lower(code2):
+            log.msg("MANUFACTURER CODE MATCHED: " + str(code1) + " " + str(code2) + "\n", level=log.INFO)
+            return True
+        else:
+            log.msg("MANUFACTURER CODE NOT MATCHED: " + str(code1) + " " + str(code2) + "\n", level=log.INFO)
+            return False
+
             
 
     # check if word is a likely candidate to represent a model number
