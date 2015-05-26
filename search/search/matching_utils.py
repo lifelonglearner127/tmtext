@@ -559,7 +559,7 @@ class ProcessText():
     def manufacturer_code_match(code1, code2):
         # upcs are lists of upcs for each product
         if not code1 or not code2:
-            log.msg("MANUFACTURER CODE NOT MATCHED: " + code1.encode("utf-8") + " " + code2.encode("utf-8") + "\n", level=log.INFO)
+            log.msg("MANUFACTURER CODE NOT MATCHED: " + str(code1).encode("utf-8") + " " + str(code2).encode("utf-8") + "\n", level=log.INFO)
             return False
         if lower(code1) == lower(code2):
             log.msg("MANUFACTURER CODE MATCHED: " + code1.encode("utf-8") + " " + code2.encode("utf-8") + "\n", level=log.INFO)
