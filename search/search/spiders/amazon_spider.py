@@ -49,6 +49,8 @@ class AmazonSpider(SearchSpider):
         # this causes 404s
         if URL == "http://www.amazon.com/gp/slredirect/redirect.html":
             return False
+        if URL.startswith("http://www.amazon.co.uk/gp/slredirect/redirect.html"):
+            return False
         try:
             # disable this for now. without user agent set, it only causes 500s. and it slows everything down. just return True for all
             return True
