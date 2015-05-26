@@ -291,7 +291,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                 'li/b[contains(text(), "ISBN-10")]/../text()'
             ).extract())
             if model:
-                cond_set(product, 'model', model.strip())
+                cond_set(product, 'model', (model.strip(),))
         self._buyer_reviews_from_html(response, product)
         self.populate_bestseller_rank(product, response)
 
