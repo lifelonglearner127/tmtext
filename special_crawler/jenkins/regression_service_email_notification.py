@@ -17,7 +17,7 @@ con = None
 con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
 cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-sql = "select sample_url from console_reportresult where changes_in_structure = 1 and report_date >= '2015-05-25'"
+sql = "select sample_url from console_reportresult where changes_in_structure = 1"
 
 cur.execute(sql)
 rows = cur.fetchall()
