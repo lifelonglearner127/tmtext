@@ -72,6 +72,10 @@ class Job(models.Model):
         max_length=300, blank=True, null=True,
         help_text="Extra command-line arguments, 1 per line. Example: enable_cache=1"
     )
+    sc_ch_mode = models.BooleanField(
+        default=False, help_text=('Run the spider in CH mode. Do not forget to'
+                                  ' fill the Product UrlS field above.')
+    )
     with_best_seller_ranking = models.BooleanField(
         default=False, help_text='For Walmart bestsellers matching')
     task_id = models.IntegerField(default=100000)

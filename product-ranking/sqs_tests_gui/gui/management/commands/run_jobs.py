@@ -42,7 +42,7 @@ class Command(BaseCommand):
                 msg['with_best_seller_ranking'] = True
             if job.branch_name:
                 msg['branch_name'] = job.branch_name
-            if job.extra_cmd_args.strip():
+            if job.extra_cmd_args and job.extra_cmd_args.strip():
                 for _arg in job.extra_cmd_args.split('\n'):
                     extra_arg_name, extra_arg_value = _arg.split('=')
                     extra_arg_name = extra_arg_name.strip()
@@ -50,6 +50,14 @@ class Command(BaseCommand):
                     if not 'cmd_args' in msg:
                         msg['cmd_args'] = {}
                     msg['cmd_args'][extra_arg_name] = extra_arg_value
+            if job.sc_ch_mode:
+                if ('cmd_args' in msg
+                        and 'content_health_mode' in msg['cmd_args']):
+                    pass  # the SC+CH mode has already been activated
+                else:  # add the cmd arg
+                    if not 'cmd_args' in msg:
+                        msg['cmd_args'] = {}
+                    msg['cmd_args']['content_health_mode'] = 'True'
             put_msg_to_sqs(msg, job.get_input_queue())
             job.status = 'pushed into sqs'
             job.save()
