@@ -96,10 +96,6 @@ def amazon_parse_department(cats):
         cat = r.get('category')
         rank = r.get('rank')
         # first, try to match the full category
-        print('+'*50)
-        print(cat)
-        print(cat.lower() in [x.lower() for x in DEPARTMENTS_CATEGORIES])
-        print('+'*50)
         if cat in DEPARTMENTS_CATEGORIES \
             or cat.lower() in [x.lower() for x in DEPARTMENTS_CATEGORIES]:
             return {cat: rank}
