@@ -35,7 +35,7 @@ class AmazonScraper(Scraper):
     MAX_CAPTCHA_RETRIES = 10
 
     marketplace_prices = None
-
+    marketplace_sellers = None
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
     def _extract_page_tree(self, captcha_data=None, retries=0):
@@ -572,6 +572,8 @@ class AmazonScraper(Scraper):
 
     def _tofloat(self,s):
         try:
+            s = s.replace(",", "")
+            s = re.findall(r"[\d\.]+", s)[0]
             t=float(s)
             return t
         except ValueError:
@@ -700,76 +702,82 @@ class AmazonScraper(Scraper):
         txt = image_to_string(img)
         return txt
 
+
     def _marketplace_sellers(self):
+        if self.marketplace_sellers != None:
+            return self.marketplace_sellers
         self.marketplace_prices = []
         mps = []
         mpp = []
-        a = self.tree_html.xpath('//div[@id="merchant-info"]//a//text()')
-        for m in a:
-            mps.append(m)
-        if len(mps) > 0:
-            b = self.tree_html.xpath('//span[@id="priceblock_ourprice"]//text()')
-            for p in b:
-                mpp.append(p)
-        b = self.tree_html.xpath('//div[contains(@class,"pa_mbc_on_amazon_offer")]//span[@class="a-size-medium a-color-price"]//text()')
-        for p in b:
-            mpp.append(p)
-        a = self.tree_html.xpath('//span[contains(@class,"mbcMerchantName")]//text()')
-        for m in a:
-            mps.append(m)
-        if len(mps) > 0:
-            self.marketplace_prices = mpp
-            return mps
-        a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
-        if len(a) > 0 and a[0].find('seller')>=0:
-            domain=self.product_page_url.split("/")
-            url =self.tree_html.xpath('//div[@id="availability"]//a/@href')
-            if len(url)>0:
-                url = domain[0]+"//"+domain[2]+url[0]
-                h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-                contents = requests.get(url, headers=h).text
-                tree = html.fromstring(contents)
-                s = tree.xpath("//p[contains(@class,'SellerName')]//text()")
-                mps=[p.strip() for p in s if p.strip() != ""]
-
-        urls = self.tree_html.xpath("//div[@id='moreBuyingChoices_feature_div']//div[@class='a-box']//span[contains(@class,'a-size-small')]//a/@href")
-        while len(urls) > 0:
-            domain = self.product_page_url.split("/")
-            url = domain[0]+"//"+domain[2]+urls[0]
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        path = 'amazon_sellers.json'
+        try:
+            with open(path, 'r') as fp:
+                amsel = json.load(fp)
+        except:
+            amsel = {}
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        domain=self.product_page_url.split("/")
+        url = domain[0]+"//"+domain[2]+ "/gp/offer-listing/" + self._product_id() + "/ref=olp_tab_all"
+        fl = 0
+        while len(url) > 10:
             contents = requests.get(url, headers=h).text
             tree = html.fromstring(contents)
-            rows = tree.xpath("//div[@id='olpTabContent']//div[contains(@class,'a-row') and contains(@class,'olpOffer')]")
-            for row in rows:
-                try:
-                    seller_price = row.xpath(".//span[contains(@class,'olpOfferPrice')]//text()")[0].strip()
-                    seller_price = seller_price.replace(",", "")
-                    seller_price = re.findall(r"[\d\.]+", seller_price)[0]
-                    seller_price = float(seller_price)
-                except IndexError:
-                    seller_price = 0.00
-
-                seller_names = row.xpath(".//p[contains(@class,'SellerName')]//text()")
-                seller_names = [self._clean_text(r) for r in seller_names if len(self._clean_text(r)) > 0]
-                try:
-                    seller_name = seller_names[0]
-                except IndexError:
-                    img_url = row.xpath(".//p[contains(@class,'SellerName')]//img/@src")[0].strip()
-                    if len(img_url) > 0:
-                        seller_name = self.img_parse(img_url)
-                        seller_name = seller_name.split("\n")[0]
-                mpp.append(seller_price)
-                mps.append(seller_name)
+            sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
+            for s in sells:
+                price = s.xpath('.//span[contains(@class,"olpOfferPrice")]//text()')
+                sname = s.xpath('.//p[contains(@class,"olpSellerName")]/span/a/text()')
+                if len(price) > 0:
+                    seller_price = self._tofloat(price[0])
+                    seller_name = ""
+                    if len(sname) > 0 and sname[0].strip() != "":
+                        seller_name = sname[0].strip()
+                    else:
+                        seller_link = s.xpath(".//p[contains(@class,'SellerName')]//a/@href")
+                        if len(seller_link) > 0:
+                            sd=seller_link[0].split("/")
+                            seller_id = ""
+                            if len(sd) > 4:
+                                seller_id = sd[4]
+#                                print "seller_id",seller_id
+                                if seller_id != "" and seller_id in amsel:
+                                    seller_name = amsel[seller_id]
+#                                    print "seller_name",seller_name
+                            if seller_name == "":
+                                seller_content = requests.get(seller_link[0], headers=h).text
+                                seller_tree = html.fromstring(seller_content)
+                                seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")
+                                if len(seller_names) > 0:
+                                    seller_name = seller_names[0].strip()
+                                else:
+                                    seller_names = seller_tree.xpath("//title//text()")
+                                    if len(seller_names) > 0:
+                                        if seller_names[0].find(":")>0:
+                                            seller_name = seller_names[0].split(":")[1].strip()
+                                        else:
+                                            seller_name = seller_names[0].split("@")[0].strip()
+                            if seller_name != "" and seller_id != "":
+                                amsel[seller_id] = seller_name
+                                fl = 1
+                    if seller_name != "":
+                        mps.append(seller_name)
+                        mpp.append(seller_price)
             urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
-
+            if len(urls)>0:
+                url = domain[0]+"//"+domain[2]+urls[0]
+            else:
+                url = ""
         if len(mps)>0:
+            if fl == 1:
+                with open(path, 'w') as fp:
+                    json.dump(amsel, fp)
             self.marketplace_prices = mpp
+            self.marketplace_sellers = mps
             return mps
-
         return None
 
+
     def _marketplace_prices(self):
-        if self.marketplace_prices is None:
+        if self.marketplace_prices is None :
             self._marketplace_sellers()
         if len(self.marketplace_prices) > 0:
             return self.marketplace_prices
