@@ -199,16 +199,31 @@ class AmazonDEScraper(Scraper):
 
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
+        case_number = 0
+
         if len(rows)==0:
             rows = self.tree_html.xpath("//div[@id='detail_bullets_id']//div[@class='content']//ul//li")
+            case_number = 1
+
         if len(rows)==0:
             rows = self.tree_html.xpath("//div[@id='dv-center-features']//table//tr")
+            case_number = 2
+
         if len(rows)==0:
             rows = self.tree_html.xpath("//table[@id='aloha-ppd-glance-table']//tr")
+            case_number = 3
+
         # list of lists of cells (by rows)
         cells=[]
         for row in rows:
-            r = row.text_content() #  xpath(".//*[not(self::script)]//text()")
+            r = ""
+
+            if case_number == 0:
+                for td in row.xpath("td"):
+                    r += (td.text_content() + " ")
+            else:
+                r = row.text_content() #  xpath(".//*[not(self::script)]//text()")
+
             if len(r)>0 and r.find('function') < 0 and r.find('padding') < 0:
                 cells.append(self._clean_text(r))
         return cells
