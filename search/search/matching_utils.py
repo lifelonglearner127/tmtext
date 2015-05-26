@@ -235,7 +235,7 @@ class ProcessText():
                 score += ProcessText.UPC_MATCH_WEIGHT
 
             if manufacturer_code_matched:
-                score += ProcessText.MANUFACTURER_CODE_MATCH_WEIGHTr
+                score += ProcessText.MANUFACTURER_CODE_MATCH_WEIGHT
 
             # add model matching score
             if model_matched:
