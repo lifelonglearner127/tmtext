@@ -53,15 +53,24 @@ class Job(models.Model):
 
     search_term = models.CharField(
         max_length=255, blank=True, null=True,
-        help_text='Enter this OR product URL below'
+        help_text='Enter this OR product(s) URL below'
     )
     product_url = models.URLField(
         max_length=500, blank=True, null=True,
-        help_text='Enter this OR search term above'
+        help_text='Enter this OR search term above OR products URL below'
+    )
+    product_urls = models.CharField(
+        max_length=1500, blank=True, null=True,
+        help_text=('Enter this OR search term above OR product_url.'
+                   ' Only for the CH+SC mode!')
     )
     quantity = models.IntegerField(
         blank=True, null=True, default=20,
         help_text='Leave blank for unlimited results (slow!)'
+    )
+    extra_cmd_args = models.TextField(
+        max_length=300, blank=True, null=True,
+        help_text="Extra command-line arguments, 1 per line. Example: enable_cache=1"
     )
     with_best_seller_ranking = models.BooleanField(
         default=False, help_text='For Walmart bestsellers matching')
