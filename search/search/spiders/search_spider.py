@@ -241,6 +241,10 @@ class SearchSpider(BaseSpider):
                     product_url = product_info['product_url']
                 else:
                     product_url = ''
+                if 'product_manufacturer_code' in product_info:
+                    product_manufacturer_code = product_info['product_manufacturer_code']
+                else:
+                    product_manufacturer_code = None
 
                 # if there is no product brand, get first word in name, assume it's the brand
                 product_brand_extracted = ""
@@ -337,6 +341,7 @@ class SearchSpider(BaseSpider):
                     request.meta['origin_price'] = product_price
 
                 request.meta['origin_brand_extracted'] = product_brand_extracted
+                request.meta['origin_manufacturer_code'] = product_manufacturer_code
 
                 yield request
 
@@ -419,13 +424,14 @@ class SearchSpider(BaseSpider):
 
 
         if site in self.parse_url_functions:
-            (product_name, product_model, product_price, product_upc) = self.parse_url_functions[site](hxs)
+            (product_name, product_model, product_price, product_upc, product_manufacturer_code) = self.parse_url_functions[site](hxs)
 
         else:
             raise CloseSpider("Unsupported site: " + site)
 
+        # product_manufacturer_code = None # temporary
         # replace None attributes with the empty string - for output purposes (log mainly)
-        for attribute in (product_name, product_model, product_price, product_upc):
+        for attribute in (product_name, product_model, product_price, product_upc, product_manufacturer_code):
             if not attribute:
                 attribute = ""
 
@@ -668,6 +674,7 @@ class SearchSpider(BaseSpider):
         request.meta['origin_name'] = product_name
         request.meta['origin_model'] = product_model
         request.meta['origin_upc'] = [product_upc]
+        request.meta['origin_manufacturer_code'] = product_manufacturer_code
         if product_price:
             request.meta['origin_price'] = product_price
 
@@ -707,7 +714,7 @@ class SearchSpider(BaseSpider):
             if m:
                 product_model = m.group(2).strip()
 
-        return (product_name, product_model, None, None)
+        return (product_name, product_model, None, None, None)
 
 
 
@@ -777,7 +784,7 @@ class SearchSpider(BaseSpider):
         if product_upc_holder:
             upc = product_upc_holder[0].strip()
 
-        return (product_name, product_model, product_price, upc)
+        return (product_name, product_model, product_price, upc, None)
 
 #TODO: for the sites below, complete with missing logic, for not returning empty elements in manufacturer spider
     def parseURL_newegg(self, hxs):
@@ -801,7 +808,7 @@ class SearchSpider(BaseSpider):
         else:
             product_model = None
 
-        return (product_name, product_model, None, None)
+        return (product_name, product_model, None, None, None)
 
     #TODO: add price info? product model? brand?
     def parseURL_boots(self, hxs):
@@ -822,7 +829,7 @@ class SearchSpider(BaseSpider):
         if not product_name:
             product_name = None
 
-        return (product_name, None, None, None)
+        return (product_name, None, None, None, None)
 
     #TODO: add price info? product model? brand
     def parseURL_tesco(self, hxs):
@@ -833,7 +840,7 @@ class SearchSpider(BaseSpider):
         else:
             product_name_holder = None
 
-        return (product_name, None, None, None)
+        return (product_name, None, None, None, None)
 
     def parseURL_amazon(self, hxs):
         # works for amazon.com and amazon.co.uk
@@ -900,7 +907,7 @@ class SearchSpider(BaseSpider):
         else:
             self.log("Didn't find product price: (" + product_name + ")\n", level=log.INFO)
 
-        return (product_name, product_model, price, None)
+        return (product_name, product_model, price, None, None)
 
     def parseURL_target(self, hxs):
         product_name_holder = hxs.select("//h2[@class='product-name item']/span[@itemprop='name']/text()").extract()
@@ -931,7 +938,7 @@ class SearchSpider(BaseSpider):
         if upc_node:
             upc = upc_node[0]
 
-        return (product_name, None, price, upc)
+        return (product_name, None, price, upc, None)
 
 
     def parseURL_maplin(self, hxs):
@@ -962,7 +969,13 @@ class SearchSpider(BaseSpider):
 
         upc = None
 
-        return (product_name, None, price, upc)
+        try:
+            product_code = hxs.select("//span[@itemprop='sku']/text()").extract()[0]
+        except Exception:
+            self.log("No code for product " + str(product_name), level=log.WARNING)
+            product_code = None
+
+        return (product_name, None, price, upc, product_code)
 
 
     # accumulate results for each (sending the pending requests and the partial results as metadata),
@@ -989,7 +1002,12 @@ class SearchSpider(BaseSpider):
             origin_upc = ''
         else:
             origin_upc = str(response.meta['origin_upc'])
-        self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8") + " UPC: " + origin_upc.encode("utf-8"), level=log.DEBUG)
+        if 'origin_manufacturer_code' not in response.meta:
+            origin_manufacturer_code = ''
+        else:
+            origin_manufacturer_code = str(response.meta['origin_manufacturer_code'])
+        self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8") +\
+         " UPC: " + origin_upc.encode("utf-8") + " MANUFACTURER_CODE: " + origin_manufacturer_code.encode("utf-8"), level=log.DEBUG)
         self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
         self.log( "MATCHES: ", level=log.DEBUG)
         for item in items:
@@ -1024,6 +1042,8 @@ class SearchSpider(BaseSpider):
                     request.meta['origin_upc'] = response.meta['origin_upc']
                 if 'threshold' in response.meta:
                     request.meta['threshold'] = response.meta['threshold']
+                if 'origin_manufacturer_code' in response.meta:
+                    request.meta['origin_manufacturer_code'] = response.meta['origin_manufacturer_code']
 
                 # if 'origin_id' in response.meta:
                 #     request.meta['origin_id'] = response.meta['origin_id']
@@ -1064,8 +1084,13 @@ class SearchSpider(BaseSpider):
                     else:
                         origin_upc = None
 
+                    if 'origin_manufacturer_code' in response.meta:
+                        origin_manufacturer_code = response.meta['origin_manufacturer_code']
+                    else:
+                        origin_manufacturer_code = None
+
                         ## print "NO PRICE"
-                    best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], product_price, origin_upc, items, threshold)
+                    best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], product_price, origin_upc, origin_manufacturer_code, items, threshold)
 
                     # #self.log( "ALL MATCHES: ", level=log.WARNING)                    
                     # for item in items:
@@ -1089,6 +1114,8 @@ class SearchSpider(BaseSpider):
 
                     if 'origin_upc' in response.meta:
                         item['origin_upc'] = response.meta['origin_upc']
+                    if 'origin_manufacturer_code' in response.meta:
+                        item['origin_manufacturer_code'] = response.meta['origin_manufacturer_code']
 
                     # if 'origin_id' in response.meta:
                     #     item['origin_id'] = response.meta['origin_id']

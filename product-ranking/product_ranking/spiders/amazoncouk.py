@@ -63,13 +63,13 @@ class AmazoncoukValidatorSettings(object):  # do NOT set BaseValidatorSettings a
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
         'nothing_fou': [5, 50],
-        'kaspersky total': [5, 50],
+        'kaspersky total': [5, 70],
         'gold sold fold': [5, 200],  # spider should return from 5 to 200 products
         'yamaha drums midi': [5, 100],
-        'black men shoes size 8 red stripes': [5, 60],
-        'antoshka': [5, 800],
+        'black men shoes size 8 red stripes': [5, 80],
+        'antoshka': [5, 200],
         'apple ipod nano sold': [100, 300],
-        'avira 2': [200, 500],
+        'avira 2': [20, 300],
     }
 
 
@@ -151,7 +151,7 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
                     'li/b[contains(text(), "ISBN-10")]/../text()'
                 ).extract())
                 if model:
-                    cond_set(prod, 'model', model)
+                    cond_set(prod, 'model', (model,))
 
         title = response.xpath(
             '//span[@id="productTitle"]/text()[normalize-space()] |'
@@ -328,7 +328,7 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
         if not total_matches:
             total_matches = int(is_empty(response.xpath(
                 '//h2[@id="s-result-count"]/text()'
-            ).re(FLOATING_POINT_RGEX), None))
+            ).re(FLOATING_POINT_RGEX), 0))
         return total_matches
 
     def _scrape_product_links(self, response):

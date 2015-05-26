@@ -254,6 +254,11 @@ class AmazonSpider(SearchSpider):
                 upc = upc_node[0].strip().split()
                 item['product_upc'] = upc
 
+            manufacturer_code_node = hxs.select("//li/b/text()[normalize-space()='Manufacturer reference:']/parent::node()/parent::node()/text()").extract()
+            if manufacturer_code_node:
+                manufacturer_code = manufacturer_code_node[0].strip()
+                item['manufacturer_code'] = manufacturer_code
+
             asin_node = hxs.select("//li/b/text()[normalize-space()='ASIN:']/parent::node()/parent::node()/text()").extract()
             if asin_node:
                 item['product_asin'] = asin_node[0].strip()
