@@ -21,12 +21,12 @@ sql = "select sample_url from console_reportresult where changes_in_structure > 
 
 cur.execute(sql)
 rows = cur.fetchall()
-rows = list(set(rows))
 urls = []
 
 for row in rows:
     urls.append(row["sample_url"])
 
+urls = list(set(urls))
 changed_product_urls = "\n" .join(urls)
 
 print changed_product_urls
