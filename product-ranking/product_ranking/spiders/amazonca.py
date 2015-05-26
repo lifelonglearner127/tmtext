@@ -55,13 +55,13 @@ class AmazoncaValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
-        'nothing_fou': [5, 50],
-        'kaspersky total': [5, 50],
+        'nothing_fou': [5, 70],
+        'kaspersky total': [3, 50],
         'gold sold fold': [5, 200],  # spider should return from 5 to 200 products
         'yamaha drums midi': [5, 100],
-        'black men shoes size 8 red': [5, 60],
-        'antoshka': [5, 800],
-        'apple ipod nano gold': [100, 300],
+        'black men shoes size 8 red': [5, 100],
+        'antoshka': [5, 150],
+        'apple ipod nano gold': [50, 300],
         'programming product best': [5, 100],
     }
 
@@ -291,7 +291,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                 'li/b[contains(text(), "ISBN-10")]/../text()'
             ).extract())
             if model:
-                cond_set(product, 'model', model.strip())
+                cond_set(product, 'model', (model.strip(),))
         self._buyer_reviews_from_html(response, product)
         self.populate_bestseller_rank(product, response)
 
@@ -320,7 +320,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         if not total_matches:
             total_matches = int(is_empty(response.xpath(
                 '//h2[@id="s-result-count"]/text()'
-            ).re(FLOATING_POINT_RGEX), None))
+            ).re(FLOATING_POINT_RGEX), 0))
         return total_matches
 
     def _scrape_product_links(self, response):
