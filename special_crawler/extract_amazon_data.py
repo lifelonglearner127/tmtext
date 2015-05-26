@@ -709,7 +709,7 @@ class AmazonScraper(Scraper):
         self.marketplace_prices = []
         mps = []
         mpp = []
-        path = 'amazon_sellers.json'
+        path = '/tmp/amazon_sellers.json'
         try:
             with open(path, 'r') as fp:
                 amsel = json.load(fp)
@@ -768,8 +768,11 @@ class AmazonScraper(Scraper):
                 url = ""
         if len(mps)>0:
             if fl == 1:
-                with open(path, 'w') as fp:
-                    json.dump(amsel, fp)
+                try:
+                    with open(path, 'w') as fp:
+                        json.dump(amsel, fp)
+                except Exception as ex:
+                    print ex
             self.marketplace_prices = mpp
             self.marketplace_sellers = mps
             return mps
