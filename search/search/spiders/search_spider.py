@@ -972,7 +972,7 @@ class SearchSpider(BaseSpider):
         try:
             product_code = hxs.select("//span[@itemprop='sku']/text()").extract()[0]
         except Exception:
-            self.log("No code for product " + product_name, level=log.WARNING)
+            self.log("No code for product " + str(product_name), level=log.WARNING)
             product_code = None
 
         return (product_name, None, price, upc, product_code)
