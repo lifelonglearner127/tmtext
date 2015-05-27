@@ -42,7 +42,7 @@ is_empty = lambda x, y=None: x[0] if x else y
 
 
 class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['model', 'brand', 'price', 'buyer_reviews']
+    optional_fields = ['model', 'brand', 'price', 'buyer_reviews', 'image_url']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
         'google_source_site', 'description', 'special_pricing', 'bestseller_rank'
@@ -270,11 +270,13 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 '//div[@id="kib-container"]/div[@id="kib-ma-container-0"]'
                 '/img/@src'
             ).extract()
-        cond_set(
-            product,
-            'image_url',
-            image
-        )
+        if image and image[0].strip().startswith('http'):
+            # sometimes images are coded data
+            cond_set(
+                product,
+                'image_url',
+                image
+            )
 
         title = response.xpath(
             '//span[@id="productTitle"]/text()[normalize-space()] |'
@@ -609,3 +611,28 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         product["marketplace"] = marketplaces
 
         return product
+
+    def _validate_url(self, val):
+        if not bool(val.strip()):  # empty
+            return False
+        if len(val.strip()) > 1500:  # too long
+            if not 'redirect' in val:
+                return False
+            elif len(val.strip()) > 3000:
+                return False
+        if val.strip().count(u' ') > 5:  # too many spaces
+            return False
+        if not val.strip().lower().startswith('http'):
+            return False
+        return True
+
+    def _validate_title(self, val):
+        if not bool(val.strip()):  # empty
+            return False
+        if len(val.strip()) > 1500:  # too long
+            return False
+        if val.strip().count(u' ') > 300:  # too many spaces
+            return False
+        if '<' in val or '>' in val:  # no tags
+            return False
+        return True
