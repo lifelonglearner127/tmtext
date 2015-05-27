@@ -28,11 +28,11 @@ do
 		then
 			echo "$second" | xargs google-chrome
 		fi
-		# third=`echo "$line" | cut -d',' -f3`
-		# if [ -n "$third" ]
-		# then
-		# 	echo "$third" | xargs google-chrome
-		# fi
+		third=`echo "$line" | cut -d',' -f3`
+		if [ -n "$third" ]
+		then
+			echo "$third" | xargs google-chrome
+		fi
 	# if there's only one result
 	else
 		google-chrome "$line"
