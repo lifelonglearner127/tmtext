@@ -69,6 +69,8 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
+        self.version = "eb94c87fc8c814e34ba4fc33ca980eb5711bbba9"
+
         self.product_url = product_url
         self.products_file = products_file
         self.product_name = product_name
@@ -182,6 +184,9 @@ class SearchSpider(BaseSpider):
 
     # parse input and build list of URLs to find matches for, send them to parseURL
     def parse(self, response):
+
+        # log spider version - will match commit number of last change
+        self.log("Spider version: " + self.version + "\n", level=log.INFO)
 
         if self.product_name:
 
