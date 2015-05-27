@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# TODO:
-# - invalid marketplace price (separator is comma)
-# - buyer reviews: add zeroes for missing marks
-
-
 from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 
