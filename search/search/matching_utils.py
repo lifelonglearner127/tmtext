@@ -590,13 +590,13 @@ class ProcessText():
         # some models on bestbuy have . or /
         nonwords = len(re.findall("[^\w\-/\.]", word))
         
-        if ((letters > 1 and numbers > 0) or numbers > 4 or \
+        if ((letters > 1 and numbers > 0) or numbers > 4 or (numbers >=4 and letters >=1) or\
         (letters > 3 and vowels < 2 and not ProcessText.is_dictionary_word(word))) \
         and nonwords==0 \
         and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz") and \
         not re.match("[0-9]{3,}[kmgt]b", word) and not re.match("[0-9]{3,}p", word) and not re.match("[0-9]{2,}hz", word) \
         and not re.match("[0-9\.]{1,4}oz", word) and not re.match("[0-9\.]{1,4}ml", word)\
-        and not re.match("[0-9\.]{1,4}mm", word) and not re.match("[0-9\.]{1,4}m?ah", word):
+        and not re.match("[0-9\.]{1,4}[\-x]{,1}[0-9\.]{1,4}mm", word) and not re.match("[0-9\.]{1,4}m?ah", word):
         # word is not a memory size, frequency(Hz) or pixels description etc
             return True
 
@@ -660,7 +660,7 @@ class ProcessText():
     @staticmethod
     def weight(word):
 
-        if word.endswith("\"") or re.match("[0-9]+\.[0-9]+", word) or re.match("[0-9\.]{1,4}mm", word):
+        if word.endswith("\"") or re.match("[0-9]+\.[0-9]+", word) or re.match("[0-9\.]{1,4}[\-x]{,1}[0-9\.]{1,4}mm", word):
             return ProcessText.MEASURE_MATCH_WEIGHT
 
         # non dictionary word
