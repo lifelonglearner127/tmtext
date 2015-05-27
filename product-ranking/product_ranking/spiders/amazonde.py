@@ -509,6 +509,13 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             else:
                 return 0
 
+        # add missing marks
+        for mark in range(1, 6):
+            if mark not in ratings:
+                if str(mark) not in ratings:
+                    if unicode(mark) not in ratings:
+                        ratings[unicode(mark)] = 0
+
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)
