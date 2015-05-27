@@ -593,6 +593,9 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 '/span[contains(@class, "price")]/text()'
             ).re(r'[\d\,]+'), 0)
 
+            if price:
+                price = float(price.replace(',', '.').strip())
+
             name = is_empty(seller.xpath(
                 'div/p[contains(@class, "Name")]/span/a/text()').extract())
 
