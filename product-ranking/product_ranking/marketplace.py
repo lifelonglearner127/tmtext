@@ -39,6 +39,11 @@ class Amazon_marketplace(object):
         self.is_empty = lambda x, y=None: x[0] if x else y
 
     def parse_marketplace(self, response):
+        # turn off this feature if a special marker exists (the feature takes
+        #  too much time to scrape
+        if os.path.exists('/tmp/stop_marketplaces'):
+            return response.meta['product']
+
         next_req = response.meta.get("next_req", None)
 
         if self.called_class._has_captcha(response):
