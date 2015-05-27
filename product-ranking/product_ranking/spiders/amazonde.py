@@ -17,6 +17,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set,\
     cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
 from product_ranking.amazon_bestsellers import amazon_parse_department
+from product_ranking.marketplace import Amazon_marketplace
 
 
 try:
@@ -77,6 +78,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
 
         self.captcha_retries = int(captcha_retries)
+
+        self.mtp_class = Amazon_marketplace(self)
 
         self._cbw = CaptchaBreakerWrapper()
 
@@ -576,6 +579,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             buyer_reviews['average_rating'] = round(average, 1)
         return buyer_reviews
 
+    """
     def parse_marketplace(self, response):
         if self._has_captcha(response):
             result = self._handle_captcha(response, self.parse_marketplace)
@@ -620,6 +624,11 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         product["marketplace"] = marketplaces
 
         return product
+    """
+    def parse_marketplace(self, response):
+        response.meta["called_class"] = self
+        response.meta["next_req"] = None
+        return self.mtp_class.parse_marketplace(response)
 
     def _validate_url(self, val):
         if not bool(val.strip()):  # empty

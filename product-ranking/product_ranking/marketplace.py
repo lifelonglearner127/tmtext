@@ -39,7 +39,7 @@ class Amazon_marketplace(object):
             self.called_class = stack[1][0].f_locals["self"].__class__()
         self.is_empty = lambda x, y=None: x[0] if x else y
 
-    def parse_marketplace(self, response):
+    def parse_marketplace(self, response, replace_comma_with_dot=False):
         next_req = response.meta.get("next_req", None)
 
         if self.called_class._has_captcha(response):
@@ -59,6 +59,8 @@ class Amazon_marketplace(object):
                 'div[contains(@class, "a-column")]' \
                 '/span[contains(@class, "price")]/text()'
             ).re(FLOATING_POINT_RGEX), 0)
+            if replace_comma_with_dot:
+                price = price.replace(',', '').strip()
 
             name = self.is_empty(seller.xpath(
                 'div/p[contains(@class, "Name")]/span/a/text()').extract(), "")
@@ -69,8 +71,9 @@ class Amazon_marketplace(object):
                 ,
                 ""
             )
-            if not 'new' in condition.strip().lower():
-                continue
+            if not 'new' in condition.lower():
+                if not 'neu' in condition.lower():
+                    continue
 
             currencyKey = self.set_seller_amazon()
             priceCurrency = "USD"
