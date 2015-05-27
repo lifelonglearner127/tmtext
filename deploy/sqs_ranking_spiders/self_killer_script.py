@@ -82,17 +82,18 @@ def main():
     instance_id = get_instance_metadata()['instance-id']
     log_file = '/tmp/remote_instance_starter2.log'
     flag, reason = check_logs_status(log_file)
-    if flag:
+    if flag and reason:
         os.system('rm %s' % log_file)
         s3_conn = boto.connect_s3()
         bucket = s3_conn.get_bucket(BUCKET_NAME)
         k = Key(bucket)
         k.key = BUCKET_KEY
         global log_file_path
+        time.sleep(70)
         k.get_contents_to_filename(log_file_path)
-        time.sleep(10)
         logger.warning("Instance with id=%s was terminated"
-                   " due to reason='%s by itself'.", instance_id, reason)
+                   " due to reason='%s'. "
+                   "Instance was killed by itself.", instance_id, reason)
         k.set_contents_from_filename(log_file_path)
         conn.terminate_instance(instance_id, decrement_capacity=True)
 
