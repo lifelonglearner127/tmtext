@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+# TODO:
+# - invalid marketplace price (separator is comma)
+# - buyer reviews: add zeroes for missing marks
+
+
 from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 
@@ -532,7 +537,6 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         buyer_reviews["rating_by_star"] = {}
         buyer_reviews = self.get_rating_by_star(response, buyer_reviews)
 
-
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
         if "mkt_place_link" in response.meta:
@@ -580,18 +584,18 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         for seller in response.xpath(
             '//div[contains(@class, "a-section")]/' \
-            'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
+                'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
 
             price = is_empty(seller.xpath(
                 'div[contains(@class, "a-column")]' \
                 '/span[contains(@class, "price")]/text()'
-            ).re(FLOATING_POINT_RGEX), 0)
+            ).re(r'[\d\,]+'), 0)
 
             name = is_empty(seller.xpath(
                 'div/p[contains(@class, "Name")]/span/a/text()').extract())
 
             marketplaces.append({
-                "price": Price(price=price, priceCurrency="USD"),
+                "price": Price(price=price, priceCurrency="EUR"),
                 "name": name
             })
 
