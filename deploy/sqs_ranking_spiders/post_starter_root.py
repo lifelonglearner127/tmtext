@@ -23,7 +23,7 @@ def mark_as_finished():
 
 
 def _install_system_package(package):
-    os.system('apt-get install -y %s')
+    os.system('apt-get install -y %s' % package)
 
 
 def main():
@@ -32,6 +32,16 @@ def main():
     f.close()
     # put anything you want here...
     # install extra system packages
+    tmp_cron_name = 'mycron'
+    os.system('crontab -l > %s' % tmp_cron_name)
+    with open(tmp_cron_name, 'a') as f:
+        cmd = \
+        '* * * * * cd /home/spiders/repo/tmtext/deploy/sqs_ranking_spiders;'\
+        ' source /home/spiders/virtual_environment/bin/activate && '\
+        'python self_killer_script.py \n'
+        f.write(cmd)
+        f.write('\n')
+    os.system('crontab %s' % tmp_cron_name)
     _install_system_package('tesseract-ocr')
 
 
