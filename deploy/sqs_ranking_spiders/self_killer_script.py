@@ -84,8 +84,8 @@ def main():
     flag, reason = check_logs_status(log_file)
     if flag:
         os.system('rm %s' % log_file)
-        conn = boto.connect_s3()
-        bucket = conn.get_bucket(BUCKET_NAME)
+        s3_conn = boto.connect_s3()
+        bucket = s3_conn.get_bucket(BUCKET_NAME)
         k = Key(bucket)
         k.key = BUCKET_KEY
         global log_file_path
