@@ -10,10 +10,14 @@ from scrapy.http import Request
 from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.items import Price
 
+
+REPLACE_COMMA_WITH_DOT = False  # it's ok to use globals for the whole process
+
+
 class Amazon_marketplace(object):
     """Scrape marketplace sellers for Amazons sites
     """
-    
+
     cache = {}
     called_class = None
 
@@ -23,7 +27,8 @@ class Amazon_marketplace(object):
         "amazon.co.uk": "GBP",
         "amazon.co.jp": "JPY",
         "amazon.cn": "CNY",
-        "amazon.fr": "EUR"
+        "amazon.fr": "EUR",
+        "amazon.de": "EUR"
     }
 
     IMG_FOLDER = "amazon_marketplace/"
@@ -38,16 +43,20 @@ class Amazon_marketplace(object):
             self.called_class = stack[1][0].f_locals["self"].__class__()
         self.is_empty = lambda x, y=None: x[0] if x else y
 
-    def parse_marketplace(self, response):
-        # turn off this feature if a special marker exists (the feature takes
-        #  too much time to scrape
-        if os.path.exists('/tmp/stop_marketplaces'):
+    def parse_marketplace(self, response, replace_comma_with_dot=False):
+        global REPLACE_COMMA_WITH_DOT
+
+        if replace_comma_with_dot:
+            REPLACE_COMMA_WITH_DOT = True
+
+        if os.path.exists('/tmp/stop_marketplaces'):  # only for speed-up
             return response.meta['product']
 
         next_req = response.meta.get("next_req", None)
 
         if self.called_class._has_captcha(response):
-            return self.called_class._handle_captcha(response, self.parse_marketplace)
+            return self.called_class._handle_captcha(
+                response, self.parse_marketplace, replace_comma_with_dot)
 
         product = response.meta["product"]
 
@@ -63,6 +72,8 @@ class Amazon_marketplace(object):
                 'div[contains(@class, "a-column")]' \
                 '/span[contains(@class, "price")]/text()'
             ).re(FLOATING_POINT_RGEX), 0)
+            if replace_comma_with_dot or REPLACE_COMMA_WITH_DOT:
+                price = price.replace(',', '.').strip()
 
             name = self.is_empty(seller.xpath(
                 'div/p[contains(@class, "Name")]/span/a/text()').extract(), "")
@@ -73,8 +84,9 @@ class Amazon_marketplace(object):
                 ,
                 ""
             )
-            if not 'new' in condition.strip().lower():
-                continue
+            if not 'new' in condition.lower():
+                if not 'neu' in condition.lower():
+                    continue
 
             currencyKey = self.set_seller_amazon()
             priceCurrency = "USD"
