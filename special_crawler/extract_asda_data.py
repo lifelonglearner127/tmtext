@@ -105,6 +105,15 @@ class AsdaScraper(Scraper):
 
         return self.product_json["items"][0]["name"]
 
+    def _rollback(self):
+        if not self.product_json:
+            self._product_json()
+
+        if self.product_json["items"][0]["promoType"] == "Rollback":
+            return 1
+
+        return 0
+
     def _model(self):
         return None
 
@@ -143,6 +152,12 @@ class AsdaScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
+        if not self.product_json:
+            self._product_json()
+
+        if self.product_json["items"][0]["productDetails"]["furtherDesc"]:
+            return self.product_json["items"][0]["productDetails"]["furtherDesc"]
+
         long_description_url = "http://groceries.asda.com/asda-webstore/pages/product_details/view1.shtml?A521198.RWD"
         contents = urllib.urlopen(long_description_url).read()
         start_index = contents.find('<h4 class="sect-title">Product Information</h4><p class="p-text">')
@@ -220,7 +235,10 @@ class AsdaScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        return None
+        if not self.product_json:
+            self._product_json()
+
+        return float(self.product_json["items"][0]["avgStarRating"])
 
     def _review_count(self):
         if not self.product_json:
@@ -229,13 +247,62 @@ class AsdaScraper(Scraper):
         return int(self.product_json["items"][0]["totalReviewCount"])
 
     def _max_review(self):
-        return None
+        if not self.product_json:
+            self._product_json()
+
+        if self._review_count() == 0:
+            return None
+
+        review_list = self._reviews()
+
+        return float(review_list[len(review_list) - 1][0])
 
     def _min_review(self):
-        return None
+        if not self.product_json:
+            self._product_json()
+
+        if self._review_count() == 0:
+            return None
+
+        review_list = self._reviews()
+
+        return float(review_list[0][0])
 
     def _reviews(self):
-        return None
+        if not self.product_json:
+            self._product_json()
+
+        if self._review_count() == 0:
+            return None
+
+        reviews_url = "http://groceries.asda.com/review/reviews.json?Filter=ProductId:" + self._item_id() + \
+                      "&Sort=SubmissionTime:desc&apiversion=5.4&passkey=92ffdz3h647mtzgbmu5vedbq&Offset=0&Limit=" + \
+                      str(self._review_count())
+        reviews_json = json.loads(urllib.urlopen(reviews_url).read())
+        rating_count_list = [0, 0, 0, 0, 0]
+        reviews_list = []
+
+        for review in reviews_json["Results"]:
+            if review["Rating"] == 1:
+                rating_count_list[0] = rating_count_list[0] + 1
+
+            if review["Rating"] == 2:
+                rating_count_list[1] = rating_count_list[1] + 1
+
+            if review["Rating"] == 3:
+                rating_count_list[2] = rating_count_list[2] + 1
+
+            if review["Rating"] == 4:
+                rating_count_list[3] = rating_count_list[3] + 1
+
+            if review["Rating"] == 5:
+                rating_count_list[4] = rating_count_list[4] + 1
+
+        for index, rating_count in enumerate(rating_count_list):
+            if rating_count > 0:
+                reviews_list.append([index + 1, rating_count])
+
+        return reviews_list
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -324,6 +391,7 @@ class AsdaScraper(Scraper):
         "product_name" : _product_name, \
         "product_title" : _product_title, \
         "title_seo" : _title_seo, \
+        "rollback" : _rollback, \
         "model" : _model, \
         "features" : _features, \
         "feature_count" : _feature_count, \
