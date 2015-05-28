@@ -42,6 +42,7 @@ from extract_costco_data import CostcoScraper
 from extract_proswimwear_data import ProswimwearScraper
 from extract_amazonde_data import AmazonDEScraper
 from extract_ulta_data import UltaScraper
+from extract_asda_data import AsdaScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -95,7 +96,8 @@ SUPPORTED_SITES = {
                     "costco": CostcoScraper,
                     "proswimwear": ProswimwearScraper,
                     "amazonde": AmazonDEScraper,
-                    "ulta": UltaScraper
+                    "ulta": UltaScraper,
+                    "groceries": AsdaScraper
                     }
 
 # add logger
@@ -167,6 +169,9 @@ def extract_domain(url):
         return 'costco'
     if 'amazon.de' in url:
         return 'amazonde'
+    if 'groceries.asda.com' in url:
+        return 'groceries'
+
     m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)
