@@ -172,13 +172,23 @@ class SearchSpider(BaseSpider):
                 # if self.target_site == 'target':
                 #     product['product_upc'] = product_info[1]
 
-                reader = csv.reader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+                reader = csv.DictReader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
                 
-                for row in reader:
-                    product = {}
-                    product['product_name'] = row[1]
-                    product['product_upc'] = row[0]
-                    products.append(product)
+                while True:
+                    try:
+                        data = next(reader)
+                        product = {}
+                        try:
+                            product['product_name'] = data['Product_Name']
+                        except Exception:
+                            self.log("No product name in csv for row " + str(data) + "\n", level=log.INFO)
+                        try:
+                            product['product_upc'] = data['UPC']
+                        except Exception:
+                            self.log("No UPC in csv for row " + str(data) + "\n", level=log.INFO)
+                        products.append(product)
+                    except StopIteration, e:
+                        break
 
         return products
 
