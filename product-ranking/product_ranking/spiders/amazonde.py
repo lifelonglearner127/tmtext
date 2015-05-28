@@ -628,7 +628,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_marketplace(self, response):
         response.meta["called_class"] = self
         response.meta["next_req"] = None
-        return self.mtp_class.parse_marketplace(response)
+        return self.mtp_class.parse_marketplace(
+            response, replace_comma_with_dot=True)
 
     def _validate_url(self, val):
         if not bool(val.strip()):  # empty
@@ -654,3 +655,9 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         if '<' in val or '>' in val:  # no tags
             return False
         return True
+
+    def exit_point(self, product, next_req):
+        if next_req:
+            next_req.replace(meta={"product": product})
+            return next_req
+        return product
