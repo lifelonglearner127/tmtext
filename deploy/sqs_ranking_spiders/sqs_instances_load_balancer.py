@@ -28,13 +28,20 @@ def scale_autoscale_group():
     group = autoscale_conn.get_all_groups(names=['SCCluster1'])[0]
 
     exist_capacity = int(group.desired_capacity)
+
+    if waiting_tasks in range(20,100):
+        waiting_tasks = 20
+    if waiting_tasks in range(100,201):
+        waiting_tasks = 50
+    if waiting_tasks >= 201:
+        waiting_tasks = 100
     new_instances_quantity = min((waiting_tasks + exist_capacity),
                                  (int(group.max_size) - 30))
     group.set_capacity(new_instances_quantity)
     group.desired_capacity = new_instances_quantity
     group.update()
-    print "Group was scaled ajdusted to %s instances from %s instances" % \
-          (exist_capacity, new_instances_quantity)
+    print "Group was ajdusted to %s instances from %s instances" % \
+          (new_instances_quantity, exist_capacity)
 
 if __name__ == '__main__':
     scale_autoscale_group()
