@@ -44,7 +44,7 @@ MEMUSAGE_ENABLED = True
 LOG_FORMATTER = 'product_ranking.pipelines.PipelineFormatter'
 
 # Value to use for buyer_reviews if no reviews found
-ZERO_REVIEWS_VALUE = 0
+ZERO_REVIEWS_VALUE = [0, 0.0, {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}]
 
 
 # TODO: move out from this file! should be set dynamically in the __init__ method of the BaseValidator class
