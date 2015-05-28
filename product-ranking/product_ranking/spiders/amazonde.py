@@ -17,6 +17,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set,\
     cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
 from product_ranking.amazon_bestsellers import amazon_parse_department
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
 
 
@@ -510,7 +511,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 )
                 return buyer_rev_req
             else:
-                return 0
+                return ZERO_REVIEWS_VALUE
 
         # add missing marks
         for mark in range(1, 6):
@@ -536,7 +537,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 re.findall(FLOATING_POINT_RGEX, total_revs), 0
             )
         if int(buyer_reviews["num_of_reviews"]) == 0:
-            product["buyer_reviews"] = 0
+            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
             return product
 
         buyer_reviews["rating_by_star"] = {}
