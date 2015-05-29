@@ -54,7 +54,7 @@ def can_run():
     for line in out.splitlines():
         if 'cache_starter.py' in line:
             counter += 1
-    if counter >= 2:
+    if counter >= 3:
         return False
     return True
 
@@ -82,7 +82,7 @@ def main_starter(CACHE_QUEUES_LIST):
 
 
 if (__name__ == '__main__'):
-    # time.sleep(random.randrange(10))
+    time.sleep(random.randrange(10))
     if not can_run():
         sys.exit()
     logging.config.dictConfig(log_settings)

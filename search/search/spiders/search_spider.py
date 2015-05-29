@@ -69,6 +69,8 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
+        self.version = "a4a52aaa9b24b6e7508cf4dede200459f2c6a452"
+
         self.product_url = product_url
         self.products_file = products_file
         self.product_name = product_name
@@ -170,18 +172,35 @@ class SearchSpider(BaseSpider):
                 # if self.target_site == 'target':
                 #     product['product_upc'] = product_info[1]
 
-                reader = csv.reader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+                reader = csv.DictReader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
                 
-                for row in reader:
-                    product = {}
-                    product['product_name'] = row[1]
-                    product['product_upc'] = row[0]
-                    products.append(product)
+                while True:
+                    try:
+                        data = next(reader)
+                        product = {}
+                        try:
+                            product['product_name'] = data['Product_Name']
+                        except Exception:
+                            self.log("No product name in csv for row " + str(data) + "\n", level=log.INFO)
+                        try:
+                            product['product_upc'] = data['UPC']
+                        except Exception:
+                            self.log("No UPC in csv for row " + str(data) + "\n", level=log.INFO)
+                        try:
+                            product['product_price'] = float(data['Product_Price'])
+                        except Exception:
+                            pass
+                        products.append(product)
+                    except StopIteration, e:
+                        break
 
         return products
 
     # parse input and build list of URLs to find matches for, send them to parseURL
     def parse(self, response):
+
+        # log spider version - will match commit number of last change
+        self.log("Spider version: " + self.version + "\n", level=log.INFO)
 
         if self.product_name:
 
@@ -224,12 +243,15 @@ class SearchSpider(BaseSpider):
                 product_name = product_model = product_price = None
                 if 'product_name' in product_info:
                     product_name = product_info['product_name']
+                else:
+                    product_name = ''
                 if 'product_price' in product_info:
                     product_price = product_info['product_price']
                 if 'product_model' in product_info:
                     product_model = product_info['product_model']
                 else:
-                    product_model = ProcessText.extract_model_from_name(product_name)
+                    if product_name:
+                        product_model = ProcessText.extract_model_from_name(product_name)
                 if not product_model:
                     # for correctly logging
                     product_model = ''
@@ -249,10 +271,11 @@ class SearchSpider(BaseSpider):
                 # if there is no product brand, get first word in name, assume it's the brand
                 product_brand_extracted = ""
                 #product_name_tokenized = ProcessText.normalize(product_name)
-                product_name_tokenized = [word.lower() for word in product_name.split(" ")]
-                #TODO: maybe extract brand as word after 'by', if 'by' is somewhere in the product name
-                if len(product_name_tokenized) > 0 and re.match("[a-z]*", product_name_tokenized[0]):
-                    product_brand_extracted = product_name_tokenized[0].lower()
+                if product_name:
+                    product_name_tokenized = [word.lower() for word in product_name.split(" ")]
+                    #TODO: maybe extract brand as word after 'by', if 'by' is somewhere in the product name
+                    if len(product_name_tokenized) > 0 and re.match("[a-z]*", product_name_tokenized[0]):
+                        product_brand_extracted = product_name_tokenized[0].lower()
 
 
                 request = None
@@ -298,35 +321,36 @@ class SearchSpider(BaseSpider):
 
 
                 # 3) Search by product full name
-                query2 = self.build_search_query(product_name)
-                search_pages2 = self.build_search_pages(query2)
-                #page2 = search_pages2[self.target_site]
-                page2 = search_pages2[self.target_site]
-                request2 = Request(page2, callback = self.parseResults)
+                if product_name:
+                    query2 = self.build_search_query(product_name)
+                    search_pages2 = self.build_search_pages(query2)
+                    #page2 = search_pages2[self.target_site]
+                    page2 = search_pages2[self.target_site]
+                    request2 = Request(page2, callback = self.parseResults)
 
-                request2.meta['query'] = query2
-                request2.meta['target_site'] = self.target_site
+                    request2.meta['query'] = query2
+                    request2.meta['target_site'] = self.target_site
 
-                if not request:
-                    request = request2
-                else:
-                    pending_requests.append(request2)
+                    if not request:
+                        request = request2
+                    else:
+                        pending_requests.append(request2)
 
-                # 4) Search by combinations of words in product's name
-                # create queries
+                    # 4) Search by combinations of words in product's name
+                    # create queries
 
-                for words in ProcessText.words_combinations(product_name, fast=self.fast):
-                    query3 = self.build_search_query(" ".join(words))
-                    search_pages3 = self.build_search_pages(query3)
-                    #page3 = search_pages3[self.target_site]
-                    page3 = search_pages3[self.target_site]
-                    request3 = Request(page3, callback = self.parseResults)
+                    for words in ProcessText.words_combinations(product_name, fast=self.fast):
+                        query3 = self.build_search_query(" ".join(words))
+                        search_pages3 = self.build_search_pages(query3)
+                        #page3 = search_pages3[self.target_site]
+                        page3 = search_pages3[self.target_site]
+                        request3 = Request(page3, callback = self.parseResults)
 
-                    request3.meta['query'] = query3
-                    request3.meta['target_site'] = self.target_site
+                        request3.meta['query'] = query3
+                        request3.meta['target_site'] = self.target_site
 
 
-                    pending_requests.append(request3)
+                        pending_requests.append(request3)
 
                 request.meta['pending_requests'] = pending_requests
                 #request.meta['origin_site'] = 

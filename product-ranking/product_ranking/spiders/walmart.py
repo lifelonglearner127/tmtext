@@ -116,14 +116,16 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "query=%s&context=Home" \
                 "&clientId=walmart_us_desktop_backfill_search" \
                 "&channel=ch_8,backfill" % (st,)
-            yield Request(url=url, callback=self.get_sponsored_links)
+            yield Request(url=url, callback=self.get_sponsored_links,
+                          dont_filter=True)
 
         if self.product_url:
             prod = SiteProductItem()
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod})
+                          meta={'product': prod},
+                          dont_filter=True)
 
     def get_sponsored_links(self, response):
         self.reql = []

@@ -198,16 +198,26 @@ def delete_old_unresponded_hosts(unresponded):
         if time.time() - int(last_time) > 60*60*24*3:  # three day
             del unresponded[inst_id]
 
-
-def upload_logs_to_s3():
+def get_amazon_connection():
     conn = boto.connect_s3()
     bucket = conn.get_bucket(BUCKET_NAME)
     k = Key(bucket)
     k.key = BUCKET_KEY
+    return k
+
+
+def get_logs_from_s3():
+    k = get_amazon_connection()
+    k.get_contents_to_filename(log_file_path)
+
+
+def upload_logs_to_s3():
+    k = get_amazon_connection()
     k.set_contents_from_filename(log_file_path)
 
 
 def main():
+    get_logs_from_s3()
     instances, conn = get_all_group_instances_and_conn()
     names = ', '.join([inst.id for inst in instances])
     logger.info("Instances running at this moment: %s", names)
