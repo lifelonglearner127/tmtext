@@ -75,7 +75,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
     settings = AmazonDeValidatorSettings
 
-    def __init__(self, captcha_retries='10', *args, **kwargs):
+    def __init__(self, captcha_retries='20', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
 
         self.captcha_retries = int(captcha_retries)
