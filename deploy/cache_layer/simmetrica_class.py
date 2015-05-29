@@ -13,7 +13,7 @@ import redis
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
 
-from cache_layer import REDIS_HOST, REDIS_PORT
+from cache_layer import REDIS_HOST, REDIS_PORT, HANDLED_TASKS_SORTED_SET
 
 
 class Simmetrica(object):
@@ -145,6 +145,10 @@ class Simmetrica(object):
         self.db.delete('simmetrica_newest_resp')
         self.db.delete('simmetrica_oldest_resp')
 
+    def remove_sqs_metrics(self, hours_limit):
+        max_limit = time.time() - 3600*int(hours_limit)
+        self.db.zremrangebyscore(HANDLED_TASKS_SORTED_SET, 0, max_limit)
+
     @staticmethod
     def random_generator(length=12):
         return ''.join(
@@ -162,3 +166,4 @@ if (__name__ == '__main__'):
         print(e)
     # s.remove_old_req_and_resp(hours_limit)
     s.delete_old_responses(hours_limit)
+    s.remove_sqs_metrics(hours_limit)
