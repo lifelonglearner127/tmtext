@@ -379,7 +379,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 total_matches = None
             if not total_matches:
                 count_matches = response.xpath(
-                    '//h2[@id="s-result-count"]/text()').re('([\d\.]+)')
+                    '//h2[@id="s-result-count"]/text()').re('([\d\.]+) Ergebnisse')
                 if count_matches:
                     total_matches = int(
                         count_matches[0].strip().replace('.', ''))
