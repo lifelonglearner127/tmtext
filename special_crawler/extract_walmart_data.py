@@ -119,11 +119,10 @@ class WalmartScraper(Scraper):
             False otherwise
         """
 
-        if self.tree_html.xpath("//meta[@property='og:type']") and \
-                self.tree_html.xpath("//meta[@property='og:type']/@content")[0] == "product":
-            return False
+        if self.tree_html.xpath("//div[@class='js-about-bundle-wrapper']"):
+            return True
 
-        return True
+        return False
 
     # TODO:
     #      better way of extracting id now that URL format is more permissive
