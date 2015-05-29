@@ -119,7 +119,12 @@ class WalmartScraper(Scraper):
             False otherwise
         """
 
+        # we ignore bundle product
         if self.tree_html.xpath("//div[@class='js-about-bundle-wrapper']"):
+            return True
+
+        # we ignore video product
+        if self.tree_html.xpath("//div[@class='VuduItemBox']"):
             return True
 
         return False
