@@ -55,14 +55,14 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
-        'samsung t9500 battery 2600 li-ion warranty': [30, 250],
-        'water pump bronze inch apollo': [2, 30],
-        'ceiling fan industrial white system': [5, 50],
-        'kaspersky total': [5, 50],
-        'car navigator garmin maps 44LM': [1, 20],
-        'yamaha drums midi': [50, 300],
-        'black men shoes size 8  red stripes': [50, 300],
-        'car audio equalizer pioneer mp3': [40, 150]
+        'dress code style all': [5, 70],
+        'water pump bronze': [2, 70],
+        'ceiling fan industrial': [15, 90],
+        'kaspersky total': [30, 250],
+        'car navigator garmin': [5, 100],
+        'yamaha drums midi': [2, 50],
+        'black men shoes size 8 red': [5, 70],
+        'car audio equalizer pioneer': [5, 120]
     }
 
 
@@ -113,14 +113,32 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
-            mkt_place_link = urlparse.urljoin(
-                response.url,
-                is_empty(response.xpath(
+            #Get url for marketplace
+            url = is_empty(response.xpath(
+                    "//div[contains(@class, 'a-box-inner')]/span" \
+                    "/a/@href |" \
                     "//div[contains(@class, 'a-box-inner')]" \
                     "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
                     "//div[@id='secondaryUsedAndNew']" \
                     "//a[contains(@href, '/gp/offer-listing/')]/@href"
-                ).extract()))
+            ).extract())
+            if url:
+                mkt_place_link = urlparse.urljoin(
+                    response.url,
+                    url
+                )
+            else:
+                asin = is_empty(response.xpath("//form[@id='addToCart']"
+                    "/input[@name='ASIN']/@value").extract())
+                if not asin:
+                    asin = is_empty(re.findall(
+                        "\"ASIN\"\:\"([^\"]*)", response.body_as_unicode()))
+                if asin:
+                    url = "/gp/offer-listing/%s/ref=dp_olp_all_mbc"\
+                        "?ie=UTF8&amp;condition=new" % (asin,)
+                    mkt_place_link = urlparse.urljoin(response.url, url)
+                else:
+                    mkt_place_link = None
 
             if isinstance(prod['buyer_reviews'], Request):
                 meta = prod['buyer_reviews'].meta
@@ -315,6 +333,19 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 )
             elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
                 model = li.xpath('text()').extract()
+        if not product.get('model'):
+                model = is_empty(response.xpath(
+                    '//div[contains(@class, "content")]/ul/'
+                    'li/b[contains(text(), "ASIN")]/../text() |'
+                    '//table/tbody/tr/'
+                    'td[contains(@class, "label") and contains(text(), "ASIN")]'
+                    '/../td[contains(@class, "value")]/text() |'
+                    '//div[contains(@class, "content")]/ul/'
+                    'li/b[contains(text(), "ISBN-10")]/../text()'
+                ).extract())
+                if model:
+                    cond_set(product, 'model', (model,))
+
         cond_set(product, 'model', model, conv=string.strip)
         self._populate_bestseller_rank(product, response)
         revs = self._buyer_reviews_from_html(response)
@@ -349,7 +380,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 total_matches = None
             if not total_matches:
                 count_matches = response.xpath(
-                    '//h2[@id="s-result-count"]/text()').re('von ([\d\.]+)')
+                    '//h2[@id="s-result-count"]/text()').re('([\d\.]+) Ergebnisse')
                 if count_matches:
                     total_matches = int(
                         count_matches[0].strip().replace('.', ''))
@@ -384,7 +415,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             yield link, SiteProductItem(prime=prime)
 
     def _scrape_next_results_page_link(self, response):
-        next_pages = response.css('#pagnNextLink ::attr(href)').extract()
+        next_pages = response.xpath(
+            "//a[@id='pagnNextLink']/@href").extract()
         next_page_url = None
         if len(next_pages) == 1:
             next_page_url = next_pages[0]
@@ -395,14 +427,16 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
     ## Captcha handling functions.
 
     def _has_captcha(self, response):
-        return '.images-amazon.com/captcha/' in response.body_as_unicode()
+        return 'Geben Sie die angezeigten Zeichen im Bild ein:' in\
+            response.body_as_unicode()
 
     def _solve_captcha(self, response):
         forms = response.xpath('//form')
         assert len(forms) == 1, "More than one form found."
 
         captcha_img = forms[0].xpath(
-            '//img[contains(@src, "/captcha/")]/@src').extract()[0]
+            '//img/@src').extract()[0]
+            #[contains(@src, "opfcaptcha-prod")]
 
         self.log("Extracted capcha url: %s" % captcha_img, level=DEBUG)
         return self._cbw.solve_captcha(captcha_img)
