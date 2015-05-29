@@ -64,8 +64,8 @@ Total used memory: %s
 
 SQS metrics:
 Daily sqs instances counter: %s # this mean how many instances were rised up
-Executed_tasks_during_the_day:%s
-Waiting task at this moment: %s
+Executed tasks during the day: %s
+Still waiting tasks at queue: %s
 """
 
 TEXT = text_draft % (total_requests, total_responses, correlation,

@@ -6,12 +6,21 @@ import boto
 import boto.sqs
 from boto.s3.key import Key
 from boto.ec2.autoscale import AutoScaleConnection
+import redis
 
+CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
 
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
     TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET
-from sqs_ranking_spiders import QUEUES_LIST
+try:
+    from sqs_ranking_spiders import QUEUES_LIST
+except ImportError:
+    QUEUES_LIST = {
+        'production': 'sqs_ranking_spiders_tasks',
+        'dev': 'sqs_ranking_spiders_tasks_dev',
+        'test': 'sqs_ranking_spiders_tasks_tests'
+    }
 
 
 def check_instance_quantity():
@@ -66,6 +75,7 @@ def get_sqs_metrics(purge=False):
 
 
     waiting_task = 0
+    sqs_conn = boto.sqs.connect_to_region('us-east-1')
     for queue in QUEUES_LIST.values():
         try:
             q = sqs_conn.get_queue(queue)

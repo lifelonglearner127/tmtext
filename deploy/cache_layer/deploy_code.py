@@ -54,11 +54,16 @@ def setup_cron():
         'send_cache_mail_report.py',
     ]
 
+def restart_services():
+    sudo('service nginx restart')
+    sudo('service uwsgi restart')
+
 def deploy():
     setup_packages()
     create_virtualenv()
     copy_cache_scripts()
     setup_cron()
+    restart_services()
 
 if __name__ == '__main__':
     deploy()

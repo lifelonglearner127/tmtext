@@ -19,6 +19,7 @@ import boto
 from boto.s3.key import Key
 import unidecode
 from boto.utils import get_instance_metadata
+import redis
 
 
 # list of all available incoming SQS with tasks
