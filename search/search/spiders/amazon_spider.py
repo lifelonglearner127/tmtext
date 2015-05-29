@@ -25,6 +25,7 @@ import urllib2
 class AmazonSpider(SearchSpider):
 
     name = "amazon"
+    handle_httpstatus_list = [404]
     # cookie_header = "x-wl-uid=1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=; session-token=JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=; x-amz-captcha-1=1391100438353490; x-amz-captcha-2=+EDhq9rcotSRn783vYMxdQ==; csm-hit=337.71|1391093239619; ubid-main=188-7820618-3817319; session-id-time=2082787201l; session-id=177-0028713-4113141"
     # cookies = {"x-wl-uid" : "1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=", \
     # "session-token" : "JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=",\
@@ -48,9 +49,11 @@ class AmazonSpider(SearchSpider):
         # this causes 404s
         if URL == "http://www.amazon.com/gp/slredirect/redirect.html":
             return False
+        if URL.startswith("http://www.amazon.co.uk/gp/slredirect/redirect.html"):
+            return False
         try:
             # disable this for now. without user agent set, it only causes 500s. and it slows everything down. just return True for all
-            #return True
+            return True
             request = urllib2.Request(URL)
             request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')
             resp = urllib2.urlopen(request, timeout=5)
@@ -252,6 +255,11 @@ class AmazonSpider(SearchSpider):
             if upc_node:
                 upc = upc_node[0].strip().split()
                 item['product_upc'] = upc
+
+            manufacturer_code_node = hxs.select("//li/b/text()[normalize-space()='Manufacturer reference:']/parent::node()/parent::node()/text()").extract()
+            if manufacturer_code_node:
+                manufacturer_code = manufacturer_code_node[0].strip()
+                item['manufacturer_code'] = manufacturer_code
 
             asin_node = hxs.select("//li/b/text()[normalize-space()='ASIN:']/parent::node()/parent::node()/text()").extract()
             if asin_node:

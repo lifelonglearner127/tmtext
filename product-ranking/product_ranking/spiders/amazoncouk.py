@@ -13,11 +13,12 @@ from scrapy.selector import Selector
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    cond_set_value, FLOATING_POINT_RGEX
+    cond_set_value, FLOATING_POINT_RGEX, dump_url_to_file
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
+from product_ranking.amazon_tests import AmazonTests
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
@@ -48,7 +49,31 @@ except ImportError as e:
             return None
     CaptchaBreakerWrapper = FakeCaptchaBreaker
 
-class AmazonCoUkProductsSpider(BaseProductsSpider):
+
+class AmazoncoukValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['model', 'brand', 'description', 'price', 'bestseller_rank']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'buyer_reviews', 'google_source_site', 'special_pricing',
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = False  # ... duplicated requests?
+    ignore_log_filtered = False  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_found_1234654654': 0,
+        'nothing_fou': [5, 50],
+        'kaspersky total': [5, 70],
+        'gold sold fold': [5, 200],  # spider should return from 5 to 200 products
+        'yamaha drums midi': [5, 100],
+        'black men shoes size 8 red stripes': [5, 80],
+        'antoshka': [5, 200],
+        'apple ipod nano sold': [100, 300],
+        'avira 2': [20, 300],
+    }
+
+
+class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
     name = "amazoncouk_products"
     allowed_domains = ["www.amazon.co.uk"]
     start_urls = []
@@ -59,7 +84,11 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
     _cbw = CaptchaBreakerWrapper()
 
-    def __init__(self, captcha_retries='10', *args, **kwargs):
+    settings = AmazoncoukValidatorSettings
+
+    def __init__(self, captcha_retries='10',*args, **kwargs):
+        # locations = settings.get('AMAZONFRESH_LOCATION')
+        # loc = locations.get(location, '')
         super(AmazonCoUkProductsSpider, self).__init__(*args, **kwargs)
 
         self.mtp_class = Amazon_marketplace(self)
@@ -111,6 +140,18 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
             if text and 'Item model number:' in text:
                 possible_model = tag.xpath('text()').extract()
                 cond_set(prod, 'model', possible_model)
+            if not prod.get('model'):
+                model = is_empty(response.xpath(
+                    '//div[contains(@class, "content")]/ul/'
+                    'li/b[contains(text(), "ASIN")]/../text() |'
+                    '//table/tbody/tr/'
+                    'td[contains(@class, "label") and contains(text(), "ASIN")]'
+                    '/../td[contains(@class, "value")]/text() |'
+                    '//div[contains(@class, "content")]/ul/'
+                    'li/b[contains(text(), "ISBN-10")]/../text()'
+                ).extract())
+                if model:
+                    cond_set(prod, 'model', (model,))
 
         title = response.xpath(
             '//span[@id="productTitle"]/text()[normalize-space()] |'
@@ -127,6 +168,9 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
 
         brand = response.xpath('//a[@id="brand"]/text()').extract()
         cond_set(prod, 'brand', brand)
+
+        if not prod.get('brand', None):
+            dump_url_to_file(response.url)
 
         cond_set(
             prod,
@@ -281,6 +325,10 @@ class AmazonCoUkProductsSpider(BaseProductsSpider):
                 total_matches = int(count_matches[-1].replace(',', ''))
             else:
                 total_matches = None
+        if not total_matches:
+            total_matches = int(is_empty(response.xpath(
+                '//h2[@id="s-result-count"]/text()'
+            ).re(FLOATING_POINT_RGEX), 0))
         return total_matches
 
     def _scrape_product_links(self, response):

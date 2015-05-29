@@ -65,7 +65,7 @@ REPO_BASE_PATH = '~/repos/'
 REPO_URL = 'git@bitbucket.org:dfeinleib/tmtext.git'
 
 LOCAL_CERT_BASE_PATH = os.getenv("HOME") + '/tmp/web_runner_ssh_keys'
-CERT_REPO_URL = 'git@bitbucket.org:dfeinleib/tmtext-ssh.git'
+CERT_REPO_URL = 'git@bitbucket.org:dfeinleib/tmtext.git'
 LOCAL_CERT_PATH = LOCAL_CERT_BASE_PATH + os.sep + re.search(
                     '.+\/([^\s]+?)\.git$', CERT_REPO_URL).group(1)
 
@@ -277,6 +277,11 @@ def _setup_virtual_env_scrapyd():
         run('pip install requests')
         run('pip install Pillow')
         run('pip install pytesseract')
+        run('pip install boto')
+        run('pip install django')
+        run('pip install django-ses')
+        run('pip install django_adminplus')
+
 
     _setup_simmetrica_monitoring()
 

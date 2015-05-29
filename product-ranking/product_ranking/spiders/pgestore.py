@@ -46,6 +46,9 @@ class PGShopProductSpider(BaseProductsSpider):
             *args,
             **kwargs)
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def _scrape_total_matches(self, response):
         num_results = response.xpath(
             '//span[@class="number-copy"]/text()').extract()

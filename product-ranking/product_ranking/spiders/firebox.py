@@ -9,8 +9,10 @@ from scrapy.http import FormRequest
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    dump_url_to_file
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 class FireboxProductSpider(BaseProductsSpider):
     name = 'firebox_products'
@@ -54,12 +56,12 @@ class FireboxProductSpider(BaseProductsSpider):
         ).extract()
         cond_set(prod, 'title', title)
 
-        price = re.findall('(.?)(\d+.\d+)',
-                           response.xpath('//div[@class="price"]/text() |'
-                                          ' //div[@class="price"]/div/text()')[0]
-                           .extract())[0]
+        price = is_empty(re.findall('(.?)(\d+.\d+)',
+                           is_empty(response.xpath('//div[@class="price"]/text() |'
+                                          ' //div[@class="price"]/div/text()')
+                           .extract(), "")), 0)
         if price:
-            priceCurrency = self.convert_currency[price[0]]
+            priceCurrency = self.convert_currency[is_empty(price, "")]
             prod["price"] = Price(priceCurrency=priceCurrency,
                                   price=price[1])
 
@@ -81,6 +83,8 @@ class FireboxProductSpider(BaseProductsSpider):
         cond_set(prod, 'locale', ['en-US'])
 
         cond_set(prod, 'brand', ['NO BRAND'])
+        if not prod.get('brand', None):
+            dump_url_to_file(response.url)
 
         prod['url'] = unicode(response.url)
 
@@ -93,8 +97,8 @@ class FireboxProductSpider(BaseProductsSpider):
             name = item.xpath('.//img/@title').extract()
             link = item.xpath('.//@href').extract()
             if name and link:
-                name = name[0]
-                link = link[0]
+                name = is_empty(name, "")
+                link = (link, "")
                 related.append(RelatedProduct(title=name, url=link))
 
         prod['related_products'] = {'Similar Products': related}
@@ -118,7 +122,7 @@ class FireboxProductSpider(BaseProductsSpider):
         total = response.xpath('//div[@class="searchtitle"]/text()').extract()
         if total:
             total = re.findall("(\d+)", total[0])
-        total_matches = int(total[0])
+        total_matches = int(is_empty(total, 0))
 
         return total_matches
 
@@ -139,3 +143,7 @@ class FireboxProductSpider(BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+       

@@ -39,7 +39,7 @@ class JobForm(forms.ModelForm):
         super(JobForm, self).__init__(*args, **kwargs)
         self.fields['task_id'].initial = self.fields['task_id'].initial + random.randint(10000, 99999)
         self.fields['spider'] = forms.ChoiceField(
-            choices=generate_spider_choices)
+            choices=generate_spider_choices())
         if self.instance and self.instance.pk:
             for field in self.fields.keys():
                 self.fields[field].widget = ReadOnlyWidget()
@@ -49,10 +49,11 @@ class JobForm(forms.ModelForm):
     def clean(self, *args, **kwargs):
         data = self.cleaned_data
         product_url = data.get('product_url', '')
+        product_urls = data.get('product_urls', '')
         search_term = data.get('search_term', '')
-        if not product_url and not search_term:
+        if not product_url and not search_term and not product_urls:
             raise forms.ValidationError(
-                'You should enter Product url OR search term')
+                'You should enter Product url OR search term OR product_urls')
         return data
 
     def clean_product_url(self, *args, **kwargs):
@@ -63,6 +64,16 @@ class JobForm(forms.ModelForm):
                 if not product_url.lower().startswith('https://'):
                     raise forms.ValidationError('Invalid URL')
         return product_url
+
+    def clean_product_urls(self, *args, **kwargs):
+        data = self.cleaned_data
+        product_urls = data.get('product_urls', '')
+        if product_urls:
+            for prod_url in product_urls.split('||||'):
+                if not prod_url.lower().startswith('http://'):
+                    if not prod_url.lower().startswith('https://'):
+                        raise forms.ValidationError('Invalid URL: ' + prod_url)
+        return product_urls
 
     class Meta:
         model = Job

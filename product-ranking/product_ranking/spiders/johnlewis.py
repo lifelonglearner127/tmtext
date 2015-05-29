@@ -157,6 +157,9 @@ class JohnlewisProductsSpider(BaseProductsSpider):
             *args,
             **kwargs)
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         if 'page_not_found' in response.url:
             return
@@ -381,7 +384,7 @@ class JohnlewisProductsSpider(BaseProductsSpider):
                 new_product['model'] = color
                 new_product['price'] = v['price']
                 if not '£' in new_product['price']:
-                    self.log('Unknown currency at' % response.url)
+                    self.log('Unknown currency at %s' % response.url)
                 else:
                     new_product['price'] = Price(
                         price=new_product['price'].replace(',', '').replace(

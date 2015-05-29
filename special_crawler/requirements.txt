@@ -4,3 +4,5 @@ requests>=2.2.1
 Pillow>=2.3.0
 mmh3>=2.3
 pycurl==7.19.5
+pytesseract>=0.1.6
+numpy>=1.9.2

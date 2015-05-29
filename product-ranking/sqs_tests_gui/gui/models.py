@@ -9,6 +9,8 @@ sys.path.append(os.path.join(CWD,  '..', '..', '..',
                              'deploy'))
 from sqs_ranking_spiders import QUEUES_LIST
 
+import settings
+
 
 def get_data_filename(job):
     """ Returns local job filename relative to MEDIA """
@@ -32,12 +34,11 @@ def get_log_filename(job):
     return '/%s/log.log' % job
 
 
-def _get_queue_names():
-    t = [[v, v] for v in QUEUES_LIST.values()]
-    return sorted(t, key=lambda v: 'test' in v[0], reverse=True)
-
-
 class Job(models.Model):
+    cache_choices = (
+        ('no cache', 'no cache'), ('cache', 'cache')
+    )
+
     _status_choices = [
         ('created', 'created'),
         ('pushed into sqs', 'pushed into sqs'),
@@ -52,15 +53,28 @@ class Job(models.Model):
 
     search_term = models.CharField(
         max_length=255, blank=True, null=True,
-        help_text='Enter this OR product URL below'
+        help_text='Enter this OR product(s) URL below'
     )
     product_url = models.URLField(
         max_length=500, blank=True, null=True,
-        help_text='Enter this OR search term above'
+        help_text='Enter this OR search term above OR products URL below'
+    )
+    product_urls = models.CharField(
+        max_length=1500, blank=True, null=True,
+        help_text=('Enter this OR search term above OR product_url.'
+                   ' Only for the CH+SC mode!')
     )
     quantity = models.IntegerField(
         blank=True, null=True, default=20,
         help_text='Leave blank for unlimited results (slow!)'
+    )
+    extra_cmd_args = models.TextField(
+        max_length=300, blank=True, null=True,
+        help_text="Extra command-line arguments, 1 per line. Example: enable_cache=1"
+    )
+    sc_ch_mode = models.BooleanField(
+        default=False, help_text=('Run the spider in CH mode. Do not forget to'
+                                  ' fill the Product UrlS field above.')
     )
     with_best_seller_ranking = models.BooleanField(
         default=False, help_text='For Walmart bestsellers matching')
@@ -71,11 +85,8 @@ class Job(models.Model):
         help_text='Branch to use at the instance(s); leave blank for master'
     )
 
-    input_queue = models.CharField(
-        max_length=100, choices=_get_queue_names(),
-        default=_get_queue_names()[0],
-        help_text='Use test or dev branch!'
-    )
+    mode = models.CharField(
+        max_length=100, choices=cache_choices, default=cache_choices[0])
 
     created = models.DateTimeField(auto_now_add=True)
     finished = models.DateTimeField(blank=True, null=True)
@@ -87,3 +98,10 @@ class Job(models.Model):
         return ('SearchTerm [%s]' % self.search_term if self.search_term
                 else 'URL')
     searchterm_or_url.short_description = 'Type'
+
+    def get_input_queue(self):
+        if self.mode == 'no cache':
+            return settings.TEST_QUEUE
+        elif self.mode == 'cache':
+            return settings.TEST_CACHE_QUEUE
+

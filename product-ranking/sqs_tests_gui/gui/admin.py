@@ -48,13 +48,13 @@ admin_status.allow_tags = True
 
 class JobAdmin(admin.ModelAdmin):
     list_display = (
-        'task_id', 'spider', 'name', 'searchterm_or_url', admin_status,
+        'task_id', 'spider', 'name', 'searchterm_or_url', admin_status, 'mode',
         'created', 'finished',
         admin_link_to_csv_data_file, admin_link_to_log_file
     )
     list_filter = ('status', 'created', 'finished')
-    search_fields = ('name', 'spider', 'product_url', 'search_term',
-                     'server_name')
+    search_fields = ('name', 'spider', 'product_url', 'product_urls',
+                     'search_term', 'server_name')
     form = JobForm
 
     def reset_status_to_created(self, request, qs, *args, **kwargs):

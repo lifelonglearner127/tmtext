@@ -13,7 +13,7 @@ from product_ranking.items import Price, BuyerReviews
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
+from product_ranking.spiders import cond_set, cond_set_value, dump_url_to_file
 
 
 class PcworldcoukProductsSpider(BaseProductsSpider):
@@ -36,7 +36,8 @@ class PcworldcoukProductsSpider(BaseProductsSpider):
     }
 
     def __init__(self, sort_mode=None, *args, **kwargs):
-        kwargs['searchterms_str'] = urllib.quote(kwargs['searchterms_str'])
+        if 'searchterms_str' in kwargs:
+            kwargs['searchterms_str'] = urllib.quote(kwargs['searchterms_str'])
         if sort_mode:
             if sort_mode not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -61,6 +62,9 @@ class PcworldcoukProductsSpider(BaseProductsSpider):
         cond_set(product, 'brand', response.xpath(
             "//section[@itemscope]/h1"
             "/span[@itemprop='brand']/text()").extract())
+
+        if not product.get('brand', None):
+            dump_url_to_file(response.url)
 
         cond_set(product, 'upc', response.xpath(
             "//section[@itemscope]/meta[@itemprop='identifier']"
@@ -331,3 +335,6 @@ class PcworldcoukProductsSpider(BaseProductsSpider):
             "/li/a[contains(text(),'→')]/@href").extract()
         if next_page_links:
             return next_page_links[0]
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

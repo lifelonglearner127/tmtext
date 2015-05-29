@@ -6,6 +6,7 @@ The service is implemented in python 2.7.
 
 - libjpeg-dev
 - python-opencv
+- tesseract-ocr
 
 ## Dependencies (python packages):
 
@@ -14,6 +15,7 @@ The service is implemented in python 2.7.
 - requests
 - mmh3
 - PIL (Pillow)
+- pytesseract
 
 The list of dependencies can be found in the `requirements.txt` file.
 

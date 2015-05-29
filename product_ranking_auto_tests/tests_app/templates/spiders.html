@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        .error {
+            color:red;
+        }
+        .success {
+            color:green;
+        }
+    </style>
+</head>
+<body>
+<h1>Spiders</h1>
+
+<ul>
+    {% for spider in spiders %}
+        <li>
+            <span class="{% if spider.is_error %}error{% else %}success{% endif %}">
+                [{% if spider.is_error %}FAILED{% else %}PASSED{% endif %}]
+                &nbsp; &nbsp;
+            </span>
+            <a href="{% url 'tests_app_spider_review' pk=spider.pk %}"><b>{{ spider.name }}</b></a>
+            &nbsp; &nbsp;
+            last check {{ spider.get_test_runs.0.when_finished }}
+            &nbsp; &nbsp;
+            failed requests: {{ spider.get_last_failed_test_runs.count }}
+            &nbsp; &nbsp;
+            passed requests: {{ spider.get_last_successful_test_runs.count }}
+        </li>
+    {% endfor %}
+</ul>
+
+</body>
+</html>

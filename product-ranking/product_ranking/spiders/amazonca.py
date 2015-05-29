@@ -20,6 +20,7 @@ from product_ranking.spiders import (BaseProductsSpider, cond_set,
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.marketplace import Amazon_marketplace
+from product_ranking.amazon_tests import AmazonTests
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -42,11 +43,36 @@ except ImportError as e:
     CaptchaBreakerWrapper = FakeCaptchaBreaker
 
 
-class AmazonProductsSpider(BaseProductsSpider):
+class AmazoncaValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['model', 'brand', 'description', 'price', 'bestseller_rank']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'buyer_reviews', 'google_source_site', 'special_pricing',
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = False  # ... duplicated requests?
+    ignore_log_filtered = False  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_found_1234654654': 0,
+        'nothing_fou': [5, 70],
+        'kaspersky total': [3, 50],
+        'gold sold fold': [5, 200],  # spider should return from 5 to 200 products
+        'yamaha drums midi': [5, 100],
+        'black men shoes size 8 red': [5, 100],
+        'antoshka': [5, 150],
+        'apple ipod nano gold': [50, 300],
+        'programming product best': [5, 100],
+    }
+
+
+class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
     name = 'amazonca_products'
     allowed_domains = ["amazon.ca"]
 
     SEARCH_URL = "http://www.amazon.ca/s/?field-keywords={search_term}"
+
+    settings = AmazoncaValidatorSettings
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
@@ -97,7 +123,8 @@ class AmazonProductsSpider(BaseProductsSpider):
                 return Request(
                     url=mkt_place_link, 
                     callback=self.parse_marketplace,
-                    meta=meta
+                    meta=meta,
+                    dont_filter=True,
                 )
 
             result = prod
@@ -253,6 +280,18 @@ class AmazonProductsSpider(BaseProductsSpider):
                     or key == 'ITEM MODEL NUMBER'):
                 model = li.xpath('text()').extract()
         cond_set(product, 'model', model, conv=string.strip)
+        if not product.get('model', "").strip():
+            model = is_empty(response.xpath(
+                '//div[contains(@class, "content")]/ul/'
+                'li/b[contains(text(), "ASIN")]/../text() |'
+                '//table/tbody/tr/'
+                'td[contains(@class, "label") and contains(text(), "ASIN")]'
+                '/../td[contains(@class, "value")]/text() |'
+                '//div[contains(@class, "content")]/ul/'
+                'li/b[contains(text(), "ISBN-10")]/../text()'
+            ).extract())
+            if model:
+                cond_set(product, 'model', (model.strip(),))
         self._buyer_reviews_from_html(response, product)
         self.populate_bestseller_rank(product, response)
 
@@ -278,6 +317,10 @@ class AmazonProductsSpider(BaseProductsSpider):
                 total_matches = int(count_matches[-1].replace(',', ''))
             else:
                 total_matches = None
+        if not total_matches:
+            total_matches = int(is_empty(response.xpath(
+                '//h2[@id="s-result-count"]/text()'
+            ).re(FLOATING_POINT_RGEX), 0))
         return total_matches
 
     def _scrape_product_links(self, response):
@@ -413,3 +456,15 @@ class AmazonProductsSpider(BaseProductsSpider):
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
+
+    def _validate_title(self, val):
+        if not bool(val.strip()):  # empty
+            return False
+        if len(val.strip()) > 2500:  # too long
+            return False
+        if val.strip().count(u' ') > 600:  # too many spaces
+            return False
+        if '<' in val or '>' in val:  # no tags
+            if not re.search("(\<\s?\d)|(\>\s?\d)", val):
+                return False
+        return True
