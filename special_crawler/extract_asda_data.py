@@ -121,17 +121,13 @@ class AsdaScraper(Scraper):
         if not self.product_json:
             self._product_json()
 
-        if "nutritionalValues" not in self.product_json["items"][0]["productDetails"] or \
-                len(self.product_json["items"][0]["productDetails"]["nutritionalValues"]) == 0:
-            return None
+        if len(self.product_json["items"][0]["productDetails"]["featuresformatted"]) > 0:
+            features_string = self.product_json["items"][0]["productDetails"]["featuresformatted"]
+            features_string_list = features_string.split(". ")
 
-        features_json = self.product_json["items"][0]["productDetails"]["nutritionalValues"]["values"]
-        features_string_list = []
+            return features_string_list
 
-        for feature in features_json:
-            features_string_list.append(feature["value1"] + " " + feature["value2"] + " " + feature["value3"])
-
-        return features_string_list
+        return None
 
     def _feature_count(self):
         features = self._features()
@@ -141,14 +137,45 @@ class AsdaScraper(Scraper):
 
         return len(features)
 
+    def _nutrition_facts(self):
+        if not self.product_json:
+            self._product_json()
+
+        if len(self.product_json["items"][0]["productDetails"]["nutritionalValues"]) > 0:
+            nutrition_json = self.product_json["items"][0]["productDetails"]["nutritionalValues"]["values"]
+            nutrition_string_list = []
+
+            for nutrition in nutrition_json:
+                nutrition_string_list.append(nutrition["value1"] + " " + nutrition["value2"] + " " + nutrition["value3"])
+
+            return nutrition_string_list
+
+        return None
+
+    def _nutrition_fact_count(self):
+        if self._nutrition_facts():
+            return len(self._nutrition_facts())
+
+        return 0
+
     def _description(self):
         if not self.product_json:
             self._product_json()
 
-        if len(self.product_json["items"][0]["description"]) == 1:
-            return None
+        short_description = ""
 
-        return self.product_json["items"][0]["description"]
+        if len(self.product_json["items"][0]["description"]) > 1:
+            short_description = self.product_json["items"][0]["description"].strip()
+
+        if self.product_json["items"][0]["productDetails"]["furtherDesc"]:
+            short_description += '<h4 class="sect-title">Further Description</h4>'
+            short_description += ('<p class="p-text">' + self.product_json["items"][0]["productDetails"]["furtherDesc"])\
+                                  + '</p>'
+
+        if len(short_description) > 0:
+            return short_description
+
+        return None
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
@@ -158,16 +185,48 @@ class AsdaScraper(Scraper):
         if not self.product_json:
             self._product_json()
 
-        if self.product_json["items"][0]["productDetails"]["furtherDesc"]:
-            return self.product_json["items"][0]["productDetails"]["furtherDesc"]
+        long_description = ""
 
-        long_description_url = "http://groceries.asda.com/asda-webstore/pages/product_details/view1.shtml?A521198.RWD"
-        contents = urllib.urlopen(long_description_url).read()
-        start_index = contents.find('<h4 class="sect-title">Product Information</h4><p class="p-text">')
+        if self.product_json["items"][0]["productDetails"]["productMarketing"]:
+            long_description += '<h4 class="sect-title">Product Marketing</h4>'
+            long_description += ('<p class="p-text">' + self.product_json["items"][0]["productDetails"]["productMarketing"])\
+                                  + '</p>'
+
+        if self.product_json["items"][0]["productDetails"]["brandMarketing"]:
+            long_description += '<h4 class="sect-title">Brand Marketing</h4>'
+            long_description += ('<p class="p-text">' + self.product_json["items"][0]["productDetails"]["brandMarketing"])\
+                                  + '</p>'
+
+        if self.product_json["items"][0]["productDetails"]["manufacturerMarketing"]:
+            long_description += '<h4 class="sect-title">Manufacturer Marketing</h4>'
+            long_description += ('<p class="p-text">' + self.product_json["items"][0]["productDetails"]["manufacturerMarketing"])\
+                                  + '</p>'
+
+        if self.product_json["items"][0]["productDetails"]["safetyWarning"]:
+            long_description += '<h4 class="sect-title">Safety Warning</h4>'
+            long_description += ('<p class="p-text">' + self.product_json["items"][0]["productDetails"]["safetyWarning"])\
+                                  + '</p>'
+
+        if self.product_json["items"][0]["productDetails"]["otherInfo"]:
+            long_description += '<h4 class="sect-title">Other information</h4>'
+            long_description += ('<p class="p-text">' + self.product_json["items"][0]["productDetails"]["otherInfo"])\
+                                  + '</p>'
+
+        if self.product_json["items"][0]["productDetails"]["preparationUsage"]:
+            long_description += '<h4 class="sect-title">Preparation and Usage</h4>'
+            long_description += ('<p class="p-text">' + self.product_json["items"][0]["productDetails"]["preparationUsage"])\
+                                  + '</p>'
+
+        product_information_url = "http://groceries.asda.com/asda-webstore/pages/product_details/view1.shtml?A521198.RWD"
+        product_information = urllib.urlopen(product_information_url).read()
+        start_index = product_information.find('<h4 class="sect-title">Product Information</h4><p class="p-text">')
         start_index += len('<h4 class="sect-title">Product Information</h4><p class="p-text">')
-        end_index = contents.find("</p><% if(typeof ACCELERATOR.CONFIG.enableProductRatingReview")
+        end_index = product_information.find("</p><% if(typeof ACCELERATOR.CONFIG.enableProductRatingReview")
 
-        return contents[start_index:end_index]
+        long_description += '<h4 class="sect-title">Product Information</h4>'
+        long_description += product_information[start_index:end_index]
+
+        return long_description
 
     def _ingredients(self):
         if not self.product_json:
@@ -183,6 +242,24 @@ class AsdaScraper(Scraper):
         ingredients = ingredients.split(",")
 
         return ingredients
+
+    def _manufacturer(self):
+        if not self._ingredients():
+            return 0
+
+        if len(self.product_json["items"][0]["productDetails"]["manufacturerPath"]) > 0:
+            return self.product_json["items"][0]["productDetails"]["manufacturerPath"]
+
+        return None
+
+    def _return_to(self):
+        if not self._ingredients():
+            return 0
+
+        if len(self.product_json["items"][0]["productDetails"]["returnTo"]) > 0:
+            return self.product_json["items"][0]["productDetails"]["returnTo"]
+
+        return None
 
     def _ingredients_count(self):
         if not self._ingredients():
@@ -405,7 +482,10 @@ class AsdaScraper(Scraper):
         "long_description" : _long_description, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
-
+        "nutrition_facts": _nutrition_facts, \
+        "nutrition_fact_count": _nutrition_fact_count, \
+        "manufacturer": _manufacturer,
+        "return_to": _return_to,
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
