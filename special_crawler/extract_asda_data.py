@@ -145,6 +145,9 @@ class AsdaScraper(Scraper):
         if not self.product_json:
             self._product_json()
 
+        if len(self.product_json["items"][0]["description"]) == 1:
+            return None
+
         return self.product_json["items"][0]["description"]
 
     # extract product long description from its product product page tree
@@ -237,6 +240,9 @@ class AsdaScraper(Scraper):
     def _average_review(self):
         if not self.product_json:
             self._product_json()
+
+        if self._review_count() == 0:
+            return None
 
         return float(self.product_json["items"][0]["avgStarRating"])
 
