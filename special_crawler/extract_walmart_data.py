@@ -119,7 +119,8 @@ class WalmartScraper(Scraper):
             False otherwise
         """
 
-        if self.tree_html.xpath("//meta[@itemprop='productID']"):
+        if self.tree_html.xpath("//meta[@property='og:type']") and \
+                self.tree_html.xpath("//meta[@property='og:type']/@content")[0] == "product":
             return False
 
         return True
