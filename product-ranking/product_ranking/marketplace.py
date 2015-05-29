@@ -56,7 +56,7 @@ class Amazon_marketplace(object):
 
         if self.called_class._has_captcha(response):
             return self.called_class._handle_captcha(
-                response, self.parse_marketplace, replace_comma_with_dot)
+                response, self.parse_marketplace)
 
         product = response.meta["product"]
 
@@ -97,6 +97,12 @@ class Amazon_marketplace(object):
                 name = self.is_empty(seller.xpath(
                     'div/p[2]/span[2]/text()').extract(), "")
                 name = self.is_empty(re.findall("www.([^\)]*)", name), "")
+
+            if not name.strip():
+                name = self.is_empty(seller.xpath(
+                    "//p[contains(@class, 'Name')]/span[last()]/text()"
+                ).extract(), "")
+                name = self.is_empty(re.findall("\((.*)\)", name), "")
 
             if not name.strip():
                 get_name_link, key = self.get_hash_and_link(seller)
