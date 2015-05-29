@@ -394,4 +394,3 @@ if __name__=="__main__":
     CW.solve_captcha("http://ecx.images-amazon.com/captcha/bfhuzdtn/Captcha_distpnvhaw.jpg", False)
     CW.solve_captcha("http://ecx.images-amazon.com/captcha/bfhuzdtn/Captcha_distpnvhaw.jpg")
     CW.solve_captcha("http://ecx.images-amazon.com/captcha/bfhuzdtn/Captcha_distpnvhaw.jpg")
-    CW.solve_captcha("http://opfcaptcha-prod.s3.amazonaws.com/bebcecbc8bc445138f848d1ed56697cc.jpg?AWSAccessKeyId=AKIAIW6PYU6SMGXVDIJA&Signature=gOz352IoUFIwaxBuI5vbYLNepIs%3D&Expires=1432892713")
