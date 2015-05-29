@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import time
 
 import boto
 import boto.sqs
@@ -58,11 +59,32 @@ def get_key_or_return_zero(key, redis_db, purge):
         result = 0
     return result
 
-def get_sqs_metrics(purge=False):
+def get_tasks_for_time_limit(redis_db, hours_limit=1):
+    max_limit = time.time()
+    min_limit = max_limit - 3600*hours_limit
+    try:
+        tasks = len(redis_db.zrangebyscore(HANDLED_TASKS_SORTED_SET,
+                                           min_limit, max_limit))
+    except:
+        tasks = 0
+    return tasks
+
+def get_average_tasks(redis_db, hours_limit=1):
+    """Counts how many tasks per hour were performed
+    during required hours_limit"""
+    tasks = get_tasks_for_time_limit(redis_db, hours_limit)
+    average = tasks/float(hours_limit)
+    return average
+
+
+def get_sqs_metrics(purge=False, hours_limit=1):
     """
     This function will count sqs metrics and return them in json format
-    {"daily_sqs_instance_counter": int,
-     "total_tasks_quantity": int}
+    {
+    "daily_sqs_instances_counter": int,
+    "executed_tasks_during_the_day": int,
+    "waiting_task": int,
+     }
     """
     redis_db = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT)
 
@@ -83,10 +105,15 @@ def get_sqs_metrics(purge=False):
         except Exception as e:
             print e
 
+    task_during_last_hour = get_tasks_for_time_limit(redis_db, 1)
+    average_tasks = get_average_tasks(redis_db, hours_limit)
+
     result = {
         'daily_sqs_instances_counter': daily_sqs_instances_counter,
         'executed_tasks_during_the_day': executed_tasks_during_the_day,
         'waiting_task': waiting_task,
+        'task_during_last_hour': task_during_last_hour,
+        'average_tasks': average_tasks
     }
     return json.dumps(result)
 

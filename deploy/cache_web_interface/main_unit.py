@@ -77,14 +77,18 @@ def cache_stats(hours=1):
     daily_sqs_instances_counter = 'Not available'
     executed_tasks_during_the_day = 'Not available'
     waiting_task = 'Not available'
+    task_during_last_hour = 'Not available'
+    average_tasks = 'Not available'
     try:
-        sqs_metrics = additional_sqs_metrics.get_sqs_metrics()
+        sqs_metrics = additional_sqs_metrics.get_sqs_metrics(hours_limit=hours)
         sqs_metrics = json.loads(sqs_metrics)
         daily_sqs_instances_counter = \
             sqs_metrics['daily_sqs_instances_counter']
         executed_tasks_during_the_day = \
             sqs_metrics['executed_tasks_during_the_day']
         waiting_task = sqs_metrics['waiting_task']
+        task_during_last_hour = sqs_metrics['task_during_last_hour']
+        average_tasks = sqs_metrics['average_tasks']
     except Exception as e:
         print e
 
@@ -106,7 +110,9 @@ def cache_stats(hours=1):
         'daily_sqs_instances_counter': daily_sqs_instances_counter,
         'executed_tasks_during_the_day': executed_tasks_during_the_day,
         'waiting_task': waiting_task,
-        'sqs_instances_quantity': sqs_instances_quantity
+        'sqs_instances_quantity': sqs_instances_quantity,
+        'task_during_last_hour': task_during_last_hour,
+        'average_tasks': average_tasks,
     }
     return render_template('cache_stats.html', **context)
 
