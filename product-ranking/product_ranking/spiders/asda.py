@@ -138,9 +138,11 @@ class AsdaProductsSpider(BaseProductsSpider):
 
             total_stars = int(item['totalReviewCount'])
             avg_stars = float(item['avgStarRating'])
-            prod['buyer_reviews'] = BuyerReviews(num_of_reviews=total_stars,
-                                                 average_rating=avg_stars,
-                                                 rating_by_star={})
+            prod['buyer_reviews'] = BuyerReviews(
+                num_of_reviews=total_stars,
+                average_rating=avg_stars,
+                rating_by_star={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+            )
             prod['model'] = item['cin']
 
             image_url = item.get('imageURL')
