@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <regression_tool>
-    <field name="json_diff" version="5.7"></field>
+    <field name="json_diff" version="6.7"></field>
 </regression_tool>
