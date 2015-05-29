@@ -37,14 +37,17 @@ for item in most_recent_resp:
     most_recent_resp_str += pattern
 used_memory = s.get_used_memory()
 
-daily_sqs_instance_counter = 0
-total_tasks_quantity = 0
+daily_sqs_instances_counter = 0
+executed_tasks_during_the_day = 0
+waiting_task = 0
 
 try:
     sqs_metrics = get_sqs_metrics(purge=True)
     sqs_metrics = json.loads(sqs_metrics)
-    daily_sqs_instance_counter = sqs_metrics['daily_sqs_instance_counter']
-    total_tasks_quantity = sqs_metrics['total_tasks_quantity']
+    daily_sqs_instances_counter = sqs_metrics['daily_sqs_instances_counter']
+    executed_tasks_during_the_day = \
+        sqs_metrics['executed_tasks_during_the_day']
+    waiting_task = sqs_metrics['waiting_task']
 except Exception as e:
     print e
 
@@ -61,12 +64,13 @@ Total used memory: %s
 
 SQS metrics:
 Daily sqs instances counter: %s # this mean how many instances were rised up
-Total tasks received/executed during the day:%s
+Executed_tasks_during_the_day:%s
+Waiting task at this moment: %s
 """
 
 TEXT = text_draft % (total_requests, total_responses, correlation,
     most_recent_resp_str, total_cached_items, used_memory,
-    daily_sqs_instance_counter, total_tasks_quantity)
+    daily_sqs_instances_counter, executed_tasks_during_the_day, waiting_task)
 
 message = """\
 From: %s

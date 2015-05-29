@@ -50,6 +50,9 @@ except ImportError:
 sys.path.insert(
     3, os.path.join(REPO_BASE_PATH, 'special_crawler', 'queue_handler'))
 from sqs_connect import SQS_Queue
+from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
+    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET
+
 
 TEST_MODE = False  # if we should perform local file tests
 
@@ -84,6 +87,16 @@ def slugify(s):
         # to avoid reserved double-minus chars
         output = output.replace('--', '-')
     return output
+
+
+def connect_to_redis_database(redis_host, redis_port):
+    try:
+        db = redis.StrictRedis(host=redis_host, port=redis_port)
+    except Exception as e:
+        logger.warning("Failed connect to redis database with exception %s",
+                       e)
+        db = None
+    return db
 
 
 def set_global_variables_from_data_file():
@@ -395,14 +408,26 @@ def switch_branch_if_required(metadata):
         os.system(cmd)
 
 
-def increment_s3_counter(key_name):
-    global S3_CONN, S3_BUCKET
-    k = Key(S3_BUCKET)
-    k.key = key_name
-    try:
-        k.set_contents_from_string(str(int(k.get_contents_as_string()) + 1))
-    except:
-        k.set_contents_from_string('1')
+def increment_metric_counter(metric_name, redis_db):
+    """This method will just increment reuired key in redis database
+    if connecntion to the database exist."""
+    if redis_db:
+        try:
+            redis_db.incr(metric_name)
+        except Exception as e:
+            logger.warning("Failed to increment redis metric '%s' "
+                "with exception '%s'", metric_name, e)
+
+
+def update_handled_tasks_set(set_name, redis_db):
+    """Will add new score:value pair to some redis sorted set.
+    Score and value will be current time."""
+    if redis_db:
+        try:
+            redis_db.zadd(set_name, time.time(), time.time())
+        except Exception as e:
+            logger.warning("Failed to add info to set '%s' with exception"
+                " '%s'", set_name, e)
 
 
 def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
@@ -460,7 +485,9 @@ def execute_task_from_sqs():
     inst_id = instance_meta.get('instance-id')
     logger.info("IMPORTANT: ip: %s, instance id: %s", inst_ip, inst_id)
     # increment quantity of instances spinned up during the day.
-    increment_s3_counter('daily_sqs_instance_counter')
+    redis_db = connect_to_redis_database(redis_host=REDIS_HOST,
+                                         redis_port=REDIS_PORT)
+    increment_metric_counter(INSTANCES_COUNTER_REDIS_KEY, redis_db)
 
     set_global_variables_from_data_file()
     while 1:  # try to read from the queue until a new message arrives
@@ -481,7 +508,9 @@ def execute_task_from_sqs():
     task_queue.task_done()
     logger.info("Task message was successfully received and "
                 "removed form queue.")
-    increment_s3_counter('daily_sqs_executed_tasks')
+    increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
+    update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
+
     switch_branch_if_required(metadata)
     task_id = metadata.get('task_id', metadata.get('task', None))
     searchterms_str = metadata.get('searchterms_str', None)

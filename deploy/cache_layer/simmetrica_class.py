@@ -3,10 +3,18 @@ import random
 import string
 import json
 import os
+import sys
 import pickle
 from collections import Counter
 
 import redis
+
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(1, os.path.join(CWD, '..'))
+
+from cache_layer import REDIS_HOST, REDIS_PORT
+
 
 class Simmetrica(object):
 
@@ -27,8 +35,8 @@ class Simmetrica(object):
 
     def __init__(self, *args, **kwargs):
         self.db = redis.StrictRedis(
-            host='sqs-cache.4a6nml.0001.use1.cache.amazonaws.com',
-            port=6379
+            host=REDIS_HOST,
+            port=REDIS_PORT
         )
         # self.db = redis.StrictRedis(host='localhost', port=6379, db=0)
         self.CWD = os.path.dirname(os.path.abspath(__file__))

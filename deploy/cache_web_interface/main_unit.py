@@ -74,13 +74,17 @@ def cache_stats(hours=1):
 
     current_settings = s.get_settings()
 
-    daily_sqs_instance_counter = 'Not available'
-    total_tasks_quantity = 'Not available'
+    daily_sqs_instances_counter = 'Not available'
+    executed_tasks_during_the_day = 'Not available'
+    waiting_task = 'Not available'
     try:
         sqs_metrics = additional_sqs_metrics.get_sqs_metrics()
         sqs_metrics = json.loads(sqs_metrics)
-        daily_sqs_instance_counter = sqs_metrics['daily_sqs_instance_counter']
-        total_tasks_quantity = sqs_metrics['total_tasks_quantity']
+        daily_sqs_instances_counter = \
+            sqs_metrics['daily_sqs_instances_counter']
+        executed_tasks_during_the_day = \
+            sqs_metrics['executed_tasks_during_the_day']
+        waiting_task = sqs_metrics['waiting_task']
     except Exception as e:
         print e
 
@@ -99,8 +103,9 @@ def cache_stats(hours=1):
         'most_recent_resp': most_recent_resp,
         'used_memory': used_memory,
         'current_settings': current_settings,
-        'daily_sqs_instance_counter': daily_sqs_instance_counter,
-        'total_tasks_quantity': total_tasks_quantity,
+        'daily_sqs_instances_counter': daily_sqs_instances_counter,
+        'executed_tasks_during_the_day': executed_tasks_during_the_day,
+        'waiting_task': waiting_task,
         'sqs_instances_quantity': sqs_instances_quantity
     }
     return render_template('cache_stats.html', **context)
@@ -246,7 +251,7 @@ def get_list_of_bucket_items(striped=True):
         enumerated_list = list(enumerate(bucket_list))
     return enumerated_list
 
-@app.route('/')
+@app.route('/failed_logs')
 def get_all_list():
     get_list_of_bucket_items()
     return render_template('all_bucket_items.html',
