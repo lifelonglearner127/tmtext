@@ -186,6 +186,10 @@ class SearchSpider(BaseSpider):
                             product['product_upc'] = data['UPC']
                         except Exception:
                             self.log("No UPC in csv for row " + str(data) + "\n", level=log.INFO)
+                        try:
+                            product['product_price'] = float(data['Product_Price'])
+                        except Exception:
+                            pass
                         products.append(product)
                     except StopIteration, e:
                         break
