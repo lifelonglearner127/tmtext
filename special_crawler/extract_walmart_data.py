@@ -119,16 +119,10 @@ class WalmartScraper(Scraper):
             False otherwise
         """
 
-        try:
-            page_title = self.tree_html.xpath("//title/text()")[0]
-        except Exception:
-            page_title = None
-
-        if page_title == " - Walmart":
-            return True
-
-        else:
+        if self.tree_html.xpath("//meta[@itemprop='productID']"):
             return False
+
+        return True
 
     # TODO:
     #      better way of extracting id now that URL format is more permissive
