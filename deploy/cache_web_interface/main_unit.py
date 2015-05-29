@@ -9,15 +9,18 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
 
 from flask import Flask, request, send_from_directory, send_file
-from flask import render_template
+from flask import render_template, redirect, url_for
 from boto.sqs.message import Message
 import boto.sqs
+import boto
+from boto.s3.key import Key
 
 from cache_layer.simmetrica_class import Simmetrica
+from cache_layer import additional_sqs_metrics
 
 
 app = Flask(__name__)
-
+s = Simmetrica()
 
 def send_msg_to_sqs(task):
     sqs_conn = boto.sqs.connect_to_region("us-east-1")
@@ -34,7 +37,7 @@ def cache_stats(hours=1):
     if request.method == 'POST':
         data = request.form
         hours = int(data['required_hours'])
-    s = Simmetrica()
+    global s
     
     try:
         total_cached_items = s.total_resp_in_cache()
@@ -67,6 +70,30 @@ def cache_stats(hours=1):
     else:
         time_range = '%s hours' % hours
 
+    used_memory = s.get_used_memory()
+
+    current_settings = s.get_settings()
+
+    daily_sqs_instances_counter = 'Not available'
+    executed_tasks_during_the_day = 'Not available'
+    waiting_task = 'Not available'
+    task_during_last_hour = 'Not available'
+    average_tasks = 'Not available'
+    try:
+        sqs_metrics = additional_sqs_metrics.get_sqs_metrics(hours_limit=hours)
+        sqs_metrics = json.loads(sqs_metrics)
+        daily_sqs_instances_counter = \
+            sqs_metrics['daily_sqs_instances_counter']
+        executed_tasks_during_the_day = \
+            sqs_metrics['executed_tasks_during_the_day']
+        waiting_task = sqs_metrics['waiting_task']
+        task_during_last_hour = sqs_metrics['task_during_last_hour']
+        average_tasks = sqs_metrics['average_tasks']
+    except Exception as e:
+        print e
+
+    sqs_instances_quantity = additional_sqs_metrics.check_instance_quantity()
+
     context = {
         'time_range': time_range,
         'total_cached_items': total_cached_items,
@@ -77,7 +104,15 @@ def cache_stats(hours=1):
         'total_requests': total_requests,
         'total_responses': total_responses,
         'correlation': correlation,
-        'most_recent_resp': most_recent_resp
+        'most_recent_resp': most_recent_resp,
+        'used_memory': used_memory,
+        'current_settings': current_settings,
+        'daily_sqs_instances_counter': daily_sqs_instances_counter,
+        'executed_tasks_during_the_day': executed_tasks_during_the_day,
+        'waiting_task': waiting_task,
+        'sqs_instances_quantity': sqs_instances_quantity,
+        'task_during_last_hour': task_during_last_hour,
+        'average_tasks': average_tasks,
     }
     return render_template('cache_stats.html', **context)
 
@@ -145,6 +180,124 @@ def cache_logs(filename):
         return data
     else:
         return 'Log file not exists'
+
+
+@app.route('/update-settings', methods=['GET', 'POST'])
+def update_settings():
+    global s
+    if request.method == 'POST':
+        data = request.form
+        result_msg = s.update_settings(data)
+        return render_template('update_settings.html', result_msg=result_msg)
+    else:
+        current_settings = s.get_settings()
+        return render_template('update_settings.html',
+                               current_settings=current_settings)
+
+
+@app.route('/remove-old-resp', methods=['POST'])
+def remove_old_resp():
+    global s
+    data = request.form
+    try:
+        time_limit = int(data['time_limit'])
+    except:
+        time_limit = 12
+    print(time_limit)
+    s.delete_old_responses(time_limit)
+    return redirect(url_for('cache_stats'))
+
+
+@app.route('/flash-cache', methods=['POST'])
+def flash_cache():
+    global s
+    s.clear_cache()
+    return redirect(url_for('cache_stats'))
+
+
+@app.route('/get_sqs_instances_quantity')
+def get_sqs_instances_quantity():
+    data = {'sqs_instances_quantity':
+                additional_sqs_metrics.check_instance_quantity()}
+    return json.dumps(data)
+
+
+
+### This is additional functions for debugging SQS
+bucket_list = None
+enumerated_list = None
+AMAZON_BUCKET_NAME = 'spyder-bucket'
+
+def display_log_file(key):
+    filename = '/tmp/tmp_file'
+    key.get_contents_to_filename(filename)
+    lines = open(filename, 'r').readlines()
+    data = '<br>'.join(lines)
+    return data
+
+def get_list_of_bucket_items(striped=True):
+    global bucket_list
+    global enumerated_list
+    # bucket_list = None ## comment this to lower s3 load
+    if not bucket_list:
+        conn = boto.connect_s3()
+
+        bucket = conn.get_bucket(AMAZON_BUCKET_NAME, validate=False)
+        bucket_list = list(bucket.list())
+        if striped:
+            for k in bucket_list:
+                if '.zip' in k.name:
+                    try:
+                        unique_hash = k.name.split('____')[1]
+                        bucket_list = [k for k in bucket_list if unique_hash \
+                                       not in k.name]
+                    except Exception as e:
+                        print(e)
+        bucket_list.reverse()
+        enumerated_list = list(enumerate(bucket_list))
+    return enumerated_list
+
+@app.route('/failed_logs')
+def get_all_list():
+    get_list_of_bucket_items()
+    return render_template('all_bucket_items.html',
+                           bucket_list=enumerated_list)
+
+@app.route('/get_logs_by_task_by_id', methods=['GET'])
+def get_logs_by_task_by_id():
+    task_id = request.args.get('task_id')
+    get_list_of_bucket_items(striped=False)
+    global enumerated_list
+    required_list = []
+    for item in enumerated_list:
+        name = item[1].name
+        if task_id in name:
+            required_list.append(item)
+    enumerated_list = required_list
+    return render_template('all_bucket_items.html',
+                           bucket_list=enumerated_list)
+
+@app.route('/get_log_body_by_task_id', methods=["GET"])
+def get_log_body_by_task_id():
+    task_id = request.args.get('task_id')
+    print task_id
+    get_list_of_bucket_items(striped=False)
+    global enumerated_list
+    for item in enumerated_list:
+        key = item[1]
+        if 'remote_instance_starter2' in key.name:
+            if task_id in key.get_contents_as_string():
+                return display_log_file(key)
+                break
+    return "Log was not found"
+
+
+@app.route('/get_content', methods=['GET'])
+def get_content():
+    item_number = int(request.args.get('item_number'))
+    key = enumerated_list[int(item_number)][1]
+    data = display_log_file(key)
+    return data
 
 
 if __name__ == '__main__':
