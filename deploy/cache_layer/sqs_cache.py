@@ -30,11 +30,11 @@ logger = None
 simmetrica = Simmetrica()
 
 def connect_to_redis_database():
-    # db = redis.StrictRedis(
-    #     host='mycachecluster.6zn94d.0001.usw2.cache.amazonaws.com',
-    #     port=6379
-    # )
-    db = redis.StrictRedis(host='localhost', port=6379, db=0)
+    db = redis.StrictRedis(
+        host='sqs-cache.4a6nml.0001.use1.cache.amazonaws.com',
+        port=6379
+    )
+    #db = redis.StrictRedis(host='localhost', port=6379, db=0)
     return db
 
 
