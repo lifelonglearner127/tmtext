@@ -127,6 +127,11 @@ class WalmartScraper(Scraper):
         if self.tree_html.xpath("//div[@class='VuduItemBox']"):
             return True
 
+        # we ignore non standard product(v1) like gift card for now
+        if self.tree_html.xpath("//body[@id='WalmartBodyId']") and not self.tree_html.xpath\
+                        ("//form[@name='SelectProductForm']"):
+            return True
+
         return False
 
     # TODO:
