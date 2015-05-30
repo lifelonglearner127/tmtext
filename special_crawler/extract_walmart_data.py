@@ -119,16 +119,20 @@ class WalmartScraper(Scraper):
             False otherwise
         """
 
-        try:
-            page_title = self.tree_html.xpath("//title/text()")[0]
-        except Exception:
-            page_title = None
-
-        if page_title == " - Walmart":
+        # we ignore bundle product
+        if self.tree_html.xpath("//div[@class='js-about-bundle-wrapper']"):
             return True
 
-        else:
-            return False
+        # we ignore video product
+        if self.tree_html.xpath("//div[@class='VuduItemBox']"):
+            return True
+
+        # we ignore non standard product(v1) like gift card for now
+        if self.tree_html.xpath("//body[@id='WalmartBodyId']") and not self.tree_html.xpath\
+                        ("//form[@name='SelectProductForm']"):
+            return True
+
+        return False
 
     # TODO:
     #      better way of extracting id now that URL format is more permissive
