@@ -17,9 +17,9 @@ con = None
 con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
 cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-sql = "select sample_url from console_reportresult where changes_in_structure > 0 and report_date >= '2015-05-25'"
+sql_changed_products = "select sample_url from console_reportresult where changes_in_structure > 0 and report_date >= '2015-06-01'"
 
-cur.execute(sql)
+cur.execute(sql_changed_products)
 rows = cur.fetchall()
 urls = []
 
@@ -27,9 +27,25 @@ for row in rows:
     urls.append(row["sample_url"])
 
 urls = list(set(urls))
-changed_product_urls = "\n" .join(urls)
+changed_product_urls = "<br>" .join(urls)
 
+changed_product_urls = "<b>Following product urls are needed to check.</b><br>" + changed_product_urls
 print changed_product_urls
+
+sql_not_products = "select url from console_urlsample where not_a_product = 1"
+
+cur.execute(sql_not_products)
+rows = cur.fetchall()
+urls = []
+
+for row in rows:
+    urls.append(row["url"])
+
+urls = list(set(urls))
+not_product_urls = "<br>" .join(urls)
+
+not_product_urls = "<br><br><b>Following product urls are invalid.</b><br>" + changed_product_urls
+print not_product_urls
 
 fromaddr = "jenkins@contentanalyticsinc.com"
 toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com"] # must be a list
