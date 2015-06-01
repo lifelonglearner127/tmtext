@@ -196,7 +196,8 @@ class Scraper():
         "product_id" : None,
         "event" : None,
         "date": None,
-        "status": None
+        "status": None,
+        "failure_type": None
     }
 
     def load_image_hashes():
@@ -290,7 +291,6 @@ class Scraper():
         self.ERROR_RESPONSE['url'] = self.product_page_url
         # Set status
         self.ERROR_RESPONSE['status'] = "failure"
-
 
     # extract product info from product page.
     # (note: this is for info that can be extracted directly from the product page, not content generated through javascript)
