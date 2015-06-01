@@ -44,7 +44,7 @@ for row in rows:
 urls = list(set(urls))
 not_product_urls = "\n" .join(urls)
 
-not_product_urls = "\n\nFollowing product urls are invalid.\n" + changed_product_urls
+not_product_urls = "\n\nFollowing product urls are invalid.\n" + not_product_urls
 print not_product_urls
 
 fromaddr = "jenkins@contentanalyticsinc.com"
