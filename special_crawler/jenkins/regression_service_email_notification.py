@@ -27,9 +27,9 @@ for row in rows:
     urls.append(row["sample_url"])
 
 urls = list(set(urls))
-changed_product_urls = "<br>" .join(urls)
+changed_product_urls = "\n" .join(urls)
 
-changed_product_urls = "<b>Following product urls are needed to check.</b><br>" + changed_product_urls
+changed_product_urls = "Following product urls are needed to check.\n" + changed_product_urls
 print changed_product_urls
 
 sql_not_products = "select url from console_urlsample where not_a_product = 1"
@@ -42,9 +42,9 @@ for row in rows:
     urls.append(row["url"])
 
 urls = list(set(urls))
-not_product_urls = "<br>" .join(urls)
+not_product_urls = "\n" .join(urls)
 
-not_product_urls = "<br><br><b>Following product urls are invalid.</b><br>" + changed_product_urls
+not_product_urls = "\n\nFollowing product urls are invalid.\n" + changed_product_urls
 print not_product_urls
 
 fromaddr = "jenkins@contentanalyticsinc.com"
@@ -56,7 +56,7 @@ To: %s
 Subject: %s
 
 %s
-""" % (fromaddr, ", ".join(toaddrs), subject, changed_product_urls)
+""" % (fromaddr, ", ".join(toaddrs), subject, changed_product_urls + not_product_urls)
 
 print "Message length is " + repr(len(msg))
 
