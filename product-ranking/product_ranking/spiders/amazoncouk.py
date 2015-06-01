@@ -86,10 +86,12 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
 
     settings = AmazoncoukValidatorSettings
 
-    def __init__(self, captcha_retries='10',*args, **kwargs):
+    def __init__(self, captcha_retries='20', *args, **kwargs):
         # locations = settings.get('AMAZONFRESH_LOCATION')
         # loc = locations.get(location, '')
         super(AmazonCoUkProductsSpider, self).__init__(*args, **kwargs)
+
+        self.captcha_retries = int(captcha_retries)
 
         self.mtp_class = Amazon_marketplace(self)
 
