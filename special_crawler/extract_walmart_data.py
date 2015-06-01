@@ -100,6 +100,8 @@ class WalmartScraper(Scraper):
         # Currently used for seller info (but useful for others as well)
         self.js_entry_function_body = None
 
+        self.failure_type = None
+
     # checks input format
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -121,15 +123,27 @@ class WalmartScraper(Scraper):
 
         # we ignore bundle product
         if self.tree_html.xpath("//div[@class='js-about-bundle-wrapper']"):
+            self.failure_type = "Bundle"
             return True
 
         # we ignore video product
         if self.tree_html.xpath("//div[@class='VuduItemBox']"):
+            self.failure_type = "Video on Demand"
             return True
 
         # we ignore non standard product(v1) like gift card for now
         if self.tree_html.xpath("//body[@id='WalmartBodyId']") and not self.tree_html.xpath\
                         ("//form[@name='SelectProductForm']"):
+            if self.tree_html.xpath("//div[@class='PageTitle']/h1/text()") and "eGift Card" in self.tree_html.xpath("//div[@class='PageTitle']/h1/text()")[0]:
+                self.failure_type = "E-Card"
+                return True
+
+        # check existence of "We can't find the product you are looking for, but we have similar items for you to consider."
+        text_list = self.tree_html.xpath("//body//text()")
+        text_contents = " " .join(text_list)
+
+        if "We can't find the product you are looking for, but we have similar items for you to consider." in text_contents:
+            self.failure_type = "404 Error"
             return True
 
         return False
@@ -2013,6 +2027,9 @@ class WalmartScraper(Scraper):
 
         return None
 
+    def _failure_type(self):
+        return self.failure_type
+
     def _version(self):
         """Determines if walmart page being read (and version of extractor functions
             being used) is old or new design.
@@ -2216,6 +2233,7 @@ class WalmartScraper(Scraper):
         "categories" : _categories_hierarchy, \
         "category_name" : _category, \
 
+        "failure_type" : _failure_type, \
         "scraper" : _version, \
         }
 
