@@ -39,7 +39,7 @@ class AsdaProductsSpider(BaseProductsSpider):
                  "Filter=ProductId:%s&" \
                  "Sort=SubmissionTime:desc&" \
                  "apiversion=5.4&" \
-                 "passkey=92ffdz3h647mtzgbmu5vedbq"
+                 "passkey=92ffdz3h647mtzgbmu5vedbq&limit=100"
 
     def __init__(self, *args, **kwargs):
         super(AsdaProductsSpider, self).__init__(
@@ -72,9 +72,13 @@ class AsdaProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
-        data = json.loads(response.body_as_unicode())
-        item = data['items'][0]
-        product['upc'] = item['upcNumbers'][0]['upcNumber']
+        
+        try:
+            data = json.loads(response.body_as_unicode())
+            item = data['items'][0]
+            product['upc'] = item['upcNumbers'][0]['upcNumber']
+        except IndexError, ValueError:
+            pass
 
         product_id = re.findall('itemid=(\d+)', response.url)
         if product_id:
@@ -173,9 +177,23 @@ class AsdaProductsSpider(BaseProductsSpider):
     def _parse_single_product(self, response):
         product = response.meta["product"]
         result = self._scrape_product_links(response)
+
         for p in result:
             for p2 in p:
                 if isinstance(p2, SiteProductItem):
                     if "search_term" in p2:
                         del p2["search_term"]
-                    return SiteProductItem(dict(p2.items() + product.items()))
+                    product = SiteProductItem(dict(p2.items() + product.items()))
+
+        try:
+            data = json.loads(response.body_as_unicode())
+            item = data['items'][0]
+            product['upc'] = item['upcNumbers'][0]['upcNumber']
+        except IndexError, ValueError:
+            pass
+
+        product_id = re.findall('itemid=(\d+)', response.url)
+        if product_id:
+            url = self.REVIEW_URL % product_id[0]
+            meta = {'product': product}
+            return Request(url=url, meta=meta, callback=self._parse_review)
