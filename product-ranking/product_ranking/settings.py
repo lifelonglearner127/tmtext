@@ -5,6 +5,7 @@
 #
 #     http://doc.scrapy.org/en/latest/topics/settings.html
 #
+from scrapy import log
 
 BOT_NAME = 'product_ranking'
 
@@ -95,7 +96,7 @@ PROXY_LIST2 = '/tmp/http_proxies.txt'
 if not os.path.exists(PROXY_LIST) and os.path.exists(PROXY_LIST2):
     PROXY_LIST = PROXY_LIST2
 if os.path.exists(PROXY_LIST):
-    print 'USING PROXIES'
+    log.msg('USING PROXIES')
     DOWNLOADER_MIDDLEWARES['product_ranking.randomproxy.RandomProxy'] = 100
 else:
-    print 'NOT USING PROXIES'
+    log.msg('NOT USING PROXIES')
