@@ -717,7 +717,10 @@ class AmazonScraper(Scraper):
             amsel = {}
         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         domain=self.product_page_url.split("/")
-        url = domain[0]+"//"+domain[2]+ "/gp/offer-listing/" + self._product_id() + "/ref=olp_tab_all"
+        try:
+            url = domain[0] + "//" + domain[2] + "/gp/offer-listing/" + self.tree_html.xpath("//input[@id='ASIN']/@value")[0] + "/ref=olp_tab_all"
+        except:
+            url = domain[0] + "//" + domain[2] + "/gp/offer-listing/" + self._product_id() + "/ref=olp_tab_all"
         fl = 0
         while len(url) > 10:
             contents = requests.get(url, headers=h).text
