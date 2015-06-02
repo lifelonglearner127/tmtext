@@ -210,7 +210,8 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             average_rating = int(re.findall("IcoRating(\d)",
                                  average_rating[0])[0])
         if not average_rating:
-            num_of_reviews = None
+            average_rating = 0
+            num_of_reviews = 0
         buyer_reviews = BuyerReviews(num_of_reviews=int(num_of_reviews),
                                      average_rating=float(average_rating),
                                      rating_by_star={1: 0, 2: 0, 3: 0,
