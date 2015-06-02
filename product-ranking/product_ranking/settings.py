@@ -91,6 +91,9 @@ DOWNLOADER_MIDDLEWARES = {
 # http://host3:port
 # ...
 PROXY_LIST = os.path.join(CWD, 'http_proxies.txt')
+PROXY_LIST2 = '/tmp/http_proxies.txt'
+if not os.path.exists(PROXY_LIST) and os.path.exists(PROXY_LIST2):
+    PROXY_LIST = PROXY_LIST2
 if os.path.exists(PROXY_LIST):
     print 'USING PROXIES'
     DOWNLOADER_MIDDLEWARES['product_ranking.randomproxy.RandomProxy'] = 100
