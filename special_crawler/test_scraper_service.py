@@ -632,7 +632,7 @@ class ServiceScraperTest(unittest.TestCase):
         # read input urls from database
         today = date.today()
 
-        self.cur.execute("delete from console_reportresult where report_date = '%s' and website='%'" % (today.isoformat(), website))
+        self.cur.execute("delete from console_reportresult where report_date='%s' and website='%s'" % (today.isoformat(), website))
         self.con.commit()
 
         self.cur.execute("select url_list from console_massurlimport")
