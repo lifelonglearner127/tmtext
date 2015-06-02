@@ -49,6 +49,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # TODO: command-line args for num of jobs and branch name
-        N = 300
+        N = 170
         for i in xrange(N):
             _create_job(i)
