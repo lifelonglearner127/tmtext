@@ -7,17 +7,11 @@ import random
 from django.core.management.base import BaseCommand, CommandError
 
 CWD = os.path.dirname(os.path.abspath(__file__))
-#sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 
-from gui.models import Job, generate_spider_choices
-
-
-sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
-                             'deploy', 'sqs_ranking_spiders'))
-from add_task_to_sqs import put_msg_to_sqs
+from gui.models import Job
 
 
-def _create_job(i, all_spiders=False):
+def _create_job(i):
     search_terms = [
         'laptop',
         'water',
@@ -39,9 +33,6 @@ def _create_job(i, all_spiders=False):
             'amazoncouk_products',
             'amazonde_products'
     ]
-    if all_spiders:
-        choices = generate_spider_choices()
-        sites = [choice[0] for choice in choices]
     Job.objects.create(
         name='bulk created task ' + str(i),
         spider=random.choice(sites),
