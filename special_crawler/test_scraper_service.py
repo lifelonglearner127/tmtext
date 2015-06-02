@@ -647,7 +647,7 @@ class ServiceScraperTest(unittest.TestCase):
         urls = [urls[random.randrange(len(urls))] for item in range(10)]
         urls = list(set(urls))
 
-        print "Randomly selected urls of %s:" % website
+        print "\nRandomly selected urls of %s:" % website
         print '\n' . join(urls)
 
         print "Loading urls..."
@@ -687,7 +687,7 @@ class ServiceScraperTest(unittest.TestCase):
                 '''
         self.cur.execute("select url from console_urlsample where not_a_product=0 and website = '%s'" % website)
         urls = self.cur.fetchall()
-        urls = [urls[random.randrange(len(urls))] for item in range(10)]
+        urls = [urls[random.randrange(len(urls))]["url"] for item in range(10)]
         urls = list(set(urls))
 
         nTestUrlCounts = 0
