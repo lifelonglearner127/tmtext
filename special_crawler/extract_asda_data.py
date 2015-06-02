@@ -172,7 +172,7 @@ class AsdaScraper(Scraper):
             short_description += ('<p class="p-text">' + self.product_json["items"][0]["productDetails"]["furtherDesc"])\
                                   + '</p>'
 
-        if len(short_description) > 0:
+        if short_description.strip():
             return short_description
 
         return None
@@ -228,7 +228,10 @@ class AsdaScraper(Scraper):
         long_description += product_information[start_index:end_index]
         '''
 
-        return long_description
+        if long_description.strip():
+            return long_description
+
+        return None
 
     def _ingredients(self):
         if not self.product_json:
