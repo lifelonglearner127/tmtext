@@ -51,7 +51,7 @@ not_product_urls = "\n\nFollowing product urls are invalid.\n" + not_product_url
 print not_product_urls
 
 fromaddr = "jenkins@contentanalyticsinc.com"
-toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com"] # must be a list
+toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "adriana@contentanalyticsinc.com"] # must be a list
 subject = "Daily Notification from Regression Service : %s" % today.isoformat()
 msg = """\
 From: %s
