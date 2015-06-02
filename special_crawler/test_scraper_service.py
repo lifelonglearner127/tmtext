@@ -554,10 +554,10 @@ class JsonDiff:
 class ServiceScraperTest(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
+        super(ServiceScraperTest, self).__init__(*args, **kwargs)
+
         if specified_website not in args[0]:
             return
-
-        super(ServiceScraperTest, self).__init__(*args, **kwargs)
 
         is_valid_param = False
 
