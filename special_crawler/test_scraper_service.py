@@ -686,6 +686,7 @@ class ServiceScraperTest(unittest.TestCase):
                     self.con.commit()
                 '''
         self.cur.execute("select url from console_urlsample where not_a_product=0 and website = '%s'" % website)
+        print self.urls_by_scraper[website]
         self.urls_by_scraper[website] = self.cur.fetchall()
 #        urls = [urls[random.randrange(len(urls))]["url"] for item in range(test_url_number)]
 #        urls = list(set(urls))
