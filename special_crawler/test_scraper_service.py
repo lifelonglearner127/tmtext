@@ -5,7 +5,6 @@ import json
 import re
 import copy
 import random
-from time import gmtime, strftime
 import psycopg2
 import psycopg2.extras
 import requests
@@ -576,10 +575,16 @@ class ServiceScraperTest(unittest.TestCase):
 
         # read input urls from database
         try:
+            today = date.today()
+
             self.con = None
 ##            self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
             self.con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
             self.cur = self.con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            self.cur.execute("delete from console_urlsample where qualified_date = '%s'" % today.isoformat())
+            self.con.commit()
+            self.cur.execute("delete from console_reportresult where report_date = '%s'" % today.isoformat())
+            self.con.commit()
             self.cur.execute("select url_list from console_massurlimport")
 
             self.urls = []
@@ -599,6 +604,7 @@ class ServiceScraperTest(unittest.TestCase):
             for url in self.urls:
                 url = url.strip()
                 self.cur.execute("delete from console_urlsample where url='%s'" % url)
+                self.con.commit()
 
                 isFound = False
 
@@ -612,8 +618,6 @@ class ServiceScraperTest(unittest.TestCase):
                     sample_json = requests.get(base%(urllib.quote(url))).text
                     sample_json = json.loads(sample_json)
                     sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
-
-                    today = date.today()
 
                     if "sellers" not in sample_json.keys():
                         not_a_product = 1
