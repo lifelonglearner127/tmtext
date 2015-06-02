@@ -630,76 +630,73 @@ class ServiceScraperTest(unittest.TestCase):
 
     def initialize_scraper(self, website):
         # read input urls from database
-        try:
-            today = date.today()
+        today = date.today()
 
-            self.cur.execute("delete from console_reportresult where report_date = '%s' and website='%'" % (today.isoformat(), website))
-            self.con.commit()
+        self.cur.execute("delete from console_reportresult where report_date = '%s' and website='%'" % (today.isoformat(), website))
+        self.con.commit()
 
-            self.cur.execute("select url_list from console_massurlimport")
+        self.cur.execute("select url_list from console_massurlimport")
 
-            urls = []
+        urls = []
 
-            for row in self.cur:
-                urls.extend(row[0].splitlines())
+        for row in self.cur:
+            urls.extend(row[0].splitlines())
 
-            urls = list(set(urls))
-            urls = filter(lambda x: website + ".com" in x, urls)
-            urls = [urls[random.randrange(len(urls))] for item in range(10)]
-            urls = list(set(urls))
+        urls = list(set(urls))
+        urls = filter(lambda x: website + ".com" in x, urls)
+        urls = [urls[random.randrange(len(urls))] for item in range(10)]
+        urls = list(set(urls))
 
-            print "Randomly selected urls of %s:" % website
-            print '\n' . join(urls)
+        print "Randomly selected urls of %s:" % website
+        print '\n' . join(urls)
 
-            print "Loading urls..."
+        print "Loading urls..."
 
-            for url in urls:
-                url = url.strip()
+        for url in urls:
+            url = url.strip()
 
-                if website in SUPPORTED_SITES:
-                    base = "http://localhost/get_data?url=%s"
-                    sample_json = requests.get(base%(urllib.quote(url))).text
-                    sample_json = json.loads(sample_json)
-                    sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
+            if website in SUPPORTED_SITES:
+                base = "http://localhost/get_data?url=%s"
+                sample_json = requests.get(base%(urllib.quote(url))).text
+                sample_json = json.loads(sample_json)
+                sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
 
-                    print url
+                print url
 
-                    if "sellers" not in sample_json.keys():
-                        not_a_product = 1
-                        sample_json_str = ''
-                        print "This product url is invalid.\n"
-                    else:
-                        not_a_product = 0
-                        sample_json_str = sample_json_str
+                if "sellers" not in sample_json.keys():
+                    not_a_product = 1
+                    sample_json_str = ''
+                    print "This product url is invalid.\n"
+                else:
+                    not_a_product = 0
+                    sample_json_str = sample_json_str
 
-                    self.cur.execute("select not_a_product from console_urlsample where url='%s'" % url)
-                    row = self.cur.fetchall()
+                self.cur.execute("select not_a_product from console_urlsample where url='%s'" % url)
+                row = self.cur.fetchall()
 
-                    if not row:
-                        self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
-                                         " values('%s', '%s', $$%s$$, '%s', %d)"
-                                         % (url, website, sample_json_str, today.isoformat(), not_a_product))
-                        self.con.commit()
-                    '''
-                    elif not_a_product == 1 and row[0]["not_a_product"] == 0:
-                        self.cur.execute("update console_urlsample set json=$$%s$$, qualified_date='%s', not_a_product='%d' where url='%s'"
-                                         % (sample_json_str, today.isoformat(), not_a_product, url))
-                        self.con.commit()
-                    '''
-            self.cur.execute("select url from console_urlsample where not_a_product=0 and website = '%s'" % website)
-            urls = self.cur.fetchall()
-            urls = [urls[random.randrange(len(urls))] for item in range(10)]
-            urls = list(set(urls))
+                if not row:
+                    self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
+                                     " values('%s', '%s', $$%s$$, '%s', %d)"
+                                     % (url, website, sample_json_str, today.isoformat(), not_a_product))
+                    self.con.commit()
+                '''
+                elif not_a_product == 1 and row[0]["not_a_product"] == 0:
+                    self.cur.execute("update console_urlsample set json=$$%s$$, qualified_date='%s', not_a_product='%d' where url='%s'"
+                                     % (sample_json_str, today.isoformat(), not_a_product, url))
+                    self.con.commit()
+                '''
+        self.cur.execute("select url from console_urlsample where not_a_product=0 and website = '%s'" % website)
+        urls = self.cur.fetchall()
+        urls = [urls[random.randrange(len(urls))] for item in range(10)]
+        urls = list(set(urls))
 
-            nTestUrlCounts = 0
+        nTestUrlCounts = 0
 
-            self.urls_by_scraper[website] = urls
-            nTestUrlCounts = len(urls)
+        self.urls_by_scraper[website] = urls
+        nTestUrlCounts = len(urls)
 
-            print "%s - number of test urls : %d" % (website, nTestUrlCounts)
+        print "%s - number of test urls : %d" % (website, nTestUrlCounts)
 
-        except Exception, e:
-            print e
 
     # test all keys are in the response for simple (all-data) request for bhinneka
     # (using template function)
