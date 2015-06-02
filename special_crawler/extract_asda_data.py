@@ -217,6 +217,7 @@ class AsdaScraper(Scraper):
             long_description += ('<p class="p-text">' + self.product_json["items"][0]["productDetails"]["preparationUsage"])\
                                   + '</p>'
 
+        '''
         product_information_url = "http://groceries.asda.com/asda-webstore/pages/product_details/view1.shtml?A521198.RWD"
         product_information = urllib.urlopen(product_information_url).read()
         start_index = product_information.find('<h4 class="sect-title">Product Information</h4><p class="p-text">')
@@ -225,6 +226,7 @@ class AsdaScraper(Scraper):
 
         long_description += '<h4 class="sect-title">Product Information</h4>'
         long_description += product_information[start_index:end_index]
+        '''
 
         return long_description
 
