@@ -693,7 +693,7 @@ class ServiceScraperTest(unittest.TestCase):
         nTestUrlCounts = 0
 
         self.urls_by_scraper[website] = [url[0] for url in urls]
-        nTestUrlCounts = len(urls)
+        nTestUrlCounts = len(self.urls_by_scraper[website])
 
         print "%s - number of test urls : %d" % (website, nTestUrlCounts)
 
