@@ -556,9 +556,6 @@ class ServiceScraperTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(ServiceScraperTest, self).__init__(*args, **kwargs)
 
-        if specified_website not in args[0]:
-            return
-
         is_valid_param = False
 
         if specified_website != "":
@@ -576,86 +573,12 @@ class ServiceScraperTest(unittest.TestCase):
                 print "\n"
                 exit(1)
 
-        # read input urls from database
         try:
-            today = date.today()
-
             self.con = None
-##            self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
+#            self.con = psycopg2.connect(database='tmtext', user='postgres', password='password', host='127.0.0.1', port='5432')
             self.con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
             self.cur = self.con.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            self.cur.execute("delete from console_urlsample where qualified_date = '%s'" % today.isoformat())
-            self.con.commit()
-            self.cur.execute("delete from console_reportresult where report_date = '%s'" % today.isoformat())
-            self.con.commit()
-            self.cur.execute("select url_list from console_massurlimport")
-
-            self.urls = []
-
-            for row in self.cur:
-                self.urls.extend(row[0].splitlines())
-
-            self.urls = list(set(self.urls))
-            self.urls = [self.urls[random.randrange(len(self.urls))] for item in range(10)]
-            self.urls = list(set(self.urls))
-
-            print "Selected random urls from mass imported urls:"
-            print '\n' . join(self.urls)
-
-            print "Loading urls..."
-
-            for url in self.urls:
-                url = url.strip()
-                self.cur.execute("delete from console_urlsample where url='%s'" % url)
-                self.con.commit()
-
-                isFound = False
-
-                for site in SUPPORTED_SITES:
-                    if site + ".com" in url:
-                        isFound = True
-                        break
-
-                if isFound:
-                    base = "http://localhost/get_data?url=%s"
-                    sample_json = requests.get(base%(urllib.quote(url))).text
-                    sample_json = json.loads(sample_json)
-                    sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
-
-                    if "sellers" not in sample_json.keys():
-                        not_a_product = 1
-                        print "This url is not valid.\n"
-                        sample_json_str = ''
-                    else:
-                        not_a_product = 0
-                        sample_json_str = sample_json_str
-
-                    print url
-
-                    self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
-                                     " values('%s', '%s', $$%s$$, '%s', %d)"
-                                     % (url, site, sample_json_str, today.isoformat(), not_a_product))
-                    self.con.commit()
-
-            self.cur.execute("select url from console_urlsample where not_a_product=0 and qualified_date >= '%s'" % today.isoformat())
-            self.urls = self.cur.fetchall()
             self.urls_by_scraper = {}
-
-            nTestUrlCounts = 0
-
-            for site in SUPPORTED_SITES:
-                self.urls_by_scraper[site] = []
-
-                if specified_website != "" and site != specified_website:
-                    continue
-
-                for url in self.urls:
-                    if site + ".com" in url[0] and url[0] not in self.urls_by_scraper[site]:
-                        self.urls_by_scraper[site].append(url[0])
-                        nTestUrlCounts += 1
-
-            print "Total test urls: %d" % nTestUrlCounts
-
         except Exception, e:
             print e
 
@@ -705,99 +628,252 @@ class ServiceScraperTest(unittest.TestCase):
                              % (test_json_str, today.isoformat(), sample_url))
             self.con.commit()
 
+    def initialize_scraper(self, website):
+        # read input urls from database
+        try:
+            today = date.today()
+
+            self.cur.execute("delete from console_reportresult where report_date = '%s' and website='%'" % (today.isoformat(), website))
+            self.con.commit()
+
+            self.cur.execute("select url_list from console_massurlimport")
+
+            urls = []
+
+            for row in self.cur:
+                urls.extend(row[0].splitlines())
+
+            urls = list(set(urls))
+            urls = filter(lambda x: website + ".com" in x, urls)
+            urls = [urls[random.randrange(len(urls))] for item in range(10)]
+            urls = list(set(urls))
+
+            print "Randomly selected urls of %s:" % website
+            print '\n' . join(urls)
+
+            print "Loading urls..."
+
+            for url in urls:
+                url = url.strip()
+
+                if website in SUPPORTED_SITES:
+                    base = "http://localhost/get_data?url=%s"
+                    sample_json = requests.get(base%(urllib.quote(url))).text
+                    sample_json = json.loads(sample_json)
+                    sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
+
+                    print url
+
+                    if "sellers" not in sample_json.keys():
+                        not_a_product = 1
+                        sample_json_str = ''
+                        print "This product url is invalid.\n"
+                    else:
+                        not_a_product = 0
+                        sample_json_str = sample_json_str
+
+                    self.cur.execute("select not_a_product from console_urlsample where url='%s'" % url)
+                    row = self.cur.fetchall()
+
+                    if not row:
+                        self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
+                                         " values('%s', '%s', $$%s$$, '%s', %d)"
+                                         % (url, website, sample_json_str, today.isoformat(), not_a_product))
+                        self.con.commit()
+                    '''
+                    elif not_a_product == 1 and row[0]["not_a_product"] == 0:
+                        self.cur.execute("update console_urlsample set json=$$%s$$, qualified_date='%s', not_a_product='%d' where url='%s'"
+                                         % (sample_json_str, today.isoformat(), not_a_product, url))
+                        self.con.commit()
+                    '''
+            self.cur.execute("select url from console_urlsample where not_a_product=0 and website = '%s'" % website)
+            urls = self.cur.fetchall()
+            urls = [urls[random.randrange(len(urls))] for item in range(10)]
+            urls = list(set(urls))
+
+            nTestUrlCounts = 0
+
+            self.urls_by_scraper[website] = urls
+            nTestUrlCounts = len(urls)
+
+            print "%s - number of test urls : %d" % (website, nTestUrlCounts)
+
+        except Exception, e:
+            print e
+
     # test all keys are in the response for simple (all-data) request for bhinneka
     # (using template function)
     def test_bhinneka(self):
+        if specified_website and specified_website != "bhinneka":
+            return
+
+        self.initialize_scraper(self, "bhinneka")
+
         for url in self.urls_by_scraper["bhinneka"]:
             self._test("bhinneka", url)
 
     # test all keys are in the response for simple (all-data) request for walmart
     # (using template function)
     def test_walmart(self):
+        if specified_website and specified_website != "walmart":
+            return
+
+        self.initialize_scraper(self, "walmart")
+
         for url in self.urls_by_scraper["walmart"]:
             self._test("walmart", url)
 
     # test all keys are in the response for simple (all-data) request for tesco
     # (using template function)
     def test_tesco(self):
+        if specified_website and specified_website != "tesco":
+            return
+
+        self.initialize_scraper(self, "tesco")
+
         for url in self.urls_by_scraper["tesco"]:
             self._test("tesco", url)
 
     # test all keys are in the response for simple (all-data) request for amazon
     # (using template function)
     def test_amazon(self):
+        if specified_website and specified_website != "amazon":
+            return
+
+        self.initialize_scraper(self, "amazon")
+
         for url in self.urls_by_scraper["amazon"]:
             self._test("amazon", url)
 
     # test all keys are in the response for simple (all-data) request for wayfair
     # (using template function)
     def test_wayfair(self):
+        if specified_website and specified_website != "wayfair":
+            return
+
+        self.initialize_scraper(self, "wayfair")
+
         for url in self.urls_by_scraper["wayfair"]:
             self._test("wayfair", url)
 
     # test all keys are in the response for simple (all-data) request for pgestore
     # (using template function)
     def test_pgestore(self):
+        if specified_website and specified_website != "pgestore":
+            return
+
+        self.initialize_scraper(self, "pgestore")
+
         for url in self.urls_by_scraper["pgestore"]:
             self._test("pgestore", url)
 
     # test all keys are in the response for simple (all-data) request for bestbuy
     # (using template function)
     def test_bestbuy(self):
+        if specified_website and specified_website != "bestbuy":
+            return
+
+        self.initialize_scraper(self, "bestbuy")
+
         for url in self.urls_by_scraper["bestbuy"]:
             self._test("bestbuy", url)
 
     # test all keys are in the response for simple (all-data) request for statelinetack
     # (using template function)
     def test_statelinetack(self):
+        if specified_website and specified_website != "statelinestack":
+            return
+
+        self.initialize_scraper(self, "statelinestack")
+
         for url in self.urls_by_scraper["statelinetack"]:
             self._test("statelinetack", url)
 
     # test all keys are in the response for simple (all-data) request for homedepot
     # (using template function)
     def test_homedepot(self):
+        if specified_website and specified_website != "homedepot":
+            return
+
+        self.initialize_scraper(self, "homedepot")
+
         for url in self.urls_by_scraper["homedepot"]:
             self._test("homedepot", url)
 
     # test all keys are in the response for simple (all-data) request for ozon
     # (using template function)
     def test_ozon(self):
+        if specified_website and specified_website != "ozon":
+            return
+
+        self.initialize_scraper(self, "ozon")
+
         for url in self.urls_by_scraper["ozon"]:
             self._test("ozon", url)
 
     # test all keys are in the response for simple (all-data) request for target
     # (using template function)
     def test_target(self):
+        if specified_website and specified_website != "target":
+            return
+
+        self.initialize_scraper(self, "target")
+
         for url in self.urls_by_scraper["target"]:
             self._test("target", url)
 
     # test all keys are in the response for simple (all-data) request for hersheysstore
     # (using template function)
     def test_hersheysstore(self):
+        if specified_website and specified_website != "hersheysstore":
+            return
+
+        self.initialize_scraper(self, "hersheysstore")
+
         for url in self.urls_by_scraper["hersheysstore"]:
             self._test("hersheysstore", url)
 
     # test all keys are in the response for simple (all-data) request for samsclub
     # (using template function)
     def test_samsclub(self):
+        if specified_website and specified_website != "samsclub":
+            return
+
+        self.initialize_scraper(self, "samsclub")
+
         for url in self.urls_by_scraper["samsclub"]:
             self._test("samsclub", url)
 
     # test all keys are in the response for simple (all-data) request for quill
     # (using template function)
     def test_quill(self):
+        if specified_website and specified_website != "quill":
+            return
+
+        self.initialize_scraper(self, "quill")
+
         for url in self.urls_by_scraper["quill"]:
             self._test("quill", url)
 
     # test all keys are in the response for simple (all-data) request for quill
     # (using template function)
     def test_freshamazon(self):
+        if specified_website and specified_website != "freshamazon":
+            return
+
+        self.initialize_scraper(self, "freshamazon")
+
         for url in self.urls_by_scraper["freshamazon"]:
             self._test("freshamazon", url)
 
     # test all keys are in the response for simple (all-data) request for quill
     # (using template function)
     def test_freshdirect(self):
+        if specified_website and specified_website != "freshdirect":
+            return
+
+        self.initialize_scraper(self, "freshdirect")
+
         for url in self.urls_by_scraper["freshdirect"]:
             self._test("freshdirect", url)
 
