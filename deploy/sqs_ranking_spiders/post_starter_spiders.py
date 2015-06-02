@@ -29,11 +29,15 @@ def _install_pip_package(package):
     os.system('%s %s install %s' % (VENV_PYTHON, PIP_PATH, package))
 
 
-def _download_http_proxies(url):
-    import urllib
-    content = urllib.urlopen(url).read()
-    with open('/tmp/http_proxies.txt', 'w') as fh:
-        fh.write(content)
+def _create_http_proxies_list(host='tprox.contentanalyticsinc.com',
+                              fpath='/tmp/http_proxies.txt'):
+    BASE_HTTP_PORT = 22100
+    NUM_PROXIES = 300
+    fh = open(fpath, 'w')
+    for i in xrange(NUM_PROXIES):
+        proxy = 'http://%s:%s' % (host, str(BASE_HTTP_PORT+i))
+        fh.write(proxy+'\n')
+    fh.close()
 
 
 def main():
@@ -44,7 +48,7 @@ def main():
     # add new PIP packages
     _install_pip_package('Pillow')
     _install_pip_package('pytesseract')
-    _download_http_proxies(url='http://dpaste.com/172FAR0.txt')
+    _create_http_proxies_list()
 
 
 if __name__ == '__main__':
