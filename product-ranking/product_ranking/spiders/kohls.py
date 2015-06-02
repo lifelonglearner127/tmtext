@@ -6,7 +6,6 @@ import json
 import string
 import urllib
 
-import requests
 from scrapy.http import Request
 from scrapy import Selector
 
@@ -18,6 +17,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.spiders import cond_set_value
 
+is_empty = lambda x, y="": x[0] if x else y
 
 class KohlsProductsSpider(BaseProductsSpider):
     """ kohls.com product ranking spider.
@@ -56,9 +56,18 @@ class KohlsProductsSpider(BaseProductsSpider):
 
     REVIEW_URL = "http://kohls.ugc.bazaarvoice.com/9025" \
                  "/{product_id}/reviews.djs?format=embeddedhtml"
-    #
-    # RELATED_URL = "http://www.ulta.com/ulta/common/recommendedProduct.jsp?" \
-    #               "schemaVal=item_page.rvi,item_page.horizontal&productId={product_id}"
+
+    RELATED_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js?" \
+                  "a=648c894ab44bc04a&ts=1433226344391&p={product_id}&" \
+                  "pt=%7Citem_page.recs_500x500_tab1%" \
+                  "7Citem_page.recs_500x500_tab2&u=2254019586500985&" \
+                  "s=2y6y2lj2VeejVt_wKaRQXP3H0FjpX3uAJK05OyhmpXH9fO0acBNb!" \
+                  "137196239!1433224763639&cts=http%3A%2F%2Fwww.kohls.com&" \
+                  "flv=17.0.0&pref=http%3A%2F%2Fwww.kohls.com%2Fsearch.jsp%" \
+                  "3Fsearch%3Diphone%26submit-search%3Dweb-regular&" \
+                  "rcs=eF4Ny7ERgDAIBdAmlbtwxwcS4gbOkSB3Fnbq_KZ_" \
+                  "r5R3Hr2yextBMfdBluokiEGnVwVqprBs9_dcYQYmmCp0Jeu8ZCNAVX69phHt&" \
+                  "l=1"
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
@@ -149,105 +158,103 @@ class KohlsProductsSpider(BaseProductsSpider):
         product['upc'] = upc_codes
 
         price = response.xpath(
-            '//div[@class="multiple-price"]/div[2]/text()[normalize-space()]'
+            '//div[@class="multiple-price"]/div[2]/text()[normalize-space()] |'
+            '//div[@class="original original-reg"]/text()[normalize-space()] |'
+            '//span[@class="price_ammount"]/text()[normalize-space()] |'
+            '//div[@class="sale"]/text()[normalize-space()]'
         ).re("\d+.?\d{0,2}")
 
         if price:
             product['price'] = Price(price=price[0], priceCurrency='USD')
         else:
             product['price'] = Price(price='0.0', priceCurrency='USD')
-
-
-        # in_store_only = response.xpath(
-        #     '//div[@id="productBadge"]/img/@data-blzsrc[contains(.,"instore")]')
-        #
-        # if in_store_only:
-        #     product['is_in_store_only'] = True
-        # else:
-        #     product['is_in_store_only'] = False
-
-
-    def _parse_price(self, response):
-        product = response.meta['product']
-        product_id = response.meta['product_id']
-        price = re.findall("\d+.?\d{0,2}", response.body_as_unicode())
-        if price:
-            if len(price) == 1:
-                price = float(price[0].replace(',', '.'))
-                product['price'] = Price(price=price, priceCurrency='USD')
-            else:
-                price = float(price[-1].replace(',', '.'))
-                product['price'] = Price(price=price, priceCurrency='USD')
+        product['marketplace'] = []
+        marketplace_name = is_empty(response.xpath(
+            '//a[@id="pdp_vendor"]/text()').extract())
+        if marketplace_name:
+            marketplace = {
+                'name': marketplace_name,
+                'price': product['price']
+            }
         else:
-            product['price'] = Price(price='0.0', priceCurrency='USD')
+            marketplace = {
+                'name': 'Kohls',
+                'price': product['price']
+            }
+        product['marketplace'].append(marketplace)
 
-        new_meta = response.meta.copy()
-        new_meta['product'] = product
-        return Request(url=self.RELATED_URL.format(product_id=product_id),
-                       meta=new_meta,
-                       callback=self._parse_related_products)
+
+
+
+        rel_key = is_empty(response.xpath(
+            '//div[@class="br-found-heading"]/text()').extract()
+        )
+        related = []
+        related_products = {}
+        for sel in response.xpath(
+                '//div[@class="br-sf-widget-merchant-title"]/a'
+        ):
+            related.append(
+                RelatedProduct(
+                    title=is_empty(sel.xpath('text()').extract()),
+                    url=is_empty(sel.xpath('@href').extract())
+                ))
+        if len(related) > 0:
+            related_products[rel_key] = related
+
+            product['related_products'] = related_products
 
     def _parse_related_products(self, response):
         product = response.meta['product']
         product_id = response.meta['product_id']
-        related_products = {}
-        nodes = response.xpath('//div[@class="liquid"]')
-        keys = response.xpath('//h3[@id="title"]/text()').extract()
-        for i in range(0, len(nodes)):
-            key = keys[i].strip()
-            titles = nodes[i].xpath(
-                './/p[@class="prod-desc"]/a/text()'
-            ).extract()
-            links = nodes[i].xpath(
-                './/p[@class="prod-desc"]/a/@href'
-            ).extract()
-            products = []
-            for j in range(0, len(titles)):
-                try:
-                    url = requests.get(links[j], timeout=5).url or links[j]
-                    products.append(RelatedProduct(titles[j].strip(), url))
-                except Exception:
-                    self.log("Can't get related product!!!")
-            related_products[key] = products
-        product['related_products'] = related_products
+        text = re.findall('html:\s?\'(.*)\'', response.body_as_unicode())
+        if text:
+            html = Selector(text=text[0])
+            key = is_empty(html.xpath(
+                '//div[@id="rr0"]/div/div/text()[normalize-space()]'
+            ).extract())
+            related = []
+            related_products = {}
+            for sel in html.xpath('//div[@id="rr0"]/div/div/a'):
+                url = is_empty(sel.xpath('@href').extract())
+                if url:
+                    related.append(
+                        RelatedProduct(
+                            title=unicode.decode(is_empty(sel.xpath(
+                                './div/p/text()').extract())),
+                            url=urllib.unquote('http'+url.split('http')[-1])
+                        ))
 
-        initial_response = response.meta['initial_response']
-        total = initial_response.xpath(
-            '//span[@class="count"]/text()'
-        ).extract()
-        if len(total) == 0:
-            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
-            return product
-        else:
-            total = int(total[0])
-        if total == 0:
-            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
-            return product
-        new_meta = response.meta.copy()
-        new_meta['product'] = product
-        new_meta['total_stars'] = total
-        code = self._get_product_code(product_id)
-        return Request(self.REVIEW_URL.format(code=code,
-                                              product_id=product_id),
-                       meta=new_meta, callback=self._parse_reviews)
+            if key:
+                if 'related_products' in product.keys():
+                    product['related_products'][key] = related
+                else:
+                    related_products[key] = related
+                    product['related_products'] = related_products
 
-    def _get_product_code(self, product_id):
-        # override js function
-        cr = 0
-        for i in range(0, len(product_id)):
-            cp = ord(product_id[i])
-            cp = cp * abs(255-cp)
-            cr += cp
-        cr %= 1023
-        cr = str(cr)
-        ct = 4
-        for i in range(0, ct - len(cr)):
-            cr = '0' + cr
-        cr = cr[0:2] + "/" + cr[2:4]
-        return cr
+            key = is_empty(html.xpath(
+                '//div[@id="rr1"]/div/div/text()[normalize-space()]'
+            ).extract())
+            related = []
+            for sel in html.xpath('//div[@id="rr1"]/div/div/a'):
+                url = is_empty(sel.xpath('@href').extract())
+                if url:
+                    related.append(
+                        RelatedProduct(
+                            title=unicode.decode(is_empty(sel.xpath(
+                                './div/p/text()').extract())),
+                            url=urllib.unquote('http'+url.split('http')[-1])
+                        ))
+            if key and key not in product['related_products'].keys():
+                product['related_products'][key] = related
+            elif key in product['related_products'].keys():
+                product['related_products'][key] += related
+
+        return product
 
     def _parse_reviews(self, response):
         product = response.meta['product']
+        product_id = response.meta['product_id']
         text = response.body_as_unicode().encode('utf-8')
         if response.status == 200:
             x = re.search(
@@ -307,7 +314,11 @@ class KohlsProductsSpider(BaseProductsSpider):
                     cond_set_value(product, 'buyer_reviews', reviews)
         if 'buyer_reviews' not in product:
             cond_set_value(product, 'buyer_reviews', 0)
-        return product
+        new_meta = response.meta.copy()
+        new_meta['product'] = product
+        return Request(self.RELATED_URL.format(product_id=product_id),
+                       meta=new_meta, callback=self._parse_related_products,
+                       dont_filter=True)
 
     def _scrape_product_links(self, response):
         links = response.xpath(
