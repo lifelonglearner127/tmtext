@@ -656,25 +656,25 @@ class ServiceScraperTest(unittest.TestCase):
             url = url.strip()
 
             if website in SUPPORTED_SITES:
-                base = "http://localhost/get_data?url=%s"
-                sample_json = requests.get(base%(urllib.quote(url))).text
-                sample_json = json.loads(sample_json)
-                sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
-
-                print url
-
-                if "sellers" not in sample_json.keys():
-                    not_a_product = 1
-                    sample_json_str = ''
-                    print "This product url is invalid.\n"
-                else:
-                    not_a_product = 0
-                    sample_json_str = sample_json_str
-
                 self.cur.execute("select not_a_product from console_urlsample where url='%s'" % url)
                 row = self.cur.fetchall()
 
                 if not row:
+                    base = "http://localhost/get_data?url=%s"
+                    sample_json = requests.get(base%(urllib.quote(url))).text
+                    sample_json = json.loads(sample_json)
+                    sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
+
+                    print url
+
+                    if "sellers" not in sample_json.keys():
+                        not_a_product = 1
+                        sample_json_str = ''
+                        print "This product url is invalid.\n"
+                    else:
+                        not_a_product = 0
+                        sample_json_str = sample_json_str
+
                     self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
                                      " values('%s', '%s', $$%s$$, '%s', %d)"
                                      % (url, website, sample_json_str, today.isoformat(), not_a_product))
