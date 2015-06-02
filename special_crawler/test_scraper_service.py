@@ -642,7 +642,9 @@ class ServiceScraperTest(unittest.TestCase):
         for row in self.cur:
             urls.extend(row[0].splitlines())
 
+        print len(urls)
         urls = list(set(urls))
+        print len(urls)
         urls = filter(lambda x: website + ".com" in x, urls)
 #        urls = [urls[random.randrange(len(urls))] for item in range(test_url_number)]
 #        urls = list(set(urls))
