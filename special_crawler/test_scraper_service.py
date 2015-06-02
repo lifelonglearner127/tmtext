@@ -4,6 +4,8 @@ import unittest
 import json
 import re
 import copy
+import random
+from time import gmtime, strftime
 import psycopg2
 import psycopg2.extras
 import requests
@@ -586,48 +588,52 @@ class ServiceScraperTest(unittest.TestCase):
                 self.urls.extend(row[0].splitlines())
 
             self.urls = list(set(self.urls))
+            self.urls = [self.urls[random.randrange(len(self.urls))] for item in range(10)]
+            self.urls = list(set(self.urls))
+
+            print "Selected random urls from mass imported urls:"
+            print '\n' . join(self.urls)
 
             print "Loading urls..."
 
             for url in self.urls:
                 url = url.strip()
-                self.cur.execute("select * from console_urlsample where url='%s'" % url)
-                row = self.cur.fetchall()
+                self.cur.execute("delete from console_urlsample where url='%s'" % url)
 
-                if not row:
-                    isFound = False
+                isFound = False
 
-                    for site in SUPPORTED_SITES:
-                        if site + ".com" in url:
-                            isFound = True
-                            break
+                for site in SUPPORTED_SITES:
+                    if site + ".com" in url:
+                        isFound = True
+                        break
 
-                    if isFound:
-                        base = "http://localhost/get_data?url=%s"
-                        sample_json = requests.get(base%(urllib.quote(url))).text
-                        sample_json = json.loads(sample_json)
-                        sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
+                if isFound:
+                    base = "http://localhost/get_data?url=%s"
+                    sample_json = requests.get(base%(urllib.quote(url))).text
+                    sample_json = json.loads(sample_json)
+                    sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
 
-                        today = date.today()
+                    today = date.today()
 
-                        if "sellers" not in sample_json.keys():
-                            not_a_product = 1
-                            print "This url is not valid.\n"
-                            sample_json_str = ''
-                        else:
-                            not_a_product = 0
-                            sample_json_str = sample_json_str
+                    if "sellers" not in sample_json.keys():
+                        not_a_product = 1
+                        print "This url is not valid.\n"
+                        sample_json_str = ''
+                    else:
+                        not_a_product = 0
+                        sample_json_str = sample_json_str
 
-                        print url
+                    print url
 
-                        self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
-                                         " values('%s', '%s', $$%s$$, '%s', %d)"
-                                         % (url, site, sample_json_str, today.isoformat(), not_a_product))
-                        self.con.commit()
+                    self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
+                                     " values('%s', '%s', $$%s$$, '%s', %d)"
+                                     % (url, site, sample_json_str, today.isoformat(), not_a_product))
+                    self.con.commit()
 
-            self.cur.execute("select url from console_urlsample where not_a_product=0")
+            self.cur.execute("select url from console_urlsample where not_a_product=0 and qualified_date >= '%s'" % strftime("%Y-%m-%d", gmtime()))
             self.urls = self.cur.fetchall()
             self.urls_by_scraper = {}
+
             nTestUrlCounts = 0
 
             for site in SUPPORTED_SITES:

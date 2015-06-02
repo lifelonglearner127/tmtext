@@ -9,15 +9,17 @@ import psycopg2.extras
 import requests
 import sys
 import urllib
+from time import gmtime, strftime
 from datetime import date
 import xml.etree.ElementTree as ET
+
 
 
 con = None
 con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
 cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-sql_changed_products = "select sample_url from console_reportresult where changes_in_structure > 0 and report_date >= '2015-06-01'"
+sql_changed_products = "select sample_url from console_reportresult where changes_in_structure > 0 and report_date >= '%s'" % strftime("%Y-%m-%d", gmtime())
 
 cur.execute(sql_changed_products)
 rows = cur.fetchall()
@@ -32,7 +34,7 @@ changed_product_urls = "\n" .join(urls)
 changed_product_urls = "Following product urls are needed to check.\n" + changed_product_urls
 print changed_product_urls
 
-sql_not_products = "select url from console_urlsample where not_a_product = 1"
+sql_not_products = "select url from console_urlsample where not_a_product = 1 and qualified_date >= '%s'" % strftime("%Y-%m-%d", gmtime())
 
 cur.execute(sql_not_products)
 rows = cur.fetchall()
@@ -49,7 +51,7 @@ print not_product_urls
 
 fromaddr = "jenkins@contentanalyticsinc.com"
 toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com"] # must be a list
-subject = "Website changes notification from regression service"
+subject = "Daily Notification from Regression Service : %s" % strftime("%Y-%m-%d", gmtime())
 msg = """\
 From: %s
 To: %s
