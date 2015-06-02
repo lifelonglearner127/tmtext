@@ -881,7 +881,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         specified_website = sys.argv[1]
 
-    test_url_number = 50
+    test_url_number = 400
 
     del sys.argv[1:]
 
