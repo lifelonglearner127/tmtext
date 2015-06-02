@@ -640,6 +640,7 @@ class ServiceScraperTest(unittest.TestCase):
         urls = []
 
         for row in self.cur:
+            print len(row)
             urls.extend(row[0].splitlines())
 
         print len(urls)
