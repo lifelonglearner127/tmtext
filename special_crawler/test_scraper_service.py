@@ -707,7 +707,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "bhinneka":
             return
 
-        self.initialize_scraper(self, "bhinneka")
+        self.initialize_scraper("bhinneka")
 
         for url in self.urls_by_scraper["bhinneka"]:
             self._test("bhinneka", url)
@@ -718,7 +718,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "walmart":
             return
 
-        self.initialize_scraper(self, "walmart")
+        self.initialize_scraper("walmart")
 
         for url in self.urls_by_scraper["walmart"]:
             self._test("walmart", url)
@@ -729,7 +729,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "tesco":
             return
 
-        self.initialize_scraper(self, "tesco")
+        self.initialize_scraper("tesco")
 
         for url in self.urls_by_scraper["tesco"]:
             self._test("tesco", url)
@@ -740,7 +740,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "amazon":
             return
 
-        self.initialize_scraper(self, "amazon")
+        self.initialize_scraper("amazon")
 
         for url in self.urls_by_scraper["amazon"]:
             self._test("amazon", url)
@@ -751,7 +751,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "wayfair":
             return
 
-        self.initialize_scraper(self, "wayfair")
+        self.initialize_scraper("wayfair")
 
         for url in self.urls_by_scraper["wayfair"]:
             self._test("wayfair", url)
@@ -762,7 +762,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "pgestore":
             return
 
-        self.initialize_scraper(self, "pgestore")
+        self.initialize_scraper("pgestore")
 
         for url in self.urls_by_scraper["pgestore"]:
             self._test("pgestore", url)
@@ -773,7 +773,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "bestbuy":
             return
 
-        self.initialize_scraper(self, "bestbuy")
+        self.initialize_scraper("bestbuy")
 
         for url in self.urls_by_scraper["bestbuy"]:
             self._test("bestbuy", url)
@@ -784,7 +784,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "statelinestack":
             return
 
-        self.initialize_scraper(self, "statelinestack")
+        self.initialize_scraper("statelinestack")
 
         for url in self.urls_by_scraper["statelinetack"]:
             self._test("statelinetack", url)
@@ -795,7 +795,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "homedepot":
             return
 
-        self.initialize_scraper(self, "homedepot")
+        self.initialize_scraper("homedepot")
 
         for url in self.urls_by_scraper["homedepot"]:
             self._test("homedepot", url)
@@ -806,7 +806,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "ozon":
             return
 
-        self.initialize_scraper(self, "ozon")
+        self.initialize_scraper("ozon")
 
         for url in self.urls_by_scraper["ozon"]:
             self._test("ozon", url)
@@ -817,7 +817,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "target":
             return
 
-        self.initialize_scraper(self, "target")
+        self.initialize_scraper("target")
 
         for url in self.urls_by_scraper["target"]:
             self._test("target", url)
@@ -828,7 +828,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "hersheysstore":
             return
 
-        self.initialize_scraper(self, "hersheysstore")
+        self.initialize_scraper("hersheysstore")
 
         for url in self.urls_by_scraper["hersheysstore"]:
             self._test("hersheysstore", url)
@@ -839,7 +839,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "samsclub":
             return
 
-        self.initialize_scraper(self, "samsclub")
+        self.initialize_scraper("samsclub")
 
         for url in self.urls_by_scraper["samsclub"]:
             self._test("samsclub", url)
@@ -850,7 +850,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "quill":
             return
 
-        self.initialize_scraper(self, "quill")
+        self.initialize_scraper("quill")
 
         for url in self.urls_by_scraper["quill"]:
             self._test("quill", url)
@@ -861,7 +861,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "freshamazon":
             return
 
-        self.initialize_scraper(self, "freshamazon")
+        self.initialize_scraper("freshamazon")
 
         for url in self.urls_by_scraper["freshamazon"]:
             self._test("freshamazon", url)
@@ -872,7 +872,7 @@ class ServiceScraperTest(unittest.TestCase):
         if specified_website and specified_website != "freshdirect":
             return
 
-        self.initialize_scraper(self, "freshdirect")
+        self.initialize_scraper("freshdirect")
 
         for url in self.urls_by_scraper["freshdirect"]:
             self._test("freshdirect", url)
