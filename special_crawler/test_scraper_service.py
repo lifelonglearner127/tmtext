@@ -556,6 +556,9 @@ class ServiceScraperTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(ServiceScraperTest, self).__init__(*args, **kwargs)
 
+        print args
+        print kwargs
+
         is_valid_param = False
 
         if specified_website != "":
@@ -634,7 +637,7 @@ class ServiceScraperTest(unittest.TestCase):
                                      % (url, site, sample_json_str, today.isoformat(), not_a_product))
                     self.con.commit()
 
-            self.cur.execute("select url from console_urlsample where not_a_product=0 and qualified_date >= '%s'" % strftime("%Y-%m-%d", gmtime()))
+            self.cur.execute("select url from console_urlsample where not_a_product=0 and qualified_date >= '%s'" % today.isoformat())
             self.urls = self.cur.fetchall()
             self.urls_by_scraper = {}
 
