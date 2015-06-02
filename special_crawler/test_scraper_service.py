@@ -644,8 +644,8 @@ class ServiceScraperTest(unittest.TestCase):
 
         urls = list(set(urls))
         urls = filter(lambda x: website + ".com" in x, urls)
-        urls = [urls[random.randrange(len(urls))] for item in range(test_url_number)]
-        urls = list(set(urls))
+#        urls = [urls[random.randrange(len(urls))] for item in range(test_url_number)]
+#        urls = list(set(urls))
 
         print "\nRandomly selected urls of %s:" % website
         print '\n' . join(urls)
@@ -687,8 +687,8 @@ class ServiceScraperTest(unittest.TestCase):
                 '''
         self.cur.execute("select url from console_urlsample where not_a_product=0 and website = '%s'" % website)
         urls = self.cur.fetchall()
-        urls = [urls[random.randrange(len(urls))]["url"] for item in range(test_url_number)]
-        urls = list(set(urls))
+#        urls = [urls[random.randrange(len(urls))]["url"] for item in range(test_url_number)]
+#        urls = list(set(urls))
 
         nTestUrlCounts = 0
 
