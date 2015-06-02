@@ -91,6 +91,22 @@ DOWNLOADER_MIDDLEWARES = {
 # http://username:password@host2:port
 # http://host3:port
 # ...
+
+
+# TODO: removeme
+def _create_http_proxies_list(fpath, host='tprox.contentanalyticsinc.com'):
+    BASE_HTTP_PORT = 22100
+    NUM_PROXIES = 300
+    fh = open(fpath, 'w')
+    for i in xrange(NUM_PROXIES):
+        proxy = 'http://%s:%s' % (host, str(BASE_HTTP_PORT+i))
+        fh.write(proxy+'\n')
+    fh.close()
+http_proxy_path = '/tmp/http_proxies.txt'
+if not os.path.exists(http_proxy_path):
+    _create_http_proxies_list(fpath=http_proxy_path)
+
+
 PROXY_LIST = os.path.join(CWD, 'http_proxies.txt')
 PROXY_LIST2 = '/tmp/http_proxies.txt'
 if not os.path.exists(PROXY_LIST) and os.path.exists(PROXY_LIST2):
