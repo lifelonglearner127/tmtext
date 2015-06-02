@@ -21,7 +21,7 @@ ITEM_PIPELINES = {
 #USER_AGENT = 'product_ranking (+http://www.yourdomain.com)'
 
 # Delay between requests not to be blocked (seconds).
-DOWNLOAD_DELAY = 0.5
+DOWNLOAD_DELAY = 0.1
 
 #AmazonFresh mapping locations and market place id
 AMAZONFRESH_LOCATION = {
@@ -73,3 +73,26 @@ try:
     from settings_local import *
 except ImportError:
     pass
+
+# RANDOM PROXY SETTINGS
+# Retry many times since proxies often fail
+RETRY_TIMES = 15
+# Retry on most error codes since proxies fail for different reasons
+RETRY_HTTP_CODES = [500, 503, 504, 400, 403, 404, 408]
+
+DOWNLOADER_MIDDLEWARES = {
+    'scrapy.contrib.downloadermiddleware.retry.RetryMiddleware': 90,
+    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+}
+
+# Proxy list containing entries like
+# http://host1:port
+# http://username:password@host2:port
+# http://host3:port
+# ...
+PROXY_LIST = os.path.join(CWD, 'http_proxies.txt')
+if os.path.exists(PROXY_LIST):
+    print 'USING PROXIES'
+    DOWNLOADER_MIDDLEWARES['product_ranking.randomproxy.RandomProxy'] = 100
+else:
+    print 'NOT USING PROXIES'
