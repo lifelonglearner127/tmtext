@@ -47,6 +47,7 @@ def main():
     # add new PIP packages
     _install_pip_package('Pillow')
     _install_pip_package('pytesseract')
+    _install_pip_package('requests')
 
 
 if __name__ == '__main__':
