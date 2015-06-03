@@ -20,35 +20,57 @@ cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 today = date.today()
 
-sql_changed_products = "select sample_url from console_reportresult where changes_in_structure > 0 and report_date = '%s'" % today.isoformat()
+sql_changed_products = "select sample_url, website, changes_in_structure from console_reportresult where report_date = '%s'" % today.isoformat()
 
 cur.execute(sql_changed_products)
 rows = cur.fetchall()
+email_content = ""
+
 urls = []
+website_list = []
 
 for row in rows:
-    urls.append(row["sample_url"])
+    if row["website"] not in website_list:
+        website_list.append(row["website"])
 
-urls = list(set(urls))
-changed_product_urls = "\n" .join(urls)
+for website in website_list:
+    number_of_reported_products = 0
 
-changed_product_urls = "Following product urls are needed to check.\n" + changed_product_urls
-print changed_product_urls
+    for row in rows:
+        if row["website"] == website:
+            number_of_reported_products = number_of_reported_products + 1
 
-sql_not_products = "select url from console_urlsample where not_a_product = 1 and qualified_date = '%s'" % today.isoformat()
+        if row["website"] == website and row["changes_in_structure"] > 0:
+            urls.append(row["sample_url"])
 
-cur.execute(sql_not_products)
-rows = cur.fetchall()
-urls = []
+    urls = list(set(urls))
+    number_of_changed_products = len(urls)
 
-for row in rows:
-    urls.append(row["url"])
+    changed_product_urls = "\n" .join(urls)
 
-urls = list(set(urls))
-not_product_urls = "\n" .join(urls)
+    changed_product_urls = "Following product urls are needed to check.\n" + changed_product_urls
+    print changed_product_urls
 
-not_product_urls = "\n\nFollowing product urls are invalid.\n" + not_product_urls
-print not_product_urls
+    sql_not_products = "select url from console_urlsample where not_a_product = 1 and qualified_date = '%s'" % today.isoformat()
+
+    cur.execute(sql_not_products)
+    rows = cur.fetchall()
+    urls = []
+
+    for row in rows:
+        urls.append(row["url"])
+
+    urls = list(set(urls))
+    number_of_invalid_products = len(urls)
+    not_product_urls = "\n" .join(urls)
+
+    not_product_urls = "\n\nFollowing product urls are invalid.\n" + not_product_urls
+    print not_product_urls
+
+    website_header = "- " + website + "\n" + "Total tested product numbers: %d\n" \
+                                             "Problematic product numbers: %d\n" \
+                                             "Invalid product numbers: %d\n" % (number_of_reported_products + number_of_invalid_products, number_of_changed_products, number_of_invalid_products)
+    email_content += (website_header + changed_product_urls + not_product_urls)
 
 fromaddr = "jenkins@contentanalyticsinc.com"
 toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com"] # must be a list
@@ -59,7 +81,7 @@ To: %s
 Subject: %s
 
 %s
-""" % (fromaddr, ", ".join(toaddrs), subject, changed_product_urls + not_product_urls)
+""" % (fromaddr, ", ".join(toaddrs), subject, email_content)
 
 print "Message length is " + repr(len(msg))
 
