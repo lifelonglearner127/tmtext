@@ -10,4 +10,6 @@ urlpatterns = patterns('',
     url(r'spider-by-name/(?P<name>[\d\w_]+)/$',
         views.SpiderBySpiderName.as_view(),
         name='tests_app_spider_by_spider_name'),
+    url(r'json-to-csv/(?P<json>.+)$', views.JSONToCSV.as_view(),
+        name='json_to_csv')
 )

@@ -1,9 +1,20 @@
-from django.views.generic import DetailView, TemplateView, RedirectView
+import os
+import sys
+
+from django.views.generic import DetailView, TemplateView, RedirectView, View
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse_lazy
 
 from .models import TestRun, Spider, FailedRequest
+
+import settings
+
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(1, os.path.join(CWD, '..', '..', 'deploy',
+                                'sqs_ranking_spiders'))
+from scrapy_daemon import convert_json_to_csv
 
 
 class AuthViewMixin(object):
@@ -35,6 +46,26 @@ class SpiderReview(AuthViewMixin, DetailView):
         context['failed_runs'] = self.object.get_last_failed_test_runs()
         context['passed_runs'] = self.object.get_last_successful_test_runs()
         return context
+
+
+class JSONToCSV(AuthViewMixin, View):
+    def get(self, *args, **kwargs):
+        _json = kwargs.get('json', None)
+        if not _json:
+            return HttpResponse('no JSON list passed')
+        if not _json.lower().endswith('.jl'):
+            return HttpResponse('passed file is not JSON list file')
+        if not os.path.exists(_json):  # media url?
+            _json = os.path.join(settings.MEDIA_ROOT,
+                                 _json.replace(settings.MEDIA_URL, ''))
+        if not os.path.exists(_json):
+            return HttpResponse('given file does not exist')
+        csv_fname = convert_json_to_csv(_json.replace('.jl', ''))
+        response = HttpResponse(content=open(csv_fname).read())
+        response['Content-Type']= 'text/csv'
+        response['Content-Disposition'] = 'attachment; filename=%s' \
+                                           % os.path.basename(csv_fname)
+        return response
 
 
 class TestRunReview(AuthViewMixin, DetailView):

@@ -172,7 +172,7 @@ class AsdaScraper(Scraper):
             short_description += ('<p class="p-text">' + self.product_json["items"][0]["productDetails"]["furtherDesc"])\
                                   + '</p>'
 
-        if len(short_description) > 0:
+        if short_description.strip():
             return short_description
 
         return None
@@ -217,6 +217,7 @@ class AsdaScraper(Scraper):
             long_description += ('<p class="p-text">' + self.product_json["items"][0]["productDetails"]["preparationUsage"])\
                                   + '</p>'
 
+        '''
         product_information_url = "http://groceries.asda.com/asda-webstore/pages/product_details/view1.shtml?A521198.RWD"
         product_information = urllib.urlopen(product_information_url).read()
         start_index = product_information.find('<h4 class="sect-title">Product Information</h4><p class="p-text">')
@@ -225,8 +226,12 @@ class AsdaScraper(Scraper):
 
         long_description += '<h4 class="sect-title">Product Information</h4>'
         long_description += product_information[start_index:end_index]
+        '''
 
-        return long_description
+        if long_description.strip():
+            return long_description
+
+        return None
 
     def _ingredients(self):
         if not self.product_json:
