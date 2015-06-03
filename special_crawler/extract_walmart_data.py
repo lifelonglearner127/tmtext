@@ -2094,8 +2094,13 @@ class WalmartScraper(Scraper):
         return self.ing_count
 
     def _canonical_link(self):
-        if self.product_page_url != "http://www.walmart.com" + self.tree_html.xpath("//link[@rel='canonical']/@href")[0]:
-            return "http://www.walmart.com" + self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+        if canonical_link not in self.product_page_url:
+            if canonical_link.startswith("http://www.walmart.com"):
+                return canonical_link
+            else:
+                return "http://www.walmart.com" + canonical_link
 
         return None
 
