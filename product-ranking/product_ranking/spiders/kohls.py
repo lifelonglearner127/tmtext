@@ -16,6 +16,7 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.spiders import cond_set_value
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -183,9 +184,6 @@ class KohlsProductsSpider(BaseProductsSpider):
             }
         product['marketplace'].append(marketplace)
 
-
-
-
         rel_key = is_empty(response.xpath(
             '//div[@class="br-found-heading"]/text()').extract()
         )
@@ -204,6 +202,15 @@ class KohlsProductsSpider(BaseProductsSpider):
 
             product['related_products'] = related_products
 
+        brand = is_empty(response.xpath(
+            '//h1[contains(@class, "title")]/text()'
+        ).extract())
+        cond_set(
+            product,
+            'brand',
+            (guess_brand_from_first_words(brand.strip()),2)
+        )
+
     def _parse_related_products(self, response):
         product = response.meta['product']
         product_id = response.meta['product_id']
@@ -220,8 +227,8 @@ class KohlsProductsSpider(BaseProductsSpider):
                 if url:
                     related.append(
                         RelatedProduct(
-                            title=unicode.decode(is_empty(sel.xpath(
-                                './div/p/text()').extract())),
+                            title=is_empty(sel.xpath(
+                                './div/p/text()').extract()),
                             url=urllib.unquote('http'+url.split('http')[-1])
                         ))
 
