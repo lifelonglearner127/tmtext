@@ -2093,6 +2093,12 @@ class WalmartScraper(Scraper):
         # number of ingredients - integer
         return self.ing_count
 
+    def _canonical_link(self):
+        if self.product_page_url != "http://www.walmart.com" + self.tree_html.xpath("//link[@rel='canonical']/@href")[0]:
+            return "http://www.walmart.com" + self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+        return None
+
     def _nutrition_facts(self):
         # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
         # containing nutrition facts
@@ -2182,6 +2188,7 @@ class WalmartScraper(Scraper):
         "keywords" : _meta_keywords_from_tree, \
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
+        "canonical_link": _canonical_link,
         "brand" : _meta_brand_from_tree, \
         "description" : _short_description_wrapper, \
         # TODO: check if descriptions work right
