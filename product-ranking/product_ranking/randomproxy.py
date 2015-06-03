@@ -23,6 +23,7 @@ import random
 import base64
 from scrapy import log
 
+
 class RandomProxy(object):
     def __init__(self, settings):
         self.proxy_list = settings.get('PROXY_LIST')
@@ -53,6 +54,10 @@ class RandomProxy(object):
         if 'proxy' in request.meta:
             return
 
+        if not getattr(spider, 'use_proxies', None):
+            log.msg('use_proxies is OFF for this spider - not using proxy...')
+            return
+
         proxy_address = random.choice(self.proxies.keys())
         proxy_user_pass = self.proxies[proxy_address]
 
@@ -60,6 +65,8 @@ class RandomProxy(object):
         if proxy_user_pass:
             basic_auth = 'Basic ' + base64.encodestring(proxy_user_pass)
             request.headers['Proxy-Authorization'] = basic_auth
+
+        log.msg('using proxy %s' % proxy_address)
 
     def process_exception(self, request, exception, spider):
         proxy = request.meta['proxy']
