@@ -15,12 +15,12 @@ from add_task_to_sqs import put_msg_to_sqs
 
 
 class Command(BaseCommand):
-    help = ('Takes up to 10 oldest newly created Jobs'
+    help = ('Takes up to 50 oldest newly created Jobs'
             ' and pushes them into the test SQS queue')
 
     def handle(self, *args, **options):
         jobs = Job.objects.filter(status='created').order_by(
-            'created').distinct()[0:10]
+            'created').distinct()[0:50]
         for job in jobs:
             msg = {
                 'task_id': int(job.task_id),
