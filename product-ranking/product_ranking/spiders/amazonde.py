@@ -614,52 +614,6 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             buyer_reviews['average_rating'] = round(average, 1)
         return buyer_reviews
 
-    """
-    def parse_marketplace(self, response):
-        if self._has_captcha(response):
-            result = self._handle_captcha(response, self.parse_marketplace)
-
-        product = response.meta["product"]
-
-        marketplaces = response.meta.get("marketplaces", [])
-
-        for seller in response.xpath(
-            '//div[contains(@class, "a-section")]/' \
-                'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
-
-            price = is_empty(seller.xpath(
-                'div[contains(@class, "a-column")]' \
-                '/span[contains(@class, "price")]/text()'
-            ).re(r'[\d\,]+'), 0)
-
-            if price:
-                price = float(price.replace(',', '.').strip())
-
-            name = is_empty(seller.xpath(
-                'div/p[contains(@class, "Name")]/span/a/text()').extract())
-
-            marketplaces.append({
-                "price": Price(price=price, priceCurrency="EUR"),
-                "name": name
-            })
-
-        next_link = is_empty(response.xpath(
-            "//ul[contains(@class, 'a-pagination')]" \
-            "/li[contains(@class, 'a-last')]/a/@href"
-        ).extract())
-
-        if next_link:
-            meta = {"product": product, "marketplaces": marketplaces}
-            return Request(
-                url=urlparse.urljoin(response.url, next_link),
-                callback=self.parse_marketplace,
-                meta=meta
-            )
-
-        product["marketplace"] = marketplaces
-
-        return product
-    """
     def parse_marketplace(self, response):
         response.meta["called_class"] = self
         response.meta["next_req"] = None
