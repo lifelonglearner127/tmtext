@@ -6,6 +6,15 @@
 #     http://doc.scrapy.org/en/latest/topics/settings.html
 #
 
+import os
+import sys
+import random
+
+from scrapy import log
+import requests
+from requests.exceptions import Timeout as ReqTimeout
+
+
 BOT_NAME = 'product_ranking'
 
 SPIDER_MODULES = ['product_ranking.spiders']
@@ -50,8 +59,6 @@ ZERO_REVIEWS_VALUE = [0, 0.0, {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}]
 # TODO: move out from this file! should be set dynamically in the __init__ method of the BaseValidator class
 # The piece of code below is awful, need to get rid of it asap.
 # I have warned you. Better don't look there at all.
-import sys
-import os
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 
@@ -73,3 +80,70 @@ try:
     from settings_local import *
 except ImportError:
     pass
+
+# RANDOM PROXY SETTINGS
+# Retry many times since proxies often fail
+RETRY_TIMES = 15
+# Retry on most error codes since proxies fail for different reasons
+RETRY_HTTP_CODES = [500, 502, 503, 504, 400, 403, 404, 408]
+
+DOWNLOADER_MIDDLEWARES = {
+    'scrapy.contrib.downloadermiddleware.retry.RetryMiddleware': 90,
+    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+}
+
+# Proxy list containing entries like
+# http://host1:port
+# http://username:password@host2:port
+# http://host3:port
+# ...
+
+
+# TODO: removeme
+def _create_http_proxies_list(fpath, host='tprox.contentanalyticsinc.com'):
+    BASE_HTTP_PORT = 22100
+    NUM_PROXIES = 300
+    fh = open(fpath, 'w')
+    for i in xrange(NUM_PROXIES):
+        proxy = 'http://%s:%s' % (host, str(BASE_HTTP_PORT+i))
+        fh.write(proxy+'\n')
+    fh.close()
+http_proxy_path = '/tmp/http_proxies.txt'
+if not os.path.exists(http_proxy_path):
+    _create_http_proxies_list(fpath=http_proxy_path)
+
+
+def _check_if_proxies_available(http_proxy_path, timeout=10):
+    if not os.path.exists(http_proxy_path):
+        return False
+
+    with open(http_proxy_path, 'r') as fh:
+        proxies = [l.strip() for l in fh.readlines() if l.strip()]
+
+    hosts = ['google.com', 'bing.com', 'ya.ru', 'yahoo.com']
+    for h in hosts:
+        prox = random.choice(proxies)
+        try:
+            requests.get(
+                'http://'+h,
+                proxies={'http': prox, 'https': prox},
+                timeout=timeout
+            )
+            print('successfully fetched host %s using proxy %s' % (h, prox))
+            return True
+        except ReqTimeout:
+            print('failed to fetch host %s using proxy %s' % (h, prox))
+            pass  # got timeout - proxy not available
+
+
+PROXY_LIST = os.path.join(CWD, 'http_proxies.txt')
+PROXY_LIST2 = '/tmp/http_proxies.txt'
+if not os.path.exists(PROXY_LIST) and os.path.exists(PROXY_LIST2):
+    PROXY_LIST = PROXY_LIST2
+if os.path.exists(PROXY_LIST) and _check_if_proxies_available(http_proxy_path):
+    log.msg('USING PROXIES')
+    print('USING PROXIES')
+    DOWNLOADER_MIDDLEWARES['product_ranking.randomproxy.RandomProxy'] = 100
+else:
+    log.msg('NOT USING PROXIES')
+    print('NOT USING PROXIES')

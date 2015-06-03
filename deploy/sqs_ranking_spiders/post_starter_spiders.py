@@ -29,6 +29,16 @@ def _install_pip_package(package):
     os.system('%s %s install %s' % (VENV_PYTHON, PIP_PATH, package))
 
 
+def _create_http_proxies_list(fpath, host='tprox.contentanalyticsinc.com'):
+    BASE_HTTP_PORT = 22100
+    NUM_PROXIES = 300
+    fh = open(fpath, 'w')
+    for i in xrange(NUM_PROXIES):
+        proxy = 'http://%s:%s' % (host, str(BASE_HTTP_PORT+i))
+        fh.write(proxy+'\n')
+    fh.close()
+
+
 def main():
     f = open('/tmp/check_file_post_starter_spiders', 'w')
     f.write('1')
@@ -37,10 +47,16 @@ def main():
     # add new PIP packages
     _install_pip_package('Pillow')
     _install_pip_package('pytesseract')
+    _install_pip_package('requests')
 
 
 if __name__ == '__main__':
+    http_proxy_path = '/tmp/http_proxies.txt'
+    if not os.path.exists(http_proxy_path):
+        _create_http_proxies_list(fpath=http_proxy_path)
+
     if not can_run():
         sys.exit()
+
     main()
     mark_as_finished()

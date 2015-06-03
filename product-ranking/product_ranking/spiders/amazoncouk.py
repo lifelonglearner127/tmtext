@@ -86,6 +86,8 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
 
     settings = AmazoncoukValidatorSettings
 
+    use_proxies = True
+
     def __init__(self, captcha_retries='20', *args, **kwargs):
         # locations = settings.get('AMAZONFRESH_LOCATION')
         # loc = locations.get(location, '')
