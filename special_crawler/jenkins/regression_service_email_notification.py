@@ -69,11 +69,18 @@ for website in website_list:
 
     website_header = "- " + website + "\n" + "Total tested product numbers: %d\n" \
                                              "Problematic product numbers: %d\n" \
-                                             "Invalid product numbers: %d\n" % (number_of_reported_products + number_of_invalid_products, number_of_changed_products, number_of_invalid_products)
+                                             "Invalid product numbers: %d\n" \
+                                             "Web console: %s\n" % \
+                                             (number_of_reported_products + number_of_invalid_products,
+                                              number_of_changed_products,
+                                              number_of_invalid_products,
+                                              "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n"
+                                             )
     email_content += (website_header + changed_product_urls + not_product_urls)
 
+
 fromaddr = "jenkins@contentanalyticsinc.com"
-toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com"] # must be a list
+toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com"] # must be a list
 subject = "Daily Notification from Regression Service : %s" % today.isoformat()
 msg = """\
 From: %s
