@@ -156,7 +156,7 @@ class KohlsProductsSpider(BaseProductsSpider):
             if upc not in upc_codes:
                 upc_codes.append(upc)
 
-        product['upc'] = upc_codes
+        product['upc'] = ', '.join(upc_codes)
 
         price = response.xpath(
             '//div[@class="multiple-price"]/div[2]/text()[normalize-space()] |'
