@@ -157,8 +157,6 @@ class AmazonScraper(Scraper):
         return None
 
     def _product_id(self):
-        self._color_size_stockstatus()
-
         if self.scraper_version == "uk":
             product_id = re.match("^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         else:
