@@ -184,3 +184,7 @@ class SiteProductItem(Item):
     date_of_last_question = Field()  # now for Walmart only
     recent_questions = Field()  # now for Walmart only; may change in the future
     special_pricing = Field() # 1/0 for TPC, Rollback; target, walmart
+
+    #  now for Walmart and Amazon;
+    #  may change in the future
+    last_buyer_review_date = Field()
