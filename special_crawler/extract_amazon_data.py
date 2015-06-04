@@ -5,6 +5,7 @@ import urllib, urllib2
 import re
 import sys
 import json
+import lxml
 
 from lxml import html
 import time
@@ -156,6 +157,8 @@ class AmazonScraper(Scraper):
         return None
 
     def _product_id(self):
+        self._color_size_stockstatus()
+
         if self.scraper_version == "uk":
             product_id = re.match("^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         else:
@@ -298,6 +301,63 @@ class AmazonScraper(Scraper):
         res = self._clean_text(' '.join(desc.xpath('//div[@class="productDescriptionWrapper"]/div[@class="aplus"]//text()')))
         if res != "" : return res
         return None
+
+    def _color(self):
+        page_raw_text = lxml.html.tostring(self.tree_html)
+
+        startIndex = page_raw_text.find('"variationValues" : ') + len('"variationValues" : ')
+
+        if startIndex == -1:
+            return None
+
+        endIndex = page_raw_text.find("}", startIndex) + 1
+
+        json_text = page_raw_text[startIndex:endIndex]
+        json_body =json.loads(json_text)
+
+        return json_body["color_name"]
+
+    def _size(self):
+        page_raw_text = lxml.html.tostring(self.tree_html)
+
+        startIndex = page_raw_text.find('"variationValues" : ') + len('"variationValues" : ')
+
+        if startIndex == -1:
+            return None
+
+        endIndex = page_raw_text.find("}", startIndex) + 1
+
+        json_text = page_raw_text[startIndex:endIndex]
+        json_body =json.loads(json_text)
+
+        return json_body["size_name"]
+
+    def _color_size_stockstatus(self):
+        page_raw_text = lxml.html.tostring(self.tree_html)
+
+        startIndex = page_raw_text.find('"dimensionValuesDisplayData":') + len('"dimensionValuesDisplayData":')
+
+        if startIndex == -1:
+            return None
+
+        endIndex = page_raw_text.find("}", startIndex) + 1
+        json_text = page_raw_text[startIndex:endIndex]
+        json_body =json.loads(json_text)
+
+        color_size_stockstatus_dictionary = {}
+        color_list = self._color()
+        size_list = self._size()
+
+        for color in color_list:
+            color_size_stockstatus_dictionary[color] = {}
+
+            for size in size_list:
+                color_size_stockstatus_dictionary[color][size] = 0
+
+        for asin in json_body:
+            color_size_stockstatus_dictionary[json_body[asin][1]][json_body[asin][0]] = 1
+
+        return color_size_stockstatus_dictionary
 
 
     ##########################################
@@ -947,6 +1007,9 @@ class AmazonScraper(Scraper):
         "description" : _description, \
         "long_description" : _long_description, \
         "apluscontent_desc" : _apluscontent_desc, \
+        "color": _color, \
+        "size": _size, \
+        "color_size_stockstatus": _color_size_stockstatus, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
