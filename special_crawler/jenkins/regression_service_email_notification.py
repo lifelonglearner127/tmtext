@@ -70,12 +70,7 @@ for website in website_list:
     website_header = "- " + website + "\n" + "Total tested product numbers: %d\n" \
                                              "Problematic product numbers: %d\n" \
                                              "Invalid product numbers: %d\n" \
-                                             "Web console: %s\n" % \
-                                             (number_of_reported_products + number_of_invalid_products,
-                                              number_of_changed_products,
-                                              number_of_invalid_products,
-                                              "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n"
-                                             )
+                                             "Web console: %s\n" % (number_of_reported_products + number_of_invalid_products, number_of_changed_products, number_of_invalid_products, "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n")
     email_content += (website_header + changed_product_urls + not_product_urls)
 
 
