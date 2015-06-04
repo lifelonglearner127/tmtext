@@ -91,7 +91,10 @@ class HomedepotProductsSpider(BaseProductsSpider):
         desc = response.xpath(
             "//div[@id='product_description']"
             "/div[contains(@class,'main_description')]"
-            "/descendant::*[text()]/text()").extract()
+            "/descendant::*[text()]/text()"
+            "//div[contains(@class, 'main_description')] |"
+            "//div[@id='product_description']"
+        ).extract()
         desc = " ".join(l.strip() for l in desc if len(l.strip()) > 0)
         product['description'] = desc
 
@@ -105,7 +108,8 @@ class HomedepotProductsSpider(BaseProductsSpider):
             metadata = metadata[0]
             jsmeta = json.loads(metadata)
             try:
-                skus = jsmeta['attributeDefinition']['attributeLookup']
+                #skus = jsmeta['attributeDefinition']['attributeLookup']
+                skus = [jsmeta["attributeDefinition"]["defaultSku"]]
                 response.meta['skus'] = skus
                 metaname = jsmeta['attributeDefinition']['attributeListing'][0][
                     'label']
@@ -128,11 +132,10 @@ class HomedepotProductsSpider(BaseProductsSpider):
 
     def _gen_variants_requests(self, response, product, skus):
         reqs = []
-        print('+'*50)
-        print skus
-        print('+'*50)
 
-        for _, sku in skus:
+        for sku in skus:
+            # if sku:
+            #     sku = sku[len(sku)-1]
             new_product = product.copy()
             new_product['upc'] = sku
 
@@ -203,7 +206,8 @@ class HomedepotProductsSpider(BaseProductsSpider):
 
             el = sel.xpath(
                 "//div[contains(@class,'pod')]/div/div"
-                "/a[@class='item_description']")
+                "/a[@class='item_description'] |"
+            )
             prods = []
             for e in el:
                 href = e.xpath("@href").extract()
