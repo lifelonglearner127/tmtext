@@ -1,5 +1,6 @@
 import json
 import re
+import urllib
 from urllib import unquote, urlencode
 from urlparse import urljoin
 
@@ -25,7 +26,7 @@ class MothercareProductsSpider(ProductsSpider):
     * `price_asc`, `price_desc`
     """
 
-    name = 'walt_products'
+    name = 'mothercare_products'
 
     allowed_domains = [
         'mothercare.com',
@@ -34,15 +35,11 @@ class MothercareProductsSpider(ProductsSpider):
         #'mark.reevoo.com'
     ]
 
-    # SEARCH_URL = "http://www.mothercare.com/on/demandware.store" \
-    #              "/Sites-MCENGB-Site/default" \
-    #              "/Search-Show?q={search_term}" \
-    #              "&srule={sort_mode}&start=0&sz=12" \
-    #              "&view=grid&format=ajax"
-
-    SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
-        "&_refineresult=true&ic=16_0&search_constraint=0" \
-        "&search_query={search_term}"
+    SEARCH_URL = "http://www.mothercare.com/on/demandware.store" \
+                 "/Sites-MCENGB-Site/default" \
+                 "/Search-Show?q={search_term}" \
+                 "&srule={sort_mode}&start=0&sz=12" \
+                 "&view=grid&format=ajax"
 
     SORT_MODES = {
         'default': 'Most Popular',
@@ -53,18 +50,18 @@ class MothercareProductsSpider(ProductsSpider):
         'rating': 'Most Popular'
     }
 
-    # RR_URL = "http://recs.richrelevance.com/rrserver" \
-    #          "/p13n_generated.js?a={api_key}" \
-    #          "&p={product_id}&pt=|item_page.recs_1|item_page.recs_2" \
-    #          "|item_page.recs_11|item_page.recs_3&u={user_id}&s={sess_id}" \
-    #          "&sgs=|DesktopCustomer%3ADesktopCustomer|NoPreviousOrders2%3A" \
-    #          "NoPreviousOrders2|SalePreviewExclusions%3ASalePreviewExclusions" \
-    #          "|Unregistered_2%3AUnregistered_2&chi=|{bcrumb_id}" \
-    #          "&cs=|{bcrumb_id}:{bcrumb_t}&flv=11.2.202&l=1&pref={pref}"
+    RR_URL = "http://recs.richrelevance.com/rrserver" \
+             "/p13n_generated.js?a={api_key}" \
+             "&p={product_id}&pt=|item_page.recs_1|item_page.recs_2" \
+             "|item_page.recs_11|item_page.recs_3&u={user_id}&s={sess_id}" \
+             "&sgs=|DesktopCustomer%3ADesktopCustomer|NoPreviousOrders2%3A" \
+             "NoPreviousOrders2|SalePreviewExclusions%3ASalePreviewExclusions" \
+             "|Unregistered_2%3AUnregistered_2&chi=|{bcrumb_id}" \
+             "&cs=|{bcrumb_id}:{bcrumb_t}&flv=11.2.202&l=1&pref={pref}"
 
     OPTIONAL_REQUESTS = {
-        #'related_products': True,
-        #'buyer_reviews': True
+        'related_products': True,
+        'buyer_reviews': True
     }
 
     REQ_STRATEGY = re.compile("rr_recs.placements\[(\d+)\].json = ({[^}]+})",
@@ -76,8 +73,8 @@ class MothercareProductsSpider(ProductsSpider):
 
     ALLOW_RR = '[rR]ecommendations|[pP]eople'
 
-    # REVOO_URL = "http://mark.reevoo.com/reevoomark/en-GB/product?sku={sku}" \
-    #             "&trkref=MOT"
+    REVOO_URL = "http://mark.reevoo.com/reevoomark/en-GB/product?sku={sku}" \
+                "&trkref=MOT"
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
