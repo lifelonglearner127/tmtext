@@ -53,14 +53,14 @@ class MothercareProductsSpider(ProductsSpider):
         'rating': 'Most Popular'
     }
 
-    RR_URL = "http://recs.richrelevance.com/rrserver" \
-             "/p13n_generated.js?a={api_key}" \
-             "&p={product_id}&pt=|item_page.recs_1|item_page.recs_2" \
-             "|item_page.recs_11|item_page.recs_3&u={user_id}&s={sess_id}" \
-             "&sgs=|DesktopCustomer%3ADesktopCustomer|NoPreviousOrders2%3A" \
-             "NoPreviousOrders2|SalePreviewExclusions%3ASalePreviewExclusions" \
-             "|Unregistered_2%3AUnregistered_2&chi=|{bcrumb_id}" \
-             "&cs=|{bcrumb_id}:{bcrumb_t}&flv=11.2.202&l=1&pref={pref}"
+    # RR_URL = "http://recs.richrelevance.com/rrserver" \
+    #          "/p13n_generated.js?a={api_key}" \
+    #          "&p={product_id}&pt=|item_page.recs_1|item_page.recs_2" \
+    #          "|item_page.recs_11|item_page.recs_3&u={user_id}&s={sess_id}" \
+    #          "&sgs=|DesktopCustomer%3ADesktopCustomer|NoPreviousOrders2%3A" \
+    #          "NoPreviousOrders2|SalePreviewExclusions%3ASalePreviewExclusions" \
+    #          "|Unregistered_2%3AUnregistered_2&chi=|{bcrumb_id}" \
+    #          "&cs=|{bcrumb_id}:{bcrumb_t}&flv=11.2.202&l=1&pref={pref}"
 
     OPTIONAL_REQUESTS = {
         #'related_products': True,
@@ -76,8 +76,8 @@ class MothercareProductsSpider(ProductsSpider):
 
     ALLOW_RR = '[rR]ecommendations|[pP]eople'
 
-    REVOO_URL = "http://mark.reevoo.com/reevoomark/en-GB/product?sku={sku}" \
-                "&trkref=MOT"
+    # REVOO_URL = "http://mark.reevoo.com/reevoomark/en-GB/product?sku={sku}" \
+    #             "&trkref=MOT"
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
