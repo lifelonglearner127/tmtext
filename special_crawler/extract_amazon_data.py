@@ -303,7 +303,7 @@ class AmazonScraper(Scraper):
     def _color(self):
         page_raw_text = lxml.html.tostring(self.tree_html)
 
-        startIndex = page_raw_text.find('"variationValues" : ') + len('"variationValues" : ')
+        startIndex = page_raw_text.find('"variation_values":') + len('"variation_values":')
 
         if startIndex == -1:
             return None
@@ -318,7 +318,7 @@ class AmazonScraper(Scraper):
     def _size(self):
         page_raw_text = lxml.html.tostring(self.tree_html)
 
-        startIndex = page_raw_text.find('"variationValues" : ') + len('"variationValues" : ')
+        startIndex = page_raw_text.find('"variation_values":') + len('"variation_values":')
 
         if startIndex == -1:
             return None
