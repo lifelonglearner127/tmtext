@@ -996,7 +996,7 @@ class WalmartScraper(Scraper):
             size_json_body = None
 
             for item in json_body:
-                if item['name'] == "size":
+                if item['name'] == "Size":
                     size_json_body = item["variants"]
                     break
 
