@@ -135,7 +135,8 @@ def job_to_fname(metadata):
         job_name += str(task_id)
     if searchterms_str:
         additional_part = unidecode.unidecode(
-            searchterms_str).replace(' ', '-')
+            searchterms_str).replace(
+                ' ', '-').replace('/', '').replace('\\', '')
     else:
         # maybe should be changed to product_url
         additional_part = 'single-product-url-request'
