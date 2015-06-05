@@ -31,7 +31,7 @@ class MothercareProductsSpider(ProductsSpider):
     allowed_domains = [
         'mothercare.com',
         #'richrelevance.com',
-        'reevoo.com',
+        # 'reevoo.com',
         'mark.reevoo.com'
     ]
 
