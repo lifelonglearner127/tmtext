@@ -120,7 +120,6 @@ class WalmartScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        self._color()
 
         self._failure_type()
 
