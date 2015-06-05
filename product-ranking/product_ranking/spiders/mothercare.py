@@ -25,13 +25,13 @@ class MothercareProductsSpider(ProductsSpider):
     * `price_asc`, `price_desc`
     """
 
-    name = 'mothercare_products'
+    name = 'walt_products'
 
     allowed_domains = [
         'mothercare.com',
-        'richrelevance.com',
-        'reevoo.com',
-        'mark.reevoo.com'
+        #'richrelevance.com',
+        #'reevoo.com',
+        #'mark.reevoo.com'
     ]
 
     # SEARCH_URL = "http://www.mothercare.com/on/demandware.store" \
