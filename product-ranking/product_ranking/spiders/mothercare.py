@@ -34,11 +34,15 @@ class MothercareProductsSpider(ProductsSpider):
         'mark.reevoo.com'
     ]
 
-    SEARCH_URL = "http://www.mothercare.com/on/demandware.store" \
-                 "/Sites-MCENGB-Site/default" \
-                 "/Search-Show?q={search_term}" \
-                 "&srule={sort_mode}&start=0&sz=12" \
-                 "&view=grid&format=ajax"
+    # SEARCH_URL = "http://www.mothercare.com/on/demandware.store" \
+    #              "/Sites-MCENGB-Site/default" \
+    #              "/Search-Show?q={search_term}" \
+    #              "&srule={sort_mode}&start=0&sz=12" \
+    #              "&view=grid&format=ajax"
+
+    SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
+        "&_refineresult=true&ic=16_0&search_constraint=0" \
+        "&search_query={search_term}"
 
     SORT_MODES = {
         'default': 'Most Popular',
