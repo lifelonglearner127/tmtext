@@ -303,60 +303,68 @@ class AmazonScraper(Scraper):
     def _color(self):
         page_raw_text = lxml.html.tostring(self.tree_html)
 
-        startIndex = page_raw_text.find('"variation_values":') + len('"variation_values":')
+        try:
+            startIndex = page_raw_text.find('"variation_values":') + len('"variation_values":')
 
-        if startIndex == -1:
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find("}", startIndex) + 1
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+
+            return json_body["color_name"]
+        except:
             return None
-
-        endIndex = page_raw_text.find("}", startIndex) + 1
-
-        json_text = page_raw_text[startIndex:endIndex]
-        json_body =json.loads(json_text)
-
-        return json_body["color_name"]
 
     def _size(self):
         page_raw_text = lxml.html.tostring(self.tree_html)
 
-        startIndex = page_raw_text.find('"variation_values":') + len('"variation_values":')
+        try:
+            startIndex = page_raw_text.find('"variation_values":') + len('"variation_values":')
 
-        if startIndex == -1:
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find("}", startIndex) + 1
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+
+            return json_body["size_name"]
+        except:
             return None
-
-        endIndex = page_raw_text.find("}", startIndex) + 1
-
-        json_text = page_raw_text[startIndex:endIndex]
-        json_body =json.loads(json_text)
-
-        return json_body["size_name"]
 
     def _color_size_stockstatus(self):
         page_raw_text = lxml.html.tostring(self.tree_html)
 
-        startIndex = page_raw_text.find('"dimensionValuesDisplayData":') + len('"dimensionValuesDisplayData":')
+        try:
+            startIndex = page_raw_text.find('"dimensionValuesDisplayData":') + len('"dimensionValuesDisplayData":')
 
-        if startIndex == -1:
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find("}", startIndex) + 1
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+
+            color_size_stockstatus_dictionary = {}
+            color_list = self._color()
+            size_list = self._size()
+
+            for color in color_list:
+                color_size_stockstatus_dictionary[color] = {}
+
+                for size in size_list:
+                    color_size_stockstatus_dictionary[color][size] = 0
+
+            for asin in json_body:
+                color_size_stockstatus_dictionary[json_body[asin][1]][json_body[asin][0]] = 1
+
+            return color_size_stockstatus_dictionary
+        except:
             return None
-
-        endIndex = page_raw_text.find("}", startIndex) + 1
-        json_text = page_raw_text[startIndex:endIndex]
-        json_body =json.loads(json_text)
-
-        color_size_stockstatus_dictionary = {}
-        color_list = self._color()
-        size_list = self._size()
-
-        for color in color_list:
-            color_size_stockstatus_dictionary[color] = {}
-
-            for size in size_list:
-                color_size_stockstatus_dictionary[color][size] = 0
-
-        for asin in json_body:
-            color_size_stockstatus_dictionary[json_body[asin][1]][json_body[asin][0]] = 1
-
-        return color_size_stockstatus_dictionary
-
 
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
