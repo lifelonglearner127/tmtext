@@ -951,9 +951,8 @@ class WalmartScraper(Scraper):
         return long_description
 
     def _color(self):
-        page_raw_text = lxml.html.tostring(self.tree_html)
-
         try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
             startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
 
             if startIndex == -1:
@@ -962,12 +961,20 @@ class WalmartScraper(Scraper):
             endIndex = page_raw_text.find(',"variantProducts":', startIndex)
 
             json_text = page_raw_text[startIndex:endIndex]
-            json_body =json.loads(json_text)
-            json_body = json_body[1]["variants"]
+            json_body = json.loads(json_text)
+            color_json_body = None
+
+            for item in json_body:
+                if item['name'] == "Actual Color":
+                    color_json_body = item["variants"]
+                    break
+
+            if not color_json_body:
+                return None
 
             color_list = []
 
-            for color_item in json_body:
+            for color_item in color_json_body:
                 color_list.append(color_item["name"])
 
             return color_list
@@ -977,7 +984,6 @@ class WalmartScraper(Scraper):
     def _size(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
-
             startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
 
             if startIndex == -1:
@@ -986,12 +992,22 @@ class WalmartScraper(Scraper):
             endIndex = page_raw_text.find(',"variantProducts":', startIndex)
 
             json_text = page_raw_text[startIndex:endIndex]
-            json_body =json.loads(json_text)
+            json_body = json.loads(json_text)
             json_body = json_body[0]["variants"]
+
+            size_json_body = None
+
+            for item in json_body:
+                if item['name'] == "size":
+                    size_json_body = item["variants"]
+                    break
+
+            if not size_json_body:
+                return None
 
             size_list = []
 
-            for color_item in json_body:
+            for color_item in size_json_body:
                 size_list.append(color_item["name"])
 
             return size_list
@@ -999,9 +1015,11 @@ class WalmartScraper(Scraper):
             return None
 
     def _color_size_stockstatus(self):
+        if not self._color() or not self._size():
+            return None
+
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
-
             startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
 
             if startIndex == -1:
@@ -1010,7 +1028,7 @@ class WalmartScraper(Scraper):
             endIndex = page_raw_text.find(',"variantProducts":', startIndex)
 
             json_text = page_raw_text[startIndex:endIndex]
-            json_body =json.loads(json_text)
+            json_body = json.loads(json_text)
             color_json_body = json_body[1]["variants"]
 
             startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
@@ -1021,7 +1039,7 @@ class WalmartScraper(Scraper):
             endIndex = page_raw_text.find(',"variantProducts":', startIndex)
 
             json_text = page_raw_text[startIndex:endIndex]
-            json_body =json.loads(json_text)
+            json_body = json.loads(json_text)
             size_json_body = json_body[0]["variants"]
 
             startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
