@@ -77,6 +77,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
     use_proxies = True
 
+    handle_httpstatus_list = [502, 503, 504]
+
     def __init__(self, captcha_retries='20', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
 
@@ -107,6 +109,12 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_product(self, response):
         prod = response.meta['product']
+
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response,
+                self.parse_product
+            )
 
         if not self._has_captcha(response):
             self._populate_from_js(response, prod)
@@ -562,6 +570,13 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         return buyer_reviews
 
     def get_buyer_reviews_from_2nd_page(self, response):
+
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response,
+                self.get_buyer_reviews_from_2nd_page
+            )
+
         product = response.meta["product"]
         buyer_reviews = {}
         product["buyer_reviews"] = {}
