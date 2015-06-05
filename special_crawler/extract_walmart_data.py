@@ -120,6 +120,7 @@ class WalmartScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
+        self._color()
 
         self._failure_type()
 
@@ -948,6 +949,112 @@ class WalmartScraper(Scraper):
         long_description = self._long_description()
 
         return long_description
+
+    def _color(self):
+        page_raw_text = lxml.html.tostring(self.tree_html)
+
+        try:
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+            json_body = json_body[1]["variants"]
+
+            color_list = []
+
+            for color_item in json_body:
+                color_list.append(color_item["name"])
+
+            return color_list
+        except:
+            return None
+
+    def _size(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+            json_body = json_body[0]["variants"]
+
+            size_list = []
+
+            for color_item in json_body:
+                size_list.append(color_item["name"])
+
+            return size_list
+        except:
+            return None
+
+    def _color_size_stockstatus(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+            color_json_body = json_body[1]["variants"]
+
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+            size_json_body = json_body[0]["variants"]
+
+            startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"primaryProductId":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            color_size_stockstatus_json_body = json.loads(json_text)
+
+            color_size_stockstatus_dictionary = {}
+            color_id_name_map = {}
+            size_id_name_map = {}
+
+            for color in color_json_body:
+                color_size_stockstatus_dictionary[color["name"]] = {}
+                color_id_name_map[color["id"]] = color["name"]
+
+                for size in size_json_body:
+                    color_size_stockstatus_dictionary[color["name"]][size["name"]] = 0
+                    size_id_name_map[size["id"]] = size["name"]
+
+            for item in color_size_stockstatus_json_body:
+                varients = item["variants"]
+
+                if item['buyingOptions']['available'] == True:
+                    color_size_stockstatus_dictionary[color_id_name_map[varients['actual_color']['id']]][size_id_name_map[varients['size']['id']]] = 1
+
+            return color_size_stockstatus_dictionary
+        except:
+            return None
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
@@ -2205,6 +2312,9 @@ class WalmartScraper(Scraper):
         "description" : _short_description_wrapper, \
         # TODO: check if descriptions work right
         "long_description" : _long_description_wrapper, \
+        "color": _color, \
+        "size": _size, \
+        "color_size_stockstatus": _color_size_stockstatus, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
