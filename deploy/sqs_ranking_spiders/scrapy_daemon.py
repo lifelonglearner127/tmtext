@@ -510,6 +510,7 @@ def execute_task_from_sqs():
     task_queue.task_done()
     logger.info("Task message was successfully received and "
                 "removed form queue.")
+    logger.info("Whole tasks msg: %s", str(metadata))
     increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
     update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
 
