@@ -993,8 +993,6 @@ class WalmartScraper(Scraper):
 
             json_text = page_raw_text[startIndex:endIndex]
             json_body = json.loads(json_text)
-            json_body = json_body[0]["variants"]
-
             size_json_body = None
 
             for item in json_body:
