@@ -30,9 +30,9 @@ class MothercareProductsSpider(ProductsSpider):
 
     allowed_domains = [
         'mothercare.com',
-        'richrelevance.com',
-        #'reevoo.com',
-        #'mark.reevoo.com'
+        #'richrelevance.com',
+        'reevoo.com',
+        'mark.reevoo.com'
     ]
 
     SEARCH_URL = "http://www.mothercare.com/on/demandware.store" \
