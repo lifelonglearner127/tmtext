@@ -721,7 +721,7 @@ class WalmartScraper(Scraper):
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
 
-                if "<b>" in sub_description or "<ul>" in sub_description or "<dl>" in sub_description or "<li>" in sub_description:
+                if "<b>" in sub_description or "<ul>" in sub_description or "<dl>" in sub_description or "<li>" in sub_description or '<section class="product-about js-ingredients health-about">' in sub_description:
                     innerText = ""
 
                     try:
@@ -741,6 +741,8 @@ class WalmartScraper(Scraper):
                         short_description_end_index = sub_description.find("<dl>")
                     elif "<li>" in sub_description:
                         short_description_end_index = sub_description.find("<li>")
+                    elif '<section class="product-about js-ingredients health-about">' in sub_description:
+                        short_description_end_index = sub_description.find('<section class="product-about js-ingredients health-about">')
 
                     break
 
@@ -803,10 +805,15 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        long_description_existence = self.tree_html.xpath('//*[contains(@class, "ItemSectionContent")]'
+        li_long_description_existence = self.tree_html.xpath('//*[contains(@class, "ItemSectionContent")]'
                                                   '//*[contains(@itemprop, "description")]//li')
 
-        if not long_description_existence:
+        p_long_description_existence = None
+
+        if len(self.tree_html.xpath("//div[@itemprop='description']/div")) > 0 and self.tree_html.xpath("//div[@itemprop='description']/div")[1].xpath(".//p"):
+            p_long_description_existence = self.tree_html.xpath("//div[@itemprop='description']/div")[1].xpath(".//p")
+
+        if not li_long_description_existence and not p_long_description_existence:
             return None
 
         long_description_elements = self.tree_html.xpath("//div[@itemprop='description']/div")[1]
