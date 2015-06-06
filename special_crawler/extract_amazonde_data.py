@@ -331,6 +331,23 @@ class AmazonDEScraper(Scraper):
         except:
             return None
 
+    def _style(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variation_values":') + len('"variation_values":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find("}", startIndex) + 1
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+
+            return json_body["style_name"]
+        except:
+            return None
+
     def _color_size_stockstatus(self):
         if not self._color() or not self._size():
             return None
@@ -1001,6 +1018,7 @@ class AmazonDEScraper(Scraper):
         "color": _color, \
         "size": _size, \
         "color_size_stockstatus": _color_size_stockstatus, \
+        "style": _style, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
