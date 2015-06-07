@@ -135,6 +135,7 @@ class AmazonScraper(Scraper):
         return (not not m) or (not not n) or (not not l)
 
     def not_a_product(self):
+        self._color_price()
         '''Overwrites parent class method that determines if current page
         is not a product page.
         Currently for Amazon it detects captcha validation forms,
