@@ -976,7 +976,10 @@ class WalmartScraper(Scraper):
             for color_item in color_json_body:
                 color_list.append(color_item["name"])
 
-            return color_list
+            if not color_list:
+                return None
+            else:
+                return color_list
         except:
             return None
 
@@ -1007,7 +1010,10 @@ class WalmartScraper(Scraper):
             for color_item in size_json_body:
                 size_list.append(color_item["name"])
 
-            return size_list
+            if not size_list:
+                return None
+            else:
+                return size_list
         except:
             return None
 
@@ -1067,7 +1073,10 @@ class WalmartScraper(Scraper):
                 if item['buyingOptions']['available'] == True:
                     color_size_stockstatus_dictionary[color_id_name_map[varients['actual_color']['id']]][size_id_name_map[varients['size']['id']]] = 1
 
-            return color_size_stockstatus_dictionary
+            if not color_size_stockstatus_dictionary:
+                return None
+            else:
+                return color_size_stockstatus_dictionary
         except:
             return None
 
@@ -1098,8 +1107,35 @@ class WalmartScraper(Scraper):
         except:
             return None
 
-    def _selected_varients(self):
+    def _style(self):
         return None
+
+    def _selected_varients(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body = json.loads(json_text)
+            selected_varients = {}
+
+            for item in json_body:
+                if item['name'] == "Size" and "selectedValue" in item:
+                    selected_varients["size"] = item["selectedValue"]
+                elif item['name'] == "Actual Color" and "selectedValue" in item:
+                    selected_varients["color"] = item["selectedValue"]
+
+            if not selected_varients:
+                return None
+            else:
+                return selected_varients
+        except:
+            return None
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
@@ -2362,7 +2398,7 @@ class WalmartScraper(Scraper):
         "color_size_stockstatus": _color_size_stockstatus, \
         "varients": _varients, \
         "selected_varients": _selected_varients, \
-
+        "style": _style,
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
