@@ -375,7 +375,10 @@ class AmazonScraper(Scraper):
             if "style_name" in json_body:
                 varients.append("style")
 
-            return varients
+            if not varients:
+                return None
+            else:
+                return varients
         except:
             return None
 
@@ -392,7 +395,21 @@ class AmazonScraper(Scraper):
             json_text = page_raw_text[startIndex:endIndex]
             json_body =json.loads(json_text)
 
-            return json_body
+            selected_varients = {}
+
+            if "color_name" in json_body:
+                selected_varients["color"] = json_body["color_name"]
+
+            if "size_name" in json_body:
+                selected_varients["size"] = json_body["size_name"]
+
+            if "style_name" in json_body:
+                selected_varients["style"] = json_body["style_name"]
+
+            if not selected_varients:
+                return None
+            else:
+                return selected_varients
         except:
             return None
 
@@ -424,7 +441,10 @@ class AmazonScraper(Scraper):
             for asin in json_body:
                 color_size_stockstatus_dictionary[json_body[asin][1]][json_body[asin][0]] = 1
 
-            return color_size_stockstatus_dictionary
+            if not color_size_stockstatus_dictionary:
+                return None
+            else:
+                return color_size_stockstatus_dictionary
         except:
             return None
 
