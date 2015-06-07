@@ -1107,6 +1107,9 @@ class WalmartScraper(Scraper):
         except:
             return None
 
+    def _style(self):
+        return None
+
     def _selected_varients(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
@@ -2395,7 +2398,7 @@ class WalmartScraper(Scraper):
         "color_size_stockstatus": _color_size_stockstatus, \
         "varients": _varients, \
         "selected_varients": _selected_varients, \
-
+        "style": _style,
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \

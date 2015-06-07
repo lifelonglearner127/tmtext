@@ -145,6 +145,24 @@ class TargetScraper(Scraper):
             return None
         return self._long_description_helper()
 
+    def _color(self):
+        return None
+
+    def _size(self):
+        return None
+
+    def _style(self):
+        return None
+
+    def _color_size_stockstatus(self):
+        return None
+
+    def _varients(self):
+        return None
+
+    def _selected_varients(self):
+        return None
+
     def _long_description_helper(self):
         rows = self.tree_html.xpath("//ul[starts-with(@class,'normal-list reduced-spacing-list')]//li")
         line_txts = []
@@ -483,6 +501,12 @@ class TargetScraper(Scraper):
         "description" : _description, \
         "model" : _model, \
         "long_description" : _long_description, \
+        "color": _color, \
+        "selected_varients": _selected_varients, \
+        "size": _size, \
+        "style": _style, \
+        "color_size_stockstatus": _color_size_stockstatus, \
+        "varients": _varients, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \

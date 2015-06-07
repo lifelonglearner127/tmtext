@@ -59,4 +59,5 @@
     <field name="color_size_stockstatus" version="1.2"></field>
     <field name="varients" version="1.2"></field>
     <field name="selected_varients" version="1.2"></field>
+    <field name="style" version="1.2"></field>
 </fields>
