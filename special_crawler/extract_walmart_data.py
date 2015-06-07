@@ -721,7 +721,7 @@ class WalmartScraper(Scraper):
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
 
-                if "<b>" in sub_description or "<ul>" in sub_description or "<dl>" in sub_description or "<li>" in sub_description:
+                if "<b>" in sub_description or "<ul>" in sub_description or "<dl>" in sub_description or "<li>" in sub_description or '<section class="product-about js-ingredients health-about">' in sub_description:
                     innerText = ""
 
                     try:
@@ -741,6 +741,8 @@ class WalmartScraper(Scraper):
                         short_description_end_index = sub_description.find("<dl>")
                     elif "<li>" in sub_description:
                         short_description_end_index = sub_description.find("<li>")
+                    elif '<section class="product-about js-ingredients health-about">' in sub_description:
+                        short_description_end_index = sub_description.find('<section class="product-about js-ingredients health-about">')
 
                     break
 
@@ -803,10 +805,15 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        long_description_existence = self.tree_html.xpath('//*[contains(@class, "ItemSectionContent")]'
+        li_long_description_existence = self.tree_html.xpath('//*[contains(@class, "ItemSectionContent")]'
                                                   '//*[contains(@itemprop, "description")]//li')
 
-        if not long_description_existence:
+        p_long_description_existence = None
+
+        if len(self.tree_html.xpath("//div[@itemprop='description']/div")) > 0 and self.tree_html.xpath("//div[@itemprop='description']/div")[1].xpath(".//p"):
+            p_long_description_existence = self.tree_html.xpath("//div[@itemprop='description']/div")[1].xpath(".//p")
+
+        if not li_long_description_existence and not p_long_description_existence:
             return None
 
         long_description_elements = self.tree_html.xpath("//div[@itemprop='description']/div")[1]
@@ -941,6 +948,194 @@ class WalmartScraper(Scraper):
         long_description = self._long_description()
 
         return long_description
+
+    def _color(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body = json.loads(json_text)
+            color_json_body = None
+
+            for item in json_body:
+                if item['name'] == "Actual Color":
+                    color_json_body = item["variants"]
+                    break
+
+            if not color_json_body:
+                return None
+
+            color_list = []
+
+            for color_item in color_json_body:
+                color_list.append(color_item["name"])
+
+            if not color_list:
+                return None
+            else:
+                return color_list
+        except:
+            return None
+
+    def _size(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body = json.loads(json_text)
+            size_json_body = None
+
+            for item in json_body:
+                if item['name'] == "Size":
+                    size_json_body = item["variants"]
+                    break
+
+            if not size_json_body:
+                return None
+
+            size_list = []
+
+            for color_item in size_json_body:
+                size_list.append(color_item["name"])
+
+            if not size_list:
+                return None
+            else:
+                return size_list
+        except:
+            return None
+
+    def _color_size_stockstatus(self):
+        if not self._color() or not self._size():
+            return None
+
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body = json.loads(json_text)
+            color_json_body = json_body[1]["variants"]
+
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body = json.loads(json_text)
+            size_json_body = json_body[0]["variants"]
+
+            startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"primaryProductId":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            color_size_stockstatus_json_body = json.loads(json_text)
+
+            color_size_stockstatus_dictionary = {}
+            color_id_name_map = {}
+            size_id_name_map = {}
+
+            for color in color_json_body:
+                color_size_stockstatus_dictionary[color["name"]] = {}
+                color_id_name_map[color["id"]] = color["name"]
+
+                for size in size_json_body:
+                    color_size_stockstatus_dictionary[color["name"]][size["name"]] = 0
+                    size_id_name_map[size["id"]] = size["name"]
+
+            for item in color_size_stockstatus_json_body:
+                varients = item["variants"]
+
+                if item['buyingOptions']['available'] == True:
+                    color_size_stockstatus_dictionary[color_id_name_map[varients['actual_color']['id']]][size_id_name_map[varients['size']['id']]] = 1
+
+            if not color_size_stockstatus_dictionary:
+                return None
+            else:
+                return color_size_stockstatus_dictionary
+        except:
+            return None
+
+    def _varients(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body = json.loads(json_text)
+            varients = []
+
+            for item in json_body:
+                if item['name'] == "Size":
+                    varients.append("size")
+                elif item['name'] == "Actual Color":
+                    varients.append("color")
+
+            if not varients:
+                return None
+            else:
+                return varients
+        except:
+            return None
+
+    def _style(self):
+        return None
+
+    def _selected_varients(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body = json.loads(json_text)
+            selected_varients = {}
+
+            for item in json_body:
+                if item['name'] == "Size" and "selectedValue" in item:
+                    selected_varients["size"] = item["selectedValue"]
+                elif item['name'] == "Actual Color" and "selectedValue" in item:
+                    selected_varients["color"] = item["selectedValue"]
+
+            if not selected_varients:
+                return None
+            else:
+                return selected_varients
+        except:
+            return None
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
@@ -2198,6 +2393,12 @@ class WalmartScraper(Scraper):
         "description" : _short_description_wrapper, \
         # TODO: check if descriptions work right
         "long_description" : _long_description_wrapper, \
+        "color": _color, \
+        "size": _size, \
+        "color_size_stockstatus": _color_size_stockstatus, \
+        "varients": _varients, \
+        "selected_varients": _selected_varients, \
+        "style": _style,
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \

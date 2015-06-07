@@ -6,8 +6,8 @@
     <field name="meta_tags" version="1.1"></field>
     <field name="meta_tag_count" version="1.1"></field>
     <field name="brand" version="1.1"></field>
-    <field name="description" version="1.1"></field>
-    <field name="long_description" version="1.1"></field>
+    <field name="description" version="1.2"></field>
+    <field name="long_description" version="1.2"></field>
     <field name="ingredients" version="1.1"></field>
     <field name="ingredient_count" version="1.1"></field>
     <field name="nutrition_facts" version="1.1"></field>
@@ -54,4 +54,10 @@
     <field name="pdf_count" version="1.1"></field>
     <field name="mobile_image_same" version="1.1"></field>
     <field name="canonical_link" version="1.1"></field>
+    <field name="color" version="1.2"></field>
+    <field name="size" version="1.2"></field>
+    <field name="color_size_stockstatus" version="1.2"></field>
+    <field name="varients" version="1.2"></field>
+    <field name="selected_varients" version="1.2"></field>
+    <field name="style" version="1.2"></field>
 </fields>

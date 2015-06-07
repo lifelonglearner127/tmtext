@@ -135,7 +135,8 @@ def job_to_fname(metadata):
         job_name += str(task_id)
     if searchterms_str:
         additional_part = unidecode.unidecode(
-            searchterms_str).replace(' ', '-')
+            searchterms_str).replace(
+                ' ', '-').replace('/', '').replace('\\', '')
     else:
         # maybe should be changed to product_url
         additional_part = 'single-product-url-request'
@@ -509,6 +510,7 @@ def execute_task_from_sqs():
     task_queue.task_done()
     logger.info("Task message was successfully received and "
                 "removed form queue.")
+    logger.info("Whole tasks msg: %s", str(metadata))
     increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
     update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
 

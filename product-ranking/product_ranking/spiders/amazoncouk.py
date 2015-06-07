@@ -88,6 +88,8 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
 
     use_proxies = True
 
+    handle_httpstatus_list = [502, 503, 504]
+
     def __init__(self, captcha_retries='20', *args, **kwargs):
         # locations = settings.get('AMAZONFRESH_LOCATION')
         # loc = locations.get(location, '')
@@ -137,6 +139,12 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
 
     def parse_product(self, response):
         prod = response.meta['product']
+
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response,
+                self.parse_product
+            )
 
         li_tags = response.xpath('//div[@class="content"]/ul/li')
         for tag in li_tags:
@@ -371,6 +379,13 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
 
     def get_buyer_reviews_from_2nd_page(self, response):
         product = response.meta["product"]
+
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response,
+                self.parse_product
+            )
+
         buyer_reviews = {}
         product["buyer_reviews"] = {}
         total_revs = is_empty(response.xpath(
@@ -563,3 +578,15 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
 
         self.log("Extracted capcha url: %s" % captcha_img, level=DEBUG)
         return self._cbw.solve_captcha(captcha_img)
+
+    def parse_502(self, response):
+        parts = urlparse.urlparse(response.url)
+        if parts.port and parts.port != 80:
+            self.log('Got status %s - retrying without port' % response.status)
+            return Request(response.url.replace(':'+str(parts.port)+'/', '/'))
+
+    def parse_503(self, response):
+        return self.parse_502(response)
+
+    def parse_504(self, response):
+        return self.parse_502(response)
