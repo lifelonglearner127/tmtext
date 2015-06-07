@@ -79,6 +79,9 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
     settings = AmazonValidatorSettings
 
+    buyer_reviews_stars = ['one_star', 'two_star', 'three_star', 'four_star',
+                           'five_star']
+
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
 
@@ -361,7 +364,6 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         cond_set(product, 'model', model, conv=string.strip)
         self.populate_bestseller_rank(product, response)
 
-
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...
         img_jsons = response.css(
@@ -373,6 +375,64 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                 'image_url',
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
+
+    def _get_rating_by_star_by_individual_request(self, response):
+        product = response.meta['product']
+        current_star = response.meta['_current_star']
+        current_star_int = [
+            i+1 for i, _star in enumerate(self.buyer_reviews_stars)
+            if _star == current_star
+        ][0]
+        br = product.get('buyer_reviews')
+        if br:
+            rating_by_star = br.get('rating_by_star')
+        else:
+            yield product
+            return
+        if not rating_by_star:
+            rating_by_star = {}
+        num_of_reviews_for_star = re.search(
+            r'Showing .+? of ([\d,\.]+) reviews', response.body)
+        if num_of_reviews_for_star:
+            num_of_reviews_for_star = num_of_reviews_for_star.group(1)
+            num_of_reviews_for_star = num_of_reviews_for_star\
+                .replace(',', '').replace('.', '')
+            rating_by_star[str(current_star_int)] \
+                = int(num_of_reviews_for_star)
+        product['buyer_reviews']['rating_by_star'] = rating_by_star
+        if len(product['buyer_reviews']['rating_by_star']) >= 5:
+            product['buyer_reviews']['num_of_reviews'] \
+                = int(product['buyer_reviews']['num_of_reviews'])
+            product['buyer_reviews']['average_rating'] \
+                = float(product['buyer_reviews']['average_rating'])
+            # ok we collected all marks for all stars - can return the product
+            product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
+            yield product
+
+    def _get_asin_from_url(self, url):
+        match = re.search(r'/([A-Z0-9]{4,15})/', url)
+        if match:
+            return match.group(1)
+
+    def _create_post_requests(self, response, asin):
+        url = ('http://www.amazon.com/ss/customer-reviews/ajax/reviews/get/'
+               'ref=cm_cr_pr_viewopt_sr')
+        meta = response.meta
+        meta['_current_star'] = {}
+        for star in self.buyer_reviews_stars:
+            args = {
+                'asin': asin, 'filterByStar': star,
+                'filterByKeyword': '', 'formatType': 'all_formats',
+                'pageNumber': '1', 'pageSize': '10', 'sortBy': 'helpful',
+                'reftag': 'cm_cr_pr_viewopt_sr', 'reviewerType': 'all_reviews',
+                'scope': 'reviewsAjax0',
+            }
+            meta['_current_star'] = star
+            yield FormRequest(
+                url=url, formdata=args, meta=meta,
+                callback=self._get_rating_by_star_by_individual_request,
+                dont_filter=True
+            )
 
     def get_buyer_reviews_from_2nd_page(self, response):
         if self._has_captcha(response):
@@ -399,6 +459,13 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         buyer_reviews = self.get_rating_by_star(response, buyer_reviews)[0]
 
         #print('*' * 20, 'parsing buyer reviews from', response.url)
+
+        if not buyer_reviews.get('rating_by_star'):
+            response.meta['product']['buyer_reviews'] = buyer_reviews
+            # if still no rating_by_star (probably the rating is percent-based)
+            return self._create_post_requests(
+                response, self._get_asin_from_url(response.url))
+            #return
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
