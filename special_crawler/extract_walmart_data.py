@@ -1071,6 +1071,36 @@ class WalmartScraper(Scraper):
         except:
             return None
 
+    def _varients(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body = json.loads(json_text)
+            varients = []
+
+            for item in json_body:
+                if item['name'] == "Size":
+                    varients.append("size")
+                elif item['name'] == "Actual Color":
+                    varients.append("color")
+
+            if not varients:
+                return None
+            else:
+                return varients
+        except:
+            return None
+
+    def _selected_varients(self):
+        return None
+
     # extract product price from its product product page tree
     def _price_from_tree(self):
         """Extracts product price
@@ -2330,6 +2360,9 @@ class WalmartScraper(Scraper):
         "color": _color, \
         "size": _size, \
         "color_size_stockstatus": _color_size_stockstatus, \
+        "varients": _varients, \
+        "selected_varients": _selected_varients, \
+
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
