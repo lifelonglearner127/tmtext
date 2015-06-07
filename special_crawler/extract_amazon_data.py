@@ -351,6 +351,51 @@ class AmazonScraper(Scraper):
         except:
             return None
 
+    def _varients(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variation_values":') + len('"variation_values":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find("}", startIndex) + 1
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+
+            varients = []
+
+            if "color_name" in json_body:
+                varients.append("color")
+
+            if "size_name" in json_body:
+                varients.append("size")
+
+            if "style_name" in json_body:
+                varients.append("style")
+
+            return varients
+        except:
+            return None
+
+    def _selected_varients(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"selected_variations":') + len('"selected_variations":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find("}", startIndex) + 1
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+
+            return json_body
+        except:
+            return None
+
     def _color_size_stockstatus(self):
         if not self._color() or not self._size():
             return None
@@ -1031,10 +1076,11 @@ class AmazonScraper(Scraper):
         "long_description" : _long_description, \
         "apluscontent_desc" : _apluscontent_desc, \
         "color": _color, \
+        "selected_varients": _selected_varients, \
         "size": _size, \
         "style": _style, \
         "color_size_stockstatus": _color_size_stockstatus, \
-
+        "varients": _varients, \
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
