@@ -5,6 +5,7 @@ import urllib
 import re
 import sys
 import json
+import lxml
 import os.path
 import urllib, cStringIO
 from io import BytesIO
@@ -146,10 +147,58 @@ class TargetScraper(Scraper):
         return self._long_description_helper()
 
     def _color(self):
-        return None
+        try:
+            json_body = None
+
+            if self.tree_html.xpath("//div[@id='entitledItem']/text()"):
+                json_body = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
+            else:
+                return None
+
+            color_list = []
+
+            for item in json_body:
+                attributes = item["Attributes"]
+
+                for key in attributes:
+                    if key.startswith("color:"):
+                        color_list.append(key[6:])
+
+            color_list = list(set(color_list))
+
+            if not color_list:
+                return None
+            else:
+                return color_list
+        except:
+            return None
 
     def _size(self):
-        return None
+        try:
+            json_body = None
+
+            if self.tree_html.xpath("//div[@id='entitledItem']/text()"):
+                json_body = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
+            else:
+                return None
+
+            size_list = []
+
+            for item in json_body:
+                attributes = item["Attributes"]
+
+                for key in attributes:
+                    if key.startswith("size:"):
+                        size_list.append(key[5:])
+
+            size_list = list(set(size_list))
+
+            if not size_list:
+                return None
+            else:
+                return size_list
+        except:
+            return None
 
     def _style(self):
         return None
@@ -158,7 +207,21 @@ class TargetScraper(Scraper):
         return None
 
     def _varients(self):
-        return None
+        varients = []
+
+        if self._color():
+            varients.append("color")
+
+        if self._size():
+            varients.append("size")
+
+        if self._style():
+            varients.append("style")
+
+        if not varients:
+            return None
+        else:
+            return varients
 
     def _selected_varients(self):
         return None
