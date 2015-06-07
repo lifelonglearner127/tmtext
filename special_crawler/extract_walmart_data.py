@@ -976,7 +976,10 @@ class WalmartScraper(Scraper):
             for color_item in color_json_body:
                 color_list.append(color_item["name"])
 
-            return color_list
+            if not color_list:
+                return None
+            else:
+                return color_list
         except:
             return None
 
@@ -1007,7 +1010,10 @@ class WalmartScraper(Scraper):
             for color_item in size_json_body:
                 size_list.append(color_item["name"])
 
-            return size_list
+            if not size_list:
+                return None
+            else:
+                return size_list
         except:
             return None
 
@@ -1067,7 +1073,10 @@ class WalmartScraper(Scraper):
                 if item['buyingOptions']['available'] == True:
                     color_size_stockstatus_dictionary[color_id_name_map[varients['actual_color']['id']]][size_id_name_map[varients['size']['id']]] = 1
 
-            return color_size_stockstatus_dictionary
+            if not color_size_stockstatus_dictionary:
+                return None
+            else:
+                return color_size_stockstatus_dictionary
         except:
             return None
 
