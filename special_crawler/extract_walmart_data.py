@@ -1099,7 +1099,31 @@ class WalmartScraper(Scraper):
             return None
 
     def _selected_varients(self):
-        return None
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body = json.loads(json_text)
+            selected_varients = {}
+
+            for item in json_body:
+                if item['name'] == "Size" and "selectedValue" in item:
+                    selected_varients["size"] = item["selectedValue"]
+                elif item['name'] == "Actual Color" and "selectedValue" in item:
+                    selected_varients["color"] = item["selectedValue"]
+
+            if not selected_varients:
+                return None
+            else:
+                return selected_varients
+        except:
+            return None
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
