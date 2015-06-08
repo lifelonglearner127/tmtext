@@ -77,11 +77,13 @@ class KohlsScraper(Scraper):
     def _features(self):
         description_block = self.tree_html.xpath("//div[@class='Bdescription']")[0]
         is_features_found = False
+        features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
 
         for element_block in description_block:
             inner_text = "".join([t.strip() for t in element_block.itertext()])
+            inner_text = inner_text.strip()
 
-            if inner_text.strip() == "Product Features:" or inner_text == "PRODUCT FEATURES":
+            if inner_text in features_title_list:
                 is_features_found = True
                 break
 
@@ -102,35 +104,82 @@ class KohlsScraper(Scraper):
         return 0
 
     def _description(self):
-        return None
+        description_block = self.tree_html.xpath("//div[@class='Bdescription']")[0]
+        short_description = ""
+        features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
+
+        if self._features():
+            features_ul = 0
+
+            for element_block in description_block:
+                inner_text = "".join([t.strip() for t in element_block.itertext()])
+                inner_text = inner_text.strip()
+
+                if inner_text in features_title_list:
+                    break
+
+                short_description += html.tostring(element_block)
+        else:
+            for element_block in description_block:
+                if element_block.tag == "ul":
+                    break
+
+                short_description += html.tostring(element_block)
+
+        if not short_description.strip():
+            return None
+        else:
+            return short_description
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        is_features_found = False
+        description_block = self.tree_html.xpath("//div[@id='pdp_details_segment']//div[@class='Bdescription']")
+        features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
+
+        if not description_block:
+            return None
+
+        description_block = description_block[0]
+
+        long_description = ""
 
         if self._features():
-            is_features_found = True
+            features_ul = 0
 
+            for element_block in description_block:
+                if html.tostring(element_block).startswith("<!--"):
+                    continue
 
-        for element_block in description_block:
-            inner_text = "".join([t.strip() for t in element_block.itertext()])
+                inner_text = "".join([t.strip() for t in element_block.itertext()])
+                inner_text = inner_text.strip()
 
-            if inner_text.strip() == "Product Features:" or inner_text == "PRODUCT FEATURES":
-                is_features_found = True
-                break
+                if inner_text in features_title_list:
+                    features_ul = 1
+                    continue
 
-        if not is_features_found:
+                if features_ul == 1:
+                    features_ul = 2
+                    continue
+
+                if features_ul == 2:
+                    long_description += html.tostring(element_block)
+        else:
+            is_long_description = False
+
+            for element_block in description_block:
+                if not is_long_description and element_block.tag == "ul":
+                    is_long_description = True
+
+                if is_long_description:
+                    long_description += html.tostring(element_block)
+
+        if not long_description.strip():
             return None
-
-        try:
-            features_block = element_block.xpath(".//following-sibling::ul")[0]
-
-            return features_block.xpath(".//li/text()")
-        except:
-            return None
+        else:
+            return long_description
 
     def _ingredients(self):
         return None
@@ -145,16 +194,34 @@ class KohlsScraper(Scraper):
         pass
         
     def _image_urls(self):
+        image_urls = self.tree_html.xpath("//div[@id='leftCarousel']/div[@class='ver-carousel']/ul/li//img/@src")
+
+        image_urls = [x for x in image_urls if "videoPlayer_Icon.png" not in x]
+
+        if image_urls:
+            return image_urls
+
         return None
 
     def _image_count(self):
-        0
+        if self._image_urls():
+            return len(self._image_urls())
+
+        return 0
 
     def _video_urls(self):
         return None
 
     def _video_count(self):
-        return 0
+        video_count = 0
+        image_urls = self.tree_html.xpath("//div[@id='leftCarousel']/div[@class='ver-carousel']/ul/li//img/@src")
+
+        video_urls = [x for x in image_urls if "videoPlayer_Icon.png" in x]
+
+        if not video_urls:
+            return 0
+
+        return len(video_urls)
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
@@ -243,37 +310,15 @@ class KohlsScraper(Scraper):
         return 0
 
     def _site_online(self):
-        if self._in_stores_only() == 1:
-            return 0
-
-        '''
-        if self._site_online_only() == 1:
-            return 1
-        '''
-
         return 1
-
-    def _site_online_only(self):
-        return 0
 
     def _in_stores(self):
-        if self._site_online_only() == 1:
+        if self.tree_html.xpath("//img[@alt='Online_Exclusive.gif']"):
             return 0
-
-        '''
-        if self._in_stores_only() == 1:
-            return 1
-        '''
 
         return 1
 
-    def _in_stores_only(self):
-        return 0
-
     def _site_online_out_of_stock(self):
-        return 0
-
-    def _owned_out_of_stock(self):
         return 0
 
     def _marketplace_sellers(self):
