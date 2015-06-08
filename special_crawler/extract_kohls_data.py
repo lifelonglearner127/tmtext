@@ -44,7 +44,6 @@ class KohlsScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        self._extract_price_json()
         try:
             itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
