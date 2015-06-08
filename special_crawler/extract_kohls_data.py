@@ -32,7 +32,7 @@ class KohlsScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match(r"^http://www.kohls.com/product/prd-\d+/.+\.jsp$", self.product_page_url)
+        m = re.match(r"^http://www.kohls.com/product/prd-.+/.+\.jsp$", self.product_page_url)
 
         return not not m
 
