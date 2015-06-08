@@ -100,8 +100,11 @@ class KohlsScraper(Scraper):
 
         try:
             features_block = element_block.xpath(".//following-sibling::ul")[0]
+            features_list = []
 
-            return features_block.xpath(".//li/text()")
+            features_list = [x.text_content() for x in features_block.xpath(".//li")]
+
+            return features_list
         except:
             return None
 
