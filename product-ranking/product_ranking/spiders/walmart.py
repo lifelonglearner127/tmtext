@@ -230,6 +230,32 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                      response.xpath(
                          '//meta[@itemprop="model"]/@content'
                      ).extract())
+        flag = 'not available'
+        if response.xpath('//meta[@name="Keywords"]').extract():
+            if not flag in response.body_as_unicode():
+                cond_set_value(product,
+                               'shipping',
+                               'Not Available')
+            else:
+                cond_set_value(product,
+                               'shipping',
+                               'Available')
+        else:
+            shipping = response.xpath(
+                '//div[@class="product-no-fulfillment Grid-col '
+                'u-size-6-12-l active"][1]/span/text()'
+                '[contains(.,"not available")]'
+            ).extract()
+
+            if shipping:
+                cond_set_value(product,
+                               'shipping',
+                               'Not Available')
+            else:
+                cond_set_value(product,
+                               'shipping',
+                               'Available')
+
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[-1] if id else None
         # if id:
@@ -353,7 +379,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "//h1[@class='productTitle']/text()"
         ).extract())
         if title:
-            title = is_empty(Selector(text=title).xpath('string()').extract())
+            title = Selector(text=title).xpath('string()').extract()
             cond_set(
                 product,
                 'title',
