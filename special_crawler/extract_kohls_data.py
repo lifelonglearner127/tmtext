@@ -4,6 +4,7 @@ import re
 import lxml
 import lxml.html
 import requests
+import json
 
 from itertools import groupby
 
@@ -17,6 +18,12 @@ class KohlsScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.ulta.com/ulta/browse/productDetail.jsp?productId=<product-id>"
+
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        # whether product has any webcollage media
+        self.review_json = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -247,48 +254,43 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
 
+    def _extract_review_json(self):
+        try:
+            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+
+            contents = requests.get("http://kohls.ugc.bazaarvoice.com/9025/%s/reviews.djs?format=embeddedhtml" % self._product_id(), headers=h).text
+            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+            end_index = contents.find("}},", start_index) + 2
+
+            self.review_json = contents[start_index:end_index]
+            self.review_json = json.loads(self.review_json)
+        except:
+            self.review_json = None
+
     def _average_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
+
+        if str(average_review).split('.')[1] == '0':
+            return int(average_review)
+        else:
+            return float(average_review)
 
     def _review_count(self):
-        return 0
+        if not self.review_json:
+            self._extract_review_json()
+
+        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
 
     def _max_review(self):
-        '''
-        if not self._reviews():
-            return 0.0
-
-        return max(self._reviews())
-        '''
         return None
 
     def _min_review(self):
-        '''
-        if not self._reviews():
-            return 0.0
-
-        return min(self._reviews())
-        '''
         return None
 
     def _reviews(self):
-        '''
-        if not self.tree_html.xpath('//div[@id="product-review-container"]/a[@id="reviews"]'):
-            return None
-
-        reviews = self.tree_html.xpath('//span[@class="pr-rating pr-rounded"]/text()')
-
-        for idx, item in enumerate(reviews):
-            reviews[idx] = float(item)
-
-        reviews.sort()
-        review_count = [len(list(group)) for key, group in groupby(reviews)]
-        reviews = list(set(reviews))
-
-        reviews = [list(a) for a in zip(reviews, review_count)]
-
-        return reviews
-        '''
         return None
 
     ##########################################
@@ -395,7 +397,6 @@ class KohlsScraper(Scraper):
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores" : _in_stores, \
-        "owned_out_of_stock": _owned_out_of_stock, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
 
