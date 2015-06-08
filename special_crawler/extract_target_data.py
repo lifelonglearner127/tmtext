@@ -206,24 +206,24 @@ class TargetScraper(Scraper):
     def _color_size_stockstatus(self):
         return None
 
-    def _varients(self):
-        varients = []
+    def _variants(self):
+        variants = []
 
         if self._color():
-            varients.append("color")
+            variants.append("color")
 
         if self._size():
-            varients.append("size")
+            variants.append("size")
 
         if self._style():
-            varients.append("style")
+            variants.append("style")
 
-        if not varients:
+        if not variants:
             return None
         else:
-            return varients
+            return variants
 
-    def _selected_varients(self):
+    def _selected_variants(self):
         return None
 
     def _long_description_helper(self):
@@ -565,11 +565,11 @@ class TargetScraper(Scraper):
         "model" : _model, \
         "long_description" : _long_description, \
         "color": _color, \
-        "selected_varients": _selected_varients, \
+        "selected_variants": _selected_variants, \
         "size": _size, \
         "style": _style, \
         "color_size_stockstatus": _color_size_stockstatus, \
-        "varients": _varients, \
+        "variants": _variants, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
