@@ -24,6 +24,7 @@ class KohlsScraper(Scraper):
 
         # whether product has any webcollage media
         self.review_json = None
+        self.price_json = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -43,7 +44,7 @@ class KohlsScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-
+        self._extract_price_json()
         try:
             itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
@@ -267,6 +268,19 @@ class KohlsScraper(Scraper):
         except:
             self.review_json = None
 
+    def _extract_price_json(self):
+        if self.price_json:
+            return
+
+        price_json = self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'var pageData=')]")
+
+        if price_json:
+            price_json = price_json[0].text
+            start_index = price_json.find("var pageData=") + len("var pageData=")
+            end_index = price_json.find("};", start_index) + 1
+            price_json = price_json[start_index:end_index]
+            self.price_json = json.loads(price_json)
+
     def _average_review(self):
         if self._review_count() == 0:
             return None
@@ -297,13 +311,33 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return None
+        self._extract_price_json()
+
+        if not self.price_json:
+            return None
+
+        if not self.price_json["product_Details"]["itemSalePrice"]:
+            return self.price_json["product_Details"]["itemOriginalPrice"]
+
+        return self.price_json["product_Details"]["itemSalePrice"]
 
     def _price_amount(self):
-        return 0
+        self._extract_price_json()
+
+        if not self.price_json:
+            return None
+
+        price_amount = 0
+
+        if not self.price_json["product_Details"]["itemSalePrice"]:
+            price_amount = self.price_json["product_Details"]["itemOriginalPrice"]
+
+        price_amount = self.price_json["product_Details"]["itemSalePrice"]
+
+        return float(price_amount[1:])
 
     def _price_currency(self):
-        return None
+        return self.tree_html.xpath("//meta[@property='og:price:currency']/@content")[0]
 
     def _owned(self):
         return 0
