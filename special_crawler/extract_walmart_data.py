@@ -1068,10 +1068,10 @@ class WalmartScraper(Scraper):
                     size_id_name_map[size["id"]] = size["name"]
 
             for item in color_size_stockstatus_json_body:
-                varients = item["variants"]
+                variants = item["variants"]
 
                 if item['buyingOptions']['available'] == True:
-                    color_size_stockstatus_dictionary[color_id_name_map[varients['actual_color']['id']]][size_id_name_map[varients['size']['id']]] = 1
+                    color_size_stockstatus_dictionary[color_id_name_map[variants['actual_color']['id']]][size_id_name_map[variants['size']['id']]] = 1
 
             if not color_size_stockstatus_dictionary:
                 return None
@@ -1080,7 +1080,7 @@ class WalmartScraper(Scraper):
         except:
             return None
 
-    def _varients(self):
+    def _variants(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
             startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
@@ -1092,25 +1092,25 @@ class WalmartScraper(Scraper):
 
             json_text = page_raw_text[startIndex:endIndex]
             json_body = json.loads(json_text)
-            varients = []
+            variants = []
 
             for item in json_body:
                 if item['name'] == "Size":
-                    varients.append("size")
+                    variants.append("size")
                 elif item['name'] == "Actual Color":
-                    varients.append("color")
+                    variants.append("color")
 
-            if not varients:
+            if not variants:
                 return None
             else:
-                return varients
+                return variants
         except:
             return None
 
     def _style(self):
         return None
 
-    def _selected_varients(self):
+    def _selected_variants(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
             startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
@@ -1122,18 +1122,18 @@ class WalmartScraper(Scraper):
 
             json_text = page_raw_text[startIndex:endIndex]
             json_body = json.loads(json_text)
-            selected_varients = {}
+            selected_variants = {}
 
             for item in json_body:
                 if item['name'] == "Size" and "selectedValue" in item:
-                    selected_varients["size"] = item["selectedValue"]
+                    selected_variants["size"] = item["selectedValue"]
                 elif item['name'] == "Actual Color" and "selectedValue" in item:
-                    selected_varients["color"] = item["selectedValue"]
+                    selected_variants["color"] = item["selectedValue"]
 
-            if not selected_varients:
+            if not selected_variants:
                 return None
             else:
-                return selected_varients
+                return selected_variants
         except:
             return None
 
@@ -2396,8 +2396,8 @@ class WalmartScraper(Scraper):
         "color": _color, \
         "size": _size, \
         "color_size_stockstatus": _color_size_stockstatus, \
-        "varients": _varients, \
-        "selected_varients": _selected_varients, \
+        "variants": _variants, \
+        "selected_variants": _selected_variants, \
         "style": _style,
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \

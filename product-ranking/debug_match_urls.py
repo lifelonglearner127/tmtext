@@ -37,17 +37,21 @@ def _parse_exclude_fields_from_arg(arg):
     return [f.strip() for f in arg.split(',')]
 
 
-def _get_mismatching_fields(d1, d2):
+def _get_mismatching_fields(d1, d2, exclude_fields):
     result = []
     # check their length (missing fields?)
-    keys1 = set(d1.keys())
-    keys2 = set(d2.keys())
+    keys1 = set([key for key in d1.keys() if not key in exclude_fields])
+    keys2 = set([key for key in d2.keys() if not key in exclude_fields])
     if len(keys1) != len(keys2):
-        return 'length'
+        return 'length: %s' % [
+            f for f in list(keys1)+list(keys2)
+            if f not in keys1 or f not in keys2
+        ]
     if keys1 != keys2:
         return 'field_names'
     # now compare values
-    for k1, v1 in d1.items():
+    for k1, v1 in [(key,value) for key,value in d1.items()
+                   if not key in exclude_fields]:
         v2 = d2[k1]
         if k1 == 'buyer_reviews':
             v1 = unify_br(str(v1))
@@ -63,9 +67,14 @@ def print_human_friendly(
         basic_color=colorama.Fore.GREEN
 ):
     for element in results:
-        field, vals = element.items()[0]
-        if field in exclude_fields:
-            continue
+        if isinstance(element, dict):
+            field, vals = element.items()[0]
+            if field in exclude_fields:
+                continue
+        else:  # string error code?
+            field = 'Fiels sets are different!'
+            vals = [field, ''] if isinstance(results, (list, tuple))\
+                else [results, '']
         print ' '*indent, heading_color, field, basic_color
         print ' '*indent*2, colorama.Fore.YELLOW, '1.', basic_color, vals[0]
         print ' '*indent*2, colorama.Fore.YELLOW, '2.', basic_color, vals[1]
@@ -111,7 +120,8 @@ if __name__ == '__main__':
                 url2 = strip_get_args(url2)
             if url1 == url2:
                 matched_urls += 1
-                mis_fields = _get_mismatching_fields(json1, json2)
+                mis_fields = _get_mismatching_fields(json1, json2,
+                                                     fields2exclude)
                 if mis_fields:
                     print 'LINE', i
                     print colorama.Fore.GREEN
