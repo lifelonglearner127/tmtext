@@ -151,3 +151,4 @@ else:
 
 # shared CH and SC code
 sys.path.append(os.path.join(CWD, '..', '..'))
+sys.path.append(os.path.join(CWD, '..', '..', 'spiders_shared_code'))
