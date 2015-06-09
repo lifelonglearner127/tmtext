@@ -15,7 +15,8 @@ setup(
             os.walk('train_captchas_data'),
             os.walk('product_ranking/data'),
             os.walk('monitoring'),
-            os.walk('../product_ranking_auto_tests')
+            os.walk('../product_ranking_auto_tests'),
+            os.walk('../spiders_shared_code')  # TODO: test!
         )
     ],
     install_requires=[

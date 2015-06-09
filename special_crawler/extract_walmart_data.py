@@ -11,7 +11,7 @@ import requests
 
 from extract_data import Scraper
 from compare_images import compare_images
-
+from spiders_shared_code.walmart_variants import WalmartVariants
 
 class WalmartScraper(Scraper):
 
@@ -102,6 +102,8 @@ class WalmartScraper(Scraper):
 
         self.failure_type = None
 
+        self.wv = WalmartVariants()
+
     # checks input format
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -120,6 +122,8 @@ class WalmartScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
+
+        self.wv.setupCH(self.tree_html)
 
         self._failure_type()
 
@@ -188,12 +192,13 @@ class WalmartScraper(Scraper):
             if emc_link:
                 emc_link = "http:" + emc_link[0]
 #                contents = requests.get(emc_link).text
+                h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
                 s = requests.Session()
                 a = requests.adapters.HTTPAdapter(max_retries=3)
                 b = requests.adapters.HTTPAdapter(max_retries=3)
                 s.mount('http://', a)
                 s.mount('https://', b)
-                contents = s.get(emc_link, timeout=5).text
+                contents = s.get(emc_link, headers=h, timeout=5).text
                 tree = html.fromstring(contents)
                 wcobj_links = tree.xpath("//img[contains(@class, 'wc-media')]/@wcobj")
 
@@ -205,12 +210,13 @@ class WalmartScraper(Scraper):
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
 #        response_text = urllib.urlopen(request_url).read()
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=3)
         b = requests.adapters.HTTPAdapter(max_retries=3)
         s.mount('http://', a)
         s.mount('https://', b)
-        response_text = s.get(request_url, timeout=5).text
+        response_text = s.get(request_url, headers=h, timeout=5).text
         tree = html.fromstring(response_text)
 
         if tree.xpath("//div[@id='iframe-video-content']") and \
@@ -239,12 +245,13 @@ class WalmartScraper(Scraper):
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
         #TODO: handle errors
 #        response_text = urllib.urlopen(request_url).read()
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=3)
         b = requests.adapters.HTTPAdapter(max_retries=3)
         s.mount('http://', a)
         s.mount('https://', b)
-        response_text = s.get(request_url, timeout=5).text
+        response_text = s.get(request_url, headers=h, timeout=5).text
         # get first "src" value in response
         # # webcollage videos
         video_url_candidates = re.findall("'file': '([^']+)'", response_text)
@@ -265,12 +272,13 @@ class WalmartScraper(Scraper):
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % self._extract_product_id()
         # TODO: handle errors
 #        response_text = urllib.urlopen(request_url).read()
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=3)
         b = requests.adapters.HTTPAdapter(max_retries=3)
         s.mount('http://', a)
         s.mount('https://', b)
-        response_text = s.get(request_url, timeout=5).text
+        response_text = s.get(request_url, headers=h, timeout=5).text
         tree = html.fromstring(response_text)
         if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']"):
             self.has_video = True
@@ -280,13 +288,14 @@ class WalmartScraper(Scraper):
             if self.tree_html.xpath("//div[starts-with(@class,'js-idml-video-container')]"):
 #                contents = requests.get("http://www.walmart.com/product/idml/video/" +
 #                                        str(self._extract_product_id()) + "/WebcollageVideos").text
+                h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
                 s = requests.Session()
                 a = requests.adapters.HTTPAdapter(max_retries=3)
                 b = requests.adapters.HTTPAdapter(max_retries=3)
                 s.mount('http://', a)
                 s.mount('https://', b)
                 contents = s.get("http://www.walmart.com/product/idml/video/" +
-                                 str(self._extract_product_id()) + "/WebcollageVideos", timeout=5).text
+                                 str(self._extract_product_id()) + "/WebcollageVideos", headers=h, timeout=5).text
 
                 if not contents:
                     self.video_urls = None
@@ -324,13 +333,14 @@ class WalmartScraper(Scraper):
 
 #        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
 #                                str(self._extract_product_id()) + "/Webcollage360View").text
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=3)
         b = requests.adapters.HTTPAdapter(max_retries=3)
         s.mount('http://', a)
         s.mount('https://', b)
         contents = s.get("http://www.walmart-content.com/product/idml/video/" +
-                         str(self._extract_product_id()) + "/Webcollage360View", timeout=5).text
+                         str(self._extract_product_id()) + "/Webcollage360View", headers=h, timeout=5).text
 
         tree = html.fromstring(contents)
         existance_360view = tree.xpath("//div[@class='wc-360']")
@@ -376,13 +386,14 @@ class WalmartScraper(Scraper):
 
 #        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
 #                                str(self._extract_product_id()) + "/WebcollageVideos").text
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=3)
         b = requests.adapters.HTTPAdapter(max_retries=3)
         s.mount('http://', a)
         s.mount('https://', b)
         contents = s.get("http://www.walmart-content.com/product/idml/video/" +
-                         str(self._extract_product_id()) + "/WebcollageVideos", timeout=5).text
+                         str(self._extract_product_id()) + "/WebcollageVideos", headers=h, timeout=5).text
 
         tree = html.fromstring(contents)
         existance_webcollage_video = tree.xpath("//div[@class='wc-fragment']")
@@ -426,13 +437,14 @@ class WalmartScraper(Scraper):
 
 #        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
 #                                str(self._extract_product_id()) + "/WebcollageInteractiveTour").text
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=3)
         b = requests.adapters.HTTPAdapter(max_retries=3)
         s.mount('http://', a)
         s.mount('https://', b)
         contents = s.get("http://www.walmart-content.com/product/idml/video/" +
-                         str(self._extract_product_id()) + "/WebcollageInteractiveTour", timeout=5).text
+                         str(self._extract_product_id()) + "/WebcollageInteractiveTour", headers=h, timeout=5).text
 
         tree = html.fromstring(contents)
         existance_product_tour = tree.xpath("//div[contains(@class, 'wc-aplus-body')]")
@@ -478,12 +490,13 @@ class WalmartScraper(Scraper):
             request_url = self.BASE_URL_PDFREQ_WEBCOLLAGE + self._extract_product_id()
 
 #            response_text = urllib.urlopen(request_url).read().decode('string-escape')
+            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
             s = requests.Session()
             a = requests.adapters.HTTPAdapter(max_retries=3)
             b = requests.adapters.HTTPAdapter(max_retries=3)
             s.mount('http://', a)
             s.mount('https://', b)
-            response_text = s.get(request_url, timeout=5).text.decode('string-escape')
+            response_text = s.get(request_url, headers=h, timeout=5).text.decode('string-escape')
 
             pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")',
                                             response_text)
@@ -506,12 +519,13 @@ class WalmartScraper(Scraper):
                 request_url = "http:" + request_url.strip()
 
 #                response_text = urllib.urlopen(request_url).read().decode('string-escape')
+                h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
                 s = requests.Session()
                 a = requests.adapters.HTTPAdapter(max_retries=3)
                 b = requests.adapters.HTTPAdapter(max_retries=3)
                 s.mount('http://', a)
                 s.mount('https://', b)
-                response_text = s.get(request_url, timeout=5).text.decode('string-escape')
+                response_text = s.get(request_url, headers=h, timeout=5).text.decode('string-escape')
 
                 pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
 
@@ -541,14 +555,14 @@ class WalmartScraper(Scraper):
             'total_reviews' - value is int
             'average_review' - value is float
         """
-
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         request_url = self.BASE_URL_REVIEWSREQ.format(self._extract_product_id())
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=3)
         b = requests.adapters.HTTPAdapter(max_retries=3)
         s.mount('http://', a)
         s.mount('https://', b)
-        content = s.get(request_url, timeout=5).text
+        content = s.get(request_url, headers=h, timeout=5).text
 
         try:
             reviews_count = re.findall(r"BVRRNonZeroCount\\\"><span class=\\\"BVRRNumber\\\">([0-9,]+)<", content)[0]
@@ -884,12 +898,13 @@ class WalmartScraper(Scraper):
             url = "http://www.walmart-content.com/product/idml/emc/" + \
                   self.product_page_url[self.product_page_url.rfind("/") + 1:]
 #            contents = requests.get(url).text
+            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
             s = requests.Session()
             a = requests.adapters.HTTPAdapter(max_retries=3)
             b = requests.adapters.HTTPAdapter(max_retries=3)
             s.mount('http://', a)
             s.mount('https://', b)
-            contents = s.get(url, timeout=5).text
+            contents = s.get(url, headers=h, timeout=5).text
 
             tree = html.fromstring(contents)
             description_elements = tree.xpath("//div[@id='js-marketing-content']//*")
@@ -950,192 +965,22 @@ class WalmartScraper(Scraper):
         return long_description
 
     def _color(self):
-        try:
-            page_raw_text = lxml.html.tostring(self.tree_html)
-            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
-
-            if startIndex == -1:
-                return None
-
-            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
-
-            json_text = page_raw_text[startIndex:endIndex]
-            json_body = json.loads(json_text)
-            color_json_body = None
-
-            for item in json_body:
-                if item['name'] == "Actual Color":
-                    color_json_body = item["variants"]
-                    break
-
-            if not color_json_body:
-                return None
-
-            color_list = []
-
-            for color_item in color_json_body:
-                color_list.append(color_item["name"])
-
-            if not color_list:
-                return None
-            else:
-                return color_list
-        except:
-            return None
+        return self.wv._color()
 
     def _size(self):
-        try:
-            page_raw_text = lxml.html.tostring(self.tree_html)
-            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
-
-            if startIndex == -1:
-                return None
-
-            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
-
-            json_text = page_raw_text[startIndex:endIndex]
-            json_body = json.loads(json_text)
-            size_json_body = None
-
-            for item in json_body:
-                if item['name'] == "Size":
-                    size_json_body = item["variants"]
-                    break
-
-            if not size_json_body:
-                return None
-
-            size_list = []
-
-            for color_item in size_json_body:
-                size_list.append(color_item["name"])
-
-            if not size_list:
-                return None
-            else:
-                return size_list
-        except:
-            return None
+        return self.wv._size()
 
     def _color_size_stockstatus(self):
-        if not self._color() or not self._size():
-            return None
-
-        try:
-            page_raw_text = lxml.html.tostring(self.tree_html)
-            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
-
-            if startIndex == -1:
-                return None
-
-            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
-
-            json_text = page_raw_text[startIndex:endIndex]
-            json_body = json.loads(json_text)
-            color_json_body = json_body[1]["variants"]
-
-            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
-
-            if startIndex == -1:
-                return None
-
-            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
-
-            json_text = page_raw_text[startIndex:endIndex]
-            json_body = json.loads(json_text)
-            size_json_body = json_body[0]["variants"]
-
-            startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
-
-            if startIndex == -1:
-                return None
-
-            endIndex = page_raw_text.find(',"primaryProductId":', startIndex)
-
-            json_text = page_raw_text[startIndex:endIndex]
-            color_size_stockstatus_json_body = json.loads(json_text)
-
-            color_size_stockstatus_dictionary = {}
-            color_id_name_map = {}
-            size_id_name_map = {}
-
-            for color in color_json_body:
-                color_size_stockstatus_dictionary[color["name"]] = {}
-                color_id_name_map[color["id"]] = color["name"]
-
-                for size in size_json_body:
-                    color_size_stockstatus_dictionary[color["name"]][size["name"]] = 0
-                    size_id_name_map[size["id"]] = size["name"]
-
-            for item in color_size_stockstatus_json_body:
-                variants = item["variants"]
-
-                if item['buyingOptions']['available'] == True:
-                    color_size_stockstatus_dictionary[color_id_name_map[variants['actual_color']['id']]][size_id_name_map[variants['size']['id']]] = 1
-
-            if not color_size_stockstatus_dictionary:
-                return None
-            else:
-                return color_size_stockstatus_dictionary
-        except:
-            return None
+        return self.wv._color_size_stockstatus()
 
     def _variants(self):
-        try:
-            page_raw_text = lxml.html.tostring(self.tree_html)
-            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
-
-            if startIndex == -1:
-                return None
-
-            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
-
-            json_text = page_raw_text[startIndex:endIndex]
-            json_body = json.loads(json_text)
-            variants = []
-
-            for item in json_body:
-                if item['name'] == "Size":
-                    variants.append("size")
-                elif item['name'] == "Actual Color":
-                    variants.append("color")
-
-            if not variants:
-                return None
-            else:
-                return variants
-        except:
-            return None
+        return self.wv._variants()
 
     def _style(self):
-        return None
+        return self.wv._style()
 
     def _selected_variants(self):
-        try:
-            page_raw_text = lxml.html.tostring(self.tree_html)
-            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
-
-            if startIndex == -1:
-                return None
-
-            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
-
-            json_text = page_raw_text[startIndex:endIndex]
-            json_body = json.loads(json_text)
-            selected_variants = {}
-
-            for item in json_body:
-                if item['name'] == "Size" and "selectedValue" in item:
-                    selected_variants["size"] = item["selectedValue"]
-                elif item['name'] == "Actual Color" and "selectedValue" in item:
-                    selected_variants["color"] = item["selectedValue"]
-
-            if not selected_variants:
-                return None
-            else:
-                return selected_variants
-        except:
-            return None
+        return self.wv._selected_variants()
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
@@ -1793,17 +1638,11 @@ class WalmartScraper(Scraper):
         Returns:
             function body as dictionary (containing various info on product)
         """
-        body_raw = "".join(self.tree_html.xpath("//section[@class='center']/script//text()"))
-        body_clean = re.sub("\n", " ", body_raw)
-        sIndex = body_clean.find(", ") + 2
-        eIndex = body_clean.rfind('define("athena/analytics-data"')
-        body_clean = body_clean[sIndex:eIndex]
-        eIndex = body_clean.rfind(");")
-
-        body_clean = body_clean[:eIndex]
-        # extract json part of function body
-        body_dict = json.loads(body_clean)
-
+        page_raw_text = html.tostring(self.tree_html)
+        start_index = page_raw_text.find('define("product/data",') + len('define("product/data",')
+        end_index = page_raw_text.find('define("athena/analytics-data"', start_index)
+        end_index = page_raw_text.rfind(");", 0, end_index) - 2
+        body_dict = json.loads(page_raw_text[start_index:end_index])
         self.js_entry_function_body = body_dict
 
         return body_dict

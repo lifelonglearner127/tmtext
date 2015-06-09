@@ -17,6 +17,7 @@ import time
 import requests
 from extract_data import Scraper
 
+from spiders_shared_code.target_variants import TargetVariants
 
 class TargetScraper(Scraper):
 
@@ -34,6 +35,11 @@ class TargetScraper(Scraper):
     reviews = None
     video_count = None
 
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        self.tv = TargetVariants()
+
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
         m = re.match(r"^http://www\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9A-Za-z]+)", self.product_page_url)
@@ -45,6 +51,8 @@ class TargetScraper(Scraper):
         Currently for Amazon it detects captcha validation forms,
         and returns True if current page is one.
         '''
+
+        self.tv.setupCH(self.tree_html)
 
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
             return True
@@ -147,84 +155,25 @@ class TargetScraper(Scraper):
         return self._long_description_helper()
 
     def _color(self):
-        try:
-            json_body = None
-
-            if self.tree_html.xpath("//div[@id='entitledItem']/text()"):
-                json_body = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
-            else:
-                return None
-
-            color_list = []
-
-            for item in json_body:
-                attributes = item["Attributes"]
-
-                for key in attributes:
-                    if key.startswith("color:"):
-                        color_list.append(key[6:])
-
-            color_list = list(set(color_list))
-
-            if not color_list:
-                return None
-            else:
-                return color_list
-        except:
-            return None
+        return self.tv._color()
 
     def _size(self):
-        try:
-            json_body = None
-
-            if self.tree_html.xpath("//div[@id='entitledItem']/text()"):
-                json_body = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
-            else:
-                return None
-
-            size_list = []
-
-            for item in json_body:
-                attributes = item["Attributes"]
-
-                for key in attributes:
-                    if key.startswith("size:"):
-                        size_list.append(key[5:])
-
-            size_list = list(set(size_list))
-
-            if not size_list:
-                return None
-            else:
-                return size_list
-        except:
-            return None
+        return self.tv._size()
 
     def _style(self):
-        return None
+        return self.tv._style()
 
     def _color_size_stockstatus(self):
-        return None
+        return self.tv._color_size_stockstatus()
 
     def _variants(self):
-        variants = []
+        return self.tv._variants()
 
-        if self._color():
-            variants.append("color")
-
-        if self._size():
-            variants.append("size")
-
-        if self._style():
-            variants.append("style")
-
-        if not variants:
-            return None
-        else:
-            return variants
+    def _price_for_variants(self):
+        return self.tv._price_for_variants()
 
     def _selected_variants(self):
-        return None
+        return self.tv._selected_variants()
 
     def _long_description_helper(self):
         rows = self.tree_html.xpath("//ul[starts-with(@class,'normal-list reduced-spacing-list')]//li")
@@ -570,6 +519,7 @@ class TargetScraper(Scraper):
         "style": _style, \
         "color_size_stockstatus": _color_size_stockstatus, \
         "variants": _variants, \
+        "price_for_variants": _price_for_variants, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
