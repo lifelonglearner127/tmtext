@@ -45,7 +45,6 @@ class TargetScraper(Scraper):
         Currently for Amazon it detects captcha validation forms,
         and returns True if current page is one.
         '''
-        self._price_for_variants()
 
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
             return True
@@ -260,23 +259,13 @@ class TargetScraper(Scraper):
                     if key.startswith("color:"):
                         price_for_vairant["color"] = key[6:]
 
-                price_for_vairant["price"] = hash_price_for_variants_json_item_to_catentry_id[variant_item["catentry_id"]]
+                price_for_vairant["price"] = hash_price_for_variants_json_item_to_catentry_id[variant_item["catentry_id"]]["Attributes"]["price"]["formattedOfferPrice"]
+                price_for_variants_list.append(price_for_vairant)
 
-            size_list = []
-
-            for item in json_body:
-                attributes = item["Attributes"]
-
-                for key in attributes:
-                    if key.startswith("size:"):
-                        size_list.append(key[5:])
-
-            size_list = list(set(size_list))
-
-            if not size_list:
+            if not price_for_variants_list:
                 return None
             else:
-                return size_list
+                return price_for_variants_list
         except:
             return None
 
