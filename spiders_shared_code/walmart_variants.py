@@ -10,15 +10,14 @@ class WalmartVariants(object):
         self.response = response
         self.tree_html = lxml.html.fromstring(response.body)
 
-    def setupCH(self):
+    def setupCH(self, tree_html):
         """ Call it from CH spiders """
-        pass
+        self.tree_html = tree_html
 
     def _color(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
-            startIndex = page_raw_text.find('"variantTypes":')\
-                         + len('"variantTypes":')
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
 
             if startIndex == -1:
                 return None
@@ -52,8 +51,7 @@ class WalmartVariants(object):
     def _size(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
-            startIndex = page_raw_text.find('"variantTypes":')\
-                         + len('"variantTypes":')
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
 
             if startIndex == -1:
                 return None
@@ -90,8 +88,7 @@ class WalmartVariants(object):
 
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
-            startIndex = page_raw_text.find('"variantTypes":')\
-                         + len('"variantTypes":')
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
 
             if startIndex == -1:
                 return None
@@ -102,8 +99,7 @@ class WalmartVariants(object):
             json_body = json.loads(json_text)
             color_json_body = json_body[1]["variants"]
 
-            startIndex = page_raw_text.find('"variantTypes":')\
-                         + len('"variantTypes":')
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
 
             if startIndex == -1:
                 return None
@@ -114,8 +110,7 @@ class WalmartVariants(object):
             json_body = json.loads(json_text)
             size_json_body = json_body[0]["variants"]
 
-            startIndex = page_raw_text.find('"variantProducts":')\
-                         + len('"variantProducts":')
+            startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
 
             if startIndex == -1:
                 return None
@@ -134,17 +129,14 @@ class WalmartVariants(object):
                 color_id_name_map[color["id"]] = color["name"]
 
                 for size in size_json_body:
-                    color_size_stockstatus_dictionary[
-                        color["name"]][size["name"]] = 0
+                    color_size_stockstatus_dictionary[color["name"]][size["name"]] = 0
                     size_id_name_map[size["id"]] = size["name"]
 
             for item in color_size_stockstatus_json_body:
                 variants = item["variants"]
 
                 if item['buyingOptions']['available'] == True:
-                    color_size_stockstatus_dictionary[
-                        color_id_name_map[variants['actual_color']['id']]
-                    ][size_id_name_map[variants['size']['id']]] = 1
+                    color_size_stockstatus_dictionary[color_id_name_map[variants['actual_color']['id']]][size_id_name_map[variants['size']['id']]] = 1
 
             if not color_size_stockstatus_dictionary:
                 return None
@@ -156,8 +148,7 @@ class WalmartVariants(object):
     def _variants(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
-            startIndex = page_raw_text.find('"variantTypes":')\
-                         + len('"variantTypes":')
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
 
             if startIndex == -1:
                 return None
@@ -187,8 +178,7 @@ class WalmartVariants(object):
     def _selected_variants(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
-            startIndex = page_raw_text.find('"variantTypes":')\
-                         + len('"variantTypes":')
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
 
             if startIndex == -1:
                 return None
@@ -211,4 +201,3 @@ class WalmartVariants(object):
                 return selected_variants
         except:
             return None
-

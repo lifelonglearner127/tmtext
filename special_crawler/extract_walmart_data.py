@@ -3,7 +3,6 @@
 import re
 import sys
 import json
-import os
 
 from lxml import html, etree
 import lxml
@@ -12,14 +11,9 @@ import requests
 
 from extract_data import Scraper
 from compare_images import compare_images
-
-
-CWD = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(CWD, '..' ))
 from spiders_shared_code.walmart_variants import WalmartVariants
 
-
-class WalmartScraper(Scraper, WalmartVariants):
+class WalmartScraper(Scraper):
 
     """Implements methods that each extract an individual piece of data for walmart.com
         Attributes:
@@ -108,6 +102,8 @@ class WalmartScraper(Scraper, WalmartVariants):
 
         self.failure_type = None
 
+        self.wv = WalmartVariants()
+
     # checks input format
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -126,6 +122,8 @@ class WalmartScraper(Scraper, WalmartVariants):
             True if it's an unavailable product page
             False otherwise
         """
+
+        self.wv.setupCH(self.tree_html)
 
         self._failure_type()
 
@@ -965,6 +963,24 @@ class WalmartScraper(Scraper, WalmartVariants):
         long_description = self._long_description()
 
         return long_description
+
+    def _color(self):
+        return self.wv._color()
+
+    def _size(self):
+        return self.wv._size()
+
+    def _color_size_stockstatus(self):
+        return self.wv._color_size_stockstatus()
+
+    def _variants(self):
+        return self.wv._variants()
+
+    def _style(self):
+        return self.wv._style()
+
+    def _selected_variants(self):
+        return self.wv._selected_variants()
 
     # extract product price from its product product page tree
     def _price_from_tree(self):
@@ -2216,13 +2232,12 @@ class WalmartScraper(Scraper, WalmartVariants):
         "description" : _short_description_wrapper, \
         # TODO: check if descriptions work right
         "long_description" : _long_description_wrapper, \
-        # we should use strings to call methods of base classes
-        "color": '_color', \
-        "size": '_size', \
-        "color_size_stockstatus": '_color_size_stockstatus', \
-        "variants": '_variants', \
-        "selected_variants": '_selected_variants', \
-        "style": '_style',
+        "color": _color, \
+        "size": _size, \
+        "color_size_stockstatus": _color_size_stockstatus, \
+        "variants": _variants, \
+        "selected_variants": _selected_variants, \
+        "style": _style,
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
