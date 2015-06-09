@@ -190,5 +190,6 @@ class SiteProductItem(Item):
     size = Field()
     color_size_stockstatus = Field()
     selected_variants = Field()
+    price_for_variants = Field()
 
     shipping = Field()  # now for Walmart only; may change in the future
