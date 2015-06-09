@@ -45,6 +45,7 @@ class TargetScraper(Scraper):
         Currently for Amazon it detects captcha validation forms,
         and returns True if current page is one.
         '''
+        self._price_for_variants()
 
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
             return True
@@ -222,6 +223,62 @@ class TargetScraper(Scraper):
             return None
         else:
             return variants
+
+    def _price_for_variants(self):
+        try:
+            variants_json_body = None
+            price_for_variants_json_body = None
+
+            if self.tree_html.xpath("//div[@id='entitledItem']/text()"):
+                variants_json_body = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
+            else:
+                return None
+
+            if self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'Target.globals.refreshItems =')]/text()"):
+                price_for_variants_json_body = self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'Target.globals.refreshItems =')]/text()")[0]
+                start_index = price_for_variants_json_body.find("Target.globals.refreshItems =") + len("Target.globals.refreshItems =")
+                price_for_variants_json_body = price_for_variants_json_body[start_index:]
+                price_for_variants_json_body = json.loads(price_for_variants_json_body)
+            else:
+                return None
+
+            hash_price_for_variants_json_item_to_catentry_id = {}
+
+            for variant_item in price_for_variants_json_body:
+                hash_price_for_variants_json_item_to_catentry_id[variant_item["catentry_id"]] = variant_item
+
+            price_for_variants_list = []
+
+            for variant_item in variants_json_body:
+                attributes = variant_item["Attributes"]
+                price_for_vairant = {}
+
+                for key in attributes:
+                    if key.startswith("size:"):
+                        price_for_vairant["size"] = key[5:]
+
+                    if key.startswith("color:"):
+                        price_for_vairant["color"] = key[6:]
+
+                price_for_vairant["price"] = hash_price_for_variants_json_item_to_catentry_id[variant_item["catentry_id"]]
+
+            size_list = []
+
+            for item in json_body:
+                attributes = item["Attributes"]
+
+                for key in attributes:
+                    if key.startswith("size:"):
+                        size_list.append(key[5:])
+
+            size_list = list(set(size_list))
+
+            if not size_list:
+                return None
+            else:
+                return size_list
+        except:
+            return None
 
     def _selected_variants(self):
         return None
@@ -570,6 +627,7 @@ class TargetScraper(Scraper):
         "style": _style, \
         "color_size_stockstatus": _color_size_stockstatus, \
         "variants": _variants, \
+        "price_for_variants": _price_for_variants, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
