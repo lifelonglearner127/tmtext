@@ -348,7 +348,7 @@ class AmazonDEScraper(Scraper):
         except:
             return None
 
-    def _varients(self):
+    def _variants(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
             startIndex = page_raw_text.find('"variation_values":') + len('"variation_values":')
@@ -361,25 +361,25 @@ class AmazonDEScraper(Scraper):
             json_text = page_raw_text[startIndex:endIndex]
             json_body =json.loads(json_text)
 
-            varients = []
+            variants = []
 
             if "color_name" in json_body:
-                varients.append("color")
+                variants.append("color")
 
             if "size_name" in json_body:
-                varients.append("size")
+                variants.append("size")
 
             if "style_name" in json_body:
-                varients.append("style")
+                variants.append("style")
 
-            if not varients:
+            if not variants:
                 return None
             else:
-                return varients
+                return variants
         except:
             return None
 
-    def _selected_varients(self):
+    def _selected_variants(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
             startIndex = page_raw_text.find('"selected_variations":') + len('"selected_variations":')
@@ -392,21 +392,21 @@ class AmazonDEScraper(Scraper):
             json_text = page_raw_text[startIndex:endIndex]
             json_body =json.loads(json_text)
 
-            selected_varients = {}
+            selected_variants = {}
 
             if "color_name" in json_body:
-                selected_varients["color"] = json_body["color_name"]
+                selected_variants["color"] = json_body["color_name"]
 
             if "size_name" in json_body:
-                selected_varients["size"] = json_body["size_name"]
+                selected_variants["size"] = json_body["size_name"]
 
             if "style_name" in json_body:
-                selected_varients["style"] = json_body["style_name"]
+                selected_variants["style"] = json_body["style_name"]
 
-            if not selected_varients:
+            if not selected_variants:
                 return None
             else:
-                return selected_varients
+                return selected_variants
         except:
             return None
 
@@ -1084,8 +1084,8 @@ class AmazonDEScraper(Scraper):
         "size": _size, \
         "color_size_stockstatus": _color_size_stockstatus, \
         "style": _style, \
-        "selected_varients": _selected_varients, \
-        "varients": _varients, \
+        "selected_variants": _selected_variants, \
+        "variants": _variants, \
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
