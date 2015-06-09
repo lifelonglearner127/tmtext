@@ -466,12 +466,9 @@ class TargetProductSpider(BaseProductsSpider):
 
             product['related_products'] = {"recommended": ritems,
                                            "buyers_also_bought": obitems}
-        variants = response.meta.get('variants')
         if self.POPULATE_REVIEWS:
             canonical_url = response.meta['canonical_url']
             return self._request_reviews(response, product, canonical_url)
-        elif variants and self.POPULATE_VARIANTS:
-            return self._populate_variants(response, product, variants)
         else:
             return product
 
@@ -784,10 +781,6 @@ class TargetProductSpider(BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', reviews)
         else:
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
-        variants = response.meta.get('variants')
-        
-        if variants and self.POPULATE_VARIANTS:
-            return self._populate_variants(response, product, variants)
         return product
 
     def _populate_collection_items(self, response, prod):
