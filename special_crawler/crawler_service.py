@@ -43,6 +43,7 @@ from extract_proswimwear_data import ProswimwearScraper
 from extract_amazonde_data import AmazonDEScraper
 from extract_ulta_data import UltaScraper
 from extract_asda_data import AsdaScraper
+from extract_kohls_data import KohlsScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -97,7 +98,8 @@ SUPPORTED_SITES = {
                     "proswimwear": ProswimwearScraper,
                     "amazonde": AmazonDEScraper,
                     "ulta": UltaScraper,
-                    "groceries": AsdaScraper
+                    "groceries": AsdaScraper,
+                    "kohls": KohlsScraper
                     }
 
 # add logger
