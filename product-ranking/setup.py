@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 import os
 import itertools
 
+
 setup(
     name='product-ranking',
     version='1.0',
@@ -16,7 +17,7 @@ setup(
             os.walk('product_ranking/data'),
             os.walk('monitoring'),
             os.walk('../product_ranking_auto_tests'),
-            os.walk('../spiders_shared_code')  # TODO: test!
+            os.walk('spiders_shared_code')  # TODO: test!
         )
     ],
     install_requires=[
