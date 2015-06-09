@@ -15,7 +15,7 @@ from compare_images import compare_images
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(CWD, '..', '..'))
+sys.path.append(os.path.join(CWD, '..' ))
 from spiders_shared_code.walmart_variants import WalmartVariants
 
 
