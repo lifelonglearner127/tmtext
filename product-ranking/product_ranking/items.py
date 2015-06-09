@@ -185,4 +185,10 @@ class SiteProductItem(Item):
     recent_questions = Field()  # now for Walmart only; may change in the future
     special_pricing = Field() # 1/0 for TPC, Rollback; target, walmart
 
+    variants = Field()
+    colors = Field()
+    sizes = Field()
+    color_size_stockstatus = Field()
+    selected_variants = Field()
+
     shipping = Field()  # now for Walmart only; may change in the future

@@ -1804,17 +1804,11 @@ class WalmartScraper(Scraper):
         Returns:
             function body as dictionary (containing various info on product)
         """
-        body_raw = "".join(self.tree_html.xpath("//section[@class='center']/script//text()"))
-        body_clean = re.sub("\n", " ", body_raw)
-        sIndex = body_clean.find(", ") + 2
-        eIndex = body_clean.rfind('define("athena/analytics-data"')
-        body_clean = body_clean[sIndex:eIndex]
-        eIndex = body_clean.rfind(");")
-
-        body_clean = body_clean[:eIndex]
-        # extract json part of function body
-        body_dict = json.loads(body_clean)
-
+        page_raw_text = html.tostring(self.tree_html)
+        start_index = page_raw_text.find('define("product/data",') + len('define("product/data",')
+        end_index = page_raw_text.find('define("athena/analytics-data"', start_index)
+        end_index = page_raw_text.rfind(");", 0, end_index) - 2
+        body_dict = json.loads(page_raw_text[start_index:end_index])
         self.js_entry_function_body = body_dict
 
         return body_dict
