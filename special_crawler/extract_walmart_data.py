@@ -19,7 +19,7 @@ sys.path.append(os.path.join(CWD, '..' ))
 from spiders_shared_code.walmart_variants import WalmartVariants
 
 
-class WalmartScraper(WalmartVariants, Scraper):
+class WalmartScraper(Scraper, WalmartVariants):
 
     """Implements methods that each extract an individual piece of data for walmart.com
         Attributes:
@@ -2205,12 +2205,13 @@ class WalmartScraper(WalmartVariants, Scraper):
         "description" : _short_description_wrapper, \
         # TODO: check if descriptions work right
         "long_description" : _long_description_wrapper, \
-        "color": _color, \
-        "size": _size, \
-        "color_size_stockstatus": _color_size_stockstatus, \
-        "variants": _variants, \
-        "selected_variants": _selected_variants, \
-        "style": _style,
+        # we should use strings to call methods of base classes
+        "color": '_color', \
+        "size": '_size', \
+        "color_size_stockstatus": '_color_size_stockstatus', \
+        "variants": '_variants', \
+        "selected_variants": '_selected_variants', \
+        "style": '_style',
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
