@@ -235,11 +235,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             if not flag in response.body_as_unicode():
                 cond_set_value(product,
                                'shipping',
-                               'Not Available')
+                               False)
             else:
                 cond_set_value(product,
                                'shipping',
-                               'Available')
+                               True)
         else:
             shipping = response.xpath(
                 '//div[@class="product-no-fulfillment Grid-col '
@@ -250,11 +250,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             if shipping:
                 cond_set_value(product,
                                'shipping',
-                               'Not Available')
+                               False)
             else:
                 cond_set_value(product,
                                'shipping',
-                               'Available')
+                               True)
 
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[-1] if id else None
