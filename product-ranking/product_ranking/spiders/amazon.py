@@ -378,6 +378,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
     def _get_rating_by_star_by_individual_request(self, response):
         product = response.meta['product']
+        mkt_place_link = response.meta.get("mkt_place_link")
         current_star = response.meta['_current_star']
         current_star_int = [
             i+1 for i, _star in enumerate(self.buyer_reviews_stars)
@@ -387,8 +388,9 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         if br:
             rating_by_star = br.get('rating_by_star')
         else:
-            yield product
-            return
+            if mkt_place_link:
+                return self.mkt_request(mkt_place_link, {"product": product})
+            return product
         if not rating_by_star:
             rating_by_star = {}
         num_of_reviews_for_star = re.search(
@@ -399,6 +401,9 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                 .replace(',', '').replace('.', '')
             rating_by_star[str(current_star_int)] \
                 = int(num_of_reviews_for_star)
+        if not str(current_star_int) in rating_by_star.keys():
+            rating_by_star[str(current_star_int)] = 0
+
         product['buyer_reviews']['rating_by_star'] = rating_by_star
         if len(product['buyer_reviews']['rating_by_star']) >= 5:
             product['buyer_reviews']['num_of_reviews'] \
@@ -407,7 +412,9 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                 = float(product['buyer_reviews']['average_rating'])
             # ok we collected all marks for all stars - can return the product
             product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
-            yield product
+            if mkt_place_link:
+                return self.mkt_request(mkt_place_link, {"product": product})
+            return product
 
     def _get_asin_from_url(self, url):
         match = re.search(r'/([A-Z0-9]{4,15})/', url)
@@ -730,3 +737,11 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         txt = response.xpath('//h1[@id="noResultsTitle"]/text()').extract()
         txt = ''.join(txt)
         return 'did not match any products' in txt
+
+    def mkt_request(self, link, meta):
+        return Request(
+            url=link, 
+            callback=self.parse_marketplace,
+            meta=meta,
+            dont_filter=True
+        )
