@@ -483,8 +483,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         wv = WalmartVariants(response)
         product['variants'] = wv._variants()
-        product['colors'] = wv._color()
-        product['sizes'] = wv._size()
+        product['color'] = wv._color()
+        product['size'] = wv._size()
         product['color_size_stockstatus'] = wv._color_size_stockstatus()
         product['selected_variants'] = wv._selected_variants()
 

@@ -186,8 +186,8 @@ class SiteProductItem(Item):
     special_pricing = Field() # 1/0 for TPC, Rollback; target, walmart
 
     variants = Field()
-    colors = Field()
-    sizes = Field()
+    color = Field()
+    size = Field()
     color_size_stockstatus = Field()
     selected_variants = Field()
 
