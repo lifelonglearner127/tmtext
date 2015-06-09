@@ -451,9 +451,10 @@ class Scraper():
             try:
                 if isinstance(self.ALL_DATA_TYPES[info], (str, unicode)):
                     _method_to_call = getattr(self, self.ALL_DATA_TYPES[info])
+                    results = _method_to_call()
                 else:  # callable?
                     _method_to_call = self.ALL_DATA_TYPES[info]
-                results = _method_to_call(self)
+                    results = _method_to_call(self)
             except IndexError, e:
                 sys.stderr.write("ERROR: No " + info + " for " + self.product_page_url.encode("utf-8") + ":\n" + str(e) + "\n")
                 results = None
