@@ -17,6 +17,7 @@ from lxml import html, etree
 from itertools import chain
 import time
 
+
 class Scraper():
 
     """Base class for scrapers

@@ -147,3 +147,7 @@ if os.path.exists(PROXY_LIST) and _check_if_proxies_available(http_proxy_path):
 else:
     log.msg('NOT USING PROXIES')
     print('NOT USING PROXIES')
+
+
+# shared CH and SC code
+sys.path.append(os.path.join(CWD, '..', '..'))
