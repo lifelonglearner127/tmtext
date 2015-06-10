@@ -244,10 +244,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             shipping = response.xpath(
                 '//div[@class="product-no-fulfillment Grid-col '
                 'u-size-6-12-l active"][1]/span/text()'
-                '[contains(.,"not available")]'
+                '[contains(.,"not available")] |'
+                '//span[@class="js-shipping-delivery-date-msg '
+                'delivery-date-msg"]/text()[contains(., "Not available")]'
             ).extract()
 
-            if shipping:
+            if len(shipping) > 0:
                 cond_set_value(product,
                                'shipping',
                                False)
