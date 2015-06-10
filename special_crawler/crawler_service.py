@@ -1,4 +1,9 @@
 #!/usr/bin/python
+import os
+import sys
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(1, os.path.join(CWD, '..'))
 
 from flask import Flask, jsonify, abort, request
 from extract_walmart_data import WalmartScraper
