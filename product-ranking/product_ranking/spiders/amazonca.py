@@ -25,6 +25,11 @@ from product_ranking.amazon_tests import AmazonTests
 is_empty = lambda x, y=None: x[0] if x else y
 
 try:
+    from spiders_shared_code.amazon_variants import AmazonVariants
+except ImportError:
+    from amazon_variants import AmazonVariants
+
+try:
     from captcha_solver import CaptchaBreakerWrapper
 except ImportError as e:
     import sys
@@ -166,6 +171,16 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         cond_set(product, 'brand', ['NO BRAND'])
         if '®' in product.get('brand', ''):
             product['brand'] = product['brand'].replace('®', '')
+        
+        ### Populate variants with CH/SC class
+        av = AmazonVariants()
+        av.setupSC(response)
+        product['variants'] = av._variants()
+        product['color'] = av._color()
+        product['size'] = av._size()
+        product['color_size_stockstatus'] = av._color_size_stockstatus()
+        product['selected_variants'] = av._selected_variants()
+
         price = response.xpath(
             '//span[@id="priceblock_saleprice"]/text()'
         ).extract()
