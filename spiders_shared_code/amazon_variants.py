@@ -65,6 +65,23 @@ class AmazonVariants(object):
         except:
             return None
 
+    def _flavor(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variation_values":') + len('"variation_values":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find("}", startIndex) + 1
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+
+            return json_body["flavor_name"]
+        except:
+            return None
+
     def _variants(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
@@ -88,6 +105,9 @@ class AmazonVariants(object):
 
             if "style_name" in json_body:
                 variants.append("style")
+
+            if "flavor_name" in json_body:
+                variants.append("flavor")
 
             if not variants:
                 return None
@@ -119,6 +139,9 @@ class AmazonVariants(object):
 
             if "style_name" in json_body:
                 selected_variants["style"] = json_body["style_name"]
+
+            if "flavor_name" in json_body:
+                selected_variants["flavor"] = json_body["flavor_name"]
 
             if not selected_variants:
                 return None

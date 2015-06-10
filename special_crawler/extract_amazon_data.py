@@ -322,6 +322,9 @@ class AmazonScraper(Scraper):
     def _variants(self):
         return self.av._variants()
 
+    def _flavor(self):
+        return self.av._flavor()
+
     def _selected_variants(self):
         return self.av._selected_variants()
 
@@ -981,6 +984,7 @@ class AmazonScraper(Scraper):
         "style": _style, \
         "color_size_stockstatus": _color_size_stockstatus, \
         "variants": _variants, \
+        "flavor": _flavor, \
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
