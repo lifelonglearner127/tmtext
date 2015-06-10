@@ -68,6 +68,10 @@ class MacysScraper(Scraper):
         product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
         return product_id
 
+    def _site_id(self):
+        site_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
+        return site_id
+
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
@@ -389,6 +393,7 @@ class MacysScraper(Scraper):
         # CONTAINER : NONE
         "url" : _url, \
         "product_id" : _product_id, \
+        "site_id" : _site_id, \
 
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
