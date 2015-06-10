@@ -7,6 +7,7 @@ import json
 import re
 import string
 import urlparse
+from datetime import datetime
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -72,6 +73,10 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
     SEARCH_URL = "http://www.amazon.ca/s/?field-keywords={search_term}"
 
+    REVIEW_DATE_URL = 'http://www.amazon.ca/product-reviews/{product_id}/' \
+                      'ref=cm_cr_pr_top_recent?ie=UTF8&showViewpoints=0&' \
+                      'sortBy=bySubmissionDateDescending'
+
     settings = AmazoncaValidatorSettings
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
@@ -117,17 +122,17 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                     "//div[@id='secondaryUsedAndNew']" \
                     "//a[contains(@href, '/gp/offer-listing/')]/@href"
                 ).extract()))
-
+            prod_id = is_empty(re.findall('dp/([a-zA-Z0-9]+)/', response.url))
+            meta = response.meta.copy()
+            meta = {"product": prod}
             if mkt_place_link:
-                meta = {"product": prod}
-                return Request(
-                    url=mkt_place_link, 
-                    callback=self.parse_marketplace,
-                    meta=meta,
-                    dont_filter=True,
-                )
-
-            result = prod
+                meta['mkt_place_link'] = mkt_place_link
+            return Request(
+                url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                callback=self.parse_last_buyer_review_date,
+                meta=meta,
+                dont_filter=True,
+            )
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
             self.log(
                 "Giving up on trying to solve the captcha challenge after"
@@ -138,6 +143,31 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         else:
             result = self._handle_captcha(response, self.parse_product)
         return result
+
+    def parse_last_buyer_review_date(self, response):
+        product = response.meta['product']
+        date = is_empty(response.xpath(
+            '//table[@id="productReviews"]/tr/td/div/div/span/nobr/text()'
+        ).extract())
+
+        if date:
+            try:
+                d = datetime.strptime(date.replace('.', ''), '%B %d %Y')
+            except:
+                d = datetime.strptime(date.replace('.', ''), '%b %d %Y')
+            date = d.strftime('%d/%m/%Y')
+            product['last_buyer_review_date'] = date
+
+        new_meta = response.meta.copy()
+        new_meta['product'] = product
+        if 'mkt_place_link' in response.meta.keys():
+                return Request(
+                    url=response.meta['mkt_place_link'],
+                    callback=self.parse_marketplace,
+                    meta=new_meta,
+                    dont_filter=True,
+                )
+        return product
 
     def populate_bestseller_rank(self, product, response):
         ranks = {' > '.join(map(unicode.strip,
