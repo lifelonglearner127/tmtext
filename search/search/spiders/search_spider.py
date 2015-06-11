@@ -58,12 +58,13 @@ class SearchSpider(BaseSpider):
     #                product_name - the product's name, for searching by product name
     #                product_url - the product's page url in the source site, for searching by product URL
     #                product_urls_file - file containing a list of product pages URLs
+    #                bestsellers_link - link to list of bestseller products
     #                output - integer(1/2/3/4) option indicating output type (either result URL (1), or result URL and source product URL (2))
     #                         3 - same as 2 but with extra field representing confidence score
     #                         4 - same as 3 but with origin products represented by UPC instead of URL
     #                         5 - same as 3 but with product name as well, on first column (name from source site)
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
-    def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
+    def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, bestsellers_link = None, walmart_ids_file = None, \
         output = 2, threshold = 1.0, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
 
         # call specific init for each derived class
@@ -74,6 +75,7 @@ class SearchSpider(BaseSpider):
         self.product_url = product_url
         self.products_file = products_file
         self.product_name = product_name
+        self.bestsellers_link = bestsellers_link
         self.output = int(output)
         self.product_urls_file = product_urls_file
         self.walmart_ids_file = walmart_ids_file
@@ -105,7 +107,12 @@ class SearchSpider(BaseSpider):
                                     'tesco' : self.parseURL_tesco, \
                                     'amazon' : self.parseURL_amazon, \
                                     'target' : self.parseURL_target, \
-                                    'maplin' : self.parseURL_maplin}
+                                    'maplin' : self.parseURL_maplin
+                                    }
+
+        # parse_bestsellers functions, for each supported origin site
+        self.parse_bestsellers_functions = {'amazon' : self.parse_bestsellers_amazon, \
+                                            }
 
 
     def build_search_pages(self, search_query):
@@ -369,8 +376,10 @@ class SearchSpider(BaseSpider):
 
                 yield request
 
+        if self.bestsellers_link:
+            origin_site = Utils.extract_domain(self.bestsellers_link)
+            yield Request(self.bestsellers_link, callback=self.parse_bestsellers_functions[origin_site])
 
-        
         # if we have product URLs, pass them to parseURL to extract product names (which will pass them to parseResults)
         product_urls = []
         # if we have a single product URL, create a list of URLs containing it
@@ -424,7 +433,29 @@ class SearchSpider(BaseSpider):
                 request = Request(walmart_url, callback = self.parseURL)
                 #request.meta['origin_site'] = 'walmart'
                 yield request
-        
+
+    def parse_bestsellers_amazon(self, response):
+        '''Parse input bestsellers link to extract all bestseller products,
+        and pass them over to parseURL to start matching with these as
+        origin urls
+        '''
+        # e.g.
+        # http://www.amazon.com/Best-Sellers-Electronics-Televisions/zgbs/electronics/172659/ref=zg_bs_nav_e_2_1266092011
+
+        hxs = HtmlXPathSelector(response)
+        product_links = hxs.select("//div[@class='zg_title']/a/@href").extract()
+        for product_link in product_links:
+            # start matching for this product
+            yield Request(product_link.strip(), callback=self.parseURL, meta={'origin_site' : 'amazon'})
+
+        # go to next page
+        try:
+            next_page_link = sel.xpath("//ol[@class='zg_pagination']/li[@class='zg_page zg_selected']/following-sibling::li[1]/a/@href")\
+            .extract()
+            yield Request(next_page_link, callback=self.parse_bestsllers_amazon)
+        except Exception:
+            pass
+
 
     # parse a product page (given its URL) and extract product's name;
     # create queries to search by (use model name, model number, and combinations of words from model name), then send them to parseResults
