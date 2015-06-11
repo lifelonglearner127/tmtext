@@ -24,14 +24,36 @@ class HomeDepotScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.homedepot.com/.*?$", self.product_page_url)
+        m = re.match(r"^http://www.homedepot.com/p/.*?$", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
+        try:
+            itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
+            if itemtype != "product":
+                raise Exception()
+
+        except Exception:
+            return True
+
+        return False
 
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
+    def _canonical_link(self):
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+        return canonical_link
+
     def _url(self):
         return self.product_page_url
 
@@ -304,6 +326,7 @@ class HomeDepotScraper(Scraper):
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
+        "canonical_link": _canonical_link,
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \

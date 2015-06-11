@@ -58,6 +58,12 @@ class KohlsScraper(Scraper):
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
+
+    def _canonical_link(self):
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+        return canonical_link
+
     def _url(self):
         return self.product_page_url
 
@@ -430,6 +436,7 @@ class KohlsScraper(Scraper):
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
+        "canonical_link": _canonical_link,
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \

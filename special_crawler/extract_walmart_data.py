@@ -2136,13 +2136,10 @@ class WalmartScraper(Scraper):
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
-        if canonical_link not in self.product_page_url:
-            if canonical_link.startswith("http://www.walmart.com"):
-                return canonical_link
-            else:
-                return "http://www.walmart.com" + canonical_link
-
-        return None
+        if canonical_link.startswith("http://www.walmart.com"):
+            return canonical_link
+        else:
+            return "http://www.walmart.com" + canonical_link
 
     def _nutrition_facts(self):
         # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
