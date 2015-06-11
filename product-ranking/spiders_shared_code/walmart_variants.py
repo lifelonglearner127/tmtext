@@ -146,7 +146,6 @@ class WalmartVariants(object):
             return None
 
     def _variants(self):
-        self.stockstatus_for_variants()
 
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
