@@ -131,9 +131,11 @@ class TargetProductSpider(BaseProductsSpider):
         prod['variants'] = tv._variants()
         prod['color'] = tv._color()
         prod['size'] = tv._size()
+        prod['style'] = tv._style()
         prod['color_size_stockstatus'] = tv._color_size_stockstatus()
         prod['selected_variants'] = tv._selected_variants()
         prod['price_for_variants'] = tv._price_for_variants()
+        prod['stockstatus_for_variants'] = tv._stockstatus_for_variants()
 
         price = is_empty(response.xpath(
             '//p[contains(@class, "price")]/span/text()').extract())
