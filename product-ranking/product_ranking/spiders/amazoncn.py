@@ -21,6 +21,10 @@ from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 
+try:
+    from spiders_shared_code.amazon_variants import AmazonVariants
+except ImportError:
+    from amazon_variants import AmazonVariants
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -167,6 +171,14 @@ class AmazonProductsSpider(BaseProductsSpider):
                 = department.items()[0]
 
     def _populate_from_html(self, response, product):
+        av = AmazonVariants()
+        av.setupSC(response)
+        product['variants'] = av._variants()
+        product['color'] = av._color()
+        product['size'] = av._size()
+        product['color_size_stockstatus'] = av._color_size_stockstatus()
+        product['selected_variants'] = av._selected_variants()
+
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         price = response.css('#priceblock_ourprice ::text '
                          ', .price3P::text'

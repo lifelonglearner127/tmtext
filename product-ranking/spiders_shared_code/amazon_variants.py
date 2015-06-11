@@ -151,10 +151,12 @@ class AmazonVariants(object):
 
                 for size in size_list:
                     color_size_stockstatus_dictionary[color][size] = 0
-
             for asin in json_body:
-                color_size_stockstatus_dictionary[json_body[asin][1]][json_body[asin][0]] = 1
-
+                try:
+                    color_size_stockstatus_dictionary[json_body[asin][1]][json_body[asin][0]] = 1
+                except:
+                    #  for amazon.cn
+                    color_size_stockstatus_dictionary[json_body[asin][0]][json_body[asin][1]] = 1
             if not color_size_stockstatus_dictionary:
                 return None
             else:
