@@ -131,6 +131,10 @@ class TargetVariants(object):
                         price_for_vairant["color"] = key[6:]
 
                 price_for_vairant["price"] = hash_price_for_variants_json_item_to_catentry_id[variant_item["catentry_id"]]["Attributes"]["price"]["formattedOfferPrice"]
+
+                if not price_for_vairant["price"].isdigit():
+                    price_for_vairant["price"] = float(price_for_vairant["price"][1:])
+
                 price_for_variants_list.append(price_for_vairant)
 
             if not price_for_variants_list:
