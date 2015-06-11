@@ -40,6 +40,11 @@ class AmazonDEScraper(Scraper):
     marketplace_prices = None
     marketplace_sellers = None
 
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        self.av = AmazonVariants()
+
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
     def _extract_page_tree(self, captcha_data=None, retries=0):
@@ -311,11 +316,20 @@ class AmazonDEScraper(Scraper):
     def _variants(self):
         return self.av._variants()
 
+    def _flavor(self):
+        return self.av._flavor()
+
     def _selected_variants(self):
         return self.av._selected_variants()
 
     def _color_size_stockstatus(self):
         return self.av._color_size_stockstatus()
+
+    def _stockstatus_for_variants(self):
+        return self.av._stockstatus_for_variants()
+
+    def _price_for_variants(self):
+        return self.av._price_for_variants()
 
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
@@ -955,8 +969,11 @@ class AmazonDEScraper(Scraper):
         "color": _color, \
         "size": _size, \
         "color_size_stockstatus": _color_size_stockstatus, \
+        "stockstatus_for_variants": _stockstatus_for_variants, \
         "style": _style, \
+        "flavor": _flavor, \
         "selected_variants": _selected_variants, \
+        "price_for_variants": _price_for_variants, \
         "variants": _variants, \
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\

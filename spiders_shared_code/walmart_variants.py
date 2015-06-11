@@ -146,6 +146,8 @@ class WalmartVariants(object):
             return None
 
     def _variants(self):
+        self.stockstatus_for_variants()
+
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
             startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
@@ -201,3 +203,79 @@ class WalmartVariants(object):
                 return selected_variants
         except:
             return None
+
+    def _stockstatus_for_variants(self):
+        color_list = self._color()
+        size_list = self._size()
+
+        if not color_list and not size_list:
+            return None
+
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body = json.loads(json_text)
+
+            color_json_body = None
+            size_json_body = None
+
+            if color_list and size_list:
+                size_json_body = json_body[0]["variants"]
+                color_json_body = json_body[1]["variants"]
+            elif color_list and not size_list:
+                color_json_body = json_body[0]["variants"]
+            elif size_list and not color_list:
+                size_json_body = json_body[0]["variants"]
+
+            startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find(',"primaryProductId":', startIndex)
+
+            json_text = page_raw_text[startIndex:endIndex]
+            color_size_stockstatus_json_body = json.loads(json_text)
+
+            stockstatus_for_variants_list = []
+            color_id_name_map = {}
+            size_id_name_map = {}
+
+            if color_json_body:
+                for color in color_json_body:
+                    color_id_name_map[color["id"]] = color["name"]
+
+            if size_json_body:
+                for size in size_json_body:
+                    size_id_name_map[size["id"]] = size["name"]
+
+            for item in color_size_stockstatus_json_body:
+                variants = item["variants"]
+                stockstatus_for_variants = {}
+
+                if color_list:
+                    stockstatus_for_variants["color"] = color_id_name_map[variants['actual_color']['id']]
+
+                if size_list:
+                    stockstatus_for_variants["size"] = size_id_name_map[variants['size']['id']]
+
+                if item['buyingOptions']['available'] == True:
+                    stockstatus_for_variants["stockstatus"] = 1
+                stockstatus_for_variants_list.append(stockstatus_for_variants)
+
+            if not stockstatus_for_variants_list:
+                return None
+            else:
+                return stockstatus_for_variants_list
+        except:
+            return None
+
+    def _price_for_variants(self):
+        return None

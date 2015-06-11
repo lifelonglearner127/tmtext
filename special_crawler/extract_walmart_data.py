@@ -979,6 +979,12 @@ class WalmartScraper(Scraper):
     def _style(self):
         return self.wv._style()
 
+    def _stockstatus_for_variants(self):
+        return self.wv._stockstatus_for_variants()
+
+    def _price_for_variants(self):
+        return self.wv._price_for_variants()
+
     def _selected_variants(self):
         return self.wv._selected_variants()
 
@@ -2237,7 +2243,9 @@ class WalmartScraper(Scraper):
         "color_size_stockstatus": _color_size_stockstatus, \
         "variants": _variants, \
         "selected_variants": _selected_variants, \
-        "style": _style,
+        "style": _style, \
+        "stockstatus_for_variants": _stockstatus_for_variants, \
+        "price_for_variants": _price_for_variants, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \

@@ -331,6 +331,12 @@ class AmazonScraper(Scraper):
     def _color_size_stockstatus(self):
         return self.av._color_size_stockstatus()
 
+    def _stockstatus_for_variants(self):
+        return self.av._stockstatus_for_variants()
+
+    def _price_for_variants(self):
+        return self.av._price_for_variants()
+
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -983,6 +989,8 @@ class AmazonScraper(Scraper):
         "size": _size, \
         "style": _style, \
         "color_size_stockstatus": _color_size_stockstatus, \
+        "stockstatus_for_variants": _stockstatus_for_variants, \
+        "price_for_variants": _price_for_variants, \
         "variants": _variants, \
         "flavor": _flavor, \
         # CONTAINER : PAGE_ATTRIBUTES

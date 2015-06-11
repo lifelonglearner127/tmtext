@@ -44,4 +44,6 @@
     <field name="varients" version="1.2"></field>
     <field name="selected_varients" version="1.2"></field>
     <field name="style" version="1.2"></field>
+    <field name="stockstatus_for_variants" version="1.2"></field>
+    <field name="price_for_variants" version="1.2"></field>
 </fields>
