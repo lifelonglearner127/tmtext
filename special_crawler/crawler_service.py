@@ -1,4 +1,9 @@
 #!/usr/bin/python
+import os
+import sys
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(1, os.path.join(CWD, '..'))
 
 from flask import Flask, jsonify, abort, request
 from extract_walmart_data import WalmartScraper
@@ -8,7 +13,6 @@ from extract_pgestore_data import PGEStore
 from extract_wayfair_data import WayfairScraper
 from extract_bestbuy_data import BestBuyScraper
 from extract_kmart_data import KMartScraper
-from extract_target_data import TargetScraper
 from extract_ozon_data import OzonScraper
 from extract_vitadepot_data import VitadepotScraper
 from extract_argos_data import ArgosScraper
@@ -29,7 +33,6 @@ from extract_staplesadvantage_data import StaplesAdvantageScraper
 from extract_souq_data import SouqScraper
 from extract_freshdirect_data import FreshDirectScraper
 from extract_peapod_data import PeapodScraper
-
 from extract_quill_data import QuillScraper
 from extract_hersheys_data import HersheysScraper
 from extract_freshamazon_data import FreshAmazonScraper
@@ -68,7 +71,6 @@ SUPPORTED_SITES = {
                     "ozon" : OzonScraper,
                     "pgestore" : PGEStore,
                     "pgshop" : PGEStore,
-                    # "target" : TargetScraper,
                     "vitadepot": VitadepotScraper,
                     "wayfair" : WayfairScraper,
                     "impactgel" : ImpactgelScraper,

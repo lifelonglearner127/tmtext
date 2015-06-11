@@ -21,6 +21,11 @@ from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
 
+try:
+    from spiders_shared_code.amazon_variants import AmazonVariants
+except ImportError:
+    from amazon_variants import AmazonVariants
+
 is_empty = lambda x, y=None: x[0] if x else y
 
 
@@ -236,6 +241,14 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         brand_name = is_empty(response.xpath('//a[@id="brand"]/text()').
             extract())
         cond_set(product, 'brand', brand_name)
+
+        av = AmazonVariants()
+        av.setupSC(response)
+        product['variants'] = av._variants()
+        product['color'] = av._color()
+        product['size'] = av._size()
+        product['color_size_stockstatus'] = av._color_size_stockstatus()
+        product['selected_variants'] = av._selected_variants()
         
         brand_logo = is_empty(response.xpath('//a[@id="brand"]/@href')
             .extract())

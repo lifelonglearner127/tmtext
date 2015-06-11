@@ -65,6 +65,23 @@ class AmazonVariants(object):
         except:
             return None
 
+    def _flavor(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"variation_values":') + len('"variation_values":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find("}", startIndex) + 1
+
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+
+            return json_body["flavor_name"]
+        except:
+            return None
+
     def _variants(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
@@ -88,6 +105,9 @@ class AmazonVariants(object):
 
             if "style_name" in json_body:
                 variants.append("style")
+
+            if "flavor_name" in json_body:
+                variants.append("flavor")
 
             if not variants:
                 return None
@@ -119,6 +139,9 @@ class AmazonVariants(object):
 
             if "style_name" in json_body:
                 selected_variants["style"] = json_body["style_name"]
+
+            if "flavor_name" in json_body:
+                selected_variants["flavor"] = json_body["flavor_name"]
 
             if not selected_variants:
                 return None
@@ -161,3 +184,58 @@ class AmazonVariants(object):
                 return color_size_stockstatus_dictionary
         except:
             return None
+
+    def _stockstatus_for_variants(self):
+        color_list = self._color()
+        size_list = self._size()
+        style_list = self._style()
+        flavor_list = self._flavor()
+
+        if not color_list and not size_list and not style_list and not flavor_list:
+            return None
+
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            startIndex = page_raw_text.find('"dimensionValuesDisplayData":') + len('"dimensionValuesDisplayData":')
+
+            if startIndex == -1:
+                return None
+
+            endIndex = page_raw_text.find("}", startIndex) + 1
+            json_text = page_raw_text[startIndex:endIndex]
+            json_body =json.loads(json_text)
+
+            stockstatus_for_variants_list = []
+
+            for asin in json_body:
+                stockstatus_for_variants = {}
+
+                if style_list and not color_list and not size_list and not flavor_list:
+                    stockstatus_for_variants["style"] = json_body[asin][0]
+                    stockstatus_for_variants["stockstatus"] = 1
+                elif not style_list and color_list and size_list:
+                    stockstatus_for_variants["size"] = json_body[asin][0]
+                    stockstatus_for_variants["color"] = json_body[asin][1]
+                    stockstatus_for_variants["stockstatus"] = 1
+                elif not style_list and not color_list and size_list:
+                    stockstatus_for_variants["size"] = json_body[asin][0]
+                    stockstatus_for_variants["stockstatus"] = 1
+                elif not style_list and color_list and not size_list:
+                    stockstatus_for_variants["color"] = json_body[asin][0]
+                    stockstatus_for_variants["stockstatus"] = 1
+                elif flavor_list:
+                    stockstatus_for_variants["flavor"] = json_body[asin][0]
+                    stockstatus_for_variants["stockstatus"] = 1
+
+                if stockstatus_for_variants:
+                    stockstatus_for_variants_list.append(stockstatus_for_variants)
+
+            if not stockstatus_for_variants_list:
+                return None
+            else:
+                return stockstatus_for_variants_list
+        except:
+            return None
+
+    def _price_for_variants(self):
+        return None
