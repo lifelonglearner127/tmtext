@@ -448,9 +448,12 @@ def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
                     metadata['server_name']+PROGRESS_QUEUE_NAME, _msg)
             # try to upload at least scrapy logs to S3
             try:
+                logger.info("Due to spider failed daemon will try"
+                            " to upload logs to s3 if they exist.")
                 put_file_into_s3(AMAZON_BUCKET_NAME, log_file)
             except Exception as e:
-                logger.error("Failed to load logs to S3 with exception:", e)
+                logger.error("Failed to load logs to S3 with exception: %s",
+                             str(e))
             # this log message should be added at the end because
             # killer script will stop instance if found this message
             # at logs
