@@ -7,6 +7,7 @@ import json
 import re
 import string
 import urlparse
+from datetime import datetime
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -42,6 +43,7 @@ except ImportError as e:
 
 is_empty = lambda x, y=None: x[0] if x else y
 
+
 class AmazonProductsSpider(BaseProductsSpider):
     name = 'amazoncn_products'
     allowed_domains = ["amazon.cn"]
@@ -50,6 +52,9 @@ class AmazonProductsSpider(BaseProductsSpider):
     #SEARCH_URL = "http://www.amazon.cn/s/ref=sr_st_{sort_mode}" \
     #             "?keywords={search_term}&rh=k:{search_term},i:{sort_category}"
 
+    REVIEW_DATE_URL = 'http://www.amazon.cn/product-reviews/{product_id}/' \
+                      'ref=cm_cr_pr_top_recent?ie=UTF8&showViewpoints=0&' \
+                      'sortBy=bySubmissionDateDescending'
     SORT_MODES = {
         'default': 'relevancerank',
         'relevance': 'relevancerank',
@@ -126,14 +131,17 @@ class AmazonProductsSpider(BaseProductsSpider):
             else:
                 result = prod
 
+            prod_id = is_empty(re.findall('dp/([a-zA-Z0-9]+)/', response.url))
+            meta = response.meta.copy()
+            meta = {"product": prod, 'product_id': prod_id}
             if mkt_place_link:
-                meta = {"product": prod}
-                return Request(
-                    url=mkt_place_link, 
-                    callback=self.parse_marketplace,
-                    meta=meta,
-                    dont_filter=True
-                )
+                meta['mkt_place_link'] = mkt_place_link
+            return Request(
+                url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                callback=self.parse_last_buyer_review_date,
+                meta=meta,
+                dont_filter=True,
+            )
 
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
             self.log("Giving up on trying to solve the captcha challenge after"
@@ -143,6 +151,30 @@ class AmazonProductsSpider(BaseProductsSpider):
         else:
             result = self._handle_captcha(response, self.parse_product)
         return result
+
+    def parse_last_buyer_review_date(self, response):
+        product = response.meta['product']
+        date = is_empty(response.xpath(
+            '//table[@id="productReviews"]/tr/td/div/div/span/nobr/text()'
+        ).extract())
+
+        if date:
+            d = datetime.strptime(
+                date.replace(u'\u5e74', ' ').replace(u'\u6708', ' ').
+                replace(u'\u65e5', ''), '%Y %m %d')
+            date = d.strftime('%d/%m/%Y')
+            product['last_buyer_review_date'] = date
+
+        new_meta = response.meta.copy()
+        new_meta['product'] = product
+        if 'mkt_place_link' in response.meta.keys():
+                return Request(
+                    url=response.meta['mkt_place_link'],
+                    callback=self.parse_marketplace,
+                    meta=new_meta,
+                    dont_filter=True,
+                )
+        return product
 
     def _populate_bestseller_rank(self, product, response):
         ranks = {' > '.join(map(unicode.strip,
@@ -500,6 +532,7 @@ class AmazonProductsSpider(BaseProductsSpider):
 
     def get_buyer_reviews_from_2nd_page(self, response):
         product = response.meta["product"]
+        prod_id = response.meta['product_id']
         buyer_reviews = {}
         product["buyer_reviews"] = {}
         total_revs = is_empty(response.xpath(
@@ -519,13 +552,15 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
-        if "mkt_place_link" in response.meta:
-            meta = {"product": product}
-            return Request(
-                url=response.meta["mkt_place_link"], 
-                callback=self.parse_marketplace,
-                meta=meta
-            )
+        meta = response.meta.copy()
+        meta['product'] = product
+        if product['buyer_reviews'] != 0:
+            return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                           meta=meta,
+                           dont_filter=True,
+                           callback=self._parse_last_buyer_review_date)
+
+        return product
 
         return product
 
