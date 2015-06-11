@@ -58,6 +58,12 @@ class KohlsScraper(Scraper):
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
+
+    def _canonical_link(self):
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+        return canonical_link
+
     def _url(self):
         return self.product_page_url
 
@@ -208,6 +214,13 @@ class KohlsScraper(Scraper):
 
         image_urls = [x for x in image_urls if "videoPlayer_Icon.png" not in x]
 
+        if not image_urls:
+            image_urls = self.tree_html.xpath("//div[@id='largeViewer']//div[@id='easyzoom_wrap']//a/img/@src")
+
+        for index, url in enumerate(image_urls):
+            if "?wid=" in url:
+                image_urls[index] = url[:url.find("?wid=")]
+
         if image_urls:
             return image_urls
 
@@ -281,6 +294,12 @@ class KohlsScraper(Scraper):
             start_index = price_json.find("var pageData=") + len("var pageData=")
             end_index = price_json.find("};", start_index) + 1
             price_json = price_json[start_index:end_index]
+            start_index = price_json.find('"itemName":"') + len('"itemName":"')
+            end_index = price_json.find('"itemProductID":')
+            end_index = price_json.rfind('"', start_index, end_index)
+            item_product_id_text = price_json[start_index:end_index]
+            item_product_id_text = item_product_id_text.replace('"', '\\"')
+            price_json = price_json[:start_index] + item_product_id_text + price_json[end_index:]
             self.price_json = json.loads(price_json)
 
     def _average_review(self):
@@ -417,6 +436,7 @@ class KohlsScraper(Scraper):
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
+        "canonical_link": _canonical_link,
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \
