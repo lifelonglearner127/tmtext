@@ -92,6 +92,9 @@ class TargetVariants(object):
             return variants
 
     def _price_for_variants(self):
+        if not self._color() and not self._size():
+            return None
+
         try:
             variants_json_body = None
             price_for_variants_json_body = None
@@ -139,3 +142,59 @@ class TargetVariants(object):
 
     def _selected_variants(self):
         return None
+
+    def _stockstatus_for_variants(self):
+        size_list = self._size()
+        color_list = self._color()
+
+        if not size_list and not color_list:
+            return None
+
+        try:
+            variants_json_body = None
+            stockstatus_for_variants_json_body = None
+
+            if self.tree_html.xpath("//div[@id='entitledItem']/text()"):
+                variants_json_body = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
+            else:
+                return None
+
+            if self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'Target.globals.refreshItems =')]/text()"):
+                stockstatus_for_variants_json_body = self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'Target.globals.refreshItems =')]/text()")[0]
+                start_index = stockstatus_for_variants_json_body.find("Target.globals.refreshItems =") + len("Target.globals.refreshItems =")
+                stockstatus_for_variants_json_body = stockstatus_for_variants_json_body[start_index:]
+                stockstatus_for_variants_json_body = json.loads(stockstatus_for_variants_json_body)
+            else:
+                return None
+
+            hash_price_for_variants_json_item_to_catentry_id = {}
+
+            for variant_item in stockstatus_for_variants_json_body:
+                hash_price_for_variants_json_item_to_catentry_id[variant_item["catentry_id"]] = variant_item
+
+            stockstatus_for_variants_list = []
+
+            for variant_item in variants_json_body:
+                attributes = variant_item["Attributes"]
+
+                if hash_price_for_variants_json_item_to_catentry_id[variant_item["catentry_id"]]["Attributes"]["inventory"]["status"] != "in stock":
+                    continue
+
+                stockstatus_for_vairant = {}
+
+                for key in attributes:
+                    if key.startswith("size:"):
+                        stockstatus_for_vairant["size"] = key[5:]
+
+                    if key.startswith("color:"):
+                        stockstatus_for_vairant["color"] = key[6:]
+
+                stockstatus_for_vairant["stockstatus"] = 1
+                stockstatus_for_variants_list.append(stockstatus_for_vairant)
+
+            if not stockstatus_for_variants_list:
+                return None
+            else:
+                return stockstatus_for_variants_list
+        except:
+            return None
