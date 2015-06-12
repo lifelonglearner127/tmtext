@@ -20,10 +20,10 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
-try:
-    from spiders_shared_code.walmart_variants import WalmartVariants
-except ImportError:
-    from walmart_variants import WalmartVariants
+#try:
+from spiders_shared_code.walmart_variants import WalmartVariants
+#except ImportError:
+#    from walmart_variants import WalmartVariants
 
 is_empty = lambda x, y="": x[0] if x else y
 
