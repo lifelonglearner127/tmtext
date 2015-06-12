@@ -14,6 +14,7 @@ import re
 import sys
 import json
 import csv
+import urllib
 
 # from selenium import webdriver
 # import time
@@ -112,6 +113,7 @@ class SearchSpider(BaseSpider):
 
         # parse_bestsellers functions, for each supported origin site
         self.parse_bestsellers_functions = {'amazon' : self.parse_bestsellers_amazon, \
+                                            'walmart' : self.parse_bestsellers_walmart
                                             }
 
 
@@ -447,13 +449,38 @@ class SearchSpider(BaseSpider):
         for product_link in product_links:
             # start matching for this product
             yield Request(product_link.strip(), callback=self.parseURL, meta={'origin_site' : 'amazon'})
+            pass
 
         # go to next page
         try:
-            next_page_link = sel.xpath("//ol[@class='zg_pagination']/li[@class='zg_page zg_selected']/following-sibling::li[1]/a/@href")\
-            .extract()
-            yield Request(next_page_link, callback=self.parse_bestsllers_amazon)
-        except Exception:
+            next_page_link = hxs.select("//ol[@class='zg_pagination']/li[@class='zg_page zg_selected']/following-sibling::li[1]/a/@href")\
+            .extract()[0]
+            yield Request(next_page_link, callback=self.parse_bestsellers_amazon)
+        except Exception, e:
+            pass
+
+    def parse_bestsellers_walmart(self, response):
+        '''Parse input bestsellers link to extract all bestseller products,
+        and pass them over to parseURL to start matching with these as
+        origin urls
+        '''
+        # e.g.
+        # http://www.walmart.com/browse/electronics/tvs/3944_1060825_447913
+
+        hxs = HtmlXPathSelector(response)
+        product_links = hxs.select("//div[@class='js-tile tile-grid-unit']/a[@class='js-product-title']/@href").extract()
+        for product_link in product_links:
+            # start matching for this product
+            product_link = "http://www.walmart.com" + product_link.strip()
+            yield Request(product_link, callback=self.parseURL, meta={'origin_site' : 'walmart'})
+
+        # go to next page
+        try:
+            next_page_link = hxs.select("//a[@class='paginator-btn paginator-btn-next']/@href").extract()[0]
+            base_url = urllib.splitquery(response.url)[0]
+            next_page_link = base_url + next_page_link
+            yield Request(next_page_link, callback=self.parse_bestsellers_walmart)
+        except Exception, e:
             pass
 
 
