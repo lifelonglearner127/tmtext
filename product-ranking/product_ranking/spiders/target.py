@@ -18,10 +18,8 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
-try:
-    from spiders_shared_code.target_variants import TargetVariants
-except ImportError:
-    from target_variants import TargetVariants
+from spiders_shared_code.target_variants import TargetVariants
+
 
 
 is_empty = lambda x, y=None: x[0] if x else y

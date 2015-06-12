@@ -20,11 +20,7 @@ from product_ranking.amazon_tests import AmazonTests
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
-
-try:
-    from spiders_shared_code.amazon_variants import AmazonVariants
-except ImportError:
-    from amazon_variants import AmazonVariants
+from spiders_shared_code.amazon_variants import AmazonVariants
 
 is_empty = lambda x, y=None: x[0] if x else y
 
