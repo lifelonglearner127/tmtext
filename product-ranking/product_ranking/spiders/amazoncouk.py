@@ -19,11 +19,7 @@ from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
 from product_ranking.amazon_tests import AmazonTests
-
-try:
-    from spiders_shared_code.amazon_variants import AmazonVariants
-except ImportError:
-    from amazon_variants import AmazonVariants
+from spiders_shared_code.amazon_variants import AmazonVariants
 
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
@@ -157,8 +153,12 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
         prod['variants'] = av._variants()
         prod['color'] = av._color()
         prod['size'] = av._size()
+        prod['style'] = av._style()
+        prod['flavor'] = av._flavor()
         prod['color_size_stockstatus'] = av._color_size_stockstatus()
         prod['selected_variants'] = av._selected_variants()
+        prod['price_for_variants'] = av._price_for_variants()
+        prod['stockstatus_for_variants'] = av._stockstatus_for_variants()
 
         li_tags = response.xpath('//div[@class="content"]/ul/li')
         for tag in li_tags:

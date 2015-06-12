@@ -21,13 +21,9 @@ from product_ranking.spiders import (BaseProductsSpider, cond_set,
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.marketplace import Amazon_marketplace
 from product_ranking.amazon_tests import AmazonTests
+from spiders_shared_code.amazon_variants import AmazonVariants
 
 is_empty = lambda x, y=None: x[0] if x else y
-
-try:
-    from spiders_shared_code.amazon_variants import AmazonVariants
-except ImportError:
-    from amazon_variants import AmazonVariants
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -178,8 +174,12 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         product['variants'] = av._variants()
         product['color'] = av._color()
         product['size'] = av._size()
+        product['style'] = av._style()
+        product['flavor'] = av._flavor()
         product['color_size_stockstatus'] = av._color_size_stockstatus()
         product['selected_variants'] = av._selected_variants()
+        product['price_for_variants'] = av._price_for_variants()
+        product['stockstatus_for_variants'] = av._stockstatus_for_variants()
 
         price = response.xpath(
             '//span[@id="priceblock_saleprice"]/text()'

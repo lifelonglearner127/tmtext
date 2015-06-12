@@ -243,8 +243,12 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         product['variants'] = av._variants()
         product['color'] = av._color()
         product['size'] = av._size()
+        product['style'] = av._style()
+        product['flavor'] = av._flavor()
         product['color_size_stockstatus'] = av._color_size_stockstatus()
         product['selected_variants'] = av._selected_variants()
+        product['price_for_variants'] = av._price_for_variants()
+        product['stockstatus_for_variants'] = av._stockstatus_for_variants()
         
         brand_logo = is_empty(response.xpath('//a[@id="brand"]/@href')
             .extract())
