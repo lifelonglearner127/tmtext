@@ -264,6 +264,13 @@ class AmazonSpider(SearchSpider):
                 manufacturer_code = manufacturer_code_node[0].strip()
                 item['manufacturer_code'] = manufacturer_code
 
+            try:
+                bestsellers_rank = hxs.select("//tr[@id='SalesRank']/td[@class='value']/text()").re("#[0-9]+")[0]
+                item['bestsellers_rank'] = int("".join(bestsellers_rank[1:]))
+            except Exception, e:
+                if self.output==6 or self.bestsellers_link:
+                    self.log("Didn't find product rank: " + str(e) + " " + response.url + "\n", level=log.INFO)
+
             asin_node = hxs.select("//li/b/text()[normalize-space()='ASIN:']/parent::node()/parent::node()/text()").extract()
             if asin_node:
                 item['product_asin'] = asin_node[0].strip()
