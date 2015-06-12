@@ -14,6 +14,7 @@ class SearchItem(Item):
 
     manufacturer_code = Field() # product code on manufacturer site. e.g.: product code on maplin.co.uk (when maplin is manufacturer), 
                                 # "manufacturer reference" on amazon.co.uk
+    bestsellers_rank = Field() # product rank in bestsellers list on target site
 
     origin_url = Field() # original product url
 #    origin_id = Field() # original (source) product id (for walmart products)
@@ -27,6 +28,7 @@ class SearchItem(Item):
     
     origin_manufacturer_code = Field() # product code on manufacturer site.
                                        #  e.g.: product code on maplin.co.uk, "manufacturer reference" on amazon.co.uk
+    origin_bestsellers_rank = Field() # product rank in bestsellers list on source (origin) site
 
     product_origin_price = Field() # price of product on origin site, in dollars
     product_target_price = Field() # price of product on target site, in dollars

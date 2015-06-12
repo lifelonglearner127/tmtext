@@ -64,6 +64,8 @@ class SearchSpider(BaseSpider):
     #                         3 - same as 2 but with extra field representing confidence score
     #                         4 - same as 3 but with origin products represented by UPC instead of URL
     #                         5 - same as 3 but with product name as well, on first column (name from source site)
+    #                         6 - same as 3 but additionally with bestsellers rank (origin and target) - to be used
+    #                             in combination with the input bestsellers_link option
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
     def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, bestsellers_link = None, walmart_ids_file = None, \
         output = 2, threshold = 1.0, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
@@ -446,16 +448,26 @@ class SearchSpider(BaseSpider):
 
         hxs = HtmlXPathSelector(response)
         product_links = hxs.select("//div[@class='zg_title']/a/@href").extract()
+
+        if 'last_index' not in response.meta:
+            last_index = 0
+        else:
+            last_index = response.meta['last_index']
+
+        # index of product in bestsellers lists
+        index = last_index
+
         for product_link in product_links:
             # start matching for this product
-            yield Request(product_link.strip(), callback=self.parseURL, meta={'origin_site' : 'amazon'})
+            index = index + 1
+            yield Request(product_link.strip(), callback=self.parseURL, meta={'origin_site' : 'amazon', 'origin_bestsellers_rank' : index})
             pass
 
         # go to next page
         try:
             next_page_link = hxs.select("//ol[@class='zg_pagination']/li[@class='zg_page zg_selected']/following-sibling::li[1]/a/@href")\
             .extract()[0]
-            yield Request(next_page_link, callback=self.parse_bestsellers_amazon)
+            yield Request(next_page_link, callback=self.parse_bestsellers_amazon, meta={'last_index' : index})
         except Exception, e:
             pass
 
@@ -469,17 +481,25 @@ class SearchSpider(BaseSpider):
 
         hxs = HtmlXPathSelector(response)
         product_links = hxs.select("//div[@class='js-tile tile-grid-unit']/a[@class='js-product-title']/@href").extract()
+
+        if 'last_index' not in response.meta:
+            last_index = 0
+        else:
+            last_index = response.meta['last_index']
+
+
         for product_link in product_links:
             # start matching for this product
             product_link = "http://www.walmart.com" + product_link.strip()
-            yield Request(product_link, callback=self.parseURL, meta={'origin_site' : 'walmart'})
+            index = index + 1
+            yield Request(product_link, callback=self.parseURL, meta={'origin_site' : 'walmart', 'origin_bestsellers_rank' : index})
 
         # go to next page
         try:
             next_page_link = hxs.select("//a[@class='paginator-btn paginator-btn-next']/@href").extract()[0]
             base_url = urllib.splitquery(response.url)[0]
             next_page_link = base_url + next_page_link
-            yield Request(next_page_link, callback=self.parse_bestsellers_walmart)
+            yield Request(next_page_link, callback=self.parse_bestsellers_walmart, meta={'last_index' : index})
         except Exception, e:
             pass
 
@@ -759,6 +779,8 @@ class SearchSpider(BaseSpider):
         request.meta['origin_manufacturer_code'] = product_manufacturer_code
         if product_price:
             request.meta['origin_price'] = product_price
+        if 'origin_bestsellers_rank' in response.meta:
+            request.meta['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
         # origin product brand as extracted from name (basically the first word in the name)
         request.meta['origin_brand_extracted'] = product_brand_extracted
@@ -984,10 +1006,10 @@ class SearchSpider(BaseSpider):
                 if currency != "$":
                     price = Utils.convert_to_dollars(price, currency)
             else:
-                self.log("Didn't match product price: " + product_target_price + " (" + product_name + ")\n", level=log.WARNING)
+                self.log("Didn't match product price: " + product_target_price + " (" + str(product_name) + ")\n", level=log.WARNING)
 
         else:
-            self.log("Didn't find product price: (" + product_name + ")\n", level=log.INFO)
+            self.log("Didn't find product price: (" + str(product_name) + ")\n", level=log.INFO)
 
         return (product_name, product_model, price, None, None)
 
@@ -1126,6 +1148,8 @@ class SearchSpider(BaseSpider):
                     request.meta['threshold'] = response.meta['threshold']
                 if 'origin_manufacturer_code' in response.meta:
                     request.meta['origin_manufacturer_code'] = response.meta['origin_manufacturer_code']
+                if 'origin_bestsellers_rank' in response.meta:
+                    request.meta['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
                 # if 'origin_id' in response.meta:
                 #     request.meta['origin_id'] = response.meta['origin_id']
@@ -1198,6 +1222,8 @@ class SearchSpider(BaseSpider):
                         item['origin_upc'] = response.meta['origin_upc']
                     if 'origin_manufacturer_code' in response.meta:
                         item['origin_manufacturer_code'] = response.meta['origin_manufacturer_code']
+                    if 'origin_bestsellers_rank' in response.meta:
+                        item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
                     # if 'origin_id' in response.meta:
                     #     item['origin_id'] = response.meta['origin_id']
