@@ -20,10 +20,8 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
-try:
-    from spiders_shared_code.walmart_variants import WalmartVariants
-except ImportError:
-    from walmart_variants import WalmartVariants
+from spiders_shared_code.walmart_variants import WalmartVariants
+
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -298,8 +296,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         product['variants'] = wv._variants()
         product['color'] = wv._color()
         product['size'] = wv._size()
+        product['style'] = wv._style()
         product['color_size_stockstatus'] = wv._color_size_stockstatus()
         product['selected_variants'] = wv._selected_variants()
+        product['price_for_variants'] = wv._price_for_variants()
+        product['stockstatus_for_variants'] = wv._stockstatus_for_variants()
 
         return self._start_related(response)
 

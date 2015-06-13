@@ -35,7 +35,7 @@ class URLsPipeline(object):
 
             # write headers row
             titles = []
-            if int(spider.output) in [2,3]:
+            if int(spider.output) in [2,3,6]:
                 titles.append("Original_URL")
             if int(spider.output) == 4:
                 titles.append("Original_UPC")
@@ -49,6 +49,11 @@ class URLsPipeline(object):
             #     titles.append("Original_product_name")
             #     titles.append("Original_product_model")
             titles.append("Match_URL")
+
+            if int(spider.output) == 6:
+                titles.append("Original_Bestsellers_Rank")
+                titles.append("Target_Bestsellers_Rank")
+
 
             # TODO. uncomment
             # if int(spider.output) == 3:
@@ -111,6 +116,13 @@ class URLsPipeline(object):
             elif option>=3:
                 fields.append("")
             #fields.append(item['product_url'] if 'product_url' in item else "")
+            
+            if option == 6:
+                if 'bestsellers_rank' not in item:
+                    item['bestsellers_rank'] = 0
+                fields.append(str(item['origin_bestsellers_rank']))
+                fields.append(str(item['bestsellers_rank']))
+
             
             # if output type is 3, add additional fields
             if option >= 3:

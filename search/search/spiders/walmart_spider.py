@@ -120,6 +120,8 @@ class WalmartSpider(SearchSpider):
             item['origin_model'] = response.meta['origin_model']
         if 'origin_upc' in response.meta:
             item['origin_upc'] = response.meta['origin_upc']
+        if 'origin_bestsellers_rank' in response.meta:
+            item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
         # assume new design of walmart product page
         product_name_node = hxs.select("//h1[contains(@class, 'product-name')]//text()").extract()
