@@ -486,7 +486,7 @@ class SearchSpider(BaseSpider):
             last_index = 0
         else:
             last_index = response.meta['last_index']
-
+        index = last_index
 
         for product_link in product_links:
             # start matching for this product
