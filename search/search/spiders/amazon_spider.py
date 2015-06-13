@@ -265,8 +265,9 @@ class AmazonSpider(SearchSpider):
                 item['manufacturer_code'] = manufacturer_code
 
             try:
-                bestsellers_rank = hxs.select("//tr[@id='SalesRank']/td[@class='value']/text()").re("#[0-9]+")[0]
-                item['bestsellers_rank'] = int("".join(bestsellers_rank[1:]))
+                bestsellers_rank = hxs.select("//tr[@id='SalesRank']/td[@class='value']/text()" + 
+                    " | //li[@id='SalesRank']/text()").re("#[0-9,]+")[0]
+                item['bestsellers_rank'] = int(re.sub(",", "", "".join(bestsellers_rank[1:])))
             except Exception, e:
                 if self.output==6 or self.bestsellers_link:
                     self.log("Didn't find product rank: " + str(e) + " " + response.url + "\n", level=log.INFO)
