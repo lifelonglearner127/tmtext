@@ -4,6 +4,7 @@ import lxml.html
 import itertools
 import re
 
+
 class AmazonVariants(object):
 
     def setupSC(self, response):

@@ -1,7 +1,7 @@
 import json
 
 import lxml.html
-import re
+
 
 class WalmartVariants(object):
 

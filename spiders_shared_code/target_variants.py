@@ -1,8 +1,7 @@
 import json
 
 import lxml.html
-import itertools
-import re
+
 
 class TargetVariants(object):
 
