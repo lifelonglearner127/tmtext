@@ -116,7 +116,11 @@ class MacysProductsSpider(ProductsSpider):
                  box.css('.shortDescription a::text').extract(),
                  string.strip)
 
-        price = box.css('.prices span.priceSale::text').re(FLOATING_POINT_RGEX)
+        if box.css('.priceSale::text'):
+            price = box.css('.priceSale::text').re(FLOATING_POINT_RGEX)
+        else:
+            price = box.css('.prices span.priceSale::text').re(
+                FLOATING_POINT_RGEX)
         if not price:
             price = box.css('.prices span::text').re(FLOATING_POINT_RGEX)
         if price:
@@ -186,6 +190,8 @@ class MacysProductsSpider(ProductsSpider):
             price = response.xpath(
                 "//div[@id='priceInfo']/div/span/text()"
             ).re(FLOATING_POINT_RGEX)
+        if response.css('.priceSale::text'):
+            price = response.css('.priceSale::text').re(FLOATING_POINT_RGEX)
         if price:
                 product['price'] = Price(price=price[0],
                                          priceCurrency='USD')
