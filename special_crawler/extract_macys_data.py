@@ -173,6 +173,17 @@ class MacysScraper(Scraper):
                 if len(img) >= 2:
                     image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % img[1].replace('"','').replace("'",""))
 
+        image_url_additional2 = re.findall(r"MACYS.pdp.additionalImages\[\d+\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_additional2) > 0:
+            image_urls = image_url_additional2[0].split('",')
+            image_url_additional = []
+            for r in image_urls:
+                img = r.split(":")
+                if len(img) >= 2:
+                    imgs = img[1].replace('"','').replace("'","").split(",")
+                    for r in imgs:
+                        image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
+
         image_url = self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img/@src")
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url) < 1:
@@ -201,6 +212,8 @@ class MacysScraper(Scraper):
             return self.video_urls
         self.video_count = 0
         video_urls = []
+        rows = re.findall(r'videoid: "(.*?)"', " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        video_urls = rows
         if len(video_urls) < 1:
             return None
         self.video_urls = video_urls
