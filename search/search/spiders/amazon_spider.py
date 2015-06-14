@@ -157,6 +157,9 @@ class AmazonSpider(SearchSpider):
         if 'origin_upc' in response.meta:
             item['origin_upc'] = response.meta['origin_upc']
 
+        if 'origin_bestsellers_rank' in response.meta:
+            item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
+
 
         # if 'origin_id' in response.meta:
         #     item['origin_id'] = response.meta['origin_id']
@@ -260,6 +263,14 @@ class AmazonSpider(SearchSpider):
             if manufacturer_code_node:
                 manufacturer_code = manufacturer_code_node[0].strip()
                 item['manufacturer_code'] = manufacturer_code
+
+            try:
+                bestsellers_rank = hxs.select("//tr[@id='SalesRank']/td[@class='value']/text()" + 
+                    " | //li[@id='SalesRank']/text()").re("#[0-9,]+")[0]
+                item['bestsellers_rank'] = int(re.sub(",", "", "".join(bestsellers_rank[1:])))
+            except Exception, e:
+                if self.output==6 or self.bestsellers_link:
+                    self.log("Didn't find product rank: " + str(e) + " " + response.url + "\n", level=log.INFO)
 
             asin_node = hxs.select("//li/b/text()[normalize-space()='ASIN:']/parent::node()/parent::node()/text()").extract()
             if asin_node:

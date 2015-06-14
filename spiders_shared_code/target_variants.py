@@ -150,53 +150,47 @@ class TargetVariants(object):
         return None
 
     def _stockstatus_for_variants(self):
-        size_list = self._size()
-        color_list = self._color()
-
-        if not size_list and not color_list:
-            return None
-
         try:
-            variants_json_body = None
-            stockstatus_for_variants_json_body = None
-
-            if self.tree_html.xpath("//div[@id='entitledItem']/text()"):
-                variants_json_body = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
-            else:
-                return None
+            variation_combinations_values = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
 
             if self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'Target.globals.refreshItems =')]/text()"):
-                stockstatus_for_variants_json_body = self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'Target.globals.refreshItems =')]/text()")[0]
-                start_index = stockstatus_for_variants_json_body.find("Target.globals.refreshItems =") + len("Target.globals.refreshItems =")
-                stockstatus_for_variants_json_body = stockstatus_for_variants_json_body[start_index:]
-                stockstatus_for_variants_json_body = json.loads(stockstatus_for_variants_json_body)
+                stockstatus_for_variation_combinations = self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'Target.globals.refreshItems =')]/text()")[0]
+                start_index = stockstatus_for_variation_combinations.find("Target.globals.refreshItems =") + len("Target.globals.refreshItems =")
+                stockstatus_for_variation_combinations = stockstatus_for_variation_combinations[start_index:]
+                stockstatus_for_variation_combinations = json.loads(stockstatus_for_variation_combinations)
             else:
                 return None
 
-            hash_price_for_variants_json_item_to_catentry_id = {}
+            hash_catentryid_to_stockstatus = {}
 
-            for variant_item in stockstatus_for_variants_json_body:
-                hash_price_for_variants_json_item_to_catentry_id[variant_item["catentry_id"]] = variant_item
+            for stockstatus in stockstatus_for_variation_combinations:
+                hash_catentryid_to_stockstatus[stockstatus["catentry_id"]] = stockstatus["Attributes"]
 
             stockstatus_for_variants_list = []
 
-            for variant_item in variants_json_body:
+            for variant_item in variation_combinations_values:
+                stockstatus_for_variants = {}
+                properties = {}
+
                 attributes = variant_item["Attributes"]
-
-                if hash_price_for_variants_json_item_to_catentry_id[variant_item["catentry_id"]]["Attributes"]["inventory"]["status"] != "in stock":
-                    continue
-
-                stockstatus_for_vairant = {}
 
                 for key in attributes:
                     if key.startswith("size:"):
-                        stockstatus_for_vairant["size"] = key[5:]
+                        properties["size"] = key[5:]
 
                     if key.startswith("color:"):
-                        stockstatus_for_vairant["color"] = key[6:]
+                        properties["color"] = key[6:]
 
-                stockstatus_for_vairant["stockstatus"] = 1
-                stockstatus_for_variants_list.append(stockstatus_for_vairant)
+                stockstatus_for_variants["properties"] = properties
+                stockstatus_for_variants["selected"] = None
+                stockstatus_for_variants["price"] = float(hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["price"]["formattedOfferPrice"][1:])
+
+                if hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["inventory"]["status"] == "in stock":
+                    stockstatus_for_variants["in_stock"] = True
+                else:
+                    stockstatus_for_variants["in_stock"] = False
+
+                stockstatus_for_variants_list.append(stockstatus_for_variants)
 
             if not stockstatus_for_variants_list:
                 return None
