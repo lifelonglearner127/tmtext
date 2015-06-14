@@ -17,7 +17,7 @@ class JcpenneyScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.kohls.com/product/prd-<product-id>/<optional-part-of-product-name>.jsp"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www\.jcpenney\.com/.*/prod\.jump\?ppId=.+$"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -32,7 +32,7 @@ class JcpenneyScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match(r"^http://www.kohls.com/product/prd-.+/.+\.jsp$", self.product_page_url)
+        m = re.match(r"^http://www\.jcpenney\.com/.*/prod\.jump\?ppId=.+$", self.product_page_url)
 
         return not not m
 
@@ -45,9 +45,9 @@ class JcpenneyScraper(Scraper):
             False otherwise
         """
         try:
-            itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
+            itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')[0]
 
-            if itemtype != "product":
+            if not itemtype:
                 raise Exception()
 
         except Exception:
@@ -68,9 +68,7 @@ class JcpenneyScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//input[@class='preSelectedskuId']/@value")[0].strip()[:-1]
-
-        return product_id
+         return re.search('prod\.jump\?ppId=(.+?)$', self.product_page_url).group(1)
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -88,59 +86,20 @@ class JcpenneyScraper(Scraper):
         return None
 
     def _features(self):
-        description_block = self.tree_html.xpath("//div[@class='Bdescription']")[0]
-        is_features_found = False
-        features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
-
-        for element_block in description_block:
-            inner_text = "".join([t.strip() for t in element_block.itertext()])
-            inner_text = inner_text.strip()
-
-            if inner_text in features_title_list:
-                is_features_found = True
-                break
-
-        if not is_features_found:
-            return None
-
-        try:
-            features_block = element_block.xpath(".//following-sibling::ul")[0]
-            features_list = []
-
-            features_list = [x.text_content() for x in features_block.xpath(".//li")]
-
-            return features_list
-        except:
-            return None
+        return None
 
     def _feature_count(self):
-        if self._features():
-            return len(self._features())
-
         return 0
 
     def _description(self):
-        description_block = self.tree_html.xpath("//div[@class='Bdescription']")[0]
+        description_block = self.tree_html.xpath("//div[@id='longCopyCont']")[0]
         short_description = ""
-        features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
 
-        if self._features():
-            features_ul = 0
+        for element in description_block:
+            if "style" in element.attrib and element.attrib["style"].startswith('page-break-after'):
+                break
 
-            for element_block in description_block:
-                inner_text = "".join([t.strip() for t in element_block.itertext()])
-                inner_text = inner_text.strip()
-
-                if inner_text in features_title_list:
-                    break
-
-                short_description += html.tostring(element_block)
-        else:
-            for element_block in description_block:
-                if element_block.tag == "ul":
-                    break
-
-                short_description += html.tostring(element_block)
+            short_description = short_description + html.tostring(element)
 
         if not short_description.strip():
             return None
@@ -152,45 +111,17 @@ class JcpenneyScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_block = self.tree_html.xpath("//div[@id='pdp_details_segment']//div[@class='Bdescription']")
-        features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
-
-        if not description_block:
-            return None
-
-        description_block = description_block[0]
-
+        description_block = self.tree_html.xpath("//div[@id='longCopyCont']")[0]
         long_description = ""
+        long_description_start = False
 
-        if self._features():
-            features_ul = 0
+        for element in description_block:
+            if "style" in element.attrib and element.attrib["style"].startswith('page-break-after'):
+                long_description_start = True
+                continue
 
-            for element_block in description_block:
-                if html.tostring(element_block).startswith("<!--"):
-                    continue
-
-                inner_text = "".join([t.strip() for t in element_block.itertext()])
-                inner_text = inner_text.strip()
-
-                if inner_text in features_title_list:
-                    features_ul = 1
-                    continue
-
-                if features_ul == 1:
-                    features_ul = 2
-                    continue
-
-                if features_ul == 2:
-                    long_description += html.tostring(element_block)
-        else:
-            is_long_description = False
-
-            for element_block in description_block:
-                if not is_long_description and element_block.tag == "ul":
-                    is_long_description = True
-
-                if is_long_description:
-                    long_description += html.tostring(element_block)
+            if long_description_start:
+                long_description = long_description + html.tostring(element)
 
         if not long_description.strip():
             return None
@@ -210,21 +141,18 @@ class JcpenneyScraper(Scraper):
         pass
         
     def _image_urls(self):
-        image_urls = self.tree_html.xpath("//div[@id='leftCarousel']/div[@class='ver-carousel']/ul/li//img/@src")
+        image_ids = re.search('var imageName = "(.+?)";', html.tostring(self.tree_html)).group(1)
+        image_ids = image_ids.split(",")
 
-        image_urls = [x for x in image_urls if "videoPlayer_Icon.png" not in x]
+        image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?wid=35&hei=35&fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
 
         if not image_urls:
-            image_urls = self.tree_html.xpath("//div[@id='largeViewer']//div[@id='easyzoom_wrap']//a/img/@src")
+            return None
 
-        for index, url in enumerate(image_urls):
-            if "?wid=" in url:
-                image_urls[index] = url[:url.find("?wid=")]
-
-        if image_urls:
+        if len(image_urls) > 1:
+            return image_urls[1:]
+        else:
             return image_urls
-
-        return None
 
     def _image_count(self):
         if self._image_urls():
@@ -236,15 +164,7 @@ class JcpenneyScraper(Scraper):
         return None
 
     def _video_count(self):
-        video_count = 0
-        image_urls = self.tree_html.xpath("//div[@id='leftCarousel']/div[@class='ver-carousel']/ul/li//img/@src")
-
-        video_urls = [x for x in image_urls if "videoPlayer_Icon.png" in x]
-
-        if not video_urls:
-            return 0
-
-        return len(video_urls)
+        return 0
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
@@ -272,35 +192,22 @@ class JcpenneyScraper(Scraper):
 
     def _extract_review_json(self):
         try:
+            review_id = re.search('reviewId:"(.+?)",', html.tostring(self.tree_html)).group(1)
+
             h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
 
-            contents = requests.get("http://kohls.ugc.bazaarvoice.com/9025/%s/reviews.djs?format=embeddedhtml" % self._product_id(), headers=h).text
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find("}},", start_index) + 2
-
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
+            contents = requests.get("https://jcpenney.ugc.bazaarvoice.com/1573-en_us/%s/reviews.djs?format=embeddedhtml" % review_id, headers=h).text
+            review_json = re.search('webAnalyticsConfig:(.+?),\nwidgetInitializers:initializers,', contents).group(1)
+            self.review_json = json.loads(review_json)
         except:
             self.review_json = None
 
     def _extract_price_json(self):
-        if self.price_json:
-            return
-
-        price_json = self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'var pageData=')]")
-
-        if price_json:
-            price_json = price_json[0].text
-            start_index = price_json.find("var pageData=") + len("var pageData=")
-            end_index = price_json.find("};", start_index) + 1
-            price_json = price_json[start_index:end_index]
-            start_index = price_json.find('"itemName":"') + len('"itemName":"')
-            end_index = price_json.find('"itemProductID":')
-            end_index = price_json.rfind('"', start_index, end_index)
-            item_product_id_text = price_json[start_index:end_index]
-            item_product_id_text = item_product_id_text.replace('"', '\\"')
-            price_json = price_json[:start_index] + item_product_id_text + price_json[end_index:]
+        try:
+            price_json= re.search('var jcpPPJSON = (.+?);\njcpDLjcp\.productPresentation = jcpPPJSON;', html.tostring(self.tree_html)).group(1)
             self.price_json = json.loads(price_json)
+        except:
+            self.price_json = None
 
     def _average_review(self):
         if self._review_count() == 0:
@@ -337,10 +244,12 @@ class JcpenneyScraper(Scraper):
         if not self.price_json:
             return None
 
-        if not self.price_json["product_Details"]["itemSalePrice"]:
-            return self.price_json["product_Details"]["itemOriginalPrice"]
+        price = self.price_json["price"]
 
-        return self.price_json["product_Details"]["itemSalePrice"]
+        if float(price).is_integer():
+            price = int(price)
+
+        return "$" + str(price)
 
     def _price_amount(self):
         self._extract_price_json()
@@ -348,17 +257,15 @@ class JcpenneyScraper(Scraper):
         if not self.price_json:
             return None
 
-        price_amount = 0
+        price = self.price_json["price"]
 
-        if not self.price_json["product_Details"]["itemSalePrice"]:
-            price_amount = self.price_json["product_Details"]["itemOriginalPrice"]
+        if float(price).is_integer():
+            price = int(price)
 
-        price_amount = self.price_json["product_Details"]["itemSalePrice"]
-
-        return float(price_amount[1:])
+        return price
 
     def _price_currency(self):
-        return self.tree_html.xpath("//meta[@property='og:price:currency']/@content")[0]
+        return "USD"
 
     def _owned(self):
         return 0
@@ -370,9 +277,6 @@ class JcpenneyScraper(Scraper):
         return 1
 
     def _in_stores(self):
-        if self.tree_html.xpath("//img[@alt='Online_Exclusive.gif']"):
-            return 0
-
         return 1
 
     def _site_online_out_of_stock(self):
@@ -388,13 +292,18 @@ class JcpenneyScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return None
+        return self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")[1:-1]
 
     def _category_name(self):
-        return None
+        return self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")[-2]
 
     def _brand(self):
-        return None
+        self._extract_price_json()
+
+        if not self.price_json:
+            return None
+
+        return self.price_json["products"][0]["lots"][0]["brandName"]
 
     ##########################################
     ################ HELPER FUNCTIONS
