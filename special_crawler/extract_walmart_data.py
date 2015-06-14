@@ -683,6 +683,10 @@ class WalmartScraper(Scraper):
 
         return self.stringify_children(product_name_node[0]).strip()
 
+    # extract walmart no
+    def _site_id(self):
+        return self.tree_html.xpath("//tr[@class='js-product-specs-row']/td[text() = 'Walmart No.:']/following-sibling::td/text()")[0].strip()
+
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_keywords_from_tree(self):
@@ -2227,6 +2231,7 @@ class WalmartScraper(Scraper):
         # Info extracted from product page
         "upc" : _upc_from_tree, \
         "product_name" : _product_name_from_tree, \
+        "site_id" : _site_id, \
         "keywords" : _meta_keywords_from_tree, \
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
