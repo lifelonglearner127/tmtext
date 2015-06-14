@@ -19,7 +19,8 @@ class AsdaScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.ulta.com/ulta/browse/productDetail.jsp?productId=<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://groceries.asda.com/asda-webstore/landing/home.shtml?cmpid=ahc-_" \
+                          "-ghs-d1-_-asdacom-dsk-_-hp/search/.+#/product/.+$"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
