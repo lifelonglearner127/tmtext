@@ -57,7 +57,6 @@ class CutFromTitleTagsAndReturnStringOnly(object):
 
 class SetMarketplaceSellerType(object):
     def process_item(self, item, spider):
-        assert False, spider
         spider_main_domain = spider.allowed_domains[0]
         spider_main_domain = tldextract.extract(spider_main_domain).domain
         marketplaces = item.get('marketplace', {})
