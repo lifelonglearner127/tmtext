@@ -104,7 +104,7 @@ class JcpenneyScraper(Scraper):
         long_description_start = False
 
         for element in description_block:
-            if element.tag == "p":
+            if element.tag == "p" and not long_description:
                 long_description_start = True
                 continue
 
