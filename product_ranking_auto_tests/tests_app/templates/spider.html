@@ -15,10 +15,25 @@
 
 <h1>{{ object }}</h1>
 
-<h2>Failed test runs (200 latest)</h2>
-{% if not failed_runs %}
-    <div>No failed test runs found</div>
+{% if 'only_failed' in request.GET %}
+    <h2>Failed test runs (200 latest)</h2>
+    {% if not failed_runs %}
+        <div>No failed test runs found</div>
+    {% endif %}
+    <p>Showing only failed test runs.
+       <a href="{% url 'tests_app_spider_review' pk=object.pk %}">Show all test runs including passed</a>.
+    </p>
+{% else %}
+    <h2>All test runs (200 latest)</h2>
+    {% if not all_runs%}
+        <div>No test runs found</div>
+    {% endif %}
+    <p>Showing all test runs.
+       <a href="{% url 'tests_app_spider_review' pk=object.pk %}?only_failed=1">Show oly failed test runs</a>.
+    </p>
 {% endif %}
+
+
 <ul>
     {% for fr in all_runs|slice:"0, 200" %}
         <li>
