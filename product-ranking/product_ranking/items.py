@@ -141,6 +141,7 @@ def scrapy_upc_serializer(value):
         return '0' + value.lstrip('0')
     return value
 
+
 class SiteProductItem(Item):
     # Search metadata.
     site = Field()  # String.
