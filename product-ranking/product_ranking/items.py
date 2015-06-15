@@ -118,7 +118,8 @@ def scrapy_marketplace_serializer(value):
             converted = {
                 u'price': get(rec, 'price', 'price', float),
                 u'currency': get(rec, 'price', 'priceCurrency', unicode),
-                u'name': conv_or_none(rec.get('name'), unicode)
+                u'name': conv_or_none(rec.get('name'), unicode),
+                u'seller_type': rec.get('seller_type', None)
             }
         else:
             converted = {u'price': None, u'currency': None,
