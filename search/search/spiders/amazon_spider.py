@@ -265,8 +265,14 @@ class AmazonSpider(SearchSpider):
                 item['manufacturer_code'] = manufacturer_code
 
             try:
-                bestsellers_rank = hxs.select("//tr[@id='SalesRank']/td[@class='value']/text()" + 
-                    " | //li[@id='SalesRank']/text()").re("#[0-9,]+")[0]
+                # for lowest level category:
+                # TODO: test the xpath for the second type of page (see second type of xpath for top-level category)
+                bestsellers_rank = hxs.select("//tr[@id='SalesRank']/td[@class='value']/ul/li/span/text()" + \
+                "| //li[@id='SalesRank']/ul/li/span/text()").re("#[0-9,]+")[0]
+
+                # for top-level category:
+                # bestsellers_rank = hxs.select("//tr[@id='SalesRank']/td[@class='value']/text()" + 
+                #     " | //li[@id='SalesRank']/text()").re("#[0-9,]+")[0]
                 item['bestsellers_rank'] = int(re.sub(",", "", "".join(bestsellers_rank[1:])))
             except Exception, e:
                 if self.output==6 or self.bestsellers_link:
