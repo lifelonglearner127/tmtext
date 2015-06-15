@@ -2240,14 +2240,7 @@ class WalmartScraper(Scraper):
         "description" : _short_description_wrapper, \
         # TODO: check if descriptions work right
         "long_description" : _long_description_wrapper, \
-        "color": _color, \
-        "size": _size, \
-        "color_size_stockstatus": _color_size_stockstatus, \
         "variants": _variants, \
-        "selected_variants": _selected_variants, \
-        "style": _style, \
-        "stockstatus_for_variants": _stockstatus_for_variants, \
-        "price_for_variants": _price_for_variants, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \

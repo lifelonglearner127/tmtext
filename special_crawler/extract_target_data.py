@@ -516,15 +516,7 @@ class TargetScraper(Scraper):
         "description" : _description, \
         "model" : _model, \
         "long_description" : _long_description, \
-        "color": _color, \
-        "selected_variants": _selected_variants, \
-        "size": _size, \
-        "style": _style, \
-        "color_size_stockstatus": _color_size_stockstatus, \
-        "stockstatus_for_variants": _stockstatus_for_variants, \
         "variants": _variants, \
-        "price_for_variants": _price_for_variants, \
-
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
