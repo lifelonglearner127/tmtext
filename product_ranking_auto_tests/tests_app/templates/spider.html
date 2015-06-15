@@ -15,7 +15,7 @@
 
 <h1>{{ object }}</h1>
 
-{% if 'only_failed' in request.GET %}
+{% if request.GET.only_failed %}
     <h2>Failed test runs (200 latest)</h2>
     {% if not failed_runs %}
         <div>No failed test runs found</div>
@@ -29,13 +29,15 @@
         <div>No test runs found</div>
     {% endif %}
     <p>Showing all test runs.
-       <a href="{% url 'tests_app_spider_review' pk=object.pk %}?only_failed=1">Show oly failed test runs</a>.
+       <a href="{% url 'tests_app_spider_review' pk=object.pk %}?only_failed=1">Show only failed test runs</a>.
     </p>
 {% endif %}
 
-
 <ul>
-    {% for fr in all_runs|slice:"0, 200" %}
+    {% if request.GET.only_failed %}
+        {% for fr in failed_runs|slice:"0, 200" %}
+    {% else %}
+        {% for fr in all_runs|slice:"0, 200" %}
         <li>
             <div>
                 <a href="#" onclick="$('#fr_{{ fr.pk }}').show(100); return false">{{ fr }}</a>,
@@ -62,7 +64,8 @@
                 </ul>
             </div>
         </li>
-    {% endfor %}
+        {% endfor %}
+    {% endif %}
 </ul>
 
 </body>
