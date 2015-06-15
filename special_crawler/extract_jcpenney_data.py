@@ -92,19 +92,7 @@ class JcpenneyScraper(Scraper):
         return 0
 
     def _description(self):
-        description_block = self.tree_html.xpath("//div[@id='longCopyCont']")[0]
-        short_description = ""
-
-        for element in description_block:
-            if "style" in element.attrib and element.attrib["style"].startswith('page-break-after'):
-                break
-
-            short_description = short_description + html.tostring(element)
-
-        if not short_description.strip():
-            return None
-        else:
-            return short_description
+        return html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']//p[1]")[0])
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
@@ -116,7 +104,7 @@ class JcpenneyScraper(Scraper):
         long_description_start = False
 
         for element in description_block:
-            if "style" in element.attrib and element.attrib["style"].startswith('page-break-after'):
+            if element.tag == "p":
                 long_description_start = True
                 continue
 
