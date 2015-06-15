@@ -265,7 +265,11 @@ class JcpenneyScraper(Scraper):
         return 1
 
     def _in_stores(self):
-        return 1
+        try:
+            if self.tree_html.xpath("//div[contains(@id, 'channelAvailabilitypp')]/text()")[0] == "online":
+                return 0
+        except:
+            return 1
 
     def _site_online_out_of_stock(self):
         return 0
