@@ -481,7 +481,7 @@ class SearchSpider(BaseSpider):
 
         # go to next page
         # if we're already past the index range, skip further pages
-        if index <= self.bestsellers_range[1]:
+        if not self.bestsellers_range or index <= self.bestsellers_range[1]:
             try:
                 next_page_link = hxs.select("//ol[@class='zg_pagination']/li[@class='zg_page zg_selected']/following-sibling::li[1]/a/@href")\
                 .extract()[0]
@@ -517,7 +517,7 @@ class SearchSpider(BaseSpider):
 
         # go to next page
         # if we're already past the index range, skip further pages
-        if index <= self.bestsellers_range[1]:
+        if not self.bestsellers_range or index <= self.bestsellers_range[1]:
             try:
                 next_page_link = hxs.select("//a[@class='paginator-btn paginator-btn-next']/@href").extract()[0]
                 base_url = urllib.splitquery(response.url)[0]
