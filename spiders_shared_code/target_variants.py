@@ -14,7 +14,7 @@ class TargetVariants(object):
         """ Call it from CH spiders """
         self.tree_html = tree_html
 
-    def _stockstatus_for_variants(self):
+    def _variants(self):
         try:
             variation_combinations_values = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
 

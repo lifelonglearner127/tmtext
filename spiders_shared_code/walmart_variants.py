@@ -14,7 +14,7 @@ class WalmartVariants(object):
         """ Call it from CH spiders """
         self.tree_html = tree_html
 
-    def _stockstatus_for_variants(self):
+    def _variants(self):
         try:
             page_raw_text = lxml.html.tostring(self.tree_html)
             startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
