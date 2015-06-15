@@ -67,18 +67,20 @@ class SearchSpider(BaseSpider):
     #                         6 - same as 3 but additionally with bestsellers rank (origin and target) - to be used
     #                             in combination with the input bestsellers_link option
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
-    def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, bestsellers_link = None, walmart_ids_file = None, \
-        output = 2, threshold = 1.0, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
+    def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, bestsellers_link = None, bestsellers_range = '0', \
+        walmart_ids_file = None, output = 2, threshold = 1.0, \
+        outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
 
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "ced9935f7f1f0b8f341bf8bdaa824d16b595227d"
+        self.version = "352aa88f9341d5c4744375f974427cf9921ffd05"
 
         self.product_url = product_url
         self.products_file = products_file
         self.product_name = product_name
         self.bestsellers_link = bestsellers_link
+        self.bestsellers_range = self.parse_bestsellers_range(bestsellers_range)
         self.output = int(output)
         self.product_urls_file = product_urls_file
         self.walmart_ids_file = walmart_ids_file
@@ -161,6 +163,18 @@ class SearchSpider(BaseSpider):
         # put + instead of spaces, lowercase all words
         search_query = "+".join(ProcessText.normalize(product_name, stem=False, exclude_stopwords=False))
         return search_query
+
+    def parse_bestsellers_range(self, bestsellers_range_string):
+        '''Parse input string bestsellers range into a tuple of integers
+        representing the range of bestsellers to extract for this spider
+        :param bestsellers_range_string: bestsellers range as string of the form
+        [x-y] or 0
+        '''
+
+        if bestsellers_range_string == '0':
+            return []
+        else:
+            return map(lambda x: int(x), bestsellers_range_string.split("-"))
 
     # TODO: make more general. this is pretty specific to the clorox audit batch input file
     def parse_products_file(self, products_file):
@@ -460,16 +474,20 @@ class SearchSpider(BaseSpider):
         for product_link in product_links:
             # start matching for this product
             index = index + 1
-            yield Request(product_link.strip(), callback=self.parseURL, meta={'origin_site' : 'amazon', 'origin_bestsellers_rank' : index})
+            # only consider products in the range given as input
+            if self.bestsellers_range and self.bestsellers_range[0] <= index < self.bestsellers_range[1]:
+                yield Request(product_link.strip(), callback=self.parseURL, meta={'origin_site' : 'amazon', 'origin_bestsellers_rank' : index})
             pass
 
         # go to next page
-        try:
-            next_page_link = hxs.select("//ol[@class='zg_pagination']/li[@class='zg_page zg_selected']/following-sibling::li[1]/a/@href")\
-            .extract()[0]
-            yield Request(next_page_link, callback=self.parse_bestsellers_amazon, meta={'last_index' : index})
-        except Exception, e:
-            pass
+        # if we're already past the index range, skip further pages
+        if not self.bestsellers_range or index <= self.bestsellers_range[1]:
+            try:
+                next_page_link = hxs.select("//ol[@class='zg_pagination']/li[@class='zg_page zg_selected']/following-sibling::li[1]/a/@href")\
+                .extract()[0]
+                yield Request(next_page_link, callback=self.parse_bestsellers_amazon, meta={'last_index' : index})
+            except Exception, e:
+                pass
 
     def parse_bestsellers_walmart(self, response):
         '''Parse input bestsellers link to extract all bestseller products,
@@ -492,16 +510,21 @@ class SearchSpider(BaseSpider):
             # start matching for this product
             product_link = "http://www.walmart.com" + product_link.strip()
             index = index + 1
-            yield Request(product_link, callback=self.parseURL, meta={'origin_site' : 'walmart', 'origin_bestsellers_rank' : index})
+            
+            # only consider products in the range given as input
+            if self.bestsellers_range and self.bestsellers_range[0] <= index < self.bestsellers_range[1]:
+                yield Request(product_link, callback=self.parseURL, meta={'origin_site' : 'walmart', 'origin_bestsellers_rank' : index})
 
         # go to next page
-        try:
-            next_page_link = hxs.select("//a[@class='paginator-btn paginator-btn-next']/@href").extract()[0]
-            base_url = urllib.splitquery(response.url)[0]
-            next_page_link = base_url + next_page_link
-            yield Request(next_page_link, callback=self.parse_bestsellers_walmart, meta={'last_index' : index})
-        except Exception, e:
-            pass
+        # if we're already past the index range, skip further pages
+        if not self.bestsellers_range or index <= self.bestsellers_range[1]:
+            try:
+                next_page_link = hxs.select("//a[@class='paginator-btn paginator-btn-next']/@href").extract()[0]
+                base_url = urllib.splitquery(response.url)[0]
+                next_page_link = base_url + next_page_link
+                yield Request(next_page_link, callback=self.parse_bestsellers_walmart, meta={'last_index' : index})
+            except Exception, e:
+                pass
 
 
     # parse a product page (given its URL) and extract product's name;
