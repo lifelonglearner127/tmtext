@@ -13,6 +13,8 @@
 </head>
 <body>
 
+{% load setvar %}
+
 <h1>{{ object }}</h1>
 
 {% if request.GET.only_failed %}
@@ -33,11 +35,16 @@
     </p>
 {% endif %}
 
+
+{% if request.GET.only_failed %}
+    {% setvar failed_runs as loop_runs %}
+{% else %}
+    {% setvar all_runs as loop_runs %}
+{% endif %}
+
+
 <ul>
-    {% if request.GET.only_failed %}
-        {% for fr in failed_runs|slice:"0, 200" %}
-    {% else %}
-        {% for fr in all_runs|slice:"0, 200" %}
+    {% for fr in loop_runs|slice:"0, 200" %}
         <li>
             <div>
                 <a href="#" onclick="$('#fr_{{ fr.pk }}').show(100); return false">{{ fr }}</a>,
@@ -64,8 +71,7 @@
                 </ul>
             </div>
         </li>
-        {% endfor %}
-    {% endif %}
+    {% endfor %}
 </ul>
 
 </body>
