@@ -768,7 +768,13 @@ class AmazonDEScraper(Scraper):
                 if seller_name is not None:
                     mps.append(seller_name)
                     mpp.append(seller_price)
-            urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
+
+                    if len(mps) > 20:
+                        break
+            else:
+                urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
+                continue
+            break
 
         if len(mps)>0:
             if fl == 1:
