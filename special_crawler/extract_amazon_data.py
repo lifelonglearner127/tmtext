@@ -801,7 +801,12 @@ class AmazonScraper(Scraper):
                         mps.append(seller_name)
                         mpp.append(seller_price)
 
-            urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
+                        if len(mps) > 20:
+                            break
+            else:
+                urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
+                continue
+            break
 
             if len(urls)>0:
                 url = domain[0]+"//"+domain[2]+urls[0]
