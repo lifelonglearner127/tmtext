@@ -10,9 +10,14 @@ import urlparse
 from scrapy import Request, Selector
 from scrapy.log import DEBUG
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
+    BuyerReviews
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    FLOATING_POINT_RGEX
 
+from lxml import html
+
+is_empty =lambda x,y=None: x[0] if x else y
 
 def is_num(s):
     try:
@@ -30,6 +35,8 @@ class HomedepotProductsSpider(BaseProductsSpider):
     SEARCH_URL = "http://www.homedepot.com/s/{search_term}?NCNI-5"
     SCRIPT_URL = "http://www.res-x.com/ws/r2/Resonance.aspx"
     DETAILS_URL = "http://www.homedepot.com/p/getSkuDetails?itemId=%s"
+    REVIEWS_URL = "http://homedepot.ugc.bazaarvoice.com/1999m/%s/" \
+        "reviews.djs?format=embeddedhtml"
 
     def __init__(self, *args, **kwargs):
         # All this is to set the site_name since we have several
@@ -60,7 +67,9 @@ class HomedepotProductsSpider(BaseProductsSpider):
             product,
             'image_url',
             response.xpath(
-                "//div[@class='product_mainimg']/img/@src").extract())
+                "//div[@class='product_mainimg']/img/@src |"
+                "//img[@id='mainImage']/@src"
+            ).extract())
 
         cond_set(
             product,
@@ -81,12 +90,17 @@ class HomedepotProductsSpider(BaseProductsSpider):
 
         cond_set(
             product,
-            'upc',
+            'model',
             response.xpath(
                 "//h2[@class='internetNo']"
                 "/span[@itemprop='productID']/text()").extract(),
             conv=int
         )
+
+        upc = is_empty(re.findall(
+            "ItemUPC=\'(\d+)\'", response.body))
+        if upc:
+            product["upc"] = upc
 
         desc = response.xpath(
             "//div[@id='product_description']"
@@ -128,6 +142,15 @@ class HomedepotProductsSpider(BaseProductsSpider):
                 meta=new_meta,
                 priority=1000,
             )
+
+        if product.get("model"):
+            return Request(
+                url=self.REVIEWS_URL % (product.get("model"),),
+                callback=self.parse_buyer_reviews,
+                meta={"product": product},
+                dont_filter=True,
+            )
+
         return self._gen_variants_requests(response, product, skus)
 
     def _gen_variants_requests(self, response, product, skus):
@@ -137,7 +160,7 @@ class HomedepotProductsSpider(BaseProductsSpider):
             # if sku:
             #     sku = sku[len(sku)-1]
             new_product = product.copy()
-            new_product['upc'] = sku
+            new_product['model'] = sku
 
             new_meta = response.meta.copy()
             new_meta['product'] = new_product
@@ -163,6 +186,8 @@ class HomedepotProductsSpider(BaseProductsSpider):
         critemid = response.xpath(
             "//input[@id='certona_critemId']/@value").extract()
         if not critemid:
+            critemid = is_empty(re.findall("\"itemId\"\:\"(\d+)\"", response.body))
+        if not critemid:
             return
 
         payload = {
@@ -175,7 +200,7 @@ class HomedepotProductsSpider(BaseProductsSpider):
             "bx": "true",
             "sc": "PIPHorizontal1_rr",
             "ev": "product",
-            "ei": critemid[0],
+            "ei": critemid,
             "storenum": "121",
             "cb": "None",
         }
@@ -206,7 +231,7 @@ class HomedepotProductsSpider(BaseProductsSpider):
 
             el = sel.xpath(
                 "//div[contains(@class,'pod')]/div/div"
-                "/a[@class='item_description'] |"
+                "/a[@class='item_description']"
             )
             prods = []
             for e in el:
@@ -223,7 +248,15 @@ class HomedepotProductsSpider(BaseProductsSpider):
                 product['related_products'] = {"recommended": prods}
 
         skus = response.meta.get('skus', None)
+
         if not skus:
+            if product.get("model"):
+                return Request(
+                    url=self.REVIEWS_URL % (product.get("model"),),
+                    callback=self.parse_buyer_reviews,
+                    meta={"product": product},
+                    dont_filter=True,
+                )
             return product
         return self._gen_variants_requests(response, product, skus)
 
@@ -268,6 +301,43 @@ class HomedepotProductsSpider(BaseProductsSpider):
                 product['model'] = colornames[0]
         except (ValueError, KeyError, IndexError):
             self.log("Failed to parse SKU details.", DEBUG)
+
+
+        if product.get("model"):
+            return Request(
+                url=self.REVIEWS_URL % (product.get("model"),),
+                callback=self.parse_buyer_reviews,
+                meta={"product": product},
+                dont_filter=True,
+            )
+
+        return product
+
+    def parse_buyer_reviews(self, response):
+        product = response.meta.get("product")
+        data = html.fromstring(response.body_as_unicode())
+        rating_by_stars = {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0}
+
+        avg = float(is_empty(is_empty(
+            re.findall("\"avgRating\"\:(\d+(.\d+){0,1})", 
+            response.body_as_unicode()
+        ), []), 0))
+        total = data.xpath(
+            "//span[contains(@class, 'BVRRCount')]/strong/span/text()"
+        ) or 0
+        alls = data.xpath("//span[contains(@class, 'BVRRHistAbsLabel')]/text()")[:5]
+        alls = [x.replace("(", "").replace(")", "").strip() for x in alls]
+        alls.reverse()
+        for i, rev in enumerate(alls):
+            rating_by_stars[str(i+1)] = rev
+        if total:
+            total = is_empty(re.findall(
+                FLOATING_POINT_RGEX,
+                is_empty(total, "")
+            ), 0)
+        if avg:
+            avg = float("{0:.2f}".format(avg))
+        product["buyer_reviews"] = BuyerReviews(total, avg, rating_by_stars)
 
         return product
 
