@@ -22,13 +22,13 @@ import compare_images
 
 from spiders_shared_code.amazon_variants import AmazonVariants
 
-class AmazonScraper(Scraper):
+class AmazonCNScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id> or http://www.amazon.co.uk/dp/<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.cn/dp/<product-id>"
 
     CB = captcha_solver.CaptchaBreakerWrapper()
     # special dir path to store the captchas, so that the service has permissions to create it on the scraper instances
@@ -135,12 +135,8 @@ class AmazonScraper(Scraper):
 
 
     def check_url_format(self):
-        m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        n = re.match(r"^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        l = re.match(r"^http://www.amazon.co.uk/.*$", self.product_page_url)
-        self.scraper_version = "com"
-        if (not not n) or (not not l): self.scraper_version = "uk"
-        return (not not m) or (not not n) or (not not l)
+        m = re.match(r"^http://www.amazon.cn/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        return not not m
 
     def not_a_product(self):
         '''Overwrites parent class method that determines if current page
@@ -148,8 +144,6 @@ class AmazonScraper(Scraper):
         Currently for Amazon it detects captcha validation forms,
         and returns True if current page is one.
         '''
-
-        self.av.setupCH(self.tree_html)
 
         if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
             return True
@@ -167,10 +161,7 @@ class AmazonScraper(Scraper):
         return None
 
     def _product_id(self):
-        if self.scraper_version == "uk":
-            product_id = re.match("^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
-        else:
-            product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+        product_id = re.match("^http://www.amazon.cn/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         return product_id
 
     def _site_id(self):
@@ -207,40 +198,43 @@ class AmazonScraper(Scraper):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
-        model = self.tree_html.xpath("//tr[@class='item-model-number']/td[@class='value']//text()")[0]
+        model = self.tree_html.xpath("//b[contains(text(),'Modellnummer:')]/following-sibling::text()")[0].strip()
         return model
 
     # Amazon's version of UPC
     def _asin(self):
-        return self.tree_html.xpath("//input[@name='ASIN']/@value")[0]
+        return self.tree_html.xpath("//b[contains(text(),'ASIN:')]/following-sibling::text()")[0].strip()
 
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
+        case_number = 0
+
+        if len(rows)==0:
+            rows = self.tree_html.xpath("//div[@id='detail_bullets_id']//div[@class='content']//ul//li")
+            case_number = 1
+
         if len(rows)==0:
             rows = self.tree_html.xpath("//div[@id='dv-center-features']//table//tr")
+            case_number = 2
+
         if len(rows)==0:
             rows = self.tree_html.xpath("//table[@id='aloha-ppd-glance-table']//tr")
+            case_number = 3
+
         # list of lists of cells (by rows)
         cells=[]
         for row in rows:
-            r = row.xpath(".//*[not(self::script)]//text()")
-            if len(r)>0 and len(r[0])>1 and r[0].find('Customer Review') < 0 \
-               and r[0].find('function(') < 0 and  r[0].find('Delivery') < 0 \
-               and r[0].find('Date ') < 0 and r[0].find('Best Seller') < 0 \
-               and r[0].find('Manufacturer ref') < 0 and r[0].find('ASIN') < 0:
-                cells.append(r)
-#            cells = map(lambda row: row.xpath(".//*[not(self::script)]//text()"), rows)
-        # list of text in each row
-        rows_text = map(\
-            lambda row: ":".join(\
-                map(lambda cell: cell.strip(), row)\
-                ), \
-            cells)
-        all_features_text = "\n".join(rows_text)
-        # return dict with all features info
-     #   return all_features_text
-        return rows_text
+            r = ""
 
+            if case_number == 0:
+                for td in row.xpath("td"):
+                    r += (td.text_content() + " ")
+            else:
+                r = row.text_content() #  xpath(".//*[not(self::script)]//text()")
+
+            if len(r)>0 and r.find('function') < 0 and r.find('padding') < 0:
+                cells.append(self._clean_text(r))
+        return cells
 
     def _feature_count(self): # extract number of features from tree
         rows = self._features()
@@ -501,7 +495,17 @@ class AmazonScraper(Scraper):
 
     # return one element containing the PDF
     def _pdf_urls(self):
-        return None
+        pdf_hrefs = []
+        pdfs = self.tree_html.xpath("//a[contains(@onclick,'pdf')]")
+        for pdf in pdfs:
+            # window.open('http://graphics.samsclub.com/images/pool-SNFRound.pdf','_blank')
+            try:
+                url = re.findall(r"open\('(.*?)',", pdf.attrib['onclick'])[0]
+                if url not in pdf_hrefs and url.endswith("pdf"):
+                    pdf_hrefs.append(url)
+            except IndexError:
+                pass
+        return pdf_hrefs
 
     def _pdf_count(self):
         urls = self._pdf_urls()
@@ -538,55 +542,29 @@ class AmazonScraper(Scraper):
             average_review = self.tree_html.xpath("//div[@class='gry txtnormal acrRating']//text()")
         if len(average_review) == 0:
             average_review = self.tree_html.xpath("//div[@id='avgRating']//span//text()")
-        average_review = re.findall("([0-9]\.?[0-9]?) out of 5 stars", average_review[0])[0]
+        average_review = re.findall("([0-9]\.?[0-9]?) von 5 Sternen", average_review[0])[0]
         return self._tofloat(average_review)
 
     def _review_count(self):
-        nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")
-        if len(nr_reviews) > 0:
-            nr_review = re.findall("([0-9,]+) customer reviews", nr_reviews[0])
-            if len(nr_review) == 0:
-                nr_review = re.findall("([0-9]+) customer review", nr_reviews[0])
-            if len(nr_review) > 0:
-                return self._toint(nr_review[0])
-        nr_reviews = self.tree_html.xpath("//div[@class='fl gl5 mt3 txtnormal acrCount']//text()")
-        if len(nr_reviews) > 1:
-            return self._toint(nr_reviews[1])
-        nr_reviews = self.tree_html.xpath("//a[@class='a-link-normal a-text-normal product-reviews-link']//text()")
-        if len(nr_reviews) > 1:
-            return self._toint(nr_reviews[0].replace('(','').replace(')','').replace(',',''))
-        if self.scraper_version == "uk":
-            nr_reviews = self.tree_html.xpath("//span[@class='crAvgStars']/a//text()")
-            if len(nr_reviews) > 0:
-                res = nr_reviews[0].split()
-                return self._toint(res[0])
+        txt = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")[0].strip()
+        review_cnt = re.findall(r'\d+', txt)
+        if len(review_cnt) > 0:
+            return int(review_cnt[0])
         return 0
 
 
     def _reviews(self):
-        stars=self.tree_html.xpath("//tr[@class='a-histogram-row']//a//text()")
-        rev=[]
-        for i in range(len(stars)-1,0,-2):
-            a=self._toint(stars[i-1].split()[0])
-            b= self._toint(stars[i])
-            rev.append([a,b])
-        if len(rev) > 0 :  return rev
-        stars=self.tree_html.xpath("//div[contains(@class,'histoRow')]")
-        for a in stars:
-            b=a.text_content().strip().split()
-            if len(b)>2:
-                b1 = self._toint(b[0])
-                b2 =self._toint(b[2])
-                rev.append([b1,b2])
-        if len(rev) > 0 :
+        stars = self.tree_html.xpath("//tr[@class='a-histogram-row']//td[3]//a//text()")
+        rev = []
+        for i in range(5, 0, -1):
+            rev.append([i, int(stars[5-i])])
+        if len(rev) > 0:
             rev.reverse()
             return rev
         return None
 
     def _tofloat(self,s):
         try:
-            s = s.replace(",", "")
-            s = re.findall(r"[\d\.]+", s)[0]
             t=float(s)
             return t
         except ValueError:
@@ -602,14 +580,18 @@ class AmazonScraper(Scraper):
 
     def _max_review(self):
         rv = self._reviews()
-        if rv !=None and len(rv)>0:
-            return rv[-1][0]
+        if rv is not None:
+            for i in range(4, -1, -1):
+                if rv[i][1] > 0:
+                    return rv[i][0]
         return None
 
     def _min_review(self):
         rv = self._reviews()
-        if rv !=None and len(rv)>0:
-            return rv[0][0]
+        if rv is not None:
+            for i in range(0, 5, 1):
+                if rv[i][1] > 0:
+                    return rv[i][0]
         return None
 
 
@@ -618,15 +600,15 @@ class AmazonScraper(Scraper):
     ##########################################
     def _price_amount(self):
         price = self._price()
-        price = price.replace(",", "")
+        price = price.replace(",", ".")
         price_amount = re.findall(r"[\d\.]+", price)[0]
         return float(price_amount)
 
     def _price_currency(self):
         price = self._price()
-        price = price.replace(",", "")
+        price = price.replace(",", ".")
         price_amount = re.findall(r"[\d\.]+", price)[0]
-        price_currency = price.replace(price_amount, "")
+        price_currency = price.replace(price_amount, "").strip()
         if price_currency == "$":
             return "USD"
         return price_currency
@@ -697,16 +679,10 @@ class AmazonScraper(Scraper):
         return None
 
     def _marketplace(self):
-        aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
-        for a in aa:
-            if a.text_content().find('old by ')>0 and a.text_content().find('old by Amazon')<0:
-                return 1
-            if a.text_content().find('seller')>0 :
-                return 1
-        a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
-        if len(a)>0 and a[0].find('seller')>=0: return 1
-        s = self._seller_from_tree()
-        return s['marketplace']
+        rows = self.tree_html.xpath("//div[@id='mbc']")
+        if len(rows) > 0:
+            return 1
+        return 0
 
     def img_parse(self, img_url):
         file = urllib.urlopen(img_url)
@@ -715,121 +691,102 @@ class AmazonScraper(Scraper):
         txt = image_to_string(img)
         return txt
 
-
     def _marketplace_sellers(self):
         if self.marketplace_sellers != None:
             return self.marketplace_sellers
-
         self.marketplace_prices = []
+        self.marketplace_sellers = []
         mps = []
         mpp = []
-        path = '/tmp/amazon_sellers.json'
-
+        path = '/tmp/amazoncn_sellers.json'
         try:
             with open(path, 'r') as fp:
                 amsel = json.load(fp)
         except:
             amsel = {}
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        domain=self.product_page_url.split("/")
+        a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
+        if len(a)>0 and a[0].find('seller')>=0:
+            domain=self.product_page_url.split("/")
+            url =self.tree_html.xpath('//div[@id="availability"]//a/@href')
+            if len(url)>0:
+                url = domain[0]+"//"+domain[2]+url[0]
+                h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+                contents = requests.get(url, headers=h).text
+                tree = html.fromstring(contents)
+                s = tree.xpath("//p[contains(@class,'SellerName')]//text()")
+                mps=[p.strip() for p in s if p.strip() != ""]
 
-        try:
-            url = domain[0] + "//" + domain[2] + "/gp/offer-listing/" + self.tree_html.xpath("//input[@id='ASIN']/@value")[0] + "/ref=olp_tab_all"
-        except:
-            url = domain[0] + "//" + domain[2] + "/gp/offer-listing/" + self._product_id() + "/ref=olp_tab_all"
-        fl = 0
-
-        while len(url) > 10:
+        urls = self.tree_html.xpath("//div[@id='moreBuyingChoices_feature_div']//div[@class='a-box']//span[contains(@class,'a-size-small')]//a/@href")
+        while len(urls) > 0:
+            domain = self.product_page_url.split("/")
+            url = domain[0]+"//"+domain[2]+urls[0]
+            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
             contents = requests.get(url, headers=h).text
             tree = html.fromstring(contents)
-            sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
-
+            sells = tree.xpath("//div[@id='olpTabContent']//div[contains(@class,'a-row') and contains(@class,'olpOffer')]")
             for s in sells:
-                price = s.xpath('.//span[contains(@class,"olpOfferPrice")]//text()')
-                sname = s.xpath('.//p[contains(@class,"olpSellerName")]/span/a/text()')
+                try:
+                    seller_price = s.xpath(".//span[contains(@class,'olpOfferPrice')]//text()")[0].strip()
+                    seller_price = seller_price.replace(",", ".")
+                    seller_price = re.findall(r"[\d\.]+", seller_price)[0]
+                    seller_price = float(seller_price)
+                except IndexError:
+                    seller_price = 0.00
 
-                if len(price) > 0:
-                    seller_price = self._tofloat(price[0])
-                    seller_name = ""
+                seller_names = s.xpath(".//p[contains(@class,'SellerName')]//a//text()")
+                seller_names = [self._clean_text(r) for r in seller_names if len(self._clean_text(r)) > 0]
+                try:
+                    seller_name = seller_names[0]
+                except IndexError:
+                    seller_name = None
+                    seller_link = s.xpath(".//p/a[contains(@href,'&seller=')]/@href")
+                    if len(seller_link) > 0:
+                        seller_id = re.findall(r"&seller=([A-Za-z0-9]*)", seller_link[0])
+                        if len(seller_id) > 0:
+                            seller_id = seller_id[0]
+                            if seller_id in amsel:
+                                seller_name = amsel[seller_id]
 
-                    if len(sname) > 0 and sname[0].strip() != "":
-                        seller_name = sname[0].strip()
-                    else:
-                        seller_link = s.xpath(".//p[@class='a-spacing-small']/a/@href")
-
-                        if len(seller_link) > 0:
-                            sd=seller_link[0].split("/")
-                            seller_id = ""
-
-                            if len(sd) > 4:
-                                seller_id = sd[4]
-#                                print "seller_id",seller_id
-
-                                if seller_id != "" and seller_id in amsel:
-                                    seller_name = amsel[seller_id]
-#                                    print "seller_name",seller_name
-
-                            if seller_name == "":
-                                if seller_link[0].startswith("http://www.amazon."):
-                                    seller_content = requests.get(seller_link[0], headers=h).text
-                                else:
-                                    if self.scraper_version == "uk":
-                                        seller_content = requests.get("http://www.amazon.uk" + seller_link[0], headers=h).text
-                                    else:
-                                        seller_content = requests.get("http://www.amazon.com" + seller_link[0], headers=h).text
-
-                                seller_tree = html.fromstring(seller_content)
-                                seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")
-
+                        if seller_name is None:
+                            seller_content = requests.get("http://www.amazon.cn%s" % seller_link[0], headers=h).text
+                            seller_tree = html.fromstring(seller_content)
+                            seller_names = seller_tree.xpath("//div[@id='aag_header']//h1//text()")
+                            if len(seller_names) > 0:
+                                seller_name = seller_names[0].strip()
+                            else:
+                                seller_names = seller_tree.xpath("//title//text()")
                                 if len(seller_names) > 0:
-                                    seller_name = seller_names[0].strip()
-                                else:
-                                    seller_names = seller_tree.xpath("//title//text()")
+                                    if seller_names[0].find(":") > 0:
+                                        seller_name = seller_names[0].split(":")[1].strip()
+                                    else:
+                                        seller_name = seller_names[0].split("@")[0].strip()
+                        if seller_name != "" and seller_id != "":
+                            amsel[seller_id] = seller_name
+                            fl = 1
 
-                                    if len(seller_names) > 0:
-                                        if seller_names[0].find(":")>0:
-                                            seller_name = seller_names[0].split(":")[1].strip()
-                                        else:
-                                            seller_name = seller_names[0].split("@")[0].strip()
+                if seller_name is not None:
+                    mps.append(seller_name)
+                    mpp.append(seller_price)
 
-                            if seller_name != "" and seller_id != "":
-                                amsel[seller_id] = seller_name
-                                fl = 1
-
-                    if seller_name != "":
-                        mps.append(seller_name)
-                        mpp.append(seller_price)
-
-                        if len(mps) > 20:
-                            break
+                    if len(mps) > 20:
+                        break
             else:
                 urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
                 continue
             break
 
-            if len(urls)>0:
-                url = domain[0]+"//"+domain[2]+urls[0]
-            else:
-                url = ""
-
         if len(mps)>0:
             if fl == 1:
-                try:
-                    with open(path, 'w') as fp:
-                        json.dump(amsel, fp)
-                except Exception as ex:
-                    print ex
-
+                with open(path, 'w') as fp:
+                    json.dump(amsel, fp)
             self.marketplace_prices = mpp
             self.marketplace_sellers = mps
-
             return mps
-
         return None
 
     def _marketplace_prices(self):
-        if self.marketplace_prices is None :
+        if self.marketplace_prices is None:
             self._marketplace_sellers()
         if len(self.marketplace_prices) > 0:
             return self.marketplace_prices
@@ -849,6 +806,7 @@ class AmazonScraper(Scraper):
         Returns:
             1/0
         """
+
         return None
 
     # extract product seller information from its product product page tree (using h2 visible tags)
@@ -903,12 +861,9 @@ class AmazonScraper(Scraper):
 
     # extract a hierarchical list of all the departments the product belongs to
     def _categories(self):
-        if self.scraper_version == "uk":
-            all = self.tree_html.xpath("//div[@id='wayfinding-breadcrumbs_feature_div']//span[@class='a-list-item']/a//text()")
-        else:
-            all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
-            if len(all)==0:
-                all = self.tree_html.xpath("//li[@class='breadcrumb']/a//text()")
+        all = self.tree_html.xpath("//div[@id='wayfinding-breadcrumbs_feature_div']//span[@class='a-list-item']/a//text()")
+        if len(all)==0:
+            all = self.tree_html.xpath("//li[@class='breadcrumb']/a//text()")
         if len(all)==0:
             all = self.tree_html.xpath("//ul[@id='nav-subnav']/li[@class='nav-subnav-item nav-category-button']/a//text()")
         all = map(lambda t: self._clean_text(t), all)
@@ -951,8 +906,8 @@ class AmazonScraper(Scraper):
             "com" for Amazon.com
         """
          # using url to distinguish between page versions.
-        if self.product_page_url.find(".co.uk")>1:
-            return "uk"
+        if self.product_page_url.find(".de")>1:
+            return "de"
         return "com"
 
     ##########################################
