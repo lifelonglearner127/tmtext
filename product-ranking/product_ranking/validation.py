@@ -460,7 +460,7 @@ class BaseValidator(object):
         return True
 
     def _validate_department(self, val):
-        val = str(val)
+        val = unicode(val)
         if len(val) > 100:
             return False
         return True

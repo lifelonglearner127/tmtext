@@ -181,7 +181,6 @@ class MacysProductsSpider(ProductsSpider):
                 "//div[@id='memberProductList']/div[1]/"
                 "div[@class='productPriceSection']/div/span[last()]/text()"
             ).re(FLOATING_POINT_RGEX)
-            
         else:
             price = response.xpath(
                 "//div[@id='priceInfo']/div/span/text()"
@@ -190,7 +189,8 @@ class MacysProductsSpider(ProductsSpider):
                 product['price'] = Price(price=price[0],
                                          priceCurrency='USD')
 
-        if not product.get("image_url"):
+        if not product.get("image_url") or \
+                "data:image" in product.get("image_url"):
             image_url = response.xpath(
                 "//img[contains(@id, 'mainView')]/@src").extract()
             if image_url:

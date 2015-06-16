@@ -15,6 +15,7 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set,\
     cond_set_value, FLOATING_POINT_RGEX
+from product_ranking.amazon_tests import AmazonTests
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 
@@ -40,9 +41,34 @@ except ImportError as e:
 
 is_empty = lambda x, y=None: x[0] if x else y
 
-class AmazonProductsSpider(BaseProductsSpider):
+class AmazonfrValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['model', 'brand', 'price', 'bestseller_rank',
+                       'buyer_reviews']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'google_source_site', 'description', 'special_pricing'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = True  # ... duplicated requests?
+    ignore_log_filtered = True  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_found_1234654654': 0,
+        'samsung t9500 battery 2600 li-ion warranty': [5, 175],
+        'water pump mini': [5, 150],
+        'ceiling fan industrial white system': [5, 50],
+        'kaspersky total': [5, 75],
+        'car navigator garmin maps 44LM': [1, 30],
+        'yamaha drums midi': [1, 300],
+        'black men shoes size 8 red': [20, 200],
+        'car audio equalizer': [5, 150]
+    }
+
+class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
     name = 'amazonfr_products'
     allowed_domains = ["amazon.fr"]
+
+    settings = AmazonfrValidatorSettings()
 
     SEARCH_URL = "http://www.amazon.fr/s/?field-keywords={search_term}"
 
@@ -282,6 +308,19 @@ class AmazonProductsSpider(BaseProductsSpider):
                 )
             elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
                 model = li.xpath('text()').extract()
+        if not product.get('model'):
+                model = is_empty(response.xpath(
+                    '//div[contains(@class, "content")]/ul/'
+                    'li/b[contains(text(), "ASIN")]/../text() |'
+                    '//table/tbody/tr/'
+                    'td[contains(@class, "label") and contains(text(), "ASIN")]'
+                    '/../td[contains(@class, "value")]/text() |'
+                    '//div[contains(@class, "content")]/ul/'
+                    'li/b[contains(text(), "ISBN-10")]/../text()'
+                ).extract())
+                if model:
+                    cond_set(product, 'model', (model, ))
+
         cond_set(product, 'model', model, conv=string.strip)
         self._populate_bestseller_rank(product, response)
         revs = self._buyer_reviews_from_html(response)
@@ -314,6 +353,10 @@ class AmazonProductsSpider(BaseProductsSpider):
                     u' ', '').replace(u'\xa0', ''))
             else:
                 total_matches = None
+        if not total_matches:
+            total_matches = int(is_empty(response.xpath(
+                '//h2[@id="s-result-count"]/text()'
+            ).re(FLOATING_POINT_RGEX), 0))
         return total_matches
 
     def _scrape_product_links(self, response):
