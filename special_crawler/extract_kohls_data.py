@@ -351,10 +351,17 @@ class KohlsScraper(Scraper):
         if not self.price_json:
             return None
 
-        if not self.price_json["product_Details"]["itemSalePrice"]:
-            return self.price_json["product_Details"]["itemOriginalPrice"]
+        price = None
 
-        return self.price_json["product_Details"]["itemSalePrice"]
+        if not self.price_json["product_Details"]["itemSalePrice"]:
+            price = self.price_json["product_Details"]["itemOriginalPrice"]
+        else:
+            price = self.price_json["product_Details"]["itemSalePrice"]
+
+        if "|" in price:
+            price = price[:price.find("|")]
+
+        return price.strip()
 
     def _price_amount(self):
         self._extract_price_json()
@@ -366,8 +373,13 @@ class KohlsScraper(Scraper):
 
         if not self.price_json["product_Details"]["itemSalePrice"]:
             price_amount = self.price_json["product_Details"]["itemOriginalPrice"]
+        else:
+            price_amount = self.price_json["product_Details"]["itemSalePrice"]
 
-        price_amount = self.price_json["product_Details"]["itemSalePrice"]
+        if "|" in price_amount:
+            price_amount = price_amount[:price_amount.find("|")]
+
+        price_amount = price_amount.strip()
 
         return float(price_amount[1:])
 
@@ -408,7 +420,8 @@ class KohlsScraper(Scraper):
         return None
 
     def _brand(self):
-        return None
+        brand = re.search('googletag\.pubads\(\)\.setTargeting\("brd", "(.+?)"', lxml.html.tostring(self.tree_html)).group(1)
+        return brand
 
     ##########################################
     ################ HELPER FUNCTIONS
