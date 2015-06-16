@@ -25,6 +25,7 @@ class KohlsScraper(Scraper):
         # whether product has any webcollage media
         self.review_json = None
         self.price_json = None
+        self.failure_type = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -45,11 +46,11 @@ class KohlsScraper(Scraper):
             False otherwise
         """
         try:
-            itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
+            self._failure_type()
 
-            if itemtype != "product":
-                raise Exception()
-
+            if self.failure_type:
+                self.ERROR_RESPONSE["failure_type"] = self.failure_type
+                return True
         except Exception:
             return True
 
@@ -71,6 +72,19 @@ class KohlsScraper(Scraper):
         product_id = self.tree_html.xpath("//input[@class='preSelectedskuId']/@value")[0].strip()[:-1]
 
         return product_id
+
+    def _failure_type(self):
+        itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
+
+        if itemtype != "product":
+            self.failure_type = "Not a product"
+            return
+
+        collectiontype = self.tree_html.xpath('//input[@id="collectionType"]/@value')[0].strip()
+
+        if collectiontype.startswith("collection"):
+            self.failure_type = "Collection product"
+            return
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
