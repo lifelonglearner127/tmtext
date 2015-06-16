@@ -126,10 +126,21 @@ class JcpenneyProductsSpider(BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product'] = prod
         new_meta['product_id'] = product_id[0]
-        return Request(self.url_formatter.format(self.REVIEW_URL,
-                                                 product_id=product_id[0]),
-                       meta=new_meta, callback=self._parse_reviews,
-                       dont_filter=True)
+
+        review_id = is_empty(response.xpath(
+            '//script/text()[contains(.,"reviewId")]'
+        ).re('reviewId:\"(\d+)\",'))
+        if review_id:
+            return Request(self.url_formatter.format(self.REVIEW_URL,
+                                                     product_id=review_id),
+                           meta=new_meta, callback=self._parse_reviews,
+                           dont_filter=True)
+        else:
+            print response.url, '!'*40
+            return Request(self.url_formatter.format(self.REVIEW_URL,
+                                                     product_id=product_id[0]),
+                           meta=new_meta, callback=self._parse_reviews,
+                           dont_filter=True)
 
     def _populate_from_html(self, response, product):
         if 'title' in product and product['title'] == '':
@@ -180,20 +191,6 @@ class JcpenneyProductsSpider(BaseProductsSpider):
             product['price'] = Price(price=price, priceCurrency='USD')
         else:
             product['price'] = Price(price='0.0', priceCurrency='USD')
-        # product['marketplace'] = []
-        # marketplace_name = is_empty(response.xpath(
-        #     '//a[@id="pdp_vendor"]/text()').extract())
-        # if marketplace_name:
-        #     marketplace = {
-        #         'name': marketplace_name,
-        #         'price': product['price']
-        #     }
-        # else:
-        #     marketplace = {
-        #         'name': 'Kohls',
-        #         'price': product['price']
-        #     }
-        # product['marketplace'].append(marketplace)
 
     def _parse_related_products(self, response):
         product = response.meta['product']
@@ -216,12 +213,13 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                     related.append(
                         RelatedProduct(
                             title=is_empty(sel.xpath(
-                                '//div[@class="ftProductDesc"]/text()'
+                                './div[@class="ftProductDesc"]/text()'
                             ).extract()),
                             url=urllib.unquote('http'+url.split('http')[-1])
                         ))
-            related_products[also_browsed] = related
-            product['related_products']= related_products
+            if len(related) > 0:
+                related_products[also_browsed] = related
+                product['related_products'] = related_products
 
             also_bought = is_empty(
                 html.xpath(
@@ -238,12 +236,16 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                     related.append(
                         RelatedProduct(
                             title=is_empty(sel.xpath(
-                                '//div[@class="ftProductDesc"]/text()'
+                                './div[@class="ftProductDesc"]/text()'
                             ).extract()),
                             url=urllib.unquote('http'+url.split('http')[-1])
                         ))
-
-            product['related_products'][also_bought] = related
+            if len(related) > 0:
+                if 'related_products' in product:
+                    product['related_products'][also_bought] = related
+                else:
+                    related_products[also_bought] = related
+                    product['related_products'] = related_products
 
         return product
 
@@ -284,7 +286,6 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                         total = 0
                 else:
                     total = 0
-
                 hist = sel.xpath(
                     "//div[@class='BVRRHistogram']"
                     "/div[@class='BVRRHistogramContent']"
@@ -306,7 +307,8 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                         pass
                 if distribution:
                     reviews = BuyerReviews(total, avrg, distribution)
-                    cond_set_value(product, 'buyer_reviews', reviews)
+                    product['buyer_reviews'] = reviews
+
         if 'buyer_reviews' not in product:
             cond_set_value(product, 'buyer_reviews', 0)
         new_meta = response.meta.copy()
@@ -321,7 +323,10 @@ class JcpenneyProductsSpider(BaseProductsSpider):
         ).extract()
 
         for link in links:
-            yield 'http://www.jcpenney.com'+link, SiteProductItem()
+            if 'javascript:void(price)' in link:
+                continue
+            else:
+                yield 'http://www.jcpenney.com'+link, SiteProductItem()
 
     def _scrape_total_matches(self, response):
         if response.xpath('//div[@class="null_result_holder"]').extract():
