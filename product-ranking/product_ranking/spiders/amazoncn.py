@@ -587,7 +587,7 @@ class AmazonProductsSpider(BaseProductsSpider):
                 'div/p[contains(@class, "Name")]/span/a/text()').extract())
 
             marketplaces.append({
-                "price": Price(price=price, priceCurrency="USD"), 
+                "price": Price(price=price, priceCurrency="CNY"),
                 "name": name
             })
 
