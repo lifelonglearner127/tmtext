@@ -196,7 +196,7 @@ class HomeDepotScraper(Scraper):
         scripts = self.tree_html.xpath('//script//text()')
 
         for script in scripts:
-            jsonvar = re.findall(r'JSON = (.*?);', script)
+            jsonvar = re.findall(r'PRODUCT_INLINE_PLAYER_JSON = (.*?);', script)
             if len(jsonvar) > 0:
                 jsonvar = jsonvar[0]
                 break
@@ -228,7 +228,7 @@ class HomeDepotScraper(Scraper):
         scripts = self.tree_html.xpath('//script//text()')
 
         for script in scripts:
-            jsonvar = re.findall(r'JSON = (.*?);', script)
+            jsonvar = re.findall(r'PRODUCT_INLINE_PLAYER_JSON = (.*?);', script)
             if len(jsonvar) > 0:
                 jsonvar = jsonvar[0]
                 break
@@ -337,17 +337,20 @@ class HomeDepotScraper(Scraper):
 
     def _site_online(self):
         self._extract_product_json()
-
+        '''
         if self.product_json["itemAvailability"]["availableOnlineStore"] == True:
             return 1
-
-        return 0
+        '''
+        return 1
 
     def _site_online_out_of_stock(self):
-        if self._site_online():
-            return 0
+        self._extract_product_json()
 
-        return None
+        for message in self.product_json["storeSkus"][0]["storeAvailability"]["itemAvilabilityMessages"]:
+            if message["messageValue"] == u'Out Of Stock Online':
+                return 1
+
+        return 0
 
     def _in_stores_out_of_stock(self):
         return 0

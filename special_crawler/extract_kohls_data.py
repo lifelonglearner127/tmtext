@@ -25,6 +25,7 @@ class KohlsScraper(Scraper):
         # whether product has any webcollage media
         self.review_json = None
         self.price_json = None
+        self.failure_type = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -45,11 +46,11 @@ class KohlsScraper(Scraper):
             False otherwise
         """
         try:
-            itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
+            self._failure_type()
 
-            if itemtype != "product":
-                raise Exception()
-
+            if self.failure_type:
+                self.ERROR_RESPONSE["failure_type"] = self.failure_type
+                return True
         except Exception:
             return True
 
@@ -71,6 +72,19 @@ class KohlsScraper(Scraper):
         product_id = self.tree_html.xpath("//input[@class='preSelectedskuId']/@value")[0].strip()[:-1]
 
         return product_id
+
+    def _failure_type(self):
+        itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
+
+        if itemtype != "product":
+            self.failure_type = "Not a product"
+            return
+
+        collectiontype = self.tree_html.xpath('//input[@id="collectionType"]/@value')[0].strip()
+
+        if collectiontype.startswith("collection"):
+            self.failure_type = "Collection product"
+            return
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -337,10 +351,17 @@ class KohlsScraper(Scraper):
         if not self.price_json:
             return None
 
-        if not self.price_json["product_Details"]["itemSalePrice"]:
-            return self.price_json["product_Details"]["itemOriginalPrice"]
+        price = None
 
-        return self.price_json["product_Details"]["itemSalePrice"]
+        if not self.price_json["product_Details"]["itemSalePrice"]:
+            price = self.price_json["product_Details"]["itemOriginalPrice"]
+        else:
+            price = self.price_json["product_Details"]["itemSalePrice"]
+
+        if "|" in price:
+            price = price[:price.find("|")]
+
+        return price.strip()
 
     def _price_amount(self):
         self._extract_price_json()
@@ -352,8 +373,13 @@ class KohlsScraper(Scraper):
 
         if not self.price_json["product_Details"]["itemSalePrice"]:
             price_amount = self.price_json["product_Details"]["itemOriginalPrice"]
+        else:
+            price_amount = self.price_json["product_Details"]["itemSalePrice"]
 
-        price_amount = self.price_json["product_Details"]["itemSalePrice"]
+        if "|" in price_amount:
+            price_amount = price_amount[:price_amount.find("|")]
+
+        price_amount = price_amount.strip()
 
         return float(price_amount[1:])
 
@@ -394,7 +420,8 @@ class KohlsScraper(Scraper):
         return None
 
     def _brand(self):
-        return None
+        brand = re.search('googletag\.pubads\(\)\.setTargeting\("brd", "(.+?)"', lxml.html.tostring(self.tree_html)).group(1)
+        return brand
 
     ##########################################
     ################ HELPER FUNCTIONS
