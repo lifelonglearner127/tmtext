@@ -49,6 +49,7 @@ class TargetVariants(object):
                 stockstatus_for_variants["properties"] = properties
                 stockstatus_for_variants["selected"] = None
                 stockstatus_for_variants["price"] = float(hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["price"]["formattedOfferPrice"][1:])
+                stockstatus_for_variants["image_url"] = hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["primary_image"]
 
                 if hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["inventory"]["status"] == "in stock":
                     stockstatus_for_variants["in_stock"] = True
