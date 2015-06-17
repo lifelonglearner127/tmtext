@@ -287,7 +287,7 @@ class AmazonCNScraper(Scraper):
             if len(d.xpath('.//div[@class="aplus"]'))==0:
                 res += self._clean_text(' '.join(d.xpath('.//text()')))+" "
         if res != "" :
-            return res
+            return res.encode("latin-1").decode("utf8")
         return None
 
 
@@ -299,9 +299,9 @@ class AmazonCNScraper(Scraper):
         desc = urllib.unquote_plus(str(desc))
         desc = html.fromstring(desc)
         res = self._clean_text(' '.join(desc.xpath('//div[@id="aplusProductDescription"]//text()')))
-        if res != "" : return res
+        if res != "" : return res.encode("latin-1").decode("utf8")
         res = self._clean_text(' '.join(desc.xpath('//div[@class="productDescriptionWrapper"]/div[@class="aplus"]//text()')))
-        if res != "" : return res
+        if res != "" : return res.encode("latin-1").decode("utf8")
         return None
 
     def _variants(self):
