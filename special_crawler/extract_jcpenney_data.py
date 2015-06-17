@@ -10,6 +10,7 @@ from itertools import groupby
 
 from lxml import html, etree
 from extract_data import Scraper
+from spiders_shared_code.jcpenney_variants import JcpenneyVariants
 
 
 class JcpenneyScraper(Scraper):
@@ -25,6 +26,7 @@ class JcpenneyScraper(Scraper):
         # whether product has any webcollage media
         self.review_json = None
         self.price_json = None
+        self.jv = JcpenneyVariants()
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -44,6 +46,8 @@ class JcpenneyScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
+        self.jv.setupCH(self.tree_html)
+
         try:
             itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')[0]
 
@@ -68,7 +72,7 @@ class JcpenneyScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-         return re.search('prod\.jump\?ppId=(.+?)$', self.product_page_url).group(1)
+        return re.search('prod\.jump\?ppId=(.+?)$', self.product_page_url).group(1)
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -121,6 +125,9 @@ class JcpenneyScraper(Scraper):
 
     def _ingredients_count(self):
         return 0
+
+    def _variants(self):
+        return self.jv._variants()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -326,6 +333,7 @@ class JcpenneyScraper(Scraper):
         "long_description" : _long_description, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
+        "variants": _variants,
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
