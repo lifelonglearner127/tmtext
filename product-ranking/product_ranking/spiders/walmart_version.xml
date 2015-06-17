@@ -37,9 +37,5 @@
     <field name="recent_questions" version="1.1"></field>
     <field name="special_pricing" version="1.1"></field>
     <field name="shipping" version="1.0"></field>
-    <field name="variants" version="1.0"></field>
-    <field name="color" version="1.1"></field>
-    <field name="size" version="1.1"></field>
-    <field name="color_size_stockstatus" version="1.0"></field>
-    <field name="selected_variants" version="1.0"></field>
+    <field name="variants" version="1.1"></field>
 </fields>

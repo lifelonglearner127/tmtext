@@ -14,6 +14,7 @@ import re
 import sys
 import json
 import csv
+import urllib
 
 # from selenium import webdriver
 # import time
@@ -58,22 +59,28 @@ class SearchSpider(BaseSpider):
     #                product_name - the product's name, for searching by product name
     #                product_url - the product's page url in the source site, for searching by product URL
     #                product_urls_file - file containing a list of product pages URLs
+    #                bestsellers_link - link to list of bestseller products
     #                output - integer(1/2/3/4) option indicating output type (either result URL (1), or result URL and source product URL (2))
     #                         3 - same as 2 but with extra field representing confidence score
     #                         4 - same as 3 but with origin products represented by UPC instead of URL
     #                         5 - same as 3 but with product name as well, on first column (name from source site)
+    #                         6 - same as 3 but additionally with bestsellers rank (origin and target) - to be used
+    #                             in combination with the input bestsellers_link option
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
-    def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, walmart_ids_file = None, \
-        output = 2, threshold = 1.0, outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
+    def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, bestsellers_link = None, bestsellers_range = '0', \
+        walmart_ids_file = None, output = 2, threshold = 1.0, \
+        outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
 
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "a4a52aaa9b24b6e7508cf4dede200459f2c6a452"
+        self.version = "67695da0116774d627ac826743f16c284c316be4"
 
         self.product_url = product_url
         self.products_file = products_file
         self.product_name = product_name
+        self.bestsellers_link = bestsellers_link
+        self.bestsellers_range = self.parse_bestsellers_range(bestsellers_range)
         self.output = int(output)
         self.product_urls_file = product_urls_file
         self.walmart_ids_file = walmart_ids_file
@@ -105,7 +112,13 @@ class SearchSpider(BaseSpider):
                                     'tesco' : self.parseURL_tesco, \
                                     'amazon' : self.parseURL_amazon, \
                                     'target' : self.parseURL_target, \
-                                    'maplin' : self.parseURL_maplin}
+                                    'maplin' : self.parseURL_maplin
+                                    }
+
+        # parse_bestsellers functions, for each supported origin site
+        self.parse_bestsellers_functions = {'amazon' : self.parse_bestsellers_amazon, \
+                                            'walmart' : self.parse_bestsellers_walmart
+                                            }
 
 
     def build_search_pages(self, search_query):
@@ -150,6 +163,18 @@ class SearchSpider(BaseSpider):
         # put + instead of spaces, lowercase all words
         search_query = "+".join(ProcessText.normalize(product_name, stem=False, exclude_stopwords=False))
         return search_query
+
+    def parse_bestsellers_range(self, bestsellers_range_string):
+        '''Parse input string bestsellers range into a tuple of integers
+        representing the range of bestsellers to extract for this spider
+        :param bestsellers_range_string: bestsellers range as string of the form
+        [x-y] or 0
+        '''
+
+        if bestsellers_range_string == '0':
+            return []
+        else:
+            return map(lambda x: int(x), bestsellers_range_string.split("-"))
 
     # TODO: make more general. this is pretty specific to the clorox audit batch input file
     def parse_products_file(self, products_file):
@@ -369,8 +394,10 @@ class SearchSpider(BaseSpider):
 
                 yield request
 
+        if self.bestsellers_link:
+            origin_site = Utils.extract_domain(self.bestsellers_link)
+            yield Request(self.bestsellers_link, callback=self.parse_bestsellers_functions[origin_site])
 
-        
         # if we have product URLs, pass them to parseURL to extract product names (which will pass them to parseResults)
         product_urls = []
         # if we have a single product URL, create a list of URLs containing it
@@ -424,7 +451,81 @@ class SearchSpider(BaseSpider):
                 request = Request(walmart_url, callback = self.parseURL)
                 #request.meta['origin_site'] = 'walmart'
                 yield request
-        
+
+    def parse_bestsellers_amazon(self, response):
+        '''Parse input bestsellers link to extract all bestseller products,
+        and pass them over to parseURL to start matching with these as
+        origin urls
+        '''
+        # e.g.
+        # http://www.amazon.com/Best-Sellers-Electronics-Televisions/zgbs/electronics/172659/ref=zg_bs_nav_e_2_1266092011
+
+        hxs = HtmlXPathSelector(response)
+        product_links = hxs.select("//div[@class='zg_title']/a/@href").extract()
+
+        if 'last_index' not in response.meta:
+            last_index = 0
+        else:
+            last_index = response.meta['last_index']
+
+        # index of product in bestsellers lists
+        index = last_index
+
+        for product_link in product_links:
+            # start matching for this product
+            index = index + 1
+            # only consider products in the range given as input
+            if self.bestsellers_range and self.bestsellers_range[0] <= index < self.bestsellers_range[1]:
+                yield Request(product_link.strip(), callback=self.parseURL, meta={'origin_site' : 'amazon', 'origin_bestsellers_rank' : index})
+            pass
+
+        # go to next page
+        # if we're already past the index range, skip further pages
+        if not self.bestsellers_range or index <= self.bestsellers_range[1]:
+            try:
+                next_page_link = hxs.select("//ol[@class='zg_pagination']/li[@class='zg_page zg_selected']/following-sibling::li[1]/a/@href")\
+                .extract()[0]
+                yield Request(next_page_link, callback=self.parse_bestsellers_amazon, meta={'last_index' : index})
+            except Exception, e:
+                pass
+
+    def parse_bestsellers_walmart(self, response):
+        '''Parse input bestsellers link to extract all bestseller products,
+        and pass them over to parseURL to start matching with these as
+        origin urls
+        '''
+        # e.g.
+        # http://www.walmart.com/browse/electronics/tvs/3944_1060825_447913
+
+        hxs = HtmlXPathSelector(response)
+        product_links = hxs.select("//div[@class='js-tile tile-grid-unit']/a[@class='js-product-title']/@href").extract()
+
+        if 'last_index' not in response.meta:
+            last_index = 0
+        else:
+            last_index = response.meta['last_index']
+        index = last_index
+
+        for product_link in product_links:
+            # start matching for this product
+            product_link = "http://www.walmart.com" + product_link.strip()
+            index = index + 1
+            
+            # only consider products in the range given as input
+            if self.bestsellers_range and self.bestsellers_range[0] <= index < self.bestsellers_range[1]:
+                yield Request(product_link, callback=self.parseURL, meta={'origin_site' : 'walmart', 'origin_bestsellers_rank' : index})
+
+        # go to next page
+        # if we're already past the index range, skip further pages
+        if not self.bestsellers_range or index <= self.bestsellers_range[1]:
+            try:
+                next_page_link = hxs.select("//a[@class='paginator-btn paginator-btn-next']/@href").extract()[0]
+                base_url = urllib.splitquery(response.url)[0]
+                next_page_link = base_url + next_page_link
+                yield Request(next_page_link, callback=self.parse_bestsellers_walmart, meta={'last_index' : index})
+            except Exception, e:
+                pass
+
 
     # parse a product page (given its URL) and extract product's name;
     # create queries to search by (use model name, model number, and combinations of words from model name), then send them to parseResults
@@ -701,6 +802,8 @@ class SearchSpider(BaseSpider):
         request.meta['origin_manufacturer_code'] = product_manufacturer_code
         if product_price:
             request.meta['origin_price'] = product_price
+        if 'origin_bestsellers_rank' in response.meta:
+            request.meta['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
         # origin product brand as extracted from name (basically the first word in the name)
         request.meta['origin_brand_extracted'] = product_brand_extracted
@@ -926,10 +1029,10 @@ class SearchSpider(BaseSpider):
                 if currency != "$":
                     price = Utils.convert_to_dollars(price, currency)
             else:
-                self.log("Didn't match product price: " + product_target_price + " (" + product_name + ")\n", level=log.WARNING)
+                self.log("Didn't match product price: " + product_target_price + " (" + str(product_name) + ")\n", level=log.WARNING)
 
         else:
-            self.log("Didn't find product price: (" + product_name + ")\n", level=log.INFO)
+            self.log("Didn't find product price: (" + str(product_name) + ")\n", level=log.INFO)
 
         return (product_name, product_model, price, None, None)
 
@@ -1068,6 +1171,8 @@ class SearchSpider(BaseSpider):
                     request.meta['threshold'] = response.meta['threshold']
                 if 'origin_manufacturer_code' in response.meta:
                     request.meta['origin_manufacturer_code'] = response.meta['origin_manufacturer_code']
+                if 'origin_bestsellers_rank' in response.meta:
+                    request.meta['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
                 # if 'origin_id' in response.meta:
                 #     request.meta['origin_id'] = response.meta['origin_id']
@@ -1140,6 +1245,8 @@ class SearchSpider(BaseSpider):
                         item['origin_upc'] = response.meta['origin_upc']
                     if 'origin_manufacturer_code' in response.meta:
                         item['origin_manufacturer_code'] = response.meta['origin_manufacturer_code']
+                    if 'origin_bestsellers_rank' in response.meta:
+                        item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
                     # if 'origin_id' in response.meta:
                     #     item['origin_id'] = response.meta['origin_id']

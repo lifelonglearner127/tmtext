@@ -460,7 +460,7 @@ class BaseValidator(object):
         return True
 
     def _validate_department(self, val):
-        val = str(val)
+        val = unicode(val)
         if len(val) > 100:
             return False
         return True
@@ -505,6 +505,13 @@ class BaseValidator(object):
         for v in val:
             if not 'date' in [k.lower() for k in v.keys()]:
                 return False
+        return True
+
+    def _validate_shipping(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_variants(self, val):
+        # TODO: implement
         return True
 
     def _get_failed_fields(self, data, add_row_index=False):

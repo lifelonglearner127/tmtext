@@ -17,6 +17,7 @@ from product_ranking.spiders import (BaseProductsSpider, cond_set,
                                      cond_set_value, FormatterWithDefaults,
                                      FLOATING_POINT_RGEX)
 from product_ranking.guess_brand import guess_brand_from_first_words
+from product_ranking.amazon_tests import AmazonTests
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
@@ -46,9 +47,34 @@ except ImportError as e:
 
 is_empty = lambda x, y=None: x[0] if x else y
 
-class AmazonProductsSpider(BaseProductsSpider):
+class AmazoncnValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['model', 'brand', 'price', 'bestseller_rank',
+                       'buyer_reviews']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'google_source_site', 'description', 'special_pricing'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = True  # ... duplicated requests?
+    ignore_log_filtered = True  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'adfhsadifgewrtgujoc2': 0,
+        'iphone duos': [5, 175],
+        'gold shell': [50, 200],
+        'Led Tv screen': [20, 200],
+        'told help': [5, 150],
+        'crawl': [50, 400],
+        'sony playstation 4': [50, 200],
+        'store data all': [20, 300],
+        'iphone stone': [40, 250]
+    }
+
+class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
     name = 'amazoncn_products'
     allowed_domains = ["amazon.cn"]
+
+    settings = AmazoncnValidatorSettings()
 
     SEARCH_URL = "http://www.amazon.cn/s/?field-keywords={search_term}"
     #SEARCH_URL = "http://www.amazon.cn/s/ref=sr_st_{sort_mode}" \
@@ -105,6 +131,8 @@ class AmazonProductsSpider(BaseProductsSpider):
                 yield r
 
     def parse_product(self, response):
+        if self._has_captcha(response):
+            result = self._handle_captcha(response, self.parse_product)
         prod = response.meta['product']
 
         if not self._has_captcha(response):
@@ -279,6 +307,18 @@ class AmazonProductsSpider(BaseProductsSpider):
                 )
             elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
                 model = li.xpath('text()').extract()
+        if not product.get('model'):
+                model = is_empty(response.xpath(
+                    '//div[contains(@class, "content")]/ul/'
+                    'li/b[contains(text(), "ASIN")]/../text() |'
+                    '//table/tbody/tr/'
+                    'td[contains(@class, "label") and contains(text(), "ASIN")]'
+                    '/../td[contains(@class, "value")]/text() |'
+                    '//div[contains(@class, "content")]/ul/'
+                    'li/b[contains(text(), "ISBN-10")]/../text()'
+                ).extract())
+                if model:
+                    cond_set(product, 'model', (model, ))
         if not product.get('brand') and product.get('title'):
             brand = guess_brand_from_first_words(product['title'])
             cond_set_value(product, 'brand', brand)
@@ -439,7 +479,7 @@ class AmazonProductsSpider(BaseProductsSpider):
             average = float(is_empty(response.xpath(
                 '//div[contains(@class, "a-fixed-left-grid")]'\
                 '//span[contains(@class, "a-size-base")]/text()'
-                ).re(FLOATING_POINT_RGEX), 0))
+                ).re(FLOATING_POINT_RGEX), '0').replace(',', ''))
             total = 0
             for mark in response.xpath(
                 '//div[contains(@class, "a-fixed-left-grid")]/div'
@@ -507,6 +547,11 @@ class AmazonProductsSpider(BaseProductsSpider):
         return buyer_reviews
 
     def get_buyer_reviews_from_2nd_page(self, response):
+        if self._has_captcha(response):
+            result = self._handle_captcha(
+                response, 
+                self.get_buyer_reviews_from_2nd_page
+            )
         product = response.meta["product"]
         buyer_reviews = {}
         product["buyer_reviews"] = {}

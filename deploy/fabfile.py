@@ -230,6 +230,7 @@ def setup_packages():
     cuisine.package_ensure('mc htop iotop nano')  # just for convenience
     sudo('pip install virtualenv --upgrade')
     sudo('pip install pytesseract')
+    sudo('pip install tldextract')
 
     env.user, env.password, env.key_filename = \
         orig_user, orig_passw, orig_cert
@@ -282,7 +283,7 @@ def _setup_virtual_env_scrapyd():
         run('pip install django-ses')
         run('pip install django_adminplus')
         run('pip install lxml')
-
+        run('pip install tldextract')
 
     _setup_simmetrica_monitoring()
 

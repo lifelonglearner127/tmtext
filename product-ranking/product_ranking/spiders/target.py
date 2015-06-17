@@ -18,10 +18,8 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
-try:
-    from spiders_shared_code.target_variants import TargetVariants
-except ImportError:
-    from target_variants import TargetVariants
+from spiders_shared_code.target_variants import TargetVariants
+
 
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -129,11 +127,6 @@ class TargetProductSpider(BaseProductsSpider):
         tv = TargetVariants()
         tv.setupSC(response)
         prod['variants'] = tv._variants()
-        prod['color'] = tv._color()
-        prod['size'] = tv._size()
-        prod['color_size_stockstatus'] = tv._color_size_stockstatus()
-        prod['selected_variants'] = tv._selected_variants()
-        prod['price_for_variants'] = tv._price_for_variants()
 
         price = is_empty(response.xpath(
             '//p[contains(@class, "price")]/span/text()').extract())

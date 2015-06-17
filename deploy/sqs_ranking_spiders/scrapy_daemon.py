@@ -439,7 +439,6 @@ def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
     _max_initial_attempts = 10
     for i in xrange(_max_initial_attempts):
         if i >= _max_initial_attempts - 2:
-            logger.error("Spider failed to start.")
             _msg = generate_msg(metadata, 'failed')
             if TEST_MODE:
                 test_write_msg_to_fs(
@@ -447,6 +446,18 @@ def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
             else:
                 write_msg_to_sqs(
                     metadata['server_name']+PROGRESS_QUEUE_NAME, _msg)
+            # try to upload at least scrapy logs to S3
+            try:
+                logger.info("Due to spider failed daemon will try"
+                            " to upload logs to s3 if they exist.")
+                put_file_into_s3(AMAZON_BUCKET_NAME, log_file)
+            except Exception as e:
+                logger.error("Failed to load logs to S3 with exception: %s",
+                             str(e))
+            # this log message should be added at the end because
+            # killer script will stop instance if found this message
+            # at logs
+            logger.error("Spider failed to start.")
             sys.exit()
             return  # error - the data file still does not exist
         if os.path.exists(data_file) and os.path.exists(log_file):

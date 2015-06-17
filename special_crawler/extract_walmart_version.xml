@@ -54,12 +54,6 @@
     <field name="pdf_count" version="1.1"></field>
     <field name="mobile_image_same" version="1.1"></field>
     <field name="canonical_link" version="1.1"></field>
-    <field name="color" version="1.2"></field>
-    <field name="size" version="1.2"></field>
-    <field name="color_size_stockstatus" version="1.2"></field>
-    <field name="varients" version="1.2"></field>
-    <field name="selected_varients" version="1.2"></field>
-    <field name="style" version="1.2"></field>
-    <field name="stockstatus_for_variants" version="1.2"></field>
-    <field name="price_for_variants" version="1.2"></field>
+    <field name="variants" version="1.2"></field>
+    <field name="site_id" version="1.1"></field>
 </fields>

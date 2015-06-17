@@ -90,6 +90,8 @@ def main():
         k.key = BUCKET_KEY
         global log_file_path
         time.sleep(70)
+        # Try to upload logs prior to stop server
+        os.system('python upload_logs_to_s3.py')
         k.get_contents_to_filename(log_file_path)
         logger.warning("Instance with id=%s was terminated"
                    " due to reason='%s'. "
