@@ -48,6 +48,7 @@ from extract_ulta_data import UltaScraper
 from extract_asda_data import AsdaScraper
 from extract_kohls_data import KohlsScraper
 from extract_jcpenney_data import JcpenneyScraper
+from extract_amazoncn_data import AmazonCNScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -103,7 +104,8 @@ SUPPORTED_SITES = {
                     "ulta": UltaScraper,
                     "groceries": AsdaScraper,
                     "kohls": KohlsScraper,
-                    "jcpenney": JcpenneyScraper
+                    "jcpenney": JcpenneyScraper,
+                    "amazoncn": AmazonCNScraper,
                     }
 
 # add logger
@@ -175,6 +177,8 @@ def extract_domain(url):
         return 'costco'
     if 'amazon.de' in url:
         return 'amazonde'
+    if 'amazon.cn' in url:
+        return 'amazoncn'
     if 'groceries.asda.com' in url:
         return 'groceries'
 
