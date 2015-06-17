@@ -373,7 +373,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             buyer_reviews['rating_by_star'][int(_star)] = int(_reviews)
         return BuyerReviews(**buyer_reviews)
 
-    def _parse_marketplaces(self, response, product):
+    def _parse_marketplaces_from_page_html(self, response, product):
         marketplaces = []
         for seller in response.xpath(
             "//ul[contains(@class, 'sellers-list')]"
@@ -423,6 +423,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 name = is_empty(response.xpath(
                     '//meta[@itemprop="seller"]/@content'
                 ).extract())
+            if not name:
+                name_json = re.search(r',\"sellerName\"\:\"(.*?)\",',
+                                      response.body)
+                if name_json:
+                    name = name_json.group(1).strip()
+
             price_amount = is_empty(
                 response.xpath('//meta[@itemprop="price"]'
                                '/@content').re(FLOATING_POINT_RGEX)
@@ -487,7 +493,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 (guess_brand_from_first_words(brand.strip()),)
             )
 
-        if not "marketplace" in product:
+        if not product.get("marketplace"):
             seller = response.xpath(
                 '//div[@class="product-seller"]/div/' \
                 'span[contains(@class, "primary-seller")]/b/text()'
@@ -545,7 +551,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 response.xpath('//strong[@id="UPC_CODE"]/text()').extract()
             )
 
-        self._parse_marketplaces(response, product)
+        self._parse_marketplaces_from_page_html(response, product)
 
     def _gen_location_request(self, response):
         data = {"postalCode": ""}
