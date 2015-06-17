@@ -3,6 +3,7 @@ import json
 import lxml.html
 import itertools
 import re
+from lxml import html, etree
 
 
 class JcpenneyVariants(object):
@@ -59,6 +60,13 @@ class JcpenneyVariants(object):
 
             variation_combinations_values = map(list, variation_combinations_values)
 
+            price_json= re.search('var jcpPPJSON = (.+?);\njcpDLjcp\.productPresentation = jcpPPJSON;', html.tostring(self.tree_html)).group(1)
+            self.price_json = json.loads(price_json)
+            price = self.price_json["price"]
+
+            if float(price).is_integer():
+                price = int(price)
+
             for variation_combination in variation_combinations_values:
                 stockstatus_for_variants = {}
                 properties = {}
@@ -78,7 +86,7 @@ class JcpenneyVariants(object):
                 else:
                     stockstatus_for_variants["selected"] = False
 
-                stockstatus_for_variants["price"] = None
+                stockstatus_for_variants["price"] = price
 
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
 
