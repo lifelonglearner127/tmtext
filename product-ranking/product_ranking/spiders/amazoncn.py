@@ -174,10 +174,6 @@ class AmazonProductsSpider(BaseProductsSpider):
         av = AmazonVariants()
         av.setupSC(response)
         product['variants'] = av._variants()
-        product['color'] = av._color()
-        product['size'] = av._size()
-        product['color_size_stockstatus'] = av._color_size_stockstatus()
-        product['selected_variants'] = av._selected_variants()
 
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         price = response.css('#priceblock_ourprice ::text '
