@@ -15,8 +15,10 @@ from scrapy.log import ERROR
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     RelatedProduct
 from product_ranking.spiders import (BaseProductsSpider, FormatterWithDefaults,
-                                     cond_set, cond_set_value)
+                                     cond_set, cond_set_value, 
+                                     FLOATING_POINT_RGEX)
 
+is_empty = lambda x,y=None: x[0] if x else y
 
 class ProswimwearCoUkSpider(BaseProductsSpider):
     name = 'proswimwear_co_uk_products'
@@ -68,6 +70,12 @@ class ProswimwearCoUkSpider(BaseProductsSpider):
         if 'total' in total.lower():  # like " Items 1 to 20 of 963 total "
             total = total.split('of ', 1)[1]
         total = re.search(r'([\d,\. ]+)', total)
+        if not total:
+            total = is_empty(response.xpath(
+                "//p[contains(@class, 'amount')]/strong/text()"
+            ).re(FLOATING_POINT_RGEX))
+            if total:
+                return int(total)
         if not total:
             self.log(
                 "'total matches' string not found at %s" % response.url,
@@ -133,7 +141,7 @@ class ProswimwearCoUkSpider(BaseProductsSpider):
         values = [int(value) / 20 for value in values]
         total = len(values)
         avg = sum(values) / total
-        by_star = {value: values.count(value) for value in values}
+        by_star = {int(value): int(values.count(value)) for value in values}
         cond_set_value(product, 'buyer_reviews',
                        BuyerReviews(num_of_reviews=total, average_rating=avg,
                                     rating_by_star=by_star))
