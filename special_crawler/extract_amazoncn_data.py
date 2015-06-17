@@ -6,6 +6,7 @@ import re
 import sys
 import json
 import lxml
+from httplib import IncompleteRead
 
 from lxml import html
 import time
@@ -198,7 +199,7 @@ class AmazonCNScraper(Scraper):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
-        model = self.tree_html.xpath("//b[contains(text(),'Modellnummer:')]/following-sibling::text()")[0].strip()
+        model = re.search('<b>&#22411;&#21495;:</b>(.+?)</li>', html.tostring(self.tree_html)).group(1)
         return model
 
     # Amazon's version of UPC
@@ -272,11 +273,23 @@ class AmazonCNScraper(Scraper):
         desc = " ".join(self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript//text()')).strip()
         if desc is not None and len(desc)>5:
             return desc
-        pd = self.tree_html.xpath("//h2[contains(text(),'Product Description')]/following-sibling::*//text()")
-        if len(pd)>0:
-            desc = " ".join(pd).strip()
-            if desc is not None and len(desc)>0:
-                return  self._clean_text(desc)
+        pd = self.tree_html.xpath("//h2")
+        is_found_h2 = False
+
+        for h2 in pd:
+            if u'\u57fa\u672c\u4fe1\u606f' in h2.xpath("./text()")[0]:
+                is_found_h2 = True
+                break
+
+        if is_found_h2:
+            pd = h2.xpath("./following-sibling::*//text()")
+
+            if len(pd)>0:
+                desc = " ".join(pd).strip()
+
+                if desc is not None and len(desc)>0:
+                    return  self._clean_text(desc)
+
         desc = '\n'.join(self.tree_html.xpath('//script//text()'))
         desc = re.findall(r'var iframeContent = "(.*)";', desc)
         desc = urllib.unquote_plus(str(desc))
@@ -542,7 +555,7 @@ class AmazonCNScraper(Scraper):
             average_review = self.tree_html.xpath("//div[@class='gry txtnormal acrRating']//text()")
         if len(average_review) == 0:
             average_review = self.tree_html.xpath("//div[@id='avgRating']//span//text()")
-        average_review = re.findall("([0-9]\.?[0-9]?) von 5 Sternen", average_review[0])[0]
+        average_review = re.findall("([0-9]\.?[0-9]?)", average_review[0])[0]
         return self._tofloat(average_review)
 
     def _review_count(self):
@@ -771,10 +784,11 @@ class AmazonCNScraper(Scraper):
 
                     if len(mps) > 20:
                         break
-            else:
-                urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
-                continue
-            break
+
+            if len(mps) > 20:
+                break
+
+            urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
 
         if len(mps)>0:
             if fl == 1:
