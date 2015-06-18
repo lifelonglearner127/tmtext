@@ -137,10 +137,14 @@ class AmazonScraper(Scraper):
     def check_url_format(self):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         n = re.match(r"^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        o = re.match(r"^http://www.amazon.ca/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         l = re.match(r"^http://www.amazon.co.uk/.*$", self.product_page_url)
         self.scraper_version = "com"
+
         if (not not n) or (not not l): self.scraper_version = "uk"
-        return (not not m) or (not not n) or (not not l)
+        if (not not o): self.scraper_version = "ca"
+
+        return (not not m) or (not not n) or (not not l) or (not not o)
 
     def not_a_product(self):
         '''Overwrites parent class method that determines if current page
@@ -169,6 +173,8 @@ class AmazonScraper(Scraper):
     def _product_id(self):
         if self.scraper_version == "uk":
             product_id = re.match("^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+        elif self.scraper_version == "ca":
+            product_id = re.match("^http://www.amazon.ca/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         else:
             product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         return product_id
@@ -775,7 +781,9 @@ class AmazonScraper(Scraper):
                                     seller_content = requests.get(seller_link[0], headers=h).text
                                 else:
                                     if self.scraper_version == "uk":
-                                        seller_content = requests.get("http://www.amazon.uk" + seller_link[0], headers=h).text
+                                        seller_content = requests.get("http://www.amazon.co.uk" + seller_link[0], headers=h).text
+                                    elif self.scraper_version == "ca":
+                                        seller_content = requests.get("http://www.amazon.ca" + seller_link[0], headers=h).text
                                     else:
                                         seller_content = requests.get("http://www.amazon.com" + seller_link[0], headers=h).text
 
