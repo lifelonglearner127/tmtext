@@ -17,8 +17,11 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
+from spiders_shared_code.jcpenney_variants import JcpenneyVariants
+
 
 is_empty = lambda x, y="": x[0] if x else y
+
 
 class JcpenneyProductsSpider(BaseProductsSpider):
     """ jcpenny.com product ranking spider.
@@ -117,6 +120,10 @@ class JcpenneyProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
+
+        jp = JcpenneyVariants()
+        jp.setupSC(response)
+        prod['variants'] = jp._variants()
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
