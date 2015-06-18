@@ -42,8 +42,8 @@ class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_123': 0,
-        'chrysler spare parts': [10, 150],
-        'shampoo dry wash baby': [50, 250],
+        'chrysler spare parts': [10, 150],#1300
+        'shampoo dry wash baby': [50, 250],#1800
         'macbook air thunderbolt': [10, 150],
         'hexacore': [50, 250],
         '300c': [50, 250],
@@ -66,6 +66,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     """
     name = 'walmart_products'
     allowed_domains = ["walmart.com", "msn.com"]
+
+    handle_httpstatus_list = [404]
 
     SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
         "&_refineresult=true&ic=16_0&search_constraint=0" \
@@ -195,6 +197,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         return super(WalmartProductsSpider, self).start_requests()
 
     def parse_product(self, response):
+        if response.status == 404:
+            return response.meta.get("product")
         if self._search_page_error(response):
             self.log(
                 "Got 404 when coming from %r." % response.request.url, ERROR)
