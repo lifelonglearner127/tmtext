@@ -12,6 +12,7 @@ from scrapy import Selector
 from scrapy.exceptions import DropItem
 from scrapy import logformatter
 from scrapy import log
+import tldextract
 try:
     import mock
 except ImportError:
@@ -52,6 +53,24 @@ class CutFromTitleTagsAndReturnStringOnly(object):
         if isinstance(title, str) or isinstance(title, unicode):
             return Selector(text=title).xpath("string()").extract()[0]
         return title
+
+
+class SetMarketplaceSellerType(object):
+    def process_item(self, item, spider):
+        spider_main_domain = spider.allowed_domains[0]
+        spider_main_domain = tldextract.extract(spider_main_domain).domain
+        marketplaces = item.get('marketplace', {})
+        # extend the marketplace dict with the seller_type (see BZ 1869)
+        for marketplace in marketplaces:
+            name = marketplace.get('name', '')
+            if name:
+                name_domain = tldextract.extract(name).domain
+                if spider_main_domain and name_domain:
+                    if spider_main_domain.lower() == name_domain.lower():
+                        marketplace['seller_type'] = 'site'
+                    else:
+                        marketplace['seller_type'] = 'marketplace'
+        return item
 
 
 class AddSearchTermInTitleFields(object):

@@ -16,6 +16,7 @@ from lxml import etree
 import time
 import requests
 from extract_data import Scraper
+from spiders_shared_code.macys_variants import MacysVariants
 
 
 class MacysScraper(Scraper):
@@ -25,6 +26,14 @@ class MacysScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www1\.macys\.com/shop/(.*)"
+
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        # whether product has any webcollage media
+        self.review_json = None
+        self.price_json = None
+        self.mv = MacysVariants()
 
     reviews_tree = None
     max_score = None
@@ -50,6 +59,8 @@ class MacysScraper(Scraper):
         Currently for Amazon it detects captcha validation forms,
         and returns True if current page is one.
         '''
+
+        self.mv.setupCH(self.tree_html)
 
         #if len(self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img")) < 1:
         #    return True
@@ -163,6 +174,9 @@ class MacysScraper(Scraper):
             return description
         except IndexError:
             pass
+
+    def _variants(self):
+        return self.mv._variants()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -435,7 +449,7 @@ class MacysScraper(Scraper):
         "description" : _description, \
         "model" : _model, \
         "long_description" : _long_description, \
-
+        "variants" : _variants, \
         # CONTAINER : PAGE_ATTRIBUTES
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \

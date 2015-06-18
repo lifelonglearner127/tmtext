@@ -6,6 +6,7 @@ import re
 import sys
 import json
 import lxml
+from httplib import IncompleteRead
 
 from lxml import html
 import time
@@ -22,13 +23,13 @@ import compare_images
 
 from spiders_shared_code.amazon_variants import AmazonVariants
 
-class AmazonDEScraper(Scraper):
+class AmazonCNScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.de/dp/<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.cn/dp/<product-id>"
 
     CB = captcha_solver.CaptchaBreakerWrapper()
     # special dir path to store the captchas, so that the service has permissions to create it on the scraper instances
@@ -135,7 +136,7 @@ class AmazonDEScraper(Scraper):
 
 
     def check_url_format(self):
-        m = re.match(r"^http://www.amazon.de/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        m = re.match(r"^http://www.amazon.cn/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -161,7 +162,7 @@ class AmazonDEScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = re.match("^http://www.amazon.de/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+        product_id = re.match("^http://www.amazon.cn/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         return product_id
 
     def _site_id(self):
@@ -198,7 +199,7 @@ class AmazonDEScraper(Scraper):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
-        model = self.tree_html.xpath("//b[contains(text(),'Modellnummer:')]/following-sibling::text()")[0].strip()
+        model = re.search('<b>&#22411;&#21495;:</b>(.+?)</li>', html.tostring(self.tree_html)).group(1)
         return model
 
     # Amazon's version of UPC
@@ -272,11 +273,23 @@ class AmazonDEScraper(Scraper):
         desc = " ".join(self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript//text()')).strip()
         if desc is not None and len(desc)>5:
             return desc
-        pd = self.tree_html.xpath("//h2[contains(text(),'Product Description')]/following-sibling::*//text()")
-        if len(pd)>0:
-            desc = " ".join(pd).strip()
-            if desc is not None and len(desc)>0:
-                return  self._clean_text(desc)
+        pd = self.tree_html.xpath("//h2")
+        is_found_h2 = False
+
+        for h2 in pd:
+            if u'\u57fa\u672c\u4fe1\u606f' in h2.xpath("./text()")[0]:
+                is_found_h2 = True
+                break
+
+        if is_found_h2:
+            pd = h2.xpath("./following-sibling::*//text()")
+
+            if len(pd)>0:
+                desc = " ".join(pd).strip()
+
+                if desc is not None and len(desc)>0:
+                    return  self._clean_text(desc)
+
         desc = '\n'.join(self.tree_html.xpath('//script//text()'))
         desc = re.findall(r'var iframeContent = "(.*)";', desc)
         desc = urllib.unquote_plus(str(desc))
@@ -287,7 +300,7 @@ class AmazonDEScraper(Scraper):
             if len(d.xpath('.//div[@class="aplus"]'))==0:
                 res += self._clean_text(' '.join(d.xpath('.//text()')))+" "
         if res != "" :
-            return res
+            return res.encode("latin-1").decode("utf8")
         return None
 
 
@@ -299,9 +312,9 @@ class AmazonDEScraper(Scraper):
         desc = urllib.unquote_plus(str(desc))
         desc = html.fromstring(desc)
         res = self._clean_text(' '.join(desc.xpath('//div[@id="aplusProductDescription"]//text()')))
-        if res != "" : return res
+        if res != "" : return res.encode("latin-1").decode("utf8")
         res = self._clean_text(' '.join(desc.xpath('//div[@class="productDescriptionWrapper"]/div[@class="aplus"]//text()')))
-        if res != "" : return res
+        if res != "" : return res.encode("latin-1").decode("utf8")
         return None
 
     def _variants(self):
@@ -542,7 +555,7 @@ class AmazonDEScraper(Scraper):
             average_review = self.tree_html.xpath("//div[@class='gry txtnormal acrRating']//text()")
         if len(average_review) == 0:
             average_review = self.tree_html.xpath("//div[@id='avgRating']//span//text()")
-        average_review = re.findall("([0-9]\.?[0-9]?) von 5 Sternen", average_review[0])[0]
+        average_review = re.findall("([0-9]\.?[0-9]?)", average_review[0])[0]
         return self._tofloat(average_review)
 
     def _review_count(self):
@@ -698,7 +711,7 @@ class AmazonDEScraper(Scraper):
         self.marketplace_sellers = []
         mps = []
         mpp = []
-        path = '/tmp/amazonde_sellers.json'
+        path = '/tmp/amazoncn_sellers.json'
         try:
             with open(path, 'r') as fp:
                 amsel = json.load(fp)
@@ -749,7 +762,7 @@ class AmazonDEScraper(Scraper):
                                 seller_name = amsel[seller_id]
 
                         if seller_name is None:
-                            seller_content = requests.get("http://www.amazon.de%s" % seller_link[0], headers=h).text
+                            seller_content = requests.get("http://www.amazon.cn%s" % seller_link[0], headers=h).text
                             seller_tree = html.fromstring(seller_content)
                             seller_names = seller_tree.xpath("//div[@id='aag_header']//h1//text()")
                             if len(seller_names) > 0:

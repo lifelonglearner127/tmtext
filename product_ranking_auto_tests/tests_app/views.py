@@ -42,6 +42,8 @@ class SpiderReview(AuthViewMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(SpiderReview, self).get_context_data(**kwargs)
+        context['all_runs'] = self.object.spider_test_runs.all()\
+            .order_by('-when_finished')
         context['running_runs'] = self.object.get_last_running_test_runs()
         context['failed_runs'] = self.object.get_last_failed_test_runs()
         context['passed_runs'] = self.object.get_last_successful_test_runs()

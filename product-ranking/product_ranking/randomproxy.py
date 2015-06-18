@@ -49,15 +49,7 @@ class RandomProxy(object):
     def from_crawler(cls, crawler):
         return cls(crawler.settings)
 
-    def process_request(self, request, spider):
-        # Don't overwrite with a random one (server-side state for IP)
-        if 'proxy' in request.meta:
-            return
-
-        if not getattr(spider, 'use_proxies', None):
-            log.msg('use_proxies is OFF for this spider - not using proxy...')
-            return
-
+    def _insert_proxy_into_request(self, request):
         proxy_address = random.choice(self.proxies.keys())
         proxy_user_pass = self.proxies[proxy_address]
 
@@ -67,6 +59,15 @@ class RandomProxy(object):
             request.headers['Proxy-Authorization'] = basic_auth
 
         log.msg('using proxy %s' % proxy_address)
+
+    def process_request(self, request, spider):
+        # Don't overwrite with a random one (server-side state for IP)
+        if 'proxy' in request.meta:
+            return
+        if not getattr(spider, 'use_proxies', None):
+            log.msg('use_proxies is OFF for this spider - not using proxy...')
+            return
+        self._insert_proxy_into_request(request)
 
     def process_exception(self, request, exception, spider):
         proxy = request.meta['proxy']
@@ -78,3 +79,4 @@ class RandomProxy(object):
             pass
         except KeyError:
             pass
+        self._insert_proxy_into_request(request)

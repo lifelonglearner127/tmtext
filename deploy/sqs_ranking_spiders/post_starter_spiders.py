@@ -48,6 +48,7 @@ def main():
     _install_pip_package('Pillow')
     _install_pip_package('pytesseract')
     _install_pip_package('requests')
+    _install_pip_package('tldextract')
 
 
 if __name__ == '__main__':

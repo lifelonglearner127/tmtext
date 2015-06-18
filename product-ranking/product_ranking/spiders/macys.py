@@ -17,6 +17,7 @@ from product_ranking.spiders import cond_set, cond_set_value, \
     FLOATING_POINT_RGEX, cond_replace
 from contrib.product_spider import ProductsSpider
 from product_ranking.guess_brand import guess_brand_from_first_words
+from spiders_shared_code.macys_variants import MacysVariants
 
 
 class MacysProductsSpider(ProductsSpider):
@@ -60,8 +61,9 @@ class MacysProductsSpider(ProductsSpider):
                     # 'dont_redirect': True, 'handle_httpstatus_list': [302],
                     'page': 1,
                     },
-                headers={"User-Agent": self.user_agent}
-                )
+                headers={"User-Agent": self.user_agent},
+                dont_filter=True
+            )
 
         if self.product_url:
             prod = SiteProductItem()
@@ -116,7 +118,11 @@ class MacysProductsSpider(ProductsSpider):
                  box.css('.shortDescription a::text').extract(),
                  string.strip)
 
-        price = box.css('.prices span.priceSale::text').re(FLOATING_POINT_RGEX)
+        if box.css('.priceSale::text'):
+            price = box.css('.priceSale::text').re(FLOATING_POINT_RGEX)
+        else:
+            price = box.css('.prices span.priceSale::text').re(
+                FLOATING_POINT_RGEX)
         if not price:
             price = box.css('.prices span::text').re(FLOATING_POINT_RGEX)
         if price:
@@ -176,21 +182,27 @@ class MacysProductsSpider(ProductsSpider):
         """
         product = response.meta.get('product', SiteProductItem())
 
+        mv = MacysVariants()
+        mv.setupSC(response)
+        product['variants'] = mv._variants()
+
         if response.xpath('//li[@id="memberItemsTab"]').extract():
             price = response.xpath(
                 "//div[@id='memberProductList']/div[1]/"
                 "div[@class='productPriceSection']/div/span[last()]/text()"
             ).re(FLOATING_POINT_RGEX)
-            
         else:
             price = response.xpath(
                 "//div[@id='priceInfo']/div/span/text()"
             ).re(FLOATING_POINT_RGEX)
+        if response.css('.priceSale::text'):
+            price = response.css('.priceSale::text').re(FLOATING_POINT_RGEX)
         if price:
                 product['price'] = Price(price=price[0],
                                          priceCurrency='USD')
 
-        if not product.get("image_url"):
+        if not product.get("image_url") or \
+                "data:image" in product.get("image_url"):
             image_url = response.xpath(
                 "//img[contains(@id, 'mainView')]/@src").extract()
             if image_url:
@@ -289,25 +301,26 @@ class MacysProductsSpider(ProductsSpider):
 
             rp = []
             rel_prod_links = []
-            for el in data["recommendedItems"]:
-                url, title = "", ""
-                link = "http://www1.macys.com/shop/catalog/" \
-                    "product/newthumbnail/json?" \
-                    "productId=%s&source=118" % (el["productId"],)
-                rel_prod_links.append(link)
+            if data.get('recommendedItems'):
+                for el in data["recommendedItems"]:
+                    url, title = "", ""
+                    link = "http://www1.macys.com/shop/catalog/" \
+                        "product/newthumbnail/json?" \
+                        "productId=%s&source=118" % (el["productId"],)
+                    rel_prod_links.append(link)
 
-                r = requests.get(link)
-                data = json.loads(r.text)
+                    r = requests.get(link)
+                    data = json.loads(r.text)
 
-                try:
-                    title = data["productThumbnail"]["productDescription"]
-                    url = "http://www1.macys.com/" + \
-                        data["productThumbnail"]["semanticURL"]
-                except Exception:
-                    pass
+                    try:
+                        title = data["productThumbnail"]["productDescription"]
+                        url = "http://www1.macys.com/" + \
+                            data["productThumbnail"]["semanticURL"]
+                    except Exception:
+                        pass
 
-                if title or url:
-                    rp.append(RelatedProduct(title, url))
+                    if title or url:
+                        rp.append(RelatedProduct(title, url))
             if rp:
                 recomm = {'Customers Also Shopped': rp}
                 product["related_products"] = recomm

@@ -151,14 +151,6 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
         av = AmazonVariants()
         av.setupSC(response)
         prod['variants'] = av._variants()
-        prod['color'] = av._color()
-        prod['size'] = av._size()
-        prod['style'] = av._style()
-        prod['flavor'] = av._flavor()
-        prod['color_size_stockstatus'] = av._color_size_stockstatus()
-        prod['selected_variants'] = av._selected_variants()
-        prod['price_for_variants'] = av._price_for_variants()
-        prod['stockstatus_for_variants'] = av._stockstatus_for_variants()
 
         li_tags = response.xpath('//div[@class="content"]/ul/li')
         for tag in li_tags:
