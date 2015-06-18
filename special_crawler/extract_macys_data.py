@@ -127,7 +127,15 @@ class MacysScraper(Scraper):
         if len(rows) > 0:
             description += "\n".join(rows)
         if len(description) < 1:
-            return None
+            description = ""
+            rows = self.tree_html.xpath("//div[@id='productDetails']//text()")
+            rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+            if len(rows) > 0:
+                description += "\n".join(rows)
+            if len(description) < 1:
+                return None
+            if description.startswith("Product Details"):
+                description = description.replace("Product Details\n", "")
         return description
 
     def _long_description(self):
@@ -216,7 +224,7 @@ class MacysScraper(Scraper):
         video_urls = rows
         if len(video_urls) < 1:
             return None
-        self.video_urls = video_urls
+        self.video_urls = ["http://c.brightcove.com/services/viewer/federated_f9?flashID=%s_v" % r for r in video_urls]
         self.video_count = len(self.video_urls)
         return video_urls
 
