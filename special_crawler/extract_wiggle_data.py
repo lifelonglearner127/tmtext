@@ -18,15 +18,7 @@ class WiggleScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www\.jcpenney\.com/.*/prod\.jump\?ppId=.+$"
-
-    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
-        Scraper.__init__(self, **kwargs)
-
-        # whether product has any webcollage media
-        self.review_json = None
-        self.price_json = None
-        self.jv = JcpenneyVariants()
+    INVALID_URL_MESSAGE = "Expected URL format is http://www\.wiggle\.co\.uk/product-name/"
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -34,7 +26,7 @@ class WiggleScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match(r"^http://www\.jcpenney\.com/.*/prod\.jump\?ppId=.+$", self.product_page_url)
+        m = re.match(r"^http://www\.wiggle\.co\.uk/.*/$", self.product_page_url)
 
         return not not m
 
@@ -46,12 +38,11 @@ class WiggleScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        self.jv.setupCH(self.tree_html)
 
         try:
-            itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')[0]
+            product_name = self.tree_html.xpath('//h1[@id="product-display-name"]')
 
-            if not itemtype:
+            if not product_name:
                 raise Exception()
 
         except Exception:
@@ -72,19 +63,21 @@ class WiggleScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return re.search('prod\.jump\?ppId=(.+?)$', self.product_page_url).group(1)
+        product_json = json.loads(re.search('window.universal_variable.product = (.+?)\n', html.tostring(self.tree_html)).group(1))
+
+        return product_json["id"]
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//h1[@id="product-display-name"]/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//h1[@id="product-display-name"]/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//h1[@id="product-display-name"]/text()')[0].strip()
 
     def _model(self):
         return None
@@ -96,24 +89,22 @@ class WiggleScraper(Scraper):
         return 0
 
     def _description(self):
-        return html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']//p[1]")[0])
+        return self.tree_html.xpath("//span[@class='item-desc']/text()")[0].strip()
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_block = self.tree_html.xpath("//div[@id='longCopyCont']")[0]
+        description_block = self.tree_html.xpath("//div[@id='tabDescription']")[0]
         long_description = ""
         long_description_start = False
 
         for element in description_block:
-            if element.tag == "p" and not long_description:
-                long_description_start = True
-                continue
+            if element.tag == "a" and element.attrib["rel"] == "Buy Now":
+                break
 
-            if long_description_start:
-                long_description = long_description + html.tostring(element)
+            long_description = long_description + html.tostring(element)
 
         if not long_description.strip():
             return None
@@ -126,28 +117,20 @@ class WiggleScraper(Scraper):
     def _ingredients_count(self):
         return 0
 
-    def _variants(self):
-        return self.jv._variants()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
     def _mobile_image_same(self):
         pass
-        
-    def _image_urls(self):
-        image_ids = re.search('var imageName = "(.+?)";', html.tostring(self.tree_html)).group(1)
-        image_ids = image_ids.split(",")
 
-        image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?wid=35&hei=35&fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
+    def _image_urls(self):
+        image_urls = self.tree_html.xpath("//ul[@id='gallery']//img/@src")
 
         if not image_urls:
             return None
 
-        if len(image_urls) > 1:
-            return image_urls[1:]
-        else:
-            return image_urls
+        return image_urls
 
     def _image_count(self):
         if self._image_urls():
@@ -185,41 +168,15 @@ class WiggleScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
 
-    def _extract_review_json(self):
-        try:
-            review_id = re.search('reviewId:"(.+?)",', html.tostring(self.tree_html)).group(1)
-
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-
-            contents = requests.get("https://jcpenney.ugc.bazaarvoice.com/1573-en_us/%s/reviews.djs?format=embeddedhtml" % review_id, headers=h).text
-            review_json = re.search('webAnalyticsConfig:(.+?),\nwidgetInitializers:initializers,', contents).group(1)
-            self.review_json = json.loads(review_json)
-        except:
-            self.review_json = None
-
-    def _extract_price_json(self):
-        try:
-            price_json= re.search('var jcpPPJSON = (.+?);\njcpDLjcp\.productPresentation = jcpPPJSON;', html.tostring(self.tree_html)).group(1)
-            self.price_json = json.loads(price_json)
-        except:
-            self.price_json = None
-
     def _average_review(self):
-        if self._review_count() == 0:
-            return None
+        product_json = json.loads(re.search('window.universal_variable.product = (.+?)\n', html.tostring(self.tree_html)).group(1))
 
-        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
-
-        if str(average_review).split('.')[1] == '0':
-            return int(average_review)
-        else:
-            return float(average_review)
+        return float(product_json["review_rating"])
 
     def _review_count(self):
-        if not self.review_json:
-            self._extract_review_json()
+        product_json = json.loads(re.search('window.universal_variable.product = (.+?)\n', html.tostring(self.tree_html)).group(1))
 
-        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
+        return int(product_json["review_volume"])
 
     def _max_review(self):
         return None
@@ -234,30 +191,12 @@ class WiggleScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        price = self.price_json["price"]
-
-        if float(price).is_integer():
-            price = int(price)
-
-        return "$" + str(price)
+        return self.tree_html.xpath("//div[@class='unit-price']/text()")[0]
 
     def _price_amount(self):
-        self._extract_price_json()
+        product_json = json.loads(re.search('window.universal_variable.product = (.+?)\n', html.tostring(self.tree_html)).group(1))
 
-        if not self.price_json:
-            return None
-
-        price = self.price_json["price"]
-
-        if float(price).is_integer():
-            price = int(price)
-
-        return price
+        return float(product_json["unit_sale_price"])
 
     def _price_currency(self):
         return "USD"
@@ -272,11 +211,7 @@ class WiggleScraper(Scraper):
         return 1
 
     def _in_stores(self):
-        try:
-            if self.tree_html.xpath("//div[contains(@id, 'channelAvailabilitypp')]/text()")[0] == "online":
-                return 0
-        except:
-            return 1
+        return 1
 
     def _site_online_out_of_stock(self):
         return 0
@@ -289,20 +224,19 @@ class WiggleScraper(Scraper):
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
-    ##########################################    
+    ##########################################
     def _categories(self):
-        return self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")[1:-1]
+        product_json = json.loads(re.search('window.universal_variable.product = (.+?)\n', html.tostring(self.tree_html)).group(1))
+
+        return product_json["categories"]
 
     def _category_name(self):
-        return self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")[-2]
+        product_json = json.loads(re.search('window.universal_variable.product = (.+?)\n', html.tostring(self.tree_html)).group(1))
+
+        return product_json["categories"][-1]
 
     def _brand(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        return self.price_json["products"][0]["lots"][0]["brandName"]
+        return None
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -333,7 +267,6 @@ class WiggleScraper(Scraper):
         "long_description" : _long_description, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
-        "variants": _variants,
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
