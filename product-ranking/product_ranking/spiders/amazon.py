@@ -461,7 +461,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         if not buyer_reviews['num_of_reviews']:
             buyer_reviews['num_of_reviews'] = ZERO_REVIEWS_VALUE
         average = is_empty(response.xpath(
-            '//div[contains(@class, "averageStarRatingNumerical")]/span/text()'
+            '//div[contains(@class, "averageStarRatingNumerical")]//span/text()'
         ).extract(), "")
 
         buyer_reviews["average_rating"] = \
