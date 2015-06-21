@@ -128,6 +128,11 @@ class WiggleScraper(Scraper):
         image_urls = self.tree_html.xpath("//ul[@id='gallery']//img/@src")
 
         if not image_urls:
+            image_urls = self.tree_html.xpath("//div[@id='mainImageWrapper']//img/@src")
+
+            image_urls = ["http:" + url for url in image_urls]
+
+        if not image_urls:
             return None
 
         return image_urls
