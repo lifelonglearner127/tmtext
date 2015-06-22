@@ -42,8 +42,8 @@ class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_123': 0,
-        'chrysler spare parts': [10, 150],
-        'shampoo dry wash baby': [50, 250],
+        'chrysler 300c': [10, 150],
+        'swiming dress': [50, 250],
         'macbook air thunderbolt': [10, 150],
         'hexacore': [50, 250],
         '300c': [50, 250],
@@ -66,6 +66,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     """
     name = 'walmart_products'
     allowed_domains = ["walmart.com", "msn.com"]
+
+    default_hhl = [404, 500, 502, 520]
 
     SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
         "&_refineresult=true&ic=16_0&search_constraint=0" \
@@ -167,7 +169,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             new_meta['reql'] = self.reql
             self.sld = new_meta["sld"]
             return req1.replace(meta=new_meta)
-        return super(WalmartProductsSpider, self).start_requests()
+        return self.update_native_start_requests()
 
     def parse_sponsored_links(self, response):
         self.temp_spons_link = None
@@ -196,9 +198,21 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.sld = new_meta["sld"]
             return req1.replace(meta=new_meta)
         del self.temp_spons_link, self.sld, self.reql
-        return super(WalmartProductsSpider, self).start_requests()
+        return self.update_native_start_requests()
+
+    def update_native_start_requests(self):
+        reqs = []
+        for req in super(WalmartProductsSpider, self).start_requests():
+            new_meta = req.meta.copy()
+            new_meta["handle_httpstatus_list"] = self.default_hhl
+            reqs.append(req.replace(meta=new_meta))
+        return reqs
 
     def parse_product(self, response):
+        if response.status in self.default_hhl:
+            product = response.meta.get("product")
+            product.update({"locale":'en-US'})
+            return product
         if self._search_page_error(response):
             self.log(
                 "Got 404 when coming from %r." % response.request.url, ERROR)
@@ -467,25 +481,23 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         title = is_empty(response.xpath(
                 "//h1[contains(@class,'product-name')]/text() |"
                 "//h1[@class='productTitle']/text()"
-        ).extract())
+        ).extract(), "")
+        if not title.strip():
+            title = is_empty(response.xpath(
+                "//h1[contains(@class,'product-name')]/span/text()"
+            ).extract())
         if title:
             title = Selector(text=title).xpath('string()').extract()
-            cond_set(
-                product,
-                'title',
-                title,
-                conv=string.strip)
+            product["title"] = is_empty(title, "").strip()
+
         cond_set(
             product,
             'brand',
             response.xpath(
                 "//div[@class='product-subhead-section']"
                 "/a[@id='WMItemBrandLnk']/text()").extract())
-        cond_set(
-            product,
-            'image_url',
-            response.xpath(
-                '//meta[@property="og:image"]/@content').extract())
+        product['image_url'] = is_empty(response.xpath(
+                '//meta[@property="og:image"]/@content').extract(), "")
         if not product.get("brand"):
             brand = is_empty(response.xpath(
                 "//h1[contains(@class, 'product-name product-heading')]/text()"
@@ -807,6 +819,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         for item in items:
             link = item.css('a.js-product-title ::attr(href)')[0].extract()
 
+            title = ''.join(item.xpath(
+                'div/div/h4[contains(@class, "tile-heading")]/a/node()'
+            ).extract()).strip()
+            title = is_empty(Selector(text=title).xpath('string()').extract())
+
+            image_url = is_empty(item.xpath(
+                "a/img[contains(@class, 'product-image')]/@data-default-image"
+            ).extract())
+
             if item.css('div.pick-up-only').xpath('text()').extract():
                 is_pickup_only = True
             else:
@@ -820,9 +841,22 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             else:
                 is_in_store_only = False
 
+            if item.xpath(
+                './/div[@class="tile-row"]'
+                '/span[@class="flag-rollback"]/text()'
+            ).extract():
+                special_pricing = 1
+            else:
+                special_pricing = 0
+
             res_item = SiteProductItem()
+            if title:
+                res_item["title"] = title.strip()
+            if image_url:
+                res_item["image_url"] = image_url
             res_item['is_pickup_only'] = is_pickup_only
             res_item['is_in_store_only'] = is_in_store_only
+            res_item['special_pricing'] = special_pricing
 
             yield link, res_item
 
