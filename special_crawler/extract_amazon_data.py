@@ -319,6 +319,63 @@ class AmazonScraper(Scraper):
     def _variants(self):
         return self.av._variants()
 
+    def _ingredients(self):
+        page_raw_text = html.tostring(self.tree_html)
+
+        try:
+            ingredients = re.search('<b>Ingredients</b><br>(.+?)<br>', page_raw_text).group(1)
+            ingredients = ingredients.split(",")
+
+            ingredients = [ingredient.strip() for ingredient in ingredients]
+
+            if ingredients:
+                return ingredients
+        except:
+            desc = '\n'.join(self.tree_html.xpath('//script//text()'))
+            desc = re.findall(r'var iframeContent = "(.*)";', desc)
+            desc = urllib.unquote_plus(str(desc))
+            ingredients = re.search('Ingredients:(.+?)(\\n|\.)', desc).group(1)
+
+            if "</h5>" in ingredients:
+                return None
+
+            ingredients = ingredients.split(",")
+
+            ingredients = [ingredient.strip() for ingredient in ingredients]
+
+            if ingredients:
+                return ingredients
+
+        return None
+
+    def _ingredient_count(self):
+        if self._ingredients():
+            return len(self._ingredients())
+
+        return 0
+
+    def _nutrition_facts(self):
+        try:
+            desc = '\n'.join(self.tree_html.xpath('//script//text()'))
+            desc = re.findall(r'var iframeContent = "(.*)";', desc)
+            desc = urllib.unquote_plus(str(desc))
+            nutrition_facts = re.search('<h5>Nutritional Facts and Ingredients:</h5> <p>(.+?)(</p>|<br>)', desc).group(1)
+            nutrition_facts = nutrition_facts.split(",")
+            nutrition_facts = [nutrition_fact.strip() for nutrition_fact in nutrition_facts]
+
+            if nutrition_facts:
+                return nutrition_facts
+        except:
+            pass
+
+        return None
+
+    def _nutrition_fact_count(self):
+        if self._nutrition_facts():
+            return len(self._nutrition_facts())
+
+        return 0
+
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -1003,6 +1060,11 @@ class AmazonScraper(Scraper):
         "long_description" : _long_description, \
         "apluscontent_desc" : _apluscontent_desc, \
         "variants": _variants, \
+        "ingredients": _ingredients, \
+        "ingredient_count": _ingredient_count, \
+        "nutrition_facts": _nutrition_facts, \
+        "nutrition_fact_count": _nutrition_fact_count, \
+
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
