@@ -118,8 +118,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "query=%s&context=Home" \
                 "&clientId=walmart_us_desktop_backfill_search" \
                 "&channel=ch_8,backfill" % (st,)
-            yield Request(url=url, callback=self.get_sponsored_links,
-                          dont_filter=True)
+            yield Request(
+                url=url, 
+                callback=self.get_sponsored_links,
+                dont_filter=True, 
+                meta={"handle_httpstatus_list": [404]},
+            )
 
         if self.product_url:
             prod = SiteProductItem()
