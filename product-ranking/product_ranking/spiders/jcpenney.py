@@ -47,7 +47,8 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                  "fromSearch=true&" \
                  "Ntt={search_term}&" \
                  "ruleZoneName=XGNSZone&" \
-                 "Ns={sort_mode}&pageSize=72"
+                 "Ns={sort_mode}&pageSize=72&" \
+                 "redirectTerm=skirts{search_term}"
     SORTING = None
     SORT_MODES = {
         'default': '',
@@ -128,7 +129,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
 
-        product_id = re.findall('ppId=(.*)&search', response.url)
+        product_id = re.findall('ppId=([a-zA-Z0-9]+)&', response.url)
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
@@ -191,7 +192,8 @@ class JcpenneyProductsSpider(BaseProductsSpider):
             )
 
         price = is_empty(response.xpath(
-            '//span[@itemprop="price"]/a/text()'
+            '//span[@itemprop="price"]/a/text() |'
+            '//span[@itemprop="price"]/text() '
         ).re("\d+.?\d{0,2}"))
 
         if price:
