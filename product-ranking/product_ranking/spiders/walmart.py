@@ -496,8 +496,16 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             response.xpath(
                 "//div[@class='product-subhead-section']"
                 "/a[@id='WMItemBrandLnk']/text()").extract())
-        product['image_url'] = is_empty(response.xpath(
-                '//meta[@property="og:image"]/@content').extract(), "")
+
+        cond_set(
+            product, 'image_url',
+            response.xpath('//img[contains(@class, "product-image")]/@src'),
+            ""
+        )
+        if not product.get('image_url', None):
+            product['image_url'] = is_empty(response.xpath(
+                    '//meta[@property="og:image"]/@content').extract(), "")
+
         if not product.get("brand"):
             brand = is_empty(response.xpath(
                 "//h1[contains(@class, 'product-name product-heading')]/text()"
