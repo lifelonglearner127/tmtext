@@ -33,7 +33,7 @@
                 <a href="{% url 'tests_app_spider_review' pk=spider.pk %}"><b>{{ spider.name }}</b></a>
             </td>
             <td>{{ spider.get_test_runs.0.when_finished }}</td>
-            <td>{{ spider.last_consecutive_errors }}</td>
+            <td>{{ spider.last_consecutive_errors|default_if_none:0 }}</td>
             <td>
                 {{ spider.get_passed_test_runs_for_24_hours|length }} /
                 {{ spider.get_total_test_runs_for_24_hours|length }}
