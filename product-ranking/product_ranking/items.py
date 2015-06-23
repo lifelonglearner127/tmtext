@@ -195,6 +195,7 @@ class SiteProductItem(Item):
     prime = Field()  # amazon Prime program: Prime/PrimePantry/None
 
     is_pickup_only = Field()   # now for Walmart only; may change in the future
+    shelf_page_out_of_stock = Field()  # now for Walmart only;
 
     date_of_last_question = Field()  # now for Walmart only
     recent_questions = Field()  # now for Walmart only; may change in the future

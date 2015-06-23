@@ -857,6 +857,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             else:
                 special_pricing = 0
 
+            if item.css('div.out-of-stock').xpath('text()').extract():
+                shelf_page_out_of_stock = True
+            else:
+                shelf_page_out_of_stock = False
+
             res_item = SiteProductItem()
             if title:
                 res_item["title"] = title.strip()
@@ -865,7 +870,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             res_item['is_pickup_only'] = is_pickup_only
             res_item['is_in_store_only'] = is_in_store_only
             res_item['special_pricing'] = special_pricing
-
+            res_item['shelf_page_out_of_stock'] = shelf_page_out_of_stock
             yield link, res_item
 
     def _scrape_next_results_page_link(self, response):
