@@ -12,7 +12,8 @@ import random
 
 from scrapy import log
 import requests
-from requests.exceptions import Timeout as ReqTimeout
+from requests.exceptions import (Timeout as ReqTimeout,
+                                 ProxyError as ReqProxyError)
 
 
 BOT_NAME = 'product_ranking'
@@ -63,11 +64,32 @@ ZERO_REVIEWS_VALUE = [0, 0.0, {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}]
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 
+# RANDOM PROXY SETTINGS
+# Retry many times since proxies often fail
+RETRY_TIMES = 5
+# Retry on most error codes since proxies fail for different reasons
+RETRY_HTTP_CODES = [500, 502, 503, 504, 400, 403, 404, 408]
+
+DOWNLOADER_MIDDLEWARES = {
+    'scrapy.contrib.downloadermiddleware.retry.RetryMiddleware': 90,
+    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+}
+
 _args_names = [arg.split('=')[0] if '=' in arg else arg for arg in sys.argv]
 if 'validate' in _args_names:
     ITEM_PIPELINES = {
         'product_ranking.validation.ValidatorPipeline': 100,
     }
+
+if 'enable_s3_cache' in _args_names:
+    #DOWNLOADER_MIDDLEWARES['scrapy.contrib.downloadermiddleware.httpcache.HttpCacheMiddleware'] = 50
+    #DOWNLOADER_MIDDLEWARES['product_ranking.cache.PersistentCacheMiddleware'] = 50
+    HTTPCACHE_ENABLED = True
+    HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.DummyPolicy'
+    HTTPCACHE_STORAGE = 'product_ranking.cache.S3CacheStorage'
+    HTTPCACHE_EXPIRATION_SECS = 0  # forever
+    HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')
+
 
 if 'enable_cache' in _args_names:
     HTTPCACHE_ENABLED = True
@@ -81,17 +103,6 @@ try:
     from settings_local import *
 except ImportError:
     pass
-
-# RANDOM PROXY SETTINGS
-# Retry many times since proxies often fail
-RETRY_TIMES = 15
-# Retry on most error codes since proxies fail for different reasons
-RETRY_HTTP_CODES = [500, 502, 503, 504, 400, 403, 404, 408]
-
-DOWNLOADER_MIDDLEWARES = {
-    'scrapy.contrib.downloadermiddleware.retry.RetryMiddleware': 90,
-    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
-}
 
 # Proxy list containing entries like
 # http://host1:port
@@ -135,6 +146,8 @@ def _check_if_proxies_available(http_proxy_path, timeout=10):
         except ReqTimeout:
             print('failed to fetch host %s using proxy %s' % (h, prox))
             pass  # got timeout - proxy not available
+        except ReqProxyError:
+            print('proxy %s - failed to fetch host %s' % (prox, h))
 
 
 PROXY_LIST = os.path.join(CWD, 'http_proxies.txt')
