@@ -3,6 +3,13 @@
 # from scrapy.contrib. We separate cache folders by search terms.
 #
 
+# TODO:
+# - packing appropriate cache dirs;
+# - uploading them to S3 on spider close;
+# - downloading cache dirs and unpacking them;
+# - executing the crawler against the cached dir;
+# - error handling (blank page?); solving captcha issues at amazon
+
 import os
 import sys
 import datetime
