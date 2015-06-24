@@ -113,6 +113,15 @@ class Spider(models.Model):
             status='failed', when_finished__gte=hrs_24
         ).order_by('-when_finished').distinct()
 
+    def get_failed_test_runs_for_24_hours_with_missing_data(self):
+        _exclude_ids = []
+        frs = self.get_failed_test_runs_for_24_hours()
+        for fr in frs:
+            if ('got 0 results' not in fr.error
+                    and 'some products missing' not in fr.error):
+                _exclude_ids.append(fr.pk)
+        return frs.exclude(id__in=_exclude_ids).distinct()
+
     def get_total_test_runs_for_24_hours(self):
         hrs_24 = timezone.now() - datetime.timedelta(days=1)
         return self.spider_test_runs.filter(
