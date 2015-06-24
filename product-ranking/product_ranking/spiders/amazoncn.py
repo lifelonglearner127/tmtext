@@ -364,7 +364,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
             #count_matches = response.xpath(
             #    '//*[@id="resultCount"]/text()').re(u'共([\d, ]+)')
             count_matches = "".join(
-                response.xpath("//h2[@id='s-result-count']//text()")
+                response.xpath("//h2[@id='s-result-count']/text()")
                 .extract())
             count_matches = re.findall(r"[\d, ]+", count_matches)
             count_matches = [r for r in count_matches if len(r.strip()) > 0]
