@@ -42,7 +42,7 @@
             <td>
                 {% with spider.get_failed_test_runs_for_24_hours_with_missing_data as f_runs %}
                     {% if f_runs|length > 0 %}
-                    <a href="/admin/tests_app/failedrequest/?id__in={% for ftr in f_runs %}{% for req in ftr.test_run_failed_requests.all %}{{ req.pk }}{% if not forloop.last %},{% endif %}{% endfor %}{% endfor %}">
+                    <a href="/admin/tests_app/failedrequest/?id__in={% for ftr in f_runs %}{% for req in ftr.test_run_failed_requests.all %}{% if req.is_missing_data %}{{ req.pk }}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}{% endfor %}">
                         {{ f_runs|length }}
                     </a>
                     {% else %}
