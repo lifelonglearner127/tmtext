@@ -112,6 +112,9 @@ class ClassifyImagesBySimilarity(viewsets.ViewSet):
 #                rate = serializer.data["rate"]
                 urls = serializer.data["urls"]
 
+                if not urls:
+                    urls = request.DATA["urls"].split(" ")
+
                 images = []
 
                 for url in urls:
