@@ -124,8 +124,10 @@ class Spider(models.Model):
             ).distinct().count()
             num_of_req_total = fr.test_run_failed_requests.all().count()
             # TODO: calculate (by percent) if this test req actually failed or not
-            if num_of_req_with_missing_data < num_of_req_total / 2:
+            print(fr, num_of_req_with_missing_data, num_of_req_total)
+            if num_of_req_with_missing_data < 2:
                 _exclude_ids.append(fr.pk)
+        print(len(frs), len(_exclude_ids))
         return frs.exclude(id__in=_exclude_ids).distinct()
 
     def get_total_test_runs_for_24_hours(self):
