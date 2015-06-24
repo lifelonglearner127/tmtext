@@ -2,8 +2,17 @@
 # Custom extensions
 #
 
+import os
+import sys
+
 from scrapy import signals
 from scrapy.xlib.pydispatch import dispatcher
+import boto
+from boto.s3.connection import S3Connection
+from s3peat import S3Bucket, sync_to_s3  # pip install s3peat
+
+from cache import get_partial_request_path
+import settings
 
 try:
     from monitoring import push_simmetrica_event
@@ -15,6 +24,10 @@ except ImportError:
             from product_ranking.spiders import push_simmetrica_event
         except ImportError:
             print 'ERROR: CAN NOT IMPORT MONITORING PACKAGE!'
+
+amazon_public_key = 'AKIAIKTYYIQIZF3RWNRA'
+amazon_secret_key = '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'
+bucket_name = 'spiders-cache'
 
 
 def _stats_on_spider_open(spider):
@@ -73,3 +86,74 @@ class StatsCollector(object):
     @classmethod
     def from_crawler(cls, crawler):
         return cls(crawler)
+
+
+def _s3_cache_on_spider_close(spider, reason):
+    # upload cache
+    bucket = S3Bucket(bucket_name, amazon_public_key, amazon_secret_key,
+                      public=False)
+    folder_path = get_partial_request_path(settings.HTTPCACHE_DIR, spider)
+    if not os.path.exists(folder_path):
+        print('Path to upload does not exist:', folder_path)
+        return
+    print('Uploading cache to', folder_path)
+    try:
+        # Upload file to S3
+        sync_to_s3(
+            directory=folder_path,
+            prefix=os.path.relpath(folder_path, settings.HTTPCACHE_DIR),
+            bucket=bucket,
+            concurrency=20
+        )
+    except Exception as e:
+        print('ERROR UPLOADING TO S3', str(e))
+        pass
+        #logger.error("Failed to load log files to S3. "
+        #             "Check file path and amazon keys/permissions.")
+
+
+class S3CacheUploader(object):
+
+    def __init__(self, *args, **kwargs):
+        dispatcher.connect(_s3_cache_on_spider_close, signals.spider_closed)
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
+
+
+class S3CacheDownloader(object):
+
+    def __init__(self, *args, **kwargs):
+        # download s3 cache
+        # TODO
+        conn = S3Connection(amazon_public_key, amazon_secret_key)
+        bucket = conn.get_bucket(bucket_name)
+        for key in bucket.list():
+            assert False, key.name
+            try:
+                res = key.get_contents_to_filename(key.name)
+            except:
+                logging.info(key.name+":"+"FAILED")
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
+
+
+if __name__ == '__main__':
+    if 'clear_bucket' in sys.argv:  # be careful!
+        from boto.s3.connection import S3Connection
+        conn = S3Connection(amazon_public_key, amazon_secret_key)
+        bucket = conn.get_bucket(bucket_name)
+        for f in bucket.list():
+            bucket.delete_key(f.key)
+    else:
+        # list all files in bucket, for convenience
+        CWD = os.path.dirname(os.path.abspath(__file__))
+        sys.path.append(os.path.join(CWD, '..', '..', 'deploy',
+                                     'sqs_ranking_spiders'))
+        from list_all_files_in_s3_bucket import list_files_in_bucket
+        for f in (list_files_in_bucket(
+                amazon_public_key, amazon_secret_key, bucket_name)):
+            print f

@@ -81,7 +81,7 @@ if 'validate' in _args_names:
         'product_ranking.validation.ValidatorPipeline': 100,
     }
 
-if 'enable_s3_cache' in _args_names:
+if 'save_s3_cache' in _args_names:
     #DOWNLOADER_MIDDLEWARES['scrapy.contrib.downloadermiddleware.httpcache.HttpCacheMiddleware'] = 50
     #DOWNLOADER_MIDDLEWARES['product_ranking.cache.PersistentCacheMiddleware'] = 50
     HTTPCACHE_ENABLED = True
@@ -89,7 +89,16 @@ if 'enable_s3_cache' in _args_names:
     HTTPCACHE_STORAGE = 'product_ranking.cache.S3CacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
     HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')
+    EXTENSIONS['product_ranking.extensions.S3CacheUploader'] = 999
 
+if 'load_from_s3_cache' in _args_names:
+    HTTPCACHE_ENABLED = True
+    HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.DummyPolicy'
+    HTTPCACHE_STORAGE = 'product_ranking.cache.S3CacheStorage'
+    HTTPCACHE_EXPIRATION_SECS = 0  # forever
+    HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')
+
+    EXTENSIONS['product_ranking.extensions.S3CacheDownloader'] = 999
 
 if 'enable_cache' in _args_names:
     HTTPCACHE_ENABLED = True

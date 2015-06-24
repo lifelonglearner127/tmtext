@@ -31,28 +31,28 @@ def _get_searchterms_str():
     arg_name, arg_value = args[0].split('=')
     return arg_value
 
+
 def _slugify(value, replaces='\'"~@#$%^&*()[] _-/\:\?\='):
     for char in replaces:
         value = value.replace(char, '-')
     return value
 
-def get_request_path_with_date(cache_dir, spider, request):
+
+def get_partial_request_path(cache_dir, spider):
     global UTC_NOW
-    key = request_fingerprint(request)
     searchterms_str = _slugify(_get_searchterms_str())
     utc_today = UTC_NOW.strftime('%Y-%m-%d')
     if searchterms_str:
         return os.path.join(
-            cache_dir, spider.name, utc_today, searchterms_str,
-            _slugify(request.url),
-            key[0:2], key
-        )
+            cache_dir, spider.name, utc_today, searchterms_str)
     else:
         return os.path.join(
-            cache_dir, spider.name, utc_today, 'url',
-            _slugify(request.url),
-            key[0:2], key
-        )
+            cache_dir, spider.name, utc_today, 'url')
+
+
+def get_request_path_with_date(cache_dir, spider, request):
+    key = request_fingerprint(request)
+    return os.path.join(cache_dir, spider.name, key[0:2], key)
 
 
 class CustomFilesystemCacheStorage(FilesystemCacheStorage):
