@@ -73,7 +73,7 @@ class CompareTwoImageViewSet(viewsets.ViewSet):
                 results_b = compare_two_images_b(images_b[0], images_b[1])
                 results_c = compare_two_images_c(images_b[0], images_b[1])
 
-                return Response({'method 1': results_a, 'method 2': results_b, 'method 3': results_c})
+                return Response({'method 1': results_c, 'method 2': results_a, 'method 3': results_b})
             except:
                 var = traceback.format_exc()
 
