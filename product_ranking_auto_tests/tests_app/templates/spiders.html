@@ -40,7 +40,15 @@
                 {{ spider.get_total_test_runs_for_24_hours|length }}
             </td>
             <td>
-                {{ spider.get_failed_test_runs_for_24_hours_with_missing_data|length }}
+                {% with spider.get_failed_test_runs_for_24_hours_with_missing_data as f_runs %}
+                    {% if spider.f_runs|length > 0 %}
+                    <a href="http://localhost:8000/admin/tests_app/failedrequest/?id__in={% for ftr in spider.f_runs %}{{ ftr.pk }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                        {{ spider.f_runs|length }}
+                    </a>
+                    {% else %}
+                        {{ spider.f_runs|length }}
+                    {% endif %}
+                {% endwith %}
             </td>
             <td>{{ spider.spider_test_runs.all|length }}</td>
         </tr>

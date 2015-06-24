@@ -1,6 +1,7 @@
 import datetime
 
 from django.db import models
+from django.db.models import Q
 from django.core.urlresolvers import reverse_lazy
 from django.utils import timezone
 
@@ -117,8 +118,13 @@ class Spider(models.Model):
         _exclude_ids = []
         frs = self.get_failed_test_runs_for_24_hours()
         for fr in frs:
-            if ('got 0 results' not in fr.error
-                    and 'some products missing' not in fr.error):
+            num_of_req_with_missing_data = fr.test_run_failed_requests.filter(
+                Q(error__icontains='got 0 results')
+                | Q(error__icontains='some products missing')
+            ).distinct().count()
+            num_of_req_total = fr.test_run_failed_requests.all().count()
+            # TODO: calculate (by percent) if this test req actually failed or not
+            if num_of_req_with_missing_data < num_of_req_total / 2:
                 _exclude_ids.append(fr.pk)
         return frs.exclude(id__in=_exclude_ids).distinct()
 
