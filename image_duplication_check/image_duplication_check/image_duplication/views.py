@@ -4,6 +4,7 @@ import cv2
 import urllib
 import cStringIO
 import copy
+import sys
 
 from PIL import Image
 import numpy as np
@@ -72,8 +73,13 @@ class CompareTwoImageViewSet(viewsets.ViewSet):
                 results_c = compare_two_images_c(images_b[0], images_b[1])
 
                 return Response({'method 1': results_a, 'method 2': results_b, 'method 3': results_c})
+            except IOError as (errno, strerror):
+                print "I/O error({0}): {1}".format(errno, strerror)
+            except ValueError:
+                print "Could not convert data to an integer."
             except:
-                pass
+                print "Unexpected error:", sys.exc_info()[0]
+                raise
 
         return Response({'data': 'NO OK'})
 
