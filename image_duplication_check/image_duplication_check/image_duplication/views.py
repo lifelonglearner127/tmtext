@@ -34,7 +34,7 @@ class CompareTwoImageViewSet(viewsets.ViewSet):
 
         if serializer.is_valid():
             try:
-                rate = serializer.data["rate"]
+#                rate = serializer.data["rate"]
                 urls = serializer.data["urls"]
 
                 images_a  = []
@@ -106,7 +106,7 @@ class ClassifyImagesBySimilarity(viewsets.ViewSet):
 
         if serializer.is_valid():
             try:
-                rate = serializer.data["rate"]
+#                rate = serializer.data["rate"]
                 urls = serializer.data["urls"]
 
                 images = []
@@ -138,7 +138,7 @@ class ClassifyImagesBySimilarity(viewsets.ViewSet):
                         similarity_rate = float(compare_two_images_c(images[url1], rest_images[url2]))
                         hamming_rate = float(compare_two_images_b(images[url1], rest_images[url2]))
 
-                        if similarity_rate >= rate:
+                        if similarity_rate >= 0.9:
                             processed_images.append(url2)
                             group_image_indexes.append(url2)
 
