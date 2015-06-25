@@ -73,3 +73,13 @@ class S3CacheStorage(FilesystemCacheStorage):
 
     def _get_request_path(self, spider, request):
         return get_request_path_with_date(self.cachedir, spider, request)
+
+
+class CustomCachePolicy(DummyPolicy):
+    """ For not caching amazon captcha """
+
+    def should_cache_response(self, response, request):
+        if 2000 >= len(response.body) >= 1850:
+            return False
+        return super(CustomCachePolicy, self).should_cache_response(
+            response, request)
