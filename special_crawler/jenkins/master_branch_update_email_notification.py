@@ -22,6 +22,28 @@ removed_file_name = list(set(old_git_file_name) - set(latest_git_file_name))
 
 report_results = ""
 
+for scraper in new_file_name:
+
+    scraper_results = ""
+
+    scraper_version_xml = ET.parse(strBasePath + "tmtext/special_crawler/" + scraper)
+
+    scraper_version_root = scraper_version_xml.getroot()
+
+    scraper_version_field_names = []
+
+    for field in scraper_version_root:
+        scraper_version_field_names.append(field.attrib["name"])
+
+    if scraper_version_field_names:
+        scraper_results += ("\n- Fields Added \n" + ", " . join(scraper_version_field_names))
+
+    report_results += ("New Scraper: " + scraper[8:-12] + scraper_results + "\n\n")
+
+for scraper in removed_file_name:
+
+    report_results += ("Removed Scraper: " + scraper[8:-12] + scraper_results + "\n\n")
+
 for scraper in common_file_name:
 
     scraper_results = ""
