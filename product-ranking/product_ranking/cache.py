@@ -32,7 +32,7 @@ def _get_searchterms_str():
     return arg_value
 
 
-def _slugify(value, replaces='\'"~@#$%^&*()[] _-/\:\?\='):
+def _slugify(value, replaces='\'"~@#$%^&*()[] _-/\:\?\=\,'):
     for char in replaces:
         value = value.replace(char, '-')
     return value
@@ -52,7 +52,11 @@ def get_partial_request_path(cache_dir, spider):
 
 def get_request_path_with_date(cache_dir, spider, request):
     key = request_fingerprint(request)
-    return os.path.join(cache_dir, spider.name, key[0:2], key)
+    return os.path.join(
+        get_partial_request_path(cache_dir, spider),
+        _slugify(request.url),
+        key[0:2], key
+    )
 
 
 class CustomFilesystemCacheStorage(FilesystemCacheStorage):
@@ -73,13 +77,3 @@ class S3CacheStorage(FilesystemCacheStorage):
 
     def _get_request_path(self, spider, request):
         return get_request_path_with_date(self.cachedir, spider, request)
-
-
-class CustomCachePolicy(DummyPolicy):
-    """ For not caching amazon captcha """
-
-    def should_cache_response(self, response, request):
-        if 2000 >= len(response.body) >= 1850:
-            return False
-        return super(CustomCachePolicy, self).should_cache_response(
-            response, request)

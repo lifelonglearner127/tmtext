@@ -4,14 +4,17 @@
 
 import os
 import sys
+import datetime
 
 from scrapy import signals
 from scrapy.xlib.pydispatch import dispatcher
 import boto
 from boto.s3.connection import S3Connection
 from s3peat import S3Bucket, sync_to_s3  # pip install s3peat
+import workerpool  # pip install workerpool
 
 from cache import get_partial_request_path
+import cache
 import settings
 
 try:
@@ -122,19 +125,62 @@ class S3CacheUploader(object):
         return cls(crawler)
 
 
+def _download_s3_file(key):
+    _local_cache_file = os.path.join(settings.HTTPCACHE_DIR, key.key)
+    _dir = os.path.dirname(_local_cache_file)
+    if not os.path.exists(_dir):
+        os.makedirs(_dir)
+    print('Downloading cache file', _local_cache_file)
+    try:
+        res = key.get_contents_to_filename(_local_cache_file)
+    except Exception as e:
+        print(str(e))
+
+
 class S3CacheDownloader(object):
 
-    def __init__(self, *args, **kwargs):
+    def _get_load_from_date(self):
+        arg = [a for a in sys.argv if 'load_from_s3_cache' in a]
+        if arg:
+            arg = arg[0].split('=')[1].strip()
+            return datetime.datetime.strptime(arg, '%Y-%m-%d')
+
+    def __init__(self, crawler, *args, **kwargs):
         # download s3 cache
-        # TODO
+        cache.UTC_NOW = self._get_load_from_date()
         conn = S3Connection(amazon_public_key, amazon_secret_key)
         bucket = conn.get_bucket(bucket_name)
+        partial_path = get_partial_request_path(settings.HTTPCACHE_DIR,
+                                                crawler._spider)
+
+        _cache_found = False
+        _keys2download = []
         for key in bucket.list():
-            assert False, key.name
-            try:
-                res = key.get_contents_to_filename(key.name)
-            except:
-                logging.info(key.name+":"+"FAILED")
+            if key.key.startswith(os.path.relpath(
+                    partial_path, settings.HTTPCACHE_DIR)):
+                _cache_found = True
+                _keys2download.append(key)
+        if not _cache_found:
+            print('Cache is not found! Check the date param!')
+            sys.exit(1)
+        # TODO: fix! (threaded downloading hangs up for unknown reasons)
+        """
+        # init pool
+        pool = workerpool.WorkerPool(size=10)
+        # The ``download`` method will be called with a line from the second
+        # parameter for each job.
+        pool.map(_download_s3_file, _keys2download)
+        # Send shutdown jobs to all threads, and wait until all the jobs have been completed
+        pool.shutdown()
+        pool.wait()
+        """
+        for key2download in _keys2download:
+            _download_s3_file(key2download)
+        # TODO: it's for debugging! remove me
+        while os.path.exists('/tmp/_removeme'):
+            import time
+            time.sleep(0.5)
+
 
     @classmethod
     def from_crawler(cls, crawler):
