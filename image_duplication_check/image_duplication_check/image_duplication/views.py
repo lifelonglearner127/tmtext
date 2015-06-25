@@ -54,6 +54,7 @@ class CompareTwoImageViewSet(viewsets.ViewSet):
                         image = np.asarray(bytearray(resp), dtype="uint8")
                         images_a.append(cv2.imdecode(image, cv2.IMREAD_COLOR))
                         images_b.append(Image.open(cStringIO.StringIO(resp)))
+                        images_c.append(Image.open(cStringIO.StringIO(resp)))
 
                     if ext not in (".jpg", ".jpeg", ".png"):
                         if is_local:
