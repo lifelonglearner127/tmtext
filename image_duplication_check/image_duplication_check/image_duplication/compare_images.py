@@ -34,7 +34,7 @@ def compare_two_images_a(img1, img2):
     return correlation
 
 
-def get_thumbnail(image, size=(128,128), stretch_to_fit=False, greyscale=False):
+def get_thumbnail(image, size=(64,64), stretch_to_fit=False, greyscale=False):
     " get a smaller version of the image - makes comparison much faster/easier"
     if not stretch_to_fit:
         image.thumbnail(size, Image.ANTIALIAS)
@@ -84,7 +84,7 @@ def hamming_distance(s1, s2):
     return sum(ch1 != ch2 for ch1, ch2 in zip(s1, s2))
 
 
-def dhash(image, hash_size = 100):
+def dhash(image, hash_size=16):
     # Grayscale and shrink the image in one step.
     image = image.convert('L').resize(
         (hash_size + 1, hash_size),

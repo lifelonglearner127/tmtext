@@ -34,7 +34,6 @@ class CompareTwoImageViewSet(viewsets.ViewSet):
 
         if serializer.is_valid():
             try:
-#                rate = serializer.data["rate"]
                 urls = serializer.data["urls"]
 
                 if not urls:
@@ -42,6 +41,7 @@ class CompareTwoImageViewSet(viewsets.ViewSet):
 
                 images_a  = []
                 images_b = []
+                images_c = []
 
                 for url in urls:
                     path, ext = os.path.splitext(url)
@@ -54,8 +54,6 @@ class CompareTwoImageViewSet(viewsets.ViewSet):
                         image = np.asarray(bytearray(resp), dtype="uint8")
                         images_a.append(cv2.imdecode(image, cv2.IMREAD_COLOR))
                         images_b.append(Image.open(cStringIO.StringIO(resp)))
-
-                    image = None
 
                     if ext not in (".jpg", ".jpeg", ".png"):
                         if is_local:
@@ -72,11 +70,11 @@ class CompareTwoImageViewSet(viewsets.ViewSet):
 
                         images_a.append(image)
 
-                results_a = compare_two_images_a(images_a[0], images_a[1])
+#                results_a = compare_two_images_a(images_a[0], images_a[1])
                 results_b = compare_two_images_b(images_b[0], images_b[1])
-                results_c = compare_two_images_c(images_b[0], images_b[1])
+                results_c = compare_two_images_c(images_c[0], images_c[1])
 
-                return Response({'method 1': results_c, 'method 2': results_a, 'method 3': results_b})
+                return Response({'similarity': results_b * results_c})
             except:
                 var = traceback.format_exc()
 
@@ -109,7 +107,6 @@ class ClassifyImagesBySimilarity(viewsets.ViewSet):
 
         if serializer.is_valid():
             try:
-#                rate = serializer.data["rate"]
                 urls = serializer.data["urls"]
 
                 if not urls:
@@ -141,10 +138,9 @@ class ClassifyImagesBySimilarity(viewsets.ViewSet):
 
                     for url2 in rest_images:
 
-                        similarity_rate = float(compare_two_images_c(images[url1], rest_images[url2]))
-                        hamming_rate = float(compare_two_images_b(images[url1], rest_images[url2]))
+                        similarity_rate = float(compare_two_images_c(images[url1], rest_images[url2])) * float(compare_two_images_b(images[url1], rest_images[url2]))
 
-                        if similarity_rate >= 0.9:
+                        if similarity_rate >= 0.5:
                             processed_images.append(url2)
                             group_image_indexes.append(url2)
 
