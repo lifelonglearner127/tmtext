@@ -2,9 +2,9 @@ import smtplib
 import glob
 import xml.etree.ElementTree as ET
 
-strBasePath = "/home/ubuntu/master/"
-latest_git_file_path = glob.glob(strBasePath + "tmtext/special_crawler/*_version.xml")
-old_git_file_path = glob.glob(strBasePath + "tmtext_old/special_crawler/*_version.xml")
+strBasePath = "/home/ubuntu/production/"
+latest_git_file_path = glob.glob(strBasePath + "tmtext/product-ranking/product_ranking/spiders/*_version.xml")
+old_git_file_path = glob.glob(strBasePath + "tmtext_old/product-ranking/product_ranking/spiders/*_version.xml")
 
 latest_git_file_name = []
 
@@ -48,8 +48,8 @@ for scraper in common_file_name:
 
     scraper_results = ""
 
-    latest_scraper_version_xml = ET.parse(strBasePath + "tmtext/special_crawler/" + scraper)
-    old_scraper_version_xml = ET.parse(strBasePath + "tmtext_old/special_crawler/" + scraper)
+    latest_scraper_version_xml = ET.parse(strBasePath + "tmtext/product-ranking/product_ranking/spiders/" + scraper)
+    old_scraper_version_xml = ET.parse(strBasePath + "tmtext_old/product-ranking/product_ranking/spiders/" + scraper)
 
     latest_scraper_version_root = latest_scraper_version_xml.getroot()
     old_scraper_version_root = old_scraper_version_xml.getroot()
@@ -101,7 +101,7 @@ for scraper in common_file_name:
         scraper_results += ("\n- Fields Removed \n" + ", " . join(removed_fields))
 
     if scraper_results:
-        report_results += ("Updated Scraper: " + scraper[8:-12] + scraper_results + "\n\n")
+        report_results += ("Updated Scraper: " + scraper[:-12] + scraper_results + "\n\n")
 
 if not report_results:
     exit(0)
@@ -109,9 +109,8 @@ if not report_results:
 print report_results
 
 fromaddr = "jenkins@contentanalyticsinc.com"
-#toaddrs = ["dave@contentanalyticsinc.com", "jacob.cats426@gmail.com", "support@contentanalyticsinc.com"] # must be a list
-toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com"] # must be a list
-subject = "Master CH Scrapers Updated"
+toaddrs = ["dave@contentanalyticsinc.com", "diogo.medeiros1115@gmail.com", "jacob.cats426@gmail.com", "support@contentanalyticsinc.com", "no.andrey@gmail.com"] # must be a list
+subject = "Production SC Scrapers Updated"
 msg = """\
 From: %s
 To: %s
@@ -140,3 +139,4 @@ server.ehlo()
 server.login(smtp_username, smtp_password)
 server.sendmail(fromaddr, toaddrs, msg)
 print server.quit()
+
