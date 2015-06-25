@@ -51,6 +51,7 @@ def main():
     _install_pip_package('tldextract')
     _install_pip_package('boto')
     _install_pip_package('s3peat')
+    _install_pip_package('workerpool')
 
 
 if __name__ == '__main__':

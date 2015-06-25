@@ -286,6 +286,7 @@ def _setup_virtual_env_scrapyd():
         run('pip install tldextract')
         run('pip install boto')
         run('pip install s3peat')
+        run('pip install workerpool')
 
     _setup_simmetrica_monitoring()
 
