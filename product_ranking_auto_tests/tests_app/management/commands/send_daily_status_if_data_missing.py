@@ -23,38 +23,38 @@ from tests_app.models import (Spider, TestRun, FailedRequest, Alert,
 class Command(BaseCommand):
     can_import_settings = True
 
-    def _what_is_broken(self):
-        spiders = Spider.objects.filter(active=True)
-        return [s for s in spiders if s.is_error()]
-
     def _num_of_active_spiders(self):
         return Spider.objects.filter(active=True).count()
 
-    def _num_of_failed_spiders(self):
-        return len(self._what_is_broken())
-
-    def _num_of_passed_spiders(self):
-        return self._num_of_active_spiders() - self._num_of_failed_spiders()
-
     def handle(self, *args, **options):
         # send a summary email
-        email_subj = '[%s] SC Auto-tests: daily summary updates'
-        if self._what_is_broken():
-            email_subj %= 'FAILED'
-        else:
-            email_subj %= 'PASSED'
+        email_subj = '[%s] SC Auto-tests: data daily summary updates'
+        global_failed = False
+        spiders_status = {}
+        for spider in Spider.objects.filter(active=True):
+            if spider.get_failed_test_runs_for_24_hours_with_missing_data(
+                    threshold=4):
+                global_failed = True
+                spiders_status[spider.name] = 'failed'
+            else:
+                spiders_status[spider.name] = 'passed'
 
         email_template = """
 %i spider(s) checked. %i Failed. %i Passed.
 
 Detailed Results (tests passed / total):
-""" % (self._num_of_active_spiders(), self._num_of_failed_spiders(),
-       self._num_of_passed_spiders())
 
-        for spider in Spider.objects.filter(active=True).order_by('name'):
+"""  % (len(spiders_status.keys()),
+        len([s for s in spiders_status.items() if s[1] == 'failed']),
+        len([s for s in spiders_status.items() if s[1] == 'passed']))
+
+        for spider_name, spider_status in spiders_status.items():
+            spider = Spider.objects.get(name=spider_name)
             _total_tr = spider.get_total_test_runs_for_24_hours().count()
-            _passed_tr = spider.get_passed_test_runs_for_24_hours().count()
-            if spider.is_error():
+            _failed_tr = spider.get_failed_test_runs_for_24_hours_with_missing_data(
+                threshold=4).count()
+            _passed_tr = _total_tr - _failed_tr
+            if spiders_status == 'failed':
                 email_template += "* [FAILED] - %i/%i - %s." % (
                     _passed_tr, _total_tr, spider.name)
             else:
@@ -64,10 +64,12 @@ Detailed Results (tests passed / total):
             email_template += " Details: %s" % spider.get_absolute_url()
             email_template += '\n\n'
 
+        email_subj %= '[PASSED]' if not global_failed else '[FAILED]'
         email_subj += ", UTC time: %s" % datetime.datetime.utcnow()
 
         print email_template
 
+        sys.exit()
         # send report email
         conn = ses.connect_to_region(
             'us-east-1',
