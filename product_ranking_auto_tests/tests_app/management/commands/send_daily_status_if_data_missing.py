@@ -64,7 +64,7 @@ Detailed Results (tests passed / total):
             email_template += " Details: %s" % spider.get_absolute_url()
             email_template += '\n\n'
 
-        email_subj %= '[PASSED]' if not global_failed else '[FAILED]'
+        email_subj %= 'PASSED' if not global_failed else 'FAILED'
         email_subj += ", UTC time: %s" % datetime.datetime.utcnow()
 
         # send report email
