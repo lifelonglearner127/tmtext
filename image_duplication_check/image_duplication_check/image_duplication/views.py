@@ -71,11 +71,12 @@ class CompareTwoImageViewSet(viewsets.ViewSet):
 
                         images_a.append(image)
 
-#                results_a = compare_two_images_a(images_a[0], images_a[1])
-                results_b = compare_two_images_b(images_b[0], images_b[1])
-                results_c = compare_two_images_c(images_c[0], images_c[1])
+                similarity_rate = float(compare_two_images_b(images_b[0], images_b[1])) * float(compare_two_images_c(images_c[0], images_c[1]))
 
-                return Response({'similarity': results_b * results_c})
+                if similarity_rate >= 0.5:
+                    return Response({'Are two images similar?': "Yes"})
+                else:
+                    return Response({'Are two images similar?': "No"})
             except:
                 var = traceback.format_exc()
 
