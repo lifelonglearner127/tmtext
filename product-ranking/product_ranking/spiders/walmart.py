@@ -4,7 +4,7 @@ import json
 import pprint
 import re
 import urlparse
-import uuid
+import hashlib
 import string
 from datetime import datetime
 import lxml.html
@@ -605,7 +605,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if not prodid:
             self.log("No PRODID in %r." % response.url, WARNING)
             return
-        cid = uuid.uuid4()
+        cid = hashlib.md5(prodid).hexdigest()
         reql = []
         url1 = (
             "http://www.walmart.com/irs?parentItemId%5B%5D={prodid}"

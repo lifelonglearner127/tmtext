@@ -22,6 +22,7 @@
         <th>Last check</th>
         <th>Last consecutive errors</th>
         <th>Last 24 hours checks (passed/total)</th>
+        <th>Missing data (last 24 hours)</th>
         <th>Total checks</th>
     </tr>
     {% for spider in spiders %}
@@ -37,6 +38,17 @@
             <td>
                 {{ spider.get_passed_test_runs_for_24_hours|length }} /
                 {{ spider.get_total_test_runs_for_24_hours|length }}
+            </td>
+            <td>
+                {% with spider.get_failed_test_runs_for_24_hours_with_missing_data as f_runs %}
+                    {% if f_runs|length > 0 %}
+                    <a href="{% url 'view_missing_data' pk=spider.pk %}">
+                        {{ f_runs|length }}
+                    </a>
+                    {% else %}
+                        {{ f_runs|length }}
+                    {% endif %}
+                {% endwith %}
             </td>
             <td>{{ spider.spider_test_runs.all|length }}</td>
         </tr>
