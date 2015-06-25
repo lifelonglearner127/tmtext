@@ -52,7 +52,7 @@ class SpiderReview(AuthViewMixin, DetailView):
 
 class ViewMissingDataRequests24Hours(AuthViewMixin, DetailView):
     model = Spider
-    template_name = 'spider.html'
+    template_name = 'spider_missing.html'
 
     def get_context_data(self, **kwargs):
         context = super(
