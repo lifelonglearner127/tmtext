@@ -49,6 +49,8 @@ def main():
     _install_pip_package('pytesseract')
     _install_pip_package('requests')
     _install_pip_package('tldextract')
+    _install_pip_package('boto')
+    _install_pip_package('s3peat')
 
 
 if __name__ == '__main__':

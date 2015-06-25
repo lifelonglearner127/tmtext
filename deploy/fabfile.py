@@ -284,6 +284,8 @@ def _setup_virtual_env_scrapyd():
         run('pip install django_adminplus')
         run('pip install lxml')
         run('pip install tldextract')
+        run('pip install boto')
+        run('pip install s3peat')
 
     _setup_simmetrica_monitoring()
 
