@@ -54,7 +54,7 @@ Detailed Results (tests passed / total):
             _failed_tr = spider.get_failed_test_runs_for_24_hours_with_missing_data(
                 threshold=4).count()
             _passed_tr = _total_tr - _failed_tr
-            if spiders_status == 'failed':
+            if spider_status == 'failed':
                 email_template += "* [FAILED] - %i/%i - %s." % (
                     _passed_tr, _total_tr, spider.name)
             else:
@@ -67,9 +67,6 @@ Detailed Results (tests passed / total):
         email_subj %= '[PASSED]' if not global_failed else '[FAILED]'
         email_subj += ", UTC time: %s" % datetime.datetime.utcnow()
 
-        print email_template
-
-        sys.exit()
         # send report email
         conn = ses.connect_to_region(
             'us-east-1',
