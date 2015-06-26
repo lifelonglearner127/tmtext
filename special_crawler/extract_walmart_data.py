@@ -2184,16 +2184,19 @@ class WalmartScraper(Scraper):
         return self.nutr_count
 
     def _nutrition_fact_text_health(self):
-        if not self._nutrition_facts():
+        try:
+            if not self._nutrition_facts():
+                return 0
+
+            nutrition_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='nutrient-table']//tr")
+            vitamins_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='vitamins-table']//tr")
+
+            if len(nutrition_facts_tr_list) < 2 or len(vitamins_facts_tr_list) < 1:
+                return 1
+
+            return 2
+        except:
             return 0
-
-        nutrition_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='nutrient-table']//tr")
-        vitamins_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='vitamins-table']//tr")
-
-        if len(nutrition_facts_tr_list) < 2 or len(vitamins_facts_tr_list) < 1:
-            return 1
-
-        return 2
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
