@@ -206,6 +206,17 @@ class MacysScraper(Scraper):
                     for r in imgs:
                         image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
 
+        image_url_additional3 = re.findall(r"MACYS.pdp.imageZoomer = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_additional3) > 0:
+            m = re.findall(r"imgList: '(.*?)'", image_url_additional3[0], re.DOTALL)
+            if len(m) > 0:
+                image_urls = m[0].split(',')
+                image_url_additional = []
+                for r in image_urls:
+                    image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
+                if len(image_url_additional) > 0:
+                    return image_url_additional
+
         image_url = self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img/@src")
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url) < 1:
