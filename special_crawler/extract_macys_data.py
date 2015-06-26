@@ -66,6 +66,8 @@ class MacysScraper(Scraper):
         #    return True
         if len(self.tree_html.xpath("//h1[contains(@class,'productTitle')]")) < 1:
             return True
+        if len(self.tree_html.xpath("//div[@id='viewCollectionItemsButton']")) > 0:
+            return True
         return False
 
     ##########################################
