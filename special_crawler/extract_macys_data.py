@@ -162,7 +162,8 @@ class MacysScraper(Scraper):
         link = re.findall(r"MACYS\.adLinkPopUp\.definePopup\('(.*?)'", script, re.DOTALL)
         try:
             link = "http://www1.macys.com/shop/media/popup/?popupFileName=%s" % link[0]
-            contents = urllib.urlopen(link).read()
+            req = urllib2.Request(link, headers={'User-Agent' : "Magic Browser"})
+            contents = urllib2.urlopen(req).read()
             # document.location.replace('
             tree = html.fromstring(contents)
             rows = tree.xpath("//text()")
