@@ -17,6 +17,8 @@ class WalmartVariants(object):
     def _variants(self):
         try:
             if getattr(self, 'response', None):
+                # SC spiders sometimes fail to perform correct conversion
+                # response.body -> lxml.html tree -> tostring
                 page_raw_text = self.response.body
             else:
                 page_raw_text = lxml.html.tostring(self.tree_html)
