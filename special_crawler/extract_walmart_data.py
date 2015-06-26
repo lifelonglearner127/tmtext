@@ -2185,16 +2185,22 @@ class WalmartScraper(Scraper):
 
     def _nutrition_fact_text_health(self):
         try:
-            if not self._nutrition_facts():
+            if self._version() == "Walmart v1":
+                if self.tree_html.xpath("//div[@class='NutFactsSIPT']"):
+                    return 2
+
                 return 0
+            elif self._version() == "Walmart v2":
+                if not self._nutrition_facts():
+                    return 0
 
-            nutrition_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='nutrient-table']//tr")
-            vitamins_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='vitamins-table']//tr")
+                nutrition_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='nutrient-table']//tr")
+                vitamins_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='vitamins-table']//tr")
 
-            if len(nutrition_facts_tr_list) < 2 or len(vitamins_facts_tr_list) < 1:
-                return 1
+                if len(nutrition_facts_tr_list) < 2 or len(vitamins_facts_tr_list) < 1:
+                    return 1
 
-            return 2
+                return 2
         except:
             return 0
 
