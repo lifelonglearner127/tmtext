@@ -17,6 +17,7 @@ import datetime
 
 from scrapy.contrib.httpcache import *
 from scrapy.contrib.downloadermiddleware.httpcache import HttpCacheMiddleware
+from scrapy.utils import gz
 
 
 UTC_NOW = datetime.datetime.utcnow()  # we don't init it in a local method
@@ -77,3 +78,17 @@ class S3CacheStorage(FilesystemCacheStorage):
 
     def _get_request_path(self, spider, request):
         return get_request_path_with_date(self.cachedir, spider, request)
+
+
+class CustomCachePolicy(DummyPolicy):
+    """ For not caching amazon captcha """
+
+    def should_cache_response(self, response, request):
+        # all gzipped strings start with this symbols
+        gzip_line_start = '\037\213'
+        if response.body.startswith(gzip_line_start):
+            body = gz.gunzip(response.body)
+            if '.images-amazon.com/captcha/' in body:
+                return False
+        return super(CustomCachePolicy, self).should_cache_response(
+            response, request)
