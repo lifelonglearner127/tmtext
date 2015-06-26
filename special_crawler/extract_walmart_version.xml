@@ -12,6 +12,7 @@
     <field name="ingredient_count" version="1.1"></field>
     <field name="nutrition_facts" version="1.1"></field>
     <field name="nutrition_fact_count" version="1.1"></field>
+    <field name="nutrition_fact_text_health" version="1.1"></field>
     <field name="price" version="1.1"></field>
     <field name="price_amount" version="1.1"></field>
     <field name="price_currency" version="1.1"></field>

@@ -1,6 +1,7 @@
 import datetime
 
 from django.db import models
+from django.db.models import Q
 from django.core.urlresolvers import reverse_lazy
 from django.utils import timezone
 
@@ -113,6 +114,20 @@ class Spider(models.Model):
             status='failed', when_finished__gte=hrs_24
         ).order_by('-when_finished').distinct()
 
+    def get_failed_test_runs_for_24_hours_with_missing_data(self, threshold=2):
+        _exclude_ids = []
+        frs = self.get_failed_test_runs_for_24_hours()
+        for fr in frs:
+            num_of_req_with_missing_data = fr.test_run_failed_requests.filter(
+                Q(error__icontains='got 0 results')
+                | Q(error__icontains='some products missing')
+            ).distinct().count()
+            num_of_req_total = fr.test_run_failed_requests.all().count()
+            # TODO: calculate (by percent) if this test req actually failed or not
+            if num_of_req_with_missing_data <= threshold:
+                _exclude_ids.append(fr.pk)
+        return frs.exclude(id__in=_exclude_ids).distinct()
+
     def get_total_test_runs_for_24_hours(self):
         hrs_24 = timezone.now() - datetime.timedelta(days=1)
         return self.spider_test_runs.filter(
@@ -172,6 +187,10 @@ class FailedRequest(models.Model):
                                   help_text='Found errors (in HTML format)')
     result_file = models.FileField(blank=True, null=True)
     log_file = models.FileField(blank=True, null=True)
+
+    def is_missing_data(self):
+        return 'got 0 results' in str(self.error)\
+               or 'some products missing' in str(self.error)
 
 
 class Alert(models.Model):
