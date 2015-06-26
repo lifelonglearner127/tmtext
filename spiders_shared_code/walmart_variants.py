@@ -16,7 +16,11 @@ class WalmartVariants(object):
 
     def _variants(self):
         try:
-            page_raw_text = lxml.html.tostring(self.tree_html)
+            if getattr(self, 'response', None):
+                page_raw_text = self.response.body
+            else:
+                page_raw_text = lxml.html.tostring(self.tree_html)
+
             startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
 
             if startIndex == -1:
