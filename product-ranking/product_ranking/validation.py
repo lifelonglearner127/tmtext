@@ -514,7 +514,7 @@ class BaseValidator(object):
         # TODO: implement
         return True
 
-    def _validate_shelf_page_out_of_stock(self):
+    def _validate_shelf_page_out_of_stock(self, val):
         # TODO: implement
         return True
 
