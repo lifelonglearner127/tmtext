@@ -66,7 +66,7 @@ def get_request_path_with_date(cache_dir, spider, request):
         except OSError as e:
             if 'too long' in str(e).lower():
                 result = result[0:235]  # depends on OS! Works for Linux
-                print('Cache filename truncated to 200 chars!', result)
+                print('Cache filename truncated to 235 chars!', result)
     return result
 
 
