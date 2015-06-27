@@ -188,12 +188,35 @@ class S3CacheDownloader(object):
 
 
 if __name__ == '__main__':
+    from pprint import pprint
+    from boto.s3.connection import S3Connection
+    conn = S3Connection(amazon_public_key, amazon_secret_key)
+    bucket = conn.get_bucket(bucket_name)
     if 'clear_bucket' in sys.argv:  # be careful!
-        from boto.s3.connection import S3Connection
-        conn = S3Connection(amazon_public_key, amazon_secret_key)
-        bucket = conn.get_bucket(bucket_name)
+        if input('Delete all files? y/n').lower() == 'y':
+            for f in bucket.list():
+                bucket.delete_key(f.key)
+        else:
+            print('You did not type "y" - exit...')
+    elif 'cache_map' in sys.argv:  # lists available cache
+        cache_map = {}  # spider -> date -> searchterm
         for f in bucket.list():
-            bucket.delete_key(f.key)
+            if len(f.key.split('/')) < 4:
+                continue  # invalid key?
+            spider, date, searchterm = f.key.split('/')[0:3]
+            if not spider in cache_map:
+                cache_map[spider] = {}
+            if not date in cache_map[spider]:
+                cache_map[spider][date] = []
+            if not searchterm in cache_map[spider][date]:
+                cache_map[spider][date].append(searchterm)
+        for spider, dates in cache_map.items():
+            print '\n\n'
+            print spider
+            for date, searchterms in dates.items():
+                print ' '*4, date
+                for searchterm in searchterms:
+                    print ' '*8, searchterm
     else:
         # list all files in bucket, for convenience
         CWD = os.path.dirname(os.path.abspath(__file__))
@@ -202,4 +225,4 @@ if __name__ == '__main__':
         from list_all_files_in_s3_bucket import list_files_in_bucket
         for f in (list_files_in_bucket(
                 amazon_public_key, amazon_secret_key, bucket_name)):
-            print f
+            print f.key
