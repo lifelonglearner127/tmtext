@@ -14,6 +14,7 @@
 import os
 import sys
 import datetime
+from exceptions import OSError
 
 from scrapy.contrib.httpcache import *
 from scrapy.contrib.downloadermiddleware.httpcache import HttpCacheMiddleware
@@ -53,11 +54,20 @@ def get_partial_request_path(cache_dir, spider):
 
 def get_request_path_with_date(cache_dir, spider, request):
     key = request_fingerprint(request)
-    return os.path.join(
+    result = os.path.join(
         get_partial_request_path(cache_dir, spider),
         _slugify(request.url),
         key[0:2], key
     )
+    # check max filename length and truncate it if needed
+    if not os.path.exists(result):
+        try:
+            os.makedirs(result)
+        except OSError as e:
+            if 'too long' in str(e).lower():
+                result = result[0:235]  # depends on OS! Works for Linux
+                print('Cache filename truncated to 200 chars!', result)
+    return result
 
 
 class CustomFilesystemCacheStorage(FilesystemCacheStorage):
