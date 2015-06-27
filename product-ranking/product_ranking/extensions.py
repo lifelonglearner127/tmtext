@@ -193,7 +193,7 @@ if __name__ == '__main__':
     conn = S3Connection(amazon_public_key, amazon_secret_key)
     bucket = conn.get_bucket(bucket_name)
     if 'clear_bucket' in sys.argv:  # be careful!
-        if input('Delete all files? y/n').lower() == 'y':
+        if raw_input('Delete all files? y/n: ').lower() == 'y':
             for f in bucket.list():
                 bucket.delete_key(f.key)
         else:
