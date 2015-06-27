@@ -85,7 +85,7 @@ if 'save_s3_cache' in _args_names:
     #DOWNLOADER_MIDDLEWARES['scrapy.contrib.downloadermiddleware.httpcache.HttpCacheMiddleware'] = 50
     #DOWNLOADER_MIDDLEWARES['product_ranking.cache.PersistentCacheMiddleware'] = 50
     HTTPCACHE_ENABLED = True
-    HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.DummyPolicy'
+    HTTPCACHE_POLICY = 'product_ranking.cache.CustomCachePolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.S3CacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
     HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')
@@ -93,13 +93,13 @@ if 'save_s3_cache' in _args_names:
 
 if 'load_from_s3_cache' in _args_names:
     HTTPCACHE_ENABLED = True
-    HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.DummyPolicy'
+    HTTPCACHE_POLICY = 'product_ranking.cache.CustomCachePolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.S3CacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
     HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')
     EXTENSIONS['product_ranking.extensions.S3CacheDownloader'] = 999
 
-if 'enable_cache' in _args_names:
+if 'enable_cache' in _args_names:  # for local development purposes only!
     HTTPCACHE_ENABLED = True
     HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.DummyPolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.CustomFilesystemCacheStorage'
