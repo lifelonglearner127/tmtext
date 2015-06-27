@@ -721,7 +721,7 @@ class ServiceScraperTest(unittest.TestCase):
             try:
                 self._test("walmart", url)
             except:
-                continue
+                pass
 
     # test all keys are in the response for simple (all-data) request for tesco
     # (using template function)
