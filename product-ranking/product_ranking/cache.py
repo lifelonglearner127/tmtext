@@ -32,7 +32,7 @@ def get_cache_map():
     conn = S3Connection(amazon_public_key, amazon_secret_key)
     bucket = conn.get_bucket(bucket_name)
     cache_map = {}  # spider -> date -> searchterm
-    for f in bucket.list():
+    for f in bucket.list():  # TODO: list by prefix!
         if len(f.key.split('/')) < 4:
             continue  # invalid key?
         spider, date, searchterm = f.key.split('/')[0:3]
