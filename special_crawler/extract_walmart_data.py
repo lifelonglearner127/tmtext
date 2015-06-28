@@ -2148,56 +2148,122 @@ class WalmartScraper(Scraper):
     def _nutrition_facts(self):
         # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
         # containing nutrition facts
-        res=[]
-        nutr=self.tree_html.xpath("//div[@class='nutrition-section']//div[@class='serving']//div")
-        for i, n in enumerate(nutr):
-            nt = n.text_content()
-            if i == 0:
-                res.append([nt[0:13].strip(),nt[13:].strip()])
-            if i == 1:
-                res.append([nt[0:22].strip(),nt[22:].strip()])
-        nutr=self.tree_html.xpath("//div[@class='nutrition-section']//table[contains(@class,'table')]//tr")
-        _digits = re.compile('\d')
-        for i, n in enumerate(nutr):
-            pr = n.xpath(".//*[self::th or self::td]//text()")
-            if len(pr)>0 and pr[0].find("B6") < 0:
-                m = _digits.search(pr[0])
-                if m != None and m.start() > 1:
-                    p0 = pr[0][0:m.start()-1]
-                    p1 = pr[0][m.start()-1:]
-                    pr[0] = p1.strip()
-                    pr.insert(0,p0.strip())
-            if len(pr)==2 :
-                res.append(pr)
-            elif len(pr)==3 and pr[2].strip()!="":
-                res.append([pr[0].strip(),{"absolute":pr[1].strip(),"relative":pr[2].strip()}])
-            elif len(pr) == 3 and pr[2].strip() == "":
-                res.append([pr[0].strip(),pr[1].strip()])
-        if len(res) > 0:
-            self.nutr_count = len(res)
+        if self._version() == "Walmart v1":
+            if not self.tree_html.xpath("//div[@class='NutFactsSIPT']"):
+                return None
+
+            res = []
+            serving_info = self.tree_html.xpath("//div[@class='NutFactsSIPT']//tr[@class='ServingInfo']/td/text()")
+            res.append([serving_info[0][0:13].strip(),serving_info[0][13:].strip()])
+            res.append([serving_info[1][0:22].strip(),serving_info[1][22:].strip()])
+            calories_info_cals = self.tree_html.xpath("//div[@class='NutFactsSIPT']//tr[@class='Calories']/td/div[@class='Cals']//text()")
+
+            if calories_info_cals:
+                res.append(calories_info_cals)
+
+            calories_info_cals_fat = self.tree_html.xpath("//div[@class='NutFactsSIPT']//tr[@class='Calories']/td/div[@class='CalsFat']//text()")
+
+            if calories_info_cals_fat:
+                res.append([calories_info_cals_fat[0][:17].strip(), calories_info_cals_fat[0][17:].strip()])
+
+            nutrition_info_list = self.tree_html.xpath("//div[@class='NutFactsSIPT']//tr[child::*[@class='AttrName'] and child::*[@class='AttrValue']]")
+
+            for nutrition_info in nutrition_info_list:
+                values = nutrition_info.xpath("./td//text()")
+                pass
+
+                if len(values) == 1:
+                    nDigitIndex = re.search("\d", values[0]).start()
+                    res.append([values[0][:nDigitIndex].strip(), values[0][nDigitIndex:].strip()])
+                if len(values) == 2:
+                    res.append([values[0].strip(), values[1].strip()])
+                elif len(values) == 3:
+                    res.append([values[0].strip(), {"absolute": values[1].strip(), "relative": values[2].strip()}])
+
+            if not res:
+                return None
+
             return res
-        self.nutr_count = None
+        elif self._version() == "Walmart v2":
+            res=[]
+            nutr=self.tree_html.xpath("//div[@class='nutrition-section']//div[@class='serving']//div")
+            for i, n in enumerate(nutr):
+                nt = n.text_content()
+                if i == 0:
+                    res.append([nt[0:13].strip(),nt[13:].strip()])
+                if i == 1:
+                    res.append([nt[0:22].strip(),nt[22:].strip()])
+            nutr=self.tree_html.xpath("//div[@class='nutrition-section']//table[contains(@class,'table')]//tr")
+            _digits = re.compile('\d')
+            for i, n in enumerate(nutr):
+                pr = n.xpath(".//*[self::th or self::td]//text()")
+                if len(pr)>0 and pr[0].find("B6") < 0:
+                    m = _digits.search(pr[0])
+                    if m != None and m.start() > 1:
+                        p0 = pr[0][0:m.start()-1]
+                        p1 = pr[0][m.start()-1:]
+                        pr[0] = p1.strip()
+                        pr.insert(0,p0.strip())
+                if len(pr)==2 :
+                    res.append(pr)
+                elif len(pr)==3 and pr[2].strip()!="":
+                    res.append([pr[0].strip(),{"absolute":pr[1].strip(),"relative":pr[2].strip()}])
+                elif len(pr) == 3 and pr[2].strip() == "":
+                    res.append([pr[0].strip(),pr[1].strip()])
+            if len(res) > 0:
+                return res
+
+            return None
+
         return None
 
     def _nutrition_fact_count(self):
         # number of nutrition facts (of elements in the nutrition_facts list) - integer
-        return self.nutr_count
+        nutrition_facts = self._nutrition_facts()
+
+        if nutrition_facts:
+            return len(nutrition_facts)
+
+        return 0
 
     def _nutrition_fact_text_health(self):
         try:
             if self._version() == "Walmart v1":
-                if self.tree_html.xpath("//div[@class='NutFactsSIPT']"):
-                    return 2
+                nutrition_facts = self._nutrition_facts()
 
-                return 0
+                if not nutrition_facts:
+                    return 0
+
+                calories_info_count = 0
+
+                for nutrition_fact in nutrition_facts:
+                    if "Calories" in nutrition_fact[0]:
+                        calories_info_count = calories_info_count + 1
+
+                if calories_info_count == 0 or len(nutrition_facts) - calories_info_count < 3:
+                    return 1
+
+                nutrition_facts_in_text = html.tostring(self.tree_html.xpath("//div[@class='NutFactsSIPT']")[0]).lower()
+
+                if not re.search('percent daily values are based on(.+?)your daily values may be higher or lower depending', nutrition_facts_in_text):
+                    return 1
+
+                return 2
             elif self._version() == "Walmart v2":
-                if not self._nutrition_facts():
+                nutrition_facts = self._nutrition_facts()
+
+                if not nutrition_facts:
                     return 0
 
                 nutrition_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='nutrient-table']//tr")
+                calories_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='calories-table']//tr")
                 vitamins_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='vitamins-table']//tr")
+                nutrition_facts_in_text = html.tostring(self.tree_html.xpath("//div[@class='nutrition-section']")[0]).lower()
 
-                if len(nutrition_facts_tr_list) < 2 or len(vitamins_facts_tr_list) < 1:
+                if len(nutrition_facts_tr_list) < 2 or len(calories_facts_tr_list) < 2:
+                    return 1
+
+                if not re.search('percent daily values are based on(.+?)your daily values may be higher or lower depending', nutrition_facts_in_text):
                     return 1
 
                 return 2
