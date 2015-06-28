@@ -91,7 +91,7 @@ if 'save_s3_cache' in _args_names:
     HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')
     EXTENSIONS['product_ranking.extensions.S3CacheUploader'] = 999
 
-if 'load_from_s3_cache' in _args_names:
+if 'load_s3_cache' in _args_names:
     HTTPCACHE_ENABLED = True
     HTTPCACHE_POLICY = 'product_ranking.cache.CustomCachePolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.S3CacheStorage'
