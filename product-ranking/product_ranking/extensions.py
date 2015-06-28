@@ -150,9 +150,8 @@ class S3CacheDownloader(object):
         cache.UTC_NOW = self._get_load_from_date()
         conn = S3Connection(amazon_public_key, amazon_secret_key)
         bucket = conn.get_bucket(bucket_name)
-        partial_path = get_partial_request_path(settings.HTTPCACHE_DIR,
-                                                crawler._spider)
-
+        partial_path = cache.get_partial_request_path(
+            settings.HTTPCACHE_DIR, crawler._spider)
         _cache_found = False
         _keys2download = []
         for key in bucket.list():
