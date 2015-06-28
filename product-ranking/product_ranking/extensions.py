@@ -13,7 +13,6 @@ from boto.s3.connection import S3Connection
 from s3peat import S3Bucket, sync_to_s3  # pip install s3peat
 import workerpool  # pip install workerpool
 
-from cache import get_partial_request_path
 import cache
 import settings
 
@@ -95,7 +94,8 @@ def _s3_cache_on_spider_close(spider, reason):
     # upload cache
     bucket = S3Bucket(bucket_name, amazon_public_key, amazon_secret_key,
                       public=False)
-    folder_path = get_partial_request_path(settings.HTTPCACHE_DIR, spider)
+    folder_path = cache.get_partial_request_path(
+        settings.HTTPCACHE_DIR, spider)
     if not os.path.exists(folder_path):
         print('Path to upload does not exist:', folder_path)
         return
@@ -199,17 +199,7 @@ if __name__ == '__main__':
         else:
             print('You did not type "y" - exit...')
     elif 'cache_map' in sys.argv:  # lists available cache
-        cache_map = {}  # spider -> date -> searchterm
-        for f in bucket.list():
-            if len(f.key.split('/')) < 4:
-                continue  # invalid key?
-            spider, date, searchterm = f.key.split('/')[0:3]
-            if not spider in cache_map:
-                cache_map[spider] = {}
-            if not date in cache_map[spider]:
-                cache_map[spider][date] = []
-            if not searchterm in cache_map[spider][date]:
-                cache_map[spider][date].append(searchterm)
+        cache_map = cache.get_cache_map()
         for spider, dates in cache_map.items():
             print '\n\n'
             print spider
