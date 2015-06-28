@@ -19,20 +19,26 @@ from exceptions import OSError
 from scrapy.contrib.httpcache import *
 from scrapy.contrib.downloadermiddleware.httpcache import HttpCacheMiddleware
 from scrapy.utils import gz
-
-from extensions import amazon_public_key, amazon_secret_key, bucket_name
+from boto.s3.connection import S3Connection
 
 UTC_NOW = datetime.datetime.utcnow()  # we don't init it in a local method
                                       # to avoid spreading one job across
                                       #  2 dates, if it runs for too long
 
 
-def get_cache_map():
-    from boto.s3.connection import S3Connection
+def get_cache_map(prefix=None):
+    """ Get cache data, spider -> date -> searchterm
+    :param prefix: str, must start with spider_name
+    :return: dict
+    """
+    _started = datetime.datetime.now()
+    from extensions import amazon_public_key, amazon_secret_key,\
+        bucket_name
     conn = S3Connection(amazon_public_key, amazon_secret_key)
     bucket = conn.get_bucket(bucket_name)
-    cache_map = {}  # spider -> date -> searchterm
-    for f in bucket.list():  # TODO: list by prefix!
+    cache_map = {}
+    keyz = bucket.list(prefix=prefix) if prefix else bucket.list()
+    for f in keyz:
         if len(f.key.split('/')) < 4:
             continue  # invalid key?
         spider, date, searchterm = f.key.split('/')[0:3]
@@ -42,6 +48,9 @@ def get_cache_map():
             cache_map[spider][date] = []
         if not searchterm in cache_map[spider][date]:
             cache_map[spider][date].append(searchterm)
+    _finished = datetime.datetime.now()
+    print('    [cache map finished in %s seconds]'
+          % (_finished - _started).total_seconds())
     return cache_map
 
 

@@ -27,6 +27,7 @@ except ImportError:
         except ImportError:
             print 'ERROR: CAN NOT IMPORT MONITORING PACKAGE!'
 
+
 amazon_public_key = 'AKIAIKTYYIQIZF3RWNRA'
 amazon_secret_key = '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'
 bucket_name = 'spiders-cache'
@@ -117,8 +118,23 @@ def _s3_cache_on_spider_close(spider, reason):
 
 class S3CacheUploader(object):
 
-    def __init__(self, *args, **kwargs):
-        dispatcher.connect(_s3_cache_on_spider_close, signals.spider_closed)
+    def __init__(self, crawler, *args, **kwargs):
+        # check cache map - maybe such cache already exists?
+        enable_cache_upload = True
+        utcdate = cache.UTC_NOW.strftime('%Y-%m-%d')
+        cache_map = cache.get_cache_map(
+            prefix=os.path.join(crawler._spider.name, utcdate)
+        )
+        if crawler._spider.name in cache_map:
+            if utcdate in cache_map[crawler._spider.name]:
+                if cache._slugify(cache._get_searchterms_str()) \
+                        in cache_map[crawler._spider.name][utcdate]:
+                    print('Cache for this date, spider,'
+                          ' and searchterm already exists!'
+                          ' Cache will NOT be uploaded!')
+                    enable_cache_upload = False
+        if enable_cache_upload:
+            dispatcher.connect(_s3_cache_on_spider_close, signals.spider_closed)
 
     @classmethod
     def from_crawler(cls, crawler):
