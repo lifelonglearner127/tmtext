@@ -43,6 +43,7 @@
     <field name="wc_360" version="1.1"></field>
     <field name="wc_emc" version="1.1"></field>
     <field name="wc_pdf" version="1.1"></field>
+    <field name="wc_video" version="1.1"></field>
     <field name="wc_prodtour" version="1.1"></field>
     <field name="flixmedia" version="1.1"></field>
     <field name="webcollage" version="1.1"></field>
