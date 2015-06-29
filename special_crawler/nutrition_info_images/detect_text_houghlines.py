@@ -27,6 +27,8 @@ def is_text_image(filename, is_url=False):
     cv.CvtColor(dst, color_dst, cv.CV_GRAY2BGR)
 
     slopes = []
+    # difference between xs or ys - variant of slope
+    tilts = []
     # x coordinates of horizontal lines
     horizontals = []
     # y coordinates of vertical lines
@@ -66,36 +68,118 @@ def is_text_image(filename, is_url=False):
         else:
             verticals.append(pt1[1])
         slopes.append(slope)
+        tilts.append(min(abs(pt1[1] - pt2[1]), (abs(pt1[0] - pt2[0]))))
         # print slope
-    average = sum(slopes)/float(len(slopes))
-    median = npmedian(nparray(slopes))
+    average_slope = sum(slopes)/float(len(slopes))
+    median_slope = npmedian(nparray(slopes))
+    average_tilt = sum(tilts)/float(len(tilts))
+    median_tilt = npmedian(nparray(tilts))
     differences = []
-    print "x differences:"
+    print "x_differences:"
     for (i, x) in enumerate(horizontals):
         if i > 0:
             # print abs(horizontals[i] - horizontals[i-1])
             differences.append(abs(horizontals[i] - horizontals[i-1]))
-    print "y differences:"
+    print "y_differences:"
     for (i, y) in enumerate(verticals):
         if i > 0:
             # print abs(verticals[i] - verticals[i-1])
             differences.append(abs(verticals[i] - verticals[i-1]))
 
-    print "average:", average
-    print "median:", median
-    print "median differences:", npmedian(nparray(differences))
-    print "nr lines:", len(lines)
+    print "average_slope:", average_slope
+    print "median_slope:", median_slope
+    print "average_tilt:", average_tilt
+    print "median_tilt:", median_tilt
+    median_differences = npmedian(nparray(differences))
+    print "median_differences:", median_differences
+    print "nr_lines:", len(lines)
 
     # print "sorted xs:", sorted(lines)
 
-    return (average, median)
+    return (average_slope, median_slope, average_tilt, median_tilt, median_differences)
+
+def plot_examples(examples=None):
+    '''Plots in 2D space the points in the 4 lists given as input
+    :param examples: list of nutrition images,
+    dictionaries with keys:
+    'name' - image title
+    'label' - one of 'TP', 'TN', 'FP', 'FN' (true/false positives/negatives)
+    'coords' - tuple of coordinates
+    '''
+
+    def get_examples():
+        images = [
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition2.jpg', 'TN'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition3_falsepos.jpg', 'FP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition4_falsepos.jpg', 'FP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition5_falsepos.jpg', 'FP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition6_falsepos.jpg', 'FP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition.jpg', 'TN'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image10_falseneg.jpg', 'FN'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image11_falseneg.jpg', 'FN'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image2.png', 'TP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image3.jpg', 'TP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image4.jpg', 'TP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image5.jpg', 'TP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image6.jpg', 'TP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image7.jpg', 'TP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image8.jpg', 'TP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image9.jpg', 'TP'),
+                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image.jpg', 'TP')
+                    ]
+        examples = []
+        for image, label in images:
+            average_slope, median_slope, average_tilt, median_tilt, median_differences = is_text_image(image)
+            example = {'name': image, 'label': label, 'coords': (median_slope, median_tilt, median_differences)}
+            examples.append(example)
+        return examples
+
+    # hardcode list of examples
+    if not examples:
+        examples = get_examples()
+
+    labels_to_colors = {
+    'TP' : 'red',
+    'FN' : 'orange',
+    'TN' : 'blue',
+    'FP' : 'green',
+    }
+
+    points = []
+
+    import matplotlib.pyplot as plt
+
+    X = []
+    Y = []
+    colors = []
+    areas = []
+
+    print examples
+    for example in examples:
+        x, y = example['coords'][:2]
+
+        # TEST
+        if y>8:
+            continue
+
+        X.append(x)
+        Y.append(y)
+        color = labels_to_colors[example['label']]
+        colors.append(color)
+        areas.append(example['coords'][2])
+
+    plt.scatter(X, Y, s=areas, c=colors)
+    plt.savefig('/tmp/nutrition.png')
+    plt.show()
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        filename = sys.argv[1]
-        src = cv.LoadImage(filename, cv.CV_LOAD_IMAGE_GRAYSCALE)
-    else:
-        import sys
-        sys.exit(0)
+    # if len(sys.argv) > 1:
+    #     filename = sys.argv[1]
+    #     src = cv.LoadImage(filename, cv.CV_LOAD_IMAGE_GRAYSCALE)
+    # else:
+    #     import sys
+    #     sys.exit(0)
+    # 
+    # is_text_image(filename)
 
-    is_text_image(filename)
+    plot_examples()
