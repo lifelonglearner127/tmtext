@@ -6,6 +6,7 @@ import os
 import sys
 import datetime
 
+
 from scrapy import signals
 from scrapy.xlib.pydispatch import dispatcher
 import boto
@@ -92,11 +93,12 @@ class StatsCollector(object):
 
 
 def _s3_cache_on_spider_close(spider, reason):
+    utcnow = datetime.datetime.utcnow()
     # upload cache
     bucket = S3Bucket(bucket_name, amazon_public_key, amazon_secret_key,
                       public=False)
     folder_path = cache.get_partial_request_path(
-        settings.HTTPCACHE_DIR, spider)
+        settings.HTTPCACHE_DIR, spider, utcnow)
     if not os.path.exists(folder_path):
         print('Path to upload does not exist:', folder_path)
         return
@@ -114,6 +116,9 @@ def _s3_cache_on_spider_close(spider, reason):
         pass
         #logger.error("Failed to load log files to S3. "
         #             "Check file path and amazon keys/permissions.")
+    # remove local cache
+    cache.clear_local_cache(settings.HTTPCACHE_DIR, spider,
+                            datetime.datetime.utcnow())
 
 
 class S3CacheUploader(object):
@@ -121,7 +126,8 @@ class S3CacheUploader(object):
     def __init__(self, crawler, *args, **kwargs):
         # check cache map - maybe such cache already exists?
         enable_cache_upload = True
-        utcdate = cache.UTC_NOW.strftime('%Y-%m-%d')
+        utcdate = cache.UTC_NOW if cache.UTC_NOW else datetime.datetime.utcnow()
+        utcdate = utcdate.strftime('%Y-%m-%d')
         cache_map = cache.get_cache_map(
             prefix=os.path.join(crawler._spider.name, utcdate)
         )
@@ -156,18 +162,21 @@ def _download_s3_file(key):
 class S3CacheDownloader(object):
 
     def _get_load_from_date(self):
-        arg = [a for a in sys.argv if 'load_from_s3_cache' in a]
+        arg = [a for a in sys.argv if 'load_s3_cache' in a]
         if arg:
             arg = arg[0].split('=')[1].strip()
             return datetime.datetime.strptime(arg, '%Y-%m-%d')
 
     def __init__(self, crawler, *args, **kwargs):
+        _load_from = self._get_load_from_date()
+        # remove local cache
+        cache.clear_local_cache(settings.HTTPCACHE_DIR, crawler._spider,
+                                _load_from)
         # download s3 cache
-        cache.UTC_NOW = self._get_load_from_date()
         conn = S3Connection(amazon_public_key, amazon_secret_key)
         bucket = conn.get_bucket(bucket_name)
         partial_path = cache.get_partial_request_path(
-            settings.HTTPCACHE_DIR, crawler._spider)
+            settings.HTTPCACHE_DIR, crawler._spider, _load_from)
         _cache_found = False
         _keys2download = []
         for key in bucket.list():

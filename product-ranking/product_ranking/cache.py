@@ -14,12 +14,15 @@
 import os
 import sys
 import datetime
+import shutil
 from exceptions import OSError
 
 from scrapy.contrib.httpcache import *
 from scrapy.contrib.downloadermiddleware.httpcache import HttpCacheMiddleware
 from scrapy.utils import gz
 from boto.s3.connection import S3Connection
+
+import settings
 
 UTC_NOW = datetime.datetime.utcnow()  # we don't init it in a local method
                                       # to avoid spreading one job across
@@ -68,8 +71,16 @@ def _slugify(value, replaces='\'"~@#$%^&*()[] _-/\:\?\=\,'):
     return value
 
 
-def get_partial_request_path(cache_dir, spider):
-    global UTC_NOW
+def clear_local_cache(cache_dir, spider, UTC_NOW=UTC_NOW):
+    if _get_searchterms_str():
+            if os.path.exists(get_partial_request_path(
+                    settings.HTTPCACHE_DIR, spider, UTC_NOW)):
+                shutil.rmtree(get_partial_request_path(
+                    cache_dir, spider, UTC_NOW))
+                print('Local cache cleared')
+
+
+def get_partial_request_path(cache_dir, spider, UTC_NOW=UTC_NOW):
     searchterms_str = _slugify(_get_searchterms_str())
     utc_today = UTC_NOW.strftime('%Y-%m-%d')
     if searchterms_str:
@@ -80,10 +91,10 @@ def get_partial_request_path(cache_dir, spider):
             cache_dir, spider.name, utc_today, 'url')
 
 
-def get_request_path_with_date(cache_dir, spider, request):
+def get_request_path_with_date(cache_dir, spider, request, UTC_NOW=UTC_NOW):
     key = request_fingerprint(request)
     result = os.path.join(
-        get_partial_request_path(cache_dir, spider),
+        get_partial_request_path(cache_dir, spider, UTC_NOW),
         _slugify(request.url),
         key[0:2], key
     )
