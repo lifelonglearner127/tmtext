@@ -55,6 +55,7 @@ def is_text_image(filename, is_url=False):
     # TODO
     # lines = list(set(map(lambda l: tuple([int(p) - int(p)%5 for p in l]), lines)))
 
+    nr_straight_lines = 0
     for line in lines:
         (pt1, pt2) = line
 
@@ -62,11 +63,14 @@ def is_text_image(filename, is_url=False):
         # (slope is either delta x/ delta y or the reverse)
         # add smoothing term in denominator in case of 0
         slope = min(abs(pt1[1] - pt2[1]), (abs(pt1[0] - pt2[0]))) / (max(abs(pt1[1] - pt2[1]), (abs(pt1[0] - pt2[0]))) + 0.01)
-        if abs(pt1[0] - pt2[0]) < abs(pt1[1] - pt2[1]):
-            # means it's a horizontal line
-            horizontals.append(pt1[0])
-        else:
-            verticals.append(pt1[1])
+        if slope < 0.1:
+            if abs(pt1[0] - pt2[0]) < abs(pt1[1] - pt2[1]):
+                # means it's a horizontal line
+                horizontals.append(pt1[0])
+            else:
+                verticals.append(pt1[1])
+        if slope < 0.05:
+            nr_straight_lines += 1
         slopes.append(slope)
         tilts.append(min(abs(pt1[1] - pt2[1]), (abs(pt1[0] - pt2[0]))))
         # print slope
@@ -94,11 +98,13 @@ def is_text_image(filename, is_url=False):
     print "median_tilt:", median_tilt
     median_differences = npmedian(nparray(differences))
     print "median_differences:", median_differences
-    print "nr_lines:", len(lines)
+    average_differences = sum(differences)/float(len(differences))
+    print "average_differences:", average_differences
+    print "nr_lines:", nr_straight_lines
 
     # print "sorted xs:", sorted(lines)
 
-    return (average_slope, median_slope, average_tilt, median_tilt, median_differences, len(lines))
+    return (average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_straight_lines)
 
 def plot_examples(examples=None):
     '''Plots in 2D space the points in the 4 lists given as input
@@ -131,8 +137,8 @@ def plot_examples(examples=None):
                     ]
         examples = []
         for image, label in images:
-            average_slope, median_slope, average_tilt, median_tilt, median_differences, nr_lines = is_text_image(image)
-            example = {'name': image, 'label': label, 'coords': (median_slope, median_differences, nr_lines)}
+            average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = is_text_image(image)
+            example = {'name': image, 'label': label, 'coords': (median_slope, average_differences, nr_lines)}
             examples.append(example)
         return examples
 
@@ -161,7 +167,7 @@ def plot_examples(examples=None):
         x, y = example['coords'][:2]
 
         # TEST
-        # if y>8:
+        # if y>20:
         #     continue
 
         X.append(x)
@@ -181,7 +187,7 @@ if __name__ == "__main__":
     # else:
     #     import sys
     #     sys.exit(0)
-    # 
+    
     # is_text_image(filename)
 
     plot_examples()
