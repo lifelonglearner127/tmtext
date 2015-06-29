@@ -75,6 +75,8 @@ def is_text_image(filename, is_url=False):
     average_tilt = sum(tilts)/float(len(tilts))
     median_tilt = npmedian(nparray(tilts))
     differences = []
+    horizontals = sorted(horizontals)
+    verticals = sorted(verticals)
     print "x_differences:"
     for (i, x) in enumerate(horizontals):
         if i > 0:
@@ -96,7 +98,7 @@ def is_text_image(filename, is_url=False):
 
     # print "sorted xs:", sorted(lines)
 
-    return (average_slope, median_slope, average_tilt, median_tilt, median_differences)
+    return (average_slope, median_slope, average_tilt, median_tilt, median_differences, len(lines))
 
 def plot_examples(examples=None):
     '''Plots in 2D space the points in the 4 lists given as input
@@ -129,8 +131,8 @@ def plot_examples(examples=None):
                     ]
         examples = []
         for image, label in images:
-            average_slope, median_slope, average_tilt, median_tilt, median_differences = is_text_image(image)
-            example = {'name': image, 'label': label, 'coords': (median_slope, median_tilt, median_differences)}
+            average_slope, median_slope, average_tilt, median_tilt, median_differences, nr_lines = is_text_image(image)
+            example = {'name': image, 'label': label, 'coords': (median_slope, median_differences, nr_lines)}
             examples.append(example)
         return examples
 
@@ -159,8 +161,8 @@ def plot_examples(examples=None):
         x, y = example['coords'][:2]
 
         # TEST
-        if y>8:
-            continue
+        # if y>8:
+        #     continue
 
         X.append(x)
         Y.append(y)
