@@ -65,6 +65,13 @@ def _get_searchterms_str():
     return arg_value
 
 
+def _get_load_from_date():
+    arg = [a for a in sys.argv if 'load_s3_cache' in a]
+    if arg:
+        arg = arg[0].split('=')[1].strip()
+        return datetime.datetime.strptime(arg, '%Y-%m-%d')
+
+
 def _slugify(value, replaces='\'"~@#$%^&*()[] _-/\:\?\=\,'):
     for char in replaces:
         value = value.replace(char, '-')
@@ -95,7 +102,7 @@ def get_request_path_with_date(cache_dir, spider, request, UTC_NOW=UTC_NOW):
     key = request_fingerprint(request)
     result = os.path.join(
         get_partial_request_path(cache_dir, spider, UTC_NOW),
-        _slugify(request.url),
+        _slugify(request.url),  #shouldn't be too long to avoid truncating keys!
         key[0:2], key
     )
     # check max filename length and truncate it if needed
@@ -116,17 +123,21 @@ class CustomFilesystemCacheStorage(FilesystemCacheStorage):
         key = request_fingerprint(request)
         searchterms_str = _slugify(_get_searchterms_str())
         if searchterms_str:
-            return os.path.join(self.cachedir, spider.name, searchterms_str,
-                                key[0:2], key)
+            result = os.path.join(self.cachedir, spider.name, searchterms_str,
+                                  key[0:2], key)
         else:
-            return os.path.join(self.cachedir, spider.name, key[0:2], key)
+            result = os.path.join(self.cachedir, spider.name, key[0:2], key)
+        print('    retrieving cache file', result)
+        return result
 
 
 class S3CacheStorage(FilesystemCacheStorage):
     """ For uploading cache to S3 """
 
     def _get_request_path(self, spider, request):
-        return get_request_path_with_date(self.cachedir, spider, request)
+        utcnow = _get_load_from_date()
+        return get_request_path_with_date(self.cachedir, spider, request,
+                                          utcnow)
 
 
 class CustomCachePolicy(DummyPolicy):

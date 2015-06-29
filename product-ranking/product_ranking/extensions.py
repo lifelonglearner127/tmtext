@@ -161,14 +161,10 @@ def _download_s3_file(key):
 
 class S3CacheDownloader(object):
 
-    def _get_load_from_date(self):
-        arg = [a for a in sys.argv if 'load_s3_cache' in a]
-        if arg:
-            arg = arg[0].split('=')[1].strip()
-            return datetime.datetime.strptime(arg, '%Y-%m-%d')
-
     def __init__(self, crawler, *args, **kwargs):
-        _load_from = self._get_load_from_date()
+        _load_from = cache._get_load_from_date()
+        _blocker_fname = '/tmp/_cache_spider_blocker'
+        os.system("echo '1' > %s" % _blocker_fname)
         # remove local cache
         cache.clear_local_cache(settings.HTTPCACHE_DIR, crawler._spider,
                                 _load_from)
@@ -200,8 +196,9 @@ class S3CacheDownloader(object):
         """
         for key2download in _keys2download:
             _download_s3_file(key2download)
-        # TODO: it's for debugging! remove me
-        while os.path.exists('/tmp/_removeme'):
+        print('Cache downloaded; ready for re-parsing the data, remove'
+              ' %s file when you are ready' % _blocker_fname)
+        while os.path.exists(_blocker_fname):
             import time
             time.sleep(0.5)
 
