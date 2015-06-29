@@ -20,7 +20,7 @@ cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 today = date.today()
 
-sql_changed_products = "select sample_url, website, changes_in_structure from console_reportresult where report_date = '%s'" % today.isoformat()
+sql_changed_products = "select id, sample_url, website, changes_in_structure from console_reportresult where report_date = '%s'" % today.isoformat()
 
 cur.execute(sql_changed_products)
 rows = cur.fetchall()
@@ -41,7 +41,9 @@ for website in website_list:
             number_of_reported_products = number_of_reported_products + 1
 
         if row["website"] == website and row["changes_in_structure"] > 0:
-            urls.append(row["sample_url"])
+            urls.append(row["sample_url"] +
+                        "\n    - number of changed parts: " + row["changes_in_structure"] +
+                        "\n    - detail view: http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + row["id"])
 
     urls = list(set(urls))
     number_of_changed_products = len(urls)
