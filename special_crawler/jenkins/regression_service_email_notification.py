@@ -43,7 +43,7 @@ for website in website_list:
         if row["website"] == website and row["changes_in_structure"] > 0:
             urls.append(row["sample_url"] +
                         "\n    - number of changed parts: " + row["changes_in_structure"] +
-                        "\n    - detail view: http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + row["id"])
+                        "\n    - detail view: http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"]))
 
     urls = list(set(urls))
     number_of_changed_products = len(urls)
