@@ -309,6 +309,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'url', response.url)
             return self._gen_location_request(response)
 
+        _na_text = response.xpath(
+            '//*[contains(@class, "NotAvailable")]'
+            '[contains(@style, "block")]/text()'
+        ).extract()
+        if _na_text:
+            if 'not available' in _na_text[0].lower():
+                product['is_out_of_stock'] = True
+
         wv = WalmartVariants()
         wv.setupSC(response)
         product['variants'] = wv._variants()
