@@ -99,7 +99,6 @@ class AsdaProductsSpider(BaseProductsSpider):
         prod['buyer_reviews'] = BuyerReviews(num, avg, by_star)
         return prod
 
-
     def _search_page_error(self, response):
         try:
             data = json.loads(response.body_as_unicode())
