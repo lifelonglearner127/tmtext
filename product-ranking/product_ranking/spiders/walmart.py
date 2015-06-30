@@ -360,11 +360,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _on_api_response(self, response):
         original_id = response.meta['original_id']
         current_id = response.meta['current_id']
+        original_response = response.meta['original_response_']
         if not 'product' in response.meta:
             response.meta['product'] = {}
         product = response.meta['product']
-        product['_walmart_original_price'] = -10
-        product['_walmart_original_oos'] = False
         j = json.loads(response.body)
         if str(j['itemId']) != str(original_id):
             self.log('API: itemId mismatch at URL %s' % response.url,
@@ -374,12 +373,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 = j.get('stock', '').lower() == 'not available'
             product['_walmart_original_price'] \
                 = j.get('price', j.get('salePrice'))
+        original_response.meta['product'] = product
+        yield self.parse_product(original_response)
 
-    def _get_walmart_api_data_for_item_id(self, original_id, current_id, meta):
+    def _get_walmart_api_data_for_item_id(self, original_response, original_id, current_id, meta):
         api_url = 'http://api.walmartlabs.com/v1/items/%s?apiKey=%s&format=json'
         api_key = _get_walmart_api_key()
         meta['original_id'] = original_id
         meta['current_id'] = current_id
+        meta['original_response_'] = original_response
         return Request(
             url=api_url % (original_id, api_key),
             callback=self._on_api_response, meta=meta
@@ -393,17 +395,17 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             response.meta['product'] = {}
         response.meta['product']['_walmart_original_id'] = original_parent_id
         response.meta['product']['_walmart_current_id'] = current_id
-        yield self.parse_product(response)
         if original_parent_id:
             # ok we've been redirected and we get the original item ID. Now:
             # * perform API call (in method _get_walmart_api_data_from_item_id
             # * get the original ("parent") item Price and Out_of_stock (in _on_api_response)
-            # * replace the existing data with the original Price and OOS TODO - where?!!!!
+            # * replace the existing data with the original Price and OOS in WalmartRedirectedItemFieldReplace
             yield self._get_walmart_api_data_for_item_id(
+                original_response=response,
                 original_id=original_parent_id, current_id=current_id,
                 meta=response.meta)
-        #else:
-        #    yield self.parse_product(response)
+        else:
+            yield self.parse_product(response)
 
     def _search_page_error(self, response):
         path = urlparse.urlsplit(response.url)[2]
