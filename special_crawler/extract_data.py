@@ -52,6 +52,7 @@ class Scraper():
             "event",
             "product_id",
             "site_id",
+            "walmart_no",
             "date",
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
