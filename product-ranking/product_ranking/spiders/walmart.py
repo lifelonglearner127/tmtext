@@ -5,6 +5,7 @@ import pprint
 import re
 import urlparse
 import hashlib
+import random
 import re
 import string
 from datetime import datetime
@@ -61,8 +62,11 @@ def _get_walmart_original_redirect_item_id(response):
 
 
 def _get_walmart_api_key():
-    # TODO: implement random!
-    return 'yahac2smt4p4fjhgpz394kbp'
+    # TODO: implement loading from a config file!
+    keys = ['yahac2smt4p4fjhgpz394kbp', 'upg664pajfcj7scau9ajq5zq',
+            '63y2yz3qnes9vwn97tjpshtb']
+    key = random.choice(keys)
+    return key
 
 
 class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
