@@ -426,22 +426,78 @@ class BaseValidator(object):
         return True
 
     def _validate_google_source_site(self, val):
+        if not isinstance(val, (str, unicode)) and not val:
+            return False
+
+        try:
+            val = json.loads(val)
+        except:
+            return False
+
+        if not isinstance(val, dict):
+            return False
+
+        for v in val:
+            if 'currency' not in v:
+                return False
+            if 'price' not in v:
+                return False
+
         return True
 
     def _validate_is_mobile_agent(self, val):
+        if val in ('', None):
+            return True
         return val in ('True', 'False')
 
     def _validate_is_single_result(self, val):
+        if val in ('', None):
+            return True
         return val in ('True', 'False')
 
     def _validate_scraped_results_per_page(self, val):
-        return True
+        if val in ('', None):
+            return True
+        if isinstance(val, int):
+            return True
+        return False
 
     def _validate_sponsored_links(self, val):
+        if val in ('', None):
+            return True
+
+        if isinstance(val, (str, unicode)):
+            try:
+                val = json.loads(val)
+            except:
+                return False
+
+        if isinstance(val, (tuple, list)):
+            for v in val:
+                if not isinstance(v, dict):
+                    return False
         return True
 
     def _validate_category(self, val):
-        return True
+
+        if val is '':
+            return True
+
+        if isinstance(val, (tuple, list)):
+
+            if not val:
+                return True
+
+            for v in val:
+                if isinstance(v, dict):
+                    try:
+                        v['category']
+                        v['rank']
+                        return True
+                    except KeyError:
+                        return False
+
+        return False
 
     def _validate_bestseller_rank(self, val):
         if isinstance(val, int):
@@ -524,6 +580,8 @@ class BaseValidator(object):
         return True
 
     def _validate_shelf_page_out_of_stock(self, val):
+        if val in ('', None):
+            return True
         return val in (0, 1)
 
     def _get_failed_fields(self, data, add_row_index=False):
