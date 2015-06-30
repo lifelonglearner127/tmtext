@@ -70,13 +70,14 @@ class RandomProxy(object):
         self._insert_proxy_into_request(request)
 
     def process_exception(self, request, exception, spider):
-        proxy = request.meta['proxy']
-        log.msg('Removing failed proxy <%s>, %d proxies left' % (
-                    proxy, len(self.proxies)))
-        try:
-            del self.proxies[proxy]
-        except ValueError:
-            pass
-        except KeyError:
-            pass
-        self._insert_proxy_into_request(request)
+        proxy = request.meta.get('proxy', None)
+        if proxy:
+            log.msg('Removing failed proxy <%s>, %d proxies left' % (
+                        proxy, len(self.proxies)))
+            try:
+                del self.proxies[proxy]
+            except ValueError:
+                pass
+            except KeyError:
+                pass
+            self._insert_proxy_into_request(request)
