@@ -480,7 +480,7 @@ class BaseValidator(object):
 
     def _validate_category(self, val):
 
-        if val is '':
+        if val in (None, ''):
             return True
 
         if isinstance(val, (tuple, list)):
