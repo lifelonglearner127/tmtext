@@ -20,7 +20,7 @@ cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 today = date.today()
 
-sql_changed_products = "select id, sample_url, website, changes_in_structure from console_reportresult where report_date = '%s'" % today.isoformat()
+sql_changed_products = "select id, sample_url, website, changes_in_structure, sample_json, current_json from console_reportresult where report_date = '%s'" % today.isoformat()
 
 cur.execute(sql_changed_products)
 rows = cur.fetchall()
@@ -33,6 +33,8 @@ for row in rows:
     if row["website"] not in website_list:
         website_list.append(row["website"])
 
+urls_version_changed = []
+
 for website in website_list:
     number_of_reported_products = 0
 
@@ -41,13 +43,24 @@ for website in website_list:
             number_of_reported_products = number_of_reported_products + 1
 
         if row["website"] == website and row["changes_in_structure"] > 0:
-            urls.append(row["sample_url"] +
-                        "\n    - number of changed parts: " + str(row["changes_in_structure"]) +
-                        "\n    - detail view: http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"]))
+            sample_json = json.loads(row["sample_json"])
+            current_json = json.loads(row["current_json"])
+
+            if sample_json["scraper"] != current_json["scraper"]:
+                urls_version_changed.append(row["sample_url"])
+                urls.append(row["sample_url"] +
+                            "\n    - number of changed parts: " + str(row["changes_in_structure"]) +
+                            "\n    - version changed(Yes/No): Yes" +
+                            "\n    - detail view: http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"]))
+            else:
+                urls.append(row["sample_url"] +
+                            "\n    - number of changed parts: " + str(row["changes_in_structure"]) +
+                            "\n    - version changed(Yes/No): No" +
+                            "\n    - detail view: http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"]))
 
     urls = list(set(urls))
     number_of_changed_products = len(urls)
-
+    number_of_version_changed_products = len(urls_version_changed)
     changed_product_urls = "\n" .join(urls)
 
     changed_product_urls = "Following product urls are needed to check.\n" + changed_product_urls
@@ -70,9 +83,10 @@ for website in website_list:
     print not_product_urls
 
     website_header = "- " + website + "\n" + "Total tested product numbers: %d\n" \
-                                             "Problematic product numbers: %d\n" \
+                                             "Product numbers of content structure changed: %d\n" \
+                                             "Product numbers of version changed: %d\n" \
                                              "Invalid product numbers: %d\n" \
-                                             "Web console: %s\n" % (number_of_reported_products + number_of_invalid_products, number_of_changed_products, number_of_invalid_products, "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n")
+                                             "Web console: %s\n" % (number_of_reported_products + number_of_invalid_products, number_of_changed_products, number_of_version_changed_products, number_of_invalid_products, "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n")
     email_content += (website_header + changed_product_urls + not_product_urls)
 
 
