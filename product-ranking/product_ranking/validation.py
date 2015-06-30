@@ -331,7 +331,7 @@ class BaseValidator(object):
         return True
 
     def _validate_special_pricing(self, val):
-        return val in (0,1)
+        return val in (0, 1)
 
     def _validate_ranking(self, val):
         if isinstance(val, int):
@@ -391,9 +391,9 @@ class BaseValidator(object):
         return True
 
     def _validate_buyer_reviews(self, val):
-        #print 'VAL', val
-        #import pdb
-        #pdb.set_trace()
+        # print 'VAL', val
+        # import pdb
+        # pdb.set_trace()
         if val in (0, True, False, ''):
             return True
         if isinstance(val, (str, unicode)):
@@ -429,10 +429,10 @@ class BaseValidator(object):
         return True
 
     def _validate_is_mobile_agent(self, val):
-        return True
+        return val in ('True', 'False')
 
     def _validate_is_single_result(self, val):
-        return True
+        return val in ('True', 'False')
 
     def _validate_scraped_results_per_page(self, val):
         return True
@@ -511,12 +511,20 @@ class BaseValidator(object):
         return val in (True, False, None, '')
 
     def _validate_variants(self, val):
-        # TODO: implement
+        print val
+        if isinstance(val, (str, unicode)):
+            try:
+                val = json.loads(val)
+            except:
+                return False
+        if isinstance(val, dict):
+            val = val['variants']
+        if val and not isinstance(val, (list, tuple)):
+            return False
         return True
 
     def _validate_shelf_page_out_of_stock(self, val):
-        # TODO: implement
-        return True
+        return val in (0, 1)
 
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
