@@ -204,3 +204,9 @@ class SiteProductItem(Item):
     variants = Field()
 
     shipping = Field()  # now for Walmart only; may change in the future
+
+    _walmart_redirected = Field()  # for Walmart only; see #2126
+    _walmart_original_id = Field()
+    _walmart_current_id = Field()
+    _walmart_original_price = Field()
+    _walmart_original_oos = Field()  # oos = out of stock

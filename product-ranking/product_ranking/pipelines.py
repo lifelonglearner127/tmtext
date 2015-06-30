@@ -18,6 +18,8 @@ try:
 except ImportError:
     pass  # Optional import for test.
 
+from .items import Price
+
 
 class PipelineFormatter(logformatter.LogFormatter):
     # redefine this method to change log level for DropItem exception
@@ -53,6 +55,23 @@ class CutFromTitleTagsAndReturnStringOnly(object):
         if isinstance(title, str) or isinstance(title, unicode):
             return Selector(text=title).xpath("string()").extract()[0]
         return title
+
+
+class WalmartRedirectedItemFieldReplace(object):
+    """ Replaces fields of the "variant" item with the data of the "parent"
+        (original) one
+    """
+    def process_item(self, item, spider):
+        _walmart_current_id = item.get('_walmart_current_id', None)
+        _walmart_original_id = item.get('_walmart_original_id', None)
+        _walmart_original_oos = item.get('_walmart_original_oos', None)
+        _walmart_original_price = item.get('_walmart_original_price', None)
+        if _walmart_original_oos:
+            item['is_out_of_stock'] = _walmart_original_oos
+        if _walmart_original_price:
+            item['price'] = Price(priceCurrency=item['price'].priceCurrency,
+                                  price=_walmart_original_price)
+        return item
 
 
 class SetMarketplaceSellerType(object):

@@ -5,6 +5,7 @@ import pprint
 import re
 import urlparse
 import hashlib
+import re
 import string
 from datetime import datetime
 import lxml.html
@@ -29,6 +30,39 @@ is_empty = lambda x, y="": x[0] if x else y
 def get_string_from_html(xp, link):
     loc = is_empty(link.xpath(xp).extract())
     return Selector(text=loc).xpath('string()').extract()
+
+
+def get_walmart_id_from_url(url):
+    """ Returns item ID from the given URL """
+    # possible variants:
+    # http://walmart.com/ip/37002591?blabla=1
+    # http://www.walmart.com/ip/Pampers-Swaddlers-Disposable-Diapers-Economy-Pack-Plus-Choose-your-Size/27280840
+    if '?' in url:
+        url = url.rsplit('?', 1)[0]
+    if '/ip/' in url:
+        url = url.split('/ip/')[1]
+    if re.match(r'^[0-9]{3,20}$', url):
+        return url
+    g = re.search(r'\/([0-9]{3,20})', url)
+    if not g:
+        return
+    return g.group(1)
+
+
+def _get_walmart_original_redirect_item_id(response):
+    """ Detects if the item was redirected, see BZ #2126
+    :return: None if no redirect; item ID otherwise
+    """
+    redirects = response.request.meta.get('redirect_urls')
+    if not redirects:
+        return
+    original_url = redirects[0]
+    return get_walmart_id_from_url(original_url)
+
+
+def _get_walmart_api_key():
+    # TODO: implement random!
+    return 'yahac2smt4p4fjhgpz394kbp'
 
 
 class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
@@ -65,7 +99,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     FIXME: Currently we redirect infinitely, which could be a problem.
     """
     name = 'walmart_products'
-    allowed_domains = ["walmart.com", "msn.com"]
+    allowed_domains = ["walmart.com", "msn.com", 'api.walmartlabs.com']
 
     default_hhl = [404, 500, 502, 520]
 
@@ -323,8 +357,55 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         return self._start_related(response)
 
+    def _on_api_response(self, response):
+        original_id = response.meta['original_id']
+        current_id = response.meta['current_id']
+        original_response = response.meta['original_response_']
+        if not 'product' in response.meta:
+            response.meta['product'] = {}
+        product = response.meta['product']
+        j = json.loads(response.body)
+        if str(j['itemId']) != str(original_id):
+            self.log('API: itemId mismatch at URL %s' % response.url,
+                     level=ERROR)
+        else:
+            product['_walmart_original_oos'] \
+                = j.get('stock', '').lower() == 'not available'
+            product['_walmart_original_price'] \
+                = j.get('price', j.get('salePrice'))
+        original_response.meta['product'] = product
+        yield self.parse_product(original_response)
+
+    def _get_walmart_api_data_for_item_id(self, original_response, original_id, current_id, meta):
+        api_url = 'http://api.walmartlabs.com/v1/items/%s?apiKey=%s&format=json'
+        api_key = _get_walmart_api_key()
+        meta['original_id'] = original_id
+        meta['current_id'] = current_id
+        meta['original_response_'] = original_response
+        return Request(
+            url=api_url % (original_id, api_key),
+            callback=self._on_api_response, meta=meta
+        )
+
     def _parse_single_product(self, response):
-        return self.parse_product(response)
+        original_parent_id = _get_walmart_original_redirect_item_id(response)
+        current_id = get_walmart_id_from_url(response.url)
+        # store current ID to identify it later to match the products
+        if 'product' not in response.meta:
+            response.meta['product'] = {}
+        response.meta['product']['_walmart_original_id'] = original_parent_id
+        response.meta['product']['_walmart_current_id'] = current_id
+        if original_parent_id:
+            # ok we've been redirected and we get the original item ID. Now:
+            # * perform API call (in method _get_walmart_api_data_from_item_id
+            # * get the original ("parent") item Price and Out_of_stock (in _on_api_response)
+            # * replace the existing data with the original Price and OOS in WalmartRedirectedItemFieldReplace
+            yield self._get_walmart_api_data_for_item_id(
+                original_response=response,
+                original_id=original_parent_id, current_id=current_id,
+                meta=response.meta)
+        else:
+            yield self.parse_product(response)
 
     def _search_page_error(self, response):
         path = urlparse.urlsplit(response.url)[2]
