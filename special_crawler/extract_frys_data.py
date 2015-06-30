@@ -444,6 +444,7 @@ class FrysScraper(Scraper):
         for r in rows:
             if "Manufacturer" in r:
                 brand = r.replace("Manufacturer", "").strip()
+                brand = brand.replace(": ", "")
         return brand
 
     ##########################################
