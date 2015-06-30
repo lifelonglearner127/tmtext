@@ -66,6 +66,8 @@ class MacysScraper(Scraper):
         #    return True
         if len(self.tree_html.xpath("//h1[contains(@class,'productTitle')]")) < 1:
             return True
+        if len(self.tree_html.xpath("//div[@id='viewCollectionItemsButton']")) > 0:
+            return True
         return False
 
     ##########################################
@@ -160,7 +162,8 @@ class MacysScraper(Scraper):
         link = re.findall(r"MACYS\.adLinkPopUp\.definePopup\('(.*?)'", script, re.DOTALL)
         try:
             link = "http://www1.macys.com/shop/media/popup/?popupFileName=%s" % link[0]
-            contents = urllib.urlopen(link).read()
+            req = urllib2.Request(link, headers={'User-Agent' : "Magic Browser"})
+            contents = urllib2.urlopen(req).read()
             # document.location.replace('
             tree = html.fromstring(contents)
             rows = tree.xpath("//text()")
@@ -205,6 +208,17 @@ class MacysScraper(Scraper):
                     imgs = img[1].replace('"','').replace("'","").split(",")
                     for r in imgs:
                         image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
+
+        image_url_additional3 = re.findall(r"MACYS.pdp.imageZoomer = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_additional3) > 0:
+            m = re.findall(r"imgList: '(.*?)'", image_url_additional3[0], re.DOTALL)
+            if len(m) > 0:
+                image_urls = m[0].split(',')
+                image_url_additional = []
+                for r in image_urls:
+                    image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
+                if len(image_url_additional) > 0:
+                    return image_url_additional
 
         image_url = self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img/@src")
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
