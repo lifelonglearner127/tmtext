@@ -12,6 +12,7 @@ class NutritionImagesItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
     image = scrapy.Field()
-    slope_median = scrapy.Field()
     slope_average = scrapy.Field()
+    distance_average = scrapy.Field()
+    nr_lines = scrapy.Field()
     is_likely_text = scrapy.Field()

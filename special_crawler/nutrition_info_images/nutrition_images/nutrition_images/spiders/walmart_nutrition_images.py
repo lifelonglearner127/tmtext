@@ -4,6 +4,8 @@ from scrapy.http import Request
 import json
 from nutrition_images.items import NutritionImagesItem
 from detect_text_houghlines import is_text_image
+from urllib import splitquery
+from urlparse import parse_qs
 
 class WalmartNutritionImagesSpider(scrapy.Spider):
     name = "walmart_nutrition_images"
@@ -12,10 +14,22 @@ class WalmartNutritionImagesSpider(scrapy.Spider):
         'http://www.walmart.com/browse/food/snacks-cookies-chips/976759_976787?cat_id=976759_976787',
     )
 
+    # how many pages to parse
+    MAX_PAGES = 5
+
     def parse(self, response):
         urls = map(lambda u: "http://www.walmart.com" + u, response.xpath("//a[@class='js-product-title']/@href").extract())
         for url in urls:
             yield Request(url, callback=self.parse_url)
+
+        # parse next page
+        root_url, query = splitquery(response.url)
+        # if we are on first page
+        parsed_q = parse_qs(query)
+        if 'page' not in parsed_q:
+            for page in range(2, self.MAX_PAGES+1):
+                next_page = root_url + "?" + query + "&page=%s" % str(page)
+                yield Request(next_page, callback = self.parse)
 
     def parse_url(self, response):
         # response.xpath("//title//text()").extract()
@@ -46,8 +60,12 @@ class WalmartNutritionImagesSpider(scrapy.Spider):
         for image in images_carousel:
             item = NutritionImagesItem()
             item['image'] = image
-            (item['slope_average'], item['slope_median']) = is_text_image(image, is_url=True)
-            item['is_likely_text'] = item['slope_median'] < 0.02
+            (average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_straight_lines) = \
+            is_text_image(image, is_url=True)
+            (item['slope_average'], item['distance_average'], item['nr_lines']) = average_slope, average_differences, nr_straight_lines
+
+            # TODO: predict with classifier
+            # item['is_likely_text'] = item['slope_median'] < 0.02
 
             yield item
 
