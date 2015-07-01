@@ -148,16 +148,16 @@ def plot_examples(examples=None):
         return examples
 
     def get_examples_from_files():
-        examples_file = '/home/ana/code/tmtext/special_crawler/nutrition_info_images/nutrition_images/nutrition_images_actual.csv'
+        examples_file = '/home/ana/code/tmtext/special_crawler/nutrition_info_images/nutrition_images_training.csv'
         examples = []
         with open(examples_file) as f:
             # skip headers line
             f.readline()
             ireader = csv.reader(f)
             for row in ireader:
-                label_bool = row[1]
-                image = row[2]
-                label = 'TP' if label_bool == 'True' else 'TN'
+                label_raw = row[1]
+                image = row[0]
+                label = 'TP' if label_raw == '1' else 'TN'
                 average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = is_text_image(image, is_url=True)
                 example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
                 examples.append(example)

@@ -4,7 +4,7 @@ from detect_text_houghlines import is_text_image
 import numpy as np
 import matplotlib.pyplot as plt
 
-def read_training_set(path="nutrition_images/nutrition_images_actual.csv"):
+def read_training_set(path="nutrition_images_training.csv"):
     '''Reads the training set from a file, returns examples and their labels (2 lists)
     examples will have the following format:
     list of strings representing the image names
@@ -21,15 +21,13 @@ def read_training_set(path="nutrition_images/nutrition_images_actual.csv"):
         # omit headers
         f.readline()
         for row in reader:
-            # examples.append((row[0], row[3]))
-            # examples.append((row[0], row[0]))
-            image = row[2]
+            image = row[0]
             names.append(image)
 
             average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_straight_lines = \
             is_text_image(image, is_url=True)
             examples.append((average_slope, average_differences, nr_straight_lines))
-            labels.append(1 if row[1]=='True' else 0)
+            labels.append(int(row[1]))
     return (names, examples, labels)
 
 
@@ -41,11 +39,17 @@ def train():
 
 if __name__ == '__main__':
     trained, clf = train()
-    imgs, examples, labels = read_training_set("nutrition_images/nutrition_images.csv.bak")
+    imgs, examples, labels = read_training_set("nutrition_images_test.csv")
+    nr_predicted = 0
     for idx, example in enumerate(examples):
         if imgs[idx] not in trained:
             predicted = clf.predict(example)
             print imgs[idx], labels[idx], predicted
+            with open('nutrition_images_predicted.csv', 'a+') as out:
+                out.write(",".join([imgs[idx], str(predicted[0])]) + "\n")
+            nr_predicted += 1
+
+    print "Predicted examples:", nr_predicted
 
     # Plot the decision boundary
     w = clf.coef_[0]
@@ -59,4 +63,4 @@ if __name__ == '__main__':
 
     plt.scatter([e[0] for e in examples], [e[1] for e in examples], c=['red' if l==1 else 'blue' for l in labels])
 
-    plt.show()
+    # plt.show()
