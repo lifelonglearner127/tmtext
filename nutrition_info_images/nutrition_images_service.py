@@ -16,4 +16,4 @@ def is_nutrition_image():
     return render_template('input_template.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=8080)
