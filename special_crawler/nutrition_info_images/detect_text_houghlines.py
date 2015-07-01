@@ -6,6 +6,7 @@ from math import sin, cos, sqrt, pi
 import cv2.cv as cv
 import urllib2
 from numpy import array as nparray, median as npmedian
+import csv
 
 # toggle between CV_HOUGH_STANDARD and CV_HOUGH_PROBILISTIC
 USE_STANDARD = False
@@ -63,13 +64,17 @@ def is_text_image(filename, is_url=False):
         # (slope is either delta x/ delta y or the reverse)
         # add smoothing term in denominator in case of 0
         slope = min(abs(pt1[1] - pt2[1]), (abs(pt1[0] - pt2[0]))) / (max(abs(pt1[1] - pt2[1]), (abs(pt1[0] - pt2[0]))) + 0.01)
-        if slope < 0.1:
+        # if slope < 0.1:
+        # if slope < 5:
+        if slope < 0.05:
             if abs(pt1[0] - pt2[0]) < abs(pt1[1] - pt2[1]):
                 # means it's a horizontal line
                 horizontals.append(pt1[0])
             else:
                 verticals.append(pt1[1])
         if slope < 0.05:
+        # if slope < 5:
+        # if slope < 0.1:
             nr_straight_lines += 1
         slopes.append(slope)
         tilts.append(min(abs(pt1[1] - pt2[1]), (abs(pt1[0] - pt2[0]))))
@@ -115,7 +120,7 @@ def plot_examples(examples=None):
     'coords' - tuple of coordinates
     '''
 
-    def get_examples():
+    def get_examples_from_images():
         images = [
                         ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition2.jpg', 'TN'),
                         ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition3_falsepos.jpg', 'FP'),
@@ -138,13 +143,30 @@ def plot_examples(examples=None):
         examples = []
         for image, label in images:
             average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = is_text_image(image)
-            example = {'name': image, 'label': label, 'coords': (median_slope, average_differences, nr_lines)}
+            example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
             examples.append(example)
+        return examples
+
+    def get_examples_from_files():
+        examples_file = '/home/ana/code/tmtext/special_crawler/nutrition_info_images/nutrition_images/nutrition_images_actual.csv'
+        examples = []
+        with open(examples_file) as f:
+            # skip headers line
+            f.readline()
+            ireader = csv.reader(f)
+            for row in ireader:
+                label_bool = row[1]
+                image = row[2]
+                label = 'TP' if label_bool == 'True' else 'TN'
+                average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = is_text_image(image, is_url=True)
+                example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
+                examples.append(example)
         return examples
 
     # hardcode list of examples
     if not examples:
-        examples = get_examples()
+        examples = get_examples_from_files()
+        examples += get_examples_from_images()
 
     labels_to_colors = {
     'TP' : 'red',
@@ -165,10 +187,6 @@ def plot_examples(examples=None):
     print examples
     for example in examples:
         x, y = example['coords'][:2]
-
-        # TEST
-        # if y>20:
-        #     continue
 
         X.append(x)
         Y.append(y)
