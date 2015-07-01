@@ -1,1 +1,0 @@
-../detect_text_houghlines.py
