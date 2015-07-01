@@ -445,16 +445,19 @@ class BaseValidator(object):
 
         return True
 
+    # Added.
     def _validate_is_mobile_agent(self, val):
         if val in ('', None):
             return True
         return val in ('True', 'False')
 
+    # Added.
     def _validate_is_single_result(self, val):
         if val in ('', None):
             return True
         return val in ('True', 'False')
 
+    # Added.
     def _validate_scraped_results_per_page(self, val):
         if val in ('', None):
             return True
@@ -462,6 +465,7 @@ class BaseValidator(object):
             return True
         return False
 
+    # Added.
     def _validate_sponsored_links(self, val):
         if val in ('', None):
             return True
@@ -478,6 +482,7 @@ class BaseValidator(object):
                     return False
         return True
 
+    # Category field. Added.
     def _validate_category(self, val):
 
         if val in (None, ''):
@@ -490,12 +495,9 @@ class BaseValidator(object):
 
             for v in val:
                 if isinstance(v, dict):
-                    try:
-                        v['category']
-                        v['rank']
+                    if v.get('category') and v.get('rank'):
                         return True
-                    except KeyError:
-                        return False
+                    return False
 
         return False
 
@@ -580,7 +582,7 @@ class BaseValidator(object):
         return True
 
     def _validate_shelf_page_out_of_stock(self, val):
-        if val in ('', None):
+        if val is '':
             return True
         return val in (0, 1)
 
