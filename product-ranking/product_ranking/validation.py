@@ -396,14 +396,14 @@ class BaseValidator(object):
         # pdb.set_trace()
         if val in (0, True, False, ''):
             return True
-        if isinstance(val, (str, unicode)):
+        if isinstance(val, basestring):
             try:
                 val = json.loads(val)
             except:
                 return False
         if isinstance(val, dict):
             val = val['buyer_reviews']
-        if isinstance(val, (unicode, str)):
+        if isinstance(val, basestring):
             val = json.loads(val)
         if not val:
             return True  # empty object?
@@ -426,7 +426,7 @@ class BaseValidator(object):
         return True
 
     def _validate_google_source_site(self, val):
-        if not isinstance(val, (str, unicode)) and not val:
+        if not isinstance(val, basestring) and not val:
             return False
 
         try:
@@ -470,7 +470,7 @@ class BaseValidator(object):
         if val in ('', None):
             return True
 
-        if isinstance(val, (str, unicode)):
+        if isinstance(val, basestring):
             try:
                 val = json.loads(val)
             except:
@@ -532,7 +532,7 @@ class BaseValidator(object):
     def _validate_marketplace(self, val):
         if val == '':
             return True
-        if isinstance(val, (str, unicode)):
+        if isinstance(val, basestring):
             try:
                 val = json.loads(val)
             except:
@@ -547,7 +547,7 @@ class BaseValidator(object):
         return True
 
     def _validate_prime(self, val):
-        if isinstance(val, (str, unicode)):
+        if isinstance(val, basestring):
             if 'Prime' in val:
                 return 4 < len(val) < 20
         return val in (True, False, None, '')
@@ -555,7 +555,7 @@ class BaseValidator(object):
     def _validate_recent_questions(self, val):
         if val == '':
             return True
-        if isinstance(val, (str, unicode)):
+        if isinstance(val, basestring):
             try:
                 val = json.loads(val)
             except:
@@ -569,21 +569,20 @@ class BaseValidator(object):
         return val in (True, False, None, '')
 
     def _validate_variants(self, val):
-        if isinstance(val, (str, unicode)):
+
+        if isinstance(val, basestring):
             try:
                 val = json.loads(val)
             except:
                 return False
-        if isinstance(val, dict):
-            val = val['variants']
+
         if val and not isinstance(val, (list, tuple)):
             return False
+
         return True
 
     def _validate_shelf_page_out_of_stock(self, val):
-        if val in ('', None):
-            return True
-        return val in (0, 1)
+        return val in ('', 0, 1)
 
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
@@ -705,6 +704,7 @@ class BaseValidator(object):
                 and 'ranking' not in self.settings.ignore_fields):
             # validate ranking (to make sure no products are missing)
             ranking_values = _extract_ranking(data)
+
             if ranking_values is None:
                 found_issues.update(OrderedDict(ranking='field not found'))
             if not self._check_ranking_consistency(ranking_values):
@@ -712,13 +712,16 @@ class BaseValidator(object):
                     OrderedDict(ranking='some products missing'))
 
         log_issues = self._check_logs()
+
         if not self.settings.ignore_log_errors:
             if 'ERRORS' in log_issues:
                 found_issues.update(OrderedDict(log_issues='errors found'))
+
         if not self.settings.ignore_log_duplications:
             if 'DUPLICATIONS' in log_issues:
                 found_issues.update(
                     OrderedDict(log_issues='duplicated requests found'))
+
         if not self.settings.ignore_log_filtered:
             if 'FILTERED' in log_issues:
                 found_issues.update(
