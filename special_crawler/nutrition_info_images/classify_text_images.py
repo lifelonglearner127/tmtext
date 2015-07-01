@@ -7,6 +7,7 @@ from math import sin, cos, sqrt, pi
 import cv2.cv as cv
 import urllib2
 from numpy import array as nparray, median as npmedian
+from sklearn.externals import joblib
 
 # toggle between CV_HOUGH_STANDARD and CV_HOUGH_PROBILISTIC
 USE_STANDARD = False
@@ -246,23 +247,33 @@ def read_images_set(path="nutrition_images_training.csv"):
     return (names, examples, labels)
 
 
-def train(training_set, serialize = False):
+def train(training_set, serialize_file=None):
     '''Trains text image classifier.
     :param training_set: training set of images, tuple of lists:
     images, features and labels, as returned by read_images_set.
+    :param serialize_file: the path of the file to serialize the classifier to, optional
     :return: tuple of images list and classifier object
     '''
     imgs, X, y = training_set
     clf = svm.SVC(kernel='linear')
     clf.fit(X, y)
-    return imgs, clf
 
-def predict(clf, test_set, from_serialized_file=None):
+    if serialize_file:
+        joblib.dump(clf, serialize_file)
+
+    return imgs, clf    
+
+def predict(test_set, clf=None, from_serialized_file=None):
     '''Predicts labels (text image/not) for an input test set.
     :param test_set: test set of images, tuple of lists:
     images, features and labels, as returned by read_images_set.
+    :param clf: the classifier object, if passed directly
+    :param from_serialized_file: the path of the file containing the serialized classfier, if any
     :return: list of tuples (image_url, label)
     '''
+    if from_serialized_file:
+        clf = joblib.load(from_serialized_file)
+
     imgs, examples, labels = test_set
     predicted_examples = []
     for idx, example in enumerate(examples):
@@ -274,11 +285,11 @@ def predict(clf, test_set, from_serialized_file=None):
 
 def classifier_main():
     training_set = read_images_set()
-    trained, clf = train(training_set)
+    trained, clf = train(training_set, serialize_file="nutrition_image_classifier.pkl")
     test_set = read_images_set("nutrition_images_test.csv")
     imgs, examples, labels = test_set
     nr_predicted = 0
-    predicted = predict(clf, test_set)
+    predicted = predict(test_set, clf, from_serialized_file="nutrition_image_classifier.pkl")
     accurate = 0
     with open('nutrition_images_predicted.csv', 'w+') as out:
         for example in predicted:
