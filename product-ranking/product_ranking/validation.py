@@ -569,7 +569,6 @@ class BaseValidator(object):
         return val in (True, False, None, '')
 
     def _validate_variants(self, val):
-        print val
         if isinstance(val, (str, unicode)):
             try:
                 val = json.loads(val)
@@ -582,7 +581,7 @@ class BaseValidator(object):
         return True
 
     def _validate_shelf_page_out_of_stock(self, val):
-        if val is '':
+        if val in ('', None):
             return True
         return val in (0, 1)
 
