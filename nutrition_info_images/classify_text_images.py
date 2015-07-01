@@ -282,6 +282,22 @@ def predict(test_set, clf=None, from_serialized_file=None):
         predicted_examples.append((imgs[idx], predicted[0]))
     return predicted_examples
 
+def predict_one(image, clf=None, from_serialized_file=None, is_url=False):
+    '''Predicts label (text image/not) for an input image.
+    :param image: image url or path
+    :param clf: the classifier object, if passed directly
+    :param from_serialized_file: the path of the file containing the serialized classfier, if any
+    :param is_url: image is a url, not a file path on disk
+    :return: predicted label
+    '''
+    if from_serialized_file:
+        clf = joblib.load(from_serialized_file)
+    average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_straight_lines = \
+    extract_features(image, is_url=is_url)
+    example = (average_slope, average_differences, nr_straight_lines)
+
+    predicted = clf.predict(example)
+    return predicted
 
 def classifier_main():
     training_set = read_images_set()
@@ -319,5 +335,10 @@ def classifier_main():
 
     plt.show()
 
+def classifier_predict_one(image_url):
+    predicted = predict_one(image_url, None, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=False)
+    return predicted
+
 if __name__ == '__main__':
-    classifier_main()
+    # classifier_main()
+    print classifier_predict_one(sys.argv[1])
