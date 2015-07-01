@@ -282,7 +282,7 @@ def predict(test_set, clf=None, from_serialized_file=None):
         predicted_examples.append((imgs[idx], predicted[0]))
     return predicted_examples
 
-def predict_one(image, clf=None, from_serialized_file=None, is_url=False):
+def predict_one(image, clf=None, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=False):
     '''Predicts label (text image/not) for an input image.
     :param image: image url or path
     :param clf: the classifier object, if passed directly
@@ -336,8 +336,8 @@ def classifier_main():
     plt.show()
 
 def classifier_predict_one(image_url):
-    predicted = predict_one(image_url, None, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=False)
-    return predicted
+    predicted = predict_one(image_url, None, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=True)
+    return predicted[0]
 
 if __name__ == '__main__':
     # classifier_main()
