@@ -117,8 +117,7 @@ for website in website_list:
 
 
 fromaddr = "jenkins@contentanalyticsinc.com"
-#toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com"] # must be a list
-toaddrs = ["jacob.cats426@gmail.com"] # must be a list
+toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com"] # must be a list
 subject = "Daily Notification from Regression Service : %s" % today.isoformat()
 
 print "Message length is " + repr(len(email_content))
