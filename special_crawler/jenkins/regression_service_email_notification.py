@@ -133,7 +133,8 @@ smtp_do_tls = True
 msg = MIMEMultipart(
         From=fromaddr,
         To=COMMASPACE.join(toaddrs),
-        Date=formatdate(localtime=True)
+        Date=formatdate(localtime=True),
+        Subject="Subject: Test"
         )
 
 csv_file = MIMEApplication(open(csv_file_name, "rb").read())
