@@ -569,22 +569,31 @@ class BaseValidator(object):
         return val in (True, False, None, '')
 
     def _validate_variants(self, val):
-
         if isinstance(val, basestring):
             try:
                 val = json.loads(val)
             except:
                 return False
-
         if val and not isinstance(val, (list, tuple)):
             return False
-
         return True
 
     def _validate_shelf_page_out_of_stock(self, val):
         return val in ('', 0, 1)
 
+    def _validate__walmart_redirected(self, val):
+        return True  # we will not validate this field for now
+
+    def _validate__walmart_original_id(self, val):
+        return True  # we will not validate this field for now
+
     def _validate__walmart_current_id(self, val):
+        return True  # we will not validate this field for now
+
+    def _validate__walmart_original_price(self, val):
+        return True  # we will not validate this field for now
+
+    def _validate__walmart_original_oos(self, val):
         return True  # we will not validate this field for now
 
     def _get_failed_fields(self, data, add_row_index=False):
