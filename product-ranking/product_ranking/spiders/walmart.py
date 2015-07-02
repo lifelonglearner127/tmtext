@@ -385,8 +385,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         buyer_reviews['rating_by_star'] = {}
         for _revs in response.css('.review-histogram .rating-filter'):
             _star = _revs.css('.meter-inline ::text').extract()[0].strip()
-            print "--------------------------------------------------------"
-            print _revs.css('.rating-val ::text').extract()
+
             try:
                 _reviews = _revs.css('.rating-val ::text').extract()[0].strip()
             except:
