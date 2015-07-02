@@ -102,7 +102,7 @@ def get_request_path_with_date(cache_dir, spider, request, UTC_NOW=UTC_NOW):
     key = request_fingerprint(request)
     result = os.path.join(
         get_partial_request_path(cache_dir, spider, UTC_NOW),
-        _slugify(request.url),  #shouldn't be too long to avoid truncating keys!
+        _slugify(request.url),  # TODO: removeme! shouldn't be too long to avoid truncating keys!
         key[0:2], key
     )
     # check max filename length and truncate it if needed
@@ -136,6 +136,9 @@ class S3CacheStorage(FilesystemCacheStorage):
 
     def _get_request_path(self, spider, request):
         utcnow = _get_load_from_date()
+        if not utcnow:  # not loading from cache, but saving
+            global UTC_NOW
+            utcnow = UTC_NOW
         return get_request_path_with_date(self.cachedir, spider, request,
                                           utcnow)
 
