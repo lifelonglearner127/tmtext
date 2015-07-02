@@ -584,6 +584,9 @@ class BaseValidator(object):
     def _validate_shelf_page_out_of_stock(self, val):
         return val in ('', 0, 1)
 
+    def _validate__walmart_current_id(self, val):
+        return True  # we will not validate this field for now
+
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
         :param data: 2-dimensions list or str
