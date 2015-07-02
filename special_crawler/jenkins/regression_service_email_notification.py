@@ -123,7 +123,7 @@ smtp_do_tls = True
 
 msg = MIMEMultipart(
         From=fromaddr,
-        To=toaddrs,
+        To=COMMASPACE.join(toaddrs),
         Date=formatdate(localtime=True),
         Subject=subject
         )
