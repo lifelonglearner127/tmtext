@@ -102,7 +102,7 @@ def get_request_path_with_date(cache_dir, spider, request, UTC_NOW=UTC_NOW):
     key = request_fingerprint(request)
     result = os.path.join(
         get_partial_request_path(cache_dir, spider, UTC_NOW),
-        _slugify(request.url),  # TODO: removeme! shouldn't be too long to avoid truncating keys!
+        #_slugify(request.url),  # TODO: removeme! shouldn't be too long to avoid truncating keys!
         key[0:2], key
     )
     # check max filename length and truncate it if needed
