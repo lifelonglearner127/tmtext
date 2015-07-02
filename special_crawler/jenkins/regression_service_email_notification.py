@@ -71,8 +71,16 @@ for website in website_list:
             if sample_json["scraper"] != current_json["scraper"]:
                 urls_version_changed.append(row["sample_url"])
                 csv_writer.writerow({"number of changed parts": str(row["changes_in_structure"]), "version changed(Yes/No)": "Yes", "detail view link": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
+                urls.append(row["sample_url"] +
+                            "\n    - number of changed parts: " + str(row["changes_in_structure"]) +
+                            "\n    - version changed(Yes/No): Yes" +
+                            "\n    - detail view: http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"]))
             else:
                 csv_writer.writerow({"number of changed parts": str(row["changes_in_structure"]), "version changed(Yes/No)": "No", "detail view link": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
+                urls.append(row["sample_url"] +
+                            "\n    - number of changed parts: " + str(row["changes_in_structure"]) +
+                            "\n    - version changed(Yes/No): No" +
+                            "\n    - detail view: http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"]))
 
             csv_file.close()
 
@@ -109,7 +117,8 @@ for website in website_list:
 
 
 fromaddr = "jenkins@contentanalyticsinc.com"
-toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com"] # must be a list
+#toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com"] # must be a list
+toaddrs = ["jacob.cats426@gmail.com"] # must be a list
 subject = "Daily Notification from Regression Service : %s" % today.isoformat()
 
 print "Message length is " + repr(len(email_content))
