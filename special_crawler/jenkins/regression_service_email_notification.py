@@ -135,8 +135,8 @@ msg = MIMEMultipart(
         To=COMMASPACE.join(toaddrs),
         Date=formatdate(localtime=True)
         )
-msg['Subject'] = "Subject: Test\n\n"
-msg.preamble = "Subject: Test\n\n"
+msg['Subject'] = subject
+msg.preamble = subject
 csv_file = MIMEApplication(open(csv_file_name, "rb").read())
 csv_file.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name))
 msg.attach(csv_file)
