@@ -1,0 +1,375 @@
+#!/usr/bin/python
+
+import re
+import lxml
+import lxml.html
+import requests
+import json
+
+from itertools import groupby
+
+from lxml import html, etree
+from extract_data import Scraper
+from spiders_shared_code.jcpenney_variants import JcpenneyVariants
+
+
+class SnapdealScraper(Scraper):
+    ##########################################
+    ############### PREP
+    ##########################################
+
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.snapdeal.com/product/<product-name>/<product-id>"
+
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        # whether product has any webcollage media
+        self.reviews = None
+        self.average_review = 0
+        self.max_review = 0
+        self.min_review = 0
+        self.review_count = 0
+        self.is_review_checked = False
+
+    def check_url_format(self):
+        """Checks product URL format for this scraper instance is valid.
+        Returns:
+            True if valid, False otherwise
+        """
+
+        m = re.match(r"^http://www\.snapdeal\.com/product/.*/[0-9]+$", self.product_page_url)
+
+        return not not m
+
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
+
+        try:
+            if self.tree_html.xpath("//meta[@property='og:type']/@content")[0] != "snapdeallog:item":
+                raise Exception
+        except Exception:
+            return True
+
+        return False
+
+    ##########################################
+    ############### CONTAINER : NONE
+    ##########################################
+
+    def _canonical_link(self):
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+        return canonical_link
+
+    def _url(self):
+        return self.product_page_url
+
+    def _product_id(self):
+        return self.tree_html.xpath("//div[@id='pppid']/text()")[0].strip()
+
+    ##########################################
+    ############### CONTAINER : PRODUCT_INFO
+    ##########################################
+    def _product_name(self):
+        return self.tree_html.xpath("//meta[@name='og_title']/@content")[0].strip()
+
+    def _product_title(self):
+        return self.tree_html.xpath("//meta[@name='og_title']/@content")[0].strip()
+
+    def _title_seo(self):
+        return self.tree_html.xpath("//meta[@name='og_title']/@content")[0].strip()
+
+    def _model(self):
+        return None
+
+    def _features(self):
+        try:
+            features = self.tree_html.xpath("//ul[@class='key-features']/li")
+            features = [feature.text_content() for feature in features if len(feature.text_content()) > 0]
+
+            if not features:
+                return None
+
+            return features
+        except:
+            return None
+
+    def _feature_count(self):
+        features = self._features()
+
+        if not features:
+            return 0
+
+        return len(features)
+
+    def _description(self):
+        description = self.tree_html.xpath("//div[@itemprop='description']")[0].text_content().strip()
+
+        if not description:
+            return None
+
+        return description
+
+    # extract product long description from its product product page tree
+    # ! may throw exception if not found
+    # TODO:
+    #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
+    def _long_description(self):
+        return None
+
+    def _ingredients(self):
+        return None
+
+    def _ingredients_count(self):
+        return None
+
+    def _variants(self):
+        return None
+
+    ##########################################
+    ############### CONTAINER : PAGE_ATTRIBUTES
+    ##########################################
+    def _mobile_image_same(self):
+        pass
+        
+    def _image_urls(self):
+        image_urls = self.tree_html.xpath("//ul[@id='product-thumbs']//li//img//@src")
+        lazy_image_urls = self.tree_html.xpath("//ul[@id='product-thumbs']//li//img//@lazysrc")
+
+        if not image_urls:
+            image_urls = []
+
+        if not lazy_image_urls:
+            lazy_image_urls = []
+
+        image_urls.extend(lazy_image_urls)
+
+        if not image_urls:
+            return None
+
+        return image_urls
+
+    def _image_count(self):
+        image_urls = self._image_urls()
+
+        if not image_urls:
+            return 0
+
+        return len(image_urls)
+
+    def _video_urls(self):
+        return None
+
+    def _video_count(self):
+        return 0
+
+    # return dictionary with one element containing the PDF
+    def _pdf_urls(self):
+        return None
+
+    def _pdf_count(self):
+        return 0
+
+    def _wc_emc(self):
+        return 0
+
+    def _wc_prodtour(self):
+        return 0
+
+    def _wc_360(self):
+        return 0
+
+    def _wc_video(self):
+        return 0
+
+    def _wc_pdf(self):
+        return 0
+
+    def _webcollage(self):
+        if self._wc_360() == 1 or self._wc_prodtour() == 1 or self._wc_pdf() == 1 or self._wc_emc() == 1 or self._wc_360():
+            return 1
+
+        return 0
+
+    def _htags(self):
+        htags_dict = {}
+        htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
+        htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
+
+        return htags_dict
+
+    def _keywords(self):
+        return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0].strip()
+
+    ##########################################
+    ############### CONTAINER : REVIEWS
+    ##########################################
+
+    def _average_review(self):
+        self._reviews()
+
+        return self.average_review
+
+    def _review_count(self):
+        self._reviews()
+
+        return self.review_count
+
+    def _max_review(self):
+        self._reviews()
+
+        return self.max_review
+
+    def _min_review(self):
+        self._reviews()
+
+        return self.min_review
+
+    def _reviews(self):
+        if self.is_review_checked:
+            return self.reviews
+
+        self.is_review_checked = True
+
+        review_url = "http://www.snapdeal.com/getReviewsInfoGram?pageId=" + self._product_id()
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+
+        contents = requests.get(review_url, headers=h).text
+        reviews = json.loads(re.search('var temp = \((.+?)\);', contents).group(1))
+        review_list = []
+        max_review = 0
+        min_review = 0
+
+        for review in reviews:
+            if int(reviews[review]) > 0:
+                if max_review < int(review) or max_review == 0:
+                    max_review = int(review)
+
+                if min_review > int(review) or min_review == 0:
+                    min_review = int(review)
+
+                review_list.append([int(review), int(reviews[review])])
+
+        if not review_list:
+            return None
+
+        self.reviews = review_list
+        self.average_review = float(self.tree_html.xpath("//span[@itemprop='ratingValue']/text()")[0].strip())
+        self.review_count = int(self.tree_html.xpath("//span[@itemprop='ratingCount']/text()")[0].strip())
+        self.max_review = max_review
+        self.min_review = min_review
+
+        return self.reviews
+
+    ##########################################
+    ############### CONTAINER : SELLERS
+    ##########################################
+    def _price(self):
+        return self.tree_html.xpath("//div[@class='buyContainer']//strong[@class='voucherPrice']")[0].text_content()
+
+    def _price_amount(self):
+        return float(self.tree_html.xpath("//input[@id='sellingPriceInpt']/@value")[0])
+
+    def _price_currency(self):
+        return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
+
+    def _site_online(self):
+        return 1
+
+    def _in_stores(self):
+        return 1
+
+    def _site_online_out_of_stock(self):
+        return 0
+
+    ##########################################
+    ############### CONTAINER : CLASSIFICATION
+    ##########################################    
+    def _categories(self):
+        return self.tree_html.xpath("//div[@class='containerBreadcrumb']//span[@itemprop='title']/text()")
+
+    def _category_name(self):
+        return self._categories()[-1]
+
+    def _brand(self):
+        return self.tree_html.xpath("//a[@class='somn-track brandName']/img/@alt")[0]
+
+    ##########################################
+    ################ HELPER FUNCTIONS
+    ##########################################
+    def _clean_text(self, text):
+        return re.sub("&nbsp;", " ", text).strip()
+
+    ##########################################
+    ################ RETURN TYPES
+    ##########################################
+
+    # dictionaries mapping type of info to be extracted to the method that does it
+    # also used to define types of data that can be requested to the REST service
+
+    DATA_TYPES = { \
+        # CONTAINER : NONE
+        "url" : _url, \
+        "product_id" : _product_id, \
+
+        # CONTAINER : PRODUCT_INFO
+        "product_name" : _product_name, \
+        "product_title" : _product_title, \
+        "title_seo" : _title_seo, \
+        "model" : _model, \
+        "features" : _features, \
+        "feature_count" : _feature_count, \
+        "description" : _description, \
+        "long_description" : _long_description, \
+        "ingredients": _ingredients, \
+        "ingredient_count": _ingredients_count,
+        "variants": _variants,
+
+        # CONTAINER : PAGE_ATTRIBUTES
+        "image_count" : _image_count,\
+        "image_urls" : _image_urls, \
+        "video_count" : _video_count, \
+        "video_urls" : _video_urls, \
+        "pdf_count" : _pdf_count, \
+        "pdf_urls" : _pdf_urls, \
+        "webcollage" : _webcollage, \
+        "wc_360": _wc_360, \
+        "wc_emc": _wc_emc, \
+        "wc_pdf": _wc_pdf, \
+        "wc_prodtour": _wc_prodtour, \
+        "wc_video": _wc_video, \
+        "htags" : _htags, \
+        "keywords" : _keywords, \
+        "canonical_link": _canonical_link,
+
+        # CONTAINER : REVIEWS
+        "review_count" : _review_count, \
+        "average_review" : _average_review, \
+        "max_review" : _max_review, \
+        "min_review" : _min_review, \
+        "reviews" : _reviews, \
+        # CONTAINER : SELLERS
+        "price" : _price, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
+        "site_online": _site_online, \
+        "site_online_out_of_stock": _site_online_out_of_stock, \
+        "in_stores" : _in_stores, \
+
+        # CONTAINER : CLASSIFICATION
+        "categories" : _categories, \
+        "category_name" : _category_name, \
+        "brand" : _brand, \
+        }
+
+    # special data that can't be extracted from the product page
+    # associated methods return already built dictionary containing the data
+    DATA_TYPES_SPECIAL = { \
+        "mobile_image_same" : _mobile_image_same, \
+    }
