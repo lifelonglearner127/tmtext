@@ -137,7 +137,8 @@ msg = MIMEMultipart(
         )
 
 csv_file = MIMEApplication(open(csv_file_name, "rb").read())
-msg.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name))
+csv_file.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name))
+msg.add_header('Content-Disposition', 'attachment', filename="Test.csv")
 msg.attach(csv_file)
 msg.attach(MIMEText(email_content))
 
