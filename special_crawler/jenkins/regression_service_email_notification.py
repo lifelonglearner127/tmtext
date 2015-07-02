@@ -136,7 +136,7 @@ msg = MIMEMultipart(
         Date=formatdate(localtime=True),
         Subject="Subject: Test\n\n"
         )
-
+msg.preamble = "Subject: Test\n\n"
 csv_file = MIMEApplication(open(csv_file_name, "rb").read())
 csv_file.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name))
 msg.attach(csv_file)
