@@ -80,11 +80,11 @@ def _slugify(value, replaces='\'"~@#$%^&*()[] _-/\:\?\=\,'):
 
 def clear_local_cache(cache_dir, spider, UTC_NOW=UTC_NOW):
     if _get_searchterms_str():
-            if os.path.exists(get_partial_request_path(
-                    settings.HTTPCACHE_DIR, spider, UTC_NOW)):
-                shutil.rmtree(get_partial_request_path(
-                    cache_dir, spider, UTC_NOW))
-                print('Local cache cleared')
+        if os.path.exists(get_partial_request_path(
+                settings.HTTPCACHE_DIR, spider, UTC_NOW)):
+            shutil.rmtree(get_partial_request_path(
+                cache_dir, spider, UTC_NOW))
+            print('Local cache cleared')
 
 
 def get_partial_request_path(cache_dir, spider, UTC_NOW=UTC_NOW):
