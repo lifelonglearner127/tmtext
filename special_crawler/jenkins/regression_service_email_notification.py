@@ -134,7 +134,7 @@ msg = MIMEMultipart(
         From=fromaddr,
         To=COMMASPACE.join(toaddrs),
         Date=formatdate(localtime=True),
-        Subject="Subject: Test"
+        Subject="Subject: Test\n\n"
         )
 
 csv_file = MIMEApplication(open(csv_file_name, "rb").read())
