@@ -142,7 +142,7 @@ msg.attach(MIMEText(email_content))
 with open(csv_file_name, "rb") as fil:
             msg.attach(MIMEApplication(
                 fil.read(),
-                Content_Disposition='attachment; filename="%s"' % basename(csv_file_name)
+                Content_Disposition='attachment; filename="Test.csv"'
             ))
 
 server = smtplib.SMTP(
