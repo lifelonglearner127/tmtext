@@ -133,17 +133,14 @@ smtp_do_tls = True
 msg = MIMEMultipart(
         From=fromaddr,
         To=COMMASPACE.join(toaddrs),
-        Date=formatdate(localtime=True),
-        Subject=subject
+        Date=formatdate(localtime=True)
         )
 
+csv_file = MIMEApplication(open(csv_file_name, "rb").read())
+csv_file.add_header('Content-Disposition', 'attachment', filename=csv_file_name)
+msg.add_header('Content-Disposition', 'attachment; filename="Test.csv"')
+msg.attach(csv_file)
 msg.attach(MIMEText(email_content))
-
-with open(csv_file_name, "rb") as fil:
-            msg.attach(MIMEApplication(
-                fil.read(),
-                Content_Disposition='attachment; filename="Test.csv"'
-            ))
 
 server = smtplib.SMTP(
     host = smtp_server,
