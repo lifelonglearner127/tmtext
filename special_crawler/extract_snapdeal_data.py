@@ -109,10 +109,16 @@ class SnapdealScraper(Scraper):
         return len(features)
 
     def _description(self):
-        description = self.tree_html.xpath("//div[@itemprop='description']")[0].text_content().strip()
+        description = None
 
-        if not description:
-            return None
+        try:
+            description = self.tree_html.xpath("//div[@itemprop='description']//p[@class='MsoNormal']//span[contains(text(), 'Product description')]/../../following-sibling::p[1]")[0].text_content().strip()
+        except:
+            if not description:
+                description = self.tree_html.xpath("//div[@itemprop='description']")[0].text_content().strip()
+
+                if not description:
+                    return None
 
         return description
 
@@ -121,7 +127,18 @@ class SnapdealScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        return None
+        try:
+            description = self.tree_html.xpath("//div[@itemprop='description']")[0].text_content().strip()
+            short_description = self._description()
+
+            sIndex = description.find(short_description) + len(short_description)
+
+            if not description[sIndex:].strip():
+                return None
+
+            return description[sIndex:].strip()
+        except:
+            return None
 
     def _ingredients(self):
         return None
@@ -164,10 +181,31 @@ class SnapdealScraper(Scraper):
         return len(image_urls)
 
     def _video_urls(self):
-        return None
+        iframe_list = self.tree_html.xpath("//iframe")
+
+        youtubu_iframes = []
+
+        for iframe in iframe_list:
+            if "www.youtube.com" in iframe.xpath("./@src")[0]:
+                youtubu_iframes.append(iframe)
+
+        if not youtubu_iframes:
+            return None
+
+        youtubu_urls = []
+
+        for iframe in youtubu_iframes:
+            youtubu_urls.append(iframe.xpath("./@src")[0])
+
+        return youtubu_urls
 
     def _video_count(self):
-        return 0
+        video_urls = self._video_urls()
+
+        if not video_urls:
+            return 0
+
+        return len(video_urls)
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
