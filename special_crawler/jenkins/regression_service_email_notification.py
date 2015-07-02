@@ -63,10 +63,10 @@ for website in website_list:
                 csv_file = open(csv_file_name, "a+")
             else:
                 csv_file = open(csv_file_name, "w")
-                writer = csv.DictWriter(csv_file, field_names=field_names)
+                writer = csv.DictWriter(csv_file, fieldnames=field_names)
                 writer.writeheader()
 
-            csv_writer = csv.DictWriter(csv_file, field_names=field_names)
+            csv_writer = csv.DictWriter(csv_file, fieldnames=field_names)
 
             if sample_json["scraper"] != current_json["scraper"]:
                 urls_version_changed.append(row["sample_url"])
