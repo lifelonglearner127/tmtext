@@ -50,6 +50,7 @@ from extract_kohls_data import KohlsScraper
 from extract_jcpenney_data import JcpenneyScraper
 from extract_amazoncn_data import AmazonCNScraper
 from extract_wiggle_data import WiggleScraper
+from extract_snapdeal_data import SnapdealScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -107,7 +108,8 @@ SUPPORTED_SITES = {
                     "kohls": KohlsScraper,
                     "jcpenney": JcpenneyScraper,
                     "amazoncn": AmazonCNScraper,
-                    "wiggle": WiggleScraper
+                    "wiggle": WiggleScraper,
+                    "snapdeal": SnapdealScraper
                     }
 
 # add logger
