@@ -57,11 +57,15 @@ def get_cache_map(prefix=None):
     return cache_map
 
 
-def _get_searchterms_str():
-    args = [a for a in sys.argv if 'searchterms_str' in a]
+def _get_searchterms_str_or_product_url():
+    args_term = [a for a in sys.argv if 'searchterms_str' in a]
+    args_url = [a for a in sys.argv if 'product_url' in a]
+    args = args_term if args_term else args_url
     if not args:
         return
     arg_name, arg_value = args[0].split('=')
+    if args_url:
+        arg_value = _slugify(arg_value)[7:67]  # reduce the length of the url
     return arg_value
 
 
@@ -72,14 +76,14 @@ def _get_load_from_date():
         return datetime.datetime.strptime(arg, '%Y-%m-%d')
 
 
-def _slugify(value, replaces='\'"~@#$%^&*()[] _-/\:\?\=\,'):
+def _slugify(value, replaces='\'"~@#$%^&*()[] _-/\:\?\=\,\.'):
     for char in replaces:
         value = value.replace(char, '-')
     return value
 
 
 def clear_local_cache(cache_dir, spider, UTC_NOW=UTC_NOW):
-    if _get_searchterms_str():
+    if _get_searchterms_str_or_product_url():
         if os.path.exists(get_partial_request_path(
                 settings.HTTPCACHE_DIR, spider, UTC_NOW)):
             shutil.rmtree(get_partial_request_path(
@@ -88,7 +92,7 @@ def clear_local_cache(cache_dir, spider, UTC_NOW=UTC_NOW):
 
 
 def get_partial_request_path(cache_dir, spider, UTC_NOW=UTC_NOW):
-    searchterms_str = _slugify(_get_searchterms_str())
+    searchterms_str = _slugify(_get_searchterms_str_or_product_url())
     utc_today = UTC_NOW.strftime('%Y-%m-%d')
     if searchterms_str:
         return os.path.join(
@@ -121,7 +125,7 @@ class CustomFilesystemCacheStorage(FilesystemCacheStorage):
 
     def _get_request_path(self, spider, request):
         key = request_fingerprint(request)
-        searchterms_str = _slugify(_get_searchterms_str())
+        searchterms_str = _slugify(_get_searchterms_str_or_product_url())
         if searchterms_str:
             result = os.path.join(self.cachedir, spider.name, searchterms_str,
                                   key[0:2], key)

@@ -133,7 +133,7 @@ class S3CacheUploader(object):
         )
         if crawler._spider.name in cache_map:
             if utcdate in cache_map[crawler._spider.name]:
-                if cache._slugify(cache._get_searchterms_str()) \
+                if cache._slugify(cache._get_searchterms_str_or_product_url()) \
                         in cache_map[crawler._spider.name][utcdate]:
                     print('Cache for this date, spider,'
                           ' and searchterm already exists!'
@@ -211,11 +211,13 @@ class S3CacheDownloader(object):
 if __name__ == '__main__':
     from pprint import pprint
     from boto.s3.connection import S3Connection
-    conn = S3Connection(amazon_public_key, amazon_secret_key)
+    conn = S3Connection(amazon_public_key, amazon_secret_key,
+                        proxy='127.0.0.1', proxy_port=22139)
     bucket = conn.get_bucket(bucket_name)
     if 'clear_bucket' in sys.argv:  # be careful!
         if raw_input('Delete all files? y/n: ').lower() == 'y':
             for f in bucket.list():
+                print '    removing', f
                 bucket.delete_key(f.key)
         else:
             print('You did not type "y" - exit...')
