@@ -189,19 +189,19 @@ class MacysScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_url_additional = re.findall(r"MACYS.pdp.primaryImages\[\d+\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
-        if len(image_url_additional) > 0:
-            image_urls = image_url_additional[0].split(",")
-            image_url_additional = []
+        image_url_primary = []
+        image_url_tmp = re.findall(r"MACYS.pdp.primaryImages\[\d+\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_tmp) > 0:
+            image_urls = image_url_tmp[0].split(",")
             for r in image_urls:
                 img = r.split(":")
                 if len(img) >= 2:
-                    image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % img[1].replace('"','').replace("'",""))
+                    image_url_primary.append("http://slimages.macys.com/is/image/MCY/products/%s" % img[1].replace('"','').replace("'",""))
 
-        image_url_additional2 = re.findall(r"MACYS.pdp.additionalImages\[\d+\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
-        if len(image_url_additional2) > 0:
-            image_urls = image_url_additional2[0].split('",')
-            image_url_additional = []
+        image_url_additional = []
+        image_url_tmp = re.findall(r"MACYS.pdp.additionalImages\[\d+\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_tmp) > 0:
+            image_urls = image_url_tmp[0].split('",')
             for r in image_urls:
                 img = r.split(":")
                 if len(img) >= 2:
@@ -209,23 +209,19 @@ class MacysScraper(Scraper):
                     for r in imgs:
                         image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
 
-        image_url_additional3 = re.findall(r"MACYS.pdp.imageZoomer = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
-        if len(image_url_additional3) > 0:
-            m = re.findall(r"imgList: '(.*?)'", image_url_additional3[0], re.DOTALL)
+        image_url_imageZoomer = []
+        image_url_tmp = re.findall(r"MACYS.pdp.imageZoomer = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_tmp) > 0:
+            m = re.findall(r"imgList: '(.*?)'", image_url_tmp[0], re.DOTALL)
             if len(m) > 0:
                 image_urls = m[0].split(',')
-                image_url_additional = []
                 for r in image_urls:
-                    image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
-                if len(image_url_additional) > 0:
-                    return image_url_additional
+                    image_url_imageZoomer.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
 
         image_url = self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img/@src")
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url) < 1:
             image_url = self.tree_html.xpath("//div[@class='productImageSection']//img/@src")
-            if len(image_url) < 1:
-                return None
 
         if len(image_url) == 1:
             try:
@@ -234,8 +230,16 @@ class MacysScraper(Scraper):
             except Exception, e:
                 print "WARNING: ", e.message
 
-        image_url = image_url + image_url_additional
-        return image_url
+        image_url = image_url + image_url_primary + image_url_imageZoomer + image_url_additional
+        image_url2 = []
+        for r in image_url:
+            try:
+                image_url_tmp = r.split("?")[0]
+            except:
+                image_url_tmp = r
+            image_url2.append(image_url_tmp)
+        image_url2 = list(set(image_url2))
+        return image_url2
 
     def _image_count(self):
         image_urls = self._image_urls()
