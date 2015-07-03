@@ -211,8 +211,7 @@ class S3CacheDownloader(object):
 if __name__ == '__main__':
     from pprint import pprint
     from boto.s3.connection import S3Connection
-    conn = S3Connection(amazon_public_key, amazon_secret_key,
-                        proxy='127.0.0.1', proxy_port=22139)
+    conn = S3Connection(amazon_public_key, amazon_secret_key)
     bucket = conn.get_bucket(bucket_name)
     if 'clear_bucket' in sys.argv:  # be careful!
         if raw_input('Delete all files? y/n: ').lower() == 'y':
