@@ -98,7 +98,7 @@ class WalmartScraper(Scraper):
         # javascript function found in a script tag
         # containing various info on the product.
         # Currently used for seller info (but useful for others as well)
-        self.js_entry_function_body = None
+        self.product_info_json = None
 
         self.failure_type = None
 
@@ -720,7 +720,13 @@ class WalmartScraper(Scraper):
             string containing the tag's content, or None
         """
 
-        return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
+        if self._version() == "Walmart v1":
+            return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
+
+        if self._version() == "Walmart v2":
+            return self.tree_html.xpath("//span[@itemprop='brand']/text()")[0]
+
+        return None
 
     # extract product short description from its product page tree
     # ! may throw exception if not found
@@ -1002,31 +1008,39 @@ class WalmartScraper(Scraper):
         Returns:
             string containing the product price, with decimals, no currency
         """
-        try:
-            body_raw = "" . join(self.tree_html.xpath("//form[@name='SelectProductForm']//script/text()")).strip()
-            body_clean = re.sub("\n", " ", body_raw)
-            body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
-            sIndex = body_jpart.find("price:") + len("price:") + 1
-            eIndex = body_jpart.find("',", sIndex)
+        if self._version() == "Walmart v1":
+            try:
+                body_raw = "" . join(self.tree_html.xpath("//form[@name='SelectProductForm']//script/text()")).strip()
+                body_clean = re.sub("\n", " ", body_raw)
+                body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
+                sIndex = body_jpart.find("price:") + len("price:") + 1
+                eIndex = body_jpart.find("',", sIndex)
 
-            if "camelPrice" not in body_jpart[sIndex:eIndex] and not self._in_stock():
-                return "out of stock - no price given"
+                if "camelPrice" not in body_jpart[sIndex:eIndex] and not self._in_stock():
+                    return "out of stock - no price given"
 
-            if "camelPrice" not in body_jpart[sIndex:eIndex] and self._in_stores_only():
-                return "in stores only - no online price"
-        except Exception:
-            pass
+                if "camelPrice" not in body_jpart[sIndex:eIndex] and self._in_stores_only():
+                    return "in stores only - no online price"
 
+                return self.tree_html.xpath("//span[contains(@class, 'camelPrice')]")[0].text_content().strip()
+            except:
+                pass
 
-        meta_price = self.tree_html.xpath("//meta[@itemprop='price']/@content")
+        if self._version() == "Walmart v2":
+            try:
+                price = self.tree_html.xpath("//div[@itemprop='price']")[0].text_content().strip()
 
-        if meta_price:
-            return meta_price[0]
-        else:
-            if not self._in_stock():
-                return "out of stock - no price given"
-            else:
-                return None
+                if price:
+                    return price
+                else:
+                    if not self._in_stock():
+                        return "out of stock - no price given"
+                    else:
+                        return None
+            except:
+                pass
+
+        return None
 
     def _price_amount(self):
         """Extracts numercial value of product price in
@@ -1056,8 +1070,16 @@ class WalmartScraper(Scraper):
                 "in stores only - no online price":
             return None
         else:
-            meta_currency = self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
-            return meta_currency
+            if self._version() == "Walmart v1":
+                meta_currency = self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
+                return meta_currency
+
+            if self._version() == "Walmart v2":
+                product_info_json = self._extract_product_info_json()
+
+                return product_info_json["buyingOptions"]["price"]["currencyUnit"]
+
+        return None
 
     # extract htags (h1, h2) from its product product page tree
     def _htags_from_tree(self):
@@ -1557,10 +1579,10 @@ class WalmartScraper(Scraper):
             else:
                 return relative_url
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         images_carousel = []
 
@@ -1644,7 +1666,7 @@ class WalmartScraper(Scraper):
             return None # no images found to compare
 
     # ! may throw exception if json object not decoded properly
-    def _extract_jsfunction_body(self):
+    def _extract_product_info_json(self):
         """Extracts body of javascript function
         found in a script tag on each product page,
         that contains various usable information about product.
@@ -1652,14 +1674,16 @@ class WalmartScraper(Scraper):
         Returns:
             function body as dictionary (containing various info on product)
         """
-        page_raw_text = html.tostring(self.tree_html)
-        start_index = page_raw_text.find('define("product/data",') + len('define("product/data",')
-        end_index = page_raw_text.find('define("athena/analytics-data"', start_index)
-        end_index = page_raw_text.rfind(");", 0, end_index) - 2
-        body_dict = json.loads(page_raw_text[start_index:end_index])
-        self.js_entry_function_body = body_dict
 
-        return body_dict
+        if self.product_info_json:
+            return self.product_info_json
+
+        page_raw_text = html.tostring(self.tree_html)
+        product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
+
+        self.product_info_json = product_info_json
+
+        return self.product_info_json
 
     # ! may throw exception if not found
     def _owned_from_script(self):
@@ -1669,10 +1693,10 @@ class WalmartScraper(Scraper):
             1/0 (product owned/not owned)
         """
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         seller = pinfo_dict['analyticsData']['sellerName']
 
@@ -1690,10 +1714,10 @@ class WalmartScraper(Scraper):
             1/0 (product has marketplace sellers/has not)
         """
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         # TODO: what to do when there is no 'marketplaceOptions'?
         #       e.g. http://www.walmart.com/ip/23149039
@@ -1812,10 +1836,10 @@ class WalmartScraper(Scraper):
 #        if self._site_online():
 #           return 1
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         available = pinfo_dict["analyticsData"]["storesAvail"]
 
@@ -1830,10 +1854,10 @@ class WalmartScraper(Scraper):
             or None if none found / not relevant
         """
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
         sellers = map(lambda d: d["sellerName"], sellers_dict)
@@ -1849,10 +1873,10 @@ class WalmartScraper(Scraper):
             1/0 (available/not available)
         """
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         available = pinfo_dict["analyticsData"]["onlineAvail"]
 
@@ -2011,10 +2035,10 @@ class WalmartScraper(Scraper):
         #       e.g. http://www.walmart.com/ip/23149039
         try:
             #       new design
-            if not self.js_entry_function_body:
-                pinfo_dict = self._extract_jsfunction_body()
+            if not self.product_info_json:
+                pinfo_dict = self._extract_product_info_json()
             else:
-                pinfo_dict = self.js_entry_function_body
+                pinfo_dict = self.product_info_json
 
             marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
 
