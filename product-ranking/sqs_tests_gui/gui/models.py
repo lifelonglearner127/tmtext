@@ -2,6 +2,7 @@ import os
 import sys
 
 from django.db import models
+from django.utils import timezone
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
@@ -83,6 +84,13 @@ class Job(models.Model):
     branch_name = models.CharField(
         max_length=100, blank=True, null=True,
         help_text='Branch to use at the instance(s); leave blank for master'
+    )
+
+    save_s3_cache = models.BooleanField(
+        default=False, help_text='Upload raw cache to S3?')
+    load_s3_cache = models.DateField(
+        blank=True, null=True, default=timezone.now().date(),
+        help_text='Load raw cache from S3'
     )
 
     mode = models.CharField(

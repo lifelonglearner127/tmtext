@@ -52,7 +52,8 @@ class JobAdmin(admin.ModelAdmin):
         'created', 'finished',
         admin_link_to_csv_data_file, admin_link_to_log_file
     )
-    list_filter = ('status', 'created', 'finished')
+    list_filter = ('status', 'created', 'finished',
+                   'load_s3_cache', 'save_s3_cache')
     search_fields = ('name', 'spider', 'product_url', 'product_urls',
                      'search_term', 'server_name')
     form = JobForm
