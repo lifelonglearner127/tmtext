@@ -11,14 +11,22 @@ def quitting(thing):
     yield thing
     thing.quit()
 
-with quitting(webdriver.Firefox()) as driver:
-    driver.implicitly_wait(5)
-    driver.get('http://www.walmart.com/ip/16564851')
-    driver.save_screenshot('/tmp/nutrition_full.png')
-    nutrition_element = driver.find_element_by_xpath("//div[@class='NutFactsSIPT']")
-    (x,y) = nutrition_element.location.values()
-    (h,w) = nutrition_element.size.values()
+def screenshot_element(urls, element_xpath, image_name="nutrition"):
+    with quitting(webdriver.Firefox()) as driver:
+        for url in urls:
+            driver.implicitly_wait(5)
+            driver.get(url)
+            driver.save_screenshot('/tmp/' + image_name + '_full.png')
+            try:
+                nutrition_element = driver.find_element_by_xpath(element_xpath)
+                (x,y) = nutrition_element.location.values()
+                (h,w) = nutrition_element.size.values()
 
-    full = Image.open('/tmp/nutrition_full.png')
-    cropped = full.crop((y, x, y+h, x+w))
-    cropped.save('/tmp/nutrition_cropped.png')
+                full = Image.open('/tmp/' + image_name + '_full.png')
+                cropped = full.crop((y, x, y+h, x+w))
+
+                from random import random
+                idx = int(random() * 1000)
+                cropped.save('/tmp/' + image_name + '_cropped%d.png' % idx)
+            except Exception:
+                pass
