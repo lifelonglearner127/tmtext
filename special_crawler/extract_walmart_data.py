@@ -98,7 +98,7 @@ class WalmartScraper(Scraper):
         # javascript function found in a script tag
         # containing various info on the product.
         # Currently used for seller info (but useful for others as well)
-        self.js_entry_function_body = None
+        self.product_info_json = None
 
         self.failure_type = None
 
@@ -687,6 +687,10 @@ class WalmartScraper(Scraper):
     def _site_id(self):
         return self.tree_html.xpath("//tr[@class='js-product-specs-row']/td[text() = 'Walmart No.:']/following-sibling::td/text()")[0].strip()
 
+    # extract walmart no
+    def _walmart_no(self):
+        return self.tree_html.xpath("//tr[@class='js-product-specs-row']/td[text() = 'Walmart No.:']/following-sibling::td/text()")[0].strip()
+
     # extract meta "keywords" tag for a product from its product page tree
     # ! may throw exception if not found
     def _meta_keywords_from_tree(self):
@@ -716,7 +720,13 @@ class WalmartScraper(Scraper):
             string containing the tag's content, or None
         """
 
-        return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
+        if self._version() == "Walmart v1":
+            return self.tree_html.xpath("//meta[@itemprop='brand']/@content")[0]
+
+        if self._version() == "Walmart v2":
+            return self.tree_html.xpath("//span[@itemprop='brand']/text()")[0]
+
+        return None
 
     # extract product short description from its product page tree
     # ! may throw exception if not found
@@ -998,31 +1008,39 @@ class WalmartScraper(Scraper):
         Returns:
             string containing the product price, with decimals, no currency
         """
-        try:
-            body_raw = "" . join(self.tree_html.xpath("//form[@name='SelectProductForm']//script/text()")).strip()
-            body_clean = re.sub("\n", " ", body_raw)
-            body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
-            sIndex = body_jpart.find("price:") + len("price:") + 1
-            eIndex = body_jpart.find("',", sIndex)
+        if self._version() == "Walmart v1":
+            try:
+                body_raw = "" . join(self.tree_html.xpath("//form[@name='SelectProductForm']//script/text()")).strip()
+                body_clean = re.sub("\n", " ", body_raw)
+                body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
+                sIndex = body_jpart.find("price:") + len("price:") + 1
+                eIndex = body_jpart.find("',", sIndex)
 
-            if "camelPrice" not in body_jpart[sIndex:eIndex] and not self._in_stock():
-                return "out of stock - no price given"
+                if "camelPrice" not in body_jpart[sIndex:eIndex] and not self._in_stock():
+                    return "out of stock - no price given"
 
-            if "camelPrice" not in body_jpart[sIndex:eIndex] and self._in_stores_only():
-                return "in stores only - no online price"
-        except Exception:
-            pass
+                if "camelPrice" not in body_jpart[sIndex:eIndex] and self._in_stores_only():
+                    return "in stores only - no online price"
 
+                return self.tree_html.xpath("//span[contains(@class, 'camelPrice')]")[0].text_content().strip()
+            except:
+                pass
 
-        meta_price = self.tree_html.xpath("//meta[@itemprop='price']/@content")
+        if self._version() == "Walmart v2":
+            try:
+                price = self.tree_html.xpath("//div[@itemprop='price']")[0].text_content().strip()
 
-        if meta_price:
-            return meta_price[0]
-        else:
-            if not self._in_stock():
-                return "out of stock - no price given"
-            else:
-                return None
+                if price:
+                    return price
+                else:
+                    if not self._in_stock():
+                        return "out of stock - no price given"
+                    else:
+                        return None
+            except:
+                pass
+
+        return None
 
     def _price_amount(self):
         """Extracts numercial value of product price in
@@ -1052,8 +1070,16 @@ class WalmartScraper(Scraper):
                 "in stores only - no online price":
             return None
         else:
-            meta_currency = self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
-            return meta_currency
+            if self._version() == "Walmart v1":
+                meta_currency = self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
+                return meta_currency
+
+            if self._version() == "Walmart v2":
+                product_info_json = self._extract_product_info_json()
+
+                return product_info_json["buyingOptions"]["price"]["currencyUnit"]
+
+        return None
 
     # extract htags (h1, h2) from its product product page tree
     def _htags_from_tree(self):
@@ -1553,10 +1579,10 @@ class WalmartScraper(Scraper):
             else:
                 return relative_url
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         images_carousel = []
 
@@ -1640,7 +1666,7 @@ class WalmartScraper(Scraper):
             return None # no images found to compare
 
     # ! may throw exception if json object not decoded properly
-    def _extract_jsfunction_body(self):
+    def _extract_product_info_json(self):
         """Extracts body of javascript function
         found in a script tag on each product page,
         that contains various usable information about product.
@@ -1648,14 +1674,16 @@ class WalmartScraper(Scraper):
         Returns:
             function body as dictionary (containing various info on product)
         """
-        page_raw_text = html.tostring(self.tree_html)
-        start_index = page_raw_text.find('define("product/data",') + len('define("product/data",')
-        end_index = page_raw_text.find('define("athena/analytics-data"', start_index)
-        end_index = page_raw_text.rfind(");", 0, end_index) - 2
-        body_dict = json.loads(page_raw_text[start_index:end_index])
-        self.js_entry_function_body = body_dict
 
-        return body_dict
+        if self.product_info_json:
+            return self.product_info_json
+
+        page_raw_text = html.tostring(self.tree_html)
+        product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
+
+        self.product_info_json = product_info_json
+
+        return self.product_info_json
 
     # ! may throw exception if not found
     def _owned_from_script(self):
@@ -1665,10 +1693,10 @@ class WalmartScraper(Scraper):
             1/0 (product owned/not owned)
         """
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         seller = pinfo_dict['analyticsData']['sellerName']
 
@@ -1686,10 +1714,10 @@ class WalmartScraper(Scraper):
             1/0 (product has marketplace sellers/has not)
         """
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         # TODO: what to do when there is no 'marketplaceOptions'?
         #       e.g. http://www.walmart.com/ip/23149039
@@ -1808,10 +1836,10 @@ class WalmartScraper(Scraper):
 #        if self._site_online():
 #           return 1
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         available = pinfo_dict["analyticsData"]["storesAvail"]
 
@@ -1826,10 +1854,10 @@ class WalmartScraper(Scraper):
             or None if none found / not relevant
         """
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
         sellers = map(lambda d: d["sellerName"], sellers_dict)
@@ -1845,10 +1873,10 @@ class WalmartScraper(Scraper):
             1/0 (available/not available)
         """
 
-        if not self.js_entry_function_body:
-            pinfo_dict = self._extract_jsfunction_body()
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
         else:
-            pinfo_dict = self.js_entry_function_body
+            pinfo_dict = self.product_info_json
 
         available = pinfo_dict["analyticsData"]["onlineAvail"]
 
@@ -2007,10 +2035,10 @@ class WalmartScraper(Scraper):
         #       e.g. http://www.walmart.com/ip/23149039
         try:
             #       new design
-            if not self.js_entry_function_body:
-                pinfo_dict = self._extract_jsfunction_body()
+            if not self.product_info_json:
+                pinfo_dict = self._extract_product_info_json()
             else:
-                pinfo_dict = self.js_entry_function_body
+                pinfo_dict = self.product_info_json
 
             marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
 
@@ -2148,52 +2176,127 @@ class WalmartScraper(Scraper):
     def _nutrition_facts(self):
         # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
         # containing nutrition facts
-        res=[]
-        nutr=self.tree_html.xpath("//div[@class='nutrition-section']//div[@class='serving']//div")
-        for i, n in enumerate(nutr):
-            nt = n.text_content()
-            if i == 0:
-                res.append([nt[0:13].strip(),nt[13:].strip()])
-            if i == 1:
-                res.append([nt[0:22].strip(),nt[22:].strip()])
-        nutr=self.tree_html.xpath("//div[@class='nutrition-section']//table[contains(@class,'table')]//tr")
-        _digits = re.compile('\d')
-        for i, n in enumerate(nutr):
-            pr = n.xpath(".//*[self::th or self::td]//text()")
-            if len(pr)>0 and pr[0].find("B6") < 0:
-                m = _digits.search(pr[0])
-                if m != None and m.start() > 1:
-                    p0 = pr[0][0:m.start()-1]
-                    p1 = pr[0][m.start()-1:]
-                    pr[0] = p1.strip()
-                    pr.insert(0,p0.strip())
-            if len(pr)==2 :
-                res.append(pr)
-            elif len(pr)==3 and pr[2].strip()!="":
-                res.append([pr[0].strip(),{"absolute":pr[1].strip(),"relative":pr[2].strip()}])
-            elif len(pr) == 3 and pr[2].strip() == "":
-                res.append([pr[0].strip(),pr[1].strip()])
-        if len(res) > 0:
-            self.nutr_count = len(res)
+        if self._version() == "Walmart v1":
+            if not self.tree_html.xpath("//div[@class='NutFactsSIPT']"):
+                return None
+
+            res = []
+            serving_info = self.tree_html.xpath("//div[@class='NutFactsSIPT']//tr[@class='ServingInfo']/td/text()")
+            res.append([serving_info[0][0:13].strip(),serving_info[0][13:].strip()])
+            res.append([serving_info[1][0:22].strip(),serving_info[1][22:].strip()])
+            calories_info_cals = self.tree_html.xpath("//div[@class='NutFactsSIPT']//tr[@class='Calories']/td/div[@class='Cals']//text()")
+
+            if calories_info_cals:
+                res.append(calories_info_cals)
+
+            calories_info_cals_fat = self.tree_html.xpath("//div[@class='NutFactsSIPT']//tr[@class='Calories']/td/div[@class='CalsFat']//text()")
+
+            if calories_info_cals_fat:
+                res.append([calories_info_cals_fat[0][:17].strip(), calories_info_cals_fat[0][17:].strip()])
+
+            nutrition_info_list = self.tree_html.xpath("//div[@class='NutFactsSIPT']//tr[child::*[@class='AttrName'] and child::*[@class='AttrValue']]")
+
+            for nutrition_info in nutrition_info_list:
+                values = nutrition_info.xpath("./td//text()")
+                pass
+
+                if len(values) == 1:
+                    nDigitIndex = re.search("\d", values[0]).start()
+                    res.append([values[0][:nDigitIndex].strip(), values[0][nDigitIndex:].strip()])
+                if len(values) == 2:
+                    res.append([values[0].strip(), values[1].strip()])
+                elif len(values) == 3:
+                    res.append([values[0].strip(), {"absolute": values[1].strip(), "relative": values[2].strip()}])
+
+            if not res:
+                return None
+
             return res
-        self.nutr_count = None
+        elif self._version() == "Walmart v2":
+            res=[]
+            nutr=self.tree_html.xpath("//div[@class='nutrition-section']//div[@class='serving']//div")
+            for i, n in enumerate(nutr):
+                nt = n.text_content()
+                if i == 0:
+                    res.append([nt[0:13].strip(),nt[13:].strip()])
+                if i == 1:
+                    res.append([nt[0:22].strip(),nt[22:].strip()])
+            nutr=self.tree_html.xpath("//div[@class='nutrition-section']//table[contains(@class,'table')]//tr")
+            _digits = re.compile('\d')
+            for i, n in enumerate(nutr):
+                pr = n.xpath(".//*[self::th or self::td]//text()")
+                if len(pr)>0 and pr[0].find("B6") < 0:
+                    m = _digits.search(pr[0])
+                    if m != None and m.start() > 1:
+                        p0 = pr[0][0:m.start()-1]
+                        p1 = pr[0][m.start()-1:]
+                        pr[0] = p1.strip()
+                        pr.insert(0,p0.strip())
+                if len(pr)==2 :
+                    res.append(pr)
+                elif len(pr)==3 and pr[2].strip()!="":
+                    res.append([pr[0].strip(),{"absolute":pr[1].strip(),"relative":pr[2].strip()}])
+                elif len(pr) == 3 and pr[2].strip() == "":
+                    res.append([pr[0].strip(),pr[1].strip()])
+            if len(res) > 0:
+                return res
+
+            return None
+
         return None
 
     def _nutrition_fact_count(self):
         # number of nutrition facts (of elements in the nutrition_facts list) - integer
-        return self.nutr_count
+        nutrition_facts = self._nutrition_facts()
+
+        if nutrition_facts:
+            return len(nutrition_facts)
+
+        return 0
 
     def _nutrition_fact_text_health(self):
-        if not self._nutrition_facts():
+        try:
+            if self._version() == "Walmart v1":
+                nutrition_facts = self._nutrition_facts()
+
+                if not nutrition_facts:
+                    return 0
+
+                calories_info_count = 0
+
+                for nutrition_fact in nutrition_facts:
+                    if "Calories" in nutrition_fact[0]:
+                        calories_info_count = calories_info_count + 1
+
+                if calories_info_count == 0 or len(nutrition_facts) - calories_info_count < 3:
+                    return 1
+
+                nutrition_facts_in_text = html.tostring(self.tree_html.xpath("//div[@class='NutFactsSIPT']")[0]).lower()
+
+                if not re.search('percent daily values are based on(.+?)your daily values may be higher or lower depending', nutrition_facts_in_text):
+                    return 1
+
+                return 2
+            elif self._version() == "Walmart v2":
+                nutrition_facts = self._nutrition_facts()
+
+                if not nutrition_facts:
+                    return 0
+
+                nutrition_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='nutrient-table']//tr")
+                calories_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='calories-table']//tr")
+                vitamins_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='vitamins-table']//tr")
+                nutrition_facts_in_text = html.tostring(self.tree_html.xpath("//div[@class='nutrition-section']")[0]).lower()
+
+                if len(nutrition_facts_tr_list) < 2 or len(calories_facts_tr_list) < 2:
+                    return 1
+
+                if not re.search('percent daily values are based on(.+?)your daily values may be higher or lower depending', nutrition_facts_in_text):
+                    return 1
+
+                return 2
+        except:
             return 0
-
-        nutrition_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='nutrient-table']//tr")
-        vitamins_facts_tr_list = self.tree_html.xpath("//div[@class='nutrition-section']//table[@class='vitamins-table']//tr")
-
-        if len(nutrition_facts_tr_list) < 2 or len(vitamins_facts_tr_list) < 1:
-            return 1
-
-        return 2
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -2244,6 +2347,7 @@ class WalmartScraper(Scraper):
         "upc" : _upc_from_tree, \
         "product_name" : _product_name_from_tree, \
         "site_id" : _site_id, \
+        "walmart_no" : _walmart_no, \
         "keywords" : _meta_keywords_from_tree, \
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\

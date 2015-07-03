@@ -26,6 +26,7 @@ ITEM_PIPELINES = {
     'product_ranking.pipelines.SetMarketplaceSellerType': 300,
     'product_ranking.pipelines.AddSearchTermInTitleFields': 300,
     'product_ranking.pipelines.CheckGoogleSourceSiteFieldIsCorrectJson': 400,
+    'product_ranking.pipelines.WalmartRedirectedItemFieldReplace': 999
 }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

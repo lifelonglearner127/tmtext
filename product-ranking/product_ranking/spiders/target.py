@@ -445,6 +445,8 @@ class TargetProductSpider(BaseProductsSpider):
                 "/div/p/text()").extract()
             if isonline:
                 isonline = isonline[0].strip()
+
+
             # TODO: isonline: u'out of stock online'
             # ==  'out of stock' & 'online'
             price = ci.xpath(
@@ -485,7 +487,7 @@ class TargetProductSpider(BaseProductsSpider):
                     price = None
                 else:
                     amount = is_empty(re.findall(
-                        '\d+\.{0,1}\d+', priceattr['amount']
+                        '\d+\.{0, 1}\d+', priceattr['amount']
                     ))                   
                     price = Price(priceCurrency=currency, price=amount)
                 cond_set_value(product, 'price', price)
@@ -513,6 +515,7 @@ class TargetProductSpider(BaseProductsSpider):
                     return
             self.log("Try again after 1-3 min.", DEBUG)
             return
+
         bi_list = self._extract_links_with_brand(containers)
 
         if not bi_list:
@@ -531,14 +534,18 @@ class TargetProductSpider(BaseProductsSpider):
 
         for brand, link, isonline, price in bi_list:
             product = SiteProductItem(brand=brand)
-            if 'out of stock' in isonline:
+
+            product['is_out_of_stock'] = False
+            if "out of stock" in isonline:
                 product['is_out_of_stock'] = True
+
+            product['is_in_store_only'] = False
             if 'in stores only' in isonline:
                 product['is_in_store_only'] = True
             if price:
                 product['price'] = Price(price=price, priceCurrency='USD')
 
-            # FIXME: 'onilne_only' status
+            # FIXME: 'online_only' status
             # if 'online only' in isonline:
             #     product['???'] = True
             yield link, product

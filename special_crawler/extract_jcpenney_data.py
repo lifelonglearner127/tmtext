@@ -27,6 +27,16 @@ class JcpenneyScraper(Scraper):
         self.review_json = None
         self.price_json = None
         self.jv = JcpenneyVariants()
+        self.is_analyze_media_contents = False
+        self.video_urls = None
+        self.video_count = 0
+        self.pdf_urls = None
+        self.pdf_count = 0
+        self.wc_emc = 0
+        self.wc_prodtour = 0
+        self.wc_360 = 0
+        self.wc_video = 0
+        self.wc_pdf = 0
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -155,20 +165,138 @@ class JcpenneyScraper(Scraper):
 
         return 0
 
+    def analyze_media_contents(self):
+        if self.is_analyze_media_contents:
+            return
+
+        self.is_analyze_media_contents = True
+
+        page_raw_text = html.tostring(self.tree_html)
+
+        #check pdf
+        try:
+            pdf_url = re.search('href="(.+\.pdf?)"', page_raw_text).group(1)
+
+            if not pdf_url:
+                raise Exception
+
+            if not pdf_url.startswith("http://"):
+                pdf_url = "http://www.jcpenney.com" + pdf_url
+
+            self.pdf_urls = [pdf_url]
+            self.pdf_count = len(self.pdf_urls)
+        except:
+            pass
+
+        #check media contents window existence
+        if not self.tree_html.xpath("//a[@class='InvodoViewerLink']"):
+            return
+
+        media_contents_window_link = self.tree_html.xpath("//a[@class='InvodoViewerLink']/@onclick")[0]
+        media_contents_window_link = re.search("window\.open\('(.+?)',", media_contents_window_link).group(1)
+
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+
+        contents = requests.get(media_contents_window_link, headers=h).text
+
+        #check media contents
+        if "webapps.easy2.com" in media_contents_window_link:
+            try:
+                media_content_raw_text = re.search('Demo.instance.data =(.+?)};\n', contents).group(1) + "}"
+                media_content_json = json.loads(media_content_raw_text)
+
+                video_lists = re.findall('"Path":"(.*?)",', media_content_raw_text)
+
+                video_lists = [media_content_json["UrlAddOn"] + url for url in video_lists if url.strip().endswith(".flv") or url.strip().endswith(".mp4/")]
+                video_lists = list(set(video_lists))
+
+                if not video_lists:
+                    raise Exception
+
+                self.video_urls = video_lists
+                self.video_count = len(self.video_urls)
+            except:
+                pass
+        elif "content.webcollage.net" in media_contents_window_link:
+            webcollage_link = re.search("document\.location\.replace\('(.+?)'\);", contents).group(1)
+            contents = requests.get(webcollage_link, headers=h).text
+            webcollage_page_tree = html.fromstring(contents)
+
+            try:
+                webcollage_media_base_url = re.search('<div data-resources-base="(.+?)"', contents).group(1)
+
+                videos_json = '{"videos":' + re.search('{"videos":(.*?)]}</div>', contents).group(1) + ']}'
+                videos_json = json.loads(videos_json)
+
+                video_lists = [webcollage_media_base_url + videos_json["videos"][0]["src"]["src"][1:]]
+                self.wc_video = 1
+                self.video_urls = video_lists
+                self.video_count = len(self.video_urls)
+            except:
+                pass
+
+            try:
+                if webcollage_page_tree.xpath("//div[@class='wc-ms-navbar']//span[text()='360 Rotation']") or webcollage_page_tree.xpath("//div[@class='wc-ms-navbar']//span[text()='360/Zoom']"):
+                    self.wc_360 = 1
+            except:
+                pass
+
+            try:
+                if webcollage_page_tree.xpath("//ul[contains(@class, 'wc-rich-features')]"):
+                    self.wc_emc = 1
+            except:
+                pass
+
+        elif "bcove.me" in media_contents_window_link:
+            try:
+                brightcove_page_tree = html.fromstring(contents)
+                video_lists = [brightcove_page_tree.xpath("//meta[@property='og:video']/@content")[0]]
+                self.video_urls = video_lists
+                self.video_count = len(self.video_urls)
+            except:
+                pass
+
     def _video_urls(self):
-        return None
+        self.analyze_media_contents()
+        return self.video_urls
 
     def _video_count(self):
-        return 0
+        self.analyze_media_contents()
+        return self.video_count
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
-        return None
+        self.analyze_media_contents()
+        return self.pdf_urls
 
     def _pdf_count(self):
-        return 0
+        self.analyze_media_contents()
+        return self.pdf_count
+
+    def _wc_emc(self):
+        self.analyze_media_contents()        
+        return self.wc_emc
+
+    def _wc_prodtour(self):
+        self.analyze_media_contents()        
+        return self.wc_prodtour
+
+    def _wc_360(self):
+        self.analyze_media_contents()        
+        return self.wc_360
+
+    def _wc_video(self):
+        self.analyze_media_contents()        
+        return self.wc_video
+
+    def _wc_pdf(self):
+        self.analyze_media_contents()        
+        return self.wc_pdf
 
     def _webcollage(self):
+        if self._wc_360() == 1 or self._wc_prodtour() == 1 or self._wc_pdf() == 1 or self._wc_emc() == 1 or self._wc_360():
+            return 1
+
         return 0
 
     def _htags(self):
@@ -343,6 +471,11 @@ class JcpenneyScraper(Scraper):
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
+        "wc_360": _wc_360, \
+        "wc_emc": _wc_emc, \
+        "wc_pdf": _wc_pdf, \
+        "wc_prodtour": _wc_prodtour, \
+        "wc_video": _wc_video, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "canonical_link": _canonical_link,

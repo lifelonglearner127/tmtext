@@ -1,5 +1,6 @@
 import json
 import re
+import urllib
 from urllib import unquote, urlencode
 from urlparse import urljoin
 
@@ -29,9 +30,9 @@ class MothercareProductsSpider(ProductsSpider):
 
     allowed_domains = [
         'mothercare.com',
-        'richrelevance.com',
-        'reevoo.com',
-        'mark.reevoo.com'
+        #'richrelevance.com',
+        #'reevoo.com',
+        #'mark.reevoo.com'
     ]
 
     SEARCH_URL = "http://www.mothercare.com/on/demandware.store" \
@@ -74,6 +75,12 @@ class MothercareProductsSpider(ProductsSpider):
 
     REVOO_URL = "http://mark.reevoo.com/reevoomark/en-GB/product?sku={sku}" \
                 "&trkref=MOT"
+
+    def __init__(self, *args, **kwargs):
+        super(MothercareProductsSpider, self).__init__(*args, **kwargs)
+        self.allowed_domains.append('richrelevance.com')
+        self.allowed_domains.append('reevoo.com')
+        self.allowed_domains.append('mark.reevoo.com')
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
