@@ -26,11 +26,11 @@ class SnapdealProductSpider(BaseProductsSpider):
         "/0/0/20?q=&sort={sort}&keyword={search_term}&clickSrc=go_header"
         "&viewType=List&lang=en&snr=false")
 
-    # SEARCH_URL = ("http://www.snapdeal.com/search?keyword={search_term}"
-    #     "&santizedKeyword=&catId=&categoryId=&suggested=false&vertical="
-    #     "&noOfResults=20&clickSrc=go_header&lastKeyword=&prodCatId="
-    #     "&changeBackToAll=false&foundInAll=false&categoryIdSearched="
-    #     "&cityPageUrl=&url=&utmContent=&catalogID=&dealDetail=")
+    START_URL = ("http://www.snapdeal.com/search?keyword={search_term}"
+        "&santizedKeyword=&catId=&categoryId=&suggested=false&vertical="
+        "&noOfResults=20&clickSrc=go_header&lastKeyword=&prodCatId="
+        "&changeBackToAll=false&foundInAll=false&categoryIdSearched="
+        "&cityPageUrl=&url=&utmContent=&catalogID=&dealDetail=")
 
     REVIEWS_URL = "http://www.snapdeal.com/getReviewsInfoGram?pageId={id}"
 
@@ -51,6 +51,8 @@ class SnapdealProductSpider(BaseProductsSpider):
         "FRESH_ARRIVALS": "rec",
     }
 
+    tm = None
+
     def __init__(self, *args, **kwargs):
         super(SnapdealProductSpider, self).__init__(*args, **kwargs)
         self.sort_by = self.SORT_MODES.get(
@@ -58,6 +60,16 @@ class SnapdealProductSpider(BaseProductsSpider):
         self.SEARCH_URL = ("http://www.snapdeal.com/acors/json/product/get/"
         "search/0/0/20?q=&sort=%s&keyword={search_term}&clickSrc=go_header"
         "&viewType=List&lang=en&snr=false" % (self.sort_by,))
+
+    def start_requests(self):
+        yield Request(
+            url=self.START_URL.format(search_term=self.searchterms[0]),
+            callback=self.after_start,
+        )
+
+    def after_start(self, response):
+        self.tm = self._scrape_total_matches(response)
+        return super(SnapdealProductSpider, self).start_requests()
 
     def parse_product(self, response):
         product = response.meta.get("product")
@@ -177,9 +189,12 @@ class SnapdealProductSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        total_matches = is_empty(response.xpath(
-            "//b[@id='no-of-results-filter']/text()").extract(), "0")
-        return int(total_matches.replace("+", ""))
+        if self.tm is None:
+            total_matches = is_empty(response.xpath(
+                "//b[@id='no-of-results-filter']/text()").extract(), "0")
+            return int(total_matches.replace("+", ""))
+        else:
+            return self.tm
 
     def _scrape_product_links(self, response):
         links = []
