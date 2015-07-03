@@ -570,7 +570,7 @@ class BaseValidator(object):
 
     def _validate_variants(self, val):
 
-        if isinstance(val, basestring):
+        if val and isinstance(val, basestring):
             try:
                 val = json.loads(val)
             except:
