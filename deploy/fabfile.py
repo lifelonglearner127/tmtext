@@ -230,6 +230,7 @@ def setup_packages():
     cuisine.package_ensure('mc htop iotop nano')  # just for convenience
     sudo('pip install virtualenv --upgrade')
     sudo('pip install pytesseract')
+    sudo('pip install tldextract')
 
     env.user, env.password, env.key_filename = \
         orig_user, orig_passw, orig_cert
@@ -281,7 +282,8 @@ def _setup_virtual_env_scrapyd():
         run('pip install django')
         run('pip install django-ses')
         run('pip install django_adminplus')
-
+        run('pip install lxml')
+        run('pip install tldextract')
 
     _setup_simmetrica_monitoring()
 
@@ -315,6 +317,7 @@ def _setup_virtual_env_web_runner():
         run('pip install wheel')
         run('pip install Paste')
         run('pip install flask')
+        run('pip install lxml')
 
 
 def _setup_virtual_env_web_runner_web():
@@ -325,6 +328,7 @@ def _setup_virtual_env_web_runner_web():
     with virtualenv(VENV_WEB_RUNNER_WEB):
         run('pip install django')
         run('pip install requests')
+        run('pip install lxml')
 
 
 def setup_virtual_env(scrapyd=True, web_runner=True, web_runner_web=True):

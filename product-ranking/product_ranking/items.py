@@ -118,7 +118,8 @@ def scrapy_marketplace_serializer(value):
             converted = {
                 u'price': get(rec, 'price', 'price', float),
                 u'currency': get(rec, 'price', 'priceCurrency', unicode),
-                u'name': conv_or_none(rec.get('name'), unicode)
+                u'name': conv_or_none(rec.get('name'), unicode),
+                u'seller_type': rec.get('seller_type', None)
             }
         else:
             converted = {u'price': None, u'currency': None,
@@ -126,6 +127,20 @@ def scrapy_marketplace_serializer(value):
 
         result.append(converted)
     return result
+
+
+def scrapy_upc_serializer(value):
+    """ This method is required to correctly dump values while using JSON
+        output (otherwise we'd have "can not serialize to JSON" error).
+        `value` can be a string, number, or a `MarketplaceSeller` instance.
+    :param value: int, str
+    :return: unicode
+    """
+    value = unicode(value)
+    if len(value) > 12 and value.startswith('0'):
+        return '0' + value.lstrip('0')
+    return value
+
 
 class SiteProductItem(Item):
     # Search metadata.
@@ -140,7 +155,7 @@ class SiteProductItem(Item):
 
     # Product data.
     title = Field()  # String.
-    upc = Field()  # Integer.
+    upc = Field(serializer=scrapy_upc_serializer)  # Integer.
     model = Field()  # String, alphanumeric code.
     url = Field()  # String, URL.
     image_url = Field()  # String, URL.
@@ -180,7 +195,18 @@ class SiteProductItem(Item):
     prime = Field()  # amazon Prime program: Prime/PrimePantry/None
 
     is_pickup_only = Field()   # now for Walmart only; may change in the future
+    shelf_page_out_of_stock = Field()  # now for Walmart only;
 
     date_of_last_question = Field()  # now for Walmart only
     recent_questions = Field()  # now for Walmart only; may change in the future
-    special_pricing = Field() # 1/0 for TPC, Rollback; target, walmart
+    special_pricing = Field()  # 1/0 for TPC, Rollback; target, walmart
+
+    variants = Field()
+
+    shipping = Field()  # now for Walmart only; may change in the future
+
+    _walmart_redirected = Field()  # for Walmart only; see #2126
+    _walmart_original_id = Field()
+    _walmart_current_id = Field()
+    _walmart_original_price = Field()
+    _walmart_original_oos = Field()  # oos = out of stock

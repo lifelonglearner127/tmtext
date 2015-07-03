@@ -135,7 +135,8 @@ def job_to_fname(metadata):
         job_name += str(task_id)
     if searchterms_str:
         additional_part = unidecode.unidecode(
-            searchterms_str).replace(' ', '-')
+            searchterms_str).replace(
+                ' ', '-').replace('/', '').replace('\\', '')
     else:
         # maybe should be changed to product_url
         additional_part = 'single-product-url-request'
@@ -438,7 +439,6 @@ def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
     _max_initial_attempts = 10
     for i in xrange(_max_initial_attempts):
         if i >= _max_initial_attempts - 2:
-            logger.error("Spider failed to start.")
             _msg = generate_msg(metadata, 'failed')
             if TEST_MODE:
                 test_write_msg_to_fs(
@@ -446,6 +446,18 @@ def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
             else:
                 write_msg_to_sqs(
                     metadata['server_name']+PROGRESS_QUEUE_NAME, _msg)
+            # try to upload at least scrapy logs to S3
+            try:
+                logger.info("Due to spider failed daemon will try"
+                            " to upload logs to s3 if they exist.")
+                put_file_into_s3(AMAZON_BUCKET_NAME, log_file)
+            except Exception as e:
+                logger.error("Failed to load logs to S3 with exception: %s",
+                             str(e))
+            # this log message should be added at the end because
+            # killer script will stop instance if found this message
+            # at logs
+            logger.error("Spider failed to start.")
             sys.exit()
             return  # error - the data file still does not exist
         if os.path.exists(data_file) and os.path.exists(log_file):
@@ -509,6 +521,7 @@ def execute_task_from_sqs():
     task_queue.task_done()
     logger.info("Task message was successfully received and "
                 "removed form queue.")
+    logger.info("Whole tasks msg: %s", str(metadata))
     increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
     update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
 

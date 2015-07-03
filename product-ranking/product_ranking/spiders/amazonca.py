@@ -21,6 +21,7 @@ from product_ranking.spiders import (BaseProductsSpider, cond_set,
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.marketplace import Amazon_marketplace
 from product_ranking.amazon_tests import AmazonTests
+from spiders_shared_code.amazon_variants import AmazonVariants
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -166,6 +167,12 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         cond_set(product, 'brand', ['NO BRAND'])
         if '®' in product.get('brand', ''):
             product['brand'] = product['brand'].replace('®', '')
+        
+        ### Populate variants with CH/SC class
+        av = AmazonVariants()
+        av.setupSC(response)
+        product['variants'] = av._variants()
+
         price = response.xpath(
             '//span[@id="priceblock_saleprice"]/text()'
         ).extract()

@@ -20,6 +20,8 @@ sys.path.append(os.path.abspath('../search'))
 import captcha_solver
 import compare_images
 
+from spiders_shared_code.amazon_variants import AmazonVariants
+
 class AmazonScraper(Scraper):
 
     ##########################################
@@ -37,6 +39,12 @@ class AmazonScraper(Scraper):
 
     marketplace_prices = None
     marketplace_sellers = None
+
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        self.av = AmazonVariants()
+
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
     def _extract_page_tree(self, captcha_data=None, retries=0):
@@ -129,10 +137,14 @@ class AmazonScraper(Scraper):
     def check_url_format(self):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         n = re.match(r"^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        o = re.match(r"^http://www.amazon.ca/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         l = re.match(r"^http://www.amazon.co.uk/.*$", self.product_page_url)
         self.scraper_version = "com"
+
         if (not not n) or (not not l): self.scraper_version = "uk"
-        return (not not m) or (not not n) or (not not l)
+        if (not not o): self.scraper_version = "ca"
+
+        return (not not m) or (not not n) or (not not l) or (not not o)
 
     def not_a_product(self):
         '''Overwrites parent class method that determines if current page
@@ -140,6 +152,8 @@ class AmazonScraper(Scraper):
         Currently for Amazon it detects captcha validation forms,
         and returns True if current page is one.
         '''
+
+        self.av.setupCH(self.tree_html)
 
         if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
             return True
@@ -159,6 +173,8 @@ class AmazonScraper(Scraper):
     def _product_id(self):
         if self.scraper_version == "uk":
             product_id = re.match("^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+        elif self.scraper_version == "ca":
+            product_id = re.match("^http://www.amazon.ca/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         else:
             product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         return product_id
@@ -300,63 +316,65 @@ class AmazonScraper(Scraper):
         if res != "" : return res
         return None
 
-    def _color(self):
-        page_raw_text = lxml.html.tostring(self.tree_html)
+    def _variants(self):
+        return self.av._variants()
 
-        startIndex = page_raw_text.find('"variationValues" : ') + len('"variationValues" : ')
+    def _ingredients(self):
+        page_raw_text = html.tostring(self.tree_html)
 
-        if startIndex == -1:
-            return None
+        try:
+            ingredients = re.search('<b>Ingredients</b><br>(.+?)<br>', page_raw_text).group(1)
+            ingredients = ingredients.split(",")
 
-        endIndex = page_raw_text.find("}", startIndex) + 1
+            ingredients = [ingredient.strip() for ingredient in ingredients]
 
-        json_text = page_raw_text[startIndex:endIndex]
-        json_body =json.loads(json_text)
+            if ingredients:
+                return ingredients
+        except:
+            desc = '\n'.join(self.tree_html.xpath('//script//text()'))
+            desc = re.findall(r'var iframeContent = "(.*)";', desc)
+            desc = urllib.unquote_plus(str(desc))
+            ingredients = re.search('Ingredients:(.+?)(\\n|\.)', desc).group(1)
 
-        return json_body["color_name"]
+            if "</h5>" in ingredients:
+                return None
 
-    def _size(self):
-        page_raw_text = lxml.html.tostring(self.tree_html)
+            ingredients = ingredients.split(",")
 
-        startIndex = page_raw_text.find('"variationValues" : ') + len('"variationValues" : ')
+            ingredients = [ingredient.strip() for ingredient in ingredients]
 
-        if startIndex == -1:
-            return None
+            if ingredients:
+                return ingredients
 
-        endIndex = page_raw_text.find("}", startIndex) + 1
+        return None
 
-        json_text = page_raw_text[startIndex:endIndex]
-        json_body =json.loads(json_text)
+    def _ingredient_count(self):
+        if self._ingredients():
+            return len(self._ingredients())
 
-        return json_body["size_name"]
+        return 0
 
-    def _color_size_stockstatus(self):
-        page_raw_text = lxml.html.tostring(self.tree_html)
+    def _nutrition_facts(self):
+        try:
+            desc = '\n'.join(self.tree_html.xpath('//script//text()'))
+            desc = re.findall(r'var iframeContent = "(.*)";', desc)
+            desc = urllib.unquote_plus(str(desc))
+            nutrition_facts = re.search('<h5>Nutritional Facts and Ingredients:</h5> <p>(.+?)(</p>|<br>)', desc).group(1)
+            nutrition_facts = nutrition_facts.split(",")
+            nutrition_facts = [nutrition_fact.strip() for nutrition_fact in nutrition_facts]
 
-        startIndex = page_raw_text.find('"dimensionValuesDisplayData":') + len('"dimensionValuesDisplayData":')
+            if nutrition_facts:
+                return nutrition_facts
+        except:
+            pass
 
-        if startIndex == -1:
-            return None
+        return None
 
-        endIndex = page_raw_text.find("}", startIndex) + 1
-        json_text = page_raw_text[startIndex:endIndex]
-        json_body =json.loads(json_text)
+    def _nutrition_fact_count(self):
+        if self._nutrition_facts():
+            return len(self._nutrition_facts())
 
-        color_size_stockstatus_dictionary = {}
-        color_list = self._color()
-        size_list = self._size()
-
-        for color in color_list:
-            color_size_stockstatus_dictionary[color] = {}
-
-            for size in size_list:
-                color_size_stockstatus_dictionary[color][size] = 0
-
-        for asin in json_body:
-            color_size_stockstatus_dictionary[json_body[asin][1]][json_body[asin][0]] = 1
-
-        return color_size_stockstatus_dictionary
-
+        return 0
 
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
@@ -764,69 +782,103 @@ class AmazonScraper(Scraper):
     def _marketplace_sellers(self):
         if self.marketplace_sellers != None:
             return self.marketplace_sellers
+
         self.marketplace_prices = []
         mps = []
         mpp = []
         path = '/tmp/amazon_sellers.json'
+
         try:
             with open(path, 'r') as fp:
                 amsel = json.load(fp)
         except:
             amsel = {}
+
         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         domain=self.product_page_url.split("/")
+
         try:
             url = domain[0] + "//" + domain[2] + "/gp/offer-listing/" + self.tree_html.xpath("//input[@id='ASIN']/@value")[0] + "/ref=olp_tab_all"
         except:
             url = domain[0] + "//" + domain[2] + "/gp/offer-listing/" + self._product_id() + "/ref=olp_tab_all"
         fl = 0
+
         while len(url) > 10:
             contents = requests.get(url, headers=h).text
             tree = html.fromstring(contents)
             sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
+
             for s in sells:
                 price = s.xpath('.//span[contains(@class,"olpOfferPrice")]//text()')
                 sname = s.xpath('.//p[contains(@class,"olpSellerName")]/span/a/text()')
+
                 if len(price) > 0:
                     seller_price = self._tofloat(price[0])
                     seller_name = ""
+
                     if len(sname) > 0 and sname[0].strip() != "":
                         seller_name = sname[0].strip()
                     else:
-                        seller_link = s.xpath(".//p[contains(@class,'SellerName')]//a/@href")
+                        seller_link = s.xpath(".//p[@class='a-spacing-small']/a/@href")
+
                         if len(seller_link) > 0:
                             sd=seller_link[0].split("/")
                             seller_id = ""
+
                             if len(sd) > 4:
                                 seller_id = sd[4]
 #                                print "seller_id",seller_id
+
                                 if seller_id != "" and seller_id in amsel:
                                     seller_name = amsel[seller_id]
 #                                    print "seller_name",seller_name
+
                             if seller_name == "":
-                                seller_content = requests.get(seller_link[0], headers=h).text
+                                if seller_link[0].startswith("http://www.amazon."):
+                                    seller_content = requests.get(seller_link[0], headers=h).text
+                                else:
+                                    if self.scraper_version == "uk":
+                                        seller_content = requests.get("http://www.amazon.co.uk" + seller_link[0], headers=h).text
+                                    elif self.scraper_version == "ca":
+                                        seller_content = requests.get("http://www.amazon.ca" + seller_link[0], headers=h).text
+                                    else:
+                                        seller_content = requests.get("http://www.amazon.com" + seller_link[0], headers=h).text
+
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")
+
                                 if len(seller_names) > 0:
                                     seller_name = seller_names[0].strip()
                                 else:
                                     seller_names = seller_tree.xpath("//title//text()")
+
                                     if len(seller_names) > 0:
                                         if seller_names[0].find(":")>0:
                                             seller_name = seller_names[0].split(":")[1].strip()
                                         else:
                                             seller_name = seller_names[0].split("@")[0].strip()
+
                             if seller_name != "" and seller_id != "":
                                 amsel[seller_id] = seller_name
                                 fl = 1
+
                     if seller_name != "":
                         mps.append(seller_name)
                         mpp.append(seller_price)
+
+                        if len(mps) > 20:
+                            break
+
+            if len(mps) > 20:
+                break
+
             urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
+
             if len(urls)>0:
                 url = domain[0]+"//"+domain[2]+urls[0]
             else:
                 url = ""
+
         if len(mps)>0:
             if fl == 1:
                 try:
@@ -834,11 +886,13 @@ class AmazonScraper(Scraper):
                         json.dump(amsel, fp)
                 except Exception as ex:
                     print ex
+
             self.marketplace_prices = mpp
             self.marketplace_sellers = mps
-            return mps
-        return None
 
+            return mps
+
+        return None
 
     def _marketplace_prices(self):
         if self.marketplace_prices is None :
@@ -1005,9 +1059,11 @@ class AmazonScraper(Scraper):
         "description" : _description, \
         "long_description" : _long_description, \
         "apluscontent_desc" : _apluscontent_desc, \
-        "color": _color, \
-        "size": _size, \
-        "color_size_stockstatus": _color_size_stockstatus, \
+        "variants": _variants, \
+        "ingredients": _ingredients, \
+        "ingredient_count": _ingredient_count, \
+        "nutrition_facts": _nutrition_facts, \
+        "nutrition_fact_count": _nutrition_fact_count, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\

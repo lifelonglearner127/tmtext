@@ -1,0 +1,88 @@
+import json
+
+import lxml.html
+import itertools
+import re
+
+
+class AmazonVariants(object):
+
+    def setupSC(self, response):
+        """ Call it from SC spiders """
+        self.response = response
+        self.tree_html = lxml.html.fromstring(response.body)
+
+    def setupCH(self, tree_html):
+        """ Call it from CH spiders """
+        self.tree_html = tree_html
+
+    def _variants(self):
+        try:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            variation_key_values = json.loads(re.search('"variation_values":(.+?),"deviceType', page_raw_text).group(1))
+            variation_key_list = list(variation_key_values)
+
+            for index, variation_key in enumerate(variation_key_list):
+                variation_key_list[index] = variation_key[:variation_key.find("_")]
+
+            variation_values_list = []
+
+            for variation_key in variation_key_values:
+                variation_values_list.append(variation_key_values[variation_key])
+
+            variation_combinations_values = list(itertools.product(*variation_values_list))
+
+            variation_combinations_values = map(list, variation_combinations_values)
+            instock_variation_combinations_values = json.loads(re.search('"dimensionValuesDisplayData":(.+?),"hidePopover":', page_raw_text).group(1))
+            instock_variation_combinations_values = [instock_variation_combinations_values[key] for key in instock_variation_combinations_values]
+
+            outofstock_variation_combinations_values = [variation_combination for variation_combination in variation_combinations_values if variation_combination not in instock_variation_combinations_values]
+
+            selected_variation_combination = json.loads(re.search('"selected_variations":(.+?),"jqupgrade"', page_raw_text).group(1))
+
+            selected_variation_combination = [selected_variation_combination[key] for key in selected_variation_combination]
+
+            stockstatus_for_variants_list = []
+
+            for variation_combination in outofstock_variation_combinations_values:
+                stockstatus_for_variants = {}
+                properties = {}
+                isSelected = True
+
+                for index, variation_key in enumerate(variation_key_list):
+                    properties[variation_key] = variation_combination[index]
+
+                    if variation_combination[index] != selected_variation_combination[index]:
+                        isSelected = False
+
+                stockstatus_for_variants["properties"] = properties
+                stockstatus_for_variants["in_stock"] = False
+                stockstatus_for_variants["selected"] = isSelected
+                stockstatus_for_variants["price"] = None
+
+                stockstatus_for_variants_list.append(stockstatus_for_variants)
+
+            for variation_combination in instock_variation_combinations_values:
+                stockstatus_for_variants = {}
+                properties = {}
+                isSelected = True
+
+                for index, variation_key in enumerate(variation_key_list):
+                    properties[variation_key] = variation_combination[index]
+
+                    if variation_combination[index] != selected_variation_combination[index]:
+                        isSelected = False
+
+                stockstatus_for_variants["properties"] = properties
+                stockstatus_for_variants["in_stock"] = True
+                stockstatus_for_variants["selected"] = isSelected
+                stockstatus_for_variants["price"] = None
+
+                stockstatus_for_variants_list.append(stockstatus_for_variants)
+
+            if not stockstatus_for_variants_list:
+                return None
+            else:
+                return stockstatus_for_variants_list
+        except:
+            return None

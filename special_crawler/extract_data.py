@@ -17,6 +17,7 @@ from lxml import html, etree
 from itertools import chain
 import time
 
+
 class Scraper():
 
     """Base class for scrapers
@@ -51,6 +52,7 @@ class Scraper():
             "event",
             "product_id",
             "site_id",
+            "walmart_no",
             "date",
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
@@ -73,11 +75,9 @@ class Scraper():
             "nutrition_facts", # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
                                # containing nutrition facts
             "nutrition_fact_count", # number of nutrition facts (of elements in the nutrition_facts list) - integer
+            "nutrition_fact_text_health", # indicate nutrition fact text status - 0: not exists, 1: exists but partially, 2: exists and perfect.
             "rollback", # binary (0/1), whether product is rollback or not
-            "color", # list of color string
-            "size", # list of size string
-            "color_size_stockstatus", # dictionary of color, size and stock status
-
+            "variants", # list of variants
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
@@ -179,12 +179,12 @@ class Scraper():
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
                         "features", "feature_count", "model_meta", "description", "long_description","apluscontent_desc",
-                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "rollback",
+                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "rollback",
                         "manufacturer", "return_to"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "color", "size", "color_size_stockstatus"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "variants"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock", \
@@ -445,9 +445,13 @@ class Scraper():
             return self.ERROR_RESPONSE
 
         for info in info_type_list:
-
             try:
-                results = self.ALL_DATA_TYPES[info](self)
+                if isinstance(self.ALL_DATA_TYPES[info], (str, unicode)):
+                    _method_to_call = getattr(self, self.ALL_DATA_TYPES[info])
+                    results = _method_to_call()
+                else:  # callable?
+                    _method_to_call = self.ALL_DATA_TYPES[info]
+                    results = _method_to_call(self)
             except IndexError, e:
                 sys.stderr.write("ERROR: No " + info + " for " + self.product_page_url.encode("utf-8") + ":\n" + str(e) + "\n")
                 results = None

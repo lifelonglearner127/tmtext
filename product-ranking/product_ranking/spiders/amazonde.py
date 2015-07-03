@@ -77,6 +77,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
     use_proxies = True
 
+    handle_httpstatus_list = [502, 503, 504]
+
     def __init__(self, captcha_retries='20', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
 
@@ -107,6 +109,12 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_product(self, response):
         prod = response.meta['product']
+
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response,
+                self.parse_product
+            )
 
         if not self._has_captcha(response):
             self._populate_from_js(response, prod)
@@ -562,6 +570,13 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         return buyer_reviews
 
     def get_buyer_reviews_from_2nd_page(self, response):
+
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response,
+                self.get_buyer_reviews_from_2nd_page
+            )
+
         product = response.meta["product"]
         buyer_reviews = {}
         product["buyer_reviews"] = {}
@@ -616,52 +631,6 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             buyer_reviews['average_rating'] = round(average, 1)
         return buyer_reviews
 
-    """
-    def parse_marketplace(self, response):
-        if self._has_captcha(response):
-            result = self._handle_captcha(response, self.parse_marketplace)
-
-        product = response.meta["product"]
-
-        marketplaces = response.meta.get("marketplaces", [])
-
-        for seller in response.xpath(
-            '//div[contains(@class, "a-section")]/' \
-                'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
-
-            price = is_empty(seller.xpath(
-                'div[contains(@class, "a-column")]' \
-                '/span[contains(@class, "price")]/text()'
-            ).re(r'[\d\,]+'), 0)
-
-            if price:
-                price = float(price.replace(',', '.').strip())
-
-            name = is_empty(seller.xpath(
-                'div/p[contains(@class, "Name")]/span/a/text()').extract())
-
-            marketplaces.append({
-                "price": Price(price=price, priceCurrency="EUR"),
-                "name": name
-            })
-
-        next_link = is_empty(response.xpath(
-            "//ul[contains(@class, 'a-pagination')]" \
-            "/li[contains(@class, 'a-last')]/a/@href"
-        ).extract())
-
-        if next_link:
-            meta = {"product": product, "marketplaces": marketplaces}
-            return Request(
-                url=urlparse.urljoin(response.url, next_link),
-                callback=self.parse_marketplace,
-                meta=meta
-            )
-
-        product["marketplace"] = marketplaces
-
-        return product
-    """
     def parse_marketplace(self, response):
         response.meta["called_class"] = self
         response.meta["next_req"] = None

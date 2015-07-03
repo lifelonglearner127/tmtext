@@ -16,6 +16,7 @@ from lxml import etree
 import time
 import requests
 from extract_data import Scraper
+from spiders_shared_code.macys_variants import MacysVariants
 
 
 class MacysScraper(Scraper):
@@ -24,7 +25,15 @@ class MacysScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www1\.macys\.com/shop/product/(.*)"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www1\.macys\.com/shop/(.*)"
+
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        # whether product has any webcollage media
+        self.review_json = None
+        self.price_json = None
+        self.mv = MacysVariants()
 
     reviews_tree = None
     max_score = None
@@ -41,7 +50,7 @@ class MacysScraper(Scraper):
 
     def check_url_format(self):
         # for ex: http://www1.macys.com/shop/product/closeout-biddeford-comfort-knit-fleece-heated-king-blanket?ID=694761
-        m = re.match(r"^http://www1\.macys\.com/shop/product/(.*)", self.product_page_url)
+        m = re.match(r"^http://www1\.macys\.com/shop/(.*)", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -51,9 +60,13 @@ class MacysScraper(Scraper):
         and returns True if current page is one.
         '''
 
+        self.mv.setupCH(self.tree_html)
+
         #if len(self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img")) < 1:
         #    return True
         if len(self.tree_html.xpath("//h1[contains(@class,'productTitle')]")) < 1:
+            return True
+        if len(self.tree_html.xpath("//div[@id='viewCollectionItemsButton']")) > 0:
             return True
         return False
 
@@ -67,6 +80,10 @@ class MacysScraper(Scraper):
     def _product_id(self):
         product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
         return product_id
+
+    def _site_id(self):
+        site_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
+        return site_id
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -123,7 +140,15 @@ class MacysScraper(Scraper):
         if len(rows) > 0:
             description += "\n".join(rows)
         if len(description) < 1:
-            return None
+            description = ""
+            rows = self.tree_html.xpath("//div[@id='productDetails']//text()")
+            rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+            if len(rows) > 0:
+                description += "\n".join(rows)
+            if len(description) < 1:
+                return None
+            if description.startswith("Product Details"):
+                description = description.replace("Product Details\n", "")
         return description
 
     def _long_description(self):
@@ -137,7 +162,8 @@ class MacysScraper(Scraper):
         link = re.findall(r"MACYS\.adLinkPopUp\.definePopup\('(.*?)'", script, re.DOTALL)
         try:
             link = "http://www1.macys.com/shop/media/popup/?popupFileName=%s" % link[0]
-            contents = urllib.urlopen(link).read()
+            req = urllib2.Request(link, headers={'User-Agent' : "Magic Browser"})
+            contents = urllib2.urlopen(req).read()
             # document.location.replace('
             tree = html.fromstring(contents)
             rows = tree.xpath("//text()")
@@ -152,6 +178,9 @@ class MacysScraper(Scraper):
         except IndexError:
             pass
 
+    def _variants(self):
+        return self.mv._variants()
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -160,6 +189,37 @@ class MacysScraper(Scraper):
         return None
 
     def _image_urls(self):
+        image_url_additional = re.findall(r"MACYS.pdp.primaryImages\[\d+\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_additional) > 0:
+            image_urls = image_url_additional[0].split(",")
+            image_url_additional = []
+            for r in image_urls:
+                img = r.split(":")
+                if len(img) >= 2:
+                    image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % img[1].replace('"','').replace("'",""))
+
+        image_url_additional2 = re.findall(r"MACYS.pdp.additionalImages\[\d+\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_additional2) > 0:
+            image_urls = image_url_additional2[0].split('",')
+            image_url_additional = []
+            for r in image_urls:
+                img = r.split(":")
+                if len(img) >= 2:
+                    imgs = img[1].replace('"','').replace("'","").split(",")
+                    for r in imgs:
+                        image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
+
+        image_url_additional3 = re.findall(r"MACYS.pdp.imageZoomer = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_additional3) > 0:
+            m = re.findall(r"imgList: '(.*?)'", image_url_additional3[0], re.DOTALL)
+            if len(m) > 0:
+                image_urls = m[0].split(',')
+                image_url_additional = []
+                for r in image_urls:
+                    image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
+                if len(image_url_additional) > 0:
+                    return image_url_additional
+
         image_url = self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img/@src")
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url) < 1:
@@ -174,6 +234,7 @@ class MacysScraper(Scraper):
             except Exception, e:
                 print "WARNING: ", e.message
 
+        image_url = image_url + image_url_additional
         return image_url
 
     def _image_count(self):
@@ -187,9 +248,11 @@ class MacysScraper(Scraper):
             return self.video_urls
         self.video_count = 0
         video_urls = []
+        rows = re.findall(r'videoid: "(.*?)"', " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        video_urls = rows
         if len(video_urls) < 1:
             return None
-        self.video_urls = video_urls
+        self.video_urls = ["http://c.brightcove.com/services/viewer/federated_f9?flashID=%s_v" % r for r in video_urls]
         self.video_count = len(self.video_urls)
         return video_urls
 
@@ -389,6 +452,7 @@ class MacysScraper(Scraper):
         # CONTAINER : NONE
         "url" : _url, \
         "product_id" : _product_id, \
+        "site_id" : _site_id, \
 
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
@@ -399,7 +463,7 @@ class MacysScraper(Scraper):
         "description" : _description, \
         "model" : _model, \
         "long_description" : _long_description, \
-
+        "variants" : _variants, \
         # CONTAINER : PAGE_ATTRIBUTES
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \

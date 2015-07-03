@@ -22,8 +22,10 @@ NEWSPIDER_MODULE = 'product_ranking.spiders'
 
 ITEM_PIPELINES = {
     'product_ranking.pipelines.CutFromTitleTagsAndReturnStringOnly': 300,
+    'product_ranking.pipelines.SetMarketplaceSellerType': 300,
     'product_ranking.pipelines.AddSearchTermInTitleFields': 300,
     'product_ranking.pipelines.CheckGoogleSourceSiteFieldIsCorrectJson': 400,
+    'product_ranking.pipelines.WalmartRedirectedItemFieldReplace': 999
 }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -147,3 +149,8 @@ if os.path.exists(PROXY_LIST) and _check_if_proxies_available(http_proxy_path):
 else:
     log.msg('NOT USING PROXIES')
     print('NOT USING PROXIES')
+
+
+# shared CH and SC code
+sys.path.append(os.path.join(CWD, '..', '..'))
+sys.path.append(os.path.join(CWD, '..', '..', 'spiders_shared_code'))

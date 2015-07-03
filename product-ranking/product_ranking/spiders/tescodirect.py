@@ -66,8 +66,9 @@ class TescoDirectProductsSpider(BaseProductsSpider):
     def __init__(self, *args, **kwargs):
         self.search = kwargs.get("searchterms_str")
         if "search_modes" in kwargs:
-            self.sort_by = self.SORT_MODES[kwargs["search_modes"]]    
+            self.sort_by = self.SORT_MODES[kwargs["search_modes"]]
         super(TescoDirectProductsSpider, self).__init__(*args, **kwargs)
+        self.site_name = "www.tesco.com/direct"
 
     def start_requests(self):
         """Generate Requests from the SEARCH_URL and the search terms."""
@@ -114,6 +115,7 @@ class TescoDirectProductsSpider(BaseProductsSpider):
             prod = SiteProductItem()
             prod['is_single_result'] = True
             prod['url'] = self.product_url
+            prod['site'] = "www.tesco.com/direct"
             yield Request(self.product_url,
                           self._parse_single_product,
                           meta={'product': prod})

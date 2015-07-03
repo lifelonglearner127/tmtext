@@ -133,7 +133,9 @@ class AsdaProductsSpider(BaseProductsSpider):
                     priceCurrency='GBP'
                 )
             # FIXME Verify by comparing a prod in another site.
-            prod['upc'] = item['upcNumbers'][0]['upcNumber']
+            if getattr(item, 'upcNumbers', None):
+                if 'upcNumbers' in item['upcNumbers'][0]:
+                    prod['upc'] = item['upcNumbers'][0]['upcNumber']
             prod['model'] = item['id']
 
             total_stars = int(item['totalReviewCount'])

@@ -5,6 +5,7 @@ import urllib
 import re
 import sys
 import json
+import lxml
 import os.path
 import urllib, cStringIO
 from io import BytesIO
@@ -16,6 +17,7 @@ import time
 import requests
 from extract_data import Scraper
 
+from spiders_shared_code.target_variants import TargetVariants
 
 class TargetScraper(Scraper):
 
@@ -33,6 +35,11 @@ class TargetScraper(Scraper):
     reviews = None
     video_count = None
 
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        self.tv = TargetVariants()
+
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
         m = re.match(r"^http://www\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9A-Za-z]+)", self.product_page_url)
@@ -44,6 +51,8 @@ class TargetScraper(Scraper):
         Currently for Amazon it detects captcha validation forms,
         and returns True if current page is one.
         '''
+
+        self.tv.setupCH(self.tree_html)
 
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
             return True
@@ -144,6 +153,30 @@ class TargetScraper(Scraper):
         if len(description) < 1:
             return None
         return self._long_description_helper()
+
+    def _color(self):
+        return self.tv._color()
+
+    def _size(self):
+        return self.tv._size()
+
+    def _style(self):
+        return self.tv._style()
+
+    def _color_size_stockstatus(self):
+        return self.tv._color_size_stockstatus()
+
+    def _stockstatus_for_variants(self):
+        return self.tv._stockstatus_for_variants()
+
+    def _variants(self):
+        return self.tv._variants()
+
+    def _price_for_variants(self):
+        return self.tv._price_for_variants()
+
+    def _selected_variants(self):
+        return self.tv._selected_variants()
 
     def _long_description_helper(self):
         rows = self.tree_html.xpath("//ul[starts-with(@class,'normal-list reduced-spacing-list')]//li")
@@ -483,7 +516,7 @@ class TargetScraper(Scraper):
         "description" : _description, \
         "model" : _model, \
         "long_description" : _long_description, \
-
+        "variants": _variants, \
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \

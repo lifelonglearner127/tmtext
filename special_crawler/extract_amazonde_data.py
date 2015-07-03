@@ -5,6 +5,7 @@ import urllib, urllib2
 import re
 import sys
 import json
+import lxml
 
 from lxml import html
 import time
@@ -18,6 +19,8 @@ from pytesseract import image_to_string
 sys.path.append(os.path.abspath('../search'))
 import captcha_solver
 import compare_images
+
+from spiders_shared_code.amazon_variants import AmazonVariants
 
 class AmazonDEScraper(Scraper):
 
@@ -36,6 +39,11 @@ class AmazonDEScraper(Scraper):
 
     marketplace_prices = None
     marketplace_sellers = None
+
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        self.av = AmazonVariants()
 
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
@@ -296,6 +304,8 @@ class AmazonDEScraper(Scraper):
         if res != "" : return res
         return None
 
+    def _variants(self):
+        return self.av._variants()
 
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
@@ -758,6 +768,13 @@ class AmazonDEScraper(Scraper):
                 if seller_name is not None:
                     mps.append(seller_name)
                     mpp.append(seller_price)
+
+                    if len(mps) > 20:
+                        break
+
+            if len(mps) > 20:
+                break
+
             urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
 
         if len(mps)>0:
@@ -932,7 +949,7 @@ class AmazonDEScraper(Scraper):
         "description" : _description, \
         "long_description" : _long_description, \
         "apluscontent_desc" : _apluscontent_desc, \
-
+        "variants": _variants, \
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \

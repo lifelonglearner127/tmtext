@@ -260,6 +260,16 @@ class BaseProductsSpider(Spider):
                           meta={'product': prod})
 
     def parse(self, response):
+
+        # call the appropriate method for the code. It'll only work if you set
+        #  `handle_httpstatus_list = [502, 503, 504]` in the spider
+        if hasattr(self, 'handle_httpstatus_list'):
+            for _code in self.handle_httpstatus_list:
+                if response.status == _code:
+                    _callable = getattr(self, 'parse_'+str(_code), None)
+                    if callable(_callable):
+                        yield _callable()
+
         if self._search_page_error(response):
             remaining = response.meta['remaining']
             search_term = response.meta['search_term']
