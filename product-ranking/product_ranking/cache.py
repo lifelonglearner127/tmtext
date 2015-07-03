@@ -40,7 +40,18 @@ def get_cache_map(prefix=None):
     conn = S3Connection(amazon_public_key, amazon_secret_key)
     bucket = conn.get_bucket(bucket_name)
     cache_map = {}
+    # TODO: switch to threaded listing using s4cmd! replace every .list() method call!
     keyz = bucket.list(prefix=prefix) if prefix else bucket.list()
+    """
+    try:
+        from s4cmd import S3Handler
+    except ImportError:
+        print 'Install s4cmd! or everything will be too slow!'
+
+    s3_handler = S3Handler()
+    s3_handler.S3_KEYS = [amazon_secret_key, amazon_secret_key]
+    keyz = s3_handler.s3walk('s3://'+bucket.name, '*')
+    """
     for f in keyz:
         if len(f.key.split('/')) < 4:
             continue  # invalid key?
