@@ -128,49 +128,6 @@ def plot_examples(examples=None):
     'coords' - tuple of coordinates
     '''
 
-    def get_examples_from_images():
-        images = [
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition2.jpg', 'TN'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition3_falsepos.jpg', 'FP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition4_falsepos.jpg', 'FP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition5_falsepos.jpg', 'FP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition6_falsepos.jpg', 'FP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/notnutrition.jpg', 'TN'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image10_falseneg.jpg', 'FN'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image11_falseneg.jpg', 'FN'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image2.png', 'TP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image3.jpg', 'TP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image4.jpg', 'TP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image5.jpg', 'TP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image6.jpg', 'TP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image7.jpg', 'TP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image8.jpg', 'TP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image9.jpg', 'TP'),
-                        ('/home/ana/code/tmtext/special_crawler/nutrition_info_images/examples/nutrition_image.jpg', 'TP')
-                    ]
-        examples = []
-        for image, label in images:
-            average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = extract_features(image)
-            example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
-            examples.append(example)
-        return examples
-
-    def get_examples_from_files():
-        examples_file = '/home/ana/code/tmtext/special_crawler/nutrition_info_images/nutrition_images_training.csv'
-        examples = []
-        with open(examples_file) as f:
-            # skip headers line
-            f.readline()
-            ireader = csv.reader(f)
-            for row in ireader:
-                label_raw = row[1]
-                image = row[0]
-                label = 'TP' if label_raw == '1' else 'TN'
-                average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = extract_features(image, is_url=True)
-                example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
-                examples.append(example)
-        return examples
-
     # hardcode list of examples
     if not examples:
         examples = get_examples_from_files()
@@ -206,6 +163,50 @@ def plot_examples(examples=None):
     plt.savefig('/tmp/nutrition.png')
     plt.show()
 
+def get_examples_from_images():
+    images = [
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/notnutrition2.jpg', 'TN'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/notnutrition3_falsepos.jpg', 'FP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/notnutrition4_falsepos.jpg', 'FP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/notnutrition5_falsepos.jpg', 'FP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/notnutrition6_falsepos.jpg', 'FP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/notnutrition.jpg', 'TN'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/nutrition_image10_falseneg.jpg', 'FN'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/nutrition_image11_falseneg.jpg', 'FN'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/nutrition_image2.png', 'TP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/nutrition_image3.jpg', 'TP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/nutrition_image4.jpg', 'TP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/nutrition_image5.jpg', 'TP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/nutrition_image6.jpg', 'TP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/nutrition_image7.jpg', 'TP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/nutrition_image8.jpg', 'TP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/nutrition_image9.jpg', 'TP'),
+                    ('/home/ana/code/tmtext/nutrition_info_images/examples/nutrition_image.jpg', 'TP')
+                ]
+    examples = []
+    for image, label in images:
+        average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = extract_features(image)
+        example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
+        examples.append(example)
+    return examples
+
+def get_examples_from_files():
+    examples_file = '/home/ana/code/tmtext/special_crawler/nutrition_info_images/nutrition_images_training.csv'
+    examples = []
+    with open(examples_file) as f:
+        # skip headers line
+        f.readline()
+        ireader = csv.reader(f)
+        for row in ireader:
+            label_raw = row[1]
+            image = row[0]
+            label = 'TP' if label_raw == '1' else 'TN'
+            average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = extract_features(image, is_url=True)
+            example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
+            examples.append(example)
+    return examples
+
+
 def extract_features_main():
     # if len(sys.argv) > 1:
     #     filename = sys.argv[1]
@@ -218,6 +219,14 @@ def extract_features_main():
 
     plot_examples()
 
+def read_images_set_fromdir():
+    imagesd = get_examples_from_images()
+    tset = ([imaged['name'] for imaged in imagesd],
+            ['1' if imaged['label'][1]=='P' else '0' for imaged in imagesd],
+            [imaged['coords'] for imaged in imagesd])
+    return ([imaged['name'] for imaged in imagesd],
+            [imaged['coords'] for imaged in imagesd],
+            [1 if imaged['label'][1]=='P' else 0 for imaged in imagesd])
 
 def read_images_set(path="nutrition_images_training.csv"):
     '''Reads the training set from a file, returns examples and their labels (2 lists)
@@ -299,13 +308,23 @@ def predict_one(image, clf=None, from_serialized_file="serialized_classifier/nut
     predicted = clf.predict(example)
     return predicted
 
+
+
 def classifier_main():
-    training_set = read_images_set()
-    trained, clf = train(training_set, serialize_file="serialized_classifier/nutrition_image_classifier.pkl")
+    training_set1 = read_images_set()
+    # trained, clf = train(training_set1, serialize_file="serialized_classifier/nutrition_image_classifier.pkl")
+
+    training_set2 = read_images_set_fromdir()
+    training_set = [l[0]+l[1] for l in zip(training_set1,training_set2)]
+
+    trained, clf = train(training_set)
+
     test_set = read_images_set("nutrition_images_test.csv")
+
     imgs, examples, labels = test_set
     nr_predicted = 0
-    predicted = predict(test_set, clf, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl")
+    # predicted = predict(test_set, clf, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl")
+    predicted = predict(test_set, clf)
     accurate = 0
     with open('nutrition_images_predicted.csv', 'w+') as out:
         for example in predicted:
@@ -336,9 +355,9 @@ def classifier_main():
     plt.show()
 
 def classifier_predict_one(image_url):
-    predicted = predict_one(image_url, None, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=True)
+    predicted = predict_one(image_url, None, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=False)
     return predicted[0]
 
 if __name__ == '__main__':
-    # classifier_main()
-    print classifier_predict_one(sys.argv[1])
+    classifier_main()
+    # print classifier_predict_one(sys.argv[1])
