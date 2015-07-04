@@ -44,7 +44,7 @@ for row in rows:
 
 urls_version_changed = []
 
-field_names = ["number of changed parts", "version changed(Yes/No)", "detail view link"]
+field_names = ["url", "number of changed parts", "version changed(Yes/No)", "detail view link"]
 csv_file_name = "/home/ubuntu/tmtext/special_crawler/jenkins/regression_service_report_" + time.strftime("%Y_%m_%d") + ".csv"
 
 for website in website_list:
@@ -71,7 +71,7 @@ for website in website_list:
 
             if sample_json["scraper"] != current_json["scraper"]:
                 urls_version_changed.append(row["sample_url"])
-                csv_writer.writerow({"number of changed parts": str(row["changes_in_structure"]), "version changed(Yes/No)": "Yes", "detail view link": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
+                csv_writer.writerow({"url": row["sample_url"], "number of changed parts": str(row["changes_in_structure"]), "version changed(Yes/No)": "Yes", "detail view link": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
                 urls.append(row["sample_url"] +
                             "\n    - number of changed parts: " + str(row["changes_in_structure"]) +
                             "\n    - version changed(Yes/No): Yes" +
