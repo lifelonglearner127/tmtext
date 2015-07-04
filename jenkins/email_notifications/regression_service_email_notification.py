@@ -109,8 +109,8 @@ for website in website_list:
     not_product_urls = "\n\nFollowing product urls are invalid.\n" + not_product_urls
     print not_product_urls
 
-    percentage_of_invalid_products = (number_of_invalid_products / (number_of_reported_products + number_of_invalid_products)) * float(100)
-    percentage_of_changed_products = (number_of_changed_products / (number_of_reported_products + number_of_invalid_products)) * float(100)
+    percentage_of_invalid_products = (float(number_of_invalid_products) / float(number_of_reported_products + number_of_invalid_products)) * float(100)
+    percentage_of_changed_products = (float(number_of_changed_products) / float(number_of_reported_products + number_of_invalid_products)) * float(100)
     possibility_of_overall_website_changes = "No"
 
     if percentage_of_changed_products > 80:
