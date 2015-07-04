@@ -47,6 +47,10 @@ urls_version_changed = []
 field_names = ["url", "number of changed parts", "version changed(Yes/No)", "detail view link"]
 csv_file_name = "/home/ubuntu/tmtext/special_crawler/jenkins/regression_service_report_" + time.strftime("%Y_%m_%d") + ".csv"
 
+if os.path.isfile(csv_file_name):
+    os.remove(csv_file_name)
+
+
 for website in website_list:
     number_of_reported_products = 0
 
