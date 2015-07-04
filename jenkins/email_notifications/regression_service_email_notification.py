@@ -32,6 +32,7 @@ sql_changed_products = "select id, sample_url, website, changes_in_structure, sa
 
 cur.execute(sql_changed_products)
 rows = cur.fetchall()
+rows = sorted(rows, key=lambda k: k['changes_in_structure'], reverse=True)
 email_content = ""
 
 urls = []
@@ -76,7 +77,7 @@ for website in website_list:
                             "\n    - version changed(Yes/No): Yes" +
                             "\n    - detail view: http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"]))
             else:
-                csv_writer.writerow({"number of changed parts": str(row["changes_in_structure"]), "version changed(Yes/No)": "No", "detail view link": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
+                csv_writer.writerow({"url": row["sample_url"], "number of changed parts": str(row["changes_in_structure"]), "version changed(Yes/No)": "No", "detail view link": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
                 urls.append(row["sample_url"] +
                             "\n    - number of changed parts: " + str(row["changes_in_structure"]) +
                             "\n    - version changed(Yes/No): No" +
@@ -108,11 +109,21 @@ for website in website_list:
     not_product_urls = "\n\nFollowing product urls are invalid.\n" + not_product_urls
     print not_product_urls
 
+    percentage_of_invalid_products = (number_of_invalid_products / (number_of_reported_products + number_of_invalid_products)) * float(100)
+    percentage_of_changed_products = (number_of_changed_products / (number_of_reported_products + number_of_invalid_products)) * float(100)
+    possibility_of_overall_website_changes = "No"
+
+    if percentage_of_changed_products > 80:
+        possibility_of_overall_website_changes = "Yes"
+
     website_header = "- " + website + "\n" + "Total tested product numbers: %d\n" \
                                              "Product numbers of content structure changed: %d\n" \
                                              "Product numbers of version changed: %d\n" \
                                              "Invalid product numbers: %d\n" \
-                                             "Web console: %s\n" % (number_of_reported_products + number_of_invalid_products, number_of_changed_products, number_of_version_changed_products, number_of_invalid_products, "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n")
+                                             "Percentage of invalid products: %f\n" \
+                                             "Percentage of changed products: %f\n" \
+                                             "Possibility of overall website changes: %s\n" \
+                                             "Web console: %s\n" % (number_of_reported_products + number_of_invalid_products, number_of_changed_products, number_of_version_changed_products, number_of_invalid_products, percentage_of_invalid_products, percentage_of_changed_products, possibility_of_overall_website_changes, "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n")
     email_content += (website_header)
 
 
