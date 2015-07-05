@@ -636,9 +636,4 @@ if __name__ == '__main__':
         logger.debug('TEST MODE ON')
         logger.debug('Faking the SQS_Queue class')
 
-    # install PIP packages for sure?
-    time.sleep(30)
-    os.system('python /home/spiders/repo/post_starter_spiders.py')
-    time.sleep(20)
-    
     execute_task_from_sqs()
