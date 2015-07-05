@@ -69,7 +69,7 @@ def check_logs_status(file_path):
             f.close()
             for line in lines:
                 if 'Spider default output:' in line or \
-                        'Simmetrica events have been pushed...' in line:
+                        'INFO: Spider closed (finished)' in line:
                     reason = "Task was finished"
                     flag = True
                 elif 'Spider failed to start.' in line:
