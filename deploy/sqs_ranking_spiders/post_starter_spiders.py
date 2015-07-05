@@ -3,6 +3,7 @@
 
 import os
 import sys
+import random
 
 
 main_folder = os.path.expanduser('~/repo/')
@@ -60,6 +61,8 @@ if __name__ == '__main__':
         _create_http_proxies_list(fpath=http_proxy_path)
 
     if not can_run():
+        if random.randint(0, 3) == 0:
+            main()  # install packages one more time?
         sys.exit()
 
     main()
