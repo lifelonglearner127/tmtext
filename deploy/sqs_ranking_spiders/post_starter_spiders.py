@@ -60,7 +60,9 @@ if __name__ == '__main__':
         _create_http_proxies_list(fpath=http_proxy_path)
 
     if not can_run():
-        sys.exit()
+        for package in INSTALL_PACKAGES:
+            _install_pip_package(package)
+            sys.exit()
 
     main()
     mark_as_finished()
