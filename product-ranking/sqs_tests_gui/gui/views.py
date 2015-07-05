@@ -1,4 +1,4 @@
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, View
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
@@ -29,3 +29,14 @@ class LogFileView(AdminOnlyMixin, RedirectView):
         if log_fname.startswith('/'):
             log_fname = log_fname[1:]
         return settings.MEDIA_URL + log_fname
+
+
+class AddJob(View):
+    """ For POSTing jobs """
+    def post(self, request, *args, **kwargs):
+        with open('/tmp/_add_job.txt', 'a') as fh:
+            import datetime
+            _str = ''
+            for key, value in request.POST.iteritems():
+                _str += '    %s - %s' % (key, value)
+            fh.write(str(datetime.datetime.now()) + '\n' + _str + '\n\n')
