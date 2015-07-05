@@ -1,9 +1,12 @@
+import datetime
+import random
+
 from django.views.generic import RedirectView, View
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 
-from .models import get_data_filename, get_log_filename
+from .models import get_data_filename, get_log_filename, Job
 import settings
 
 
@@ -31,12 +34,40 @@ class LogFileView(AdminOnlyMixin, RedirectView):
         return settings.MEDIA_URL + log_fname
 
 
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
 class AddJob(View):
     """ For POSTing jobs """
     def post(self, request, *args, **kwargs):
-        with open('/tmp/_add_job.txt', 'a') as fh:
-            import datetime
-            _str = ''
-            for key, value in request.POST.iteritems():
-                _str += '    %s - %s' % (key, value)
-            fh.write(str(datetime.datetime.now()) + '\n' + _str + '\n\n')
+        client_ip = get_client_ip(request)
+
+        site = request.POST.get('site', '')
+        searchterms_str = request.POST.get('searchterms_str', '')
+        product_url = request.POST.get('product_url', '')
+
+        name = ('AUTO|'+str(client_ip) + '|' + site
+                + '|' + searchterms_str)
+
+        if not '_products' in site:
+            site = site.strip() + '_products'
+
+        Job.objects.get_or_create(
+            name=name,
+            spider=site,
+            search_term=searchterms_str,
+            product_url=product_url,
+            quantity=int(request.POST.get('quantity', 200)),
+            task_id=random.randrange(100000, 900000),
+            mode='no cache',
+            save_s3_cache=True,
+            branch_name='s3_cache'  # TODO: change to master after it's merged into master
+        )
+
+        return HttpResponse('ok')
