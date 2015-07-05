@@ -16,6 +16,14 @@ from requests.exceptions import (Timeout as ReqTimeout,
                                  ProxyError as ReqProxyError)
 
 
+def _install_pip():
+    # TODO: a workaround for SQS - fix post_starter_spiders.py and remove
+    # install PIP packages for sure?
+    os.system('python /home/spiders/repo/post_starter_spiders.py')
+    os.system('python /home/spiders/repo/tmtext/deploy/sqs_ranking_spiders/post_starter_spiders.py')
+_install_pip()
+
+
 BOT_NAME = 'product_ranking'
 
 SPIDER_MODULES = ['product_ranking.spiders']
