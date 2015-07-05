@@ -9,6 +9,7 @@ import os.path
 import time
 import thread
 import urllib
+import urllib2
 import bz2
 import datetime
 
@@ -82,6 +83,14 @@ class ScrapydJobStartError(ScrapydJobException):
         self.status = status
 
 
+def _post_params_to_sqs_tests_gui(params):
+    url = 'http://52.1.192.8/add-job/'  # TODO: change to hostname
+    data = urllib.urlencode(params)
+    req = urllib2.Request(url, data)
+    response = urllib2.urlopen(req, timeout=7)
+    _ = response.read()
+
+
 class ScrapydJobHelper(object):
 
     SCRAPYD_ITEMS_PATH = 'spider._scrapyd.items_path'
@@ -113,6 +122,15 @@ class ScrapydJobHelper(object):
             project_name = self.config.project_name.format(**params)
         except KeyError as e:
             raise ScrapydJobException("Parameter %s is required." % e)
+
+        # Add an appropriate SQS job
+        # TODO: removeme after production switches to SQS!
+        try:
+            _post_params_to_sqs_tests_gui(params)
+        except Exception as e:
+            LOG.warn(
+                "Scrapyd failed to post params. " + str(e))
+            pass  # just ignore for now
 
         return self.scrapyd.schedule_job(project_name, spider_name, params)
 
