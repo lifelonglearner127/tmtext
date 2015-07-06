@@ -436,7 +436,7 @@ def report_progress_and_wait(data_file, log_file, data_bs_file, metadata,
                              initial_sleep_time=15, sleep_time=15):
     time.sleep(initial_sleep_time)
     # if the data file does not exist - try to wait a bit longer
-    _max_initial_attempts = 10
+    _max_initial_attempts = 1000
     for i in xrange(_max_initial_attempts):
         if i >= _max_initial_attempts - 2:
             _msg = generate_msg(metadata, 'failed')
