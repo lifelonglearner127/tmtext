@@ -42,7 +42,7 @@ class Command(BaseCommand):
                 name=extra_args['name'],
                 spider=site,
                 search_term='',
-                product_url=multiurl,
+                product_urls=multiurl,
                 quantity=200,
                 task_id=random.randrange(100000, 900000),
                 mode='no cache',
