@@ -50,7 +50,8 @@ def get_cache_map(prefix=None):
 
     s3_handler = S3Handler()
     s3_handler.S3_KEYS = [amazon_secret_key, amazon_secret_key]
-    keyz = s3_handler.s3walk('s3://'+bucket.name, '*')
+    s3_handler.opt.recursive = True
+    keyz = s3_handler.s3walk('s3://'+bucket.name, '/')
     """
     for f in keyz:
         if len(f.key.split('/')) < 4:
