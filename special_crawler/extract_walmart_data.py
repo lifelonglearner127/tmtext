@@ -2347,6 +2347,7 @@ class WalmartScraper(Scraper):
         "upc" : _upc_from_tree, \
         "product_name" : _product_name_from_tree, \
         "site_id" : _site_id, \
+        "product_id" : _extract_product_id, \
         "walmart_no" : _walmart_no, \
         "keywords" : _meta_keywords_from_tree, \
         "meta_tags": _meta_tags,\
