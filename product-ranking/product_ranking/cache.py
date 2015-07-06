@@ -117,7 +117,7 @@ def get_partial_request_path(cache_dir, spider, UTC_NOW=UTC_NOW):
     utc_today = UTC_NOW.strftime('%Y-%m-%d')
     if searchterms_str:
         return os.path.join(
-            cache_dir, spider.name, utc_today, searchterms_str)
+            cache_dir, spider.name, utc_today, searchterms_str)  # TODO: replace searchterms_str with double hash (md5 and sha1); or do it in _get_searchterms_str_or_product_url ?
     else:
         return os.path.join(
             cache_dir, spider.name, utc_today, 'url')
