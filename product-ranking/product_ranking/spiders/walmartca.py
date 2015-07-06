@@ -101,15 +101,15 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
     sponsored_links = []
 
-    _JS_DATA_RE = re.compile(
-        r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
+    # _JS_DATA_RE = re.compile(
+    #     r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
     user_agent = 'default'
 
-    def __init__(self, search_sort='best_match', zipcode='94117',
+    def __init__(self, search_sort='best_match', zipcode='M3C',
                  search_order='default', *args, **kwargs):
-        # if zipcode:
-        #     self.zipcode = zipcode
+        if zipcode:
+            self.zipcode = zipcode
         # if search_sort == 'best_sellers':
         #     self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         super(WalmartCaProductsSpider, self).__init__(
@@ -119,6 +119,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 search_order=self._SEARCH_ORDER[search_order]
             ),
             *args, **kwargs)
+
+    """
+    Defined in base class
+    """
 
     # def start_requests(self):
     #     for st in self.searchterms:
@@ -150,7 +154,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     #         #               self._parse_single_product,
     #         #               meta={'product': prod},
     #         #               dont_filter=True)
-
 
     """
     Parse sponsored links
@@ -232,7 +235,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         if response.status in self.default_hhl:
             product = response.meta.get("product")
-            product.update({"locale": 'en-US'})
+            product.update({"locale": 'en'})
             return product
 
         if self._search_page_error(response):
@@ -244,14 +247,14 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         # if self.sponsored_links:
         #     product["sponsored_links"] = self.sponsored_links
 
-        self._populate_from_js(response, product)
+        # self._populate_from_js(response, product)
         self._populate_from_html(response, product)
         # buyer_reviews = self._build_buyer_reviews(response)
         # if buyer_reviews:
         #     product['buyer_reviews'] = buyer_reviews
         # else:
         #     product['buyer_reviews'] = 0
-        cond_set_value(product, 'locale', 'en-US')  # Default locale.
+        cond_set_value(product, 'locale', 'en')  # Default locale.
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
         # self._gen_related_req(response)
@@ -336,6 +339,8 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         product['variants'] = wv._variants()
 
         # return self._start_related(response)
+
+        return product
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -491,22 +496,19 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     #         product["marketplace"] = marketplaces
 
     def _populate_from_html(self, response, product):
+
         cond_set_value(product, 'url', response.url)
+
         cond_set(
             product,
             'description',
-            response.css('.about-product-section, #SITCC_1column').extract(),
+            response.css('.productDescription .description').extract(),
             conv=''.join
         )
 
-        title = is_empty(response.xpath(
-                "//h1[contains(@class,'product-name')]/text() |"
-                "//h1[@class='productTitle']/text()"
-        ).extract(), "")
-        if not title.strip():
-            title = is_empty(response.xpath(
-                "//h1[contains(@class,'product-name')]/span/text()"
-            ).extract())
+        title = is_empty(
+            response.xpath("//div[@id='product-desc']/"
+                           "h1[@data-analytics-type='productPage-productName']").extract(), "")
         if title:
             title = Selector(text=title).xpath('string()').extract()
             product["title"] = is_empty(title, "").strip()
@@ -514,14 +516,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set(
             product,
             'brand',
-            response.xpath(
-                "//div[@class='product-subhead-section']"
-                "/a[@id='WMItemBrandLnk']/text()").extract())
+            response.css(
+                "#specGroup span[itemprop='brand']::text").extract())
 
+        # FIXME: img wth better resolution
         cond_set(
             product, 'image_url',
-            response.xpath('//img[contains(@class, "product-image")]/@src'),
-            ""
+            response.css('#product-images img::attr(src)').extract()
         )
         if not product.get('image_url', None):
             product['image_url'] = is_empty(response.xpath(
@@ -616,6 +617,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     #     req = req.replace(body='{"postalCode":"' + self.zipcode + '"}')
     #     return req
 
+    """
+    RELATED PRODUCTS
+    """
+
     # def _gen_related_req(self, response):
     #     prodid = response.meta.get('productid')
     #     if not prodid:
@@ -637,19 +642,20 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     #     response.meta['relreql'] = reql
     #     return reql
     #
-    # def _start_related(self, response):
-    #     product = response.meta['product']
-    #     reql = response.meta.get('relreql')
-    #     if not reql:
-    #         return self._request_questions_info(response)
-    #         #return product
-    #     (url, proc) = reql.pop(0)
-    #     response.meta['relreql'] = reql
-    #     return Request(
-    #         url,
-    #         meta=response.meta.copy(),
-    #         callback=proc,
-    #         dont_filter=True)
+    def _start_related(self, response):
+        product = response.meta['product']
+        reql = response.meta.get('relreql')
+        if not reql:
+            return 0
+            # return self._request_questions_info(response)
+            #return product
+        (url, proc) = reql.pop(0)
+        response.meta['relreql'] = reql
+        return Request(
+            url,
+            meta=response.meta.copy(),
+            callback=proc,
+            dont_filter=True)
     #
     # def _proc_mod_related(self, response):
     #     product = response.meta['product']
@@ -710,11 +716,11 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     #             dont_filter=True)
     #     return self._start_related(response)
 
-    def _reload_page(self, response):
-        product = response.meta['product']
-        self._populate_from_js(response, product)
-        self._populate_from_html(response, product)
-        return self._start_related(response)
+    # def _reload_page(self, response):
+    #     product = response.meta['product']
+    #     self._populate_from_js(response, product)
+    #     self._populate_from_html(response, product)
+    #     return self._start_related(response)
 
     def _populate_from_js(self, response, product):
         data = {}
@@ -885,6 +891,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         return next_page
+
+    """
+    Parse questions on product page
+    """
 
     # def _request_questions_info(self, response):
     #     product_id = response.meta['product_id']
