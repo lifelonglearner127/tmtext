@@ -11,7 +11,7 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    dump_url_to_file
+    dump_url_to_file, FLOATING_POINT_RGEX
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -31,6 +31,10 @@ class SnapdealProductSpider(BaseProductsSpider):
         "&noOfResults=20&clickSrc=go_header&lastKeyword=&prodCatId="
         "&changeBackToAll=false&foundInAll=false&categoryIdSearched="
         "&cityPageUrl=&url=&utmContent=&catalogID=&dealDetail=")
+
+    RELATED_URL = ("http://www.snapdeal.com/acors/json/"
+        "getPersonalizationWidgetDataById?"
+        "pogId={ppid}&categoryId={catId}&brandId={brandId}")
 
     REVIEWS_URL = "http://www.snapdeal.com/getReviewsInfoGram?pageId={id}"
 
@@ -62,18 +66,30 @@ class SnapdealProductSpider(BaseProductsSpider):
         "&viewType=List&lang=en&snr=false" % (self.sort_by,))
 
     def start_requests(self):
-        yield Request(
-            url=self.START_URL.format(search_term=self.searchterms[0]),
-            callback=self.after_start,
-        )
+        if not self.product_url:
+            yield Request(
+                url=self.START_URL.format(search_term=self.searchterms[0]),
+                callback=self.after_start,
+            )
+        else:
+            for req in super(SnapdealProductSpider, self).start_requests():
+                yield req
 
     def after_start(self, response):
+        url = is_empty(response.xpath(
+            "//div[contains(@class, 'viewallbox')]/a/@href").extract())
+        if url:
+            return Request(url=url, callback=self.after_start)
         self.tm = self._scrape_total_matches(response)
         return super(SnapdealProductSpider, self).start_requests()
 
     def parse_product(self, response):
         product = response.meta.get("product")
         reqs = []
+
+        text = response.body_as_unicode()
+        text = text.replace('_blank"', '').replace('target="', '')
+        response = response.replace(body=text)
 
         product["locale"] = "en_US"
 
@@ -86,18 +102,26 @@ class SnapdealProductSpider(BaseProductsSpider):
             product["brand"] = brand
 
         cond_set(product, "image_url", response.xpath(
-            "//ul[@id='product-slider']/li[1]/img/@src").extract())
+            "//ul[@id='product-slider']/li[1]/img/@src |"
+            "//img[@itemprop='image']/@src"
+        ).extract())
 
         model = is_empty(response.xpath(
-            "//div[contains(@class, 'buybutton')]/a/@supc").extract())
+            "//div[contains(@class, 'buybutton')]/a/@supc |"
+            "//div[@id='defaultSupc']/text()"
+        ).extract())
         if model:
             product["model"] = model
 
         cond_set(product, "description", response.xpath(
-            "//div[contains(@class, 'details-content')]").extract())
+            "//div[contains(@class, 'details-content')] |"
+            "//div[itemprop='description' and class='detailssubbox']"
+        ).extract())
 
         price = is_empty(response.xpath(
-            "//span[@id='selling-price-id']/text()").extract())
+            "//span[@id='selling-price-id']/text() |"
+            "//input[@id='productSellingPrice']/@value"
+        ).extract())
 
         if price:
             priceCurrency = is_empty(response.xpath(
@@ -119,7 +143,34 @@ class SnapdealProductSpider(BaseProductsSpider):
         else:
             product["is_out_of_stock"] = False
 
-        pid = is_empty(response.xpath("//div[@id='pppid']/text()").extract())
+        variantsJSON = is_empty(response.xpath(
+            "//input[@id='productAttributesJson']/@value").extract())
+        try:
+            variants = json.loads(variantsJSON)
+        except (ValueError, TypeError):
+            variants = []
+
+        product["variants"] = []
+        default_cat_id = is_empty(response.xpath(
+            "//div[@id='defaultCatalogId']/text()").extract())
+        for variant in variants:
+            dc = {
+                variant.get("name", "color").lower(): variant.get("value"),
+                "image_url": urljoin(
+                    "http://n4.sdlcdn.com/", variant["images"][0]),
+                "in_stock": not variant.get("soldOut", True),
+                "selected": False,
+            }
+            if str(variant.get("id", -1)) == str(default_cat_id):
+                dc["selected"] = True
+            product["variants"].append(dc)
+        if not product["variants"]:
+            product["variants"] = None
+
+        pid = is_empty(response.xpath(
+            "//div[@id='pppid']/text() |"
+            "//input[@id='pppid']/@value"
+        ).extract())
         if not pid:
             pid = is_empty(re.findall("/(\d+)", response.url))
 
@@ -133,10 +184,14 @@ class SnapdealProductSpider(BaseProductsSpider):
 
         related_products = [{"similar products": []}]
         a = response.xpath("//div[contains(@class, 'product_grid_box')]"
-            "/.//div[contains(@class, 'product-title')]/a")
+            "/.//div[contains(@class, 'product-title')]/a |"
+            "//div[contains(@class, 'product-txtWrapper')]/div/a"
+        )
 
         for item in a:
-            title = is_empty(item.xpath("text()").extract(), "").strip()
+            title = is_empty(item.xpath("text() | "
+                ".//p[contains(@class, 'product-title')]/text()"
+            ).extract(), "").strip()
             link = is_empty(item.xpath("@href").extract(), "")
             related_products[0]["similar products"].append(
                 RelatedProduct(title=title, url=link)
@@ -144,6 +199,32 @@ class SnapdealProductSpider(BaseProductsSpider):
 
         if related_products[0]["similar products"]:
             product["related_products"] = related_products
+
+        brandId = is_empty(response.xpath(
+            "//div[@id='brndId']/text()").extract())
+        catId = is_empty(response.xpath(
+            "//div[@id='categoryId']/text()").extract())
+
+        if brandId and catId and pid:
+            url = self.RELATED_URL.format(
+                ppid=pid, catId=catId, brandId=brandId)
+            reqs.append(
+                Request(
+                    url=url,
+                    callback=self.parse_related
+                )
+            )
+
+        marketplace_link = is_empty(response.xpath(
+            "//a[@id='buyMoreSellerLink']/@href").extract())
+        if marketplace_link:
+            marketplace_link = urljoin(
+                "http://www.snapdeal.com/", marketplace_link)
+            marketplace_req = Request(
+                url=marketplace_link,
+                callback=self.parse_marketplace,
+            )
+            reqs.append(marketplace_req)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -184,14 +265,74 @@ class SnapdealProductSpider(BaseProductsSpider):
             product["buyer_reviews"] = 0
 
         if reqs:
-            return self.send_next_request(reqs)
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def parse_marketplace(self, response):
+        product = response.meta.get("product")
+        reqs = response.meta.get("reqs")
+
+        marketplace = []
+
+        for div in response.xpath("//div[@id='mvfrstVisible']"
+                "/div[contains(@class, 'cont')]"):
+            name = is_empty(div.xpath(
+                ".//a[contains(@class, 'mvLink')]/text()").extract(), "")
+            price = is_empty(div.xpath(
+                ".//strong/text()").re(FLOATING_POINT_RGEX), "")
+            if price:
+                price = Price(priceCurrency="INR", price=price)
+            if name and price:
+                marketplace.append({"price": price, "name": name.strip()})
+
+        product["marketplace"] = marketplace
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def parse_related(self, response):
+        product = response.meta.get("product")
+        reqs = response.meta.get("reqs")
+        related_products = []
+
+        try:
+            data = json.loads(response.body)
+            for rp in data[0]["personalizationWidgetDTO"]["widgetData"]:
+                related_products.append(RelatedProduct
+                    (
+                        title=rp.get("name"),
+                        url=urljoin(
+                            "http://snapdeal.com", rp.get("pageUrl", "")),
+                    )
+                )
+        except (ValueError, TypeError, IndexError):
+            data = []
+
+        if related_products:
+            product["related_products"] = related_products
+
+        if reqs:
+            return self.send_next_request(reqs, response)
 
         return product
 
     def _scrape_total_matches(self, response):
+        fl=open('file.html', 'w')
+        fl.write(response.body)
+        fl.close()
         if self.tm is None:
-            total_matches = is_empty(response.xpath(
-                "//b[@id='no-of-results-filter']/text()").extract(), "0")
+            total_matches = is_empty(re.findall(
+                "totItmsFound\s+\=\s+(\d+)", response.body))
+            if not total_matches:
+                total_matches = is_empty(response.xpath(
+                    "//span[@id='no-of-results-filter']/text() |"
+                    "//b[@id='no-of-results-filter']/text()").extract(), "0")
+            if not total_matches:
+                total_matches = is_empty(response.xpath(
+                    "//input[@id='resultsOnPage']/@value").extract())
             return int(total_matches.replace("+", ""))
         else:
             return self.tm
