@@ -51,6 +51,7 @@ from extract_jcpenney_data import JcpenneyScraper
 from extract_amazoncn_data import AmazonCNScraper
 from extract_wiggle_data import WiggleScraper
 from extract_snapdeal_data import SnapdealScraper
+from extract_walmartca_data import WalmartCAScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -109,7 +110,8 @@ SUPPORTED_SITES = {
                     "jcpenney": JcpenneyScraper,
                     "amazoncn": AmazonCNScraper,
                     "wiggle": WiggleScraper,
-                    "snapdeal": SnapdealScraper
+                    "snapdeal": SnapdealScraper,
+                    "walmartca": WalmartCAScraper
                     }
 
 # add logger
@@ -185,6 +187,9 @@ def extract_domain(url):
         return 'amazoncn'
     if 'groceries.asda.com' in url:
         return 'groceries'
+    if 'walmart.ca' in url:
+        return 'walmartca'
+
 
     m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
     if m:

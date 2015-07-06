@@ -92,7 +92,7 @@ class WalmartCAScraper(Scraper):
         feature_list = []
 
         for index, feature_name in enumerate(feature_name_list):
-            feature_list.append(feature_name + " " + feature_value_list[index])
+            feature_list.append(feature_name.text_content() + " " + feature_value_list[index].text_content())
 
         if not feature_list:
             return None
