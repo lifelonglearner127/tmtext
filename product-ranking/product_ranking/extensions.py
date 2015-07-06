@@ -128,7 +128,7 @@ class S3CacheUploader(object):
         enable_cache_upload = True
         utcdate = cache.UTC_NOW if cache.UTC_NOW else datetime.datetime.utcnow()
         utcdate = utcdate.strftime('%Y-%m-%d')
-        cache_map = cache.get_cache_map(
+        cache_map = cache.get_cache_map(  # TODO: make it FASTER!
             prefix=os.path.join(crawler._spider.name, utcdate)
         )
         if crawler._spider.name in cache_map:
