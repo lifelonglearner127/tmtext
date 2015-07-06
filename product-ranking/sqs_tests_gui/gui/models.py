@@ -126,4 +126,4 @@ class JobGrouperCache(models.Model):
                                    blank=True, null=True)
 
     def __unicode__(self):
-        return u'%s: %s: %s' % (self.spider.name, self.product_url, self.created)
+        return u'%s: %s: %s' % (self.spider, self.product_url, self.created)
