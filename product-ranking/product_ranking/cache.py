@@ -71,12 +71,22 @@ def get_cache_map(prefix=None):
 def _get_searchterms_str_or_product_url():
     args_term = [a for a in sys.argv if 'searchterms_str' in a]
     args_url = [a for a in sys.argv if 'product_url' in a]
-    args = args_term if args_term else args_url
+    args_urls = [a for a in sys.argv if 'products_url' in a]
+    if args_term:
+        args = args_term
+    elif args_url:
+        args = args_url
+    else:
+        args = args_urls
     if not args:
         return
-    arg_name, arg_value = args[0].split('=')
-    if args_url:
-        arg_value = _slugify(arg_value)[7:67]  # reduce the length of the url
+    arg_name, arg_value = args[0].split('=', 1)
+    if args_urls:
+        _urls = arg_value.split('||||')  # break into individual URLs
+        _urls = sorted(_urls)
+        arg_value = '||||'.join(_urls)
+    if args_url or args_urls:
+        arg_value = _slugify(arg_value)[7:67]  # reduce the length of the url(s)
     return arg_value
 
 
