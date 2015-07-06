@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         all_sites = JobGrouperCache.objects.all().only('spider')
-        all_sites = list(set([s for s in all_sites]))  # make unique
+        all_sites = list(set([s.spider for s in all_sites]))  # make unique
         for site in all_sites:
             # get all groupers OLDER than the last N_MINS minutes
             groupers = JobGrouperCache.objects.filter(spider=site)\
@@ -50,4 +50,4 @@ class Command(BaseCommand):
                 branch_name=extra_args['branch_name']
             )
 
-            groupers.delete()  # we don't need them anymore
+            [g.delete() for g in groupers]   # we don't need them anymore
