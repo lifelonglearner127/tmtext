@@ -113,3 +113,17 @@ class Job(models.Model):
         elif self.mode == 'cache':
             return settings.TEST_CACHE_QUEUE
 
+
+class JobGrouperCache(models.Model):
+    """ Group automatically incoming created jobs in a single piece
+        (for products_url only). In other words, groups product_url into
+        products_url
+    """
+    spider = models.CharField(max_length=100, db_index=True)
+    product_url = models.URLField(max_length=500)
+    extra_args = models.TextField(blank=True, null=True)  # for other args,JSON
+    created = models.DateTimeField(auto_now_add=True, db_index=True,
+                                   blank=True, null=True)
+
+    def __unicode__(self):
+        return u'%s: %s: %s' % (self.spider.name, self.product_url, self.created)

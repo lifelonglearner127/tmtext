@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.core.urlresolvers import reverse_lazy
 
 # Register your models here.
-from .models import Job
+from .models import Job, JobGrouperCache
 from .forms import JobForm
 
 
@@ -66,4 +66,7 @@ class JobAdmin(admin.ModelAdmin):
 
     actions = (reset_status_to_created, reset_status_to_pushed_into_sqs)
 
+
 admin.site.register(Job, JobAdmin)
+
+admin.site.register(JobGrouperCache)

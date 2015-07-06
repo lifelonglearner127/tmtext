@@ -1,12 +1,13 @@
 import datetime
 import random
+import json
 
 from django.views.generic import RedirectView, View
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 
-from .models import get_data_filename, get_log_filename, Job
+from .models import get_data_filename, get_log_filename, Job, JobGrouperCache
 import settings
 
 
@@ -58,16 +59,29 @@ class AddJob(View):
         if not '_products' in site:
             site = site.strip() + '_products'
 
-        Job.objects.get_or_create(
-            name=name,
-            spider=site,
-            search_term=searchterms_str,
-            product_url=product_url,
-            quantity=int(request.POST.get('quantity', 200)),
-            task_id=random.randrange(100000, 900000),
-            mode='no cache',
-            save_s3_cache=True,
-            branch_name='s3_cache'  # TODO: change to master after it's merged into master
-        )
+        quantity = int(request.POST.get('quantity', 200))
 
-        return HttpResponse('ok')
+        branch = 's3_cache'  # TODO: change to master after it's merged into master
+
+        if product_url and not searchterms_str:
+            # create a new 'grouper' object, not the real job
+            JobGrouperCache.objects.get_or_create(
+                spider=site, product_url=product_url,
+                extra_args=json.dumps({
+                    'name': name, 'branch_name': branch
+                })
+            )
+            return HttpResponse('JobGrouperCache object created')
+        else:
+            Job.objects.get_or_create(
+                name=name,
+                spider=site,
+                search_term=searchterms_str,
+                product_url=product_url,
+                quantity=quantity,
+                task_id=random.randrange(100000, 900000),
+                mode='no cache',
+                save_s3_cache=True,
+                branch_name=branch
+            )
+            return HttpResponse('Job object created')
