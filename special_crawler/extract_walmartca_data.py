@@ -24,19 +24,6 @@ class WalmartCAScraper(Scraper):
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
-        self.review_json = None
-        self.price_json = None
-        self.jv = JcpenneyVariants()
-        self.is_analyze_media_contents = False
-        self.video_urls = None
-        self.video_count = 0
-        self.pdf_urls = None
-        self.pdf_count = 0
-        self.wc_emc = 0
-        self.wc_prodtour = 0
-        self.wc_360 = 0
-        self.wc_video = 0
-        self.wc_pdf = 0
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -84,47 +71,51 @@ class WalmartCAScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//h1[@data-analytics-type="productPage-productName"]/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//h1[@data-analytics-type="productPage-productName"]/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//h1[@data-analytics-type="productPage-productName"]/text()')[0].strip()
 
     def _model(self):
         return None
 
     def _features(self):
-        return None
+        if not self.tree_html.xpath("//div[@id='specGroup']"):
+            return None
+
+        feature_name_list = self.tree_html.xpath("//div[@id='specGroup']//div[contains(@class, 'name')]")
+        feature_value_list = self.tree_html.xpath("//div[@id='specGroup']//div[contains(@class, 'value')]")
+
+        feature_list = []
+
+        for index, feature_name in enumerate(feature_name_list):
+            feature_list.append(feature_name + " " + feature_value_list[index])
+
+        if not feature_list:
+            return None
+
+        return feature_list
 
     def _feature_count(self):
-        return 0
+        features = self._features()
+
+        if not features:
+            return 0
+
+        return len(features)
 
     def _description(self):
-        return html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']//p[1]")[0])
+        return self.tree_html.xpath("//div[@itemprop='description']/div[contains(@class, 'description')]")[0].text_content()
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_block = self.tree_html.xpath("//div[@id='longCopyCont']")[0]
-        long_description = ""
-        long_description_start = False
-
-        for element in description_block:
-            if element.tag == "p" and not long_description:
-                long_description_start = True
-                continue
-
-            if long_description_start:
-                long_description = long_description + html.tostring(element)
-
-        if not long_description.strip():
-            return None
-        else:
-            return long_description
+        return self.tree_html.xpath("//div[@itemprop='description']/div[contains(@class, 'bullets')]")[0].text_content()
 
     def _ingredients(self):
         return None
@@ -133,7 +124,7 @@ class WalmartCAScraper(Scraper):
         return 0
 
     def _variants(self):
-        return self.jv._variants()
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -142,18 +133,17 @@ class WalmartCAScraper(Scraper):
         pass
         
     def _image_urls(self):
-        image_ids = re.search('var imageName = "(.+?)";', html.tostring(self.tree_html)).group(1)
-        image_ids = image_ids.split(",")
+        slider_images = self.tree_html.xpath("//div[@id='carousel']//ul[@class='slides']//img/@src")
 
-        image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?wid=35&hei=35&fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
+        if slider_images:
+           return slider_images
 
-        if not image_urls:
-            return None
+        main_image = self.tree_html.xpath("//div[@id='product-images']//div[@class='centered-img-wrap']//img/@src")
 
-        if len(image_urls) > 1:
-            return image_urls[1:]
-        else:
-            return image_urls
+        if main_image:
+            return main_image
+
+        return None
 
     def _image_count(self):
         if self._image_urls():
@@ -161,133 +151,33 @@ class WalmartCAScraper(Scraper):
 
         return 0
 
-    def analyze_media_contents(self):
-        if self.is_analyze_media_contents:
-            return
-
-        self.is_analyze_media_contents = True
-
-        page_raw_text = html.tostring(self.tree_html)
-
-        #check pdf
-        try:
-            pdf_url = re.search('href="(.+\.pdf?)"', page_raw_text).group(1)
-
-            if not pdf_url:
-                raise Exception
-
-            if not pdf_url.startswith("http://"):
-                pdf_url = "http://www.jcpenney.com" + pdf_url
-
-            self.pdf_urls = [pdf_url]
-            self.pdf_count = len(self.pdf_urls)
-        except:
-            pass
-
-        #check media contents window existence
-        if not self.tree_html.xpath("//a[@class='InvodoViewerLink']"):
-            return
-
-        media_contents_window_link = self.tree_html.xpath("//a[@class='InvodoViewerLink']/@onclick")[0]
-        media_contents_window_link = re.search("window\.open\('(.+?)',", media_contents_window_link).group(1)
-
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-
-        contents = requests.get(media_contents_window_link, headers=h).text
-
-        #check media contents
-        if "webapps.easy2.com" in media_contents_window_link:
-            try:
-                media_content_raw_text = re.search('Demo.instance.data =(.+?)};\n', contents).group(1) + "}"
-                media_content_json = json.loads(media_content_raw_text)
-
-                video_lists = re.findall('"Path":"(.*?)",', media_content_raw_text)
-
-                video_lists = [media_content_json["UrlAddOn"] + url for url in video_lists if url.strip().endswith(".flv") or url.strip().endswith(".mp4/")]
-                video_lists = list(set(video_lists))
-
-                if not video_lists:
-                    raise Exception
-
-                self.video_urls = video_lists
-                self.video_count = len(self.video_urls)
-            except:
-                pass
-        elif "content.webcollage.net" in media_contents_window_link:
-            webcollage_link = re.search("document\.location\.replace\('(.+?)'\);", contents).group(1)
-            contents = requests.get(webcollage_link, headers=h).text
-            webcollage_page_tree = html.fromstring(contents)
-
-            try:
-                webcollage_media_base_url = re.search('<div data-resources-base="(.+?)"', contents).group(1)
-
-                videos_json = '{"videos":' + re.search('{"videos":(.*?)]}</div>', contents).group(1) + ']}'
-                videos_json = json.loads(videos_json)
-
-                video_lists = [webcollage_media_base_url + videos_json["videos"][0]["src"]["src"][1:]]
-                self.wc_video = 1
-                self.video_urls = video_lists
-                self.video_count = len(self.video_urls)
-            except:
-                pass
-
-            try:
-                if webcollage_page_tree.xpath("//div[@class='wc-ms-navbar']//span[text()='360 Rotation']") or webcollage_page_tree.xpath("//div[@class='wc-ms-navbar']//span[text()='360/Zoom']"):
-                    self.wc_360 = 1
-            except:
-                pass
-
-            try:
-                if webcollage_page_tree.xpath("//ul[contains(@class, 'wc-rich-features')]"):
-                    self.wc_emc = 1
-            except:
-                pass
-
-        elif "bcove.me" in media_contents_window_link:
-            try:
-                brightcove_page_tree = html.fromstring(contents)
-                video_lists = [brightcove_page_tree.xpath("//meta[@property='og:video']/@content")[0]]
-                self.video_urls = video_lists
-                self.video_count = len(self.video_urls)
-            except:
-                pass
-
     def _video_urls(self):
-        self.analyze_media_contents()
-        return self.video_urls
+        return None
 
     def _video_count(self):
-        self.analyze_media_contents()
-        return self.video_count
+        return 0
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
-        self.analyze_media_contents()
-        return self.pdf_urls
+        return None
 
     def _pdf_count(self):
-        self.analyze_media_contents()
-        return self.pdf_count
+        return 0
 
     def _wc_emc(self):
-        self.analyze_media_contents()        
-        return self.wc_emc
+        return 0
 
     def _wc_prodtour(self):
-        self.analyze_media_contents()        
-        return self.wc_prodtour
+        return 0
 
     def _wc_360(self):
-        self.analyze_media_contents()        
-        return self.wc_360
+        return 0
 
     def _wc_video(self):
-        self.analyze_media_contents()        
-        return self.wc_video
+        return 0
 
     def _wc_pdf(self):
-        self.analyze_media_contents()        
-        return self.wc_pdf
+        return 0
 
     def _webcollage(self):
         if self._wc_360() == 1 or self._wc_prodtour() == 1 or self._wc_pdf() == 1 or self._wc_emc() == 1 or self._wc_360():
@@ -309,41 +199,13 @@ class WalmartCAScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
 
-    def _extract_review_json(self):
-        try:
-            review_id = re.search('reviewId:"(.+?)",', html.tostring(self.tree_html)).group(1)
-
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-
-            contents = requests.get("https://jcpenney.ugc.bazaarvoice.com/1573-en_us/%s/reviews.djs?format=embeddedhtml" % review_id, headers=h).text
-            review_json = re.search('webAnalyticsConfig:(.+?),\nwidgetInitializers:initializers,', contents).group(1)
-            self.review_json = json.loads(review_json)
-        except:
-            self.review_json = None
-
-    def _extract_price_json(self):
-        try:
-            price_json= re.search('var jcpPPJSON = (.+?);\njcpDLjcp\.productPresentation = jcpPPJSON;', html.tostring(self.tree_html)).group(1)
-            self.price_json = json.loads(price_json)
-        except:
-            self.price_json = None
-
     def _average_review(self):
-        if self._review_count() == 0:
-            return None
+        average_review = float(self.tree_html.xpath("//span[@class='bv-secondary-rating-summary-rating']/text()")[0].strip())
 
-        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
-
-        if str(average_review).split('.')[1] == '0':
-            return int(average_review)
-        else:
-            return float(average_review)
+        return average_review
 
     def _review_count(self):
-        if not self.review_json:
-            self._extract_review_json()
-
-        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
+        return 0
 
     def _max_review(self):
         return None
@@ -358,33 +220,13 @@ class WalmartCAScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        price = self.price_json["price"]
-
-        if float(price).is_integer():
-            price = int(price)
-
-        return "$" + str(price)
+        return None
 
     def _price_amount(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        price = self.price_json["price"]
-
-        if float(price).is_integer():
-            price = int(price)
-
-        return price
+        return None
 
     def _price_currency(self):
-        return "USD"
+        return None
 
     def _owned(self):
         return 0
@@ -393,14 +235,10 @@ class WalmartCAScraper(Scraper):
         return 0
 
     def _site_online(self):
-        return 1
+        return 0
 
     def _in_stores(self):
-        try:
-            if self.tree_html.xpath("//div[contains(@id, 'channelAvailabilitypp')]/text()")[0] == "online":
-                return 0
-        except:
-            return 1
+        return 0
 
     def _site_online_out_of_stock(self):
         return 0
@@ -415,18 +253,13 @@ class WalmartCAScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")[1:-1]
+        return None
 
     def _category_name(self):
-        return self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")[-2]
+        return None
 
     def _brand(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        return self.price_json["products"][0]["lots"][0]["brandName"]
+        return None
 
     ##########################################
     ################ HELPER FUNCTIONS
