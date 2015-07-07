@@ -87,7 +87,7 @@ class Job(models.Model):
     )
 
     save_s3_cache = models.BooleanField(
-        default=False, help_text='Upload raw cache to S3?', blank=True, null=True)
+        default=False, help_text='Upload raw cache to S3?')
     #load_s3_cache = models.DateField(  # DISABLED for now!
     #    blank=True, null=True, default=timezone.now().date(),
     #    help_text='Load raw cache from S3'
