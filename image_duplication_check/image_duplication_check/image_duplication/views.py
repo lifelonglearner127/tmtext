@@ -165,3 +165,72 @@ class ClassifyImagesBySimilarity(viewsets.ViewSet):
 
     def destroy(self, request, pk=None):
         return Response({'data': 'OK'})
+
+
+class FindSimilarityInImageList(viewsets.ViewSet):
+    """
+    API endpoint that allows groups to be viewed or edited.
+    """
+    serializer_class = ImageUrlSerializer
+
+    def list(self, request):
+        return Response({'data': 'OK'})
+
+    def retrieve(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.DATA)
+
+        if serializer.is_valid():
+            try:
+                urls = serializer.data["urls"]
+
+                images = []
+
+                for url in urls:
+                    if bool(re.findall("^[a-zA-Z]+://", url)):
+                        resp = urllib.urlopen(url).read()
+                        images.append(Image.open(cStringIO.StringIO(resp)))
+
+                images = dict(zip(urls, images))
+
+                rest_images = copy.copy(images)
+                results = {}
+
+                url1 = urls[0]
+
+                del rest_images[url1]
+                group_image_indexes = []
+
+                processed_images = []
+
+                for url2 in rest_images:
+
+                    similarity_rate = float(compare_two_images_c(images[url1], rest_images[url2])) * float(compare_two_images_b(images[url1], rest_images[url2]))
+
+                    if similarity_rate >= 0.5:
+                        processed_images.append(url2)
+                        group_image_indexes.append(url2)
+
+                if group_image_indexes:
+                    results["similar_images"] = group_image_indexes
+                    results["result"] = "Yes"
+                else:
+                    results["similar_images"] = None
+                    results["result"] = "No"
+
+                return Response(results)
+            except:
+                pass
+
+        return Response({'data': 'NO OK'})
+
+    def update(self, request, pk=None):
+        pass
+
+    def partial_update(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def destroy(self, request, pk=None):
+        return Response({'data': 'OK'})
