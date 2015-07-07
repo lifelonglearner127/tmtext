@@ -76,8 +76,10 @@ class AsdaProductsSpider(BaseProductsSpider):
         try:
             data = json.loads(response.body_as_unicode())
             item = data['items'][0]
+            if item.get("images", {}).get("largeImage"):
+                product["image_url"] = item.get("images").get("largeImage")
             product['upc'] = item['upcNumbers'][0]['upcNumber']
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             pass
 
         product_id = re.findall('itemid=(\d+)', response.url)
@@ -187,8 +189,10 @@ class AsdaProductsSpider(BaseProductsSpider):
         try:
             data = json.loads(response.body_as_unicode())
             item = data['items'][0]
+            if item.get("images", {}).get("largeImage"):
+                product["image_url"] = item.get("images").get("largeImage")
             product['upc'] = item['upcNumbers'][0]['upcNumber']
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             pass
 
         product_id = re.findall('itemid=(\d+)', response.url)
