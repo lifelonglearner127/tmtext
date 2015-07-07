@@ -1,9 +1,12 @@
+# coding=utf-8
+
 from __future__ import division, absolute_import, unicode_literals
 
 import json
 import pprint
 import re
 import urlparse
+import hjson
 import hashlib
 import string
 from datetime import datetime
@@ -101,8 +104,8 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
     sponsored_links = []
 
-    # _JS_DATA_RE = re.compile(
-    #     r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
+    _JS_DATA_RE = re.compile(
+        r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
     user_agent = 'default'
 
@@ -120,117 +123,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             ),
             *args, **kwargs)
 
-    """
-    Defined in base class
-    """
-
-    # def start_requests(self):
-    #     for st in self.searchterms:
-    #         # url = "http://www.walmart.com/midas/srv/ypn?" \
-    #         #     "query=%s&context=Home" \
-    #         #     "&clientId=walmart_us_desktop_backfill_search" \
-    #         #     "&channel=ch_8,backfill" % (st,)
-    #         # yield Request(
-    #         #     url=url,
-    #         #     callback=self.get_sponsored_links,
-    #         #     dont_filter=True,
-    #         #     meta={"handle_httpstatus_list": [404]},
-    #         # )
-    #
-    #         yield Request(
-    #             self.url_formatter.format(
-    #                 self.SEARCH_URL,
-    #                 search_term=urllib.quote_plus(st.encode('utf-8')),
-    #             ),
-    #             meta={'search_term': st, 'remaining': self.quantity},
-    #         )
-    #
-    #     if self.product_url:
-    #         self.log(
-    #             "HAVE SOME PRODUCTS", INFO)
-    #         # prod = SiteProductItem()
-    #         # prod['is_single_result'] = True
-    #         # yield Request(self.product_url,
-    #         #               self._parse_single_product,
-    #         #               meta={'product': prod},
-    #         #               dont_filter=True)
-
-    """
-    Parse sponsored links
-    """
-    # def get_sponsored_links(self, response):
-    #     self.reql = []
-    #     self.sponsored_links = []
-    #     for link in response.xpath(
-    #         '//div[contains(@class, "yahoo_sponsored_link")]'
-    #             '/div[contains(@class, "yahoo_sponsored_link")]'):
-    #         ad_title = is_empty(
-    #             get_string_from_html('div/span[@class="title"]/a', link))
-    #         ad_text = is_empty(
-    #             get_string_from_html('div/span[@class="desc"]/a', link))
-    #         visible_url = is_empty(
-    #             get_string_from_html('div/span/span[@class="host"]/a', link))
-    #         actual_url = is_empty(
-    #             link.xpath('div/span[@class="title"]/a/@href').extract())
-    #         sld = {"ad_title": ad_title,
-    #                "ad_text": ad_text,
-    #                "visible_url": visible_url,
-    #                "actual_url": actual_url,
-    #                }
-    #         new_meta = response.meta.copy()
-    #         new_meta["sld"] = sld
-    #         new_meta['handle_httpstatus_list'] = [400, 403, 404, 405]
-    #         self.reql.append(Request(
-    #             actual_url,
-    #             callback=self.parse_sponsored_links,
-    #             errback=self.parse_sponsored_links,
-    #             meta=new_meta,
-    #             dont_filter=True))
-    #     if self.reql:
-    #         req1 = self.reql.pop(0)
-    #         new_meta = req1.meta
-    #         new_meta['reql'] = self.reql
-    #         self.sld = new_meta["sld"]
-    #         return req1.replace(meta=new_meta)
-    #     return self.update_native_start_requests()
-
-    # def parse_sponsored_links(self, response):
-    #     self.temp_spons_link = None
-    #     if hasattr(response, "meta"):
-    #         if response.status == 200:
-    #             self.sld['actual_url'] = response.url
-    #             self.sponsored_links.append(self.sld)
-    #
-    #         if self.reql:
-    #             req1 = self.reql.pop(0)
-    #             new_meta = req1.meta
-    #             new_meta['reql'] = self.reql
-    #             self.temp_spons_link = req1.url
-    #             self.sld = new_meta["sld"]
-    #             return req1.replace(meta=new_meta)
-    #     else:
-    #         self.sld['actual_url'] = self.temp_spons_link
-    #         self.sponsored_links.append(self.sld)
-    #         if not self.reql:
-    #             del self.temp_spons_link, self.sld, self.reql
-    #             return super(WalmartCaProductsSpider, self).start_requests()
-    #         req1 = self.reql.pop(0)
-    #         new_meta = req1.meta
-    #         new_meta['reql'] = self.reql
-    #         self.temp_spons_link = req1.url
-    #         self.sld = new_meta["sld"]
-    #         return req1.replace(meta=new_meta)
-    #     del self.temp_spons_link, self.sld, self.reql
-    #     return self.update_native_start_requests()
-
-    # def update_native_start_requests(self):
-    #     reqs = []
-    #     for req in super(WalmartCaProductsSpider, self).start_requests():
-    #         new_meta = req.meta.copy()
-    #         new_meta["handle_httpstatus_list"] = self.default_hhl
-    #         reqs.append(req.replace(meta=new_meta))
-    #     return reqs
-
     def parse_product(self, response):
 
         if response.status in self.default_hhl:
@@ -244,63 +136,21 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         product = response.meta['product']
 
-        # if self.sponsored_links:
-        #     product["sponsored_links"] = self.sponsored_links
-
-        # self._populate_from_js(response, product)
+        self._populate_from_js(response, product)
         self._populate_from_html(response, product)
+
         # buyer_reviews = self._build_buyer_reviews(response)
         # if buyer_reviews:
         #     product['buyer_reviews'] = buyer_reviews
         # else:
         #     product['buyer_reviews'] = 0
+
         cond_set_value(product, 'locale', 'en')  # Default locale.
+
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
+
         # self._gen_related_req(response)
-
-        model = is_empty(
-            response.xpath('//tr[@class="js-product-specs-row"]/'
-                           'td[contains(text(), "Model No")]/'
-                           'following::td[1]/text() |'
-                           '//table[@class="SpecTable"]/tr/'
-                           'td[contains(text(), "Walmart No")]'
-                           '/following::td[1]/text()').extract())
-        if model:
-            product['model'] = model.strip()
-        else:
-            cond_set(product,
-                     'model',
-                     response.xpath(
-                         '//meta[@itemprop="model"]/@content'
-                     ).extract())
-        flag = 'not available'
-        if response.xpath('//meta[@name="Keywords"]').extract():
-            if not flag in response.body_as_unicode():
-                cond_set_value(product,
-                               'shipping',
-                               False)
-            else:
-                cond_set_value(product,
-                               'shipping',
-                               True)
-        else:
-            shipping = response.xpath(
-                '//div[@class="product-no-fulfillment Grid-col '
-                'u-size-6-12-l active"][1]/span/text()'
-                '[contains(.,"not available")] |'
-                '//span[@class="js-shipping-delivery-date-msg '
-                'delivery-date-msg"]/text()[contains(., "Not available")]'
-            ).extract()
-
-            if len(shipping) > 0:
-                cond_set_value(product,
-                               'shipping',
-                               False)
-            else:
-                cond_set_value(product,
-                               'shipping',
-                               True)
 
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[-1] if id else None
@@ -315,28 +165,24 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         #    return Request(url=url, meta=meta, callback=self.get_questions)
 
-        if re.search(
-                "only available .{0,20} Walmart store",
-                response.body_as_unicode()
-        ):
-            product['is_in_store_only'] = True
-
-        special_pricing = response.xpath(
-            '//div[contains(@class, "price-flags")]//text()').extract()
-        special_pricing = [
-            r.strip() for r in special_pricing if len(r.strip()) > 0]
-        if 'Rollback' in special_pricing:
-            product['special_pricing'] = 1
-        else:
-            product['special_pricing'] = 0
-
+        # if re.search(
+        #         "only available .{0,20} Walmart store",
+        #         response.body_as_unicode()
+        # ):
+        #     product['is_in_store_only'] = True
+        #
+        # special_pricing = response.xpath(
+        #     '//div[contains(@class, "price-flags")]//text()').extract()
+        # special_pricing = [
+        #     r.strip() for r in special_pricing if len(r.strip()) > 0]
+        # if 'Rollback' in special_pricing:
+        #     product['special_pricing'] = 1
+        # else:
+        #     product['special_pricing'] = 0
+        #
         if not product.get('price'):
             cond_set_value(product, 'url', response.url)
-            # return self._gen_location_request(response)
-
-        wv = WalmartVariants()
-        wv.setupSC(response)
-        product['variants'] = wv._variants()
+            return self._gen_location_request(response)
 
         # return self._start_related(response)
 
@@ -497,8 +343,14 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _populate_from_html(self, response, product):
 
+        print '========================================================'
+        print response.meta
+        print '========================================================'
+
+        # Set product url
         cond_set_value(product, 'url', response.url)
 
+        # Get description
         cond_set(
             product,
             'description',
@@ -506,6 +358,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             conv=''.join
         )
 
+        # Get title
         title = is_empty(
             response.xpath("//div[@id='product-desc']/"
                            "h1[@data-analytics-type='productPage-productName']").extract(), "")
@@ -513,48 +366,33 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             title = Selector(text=title).xpath('string()').extract()
             product["title"] = is_empty(title, "").strip()
 
-        cond_set(
-            product,
-            'brand',
-            response.css(
-                "#specGroup span[itemprop='brand']::text").extract())
-
-        # FIXME: img wth better resolution
-        cond_set(
-            product, 'image_url',
-            response.css('#product-images img::attr(src)').extract()
-        )
-        if not product.get('image_url', None):
-            product['image_url'] = is_empty(response.xpath(
-                    '//meta[@property="og:image"]/@content').extract(), "")
-
+        # No brand
         if not product.get("brand"):
-            brand = is_empty(response.xpath(
-                "//h1[contains(@class, 'product-name product-heading')]/text()"
-                " | //h1[@class='productTitle']/text()"
-            ).extract())
+            brand = product.get("title")
             cond_set(
                 product,
                 'brand',
                 (guess_brand_from_first_words(brand.strip()),)
             )
 
-        if not product.get("marketplace"):
-            seller = response.xpath(
-                '//div[@class="product-seller"]/div/' \
-                'span[contains(@class, "primary-seller")]/b/text()'
-            ).extract()
-            if not seller:
-                seller_all = response.xpath(
-                    '//div[@class="product-seller"]/div/' \
-                    'span[contains(@class, "primary-seller")]/a'
-                )
-                seller = seller_all.xpath('b/text()').extract()
-            if seller and "price" in product:
-                product["marketplace"] = [{
-                    "price": product["price"],
-                    "name": is_empty(seller)
-                }]
+        # Get marketplace
+        # FIXME: get marketplace
+        # if not product.get("marketplace"):
+        #     seller = response.xpath(
+        #         '//div[@class="product-seller"]/div/' \
+        #         'span[contains(@class, "primary-seller")]/b/text()'
+        #     ).extract()
+        #     if not seller:
+        #         seller_all = response.xpath(
+        #             '//div[@class="product-seller"]/div/' \
+        #             'span[contains(@class, "primary-seller")]/a'
+        #         )
+        #         seller = seller_all.xpath('b/text()').extract()
+        #     if seller and "price" in product:
+        #         product["marketplace"] = [{
+        #             "price": product["price"],
+        #             "name": is_empty(seller)
+        #         }]
 
         # also_considered = self._build_related_products(
         #     response.url,
@@ -578,9 +416,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         # if recommended:
         #     product.setdefault(
         #         'related_products', {})['recommended'] = recommended
+
         if not product.get('price'):
-            currency = response.css('[itemprop=priceCurrency]::attr(content)')
-            price = response.css('[itemprop=price]::attr(content)')
+            currency = response.css('.pricing-shipping .price-current sup')
+            print "///////////////////////////////////////"
+            print currency
+            price = response.css('.pricing-shipping .price-current')
+            print price
             if price and currency:
                 currency = currency.extract()[0]
                 price = re.search('[,. 0-9]+', price.extract()[0])
@@ -590,32 +432,26 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                     cond_set_value(product, 'price',
                                    Price(priceCurrency=currency, price=price))
 
-        if not product.get('upc'):
-            cond_set(
-                product,
-                'upc',
-                response.xpath('//strong[@id="UPC_CODE"]/text()').extract()
-            )
-
         # self._parse_marketplaces_from_page_html(response, product)
 
-    # def _gen_location_request(self, response):
-    #     data = {"postalCode": ""}
-    #     new_meta = response.meta.copy()
-    #     new_meta['handle_httpstatus_list'] = [404, 405]
-    #     # Need Conetnt-Type= app/json
-    #     req = FormRequest.from_response(
-    #         response=response,
-    #         url=self.LOCATION_URL,
-    #         method='POST',
-    #         formdata=data,
-    #         callback=self._after_location,
-    #         meta=new_meta,
-    #         headers={'x-requested-with': 'XMLHttpRequest',
-    #                  'Content-Type': 'application/json'},
-    #         dont_filter=True)
-    #     req = req.replace(body='{"postalCode":"' + self.zipcode + '"}')
-    #     return req
+    def _gen_location_request(self, response):
+        print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        data = {"postalCode": ""}
+        new_meta = response.meta.copy()
+        new_meta['handle_httpstatus_list'] = [404, 405]
+        # Need Content-Type= app/json
+        req = FormRequest.from_response(
+            response=response,
+            url=self.LOCATION_URL,
+            method='POST',
+            formdata=data,
+            callback=self._after_location,
+            meta=new_meta,
+            headers={'x-requested-with': 'XMLHttpRequest',
+                     'Content-Type': 'application/json'},
+            dont_filter=True)
+        req = req.replace(body='{"postalCode":"' + self.zipcode + '"}')
+        return req
 
     """
     RELATED PRODUCTS
@@ -641,21 +477,21 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     #     reql.append((url1, self._proc_mod_related))
     #     response.meta['relreql'] = reql
     #     return reql
-    #
-    def _start_related(self, response):
-        product = response.meta['product']
-        reql = response.meta.get('relreql')
-        if not reql:
-            return 0
-            # return self._request_questions_info(response)
-            #return product
-        (url, proc) = reql.pop(0)
-        response.meta['relreql'] = reql
-        return Request(
-            url,
-            meta=response.meta.copy(),
-            callback=proc,
-            dont_filter=True)
+
+    # def _start_related(self, response):
+    #     product = response.meta['product']
+    #     reql = response.meta.get('relreql')
+    #     if not reql:
+    #         return 0
+    #         # return self._request_questions_info(response)
+    #         #return product
+    #     (url, proc) = reql.pop(0)
+    #     response.meta['relreql'] = reql
+    #     return Request(
+    #         url,
+    #         meta=response.meta.copy(),
+    #         callback=proc,
+    #         dont_filter=True)
     #
     # def _proc_mod_related(self, response):
     #     product = response.meta['product']
@@ -724,103 +560,154 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _populate_from_js(self, response, product):
         data = {}
-        m = re.search(self._JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
+        variants_list = []
+        self._JS_PROD_INFO_RE = re.compile(r'productPurchaseCartridgeData\[\"\w+\"\]\s+=\s+([^;]*\})', re.DOTALL)
+        self._JS_PROD_IMG_RE = re.compile(r'walmartData\.graphicsEnlargedURLS\s+=\s+([^;]*\])', re.DOTALL)
 
-        if m:
-            text = m.group(1)
+        # Extract base product info from JS
+        data = is_empty(
+            re.findall(self._JS_PROD_INFO_RE, response.body_as_unicode().encode('utf-8'))
+        ).strip()
+        if data:
+            data = data.decode('utf-8').replace(' :', ':')
             try:
-                data = json.loads(text)
+                product_data = hjson.loads(data, object_pairs_hook=dict)
             except ValueError:
-                pass
-
-        if not data:
-            self.log("No JS matched in %r." % response.url, WARNING)
+                self.log("Impossible to get product data from JS %r." % response.url, WARNING)
+                return
+        else:
+            self.log("No JS for product info matched in %r." % response.url, WARNING)
             return
 
-        try:
-            response.meta['productid'] = str(data['buyingOptions']['usItemId'])
-            title = is_empty(Selector(text=data['productName']).xpath(
-                'string()').extract())
-            cond_set_value(product, 'title', title)
-            available = data['buyingOptions']['available']
-            cond_set_value(
-                product,
-                'is_out_of_stock',
-                not available,
-            )
-            # the next 2 lines of code should not be uncommented, see BZ #1459
-            #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
-            #    product['is_out_of_stock'] = False
-            cond_set_value(
-                product,
-                'is_in_store_only',
-                data['buyingOptions']['storeOnlyItem'],
-            )
-            if available:
-                price_block = None
-                try:
-                    price_block = data['buyingOptions']['price']
-                except KeyError:
-                    # Packs of products have different buyingOptions.
-                    try:
-                        price_block =\
-                            data['buyingOptions']['minPrice']
-                        #     data['buyingOptions']['maxPrice']
-                    except KeyError:
-                        self.log((
-                            "Product with unknown buyingOptions "
-                            "structure: %s\n%s") % (
-                                response.url, pprint.pformat(data)),
-                            WARNING
-                        )
-                if price_block:
-                    try:
-                        _price = Price(
-                            priceCurrency=price_block['currencyUnit'],
-                            price=price_block['currencyAmount']
-                        )
-                        cond_set_value(product, 'price', _price)
-                    except KeyError:
-                        try:
-                            if price_block["currencyUnitSymbol"] == "$":
-                                _price = Price(
-                                    priceCurrency="USD",
-                                    price=price_block['currencyAmount']
-                                )
-                            cond_set_value(product, 'price', _price)
-                        except KeyError:
-                            self.log(
-                                ("Product with unknown buyingOptions "
-                                    "structure: %s\n%s") % (
-                                        response.url, pprint.pformat(data)),
-                                ERROR
-                            )
-        except KeyError:
-            pass
+        product_data['baseProdInfo'] = product_data['variantDataRaw'][0]
 
+        # Set product UPC
         try:
+            upc = is_empty(product_data['baseProdInfo']['upc_nbr'])
             cond_set_value(
-                product, 'upc', data['analyticsData']['upc'], conv=unicode)
+                product, 'upc', upc, conv=unicode
+            )
         except (ValueError, KeyError):
-            pass  # Not really a UPC.
+            self.log("Impossible to get UPC" % response.url, WARNING)  # Not really a UPC.
 
+        # Set product brand
         try:
-            cond_set_value(
-                product,
-                'image_url',
-                data['primaryImageUrl'],
-                conv=unicode)
-        except KeyError:
-            pass
+            brand = is_empty(product_data['baseProdInfo']['brand_name_en'])
+            cond_set_value(product, 'brand', brand)
+        except (ValueError, KeyError):
+            self.log("Impossible to get brand" % response.url, WARNING)
 
+        # Set if special price
         try:
-            cond_set_value(
-                product,
-                'brand',
-                data['analyticsData']['brand'],
-                conv=unicode)
-        except KeyError:
-            pass
+            special_price = product_data['baseProdInfo']['price_store_was_price']
+            cond_set_value(product, 'special_pricing', True)
+        except (ValueError, KeyError):
+            cond_set_value(product, 'special_pricing', False)
+
+        # Set product images urls
+        image = re.findall(self._JS_PROD_IMG_RE, response.body_as_unicode())
+        if image:
+            try:
+                image = image[1]
+            except:
+                image = image[0]
+
+            try:
+                image = image.decode('utf-8').replace(' :', ':').replace('//', 'http://')
+                data_image = hjson.loads(image, object_pairs_hook=dict)
+                image_urls = [value['enlargedURL'] for k, value in enumerate(data_image)]
+                cond_set_value(product, 'image_url', image_urls, conv=list)
+            except (ValueError, KeyError):
+                self.log("Impossible to set image urls in %r." % response.url, WARNING)
+
+        else:
+            self.log("No JS for product image matched in %r." % response.url, WARNING)
+            return
+
+        # try:
+        #     response.meta['productid'] = str(data['buyingOptions']['usItemId'])
+        #     title = is_empty(Selector(text=data['productName']).xpath(
+        #         'string()').extract())
+        #     cond_set_value(product, 'title', title)
+        #     available = data['buyingOptions']['available']
+        #     cond_set_value(
+        #         product,
+        #         'is_out_of_stock',
+        #         not available,
+        #     )
+        #     # the next 2 lines of code should not be uncommented, see BZ #1459
+        #     #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
+        #     #    product['is_out_of_stock'] = False
+        #     cond_set_value(
+        #         product,
+        #         'is_in_store_only',
+        #         data['buyingOptions']['storeOnlyItem'],
+        #     )
+        #     if available:
+        #         price_block = None
+        #         try:
+        #             price_block = data['buyingOptions']['price']
+        #         except KeyError:
+        #             # Packs of products have different buyingOptions.
+        #             try:
+        #                 price_block =\
+        #                     data['buyingOptions']['minPrice']
+        #                 #     data['buyingOptions']['maxPrice']
+        #             except KeyError:
+        #                 self.log((
+        #                     "Product with unknown buyingOptions "
+        #                     "structure: %s\n%s") % (
+        #                         response.url, pprint.pformat(data)),
+        #                     WARNING
+        #                 )
+        #         if price_block:
+        #             try:
+        #                 _price = Price(
+        #                     priceCurrency=price_block['currencyUnit'],
+        #                     price=price_block['currencyAmount']
+        #                 )
+        #                 cond_set_value(product, 'price', _price)
+        #             except KeyError:
+        #                 try:
+        #                     if price_block["currencyUnitSymbol"] == "$":
+        #                         _price = Price(
+        #                             priceCurrency="USD",
+        #                             price=price_block['currencyAmount']
+        #                         )
+        #                     cond_set_value(product, 'price', _price)
+        #                 except KeyError:
+        #                     self.log(
+        #                         ("Product with unknown buyingOptions "
+        #                             "structure: %s\n%s") % (
+        #                                 response.url, pprint.pformat(data)),
+        #                         ERROR
+        #                     )
+        # except KeyError:
+        #     pass
+        #
+        # try:
+        #     cond_set_value(
+        #         product, 'upc', data['analyticsData']['upc'], conv=unicode)
+        # except (ValueError, KeyError):
+        #     pass  # Not really a UPC.
+        #
+        # try:
+        #     cond_set_value(
+        #         product,
+        #         'image_url',
+        #         data['primaryImageUrl'],
+        #         conv=unicode)
+        # except KeyError:
+        #     pass
+        #
+        # try:
+        #     cond_set_value(
+        #         product,
+        #         'brand',
+        #         data['analyticsData']['brand'],
+        #         conv=unicode)
+        # except KeyError:
+        #     pass
 
     def _scrape_total_matches(self, response):
 
