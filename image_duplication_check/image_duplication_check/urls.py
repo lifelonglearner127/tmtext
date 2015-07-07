@@ -2,6 +2,7 @@ from django.conf.urls import url, include
 from rest_framework import routers
 from image_duplication_check.image_duplication.views import CompareTwoImageViewSet, ClassifyImagesBySimilarity, FindSimilarityInImageList
 
+
 router = routers.SimpleRouter()
 router.register(r'comparetwoimages', CompareTwoImageViewSet, 'comparetwoimages')
 router.register(r'classifyimagesbysimilarity', ClassifyImagesBySimilarity, 'classifyimagesbysimilarity')
