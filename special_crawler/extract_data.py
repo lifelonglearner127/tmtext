@@ -76,6 +76,10 @@ class Scraper():
                                # containing nutrition facts
             "nutrition_fact_count", # number of nutrition facts (of elements in the nutrition_facts list) - integer
             "nutrition_fact_text_health", # indicate nutrition fact text status - 0: not exists, 1: exists but partially, 2: exists and perfect.
+            "drug_facts", # drug facts - list of tuples ((key,value) pairs, values could be dictionaries)
+                               # containing drug facts
+            "drug_fact_count", # number of drug facts (of elements in the drug_facts list) - integer
+            "drug_fact_text_health", # indicate drug fact text status - 0: not exists, 1: exists but partially, 2: exists and perfect.
             "rollback", # binary (0/1), whether product is rollback or not
             "variants", # list of variants
             # page_attributes
@@ -179,7 +183,7 @@ class Scraper():
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
                         "features", "feature_count", "model_meta", "description", "long_description","apluscontent_desc",
-                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "rollback",
+                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts", "drug_fact_count", "drug_fact_text_health", "rollback",
                         "manufacturer", "return_to"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\

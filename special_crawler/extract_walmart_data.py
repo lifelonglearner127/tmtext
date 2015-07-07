@@ -2301,6 +2301,108 @@ class WalmartScraper(Scraper):
         except:
             return 0
 
+    def _drug_facts(self):
+        drug_facts = {}
+        active_ingredient_list = []
+        warnings_list = []
+        directions_list = []
+        inactive_ingredients = []
+        questions_list = []
+
+        try:
+            div_active_ingredient = self.tree_html.xpath("//section[@class='active-ingredients']/div[@class='ingredient clearfix']")
+
+            if div_active_ingredient:
+                active_ingredient_list.append({"ingredients": div_active_ingredient[0].xpath("./div[@class='column1']")[0].text_content().strip(), "purpose": div_active_ingredient[0].xpath("./div[@class='column2']")[0].text_content().strip()})
+                drug_facts["Active Ingredients"] = active_ingredient_list
+        except:
+            pass
+
+        try:
+            ul_warnings = self.tree_html.xpath("//h6[@class='section-heading warnings']/following-sibling::*[1]")
+
+            if ul_warnings:
+                warnings_title_list = ul_warnings[0].xpath("./li/strong/text()")
+                warnings_text_list = ul_warnings[0].xpath("./li/text()")
+
+                for index, warning_title in enumerate(warnings_title_list):
+                    warnings_list.append([warning_title.strip(), warnings_text_list[index].strip()])
+
+                if warnings_list:
+                    drug_facts["Warnings"] = warnings_list
+        except:
+            pass
+
+        try:
+            p_directions = self.tree_html.xpath("//h6[@class='section-heading' and contains(text(), 'Directions')]/following-sibling::*[1]")
+
+            if p_directions:
+                directions_text = p_directions[0].text_content().strip()
+                drug_facts["Directions"] = directions_text
+        except:
+            pass
+
+        try:
+            p_inactive_ingredients = self.tree_html.xpath("//h6[@class='section-heading' and contains(text(), 'Inactive Ingredients')]/following-sibling::*[1]")
+
+            if p_inactive_ingredients:
+                inactive_ingredients_text = p_inactive_ingredients[0].text_content().strip()
+                drug_facts["Inactive Ingredients"] = inactive_ingredients_text
+        except:
+            pass
+
+        try:
+            p_questions = self.tree_html.xpath("//h6[@class='section-heading' and contains(text(), 'Questions?')]/following-sibling::*[1]")
+
+            if p_questions:
+                questions_text = p_questions[0].text_content().strip()
+                drug_facts["Questions?"] = questions_text
+        except:
+            pass
+
+        if not drug_facts:
+            return None
+
+        return drug_facts
+
+    def _drug_fact_count(self):
+        drug_fact_key_list = ["Active Ingredients", "Directions", "Inactive Ingredients", "Questions?", "Warnings"]
+
+        drug_facts = self._drug_facts()
+
+        try:
+            count = 0
+
+            for key in drug_fact_key_list:
+                if key in drug_facts:
+                    if isinstance(drug_facts[key], str):
+                        count = count + 1
+                    else:
+                        count = count + len(drug_facts[key])
+
+            return count
+        except:
+            return 0
+
+        return 0
+
+    def _drug_fact_text_health(self):
+        drug_fact_main_key_list = ["Active Ingredients", "Directions", "Inactive Ingredients", "Warnings"]
+
+        drug_facts = self._drug_facts()
+
+        if not drug_facts:
+            return 0
+
+        for key in drug_fact_main_key_list:
+            if key not in drug_facts:
+                return 1
+            else:
+               if len(drug_facts[key]) == 0:
+                   return 1
+
+        return 2
+
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         """Cleans a piece of text of html entities
@@ -2366,6 +2468,9 @@ class WalmartScraper(Scraper):
         "nutrition_facts": _nutrition_facts, \
         "nutrition_fact_count": _nutrition_fact_count, \
         "nutrition_fact_text_health": _nutrition_fact_text_health, \
+        "drug_facts": _drug_facts, \
+        "drug_fact_count": _drug_fact_count, \
+        "drug_fact_text_health": _drug_fact_text_health, \
         "price" : _price_from_tree, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
