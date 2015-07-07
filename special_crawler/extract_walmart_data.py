@@ -2176,7 +2176,12 @@ class WalmartScraper(Scraper):
 
     def _ingredient_count(self):
         # number of ingredients - integer
-        return self.ing_count
+        ingredients = self._ingredients()
+
+        if not ingredients:
+            return 0
+
+        return len(ingredients)
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
