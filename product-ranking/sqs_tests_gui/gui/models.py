@@ -86,7 +86,7 @@ class Job(models.Model):
         help_text='Branch to use at the instance(s); leave blank for master'
     )
 
-    save_s3_cache = models.BooleanField(
+    save_s3_cache = models.NullBooleanField(
         default=False, help_text='Upload raw cache to S3?', blank=True, null=True)
     #load_s3_cache = models.DateField(  # DISABLED for now!
     #    blank=True, null=True, default=timezone.now().date(),
