@@ -15,6 +15,7 @@ import os
 import sys
 import datetime
 import shutil
+import hashlib
 from exceptions import OSError
 
 from scrapy.contrib.httpcache import *
@@ -23,46 +24,19 @@ from scrapy.utils import gz
 from boto.s3.connection import S3Connection
 
 import settings
+from cache_models import list_db_cache
 
 UTC_NOW = datetime.datetime.utcnow()  # we don't init it in a local method
                                       # to avoid spreading one job across
                                       #  2 dates, if it runs for too long
 
 
-def get_cache_map(prefix=None):
+def get_cache_map(spider=None, term=None, date=None):
     """ Get cache data, spider -> date -> searchterm
-    :param prefix: str, must start with spider_name
     :return: dict
     """
     _started = datetime.datetime.now()
-    from extensions import amazon_public_key, amazon_secret_key,\
-        bucket_name
-    conn = S3Connection(amazon_public_key, amazon_secret_key)
-    bucket = conn.get_bucket(bucket_name)
-    cache_map = {}
-    # TODO: switch to threaded listing using s4cmd! replace every .list() method call!
-    keyz = bucket.list(prefix=prefix) if prefix else bucket.list()
-    """
-    try:
-        from s4cmd import S3Handler
-    except ImportError:
-        print 'Install s4cmd! or everything will be too slow!'
-
-    s3_handler = S3Handler()
-    s3_handler.S3_KEYS = [amazon_secret_key, amazon_secret_key]
-    s3_handler.opt.recursive = True
-    keyz = s3_handler.s3walk('s3://'+bucket.name, '/')
-    """
-    for f in keyz:
-        if len(f.key.split('/')) < 4:
-            continue  # invalid key?
-        spider, date, searchterm = f.key.split('/')[0:3]
-        if not spider in cache_map:
-            cache_map[spider] = {}
-        if not date in cache_map[spider]:
-            cache_map[spider][date] = []
-        if not searchterm in cache_map[spider][date]:
-            cache_map[spider][date].append(searchterm)
+    cache_map = list_db_cache(spider=spider, term=term, date=date)
     _finished = datetime.datetime.now()
     print('    [cache map finished in %s seconds]'
           % (_finished - _started).total_seconds())
@@ -86,6 +60,7 @@ def _get_searchterms_str_or_product_url():
         _urls = arg_value.split('||||')  # break into individual URLs
         _urls = sorted(_urls)
         arg_value = '||||'.join(_urls)
+    arg_value = hashlib.md5(arg_value).hexdigest() + '__' + arg_value
     if args_url or args_urls:
         arg_value = _slugify(arg_value)[7:67]  # reduce the length of the url(s)
     return arg_value

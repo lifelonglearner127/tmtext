@@ -16,6 +16,7 @@ import workerpool  # pip install workerpool
 
 import cache
 import settings
+from cache_models import create_db_cache_record
 
 try:
     from monitoring import push_simmetrica_event
@@ -111,11 +112,16 @@ def _s3_cache_on_spider_close(spider, reason):
             bucket=bucket,
             concurrency=20
         )
+        uploaded_to_s3 = True
     except Exception as e:
         print('ERROR UPLOADING TO S3', str(e))
         pass
+        uploaded_to_s3 = False
         #logger.error("Failed to load log files to S3. "
         #             "Check file path and amazon keys/permissions.")
+    # create DB record
+    if uploaded_to_s3:
+        create_db_cache_record(spider, utcnow)
     # remove local cache
     cache.clear_local_cache(settings.HTTPCACHE_DIR, spider,
                             datetime.datetime.utcnow())
@@ -127,13 +133,13 @@ class S3CacheUploader(object):
         # check cache map - maybe such cache already exists?
         enable_cache_upload = True
         utcdate = cache.UTC_NOW if cache.UTC_NOW else datetime.datetime.utcnow()
-        utcdate = utcdate.strftime('%Y-%m-%d')
-        cache_map = cache.get_cache_map(  # TODO: make it FASTER!
-            prefix=os.path.join(crawler._spider.name, utcdate)
-        )
+        utcdate = utcdate.date()
+        print('Checking if cache already exists')
+        cache_map = cache.get_cache_map(
+            spider=crawler._spider.name, date=utcdate)
         if crawler._spider.name in cache_map:
             if utcdate in cache_map[crawler._spider.name]:
-                if cache._slugify(cache._get_searchterms_str_or_product_url()) \
+                if cache._get_searchterms_str_or_product_url() \
                         in cache_map[crawler._spider.name][utcdate]:
                     print('Cache for this date, spider,'
                           ' and searchterm already exists!'
@@ -169,6 +175,7 @@ class S3CacheDownloader(object):
         cache.clear_local_cache(settings.HTTPCACHE_DIR, crawler._spider,
                                 _load_from)
         # download s3 cache
+        # TODO: speed up by using cache_map from DB!
         conn = S3Connection(amazon_public_key, amazon_secret_key)
         bucket = conn.get_bucket(bucket_name)
         partial_path = cache.get_partial_request_path(

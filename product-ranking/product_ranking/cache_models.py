@@ -1,15 +1,22 @@
+import sys
+import os
+
+
 from sqlalchemy import Column, ForeignKey, \
-    String, Integer, SmallInteger, DateTime, create_engine
+    String, Integer, SmallInteger, DateTime, create_engine, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
+
 
 Base = declarative_base()
 
 SEARCH_TERM = 'search_term'
 URL_TERM = 'url_term'
+URLS_TERM = 'urls_term'
 TERM_TYPES = {
     SEARCH_TERM: 0,
-    URL_TERM: 1
+    URL_TERM: 1,
+    URLS_TERM: 2
 }
 
 
@@ -32,7 +39,7 @@ class Term(Base):
     __tablename__ = 'term'
     id = Column(Integer, primary_key=True)
     type = Column(SmallInteger, default=TERM_TYPES[SEARCH_TERM])
-    term = Column(String(300), index=True)  # if term is url, can be long
+    term = Column(String(500), index=True)  # if term is url, can be long
 
     def __repr__(self):
         return '<Term %s>' % self.term
@@ -46,7 +53,7 @@ class Run(Base):
     id = Column(Integer, primary_key=True)
     spider_id = Column(Integer, ForeignKey('spider.id'))
     term_id = Column(Integer, ForeignKey('term.id'))
-    date = Column(DateTime, index=True)
+    date = Column(Date, index=True)
     #
     spider = relationship('Spider', backref='runs')
     term = relationship('Term', backref='terms')
@@ -56,9 +63,114 @@ class Run(Base):
             self.spider.name, self.term.term, self.date)
 
 
-engine = create_engine('mysql://root:root@localhost/test')
+#engine = create_engine('mysql://root:root@localhost/test')
+if os.path.exists('cache_models.db'):  # local mode with SQLite
+    engine = create_engine('sqlite:///cache_models.db')
+else:
+    engine = create_engine(
+        'postgresql://sccache:DetVoFremjokIrnEttat'
+        '@sc-cache-map.cmuq9py90auz.us-east-1.rds.amazonaws.com/sccache'
+    )
 
 from sqlalchemy.orm import sessionmaker
 sess = sessionmaker()
 sess.configure(bind=engine)
-# Base.metadata.create_all(engine)
+session = sess()
+
+
+def create_tables():
+    Base.metadata.create_all(engine)
+
+
+def get_or_create(model, **kwargs):
+    """SqlAlchemy implementation of Django's get_or_create.
+    """
+    global session
+    instance = session.query(model).filter_by(**kwargs).first()
+    if instance:
+        return instance, False
+    else:
+        instance = model(**kwargs)
+        session.add(instance)
+        session.commit()
+        return instance, True
+
+
+def get_or_create_spider(name):
+    return get_or_create(Spider, name=name)
+
+
+def get_or_create_term(type, term):
+    return get_or_create(Term, type=type, term=term)
+
+
+def get_or_create_run(spider, term, date):
+    return get_or_create(Run, spider_id=spider.id, term_id=term.id, date=date)
+
+
+def _get_st_type():
+    args_term = [a for a in sys.argv if 'searchterms_str' in a]
+    args_url = [a for a in sys.argv if 'product_url' in a]
+    args_urls = [a for a in sys.argv if 'products_url' in a]
+    if args_term:
+        return SEARCH_TERM
+    if args_url:
+        return URL_TERM
+    if args_urls:
+        return URLS_TERM
+
+
+def create_db_cache_record(spider, date):
+    from cache import _get_searchterms_str_or_product_url
+
+    st = _get_searchterms_str_or_product_url()
+
+    spider_db, is_created = get_or_create_spider(spider.name)
+    term_db, is_created = get_or_create_term(type=TERM_TYPES[_get_st_type()],
+                                             term=st)
+    run_db, is_created = get_or_create_run(spider=spider_db, term=term_db,
+                                           date=date)
+
+
+def list_db_cache(spider=None, term=None, date=None):
+    """ Get cache data, spider -> date -> searchterm
+    :return: dict
+    """
+    global session
+    runs = session.query(Run).all()
+    # TODO: chain filters below to speed lookups up
+    """
+    if spider:
+        spiders = session.query(Spider).filter(Spider.name == spider).one()
+        runs = runs.filter(Run.spider_id == spiders.id)
+    if term:
+        terms = session.query(Term).filter(Term.term == term).all()
+        runs = runs.filter(Run.term_id.in_([t.id for t in terms]))
+    if date:
+        runs = runs.filter(date=date)
+    """
+    cache_map = {}
+    for r in runs:
+        spider = r.spider.name
+        date = r.date
+        searchterm = r.term.term
+        if not spider in cache_map:
+            cache_map[spider] = {}
+        if not date in cache_map[spider]:
+            cache_map[spider][date] = []
+        if not searchterm in cache_map[spider][date]:
+            cache_map[spider][date].append(searchterm)
+    return cache_map
+
+
+if __name__ == '__main__':
+    create_tables()
+    if 'clear_cache' in sys.argv:
+        if raw_input('Delete all records? y/n: ').lower() == 'y':
+            session.query(Spider).delete()
+            session.query(Run).delete()
+            session.query(Term).delete()
+            session.commit()
+            print('Cleared')
+        else:
+            print('You did not type "y" - exit...')
