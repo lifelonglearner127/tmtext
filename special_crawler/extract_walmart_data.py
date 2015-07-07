@@ -133,17 +133,30 @@ class WalmartScraper(Scraper):
 
         return False
 
-    # TODO:
-    #      better way of extracting id now that URL format is more permissive
-    #      though this method still seems to work...
     def _extract_product_id(self):
         """Extracts product id of walmart product from its URL
         Returns:
             string containing only product id
         """
+        if self._version() == "Walmart v1":
+            product_id = self.product_page_url.split('/')[-1]
+            return product_id
+        elif self._version() == "Walmart v2":
+            product_json = self._extract_product_info_json()
+            return product_json["analyticsData"]["productId"]
 
-        product_id = self.product_page_url.split('/')[-1]
-        return product_id
+        return None
+
+    def _upc(self):
+        if self._version() == "Walmart v1":
+            upc = self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
+            return upc
+        elif self._version() == "Walmart v2":
+            product_json = self._extract_product_info_json()
+            return product_json["analyticsData"]["upc"]
+
+        return None
+
 
     # check if there is a "Video" button available on the product page
     def _has_video_button(self):
@@ -2456,6 +2469,7 @@ class WalmartScraper(Scraper):
         "product_name" : _product_name_from_tree, \
         "site_id" : _site_id, \
         "product_id" : _extract_product_id, \
+        "upc": _upc, \
         "walmart_no" : _walmart_no, \
         "keywords" : _meta_keywords_from_tree, \
         "meta_tags": _meta_tags,\

@@ -62,5 +62,6 @@
     <field name="variants" version="1.2"></field>
     <field name="site_id" version="1.1"></field>
     <field name="walmart_no" version="2.1"></field>
-    <field name="product_id" version="1.1"></field>
+    <field name="product_id" version="1.2"></field>
+    <field name="upc" version="1.1"></field>
 </fields>
