@@ -2201,8 +2201,11 @@ class WalmartScraper(Scraper):
                 pass
 
                 if len(values) == 1:
-                    nDigitIndex = re.search("\d", values[0]).start()
-                    res.append([values[0][:nDigitIndex].strip(), values[0][nDigitIndex:].strip()])
+                    if not re.search("\d", values[0]):
+                        res.append([values[0], ""])
+                    else:
+                        nDigitIndex = re.search("\d", values[0]).start()
+                        res.append([values[0][:nDigitIndex].strip(), values[0][nDigitIndex:].strip()])
                 if len(values) == 2:
                     res.append([values[0].strip(), values[1].strip()])
                 elif len(values) == 3:
