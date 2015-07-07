@@ -7,6 +7,7 @@ import json
 import re
 import string
 import urlparse
+from datetime import datetime
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -72,6 +73,11 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
     SEARCH_URL = "http://www.amazon.fr/s/?field-keywords={search_term}"
 
+    REVIEW_DATE_URL = "http://www.amazon.fr/product-reviews/" \
+                      "{product_id}/ref=cm_cr_pr_top_recent?" \
+                      "ie=UTF8&showViewpoints=0&" \
+                      "sortBy=bySubmissionDateDescending"
+
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
 
@@ -117,21 +123,25 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                     "//a[contains(@href, '/gp/offer-listing/')]/@href"
                 ).extract()))
 
-            if isinstance(prod['buyer_reviews'], Request):
-                meta = prod['buyer_reviews'].meta
-                meta["mkt_place_link"] = mkt_place_link
-                result =  prod['buyer_reviews'].replace(meta=meta)
-            else:
-                result = prod
-
+            new_meta = response.meta.copy()
+            new_meta['product'] = prod
+            prod_id = is_empty(re.findall('dp/([a-zA-Z0-9]+)/', response.url))
+            new_meta['product_id'] = prod_id
             if mkt_place_link:
-                meta = {"product": prod}
-                return Request(
-                    url=mkt_place_link, 
-                    callback=self.parse_marketplace,
-                    meta=meta,
-                    dont_filter=True
-                )
+                new_meta["mkt_place_link"] = mkt_place_link
+
+            if isinstance(prod['buyer_reviews'], Request):
+                result = prod['buyer_reviews'].replace(meta=new_meta)
+            else:
+                if mkt_place_link:
+                    new_meta["mkt_place_link"] = mkt_place_link
+
+            if prod['buyer_reviews'] != 0:
+                return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                               meta=new_meta,
+                               dont_filter=True,
+                               callback=self.get_last_buyer_review_date)
+            result = prod
 
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
             self.log("Giving up on trying to solve the captcha challenge after"
@@ -522,6 +532,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
     def get_buyer_reviews_from_2nd_page(self, response):
         product = response.meta["product"]
+        prod_id = response.meta["product_id"]
         buyer_reviews = {}
         product["buyer_reviews"] = {}
         total_revs = is_empty(response.xpath(
@@ -541,13 +552,13 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
-        if "mkt_place_link" in response.meta:
-            meta = {"product": product}
-            return Request(
-                url=response.meta["mkt_place_link"], 
-                callback=self.parse_marketplace,
-                meta=meta
-            )
+        meta = response.meta.copy()
+        meta['product'] = product
+        if product['buyer_reviews'] != 0:
+            return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                           meta=meta,
+                           dont_filter=True,
+                           callback=self.get_last_buyer_review_date)
 
         return product
 
@@ -575,6 +586,45 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
             average = float(total)/ float(buyer_reviews['num_of_reviews'])
             buyer_reviews['average_rating'] = round(average, 1)
         return buyer_reviews
+
+    def get_last_buyer_review_date(self, response):
+        product = response.meta['product']
+        date = is_empty(response.xpath(
+            '//table[@id="productReviews"]/tr/td/div/div/span/nobr/text()'
+        ).extract())
+
+        months = {'janvier': 'January',
+                  u'f\xe9vrier': 'February',
+                  'mars': 'March',
+                  'avril': 'April',
+                  'mai': 'May',
+                  'juin': 'June',
+                  'juillet': 'July',
+                  'ao\xfbt': 'August',
+                  'septembre': 'September',
+                  'octobre': 'October',
+                  'novembre': 'November',
+                  u'd\xe9cembre': 'December'
+                  }
+
+        if date:
+            for key in months.keys():
+                if key in date:
+                    date = date.replace(key, months[key])
+            d = datetime.strptime(date, '%d %B %Y')
+            date = d.strftime('%d/%m/%Y')
+            product['last_buyer_review_date'] = date
+
+        new_meta = response.meta.copy()
+        new_meta['product'] = product
+        if 'mkt_place_link' in response.meta.keys():
+                return Request(
+                    url=response.meta['mkt_place_link'],
+                    callback=self.parse_marketplace,
+                    meta=new_meta,
+                    dont_filter=True,
+                )
+        return product
 
     def parse_marketplace(self, response):
         if self._has_captcha(response):
