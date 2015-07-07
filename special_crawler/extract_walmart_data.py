@@ -2310,10 +2310,11 @@ class WalmartScraper(Scraper):
         questions_list = []
 
         try:
-            div_active_ingredient = self.tree_html.xpath("//section[@class='active-ingredients']/div[@class='ingredient clearfix']")
+            div_active_ingredients = self.tree_html.xpath("//section[@class='active-ingredients']/div[@class='ingredient clearfix']")
 
-            if div_active_ingredient:
-                active_ingredient_list.append({"ingredients": div_active_ingredient[0].xpath("./div[@class='column1']")[0].text_content().strip(), "purpose": div_active_ingredient[0].xpath("./div[@class='column2']")[0].text_content().strip()})
+            if div_active_ingredients:
+                for div_active_ingredient in div_active_ingredients:
+                    active_ingredient_list.append({"ingredients": div_active_ingredient.xpath("./div[@class='column1']")[0].text_content().strip(), "purpose": div_active_ingredient.xpath("./div[@class='column2']")[0].text_content().strip()})
                 drug_facts["Active Ingredients"] = active_ingredient_list
         except:
             pass
@@ -2346,8 +2347,10 @@ class WalmartScraper(Scraper):
             p_inactive_ingredients = self.tree_html.xpath("//h6[@class='section-heading' and contains(text(), 'Inactive Ingredients')]/following-sibling::*[1]")
 
             if p_inactive_ingredients:
-                inactive_ingredients_text = p_inactive_ingredients[0].text_content().strip()
-                drug_facts["Inactive Ingredients"] = inactive_ingredients_text
+                inactive_ingredients = p_inactive_ingredients[0].text_content().strip().split(", ")
+
+                if inactive_ingredients:
+                    drug_facts["Inactive Ingredients"] = inactive_ingredients
         except:
             pass
 
