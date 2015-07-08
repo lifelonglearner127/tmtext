@@ -171,12 +171,12 @@ for website in website_list:
                                                  number_of_invalid_products,
                                                  percentage_of_invalid_products,
                                                  percentage_of_changed_products,
-                                                 possibility_of_overall_website_changes,
                                                  count_product_titles_are_less_than_2_character_long,
                                                  count_review_counts_are_0,
                                                  count_product_descriptions_are_less_than_2_character_long,
                                                  count_image_counts_are_0,
                                                  count_products_are_out_of_stock,
+                                                 possibility_of_overall_website_changes,
                                                  "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n")
     email_content += (website_header)
 
