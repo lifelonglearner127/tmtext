@@ -2138,6 +2138,10 @@ class WalmartScraper(Scraper):
     def _ingredients(self):
         # list of ingredients - list of strings
         ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+
+        if not ingr:
+            ingr = self.tree_html.xpath("//section[contains(@class,'js-ingredients')]/p[1]//text()")
+
         if len(ingr) > 0:
             res = []
             w = ''
