@@ -163,7 +163,6 @@ for website in website_list:
                                              "Percentage of product descriptions are < 2 words long: %d\n" \
                                              "Percentage of image counts are 0: %d\n" \
                                              "Percentage of products are out of stock: %d\n" \
-
                                              "Possibility of overall website changes: %s\n" \
                                              "Web console: %s\n" % (
                                                  number_of_reported_products + number_of_invalid_products,
