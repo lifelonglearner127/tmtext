@@ -1414,9 +1414,10 @@ class WalmartScraper(Scraper):
         Returns:
             float containing average value of reviews
         """
-        average_review_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
-            //p[@class='heading-e']/span[2]/text()")
-        average_review = float(average_review_str[0])
+        average_review_str = self.tree_html.xpath("//div[@class='review-summary Grid']\
+            //p[@class='heading-e']/text()")[0]
+        average_review = re.search('reviews \| (.+?) out of ', average_review_str).group(1)
+        average_review = float(average_review)
 
         return average_review
 
@@ -1475,8 +1476,7 @@ class WalmartScraper(Scraper):
             nr_reviews = int(nr_reviews[0])
 
         if self._version() == "Walmart v2":
-            nr_reviews_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
-                //p[@class='heading-e']/span[1]/text()")
+            nr_reviews_str = self.tree_html.xpath("//span[@itemprop='ratingCount']/text()")
 
             if not nr_reviews_str:
                 return 0
