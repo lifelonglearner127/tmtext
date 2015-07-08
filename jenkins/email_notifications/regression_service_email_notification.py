@@ -152,17 +152,42 @@ for website in website_list:
     if percentage_of_changed_products > 80:
         possibility_of_overall_website_changes = "Yes"
 
+    possibility_of_80_percent_product_titles_are_less_than_2_character_long = "No"
+    possibility_of_80_percent_review_counts_are_0 = "No"
+    possibility_of_80_percent_product_descriptions_are_less_than_2_character_long = "No"
+    possibility_of_80_percent_image_counts_are_0 = "No"
+    possibility_of_80_percent_products_are_out_of_stock = "No"
+
+    #> 80% of product titles are < 2 characters long
+    if float(float(count_product_titles_are_less_than_2_character_long) / float(number_of_reported_products + number_of_invalid_products)) > 0.8:
+        possibility_of_80_percent_product_titles_are_less_than_2_character_long = "Yes"
+    #> 80% of review counts are 0
+    if float(float(count_review_counts_are_0) / float(number_of_reported_products + number_of_invalid_products)) > 0.8:
+        possibility_of_80_percent_review_counts_are_0 = "Yes"
+    #> 80% of product descriptions are < 2 words long
+    count_product_descriptions_are_less_than_2_character_long = 0
+    if float(float(count_product_descriptions_are_less_than_2_character_long) / float(number_of_reported_products + number_of_invalid_products)) > 0.8:
+        possibility_of_80_percent_product_descriptions_are_less_than_2_character_long = "Yes"
+    #> 80% of image counts are 0
+    count_image_counts_are_0 = 0
+    if float(float(count_image_counts_are_0) / float(number_of_reported_products + number_of_invalid_products)) > 0.8:
+        possibility_of_80_percent_image_counts_are_0 = "Yes"
+    #> 80% of products are out of stock
+    count_products_are_out_of_stock = 0
+    if float(float(count_products_are_out_of_stock) / float(number_of_reported_products + number_of_invalid_products)) > 0.8:
+        possibility_of_80_percent_products_are_out_of_stock = "Yes"
+
     website_header = "- " + website + "\n" + "Total tested product numbers: %d\n" \
                                              "Product numbers of content structure changed: %d\n" \
                                              "Product numbers of version changed: %d\n" \
                                              "Invalid product numbers: %d\n" \
                                              "Percentage of invalid products: %f\n" \
                                              "Percentage of changed products: %f\n" \
-                                             "Percentage of product titles are < 2 characters long: %d\n" \
-                                             "Percentage of review counts are 0: %d\n" \
-                                             "Percentage of product descriptions are < 2 words long: %d\n" \
-                                             "Percentage of image counts are 0: %d\n" \
-                                             "Percentage of products are out of stock: %d\n" \
+                                             "Possibility of 80% of product titles are < 2 characters long: %d\n" \
+                                             "Possibility of 80% of review counts are 0: %d\n" \
+                                             "Possibility of 80% of product descriptions are < 2 words long: %d\n" \
+                                             "Possibility of 80% of image counts are 0: %d\n" \
+                                             "Possibility of 80% of products are out of stock: %d\n" \
                                              "Possibility of overall website changes: %s\n" \
                                              "Web console: %s\n" % (
                                                  number_of_reported_products + number_of_invalid_products,
@@ -171,11 +196,11 @@ for website in website_list:
                                                  number_of_invalid_products,
                                                  percentage_of_invalid_products,
                                                  percentage_of_changed_products,
-                                                 count_product_titles_are_less_than_2_character_long,
-                                                 count_review_counts_are_0,
-                                                 count_product_descriptions_are_less_than_2_character_long,
-                                                 count_image_counts_are_0,
-                                                 count_products_are_out_of_stock,
+                                                 possibility_of_80_percent_product_titles_are_less_than_2_character_long,
+                                                 possibility_of_80_percent_review_counts_are_0,
+                                                 possibility_of_80_percent_product_descriptions_are_less_than_2_character_long,
+                                                 possibility_of_80_percent_image_counts_are_0,
+                                                 possibility_of_80_percent_products_are_out_of_stock,
                                                  possibility_of_overall_website_changes,
                                                  "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n")
     email_content += (website_header)
