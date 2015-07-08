@@ -73,7 +73,7 @@ for website in website_list:
             current_json = json.loads(row["current_json"])
 
             #> 80% of product titles are < 2 characters long
-            if not current_json["page_attributes"]["title"] or len(current_json["page_attributes"]["title"]) < 2:
+            if not current_json["product_info"]["product_title"] or len(current_json["product_info"]["product_title"]) < 2:
                 count_product_titles_are_less_than_2_character_long = count_product_titles_are_less_than_2_character_long  + 1
 
             #> 80% of review counts are 0
