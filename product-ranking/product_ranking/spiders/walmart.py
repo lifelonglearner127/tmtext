@@ -117,7 +117,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
              "/{product_id}?sort=mostRecentQuestions&pageNumber={page}"
 
     REVIEW_URL = 'http://walmart.ugc.bazaarvoice.com/1336/{product_id}/' \
-                 'reviews.djs?format=embeddedhtml&dir=desc&sort=relevancy'
+                 'reviews.djs?format=embeddedhtml&sort=submissionTime'
+
+    REVIEW_DATE_URL = 'http://www.walmart.com/reviews/api/product/{product_id}?' \
+                      'limit=3&sort=submission-desc&filters=&showProduct=false'
 
     QA_LIMIT = 0xffffffff
 
@@ -458,7 +461,22 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
         else:
             product['buyer_reviews'] = 0
+
+        self._parse_last_buyer_review_date_old(self, response, product)
         return product
+
+    def _parse_last_buyer_review_date_old(self, response, product):
+        data = re.findall('var materials={(.*)}', response.body_as_unicode())
+        h = json.loads(data[0])
+        sel = Selector(text=h['BVRRSourceID'])
+        cond_set(
+            product,
+            'last_buyer_review_date',
+            sel.xpath(
+                '//span[contains(@class, "BVRRReviewDate")]/text()'
+            ).extract()
+        )
+
 
     def _build_buyer_reviews(self, response):
         overall_block = response.xpath(
@@ -1048,4 +1066,27 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                            callback=self._build_buyer_reviews_old,
                            meta=new_meta, dont_filter=True)
         else:
-            return product
+            if 'buyer_reviews' in product.keys():
+                new_meta = response.meta.copy()
+                return Request(url=self.REVIEW_DATE_URL.format(
+                    product_id=response.meta['product_id']),
+                               callback=self._parse_last_buyer_review_date,
+                               meta=new_meta,
+                               dont_filter=True)
+            else:
+                return product
+
+    def _parse_last_buyer_review_date(self, response):
+        product = response.meta['product']
+        data = json.loads(response.body_as_unicode())
+        sel = Selector(text=data['reviewsHtml'])
+
+        cond_set(
+            product,
+            'last_buyer_review_date',
+            sel.xpath(
+                '//span[contains(@class, "customer-review-date")]/text()'
+            ).extract()
+        )
+
+        return product

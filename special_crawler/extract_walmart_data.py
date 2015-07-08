@@ -133,17 +133,30 @@ class WalmartScraper(Scraper):
 
         return False
 
-    # TODO:
-    #      better way of extracting id now that URL format is more permissive
-    #      though this method still seems to work...
     def _extract_product_id(self):
         """Extracts product id of walmart product from its URL
         Returns:
             string containing only product id
         """
+        if self._version() == "Walmart v1":
+            product_id = self.product_page_url.split('/')[-1]
+            return product_id
+        elif self._version() == "Walmart v2":
+            product_json = self._extract_product_info_json()
+            return product_json["analyticsData"]["productId"]
 
-        product_id = self.product_page_url.split('/')[-1]
-        return product_id
+        return None
+
+    def _upc(self):
+        if self._version() == "Walmart v1":
+            upc = self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
+            return upc
+        elif self._version() == "Walmart v2":
+            product_json = self._extract_product_info_json()
+            return product_json["analyticsData"]["upc"]
+
+        return None
+
 
     # check if there is a "Video" button available on the product page
     def _has_video_button(self):
@@ -1401,9 +1414,10 @@ class WalmartScraper(Scraper):
         Returns:
             float containing average value of reviews
         """
-        average_review_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
-            //p[@class='heading-e']/span[2]/text()")
-        average_review = float(average_review_str[0])
+        average_review_str = self.tree_html.xpath("//div[@class='review-summary Grid']\
+            //p[@class='heading-e']/text()")[0]
+        average_review = re.search('reviews \| (.+?) out of ', average_review_str).group(1)
+        average_review = float(average_review)
 
         return average_review
 
@@ -1462,8 +1476,7 @@ class WalmartScraper(Scraper):
             nr_reviews = int(nr_reviews[0])
 
         if self._version() == "Walmart v2":
-            nr_reviews_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
-                //p[@class='heading-e']/span[1]/text()")
+            nr_reviews_str = self.tree_html.xpath("//span[@itemprop='ratingCount']/text()")
 
             if not nr_reviews_str:
                 return 0
@@ -2125,6 +2138,10 @@ class WalmartScraper(Scraper):
     def _ingredients(self):
         # list of ingredients - list of strings
         ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+
+        if not ingr:
+            ingr = self.tree_html.xpath("//section[contains(@class,'js-ingredients')]/p[1]//text()")
+
         if len(ingr) > 0:
             res = []
             w = ''
@@ -2163,7 +2180,12 @@ class WalmartScraper(Scraper):
 
     def _ingredient_count(self):
         # number of ingredients - integer
-        return self.ing_count
+        ingredients = self._ingredients()
+
+        if not ingredients:
+            return 0
+
+        return len(ingredients)
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -2201,8 +2223,11 @@ class WalmartScraper(Scraper):
                 pass
 
                 if len(values) == 1:
-                    nDigitIndex = re.search("\d", values[0]).start()
-                    res.append([values[0][:nDigitIndex].strip(), values[0][nDigitIndex:].strip()])
+                    if not re.search("\d", values[0]):
+                        res.append([values[0], ""])
+                    else:
+                        nDigitIndex = re.search("\d", values[0]).start()
+                        res.append([values[0][:nDigitIndex].strip(), values[0][nDigitIndex:].strip()])
                 if len(values) == 2:
                     res.append([values[0].strip(), values[1].strip()])
                 elif len(values) == 3:
@@ -2298,6 +2323,111 @@ class WalmartScraper(Scraper):
         except:
             return 0
 
+    def _drug_facts(self):
+        drug_facts = {}
+        active_ingredient_list = []
+        warnings_list = []
+        directions_list = []
+        inactive_ingredients = []
+        questions_list = []
+
+        try:
+            div_active_ingredients = self.tree_html.xpath("//section[@class='active-ingredients']/div[@class='ingredient clearfix']")
+
+            if div_active_ingredients:
+                for div_active_ingredient in div_active_ingredients:
+                    active_ingredient_list.append({"ingredients": div_active_ingredient.xpath("./div[@class='column1']")[0].text_content().strip(), "purpose": div_active_ingredient.xpath("./div[@class='column2']")[0].text_content().strip()})
+                drug_facts["Active Ingredients"] = active_ingredient_list
+        except:
+            pass
+
+        try:
+            ul_warnings = self.tree_html.xpath("//h6[@class='section-heading warnings']/following-sibling::*[1]")
+
+            if ul_warnings:
+                warnings_title_list = ul_warnings[0].xpath("./li/strong/text()")
+                warnings_text_list = ul_warnings[0].xpath("./li/text()")
+
+                for index, warning_title in enumerate(warnings_title_list):
+                    warnings_list.append([warning_title.strip(), warnings_text_list[index].strip()])
+
+                if warnings_list:
+                    drug_facts["Warnings"] = warnings_list
+        except:
+            pass
+
+        try:
+            p_directions = self.tree_html.xpath("//h6[@class='section-heading' and contains(text(), 'Directions')]/following-sibling::*[1]")
+
+            if p_directions:
+                directions_text = p_directions[0].text_content().strip()
+                drug_facts["Directions"] = directions_text
+        except:
+            pass
+
+        try:
+            p_inactive_ingredients = self.tree_html.xpath("//h6[@class='section-heading' and contains(text(), 'Inactive Ingredients')]/following-sibling::*[1]")
+
+            if p_inactive_ingredients:
+                inactive_ingredients = p_inactive_ingredients[0].text_content().strip().split(", ")
+
+                if inactive_ingredients:
+                    drug_facts["Inactive Ingredients"] = inactive_ingredients
+        except:
+            pass
+
+        try:
+            p_questions = self.tree_html.xpath("//h6[@class='section-heading' and contains(text(), 'Questions?')]/following-sibling::*[1]")
+
+            if p_questions:
+                questions_text = p_questions[0].text_content().strip()
+                drug_facts["Questions?"] = questions_text
+        except:
+            pass
+
+        if not drug_facts:
+            return None
+
+        return drug_facts
+
+    def _drug_fact_count(self):
+        drug_fact_key_list = ["Active Ingredients", "Directions", "Inactive Ingredients", "Questions?", "Warnings"]
+
+        drug_facts = self._drug_facts()
+
+        try:
+            count = 0
+
+            for key in drug_fact_key_list:
+                if key in drug_facts:
+                    if isinstance(drug_facts[key], str):
+                        count = count + 1
+                    else:
+                        count = count + len(drug_facts[key])
+
+            return count
+        except:
+            return 0
+
+        return 0
+
+    def _drug_fact_text_health(self):
+        drug_fact_main_key_list = ["Active Ingredients", "Directions", "Inactive Ingredients", "Warnings"]
+
+        drug_facts = self._drug_facts()
+
+        if not drug_facts:
+            return 0
+
+        for key in drug_fact_main_key_list:
+            if key not in drug_facts:
+                return 1
+            else:
+               if len(drug_facts[key]) == 0:
+                   return 1
+
+        return 2
+
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         """Cleans a piece of text of html entities
@@ -2347,6 +2477,8 @@ class WalmartScraper(Scraper):
         "upc" : _upc_from_tree, \
         "product_name" : _product_name_from_tree, \
         "site_id" : _site_id, \
+        "product_id" : _extract_product_id, \
+        "upc": _upc, \
         "walmart_no" : _walmart_no, \
         "keywords" : _meta_keywords_from_tree, \
         "meta_tags": _meta_tags,\
@@ -2362,6 +2494,9 @@ class WalmartScraper(Scraper):
         "nutrition_facts": _nutrition_facts, \
         "nutrition_fact_count": _nutrition_fact_count, \
         "nutrition_fact_text_health": _nutrition_fact_text_health, \
+        "drug_facts": _drug_facts, \
+        "drug_fact_count": _drug_fact_count, \
+        "drug_fact_text_health": _drug_fact_text_health, \
         "price" : _price_from_tree, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \

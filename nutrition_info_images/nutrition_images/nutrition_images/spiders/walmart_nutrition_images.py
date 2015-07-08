@@ -3,7 +3,7 @@ import scrapy
 from scrapy.http import Request
 import json
 from nutrition_images.items import NutritionImagesItem
-from detect_text_houghlines import is_text_image
+from classify_text_images import extract_features
 from urllib import splitquery
 from urlparse import parse_qs
 
@@ -61,7 +61,7 @@ class WalmartNutritionImagesSpider(scrapy.Spider):
             item = NutritionImagesItem()
             item['image'] = image
             (average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_straight_lines) = \
-            is_text_image(image, is_url=True)
+            extract_features(image, is_url=True)
             (item['slope_average'], item['distance_average'], item['nr_lines']) = average_slope, average_differences, nr_straight_lines
 
             # TODO: predict with classifier

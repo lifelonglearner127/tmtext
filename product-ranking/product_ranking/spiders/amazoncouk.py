@@ -5,6 +5,7 @@ from __future__ import print_function
 import re
 import json
 import urlparse
+from datetime import datetime
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -82,6 +83,10 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
     SEARCH_URL = ("http://www.amazon.co.uk/s/ref=nb_sb_noss?"
                   "url=search-alias=aps&field-keywords={search_term}&rh=i:aps,"
                   "k:{search_term}&ajr=0")
+
+    REVIEW_DATE_URL = 'http://www.amazon.co.uk/product-reviews/{product_id}' \
+                      '/ref=cm_cr_dp_see_all_btm?ie=UTF8&' \
+                      'showViewpoints=1&sortBy=bySubmissionDateDescending'
 
     _cbw = CaptchaBreakerWrapper()
 
@@ -296,24 +301,29 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
                     "//div[@id='secondaryUsedAndNew']" \
                     "//a[contains(@href, '/gp/offer-listing/')]/@href"
                 ).extract()))
+
+        new_meta = response.meta.copy()
+        new_meta['product'] = prod
+        prod_id = is_empty(re.findall('dp/([a-zA-Z0-9]+)/', response.url))
+        new_meta['product_id'] = prod_id
+
         if mkt_place_link and "condition=" in mkt_place_link:
             mkt_place_link = re.sub("condition=([^\&]*)", "", mkt_place_link)
+            new_meta['mkt_place_link'] = mkt_place_link
 
         revs = self._buyer_reviews_from_html(response)
         if isinstance(revs, Request):
-            meta = {"product": prod, "mkt_place_link": mkt_place_link}
-            return revs.replace(meta=meta)
+            if mkt_place_link:
+                new_meta["mkt_place_link"] = mkt_place_link
+            return revs.replace(meta=new_meta)
         else:
             prod['buyer_reviews'] = revs
 
-        if mkt_place_link:
-            meta = {"product": prod}
-            return Request(
-                url=mkt_place_link, 
-                callback=self.parse_marketplace,
-                meta=meta,
-                dont_filter=True,
-            )
+        if prod['buyer_reviews'] != 0:
+            return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                           meta=new_meta,
+                           dont_filter=True,
+                           callback=self._parse_last_buyer_review_date)
 
         return prod
 
@@ -384,42 +394,39 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
         return None
 
     def get_buyer_reviews_from_2nd_page(self, response):
-        product = response.meta["product"]
 
         if self._has_captcha(response):
-            return self._handle_captcha(
-                response,
-                self.parse_product
-            )
+            result = self._handle_captcha(response,
+                                          self.get_buyer_reviews_from_2nd_page)
+            print('handle captcha')
+        else:
+            product = response.meta["product"]
+            buyer_reviews = {}
+            product["buyer_reviews"] = {}
+            prod_id = response.meta["product_id"]
+            total_revs = is_empty(response.xpath(
+                '//span[@class="crAvgStars"]/a/text()').extract(), ''
+            ).replace(",", "")
+            buyer_reviews["num_of_reviews"] = is_empty(
+                    re.findall(FLOATING_POINT_RGEX, total_revs), 0
+                )
+            if int(buyer_reviews["num_of_reviews"]) == 0:
+                product["buyer_reviews"] = ZERO_REVIEWS_VALUE
+                return product
 
-        buyer_reviews = {}
-        product["buyer_reviews"] = {}
-        total_revs = is_empty(response.xpath(
-            '//span[@class="crAvgStars"]/a/text()').extract(), ''
-        ).replace(",", "")
-        buyer_reviews["num_of_reviews"] = is_empty(
-                re.findall(FLOATING_POINT_RGEX, total_revs), 0
-            )
-        if int(buyer_reviews["num_of_reviews"]) == 0:
-            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
+            buyer_reviews["rating_by_star"] = {}
+            buyer_reviews = self.get_rating_by_star(response, buyer_reviews)
+            product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
+
+            meta = response.meta.copy()
+            meta['product'] = product
+            if product['buyer_reviews'] != 0:
+                return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                               meta=meta,
+                               dont_filter=True,
+                               callback=self._parse_last_buyer_review_date)
+
             return product
-
-        buyer_reviews["rating_by_star"] = {}
-        buyer_reviews = self.get_rating_by_star(response, buyer_reviews)
-
-
-        product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
-
-        if "mkt_place_link" in response.meta:
-            meta = {"product": product}
-            return Request(
-                url=response.meta["mkt_place_link"], 
-                callback=self.parse_marketplace,
-                meta=meta,
-                dont_filter=True
-            )
-
-        return product
 
     def get_rating_by_star(self, response, buyer_reviews):
         table = response.xpath(
@@ -427,6 +434,7 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
                 'table[@cellspacing="1"]//tr'
             )
         total = 0
+        print(response)
         if table:
             for tr in table[:5]:
                 rating = is_empty(tr.xpath(
@@ -441,8 +449,24 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
                     number = int(number.replace(',', ''))
                     buyer_reviews['rating_by_star'][rating] = number
                     total += number*int(rating)
+        else:
+            stars = response.xpath(
+                '//div[@class="histoRating"]/text()'
+            ).re('(\d)+ star')
+
+            rating = response.xpath(
+                '//div[@class="histoCount"]/text()'
+            ).extract()
+
+            rating_by_star = {}
+            for i in range(0, len(stars)):
+                rating_by_star[stars[i]] = int(rating[i])
+                total += int(stars[i]) * int(rating[i])
+            if len(rating_by_star) > 0:
+                buyer_reviews['rating_by_star'] = rating_by_star
+
         if total > 0:
-            average = float(total)/ float(buyer_reviews['num_of_reviews'])
+            average = float(total)/float(buyer_reviews['num_of_reviews'])
             buyer_reviews['average_rating'] = round(average, 1)
         return buyer_reviews
 
@@ -522,6 +546,31 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
 
         return buyer_reviews
         # cond_set_value(product, 'buyer_reviews', buyer_reviews)
+
+    def _parse_last_buyer_review_date(self, response):
+        product = response.meta['product']
+        date = is_empty(response.xpath(
+            '//table[@id="productReviews"]/tr/td/div/div/span/nobr/text()'
+        ).extract())
+        if date:
+            try:
+                d = datetime.strptime(date.replace('.', ''), '%d %b %Y')
+            except Exception as e:
+                d = datetime.strptime(date.replace('.', ''), '%d %B %Y')
+            date = d.strftime('%d/%m/%Y')
+            product['last_buyer_review_date'] = date
+
+        new_meta = response.meta.copy()
+        new_meta['product'] = product
+        if 'mkt_place_link' in response.meta.keys():
+            return Request(
+                url=response.meta['mkt_place_link'],
+                callback=self.parse_marketplace,
+                meta=new_meta,
+                dont_filter=True,
+            )
+
+        return product
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
