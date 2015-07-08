@@ -50,6 +50,17 @@ csv_file_name = "/home/ubuntu/tmtext/special_crawler/jenkins/regression_service_
 if os.path.isfile(csv_file_name):
     os.remove(csv_file_name)
 
+#> 80% of product titles are < 2 characters long
+count_product_titles_are_less_than_2_character_long = 0
+#> 80% of review counts are 0
+count_review_counts_are_0 = 0
+#> 80% of product descriptions are < 2 words long
+count_product_descriptions_are_less_than_2_character_long = 0
+#> 80% of image counts are 0
+count_image_counts_are_0 = 0
+#> 80% of products are out of stock
+count_products_are_out_of_stock = 0
+
 
 for website in website_list:
     number_of_reported_products = 0
@@ -58,9 +69,30 @@ for website in website_list:
         if row["website"] == website:
             number_of_reported_products = number_of_reported_products + 1
 
-        if row["website"] == website and row["changes_in_structure"] > 0:
             sample_json = json.loads(row["sample_json"])
             current_json = json.loads(row["current_json"])
+
+            #> 80% of product titles are < 2 characters long
+            if not current_json["page_attributes"]["title"] or len(current_json["page_attributes"]["title"]) < 2:
+                count_product_titles_are_less_than_2_character_long = count_product_titles_are_less_than_2_character_long  + 1
+
+            #> 80% of review counts are 0
+            if not current_json["reviews"]["review_count"] or current_json["reviews"]["review_count"] == 0:
+                count_review_counts_are_0 = count_review_counts_are_0  + 1
+
+            #> 80% of product descriptions are < 2 words long
+            if not current_json["product_info"]["description"] or len(current_json["product_info"]["description"]) < 2:
+                count_product_descriptions_are_less_than_2_character_long = count_product_descriptions_are_less_than_2_character_long  + 1
+
+            #> 80% of image counts are 0
+            if not current_json["page_attributes"]["image_count"] or current_json["page_attributes"]["image_count"] == 0:
+                count_image_counts_are_0 = count_image_counts_are_0  + 1
+
+            #> 80% of products are out of stock
+            if current_json["sellers"]["site_online_out_of_stock"] and current_json["sellers"]["site_online_out_of_stock"] == 1:
+                count_products_are_out_of_stock = count_products_are_out_of_stock  + 1
+
+        if row["website"] == website and row["changes_in_structure"] > 0:
 
             csv_file = None
 
@@ -126,13 +158,33 @@ for website in website_list:
                                              "Invalid product numbers: %d\n" \
                                              "Percentage of invalid products: %f\n" \
                                              "Percentage of changed products: %f\n" \
+                                             "Percentage of product titles are < 2 characters long: %d\n" \
+                                             "Percentage of review counts are 0: %d\n" \
+                                             "Percentage of product descriptions are < 2 words long: %d\n" \
+                                             "Percentage of image counts are 0: %d\n" \
+                                             "Percentage of products are out of stock: %d\n" \
+
                                              "Possibility of overall website changes: %s\n" \
-                                             "Web console: %s\n" % (number_of_reported_products + number_of_invalid_products, number_of_changed_products, number_of_version_changed_products, number_of_invalid_products, percentage_of_invalid_products, percentage_of_changed_products, possibility_of_overall_website_changes, "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n")
+                                             "Web console: %s\n" % (
+                                                 number_of_reported_products + number_of_invalid_products,
+                                                 number_of_changed_products,
+                                                 number_of_version_changed_products,
+                                                 number_of_invalid_products,
+                                                 percentage_of_invalid_products,
+                                                 percentage_of_changed_products,
+                                                 possibility_of_overall_website_changes,
+                                                 count_product_titles_are_less_than_2_character_long,
+                                                 count_review_counts_are_0,
+                                                 count_product_descriptions_are_less_than_2_character_long,
+                                                 count_image_counts_are_0,
+                                                 count_products_are_out_of_stock,
+                                                 "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n")
     email_content += (website_header)
 
 
 fromaddr = "jenkins@contentanalyticsinc.com"
-toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com"] # must be a list
+#toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com"] # must be a list
+toaddrs = ["jacob.cats426@gmail.com"] # must be a list
 subject = "Daily Notification from Regression Service : %s" % today.isoformat()
 
 print "Message length is " + repr(len(email_content))
