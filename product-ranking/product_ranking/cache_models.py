@@ -137,14 +137,21 @@ def create_db_cache_record(spider, date):
 
 def list_db_cache(spider=None, term=None, date=None):
     """ Get cache data, spider -> date -> searchterm
+    supports strings for spider (as name) and for terms(as term)
     :return: dict
     """
     global session
     query = session.query(Run)
     if spider:
-        query = query.join(Spider, Run.spider_id == spider.id)
+        if isinstance(spider, Spider):
+            query = query.join(Spider, Run.spider_id == spider.id)
+        else:  # if spider is string
+            query = query.join(Spider).filter(Spider.name == spider)
     if term:
-        query = query.join(Term, Run.term_id == term.id)
+        if isinstance(term, Term):
+            query = query.join(Term, Run.term_id == term.id)
+        else:  # if term is string
+            query = query.join(Term).filter(Term.term == term)
     if date:
         query = query.filter(Run.date == date)
     runs = query.all()
