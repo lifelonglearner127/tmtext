@@ -211,3 +211,5 @@ class SiteProductItem(Item):
     _walmart_current_id = Field()
     _walmart_original_price = Field()
     _walmart_original_oos = Field()  # oos = out of stock
+
+    last_buyer_review_date = Field()
