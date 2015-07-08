@@ -365,6 +365,22 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         return self._start_related(response)
 
     def _on_api_response(self, response):
+        if hasattr(response, 'getErrorMessage'):
+            if response.getErrorMessage():
+                # API request failed
+                with open('/tmp/walmart_api_requests_failed.log', 'a') as fh:
+                    fh.write(str(datetime.utcnow())+'\n')
+                _response_from_parse_single_product = getattr(
+                    self, '_response_from_parse_single_product', None)
+                if _response_from_parse_single_product:
+                    if not 'product' in _response_from_parse_single_product.meta:
+                        _response_from_parse_single_product.meta['product'] = {}
+                    _response_from_parse_single_product.meta['product'][
+                        '_walmart_original_oos'] = True
+                    yield self.parse_product(_response_from_parse_single_product)
+                    return
+
+        # if API request succeed
         original_id = response.meta['original_id']
         current_id = response.meta['current_id']
         original_response = response.meta['original_response_']
@@ -389,9 +405,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         meta['original_id'] = original_id
         meta['current_id'] = current_id
         meta['original_response_'] = original_response
+        self._response_from_parse_single_product = original_response  # needed for FailedRequest
         return Request(
             url=api_url % (original_id, api_key),
-            callback=self._on_api_response, meta=meta
+            callback=self._on_api_response, meta=meta,
+            errback=self._on_api_response
         )
 
     def _parse_single_product(self, response):
