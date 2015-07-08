@@ -5,8 +5,8 @@ import os
 import time
 import csv
 
-input_file_path = "/home/mufasa/Documents/Misc/ticket 2275/marketplace_and_wmt_items_ip_2015-06-28.xml"
-output_dir_path = "/home/mufasa/Documents/Misc/ticket 2275/urls/"
+input_file_path = "/home/ubuntu/Documents/Misc/ticket 2275/marketplace_and_wmt_items_ip_2015-06-28.xml"
+output_dir_path = "/home/ubuntu/Documents/Misc/ticket 2275/urls/"
 
 with open(input_file_path) as f:
 
