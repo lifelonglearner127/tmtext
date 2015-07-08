@@ -40,7 +40,7 @@ def results():
     request_arguments = dict(request.args)
     image_urls = request_arguments['image'][0].split()
     return render_template('results_template.html', \
-        results={image : True if classifier_predict_one(image, image_classifier)==1 else False for image in image_urls})
+        results={image : False if classifier_predict_one(image, image_classifier)==0 else True for image in image_urls})
 
 @app.route('/nutrition_image_UI', methods=['GET'])
 def nutrition_image_UI():
@@ -52,7 +52,7 @@ def is_nutrition_image():
     validate_args(request_arguments)
     image_urls = request_arguments['image']
     try:
-        results = {image : True if classifier_predict_one(image, image_classifier)==1 else False for image in image_urls}
+        results = {image : False if classifier_predict_one(image, image_classifier)==0 else True for image in image_urls}
     except HTTPError:
         raise CustomError("Error retrieving image")
     return jsonify(results)
