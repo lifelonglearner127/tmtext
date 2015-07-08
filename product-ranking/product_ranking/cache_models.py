@@ -1,11 +1,10 @@
 import sys
 import os
 
-
 from sqlalchemy import Column, ForeignKey, \
-    String, Integer, SmallInteger, DateTime, create_engine, Date
+    String, Integer, SmallInteger, Date, create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, sessionmaker
 
 
 Base = declarative_base()
@@ -21,10 +20,10 @@ TERM_TYPES = {
 
 
 class Spider(Base):
-    """
-    Spider model class
+    """Spider model class
     """
     __tablename__ = 'spider'
+
     id = Column(Integer, primary_key=True)
     name = Column(String(100), index=True)
 
@@ -33,37 +32,42 @@ class Spider(Base):
 
 
 class Term(Base):
-    """
-    Search term model class
+    """Search term model class
     """
     __tablename__ = 'term'
+
     id = Column(Integer, primary_key=True)
     type = Column(SmallInteger, default=TERM_TYPES[SEARCH_TERM])
-    term = Column(String(500), index=True)  # if term is url, can be long
+    term = Column(String(500), index=True)  # needs html-quoting
+    # if term is url, can be long
 
     def __repr__(self):
         return '<Term %s>' % self.term
 
 
 class Run(Base):
-    """
-    Search run models class (consists of spider, term and run date)
+    """Search run model class (consists of spider, term and run date)
     """
     __tablename__ = 'run'
+
     id = Column(Integer, primary_key=True)
     spider_id = Column(Integer, ForeignKey('spider.id'))
     term_id = Column(Integer, ForeignKey('term.id'))
     date = Column(Date, index=True)
-    #
+
     spider = relationship('Spider', backref='runs')
     term = relationship('Term', backref='terms')
 
+    def get_folder(self):
+        """get path to the s3 cache folder for current run"""
+        return '%s/%s/%s' % (self.spider.name, self.date, self.term.term)
+
     def __repr__(self):
-        return '<Run %s - %s (%s)>' % (
-            self.spider.name, self.term.term, self.date)
+        return '<Run for %s>' % self.date
 
 
-#engine = create_engine('mysql://root:root@localhost/test')
+# engine = create_engine('mysql://root:root@localhost/test', echo=True)
+# use echo for debug purposes, to see produced sql queries
 if os.path.exists('cache_models.db'):  # local mode with SQLite
     engine = create_engine('sqlite:///cache_models.db')
 else:
@@ -72,7 +76,6 @@ else:
         '@sc-cache-map.cmuq9py90auz.us-east-1.rds.amazonaws.com/sccache'
     )
 
-from sqlalchemy.orm import sessionmaker
 sess = sessionmaker()
 sess.configure(bind=engine)
 session = sess()
@@ -137,28 +140,30 @@ def list_db_cache(spider=None, term=None, date=None):
     :return: dict
     """
     global session
-    runs = session.query(Run).all()
-    # TODO: chain filters below to speed lookups up
-    """
+    query = session.query(Run)
     if spider:
-        spiders = session.query(Spider).filter(Spider.name == spider).one()
-        runs = runs.filter(Run.spider_id == spiders.id)
+        query = query.join(Spider, Run.spider_id == spider.id)
     if term:
-        terms = session.query(Term).filter(Term.term == term).all()
-        runs = runs.filter(Run.term_id.in_([t.id for t in terms]))
+        query = query.join(Term, Run.term_id == term.id)
     if date:
-        runs = runs.filter(date=date)
-    """
+        query = query.filter(Run.date == date)
+    runs = query.all()
+
+    # TODO: possible alternative
+    # get list of strings, representing s3 paths to the needed folders
+    # cache_map = [run.get_folder() for run in runs]
+    # return cache_map
+
     cache_map = {}
     for r in runs:
         spider = r.spider.name
         date = r.date
         searchterm = r.term.term
-        if not spider in cache_map:
+        if spider not in cache_map:
             cache_map[spider] = {}
-        if not date in cache_map[spider]:
+        if date not in cache_map[spider]:
             cache_map[spider][date] = []
-        if not searchterm in cache_map[spider][date]:
+        if searchterm not in cache_map[spider][date]:
             cache_map[spider][date].append(searchterm)
     return cache_map
 
