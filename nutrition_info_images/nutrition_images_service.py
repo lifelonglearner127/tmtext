@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify, render_template
-from classify_text_images import classifier_predict_one
+from classify_text_images import classifier_predict_one, load_classifier
 app = Flask(__name__)
+
+image_classifier = load_classifier()
 
 @app.route('/results', methods=['GET'])
 def results():
@@ -9,11 +11,15 @@ def results():
     request_arguments = dict(request.args)
     image_urls = request_arguments['image'][0].split()
     return render_template('results_template.html', \
-        results={image : True if classifier_predict_one(image)==1 else False for image in image_urls})
+        results={image : True if classifier_predict_one(image, image_classifier)==1 else False for image in image_urls})
 
-@app.route('/is_nutrition_image', methods=['GET'])
-def is_nutrition_image():
+@app.route('/nutrition_image_UI', methods=['GET'])
+def nutrition_image_UI():
     return render_template('input_template.html')
+
+@app.route('/nutrition_image', methods=['GET'])
+def is_nutrition_image():
+    pass
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=8080)
