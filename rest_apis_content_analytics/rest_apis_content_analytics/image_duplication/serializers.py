@@ -8,4 +8,3 @@ class StringListField(serializers.ListField):
 class ImageUrlSerializer(serializers.Serializer):
     urls = StringListField()
 #    rate = serializers.FloatField()
-

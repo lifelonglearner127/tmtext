@@ -37,6 +37,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'walmart_developer_accounts',
 )
 
 REST_FRAMEWORK = {
@@ -54,9 +55,9 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'image_duplication_check.urls'
+ROOT_URLCONF = 'rest_apis_content_analytics.urls'
 
-WSGI_APPLICATION = 'image_duplication_check.wsgi.application'
+WSGI_APPLICATION = 'rest_apis_content_analytics.wsgi.application'
 
 
 # Database
@@ -88,7 +89,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
-STATIC_ROOT = '/home/ubuntu/tmtext/image_duplication_check/image_duplication_check/static'
+STATIC_ROOT = '/home/ubuntu/tmtext/rest_apis_content_analytics/rest_apis_content_analytics/static'
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = (

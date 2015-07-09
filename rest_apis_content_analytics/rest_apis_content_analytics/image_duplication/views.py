@@ -11,9 +11,10 @@ from PIL import Image
 import numpy as np
 from StringIO import StringIO
 
+from walmart_developer_accounts.models import Account
 from rest_framework import viewsets
-from image_duplication_check.image_duplication.serializers import ImageUrlSerializer
-from image_duplication_check.image_duplication.compare_images import url_to_image, compare_two_images_a, compare_two_images_b, compare_two_images_c
+from rest_apis_content_analytics.image_duplication.serializers import ImageUrlSerializer
+from rest_apis_content_analytics.image_duplication.compare_images import url_to_image, compare_two_images_a, compare_two_images_b, compare_two_images_c
 from rest_framework.response import Response
 
 
@@ -234,3 +235,5 @@ class FindSimilarityInImageList(viewsets.ViewSet):
 
     def destroy(self, request, pk=None):
         return Response({'data': 'OK'})
+
+
