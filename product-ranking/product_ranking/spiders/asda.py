@@ -27,8 +27,8 @@ class AsdaProductsSpider(BaseProductsSpider):
         "&cacheable=true&fromgi=gi&requestorigin=gi"
 
     PRODUCT_LINK = "http://groceries.asda.com/asda-webstore/landing" \
-       "/home.shtml?cmpid=ahc-_-ghs-d1-_-asdacom-dsk-_-hp" \
-       "/search/%s#/product/%s"
+                   "/home.shtml?cmpid=ahc-_-ghs-d1-_-asdacom-dsk-_-hp" \
+                   "/search/%s#/product/%s"
 
     API_URL = "http://groceries.asda.com/api/items/view?" \
               "itemid={id}&" \
@@ -39,8 +39,7 @@ class AsdaProductsSpider(BaseProductsSpider):
                  "Filter=ProductId:%s&" \
                  "Sort=SubmissionTime:desc&" \
                  "apiversion=5.4&" \
-                 "passkey=92ffdz3h647mtzgbmu5vedbq"
-
+                 "passkey=92ffdz3h647mtzgbmu5vedbq&limit=100"
 
     def __init__(self, *args, **kwargs):
         super(AsdaProductsSpider, self).__init__(
@@ -73,9 +72,15 @@ class AsdaProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
-        data = json.loads(response.body_as_unicode())
-        item = data['items'][0]
-        product['upc'] = item['upcNumbers'][0]['upcNumber']
+        
+        try:
+            data = json.loads(response.body_as_unicode())
+            item = data['items'][0]
+            if item.get("images", {}).get("largeImage"):
+                product["image_url"] = item.get("images").get("largeImage")
+            product['upc'] = item['upcNumbers'][0]['upcNumber']
+        except (IndexError, ValueError):
+            pass
 
         product_id = re.findall('itemid=(\d+)', response.url)
         if product_id:
@@ -88,14 +93,23 @@ class AsdaProductsSpider(BaseProductsSpider):
         prod = response.meta['product']
         num, avg, by_star = prod['buyer_reviews']
         data = json.loads(response.body_as_unicode())
+        if not num:
+            num = data.get("TotalResults", 0)
         by_star = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
         reviews = data['Results']
+        sumary = 0
         for review in reviews:
+            sumary += review['Rating']
             by_star[review['Rating']] += 1
+        if not avg and num:
+            avg = float("{0:.2f}".format(sumary / num))
 
-        prod['buyer_reviews'] = BuyerReviews(num, avg, by_star)
+        if num and avg:
+            prod['buyer_reviews'] = BuyerReviews(num, avg, by_star)
+        else:
+            prod['buyer_reviews'] = 0
+
         return prod
-
 
     def _search_page_error(self, response):
         try:
@@ -133,20 +147,12 @@ class AsdaProductsSpider(BaseProductsSpider):
                     priceCurrency='GBP'
                 )
             # FIXME Verify by comparing a prod in another site.
-            if getattr(item, 'upcNumbers', None):
-                if 'upcNumbers' in item['upcNumbers'][0]:
-                    prod['upc'] = item['upcNumbers'][0]['upcNumber']
-            prod['model'] = item['id']
-
             total_stars = int(item['totalReviewCount'])
             avg_stars = float(item['avgStarRating'])
-            prod['buyer_reviews'] = BuyerReviews(
-                num_of_reviews=total_stars,
-                average_rating=avg_stars,
-                rating_by_star={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
-            )
+            prod['buyer_reviews'] = BuyerReviews(num_of_reviews=total_stars,
+                                                 average_rating=avg_stars,
+                                                 rating_by_star={})
             prod['model'] = item['cin']
-
             image_url = item.get('imageURL')
             if not image_url and "images" in item:
                 image_url = item.get('images').get('largeImage')
@@ -155,7 +161,7 @@ class AsdaProductsSpider(BaseProductsSpider):
             pId = is_empty(re.findall("itemid=(\d+)", item['productURL']))
             if pId and "search_term" in response.meta:
                 prod['url'] = self.PRODUCT_LINK % (
-                    response.meta["search_term"], pId)
+                    urllib.quote(response.meta["search_term"]), pId)
             elif "imageURL" in item:
                 prod["url"] = item['imageURL']
 
@@ -182,9 +188,26 @@ class AsdaProductsSpider(BaseProductsSpider):
     def _parse_single_product(self, response):
         product = response.meta["product"]
         result = self._scrape_product_links(response)
+
         for p in result:
             for p2 in p:
                 if isinstance(p2, SiteProductItem):
                     if "search_term" in p2:
                         del p2["search_term"]
-                    return SiteProductItem(dict(p2.items() + product.items()))
+                    product = SiteProductItem(dict(p2.items() + product.items()))
+
+        try:
+            data = json.loads(response.body_as_unicode())
+            item = data['items'][0]
+            if item.get("images", {}).get("largeImage"):
+                product["image_url"] = item.get("images").get("largeImage")
+            product['upc'] = item['upcNumbers'][0]['upcNumber']
+        except (IndexError, ValueError):
+            pass
+
+        product_id = re.findall('itemid=(\d+)', response.url)
+        if product_id:
+            url = self.REVIEW_URL % product_id[0]
+            meta = {'product': product}
+            return Request(url=url, meta=meta, callback=self._parse_review)
+        return product

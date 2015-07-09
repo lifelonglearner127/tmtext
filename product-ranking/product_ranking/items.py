@@ -199,6 +199,7 @@ class SiteProductItem(Item):
 
     date_of_last_question = Field()  # now for Walmart only
     recent_questions = Field()  # now for Walmart only; may change in the future
+
     special_pricing = Field()  # 1/0 for TPC, Rollback; target, walmart
 
     variants = Field()
@@ -210,3 +211,5 @@ class SiteProductItem(Item):
     _walmart_current_id = Field()
     _walmart_original_price = Field()
     _walmart_original_oos = Field()  # oos = out of stock
+
+    last_buyer_review_date = Field()

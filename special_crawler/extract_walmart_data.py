@@ -133,17 +133,30 @@ class WalmartScraper(Scraper):
 
         return False
 
-    # TODO:
-    #      better way of extracting id now that URL format is more permissive
-    #      though this method still seems to work...
     def _extract_product_id(self):
         """Extracts product id of walmart product from its URL
         Returns:
             string containing only product id
         """
+        if self._version() == "Walmart v1":
+            product_id = self.product_page_url.split('/')[-1]
+            return product_id
+        elif self._version() == "Walmart v2":
+            product_json = self._extract_product_info_json()
+            return product_json["analyticsData"]["productId"]
 
-        product_id = self.product_page_url.split('/')[-1]
-        return product_id
+        return None
+
+    def _upc(self):
+        if self._version() == "Walmart v1":
+            upc = self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
+            return upc
+        elif self._version() == "Walmart v2":
+            product_json = self._extract_product_info_json()
+            return product_json["analyticsData"]["upc"]
+
+        return None
+
 
     # check if there is a "Video" button available on the product page
     def _has_video_button(self):
@@ -1401,9 +1414,10 @@ class WalmartScraper(Scraper):
         Returns:
             float containing average value of reviews
         """
-        average_review_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
-            //p[@class='heading-e']/span[2]/text()")
-        average_review = float(average_review_str[0])
+        average_review_str = self.tree_html.xpath("//div[@class='review-summary Grid']\
+            //p[@class='heading-e']/text()")[0]
+        average_review = re.search('reviews \| (.+?) out of ', average_review_str).group(1)
+        average_review = float(average_review)
 
         return average_review
 
@@ -1462,8 +1476,7 @@ class WalmartScraper(Scraper):
             nr_reviews = int(nr_reviews[0])
 
         if self._version() == "Walmart v2":
-            nr_reviews_str = self.tree_html.xpath("//div[contains(@class, 'review-summary')]\
-                //p[@class='heading-e']/span[1]/text()")
+            nr_reviews_str = self.tree_html.xpath("//span[@itemprop='ratingCount']/text()")
 
             if not nr_reviews_str:
                 return 0
@@ -2125,6 +2138,10 @@ class WalmartScraper(Scraper):
     def _ingredients(self):
         # list of ingredients - list of strings
         ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+
+        if not ingr:
+            ingr = self.tree_html.xpath("//section[contains(@class,'js-ingredients')]/p[1]//text()")
+
         if len(ingr) > 0:
             res = []
             w = ''
@@ -2163,7 +2180,12 @@ class WalmartScraper(Scraper):
 
     def _ingredient_count(self):
         # number of ingredients - integer
-        return self.ing_count
+        ingredients = self._ingredients()
+
+        if not ingredients:
+            return 0
+
+        return len(ingredients)
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -2456,6 +2478,7 @@ class WalmartScraper(Scraper):
         "product_name" : _product_name_from_tree, \
         "site_id" : _site_id, \
         "product_id" : _extract_product_id, \
+        "upc": _upc, \
         "walmart_no" : _walmart_no, \
         "keywords" : _meta_keywords_from_tree, \
         "meta_tags": _meta_tags,\
