@@ -596,6 +596,9 @@ class BaseValidator(object):
     def _validate__walmart_original_oos(self, val):
         return True  # we will not validate this field for now
 
+    def _validate_last_buyer_review_date(self, val):
+        return True  # TODO: implement
+
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
         :param data: 2-dimensions list or str

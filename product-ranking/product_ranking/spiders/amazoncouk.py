@@ -552,6 +552,8 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
         date = is_empty(response.xpath(
             '//table[@id="productReviews"]/tr/td/div/div/span/nobr/text()'
         ).extract())
+        # TODO: fix the code below (fails on dates like '11 Sept 2014') - test on many URLs!
+        """
         if date:
             try:
                 d = datetime.strptime(date.replace('.', ''), '%d %b %Y')
@@ -559,7 +561,7 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
                 d = datetime.strptime(date.replace('.', ''), '%d %B %Y')
             date = d.strftime('%d/%m/%Y')
             product['last_buyer_review_date'] = date
-
+        """
         new_meta = response.meta.copy()
         new_meta['product'] = product
         if 'mkt_place_link' in response.meta.keys():
