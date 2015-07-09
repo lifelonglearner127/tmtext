@@ -223,6 +223,14 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                     product, 'brand', (guess_brand_from_first_words(brand.strip()),)
                 )
 
+            # Set description
+            try:
+                description = main_info['Description']
+                cond_set_value(product, 'description', description)
+            except (ValueError, KeyError):
+                cond_set_value(product, 'description', None)
+                self.log("Impossible to get description - %r" % response.url, WARNING)
+
         except (ValueError, KeyError):
             self.log("Impossible to get product info - %r" % response.url, WARNING)
 
@@ -246,12 +254,12 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'url', response.url)
 
         # Get description
-        cond_set(
-            product,
-            'description',
-            response.css('.productDescription .description').extract(),
-            conv=''.join
-        )
+        # cond_set(
+        #     product,
+        #     'description',
+        #     response.css('.productDescription .description').extract(),
+        #     conv=''.join
+        # )
 
         # Get title
         title = is_empty(
@@ -302,13 +310,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         product_data['baseProdInfo'] = product_data['variantDataRaw'][0]
 
         # Set product UPC
-        try:
-            upc = is_empty(product_data['baseProdInfo']['upc_nbr'])
-            cond_set_value(
-                product, 'upc', upc, conv=unicode
-            )
-        except (ValueError, KeyError):
-            self.log("Impossible to get UPC" % response.url, WARNING)  # Not really a UPC.
+        # try:
+        #     upc = is_empty(product_data['baseProdInfo']['upc_nbr'])
+        #     cond_set_value(
+        #         product, 'upc', upc, conv=unicode
+        #     )
+        # except (ValueError, KeyError):
+        #     self.log("Impossible to get UPC" % response.url, WARNING)  # Not really a UPC.
 
         # Set if special price
         try:
