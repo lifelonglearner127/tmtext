@@ -119,10 +119,6 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                     "//a[contains(@href, '/gp/offer-listing/')]/@href"
             ).extract())
 
-            print("**************************************************************")
-            print(mkt_place_link)
-            print("**************************************************************")
-
             meta = response.meta.copy()
             meta['product'] = prod
             prod_id = is_empty(re.findall('dp/([a-zA-Z0-9]+)/', response.url))
