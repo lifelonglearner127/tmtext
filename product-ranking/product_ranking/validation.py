@@ -482,23 +482,16 @@ class BaseValidator(object):
                     return False
         return True
 
-    # Category field. Added.
     def _validate_category(self, val):
-
         if val in (None, ''):
             return True
-
+        if isinstance(val, basestring):
+            try:
+                val = json.loads(val)
+            except Exception as e:
+                return False
         if isinstance(val, (tuple, list)):
-
-            if not val:
-                return True
-
-            for v in val:
-                if isinstance(v, dict):
-                    if v.get('category') and v.get('rank'):
-                        return True
-                    return False
-
+            return True
         return False
 
     def _validate_bestseller_rank(self, val):
