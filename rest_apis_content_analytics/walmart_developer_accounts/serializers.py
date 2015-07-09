@@ -1,6 +1,7 @@
 from models import Account
 from rest_framework import serializers
 
+
 class WalmartDevAccountSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:

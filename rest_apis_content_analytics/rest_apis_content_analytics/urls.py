@@ -3,7 +3,6 @@ from rest_framework import routers
 from image_duplication.views import CompareTwoImageViewSet, ClassifyImagesBySimilarity, FindSimilarityInImageList
 from walmart_developer_accounts.views import WalmartAccountViewSet
 
-
 router = routers.SimpleRouter()
 router.register(r'comparetwoimages', CompareTwoImageViewSet, 'comparetwoimages')
 router.register(r'classifyimagesbysimilarity', ClassifyImagesBySimilarity, 'classifyimagesbysimilarity')
