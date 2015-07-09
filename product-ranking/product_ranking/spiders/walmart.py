@@ -23,6 +23,7 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
 from spiders_shared_code.walmart_variants import WalmartVariants
+from spiders_shared_code.walmart_categories import WalmartCategoryParser
 
 
 is_empty = lambda x, y="": x[0] if x else y
@@ -275,6 +276,18 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
         self._gen_related_req(response)
+
+        # parse category and department
+        wcp = WalmartCategoryParser()
+        wcp.setupSC(response)
+        try:
+            product['category'] = wcp._categories_hierarchy()
+        except Exception as e:
+            self.log('Category not parsed: '+str(e), ERROR)
+        try:
+            product['department'] = wcp._category()
+        except Exception as e:
+            self.log('Department not parsed: '+str(e), ERROR)
 
         model = is_empty(
             response.xpath('//tr[@class="js-product-specs-row"]/'
