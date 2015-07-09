@@ -112,20 +112,24 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
-            mkt_place_link = urlparse.urljoin(
-                response.url,
-                is_empty(response.xpath(
+            mkt_place_link = is_empty(response.xpath(
                     "//div[contains(@class, 'a-box-inner')]" \
                     "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
                     "//div[@id='secondaryUsedAndNew']" \
                     "//a[contains(@href, '/gp/offer-listing/')]/@href"
-                ).extract()))
+            ).extract())
+
+            print("**************************************************************")
+            print(mkt_place_link)
+            print("**************************************************************")
 
             meta = response.meta.copy()
             meta['product'] = prod
             prod_id = is_empty(re.findall('dp/([a-zA-Z0-9]+)/', response.url))
             meta['product_id'] = prod_id
+
             if mkt_place_link:
+                mkt_place_link = urlparse.urljoin(response.url, mkt_place_link)
                 meta["mkt_place_link"] = mkt_place_link
 
             if isinstance(prod['buyer_reviews'], Request):
@@ -136,7 +140,18 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                                    meta=meta,
                                    dont_filter=True,
                                    callback=self.get_last_buyer_review_date)
+
+            if mkt_place_link:
+                result = Request(
+                    url=meta['mkt_place_link'],
+                    callback=self.parse_marketplace,
+                    meta=meta,
+                    dont_filter=True
+                )
+            else:
+                cond_set_value(prod, 'marketplace', [])
                 result = prod
+
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
             self.log("Giving up on trying to solve the captcha challenge after"
                      " %s tries for: %s" % (self.captcha_retries, prod['url']),
@@ -175,12 +190,14 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         new_meta['product'] = product
 
         if 'mkt_place_link' in response.meta.keys():
-                return Request(
-                    url=response.meta['mkt_place_link'],
-                    callback=self.parse_marketplace,
-                    meta=new_meta,
-                    dont_filter=True,
-                )
+            return Request(
+                url=response.meta['mkt_place_link'],
+                callback=self.parse_marketplace,
+                meta=new_meta,
+                dont_filter=True,
+            )
+        else:
+            cond_set_value(product, 'marketplace', [])
         return product
 
     def populate_bestseller_rank(self, product, response):
