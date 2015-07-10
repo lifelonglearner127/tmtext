@@ -193,6 +193,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return req.replace(meta=new_meta)
 
+    """
+    Handles JS script with base product info, buyer reviews and QA statistics
+    """
     def _parse_product_info(self, response):
         meta = response.meta.copy()
         product = meta.get('product')
@@ -247,6 +250,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return product
 
+    """
+    Gets buyer reviews from JS script
+    """
     def _build_buyer_reviews(self, data, response):
         buyer_reviews = ZERO_REVIEWS_VALUE
         meta = response.meta.copy()
@@ -267,20 +273,19 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 buyer_reviews[1] = average_rating
 
                 # Get date of last review
-                dateconv = lambda date: datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f').date()
                 last_data_buyer_review = data['LastSubmissionTime']
+                last_data_buyer_review = self._handle_date_from_json(last_data_buyer_review)
 
-                timezone_id = last_data_buyer_review.index('+')
-                last_data_buyer_review = last_data_buyer_review.replace(last_data_buyer_review[timezone_id:-1], '')
-                last_data_buyer_review = dateconv(last_data_buyer_review)
-
-                product['last_buyer_review_date'] = str(last_data_buyer_review)
+                product['last_buyer_review_date'] = last_data_buyer_review
 
         except (KeyError, ValueError):
             pass
 
         product['buyer_reviews'] = buyer_reviews
 
+    """
+    Gets QA info from JS script
+    """
     def _build_qa_info(self, data, response):
         meta = response.meta.copy()
         recent_questions = []
@@ -292,33 +297,57 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         questions = []
 
         for question in question_data:
-            question_info = {}
+            question_info = dict()
 
             question_info['questionId'] = question.get('Id')
             question_info['userNickname'] = question.get('UserNickname')
             question_info['questionSummary'] = question.get('QuestionSummary')
 
+            # Get answers by answer_ids
             answer_ids = question.get('AnswerIds')
             if answer_ids:
                 answers = []
                 for answer_id in answer_ids:
                     answ = answer_data.get(answer_id)
-                    answer = {}
                     if answ:
-                        answer['answerText'] = answ['AnswerText']
-                        answer['negativeVoteCount'] = answ['TotalNegativeFeedbackCount']
-                        answer['positiveVoteCount'] = answ['TotalPositiveFeedbackCount']
-                        answer['answerId'] = answ['Id']
-                        answer['userNickname'] = answ['UserNickname']
+                        answer = dict()
+                        answer['answerText'] = answ.get('AnswerText')
+                        answer['negativeVoteCount'] = answ.get('TotalNegativeFeedbackCount')
+                        answer['positiveVoteCount'] = answ.get('TotalPositiveFeedbackCount')
+                        answer['answerId'] = answ.get('Id')
+                        answer['userNickname'] = answ.get('UserNickname')
+                        answer['submissionTime'] = self._handle_date_from_json(
+                            answ.get('SubmissionTime')
+                        )
+                        answer['lastModifiedTime'] = self._handle_date_from_json(
+                            answ.get('LastModificationTime')
+                        )
                         answers.append(answer)
-            question_info['answers'] = answers
+                question_info['answers'] = answers
+
+            question_info['totalAnswersCount'] = question.get('TotalAnswerCount')
+            question_info['submissionDate'] = self._handle_date_from_json(
+                question.get('SubmissionTime')
+            )
 
             questions.append(question_info)
 
         product['recent_questions'] = questions
 
-    def _parse_single_product(self, response):
-        return self.parse_product(response)
+    """
+    Handles date in format "2013-09-12T06:45:34.000+00:00"
+    Returns date in format "2013-09-12"
+    """
+    def _handle_date_from_json(self, date):
+        dateconv = lambda date: datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f').date()
+
+        if date and isinstance(date, basestring):
+            timezone_id = date.index('+')
+            date = date.replace(date[timezone_id:-1], '')
+            conv_date = dateconv(date)
+            return str(conv_date)
+
+        return ''
 
     # def _search_page_error(self, response):
     #     path = urlparse.urlsplit(response.url)[2]
@@ -496,3 +525,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         return next_page
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
