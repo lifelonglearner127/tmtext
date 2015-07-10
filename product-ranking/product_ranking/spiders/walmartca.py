@@ -169,7 +169,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
 
-        cond_set_value(product, 'locale', 'en')  # Default locale.
+        cond_set_value(product, 'locale', 'en_CA')  # Default locale.
 
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[-1] if id else None
@@ -199,9 +199,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         return req.replace(meta=new_meta)
 
     def _parse_product_info(self, response):
-        meta = response.meta.copy
-        product = response.meta.get('product')
-        reqs = response.meta.get('reqs')
+        meta = response.meta.copy()
+        product = meta.get('product')
+        reqs = meta.get('reqs')
 
         data = json.loads(response.body_as_unicode())
 
@@ -231,6 +231,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 cond_set_value(product, 'description', None)
                 self.log("Impossible to get description - %r" % response.url, WARNING)
 
+            # Set buyer reviews
+            self._build_buyer_reviews(main_info['ReviewStatistics'], response)
+
         except (ValueError, KeyError):
             self.log("Impossible to get product info - %r" % response.url, WARNING)
 
@@ -239,12 +242,36 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return product
 
+    def _build_buyer_reviews(self, data, response):
+        buyer_reviews = ZERO_REVIEWS_VALUE
+        meta = response.meta.copy()
+        product = meta['product']
+
+        try:
+            num_of_reviews = data['TotalReviewCount']  # Buyer reviews count
+
+            if num_of_reviews:
+                average_rating = data['AverageOverallRating']  # Average rating
+
+                for rate in data['RatingDistribution']:  # Rating by stars
+                    star = rate['RatingValue']
+                    star_count = rate['Count']
+                    buyer_reviews[2][str(star)] = star_count
+
+                buyer_reviews[0] = num_of_reviews
+                buyer_reviews[1] = average_rating
+
+            product['buyer_reviews'] = buyer_reviews
+
+        except (KeyError, ValueError):
+            product['buyer_reviews'] = buyer_reviews
+
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
-    def _search_page_error(self, response):
-        path = urlparse.urlsplit(response.url)[2]
-        return path == '/FileNotFound.aspx'
+    # def _search_page_error(self, response):
+    #     path = urlparse.urlsplit(response.url)[2]
+    #     return path == '/FileNotFound.aspx'
 
     def _populate_from_html(self, response, product):
 
