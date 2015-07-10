@@ -140,10 +140,24 @@ class SnapdealProductSpider(BaseProductsSpider):
                     "priceCurrency": priceCurrency,
                 }]
 
-        if "is currently unavailable" in response.body_as_unicode():
+        is_out_of_stock = is_empty(response.xpath(
+            "//div[contains(@class, 'soldDiscontAlert')]/"
+            ".//span[contains(@class, 'alert-heading')]/text()[last()]"
+        ).extract(), "")
+
+        sold_out = is_empty(response.xpath(
+            "//input[@id='soldOut']/@value").extract())
+
+        if sold_out == "false":
+            product["is_out_of_stock"] = False
+        elif sold_out == "true":
             product["is_out_of_stock"] = True
         else:
-            product["is_out_of_stock"] = False
+            if "is currently unavailable" in response.body_as_unicode() or \
+                    "is sold out" in is_out_of_stock:
+                product["is_out_of_stock"] = True
+            else:
+                product["is_out_of_stock"] = False
 
         variantsJSON = is_empty(response.xpath(
             "//input[@id='productAttributesJson']/@value").extract())
@@ -176,10 +190,10 @@ class SnapdealProductSpider(BaseProductsSpider):
         if not pid:
             pid = is_empty(re.findall("/(\d+)", response.url))
 
-        is_buyer_reviews = "Be the first to review" in is_empty(response.xpath(
-            "//a[contains(@class, 'write_a_review')]/text()").extract(), "")
+        is_buyer_reviews = is_empty(response.xpath(
+            "//a[contains(@class, 'showRatingTooltip')]/text()").extract())
 
-        if pid and not is_buyer_reviews:
+        if pid and is_buyer_reviews:
             buyer_reviews_url = Request(
                 url=self.REVIEWS_URL.format(id=pid),
                 callback=self.parse_buyer_reviews,
