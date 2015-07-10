@@ -458,15 +458,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _scrape_total_matches(self, response):
 
-        matches = response.css('.results ::text').re("Your search for '.+' returned (.+) results.")
+        num_results = is_empty(
+            response.css('#shelf-page .total-num-recs::text').extract(), '0'
+        )
 
-        if matches:
-            num_results = matches[0].replace(',', '')
-            try:
-                num_results = int(num_results)
-            except:
-                return 0
-        else:
+        try:
+            num_results = int(num_results)
+        except:
             num_results = None
             self.log(
                 "Failed to extract total matches from %r." % response.url, ERROR
