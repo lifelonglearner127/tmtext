@@ -129,7 +129,8 @@ class SnapdealProductSpider(BaseProductsSpider):
 
         price = is_empty(response.xpath(
             "//span[@id='selling-price-id']/text() |"
-            "//input[@id='productSellingPrice']/@value"
+            "//input[@id='productSellingPrice']/@value |"
+            "//span[@itemprop='price']/text()"
         ).extract())
 
         if price:
@@ -453,4 +454,4 @@ class SnapdealProductSpider(BaseProductsSpider):
         return url
 
     def _parse_single_product(self, response):
-        return self.parse_product(response)   
+        return self.parse_product(response)  
