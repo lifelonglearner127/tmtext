@@ -154,20 +154,15 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         reqs = []
         meta = response.meta.copy()
+        product = response.meta['product']
 
         if response.status in self.default_hhl:
             product = response.meta.get("product")
             product.update({"locale": 'en_CA'})
             return product
 
-        if self._search_page_error(response):
-            self.log("Got 404 when coming from %r." % response.request.url, ERROR)
-            return
-
-        product = response.meta['product']
-
-        self._populate_from_js(response, product)
-        self._populate_from_html(response, product)
+        # self._populate_from_js(response, product)
+        # self._populate_from_html(response, product)
 
         cond_set_value(product, 'locale', 'en_CA')  # Default locale.
 
@@ -261,10 +256,20 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 buyer_reviews[0] = num_of_reviews
                 buyer_reviews[1] = average_rating
 
-            product['buyer_reviews'] = buyer_reviews
+                # Get date of last review
+                dateconv = lambda date: datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f').date()
+                last_data_buyer_review = data['LastSubmissionTime']
+
+                timezone_id = last_data_buyer_review.index('+')
+                last_data_buyer_review = last_data_buyer_review.replace(last_data_buyer_review[timezone_id:-1], '')
+                last_data_buyer_review = dateconv(last_data_buyer_review)
+
+                product['last_buyer_review_date'] = str(last_data_buyer_review)
 
         except (KeyError, ValueError):
-            product['buyer_reviews'] = buyer_reviews
+            pass
+
+        product['buyer_reviews'] = buyer_reviews
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
