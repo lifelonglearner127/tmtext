@@ -65,7 +65,8 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'walmartca_products'
     allowed_domains = [
         "walmart.ca",
-        "api.bazaarvoice.com"
+        "api.bazaarvoice.com",
+        "om.ordergroove.com"
     ]
 
     default_hhl = [404, 500, 502, 520]
@@ -114,7 +115,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                       "filter_reviews.q5=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
                       "filter_reviewcomments.q5=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&limit.q5=1"
 
-    QA_LIMIT = 0xffffffff
+    IN_STOCK_URL = "https://om.ordergroove.com/offer/af0a84f8847311e3b233bc764e1107f2/pdp?" \
+                   "session_id=af0a84f8847311e3b233bc764e1107f2.262633.1436277025&" \
+                   "page_type=1&p=%5B%22{product_id}%22%5D&module_view=%5B%22regular%22%5D"
 
     _SEARCH_SORT = {
         'best_match': 0,
@@ -173,13 +176,23 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'locale', 'en_CA')  # Default locale.
 
         id = re.findall('\/(\d+)', response.url)
-        response.meta['product_id'] = id[-1] if id else None
+        product_id = id[-1] if id else None
+        response.meta['product_id'] = product_id
 
+        # Get product base info, QA and reviews straight from JS script
         product_info_url = self.PRODUCT_INFO_URL.format(product_id=response.meta['product_id'])
         reqs.append(Request(
             url=product_info_url,
             meta=meta,
             callback=self._parse_product_info
+        ))
+
+        # Get in_stock and shipping info straight from JS script
+        in_stock_url = self.IN_STOCK_URL.format(product_id=str(int(response.meta['product_id'])+1))
+        reqs.append(Request(
+            url=in_stock_url,
+            meta=meta,
+            callback=self._parse_stock_shipping_info
         ))
 
         if reqs:
@@ -239,7 +252,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             # Set buyer reviews info
             self._build_buyer_reviews(main_info['ReviewStatistics'], response)
 
-        except (ValueError, KeyError):
+        except:
             self.log("Impossible to get product info - %r" % response.url, WARNING)
 
         # Get QA statistics
@@ -358,6 +371,21 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return ''
 
+    def _parse_stock_shipping_info(self, response):
+        meta = response.meta.copy()
+        product = meta.get('product')
+        reqs = meta.get('reqs')
+
+        data = json.loads(response.body_as_unicode())
+
+        print "-------------------------------------------"
+        print data
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
     def _populate_from_html(self, response, product):
         """
         Gets data straight from html body
@@ -430,15 +458,18 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             self.log("Impossible to get UPC" % response.url, WARNING)  # Not really a UPC.
 
         # Set if special price
-        print "------------------------------------------------------------"
-        print product_data['baseProdInfo'].keys()
         try:
             special_price = product_data['baseProdInfo']['price_store_was_price']
-            print "------------------------------------------------------------"
-            print special_price
             cond_set_value(product, 'special_pricing', True)
         except (ValueError, KeyError):
             cond_set_value(product, 'special_pricing', False)
+
+        # Set if special price
+        # try:
+        #     special_price = product_data['baseProdInfo']['price_store_was_price']
+        #     cond_set_value(product, 'special_pricing', True)
+        # except (ValueError, KeyError):
+        #     cond_set_value(product, 'special_pricing', False)
 
         # Set product images urls
         image = re.findall(self._JS_PROD_IMG_RE, response.body_as_unicode())
