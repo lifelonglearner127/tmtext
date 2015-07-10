@@ -183,11 +183,11 @@ for website in website_list:
                                              "Invalid product numbers: %d\n" \
                                              "Percentage of invalid products: %f\n" \
                                              "Percentage of changed products: %f\n" \
-                                             "Possibility of 80 percent of product titles are < 2 characters long: %s\n" \
-                                             "Possibility of 80 percent of review counts are 0: %s\n" \
-                                             "Possibility of 80 percent of product descriptions are < 2 words long: %s\n" \
-                                             "Possibility of 80 percent of image counts are 0: %s\n" \
-                                             "Possibility of 80 percent of products are out of stock: %s\n" \
+                                             "80 percent of product titles are < 2 characters long: %s\n" \
+                                             "80 percent of review counts are 0: %s\n" \
+                                             "80 percent of product descriptions are < 2 words long: %s\n" \
+                                             "80 percent of image counts are 0: %s\n" \
+                                             "80 percent of products are out of stock: %s\n" \
                                              "Possibility of overall website changes: %s\n" \
                                              "Web console: %s\n" % (
                                                  number_of_reported_products + number_of_invalid_products,
