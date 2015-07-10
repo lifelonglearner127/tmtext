@@ -36,7 +36,9 @@ class SnapdealProductSpider(BaseProductsSpider):
         "getPersonalizationWidgetDataById?"
         "pogId={ppid}&categoryId={catId}&brandId={brandId}")
 
-    REVIEWS_URL = "http://www.snapdeal.com/getReviewsInfoGram?pageId={id}"
+    #REVIEWS_URL = "http://www.snapdeal.com/getReviewsInfoGram?pageId={id}"
+
+    REVIEWS_URL = "http://www.snapdeal.com/review/stats/{id}"
 
     NEXT_PAGI_PAGE = "http://www.snapdeal.com/acors/json/product/get/search" \
         "/0/{pos}/50?q=&sort={sort}rlvncy&keyword={term}&clickSrc=go_header" \
@@ -174,13 +176,18 @@ class SnapdealProductSpider(BaseProductsSpider):
         if not pid:
             pid = is_empty(re.findall("/(\d+)", response.url))
 
-        if pid:
+        is_buyer_reviews = "Be the first to review" in is_empty(response.xpath(
+            "//a[contains(@class, 'write_a_review')]/text()").extract(), "")
+
+        if pid and not is_buyer_reviews:
             buyer_reviews_url = Request(
                 url=self.REVIEWS_URL.format(id=pid),
                 callback=self.parse_buyer_reviews,
                 dont_filter=True,
             )
             reqs.append(buyer_reviews_url)
+        else:
+            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
 
         related_products = [{"similar products": []}]
         a = response.xpath("//div[contains(@class, 'product_grid_box')]"
@@ -216,7 +223,9 @@ class SnapdealProductSpider(BaseProductsSpider):
             )
 
         marketplace_link = is_empty(response.xpath(
-            "//a[@id='buyMoreSellerLink']/@href").extract())
+            "//a[@id='buyMoreSellerLink']/@href |"
+            "//div[contains(@class, 'other-sellers')]/a/@href"
+        ).extract())
         if marketplace_link:
             marketplace_link = urljoin(
                 "http://www.snapdeal.com/", marketplace_link)
@@ -238,31 +247,53 @@ class SnapdealProductSpider(BaseProductsSpider):
             new_meta["reqs"] = reqs
         return req.replace(meta=new_meta)
 
-
     def parse_buyer_reviews(self, response):
         product = response.meta.get("product")
         reqs = response.meta.get("reqs")
         total = 0
 
-        rev = is_empty(re.findall("temp\s+=\s+\(([^\)]*)", response.body))
+        rev = is_empty(re.findall("temp\s+=\s+\(([^\)]*)", response.body), "")
+        try:
+            rev = json.loads(rev)
+        except ValueError:
+            rev = {}
         if rev:
-            try:
-                rev = json.loads(rev)
-            except ValueError:
-                rev = {}
             for v in rev.values():
                 total += int(v)
 
-        avg = is_empty(response.xpath(
+            avg = is_empty(response.xpath(
             "//p[contains(@class, 'ig-heading')]/span/text()").extract(), 0)
-        if avg:
-            avg = float(is_empty(re.findall("([^\/]*)", str(avg)),0))
+            if avg:
+                avg = float(is_empty(re.findall("([^\/]*)", str(avg)),0))
+        else:
+            avg = float(is_empty(response.xpath(
+                "//div[contains(@class, 'ratetxt')]/span[1]/text()"
+            ).re(FLOATING_POINT_RGEX), 0))
+            for item in response.xpath(
+                    "//div[contains(@class, 'row')]/span"):
+                star = is_empty(item.xpath(
+                    "span[1]/text()").re(FLOATING_POINT_RGEX))
+                if not star:
+                    continue
+                rev[star] = is_empty(item.xpath(
+                    "span[last()]/text()").re(FLOATING_POINT_RGEX))
+            for item in response.xpath(
+                    "//div[contains(@class, 'row')]"):
+                star = is_empty(item.xpath(
+                    "span[1]/text()").re(FLOATING_POINT_RGEX))
+                if not star:
+                    continue
+                rev[star] = is_empty(item.xpath(
+                    "span[last()]/text()").re(FLOATING_POINT_RGEX))
+
+            for v in rev.values():
+                total += int(v)
 
         if avg and total:
             product["buyer_reviews"] = BuyerReviews(
                 num_of_reviews=total, average_rating=avg, rating_by_star=rev)
         else:
-            product["buyer_reviews"] = 0
+            product["buyer_reviews"] = 0       
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -281,6 +312,18 @@ class SnapdealProductSpider(BaseProductsSpider):
                 ".//a[contains(@class, 'mvLink')]/text()").extract(), "")
             price = is_empty(div.xpath(
                 ".//strong/text()").re(FLOATING_POINT_RGEX), "")
+            if price:
+                price = Price(priceCurrency="INR", price=price)
+            if name and price:
+                marketplace.append({"price": price, "name": name.strip()})
+
+        for div in response.xpath("//li[contains(@class, 'seller-dtls')]/div"):
+            name = is_empty(div.xpath(
+                ".//div[contains(@class, 'seller-nm')]/a/text()").extract())
+            price = is_empty(div.xpath(
+                ".//div[contains(@class, 'price-dtls')]"
+                "/p[contains(@class, 'FINAL')]/text()"
+            ).re(FLOATING_POINT_RGEX), "")
             if price:
                 price = Price(priceCurrency="INR", price=price)
             if name and price:
