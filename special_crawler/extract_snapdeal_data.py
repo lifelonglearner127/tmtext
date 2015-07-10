@@ -71,7 +71,7 @@ class SnapdealScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return self.tree_html.xpath("//div[@id='pppid']/text()")[0].strip()
+        return self.product_page_url.split('/')[-1]
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -90,8 +90,14 @@ class SnapdealScraper(Scraper):
 
     def _features(self):
         try:
-            features = self.tree_html.xpath("//ul[@class='key-features']/li")
-            features = [feature.text_content() for feature in features if len(feature.text_content()) > 0]
+            features_td_list = self.tree_html.xpath("//table[@class='product-spec']//tr/td")
+            features = []
+
+            for index, td in enumerate(features_td_list):
+                if (index + 1) % 2 != 0:
+                    continue
+
+                features.append(features_td_list[index - 1].text_content() + " " + td.text_content())
 
             if not features:
                 return None
@@ -156,16 +162,13 @@ class SnapdealScraper(Scraper):
         pass
         
     def _image_urls(self):
-        image_urls = self.tree_html.xpath("//ul[@id='product-thumbs']//li//img//@src")
-        lazy_image_urls = self.tree_html.xpath("//ul[@id='product-thumbs']//li//img//@lazysrc")
+        image_urls = self.tree_html.xpath("//div[@class='baseSliderPager']//img/@src")
 
         if not image_urls:
-            image_urls = []
+            image_urls = self.tree_html.xpath("//div[@class='left-panel-carousel']//img/@src")
 
-        if not lazy_image_urls:
-            lazy_image_urls = []
-
-        image_urls.extend(lazy_image_urls)
+        if not image_urls:
+            image_urls = self.tree_html.xpath("//div[@class='cloudzoom-blank']//img")
 
         if not image_urls:
             return None
@@ -186,7 +189,7 @@ class SnapdealScraper(Scraper):
         youtubu_iframes = []
 
         for iframe in iframe_list:
-            if "www.youtube.com" in iframe.xpath("./@src")[0]:
+            if "www.youtube.com" in iframe.xpath("./@lazysrc")[0]:
                 youtubu_iframes.append(iframe)
 
         if not youtubu_iframes:
@@ -195,7 +198,7 @@ class SnapdealScraper(Scraper):
         youtubu_urls = []
 
         for iframe in youtubu_iframes:
-            youtubu_urls.append(iframe.xpath("./@src")[0])
+            youtubu_urls.append(iframe.xpath("./@lazysrc")[0])
 
         return youtubu_urls
 
@@ -275,27 +278,11 @@ class SnapdealScraper(Scraper):
 
         self.is_review_checked = True
 
-        review_url = "http://www.snapdeal.com/getReviewsInfoGram?pageId=" + self._product_id()
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        rating_block = self.tree_html.xpath("//div[contains(@class, 'rating-histogram')]//div[contains(@class, 'row')]//span[@id='ratings-wrapper']")
 
-        contents = requests.get(review_url, headers=h).text
-        reviews = json.loads(re.search('var temp = \((.+?)\);', contents).group(1))
-        review_list = []
-        max_review = 0
-        min_review = 0
-
-        for review in reviews:
-            if int(reviews[review]) > 0:
-                if max_review < int(review) or max_review == 0:
-                    max_review = int(review)
-
-                if min_review > int(review) or min_review == 0:
-                    min_review = int(review)
-
-                review_list.append([int(review), int(reviews[review])])
-
-        if not review_list:
-            return None
+        review_list = None
+        max_review = None
+        min_review = None
 
         self.reviews = review_list
         self.average_review = float(self.tree_html.xpath("//span[@itemprop='ratingValue']/text()")[0].strip())
@@ -336,7 +323,7 @@ class SnapdealScraper(Scraper):
         return self._categories()[-1]
 
     def _brand(self):
-        return self.tree_html.xpath("//a[@class='somn-track brandName']/img/@alt")[0]
+        return self.tree_html.xpath("//input[@id='brandName']/@value")[0]
 
     ##########################################
     ################ HELPER FUNCTIONS
