@@ -63,7 +63,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     """
 
     name = 'walmartca_products'
-    allowed_domains = ["walmart.ca", "api.bazaarvoice.com"]
+    allowed_domains = [
+        "walmart.ca",
+        "api.bazaarvoice.com"
+    ]
 
     default_hhl = [404, 500, 502, 520]
 
@@ -151,6 +154,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             *args, **kwargs)
 
     def parse_product(self, response):
+        """
+        Main parsing product method
+        """
 
         reqs = []
         meta = response.meta.copy()
@@ -161,8 +167,8 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             product.update({"locale": 'en_CA'})
             return product
 
-        # self._populate_from_js(response, product)
-        # self._populate_from_html(response, product)
+        self._populate_from_js(response, product)
+        self._populate_from_html(response, product)
 
         cond_set_value(product, 'locale', 'en_CA')  # Default locale.
 
@@ -181,10 +187,11 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return product
 
-    """
-    Helps to handle several requests
-    """
     def send_next_request(self, reqs, response):
+        """
+        Helps to handle several requests
+        """
+
         req = reqs.pop()
         new_meta = response.meta.copy()
 
@@ -193,10 +200,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return req.replace(meta=new_meta)
 
-    """
-    Handles JS script with base product info, buyer reviews and QA statistics
-    """
     def _parse_product_info(self, response):
+        """
+        Handles JS script with base product info, buyer reviews and QA statistics
+        """
         meta = response.meta.copy()
         product = meta.get('product')
         reqs = meta.get('reqs')
@@ -250,10 +257,11 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return product
 
-    """
-    Gets buyer reviews from JS script
-    """
     def _build_buyer_reviews(self, data, response):
+        """
+        Gets buyer reviews from JS script
+        """
+
         buyer_reviews = ZERO_REVIEWS_VALUE
         meta = response.meta.copy()
         product = meta['product']
@@ -283,12 +291,12 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         product['buyer_reviews'] = buyer_reviews
 
-    """
-    Gets QA info from JS script
-    """
     def _build_qa_info(self, data, response):
+        """
+        Gets QA info from JS script
+        """
+
         meta = response.meta.copy()
-        recent_questions = []
         product = meta.get('product')
         question_data = data.get('Results')
         answer_data = data.get('Includes')
@@ -334,11 +342,12 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         product['recent_questions'] = questions
 
-    """
-    Handles date in format "2013-09-12T06:45:34.000+00:00"
-    Returns date in format "2013-09-12"
-    """
     def _handle_date_from_json(self, date):
+        """
+        Handles date in format "2013-09-12T06:45:34.000+00:00"
+        Returns date in format "2013-09-12"
+        """
+
         dateconv = lambda date: datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f').date()
 
         if date and isinstance(date, basestring):
@@ -349,26 +358,17 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return ''
 
-    # def _search_page_error(self, response):
-    #     path = urlparse.urlsplit(response.url)[2]
-    #     return path == '/FileNotFound.aspx'
-
     def _populate_from_html(self, response, product):
+        """
+        Gets data straight from html body
+        """
 
         reqs = response.meta.get('reqs')
 
         # Set product url
         cond_set_value(product, 'url', response.url)
 
-        # Get description
-        # cond_set(
-        #     product,
-        #     'description',
-        #     response.css('.productDescription .description').extract(),
-        #     conv=''.join
-        # )
-
-        # Get title
+        # Get title from html
         title = is_empty(
             response.xpath("//div[@id='product-desc']/"
                            "h1[@data-analytics-type='productPage-productName']").extract(), "")
@@ -376,18 +376,18 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             title = Selector(text=title).xpath('string()').extract()
             product["title"] = is_empty(title, "").strip()
 
-        if not product.get('price'):
-            currency = response.css('.pricing-shipping .price-current sup')
-            price = response.css('.pricing-shipping .price-current')
-
-            if price and currency:
-                currency = currency.extract()[0]
-                price = re.search('[,. 0-9]+', price.extract()[0])
-                if price:
-                    price = price.group()
-                    price = price.replace(',', '').replace(' ', '')
-                    cond_set_value(product, 'price',
-                                   Price(priceCurrency=currency, price=price))
+        # if not product.get('price'):
+        #     currency = response.css('.pricing-shipping .price-current sup')
+        #     price = response.css('.pricing-shipping .price-current')
+        #
+        #     if price and currency:
+        #         currency = currency.extract()[0]
+        #         price = re.search('[,. 0-9]+', price.extract()[0])
+        #         if price:
+        #             price = price.group()
+        #             price = price.replace(',', '').replace(' ', '')
+        #             cond_set_value(product, 'price',
+        #                            Price(priceCurrency=currency, price=price))
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -395,6 +395,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         return product
 
     def _populate_from_js(self, response, product):
+        """
+        Gets data out of JS script straight from html body
+        """
+
         reqs = response.meta.get('reqs')
         self._JS_PROD_INFO_RE = re.compile(r'productPurchaseCartridgeData\[\"\w+\"\]\s+=\s+([^;]*\})', re.DOTALL)
         self._JS_PROD_IMG_RE = re.compile(r'walmartData\.graphicsEnlargedURLS\s+=\s+([^;]*\])', re.DOTALL)
@@ -417,17 +421,21 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         product_data['baseProdInfo'] = product_data['variantDataRaw'][0]
 
         # Set product UPC
-        # try:
-        #     upc = is_empty(product_data['baseProdInfo']['upc_nbr'])
-        #     cond_set_value(
-        #         product, 'upc', upc, conv=unicode
-        #     )
-        # except (ValueError, KeyError):
-        #     self.log("Impossible to get UPC" % response.url, WARNING)  # Not really a UPC.
+        try:
+            upc = is_empty(product_data['baseProdInfo']['upc_nbr'])
+            cond_set_value(
+                product, 'upc', upc, conv=unicode
+            )
+        except (ValueError, KeyError):
+            self.log("Impossible to get UPC" % response.url, WARNING)  # Not really a UPC.
 
         # Set if special price
+        print "------------------------------------------------------------"
+        print product_data['baseProdInfo'].keys()
         try:
             special_price = product_data['baseProdInfo']['price_store_was_price']
+            print "------------------------------------------------------------"
+            print special_price
             cond_set_value(product, 'special_pricing', True)
         except (ValueError, KeyError):
             cond_set_value(product, 'special_pricing', False)
@@ -457,6 +465,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
+        """
+        Scraping number of resulted product links
+        """
 
         num_results = is_empty(
             response.css('#shelf-page .total-num-recs::text').extract(), '0'
@@ -480,7 +491,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         return None
 
     def _scrape_product_links(self, response):
-
         """
         Scraping product links from search page
         """
