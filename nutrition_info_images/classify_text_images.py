@@ -411,7 +411,7 @@ def classifier_predict_one(image_url, clf=None):
     predicted = predict_one(image_url, clf, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=is_url)
     return predicted[0]
 
-def cross_validate(test_set):
+def cross_validate(test_set, folds=10):
     '''Validates the classifier by using 10-fold cross-validation.
     Splits the data in 10 parts, iteratively trains on 9 of them and
     tests on the 10th.
@@ -425,17 +425,17 @@ def cross_validate(test_set):
     imgs, examples, labels = test_set
     # split data into 10 parts
     lg = len(imgs)
-    for i in range(10):
-        test_sets.append((imgs[ i*lg/10 : (i+1)*lg/10 ],
-            examples[ i*lg/10 : (i+1)*lg/10 ],
-            labels[ i*lg/10 : (i+1)*lg/10 ]))
+    for i in range(folds):
+        test_sets.append((imgs[ i*lg/folds : (i+1)*lg/folds ],
+            examples[ i*lg/folds : (i+1)*lg/folds ],
+            labels[ i*lg/folds : (i+1)*lg/folds ]))
 
     nr_accurate = 0
     nr_total = 0
 
-    for rnd in range(10):
+    for rnd in range(folds):
         training_set = [[],[],[]]
-        for i in range(10):
+        for i in range(folds):
             if i != rnd:
                 training_set[0] = training_set[0] + test_sets[i][0]
                 training_set[1] = training_set[1] + test_sets[i][1]
@@ -459,6 +459,7 @@ def cross_validate(test_set):
                 else:
                     print "Inaccurate:", imgs[idx]
                 nr_total += 1
+        print "nr_accurate", nr_accurate, "/", nr_total
 
 
     accuracy = float(nr_accurate)/nr_total
@@ -471,6 +472,10 @@ if __name__ == '__main__':
     # extract_features_main()
     if len(sys.argv) <= 1:
         # classifier_main()
-        print cross_validate(read_images_set("nutrition_images_training.csv"))
+        in_set1 = read_images_set("nutrition_images_training.csv")
+        in_set2 = read_images_set("nutrition_images_test.csv")
+        in_set3 = read_images_set("nutrition_images_goodq.csv")
+        in_set = [l[0]+l[1]+l[2] for l in zip(in_set1,in_set2,in_set3)]
+        print cross_validate(in_set, 100)
     else:
         print classifier_predict_one(sys.argv[1])
