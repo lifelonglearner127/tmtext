@@ -226,11 +226,21 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 cond_set_value(product, 'description', None)
                 self.log("Impossible to get description - %r" % response.url, WARNING)
 
-            # Set buyer reviews
+            # Set buyer reviews info
             self._build_buyer_reviews(main_info['ReviewStatistics'], response)
 
         except (ValueError, KeyError):
             self.log("Impossible to get product info - %r" % response.url, WARNING)
+
+        # Get QA statistics
+        try:
+            qa_info = data['BatchedResults']['q1']
+
+            # Set QA info
+            self._build_qa_info(qa_info, response)
+
+        except (ValueError, KeyError):
+            self.log("Impossible to get QA info - %r" % response.url, WARNING)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -270,6 +280,42 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             pass
 
         product['buyer_reviews'] = buyer_reviews
+
+    def _build_qa_info(self, data, response):
+        meta = response.meta.copy()
+        recent_questions = []
+        product = meta.get('product')
+        question_data = data.get('Results')
+        answer_data = data.get('Includes')
+        if answer_data:
+            answer_data = answer_data.get('Answers')
+        questions = []
+
+        for question in question_data:
+            question_info = {}
+
+            question_info['questionId'] = question.get('Id')
+            question_info['userNickname'] = question.get('UserNickname')
+            question_info['questionSummary'] = question.get('QuestionSummary')
+
+            answer_ids = question.get('AnswerIds')
+            if answer_ids:
+                answers = []
+                for answer_id in answer_ids:
+                    answ = answer_data.get(answer_id)
+                    answer = {}
+                    if answ:
+                        answer['answerText'] = answ['AnswerText']
+                        answer['negativeVoteCount'] = answ['TotalNegativeFeedbackCount']
+                        answer['positiveVoteCount'] = answ['TotalPositiveFeedbackCount']
+                        answer['answerId'] = answ['Id']
+                        answer['userNickname'] = answ['UserNickname']
+                        answers.append(answer)
+            question_info['answers'] = answers
+
+            questions.append(question_info)
+
+        product['recent_questions'] = questions
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
