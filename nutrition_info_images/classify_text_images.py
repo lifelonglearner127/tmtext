@@ -411,9 +411,66 @@ def classifier_predict_one(image_url, clf=None):
     predicted = predict_one(image_url, clf, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=is_url)
     return predicted[0]
 
+def cross_validate(test_set):
+    '''Validates the classifier by using 10-fold cross-validation.
+    Splits the data in 10 parts, iteratively trains on 9 of them and
+    tests on the 10th.
+    Final accuracy is the average of accuracies for each of the 10 tests.
+    :param test_set: input data to validate on, tuple of lists:
+    images, features and labels, as returned by read_images_set.
+    :returns: accuracy (float)
+    '''
+
+    test_sets = []
+    imgs, examples, labels = test_set
+    # split data into 10 parts
+    lg = len(imgs)
+    for i in range(10):
+        test_sets.append((imgs[ i*lg/10 : (i+1)*lg/10 ],
+            examples[ i*lg/10 : (i+1)*lg/10 ],
+            labels[ i*lg/10 : (i+1)*lg/10 ]))
+
+    nr_accurate = 0
+    nr_total = 0
+
+    for rnd in range(10):
+        training_set = [[],[],[]]
+        for i in range(10):
+            if i != rnd:
+                training_set[0] = training_set[0] + test_sets[i][0]
+                training_set[1] = training_set[1] + test_sets[i][1]
+                training_set[2] = training_set[2] + test_sets[i][2]
+
+        # if there's only one kind of label, skip this set
+        if 0 not in training_set[2] or 1 not in training_set[2]:
+            print "Skipped validation fold because not enough labels"
+            continue
+
+        # train new classifier with this training set
+        imgs, clf = train(training_set)
+
+        # test
+        imgs, examples, labels = test_sets[rnd]
+        for idx, example in enumerate(examples):
+                predicted = clf.predict(example)
+                # print imgs[idx], labels[idx], predicted
+                if labels[idx] == predicted:
+                    nr_accurate += 1
+                else:
+                    print "Inaccurate:", imgs[idx]
+                nr_total += 1
+
+
+    accuracy = float(nr_accurate)/nr_total
+
+    print "Accuracy: {0:.2f}%".format(accuracy*100)
+    return accuracy
+
+
 if __name__ == '__main__':
     # extract_features_main()
     if len(sys.argv) <= 1:
-        classifier_main()
+        # classifier_main()
+        print cross_validate(read_images_set("nutrition_images_training.csv"))
     else:
         print classifier_predict_one(sys.argv[1])
