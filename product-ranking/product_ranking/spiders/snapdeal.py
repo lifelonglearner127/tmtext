@@ -78,6 +78,9 @@ class SnapdealProductSpider(BaseProductsSpider):
                 yield req
 
     def after_start(self, response):
+        if 'Sorry, no results found for' in \
+                response.body_as_unicode():
+            return
         url = is_empty(response.xpath(
             "//div[contains(@class, 'viewallbox')]/a/@href").extract())
         if url:
@@ -451,4 +454,9 @@ class SnapdealProductSpider(BaseProductsSpider):
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
-       
+    
+    def _search_page_error(self, response):
+        if 'Sorry, no results found for "dfdsgfds"' in \
+                response.body_as_unicode():
+            return True
+        return False
