@@ -220,10 +220,6 @@ class SnapdealProductSpider(BaseProductsSpider):
         a = response.xpath(
             "//section[contains(@id, 'recommendations')]/.//div/a")
 
-        # print('+'*50)
-        # print(a)
-        # print('+'*50)
-
         for item in a:
             title = item.xpath(".//p[contains"
                 "(@class, 'product-title')]/text() | text()"
