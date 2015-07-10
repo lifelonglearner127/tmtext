@@ -3,7 +3,7 @@ import scrapy
 from scrapy.http import Request
 import json
 from nutrition_images.items import NutritionImagesItem
-from classify_text_images import extract_features
+from classify_text_images import extract_features, classifier_predict_one
 from urllib import splitquery
 from urlparse import parse_qs
 
@@ -11,11 +11,12 @@ class WalmartNutritionImagesSpider(scrapy.Spider):
     name = "walmart_nutrition_images"
     allowed_domains = ["walmart.com"]
     start_urls = (
-        'http://www.walmart.com/browse/food/snacks-cookies-chips/976759_976787?cat_id=976759_976787',
+        # 'http://www.walmart.com/browse/food/snacks-cookies-chips/976759_976787?cat_id=976759_976787',
+        'http://www.walmart.com/browse/health/vitamins/976760_1005863_1001553?cat_id=976760_1005863_1001553',
     )
 
     # how many pages to parse
-    MAX_PAGES = 5
+    MAX_PAGES = 50
 
     def parse(self, response):
         urls = map(lambda u: "http://www.walmart.com" + u, response.xpath("//a[@class='js-product-title']/@href").extract())
@@ -65,7 +66,7 @@ class WalmartNutritionImagesSpider(scrapy.Spider):
             (item['slope_average'], item['distance_average'], item['nr_lines']) = average_slope, average_differences, nr_straight_lines
 
             # TODO: predict with classifier
-            # item['is_likely_text'] = item['slope_median'] < 0.02
+            item['is_likely_text'] = 1 if classifier_predict_one(item['image']) else 0
 
             yield item
 
