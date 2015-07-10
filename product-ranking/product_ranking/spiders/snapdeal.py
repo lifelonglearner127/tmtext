@@ -163,6 +163,10 @@ class SnapdealProductSpider(BaseProductsSpider):
             else:
                 product["is_out_of_stock"] = False
 
+        if "This item has been discontinued" in\
+                response.body_as_unicode():
+            product["is_out_of_stock"] = True
+
         variantsJSON = is_empty(response.xpath(
             "//input[@id='productAttributesJson']/@value |"
             "//div[@id='attributesJson']/text()"
