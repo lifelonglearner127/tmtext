@@ -99,7 +99,10 @@ class SnapdealProductSpider(BaseProductsSpider):
             "//h1[@itemprop='name']/text()").extract())
         cond_set(product, "title", (title,))
 
-        brand = guess_brand_from_first_words(title)
+        brand = is_empty(response.xpath(
+            "//input[@id='brandName']/@value").extract())
+        if not brand:
+            brand = guess_brand_from_first_words(title)
         if brand:
             product["brand"] = brand
 
@@ -117,7 +120,8 @@ class SnapdealProductSpider(BaseProductsSpider):
 
         cond_set(product, "description", response.xpath(
             "//div[contains(@class, 'details-content')] |"
-            "//div[itemprop='description' and class='detailssubbox']"
+            "//div[itemprop='description' and class='detailssubbox'] |"
+            "//section[@id='productSpecs']"
         ).extract())
 
         price = is_empty(response.xpath(
@@ -160,7 +164,9 @@ class SnapdealProductSpider(BaseProductsSpider):
                 product["is_out_of_stock"] = False
 
         variantsJSON = is_empty(response.xpath(
-            "//input[@id='productAttributesJson']/@value").extract())
+            "//input[@id='productAttributesJson']/@value |"
+            "//div[@id='attributesJson']/text()"
+        ).extract())
         try:
             variants = json.loads(variantsJSON)
         except (ValueError, TypeError):
@@ -168,7 +174,9 @@ class SnapdealProductSpider(BaseProductsSpider):
 
         product["variants"] = []
         default_cat_id = is_empty(response.xpath(
-            "//div[@id='defaultCatalogId']/text()").extract())
+            "//div[@id='defaultCatalogId']/text() |"
+            "//input[@id='productCatalogId']/@value"
+        ).extract())
         for variant in variants:
             dc = {
                 variant.get("name", "color").lower(): variant.get("value"),
@@ -209,10 +217,19 @@ class SnapdealProductSpider(BaseProductsSpider):
             "//div[contains(@class, 'product-txtWrapper')]/div/a"
         )
 
+        a = response.xpath(
+            "//section[contains(@id, 'recommendations')]/.//div/a")
+
+        # print('+'*50)
+        # print(a)
+        # print('+'*50)
+
         for item in a:
-            title = is_empty(item.xpath("text() | "
-                ".//p[contains(@class, 'product-title')]/text()"
-            ).extract(), "").strip()
+            title = item.xpath(".//p[contains"
+                "(@class, 'product-title')]/text() | text()"
+            ).extract()
+            if len(title) > 1:
+                title = ''.join(title).strip()
             link = is_empty(item.xpath("@href").extract(), "")
             related_products[0]["similar products"].append(
                 RelatedProduct(title=title, url=link)
@@ -222,9 +239,13 @@ class SnapdealProductSpider(BaseProductsSpider):
             product["related_products"] = related_products
 
         brandId = is_empty(response.xpath(
-            "//div[@id='brndId']/text()").extract())
+            "//div[@id='brndId']/text() |"
+            "//input[@id=brndId]/@value"
+        ).extract())
         catId = is_empty(response.xpath(
-            "//div[@id='categoryId']/text()").extract())
+            "//div[@id='categoryId']/text() | "
+            "//input[@id=categoryId]/@value"
+        ).extract())
 
         if brandId and catId and pid:
             url = self.RELATED_URL.format(
