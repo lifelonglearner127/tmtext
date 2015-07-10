@@ -320,19 +320,25 @@ class SnapdealProductSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        fl=open('file.html', 'w')
-        fl.write(response.body)
-        fl.close()
         if self.tm is None:
-            total_matches = is_empty(re.findall(
-                "totItmsFound\s+\=\s+(\d+)", response.body))
+            total_matches = is_empty(response.xpath(
+                "//span[contains(@class, 'categoryCount')]/text()"
+            ).re(FLOATING_POINT_RGEX))
+            if not total_matches:
+                total_matches = is_empty(response.xpath(
+                    "//div[contains(@class, 'catlist-active')]/../"
+                    "div[contains(@class, 'catCount')]/text()"
+                ).re(FLOATING_POINT_RGEX))
+            if not total_matches:
+                total_matches = is_empty(re.findall(
+                    "totItmsFound\s+\=\s+(\d+)", response.body))
             if not total_matches:
                 total_matches = is_empty(response.xpath(
                     "//span[@id='no-of-results-filter']/text() |"
                     "//b[@id='no-of-results-filter']/text()").extract(), "0")
-            if not total_matches:
+            if not int(total_matches):
                 total_matches = is_empty(response.xpath(
-                    "//input[@id='resultsOnPage']/@value").extract())
+                    "//input[@id='resultsOnPage']/@value").extract(), "0")
             return int(total_matches.replace("+", ""))
         else:
             return self.tm
