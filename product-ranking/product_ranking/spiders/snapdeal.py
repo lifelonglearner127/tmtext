@@ -453,10 +453,4 @@ class SnapdealProductSpider(BaseProductsSpider):
         return url
 
     def _parse_single_product(self, response):
-        return self.parse_product(response)
-    
-    def _search_page_error(self, response):
-        if 'Sorry, no results found for "dfdsgfds"' in \
-                response.body_as_unicode():
-            return True
-        return False
+        return self.parse_product(response)   
