@@ -8,6 +8,7 @@ from lxml import html, etree
 import lxml
 import lxml.html
 import requests
+import random
 
 from extract_data import Scraper
 from compare_images import compare_images
@@ -103,6 +104,7 @@ class WalmartScraper(Scraper):
         self.failure_type = None
 
         self.wv = WalmartVariants()
+        self.walmart_api_json = None
 
     # checks input format
     def check_url_format(self):
@@ -114,6 +116,34 @@ class WalmartScraper(Scraper):
         m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
         return not not m
 
+    def get_walmart_api_key(self):
+        try:
+            rest_api_url = "http://restapis.contentanalyticsinc.com:8080/walmartaccounts/?format=json"
+            rest_api_response = requests.get(rest_api_url, auth=('root', 'AR"M2MmQ+}s9\'TgH'))
+            walmart_accounts = json.loads(rest_api_response.json.im_self._content)
+            walmart_accounts = walmart_accounts["results"]
+            accounts_num = len(walmart_accounts)
+            random_index = random.randint(1, accounts_num) - 1
+
+            return walmart_accounts[random_index]["api_key"]
+        except:
+            pass
+
+    def extract_product_json_from_api(self):
+        if not self.walmart_api_json:
+            try:
+                api_key = self.get_walmart_api_key()
+                product_id = self.product_page_url.split('/')[-1]
+
+                #http://api.walmartlabs.com/v1/items/37229319?apiKey=yahac2smt4p4fjhgpz394kbp&format=json
+                walmart_api_url = "http://api.walmartlabs.com/v1/items/%s?apiKey=%s&format=json" % (product_id, api_key)
+                walmart_api_response = requests.get(walmart_api_url)
+                self.walmart_api_json = json.loads(walmart_api_response.content)
+
+                return self.walmart_api_json
+            except:
+                return None
+
     def not_a_product(self):
         """Checks if current page is not a valid product page
         (an unavailable product page or other type of method)
@@ -122,8 +152,8 @@ class WalmartScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-
         self.wv.setupCH(self.tree_html)
+        self.extract_product_json_from_api()
 
         self._failure_type()
 
@@ -1002,6 +1032,32 @@ class WalmartScraper(Scraper):
 
     def _variants(self):
         return self.wv._variants()
+
+    def _parent_product_url(self):
+        if "parentItemId" not in self.walmart_api_json:
+            return None
+
+        url = self.product_page_url
+        parent_product_url = url[:url.rfind("/")] + "/" + str(self.walmart_api_json["parentItemId"])
+
+        return parent_product_url
+
+    def _related_product_urls(self):
+        if "variants" not in self.walmart_api_json:
+            return None
+
+        variants_ids = self.walmart_api_json['variants']
+        related_product_urls = []
+        url = self.product_page_url
+
+        for variant_id in variants_ids:
+            related_product_url = url[:url.rfind("/")] + "/" + str(variant_id)
+            related_product_urls.append(related_product_url)
+
+        if related_product_urls:
+            return related_product_urls
+
+        return None
 
     def _style(self):
         return self.wv._style()
@@ -2489,6 +2545,8 @@ class WalmartScraper(Scraper):
         # TODO: check if descriptions work right
         "long_description" : _long_description_wrapper, \
         "variants": _variants, \
+        "parent_product_url":  _parent_product_url, \
+        "related_products_urls":  _related_product_urls, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
