@@ -152,8 +152,12 @@ class WalmartScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        self.wv.setupCH(self.tree_html)
-        self.extract_product_json_from_api()
+
+        try:
+            self.wv.setupCH(self.tree_html)
+            self.extract_product_json_from_api()
+        except:
+            pass
 
         self._failure_type()
 
