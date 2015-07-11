@@ -1044,6 +1044,9 @@ class WalmartScraper(Scraper):
         url = self.product_page_url
         parent_product_url = url[:url.rfind("/")] + "/" + str(self.walmart_api_json["parentItemId"])
 
+        if parent_product_url == self.product_page_url:
+            return None
+
         return parent_product_url
 
     def _related_product_urls(self):
@@ -1057,6 +1060,8 @@ class WalmartScraper(Scraper):
         for variant_id in variants_ids:
             related_product_url = url[:url.rfind("/")] + "/" + str(variant_id)
             related_product_urls.append(related_product_url)
+
+        related_product_urls.remove(self.product_page_url)
 
         if related_product_urls:
             return related_product_urls
