@@ -118,15 +118,20 @@ class SnapdealScraper(Scraper):
         description = None
 
         try:
-            description = self.tree_html.xpath("//div[@itemprop='description' and @class='detailssubbox']//p[@class='MsoNormal']//span[contains(text(), 'Product description')]/../../following-sibling::p[1]")[0].text_content().strip()
-        except:
-            if not description:
-                description = self.tree_html.xpath("//div[@itemprop='description' and @class='detailssubbox']")[0].text_content().strip()
+            spec_title_list = self.tree_html.xpath("//h3[@class='spec-title']")
+            short_description = None
 
-        if not description:
+            for spec_title in spec_title_list:
+                if "Highlights" in spec_title.text_content():
+                    short_description = spec_title.xpath("./../following-sibling::div[@class='spec-body']")[0].text_content().strip()
+                    break
+
+            if short_description:
+                return short_description
+        except:
             return None
 
-        return description
+        return None
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
@@ -135,16 +140,12 @@ class SnapdealScraper(Scraper):
     def _long_description(self):
         try:
             description = self.tree_html.xpath("//div[@itemprop='description' and @class='detailssubbox']")[0].text_content().strip()
-            short_description = self._description()
 
-            sIndex = description.find(short_description) + len(short_description)
-
-            if not description[sIndex:].strip():
-                return None
-
-            return description[sIndex:].strip()
+            return description
         except:
             return None
+
+        return None
 
     def _ingredients(self):
         return None
