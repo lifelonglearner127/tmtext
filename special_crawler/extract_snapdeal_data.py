@@ -279,11 +279,26 @@ class SnapdealScraper(Scraper):
 
         self.is_review_checked = True
 
-        rating_block = self.tree_html.xpath("//div[contains(@class, 'rating-histogram')]//div[contains(@class, 'row')]//span[@id='ratings-wrapper']")
+        rating_blocks = self.tree_html.xpath("//ul[@itemprop='aggregateRating']//div[contains(@class, 'row')]")
 
-        review_list = None
+        review_list = []
         max_review = None
         min_review = None
+
+        for rating_block in rating_blocks:
+            review_rate = int(rating_block.xpath(".//span[contains(@class, 'lfloat')]/text()")[0][0])
+            review_count = int(rating_block.xpath(".//span[contains(@class, 'barover')]/following-sibling::span/text()")[0])
+            review_list.append([review_rate, review_count])
+
+            if not max_review:
+                max_review = review_rate
+            elif review_count > 0 and review_rate > max_review:
+                max_review = review_rate
+
+            if not min_review:
+                min_review = review_rate
+            elif review_count > 0 and review_rate < min_review:
+                min_review = review_rate
 
         self.reviews = review_list
         self.average_review = float(self.tree_html.xpath("//span[@itemprop='ratingValue']/text()")[0].strip())
