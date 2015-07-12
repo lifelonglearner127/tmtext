@@ -163,12 +163,13 @@ class SnapdealScraper(Scraper):
         
     def _image_urls(self):
         image_urls = self.tree_html.xpath("//div[@class='baseSliderPager']//img/@src")
+        lazy_image_urls = self.tree_html.xpath("//div[@class='baseSliderPager']//img/@lazysrc")
+        image_urls = image_urls + lazy_image_urls
 
         if not image_urls:
-            image_urls = self.tree_html.xpath("//div[@class='left-panel-carousel']//img/@src")
-
-        if not image_urls:
-            image_urls = self.tree_html.xpath("//div[@class='cloudzoom-blank']//img")
+            image_urls = self.tree_html.xpath("//div[@id='bx-pager-left-image-panel']//img/@src")
+            lazy_image_urls = self.tree_html.xpath("//div[@id='bx-pager-left-image-panel']//img/@lazysrc")
+            image_urls = image_urls + lazy_image_urls
 
         if not image_urls:
             return None
