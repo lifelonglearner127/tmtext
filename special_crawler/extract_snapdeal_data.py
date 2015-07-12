@@ -312,10 +312,17 @@ class SnapdealScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//div[@class='buyContainer']//strong[@class='voucherPrice']")[0].text_content()
+        return "Rs " + self.tree_html.xpath("//span[@itemprop='price']/text()")[0]
 
     def _price_amount(self):
-        return float(self.tree_html.xpath("//input[@id='sellingPriceInpt']/@value")[0])
+        price_amount = self.tree_html.xpath("//input[@id='productPrice']/@value")[0]
+
+        if str(int(price_amount)) == price_amount:
+            return int(price_amount)
+        else:
+            return float(price_amount)
+
+        return None
 
     def _price_currency(self):
         return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
