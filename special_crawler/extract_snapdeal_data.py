@@ -118,13 +118,13 @@ class SnapdealScraper(Scraper):
         description = None
 
         try:
-            description = self.tree_html.xpath("//div[@itemprop='description']//p[@class='MsoNormal']//span[contains(text(), 'Product description')]/../../following-sibling::p[1]")[0].text_content().strip()
+            description = self.tree_html.xpath("//div[@itemprop='description' and @class='detailssubbox']//p[@class='MsoNormal']//span[contains(text(), 'Product description')]/../../following-sibling::p[1]")[0].text_content().strip()
         except:
             if not description:
-                description = self.tree_html.xpath("//div[@itemprop='description']")[0].text_content().strip()
+                description = self.tree_html.xpath("//div[@itemprop='description' and @class='detailssubbox']")[0].text_content().strip()
 
-                if not description:
-                    return None
+        if not description:
+            return None
 
         return description
 
@@ -134,7 +134,7 @@ class SnapdealScraper(Scraper):
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
         try:
-            description = self.tree_html.xpath("//div[@itemprop='description']")[0].text_content().strip()
+            description = self.tree_html.xpath("//div[@itemprop='description' and @class='detailssubbox']")[0].text_content().strip()
             short_description = self._description()
 
             sIndex = description.find(short_description) + len(short_description)
@@ -163,12 +163,13 @@ class SnapdealScraper(Scraper):
         
     def _image_urls(self):
         image_urls = self.tree_html.xpath("//div[@class='baseSliderPager']//img/@src")
+        lazy_image_urls = self.tree_html.xpath("//div[@class='baseSliderPager']//img/@lazysrc")
+        image_urls = image_urls + lazy_image_urls
 
         if not image_urls:
-            image_urls = self.tree_html.xpath("//div[@class='left-panel-carousel']//img/@src")
-
-        if not image_urls:
-            image_urls = self.tree_html.xpath("//div[@class='cloudzoom-blank']//img")
+            image_urls = self.tree_html.xpath("//div[@id='bx-pager-left-image-panel']//img/@src")
+            lazy_image_urls = self.tree_html.xpath("//div[@id='bx-pager-left-image-panel']//img/@lazysrc")
+            image_urls = image_urls + lazy_image_urls
 
         if not image_urls:
             return None
@@ -278,11 +279,26 @@ class SnapdealScraper(Scraper):
 
         self.is_review_checked = True
 
-        rating_block = self.tree_html.xpath("//div[contains(@class, 'rating-histogram')]//div[contains(@class, 'row')]//span[@id='ratings-wrapper']")
+        rating_blocks = self.tree_html.xpath("//ul[@itemprop='aggregateRating']//div[contains(@class, 'row')]")
 
-        review_list = None
+        review_list = []
         max_review = None
         min_review = None
+
+        for rating_block in rating_blocks:
+            review_rate = int(rating_block.xpath(".//span[contains(@class, 'lfloat')]/text()")[0][0])
+            review_count = int(rating_block.xpath(".//span[contains(@class, 'barover')]/following-sibling::span/text()")[0])
+            review_list.append([review_rate, review_count])
+
+            if not max_review:
+                max_review = review_rate
+            elif review_count > 0 and review_rate > max_review:
+                max_review = review_rate
+
+            if not min_review:
+                min_review = review_rate
+            elif review_count > 0 and review_rate < min_review:
+                min_review = review_rate
 
         self.reviews = review_list
         self.average_review = float(self.tree_html.xpath("//span[@itemprop='ratingValue']/text()")[0].strip())
