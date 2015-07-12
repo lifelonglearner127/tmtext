@@ -68,7 +68,8 @@ class Scraper():
             "feature_count", # number of features of product, int
             "model_meta", # model from meta, string
             "description", # short description / entire description if no short available, string
-            "long_description", # long description / null if description above is entire description, string
+            "long_description", # long description / null if description above is entire description,
+            "shelf_description",
             "apluscontent_desc", #aplus description
             "ingredients", # list of ingredients - list of strings
             "ingredient_count", # number of ingredients - integer
@@ -184,7 +185,7 @@ class Scraper():
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
-                        "features", "feature_count", "model_meta", "description", "long_description","apluscontent_desc",
+                        "features", "feature_count", "model_meta", "description", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts", "drug_fact_count", "drug_fact_text_health", "rollback",
                         "manufacturer", "return_to"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \

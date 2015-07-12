@@ -1025,6 +1025,18 @@ class WalmartScraper(Scraper):
 
         return long_description
 
+    def _shelf_description(self):
+        shelf_description_li_list = self.tree_html.xpath("//div[@class='product-short-description module']/li")
+        shelf_description = ""
+
+        if shelf_description_li_list:
+            for li in shelf_description_li_list:
+                shelf_description = shelf_description + html.tostring(li)
+
+            return shelf_description
+
+        return None
+
     def _color(self):
         return self.wv._color()
 
@@ -2539,20 +2551,21 @@ class WalmartScraper(Scraper):
 
     DATA_TYPES = { \
         # Info extracted from product page
-        "upc" : _upc_from_tree, \
-        "product_name" : _product_name_from_tree, \
-        "site_id" : _site_id, \
-        "product_id" : _extract_product_id, \
+        "upc": _upc_from_tree, \
+        "product_name": _product_name_from_tree, \
+        "site_id": _site_id, \
+        "product_id": _extract_product_id, \
         "upc": _upc, \
-        "walmart_no" : _walmart_no, \
-        "keywords" : _meta_keywords_from_tree, \
+        "walmart_no": _walmart_no, \
+        "keywords": _meta_keywords_from_tree, \
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
         "canonical_link": _canonical_link,
-        "brand" : _meta_brand_from_tree, \
-        "description" : _short_description_wrapper, \
+        "brand": _meta_brand_from_tree, \
+        "description": _short_description_wrapper, \
         # TODO: check if descriptions work right
-        "long_description" : _long_description_wrapper, \
+        "long_description": _long_description_wrapper, \
+        "shelf_description": _shelf_description, \
         "variants": _variants, \
         "parent_product_url":  _parent_product_url, \
         "related_products_urls":  _related_product_urls, \
@@ -2564,52 +2577,52 @@ class WalmartScraper(Scraper):
         "drug_facts": _drug_facts, \
         "drug_fact_count": _drug_fact_count, \
         "drug_fact_text_health": _drug_fact_text_health, \
-        "price" : _price_from_tree, \
-        "price_amount" : _price_amount, \
-        "price_currency" : _price_currency, \
-        "htags" : _htags_from_tree, \
-        "model" : _model_from_tree, \
-        "model_meta" : _meta_model_from_tree, \
-        "features" : _features_from_tree, \
-        "feature_count" : _nr_features_from_tree, \
-        "title_seo" : _title_from_tree, \
-        "rollback" : _rollback, \
+        "price": _price_from_tree, \
+        "price_amount": _price_amount, \
+        "price_currency": _price_currency, \
+        "htags": _htags_from_tree, \
+        "model": _model_from_tree, \
+        "model_meta": _meta_model_from_tree, \
+        "features": _features_from_tree, \
+        "feature_count": _nr_features_from_tree, \
+        "title_seo": _title_from_tree, \
+        "rollback": _rollback, \
         # TODO: I think this causes the method to be called twice and is inoptimal
-        "product_title" : _product_name_from_tree, \
+        "product_title": _product_name_from_tree, \
         "owned": _owned, \
         "owned_out_of_stock": _owned_out_of_stock, \
-        "in_stores" : _in_stores, \
-        "in_stores_only" : _in_stores_only, \
+        "in_stores": _in_stores, \
+        "in_stores_only": _in_stores_only, \
         "marketplace": _marketplace, \
-        "marketplace_sellers" : _marketplace_sellers, \
+        "marketplace_sellers": _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
         "in_stock": _in_stock, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "review_count": _nr_reviews, \
         "average_review": _avg_review, \
-        "max_review" : _max_review, \
-        "min_review" : _min_review, \
-        "reviews" : _reviews, \
+        "max_review": _max_review, \
+        "min_review": _min_review, \
+        "reviews": _reviews, \
         # video needs both page source and separate requests
-        "video_count" : _video_count, \
-        "video_urls" : _video_urls, \
-        "wc_360" : _wc_360, \
+        "video_count": _video_count, \
+        "video_urls": _video_urls, \
+        "wc_360": _wc_360, \
         "wc_emc": _wc_emc, \
         "wc_video": _wc_video, \
         "wc_pdf": _wc_pdf, \
         "wc_prodtour": _wc_prodtour, \
         "flixmedia": _flixmedia, \
-        "webcollage" : _product_has_webcollage, \
-        "sellpoints" : _product_has_sellpoints, \
+        "webcollage": _product_has_webcollage, \
+        "sellpoints": _product_has_sellpoints, \
 
-        "image_count" : _image_count, \
-        "image_urls" : _image_urls, \
+        "image_count": _image_count, \
+        "image_urls": _image_urls, \
 
-        "categories" : _categories_hierarchy, \
-        "category_name" : _category, \
+        "categories": _categories_hierarchy, \
+        "category_name": _category, \
 
-        "scraper" : _version, \
+        "scraper": _version, \
         }
 
     # special data that can't be extracted from the product page
