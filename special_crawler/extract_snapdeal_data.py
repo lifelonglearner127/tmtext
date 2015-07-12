@@ -118,13 +118,13 @@ class SnapdealScraper(Scraper):
         description = None
 
         try:
-            description = self.tree_html.xpath("//div[@itemprop='description']//p[@class='MsoNormal']//span[contains(text(), 'Product description')]/../../following-sibling::p[1]")[0].text_content().strip()
+            description = self.tree_html.xpath("//div[@itemprop='description' and @class='detailssubbox']//p[@class='MsoNormal']//span[contains(text(), 'Product description')]/../../following-sibling::p[1]")[0].text_content().strip()
         except:
             if not description:
-                description = self.tree_html.xpath("//div[@itemprop='description']")[0].text_content().strip()
+                description = self.tree_html.xpath("//div[@itemprop='description' and @class='detailssubbox']")[0].text_content().strip()
 
-                if not description:
-                    return None
+        if not description:
+            return None
 
         return description
 
@@ -134,7 +134,7 @@ class SnapdealScraper(Scraper):
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
         try:
-            description = self.tree_html.xpath("//div[@itemprop='description']")[0].text_content().strip()
+            description = self.tree_html.xpath("//div[@itemprop='description' and @class='detailssubbox']")[0].text_content().strip()
             short_description = self._description()
 
             sIndex = description.find(short_description) + len(short_description)
