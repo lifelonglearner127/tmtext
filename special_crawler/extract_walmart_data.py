@@ -2577,6 +2577,9 @@ class WalmartScraper(Scraper):
 
         supplement_facts = self._supplement_facts()
 
+        if len(supplement_facts["supplement-header"]) < 2:
+            return 1
+
         for header in supplement_facts["supplement-header"]:
             if not header[1].strip():
                 return 1
