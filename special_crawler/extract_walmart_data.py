@@ -2505,6 +2505,15 @@ class WalmartScraper(Scraper):
 
         return 2
 
+    def _supplement_facts(self):
+        return None
+
+    def _supplement_fact_count(self):
+        return 0
+
+    def _supplement_fact_text_health(self):
+        return 0
+
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         """Cleans a piece of text of html entities
@@ -2577,6 +2586,9 @@ class WalmartScraper(Scraper):
         "drug_facts": _drug_facts, \
         "drug_fact_count": _drug_fact_count, \
         "drug_fact_text_health": _drug_fact_text_health, \
+        "supplement_facts": _supplement_facts, \
+        "supplement_fact_count": _supplement_fact_count, \
+        "supplement_fact_text_health": _supplement_fact_text_health, \
         "price": _price_from_tree, \
         "price_amount": _price_amount, \
         "price_currency": _price_currency, \
