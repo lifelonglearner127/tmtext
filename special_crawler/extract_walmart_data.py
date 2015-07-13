@@ -2506,13 +2506,86 @@ class WalmartScraper(Scraper):
         return 2
 
     def _supplement_facts(self):
-        return None
+        supplement_facts = None
+
+        if not self.tree_html.xpath("//div[@class='supplement-section']"):
+            return None
+
+        supplement_facts = {"supplement-header": None, "supplement-facts": None}
+
+        supplement_head_block = self.tree_html.xpath("//div[@class='supplement-header']/div")
+        supplement_head = []
+
+        for item in supplement_head_block:
+            head_string = item.text_content().strip()
+
+            if not head_string:
+                continue
+
+            index = re.search("\d", head_string)
+
+            if index:
+                key = head_string[:index.start()].strip()
+                value = head_string[index.start():].strip()
+            else:
+                key = head_string
+                value = None
+
+            supplement_head.append([key, value])
+
+        supplement_facts["supplement-header"] = supplement_head
+
+        supplement_table_block = self.tree_html.xpath("//table[@class='supplement-table']/tbody/tr")
+        supplement_table_info = []
+
+        for item in supplement_table_block:
+            data = item.xpath("./td/text()")
+
+            try:
+                key = data[0].strip()
+                if not key:
+                    continue
+
+                absolute_value = data[1].strip()
+                relative_value = data[2].strip()
+
+                supplement_table_info.append([data[0], {"absolute": absolute_value, "relative": relative_value}])
+            except:
+                continue
+
+        supplement_facts["supplement-facts"] = supplement_table_info
+
+        return supplement_facts
 
     def _supplement_fact_count(self):
-        return 0
+        supplement_facts = self._supplement_facts()
+
+        if not supplement_facts:
+            return 0
+
+        return len(supplement_facts["supplement-header"]) + len(supplement_facts["supplement-facts"])
 
     def _supplement_fact_text_health(self):
-        return 0
+        if not self.tree_html.xpath("//div[@class='supplement-section']"):
+            return 0
+
+        supplement_fact_count = self._supplement_fact_count()
+        element_count = len(self.tree_html.xpath("//div[@class='supplement-header']/div")) + len(self.tree_html.xpath("//table[@class='supplement-table']/tbody/tr"))
+
+        if supplement_fact_count != element_count:
+            return 1
+
+        supplement_facts = self._supplement_facts()
+
+        for header in supplement_facts["supplement-header"]:
+            if not header[1].strip():
+                return 1
+
+        for fact in supplement_facts["supplement-facts"]:
+            if not fact[1]["absolute"].strip():
+                return 1
+
+        return 2
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
@@ -2524,26 +2597,6 @@ class WalmartScraper(Scraper):
         """
 
         return re.sub("&nbsp;", " ", text).strip()
-
-    # TODO: fix to work with restructured code
-    def main(args):
-        # check if there is an argument
-        if len(args) <= 1:
-            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython extract_walmart_media.py <walmart_product_url>\n")
-            sys.exit(1)
-
-        product_page_url = args[1]
-
-        # check format of page url
-        if not check_url_format(product_page_url):
-            sys.stderr.write("ERROR: Invalid URL " + str(product_page_url) + "\nFormat of product URL should be\n\t http://www.walmart.com/ip/<product_id>\n")
-            sys.exit(1)
-
-        return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
-
-        # create json object with video and pdf urls
-        #return json.dumps(media_for_url(product_page_url))
-    #    return json.dumps(reviews_for_url(product_page_url))
 
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service

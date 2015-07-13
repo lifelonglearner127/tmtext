@@ -68,7 +68,7 @@
     <field name="parent_product_url" version="1.1"></field>
     <field name="related_products_urls" version="1.1"></field>
     <field name="shelf_description" version="1.1"></field>
-    <field name="supplement_facts" version="1.1"></field>
-    <field name="supplement_fact_count" version="1.1"></field>
-    <field name="supplement_fact_text_health" version="1.1"></field>
+    <field name="supplement_facts" version="1.2"></field>
+    <field name="supplement_fact_count" version="1.2"></field>
+    <field name="supplement_fact_text_health" version="1.2"></field>
 </fields>
