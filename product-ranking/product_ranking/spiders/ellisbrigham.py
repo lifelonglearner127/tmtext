@@ -14,9 +14,7 @@ from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FLOATING_POINT_RGEX, cond_set_value
-
-
-
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 
 
@@ -133,12 +131,14 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
         css = 'img[id*=_rptReviews_imgStarImage]::attr(src)'
         by_star = response.css(css).re('/img/rating/star-(\d+).png')
         by_star = {int(stars): by_star.count(stars) for stars in by_star}
-        if num_of_reviews or average_rating:
+        if int(is_empty(num_of_reviews)) or float(is_empty(average_rating)):
             prod["buyer_reviews"] = BuyerReviews(
                 num_of_reviews=int(is_empty(num_of_reviews)),
                 average_rating=float(is_empty(average_rating)),
                 rating_by_star=by_star
             )
+        else:
+            prod["buyer_reviews"] = ZERO_REVIEWS_VALUE
 
         prod["locale"] = "en_GB"
         prod['url'] = response.url
@@ -214,8 +214,8 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
         related_products = {}
         for placeholder in rp_placeholders:
             rel_cls = "%s_RecommendedListItem" % placeholder
-            xpath = '//li[@class="%s"]/h2/cufon/cufontext/text()' % rel_cls
-            relation = u''.join(response.xpath(xpath).extract())
+            xpath = '//li[contains(@id, "%s")]/h2/text()' % rel_cls
+            relation = u''.join(response.xpath(xpath).extract()).strip()
             prod_cls = '%s_rptRecommended_hlProductLink' % placeholder
             products = []
             for prod_elt in response.css('a[id*=%s]' % prod_cls):
