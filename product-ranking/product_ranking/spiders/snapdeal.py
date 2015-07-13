@@ -23,7 +23,7 @@ class SnapdealProductSpider(BaseProductsSpider):
     allowed_domains = ["www.snapdeal.com"]
 
     SEARCH_URL = ("http://www.snapdeal.com/acors/json/product/get/search"
-        "/0/0/20?q=&sort={sort}&keyword={search_term}&clickSrc=go_header"
+        "/0/0/20?q=&sort={sort}&keyword=&clickSrc=go_header"
         "&viewType=List&lang=en&snr=false")
 
     START_URL = ("http://www.snapdeal.com/search?keyword={search_term}"
@@ -41,15 +41,15 @@ class SnapdealProductSpider(BaseProductsSpider):
     REVIEWS_URL = "http://www.snapdeal.com/review/stats/{id}"
 
     NEXT_PAGI_PAGE = "http://www.snapdeal.com/acors/json/product/get/search" \
-        "/0/{pos}/50?q=&sort={sort}rlvncy&keyword={term}&clickSrc=go_header" \
-        "&viewType=List&lang=en&snr=false"
+        "/{sltab}/{pos}/{start_pos}?q={qparam}&sort={sort}&keyword={keyword}" \
+        "&clickSrc={clickSrc}&viewType=List&lang=en&snr=false"
 
     position = 20
 
     STOP = False
 
     SORT_MODES = {
-        "RELEVANCE": "",
+        "RELEVANCE": "rlvncy",
         "POPULARITY": "plrty",
         "BESTSELLERS": "bstslr",
         "PRICE": "plth",
@@ -58,14 +58,14 @@ class SnapdealProductSpider(BaseProductsSpider):
     }
 
     tm = None
+    is_set_sort = False
 
     def __init__(self, *args, **kwargs):
         super(SnapdealProductSpider, self).__init__(*args, **kwargs)
+        if kwargs.get("sort_mode"):
+            self.is_set_sort = True
         self.sort_by = self.SORT_MODES.get(
-            kwargs.get("sort_mode", "RELEVANCE"))
-        self.SEARCH_URL = ("http://www.snapdeal.com/acors/json/product/get/"
-        "search/0/0/20?q=&sort=%s&keyword={search_term}&clickSrc=go_header"
-        "&viewType=List&lang=en&snr=false" % (self.sort_by,))
+            kwargs.get("sort_mode", "POPULARITY"))
 
     def start_requests(self):
         if not self.product_url:
@@ -81,6 +81,42 @@ class SnapdealProductSpider(BaseProductsSpider):
         if 'Sorry, no results found for' in \
                 response.body_as_unicode():
             return
+
+        start_pos = is_empty(response.xpath(
+            "//input[@id='startProductState']/@value").extract(), 20)
+        if start_pos:
+            self.start_pos = int(start_pos)
+
+        self.qparam = is_empty(response.xpath(
+            "//a[@id='seeMoreProducts']/@qparam").extract(), "")
+        sorttype = is_empty(response.xpath(
+            "//a[@id='seeMoreProducts']/@sorttype").extract())
+        self.slTab = is_empty(response.xpath(
+            "//input[@id='selectedTabId']/@value | "
+            "//input[@id='categoryIdStoreFront']/@value"
+        ).extract(), 0)
+        self.keyword = is_empty(response.xpath(
+            "//input[@id='keyword']/@value").extract(), "")
+        self.clickSrc = is_empty(response.xpath(
+            "//input[@id='clickSrc']/@value").extract(), "")
+        if not self.is_set_sort:
+            srt = is_empty(re.findall(
+                "sortTypeVal\s+=\s+\"([^\"]*)", response.body))
+            self.sort_by = sorttype or srt or self.SORT_MODES["POPULARITY"]
+
+        self.SEARCH_URL = ("http://www.snapdeal.com/acors/json/product/get/"
+        "search/{slTab}/0/{start_pos}?q={qparam}&sort={sort}&keyword={keyword}"
+        "&clickSrc={clickSrc}&viewType=List&lang=en&snr=false".format(
+            qparam=self.qparam, slTab=self.slTab, sort=self.sort_by, 
+            keyword=self.keyword, clickSrc=self.clickSrc, 
+            start_pos=self.start_pos))
+
+        print('+'*50)
+        print(sorttype)
+        print(srt)
+        print(self.SEARCH_URL)
+        print('+'*50)
+
         url = is_empty(response.xpath(
             "//div[contains(@class, 'viewallbox')]/a/@href").extract())
         if url:
@@ -429,13 +465,19 @@ class SnapdealProductSpider(BaseProductsSpider):
         links = []
         try:
             data = json.loads(response.body_as_unicode())
-            if data.get("status", "") == "Fail":
+            nf = is_empty(response.xpath(
+                "//div[contains(@class, 'numberFound')]/text()").extract())
+            if data.get("status", "") == "Fail" and str(nf) == "0":
                 self.STOP = True
             for item in data.get("productOfferGroupDtos") or []:
                 url = urljoin(
                     "http://www.snapdeal.com", item.get("pageUrl", ""))
                 links.append(url)
         except ValueError:
+            nf = is_empty(response.xpath(
+                "//div[contains(@class, 'numberFound')]/text()").extract())
+            if str(nf) == "0":
+                self.STOP = True
             links = response.xpath(
                 "//a[@id='prodDetails']/@href").extract()
             if not links:
@@ -448,9 +490,13 @@ class SnapdealProductSpider(BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         if self.STOP:
             return None
-        url = self.NEXT_PAGI_PAGE.format(
-            term=self.searchterms[0], pos=self.position, sort=self.sort_by)
-        self.position += 50
+        url = self.NEXT_PAGI_PAGE.format(sltab=self.slTab, qparam=self.qparam,
+            pos=self.position, sort=self.sort_by, keyword=self.keyword, 
+            clickSrc=self.clickSrc, start_pos=self.start_pos)
+        self.position += 20
+        print('+'*50)
+        print(url)
+        print('+'*50)
         return url
 
     def _parse_single_product(self, response):
