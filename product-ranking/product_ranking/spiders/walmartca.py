@@ -146,8 +146,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                  search_order='default', *args, **kwargs):
         if zipcode:
             self.zipcode = zipcode
-        # if search_sort == 'best_sellers':
-        #     self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         super(WalmartCaProductsSpider, self).__init__(
             site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
@@ -165,6 +163,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         meta = response.meta.copy()
         product = response.meta['product']
 
+        id = re.findall('\/(\d+)', response.url)
+        product_id = id[-1] if id else None
+        response.meta['product_id'] = product_id
+
         if response.status in self.default_hhl:
             product = response.meta.get("product")
             product.update({"locale": 'en_CA'})
@@ -173,11 +175,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
 
-        cond_set_value(product, 'locale', 'en_CA')  # Default locale.
 
-        id = re.findall('\/(\d+)', response.url)
-        product_id = id[-1] if id else None
-        response.meta['product_id'] = product_id
+
+        cond_set_value(product, 'locale', 'en_CA')  # Default locale.
 
         # Get product base info, QA and reviews straight from JS script
         product_info_url = self.PRODUCT_INFO_URL.format(product_id=response.meta['product_id'])
@@ -187,13 +187,12 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             callback=self._parse_product_info
         ))
 
-        # Get in_stock and shipping info straight from JS script
-        in_stock_url = self.IN_STOCK_URL.format(product_id=str(int(response.meta['product_id'])+1))
-        reqs.append(Request(
-            url=in_stock_url,
-            meta=meta,
-            callback=self._parse_stock_shipping_info
-        ))
+        # in_stock_url = self.IN_STOCK_URL.format(product_id=str(int(response.meta['product_id'])+1))
+        # reqs.append(Request(
+        #     url=in_stock_url,
+        #     meta=meta,
+        #     callback=self._parse_stock_shipping_info
+        # ))
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -228,18 +227,18 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             main_info = data['BatchedResults']['q0']['Results'][0]
 
             # Set brand
-            try:
-                brand = main_info['Brand']['Name']
-                cond_set_value(product, 'brand', brand)
-            except (ValueError, KeyError):
-                self.log("Impossible to get brand - %r" % response.url, WARNING)
-
+            # try:
+            #     brand = main_info['Brand']['Name']
+            #     cond_set_value(product, 'brand', brand)
+            # except (ValueError, KeyError):
+            #     self.log("Impossible to get brand - %r" % response.url, WARNING)
+            #
             # No brand
-            if not product.get("brand"):
-                brand = product.get("title")
-                cond_set(
-                    product, 'brand', (guess_brand_from_first_words(brand.strip()),)
-                )
+            # if not product.get("brand"):
+            #     brand = product.get("title")
+            #     cond_set(
+            #         product, 'brand', (guess_brand_from_first_words(brand.strip()),)
+            #     )
 
             # Set description
             try:
@@ -371,27 +370,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return ''
 
-    def _parse_stock_shipping_info(self, response):
-        meta = response.meta.copy()
-        product = meta.get('product')
-        reqs = meta.get('reqs')
-
-        data = json.loads(response.body_as_unicode())
-
-        print "-------------------------------------------"
-        print data
-
-        if reqs:
-            return self.send_next_request(reqs, response)
-
-        return product
-
     def _populate_from_html(self, response, product):
         """
         Gets data straight from html body
         """
 
-        reqs = response.meta.get('reqs')
+        meta = response.meta.copy()
+        reqs = response.meta.get('reqs', [])
 
         # Set product url
         cond_set_value(product, 'url', response.url)
@@ -427,9 +412,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         Gets data out of JS script straight from html body
         """
 
-        reqs = response.meta.get('reqs')
         self._JS_PROD_INFO_RE = re.compile(r'productPurchaseCartridgeData\[\"\w+\"\]\s+=\s+([^;]*\})', re.DOTALL)
         self._JS_PROD_IMG_RE = re.compile(r'walmartData\.graphicsEnlargedURLS\s+=\s+([^;]*\])', re.DOTALL)
+        meta = response.meta.copy()
+        reqs = meta.get('reqs', [])
 
         # Extract base product info from JS
         data = is_empty(
@@ -457,6 +443,20 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         except (ValueError, KeyError):
             self.log("Impossible to get UPC" % response.url, WARNING)  # Not really a UPC.
 
+        # Set brand
+        try:
+            brand = is_empty(product_data['baseProdInfo']['brand_name_en'])
+            cond_set_value(product, 'brand', brand)
+        except (ValueError, KeyError):
+            self.log("Impossible to get brand - %r" % response.url, WARNING)
+
+        # No brand - trying to get it from product title
+        if not product.get("brand"):
+            brand = product.get("title")
+            cond_set(
+                product, 'brand', (guess_brand_from_first_words(brand.strip()),)
+            )
+
         # Set if special price
         try:
             special_price = product_data['baseProdInfo']['price_store_was_price']
@@ -464,12 +464,37 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         except (ValueError, KeyError):
             cond_set_value(product, 'special_pricing', False)
 
-        # Set if special price
-        # try:
-        #     special_price = product_data['baseProdInfo']['price_store_was_price']
-        #     cond_set_value(product, 'special_pricing', True)
-        # except (ValueError, KeyError):
-        #     cond_set_value(product, 'special_pricing', False)
+        # Set variants
+        number_of_variants = product_data.get('numberOfVariants', 0)
+        if number_of_variants:
+            # try:
+            data_variants = product_data['variantDataRaw']
+            variants = []
+
+            for var in data_variants:
+                variant = dict()
+                properties = dict()
+
+                price = var.get('price_store_price')
+                if price:
+                    price = is_empty(price, None)
+                    price = price.replace(',', '')
+                    price = format(float(price), '.2f')
+                variant['price'] = price
+
+                properties['color'] = is_empty(var.get('variantKey_en_Colour', []))
+                properties['size'] = is_empty(var.get('variantKey_en_Size', []))
+                variant['properties'] = properties
+                # variant['in_stock'] = self._parse_stock_shipping_info()
+
+                variants.append(variant)
+
+            # except (KeyError, ValueError):
+            #     variants = None
+
+        else:
+            variants = None
+        product['variants'] = variants
 
         # Set product images urls
         image = re.findall(self._JS_PROD_IMG_RE, response.body_as_unicode())
@@ -490,8 +515,38 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             self.log("No JS for product image matched in %r." % response.url, WARNING)
 
+        # in_stock_url = self.IN_STOCK_URL.format(product_id=str(int(response.meta['product_id'])+1))
+        # reqs.append(Request(
+        #     url=in_stock_url,
+        #     meta=meta,
+        #     callback=self._parse_stock_shipping_info
+        # ))
+
         if reqs:
             return self.send_next_request(reqs, response)
+
+        return product
+
+    def _parse_stock_shipping_info(self, response):
+        """
+        Gets in_stock value for product
+        """
+
+        meta = response.meta.copy()
+        product = meta.get('product')
+        product_id = product['product_id']
+
+        data = json.loads(response.body_as_unicode())
+        print '************************************************'
+        print data
+
+        # try:
+        #     in_stock = data['in_stock'][product_id]
+        #     if in_stock is None:
+        #         in_stock = False
+        #     return in_stock
+        # except:
+        #     self.log("Impossible to get in_stock for product - %r." % response.url, WARNING)
 
         return product
 
