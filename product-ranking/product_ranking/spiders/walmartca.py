@@ -389,6 +389,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             title = Selector(text=title).xpath('string()').extract()
             product["title"] = is_empty(title, "").strip()
 
+        # Get model
+        model = response.css("#productSpecs .specGroup span[@itemprop='model']::text")
+        print '-----------------------------------------'
+        print model
+        if model:
+            product["model"] = model.strip()
+
         # if not product.get('price'):
         #     currency = response.css('.pricing-shipping .price-current sup')
         #     price = response.css('.pricing-shipping .price-current')
