@@ -40,9 +40,9 @@ class SnapdealProductSpider(BaseProductsSpider):
 
     REVIEWS_URL = "http://www.snapdeal.com/review/stats/{id}"
 
-    NEXT_PAGI_PAGE = "http://www.snapdeal.com/acors/json/product/get/search" \
-        "/{sltab}/{pos}/{start_pos}?q={qparam}&sort={sort}&keyword={keyword}" \
-        "&clickSrc={clickSrc}&viewType=List&lang=en&snr=false"
+    NEXT_PAGI_PAGE = ("http://www.snapdeal.com/acors/json/product/get/search"
+        "/{sltab}/{pos}/{start_pos}?q={qparam}&sort={sort}&keyword={keyword}"
+        "&clickSrc={clickSrc}&viewType=List&lang=en&snr=false")
 
     position = 20
 
@@ -78,14 +78,11 @@ class SnapdealProductSpider(BaseProductsSpider):
                 yield req
 
     def after_start(self, response):
-        if 'Sorry, no results found for' in \
-                response.body_as_unicode():
+        if 'Sorry, no results found for' in response.body_as_unicode():
             return
 
-        start_pos = is_empty(response.xpath(
-            "//input[@id='startProductState']/@value").extract(), 20)
-        if start_pos:
-            self.start_pos = int(start_pos)
+        self.start_pos = int(is_empty(response.xpath(
+            "//input[@id='startProductState']/@value").extract(), 20))
 
         self.qparam = is_empty(response.xpath(
             "//a[@id='seeMoreProducts']/@qparam").extract(), "")
@@ -105,11 +102,14 @@ class SnapdealProductSpider(BaseProductsSpider):
             self.sort_by = sorttype or srt or self.SORT_MODES["POPULARITY"]
 
         self.SEARCH_URL = ("http://www.snapdeal.com/acors/json/product/get/"
-        "search/{slTab}/0/{start_pos}?q={qparam}&sort={sort}&keyword={keyword}"
-        "&clickSrc={clickSrc}&viewType=List&lang=en&snr=false".format(
-            qparam=self.qparam, slTab=self.slTab, sort=self.sort_by, 
-            keyword=self.keyword, clickSrc=self.clickSrc, 
-            start_pos=self.start_pos))
+            "search/{slTab}/0/{start_pos}?q={qparam}&sort={sort}"
+            "&keyword={keyword}&clickSrc={clickSrc}&viewType=List&lang=en"
+            "&snr=false".format(
+                qparam=self.qparam, slTab=self.slTab, sort=self.sort_by, 
+                keyword=self.keyword, clickSrc=self.clickSrc, 
+                start_pos=self.start_pos
+            )
+        )
 
         url = is_empty(response.xpath(
             "//div[contains(@class, 'viewallbox')]/a/@href").extract())
@@ -197,8 +197,7 @@ class SnapdealProductSpider(BaseProductsSpider):
             else:
                 product["is_out_of_stock"] = False
 
-        if "This item has been discontinued" in\
-                response.body_as_unicode():
+        if "This item has been discontinued" in response.body_as_unicode():
             product["is_out_of_stock"] = True
 
         variantsJSON = is_empty(response.xpath(
@@ -250,7 +249,8 @@ class SnapdealProductSpider(BaseProductsSpider):
             product["buyer_reviews"] = ZERO_REVIEWS_VALUE
 
         related_products = [{"similar products": []}]
-        a = response.xpath("//div[contains(@class, 'product_grid_box')]"
+        a = response.xpath(
+            "//div[contains(@class, 'product_grid_box')]"
             "/.//div[contains(@class, 'product-title')]/a |"
             "//div[contains(@class, 'product-txtWrapper')]/div/a"
         )
@@ -259,8 +259,8 @@ class SnapdealProductSpider(BaseProductsSpider):
             "//section[contains(@id, 'recommendations')]/.//div/a")
 
         for item in a:
-            title = item.xpath(".//p[contains"
-                "(@class, 'product-title')]/text() | text()"
+            title = item.xpath(
+                ".//p[contains(@class, 'product-title')]/text() | text()"
             ).extract()
             if len(title) > 1:
                 title = ''.join(title).strip()
@@ -331,7 +331,8 @@ class SnapdealProductSpider(BaseProductsSpider):
                 total += int(v)
 
             avg = is_empty(response.xpath(
-            "//p[contains(@class, 'ig-heading')]/span/text()").extract(), 0)
+                "//p[contains(@class, 'ig-heading')]/span/text()"
+            ).extract(), 0)
             if avg:
                 avg = float(is_empty(re.findall("([^\/]*)", str(avg)),0))
         else:
@@ -447,7 +448,8 @@ class SnapdealProductSpider(BaseProductsSpider):
             if not total_matches:
                 total_matches = is_empty(response.xpath(
                     "//span[@id='no-of-results-filter']/text() |"
-                    "//b[@id='no-of-results-filter']/text()").extract(), "0")
+                    "//b[@id='no-of-results-filter']/text()"
+                ).extract(), "0")
             if not int(total_matches):
                 total_matches = is_empty(response.xpath(
                     "//input[@id='resultsOnPage']/@value").extract(), "0")
@@ -459,9 +461,7 @@ class SnapdealProductSpider(BaseProductsSpider):
         links = []
         try:
             data = json.loads(response.body_as_unicode())
-            nf = is_empty(response.xpath(
-                "//div[contains(@class, 'numberFound')]/text()").extract())
-            if data.get("status", "") == "Fail" and str(nf) == "0":
+            if data.get("status", "") == "Fail":
                 self.STOP = True
             for item in data.get("productOfferGroupDtos") or []:
                 url = urljoin(
