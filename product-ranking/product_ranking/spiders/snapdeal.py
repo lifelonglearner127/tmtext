@@ -111,12 +111,6 @@ class SnapdealProductSpider(BaseProductsSpider):
             keyword=self.keyword, clickSrc=self.clickSrc, 
             start_pos=self.start_pos))
 
-        print('+'*50)
-        print(sorttype)
-        print(srt)
-        print(self.SEARCH_URL)
-        print('+'*50)
-
         url = is_empty(response.xpath(
             "//div[contains(@class, 'viewallbox')]/a/@href").extract())
         if url:
@@ -494,9 +488,6 @@ class SnapdealProductSpider(BaseProductsSpider):
             pos=self.position, sort=self.sort_by, keyword=self.keyword, 
             clickSrc=self.clickSrc, start_pos=self.start_pos)
         self.position += 20
-        print('+'*50)
-        print(url)
-        print('+'*50)
         return url
 
     def _parse_single_product(self, response):
