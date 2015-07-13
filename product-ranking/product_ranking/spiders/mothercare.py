@@ -156,10 +156,14 @@ class MothercareProductsSpider(ProductsSpider):
             "setSessionId\('([^']+)'\);", response.body).group(1)
         product_id = re.search(
             "R3_ITEM\.setId\('([^']+)'\);", response.body).group(1)
-        cs = re.search("addCategory\('([^']+)', '([^']+)'", response.body)
-        cs = '%s:%s' % (cs.group(1), cs.group(2))
-        chi = re.search("addCategoryHintId\('([^']+)'\);",
-                        response.body).group(1)
+        try:
+            cs = re.search("addCategory\('([^']+)', '([^']+)'", response.body)
+            cs = '%s:%s' % (cs.group(1), cs.group(2))
+            chi = re.search("addCategoryHintId\('([^']+)'\);",
+                            response.body).group(1)
+        except AttributeError:
+            cs = ""
+            chi = ""
 
         pref = ""
         if 'search_term' in response.meta:

@@ -330,6 +330,9 @@ def predict(test_set, clf=None, from_serialized_file=None):
         predicted_examples.append((imgs[idx], predicted[0]))
     return predicted_examples
 
+def load_classifier(path="serialized_classifier/nutrition_image_classifier.pkl"):
+    return joblib.load(path)
+
 def predict_one(image, clf=None, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=False):
     '''Predicts label (text image/not) for an input image.
     :param image: image url or path
@@ -338,7 +341,7 @@ def predict_one(image, clf=None, from_serialized_file="serialized_classifier/nut
     :param is_url: image is a url, not a file path on disk
     :return: predicted label
     '''
-    if from_serialized_file:
+    if not clf and from_serialized_file:
         clf = joblib.load(from_serialized_file)
     average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_straight_lines = \
     extract_features(image, is_url=is_url)
@@ -400,17 +403,79 @@ def classifier_main():
 
     plt.show()
 
-def classifier_predict_one(image_url):
+def classifier_predict_one(image_url, clf=None):
     if image_url.startswith("http"):
         is_url = True
     else:
         is_url = False
-    predicted = predict_one(image_url, None, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=is_url)
+    predicted = predict_one(image_url, clf, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=is_url)
     return predicted[0]
+
+def cross_validate(test_set, folds=10):
+    '''Validates the classifier by using 10-fold cross-validation.
+    Splits the data in 10 parts, iteratively trains on 9 of them and
+    tests on the 10th.
+    Final accuracy is the average of accuracies for each of the 10 tests.
+    :param test_set: input data to validate on, tuple of lists:
+    images, features and labels, as returned by read_images_set.
+    :returns: accuracy (float)
+    '''
+
+    test_sets = []
+    imgs, examples, labels = test_set
+    # split data into 10 parts
+    lg = len(imgs)
+    for i in range(folds):
+        test_sets.append((imgs[ i*lg/folds : (i+1)*lg/folds ],
+            examples[ i*lg/folds : (i+1)*lg/folds ],
+            labels[ i*lg/folds : (i+1)*lg/folds ]))
+
+    nr_accurate = 0
+    nr_total = 0
+
+    for rnd in range(folds):
+        training_set = [[],[],[]]
+        for i in range(folds):
+            if i != rnd:
+                training_set[0] = training_set[0] + test_sets[i][0]
+                training_set[1] = training_set[1] + test_sets[i][1]
+                training_set[2] = training_set[2] + test_sets[i][2]
+
+        # if there's only one kind of label, skip this set
+        if 0 not in training_set[2] or 1 not in training_set[2]:
+            print "Skipped validation fold because not enough labels"
+            continue
+
+        # train new classifier with this training set
+        imgs, clf = train(training_set)
+
+        # test
+        imgs, examples, labels = test_sets[rnd]
+        for idx, example in enumerate(examples):
+                predicted = clf.predict(example)
+                # print imgs[idx], labels[idx], predicted
+                if labels[idx] == predicted:
+                    nr_accurate += 1
+                else:
+                    print "Inaccurate:", imgs[idx]
+                nr_total += 1
+        print "nr_accurate", nr_accurate, "/", nr_total
+
+
+    accuracy = float(nr_accurate)/nr_total
+
+    print "Accuracy: {0:.2f}%".format(accuracy*100)
+    return accuracy
+
 
 if __name__ == '__main__':
     # extract_features_main()
     if len(sys.argv) <= 1:
-        classifier_main()
+        # classifier_main()
+        in_set1 = read_images_set("nutrition_images_training.csv")
+        in_set2 = read_images_set("nutrition_images_test.csv")
+        in_set3 = read_images_set("nutrition_images_goodq.csv")
+        in_set = [l[0]+l[1]+l[2] for l in zip(in_set1,in_set2,in_set3)]
+        print cross_validate(in_set, 100)
     else:
         print classifier_predict_one(sys.argv[1])

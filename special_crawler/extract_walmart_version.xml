@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <fields>
-    <field name="upc" version="1.1"></field>
+    <field name="upc" version="2.1"></field>
     <field name="product_name" version="1.1"></field>
     <field name="keywords" version="1.1"></field>
     <field name="meta_tags" version="1.1"></field>
@@ -8,11 +8,14 @@
     <field name="brand" version="2.1"></field>
     <field name="description" version="1.2"></field>
     <field name="long_description" version="1.2"></field>
-    <field name="ingredients" version="1.1"></field>
-    <field name="ingredient_count" version="1.1"></field>
-    <field name="nutrition_facts" version="1.3"></field>
+    <field name="ingredients" version="1.2"></field>
+    <field name="ingredient_count" version="1.2"></field>
+    <field name="nutrition_facts" version="1.4"></field>
     <field name="nutrition_fact_count" version="1.3"></field>
     <field name="nutrition_fact_text_health" version="1.3"></field>
+    <field name="drug_facts" version="1.4"></field>
+    <field name="drug_fact_count" version="1.3"></field>
+    <field name="drug_fact_text_health" version="1.4"></field>
     <field name="price" version="1.2"></field>
     <field name="price_amount" version="1.2"></field>
     <field name="price_currency" version="1.2"></field>
@@ -33,8 +36,8 @@
     <field name="in_stock" version="1.1"></field>
     <field name="site_online" version="1.1"></field>
     <field name="site_online_out_of_stock" version="1.1"></field>
-    <field name="review_count" version="1.2"></field>
-    <field name="average_review" version="1.1"></field>
+    <field name="review_count" version="1.3"></field>
+    <field name="average_review" version="1.2"></field>
     <field name="max_review" version="1.1"></field>
     <field name="min_review" version="1.1"></field>
     <field name="reviews" version="1.1"></field>
@@ -59,5 +62,13 @@
     <field name="variants" version="1.2"></field>
     <field name="site_id" version="1.1"></field>
     <field name="walmart_no" version="2.1"></field>
-    <field name="product_id" version="1.1"></field>
+    <field name="product_id" version="1.2"></field>
+    <field name="walmart_no" version="2.1"></field>
+    <field name="product_id" version="1.2"></field>
+    <field name="parent_product_url" version="1.1"></field>
+    <field name="related_products_urls" version="1.1"></field>
+    <field name="shelf_description" version="1.1"></field>
+    <field name="supplement_facts" version="1.2"></field>
+    <field name="supplement_fact_count" version="1.2"></field>
+    <field name="supplement_fact_text_health" version="1.2"></field>
 </fields>

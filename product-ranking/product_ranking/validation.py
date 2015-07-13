@@ -482,23 +482,16 @@ class BaseValidator(object):
                     return False
         return True
 
-    # Category field. Added.
     def _validate_category(self, val):
-
         if val in (None, ''):
             return True
-
+        if isinstance(val, basestring):
+            try:
+                val = json.loads(val)
+            except Exception as e:
+                return False
         if isinstance(val, (tuple, list)):
-
-            if not val:
-                return True
-
-            for v in val:
-                if isinstance(v, dict):
-                    if v.get('category') and v.get('rank'):
-                        return True
-                    return False
-
+            return True
         return False
 
     def _validate_bestseller_rank(self, val):
@@ -569,9 +562,7 @@ class BaseValidator(object):
         return val in (True, False, None, '')
 
     def _validate_variants(self, val):
-        if not val:
-            return True
-        if isinstance(val, basestring):
+        if val and isinstance(val, basestring):
             try:
                 val = json.loads(val)
             except:
@@ -597,6 +588,9 @@ class BaseValidator(object):
 
     def _validate__walmart_original_oos(self, val):
         return True  # we will not validate this field for now
+
+    def _validate_last_buyer_review_date(self, val):
+        return True  # TODO: implement
 
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)

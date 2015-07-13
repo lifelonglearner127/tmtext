@@ -14,6 +14,7 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FLOATING_POINT_RGEX
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 from lxml import html
 
@@ -262,9 +263,6 @@ class HomedepotProductsSpider(BaseProductsSpider):
 
     def _parse_skudetails(self, response):
         product = response.meta['product']
-        if response.status == 404:
-            # No further pages were found.
-            return product
 
         try:
             jsdata = json.loads(response.body_as_unicode())
@@ -337,7 +335,10 @@ class HomedepotProductsSpider(BaseProductsSpider):
             ), 0)
         if avg:
             avg = float("{0:.2f}".format(avg))
-        product["buyer_reviews"] = BuyerReviews(total, avg, rating_by_stars)
+        if avg and total:
+            product["buyer_reviews"] = BuyerReviews(total, avg, rating_by_stars)
+        else:
+            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
 
         return product
 
