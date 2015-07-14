@@ -13,6 +13,8 @@ from scrapy.log import WARNING, ERROR
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+
 is_empty = lambda x, y=None: x[0] if x else y
 
 class AsdaProductsSpider(BaseProductsSpider):
@@ -93,22 +95,12 @@ class AsdaProductsSpider(BaseProductsSpider):
         prod = response.meta['product']
         num, avg, by_star = prod['buyer_reviews']
         data = json.loads(response.body_as_unicode())
-        if not num:
-            num = data.get("TotalResults", 0)
         by_star = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
         reviews = data['Results']
-        sumary = 0
         for review in reviews:
-            sumary += review['Rating']
             by_star[review['Rating']] += 1
-        if not avg and num:
-            avg = float("{0:.2f}".format(sumary / num))
 
-        if num and avg:
-            prod['buyer_reviews'] = BuyerReviews(num, avg, by_star)
-        else:
-            prod['buyer_reviews'] = 0
-
+        prod['buyer_reviews'] = BuyerReviews(num, avg, by_star)
         return prod
 
     def _search_page_error(self, response):
@@ -210,3 +202,5 @@ class AsdaProductsSpider(BaseProductsSpider):
             url = self.REVIEW_URL % product_id[0]
             meta = {'product': product}
             return Request(url=url, meta=meta, callback=self._parse_review)
+
+        return product
