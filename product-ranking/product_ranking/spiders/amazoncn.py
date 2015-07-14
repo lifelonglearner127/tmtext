@@ -23,6 +23,10 @@ from product_ranking.amazon_tests import AmazonTests
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 
+try:
+    from spiders_shared_code.amazon_variants import AmazonVariants
+except ImportError:
+    from amazon_variants import AmazonVariants
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -204,28 +208,45 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         return product
 
     def _populate_bestseller_rank(self, product, response):
-        ranks = {' > '.join(map(unicode.strip,
-                                itm.css('.zg_hrsr_ladder a::text').extract())):
-                     int(re.sub('[ ,]', '',
-                                itm.css('.zg_hrsr_rank::text').re(
-                                    '([\d, ]+)')[0]))
-                 for itm in response.css('.zg_hrsr_item')}
-        prim = response.css('#SalesRank::text, #SalesRank .value'
-                            '::text').re('([\d ,]+) .*in (.+)\(')
-        if prim:
-            prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
-            ranks.update(prim)
-        ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
-        cond_set_value(product, 'category', ranks)
-        # parse department
-        department = amazon_parse_department(ranks)
-        if department is None:
-            product['department'] = None
-        else:
-            product['department'], product['bestseller_rank'] \
-                = department.items()[0]
+        # ranks = {' > '.join(map(unicode.strip,
+        #                         itm.css('.zg_hrsr_ladder a::text').extract())):
+        #              int(re.sub('[ ,]', '',
+        #                         itm.css('.zg_hrsr_rank::text').re(
+        #                             '([\d, ]+)')[0]))
+        #          for itm in response.css('.zg_hrsr_item')}
+        # prim = response.css('#SalesRank::text, #SalesRank .value'
+        #                     '::text').re('([\d ,]+) .*in (.+)\(')
+        # if prim:
+        #     prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
+        #     ranks.update(prim)
+        # ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
+        # cond_set_value(product, 'category', ranks)
+        # # parse department
+        # department = amazon_parse_department(ranks)
+        # if department is None:
+        #     product['department'] = None
+        # else:
+        #     product['department'], product['bestseller_rank'] \
+        #         = department.items()[0]
+        s = response.xpath(
+            '//li[@id="SalesRank"]/text()[normalize-space()]'
+        ).extract()
+        if s:
+            rank = is_empty(re.findall('\d+', s[0]))
+            category = is_empty(s[0].split(rank)).replace('\n', '').strip()
+            product['category'] = {category: rank}
+
+        department = is_empty(response.xpath(
+            '//div[@class="content"]/ul/li/a/text()').extract())
+
+        if department:
+            product['department'] = department.strip()
 
     def _populate_from_html(self, response, product):
+        av = AmazonVariants()
+        av.setupSC(response)
+        product['variants'] = av._variants()
+
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         price = response.css('#priceblock_ourprice ::text '
                          ', .price3P::text'
@@ -374,7 +395,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
             #count_matches = response.xpath(
             #    '//*[@id="resultCount"]/text()').re(u'共([\d, ]+)')
             count_matches = "".join(
-                response.xpath("//h2[@id='s-result-count']//text()")
+                response.xpath("//h2[@id='s-result-count']/text()")
                 .extract())
             count_matches = re.findall(r"[\d, ]+", count_matches)
             count_matches = [r for r in count_matches if len(r.strip()) > 0]
@@ -654,7 +675,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                 'div/p[contains(@class, "Name")]/span/a/text()').extract())
 
             marketplaces.append({
-                "price": Price(price=price, priceCurrency="USD"), 
+                "price": Price(price=price, priceCurrency="CNY"),
                 "name": name
             })
 
