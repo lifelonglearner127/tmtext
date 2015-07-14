@@ -2542,12 +2542,23 @@ class WalmartScraper(Scraper):
             data = item.xpath("./td/text()")
 
             try:
-                key = data[0].strip()
+                key = item.xpath("./td[1]/text()")[0].strip()
+
                 if not key:
                     continue
 
-                absolute_value = data[1].strip()
-                relative_value = data[2].strip()
+                absolute_value = item.xpath("./td[2]/text()")
+                relative_value = item.xpath("./td[3]/text()")
+
+                if absolute_value:
+                    absolute_value = absolute_value[0].strip()
+                else:
+                    absolute_value = ""
+
+                if relative_value:
+                    relative_value = relative_value[0].strip()
+                else:
+                    relative_value = ""
 
                 supplement_table_info.append([data[0], {"absolute": absolute_value, "relative": relative_value}])
             except:
