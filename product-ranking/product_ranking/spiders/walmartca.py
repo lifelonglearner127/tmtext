@@ -417,10 +417,49 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             product['price'] = None
 
+        # Get related products
+        related_prod_sections = response.css(".spotlightType-products"
+                                             "[aria=label='Featured Products: Featured Products'")
+        if related_prod_sections:
+            related_prod_sections = related_prod_sections.extract()
+            related_prod_title = ['ultimately_bought', 'also_bought', 'top_sellers']
+            related_products = dict()
+
+            for k, value in related_prod_sections.enumerate():
+                sel = Selector(text='value')
+                builded_products = self._build_related_products(sel)
+                if builded_products:
+                    related_products[related_prod_title[k]] = builded_products
+
+            print('-'*50)
+            print related_products
+            print('-'*50)
+        else:
+            product['related_products'] = None
+
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _build_related_products(self, selector):
+        related_products = []
+        rel_prod = selector.css('.product')
+
+        if rel_prod:
+            rel_prod = rel_prod.extract()
+
+            for product in rel_prod:
+                selector = Selector(text=product)
+                title = selector.css('.title a::text')
+                url = selector.css('.title a::attr(href)')
+
+                if title and url:
+                    related_products.append()
+
+            return related_products
+
+        return None
 
     def _populate_from_js(self, response, product):
         """
