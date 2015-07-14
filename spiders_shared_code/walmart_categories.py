@@ -84,7 +84,9 @@ class WalmartCategoryParser:
 
         # assume new design
         try:
-            category = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")[-1]
+            category = self.tree_html.xpath(
+                "//li[@class='breadcrumb']//a/span/text()"
+            )[-1]
         except Exception:
             category = None
 
