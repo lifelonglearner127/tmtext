@@ -175,8 +175,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
 
-
-
         cond_set_value(product, 'locale', 'en_CA')  # Default locale.
 
         # Get product base info, QA and reviews straight from JS script
@@ -198,6 +196,16 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _parse_single_product(self, response):
+        print('-'*50)
+        for section in response.css('section[aria-label="Featured Products: Featured Products"]').extract():
+            sel = Selector(text=section)
+            text = sel.xpath('//h2/text()').extract()
+            # if sel.xpath('//h2') == 'People who bought this item also bought':
+            print text
+        print('-'*50)
+        return self.parse_product(response)
 
     def send_next_request(self, reqs, response):
         """
@@ -390,24 +398,24 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             product["title"] = is_empty(title, "").strip()
 
         # Get model
-        model = response.css("#productSpecs .specGroup span[@itemprop='model']::text")
-        print '-----------------------------------------'
-        print model
-        if model:
-            product["model"] = model.strip()
+        # model = response.css("#productSpecs .specGroup span[@itemprop='model']::text")
+        # print '-----------------------------------------'
+        # print model
+        # if model:
+        #     product["model"] = model.strip()
 
-        # if not product.get('price'):
-        #     currency = response.css('.pricing-shipping .price-current sup')
-        #     price = response.css('.pricing-shipping .price-current')
-        #
-        #     if price and currency:
-        #         currency = currency.extract()[0]
-        #         price = re.search('[,. 0-9]+', price.extract()[0])
-        #         if price:
-        #             price = price.group()
-        #             price = price.replace(',', '').replace(' ', '')
-        #             cond_set_value(product, 'price',
-        #                            Price(priceCurrency=currency, price=price))
+        # Get price
+        price = response.css('.pricing-shipping .microdata-price [itemprop="price"]::text')
+        currency = response.css('.pricing-shipping .microdata-price [itemprop="priceCurrency"]::attr(content)')
+
+        if price and currency:
+            currency = is_empty(currency.extract())
+            price = is_empty(price.extract())
+            price = price.replace('$', '')
+            cond_set_value(product, 'price',
+                           Price(priceCurrency=currency, price=price))
+        else:
+            product['price'] = None
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -544,8 +552,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         product_id = product['product_id']
 
         data = json.loads(response.body_as_unicode())
-        print '************************************************'
-        print data
 
         # try:
         #     in_stock = data['in_stock'][product_id]
@@ -627,5 +633,3 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return next_page
 
-    def _parse_single_product(self, response):
-        return self.parse_product(response)
