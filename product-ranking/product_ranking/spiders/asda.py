@@ -210,4 +210,3 @@ class AsdaProductsSpider(BaseProductsSpider):
             url = self.REVIEW_URL % product_id[0]
             meta = {'product': product}
             return Request(url=url, meta=meta, callback=self._parse_review)
-        return product
