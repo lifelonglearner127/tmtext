@@ -1,7 +1,11 @@
 import os
+import time
+from collections import OrderedDict
 from datetime import datetime
-from multiprocessing.connection import Listener, AuthenticationError
-from .fake_sqs_queue_class import SQS_Queue
+from threading import Thread
+from multiprocessing.connection import Listener, AuthenticationError, Client
+from subprocess import Popen, PIPE
+from fake_sqs_queue_class import SQS_Queue
 
 # settings
 MAX_CONCURRENT_TASKS = 5  # tasks per instance, all with same git branch
@@ -10,59 +14,55 @@ LISTENER_ADDRESS = ('localhost', 6000)  # address to listen for signals
 SCRAPY_LOGS_DIR = ''  # where to put log files
 SCRAPY_DATA_DIR = ''  # where to put scraped data files
 S3_UPLOAD_DIR = ''  # folder path on the s3 server, where to save logs/data
+STATUS_STARTED = 'opened'
+STATUS_FINISHED = 'closed'
+SIGNAL_SCRIPT_OPENED = 'script_opened'
+SIGNAL_SCRIPT_CLOSED = 'script_closed'
+SIGNAL_SPIDER_OPENED = 'spider_opened'
+SIGNAL_SPIDER_CLOSED = 'spider_closed'
 
 # required signals
 REQUIRED_SIGNALS = [
     # [signal_name, wait_in_seconds]
-    ['script_started', 5 * 60],  # wait for signal after script started
-    ['spider_started', 15 * 60],
-    ['spider_closed', 24 * 60 * 60],  # wait for spider to scrape all data
-    ['script_closed', 15 * 60]
+    [SIGNAL_SCRIPT_OPENED, 5 * 60],  # wait for signal that script started
+    [SIGNAL_SPIDER_OPENED, 15 * 60],
+    # [SIGNAL_SPIDER_CLOSED, 24 * 60 * 60],
+    [SIGNAL_SPIDER_CLOSED, 30],
+    [SIGNAL_SCRIPT_CLOSED, 15 * 60]  # take into account extensions
 ]
 
 # optional extension signals
 EXTENSION_SIGNALS = [
-    ['cache_downloading', 30 * 60],  # cache load FROM s3
-    ['cache_uploading', 30 * 60]  # cache load TO s3,
+    # ['cache_downloading', 30 * 60],  # cache load FROM s3
+    # ['cache_uploading', 30 * 60]  # cache load TO s3,
     # ['logs_uploading', 15 * 60],  # logs load TO s3
     # ['data_uploading', 30 * 60]  # data load TO s3
 ]
 
 
-# TODO: this is done for scrapy side, move it there
-# TODO: call scrapy with additional parameter, which indicates,
-#       that signals should be reported
-def report_stats(signal_name, connection=None):
-    """
-    Decorator, which sends signal to the connection
-    with the signal_name as name parameter two times.
-    One before method execution with status 'started'.
-    Second after method execution with status 'closed'
-    :param signal_name: name of the signal
-    :param connection: where to send data
-    """
-    def wrapper(f):
+# custom exceptions
+class FlowError(Exception):
+    """base class for new custom exceptions"""
+    pass
 
-        def send_signal(name, status):
-            data = dict(name=name, status=status)
-            if connection:
-                connection.send(data)
-            else:
-                print 'sending', data
 
-        def wrapped(*args, **kwargs):
-            # 1) report signal start
-            send_signal(signal_name, 'started')
-            # 2) execute method
-            res = f(*args, **kwargs)
-            # 3) report signal finish
-            send_signal(signal_name, 'closed')
-            # 4) return result
-            return res
+class ConnectError(FlowError):
+    """failed to connect to scrapy process in allowed time"""
+    pass
 
-        return wrapped
 
-    return wrapper
+class FinishError(FlowError):
+    """scrapy process didn't finished in allowed time"""
+    pass
+
+
+class SignalSentTwiceError(FlowError):
+    """same signal came twice"""
+    pass
+
+
+class SignalTimeoutError(FlowError):
+    pass
 
 
 def connect_redis(host, port):
@@ -108,107 +108,289 @@ def create_dir(path):
     try:
         os.makedirs(path)
     except OSError:  # no access to create folder
-        os.makedirs(os.path.expanduser('~/' + os.path.basename(path)))
+        path = os.path.expanduser('~/' + os.path.basename(path))
+        os.makedirs(path)
+    return path
 
 
 def check_required_folders():
     # create logs & data folders if needed
+    global SCRAPY_LOGS_DIR, SCRAPY_DATA_DIR
     if not os.path.exists(SCRAPY_LOGS_DIR):
-        create_dir(SCRAPY_LOGS_DIR)
+        SCRAPY_LOGS_DIR = create_dir(SCRAPY_LOGS_DIR)
     if not os.path.exists(SCRAPY_DATA_DIR):
-        create_dir(SCRAPY_DATA_DIR)
+        SCRAPY_DATA_DIR = create_dir(SCRAPY_DATA_DIR)
 
 
 class ScrapyTask(object):
 
-    def __init__(self, task_data):
+    def __init__(self, task_data, listener, cmd=None):
         self.task_data = task_data
-        self.items_scraped = 0
-        self.errors = 0
-        self.total_time_taken = 0
-        self.finished = False
-        self.successfully_finished = False
-        self.stop_signal = False  # to break main loop if needed
-        self.extension_signals = self.parse_optional_signals()
+        self.listener = listener  # common listener to accept connections
+        self.process = None  # instance of Popen for scrapy
+        self.conn = None  # individual connection for each task
+        self.return_code = None  # result of scrapy run
+        self.finished = False  # is task finished
+        self.finished_ok = False  # is task finished good
+        self._stop_signal = False  # to break loop if needed
+        self.start_date = None
+        self.finish_date = None
+        self.required_signals = self._parse_signal_settings(REQUIRED_SIGNALS)
+        self.extension_signals = self._parse_signal_settings(EXTENSION_SIGNALS)
+        self.current_signal = None  # tuple of key, value for current signal
+        self.required_signals_done = OrderedDict()
+        self.require_signal_failed = None  # signal, where failed
+        # todo: remove
+        self.cmd = cmd
 
     def get_unique_name(self):
         # convert task data into unique name
         # TODO: get from daemon job_to_fname ?
         return ''
 
-    def parse_optional_signals(self):
-        return [
-            dict(name=s[0], wait=s[1], started=None, finished=None)
-            for s in EXTENSION_SIGNALS
-        ]
+    def _parse_signal_settings(self, signal_settings):
+        d = OrderedDict()
+        wait = 'wait'
+        # dict with signal name as key and dict as value
+        for s in signal_settings:
+            d[s[0]] = {wait: s[1], STATUS_STARTED: None, STATUS_FINISHED: None}
+        return d
 
-    def item_scraped_signal(self, item, response, spider):
-        self.items_scraped += 1
+    def _dispose(self):
+        """kill process if running, drop connection if opened"""
+        if self.process and self.process.poll() is None:
+            try:
+                os.killpg(os.getpgid(self.process.pid), 9)
+            except OSError as e:
+                print 'OSError', e
+        if self.conn:
+            self.conn.close()
 
-    def spider_error_signal(self, failure, response, spider):
-        self.errors += 1
+    def get_next_signal(self, date_time):
+        """get and remove next signal from the main queue"""
+        try:
+            k = self.required_signals.iterkeys().next()
+        except StopIteration:
+            return None
+        v = self.required_signals.pop(k)
+        v[STATUS_STARTED] = date_time
+        return k, v
 
-    def get_next_signal(self):
-        # must return tuple of signal name and time to wait in seconds
-        # if none, then all steps are finished
-        return '', 0
+    def get_signal_by_data(self, data):
+        """
+        return current main signal or
+        one of the extension signals, for which data is sent
+        """
+        is_ext = False
+        if self.current_signal and self.current_signal[0] == data['name']:
+            signal = self.current_signal
+        else:
+            is_ext = True
+            signal = (data['name'], self.extension_signals.get(data['name']))
+        return is_ext, signal
 
-    def is_data_for_extension(self, data):
-        # check if received signal is for extension and not for main flow item
-        return True
+    def process_signal_data(self, signal, data, date_time, is_ext):
+        new_status = data['status']  # opened/closed
+        if signal[1][new_status]:  # if value is already set
+            res = False
+        else:
+            res = True
+        self.signal_succeeded(signal, date_time, is_ext)
+        return res
 
-    def update_ext_duration(self, date_time):
-        # update all extension signals with the duration of running
-        # return all extension signals, which last more then allowed time
-        pass
+    def signal_failed(self, signal, date_time, ex):
+        """
+        set signal as failed
+        :param signal: signal itself
+        :param date_time: when signal failed
+        :param ex: exception that caused fail
+        """
+        signal[1]['failed'] = True
+        signal[1][STATUS_FINISHED] = date_time
+        signal[1]['reason'] = ex.__class__.__name__
 
-    def process_signal_data(self, data):
-        # get data from scrapy
-        is_ext = self.is_data_for_extension(data)
-        return is_ext
+        self.require_signal_failed = signal
+
+    def signal_succeeded(self, signal, date_time, is_ext):
+        """set finish time for signal and save in finished signals if needed"""
+        signal[1][STATUS_FINISHED] = date_time
+        if not is_ext:
+            self.required_signals_done[signal[0]] = signal[1]
 
     def finish(self):
         # run this task for both successfully or failed finish
-        # upload logs/data to s3
+        # upload logs/data to s3, etc
+        print 'finish'
+        self._dispose()
         self.finished = True
+        self.finish_date = datetime.now()
 
     def success_finish(self):
         # run this task after scrapy process successfully finished
-        self.successfully_finished = True
+        print 'success finish'
+        self.finished_ok = True
 
-    def establish_connection(self):
+    def _start_scrapy_process(self, cmd=None):
+        if not cmd:
+            cmd = self.cmd
+        self.process = Popen(cmd, shell=True, stdout=PIPE,
+                             stderr=PIPE, preexec_fn=os.setsid)
+        print 'process started'
+
+    def _establish_connection(self):
+        self.conn = self.listener.accept()
+
+    def _dummy_client(self):
+        """used to interrupt waiting for the connection from client"""
+        Client(LISTENER_ADDRESS).close()
+
+    def try_connect(self, wait):
+        """
+        tries to accept new client in the given time
+        checks status of connection each second
+        if no connection was done in the given time, simulate it and close
+        :param wait: time in seconds to wait
+        :return: success of connection
+        """
+        t = Thread(target=self._establish_connection)
+        counter = 0
+        t.start()
+        while not self._stop_signal and counter < wait:
+            time.sleep(1)
+            counter += 1
+            if self.conn:  # connected successfully
+                return True
+        # if connection failed
+        self._dummy_client()
+        self.conn.close()
+        self.conn = None
+        return False
+
+    def try_finish(self, wait):
+        """
+        runs as last signal, checks if process finished and  has return code
+        """
+        counter = 0
+        while not self._stop_signal and counter < wait:
+            time.sleep(1)
+            counter += 1
+            res = self.process.poll()
+            if res is not None:  # don't check for "not res", can be 0
+                self.return_code = res
+                return True
+        # kill process group, if not finished in allowed time
         try:
-            l = Listener(LISTENER_ADDRESS)
-        except AuthenticationError:
-            return
-        conn = l.accept()
-        return conn
+            self.process.terminate()
+            self.return_code = self.process.poll()
+            if not self.return_code:
+                return False
+        except OSError as e:
+            print 'Kill process error:', e
+        return False
 
-    def listen(self, conn):
+    def run_signal(self, next_signal, step_time_start):
+        max_step_time = next_signal[1]['wait']
+        if next_signal[0] == SIGNAL_SCRIPT_OPENED:  # first signal
+            res = self.try_connect(max_step_time)
+            if not res:
+                raise ConnectError
+            self.signal_succeeded(next_signal, datetime.now(), False)
+            return True
+        elif next_signal[0] == SIGNAL_SCRIPT_CLOSED:  # last signal
+            res = self.try_finish(max_step_time)
+            if not res:
+                raise FinishError
+            self.signal_succeeded(next_signal, datetime.now(), False)
+            return True
+        step_time_passed = 0
+        while not self._stop_signal and step_time_passed < max_step_time:
+            has_data = self.conn.poll(max_step_time - step_time_passed)
+            sub_step_time = datetime.now()
+            step_time_passed += datetime_difference(sub_step_time,
+                                                    step_time_start)
+            if has_data:
+                data = self.conn.recv()
+                is_ext, signal = self.get_signal_by_data(data)
+                res = self.process_signal_data(signal, data,
+                                               sub_step_time, is_ext)
+                if not res:
+                    raise SignalSentTwiceError
+                if not is_ext:
+                    return True
+        else:
+            raise SignalTimeoutError
+
+    def run(self):
+        t = Thread(target=self.listen)
+        t.start()
+
+    def listen(self):
         start_time = datetime.now()
-        while not self.stop_signal:  # run through all signals
-            next_signal = self.get_next_signal()
+        while not self._stop_signal:  # run through all signals
+            step_time_start = datetime.now()
+            next_signal = self.get_next_signal(step_time_start)
             if not next_signal:
                 # all steps are finished
                 self.success_finish()
                 break
-            max_step_time = next_signal[1]
-            step_time_passed = 0
-            step_time_start = datetime.now()
-            while not self.stop_signal and step_time_passed <= max_step_time:
-                has_data = conn.poll(max_step_time - step_time_passed)
-                sub_step_time = datetime.now()
-                step_time_passed += datetime_difference(sub_step_time,
-                                                        step_time_start)
-                if has_data:
-                    data = conn.recv()
-                    is_ext = self.process_signal_data(data)
-                    self.update_ext_duration(sub_step_time)
-                    if not is_ext:  # move to next signal
-                        break
+            self.current_signal = next_signal
+            try:
+                self.run_signal(next_signal, step_time_start)
+            except FlowError as e:
+                self.signal_failed(next_signal, datetime.now(), e)
+                break
         finish_time = datetime.now()
-        self.total_time_taken = datetime_difference(finish_time, start_time)
+        self.finish_date = datetime_difference(finish_time, start_time)
         self.finish()
+        print self.report()
+
+    def start(self):
+        """start the scrapy process and wait for first signal"""
+        start_time = datetime.now()
+        self.start_date = start_time
+        self._start_scrapy_process()
+        first_signal = self.get_next_signal(start_time)
+        try:
+            self.run_signal(first_signal, start_time)
+        except FlowError as e:
+            self.signal_failed(first_signal, datetime.now(), e)
+            self.finish()
+            return False
+        return True
+
+    def stop(self):
+        """send stop signal, doesn't guaranties to stop immediately"""
+        self._stop_signal = True
+
+    def report(self):
+        """returns string with the task running stats"""
+        # s = ''
+        s = self.cmd + '\n'  # todo: remove
+        if self.start_date:
+            s += 'Task started at %s.\n' % str(self.start_date.time())
+        if self.finish_date:
+            s += 'Finished %s at %s, duration %s.\n' % (
+                'successfully' if self.finished_ok else 'with error',
+                str(self.finish_date.time()),
+                str(self.finish_date - self.start_date))
+        if self.require_signal_failed:
+            sig = self.require_signal_failed
+            s += 'Failed signal is: %r, reason %r, started at %s, ' \
+                 'finished at %s, duration %s.\n' % (
+                     sig[0], sig[1]['reason'],
+                     str(sig[1][STATUS_STARTED].time()),
+                     str(sig[1][STATUS_FINISHED].time()),
+                     str(sig[1][STATUS_FINISHED] - sig[1][STATUS_STARTED]))
+        if self.required_signals_done:
+            s += 'Succeeded required signals:\n'
+            for sig in self.required_signals_done.iteritems():
+                s += '\t%r, started at %s, finished at %s, duration %s;\n' % (
+                    sig[0], str(sig[1][STATUS_STARTED].time()),
+                    str(sig[1][STATUS_FINISHED].time()),
+                    str(sig[1][STATUS_FINISHED] - sig[1][STATUS_STARTED]))
+        else:
+            s += 'None of the signals are finished.\n'
+        return s
 
 
 def main():
@@ -220,6 +402,14 @@ def main():
     tasks_taken = []
     branch = None
 
+    try:
+        listener = Listener(LISTENER_ADDRESS)
+    except AuthenticationError:
+        listener = None
+
+    if not listener:
+        print 'Socket auth failed!'
+        return
     queue = SQS_Queue('some queue')
 
     while len(tasks_taken) < MAX_CONCURRENT_TASKS or not max_tries:
@@ -232,9 +422,41 @@ def main():
             # tasks have different branches, skip
             continue
         delete_task_from_sqs(queue)
-        task = ScrapyTask(task_data)
+        task = ScrapyTask(task_data, listener)
         tasks_taken.append(task)
 
-    # run multiprocess connection to listen for signals on some port
-    # in separate thread
-    # tasks_taken[N].listen
+
+def main_test():
+    cmd = ('cd /home/user/projects/tmtext/product-ranking && '
+           '. ../../venv-tm/bin/activate && '
+           'scrapy crawl amazon_products -a quantity=1 '
+           '-a searchterms_str="iphone" -o ~/22.csv '
+           '-s LOG_FILE=/tmp/tmp.log -s WITH_SIGNALS=1')
+    cmd2 = ('cd /home/user/projects/tmtext/product-ranking && '
+           '. ../../venv-tm/bin/activate && '
+           'scrapy crawl walmart_products -a quantity=1 '
+           '-a searchterms_str="iphone" -o ~/23.csv '
+           '-s LOG_FILE=/tmp/tmp.log -s WITH_SIGNALS=1')
+    cmd3 = ('cd /home/user/projects/tmtext/product-ranking && '
+           '. ../../venv-tm/bin/activate && '
+           'scrapy crawl target_products -a quantity=1 '
+           '-a searchterms_str="iphone" -o ~/24.csv '
+           '-s LOG_FILE=/tmp/tmp.log -s WITH_SIGNALS=1')
+
+    addr = 'localhost', 9080
+    l = Listener(addr)
+    t1 = ScrapyTask({}, l, cmd)
+    t2 = ScrapyTask({}, l, cmd2)
+    t3 = ScrapyTask({}, l, cmd3)
+    if t1.start():
+        print 'run t1'
+        t1.run()
+    if t2.start():
+        print 'run t2'
+        t2.run()
+    if t3.start():
+        print 'run t3'
+        t3.run()
+    l.close()
+
+main_test()

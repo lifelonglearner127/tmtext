@@ -115,6 +115,7 @@ if 'enable_cache' in _args_names:  # for local development purposes only!
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
     HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_cache')
 
+EXTENSIONS['product_ranking.extensions.SignalsExtension'] = 999
 
 try:
     from settings_local import *

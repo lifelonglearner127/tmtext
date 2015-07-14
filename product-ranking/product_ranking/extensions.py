@@ -5,9 +5,11 @@
 import os
 import sys
 import datetime
-
+from multiprocessing.connection import Client
+from socket import error as socket_error
 
 from scrapy import signals
+from scrapy.exceptions import NotConfigured
 from scrapy.xlib.pydispatch import dispatcher
 import boto
 from boto.s3.connection import S3Connection
@@ -33,6 +35,37 @@ except ImportError:
 amazon_public_key = 'AKIAIKTYYIQIZF3RWNRA'
 amazon_secret_key = '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'
 bucket_name = 'spiders-cache'
+
+
+def report_stats(signal_name):
+    """
+    Decorator, which sends signal to the connection
+    with the signal_name as name parameter two times.
+    One before method execution with status 'started'.
+    Second after method execution with status 'closed'
+    :param signal_name: name of the signal
+    """
+    def wrapper(func):
+
+        def send_signal(name, status):
+            data = dict(name=name, status=status)
+            SignalsExtension.CONNECTION.send(data)
+
+        def wrapped(*args, **kwargs):
+            if not SignalsExtension.CONNECTION:
+                return
+            # 1) report signal start
+            send_signal(signal_name, SignalsExtension.STATUS_STARTED)
+            # 2) execute method
+            res = func(*args, **kwargs)
+            # 3) report signal finish
+            send_signal(signal_name, SignalsExtension.STATUS_FINISHED)
+            # 4) return result
+            return res
+
+        return wrapped
+
+    return wrapper
 
 
 def _stats_on_spider_open(spider):
@@ -209,11 +242,55 @@ class S3CacheDownloader(object):
             import time
             time.sleep(0.5)
 
-
     @classmethod
     def from_crawler(cls, crawler):
         return cls(crawler)
 
+
+class SignalsExtension(object):
+
+    STATUS_STARTED = 'opened'
+    STATUS_FINISHED = 'closed'
+    CONNECTION = None
+
+    def __init__(self, crawler):
+        # self.send_finish_signal('script_opened')
+        pass
+
+    def spider_opened(self, spider):
+        self.send_finish_signal('spider_opened')
+
+    def spider_closed(self, spider):
+        self.send_finish_signal('spider_closed')
+        SignalsExtension.CONNECTION.close()
+
+    def send_finish_signal(self, name):
+        print 'Finish signal:', name
+        SignalsExtension.CONNECTION.send(dict(
+            name=name, status=SignalsExtension.STATUS_FINISHED)
+        )
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        if not crawler.settings.getbool('WITH_SIGNALS'):
+            print 'pass signals ext'
+            raise NotConfigured
+        SignalsExtension.create_connection(('localhost', 9080))
+        ext = cls(crawler)
+        crawler.signals.connect(ext.spider_opened, signals.spider_opened)
+        crawler.signals.connect(ext.spider_closed, signals.spider_closed)
+        return ext
+
+    @staticmethod
+    def create_connection(address):
+        print 'create connection'
+        try:
+            # raises after 20 secs of waiting
+            SignalsExtension.CONNECTION = Client(address)
+            print 'connection set'
+        except socket_error:
+            print 'no connection'
+            raise NotConfigured
 
 if __name__ == '__main__':
     from pprint import pprint
