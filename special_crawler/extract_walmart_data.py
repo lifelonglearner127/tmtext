@@ -104,7 +104,6 @@ class WalmartScraper(Scraper):
         self.failure_type = None
 
         self.wv = WalmartVariants()
-        self.walmart_api_json = None
 
     # checks input format
     def check_url_format(self):
@@ -115,34 +114,6 @@ class WalmartScraper(Scraper):
 
         m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
         return not not m
-
-    def get_walmart_api_key(self):
-        try:
-            rest_api_url = "http://restapis.contentanalyticsinc.com:8080/walmartaccounts/?format=json"
-            rest_api_response = requests.get(rest_api_url, auth=('root', 'AR"M2MmQ+}s9\'TgH'))
-            walmart_accounts = json.loads(rest_api_response.json.im_self._content)
-            walmart_accounts = walmart_accounts["results"]
-            accounts_num = len(walmart_accounts)
-            random_index = random.randint(1, accounts_num) - 1
-
-            return walmart_accounts[random_index]["api_key"]
-        except:
-            pass
-
-    def extract_product_json_from_api(self):
-        if not self.walmart_api_json:
-            try:
-                api_key = self.get_walmart_api_key()
-                product_id = self.product_page_url.split('/')[-1]
-
-                #http://api.walmartlabs.com/v1/items/37229319?apiKey=yahac2smt4p4fjhgpz394kbp&format=json
-                walmart_api_url = "http://api.walmartlabs.com/v1/items/%s?apiKey=%s&format=json" % (product_id, api_key)
-                walmart_api_response = requests.get(walmart_api_url)
-                self.walmart_api_json = json.loads(walmart_api_response.content)
-
-                return self.walmart_api_json
-            except:
-                return None
 
     def not_a_product(self):
         """Checks if current page is not a valid product page
@@ -155,7 +126,6 @@ class WalmartScraper(Scraper):
 
         try:
             self.wv.setupCH(self.tree_html)
-            self.extract_product_json_from_api()
         except:
             pass
 
@@ -1050,34 +1020,9 @@ class WalmartScraper(Scraper):
         return self.wv._variants()
 
     def _parent_product_url(self):
-        if "parentItemId" not in self.walmart_api_json:
-            return None
-
-        url = self.product_page_url
-        parent_product_url = url[:url.rfind("/")] + "/" + str(self.walmart_api_json["parentItemId"])
-
-        if parent_product_url == self.product_page_url:
-            return None
-
-        return parent_product_url
+        return None
 
     def _related_product_urls(self):
-        if "variants" not in self.walmart_api_json:
-            return None
-
-        variants_ids = self.walmart_api_json['variants']
-        related_product_urls = []
-        url = self.product_page_url
-
-        for variant_id in variants_ids:
-            related_product_url = url[:url.rfind("/")] + "/" + str(variant_id)
-            related_product_urls.append(related_product_url)
-
-        related_product_urls.remove(self.product_page_url)
-
-        if related_product_urls:
-            return related_product_urls
-
         return None
 
     def _style(self):
@@ -2542,12 +2487,23 @@ class WalmartScraper(Scraper):
             data = item.xpath("./td/text()")
 
             try:
-                key = data[0].strip()
+                key = item.xpath("./td[1]/text()")[0].strip()
+
                 if not key:
                     continue
 
-                absolute_value = data[1].strip()
-                relative_value = data[2].strip()
+                absolute_value = item.xpath("./td[2]/text()")
+                relative_value = item.xpath("./td[3]/text()")
+
+                if absolute_value:
+                    absolute_value = absolute_value[0].strip()
+                else:
+                    absolute_value = ""
+
+                if relative_value:
+                    relative_value = relative_value[0].strip()
+                else:
+                    relative_value = ""
 
                 supplement_table_info.append([data[0], {"absolute": absolute_value, "relative": relative_value}])
             except:

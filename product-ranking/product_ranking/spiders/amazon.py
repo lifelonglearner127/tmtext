@@ -7,6 +7,7 @@ import string
 import re
 from urllib import unquote
 import urlparse
+from datetime import datetime
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -78,6 +79,10 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
     SEARCH_URL = ('http://www.amazon.com/s/ref=nb_sb_noss_1?url=search-alias'
                   '%3Daps&field-keywords={search_term}')
 
+    REVIEW_DATE_URL = 'http://www.amazon.com/ss/customer-reviews/ajax/reviews/'\
+                      'get/ref=cm_cr_pr_viewopt_srt?' \
+                      'sortBy=recent&asin={product_id}'
+
     settings = AmazonValidatorSettings
 
     buyer_reviews_stars = ['one_star', 'two_star', 'three_star', 'four_star',
@@ -131,18 +136,22 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
             new_meta = response.meta.copy()
             new_meta['product'] = prod
+            prod_id = is_empty(re.findall('dp/([a-zA-Z0-9]+)/', response.url))
+            new_meta['product_id'] = prod_id
+
+            if mkt_place_link:
+                new_meta['mkt_place_link'] = mkt_place_link
+
+            if prod['buyer_reviews'] != 0:
+                return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                               meta=new_meta,
+                               dont_filter=True,
+                               callback=self.get_last_buyer_review_date)
+
             if isinstance(prod["buyer_reviews"], Request):
                 if mkt_place_link:
                     new_meta["mkt_place_link"] = mkt_place_link
-                return prod["buyer_reviews"].replace(meta=new_meta,dont_filter=True)
-
-            if mkt_place_link:
-                return Request(
-                    url=mkt_place_link, 
-                    callback=self.parse_marketplace,
-                    meta=new_meta,
-                    dont_filter=True
-                )
+                return prod["buyer_reviews"].replace(meta=new_meta, dont_filter=True)
 
             result = prod
 
@@ -231,7 +240,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
             product['department'] = None
         else:
             product['department'], product['bestseller_rank'] \
-                = department.items()[0]     
+                = department.items()[0]
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
@@ -449,10 +458,12 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
     def get_buyer_reviews_from_2nd_page(self, response):
         if self._has_captcha(response):
             return self._handle_captcha(
-                response, 
+                response,
                 self.get_buyer_reviews_from_2nd_page
             )
         product = response.meta["product"]
+        prod_id = response.meta["product_id"]
+
         buyer_reviews = {}
         product["buyer_reviews"] = {}
         buyer_reviews["num_of_reviews"] = is_empty(response.xpath(
@@ -481,16 +492,13 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
-        meta = {"product": product}
-        mkt_place_link = response.meta.get("mkt_place_link", None)
-        if mkt_place_link:
-            return Request(
-                url=mkt_place_link, 
-                callback=self.parse_marketplace,
-                meta=meta,
-                dont_filter=True
-            )
-
+        meta = response.meta.copy()
+        meta['product'] = product
+        if product['buyer_reviews'] != 0:
+                return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                               meta=meta,
+                               dont_filter=True,
+                               callback=self.get_last_buyer_review_date)
         return product
 
     def _build_buyer_reviews(self, response):
@@ -514,7 +522,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                 '//div[@id="acr"]/div[@class="txtsmall"]'
                 '/div[contains(@class, "acrRating")]/text()'
             )
-        average = average.extract()[0].replace('out of 5 stars','')
+        average = average.extract()[0].replace('out of 5 stars', '')
         buyer_reviews['average_rating'] = float(average)
 
         buyer_reviews['rating_by_star'] = {}
@@ -529,7 +537,8 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
             ).extract())
             buyer_rev_req = Request(
                 url=buyer_rev_link,
-                callback=self.get_buyer_reviews_from_2nd_page
+                callback=self.get_buyer_reviews_from_2nd_page,
+                meta=response.meta.copy()
             )
             # now we can safely return Request
             #  because it'll be re-crawled in the `parse_product` method
@@ -745,8 +754,34 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
     def mkt_request(self, link, meta):
         return Request(
-            url=link, 
+            url=link,
             callback=self.parse_marketplace,
             meta=meta,
             dont_filter=True
         )
+
+    def get_last_buyer_review_date(self, response):
+        product = response.meta['product']
+        date = is_empty(response.xpath(
+            '//span[contains(@class, "review-date")]/text()'
+        ).extract())
+        if date:
+            d = datetime.strptime(date, 'on %B %d, %Y')
+            date = d.strftime('%d/%m/%Y')
+            product['last_buyer_review_date'] = date
+
+        new_meta = response.meta.copy()
+        new_meta['product'] = product
+
+        if isinstance(product["buyer_reviews"], Request):
+            return product["buyer_reviews"].replace(meta=new_meta, dont_filter=True)
+
+        if 'mkt_place_link' in response.meta.keys():
+                return Request(
+                    url=response.meta['mkt_place_link'],
+                    callback=self.parse_marketplace,
+                    meta=new_meta,
+                    dont_filter=True
+                )
+
+        return product
