@@ -92,7 +92,7 @@ class WalmartCAScraper(Scraper):
         feature_list = []
 
         for index, feature_name in enumerate(feature_name_list):
-            feature_list.append(feature_name.text_content() + " " + feature_value_list[index].text_content())
+            feature_list.append(feature_name.text_content().strip() + " " + feature_value_list[index].text_content().strip())
 
         if not feature_list:
             return None
@@ -108,14 +108,14 @@ class WalmartCAScraper(Scraper):
         return len(features)
 
     def _description(self):
-        return self.tree_html.xpath("//div[@itemprop='description']/div[contains(@class, 'description')]")[0].text_content()
+        return self.tree_html.xpath("//div[@itemprop='description']/div[contains(@class, 'description')]")[0].text_content().strip()
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        return self.tree_html.xpath("//div[@itemprop='description']/div[contains(@class, 'bullets')]")[0].text_content()
+        return self.tree_html.xpath("//div[@itemprop='description']/div[contains(@class, 'bullets')]")[0].text_content().strip()
 
     def _ingredients(self):
         return None
@@ -136,7 +136,13 @@ class WalmartCAScraper(Scraper):
         slider_images = self.tree_html.xpath("//div[@id='carousel']//ul[@class='slides']//img/@src")
 
         if slider_images:
-           return slider_images
+            for index, image in enumerate(slider_images):
+                if image.startswith("http:") or image.startswith("https:"):
+                    continue
+
+                slider_images[index] = "http:" + image
+
+            return slider_images
 
         main_image = self.tree_html.xpath("//div[@id='product-images']//div[@class='centered-img-wrap']//img/@src")
 
@@ -200,12 +206,21 @@ class WalmartCAScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        average_review = float(self.tree_html.xpath("//span[@class='bv-secondary-rating-summary-rating']/text()")[0].strip())
+        average_review = float(self.tree_html.xpath("//span[@itemprop='ratingValue']/text()")[0])
+
+        if average_review.is_integer():
+            average_review = int(average_review)
+        else:
+            average_review = float(average_review)
 
         return average_review
 
     def _review_count(self):
-        return 0
+        review_count = self.tree_html.xpath("//button[@data-analytics-type='product-reviews']/@data-analytics-value")[0]
+        review_count = [int(s) for s in review_count.split() if s.isdigit()]
+        review_count = review_count[0]
+
+        return review_count
 
     def _max_review(self):
         return None
@@ -220,27 +235,27 @@ class WalmartCAScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return None
+        return self.tree_html.xpath("//span[@itemprop='price']/text()")[0]
 
     def _price_amount(self):
-        return None
+        return float(self.tree_html.xpath("//span[@itemprop='price']/text()")[0][1:])
 
     def _price_currency(self):
-        return None
-
-    def _owned(self):
-        return 0
-
-    def _marketplace(self):
-        return 0
+        return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
 
     def _site_online(self):
-        return 0
+        return 1
 
     def _in_stores(self):
-        return 0
+        if "sorry, this item is currently not available in stores." in html.tostring(self.tree_html).lower():
+            return 0
+
+        return 1
 
     def _site_online_out_of_stock(self):
+        if "out of stock online" in html.tostring(self.tree_html).lower():
+            return 1
+
         return 0
 
     def _marketplace_sellers(self):
@@ -249,17 +264,24 @@ class WalmartCAScraper(Scraper):
     def _marketplace_out_of_stock(self):
         return 0
 
+    def _marketplace(self):
+        return 0
+
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return None
+        categories = self.tree_html.xpath("//nav[@id='breadcrumb']/ul/li//span[@itemprop='title']/text()")
+
+        return categories[1:]
 
     def _category_name(self):
-        return None
+        categories = self.tree_html.xpath("//nav[@id='breadcrumb']/ul/li//span[@itemprop='title']/text()")
+
+        return categories[-1].strip()
 
     def _brand(self):
-        return None
+        return self.tree_html.xpath("//span[@itemprop='brand']/text()")[0].strip()
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -319,7 +341,6 @@ class WalmartCAScraper(Scraper):
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
-        "owned" : _owned, \
         "marketplace" : _marketplace, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
