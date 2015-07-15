@@ -13,11 +13,11 @@ from datetime import datetime
 import lxml.html
 import urllib
 
-from ghost import Ghost
-
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
+from scrapy import signals
+from scrapy.xlib.pydispatch import dispatcher
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
@@ -27,6 +27,12 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
 from spiders_shared_code.walmart_variants import WalmartVariants
+
+from selenium import selenium
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 is_empty = lambda x, y="": x[0] if x else y
@@ -421,15 +427,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             product['price'] = None
 
         # Get related products
-        ghost = Ghost()
-        result, resources = ghost.wait_for_selector(".spotlightType-products "
-                                                    "[aria-label='Featured Products: Featured Products']")
 
-        print('='*50)
-        print result
-        print('='*50)
-        print resources
-        print('='*50)
         related_prod_sections = response.css(".spotlightType-products"
                                              "[aria-label='Featured Products: Featured Products']")
 
@@ -450,6 +448,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             product['related_products'] = related_products
         else:
             product['related_products'] = None
+
+        # Get department
+        department_list = response.css('#breadcrumb li[itemscope] span[itemprop="title"]::text')
+
+        if department_list:
+            department = department_list[-1].extract()
+            product['department'] = department
 
         if reqs:
             return self.send_next_request(reqs, response)
