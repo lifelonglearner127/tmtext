@@ -226,10 +226,6 @@ class TescoDirectProductsSpider(BaseProductsSpider):
         product = response.meta["product"]
         product["total_matches"] = self.tot_matches
 
-        fl=open('file.html', 'w')
-        fl.write(response.body)
-        fl.close()
-
         title = response.xpath(
             '//h1[@class="page-title"]/text()').extract()
         title = _strip_non_ascii(title[0]) if title else ''
