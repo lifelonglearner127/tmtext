@@ -86,7 +86,6 @@ class Scraper():
             "supplement_fact_text_health",
             "rollback", # binary (0/1), whether product is rollback or not
             "variants", # list of variants
-            "parent_product_url",
             "related_products_urls",
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
@@ -195,7 +194,7 @@ class Scraper():
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "variants", "parent_product_url", "related_products_urls"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "variants", "related_products_urls"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock", \

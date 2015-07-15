@@ -1019,10 +1019,36 @@ class WalmartScraper(Scraper):
     def _variants(self):
         return self.wv._variants()
 
-    def _parent_product_url(self):
-        return None
-
     def _related_product_urls(self):
+        page_raw_text = lxml.html.tostring(self.tree_html)
+        startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
+
+        if startIndex == -1:
+            return None
+
+        endIndex = page_raw_text.find(',"primaryProductId":', startIndex)
+
+        json_text = page_raw_text[startIndex:endIndex]
+        variants_json = json.loads(json_text)
+        item_id_list = []
+
+        for item in variants_json:
+            item_id_list.append(item["buyingOptions"]["usItemId"])
+
+        item_id_list = list(set(item_id_list))
+
+        related_product_urls = []
+        url = self.product_page_url
+
+        for variant_id in item_id_list:
+            related_product_url = url[:url.rfind("/")] + "/" + str(variant_id)
+            related_product_urls.append(related_product_url)
+
+        related_product_urls.remove(self.product_page_url)
+
+        if related_product_urls:
+            return related_product_urls
+
         return None
 
     def _style(self):
@@ -2588,7 +2614,6 @@ class WalmartScraper(Scraper):
         "long_description": _long_description_wrapper, \
         "shelf_description": _shelf_description, \
         "variants": _variants, \
-        "parent_product_url":  _parent_product_url, \
         "related_products_urls":  _related_product_urls, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
