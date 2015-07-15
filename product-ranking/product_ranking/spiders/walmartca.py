@@ -13,6 +13,8 @@ from datetime import datetime
 import lxml.html
 import urllib
 
+from ghost import Ghost
+
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
@@ -324,6 +326,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             answer_data = answer_data.get('Answers')
         questions = []
 
+        # TODO: handle exceptions
         for question in question_data:
             question_info = dict()
 
@@ -418,6 +421,15 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             product['price'] = None
 
         # Get related products
+        ghost = Ghost()
+        result, resources = ghost.wait_for_selector(".spotlightType-products "
+                                                    "[aria-label='Featured Products: Featured Products']")
+
+        print('='*50)
+        print result
+        print('='*50)
+        print resources
+        print('='*50)
         related_prod_sections = response.css(".spotlightType-products"
                                              "[aria-label='Featured Products: Featured Products']")
 
@@ -455,6 +467,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             print len(rel_prod)
             print('-'*50)
 
+            # TODO: rewrite selectors
             for product in rel_prod:
                 selector = Selector(text=product)
 
