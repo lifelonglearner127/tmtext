@@ -28,13 +28,6 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
 from product_ranking.validation import BaseValidator
 from spiders_shared_code.walmart_variants import WalmartVariants
 
-from selenium import selenium
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
-
 is_empty = lambda x, y="": x[0] if x else y
 
 
@@ -193,26 +186,12 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             callback=self._parse_product_info
         ))
 
-        # in_stock_url = self.IN_STOCK_URL.format(product_id=str(int(response.meta['product_id'])+1))
-        # reqs.append(Request(
-        #     url=in_stock_url,
-        #     meta=meta,
-        #     callback=self._parse_stock_shipping_info
-        # ))
-
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
 
     def _parse_single_product(self, response):
-        print('-'*50)
-        for section in response.css('section[aria-label="Featured Products: Featured Products"]').extract():
-            sel = Selector(text=section)
-            text = sel.xpath('//h2/text()').extract()
-            # if sel.xpath('//h2') == 'People who bought this item also bought':
-            print text
-        print('-'*50)
         return self.parse_product(response)
 
     def send_next_request(self, reqs, response):
@@ -242,32 +221,19 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         try:
             main_info = data['BatchedResults']['q0']['Results'][0]
 
-            # Set brand
-            # try:
-            #     brand = main_info['Brand']['Name']
-            #     cond_set_value(product, 'brand', brand)
-            # except (ValueError, KeyError):
-            #     self.log("Impossible to get brand - %r" % response.url, WARNING)
-            #
-            # No brand
-            # if not product.get("brand"):
-            #     brand = product.get("title")
-            #     cond_set(
-            #         product, 'brand', (guess_brand_from_first_words(brand.strip()),)
-            #     )
-
             # Set description
-            try:
-                description = main_info['Description']
-                cond_set_value(product, 'description', description)
-            except (ValueError, KeyError):
-                cond_set_value(product, 'description', None)
-                self.log("Impossible to get description - %r" % response.url, WARNING)
+            # try:
+            #     description = main_info['Description']
+            #     cond_set_value(product, 'description', description)
+            # except (ValueError, KeyError):
+            #     cond_set_value(product, 'description', None)
+            #     self.log("Impossible to get description - %r" % response.url, WARNING)
 
             # Set buyer reviews info
             self._build_buyer_reviews(main_info['ReviewStatistics'], response)
 
         except:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             self.log("Impossible to get product info - %r" % response.url, WARNING)
 
         # Get QA statistics
@@ -392,7 +358,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         Gets data straight from html body
         """
 
-        meta = response.meta.copy()
         reqs = response.meta.get('reqs', [])
 
         # Set product url
@@ -405,13 +370,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         if title:
             title = Selector(text=title).xpath('string()').extract()
             product["title"] = is_empty(title, "").strip()
-
-        # Get model
-        # model = response.css("#productSpecs .specGroup span[@itemprop='model']::text")
-        # print '-----------------------------------------'
-        # print model
-        # if model:
-        #     product["model"] = model.strip()
 
         # Get price
         price = response.css('.pricing-shipping .microdata-price [itemprop="price"]::text')
@@ -426,8 +384,15 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             product['price'] = None
 
-        # Get related products
+        # Get description
+        desc = response.css(
+            '.productDescription [itemprop="description"]'
+        )
+        if desc:
+            description = desc.extract()
+            product["description"] = is_empty(description, "").strip()
 
+        # Get related products
         related_prod_sections = response.css(".spotlightType-products"
                                              "[aria-label='Featured Products: Featured Products']")
 
@@ -601,36 +566,8 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             self.log("No JS for product image matched in %r." % response.url, WARNING)
 
-        # in_stock_url = self.IN_STOCK_URL.format(product_id=str(int(response.meta['product_id'])+1))
-        # reqs.append(Request(
-        #     url=in_stock_url,
-        #     meta=meta,
-        #     callback=self._parse_stock_shipping_info
-        # ))
-
         if reqs:
             return self.send_next_request(reqs, response)
-
-        return product
-
-    def _parse_stock_shipping_info(self, response):
-        """
-        Gets in_stock value for product
-        """
-
-        meta = response.meta.copy()
-        product = meta.get('product')
-        product_id = product['product_id']
-
-        data = json.loads(response.body_as_unicode())
-
-        # try:
-        #     in_stock = data['in_stock'][product_id]
-        #     if in_stock is None:
-        #         in_stock = False
-        #     return in_stock
-        # except:
-        #     self.log("Impossible to get in_stock for product - %r." % response.url, WARNING)
 
         return product
 
