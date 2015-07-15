@@ -141,6 +141,16 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                                meta=new_meta,
                                dont_filter=True,
                                callback=self.get_last_buyer_review_date)
+            else:
+                if mkt_place_link:
+                    result = Request(
+                        url=new_meta['mkt_place_link'],
+                        callback=self.parse_marketplace,
+                        meta=new_meta,
+                        dont_filter=True
+                    )
+                else:
+                    cond_set_value(prod, 'marketplace', [])
             result = prod
 
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
