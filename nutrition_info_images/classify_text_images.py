@@ -8,6 +8,7 @@ import cv2.cv as cv
 import urllib2
 from numpy import array as nparray, median as npmedian
 from sklearn.externals import joblib
+from extract_text import extract_text
 
 # toggle between CV_HOUGH_STANDARD and CV_HOUGH_PROBILISTIC
 USE_STANDARD = False
@@ -410,6 +411,28 @@ def classifier_predict_one(image_url, clf=None):
         is_url = False
     predicted = predict_one(image_url, clf, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=is_url)
     return predicted[0]
+
+def predict_textimage_type(image_url):
+    '''Decides if text image is nutrition facts image,
+    drug facts image or supplement facts image,
+    by trying to extract the text in the image
+    Returns one of 4 values (strings):
+    nutrition_facts, drug_facts, supplement_facts, 
+    or None if type could not be determined
+    '''
+
+    text = extract_text(image_url, is_url=True)
+
+    if 'nutrition' in text.lower().split():
+        return "nutrition_facts"
+
+    if 'drug' in text.lower().split():
+        return "drug_facts"
+
+    if 'supplement' in text.lower().split():
+        return "supplement_facts"
+
+    return None
 
 def cross_validate(test_set, folds=10):
     '''Validates the classifier by using 10-fold cross-validation.
