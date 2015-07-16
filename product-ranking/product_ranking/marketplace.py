@@ -239,11 +239,11 @@ class Amazon_marketplace(object):
 
         path_to = os.path.dirname(os.path.abspath(__file__))
 
-        new_img_dir = path_to + "/../" + self.IMG_FOLDER
+        new_img_dir = os.path.dirname(self.NEW_IMG_FOLDER)
         if not os.path.exists(new_img_dir):
             os.makedirs(new_img_dir)
 
-        old_img_dir = path_to + "/../" + self.NEW_IMG_FOLDER
+        old_img_dir = os.path.dirname(self.IMG_FOLDER)
         if not os.path.exists(old_img_dir):
             os.makedirs(old_img_dir)
 
@@ -252,8 +252,8 @@ class Amazon_marketplace(object):
                 cr["name"] = self.set_seller_amazon()
 
                 os.rename(
-                    old_img_dir + file_name,
-                    new_img_dir + file_name
+                    path_to + old_img_dir + file_name,
+                    path_to + new_img_dir + file_name
                 )
 
         if isfile(new_img_dir + file_name):
