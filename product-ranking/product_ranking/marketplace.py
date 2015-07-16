@@ -242,7 +242,7 @@ class Amazon_marketplace(object):
         ) + '/'
 
         if not is_already_have:
-            if "amazon" in self.get_image_text(path_to + file_path):
+            if "amazon" in self.get_image_text(file_path):
                 cr["name"] = self.set_seller_amazon()
                 os.rename(
                     path_to + self.NEW_IMG_FOLDER + file_name,
