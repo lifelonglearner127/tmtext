@@ -241,22 +241,16 @@ class Amazon_marketplace(object):
             os.path.dirname(os.path.abspath(__file__))
         ) + '/'
 
-        print('*'*50)
-        print(path_to + self.NEW_IMG_FOLDER + file_name)
-        print('*'*50)
-
         if not is_already_have:
             if "amazon" in self.get_image_text(file_path):
                 cr["name"] = self.set_seller_amazon()
-                import pdb
-                pdb.set_trace()
                 os.rename(
                     self.NEW_IMG_FOLDER + file_name,
                     self.IMG_FOLDER + file_name
                 )
 
-        # if isfile(path_to + self.NEW_IMG_FOLDER + file_name):
-        #     os.remove(path_to + self.NEW_IMG_FOLDER + file_name)
+        if isfile(path_to + self.NEW_IMG_FOLDER + file_name):
+            os.remove(path_to + self.NEW_IMG_FOLDER + file_name)
  
         if not cr.get("name"):
             cr["name"] = []
