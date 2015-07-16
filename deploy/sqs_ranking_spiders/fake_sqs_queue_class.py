@@ -6,3 +6,6 @@ class SQS_Queue():
 
     def task_done(self):
         pass
+
+    def reset_message(self):
+        pass
