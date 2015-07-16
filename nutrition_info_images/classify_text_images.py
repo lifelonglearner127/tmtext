@@ -123,6 +123,7 @@ def extract_features(filename, is_url=False):
             # print abs(verticals[i] - verticals[i-1])
             differences.append(abs(verticals[i] - verticals[i-1]))
 
+    print filename
     print "average_slope:", average_slope
     print "median_slope:", median_slope
     print "average_tilt:", average_tilt
@@ -285,7 +286,7 @@ def read_images_set(path="nutrition_images_training.csv"):
     labels = []
     names = []
     with open(path) as f:
-        reader = csv.reader(f, delimiter=',')
+        reader = csv.reader(f, delimiter=',', quotechar='"')
         # omit headers
         f.readline()
         for row in reader:
@@ -361,18 +362,21 @@ def classifier_main():
     # trained, clf = train(training_set1, serialize_file="serialized_classifier/nutrition_image_classifier.pkl")
 
     screenshots_set = read_images_set_from_screenshots()
-    goodq_set = read_images_set("nutrition_images_goodq.csv") 
+    goodq_set = read_images_set("nutrition_images_goodq.csv")
+    drug_and_supplement_set = read_images_set("drug_images_training.csv")
     training_set2 = [l[:100] for l in screenshots_set]
     training_set3 = [l[:20] for l in goodq_set]
+    training_set4 = drug_and_supplement_set
 
-    training_set = [l[0]+l[1] for l in zip(training_set1,training_set2)]
+    training_set = [l[0]+l[1] for l in zip(training_set1,training_set4)]
 
     trained, clf = train(training_set, serialize_file="serialized_classifier/nutrition_image_classifier.pkl")
 
     test_set1 = read_images_set("nutrition_images_test.csv")
     test_set2 = [l[100:] for l in screenshots_set]
     test_set3 = [l[20:] for l in goodq_set]
-    test_set = [l[0]+l[1] for l in zip(test_set1,test_set2)]
+    test_set4 = read_images_set("drug_images_test.csv")
+    test_set = [l[0]+l[1] for l in zip(test_set1,test_set4)]
 
     imgs, examples, labels = test_set
     nr_predicted = 0
