@@ -250,7 +250,7 @@ class Amazon_marketplace(object):
                 )
 
         if isfile(path_to + self.NEW_IMG_FOLDER + file_name):
-            os.remove(path_to + self.NEW_IMG_FOLDER + file_name)
+            os.remove(self.NEW_IMG_FOLDER + file_name)
  
         if not cr.get("name"):
             cr["name"] = []
