@@ -237,27 +237,20 @@ class Amazon_marketplace(object):
                 is_already_have = True
                 break
 
-        path_to = os.path.dirname(os.path.abspath(__file__))
-
-        new_img_dir = os.path.dirname(self.NEW_IMG_FOLDER)
-        if not os.path.exists(new_img_dir):
-            os.makedirs(new_img_dir)
-
-        old_img_dir = os.path.dirname(self.IMG_FOLDER)
-        if not os.path.exists(old_img_dir):
-            os.makedirs(old_img_dir)
+        path_to = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))
+        ) + '/'
 
         if not is_already_have:
-            if "amazon" in self.get_image_text(file_path):
+            if "amazon" in self.get_image_text(path_to + file_path):
                 cr["name"] = self.set_seller_amazon()
-
                 os.rename(
-                    path_to + old_img_dir + file_name,
-                    path_to + new_img_dir + file_name
+                    path_to + self.NEW_IMG_FOLDER + file_name,
+                    path_to + self.IMG_FOLDER + file_name
                 )
 
-        if isfile(new_img_dir + file_name):
-            os.remove(new_img_dir + file_name)
+        if isfile(path_to + "/../" + self.NEW_IMG_FOLDER + file_name):
+            os.remove(path_to + "/../" + self.NEW_IMG_FOLDER + file_name)
  
         if not cr.get("name"):
             cr["name"] = []
