@@ -257,6 +257,12 @@ class SignalsExtension(object):
         # self.send_finish_signal('script_opened')
         pass
 
+    def item_scraped(self, item, spider):
+        SignalsExtension.CONNECTION.send(dict(name='item_scraped'))
+
+    def spider_error(self, failure, response, spider):
+        SignalsExtension.CONNECTION.send(dict(name='spider_error'))
+
     def spider_opened(self, spider):
         self.send_finish_signal('spider_opened')
 
@@ -265,20 +271,24 @@ class SignalsExtension(object):
         SignalsExtension.CONNECTION.close()
 
     def send_finish_signal(self, name):
-        print 'Finish signal:', name
-        SignalsExtension.CONNECTION.send(dict(
-            name=name, status=SignalsExtension.STATUS_FINISHED)
-        )
+        if not SignalsExtension.CONNECTION:
+            print 'Finish signal:', name
+        else:
+            SignalsExtension.CONNECTION.send(dict(
+                name=name, status=SignalsExtension.STATUS_FINISHED)
+            )
 
     @classmethod
     def from_crawler(cls, crawler):
         if not crawler.settings.getbool('WITH_SIGNALS'):
             print 'pass signals ext'
             raise NotConfigured
-        SignalsExtension.create_connection(('localhost', 9080))
+        SignalsExtension.create_connection(('localhost', 9070))
         ext = cls(crawler)
         crawler.signals.connect(ext.spider_opened, signals.spider_opened)
         crawler.signals.connect(ext.spider_closed, signals.spider_closed)
+        crawler.signals.connect(ext.item_scraped, signals.item_scraped)
+        crawler.signals.connect(ext.spider_error, signals.spider_error)
         return ext
 
     @staticmethod
