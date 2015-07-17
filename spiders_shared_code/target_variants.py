@@ -18,8 +18,8 @@ class TargetVariants(object):
         try:
             variation_combinations_values = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
 
-            if self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'Target.globals.refreshItems =')]/text()"):
-                stockstatus_for_variation_combinations = self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'Target.globals.refreshItems =')]/text()")[0]
+            if self.tree_html.xpath("//script[@type='text/blzscript' and contains(text(), 'Target.globals.refreshItems =')]/text()"):
+                stockstatus_for_variation_combinations = self.tree_html.xpath("//script[@type='text/blzscript' and contains(text(), 'Target.globals.refreshItems =')]/text()")[0]
                 start_index = stockstatus_for_variation_combinations.find("Target.globals.refreshItems =") + len("Target.globals.refreshItems =")
                 stockstatus_for_variation_combinations = stockstatus_for_variation_combinations[start_index:]
                 stockstatus_for_variation_combinations = json.loads(stockstatus_for_variation_combinations)

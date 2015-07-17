@@ -177,6 +177,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                           meta={'product': prod},
                           dont_filter=True)
 
+        base_class = super(WalmartProductsSpider, self)
+        if hasattr(base_class, 'start_requests'):
+            for _r in base_class.start_requests():
+                try:
+                    yield _r
+                except Exception as e:
+                    pass  # do nothing on error?
+
     def get_sponsored_links(self, response):
         self.reql = []
         self.sponsored_links = []

@@ -95,35 +95,54 @@ def check_is_scrapy_daemon_not_running(ssh_key, inst_ip):
 
 
 def check_logs_status(file_path):
+    # if os.path.getsize(file_path) > 3072:
+    #     try:
+    #         f = open(file_path,'r')
+    #     except IOError:
+    #         return flag, reason # error - can't open the log file
+    #     else:
+    #         f.seek(0, 2)
+    #         fsize = f.tell()
+    #         f.seek(max(fsize-3072, 0), 0)
+    #         lines = f.readlines()
+    #         f.close()
+    #         for line in lines:
+    #             if 'Spider default output:' in line or \
+    #                     'Simmetrica events have been pushed...' in line:
+    #                 reason = "Task was finished"
+    #                 flag = True
+    #             elif 'Spider failed to start.' in line:
+    #                 reason = "Spider failed to start"
+    #                 flag = True
+    #         if fsize > 8000:
+    #             m1 = 'No any task messages were found at the queue'
+    #             m2 = 'Try to get task message from queue'
+    #             if m1 in lines[-1] and m2 in lines[-2]:
+    #                 reason = "No any tasks were received for long time"
+    #                 flag = True
+    # else:
+    #     reason = "No logs exist"
+    #     flag = True
     flag = False
     reason = ''
-    if os.path.getsize(file_path) > 3072:
-        try:
-            f = open(file_path,'r')
-        except IOError:
-            return flag, reason # error - can't open the log file
-        else:
-            f.seek(0, 2)
-            fsize = f.tell()
-            f.seek(max(fsize-3072, 0), 0)
-            lines = f.readlines()
-            f.close()
-            for line in lines:
-                if 'Spider default output:' in line or \
-                        'Simmetrica events have been pushed...' in line:
-                    reason = "Task was finished"
-                    flag = True
-                elif 'Spider failed to start.' in line:
-                    reason = "Spider failed to start"
-                    flag = True
-            if fsize > 8000:
-                m1 = 'No any task messages were found at the queue'
-                m2 = 'Try to get task message from queue'
-                if m1 in lines[-1] and m2 in lines[-2]:
-                    reason = "No any tasks were received for long time"
-                    flag = True
+    try:
+        f = open(file_path)
+    except IOError:
+        return flag, reason
+    last_lines = f.readlines()[-20:]  # read last lines
+    end_marker_ok = 'Scrapy daemon finished'
+    end_marker_fail = 'Finished with error'
+    for line in last_lines:
+        if end_marker_ok in line:
+            flag = True
+            reason = 'Task was finished'
+            break
+        elif end_marker_fail in line:
+            flag = True
+            reason = 'Task failed with errors'
+            break
     else:
-        reason = "No logs exist"
+        reason = 'No logs exist'
         flag = True
     return flag, reason
 
@@ -167,7 +186,7 @@ def stop_if_required(inst_ip, inst_id):
     if flag:
         if reason == 'No logs exist':
             return True
-        if reason == 'Task was finished':
+        if reason in ['Task was finished', 'Task failed with errors']:
             time.sleep(30)
         teminate_instance_and_log_it(inst_ip, inst_id, reason)
     else:

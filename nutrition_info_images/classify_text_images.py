@@ -123,6 +123,7 @@ def extract_features(filename, is_url=False):
             # print abs(verticals[i] - verticals[i-1])
             differences.append(abs(verticals[i] - verticals[i-1]))
 
+    print filename
     print "average_slope:", average_slope
     print "median_slope:", median_slope
     print "average_tilt:", average_tilt
@@ -225,19 +226,22 @@ def get_examples_from_screenshots():
 
 
 def get_examples_from_files():
-    examples_file = '/home/ana/code/tmtext/nutrition_info_images/nutrition_images_training.csv'
+    files = ['/home/ana/code/tmtext/nutrition_info_images/nutrition_images_training.csv',
+                '/home/ana/code/tmtext/nutrition_info_images/drug_images_training.csv',
+                '/home/ana/code/tmtext/nutrition_info_images/nutrition_images_test.csv']
     examples = []
-    with open(examples_file) as f:
-        # skip headers line
-        f.readline()
-        ireader = csv.reader(f)
-        for row in ireader:
-            label_raw = row[1]
-            image = row[0]
-            label = 'TP' if label_raw == '1' else 'TN'
-            average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = extract_features(image, is_url=True)
-            example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
-            examples.append(example)
+    for examples_file in files:
+        with open(examples_file) as f:
+            # skip headers line
+            f.readline()
+            ireader = csv.reader(f)
+            for row in ireader:
+                label_raw = row[1]
+                image = row[0]
+                label = 'TP' if label_raw == '1' else 'TN'
+                average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = extract_features(image, is_url=True)
+                example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
+                examples.append(example)
     return examples
 
 
@@ -282,7 +286,7 @@ def read_images_set(path="nutrition_images_training.csv"):
     labels = []
     names = []
     with open(path) as f:
-        reader = csv.reader(f, delimiter=',')
+        reader = csv.reader(f, delimiter=',', quotechar='"')
         # omit headers
         f.readline()
         for row in reader:
@@ -358,18 +362,21 @@ def classifier_main():
     # trained, clf = train(training_set1, serialize_file="serialized_classifier/nutrition_image_classifier.pkl")
 
     screenshots_set = read_images_set_from_screenshots()
-    goodq_set = read_images_set("nutrition_images_goodq.csv") 
+    goodq_set = read_images_set("nutrition_images_goodq.csv")
+    drug_and_supplement_set = read_images_set("drug_images_training.csv")
     training_set2 = [l[:100] for l in screenshots_set]
     training_set3 = [l[:20] for l in goodq_set]
+    training_set4 = drug_and_supplement_set
 
-    training_set = [l[0]+l[1] for l in zip(training_set1,training_set2)]
+    training_set = [l[0]+l[1] for l in zip(training_set1,training_set4)]
 
     trained, clf = train(training_set, serialize_file="serialized_classifier/nutrition_image_classifier.pkl")
 
     test_set1 = read_images_set("nutrition_images_test.csv")
     test_set2 = [l[100:] for l in screenshots_set]
     test_set3 = [l[20:] for l in goodq_set]
-    test_set = [l[0]+l[1] for l in zip(test_set1,test_set2)]
+    test_set4 = read_images_set("drug_images_test.csv")
+    test_set = [l[0]+l[1] for l in zip(test_set1,test_set4)]
 
     imgs, examples, labels = test_set
     nr_predicted = 0
@@ -494,11 +501,14 @@ def cross_validate(test_set, folds=10):
 if __name__ == '__main__':
     # extract_features_main()
     if len(sys.argv) <= 1:
-        # classifier_main()
-        in_set1 = read_images_set("nutrition_images_training.csv")
-        in_set2 = read_images_set("nutrition_images_test.csv")
-        in_set3 = read_images_set("nutrition_images_goodq.csv")
-        in_set = [l[0]+l[1]+l[2] for l in zip(in_set1,in_set2,in_set3)]
-        print cross_validate(in_set, 100)
+        classifier_main()
+        # 
+        # # cross-validate
+        # in_set1 = read_images_set("nutrition_images_training.csv")
+        # in_set2 = read_images_set("nutrition_images_test.csv")
+        # in_set3 = read_images_set("nutrition_images_goodq.csv")
+        # in_set4 = read_images_set("drug_images_training.csv")
+        # in_set = [l[0]+l[1]+l[2]+l[3] for l in zip(in_set1,in_set2,in_set3,in_set4)]
+        # print cross_validate(in_set, 418)
     else:
         print classifier_predict_one(sys.argv[1])

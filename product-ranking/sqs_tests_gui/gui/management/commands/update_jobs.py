@@ -94,7 +94,7 @@ class Command(BaseCommand):
     help = 'Updates 10 random jobs, downloading their files if ready'
 
     def handle(self, *args, **options):
-        if num_of_running_instances('update_jobs.py') > 1:
+        if num_of_running_instances('update_jobs') > 1:
             print 'an instance of the script is already running...'
             sys.exit()
         jobs = Job.objects.filter(

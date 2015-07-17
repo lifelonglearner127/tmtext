@@ -3,9 +3,15 @@
 
 import os
 import sys
+import random
 
 
 main_folder = os.path.expanduser('~/repo/')
+INSTALL_PACKAGES = [
+    'Pillow', 'pytesseract', 'requests', 'tldextract', 'boto', 's3peat',
+    'workerpool', 'sqlalchemy', 'psycopg2'
+]
+
 
 def can_run():
     if os.path.exists(os.path.join(main_folder,
@@ -45,10 +51,8 @@ def main():
     f.close()
     # put anything you want here...
     # add new PIP packages
-    _install_pip_package('Pillow')
-    _install_pip_package('pytesseract')
-    _install_pip_package('requests')
-    _install_pip_package('tldextract')
+    for package in INSTALL_PACKAGES:
+        _install_pip_package(package)
 
 
 if __name__ == '__main__':
@@ -57,7 +61,9 @@ if __name__ == '__main__':
         _create_http_proxies_list(fpath=http_proxy_path)
 
     if not can_run():
-        sys.exit()
+        for package in INSTALL_PACKAGES:
+            _install_pip_package(package)
+            sys.exit()
 
     main()
     mark_as_finished()
