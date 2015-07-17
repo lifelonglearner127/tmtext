@@ -228,6 +228,7 @@ def setup_packages():
     cuisine.package_ensure('git')
     cuisine.package_ensure('tmux')
     cuisine.package_ensure('mc htop iotop nano')  # just for convenience
+    cuisine.package_ensure('python-psycopg2')
     sudo('pip install virtualenv --upgrade')
     sudo('pip install pytesseract')
     sudo('pip install tldextract')
@@ -288,7 +289,6 @@ def _setup_virtual_env_scrapyd():
         run('pip install tldextract')
         run('pip install s3peat')
         run('pip install workerpool')
-        run('pip install psycopg2')
         run('pip install boto')
         run('pip install s3peat')
         run('pip install workerpool')
@@ -328,7 +328,6 @@ def _setup_virtual_env_web_runner():
         run('pip install lxml')
         run('pip install s3peat')
         run('pip install workerpool')
-        run('pip install psycopg2')
         run('pip install boto')
         run('pip install s3peat')
         run('pip install workerpool')
