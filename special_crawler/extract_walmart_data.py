@@ -8,6 +8,7 @@ from lxml import html, etree
 import lxml
 import lxml.html
 import requests
+import random
 
 from extract_data import Scraper
 from compare_images import compare_images
@@ -123,7 +124,10 @@ class WalmartScraper(Scraper):
             False otherwise
         """
 
-        self.wv.setupCH(self.tree_html)
+        try:
+            self.wv.setupCH(self.tree_html)
+        except:
+            pass
 
         self._failure_type()
 
@@ -991,6 +995,18 @@ class WalmartScraper(Scraper):
 
         return long_description
 
+    def _shelf_description(self):
+        shelf_description_li_list = self.tree_html.xpath("//div[@class='product-short-description module']/li")
+        shelf_description = ""
+
+        if shelf_description_li_list:
+            for li in shelf_description_li_list:
+                shelf_description = shelf_description + html.tostring(li)
+
+            return shelf_description
+
+        return None
+
     def _color(self):
         return self.wv._color()
 
@@ -1002,6 +1018,38 @@ class WalmartScraper(Scraper):
 
     def _variants(self):
         return self.wv._variants()
+
+    def _related_product_urls(self):
+        page_raw_text = lxml.html.tostring(self.tree_html)
+        startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
+
+        if startIndex == -1:
+            return None
+
+        endIndex = page_raw_text.find(',"primaryProductId":', startIndex)
+
+        json_text = page_raw_text[startIndex:endIndex]
+        variants_json = json.loads(json_text)
+        item_id_list = []
+
+        for item in variants_json:
+            item_id_list.append(item["buyingOptions"]["usItemId"])
+
+        item_id_list = list(set(item_id_list))
+
+        related_product_urls = []
+        url = self.product_page_url
+
+        for variant_id in item_id_list:
+            related_product_url = url[:url.rfind("/")] + "/" + str(variant_id)
+            related_product_urls.append(related_product_url)
+
+        related_product_urls.remove(self.product_page_url)
+
+        if related_product_urls:
+            return related_product_urls
+
+        return None
 
     def _style(self):
         return self.wv._style()
@@ -1544,6 +1592,9 @@ class WalmartScraper(Scraper):
                 find = []
             if len(find)>0:
                 return self._qualify_image_urls(find)
+
+        if self.tree_html.xpath("//link[@rel='image_src']/@href"):
+            return self.tree_html.xpath("//link[@rel='image_src']/@href")
 
         # It should only return this img when there's no img carousel
         pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
@@ -2108,6 +2159,9 @@ class WalmartScraper(Scraper):
             if self.tree_html.xpath("//div[@class='PageTitle']/h1/text()") and "eGift Card" in self.tree_html.xpath("//div[@class='PageTitle']/h1/text()")[0]:
                 self.failure_type = "E-Card"
 
+        if "/cp/" in self._canonical_link():
+            self.failure_type = "Category page"
+
         # check existence of "We can't find the product you are looking for, but we have similar items for you to consider."
         text_list = self.tree_html.xpath("//body//text()")
         text_contents = " " .join(text_list)
@@ -2428,6 +2482,102 @@ class WalmartScraper(Scraper):
 
         return 2
 
+    def _supplement_facts(self):
+        supplement_facts = None
+
+        if not self.tree_html.xpath("//div[@class='supplement-section']"):
+            return None
+
+        supplement_facts = {"supplement-header": None, "supplement-facts": None}
+
+        supplement_head_block = self.tree_html.xpath("//div[@class='supplement-header']/div")
+        supplement_head = []
+
+        for item in supplement_head_block:
+            head_string = item.text_content().strip()
+
+            if not head_string:
+                continue
+
+            index = re.search("\d", head_string)
+
+            if index:
+                key = head_string[:index.start()].strip()
+                value = head_string[index.start():].strip()
+            else:
+                key = head_string
+                value = None
+
+            supplement_head.append([key, value])
+
+        supplement_facts["supplement-header"] = supplement_head
+
+        supplement_table_block = self.tree_html.xpath("//table[@class='supplement-table']/tbody/tr")
+        supplement_table_info = []
+
+        for item in supplement_table_block:
+            data = item.xpath("./td/text()")
+
+            try:
+                key = item.xpath("./td[1]/text()")[0].strip()
+
+                if not key:
+                    continue
+
+                absolute_value = item.xpath("./td[2]/text()")
+                relative_value = item.xpath("./td[3]/text()")
+
+                if absolute_value:
+                    absolute_value = absolute_value[0].strip()
+                else:
+                    absolute_value = ""
+
+                if relative_value:
+                    relative_value = relative_value[0].strip()
+                else:
+                    relative_value = ""
+
+                supplement_table_info.append([data[0], {"absolute": absolute_value, "relative": relative_value}])
+            except:
+                continue
+
+        supplement_facts["supplement-facts"] = supplement_table_info
+
+        return supplement_facts
+
+    def _supplement_fact_count(self):
+        supplement_facts = self._supplement_facts()
+
+        if not supplement_facts:
+            return 0
+
+        return len(supplement_facts["supplement-header"]) + len(supplement_facts["supplement-facts"])
+
+    def _supplement_fact_text_health(self):
+        if not self.tree_html.xpath("//div[@class='supplement-section']"):
+            return 0
+
+        supplement_fact_count = self._supplement_fact_count()
+        element_count = len(self.tree_html.xpath("//div[@class='supplement-header']/div")) + len(self.tree_html.xpath("//table[@class='supplement-table']/tbody/tr"))
+
+        if supplement_fact_count != element_count:
+            return 1
+
+        supplement_facts = self._supplement_facts()
+
+        if len(supplement_facts["supplement-header"]) < 2:
+            return 1
+
+        for header in supplement_facts["supplement-header"]:
+            if not header[1].strip():
+                return 1
+
+        for fact in supplement_facts["supplement-facts"]:
+            if not fact[1]["absolute"].strip():
+                return 1
+
+        return 2
+
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         """Cleans a piece of text of html entities
@@ -2438,26 +2588,6 @@ class WalmartScraper(Scraper):
         """
 
         return re.sub("&nbsp;", " ", text).strip()
-
-    # TODO: fix to work with restructured code
-    def main(args):
-        # check if there is an argument
-        if len(args) <= 1:
-            sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython extract_walmart_media.py <walmart_product_url>\n")
-            sys.exit(1)
-
-        product_page_url = args[1]
-
-        # check format of page url
-        if not check_url_format(product_page_url):
-            sys.stderr.write("ERROR: Invalid URL " + str(product_page_url) + "\nFormat of product URL should be\n\t http://www.walmart.com/ip/<product_id>\n")
-            sys.exit(1)
-
-        return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
-
-        # create json object with video and pdf urls
-        #return json.dumps(media_for_url(product_page_url))
-    #    return json.dumps(reviews_for_url(product_page_url))
 
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
@@ -2474,21 +2604,23 @@ class WalmartScraper(Scraper):
 
     DATA_TYPES = { \
         # Info extracted from product page
-        "upc" : _upc_from_tree, \
-        "product_name" : _product_name_from_tree, \
-        "site_id" : _site_id, \
-        "product_id" : _extract_product_id, \
+        "upc": _upc_from_tree, \
+        "product_name": _product_name_from_tree, \
+        "site_id": _site_id, \
+        "product_id": _extract_product_id, \
         "upc": _upc, \
-        "walmart_no" : _walmart_no, \
-        "keywords" : _meta_keywords_from_tree, \
+        "walmart_no": _walmart_no, \
+        "keywords": _meta_keywords_from_tree, \
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
         "canonical_link": _canonical_link,
-        "brand" : _meta_brand_from_tree, \
-        "description" : _short_description_wrapper, \
+        "brand": _meta_brand_from_tree, \
+        "description": _short_description_wrapper, \
         # TODO: check if descriptions work right
-        "long_description" : _long_description_wrapper, \
+        "long_description": _long_description_wrapper, \
+        "shelf_description": _shelf_description, \
         "variants": _variants, \
+        "related_products_urls":  _related_product_urls, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
@@ -2497,52 +2629,55 @@ class WalmartScraper(Scraper):
         "drug_facts": _drug_facts, \
         "drug_fact_count": _drug_fact_count, \
         "drug_fact_text_health": _drug_fact_text_health, \
-        "price" : _price_from_tree, \
-        "price_amount" : _price_amount, \
-        "price_currency" : _price_currency, \
-        "htags" : _htags_from_tree, \
-        "model" : _model_from_tree, \
-        "model_meta" : _meta_model_from_tree, \
-        "features" : _features_from_tree, \
-        "feature_count" : _nr_features_from_tree, \
-        "title_seo" : _title_from_tree, \
-        "rollback" : _rollback, \
+        "supplement_facts": _supplement_facts, \
+        "supplement_fact_count": _supplement_fact_count, \
+        "supplement_fact_text_health": _supplement_fact_text_health, \
+        "price": _price_from_tree, \
+        "price_amount": _price_amount, \
+        "price_currency": _price_currency, \
+        "htags": _htags_from_tree, \
+        "model": _model_from_tree, \
+        "model_meta": _meta_model_from_tree, \
+        "features": _features_from_tree, \
+        "feature_count": _nr_features_from_tree, \
+        "title_seo": _title_from_tree, \
+        "rollback": _rollback, \
         # TODO: I think this causes the method to be called twice and is inoptimal
-        "product_title" : _product_name_from_tree, \
+        "product_title": _product_name_from_tree, \
         "owned": _owned, \
         "owned_out_of_stock": _owned_out_of_stock, \
-        "in_stores" : _in_stores, \
-        "in_stores_only" : _in_stores_only, \
+        "in_stores": _in_stores, \
+        "in_stores_only": _in_stores_only, \
         "marketplace": _marketplace, \
-        "marketplace_sellers" : _marketplace_sellers, \
+        "marketplace_sellers": _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
         "in_stock": _in_stock, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "review_count": _nr_reviews, \
         "average_review": _avg_review, \
-        "max_review" : _max_review, \
-        "min_review" : _min_review, \
-        "reviews" : _reviews, \
+        "max_review": _max_review, \
+        "min_review": _min_review, \
+        "reviews": _reviews, \
         # video needs both page source and separate requests
-        "video_count" : _video_count, \
-        "video_urls" : _video_urls, \
-        "wc_360" : _wc_360, \
+        "video_count": _video_count, \
+        "video_urls": _video_urls, \
+        "wc_360": _wc_360, \
         "wc_emc": _wc_emc, \
         "wc_video": _wc_video, \
         "wc_pdf": _wc_pdf, \
         "wc_prodtour": _wc_prodtour, \
         "flixmedia": _flixmedia, \
-        "webcollage" : _product_has_webcollage, \
-        "sellpoints" : _product_has_sellpoints, \
+        "webcollage": _product_has_webcollage, \
+        "sellpoints": _product_has_sellpoints, \
 
-        "image_count" : _image_count, \
-        "image_urls" : _image_urls, \
+        "image_count": _image_count, \
+        "image_urls": _image_urls, \
 
-        "categories" : _categories_hierarchy, \
-        "category_name" : _category, \
+        "categories": _categories_hierarchy, \
+        "category_name": _category, \
 
-        "scraper" : _version, \
+        "scraper": _version, \
         }
 
     # special data that can't be extracted from the product page

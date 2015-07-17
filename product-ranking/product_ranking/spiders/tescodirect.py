@@ -19,7 +19,7 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, FLOATING_POINT_RGEX
 
-is_empty = lambda x: x[0] if x else None
+is_empty = lambda x, y=None: x[0] if x else y
 
 
 def _strip_non_ascii(s):
@@ -250,6 +250,22 @@ class TescoDirectProductsSpider(BaseProductsSpider):
                     "price": product["price"]
                 }]
 
+            for item in response.xpath(
+                    "//div[contains(@class, 'other-sellers')]"):
+                name = is_empty(item.xpath(
+                    ".//div/span[contains(@class, 'available-from')]/text()"
+                ).extract())
+                name = is_empty(re.findall("Available from (.*)", name))
+
+                price = is_empty(item.xpath(
+                    ".//div[contains(@class, 'price-info')]/p/text()"
+                ).re(FLOATING_POINT_RGEX))
+                price = Price(price=price, priceCurrency="GBP")
+                product["marketplace"].append({
+                    "name": name,
+                    "price": price,
+                })
+
         desc = response.xpath(
             '//section[@id="product-details-link"]'
             '/section[@class="detailWrapper"]'
@@ -273,23 +289,26 @@ class TescoDirectProductsSpider(BaseProductsSpider):
         cond_set(product, 'image_url', image_url)
 
         resc_url = "http://recs.richrelevance.com/rrserver/p13n_generated.js?"
-        apiKey = re.findall("setApiKey\(\'(\w+)", response.body)
+        apiKey = is_empty(re.findall("setApiKey\(\'(\w+)", response.body), "")
         if apiKey:
-            apiKey = "a=" + apiKey[0]
-        pt = re.findall("addPlacementType\(\'(.*)\'", response.body)
+            apiKey = "a=" + apiKey
+        pt = is_empty(re.findall(
+            "addPlacementType\(\'(.*)\'", response.body), "")
         if pt:
             if len(pt) > 1:
                 pt = "&pt=|" + pt[0] + "|" + pt[1]
             else:
                 pt = "&pt=|" + pt[0]
         l = "&l=1"
-        chi = re.findall("addCategoryHintId\(\'(.*)\'", response.body)
+        chi = is_empty(re.findall(
+            "addCategoryHintId\(\'(.*)\'", response.body), "")
         if chi:
             chi = "&chi=|" + chi[0]
         else:
-            chi = response.xpath(
-                '//meta[contains(@name, "parent_category")]/@content').extract()
-            chi = "&chi=|" + chi[0] if chi else ""
+            chi = is_empty(response.xpath(
+                '//meta[contains(@name, "parent_category")]/@content'
+            ).extract(), "")
+            chi = "&chi=|" + chi
 
         resc_url = resc_url + apiKey + pt + l + chi
         ajax = urllib2.urlopen(resc_url)
@@ -449,9 +468,9 @@ class TescoDirectProductsSpider(BaseProductsSpider):
     def _scrape_product_links(self, response):
         links = response.xpath('//ul[@class="products"]/' \
             'li[contains(@class, "product-tile")]' \
-            '/div[contains(@class, "product")]/a[1]/@href'
+            '/div[contains(@class, "product")]/div/a/@href'
         ).extract()
-        for link in links:
+        for link in set(links):
             if link != '#':
                 link = self.link_begin + link
                 yield link, SiteProductItem()

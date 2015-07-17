@@ -14,6 +14,7 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FLOATING_POINT_RGEX
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 from lxml import html
 
@@ -337,7 +338,7 @@ class HomedepotProductsSpider(BaseProductsSpider):
         if avg and total:
             product["buyer_reviews"] = BuyerReviews(total, avg, rating_by_stars)
         else:
-            product["buyer_reviews"] = 0
+            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
 
         return product
 

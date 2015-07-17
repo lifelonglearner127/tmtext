@@ -13,23 +13,17 @@ from extract_data import Scraper
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants
 
 
-class SnapdealScraper(Scraper):
+class WalmartCAScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.snapdeal.com/product/<product-name>/<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www\.walmart\.ca/(en|fr)/ip/[product-name]/[product-id]$"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
-        self.reviews = None
-        self.average_review = 0
-        self.max_review = 0
-        self.min_review = 0
-        self.review_count = 0
-        self.is_review_checked = False
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -37,7 +31,7 @@ class SnapdealScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match(r"^http://www\.snapdeal\.com/product/.*/[0-9]+$", self.product_page_url)
+        m = re.match(r"^http://www\.walmart\.ca/(en|fr)/ip/.*/[0-9]+$", self.product_page_url)
 
         return not not m
 
@@ -49,10 +43,10 @@ class SnapdealScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-
         try:
-            if self.tree_html.xpath("//meta[@property='og:type']/@content")[0] != "snapdeallog:item":
-                raise Exception
+            if self.tree_html.xpath("//meta[@property='og:type']")[0] == "product":
+                raise Exception()
+
         except Exception:
             return True
 
@@ -71,40 +65,39 @@ class SnapdealScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return self.product_page_url.split('/')[-1]
+        return re.search('prod\.jump\?ppId=(.+?)$', self.product_page_url).group(1)
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//meta[@name='og_title']/@content")[0].strip()
+        return self.tree_html.xpath('//h1[@data-analytics-type="productPage-productName"]/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//meta[@name='og_title']/@content")[0].strip()
+        return self.tree_html.xpath('//h1[@data-analytics-type="productPage-productName"]/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath("//meta[@name='og_title']/@content")[0].strip()
+        return self.tree_html.xpath('//h1[@data-analytics-type="productPage-productName"]/text()')[0].strip()
 
     def _model(self):
         return None
 
     def _features(self):
-        try:
-            features_td_list = self.tree_html.xpath("//table[@class='product-spec']//tr/td")
-            features = []
-
-            for index, td in enumerate(features_td_list):
-                if (index + 1) % 2 != 0:
-                    continue
-
-                features.append(features_td_list[index - 1].text_content() + " " + td.text_content())
-
-            if not features:
-                return None
-
-            return features
-        except:
+        if not self.tree_html.xpath("//div[@id='specGroup']"):
             return None
+
+        feature_name_list = self.tree_html.xpath("//div[@id='specGroup']//div[contains(@class, 'name')]")
+        feature_value_list = self.tree_html.xpath("//div[@id='specGroup']//div[contains(@class, 'value')]")
+
+        feature_list = []
+
+        for index, feature_name in enumerate(feature_name_list):
+            feature_list.append(feature_name.text_content().strip() + " " + feature_value_list[index].text_content().strip())
+
+        if not feature_list:
+            return None
+
+        return feature_list
 
     def _feature_count(self):
         features = self._features()
@@ -115,43 +108,20 @@ class SnapdealScraper(Scraper):
         return len(features)
 
     def _description(self):
-        description = None
-
-        try:
-            spec_title_list = self.tree_html.xpath("//h3[@class='spec-title']")
-            short_description = None
-
-            for spec_title in spec_title_list:
-                if "Highlights" in spec_title.text_content():
-                    short_description = spec_title.xpath("./../following-sibling::div[@class='spec-body']")[0].text_content().strip()
-                    break
-
-            if short_description:
-                return short_description
-        except:
-            return None
-
-        return None
+        return self.tree_html.xpath("//div[@itemprop='description']/div[contains(@class, 'description')]")[0].text_content().strip()
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        try:
-            description = self.tree_html.xpath("//div[@itemprop='description' and @class='detailssubbox']")[0].text_content().strip()
-
-            return description
-        except:
-            return None
-
-        return None
+        return self.tree_html.xpath("//div[@itemprop='description']/div[contains(@class, 'bullets')]")[0].text_content().strip()
 
     def _ingredients(self):
         return None
 
     def _ingredients_count(self):
-        return None
+        return 0
 
     def _variants(self):
         return None
@@ -163,54 +133,35 @@ class SnapdealScraper(Scraper):
         pass
         
     def _image_urls(self):
-        image_urls = self.tree_html.xpath("//div[@class='baseSliderPager']//img/@src")
-        lazy_image_urls = self.tree_html.xpath("//div[@class='baseSliderPager']//img/@lazysrc")
-        image_urls = image_urls + lazy_image_urls
+        slider_images = self.tree_html.xpath("//div[@id='carousel']//ul[@class='slides']//img/@src")
 
-        if not image_urls:
-            image_urls = self.tree_html.xpath("//div[@id='bx-pager-left-image-panel']//img/@src")
-            lazy_image_urls = self.tree_html.xpath("//div[@id='bx-pager-left-image-panel']//img/@lazysrc")
-            image_urls = image_urls + lazy_image_urls
+        if slider_images:
+            for index, image in enumerate(slider_images):
+                if image.startswith("http:") or image.startswith("https:"):
+                    continue
 
-        if not image_urls:
-            return None
+                slider_images[index] = "http:" + image
 
-        return image_urls
+            return slider_images
+
+        main_image = self.tree_html.xpath("//div[@id='product-images']//div[@class='centered-img-wrap']//img/@src")
+
+        if main_image:
+            return main_image
+
+        return None
 
     def _image_count(self):
-        image_urls = self._image_urls()
+        if self._image_urls():
+            return len(self._image_urls())
 
-        if not image_urls:
-            return 0
-
-        return len(image_urls)
+        return 0
 
     def _video_urls(self):
-        iframe_list = self.tree_html.xpath("//iframe")
-
-        youtubu_iframes = []
-
-        for iframe in iframe_list:
-            if "www.youtube.com" in iframe.xpath("./@lazysrc")[0]:
-                youtubu_iframes.append(iframe)
-
-        if not youtubu_iframes:
-            return None
-
-        youtubu_urls = []
-
-        for iframe in youtubu_iframes:
-            youtubu_urls.append(iframe.xpath("./@lazysrc")[0])
-
-        return youtubu_urls
+        return None
 
     def _video_count(self):
-        video_urls = self._video_urls()
-
-        if not video_urls:
-            return 0
-
-        return len(video_urls)
+        return 0
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
@@ -255,75 +206,39 @@ class SnapdealScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        self._reviews()
+        average_review = float(self.tree_html.xpath("//span[@itemprop='ratingValue']/text()")[0])
 
-        return self.average_review
+        if average_review.is_integer():
+            average_review = int(average_review)
+        else:
+            average_review = float(average_review)
+
+        return average_review
 
     def _review_count(self):
-        self._reviews()
+        review_count = self.tree_html.xpath("//button[@data-analytics-type='product-reviews']/@data-analytics-value")[0]
+        review_count = [int(s) for s in review_count.split() if s.isdigit()]
+        review_count = review_count[0]
 
-        return self.review_count
+        return review_count
 
     def _max_review(self):
-        self._reviews()
-
-        return self.max_review
+        return None
 
     def _min_review(self):
-        self._reviews()
-
-        return self.min_review
+        return None
 
     def _reviews(self):
-        if self.is_review_checked:
-            return self.reviews
-
-        self.is_review_checked = True
-
-        rating_blocks = self.tree_html.xpath("//ul[@itemprop='aggregateRating']//div[contains(@class, 'row')]")
-
-        review_list = []
-        max_review = None
-        min_review = None
-
-        for rating_block in rating_blocks:
-            review_rate = int(rating_block.xpath(".//span[contains(@class, 'lfloat')]/text()")[0][0])
-            review_count = int(rating_block.xpath(".//span[contains(@class, 'barover')]/following-sibling::span/text()")[0])
-            review_list.append([review_rate, review_count])
-
-            if not max_review:
-                max_review = review_rate
-            elif review_count > 0 and review_rate > max_review:
-                max_review = review_rate
-
-            if not min_review:
-                min_review = review_rate
-            elif review_count > 0 and review_rate < min_review:
-                min_review = review_rate
-
-        self.reviews = review_list
-        self.average_review = float(self.tree_html.xpath("//span[@itemprop='ratingValue']/text()")[0].strip())
-        self.review_count = int(self.tree_html.xpath("//span[@itemprop='ratingCount']/text()")[0].strip())
-        self.max_review = max_review
-        self.min_review = min_review
-
-        return self.reviews
+        return None
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return "Rs " + self.tree_html.xpath("//span[@itemprop='price']/text()")[0]
+        return self.tree_html.xpath("//span[@itemprop='price']/text()")[0]
 
     def _price_amount(self):
-        price_amount = self.tree_html.xpath("//input[@id='productPrice']/@value")[0]
-
-        if str(int(price_amount)) == price_amount:
-            return int(price_amount)
-        else:
-            return float(price_amount)
-
-        return None
+        return float(self.tree_html.xpath("//span[@itemprop='price']/text()")[0][1:])
 
     def _price_currency(self):
         return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
@@ -332,22 +247,41 @@ class SnapdealScraper(Scraper):
         return 1
 
     def _in_stores(self):
+        if "sorry, this item is currently not available in stores." in html.tostring(self.tree_html).lower():
+            return 0
+
         return 1
 
     def _site_online_out_of_stock(self):
+        if "out of stock online" in html.tostring(self.tree_html).lower():
+            return 1
+
+        return 0
+
+    def _marketplace_sellers(self):
+        return None
+
+    def _marketplace_out_of_stock(self):
+        return 0
+
+    def _marketplace(self):
         return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return self.tree_html.xpath("//div[@class='containerBreadcrumb']//span[@itemprop='title']/text()")
+        categories = self.tree_html.xpath("//nav[@id='breadcrumb']/ul/li//span[@itemprop='title']/text()")
+
+        return categories[1:]
 
     def _category_name(self):
-        return self._categories()[-1]
+        categories = self.tree_html.xpath("//nav[@id='breadcrumb']/ul/li//span[@itemprop='title']/text()")
+
+        return categories[-1].strip()
 
     def _brand(self):
-        return self.tree_html.xpath("//input[@id='brandName']/@value")[0]
+        return self.tree_html.xpath("//span[@itemprop='brand']/text()")[0].strip()
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -407,9 +341,12 @@ class SnapdealScraper(Scraper):
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
+        "marketplace" : _marketplace, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores" : _in_stores, \
+        "marketplace_sellers" : _marketplace_sellers, \
+        "marketplace_out_of_stock": _marketplace_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \

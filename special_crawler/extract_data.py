@@ -68,7 +68,8 @@ class Scraper():
             "feature_count", # number of features of product, int
             "model_meta", # model from meta, string
             "description", # short description / entire description if no short available, string
-            "long_description", # long description / null if description above is entire description, string
+            "long_description", # long description / null if description above is entire description,
+            "shelf_description",
             "apluscontent_desc", #aplus description
             "ingredients", # list of ingredients - list of strings
             "ingredient_count", # number of ingredients - integer
@@ -80,8 +81,12 @@ class Scraper():
                                # containing drug facts
             "drug_fact_count", # number of drug facts (of elements in the drug_facts list) - integer
             "drug_fact_text_health", # indicate drug fact text status - 0: not exists, 1: exists but partially, 2: exists and perfect.
+            "supplement_facts",
+            "supplement_fact_count",
+            "supplement_fact_text_health",
             "rollback", # binary (0/1), whether product is rollback or not
             "variants", # list of variants
+            "related_products_urls",
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
@@ -182,13 +187,14 @@ class Scraper():
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
-                        "features", "feature_count", "model_meta", "description", "long_description","apluscontent_desc",
-                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts", "drug_fact_count", "drug_fact_text_health", "rollback",
-                        "manufacturer", "return_to"],
+                        "features", "feature_count", "model_meta", "description", "long_description", "shelf_description", "apluscontent_desc",
+                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
+                        "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
+                        "rollback", "manufacturer", "return_to"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "variants"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "variants", "related_products_urls"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock", \

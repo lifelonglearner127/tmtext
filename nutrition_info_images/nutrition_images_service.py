@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from classify_text_images import classifier_predict_one, load_classifier
+from classify_text_images import classifier_predict_one, load_classifier, predict_textimage_type
 app = Flask(__name__)
 
 import datetime
@@ -40,7 +40,7 @@ def results():
     request_arguments = dict(request.args)
     image_urls = request_arguments['image'][0].split()
     return render_template('results_template.html', \
-        results={image : False if classifier_predict_one(image, image_classifier)==0 else True for image in image_urls})
+        results={image : get_image_type(image) for image in image_urls})
 
 @app.route('/nutrition_image_UI', methods=['GET'])
 def nutrition_image_UI():
@@ -52,10 +52,28 @@ def is_nutrition_image():
     validate_args(request_arguments)
     image_urls = request_arguments['image']
     try:
-        results = {image : False if classifier_predict_one(image, image_classifier)==0 else True for image in image_urls}
+        results = {image : get_image_type(image) for image in image_urls}
     except HTTPError:
         raise CustomError("Error retrieving image")
     return jsonify(results)
+
+def get_image_type(image_url):
+    '''Predicts if image is a text image or not (nutrition/drug/supplement)
+    and which type (nutrition/drug/supplement facts)
+    Returns 1 of 5 values:
+    nutrition_facts, drug_facts, supplement_facts, unknown (if text image but type unknown)
+    and None (if not text image at all)
+    '''
+
+    # not a text image at all
+    if classifier_predict_one(image_url, image_classifier)==0:
+        return None
+
+    image_type = predict_textimage_type(image_url)
+    if not image_type:
+        return "unknown"
+
+    return image_type
 
 def validate_args(arguments):
     # normalize all arguments to str

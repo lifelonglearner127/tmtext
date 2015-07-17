@@ -273,7 +273,9 @@ def _setup_virtual_env_scrapyd():
         run('virtualenv -p python2.7 ' + venv_scrapyd)
 
     with virtualenv(VENV_SCRAPYD):
-        run('pip install scrapyd')
+        run('pip install scrapy==0.24.4')
+        run('pip install scrapyd==1.0.1')
+        run('pip install service_identity')
         run('pip install simplejson')
         run('pip install requests')
         run('pip install Pillow')
