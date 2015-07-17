@@ -177,6 +177,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                           meta={'product': prod},
                           dont_filter=True)
 
+        base_class = super(WalmartProductsSpider, self)
+        if hasattr(base_class, 'start_requests'):
+            for _r in base_class.start_requests():
+                try:
+                    yield _r
+                except Exception as e:
+                    pass  # do nothing on error?
+
     def get_sponsored_links(self, response):
         self.reql = []
         self.sponsored_links = []
@@ -261,6 +269,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             return
 
         product = response.meta['product']
+
+        wv = WalmartVariants()
+        wv.setupSC(response)
+        product['variants'] = wv._variants()
 
         if self.sponsored_links:
             product["sponsored_links"] = self.sponsored_links
@@ -370,10 +382,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if _na_text:
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
-
-        wv = WalmartVariants()
-        wv.setupSC(response)
-        product['variants'] = wv._variants()
 
         return self._start_related(response)
 

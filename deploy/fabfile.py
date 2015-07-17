@@ -289,6 +289,9 @@ def _setup_virtual_env_scrapyd():
         run('pip install s3peat')
         run('pip install workerpool')
         run('pip install psycopg2')
+        run('pip install boto')
+        run('pip install s3peat')
+        run('pip install workerpool')
 
     _setup_simmetrica_monitoring()
 
@@ -323,6 +326,12 @@ def _setup_virtual_env_web_runner():
         run('pip install Paste')
         run('pip install flask')
         run('pip install lxml')
+        run('pip install s3peat')
+        run('pip install workerpool')
+        run('pip install psycopg2')
+        run('pip install boto')
+        run('pip install s3peat')
+        run('pip install workerpool')
 
 
 def _setup_virtual_env_web_runner_web():
