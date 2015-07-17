@@ -13,6 +13,7 @@ from extract_text import extract_text
 # toggle between CV_HOUGH_STANDARD and CV_HOUGH_PROBILISTIC
 USE_STANDARD = False
 
+
 def extract_features(filename, is_url=False):
     '''Extracts features to be used in text image classifier.
     :param filename: input image
@@ -142,6 +143,7 @@ def extract_features(filename, is_url=False):
 
     return (average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_straight_lines)
 
+
 def plot_examples(examples=None):
     '''Plots in 2D space the points in the 4 lists given as input
     :param examples: list of nutrition images,
@@ -186,6 +188,7 @@ def plot_examples(examples=None):
     plt.savefig('/tmp/nutrition.png')
     plt.show()
 
+
 def get_examples_from_images():
     images = [
                     ('/home/ana/code/tmtext/nutrition_info_images/examples/notnutrition2.jpg', 'TN'),
@@ -213,6 +216,7 @@ def get_examples_from_images():
         example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
         examples.append(example)
     return examples
+
 
 def get_examples_from_screenshots():
     nutrition_facts_screenshots_path = "/home/ana/code/tmtext/nutrition_info_images/nutrition_facts_screenshots"
@@ -257,6 +261,7 @@ def extract_features_main():
 
     plot_examples()
 
+
 def read_images_set_fromdir():
     imagesd = get_examples_from_images()
     tset = ([imaged['name'] for imaged in imagesd],
@@ -266,11 +271,13 @@ def read_images_set_fromdir():
             [imaged['coords'] for imaged in imagesd],
             [1 if imaged['label'][1]=='P' else 0 for imaged in imagesd])
 
+
 def read_images_set_from_screenshots():
     imagesd = get_examples_from_screenshots()
     return ([imaged['name'] for imaged in imagesd],
             [imaged['coords'] for imaged in imagesd],
             [imaged['label'] for imaged in imagesd])
+
 
 def read_images_set(path="nutrition_images_training.csv"):
     '''Reads the training set from a file, returns examples and their labels (2 lists)
@@ -316,6 +323,7 @@ def train(training_set, serialize_file=None):
 
     return imgs, clf    
 
+
 def predict(test_set, clf=None, from_serialized_file=None):
     '''Predicts labels (text image/not) for an input test set.
     :param test_set: test set of images, tuple of lists:
@@ -335,8 +343,10 @@ def predict(test_set, clf=None, from_serialized_file=None):
         predicted_examples.append((imgs[idx], predicted[0]))
     return predicted_examples
 
+
 def load_classifier(path="nutrition_info_images/serialized_classifier/nutrition_image_classifier.pkl"):
     return joblib.load(path)
+
 
 def predict_one(image, clf=None, from_serialized_file="nutrition_info_images/serialized_classifier/nutrition_image_classifier.pkl", is_url=False):
     '''Predicts label (text image/not) for an input image.
@@ -354,7 +364,6 @@ def predict_one(image, clf=None, from_serialized_file="nutrition_info_images/ser
 
     predicted = clf.predict(example)
     return predicted
-
 
 
 def classifier_main():
@@ -411,6 +420,7 @@ def classifier_main():
 
     plt.show()
 
+
 def classifier_predict_one(image_url, clf=None):
     if image_url.startswith("http"):
         is_url = True
@@ -418,6 +428,7 @@ def classifier_predict_one(image_url, clf=None):
         is_url = False
     predicted = predict_one(image_url, clf, from_serialized_file="nutrition_info_images/serialized_classifier/nutrition_image_classifier.pkl", is_url=is_url)
     return predicted[0]
+
 
 def predict_textimage_type(image_url):
     '''Decides if text image is nutrition facts image,
@@ -440,6 +451,7 @@ def predict_textimage_type(image_url):
         return "supplement_facts"
 
     return None
+
 
 def cross_validate(test_set, folds=10):
     '''Validates the classifier by using 10-fold cross-validation.
