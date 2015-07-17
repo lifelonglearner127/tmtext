@@ -1,7 +1,8 @@
 from django.conf.urls import include, url
 from django.contrib import admin
+from django.views.decorators.csrf import csrf_exempt
 
-from gui.views import LogFileView, CSVDataFileView
+from gui.views import LogFileView, CSVDataFileView, AddJob
 
 
 from django.conf import settings
@@ -19,6 +20,8 @@ urlpatterns = [
         name='log_file_view'),
     url(r'^data/(?P<job>[0-9]+)/$', CSVDataFileView.as_view(),
         name='csv_data_file_view'),
+    url(r'^add-job', csrf_exempt(AddJob.as_view()),
+        name='add_job_view'),
 ]
 
 if settings.DEBUG:

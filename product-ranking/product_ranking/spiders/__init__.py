@@ -186,7 +186,7 @@ class BaseProductsSpider(Spider):
                  quantity=None,
                  searchterms_str=None, searchterms_fn=None,
                  site_name=None,
-                 product_url=None,
+                 product_url=None, products_url=None,
                  user_agent=None,
                  *args, **kwargs):
         if user_agent is None or user_agent not in self.USER_AGENTS.keys():
@@ -221,6 +221,7 @@ class BaseProductsSpider(Spider):
             self.quantity = int(quantity)
 
         self.product_url = product_url
+        self.products_url = products_url
 
         self.searchterms = []
         if searchterms_str is not None:
@@ -255,9 +256,20 @@ class BaseProductsSpider(Spider):
             prod = SiteProductItem()
             prod['is_single_result'] = True
             prod['url'] = self.product_url
+            prod['search_term'] = ''
             yield Request(self.product_url,
                           self._parse_single_product,
                           meta={'product': prod})
+
+        if self.products_url:
+            urls = self.products_url.split('||||')
+            for url in urls:
+                prod = SiteProductItem()
+                prod['url'] = url
+                prod['search_term'] = ''
+                yield Request(url,
+                              self._parse_single_product,
+                              meta={'product': prod})
 
     def parse(self, response):
 
