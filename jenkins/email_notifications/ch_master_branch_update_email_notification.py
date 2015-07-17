@@ -109,7 +109,6 @@ if not report_results:
 print report_results
 
 fromaddr = "jenkins@contentanalyticsinc.com"
-#toaddrs = ["dave@contentanalyticsinc.com", "jacob.cats426@gmail.com", "support@contentanalyticsinc.com"] # must be a list
 toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "support@contentanalyticsinc.com"] # must be a list
 subject = "Master CH Scrapers Updated"
 msg = """\
