@@ -76,8 +76,8 @@ class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
     ignore_fields = ['google_source_site', 'is_in_store_only', 'bestseller_rank',
                      'is_out_of_stock']
     ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = True  # ... filtered requests?
+    ignore_log_duplications = False  # ... duplicated requests?
+    ignore_log_filtered = False  # ... filtered requests?
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_123': 0,
@@ -176,14 +176,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                           self._parse_single_product,
                           meta={'product': prod},
                           dont_filter=True)
-
-        base_class = super(WalmartProductsSpider, self)
-        if hasattr(base_class, 'start_requests'):
-            for _r in base_class.start_requests():
-                try:
-                    yield _r
-                except Exception as e:
-                    pass  # do nothing on error?
 
     def get_sponsored_links(self, response):
         self.reql = []
