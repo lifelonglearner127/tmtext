@@ -6,6 +6,8 @@ import re
 import string
 import urllib
 import urlparse
+import socket
+import os
 
 import scrapy.log
 from scrapy.log import ERROR, WARNING, INFO
@@ -197,6 +199,11 @@ class BaseProductsSpider(Spider):
         if user_agent:
             self.user_agent = self.USER_AGENTS[user_agent]
             self.user_agent_key = user_agent
+
+        try:
+            self.server_ip = socket.gethostbyname(socket.gethostname())
+        except Exception as e:
+            self.log("Failed to get server IP", ERROR)
 
         super(BaseProductsSpider, self).__init__(*args, **kwargs)
 

@@ -68,6 +68,19 @@ def report_stats(signal_name):
     return wrapper
 
 
+def _ip_on_spider_open(spider):
+    server_ip = getattr(spider, 'server_ip', None)
+    if not server_ip:
+        return
+    ip_fname = '/tmp/_server_ip'
+    if not os.path.exists(ip_fname):
+        with open(ip_fname, 'w') as fh:
+            fh.write(server_ip)
+    print('Server IP: %s' % server_ip)
+    if hasattr(spider, 'log'):
+        spider.log('Server IP: %s' % server_ip)
+
+
 def _stats_on_spider_open(spider):
     if not push_simmetrica_event('monitoring_spider_opened'):
         print 'pushing simmetrica event failed, check redis server and all'\
@@ -332,3 +345,13 @@ if __name__ == '__main__':
         for f in (list_files_in_bucket(
                 amazon_public_key, amazon_secret_key, bucket_name)):
             print f.key
+
+
+class IPCollector(object):
+
+    def __init__(self, crawler, *args, **kwargs):
+        dispatcher.connect(_ip_on_spider_open, signals.spider_opened)
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
