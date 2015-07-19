@@ -81,8 +81,8 @@ class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_123': 0,
-        'chrysler 300c': [10, 150],
-        'swiming dress': [50, 250],
+        'vodka': [50, 250],
+        'taker': [100, 500],
         'macbook air thunderbolt': [10, 150],
         'hexacore': [50, 250],
         '300c': [50, 250],
