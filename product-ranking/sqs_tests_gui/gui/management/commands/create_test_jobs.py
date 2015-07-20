@@ -40,7 +40,7 @@ def _create_job(i):
         quantity=random.randrange(3, 10),  # TODO: increase
         task_id=random.randrange(100000, 900000),
         mode='no cache',
-        branch_name='tor_proxies'
+        branch_name=''
     )
 
 
