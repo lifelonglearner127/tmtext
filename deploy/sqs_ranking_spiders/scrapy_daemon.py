@@ -986,7 +986,7 @@ def main():
             queue.reset_message()
             # tasks have different branches, skip
             continue
-        queue.task_done()
+        #queue.task_done()
         logger.info("Task message was successfully received and "
                     "removed form queue.")
         logger.info("Whole tasks msg: %s", str(task_data))
