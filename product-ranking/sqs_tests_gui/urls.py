@@ -2,7 +2,7 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.views.decorators.csrf import csrf_exempt
 
-from gui.views import LogFileView, CSVDataFileView, AddJob
+from gui.views import LogFileView, CSVDataFileView, AddJob, ProgressMessagesView
 
 
 from django.conf import settings
@@ -22,6 +22,7 @@ urlpatterns = [
         name='csv_data_file_view'),
     url(r'^add-job', csrf_exempt(AddJob.as_view()),
         name='add_job_view'),
+    url(r'^progress/', ProgressMessagesView.as_view(), name='progress')
 ]
 
 if settings.DEBUG:

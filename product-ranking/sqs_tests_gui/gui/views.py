@@ -1,14 +1,24 @@
+import os
+import sys
 import datetime
 import random
 import json
+import base64
 
-from django.views.generic import RedirectView, View
+from django.views.generic import RedirectView, View, ListView, TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 
 from .models import get_data_filename, get_log_filename, Job, JobGrouperCache
 import settings
+
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CWD,  '..', '..', '..',
+                             'deploy', 'sqs_ranking_spiders'))
+from test_sqs_flow import _read_queue
+from scrapy_daemon import PROGRESS_QUEUE_NAME
 
 
 class AdminOnlyMixin(object):
@@ -85,3 +95,15 @@ class AddJob(View):
                 branch_name=branch
             )
             return HttpResponse('Job object created')
+
+
+class ProgressMessagesView(AdminOnlyMixin, TemplateView):
+    template_name = 'progress_messages.html'
+    max_messages = 999
+
+    def get_context_data(self, **kwargs):
+        context = super(ProgressMessagesView, self).get_context_data(**kwargs)
+        context['msgs'] = [
+            base64.decode(msg) for msg in
+            _read_queue(PROGRESS_QUEUE_NAME)
+        ]
