@@ -287,7 +287,12 @@ def generate_msg(metadata, progress):
         '_msg_id': metadata.get('task_id', metadata.get('task', None)),
         'utc_datetime': datetime.datetime.utcnow(),
         'progress': progress,
-        'server_ip': _get_server_ip()
+        'server_ip': _get_server_ip(),
+        'searchterms_str': metadata.get('searchterms_str', None),
+        'site': metadata.get('site', None),
+        'server_name': metadata.get('server_name', None),
+        'url': metadata.get('url', None),
+        'urls': metadata.get('urls', None)
     }
     return _msg
 
