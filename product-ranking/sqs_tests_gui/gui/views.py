@@ -9,6 +9,7 @@ from django.views.generic import RedirectView, View, ListView, TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
+import boto
 
 from .models import get_data_filename, get_log_filename, Job, JobGrouperCache
 import settings
@@ -17,7 +18,7 @@ import settings
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD,  '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
-from test_sqs_flow import _read_queue
+from add_task_to_sqs import read_access_and_secret_keys
 from scrapy_daemon import PROGRESS_QUEUE_NAME
 
 
@@ -101,9 +102,17 @@ class ProgressMessagesView(AdminOnlyMixin, TemplateView):
     template_name = 'progress_messages.html'
     max_messages = 999
 
+    def _connect(self, name=PROGRESS_QUEUE_NAME, region="us-east-1"):
+        self.conn = boto.sqs.connect_to_region(region)
+        self.q = self.conn.get_queue(name)
+
+    def _msgs(self, num_messages=100, timeout=3):
+        return [base64.b64decode(m.get_body())
+                for m in self.q.get_messages(visibility_timeout=timeout)]
+
     def get_context_data(self, **kwargs):
         context = super(ProgressMessagesView, self).get_context_data(**kwargs)
-        context['msgs'] = [
-            base64.decode(msg) for msg in
-            _read_queue(PROGRESS_QUEUE_NAME)
-        ]
+        access, secret = read_access_and_secret_keys()
+        self._connect()
+        context['msgs'] = self._msgs()
+        return context
