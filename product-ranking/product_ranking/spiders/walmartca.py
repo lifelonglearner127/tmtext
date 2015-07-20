@@ -12,6 +12,7 @@ import string
 from datetime import datetime
 import lxml.html
 import urllib
+import execjs
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -67,7 +68,8 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     allowed_domains = [
         "walmart.ca",
         "api.bazaarvoice.com",
-        "om.ordergroove.com"
+        "om.ordergroove.com",
+        "media.richrelevance.com"
     ]
 
     default_hhl = [404, 500, 502, 520]
@@ -166,7 +168,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         id = re.findall('\/(\d+)', response.url)
         product_id = id[-1] if id else None
-        response.meta['product_id'] = product_id
+        meta['product_id'] = product_id
 
         if response.status in self.default_hhl:
             product = response.meta.get("product")
@@ -178,8 +180,11 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         cond_set_value(product, 'locale', 'en_CA')  # Default locale.
 
+        # Get featured products from generated JS script, evaluating parent script
+        featured_products = self._get_featured_products(response, product_id)
+
         # Get product base info, QA and reviews straight from JS script
-        product_info_url = self.PRODUCT_INFO_URL.format(product_id=response.meta['product_id'])
+        product_info_url = self.PRODUCT_INFO_URL.format(product_id=meta['product_id'])
         reqs.append(Request(
             url=product_info_url,
             meta=meta,
@@ -353,6 +358,23 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return ''
 
+    def _get_featured_products(self, response, prod_id):
+        featured_products = dict()
+
+        import os
+        dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        path = dir + '/js/final.js'
+        with open(path, "r") as myfile:
+            data = myfile.read().replace('\n', '')
+
+        ctx = execjs.compile(data)
+
+        print('*'*50)
+        print(ctx.call("main", response.url, prod_id))
+        print('*'*50)
+
+        return featured_products
+
     def _populate_from_html(self, response, product):
         """
         Gets data straight from html body
@@ -402,9 +424,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             related_products = dict()
 
             for k, value in enumerate(related_prod_sections):
-                print('-'*50)
-                print value
-                print('-'*50)
                 sel = Selector(text=value)
                 builded_products = self._build_related_products(sel)
                 if builded_products:
@@ -432,10 +451,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         rel_prod = selector.css('.product')
         if rel_prod:
             rel_prod = rel_prod.extract()
-
-            print('-'*50)
-            print len(rel_prod)
-            print('-'*50)
 
             # TODO: rewrite selectors
             for product in rel_prod:
