@@ -275,11 +275,19 @@ def _create_sqs_queue(queue_or_connection, queue_name, visib_timeout=30):
     queue_or_connection.create_queue(queue_name, visib_timeout)
 
 
+def _get_server_ip():
+    ip_fname = '/tmp/_server_ip'
+    if os.path.exists(ip_fname):
+        with open(ip_fname) as fh:
+            return fh.read().strip()
+
+
 def generate_msg(metadata, progress):
     _msg = {
         '_msg_id': metadata.get('task_id', metadata.get('task', None)),
         'utc_datetime': datetime.datetime.utcnow(),
-        'progress': progress
+        'progress': progress,
+        'server_ip': _get_server_ip()
     }
     return _msg
 
@@ -439,6 +447,7 @@ def dump_result_data_into_sqs(data_key, logs_key, csv_data_key,
         'bucket_name': data_key.bucket.name,
         'utc_datetime': datetime.datetime.utcnow(),
         's3_key_instance_starter_logs': s3_key_instance_starter_logs,
+        'server_ip': _get_server_ip()
     }
     if csv_data_key:
         msg['csv_data_key'] = csv_data_key.key
