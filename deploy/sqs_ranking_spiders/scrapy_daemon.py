@@ -488,7 +488,8 @@ def check_required_folders():
 
 class ScrapyTask(object):
 
-    def __init__(self, task_data, listener):
+    def __init__(self, queue, task_data, listener):
+        self.queue = queue
         self.task_data = task_data
         self.listener = listener  # common listener to accept connections
         self.process = None  # instance of Popen for scrapy
@@ -689,6 +690,7 @@ class ScrapyTask(object):
     def _success_finish(self):
         # run this task after scrapy process successfully finished
         logger.info('Success finish task #%s', self.task_data.get('task_id', 0))
+        self.queue.task_done()
         self.finished_ok = True
 
     def get_output_path(self):
@@ -997,7 +999,7 @@ def main():
         logger.info("Whole tasks msg: %s", str(task_data))
         increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
         update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
-        task = ScrapyTask(task_data, listener)
+        task = ScrapyTask(queue, task_data, listener)
         tasks_taken.append(task)
 
     # prepare to execute tasks
