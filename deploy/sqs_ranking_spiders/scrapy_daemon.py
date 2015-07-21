@@ -1025,7 +1025,7 @@ def main():
         return all([_.is_finished() for _ in tasks])
 
     logger.info('Max allowed running time is %ss', max_wait_time)
-    step_time = 15
+    step_time = 30
     cur_wait_time = 0
     try:
         while cur_wait_time < max_wait_time:
