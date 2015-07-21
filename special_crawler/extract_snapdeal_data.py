@@ -335,6 +335,9 @@ class SnapdealScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
+        if self.tree_html.xpath("//div[@class='container-fluid inStockNotify reset-padding ']"):
+            return 1
+
         return 0
 
     ##########################################
