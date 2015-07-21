@@ -370,7 +370,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         ctx = execjs.compile(data)
 
         print('*'*50)
-        print(ctx.call("main", response.url, prod_id))
+        print(ctx.call("main",
+                       response.url,
+                       prod_id))
         print('*'*50)
 
         return featured_products

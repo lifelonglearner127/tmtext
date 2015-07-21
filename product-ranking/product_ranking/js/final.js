@@ -1,8 +1,11 @@
+debugger;
+
 var RR = function(href, id) {
     var _isArray = function(obj) {
         return Object.prototype.toString.call(obj) == '[object Array]';
     };
     var r3_entity = new r3_common(this);
+    var jsdom = require("jsdom");
     return {
         U: 'undefined',
         charset: 'UTF-8',
@@ -71,11 +74,32 @@ var RR = function(href, id) {
         rotatorCallback: function(placement) {},
         jsonCallback: function(recs) {},
         js: function(){
+            var scriptSrc = '',
+                placementsEmpty = false,
+                emptyPlacementName = '',
+                r3_pagetype;
 
-                var scriptSrc = '',
-                    placementsEmpty = false,
-                    emptyPlacementName = '',
-                    r3_pagetype;
+                jsdom.env({
+                    url: this.l,
+                    src: ['http://code.jquery.com/jquery-1.5.min.js'],
+                    done: function (errors, window) {
+
+                        var RSobjs = window.jQuery("section.recordSpotlight.richRelevance:not(.RRdone)");
+                            RSobjs.each(function(i){
+                                r3_entity.addPlacementType("item_page.rr" + (i+1));
+                            });
+                            r3_entity.placementTypes = '-----------------'
+                    },
+                  features: {
+                    FetchExternalResources: ["script"],
+                    ProcessExternalResources: ["script"],
+                    SkipExternalResources: false
+                  }
+                });
+
+
+
+
                 if (typeof r3_entity.placementTypes === this.U || r3_entity.placementTypes === '') {
                     placementsEmpty = true;
                 }
@@ -83,150 +107,125 @@ var RR = function(href, id) {
                     emptyPlacementName = 'item_page';
                     r3_pagetype = r3_item;
                 }
-                if (typeof r3_category !== this.U) {
-                    emptyPlacementName = 'category_page';
-                    r3_pagetype = r3_category;
-                }
-                if (typeof r3_cart !== this.U) {
-                    emptyPlacementName = 'cart_page';
-                    r3_pagetype = r3_cart;
-                }
-                if (typeof r3_addtocart !== this.U) {
-                    emptyPlacementName = 'add_to_cart_page';
-                    r3_pagetype = r3_addtocart;
-                }
-                if (typeof r3_purchased !== this.U) {
-                    emptyPlacementName = 'purchase_complete_page';
-                    r3_pagetype = r3_purchased;
-                }
-                if (typeof r3_search !== this.U) {
-                    emptyPlacementName = 'search_page';
-                    r3_pagetype = r3_search;
-                }
-                if (typeof r3_dlp !== this.U) {
-                    emptyPlacementName = 'dynamic_landing_page';
-                    r3_pagetype = r3_dlp;
-                }
-                if (typeof r3_home !== this.U) {
-                    emptyPlacementName = 'home_page';
-                    r3_pagetype = r3_home;
-                }
-                if (typeof r3_error !== this.U) {
-                    emptyPlacementName = 'error_page';
-                    r3_pagetype = r3_error;
-                }
-                if (typeof r3_myrecs !== this.U) {
-                    emptyPlacementName = 'my_recs_page';
-                    r3_pagetype = r3_myrecs;
-                }
-                if (typeof r3_wishlist !== this.U) {
-                    emptyPlacementName = 'cart_page';
-                    r3_pagetype = r3_wishlist;
-                }
-                if (typeof r3_generic !== this.U) {
-                    emptyPlacementName = 'generic_page';
-                    r3_pagetype = r3_generic;
-                }
-                if (typeof r3_landing !== this.U) {
-                    emptyPlacementName = 'landing_page';
-                    r3_pagetype = r3_landing;
-                }
-                if (typeof r3_personal !== this.U) {
-                    emptyPlacementName = 'personal_page';
-                    r3_pagetype = r3_personal;
-                }
-                if (typeof r3_merchandised !== this.U) {
-                    emptyPlacementName = 'merchandised_page';
-                    r3_pagetype = r3_merchandised;
-                }
-                if (typeof r3_ensemble != this.U) {
-                    emptyPlacementName = 'ensemble_page';
-                    r3_pagetype = r3_ensemble;
-                }
-                if (typeof r3_registry !== this.U) {
-                    emptyPlacementName = 'registry_page';
-                    r3_pagetype = r3_registry;
-                }
-                if (typeof r3_addtoregistry !== this.U) {
-                    emptyPlacementName = 'add_to_registry_page';
-                    r3_pagetype = r3_addtoregistry;
-                }
-                if (typeof r3_brand !== this.U) {
-                    emptyPlacementName = 'brand_page';
-                    r3_pagetype = r3_brand;
-                }
-
                 if (r3_pagetype) {
                     var r3_pt = new r3_pagetype(this);
                     scriptSrc = r3_pt.createScript(scriptSrc);
                 }
                 scriptSrc = r3_entity.createScript(this, scriptSrc, placementsEmpty, emptyPlacementName);
                 return scriptSrc;
-
-        },
-        log: function(eventData, commonData) {
-            var imageSrc = '',
-                prop, propValue, internalProp;
-            if (commonData) {
-                imageSrc = commonData.addCoreParams(imageSrc, 'log');
-            } else {
-                var d = new Date();
-                imageSrc = eventData.baseUrl + path + '?a=' + encodeURIComponent(eventData.apiKey) + '&ts=' + d.getTime() + ((eventData.baseUrl.toLowerCase().indexOf('https://') === 0) ? '&ssl=t' : '') + imageSrc;
-                delete eventData.baseUrl;
-                delete eventData.apiKey;
-                if (eventData.placementTypes) {
-                    imageSrc += '&pt=' + encodeURIComponent(eventData.placementTypes);
-                    delete eventData.placementTypes;
-                }
-                if (eventData.userId) {
-                    imageSrc += '&u=' + encodeURIComponent(eventData.userId);
-                    delete eventData.userId;
-                }
-                if (eventData.sessionId) {
-                    imageSrc += '&s=' + encodeURIComponent(eventData.sessionId);
-                    delete eventData.sessionId;
-                }
-                if (eventData.viewGuid && eventData.viewGuid !== '') {
-                    imageSrc += '&vg=' + encodeURIComponent(eventData.viewGuid);
-                    delete eventData.viewGuid;
-                }
-                if (eventData.segments) {
-                    imageSrc += '&sgs=' + encodeURIComponent(eventData.segments);
-                    delete eventData.segments;
-                }
-                if (eventData.channel) {
-                    imageSrc += '&channelId=' + encodeURIComponent(eventData.channel);
-                    delete eventData.channel;
-                }
-            }
-            for (prop in eventData) {
-                propValue = eventData[prop];
-                imageSrc += '&' + prop + '=';
-                if (_isArray(propValue)) {
-                    imageSrc += encodeURIComponent(propValue.join('|'));
-                } else if (propValue === Object(propValue)) {
-                    var value = '';
-                    for (internalProp in propValue) {
-                        value += '|' + internalProp + ':';
-                        if (_isArray(propValue[internalProp])) {
-                            value += propValue[internalProp].join(';');
-                        } else {
-                            value += propValue[internalProp];
-                        }
-                    }
-                    imageSrc += encodeURIComponent(value);
-                } else {
-                    imageSrc += encodeURIComponent(propValue);
-                }
-            }
-            beacon(imageSrc);
         }
     }
 };
 
+function rr_addCategory(id, name) {
+    if (typeof this.categories == RR.U) {
+        this.categories = '';
+    }
+    if (typeof name == RR.U) {
+        name = id;
+    }
+    this.categories += '|' + RR.fixCatId(id) + ':' + name;
+}
+
+function rr_addCategoryId(id) {
+    if (typeof this.categoryIds == RR.U) {
+        this.categoryIds = '';
+    }
+    this.categoryIds += '|' + RR.fixCatId(id);
+}
+
+function rr_addItemIdCentsQuantity(id, cents, quantity, sku) {
+    R3_COMMON.addItemId(id, sku);
+    if (typeof this.purchasesCents == RR.U) {
+        this.purchasesCents = '';
+    }
+    if (typeof cents == RR.U) {
+        cents = 0;
+    }
+    this.purchasesCents += '|' + cents;
+    if (typeof this.quantities == RR.U) {
+        this.quantities = '';
+    }
+    if (typeof quantity == RR.U) {
+        quantity = -1;
+    }
+    quantity = quantity + '';
+    if (quantity.indexOf('.') != -1) {
+        quantity = quantity.substring(0, quantity.indexOf('.'));
+    }
+    this.quantities += '|' + quantity;
+}
+
+function rr_addItemIdDollarsAndCentsQuantity(id, dollarsAndCents, quantity, sku) {
+    R3_COMMON.addItemId(id, sku);
+    if (typeof this.purchasesDollarsAndCents == RR.U) {
+        this.purchasesDollarsAndCents = '';
+    }
+    if (typeof dollarsAndCents == RR.U) {
+        dollarsAndCents = 0;
+    }
+    this.purchasesDollarsAndCents += '|' + dollarsAndCents;
+    if (typeof this.quantities == RR.U) {
+        this.quantities = '';
+    }
+    if (typeof quantity == RR.U) {
+        quantity = -1;
+    }
+    quantity = quantity + '';
+    if (quantity.indexOf('.') != -1) {
+        quantity = quantity.substring(0, quantity.indexOf('.'));
+    }
+    this.quantities += '|' + quantity;
+}
+
+function rr_addItemIdPriceQuantity(id, price, quantity, sku) {
+    R3_COMMON.addItemId(id, sku);
+    if (typeof this.purchasesPrice == RR.U) {
+        this.purchasesPrice = '';
+    }
+    if (typeof price == RR.U) {
+        price = 0;
+    }
+    this.purchasesPrice += '|' + price;
+    if (typeof this.quantities == RR.U) {
+        this.quantities = '';
+    }
+    if (typeof quantity == RR.U) {
+        quantity = -1;
+    }
+    quantity = quantity + '';
+    if (quantity.indexOf('.') != -1) {
+        quantity = quantity.substring(0, quantity.indexOf('.'));
+    }
+    this.quantities += '|' + quantity;
+}
+
+function rr_setBrand(brand) {
+    this.brand = RR.fixName(brand);
+}
+
+function rr_setId(id) {
+    this.id = RR.fixCatId(id);
+}
+
+function rr_setName(name) {
+    this.name = name;
+}
+
+function rr_setRecommendable(recommendable) {
+    this.recommendable = recommendable;
+}
+
+function rr_setTopLevelGenre(topLevelGenre) {
+    this.topLevelGenre = topLevelGenre;
+}
+
+function rr_setPageTypeId(pageTypeId) {
+    this.pageTypeId = pageTypeId;
+}
+
 function r3_common(RR_entity) {
-    var self = this,
-        internal = {},
+    var internal = {},
         _isArray = function (obj) {
             return Object.prototype.toString.call(obj) == '[object Array]';
         },
@@ -268,231 +267,232 @@ function r3_common(RR_entity) {
             context[type][property] = propertyValues;
             _innerAddContext(context);
         };
-    self.baseUrl = 'http://recs.richrelevance.com/rrserver/';
-    self.jsFileName = 'p13n_generated.js';
-    self.setPageBrand = rr_setBrand;
-    self.addCategoryHintId = function (id) {
-        if (typeof self.categoryHintIds == RR_entity.U) {
-            self.categoryHintIds = '';
+    this.baseUrl = 'http://recs.richrelevance.com/rrserver/';
+    this.jsFileName = 'p13n_generated.js';
+    this.placementTypes = '';
+    this.setPageBrand = rr_setBrand;
+    this.addCategoryHintId = function (id) {
+        if (typeof this.categoryHintIds == RR_entity.U) {
+            this.categoryHintIds = '';
         }
-        self.categoryHintIds += '|' + RR_entity.fixCatId(id);
+        this.categoryHintIds += '|' + RR_entity.fixCatId(id);
     };
-    self.addClickthruParams = function (index, params) {
-        if (typeof self.clickthruParams == RR_entity.U) {
-            self.clickthruParams = '';
+    this.addClickthruParams = function (index, params) {
+        if (typeof this.clickthruParams == RR_entity.U) {
+            this.clickthruParams = '';
         }
-        self.clickthruParams += '|' + encodeURIComponent(index) + ':' + encodeURIComponent(params);
+        this.clickthruParams += '|' + encodeURIComponent(index) + ':' + encodeURIComponent(params);
     };
-    self.addContext = _innerAddContext;
-    self.addFilter = function (filterName) {
-        if (typeof self.filters == RR_entity.U) {
-            self.filters = '';
+    this.addContext = _innerAddContext;
+    this.addFilter = function (filterName) {
+        if (typeof this.filters == RR_entity.U) {
+            this.filters = '';
         }
-        self.filters += '|' + filterName;
+        this.filters += '|' + filterName;
     };
-    self.addFilterBrand = function (filterBrand) {
-        if (typeof self.filterBrands == RR_entity.U) {
-            self.filterBrands = '';
+    this.addFilterBrand = function (filterBrand) {
+        if (typeof this.filterBrands == RR_entity.U) {
+            this.filterBrands = '';
         }
-        self.filterBrands += '|' + RR_entity.fixName(filterBrand);
+        this.filterBrands += '|' + RR_entity.fixName(filterBrand);
     };
-    self.addFilterCategory = function (filterCategory) {
-        if (typeof self.filterCategories == RR_entity.U) {
-            self.filterCategories = '';
+    this.addFilterCategory = function (filterCategory) {
+        if (typeof this.filterCategories == RR_entity.U) {
+            this.filterCategories = '';
         }
-        self.filterCategories += '|' + RR_entity.fixCatId(filterCategory);
+        this.filterCategories += '|' + RR_entity.fixCatId(filterCategory);
     };
-    self.addForcedPoolItem = function () {
+    this.addForcedPoolItem = function () {
     };
-    self.addForcedTemplate = function () {
+    this.addForcedTemplate = function () {
     };
-    self.addInclusiveFilter = function (dimension, property, propertyValues) {
+    this.addInclusiveFilter = function (dimension, property, propertyValues) {
         _innerAddFilter("f-" + dimension, property, propertyValues);
     };
-    self.addExclusiveFilter = function (dimension, property, propertyValues) {
+    this.addExclusiveFilter = function (dimension, property, propertyValues) {
         _innerAddFilter("f-" + dimension, "~" + property, propertyValues);
     };
-    self.addItemId = function (id, sku) {
-        if (typeof self.itemIds == RR_entity.U) {
-            self.itemIds = '';
+    this.addItemId = function (id, sku) {
+        if (typeof this.itemIds == RR_entity.U) {
+            this.itemIds = '';
         }
         if (typeof sku != RR_entity.U) {
             id = id + "~" + sku;
         }
-        self.itemIds += '|' + RR_entity.fixId(id);
+        this.itemIds += '|' + RR_entity.fixId(id);
     };
-    self.addItemIdToCart = function (id, sku) {
-        if (typeof self.addedToCartItemIds == RR_entity.U) {
-            self.addedToCartItemIds = '';
+    this.addItemIdToCart = function (id, sku) {
+        if (typeof this.addedToCartItemIds == RR_entity.U) {
+            this.addedToCartItemIds = '';
         }
         if (typeof sku != RR_entity.U) {
             id = id + "~" + sku;
         }
-        self.addedToCartItemIds += '|' + RR_entity.fixId(id);
+        this.addedToCartItemIds += '|' + RR_entity.fixId(id);
     };
-    self.addPlacementType = function (placementType) {
-        if (typeof self.placementTypes == RR_entity.U) {
-            self.placementTypes = '';
+    this.addPlacementType = function (placementType) {
+        if (typeof this.placementTypes == RR_entity.U) {
+            this.placementTypes = '';
         }
-        self.placementTypes += '|' + placementType;
+        this.placementTypes += '|' + placementType;
     };
-    self.addPromoType = function (promoType) {
-        self.addPlacementType(promoType);
+    this.addPromoType = function (promoType) {
+        this.addPlacementType(promoType);
     };
-    self.addRefinement = function (name, value) {
-        if (typeof self.refinements == RR_entity.U) {
-            self.refinements = '';
+    this.addRefinement = function (name, value) {
+        if (typeof this.refinements == RR_entity.U) {
+            this.refinements = '';
         }
-        self.refinements += '|' + name + ':' + value;
+        this.refinements += '|' + name + ':' + value;
     };
-    self.addSearchTerm = function (searchTerm) {
-        if (typeof self.searchTerms == RR_entity.U) {
-            self.searchTerms = '';
+    this.addSearchTerm = function (searchTerm) {
+        if (typeof this.searchTerms == RR_entity.U) {
+            this.searchTerms = '';
         }
-        self.searchTerms += '|' + searchTerm;
+        this.searchTerms += '|' + searchTerm;
     };
-    self.addSegment = function (segmentId, segmentName) {
-        if (typeof self.segments == RR_entity.U) {
-            self.segments = '';
+    this.addSegment = function (segmentId, segmentName) {
+        if (typeof this.segments == RR_entity.U) {
+            this.segments = '';
         }
         if (segmentName === undefined) {
-            self.segments += '|' + segmentId;
+            this.segments += '|' + segmentId;
         } else {
-            self.segments += '|' + segmentId + ':' + segmentName;
+            this.segments += '|' + segmentId + ':' + segmentName;
         }
     };
-    self.addStrategy = function (strategyName) {
-        if (typeof self.forcedStrategies == RR_entity.U) {
-            self.forcedStrategies = '';
+    this.addStrategy = function (strategyName) {
+        if (typeof this.forcedStrategies == RR_entity.U) {
+            this.forcedStrategies = '';
         }
-        self.forcedStrategies += '|' + strategyName;
+        this.forcedStrategies += '|' + strategyName;
     };
-    self.addUID = function (uid) {
-        if (typeof self.uids == RR_entity.U) {
-            self.uids = '';
+    this.addUID = function (uid) {
+        if (typeof this.uids == RR_entity.U) {
+            this.uids = '';
         }
-        self.uids += '|' + uid;
+        this.uids += '|' + uid;
     };
-    self.enableJson = function () {
-        self.jsonEnabled = 't';
+    this.enableJson = function () {
+        this.jsonEnabled = 't';
     };
-    self.forceImmediateCallback = function () {
-        self.immediateCallbackForced = 't';
+    this.forceImmediateCallback = function () {
+        this.immediateCallbackForced = 't';
     };
-    self.forceListenMode = function () {
-        self.listenModeForced = 't';
+    this.forceListenMode = function () {
+        this.listenModeForced = 't';
     };
-    self.forceDisplayMode = function () {
-        self.displayModeForced = 't';
+    this.forceDisplayMode = function () {
+        this.displayModeForced = 't';
     };
-    self.forceDevMode = function () {
-        self.devModeForced = 't';
+    this.forceDevMode = function () {
+        this.devModeForced = 't';
     };
-    self.setApiKey = function (apiKey) {
-        self.apiKey = apiKey;
+    this.setApiKey = function (apiKey) {
+        this.apiKey = apiKey;
     };
-    self.setBaseUrl = function (baseUrl) {
+    this.setBaseUrl = function (baseUrl) {
         if ('http://media.richrelevance.com/rrserver/' == baseUrl) {
             baseUrl = 'http://recs.richrelevance.com/rrserver/';
         }
         if ('https://media.richrelevance.com/rrserver/' == baseUrl) {
             baseUrl = 'https://recs.richrelevance.com/rrserver/';
         }
-        self.baseUrl = baseUrl;
+        this.baseUrl = baseUrl;
     };
-    self.setCartValue = function (value) {
+    this.setCartValue = function (value) {
         internal.cartValue = value;
     };
-    self.setChannel = function (channel) {
+    this.setChannel = function (channel) {
         internal.channel = channel;
     };
-    self.setClearancePage = function (clearancePage) {
-        self.clearancePage = clearancePage;
+    this.setClearancePage = function (clearancePage) {
+        this.clearancePage = clearancePage;
     };
-    self.setClickthruServer = function (clickthruServer) {
-        self.clickthruServer = clickthruServer;
+    this.setClickthruServer = function (clickthruServer) {
+        this.clickthruServer = clickthruServer;
     };
-    self.setFilterBrandsIncludeMatchingElements = function (filterBrandsInclude) {
-        self.filterBrandsInclude = filterBrandsInclude;
+    this.setFilterBrandsIncludeMatchingElements = function (filterBrandsInclude) {
+        this.filterBrandsInclude = filterBrandsInclude;
     };
-    self.setFilterCategoriesIncludeMatchingElements = function (filterCategoriesInclude) {
-        self.filterCategoriesInclude = filterCategoriesInclude;
+    this.setFilterCategoriesIncludeMatchingElements = function (filterCategoriesInclude) {
+        this.filterCategoriesInclude = filterCategoriesInclude;
     };
-    self.setFilterPriceCentsMax = function (filterPriceCentsMax) {
-        self.filterPriceCentsMax = filterPriceCentsMax;
+    this.setFilterPriceCentsMax = function (filterPriceCentsMax) {
+        this.filterPriceCentsMax = filterPriceCentsMax;
     };
-    self.setFilterPriceCentsMin = function (filterPriceCentsMin) {
-        self.filterPriceCentsMin = filterPriceCentsMin;
+    this.setFilterPriceCentsMin = function (filterPriceCentsMin) {
+        this.filterPriceCentsMin = filterPriceCentsMin;
     };
-    self.setFilterPriceIncludeMatchingElements = function (filterPriceInclude) {
-        self.filterPriceInclude = filterPriceInclude;
+    this.setFilterPriceIncludeMatchingElements = function (filterPriceInclude) {
+        this.filterPriceInclude = filterPriceInclude;
     };
-    self.setFilterPriceMax = function (filterPriceMax) {
-        self.filterPriceMax = filterPriceMax;
+    this.setFilterPriceMax = function (filterPriceMax) {
+        this.filterPriceMax = filterPriceMax;
     };
-    self.setFilterPriceMin = function (filterPriceMin) {
-        self.filterPriceMin = filterPriceMin;
+    this.setFilterPriceMin = function (filterPriceMin) {
+        this.filterPriceMin = filterPriceMin;
     };
-    self.setForcedCampaign = function (campaign) {
-        self.forcedCampaign = campaign;
+    this.setForcedCampaign = function (campaign) {
+        this.forcedCampaign = campaign;
     };
-    self.showNoAds = function () {
-        if (typeof self.forcedCampaign == RR_entity.U) {
-            self.forcedCampaign = '0';
+    this.showNoAds = function () {
+        if (typeof this.forcedCampaign == RR_entity.U) {
+            this.forcedCampaign = '0';
         }
     };
-    self.setIpOverride = function (ipOverride) {
-        self.ipOverride = ipOverride;
+    this.setIpOverride = function (ipOverride) {
+        this.ipOverride = ipOverride;
     };
-    self.setForcedTreatment = function (treatment) {
-        self.forcedTreatment = treatment;
+    this.setForcedTreatment = function (treatment) {
+        this.forcedTreatment = treatment;
     };
-    self.setImageServer = function (imageServer) {
-        self.imageServer = imageServer;
+    this.setImageServer = function (imageServer) {
+        this.imageServer = imageServer;
     };
-    self.setJsFileName = function (jsFileName) {
-        self.jsFileName = jsFileName;
+    this.setJsFileName = function (jsFileName) {
+        this.jsFileName = jsFileName;
     };
-    self.setJsonCallback = function (jsonCallback) {
-        self.jsonCallback = jsonCallback;
+    this.setJsonCallback = function (jsonCallback) {
+        this.jsonCallback = jsonCallback;
     };
-    self.setJsPromoFileName = function (jsFileName) {
+    this.setJsPromoFileName = function (jsFileName) {
     };
-    self.setLocale = function (locale) {
-        self.locale = locale;
+    this.setLocale = function (locale) {
+        this.locale = locale;
     };
-    self.setRegionId = function (regionId) {
-        self.regionId = regionId;
-        if (self.apiKey == RR_entity.D) {
+    this.setRegionId = function (regionId) {
+        this.regionId = regionId;
+        if (this.apiKey == RR_entity.D) {
             internal.channel = regionId;
         }
-        if (RR_entity.TM.indexOf("|" + self.apiKey + "|") > -1) {
-            self.segments = '|' + regionId + ':' + regionId;
+        if (RR_entity.TM.indexOf("|" + this.apiKey + "|") > -1) {
+            this.segments = '|' + regionId + ':' + regionId;
         }
     };
-    self.setRegistryId = function (registryId) {
-        self.registryId = registryId;
+    this.setRegistryId = function (registryId) {
+        this.registryId = registryId;
     };
-    self.setRegistryType = function (registryType) {
-        self.registryType = registryType;
+    this.setRegistryType = function (registryType) {
+        this.registryType = registryType;
     };
-    self.setSessionId = function (sessionId) {
-        self.sessionId = sessionId;
+    this.setSessionId = function (sessionId) {
+        this.sessionId = sessionId;
     };
-    self.setUserId = function (userId) {
-        self.userId = userId;
+    this.setUserId = function (userId) {
+        this.userId = userId;
     };
-    self.useDummyData = function () {
-        self.dummyDataUsed = 't';
-        self.displayModeForced = 't';
+    this.useDummyData = function () {
+        this.dummyDataUsed = 't';
+        this.displayModeForced = 't';
     };
-    self.blockItemId = function (id) {
-        if (typeof self.blockeditemIds == RR_entity.U) {
-            self.blockeditemIds = '';
+    this.blockItemId = function (id) {
+        if (typeof this.blockeditemIds == RR_entity.U) {
+            this.blockeditemIds = '';
         }
-        self.blockeditemIds += '|' + RR_entity.fixId(id);
+        this.blockeditemIds += '|' + RR_entity.fixId(id);
     };
-    self.RICHSORT = {
+    this.RICHSORT = {
         paginate: function (startRow, count) {
             _richSortParams.startRow = startRow;
             _richSortParams.count = count;
@@ -504,110 +504,111 @@ function r3_common(RR_entity) {
             var index = 0,
                 len = productIds ? productIds.length : 0;
             for (; index < len; index += 1) {
-                self.blockItemId(productIds[index]);
+                this.blockItemId(productIds[index]);
             }
         },
         filterAttribute: function (attributeName, attributeValues) {
             _richSortParams.filterAttributes[attributeName] = attributeValues;
         }
     };
-    self.initFromParams = function (RR_entity) {
+    this.initFromParams = function (RR_entity) {
         if (RR_entity.lc('r3_forceDisplay=true')) {
-            self.debugMode = true;
-            self.displayModeForced = 't';
+            this.debugMode = true;
+            this.displayModeForced = 't';
         }
         if (RR_entity.lc('r3_forceDev=true')) {
-            self.debugMode = true;
-            self.devModeForced = 't';
+            this.debugMode = true;
+            this.devModeForced = 't';
         }
         if (RR_entity.lc('r3_rad=true')) {
-            self.debugMode = true;
-            self.devModeForced = 't';
-            self.rad = true;
+            this.debugMode = true;
+            this.devModeForced = 't';
+            this.rad = true;
             var radLevel = RR_entity.pq('r3_radLevel');
             if (radLevel !== '') {
-                self.radLevel = radLevel;
+                this.radLevel = radLevel;
             }
         }
         if (RR_entity.lc('r3_useDummyData=true')) {
-            self.debugMode = true;
-            self.dummyDataUsed = 't';
-            self.displayModeForced = 't';
+            this.debugMode = true;
+            this.dummyDataUsed = 't';
+            this.displayModeForced = 't';
         }
         var tempForcedTreatment = RR_entity.pq('r3_forcedTreatment');
         if (tempForcedTreatment && tempForcedTreatment != '') {
-            self.forcedTreatment = tempForcedTreatment;
+            this.forcedTreatment = tempForcedTreatment;
         }
         var tempForcedCampaign = RR_entity.pq('r3_forcedCampaign');
         if (tempForcedCampaign && tempForcedCampaign != '') {
-            self.forcedCampaign = tempForcedCampaign;
+            this.forcedCampaign = tempForcedCampaign;
         }
         tempForcedCampaign = RR_entity.pq('r3_fc');
         if (tempForcedCampaign && tempForcedCampaign != '') {
-            self.forcedCampaign = tempForcedCampaign;
+            this.forcedCampaign = tempForcedCampaign;
         }
         var tempOverriddenIp = RR_entity.pq('r3_ipOverride');
         if (tempOverriddenIp && tempOverriddenIp != '') {
-            self.ipOverride = tempOverriddenIp;
+            this.ipOverride = tempOverriddenIp;
         }
         var tempForcedFtp = RR_entity.pq('r3_ftp');
         if (tempForcedFtp && tempForcedFtp != '') {
-            self.forcedFtp = tempForcedFtp;
+            this.forcedFtp = tempForcedFtp;
         }
         var tempRap = RR_entity.pq('r3_responseDetails');
         if (tempRap && tempRap != '') {
-            self.rap = tempRap;
+            this.rap = tempRap;
         }
         if (RR_entity.lc('r3_debugMode=true')) {
-            self.debugMode = true;
+            this.debugMode = true;
         } else if (RR_entity.lc('r3_debugMode=false')) {
-            self.debugMode = false;
+            this.debugMode = false;
         }
         if (RR_entity.lc('rr_vg=')) {
-            self.viewGuid = RR_entity.pq('rr_vg');
+            this.viewGuid = RR_entity.pq('rr_vg');
         }
-        if (typeof self.viewGuid == RR_entity.U && RR_entity.lc('vg=')) {
-            self.viewGuid = RR_entity.pq('vg');
+        if (typeof this.viewGuid == RR_entity.U && RR_entity.lc('vg=')) {
+            this.viewGuid = RR_entity.pq('vg');
         }
         if (RR_entity.lc('rm=')) {
-            self.fromRichMail = RR_entity.pq('rm');
+            this.fromRichMail = RR_entity.pq('rm');
         }
         if (RR_entity.lc('rr_u=')) {
-            self.userId = RR_entity.pq('rr_u');
+            this.userId = RR_entity.pq('rr_u');
         }
         if (RR_entity.lc('rr_pcam=')) {
-            self.promoCampaignId = RR_entity.pq('rr_pcam');
+            this.promoCampaignId = RR_entity.pq('rr_pcam');
         }
         if (RR_entity.lc('rr_pcre=')) {
-            self.promoCreativeId = RR_entity.pq('rr_pcre');
+            this.promoCreativeId = RR_entity.pq('rr_pcre');
         }
         if (RR_entity.lc('rr_propt=')) {
-            self.promoPlacementType = RR_entity.pq('rr_propt');
+            this.promoPlacementType = RR_entity.pq('rr_propt');
         }
         if (RR_entity.lc('rr_spoof=')) {
-            self.spoof = RR_entity.pq('rr_spoof');
+            this.spoof = RR_entity.pq('rr_spoof');
         }
         if (RR_entity.lc('rr_lpid=')) {
-            self.landingPageId = RR_entity.pq('rr_lpid');
+            this.landingPageId = RR_entity.pq('rr_lpid');
         }
     };
-    self.addCoreParams = function (scriptSrc, path) {
+    this.addCoreParams = function (scriptSrc, path) {
         var d = new Date();
-        scriptSrc = self.baseUrl + path + '?a=' + encodeURIComponent(self.apiKey) + '&ts=' + d.getTime() + ((self.baseUrl.toLowerCase().indexOf('https://') === 0) ? '&ssl=t' : '') + scriptSrc;
-        if (self.placementTypes) {
-            scriptSrc += '&pt=' + encodeURIComponent(self.placementTypes);
+        this.setApiKey('45c4b1787d30a004');
+        scriptSrc = this.baseUrl + path + '?a=' + encodeURIComponent(this.apiKey) + '&ts=' + d.getTime() + ((this.baseUrl.toLowerCase().indexOf('https://') === 0) ? '&ssl=t' : '') + scriptSrc;
+        if (this.placementTypes) {
+            scriptSrc += '&pt=' + encodeURIComponent(this.placementTypes);
         }
-        if (self.userId) {
-            scriptSrc += '&u=' + encodeURIComponent(self.userId);
+        if (this.userId) {
+            scriptSrc += '&u=' + encodeURIComponent(this.userId);
         }
-        if (self.sessionId) {
-            scriptSrc += '&s=' + encodeURIComponent(self.sessionId);
+        if (this.sessionId) {
+            scriptSrc += '&s=' + encodeURIComponent(this.sessionId);
         }
-        if (self.viewGuid && self.viewGuid !== '') {
-            scriptSrc += '&vg=' + encodeURIComponent(self.viewGuid);
+        if (this.viewGuid && this.viewGuid !== '') {
+            scriptSrc += '&vg=' + encodeURIComponent(this.viewGuid);
         }
-        if (self.segments) {
-            scriptSrc += '&sgs=' + encodeURIComponent(self.segments);
+        if (this.segments) {
+            scriptSrc += '&sgs=' + encodeURIComponent(this.segments);
         }
         if (internal.channel) {
             scriptSrc += '&channelId=' + encodeURIComponent(internal.channel);
@@ -623,121 +624,121 @@ function r3_common(RR_entity) {
         if (placementsEmpty) {
             this.addPlacementType(emptyPlacementName);
         }
-        scriptSrc = this.addCoreParams(scriptSrc, self.jsFileName);
-        scriptSrc += (placementsEmpty && (this.apiKey !== '7f65ff91442c1eae' && self.apiKey !== '5387d7af823640a7' && self.apiKey !== RR_entity.TD && self.apiKey !== '88ac00e4f3e16e44') ? '&pte=t' : '');
-        if (self.clickthruServer) {
-            scriptSrc += '&cts=' + encodeURIComponent(self.clickthruServer);
+        scriptSrc = this.addCoreParams(scriptSrc, this.jsFileName);
+        scriptSrc += (placementsEmpty && (this.apiKey !== '7f65ff91442c1eae' && this.apiKey !== '5387d7af823640a7' && this.apiKey !== RR_entity.TD && this.apiKey !== '88ac00e4f3e16e44') ? '&pte=t' : '');
+        if (this.clickthruServer) {
+            scriptSrc += '&cts=' + encodeURIComponent(this.clickthruServer);
         }
-        if (self.imageServer) {
-            scriptSrc += '&imgsrv=' + encodeURIComponent(self.imageServer);
+        if (this.imageServer) {
+            scriptSrc += '&imgsrv=' + encodeURIComponent(this.imageServer);
         }
-        if (self.jsonEnabled && self.jsonEnabled == 't') {
+        if (this.jsonEnabled && this.jsonEnabled == 't') {
             scriptSrc += '&je=t';
         }
-        if (typeof self.landingPageId != RR_entity.U) {
-            scriptSrc += '&lpid=' + self.landingPageId;
+        if (typeof this.landingPageId != RR_entity.U) {
+            scriptSrc += '&lpid=' + this.landingPageId;
         }
-        if (self.addedToCartItemIds) {
-            scriptSrc += '&atcid=' + encodeURIComponent(self.addedToCartItemIds);
+        if (this.addedToCartItemIds) {
+            scriptSrc += '&atcid=' + encodeURIComponent(this.addedToCartItemIds);
         }
         if (internal.cartValue) {
             scriptSrc += '&cv=' + encodeURIComponent(internal.cartValue);
         }
-        if (self.forcedStrategies) {
-            scriptSrc += '&fs=' + encodeURIComponent(self.forcedStrategies);
+        if (this.forcedStrategies) {
+            scriptSrc += '&fs=' + encodeURIComponent(this.forcedStrategies);
         }
-        if (self.listenModeForced && self.listenModeForced == 't') {
+        if (this.listenModeForced && this.listenModeForced == 't') {
             scriptSrc += '&flm=t';
         }
-        if (self.forcedTreatment && self.forcedTreatment !== '') {
-            scriptSrc += '&ftr=' + encodeURIComponent(self.forcedTreatment);
+        if (this.forcedTreatment && this.forcedTreatment !== '') {
+            scriptSrc += '&ftr=' + encodeURIComponent(this.forcedTreatment);
         }
-        if (typeof self.forcedCampaign != RR_entity.U && self.forcedCampaign != '') {
-            scriptSrc += '&fcmpn=' + encodeURIComponent(self.forcedCampaign);
+        if (typeof this.forcedCampaign != RR_entity.U && this.forcedCampaign != '') {
+            scriptSrc += '&fcmpn=' + encodeURIComponent(this.forcedCampaign);
         }
-        if (typeof self.ipOverride != RR_entity.U && self.ipOverride != '') {
-            scriptSrc += '&ipor=' + encodeURIComponent(self.ipOverride);
+        if (typeof this.ipOverride != RR_entity.U && this.ipOverride != '') {
+            scriptSrc += '&ipor=' + encodeURIComponent(this.ipOverride);
         }
-        if (self.forcedFtp && self.forcedFtp != '') {
-            scriptSrc += '&ftp=' + encodeURIComponent(self.forcedFtp);
+        if (this.forcedFtp && this.forcedFtp != '') {
+            scriptSrc += '&ftp=' + encodeURIComponent(this.forcedFtp);
         }
-        if (self.rap && self.rap != '') {
-            scriptSrc += '&rap=' + encodeURIComponent(self.rap);
+        if (this.rap && this.rap != '') {
+            scriptSrc += '&rap=' + encodeURIComponent(this.rap);
         }
-        if (self.fromRichMail && self.fromRichMail != '') {
-            scriptSrc += '&rm=' + encodeURIComponent(self.fromRichMail);
+        if (this.fromRichMail && this.fromRichMail != '') {
+            scriptSrc += '&rm=' + encodeURIComponent(this.fromRichMail);
         }
-        if (self.categoryHintIds) {
-            scriptSrc += '&chi=' + encodeURIComponent(self.categoryHintIds);
+        if (this.categoryHintIds) {
+            scriptSrc += '&chi=' + encodeURIComponent(this.categoryHintIds);
         }
-        if (self.locale) {
-            scriptSrc += '&flo=' + encodeURIComponent(self.locale);
+        if (this.locale) {
+            scriptSrc += '&flo=' + encodeURIComponent(this.locale);
         }
-        if (self.brand) {
-            scriptSrc += '&fpb=' + encodeURIComponent(self.brand);
+        if (this.brand) {
+            scriptSrc += '&fpb=' + encodeURIComponent(this.brand);
         }
-        if (typeof self.uids != RR_entity.U) {
-            scriptSrc += '&uid=' + encodeURIComponent(self.uids);
+        if (typeof this.uids != RR_entity.U) {
+            scriptSrc += '&uid=' + encodeURIComponent(this.uids);
         }
-        if (typeof self.clearancePage != RR_entity.U) {
-            scriptSrc += '&clp=' + encodeURIComponent(self.clearancePage);
+        if (typeof this.clearancePage != RR_entity.U) {
+            scriptSrc += '&clp=' + encodeURIComponent(this.clearancePage);
         }
-        if (self.filterBrands) {
-            scriptSrc += '&filbr=' + encodeURIComponent(self.filterBrands);
+        if (this.filterBrands) {
+            scriptSrc += '&filbr=' + encodeURIComponent(this.filterBrands);
         }
-        if (self.filterBrandsInclude) {
-            scriptSrc += '&filbrinc=' + encodeURIComponent(self.filterBrandsInclude);
+        if (this.filterBrandsInclude) {
+            scriptSrc += '&filbrinc=' + encodeURIComponent(this.filterBrandsInclude);
         }
-        if (self.filterCategories) {
-            scriptSrc += '&filcat=' + encodeURIComponent(self.filterCategories);
+        if (this.filterCategories) {
+            scriptSrc += '&filcat=' + encodeURIComponent(this.filterCategories);
         }
-        if (self.filterCategoriesInclude) {
-            scriptSrc += '&filcatinc=' + encodeURIComponent(self.filterCategoriesInclude);
+        if (this.filterCategoriesInclude) {
+            scriptSrc += '&filcatinc=' + encodeURIComponent(this.filterCategoriesInclude);
         }
-        if (self.filterPriceCentsMin) {
-            scriptSrc += '&filprcmin=' + encodeURIComponent(self.filterPriceCentsMin);
+        if (this.filterPriceCentsMin) {
+            scriptSrc += '&filprcmin=' + encodeURIComponent(this.filterPriceCentsMin);
         }
-        if (self.filterPriceCentsMax) {
-            scriptSrc += '&filprcmax=' + encodeURIComponent(self.filterPriceCentsMax);
+        if (this.filterPriceCentsMax) {
+            scriptSrc += '&filprcmax=' + encodeURIComponent(this.filterPriceCentsMax);
         }
-        if (self.filterPriceMin) {
-            scriptSrc += '&filprmin=' + encodeURIComponent(self.filterPriceMin);
+        if (this.filterPriceMin) {
+            scriptSrc += '&filprmin=' + encodeURIComponent(this.filterPriceMin);
         }
-        if (self.filterPriceMax) {
-            scriptSrc += '&filprmax=' + encodeURIComponent(self.filterPriceMax);
+        if (this.filterPriceMax) {
+            scriptSrc += '&filprmax=' + encodeURIComponent(this.filterPriceMax);
         }
-        if (self.filterPriceInclude) {
-            scriptSrc += '&filprinc=' + encodeURIComponent(self.filterPriceInclude);
+        if (this.filterPriceInclude) {
+            scriptSrc += '&filprinc=' + encodeURIComponent(this.filterPriceInclude);
         }
-        if (self.clickthruParams) {
-            scriptSrc += '&ctp=' + encodeURIComponent(self.clickthruParams);
+        if (this.clickthruParams) {
+            scriptSrc += '&ctp=' + encodeURIComponent(this.clickthruParams);
         }
-        if (self.regionId) {
-            scriptSrc += '&rid=' + encodeURIComponent(self.regionId);
+        if (this.regionId) {
+            scriptSrc += '&rid=' + encodeURIComponent(this.regionId);
         }
-        if (self.filters) {
-            scriptSrc += '&if=' + encodeURIComponent(self.filters);
+        if (this.filters) {
+            scriptSrc += '&if=' + encodeURIComponent(this.filters);
         }
-        if (self.refinements) {
-            scriptSrc += '&rfm=' + encodeURIComponent(self.refinements);
+        if (this.refinements) {
+            scriptSrc += '&rfm=' + encodeURIComponent(this.refinements);
         }
-        if (typeof self.rad != RR_entity.U) {
+        if (typeof this.rad != RR_entity.U) {
             scriptSrc += '&rad=t';
         }
-        if (typeof self.radLevel != RR_entity.U) {
-            scriptSrc += '&radl=' + encodeURIComponent(self.radLevel);
+        if (typeof this.radLevel != RR_entity.U) {
+            scriptSrc += '&radl=' + encodeURIComponent(this.radLevel);
         }
-        if (typeof self.promoCampaignId != RR_entity.U) {
-            scriptSrc += '&pcam=' + encodeURIComponent(self.promoCampaignId);
+        if (typeof this.promoCampaignId != RR_entity.U) {
+            scriptSrc += '&pcam=' + encodeURIComponent(this.promoCampaignId);
         }
-        if (typeof self.promoCreativeId != RR_entity.U) {
-            scriptSrc += '&pcre=' + encodeURIComponent(self.promoCreativeId);
+        if (typeof this.promoCreativeId != RR_entity.U) {
+            scriptSrc += '&pcre=' + encodeURIComponent(this.promoCreativeId);
         }
-        if (typeof self.promoPlacementType != RR_entity.U) {
-            scriptSrc += '&propt=' + encodeURIComponent(self.promoPlacementType);
+        if (typeof this.promoPlacementType != RR_entity.U) {
+            scriptSrc += '&propt=' + encodeURIComponent(this.promoPlacementType);
         }
-        if (typeof self.spoof != RR_entity.U) {
-            scriptSrc += '&spoof=' + self.spoof;
+        if (typeof this.spoof != RR_entity.U) {
+            scriptSrc += '&spoof=' + this.spoof;
         }
         if (typeof internal.context != RR_entity.U) {
             for (prop in internal.context) {
@@ -763,26 +764,26 @@ function r3_common(RR_entity) {
                 }
             }
         }
-        if (self.registryId) {
-            scriptSrc += '&rg=' + encodeURIComponent(self.registryId);
+        if (this.registryId) {
+            scriptSrc += '&rg=' + encodeURIComponent(this.registryId);
         }
-        if (self.registryType) {
-            scriptSrc += '&rgt=' + encodeURIComponent(self.registryType);
+        if (this.registryType) {
+            scriptSrc += '&rgt=' + encodeURIComponent(this.registryType);
         }
-        if (typeof self.searchTerms != RR_entity.U) {
-            scriptSrc += '&st=' + encodeURIComponent(self.searchTerms);
+        if (typeof this.searchTerms != RR_entity.U) {
+            scriptSrc += '&st=' + encodeURIComponent(this.searchTerms);
         }
-        if (self.jsonCallback) {
-            scriptSrc += '&jcb=' + encodeURIComponent(self.jsonCallback);
+        if (this.jsonCallback) {
+            scriptSrc += '&jcb=' + encodeURIComponent(this.jsonCallback);
         }
-        if (self.immediateCallbackForced) {
+        if (this.immediateCallbackForced) {
             scriptSrc += '&icf=t';
         }
-        if (self.blockeditemIds) {
-            scriptSrc += '&bi=' + encodeURIComponent(self.blockeditemIds);
+        if (this.blockeditemIds) {
+            scriptSrc += '&bi=' + encodeURIComponent(this.blockeditemIds);
         }
-        if (self.itemIds) {
-            scriptSrc += '&p=' + encodeURIComponent(self.itemIds);
+        if (this.itemIds) {
+            scriptSrc += '&p=' + encodeURIComponent(this.itemIds);
         }
         if (_richSortParams.startRow > 0) {
             scriptSrc += '&rssr=' + encodeURIComponent(_richSortParams.startRow);
@@ -803,14 +804,14 @@ function r3_common(RR_entity) {
         if (attributeFilters.length > 0) {
             scriptSrc += '&rsfoa=' + encodeURIComponent(attributeFilters.join('|'));
         }
-        if (self.debugMode) {
-            if (self.displayModeForced && self.displayModeForced == 't') {
+        if (this.debugMode) {
+            if (this.displayModeForced && this.displayModeForced == 't') {
                 scriptSrc += '&fdm=t';
             }
-            if (self.devModeForced && self.devModeForced == 't') {
+            if (this.devModeForced && this.devModeForced == 't') {
                 scriptSrc += '&dev=t';
             }
-            if (self.dummyDataUsed && self.dummyDataUsed == 't') {
+            if (this.dummyDataUsed && this.dummyDataUsed == 't') {
                 scriptSrc += '&udd=t';
             }
         }
@@ -820,386 +821,370 @@ function r3_common(RR_entity) {
 }
 
 function r3_item(RR_entity) {
-    var self = this;
-    var r3_entity = r3_common(RR_entity);
-    self.blockItemId = r3_entity.blockItemId;
-    self.setBrand = rr_setBrand;
-    self.setId = rr_setId;
-    self.setName = rr_setName;
-    self.setTopLevelGenre = rr_setTopLevelGenre;
-    self.addAttribute = function(name, value) {
-        if (typeof self.attributes == RR_entity.U) {
-            self.attributes = '';
+    var r3_entity = new r3_common(RR_entity);
+    this.blockItemId = r3_entity.blockItemId;
+    this.id = RR_entity.id;
+    this.setBrand = rr_setBrand;
+    this.setId = rr_setId;
+    this.setName = rr_setName;
+    this.setTopLevelGenre = rr_setTopLevelGenre;
+    this.addAttribute = function(name, value) {
+        if (typeof this.attributes == RR.U) {
+            this.attributes = ''
         }
-        self.attributes += '|' + name + ':' + value;
+        this.attributes += '|' + name + ':' + value
     };
-    self.addCategory = rr_addCategory;
-    self.addCategoryId = rr_addCategoryId;
-    self.setCents = function(cents) {
-        self.cents = cents;
+    this.addCategory = rr_addCategory;
+    this.addCategoryId = rr_addCategoryId;
+    this.setCents = function(cents) {
+        this.cents = cents
     };
-    self.setDescription = function(description) {
-        self.description = description;
+    this.setDescription = function(description) {
+        this.description = description
     };
-    self.setDollarsAndCents = function(dollarsAndCents) {
-        self.dollarsAndCents = dollarsAndCents;
+    this.setDollarsAndCents = function(dollarsAndCents) {
+        this.dollarsAndCents = dollarsAndCents
     };
-    self.setEndDate = function(endDate) {
-        self.endDate = endDate;
+    this.setEndDate = function(endDate) {
+        this.endDate = endDate
     };
-    self.setImageId = function(imageId) {
-        self.imageId = imageId;
+    this.setImageId = function(imageId) {
+        this.imageId = imageId
     };
-    self.setInStock = function(inStock) {
-        self.inStock = inStock;
+    this.setInStock = function(inStock) {
+        this.inStock = inStock
     };
-    self.setLinkId = function(linkId) {
-        self.linkId = linkId;
+    this.setLinkId = function(linkId) {
+        this.linkId = linkId
     };
-    self.setPrice = function(price) {
-        self.price = price;
+    this.setPrice = function(price) {
+        this.price = price
     };
-    self.setRating = function(rating) {
-        self.rating = rating;
+    this.setRating = function(rating) {
+        this.rating = rating
     };
-    self.setReleaseDate = function(releaseDate) {
-        self.releaseDate = releaseDate;
+    this.setReleaseDate = function(releaseDate) {
+        this.releaseDate = releaseDate
     };
-    self.setRecommendable = rr_setRecommendable;
-    self.setSaleCents = function(saleCents) {
-        self.saleCents = saleCents;
+    this.setRecommendable = rr_setRecommendable;
+    this.setSaleCents = function(saleCents) {
+        this.saleCents = saleCents
     };
-    self.setSaleDollarsAndCents = function(saleDollarsAndCents) {
-        self.saleDollarsAndCents = saleDollarsAndCents;
+    this.setSaleDollarsAndCents = function(saleDollarsAndCents) {
+        this.saleDollarsAndCents = saleDollarsAndCents
     };
-    self.setSalePrice = function(salePrice) {
-        self.salePrice = salePrice;
+    this.setSalePrice = function(salePrice) {
+        this.salePrice = salePrice
     };
-    self.createScript = function(scriptSrc) {
-        if (self.topLevelGenre) {
-            scriptSrc += '&tg=' + encodeURIComponent(self.topLevelGenre);
+    this.createScript = function(scriptSrc) {
+        if (this.topLevelGenre) {
+            scriptSrc += '&tg=' + encodeURIComponent(this.topLevelGenre)
         }
-        if (self.categories) {
-            scriptSrc += '&cs=' + encodeURIComponent(self.categories);
+        if (this.categories) {
+            scriptSrc += '&cs=' + encodeURIComponent(this.categories)
         }
-        if (self.categoryIds) {
-            scriptSrc += '&cis=' + encodeURIComponent(self.categoryIds);
+        if (this.categoryIds) {
+            scriptSrc += '&cis=' + encodeURIComponent(this.categoryIds)
         }
-        if (typeof r3_entity.apiKey != RR_entity.U && r3_entity.apiKey == RR_entity.D && typeof r3_item != RR_entity.U && r3_entity.regionId == "us_04_en_bsd" && !self.id) {
+        if (typeof r3_entity.apiKey != RR.U && r3_entity.apiKey == RR.D && typeof r3_item != RR_entity.U && r3_entity.regionId == "us_04_en_bsd" && !this.id) {
             try {
-                self.id = RR_entity.fixId(DELL.com.Delphi.PageSettings.mi.ProductCode);
+                this.id = RR.fixId(DELL.com.Delphi.PageSettings.mi.ProductCode)
             } catch (e) {}
         }
-        if (self.id) {
-            scriptSrc += '&p=' + encodeURIComponent(self.id);
+        if (this.id) {
+            scriptSrc += '&p=' + encodeURIComponent(RR_entity.id)
         }
-        if (self.name) {
-            scriptSrc += '&n=' + encodeURIComponent(self.name);
+        if (this.name) {
+            scriptSrc += '&n=' + encodeURIComponent(this.name)
         }
-        if (self.description) {
-            scriptSrc += '&d=' + encodeURIComponent(self.description);
+        if (this.description) {
+            scriptSrc += '&d=' + encodeURIComponent(this.description)
         }
-        if (self.imageId) {
-            scriptSrc += '&ii=' + encodeURIComponent(self.imageId);
+        if (this.imageId) {
+            scriptSrc += '&ii=' + encodeURIComponent(this.imageId)
         }
-        if (self.linkId) {
-            scriptSrc += '&li=' + encodeURIComponent(self.linkId);
+        if (this.linkId) {
+            scriptSrc += '&li=' + encodeURIComponent(this.linkId)
         }
-        if (self.releaseDate) {
-            scriptSrc += '&rd=' + encodeURIComponent(self.releaseDate);
+        if (this.releaseDate) {
+            scriptSrc += '&rd=' + encodeURIComponent(this.releaseDate)
         }
-        if (self.dollarsAndCents) {
-            scriptSrc += '&np=' + encodeURIComponent(self.dollarsAndCents);
+        if (this.dollarsAndCents) {
+            scriptSrc += '&np=' + encodeURIComponent(this.dollarsAndCents)
         }
-        if (self.cents) {
-            scriptSrc += '&npc=' + encodeURIComponent(self.cents);
+        if (this.cents) {
+            scriptSrc += '&npc=' + encodeURIComponent(this.cents)
         }
-        if (self.saleDollarsAndCents) {
-            scriptSrc += '&sp=' + encodeURIComponent(self.saleDollarsAndCents);
+        if (this.saleDollarsAndCents) {
+            scriptSrc += '&sp=' + encodeURIComponent(this.saleDollarsAndCents)
         }
-        if (self.saleCents) {
-            scriptSrc += '&spc=' + encodeURIComponent(self.saleCents);
+        if (this.saleCents) {
+            scriptSrc += '&spc=' + encodeURIComponent(this.saleCents)
         }
-        if (self.price) {
-            scriptSrc += '&np=' + encodeURIComponent(self.price);
+        if (this.price) {
+            scriptSrc += '&np=' + encodeURIComponent(this.price)
         }
-        if (self.salePrice) {
-            scriptSrc += '&sp=' + encodeURIComponent(self.salePrice);
+        if (this.salePrice) {
+            scriptSrc += '&sp=' + encodeURIComponent(this.salePrice)
         }
-        if (self.endDate) {
-            scriptSrc += '&ed=' + encodeURIComponent(self.endDate);
+        if (this.endDate) {
+            scriptSrc += '&ed=' + encodeURIComponent(this.endDate)
         }
-        if (self.rating) {
-            scriptSrc += '&r=' + encodeURIComponent(self.rating);
+        if (this.rating) {
+            scriptSrc += '&r=' + encodeURIComponent(this.rating)
         }
-        if (typeof self.recommendable != RR_entity.U) {
-            scriptSrc += '&re=' + encodeURIComponent(self.recommendable);
+        if (typeof this.recommendable != RR_entity.U) {
+            scriptSrc += '&re=' + encodeURIComponent(this.recommendable)
         }
-        if (self.brand) {
-            scriptSrc += '&b=' + encodeURIComponent(self.brand);
+        if (this.brand) {
+            scriptSrc += '&b=' + encodeURIComponent(this.brand)
         }
-        if (self.attributes) {
-            scriptSrc += '&at=' + encodeURIComponent(self.attributes);
+        if (this.attributes) {
+            scriptSrc += '&at=' + encodeURIComponent(this.attributes)
         }
-        if (typeof self.inStock != RR_entity.U) {
-            scriptSrc += '&ins=' + encodeURIComponent(self.inStock);
+        if (typeof this.inStock != RR_entity.U) {
+            scriptSrc += '&ins=' + encodeURIComponent(this.inStock)
         }
-        return scriptSrc;
+        return scriptSrc
     }
 }
 
 function r3_category(RR_entity) {
-    var self = this;
     var r3_entity = r3_common(RR_entity);
-    self.addItemId = r3_entity.addItemId;
-    self.setBrand = rr_setBrand;
-    self.setId = rr_setId;
-    self.setName = rr_setName;
-    self.setTopLevelGenre = rr_setTopLevelGenre;
-    self.setParentId = function(parentId) {
-        self.parentId = RR_entity.fixCatId(parentId);
+    this.addItemId = r3_entity.addItemId;
+    this.setBrand = rr_setBrand;
+    this.setId = rr_setId;
+    this.setName = rr_setName;
+    this.setTopLevelGenre = rr_setTopLevelGenre;
+    this.setParentId = function(parentId) {
+        this.parentId = RR_entity.fixCatId(parentId);
     };
-    self.setTopName = function(topName) {
-        self.topName = topName;
+    this.setTopName = function(topName) {
+        this.topName = topName;
     };
-    self.createScript = function(scriptSrc) {
-        if (self.topLevelGenre) {
-            scriptSrc += '&tg=' + encodeURIComponent(self.topLevelGenre);
+    this.createScript = function(scriptSrc) {
+        if (this.topLevelGenre) {
+            scriptSrc += '&tg=' + encodeURIComponent(this.topLevelGenre);
         }
-        if (self.name) {
+        if (this.name) {
             if (typeof r3_entity.apiKey != RR_entity.U && r3_entity.apiKey == RR_entity.D) {
                 try {
-                    self.id = RR_entity.fixCatId(self.name);
+                    this.id = RR_entity.fixCatId(this.name);
                 } catch (e) {}
             } else {
-                scriptSrc += '&cn=' + encodeURIComponent(self.name);
+                scriptSrc += '&cn=' + encodeURIComponent(this.name);
             }
         }
-        if (self.id) {
-            scriptSrc += '&c=' + encodeURIComponent(self.id);
+        if (this.id) {
+            scriptSrc += '&c=' + encodeURIComponent(this.id);
         }
-        if (self.parentId) {
-            scriptSrc += '&pc=' + encodeURIComponent(self.parentId);
+        if (this.parentId) {
+            scriptSrc += '&pc=' + encodeURIComponent(this.parentId);
         }
-        if (self.topName) {
-            scriptSrc += '&tcn=' + encodeURIComponent(self.topName);
+        if (this.topName) {
+            scriptSrc += '&tcn=' + encodeURIComponent(this.topName);
         }
-        if (self.brand) {
-            scriptSrc += '&b=' + encodeURIComponent(self.brand);
+        if (this.brand) {
+            scriptSrc += '&b=' + encodeURIComponent(this.brand);
         }
         return scriptSrc;
     }
 }
 
 function r3_cart(RR_entity) {
-    var self = this;
     var r3_entity = r3_common(RR_entity);
-    self.addItemId = r3_entity.addItemId;
-    self.addItemIdCentsQuantity = rr_addItemIdCentsQuantity;
-    self.addItemIdDollarsAndCentsQuantity = rr_addItemIdDollarsAndCentsQuantity;
-    self.addItemIdPriceQuantity = rr_addItemIdPriceQuantity;
-    self.createScript = function(scriptSrc) {
-        if (self.purchasesCents) {
-            scriptSrc += '&ppc=' + encodeURIComponent(self.purchasesCents);
+    this.addItemId = r3_entity.addItemId;
+    this.addItemIdCentsQuantity = rr_addItemIdCentsQuantity;
+    this.addItemIdDollarsAndCentsQuantity = rr_addItemIdDollarsAndCentsQuantity;
+    this.addItemIdPriceQuantity = rr_addItemIdPriceQuantity;
+    this.createScript = function(scriptSrc) {
+        if (this.purchasesCents) {
+            scriptSrc += '&ppc=' + encodeURIComponent(this.purchasesCents);
         }
-        if (self.purchasesDollarsAndCents) {
-            scriptSrc += '&pp=' + encodeURIComponent(self.purchasesDollarsAndCents);
+        if (this.purchasesDollarsAndCents) {
+            scriptSrc += '&pp=' + encodeURIComponent(this.purchasesDollarsAndCents);
         }
-        if (self.quantities) {
-            scriptSrc += '&q=' + encodeURIComponent(self.quantities);
+        if (this.quantities) {
+            scriptSrc += '&q=' + encodeURIComponent(this.quantities);
         }
-        if (self.purchasesPrice) {
-            scriptSrc += '&pp=' + encodeURIComponent(self.purchasesPrice);
+        if (this.purchasesPrice) {
+            scriptSrc += '&pp=' + encodeURIComponent(this.purchasesPrice);
         }
         return scriptSrc;
     }
 }
 
 function r3_addtocart(RR_entity) {
-    var self = this;
     var r3_entity = r3_common(RR_entity);
-    self.addItemIdToCart = r3_entity.addItemIdToCart;
-    self.createScript = function(scriptSrc) {
+    this.addItemIdToCart = r3_entity.addItemIdToCart;
+    this.createScript = function(scriptSrc) {
         return scriptSrc;
     }
 }
 
 function r3_purchased(RR_entity) {
-    var self = this;
-    self.addItemId = rr_addItemIdCentsQuantity;
-    self.addItemIdCentsQuantity = rr_addItemIdCentsQuantity;
-    self.addItemIdDollarsAndCentsQuantity = rr_addItemIdDollarsAndCentsQuantity;
-    self.addItemIdPriceQuantity = rr_addItemIdPriceQuantity;
-    self.setOrderNumber = function(orderNumber) {
-        self.orderNumber = orderNumber;
+    this.addItemId = rr_addItemIdCentsQuantity;
+    this.addItemIdCentsQuantity = rr_addItemIdCentsQuantity;
+    this.addItemIdDollarsAndCentsQuantity = rr_addItemIdDollarsAndCentsQuantity;
+    this.addItemIdPriceQuantity = rr_addItemIdPriceQuantity;
+    this.setOrderNumber = function(orderNumber) {
+        this.orderNumber = orderNumber;
     };
-    self.createScript = function(scriptSrc) {
-        if (self.orderNumber) {
-            scriptSrc += '&o=' + encodeURIComponent(self.orderNumber);
+    this.createScript = function(scriptSrc) {
+        if (this.orderNumber) {
+            scriptSrc += '&o=' + encodeURIComponent(this.orderNumber);
         }
-        if (self.purchasesCents) {
-            scriptSrc += '&ppc=' + encodeURIComponent(self.purchasesCents);
+        if (this.purchasesCents) {
+            scriptSrc += '&ppc=' + encodeURIComponent(this.purchasesCents);
         }
-        if (self.purchasesDollarsAndCents) {
-            scriptSrc += '&pp=' + encodeURIComponent(self.purchasesDollarsAndCents);
+        if (this.purchasesDollarsAndCents) {
+            scriptSrc += '&pp=' + encodeURIComponent(this.purchasesDollarsAndCents);
         }
-        if (self.quantities) {
-            scriptSrc += '&q=' + encodeURIComponent(self.quantities);
+        if (this.quantities) {
+            scriptSrc += '&q=' + encodeURIComponent(this.quantities);
         }
-        if (self.purchasesPrice) {
-            scriptSrc += '&pp=' + encodeURIComponent(self.purchasesPrice);
+        if (this.purchasesPrice) {
+            scriptSrc += '&pp=' + encodeURIComponent(this.purchasesPrice);
         }
         return scriptSrc;
     }
 }
 
 function r3_search(RR_entity) {
-    var self = this;
     var r3_entity = r3_common(RR_entity);
-    self.addItemId = r3_entity.addItemId;
-    self.setBrand = rr_setBrand;
-    self.setTerms = r3_entity.addSearchTerm;
-    self.createScript = function(scriptSrc) {
-        if (self.brand) {
-            scriptSrc += '&b=' + encodeURIComponent(self.brand);
+    this.addItemId = r3_entity.addItemId;
+    this.setBrand = rr_setBrand;
+    this.setTerms = r3_entity.addSearchTerm;
+    this.createScript = function(scriptSrc) {
+        if (this.brand) {
+            scriptSrc += '&b=' + encodeURIComponent(this.brand);
         }
         return scriptSrc;
     }
 }
 
 function r3_home(RR_entity) {
-    var self = this;
-    self.createScript = function(scriptSrc) {
+    this.createScript = function(scriptSrc) {
         return scriptSrc;
     }
 }
 
 function r3_dlp(RR_entity) {
-    var self = this;
-    self.createScript = function(scriptSrc) {
+    this.createScript = function(scriptSrc) {
         return scriptSrc;
     }
 }
 
 function r3_error(RR_entity) {
-    var self = this;
-    self.createScript = function(scriptSrc) {
+    this.createScript = function(scriptSrc) {
         return scriptSrc;
     }
 }
 
 function r3_myrecs(RR_entity) {
-    var self = this;
-    self.createScript = function(scriptSrc) {
+    this.createScript = function(scriptSrc) {
         return scriptSrc;
     }
 }
 
 function r3_personal(RR_entity) {
-    var self = this;
-    self.createScript = function(scriptSrc) {
+    this.createScript = function(scriptSrc) {
         return scriptSrc;
     }
 }
 
 function r3_merchandised(RR_entity) {
-    var self = this;
     var r3_entity = r3_common(RR_entity);
-    self.addItemId = r3_entity.addItemId;
-    self.setName = rr_setName;
-    self.createScript = function(scriptSrc) {
-        if (self.name) {
-            scriptSrc += '&n=' + encodeURIComponent(self.name);
+    this.addItemId = r3_entity.addItemId;
+    this.setName = rr_setName;
+    this.createScript = function(scriptSrc) {
+        if (this.name) {
+            scriptSrc += '&n=' + encodeURIComponent(this.name);
         }
         return scriptSrc;
     }
 }
 
 function r3_wishlist(RR_entity) {
-    var self = this;
+
     var r3_entity = r3_common(RR_entity);
-    self.addItemId = r3_entity.addItemId;
-    self.createScript = function(scriptSrc) {
+    this.addItemId = r3_entity.addItemId;
+    this.createScript = function(scriptSrc) {
         return scriptSrc;
     }
 }
 
 function r3_generic(RR_entity) {
-    var self = this;
-    self.setPageTypeId = rr_setPageTypeId;
-    self.createScript = function(scriptSrc) {
+    this.setPageTypeId = rr_setPageTypeId;
+    this.createScript = function(scriptSrc) {
         return scriptSrc;
     }
 }
 
 function r3_landing(RR_entity) {
-    var self = this;
-    self.isValid = function() {
+    this.isValid = function() {
         return true;
     };
-    self.createScript = function(scriptSrc) {
+    this.createScript = function(scriptSrc) {
         return scriptSrc;
     }
 }
 
 function r3_ensemble(RR_entity) {
-    var self = this;
-    self.addCategoryId = rr_addCategoryId;
-    self.setId = rr_setId;
-    self.setRecommendable = rr_setRecommendable;
-    self.createScript = function(scriptSrc) {
-        if (self.categoryIds) {
-            scriptSrc += '&cis=' + encodeURIComponent(self.categoryIds);
+    this.addCategoryId = rr_addCategoryId;
+    this.setId = rr_setId;
+    this.setRecommendable = rr_setRecommendable;
+    this.createScript = function(scriptSrc) {
+        if (this.categoryIds) {
+            scriptSrc += '&cis=' + encodeURIComponent(this.categoryIds);
         }
-        if (self.id) {
-            scriptSrc += '&p=' + encodeURIComponent(self.id);
+        if (this.id) {
+            scriptSrc += '&p=' + encodeURIComponent(this.id);
         }
-        if (typeof self.recommendable != RR_entity.U) {
-            scriptSrc += '&re=' + encodeURIComponent(self.recommendable);
+        if (typeof this.recommendable != RR_entity.U) {
+            scriptSrc += '&re=' + encodeURIComponent(this.recommendable);
         }
         return scriptSrc;
     }
 }
 
 function r3_registry(RR_entity) {
-    var self = this;
     var r3_entity = r3_common(RR_entity);
-    self.setRegistryId = r3_entity.setRegistryId;
-    self.createScript = function(scriptSrc) {
+    this.setRegistryId = r3_entity.setRegistryId;
+    this.createScript = function(scriptSrc) {
         return scriptSrc;
     }
 }
 
 function r3_addtoregistry(RR_entity) {
-    var self = this;
     var r3_entity = r3_common(RR_entity);
-    self.setRegistryId = r3_common.setRegistryId;
-    self.addItemIdCentsQuantity = rr_addItemIdCentsQuantity;
-    self.addItemIdDollarsAndCentsQuantity = rr_addItemIdDollarsAndCentsQuantity;
-    self.addItemIdPriceQuantity = rr_addItemIdPriceQuantity;
-    self.addAlreadyAddedItemId = function(id) {
-        if (typeof self.alreadyAddedRegistryItemIds == RR_entity.U) {
-            self.alreadyAddedRegistryItemIds = '';
+    this.setRegistryId = r3_common.setRegistryId;
+    this.addItemIdCentsQuantity = rr_addItemIdCentsQuantity;
+    this.addItemIdDollarsAndCentsQuantity = rr_addItemIdDollarsAndCentsQuantity;
+    this.addItemIdPriceQuantity = rr_addItemIdPriceQuantity;
+    this.addAlreadyAddedItemId = function(id) {
+        if (typeof this.alreadyAddedRegistryItemIds == RR_entity.U) {
+            this.alreadyAddedRegistryItemIds = '';
         }
-        self.alreadyAddedRegistryItemIds += '|' + id;
+        this.alreadyAddedRegistryItemIds += '|' + id;
     };
-    self.createScript = function(scriptSrc) {
-        if (self.alreadyAddedRegistryItemIds) {
-            scriptSrc += '&aari=' + encodeURIComponent(self.alreadyAddedRegistryItemIds);
+    this.createScript = function(scriptSrc) {
+        if (this.alreadyAddedRegistryItemIds) {
+            scriptSrc += '&aari=' + encodeURIComponent(this.alreadyAddedRegistryItemIds);
         } else if (r3_entity.itemIds) {
             scriptSrc += '&aari=' + encodeURIComponent(r3_entity.itemIds);
         }
-        if (self.purchasesCents) {
-            scriptSrc += '&ppc=' + encodeURIComponent(self.purchasesCents);
+        if (this.purchasesCents) {
+            scriptSrc += '&ppc=' + encodeURIComponent(this.purchasesCents);
         }
-        if (self.purchasesDollarsAndCents) {
-            scriptSrc += '&pp=' + encodeURIComponent(self.purchasesDollarsAndCents);
+        if (this.purchasesDollarsAndCents) {
+            scriptSrc += '&pp=' + encodeURIComponent(this.purchasesDollarsAndCents);
         }
-        if (self.purchasesPrice) {
-            scriptSrc += '&pp=' + encodeURIComponent(self.purchasesPrice);
+        if (this.purchasesPrice) {
+            scriptSrc += '&pp=' + encodeURIComponent(this.purchasesPrice);
         }
-        if (self.quantities) {
-            scriptSrc += '&q=' + encodeURIComponent(self.quantities);
+        if (this.quantities) {
+            scriptSrc += '&q=' + encodeURIComponent(this.quantities);
         }
         return scriptSrc;
     }
