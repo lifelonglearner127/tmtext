@@ -100,7 +100,7 @@ class Amazon_marketplace(object):
 
             if not name.strip():
                 name = self.is_empty(seller.xpath(
-                    "//p[contains(@class, 'Name')]/span[last()]/text()"
+                    ".//p[contains(@class, 'Name')]/span[last()]/text()"
                 ).extract(), "")
                 name = self.is_empty(re.findall("\((.*)\)", name), "")
 
