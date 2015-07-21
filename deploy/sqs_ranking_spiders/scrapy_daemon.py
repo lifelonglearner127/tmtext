@@ -1013,6 +1013,7 @@ def main():
     for task in tasks_taken:
         if task.start():
             task.run()
+            task.send_current_status_to_sqs()  # report 0% progress immediately
             logger.info('Task #%s (%r) started successfully.',
                         task.task_data.get('task_id', 0),
                         task.get_output_path())
