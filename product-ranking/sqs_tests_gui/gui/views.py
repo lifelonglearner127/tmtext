@@ -58,6 +58,9 @@ def get_client_ip(request):
 class AddJob(View):
     """ For POSTing jobs """
     def post(self, request, *args, **kwargs):
+        if not os.path.exists('/tmp/_enable_add_job'):
+            return HttpResponse('/tmp/_enable_add_job does not exist, exit...')
+
         client_ip = get_client_ip(request)
 
         site = request.POST.get('site', '')
