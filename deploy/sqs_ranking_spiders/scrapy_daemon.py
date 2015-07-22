@@ -690,7 +690,6 @@ class ScrapyTask(object):
     def _success_finish(self):
         # run this task after scrapy process successfully finished
         logger.info('Success finish task #%s', self.task_data.get('task_id', 0))
-        self.queue.task_done()
         self.finished_ok = True
 
     def get_output_path(self):
@@ -1013,9 +1012,10 @@ def main():
     # start and run tasks
     logger.info('Starting to execute tasks, total %s.', len(tasks_taken))
     for task in tasks_taken:
-        if task.start():
+        if task.start():  # successfully started
             task.run()
             task.send_current_status_to_sqs()  # report 0% progress immediately
+            task.queue.task_done()  # remove the message from the input queue
             logger.info('Task #%s (%r) started successfully.',
                         task.task_data.get('task_id', 0),
                         task.get_output_path())
