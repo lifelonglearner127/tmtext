@@ -129,11 +129,12 @@ class JcpenneyProductsSpider(BaseProductsSpider):
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
 
-        product_id = re.findall('ppId=([a-zA-Z0-9]+)&', response.url)
+        product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&', response.url))
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
-        new_meta['product_id'] = is_empty(product_id, None)
+        if product_id:
+            new_meta['product_id'] = product_id
 
         review_id = is_empty(response.xpath(
             '//script/text()[contains(.,"reviewId")]'
@@ -143,12 +144,13 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                                                      product_id=review_id),
                            meta=new_meta, callback=self._parse_reviews,
                            dont_filter=True)
-        else:
+        elif product_id:
             print response.url, '!'*40
             return Request(self.url_formatter.format(self.REVIEW_URL,
-                                                     product_id=product_id[0]),
+                                                     product_id=product_id),
                            meta=new_meta, callback=self._parse_reviews,
                            dont_filter=True)
+        return prod
 
     def _populate_from_html(self, response, product):
         if 'title' in product and product['title'] == '':
@@ -203,7 +205,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
 
     def _parse_related_products(self, response):
         product = response.meta['product']
-        product_id = response.meta['product_id']
+        product_id = response.meta.get('product_id')
         text = is_empty(re.findall('html:\'(.*)\'}', response.body))
         if text:
             html = Selector(text=text)
@@ -260,7 +262,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
 
     def _parse_reviews(self, response):
         product = response.meta['product']
-        product_id = response.meta['product_id']
+        product_id = response.meta.get('product_id')
         text = response.body_as_unicode().encode('utf-8')
         if response.status == 200:
             x = re.search(
