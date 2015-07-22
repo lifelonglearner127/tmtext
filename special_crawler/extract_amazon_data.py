@@ -388,6 +388,14 @@ class AmazonScraper(Scraper):
         tags = self._meta_tags()
         return len(tags)
 
+    def _canonical_link(self):
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+        if canonical_link.startswith("http://www.amazon.com"):
+            return canonical_link
+        else:
+            return "http://www.amazon.com" + canonical_link
+
     #returns 1 if the mobile version is the same, 0 otherwise
     def _mobile_image_same(self):
         url = self.product_page_url
@@ -955,30 +963,22 @@ class AmazonScraper(Scraper):
 
     # extract the department which the product belongs to
     def _category_name(self):
-        all = self._categories()
+        categories = self._categories()
 
-#        all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
-        if len(all)==0:
-            all = self.tree_html.xpath("//li[@class='breadcrumb']/a//text()")
-        all = map(lambda t: self._clean_text(t), all)
-        if len(all)>1:
-            return all[1]
-        elif len(all)>0:
-            return all[0]
-        return None
+        if not categories:
+            return None
+
+        return categories[-1]
 
     # extract a hierarchical list of all the departments the product belongs to
     def _categories(self):
-        if self.scraper_version == "uk":
-            all = self.tree_html.xpath("//div[@id='wayfinding-breadcrumbs_feature_div']//span[@class='a-list-item']/a//text()")
-        else:
-            all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
-            if len(all)==0:
-                all = self.tree_html.xpath("//li[@class='breadcrumb']/a//text()")
-        if len(all)==0:
-            all = self.tree_html.xpath("//ul[@id='nav-subnav']/li[@class='nav-subnav-item nav-category-button']/a//text()")
-        all = map(lambda t: self._clean_text(t), all)
-        return all
+        categories = self.tree_html.xpath("//div[@id='wayfinding-breadcrumbs_feature_div']//ul//a[@class='a-link-normal a-color-tertiary']/text()")
+        categories = [category.strip() for category in categories]
+
+        if not categories:
+            return None
+
+        return categories
 
     def _brand(self):
         bn=self.tree_html.xpath('//div[@id="mbc"]/@data-brand')
@@ -1078,6 +1078,7 @@ class AmazonScraper(Scraper):
         "keywords" : _keywords, \
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
+        "canonical_link": _canonical_link,
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \
