@@ -75,7 +75,7 @@ class AddJob(View):
 
         quantity = int(request.POST.get('quantity', 200))
 
-        branch = 's3_cache'  # TODO: change to master after it's merged into master
+        branch = ''
 
         if product_url and not searchterms_str:
             # create a new 'grouper' object, not the real job
