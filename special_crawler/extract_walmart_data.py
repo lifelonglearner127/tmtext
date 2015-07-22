@@ -146,8 +146,8 @@ class WalmartScraper(Scraper):
             product_id = self.product_page_url.split('/')[-1]
             return product_id
         elif self._version() == "Walmart v2":
-            product_json = self._extract_product_info_json()
-            return product_json["analyticsData"]["productId"]
+            product_id = self.product_page_url.split('/')[-1]
+            return product_id
 
         return None
 
@@ -1285,7 +1285,7 @@ class WalmartScraper(Scraper):
 
         # join all text in spec table; separate rows by newlines and eliminate spaces between cells
         # new page version:
-        rows = self.tree_html.xpath("//div[contains(@class, 'specs-table')]/table//tr")
+        rows = self.tree_html.xpath("//div[contains(@class, 'js-specs-table')]/table//tr")
         if not rows:
             # old page version:
             rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
@@ -1313,7 +1313,7 @@ class WalmartScraper(Scraper):
 
         # select table rows with more than 2 cells (the others are just headers), count them
         # new page version:
-        rows = self.tree_html.xpath("//div[contains(@class, 'specs-table')]/table//tr")
+        rows = self.tree_html.xpath("//div[contains(@class, 'js-specs-table')]/table//tr")
         if not rows:
             # old page version:
             rows = self.tree_html.xpath("//table[@class='SpecTable']//tr")
