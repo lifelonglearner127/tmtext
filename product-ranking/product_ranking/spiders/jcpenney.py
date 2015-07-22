@@ -113,7 +113,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod})
+                          meta={'product': prod, "handle_httpstatus_list": [403]})
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -133,7 +133,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
-        new_meta['product_id'] = product_id[0]
+        new_meta['product_id'] = is_empty(product_id, None)
 
         review_id = is_empty(response.xpath(
             '//script/text()[contains(.,"reviewId")]'
