@@ -74,8 +74,8 @@ class WalmartVariants(object):
                         else:
                             properties[key] = variation_key_values_by_attributes[key][variants[key]["id"]]
 
-                    if selected_variants[key] != variation_key_values_by_attributes[key][variants[key]["id"]]:
-                        isSelected = False
+                        if selected_variants[key] != variation_key_values_by_attributes[key][variants[key]["id"]]:
+                            isSelected = False
 
                 stockstatus_for_variants["properties"] = properties
                 stockstatus_for_variants["in_stock"] = item['buyingOptions']['available']
