@@ -113,7 +113,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod, "handle_httpstatus_list": [403]})
+                          meta={'product': prod})
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
