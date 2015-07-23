@@ -207,6 +207,13 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
                 product['buyer_reviews'] = buyer_reviews
 
+                # Get brand
+                try:
+                    brand = results['Brand']['Name']
+                    product['brand'] = brand
+                except (KeyError, ValueError):
+                    product['brand'] = None
+
         if reqs:
             return self.send_next_request(reqs, response)
 
