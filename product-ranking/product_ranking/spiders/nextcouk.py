@@ -179,30 +179,36 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 num_of_reviews = 0
                 average_rating = 0
                 rating_by_star = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+                zero_buyer_review = BuyerReviews(
+                    num_of_reviews=num_of_reviews,
+                    average_rating=average_rating,
+                    rating_by_star=rating_by_star
+                )
 
                 try:
                     buyer_reviews = results['ReviewStatistics']
 
                     num_of_reviews = buyer_reviews['TotalReviewCount']
-                    average_rating = buyer_reviews['AverageOverallRating']
 
-                    rating_by_star = rating_by_star
-                    ratings = buyer_reviews['RatingDistribution']
-                    for rate in ratings:
-                        star = str(rate['RatingValue'])
-                        rating_by_star[star] = rate['Count']
+                    if num_of_reviews:
+                        average_rating = buyer_reviews['AverageOverallRating']
 
-                    buyer_reviews = BuyerReviews(
-                        num_of_reviews=num_of_reviews,
-                        average_rating=average_rating,
-                        rating_by_star=rating_by_star
-                    )
+                        rating_by_star = rating_by_star
+                        ratings = buyer_reviews['RatingDistribution']
+                        for rate in ratings:
+                            star = str(rate['RatingValue'])
+                            rating_by_star[star] = rate['Count']
+
+                        buyer_reviews = BuyerReviews(
+                            num_of_reviews=num_of_reviews,
+                            average_rating=average_rating,
+                            rating_by_star=rating_by_star
+                        )
+                    else:
+                        buyer_reviews = zero_buyer_review
+
                 except (KeyError, ValueError):
-                    buyer_reviews = BuyerReviews(
-                        num_of_reviews=num_of_reviews,
-                        average_rating=average_rating,
-                        rating_by_star=rating_by_star
-                    )
+                    buyer_reviews = zero_buyer_review
 
                 product['buyer_reviews'] = buyer_reviews
 
