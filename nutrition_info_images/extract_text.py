@@ -65,8 +65,8 @@ def extract_text(filename, is_url=False, debug=False):
     if debug:
         cv2.imwrite("/tmp/5thresh.png", src)
     
-    # TODO: optimize by not writing image to disk    
-    cv2.imwrite("/tmp/dst.png", src)
+    if debug:      
+        cv2.imwrite("/tmp/dst.png", src)
 
     if debug:
         file = urllib.urlopen(filename)
@@ -77,7 +77,7 @@ def extract_text(filename, is_url=False, debug=False):
 
         print "-----------------------------------"
 
-    img = Image.open("/tmp/dst.png")
+    img = Image.fromarray(src)
     final_text = pytesseract.image_to_string(img)
     if debug:
         print "FINAL", filter(None, final_text.split('\n'))[:30]
@@ -91,8 +91,9 @@ if __name__=='__main__':
     # print extract_text("http://i5.walmartimages.com/dfw/dce07b8c-3743/k2-_c2121dd9-b52c-43d3-b30a-b5bbc2cde85f.v1.jpg", True)
     # print extract_text("http://ecx.images-amazon.com/images/I/519UiiFmggL.jpg", True)
     # print extract_text("http://ecx.images-amazon.com/images/I/51oBuOiR%2BFL.jpg", True)
-    print extract_text("http://i5.walmartimages.com/dfw/dce07b8c-a773/k2-_2e0d3993-c0ca-4021-9c49-dbbbd69004c2.v1.jpg", True)
+    # print extract_text("http://i5.walmartimages.com/dfw/dce07b8c-a773/k2-_2e0d3993-c0ca-4021-9c49-dbbbd69004c2.v1.jpg", True)
     # print extract_text("http://ecx.images-amazon.com/images/I/91Det0miFQL._SL1500_.jpg", True)
     # print extract_text("http://ecx.images-amazon.com/images/I/61H5FyM21UL.jpg", True)
     # print extract_text("http://ecx.images-amazon.com/images/I/81ikCuTaGeL._SL1500_.jpg", True)
     # print extract_text("http://ecx.images-amazon.com/images/I/81IvypyzrWL._SL1500_.jpg", True)
+    print extract_text("http://i5.walmartimages.com/dfw/dce07b8c-4d98/k2-_eba6aa70-08fe-4582-ac7a-e981b6b7691d.v1.jpg", True, True)
