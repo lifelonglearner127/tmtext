@@ -221,20 +221,23 @@ def is_dictionary_word(word):
 def image_score(cv2_im):
     '''Computes a score for the quality of the extracted text
     '''
+    print "Reading image..."
     img = Image.fromarray(cv2_im)
 
+    print "Extracting text..."
     final_text = pytesseract.image_to_string(img)
 
     total = 0
     words = 0
+    print "Computing score..."
     for word in final_text.lower().decode("utf-8").split():
         if is_dictionary_word(word):
             words += 1
         total += 1
     if not total:
         return 0
-    return float(words)/total*100
-    # return 1 if "nutrition" or "supplement" or "drug" in words else 0
+    # return float(words)/total*100
+    return 1 if "nutrition" or "supplement" or "drug" in words else 0
 
 def read_image(filename, is_url=True):
     if is_url:
@@ -267,8 +270,8 @@ def test_extract_text(filenames, is_url=False, debug=False):
                 'morph_el': range(1,4),
                 'thresh_param1': range(1,25,3),
                 'thresh_param2': range(0,50,5),
-                'thresh_param3': range(50,250,10),
-                'image_size': range(500,4000,500)
+                'thresh_param3': range(50,200,15),
+                'image_size': range(500,4000,800)
             }
 
     optimal_params = [{} for preprocessing in preprocessings]
@@ -326,11 +329,14 @@ def test_extract_text(filenames, is_url=False, debug=False):
         for idx, key in enumerate(param_keys):
             current_params[key] = current_values[idx]
         print current_params
+
+    # skipping the above ^^ ; just with the default parameters:
+    for x in [1]:
         # skip if all are 0
         if not all([False if v is None else True for v in current_params.values()]):
             print "continuing........."
             continue
-        for idx, preprocessing in enumerate([preprocessings[0], preprocessings[1], preprocessings[3]]):
+        for idx, preprocessing in enumerate(preprocessings):
             score = 0
             for idimg, src in enumerate(loaded_images):
                 try:
@@ -387,5 +393,5 @@ if __name__=='__main__':
         test_images = map(lambda l: l.strip(), fin.readlines())
 
     # test_extract_text(['/tmp/text_image.jpg', '/tmp/text_image2.jpg'])       
-    test_extract_text(test_images[:3])       
+    test_extract_text(test_images[::3])       
 
