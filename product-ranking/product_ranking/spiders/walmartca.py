@@ -27,7 +27,7 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
-from spiders_shared_code.walmart_variants import WalmartVariants
+from product_ranking.walmartca_url_feat_prod_gen import RR
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -69,7 +69,8 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         "walmart.ca",
         "api.bazaarvoice.com",
         "om.ordergroove.com",
-        "media.richrelevance.com"
+        "media.richrelevance.com",
+        "recs.richrelevance.com"
     ]
 
     default_hhl = [404, 500, 502, 520]
@@ -181,7 +182,24 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'locale', 'en_CA')  # Default locale.
 
         # Get featured products from generated JS script, evaluating parent script
-        featured_products = self._get_featured_products(response, product_id)
+        getUninitializedRecordSpotlights = len(
+            response.css(
+                "section.recordSpotlight.richRelevance:not(.RRdone)"
+            )
+        )
+
+        RR_entity = RR(
+            response.url,
+            product_id,
+            getUninitializedRecordSpotlights
+        )
+        featured_products_url = RR_entity.js()
+
+        reqs.append(Request(
+            url=featured_products_url,
+            meta=meta,
+            callback=self._get_featured_products
+        ))
 
         # Get product base info, QA and reviews straight from JS script
         product_info_url = self.PRODUCT_INFO_URL.format(product_id=meta['product_id'])
@@ -358,24 +376,11 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return ''
 
-    def _get_featured_products(self, response, prod_id):
-        featured_products = dict()
-
-        import os
-        dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        path = dir + '/js/final.js'
-        with open(path, "r") as myfile:
-            data = myfile.read().replace('\n', '')
-
-        ctx = execjs.compile(data)
-
-        print('*'*50)
-        print(ctx.call("main",
-                       response.url,
-                       prod_id))
-        print('*'*50)
-
-        return featured_products
+    def _get_featured_products(self, response):
+        data = response.body_as_unicode()
+        print('-'*50)
+        print data
+        print('-'*50)
 
     def _populate_from_html(self, response, product):
         """
