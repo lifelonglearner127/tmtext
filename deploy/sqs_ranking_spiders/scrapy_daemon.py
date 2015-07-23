@@ -942,6 +942,11 @@ class ScrapyTask(object):
         msg = generate_msg(self.task_data, self.items_scraped)
         put_msg_to_sqs(
             self.task_data['server_name']+PROGRESS_QUEUE_NAME, msg)
+        # put current progress to S3 as well, for easier debugging & tracking
+        progress_fname = self.get_output_path() + '.progress'
+        with open(progress_fname, 'w') as fh:
+            fh.write(json.dumps(msg))
+        put_file_into_s3(AMAZON_BUCKET_NAME, progress_fname)
 
 
 def main():
