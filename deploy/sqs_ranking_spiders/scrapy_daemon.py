@@ -955,12 +955,11 @@ def main():
         inst_ip = instance_meta.get('public-ipv4')
         inst_id = instance_meta.get('instance-id')
         logger.info("IMPORTANT: ip: %s, instance id: %s", inst_ip, inst_id)
-    # increment quantity of instances spinned up during the day.
+    set_global_variables_from_data_file()
     redis_db = connect_to_redis_database(redis_host=REDIS_HOST,
                                          redis_port=REDIS_PORT)
+    # increment quantity of instances spinned up during the day.
     increment_metric_counter(INSTANCES_COUNTER_REDIS_KEY, redis_db)
-    set_global_variables_from_data_file()
-
     max_tries = MAX_TRIES_TO_GET_TASK
     tasks_taken = []
     branch = None
@@ -972,7 +971,7 @@ def main():
 
     if not listener:
         logger.error('Socket auth failed!')
-        return
+        raise Exception  # to catch exception and write end marker
 
     # get tasks
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
@@ -983,12 +982,12 @@ def main():
             # set short wait time, so if task has different branch,
             # this task must appear on another instance asap
             msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries)
-        if msg is None:
-            time.sleep(3)
-            continue
         logger.info('Trying to get task from %s, try #%s',
                     TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
         max_tries -= 1
+        if msg is None:
+            time.sleep(3)
+            continue
         task_data, queue = msg
         # get branch from first task
         if not tasks_taken:
@@ -1048,6 +1047,7 @@ def main():
             time.sleep(step_time)
         else:
             logger.error('Some of the tasks not finished in allowed time.')
+            [t.stop() for t in tasks_taken if not t.is_finished()]
     except KeyboardInterrupt:
         [t.stop() for t in tasks_taken]
         raise Exception
@@ -1100,7 +1100,7 @@ if __name__ == '__main__':
         main()
     except Exception as e:
         logger.error(e)
-        logger.error('Finished with error.')
+        logger.error('Finished with error.')  # write fail finish marker
         try:
             os.killpg(os.getpgid(os.getpid()), 9)
         except:
