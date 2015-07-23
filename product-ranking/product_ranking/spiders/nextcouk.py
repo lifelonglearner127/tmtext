@@ -214,6 +214,16 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 except (KeyError, ValueError):
                     product['brand'] = None
 
+                # Get department
+                try:
+                    departments = is_empty(
+                        results['Attributes']['department']['Values']
+                    )
+                    department = departments['Value']
+                    product['department'] = department
+                except (KeyError, ValueError):
+                    product['department'] = None
+
         if reqs:
             return self.send_next_request(reqs, response)
 
