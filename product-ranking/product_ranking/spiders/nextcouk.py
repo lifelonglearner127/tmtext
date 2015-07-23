@@ -68,7 +68,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
             response.meta['product_id'], 3, '-'
         ) + '-X56'
         item = response.css(
-            '.itemsContainer .ProductDetail article[data-targetitem="{0}"]'.format(target_item)
+            '.itemsContainer .ProductDetail article.Selected'.format(target_item)
         )
 
         if item:
@@ -134,20 +134,19 @@ class NextCoUkProductSpider(BaseProductsSpider):
             if image_sel:
                 image = is_empty(image_sel.extract())
                 product['image_url'] = image.replace('Thumb', 'Shot')
-
-            # Get buyer reviews
-            buyer_reviews_url = self.REVIEWS_URL.format(product_id=product_id)
-            reviews_request = Request(
-                url=buyer_reviews_url,
-                callback=self.parse_buyer_reviews,
-                dont_filter=True,
-            )
-            reqs.append(reviews_request)
-
         else:
             self.log(
                 "Failed to extract product info from %r." % response.url, ERROR
             )
+
+        # Get buyer reviews
+        buyer_reviews_url = self.REVIEWS_URL.format(product_id=product_id)
+        reviews_request = Request(
+            url=buyer_reviews_url,
+            callback=self.parse_buyer_reviews,
+            dont_filter=True,
+        )
+        reqs.append(reviews_request)
 
         if reqs:
             return self.send_next_request(reqs, response)
