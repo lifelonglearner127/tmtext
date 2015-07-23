@@ -39,7 +39,7 @@ def _create_job(i):
             datetime.datetime.utcnow().strftime("%Y.%m.%d"), i),
         spider=random.choice(sites),
         search_term=random.choice(search_terms),
-        quantity=random.randrange(50, 100),
+        quantity=random.randrange(50, 1000),
         task_id=random.randrange(100000, 900000),
         mode='no cache',
         branch_name=''
