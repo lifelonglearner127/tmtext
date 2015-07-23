@@ -945,7 +945,7 @@ class ScrapyTask(object):
         # put current progress to S3 as well, for easier debugging & tracking
         progress_fname = self.get_output_path() + '.progress'
         with open(progress_fname, 'w') as fh:
-            fh.write(json.dumps(msg))
+            fh.write(json.dumps(msg, default=json_serializer))
         put_file_into_s3(AMAZON_BUCKET_NAME, progress_fname)
 
 
