@@ -65,8 +65,8 @@ def extract_text(filename, is_url=False, debug=False):
     if debug:
         cv2.imwrite("/tmp/5thresh.png", src)
     
-    # TODO: optimize by not writing image to disk    
-    cv2.imwrite("/tmp/dst.png", src)
+    if debug:      
+        cv2.imwrite("/tmp/dst.png", src)
 
     if debug:
         file = urllib.urlopen(filename)
@@ -77,7 +77,7 @@ def extract_text(filename, is_url=False, debug=False):
 
         print "-----------------------------------"
 
-    img = Image.open("/tmp/dst.png")
+    img = Image.fromarray(src)
     final_text = pytesseract.image_to_string(img)
     if debug:
         print "FINAL", filter(None, final_text.split('\n'))[:30]

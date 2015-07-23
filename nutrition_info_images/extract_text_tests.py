@@ -8,82 +8,6 @@ import numpy as np
 from nltk.corpus import wordnet
 import itertools
 
-def extract_text(filename, is_url=False, debug=False):
-    if is_url:
-        req = urllib.urlopen(filename)
-        arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
-        # src = cv2.imdecode(arr,-1) # 'load it as it is'    else:
-        src = cv2.imdecode(arr,cv2.CV_LOAD_IMAGE_GRAYSCALE) # 'load it as grayscale
-    else:
-        src = cv2.imread(filename, cv2.CV_LOAD_IMAGE_GRAYSCALE)
-
-    # smooth
-    # src = cv2.GaussianBlur(src,(3,3),0)
-    src = cv2.adaptiveBilateralFilter(src,(9,9),75,55)
-    if debug:
-        cv2.imwrite("/tmp/1blurred.png", src)
-
-
-    # resize image
-    orig_size = src.shape[:2]
-    # such that smaller dimension is 500 pixels at least
-    normalized_size = max(1000, max(orig_size))
-    max_dim_idx = max(enumerate(orig_size), key=lambda l: l[1])[0]
-    min_dim_idx = [idx for idx in [0,1] if idx!=max_dim_idx][0]
-    new_size = [0,0]
-    new_size[min_dim_idx] = normalized_size
-    new_size[max_dim_idx] = int(float(orig_size[max_dim_idx]) / orig_size[min_dim_idx] * normalized_size)
-
-    # src = cv2.resize(src=src, dsize=(0,0), dst=src, fx=4, fy=4)
-    src = cv2.resize(src=src, dsize=tuple(new_size), dst=src, fx=0, fy=0)
-
-    # # smooth
-    # # src = cv2.GaussianBlur(src,(5,5),0)
-    # src = cv2.adaptiveBilateralFilter(src,(1,1),75,75)
-    # cv2.imwrite("/tmp/2blurred2.png", src)
-    
-    # erode + dilate
-    element = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
-    element2 = cv2.getStructuringElement(cv2.MORPH_CROSS,(5,5))
-    skel = np.zeros(src.shape,np.uint8)
-
-    eroded = cv2.erode(src,element)
-    if debug:
-        cv2.imwrite("/tmp/3eroded.png", eroded)
-    temp = cv2.dilate(eroded,element2)
-    if debug:
-        cv2.imwrite("/tmp/4dilated.png", temp)
-    # temp = cv2.subtract(src,temp)
-    # skel = cv2.bitwise_or(skel,temp)
-    src = temp.copy()
-
-    # black and white
-    # src = cv2.adaptiveThreshold(src, 255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C, thresholdType=cv2.THRESH_BINARY, blockSize=15, C=2)
-    # _, src = cv2.threshold(src, 150, 255, cv2.THRESH_BINARY)
-    # For large text I think we need the first parameter to be higher
-    src = cv2.adaptiveThreshold(src,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,23,3)
-    # _,src = cv2.threshold(src,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    if debug:
-        cv2.imwrite("/tmp/5thresh.png", src)
-    
-    # TODO: optimize by not writing image to disk    
-    cv2.imwrite("/tmp/dst.png", src)
-
-    if debug:
-        file = urllib.urlopen(filename)
-        im = cStringIO.StringIO(file.read()) # constructs a StringIO holding the image
-        img = Image.open(im)
-        original_text = pytesseract.image_to_string(img)
-        print "ORIGINAL", filter(None, original_text.split('\n'))[:3]
-
-        print "-----------------------------------"
-
-    img = Image.open("/tmp/dst.png")
-    final_text = pytesseract.image_to_string(img)
-    if debug:
-        print "FINAL", filter(None, final_text.split('\n'))[:30]
-    return final_text
-
 def preprocessing1(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
     dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=150,\
     image_size=1000):
@@ -127,7 +51,7 @@ def preprocessing1(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     # if debug:
     #     cv2.imwrite("/tmp/5thresh.png", src)
     
-    cv2.imwrite("/tmp/dst.png", src)
+    return src
             
 
 
@@ -165,7 +89,7 @@ def preprocessing2(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     src = cv2.adaptiveThreshold(src, 255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C, thresholdType=cv2.THRESH_BINARY, \
     blockSize=thresh_param1*2+1, C=thresh_param2)
  
-    cv2.imwrite("/tmp/dst.png", src)
+    return src
 
 
 
@@ -207,8 +131,8 @@ def preprocessing3(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     if debug:
         cv2.imwrite("/tmp/5thresh.png", src)
     
-    # TODO: optimize by not writing image to disk    
-    cv2.imwrite("/tmp/dst.png", src)
+        
+    return src
 
 
 def preprocessing4(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
@@ -249,8 +173,8 @@ def preprocessing4(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     if debug:
         cv2.imwrite("/tmp/5thresh.png", src)
     
-    # TODO: optimize by not writing image to disk    
-    cv2.imwrite("/tmp/dst.png", src)
+        
+    return src
 
 
 def preprocessing5(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
@@ -286,7 +210,7 @@ def preprocessing5(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
 
     src = temp.copy()
 
-    cv2.imwrite("/tmp/dst.png", src)
+    return src
 
 def is_dictionary_word(word):
     if wordnet.synsets(word):
@@ -294,10 +218,11 @@ def is_dictionary_word(word):
     return False
 
 
-def image_score(image_path='/tmp/dst.png'):
+def image_score(cv2_im):
     '''Computes a score for the quality of the extracted text
     '''
-    img = Image.open(image_path)
+    img = Image.fromarray(cv2_im)
+
     final_text = pytesseract.image_to_string(img)
 
     total = 0
@@ -371,6 +296,7 @@ def test_extract_text(filenames, is_url=False, debug=False):
 
     # preload the images in memory
     loaded_images = []
+    print "Loading images..."
     for filename in filenames:
         src = read_image(filename)
         loaded_images.append(src)
@@ -406,14 +332,16 @@ def test_extract_text(filenames, is_url=False, debug=False):
             continue
         for idx, preprocessing in enumerate([preprocessings[0], preprocessings[1], preprocessings[3]]):
             score = 0
-            for src in loaded_images:
+            for idimg, src in enumerate(loaded_images):
                 try:
-                    preprocessing(src, **current_params)
-                    curr_score = image_score()
+                    print "Preprocessing image..."
+                    img = preprocessing(src, **current_params)
+                    print "Computing image score..."
+                    curr_score = image_score(img)
                     score += curr_score
                     print curr_score
                     if score > max_scores[idx]:
-                        successful_images[idx] = filename
+                        successful_images[idx] = filenames[idimg]
                     
                 except Exception, e:
                     print "Exception", e
@@ -428,6 +356,8 @@ def test_extract_text(filenames, is_url=False, debug=False):
                 
             print "round", rounds, current_params, scores
             rounds += 1
+            print "-----------------------"
+            print
 
 
     for idx, score in enumerate(scores):
@@ -457,5 +387,5 @@ if __name__=='__main__':
         test_images = map(lambda l: l.strip(), fin.readlines())
 
     # test_extract_text(['/tmp/text_image.jpg', '/tmp/text_image2.jpg'])       
-    test_extract_text(test_images)       
+    test_extract_text(test_images[:3])       
 
