@@ -61,6 +61,9 @@ class NextCoUkProductSpider(BaseProductsSpider):
         )
         response.meta['product_id'] = product_id
 
+        product['locale'] = 'en_GB'
+
+        # Format product id to get proper section from html body
         target_item = string_insert_char(
             response.meta['product_id'], 3, '-'
         ) + '-X56'
@@ -124,6 +127,13 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 )
             else:
                 product['price'] = None
+
+            # Get image url
+            image_sel = item.xpath('.//div[@class="StyleThumb"]//img/@src')
+
+            if image_sel:
+                image = is_empty(image_sel.extract())
+                product['image_url'] = image.replace('Thumb', 'Shot')
 
             # Get buyer reviews
             buyer_reviews_url = self.REVIEWS_URL.format(product_id=product_id)
