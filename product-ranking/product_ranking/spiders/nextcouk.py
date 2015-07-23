@@ -125,6 +125,15 @@ class NextCoUkProductSpider(BaseProductsSpider):
             else:
                 product['price'] = None
 
+            # Get buyer reviews
+            buyer_reviews_url = self.REVIEWS_URL.format(product_id=product_id)
+            reviews_request = Request(
+                url=buyer_reviews_url,
+                callback=self.parse_buyer_reviews,
+                dont_filter=True,
+            )
+            reqs.append(reviews_request)
+
         else:
             self.log(
                 "Failed to extract product info from %r." % response.url, ERROR
@@ -137,6 +146,61 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
+
+    def parse_buyer_reviews(self, response):
+        meta = response.meta.copy()
+        reqs = meta.get("reqs")
+        product = meta['product']
+        data = response.body_as_unicode()
+        data = is_empty(
+            re.findall(
+                r'bvGetReviewSummaries\((.+)\)',
+                data
+            )
+        )
+
+        if data:
+            data = json.loads(data)
+            results = is_empty(
+                data.get('Results', [])
+            )
+
+            if results:
+                # Buyer reviews
+                num_of_reviews = 0
+                average_rating = 0
+                rating_by_star = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+
+                try:
+                    buyer_reviews = results['ReviewStatistics']
+
+                    num_of_reviews = buyer_reviews['TotalReviewCount']
+                    average_rating = buyer_reviews['AverageOverallRating']
+
+                    rating_by_star = rating_by_star
+                    ratings = buyer_reviews['RatingDistribution']
+                    for rate in ratings:
+                        star = str(rate['RatingValue'])
+                        rating_by_star[star] = rate['Count']
+
+                    buyer_reviews = BuyerReviews(
+                        num_of_reviews=num_of_reviews,
+                        average_rating=average_rating,
+                        rating_by_star=rating_by_star
+                    )
+                except (KeyError, ValueError):
+                    buyer_reviews = BuyerReviews(
+                        num_of_reviews=num_of_reviews,
+                        average_rating=average_rating,
+                        rating_by_star=rating_by_star
+                    )
+
+                product['buyer_reviews'] = buyer_reviews
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
 
     def send_next_request(self, reqs, response):
         """
