@@ -1,0 +1,217 @@
+# -*- coding: utf-8 -*-#
+from urlparse import urljoin
+import json
+import re
+
+from scrapy import Selector
+from scrapy.http import FormRequest, Request
+from scrapy.log import ERROR, INFO, WARNING
+
+from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
+    BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
+from product_ranking.guess_brand import guess_brand_from_first_words
+
+is_empty = lambda x, y=None: x[0] if x else y
+
+def string_insert_char(string, index, char):
+    return string[:index] + str(char) + string[index:]
+
+class NextCoUkProductSpider(BaseProductsSpider):
+
+    name = 'nextcouk_products'
+    allowed_domains = ["www.next.co.uk",
+                       "next.ugc.bazaarvoice.com"]
+
+    SEARCH_URL = "http://www.next.co.uk/search?w={search_term}&isort={search_sort}"
+
+    NEXT_PAGE_URL = "http://www.next.co.uk/search?w=jeans&isort=score&srt={start_pos}"
+
+    REVIEWS_URL = "http://next.ugc.bazaarvoice.com/data/products.json?apiversion=5.3&" \
+                  "passkey=2l72hgc4hdkhcc1bqwyj1dt6d&" \
+                  "Filter=Id:{product_id}&stats=reviews&callback=bvGetReviewSummaries"
+
+    _SORT_MODES = {
+        "RELEVANT": "score",
+        "POPULAR": "popular",
+        "ALPHABETICAL": "title",
+        "LOW_HIGH": "price",
+        "HIGH_LOW": "price%20rev",
+        "RATING": "rating",
+    }
+
+    def __init__(self, search_sort='POPULAR', *args, **kwargs):
+        self.start_pos = 0
+        super(NextCoUkProductSpider, self).__init__(
+            site_name=self.allowed_domains[0],
+            url_formatter=FormatterWithDefaults(
+                search_sort=self._SORT_MODES[search_sort]
+            ),
+            *args, **kwargs)
+
+    def parse_product(self, response):
+        reqs = []
+        meta = response.meta.copy()
+        product = meta['product']
+
+        product_id = is_empty(
+            re.findall(r'#(\d+)', product['url']),
+            None
+        )
+        response.meta['product_id'] = product_id
+
+        target_item = string_insert_char(
+            response.meta['product_id'], 3, '-'
+        ) + '-X56'
+        item = response.css(
+            '.itemsContainer .ProductDetail article[data-targetitem="{0}"]'.format(target_item)
+        )
+
+        if item:
+            #  Getting title
+            title = item.xpath('.//div[@class="Title"]//h1/text() |'
+                               './/div[@class="Title"]//h2/text()')
+            title = is_empty(
+                title.extract(), ''
+            )
+            if title:
+                product['title'] = title.strip()
+
+            # Get description
+            description = is_empty(
+                item.css('.StyleContent').extract(), ''
+            )
+            if description:
+                product['description'] = description.strip().replace('\r', '').replace('\n', '').replace('\t', '')
+
+            # Get variants
+            variants = dict()
+            variants_selector = item.css('.StyleForm .DropDown')
+
+            if variants_selector:
+                for var in variants_selector:
+                    var_title = var.xpath('.//label/text()')
+                    var_value = var.xpath('.//select/option[@value != ""]/text()')
+
+                    if var_title and var_value:
+                        var_title = is_empty(
+                            var_title.extract(), ''
+                        ).strip().lower()
+                        var_list = []
+                        for value in var_value:
+                            var_list.append(
+                                value.extract()
+                            )
+                        variants[var_title] = var_list
+                    else:
+                        continue
+                product['variants'] = variants
+
+            # Get price
+            price_sel = item.css('.Price')
+
+            if price_sel:
+                price = is_empty(
+                    price_sel.extract()
+                ).strip()
+                price = is_empty(
+                    re.findall(r'(\d+)', price)
+                )
+                product['price'] = Price(
+                    priceCurrency="GBP",
+                    price=price
+                )
+            else:
+                product['price'] = None
+
+        else:
+            self.log(
+                "Failed to extract product info from %r." % response.url, ERROR
+            )
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
+    def send_next_request(self, reqs, response):
+        """
+        Helps to handle several requests
+        """
+
+        req = reqs.pop(0)
+        new_meta = response.meta.copy()
+        if reqs:
+            new_meta["reqs"] = reqs
+        return req.replace(meta=new_meta)
+
+    def _scrape_total_matches(self, response):
+        """
+        Scraping number of resulted product links
+        """
+
+        total_matches = response.css("#filters .ResultCount .Count ::text")
+        try:
+            matches_re = re.compile('(\d+) PRODUCTS')
+            total_matches = re.findall(
+                matches_re,
+                is_empty(
+                    total_matches.extract()
+                )
+            )
+            return int(
+                is_empty(total_matches, '0')
+            )
+        except:
+            total_matches = None
+            self.log(
+                "Failed to extract total matches from %r." % response.url, ERROR
+            )
+
+        return total_matches
+
+    def _scrape_results_per_page(self, response):
+        num = len(
+            response.css('[data-pagenumber="1"] article.Item')
+        )
+        self.items_per_page = num
+
+        if not num:
+            num = None
+            self.items_per_page = 0
+            self.log(
+                "Failed to extract results per page from %r." % response.url, ERROR
+            )
+
+        return num
+
+    def _scrape_product_links(self, response):
+        """
+        Scraping product links from search page
+        """
+
+        items = response.css(
+            'div.Page article.Item'
+        )
+
+        if items:
+            for item in items:
+                link = is_empty(
+                    item.css('.Details .Title a ::attr(href)').extract()
+                )
+                res_item = SiteProductItem()
+                yield link, res_item
+        else:
+            self.log("Found no product links in %r." % response.url, INFO)
+
+    def _scrape_next_results_page_link(self, response):
+
+        url = self.NEXT_PAGE_URL.format(start_pos=self.start_pos)
+
+        self.start_pos += self.items_per_page
+
+        return url
