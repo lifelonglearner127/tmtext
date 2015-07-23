@@ -37,7 +37,7 @@ def _create_job(i):
         name='bulk created task ' + str(i),
         spider=random.choice(sites),
         search_term=random.choice(search_terms),
-        quantity=random.randrange(3, 10),  # TODO: increase
+        quantity=random.randrange(300, 1000),
         task_id=random.randrange(100000, 900000),
         mode='no cache',
         branch_name=''
