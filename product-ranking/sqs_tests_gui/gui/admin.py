@@ -1,8 +1,11 @@
+import os
+import json
+
 from django.contrib import admin
 from django.core.urlresolvers import reverse_lazy
 
 # Register your models here.
-from .models import Job, JobGrouperCache
+from .models import Job, JobGrouperCache, get_progress_filename
 from .forms import JobForm
 
 
@@ -41,7 +44,20 @@ admin_link_to_log_file.allow_tags = True
 
 
 def admin_link_to_progress_file(job):
-    return "<a href='%s'>Progress</a>" % (link_to_progress_file(job))
+    # try to read progress from the file
+    if not os.path.exists(get_progress_filename(job)):
+        return "<a href='%s'>Progress</a>" % (link_to_progress_file(job))
+    else:
+        with open(get_progress_filename(job)) as fh:
+            cont = fh.read()
+        try:
+            cont = json.loads(cont)
+        except Exception as e:
+            return "<a href='%s'>(Invalid JSON)</a>" % (link_to_progress_file(job))
+        if not isinstance(cont, dict):
+            return "<a href='%s'>(Not DICT)</a>" % (link_to_progress_file(job))
+        progress = cont.get('progress', -1)
+        return "<a href='%s'>%s products</a>" % (link_to_progress_file(job), progress)
 admin_link_to_progress_file.allow_tags = True
 
 
