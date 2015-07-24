@@ -4,8 +4,11 @@ from future_builtins import *
 import string
 import urlparse
 import re
+import json
+import urllib
 
-from scrapy.log import ERROR, DEBUG
+from scrapy.log import ERROR, DEBUG, WARNING
+from scrapy.http import FormRequest, Request
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
@@ -31,6 +34,8 @@ class OzonProductsSpider(BaseProductsSpider):
     SEARCH_URL = ("http://www.ozon.ru/?context=search&text={search_term}"
                   "&sort={search_sort}")
 
+    RELATED_PRODS_URL = "http://www.ozon.ru/json/shelves.asmx/getitemsitems"
+
     SEARCH_SORT = {
         'default': '',
         'price': 'price',
@@ -49,12 +54,17 @@ class OzonProductsSpider(BaseProductsSpider):
             *args, **kwargs)
 
     def parse_product(self, response):
-        product = response.meta['product']
+        meta = response.meta.copy()
+        product = meta['product']
+        reqs = []
 
+        # Set product title
         cond_set(product, 'title', response.xpath(
             '//h1[@itemprop="name"]/text()'
         ).extract(), string.strip)
 
+        # Set image url
+        # TODO: refactor this odd piece of code too
         cond_set(product, 'image_url', response.xpath(
             '//div[@id="PageContent"]'
             '//img[@class="eBigGallery_ImageView"]/@src'
@@ -96,6 +106,7 @@ class OzonProductsSpider(BaseProductsSpider):
             product['price'] = Price(price=price,
                                      priceCurrency='RUB')
 
+        # Set if out of stock
         cond_set(product, 'is_out_of_stock', response.xpath(
             '//div[@id="PageContent"]'
             '//div[@class="bSaleColumn"]'
@@ -104,6 +115,8 @@ class OzonProductsSpider(BaseProductsSpider):
             x.strip() != u'\u041d\u0430 \u0441\u043a\u043b\u0430\u0434\u0435.'
         )
 
+        # Set description and brand
+        # TODO: refactor this odd piece of code
         desc = ''
         desc1 = response.xpath('//div[@class="bDetailLogoBlock"]/node()')
         brand = desc1.xpath(
@@ -139,27 +152,93 @@ class OzonProductsSpider(BaseProductsSpider):
             desc = '\n'.join([desc, clear_text(desc3)])
 
         cond_set_value(product, 'description', desc)
+
+        # Set locale
         cond_set_value(product, 'locale', 'ru-RU')
+
+        # Set related products
+        rel_prod_sel = response.xpath('//*[@class="bUniversalShelf"]/'
+                                      './/ul[@class="eUniversalShelf_Tabs"]/'
+                                      'li[contains(@class, "eUniversalShelf_Tab")]/@onclick')
+
+        if rel_prod_sel:
+            rel_prod_ids = is_empty(rel_prod_sel.extract())
+
+            rel_prod_ids = is_empty(
+                re.findall(
+                    r'return\s+(.+)',
+                    rel_prod_ids
+                )
+            )
+
+            if rel_prod_ids:
+                rel_prod_ids = rel_prod_ids.replace('\'', '"').replace(' ', '').replace('Ids', 'itemsIds')
+                data = json.loads(rel_prod_ids)
+
+                reqs.append(
+                    Request(
+                        self.RELATED_PRODS_URL,
+                        method='POST',
+                        callback=self.parse_related,
+                        body=json.dumps(data),
+                        headers={'Content-Type': 'application/json'},
+                    )
+                )
+
+        if reqs:
+            return self.send_next_request(reqs, response)
 
         return product
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
-    def _parse_related(self, response, link_selectors):
-        related_products = []
-        # for related_link in link_selectors:
-        #     title = related_link.xpath('@title').extract()
-        #     url = related_link.xpath('@href').extract()
-        #
-        #     if not url or not title or url[0] in response.url:
-        #         continue
-        #
-        #     related_products.append(RelatedProduct(
-        #         title[0],
-        #         urlparse.urljoin(response.url, url[0])
-        #     ))
-        return related_products
+    def send_next_request(self, reqs, response):
+        """
+        Helps to handle several requests
+        """
+
+        req = reqs.pop(0)
+        new_meta = response.meta.copy()
+        if reqs:
+            new_meta["reqs"] = reqs
+
+        return req.replace(meta=new_meta)
+
+    def parse_related(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+        reqs = meta.get('reqs')
+        related_products = meta.get('related_products', {})
+        recommended = []
+
+        try:
+            data = json.loads(response.body_as_unicode())
+            items = data['d']['Items']
+
+            if items:
+                for item in items:
+                    title = item['Name']
+                    href = '{www}{domain}{url}'.format(
+                        www='http://www.',
+                        domain=self.allowed_domains[0],
+                        url=item['Href']
+                    )
+
+                    recommended.append(RelatedProduct(
+                        title=title,
+                        url=href
+                    ))
+
+                related_products['recommended'] = recommended
+                product['related_products'] = related_products
+        except:
+            self.log("Impossible to get related products info in %r" % response.url, WARNING)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
 
     def _scrape_total_matches(self, response):
         total = None
