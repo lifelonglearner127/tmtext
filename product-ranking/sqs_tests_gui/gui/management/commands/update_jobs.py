@@ -130,11 +130,16 @@ class Command(BaseCommand):
             amazon_progress_file = amazon_progress_file[0]\
                 if amazon_progress_file else []
 
+            print
+            print '=' * 79
+            print 'Processing JOB', job.__dict__
+            print 'Data file', amazon_data_file
+            print 'Log file', amazon_log_file
+            print 'Progress file', amazon_progress_file
+
             if amazon_progress_file:
                 job.status = 'in progress'
                 job.save()
-
-            # TODO: check progress number and add an extra field for the model
 
             if amazon_progress_file:
                 full_local_prog_path = MEDIA_ROOT + get_progress_filename(job)
