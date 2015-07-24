@@ -63,6 +63,17 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             )
             yield Request(url, callback=self.getResponse)
 
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod['url'] = self.product_url
+            yield Request(self.product_url,
+                          self._parse_single_product,
+                          meta={'product': prod})
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     # Function count products on last page in pagination
     def count_prod_set(self, response):
         self.count_prod = 0
