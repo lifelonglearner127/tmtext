@@ -133,6 +133,9 @@ class OzonProductsSpider(BaseProductsSpider):
 
         return product
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def _parse_related(self, response, link_selectors):
         related_products = []
         for related_link in link_selectors:
@@ -187,4 +190,3 @@ class OzonProductsSpider(BaseProductsSpider):
         else:
             link = urlparse.urljoin(response.url, next[0])
         return link
-
