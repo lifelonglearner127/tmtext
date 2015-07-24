@@ -15,10 +15,12 @@ from product_ranking.spiders import (BaseProductsSpider, cond_set,
 
 def clear_text(l):
     """
-    usefull for  clearing sel.xpath('.//text()').explode() expressions
+    useful for  clearing sel.xpath('.//text()').explode() expressions
     """
     return " ".join(
         [it for it in map(string.strip, l) if it])
+
+is_empty = lambda x, y=None: x[0] if x else y
 
 
 class OzonProductsSpider(BaseProductsSpider):
@@ -66,13 +68,32 @@ class OzonProductsSpider(BaseProductsSpider):
                 response.url,
                 product.get('image_url'))
 
-        price = response.xpath(
-            '//div[@id="PageContent"]'
-            '//div[@class="bSaleColumn"]'
-            '//span[@itemprop="price"]/text()'
-        ).re(FLOATING_POINT_RGEX)
-        if price:
-            product['price'] = Price(price=price[0],
+        # Set price
+        price_main = response.xpath(
+            '//div[contains(@class, "bSaleBlock")]/'
+            './/span[@class="eOzonPrice_main"]/text()'
+        )
+        price_submain = response.xpath(
+            '//div[contains(@class, "bSaleBlock")]/'
+            './/span[@class="eOzonPrice_submain"]/text()'
+        )
+
+        if price_submain:
+            price_submain = is_empty(
+                price_submain.extract()
+            )
+        else:
+            price_submain = '00'
+
+        if price_main:
+            price_main = is_empty(
+                price_main.extract()
+            ).replace('\xa0', '')
+            price = '{0}.{1}'.format(
+                price_main.strip(),
+                price_submain.strip()
+            )
+            product['price'] = Price(price=price,
                                      priceCurrency='RUB')
 
         cond_set(product, 'is_out_of_stock', response.xpath(
@@ -120,17 +141,6 @@ class OzonProductsSpider(BaseProductsSpider):
         cond_set_value(product, 'description', desc)
         cond_set_value(product, 'locale', 'ru-RU')
 
-        also_bought = self._parse_related(response, response.css(
-            '.bAlsoPurchased p.misc a'))
-
-        recom = self._parse_related(response, response.css(
-            '.detailUpsale p.misc a'))
-
-        cond_set_value(product, 'related_products', {
-            'recommended': recom,
-            'buyers_also_bought': also_bought
-        })
-
         return product
 
     def _parse_single_product(self, response):
@@ -138,17 +148,17 @@ class OzonProductsSpider(BaseProductsSpider):
 
     def _parse_related(self, response, link_selectors):
         related_products = []
-        for related_link in link_selectors:
-            title = related_link.xpath('@title').extract()
-            url = related_link.xpath('@href').extract()
-
-            if not url or not title or url[0] in response.url:
-                continue
-
-            related_products.append(RelatedProduct(
-                title[0],
-                urlparse.urljoin(response.url, url[0])
-            ))
+        # for related_link in link_selectors:
+        #     title = related_link.xpath('@title').extract()
+        #     url = related_link.xpath('@href').extract()
+        #
+        #     if not url or not title or url[0] in response.url:
+        #         continue
+        #
+        #     related_products.append(RelatedProduct(
+        #         title[0],
+        #         urlparse.urljoin(response.url, url[0])
+        #     ))
         return related_products
 
     def _scrape_total_matches(self, response):
