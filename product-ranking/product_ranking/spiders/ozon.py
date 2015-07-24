@@ -156,7 +156,7 @@ class OzonProductsSpider(BaseProductsSpider):
         # Set locale
         cond_set_value(product, 'locale', 'ru-RU')
 
-        # Set related products
+        # Set recommended products
         rel_prod_sel = response.xpath('//*[@class="bUniversalShelf"]/'
                                       './/ul[@class="eUniversalShelf_Tabs"]/'
                                       'li[contains(@class, "eUniversalShelf_Tab")]/@onclick')
@@ -179,11 +179,45 @@ class OzonProductsSpider(BaseProductsSpider):
                     Request(
                         self.RELATED_PRODS_URL,
                         method='POST',
-                        callback=self.parse_related,
+                        callback=self.parse_recommended_prods,
                         body=json.dumps(data),
                         headers={'Content-Type': 'application/json'},
                     )
                 )
+
+        # Set also bought products
+        also_bought = is_empty(
+            re.findall(
+                r"dataLayer.push\({\"ecommerce\":(.+)}\);",
+                response.body_as_unicode()
+            )
+        )
+
+        if also_bought:
+            try:
+                prod_ids = []
+                data = json.loads(also_bought)
+
+                ids = data['impressions']
+                for item in ids:
+                    prod_ids.append(item['id'])
+
+                form_data = {
+                    "Type": "Items",
+                    "itemsIds": prod_ids
+                }
+
+                reqs.append(
+                    Request(
+                        self.RELATED_PRODS_URL,
+                        method='POST',
+                        callback=self.parse_also_bought_prods,
+                        body=json.dumps(form_data),
+                        headers={'Content-Type': 'application/json'},
+                    )
+                )
+            except (KeyError, ValueError):
+                self.log("Impossible to get also bought products info in %r" % response.url, WARNING)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -200,17 +234,46 @@ class OzonProductsSpider(BaseProductsSpider):
 
         req = reqs.pop(0)
         new_meta = response.meta.copy()
+
         if reqs:
             new_meta["reqs"] = reqs
 
         return req.replace(meta=new_meta)
 
-    def parse_related(self, response):
+    def parse_recommended_prods(self, response):
         meta = response.meta.copy()
         product = meta['product']
+        related_products = product.get('related_products', {})
         reqs = meta.get('reqs')
-        related_products = meta.get('related_products', {})
-        recommended = []
+        data = self._handle_related_product(response, 'recommended')
+
+        if data:
+            related_products['recommended'] = data
+            product['related_products'] = related_products
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def parse_also_bought_prods(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+        related_products = product.get('related_products', {})
+        reqs = meta.get('reqs')
+        data = self._handle_related_product(response, 'also_bought')
+
+        if data:
+            related_products['also_bought'] = data
+            product['related_products'] = related_products
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _handle_related_product(self, response, rel_product_type):
+        related_products = []
 
         try:
             data = json.loads(response.body_as_unicode())
@@ -225,20 +288,17 @@ class OzonProductsSpider(BaseProductsSpider):
                         url=item['Href']
                     )
 
-                    recommended.append(RelatedProduct(
+                    related_products.append(RelatedProduct(
                         title=title,
                         url=href
                     ))
 
-                related_products['recommended'] = recommended
-                product['related_products'] = related_products
-        except:
-            self.log("Impossible to get related products info in %r" % response.url, WARNING)
-
-        if reqs:
-            return self.send_next_request(reqs, response)
-
-        return product
+                return related_products
+        except (KeyError, ValueError):
+            self.log("Impossible to get {0} products info in {1}".format(
+                rel_product_type, response.url
+            ), WARNING)
+            return None
 
     def _scrape_total_matches(self, response):
         total = None
