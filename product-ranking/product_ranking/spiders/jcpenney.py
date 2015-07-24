@@ -330,7 +330,8 @@ class JcpenneyProductsSpider(BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         links = response.xpath(
-            '//div[@class="product_holder"]/div/div/span/a/@href'
+            '//div[@class="product_holder"]/div/div/'
+            'span[contains(@class, "product_image")]/a/@href'
         ).extract()
 
         for link in links:
