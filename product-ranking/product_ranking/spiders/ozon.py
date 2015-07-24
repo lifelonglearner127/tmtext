@@ -219,6 +219,27 @@ class OzonProductsSpider(BaseProductsSpider):
             except (KeyError, ValueError):
                 self.log("Impossible to get also bought products info in %r" % response.url, WARNING)
 
+        # Set matketplaces
+        marketplace_sel = response.css('#js_merchant_name ::text')
+
+        mktplaces = []
+        marketplace = {}
+
+        if marketplace_sel:
+            marketplace_name = is_empty(
+                marketplace_sel.extract()
+            ).strip()
+            marketplace['name'] = marketplace_name
+            marketplace['price'] = product['price']
+            marketplace['seller_type'] = 'seller'
+        else:
+            marketplace['name'] = self.allowed_domains[0]
+            marketplace['price'] = product['price']
+            marketplace['seller_type'] = 'site'
+
+        mktplaces.append(marketplace)
+        product['marketplace'] = mktplaces
+
         if reqs:
             return self.send_next_request(reqs, response)
 
