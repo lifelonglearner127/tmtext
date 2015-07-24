@@ -8,6 +8,8 @@ from django.core.urlresolvers import reverse_lazy
 from .models import Job, JobGrouperCache, get_progress_filename
 from .forms import JobForm
 
+from settings import MEDIA_ROOT
+
 
 COLORS = {
     'error': 'red',
@@ -45,7 +47,7 @@ admin_link_to_log_file.allow_tags = True
 
 def admin_link_to_progress_file(job):
     # try to read progress from the file
-    if not os.path.exists(get_progress_filename(job)):
+    if not os.path.exists(MEDIA_ROOT + get_progress_filename(job)):
         return "<a href='%s'>Progress</a>" % (link_to_progress_file(job))
     else:
         with open(get_progress_filename(job)) as fh:
