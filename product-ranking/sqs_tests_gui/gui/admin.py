@@ -50,7 +50,7 @@ def admin_link_to_progress_file(job):
     if not os.path.exists(MEDIA_ROOT + get_progress_filename(job)):
         return "<a href='%s'>Progress</a>" % (link_to_progress_file(job))
     else:
-        with open(get_progress_filename(job)) as fh:
+        with open(MEDIA_ROOT + get_progress_filename(job)) as fh:
             cont = fh.read()
         try:
             cont = json.loads(cont)
