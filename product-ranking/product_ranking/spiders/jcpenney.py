@@ -129,7 +129,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
 
-        product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&', response.url))
+        product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
@@ -321,7 +321,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                     product['buyer_reviews'] = reviews
 
         if 'buyer_reviews' not in product:
-            cond_set_value(product, 'buyer_reviews', 0)
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         new_meta = response.meta.copy()
         new_meta['product'] = product
         return Request(self.RELATED_URL.format(product_id=product_id),
