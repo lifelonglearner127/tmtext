@@ -64,11 +64,8 @@ class NextCoUkProductSpider(BaseProductsSpider):
         product['locale'] = 'en_GB'
 
         # Format product id to get proper section from html body
-        target_item = string_insert_char(
-            response.meta['product_id'], 3, '-'
-        ) + '-X56'
         item = response.css(
-            '.itemsContainer .ProductDetail article.Selected'.format(target_item)
+            '.itemsContainer .ProductDetail article.Selected'
         )
 
         if item:
@@ -139,6 +136,14 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 "Failed to extract product info from %r." % response.url, ERROR
             )
 
+        # Get related products
+        related_items = response.xpath(
+            '//section[@class="ProductDetail"]/article[not(contains(@class,"Selected"))]'
+        )
+
+        if related_items:
+            product['related_products'] = self.parse_related_products(related_items)
+
         # Get buyer reviews
         buyer_reviews_url = self.REVIEWS_URL.format(product_id=product_id)
         reviews_request = Request(
@@ -155,6 +160,35 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
+
+    def parse_related_products(self, items):
+        related_prods = []
+
+        for item in items:
+            # Get title
+            title = item.xpath('.//div[@class="Title"]//h1/text() |'
+                               './/div[@class="Title"]//h2/text()')
+            if title:
+                title = is_empty(
+                    title.extract()
+                ).strip()
+
+            # Get url
+            url = item.xpath('.//div[@class="StyleThumb"]/a/img/@src')
+            if url:
+                url = is_empty(
+                    url.extract()
+                )
+
+            if url and title:
+                related_prods.append(
+                    RelatedProduct(
+                        title=title,
+                        url=url
+                    )
+                )
+
+        return related_prods
 
     def parse_buyer_reviews(self, response):
         meta = response.meta.copy()
@@ -183,7 +217,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     num_of_reviews=num_of_reviews,
                     average_rating=average_rating,
                     rating_by_star=rating_by_star
-                )
+                )  # If no buyer reviews
 
                 try:
                     buyer_reviews = results['ReviewStatistics']
@@ -271,6 +305,10 @@ class NextCoUkProductSpider(BaseProductsSpider):
         return total_matches
 
     def _scrape_results_per_page(self, response):
+        """
+        Number of results on page
+        """
+
         num = len(
             response.css('[data-pagenumber="1"] article.Item')
         )
@@ -305,9 +343,6 @@ class NextCoUkProductSpider(BaseProductsSpider):
             self.log("Found no product links in %r." % response.url, INFO)
 
     def _scrape_next_results_page_link(self, response):
-
         url = self.NEXT_PAGE_URL.format(start_pos=self.start_pos)
-
         self.start_pos += self.items_per_page
-
         return url
