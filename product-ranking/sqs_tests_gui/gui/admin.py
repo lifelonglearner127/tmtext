@@ -29,9 +29,20 @@ def link_to_log_file(job):
     return reverse_lazy('log_file_view', kwargs={'job': job})
 
 
+def link_to_progress_file(job):
+    if not isinstance(job, int):
+        job = job.pk
+    return reverse_lazy('progress_file_view', kwargs={'job': job})
+
+
 def admin_link_to_log_file(job):
     return "<a href='%s'>Log</a>" % (link_to_log_file(job))
 admin_link_to_log_file.allow_tags = True
+
+
+def admin_link_to_progress_file(job):
+    return "<a href='%s'>Progress</a>" % (link_to_progress_file(job))
+admin_link_to_progress_file.allow_tags = True
 
 
 def admin_status(job):
@@ -50,7 +61,8 @@ class JobAdmin(admin.ModelAdmin):
     list_display = (
         'task_id', 'spider', 'name', 'searchterm_or_url', admin_status, 'mode',
         'created', 'finished',
-        admin_link_to_csv_data_file, admin_link_to_log_file
+        admin_link_to_csv_data_file, admin_link_to_log_file,
+        admin_link_to_progress_file
     )
     list_filter = ('status', 'created', 'finished',
                    'save_s3_cache')

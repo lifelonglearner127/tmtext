@@ -11,7 +11,8 @@ from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 import boto
 
-from .models import get_data_filename, get_log_filename, Job, JobGrouperCache
+from .models import get_data_filename, get_log_filename, get_progress_filename,\
+    Job, JobGrouperCache
 import settings
 
 
@@ -44,6 +45,14 @@ class LogFileView(AdminOnlyMixin, RedirectView):
         if log_fname.startswith('/'):
             log_fname = log_fname[1:]
         return settings.MEDIA_URL + log_fname
+
+
+class ProgressFileView(AdminOnlyMixin, RedirectView):
+    def get_redirect_url(self, *args, **kwargs):
+        prog_fname = get_progress_filename(kwargs['job'])
+        if prog_fname.startswith('/'):
+            prog_fname = prog_fname[1:]
+        return settings.MEDIA_URL + prog_fname
 
 
 def get_client_ip(request):
