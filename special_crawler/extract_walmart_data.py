@@ -1968,31 +1968,6 @@ class WalmartScraper(Scraper):
 
         return 1 if available else 0
 
-    def _owned(self):
-        """Extracts info on whether product is ownedby Walmart.com.
-        Uses functions that work on both old page design and new design.
-        Will choose whichever gives results.
-        Returns:
-            1/0 (owned/not owned)
-        """
-
-        if not self._marketplace() or self._marketplace() == 0:
-            return 1
-
-        # assume new design
-        # _owned_from_script() may throw exception if extraction fails
-        # (causing the service to return None for "owned")
-        try:
-            owned_new = self._owned_from_script()
-        except Exception:
-            owned_new = None
-
-        if owned_new is None:
-            # try to extract assuming old page structure
-            return self._owned_meta_from_tree()
-
-        return owned_new
-
     def _marketplace(self):
         """Extracts info on whether product is found on marketplace
         Uses functions that work on both old page design and new design.
@@ -2074,20 +2049,6 @@ class WalmartScraper(Scraper):
             in_stock_old = self._in_stock_old()
 
         return in_stock_old
-
-    def _owned_out_of_stock(self):
-        """Extracts whether product is owned and out of stock.
-        Works on both old and new page version.
-        Returns 1/0
-        """
-
-        owned = self._owned()
-        in_stock = self._in_stock()
-
-        if owned==1 and in_stock==0:
-            return 1
-        else:
-            return 0
 
     def _site_online(self):
         """Extracts whether the item is sold by the site and delivered directly
@@ -2652,8 +2613,6 @@ class WalmartScraper(Scraper):
         "rollback": _rollback, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title": _product_name_from_tree, \
-        "owned": _owned, \
-        "owned_out_of_stock": _owned_out_of_stock, \
         "in_stores": _in_stores, \
         "in_stores_only": _in_stores_only, \
         "marketplace": _marketplace, \
