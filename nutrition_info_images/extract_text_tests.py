@@ -230,14 +230,19 @@ def image_score(cv2_im):
     total = 0
     words = 0
     print "Computing score..."
-    for word in final_text.lower().decode("utf-8").split():
+    final_text = final_text.lower().decode("utf-8").split()
+    for word in final_text:
         if is_dictionary_word(word):
             words += 1
         total += 1
+
     if not total:
         return 0
-    # return float(words)/total*100
-    return 1 if "nutrition" or "supplement" or "drug" in words else 0
+    return float(words)/total*100
+    # if (("nutrition" in final_text) or ("supplement" in final_text) or ("drug" in final_text)):
+    #     return 1
+    # else:
+    #     return 0
 
 def read_image(filename, is_url=True):
     if is_url:
@@ -306,15 +311,16 @@ def test_extract_text(filenames, is_url=False, debug=False):
 
 
     # just do it for default values of parameters and skip the rest
-    for idx, preprocessing in enumerate(preprocessings):
-        for idimg, src in enumerate(loaded_images):
+    for idimg, src in enumerate(loaded_images):
+        for idx, preprocessing in enumerate(preprocessings):
             try:
-                preprocessing(src)
+                src = preprocessing(src)
                 score = image_score(src)
                 scores[idx] += score
                 if score > max_scores[idx]:
                     max_scores[idx] = score
-                    successful_images[idx] = filename
+                    successful_images[idx] = filenames[idimg]
+                print filenames[idimg]
             except Exception, e:
                 print "Exception", e
                 pass
