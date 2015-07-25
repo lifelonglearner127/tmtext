@@ -7,9 +7,36 @@ def _is_none(arg):
         arg = ''
     return arg
 
+def init_params(self):
+    default_value = None
+    attributes = ['session_id', 'view_guid', 'placement_types', 'user_id',
+                  'segments', 'clickthru_server', 'image_server', 'added_to_cart_item_ids',
+                  'json_enabled', 'landing_page_id', 'cart_value', 'listen_mode_forced',
+                  'forced_strategies', 'forced_treatment', 'forced_campaign', 'ip_override',
+                  'rap', 'forced_ftp', 'from_rich_mail', 'category_hint_ids',
+                  'locale', 'brand', 'uids', 'clearance_page', 'filter_brands',
+                  'filter_brands_include', 'filter_categories', 'filter_categories_include',
+                  'filter_price_cents_min', 'filter_price_cents_max', 'filter_price_min',
+                  'filter_price_max', 'filter_price_include', 'clickthru_params', 'region_id',
+                  'filters', 'refinements', 'rad', 'rad_level', 'promo_campaign_id',
+                  'promo_placement_type', 'promo_creative_id', 'registry_type', 'spoof',
+                  'search_terms', 'registry_id', 'immediate_callback_forced', 'json_callback',
+                  'blocked_item_ids', 'item_ids', 'display_mode_forced', 'debug_mode',
+                  'dummy_data_used', 'dev_mode_forced', 'top_level_genre', 'categories',
+                  'category_ids', 'name', 'description', 'image_id', 'link_id',
+                  'release_date', 'cents', 'dollars_and_cents', 'sale_dollars_and_cents',
+                  'sale_cents', 'price', 'sale_price', 'rating', 'end_date',
+                  'recommendable', 'attributes', 'in_stock']
+    for attr in attributes:
+        setattr(self, attr, default_value)
+
 class R3Common(object):
 
     def __init__(self, rr_entity):
+        # ---------------------------
+        init_params(self)
+        # ---------------------------
+
         self.rr_entity = rr_entity
         self.internal = {}
         self._rich_sort_params = dict(
@@ -148,7 +175,7 @@ class R3Common(object):
         if self.segments:
             script_src += '&' + urllib.urlencode({'sgs': self.segments})
         
-        if self.internal.channel:
+        if self.internal.get('channel'):
             script_src += '&' + urllib.urlencode({'channelId': self.internal.channel})
         
         return script_src
@@ -179,8 +206,8 @@ class R3Common(object):
         if self.added_to_cart_item_ids:
             script_src += '&' + urllib.urlencode({'atcid': self.added_to_cart_item_ids})
 
-        if self.internal.cart_value:
-            script_src += '&' + urllib.urlencode({'cv': self.internal.cartValue})
+        if self.internal.get('cart_value'):
+            script_src += '&' + urllib.urlencode({'cv': self.internal['cart_value']})
 
         if self.forced_strategies:
             script_src += '&' + urllib.urlencode({'fs': self.forced_strategies})
@@ -278,9 +305,9 @@ class R3Common(object):
         if self.spoof is not None:
             script_src += '&spoof=' + self.spoof
         
-        if self.internal.context is not None:
-            for prop in self.internal.context:
-                prop_value = self.internal.context[prop]
+        if self.internal.get('context') is not None:
+            for prop in self.internal['context']:
+                prop_value = self.internal['context'][prop]
                 script_src += '&'
                 
                 if isinstance(prop_value, list):
@@ -308,25 +335,30 @@ class R3Common(object):
         
         if self.item_ids:
             script_src += '&' + urllib.urlencode({'p': self.item_ids})
-        
-        if self._rich_sort_params.startRow > 0:
-            script_src += '&' + urllib.urlencode({'rssr': self._rich_sort_params.startRow})
-        
-        if self._rich_sort_params.count > 0:
-            script_src += '&' + urllib.urlencode({'rsrc': self._rich_sort_params.count})
-        
-        if self._rich_sort_params.price_ranges:
-            price_range_length = len(self._rich_sort_params.price_ranges)
+
+        start_row = self._rich_sort_params.get('start_row', 0)
+        if start_row > 0:
+            script_src += '&' + urllib.urlencode({'rssr': start_row})
+
+        count = self._rich_sort_params.get('count', 0)
+        if count > 0:
+            script_src += '&' + urllib.urlencode({'rsrc': count})
+
+        price_ranges = self._rich_sort_params.get('price_ranges')
+        if price_ranges:
+            price_range_length = len(price_ranges)
             for price_range_index in range(price_range_length):
-                price_ranges.push(self._rich_sort_params.price_ranges[price_range_index].join(';'))
+                price_ranges.append(
+                    ';'.join(price_ranges[price_range_index])
+                )
             
-            script_src += '&' + urllib.urlencode({'rspr': price_ranges.join('|')})
+            script_src += '&' + urllib.urlencode({'rspr': '|'.join(price_ranges)})
             
-        for attribute in self._rich_sort_params.filter_attributes:
-            attribute_filters.push(attribute + ':' + self._rich_sort_params.filter_attributes[attribute].join(';'))
+        for attribute in self._rich_sort_params['filter_attributes']:
+            attribute_filters.append(attribute + ':' + self._rich_sort_params['filter_attributes']['attribute'].join(';'))
         
-        if attribute_filters.length > 0:
-            script_src += '&' + urllib.urlencode({'rsfoa': attribute_filters.join('|')})
+        if len(attribute_filters) > 0:
+            script_src += '&' + urllib.urlencode({'rsfoa': '|'.join(attribute_filters)})
         
         if self.debug_mode:
             if self.display_mode_forced and self.display_mode_forced == 't':
@@ -345,73 +377,76 @@ class R3Common(object):
 class R3Item(object):
     
     def __init__(self, rr_entity):
+
+        init_params(self)
+
         self.rr_entity = rr_entity
         self.r3_entity = R3Common(self.rr_entity)
         self.block_item_id = self.r3_entity.block_item_id
         self.id = self.rr_entity.id
 
     def create_script(self, script_src):
-        if getattr(self, 'top_level_genre', None):
+        if self.top_level_genre:
             script_src += '&' + urllib.urlencode({'tg': self.top_level_genre})
         
-        if getattr(self, 'categories', None):
+        if self.categories:
             script_src += '&' + urllib.urlencode({'cs': self.categories})
 
-        if getattr(self, 'category_ids', None):
+        if self.category_ids:
             script_src += '&' + urllib.urlencode({'cis': self.category_ids})
 
         if self.id:
             script_src += '&' + urllib.urlencode({'p': self.id})
 
-        if getattr(self, 'name', None):
+        if self.name:
             script_src += '&' + urllib.urlencode({'n': self.name})
 
-        if getattr(self, 'description', None):
+        if self.description:
             script_src += '&' + urllib.urlencode({'d': self.description})
 
-        if getattr(self, 'image_id', None):
+        if self.image_id:
             script_src += '&' + urllib.urlencode({'ii': self.image_id})
 
-        if getattr(self, 'link_id', None):
+        if self.link_id:
             script_src += '&' + urllib.urlencode({'li': self.link_id})
 
-        if getattr(self, 'release_date', None):
+        if self.release_date:
             script_src += '&' + urllib.urlencode({'rd': self.release_date})
 
-        if getattr(self, 'dollars_and_cents', None):
+        if self.dollars_and_cents:
             script_src += '&' + urllib.urlencode({'np': self.dollars_and_cents})
 
-        if getattr(self, 'cents', None):
+        if self.cents:
             script_src += '&' + urllib.urlencode({'npc': self.cents})
 
-        if getattr(self, 'sale_dollars_and_cents', None):
+        if self.sale_dollars_and_cents:
             script_src += '&' + urllib.urlencode({'sp': self.sale_dollars_and_cents})
 
-        if getattr(self, 'sale_cents', None):
+        if self.sale_cents:
             script_src += '&' + urllib.urlencode({'spc': self.sale_cents})
 
-        if getattr(self, 'price', None):
+        if self.price:
             script_src += '&' + urllib.urlencode({'np': self.price})
 
-        if getattr(self, 'sale_price', None):
+        if self.sale_price:
             script_src += '&' + urllib.urlencode({'sp': self.sale_price})
 
-        if getattr(self, 'end_date', None):
+        if self.end_date:
             script_src += '&' + urllib.urlencode({'ed': self.end_date})
 
-        if getattr(self, 'rating', None):
+        if self.rating:
             script_src += '&' + urllib.urlencode({'r': self.rating})
 
-        if getattr(self, 'recommendable', None) is not None:
+        if self.recommendable is not None:
             script_src += '&' + urllib.urlencode({'re': self.recommendable})
 
-        if getattr(self, 'brand', None):
+        if self.brand:
             script_src += '&' + urllib.urlencode({'b': self.brand})
 
-        if getattr(self, 'attributes', None):
+        if self.attributes:
             script_src += '&' + urllib.urlencode({'at': self.attributes})
 
-        if getattr(self, 'in_stock', None) is not None:
+        if self.in_stock is not None:
             script_src += '&' + urllib.urlencode({'ins': self.in_stock})
 
         return script_src
@@ -461,7 +496,7 @@ class RR(object):
                 pidx = self.href.find('&' + n)
             return pidx != -1
         else:
-            return self.href.find(n) != -1
+            return self.href.find()
 
     def pq(self, n):
         pidx = self.href.find("?" + n + '=')
@@ -498,7 +533,3 @@ class RR(object):
 
             script_src = self.r3_entity.create_script(script_src, placements_empty, empty_placement_name)
             return script_src
-
-
-
-

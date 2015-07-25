@@ -12,7 +12,6 @@ import string
 from datetime import datetime
 import lxml.html
 import urllib
-import execjs
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -662,4 +661,3 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         return next_page
-
