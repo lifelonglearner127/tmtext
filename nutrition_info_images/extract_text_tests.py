@@ -9,8 +9,8 @@ from nltk.corpus import wordnet
 import itertools
 
 def preprocessing1(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
-    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=150,\
-    image_size=1000):
+    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
+    image_size=3000):
     '''Preprocess input image, using some order of the preprocessing operations
     (version 1)
     '''
@@ -56,8 +56,8 @@ def preprocessing1(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
 
 
 def preprocessing2(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
-    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=150,\
-    image_size=1000):
+    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
+    image_size=3000):
     '''Preprocess input image, using some order of the preprocessing operations
     '''
     
@@ -94,8 +94,8 @@ def preprocessing2(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
 
 
 def preprocessing3(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
-    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=150,\
-    image_size=1000):
+    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
+    image_size=3000):
     '''Preprocess input image, using some order of the preprocessing operations
     '''
 
@@ -136,8 +136,8 @@ def preprocessing3(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
 
 
 def preprocessing4(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
-    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=150,\
-    image_size=1000):
+    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
+    image_size=3000):
     '''Preprocess input image, using some order of the preprocessing operations
     '''
 
@@ -178,8 +178,8 @@ def preprocessing4(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
 
 
 def preprocessing5(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
-    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=150,\
-    image_size=1000):
+    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
+    image_size=3000):
     '''Preprocess input image, using some order of the preprocessing operations
     (like first but no thresholding)
     '''
@@ -288,8 +288,8 @@ def test_extract_text(filenames, is_url=False, debug=False):
     'morph_el': 1,
     'thresh_param1': 15,
     'thresh_param2': 2,
-    'thresh_param3': 150,
-    'image_size': 1000
+    'thresh_param3': 170,
+    'image_size': 3000
     }
     # param_keys = sorted(params.keys())
     # params to vary
@@ -305,22 +305,23 @@ def test_extract_text(filenames, is_url=False, debug=False):
         loaded_images.append(src)
 
 
-    # # just do it for default values of parameters and skip the rest
-    # for idx, preprocessing in enumerate(preprocessings):
-    #         try:
-    #             preprocessing(src)
-    #             score = image_score()
-    #             scores[idx] += score
-    #             if score > max_scores[idx]:
-    #                 max_scores[idx] = score
-    #                 successful_images[idx] = filename
-    #         except Exception, e:
-    #             print "Exception", e
-    #             pass
+    # just do it for default values of parameters and skip the rest
+    for idx, preprocessing in enumerate(preprocessings):
+        for idimg, src in enumerate(loaded_images):
+            try:
+                preprocessing(src)
+                score = image_score(src)
+                scores[idx] += score
+                if score > max_scores[idx]:
+                    max_scores[idx] = score
+                    successful_images[idx] = filename
+            except Exception, e:
+                print "Exception", e
+                pass
                 
-    #         print "round", rounds, scores
-    #         rounds += 1
-    # continue
+            print "round", rounds, scores
+            rounds += 1
+    return
 
     # do it for all combinations of values of parameters
     # (comment the above block)
@@ -330,13 +331,13 @@ def test_extract_text(filenames, is_url=False, debug=False):
             current_params[key] = current_values[idx]
         print current_params
 
-    # skipping the above ^^ ; just with the default parameters:
-    for x in [1]:
+    # # skipping the above ^^ ; just with the default parameters:
+    # for x in [1]:
         # skip if all are 0
         if not all([False if v is None else True for v in current_params.values()]):
             print "continuing........."
             continue
-        for idx, preprocessing in enumerate(preprocessings):
+        for idx, preprocessing in enumerate([preprocessings[3]]):
             score = 0
             for idimg, src in enumerate(loaded_images):
                 try:
@@ -393,5 +394,5 @@ if __name__=='__main__':
         test_images = map(lambda l: l.strip(), fin.readlines())
 
     # test_extract_text(['/tmp/text_image.jpg', '/tmp/text_image2.jpg'])       
-    test_extract_text(test_images[::3])       
+    test_extract_text(test_images)       
 
