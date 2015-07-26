@@ -37,9 +37,6 @@ class OzonProductsSpider(BaseProductsSpider):
 
     RELATED_PRODS_URL = "http://www.ozon.ru/json/shelves.asmx/getitemsitems"
 
-    BUYER_REVIEWS_URL = "http://www.ozon.ru/DetailLoader.aspx?module=comments&" \
-                        "id={product_id}&sort=&perPage={per_page}&page={page}&loadForm=true"
-
     SEARCH_SORT = {
         'default': '',
         'price': 'price',
@@ -61,12 +58,6 @@ class OzonProductsSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = meta['product']
         reqs = []
-
-        # Product ID
-        product_id = is_empty(
-            re.findall(r'id\/(\d+)\/', response.url)
-        )
-        response.meta['product_id'] = product_id
 
         # Set product title
         cond_set(product, 'title', response.xpath(
@@ -265,42 +256,6 @@ class OzonProductsSpider(BaseProductsSpider):
         mktplaces.append(marketplace)
         product['marketplace'] = mktplaces
 
-        # Set buyer reviews
-        reviews_url = self.BUYER_REVIEWS_URL.format(
-            product_id=product_id,
-            per_page=1000000,
-            page=1
-        )
-
-        num_of_reviews_sel = response.xpath(
-            '//a[contains(@class, "bProductRating_Stars")]/./'
-            '/span/text() |'
-            '//span[@class="eItemRatingStars_text"]/text()'
-        )
-
-        if num_of_reviews_sel:
-            num_of_reviews = is_empty(
-                re.findall(
-                    r'(\d+)',
-                    is_empty(num_of_reviews_sel.extract())
-                ), 0
-            )
-
-            if num_of_reviews:
-                response.meta['num_of_reviews'] = num_of_reviews
-                reqs.append(
-                    Request(
-                        url=reviews_url,
-                        callback=self.parse_buyer_reviews
-                    )
-                )
-            else:
-                product['buyer_reviews'] = BuyerReviews(
-                    num_of_reviews=0,
-                    average_rating=0,
-                    rating_by_star={'5': 0, '4': 0, '3': 0, '2': 0, '1': 0}
-                )
-
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -381,40 +336,6 @@ class OzonProductsSpider(BaseProductsSpider):
                 rel_product_type, response.url
             ), WARNING)
             return None
-
-    def parse_buyer_reviews(self, response):
-        meta = response.meta.copy()
-        reqs = meta.get('reqs')
-        product = meta.get('product')
-
-        rating_by_star = {'5': 0, '4': 0, '3': 0, '2': 0, '1': 0}
-        num_of_reviews = int(meta['num_of_reviews'])
-        star_sum = 0
-
-        for star in rating_by_star.iterkeys():
-            reviews_sel = response.xpath(
-                '//meta[@itemprop="ratingValue"][@content={star}]'.format(
-                    star=star
-                )
-            )
-
-            if reviews_sel:
-                num_of_star = len(reviews_sel)
-                rating_by_star[star] = num_of_star
-                star_sum += num_of_star * int(star)
-
-        average_rating = round(star_sum / num_of_reviews)
-
-        product['buyer_reviews'] = BuyerReviews(
-            average_rating=average_rating,
-            num_of_reviews=num_of_reviews,
-            rating_by_star=rating_by_star
-        )
-
-        if reqs:
-            self.send_next_request(reqs, response)
-
-        return product
 
     def _scrape_total_matches(self, response):
         total = None
