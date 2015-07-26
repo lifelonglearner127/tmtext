@@ -234,7 +234,7 @@ class OzonProductsSpider(BaseProductsSpider):
             marketplace['seller_type'] = 'seller'
         else:
             marketplace['name'] = self.allowed_domains[0]
-            marketplace['price'] = product['price']
+            marketplace['price'] = product.get('price', None)
             marketplace['seller_type'] = 'site'
 
         mktplaces.append(marketplace)
