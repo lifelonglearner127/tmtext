@@ -39,7 +39,7 @@ def preprocessing1(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     if debug:
         cv2.imwrite("/tmp/4dilated.png", temp)
 
-    src = temp.copy()
+    src = temp
 
     # # black and white
     src = cv2.adaptiveThreshold(src, 255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C, thresholdType=cv2.THRESH_BINARY, \
@@ -83,7 +83,7 @@ def preprocessing2(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
         cv2.imwrite("/tmp/4dilated.png", temp)
     # temp = cv2.subtract(src,temp)
     # skel = cv2.bitwise_or(skel,temp)
-    src = temp.copy()
+    src = temp
 
     # # black and white
     src = cv2.adaptiveThreshold(src, 255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C, thresholdType=cv2.THRESH_BINARY, \
@@ -124,7 +124,7 @@ def preprocessing3(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     if debug:
         cv2.imwrite("/tmp/4dilated.png", temp)
 
-    src = temp.copy()
+    src = temp
 
     # black and white
     _,src = cv2.threshold(src,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
@@ -166,7 +166,7 @@ def preprocessing4(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     if debug:
         cv2.imwrite("/tmp/4dilated.png", temp)
 
-    src = temp.copy()
+    src = temp
 
     # black and white
     _, src = cv2.threshold(src, thresh_param3, 255, cv2.THRESH_BINARY)
@@ -208,7 +208,7 @@ def preprocessing5(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     if debug:
         cv2.imwrite("/tmp/4dilated.png", temp)
 
-    src = temp.copy()
+    src = temp
 
     return src
 
