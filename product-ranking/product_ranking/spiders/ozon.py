@@ -134,44 +134,52 @@ class OzonProductsSpider(BaseProductsSpider):
 
         # Set description and brand
         # TODO: refactor this odd piece of code
-        desc = ''
-        desc1 = response.xpath('//div[@class="bDetailLogoBlock"]/node()')
-        brand = desc1.xpath(
-            './/a[contains(@href, "/brand/")]/text()').extract()
+        desc = response.xpath('//div[@class="bDetailLogoBlock"]/node() |'
+                              '//div[@id="js_additional_properties"]'
+                              '/div[@class="bTechDescription"]/node() |'
+                              '//div[@itemprop="description"]/div/table//td/node() |'
+                              '//div[@itemprop="description"]')
+
+        if desc:
+            # m = re.search(r'{model}:([^,<\n]+)'.format(
+            #     model=u'\u041c\u043e\u0434\u0435\u043b\u044c'
+            # ), desc)
+            # if m:
+            #     cond_set_value(product, 'model', m.group(1).strip())
+
+            product['description'] = is_empty(
+                desc.extract()
+            ).strip()
+
+        # TODO: refactor brand
+        # Set brand
+        brand = is_empty(
+            response.xpath(
+                '//a[contains(@href, "/brand/")]/text()'
+            ).extract(), ''
+        ).strip()
 
         if brand:
-            cond_set_value(product, 'brand', ', '.join(brand))
-
-        if desc1:
-            desc = clear_text(desc1.extract())
-            m = re.search(r'{model}:([^,<\n]+)'.format(
-                model=u'\u041c\u043e\u0434\u0435\u043b\u044c'
-            ), desc)
-            if m:
-                cond_set_value(product, 'model', m.group(1).strip())
-
-        desc2 = response.xpath(
-            '//div[@id="js_additional_properties"]'
-            '/div[@class="bTechDescription"]/node()')
-        brand = desc2.xpath(
-            './/a[contains(@href, "/brand/")]/text()').extract()
-
-        if brand:
-            cond_set_value(product, 'brand', ', '.join(brand))
-
-        if desc2:
-            desc = '\n'.join([desc, clear_text(desc2.extract())])
-
-        desc3 = response.xpath(
-            '//div[@itemprop="description"]/div/table//td/node()'
-        ).extract()
-        if desc3:
-            desc = '\n'.join([desc, clear_text(desc3)])
-
-        cond_set_value(product, 'description', desc)
+            product['brand'] = brand
+        else:
+            brand = is_empty(
+                response.xpath(
+                    '//a[@class="eItemBrand_logo"]/img/@alt |'
+                    '//div[contains(@class, "bDetailLogoBlock")]/./'
+                    '/a[contains(@href, "/brand/")]/text()'
+                ).extract(), ''
+            ).strip()
+            product['brand'] = brand
 
         # Set locale
-        cond_set_value(product, 'locale', 'ru-RU')
+        product['locale'] = 'ru-RU'
+
+        # Set category
+        category_sel = response.xpath('//div[contains(@class, "bBreadCrumbs")]/'
+                                      'a[contains(@class, "eBreadCrumbs_link")]/text()')
+        if category_sel:
+            category = category_sel[0].extract()
+            product['category'] = category.strip()
 
         # Set recommended products
         rel_prod_sel = response.xpath('//*[@class="bUniversalShelf"]/'
@@ -266,7 +274,8 @@ class OzonProductsSpider(BaseProductsSpider):
 
         num_of_reviews_sel = response.xpath(
             '//a[contains(@class, "bProductRating_Stars")]/./'
-            '/span/text()'
+            '/span/text() |'
+            '//span[@class="eItemRatingStars_text"]/text()'
         )
 
         if num_of_reviews_sel:
