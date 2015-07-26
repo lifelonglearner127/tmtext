@@ -115,15 +115,22 @@ class OzonProductsSpider(BaseProductsSpider):
             )
             product['price'] = Price(price=price,
                                      priceCurrency='RUB')
+        else:
+            product['price'] = None
 
         # Set if out of stock
-        cond_set(product, 'is_out_of_stock', response.xpath(
-            '//div[@id="PageContent"]'
-            '//div[@class="bSaleColumn"]'
-            '//span[@class="eSale_Info mInStock"]/text()'
-        ).extract(), lambda x:
-            x.strip() != u'\u041d\u0430 \u0441\u043a\u043b\u0430\u0434\u0435.'
+        is_out_of_stock = is_empty(
+            response.xpath(
+                '//div[@id="PageContent"]'
+                '//div[@class="bSaleColumn"]'
+                '//span[@class="eSale_Info mInStock"]/text()'
+            ).extract(), ''
         )
+
+        if is_out_of_stock.strip() != u'\u041d\u0430 \u0441\u043a\u043b\u0430\u0434\u0435.':
+            product['is_out_of_stock'] = True
+        else:
+            product['is_out_of_stock'] = False
 
         # Set description and brand
         # TODO: refactor this odd piece of code
@@ -387,7 +394,7 @@ class OzonProductsSpider(BaseProductsSpider):
                 rating_by_star[star] = num_of_star
                 star_sum += num_of_star * int(star)
 
-        average_rating = star_sum / num_of_reviews
+        average_rating = round(star_sum / num_of_reviews)
 
         product['buyer_reviews'] = BuyerReviews(
             average_rating=average_rating,
