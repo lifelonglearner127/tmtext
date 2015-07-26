@@ -137,8 +137,8 @@ class OzonProductsSpider(BaseProductsSpider):
         desc = response.xpath('//div[@class="bDetailLogoBlock"]/node() |'
                               '//div[@id="js_additional_properties"]'
                               '/div[@class="bTechDescription"]/node() |'
-                              '//div[@itemprop="description"]/div/table//td/node() |'
-                              '//div[@itemprop="description"]')
+                              '//div[@itemprop="description"] |'
+                              '//div[@id="detail_description"]')
 
         if desc:
             # m = re.search(r'{model}:([^,<\n]+)'.format(
