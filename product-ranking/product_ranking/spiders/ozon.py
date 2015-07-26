@@ -256,9 +256,57 @@ class OzonProductsSpider(BaseProductsSpider):
         mktplaces.append(marketplace)
         product['marketplace'] = mktplaces
 
+        # parse buyer reviews
+        br_link = None
+        try:
+            br_link = response.xpath(
+                '//a[contains(@href, "/reviews/")]/@href').extract()[0]
+        except IndexError:
+            self.log("No buyer reviews found for URL %s" % response.url, WARNING)
+        if br_link is not None and isinstance(br_link, (str, unicode)):
+            if br_link.startswith('/'):
+                br_link = urlparse.urljoin(response.url, br_link)
+            return Request(br_link, callback=self.parse_buyer_reviews,
+                           meta=response.meta)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
+        return product
+
+    def parse_buyer_reviews(self, response):
+        product = response.meta['product']
+        buyer_reviews = dict(num_of_reviews=0, average_rating=0.0,
+                             rating_by_star={1: 0, 2: 0, 3: 0, 4: 0, 5: 0})
+        for comment_block in response.xpath('//div[contains(@id, "comment_")]'):
+            star = comment_block.xpath(
+                './/div[contains(@class, "stars")]/@class').extract()
+            if not star:
+                continue
+            star = star[0]
+            if 'stars1' in star:
+                buyer_reviews['rating_by_star'][1] += 1
+                buyer_reviews['num_of_reviews'] += 1
+            if 'stars2' in star:
+                buyer_reviews['rating_by_star'][2] += 1
+                buyer_reviews['num_of_reviews'] += 1
+            if 'stars3' in star:
+                buyer_reviews['rating_by_star'][3] += 1
+                buyer_reviews['num_of_reviews'] += 1
+            if 'stars4' in star:
+                buyer_reviews['rating_by_star'][4] += 1
+                buyer_reviews['num_of_reviews'] += 1
+            if 'stars5' in star:
+                buyer_reviews['rating_by_star'][5] += 1
+                buyer_reviews['num_of_reviews'] += 1
+        _avg_list = []
+        for key, value in buyer_reviews['rating_by_star'].items():
+            for _i in xrange(value):
+                _avg_list.append(key)
+        if _avg_list:
+            buyer_reviews['average_rating'] = \
+                float(sum(_avg_list)) / len(_avg_list)
+        product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
         return product
 
     def _parse_single_product(self, response):
