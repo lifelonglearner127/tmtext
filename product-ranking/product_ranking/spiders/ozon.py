@@ -4,10 +4,14 @@ from future_builtins import *
 import string
 import urlparse
 import re
+import json
+import urllib
 
-from scrapy.log import ERROR, DEBUG
+from scrapy.log import ERROR, DEBUG, WARNING
+from scrapy.http import FormRequest, Request
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price
+from product_ranking.items import SiteProductItem, RelatedProduct, \
+                                    Price, BuyerReviews
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
                                      FormatterWithDefaults, cond_set_value,
                                     _extract_open_graph_metadata, FLOATING_POINT_RGEX)
@@ -15,10 +19,12 @@ from product_ranking.spiders import (BaseProductsSpider, cond_set,
 
 def clear_text(l):
     """
-    usefull for  clearing sel.xpath('.//text()').explode() expressions
+    useful for  clearing sel.xpath('.//text()').explode() expressions
     """
     return " ".join(
         [it for it in map(string.strip, l) if it])
+
+is_empty = lambda x, y=None: x[0] if x else y
 
 
 class OzonProductsSpider(BaseProductsSpider):
@@ -28,6 +34,8 @@ class OzonProductsSpider(BaseProductsSpider):
 
     SEARCH_URL = ("http://www.ozon.ru/?context=search&text={search_term}"
                   "&sort={search_sort}")
+
+    RELATED_PRODS_URL = "http://www.ozon.ru/json/shelves.asmx/getitemsitems"
 
     SEARCH_SORT = {
         'default': '',
@@ -47,12 +55,17 @@ class OzonProductsSpider(BaseProductsSpider):
             *args, **kwargs)
 
     def parse_product(self, response):
-        product = response.meta['product']
+        meta = response.meta.copy()
+        product = meta['product']
+        reqs = []
 
+        # Set product title
         cond_set(product, 'title', response.xpath(
             '//h1[@itemprop="name"]/text()'
         ).extract(), string.strip)
 
+        # Set image url
+        # TODO: refactor this odd piece of code too
         cond_set(product, 'image_url', response.xpath(
             '//div[@id="PageContent"]'
             '//img[@class="eBigGallery_ImageView"]/@src'
@@ -66,87 +79,314 @@ class OzonProductsSpider(BaseProductsSpider):
                 response.url,
                 product.get('image_url'))
 
-        price = response.xpath(
-            '//div[@id="PageContent"]'
-            '//div[@class="bSaleColumn"]'
-            '//span[@itemprop="price"]/text()'
-        ).re(FLOATING_POINT_RGEX)
-        if price:
-            product['price'] = Price(price=price[0],
-                                     priceCurrency='RUB')
-
-        cond_set(product, 'is_out_of_stock', response.xpath(
-            '//div[@id="PageContent"]'
-            '//div[@class="bSaleColumn"]'
-            '//span[@class="eSale_Info mInStock"]/text()'
-        ).extract(), lambda x:
-            x.strip() != u'\u041d\u0430 \u0441\u043a\u043b\u0430\u0434\u0435.'
+        # Set price
+        price_main = response.xpath(
+            '//div[contains(@class, "bSaleBlock")]/'
+            './/span[@class="eOzonPrice_main"]/text()'
+        )
+        price_submain = response.xpath(
+            '//div[contains(@class, "bSaleBlock")]/'
+            './/span[@class="eOzonPrice_submain"]/text()'
         )
 
-        desc = ''
-        desc1 = response.xpath('//div[@class="bDetailLogoBlock"]/node()')
-        brand = desc1.xpath(
-            './/a[contains(@href, "/brand/")]/text()').extract()
+        if price_submain:
+            price_submain = is_empty(
+                price_submain.extract()
+            )
+        else:
+            price_submain = '00'
+
+        if price_main:
+            price_main = is_empty(
+                price_main.extract()
+            ).replace('\xa0', '')
+            price = '{0}.{1}'.format(
+                price_main.strip(),
+                price_submain.strip()
+            )
+            product['price'] = Price(price=price,
+                                     priceCurrency='RUB')
+        else:
+            product['price'] = None
+
+        # Set if out of stock
+        is_out_of_stock = is_empty(
+            response.xpath(
+                '//div[@id="PageContent"]'
+                '//div[@class="bSaleColumn"]'
+                '//span[@class="eSale_Info mInStock"]/text()'
+            ).extract(), ''
+        )
+
+        if is_out_of_stock.strip() != u'\u041d\u0430 \u0441\u043a\u043b\u0430\u0434\u0435.':
+            product['is_out_of_stock'] = True
+        else:
+            product['is_out_of_stock'] = False
+
+        # Set description and brand
+        desc = response.xpath('//div[@itemprop="description"] |'
+                              '//div[@id="detail_description"]')
+
+        if desc:
+            product['description'] = is_empty(
+                desc.extract()
+            ).strip()
+
+        # TODO: refactor brand
+        # Set brand
+        brand = is_empty(
+            response.xpath(
+                '//a[contains(@href, "/brand/")]/text()'
+            ).extract(), ''
+        ).strip()
 
         if brand:
-            cond_set_value(product, 'brand', ', '.join(brand))
+            product['brand'] = brand
+        else:
+            brand = is_empty(
+                response.xpath(
+                    '//a[@class="eItemBrand_logo"]/img/@alt |'
+                    '//div[contains(@class, "bDetailLogoBlock")]/./'
+                    '/a[contains(@href, "/brand/")]/text()'
+                ).extract(), ''
+            ).strip()
+            product['brand'] = brand
 
-        if desc1:
-            desc = clear_text(desc1.extract())
-            m = re.search(r'{model}:([^,<\n]+)'.format(
-                model=u'\u041c\u043e\u0434\u0435\u043b\u044c'
-            ), desc)
-            if m:
-                cond_set_value(product, 'model', m.group(1).strip())
+        # Set locale
+        product['locale'] = 'ru-RU'
 
-        desc2 = response.xpath(
-            '//div[@id="js_additional_properties"]'
-            '/div[@class="bTechDescription"]/node()')
-        brand = desc2.xpath(
-            './/a[contains(@href, "/brand/")]/text()').extract()
+        # Set category
+        category_sel = response.xpath('//div[contains(@class, "bBreadCrumbs")]/'
+                                      'a[contains(@class, "eBreadCrumbs_link")]/text()')
+        if category_sel:
+            category = category_sel[0].extract()
+            product['category'] = category.strip()
 
-        if brand:
-            cond_set_value(product, 'brand', ', '.join(brand))
+        # Set recommended products
+        rel_prod_sel = response.xpath('//ul[@class="eUniversalShelf_Tabs"]'
+                                      '/li[contains(@class, "eUniversalShelf_Tab")]'
+                                      '/@onclick')
 
-        if desc2:
-            desc = '\n'.join([desc, clear_text(desc2.extract())])
+        if rel_prod_sel:
+            rel_prod_ids = is_empty(rel_prod_sel.extract())
 
-        desc3 = response.xpath(
-            '//div[@itemprop="description"]/div/table//td/node()'
-        ).extract()
-        if desc3:
-            desc = '\n'.join([desc, clear_text(desc3)])
+            rel_prod_ids = is_empty(
+                re.findall(
+                    r'return\s+(.+)',
+                    rel_prod_ids
+                )
+            )
 
-        cond_set_value(product, 'description', desc)
-        cond_set_value(product, 'locale', 'ru-RU')
+            if rel_prod_ids:
+                rel_prod_ids = rel_prod_ids.replace('\'', '"').replace(' ', '').replace('Ids', 'itemsIds')
+                data = json.loads(rel_prod_ids)
 
-        also_bought = self._parse_related(response, response.css(
-            '.bAlsoPurchased p.misc a'))
+                reqs.append(
+                    Request(
+                        url=self.RELATED_PRODS_URL,
+                        method='POST',
+                        callback=self.parse_recommended_prods,
+                        body=json.dumps(data),
+                        headers={'Content-Type': 'application/json'},
+                    )
+                )
 
-        recom = self._parse_related(response, response.css(
-            '.detailUpsale p.misc a'))
+        # Set also bought products
+        also_bought = is_empty(
+            re.findall(
+                r"dataLayer.push\({\"ecommerce\":(.+)}\);",
+                response.body_as_unicode()
+            )
+        )
 
-        cond_set_value(product, 'related_products', {
-            'recommended': recom,
-            'buyers_also_bought': also_bought
-        })
+        if also_bought:
+            try:
+                prod_ids = []
+                data = json.loads(also_bought)
+
+                ids = data['impressions']
+                for item in ids:
+                    prod_ids.append(item['id'])
+
+                form_data = {
+                    "Type": "Items",
+                    "itemsIds": prod_ids
+                }
+
+                reqs.append(
+                    Request(
+                        url=self.RELATED_PRODS_URL,
+                        method='POST',
+                        callback=self.parse_also_bought_prods,
+                        body=json.dumps(form_data),
+                        headers={'Content-Type': 'application/json'},
+                    )
+                )
+            except (KeyError, ValueError):
+                self.log("Impossible to get also bought products info in %r" % response.url, WARNING)
+
+        # Set matketplaces
+        marketplace_sel = response.css('#js_merchant_name ::text')
+
+        mktplaces = []
+        marketplace = {}
+
+        if marketplace_sel:
+            marketplace_name = is_empty(
+                marketplace_sel.extract()
+            ).strip()
+            marketplace['name'] = marketplace_name
+            marketplace['seller_type'] = 'seller'
+        else:
+            marketplace['name'] = self.allowed_domains[0]
+            marketplace['seller_type'] = 'site'
+
+        marketplace['price'] = product.get('price', None)
+        mktplaces.append(marketplace)
+        product['marketplace'] = mktplaces
+
+        # parse buyer reviews
+        br_link = None
+        try:
+            br_link = response.xpath(
+                '//a[contains(@href, "/reviews/")]/@href').extract()[0]
+        except IndexError:
+            product['buyer_reviews'] = BuyerReviews(
+                num_of_reviews=0,
+                average_rating=0.0,
+                rating_by_star={1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+            )
+            self.log("No buyer reviews found for URL %s" % response.url, WARNING)
+        if br_link is not None and isinstance(br_link, basestring):
+            if br_link.startswith('/'):
+                br_link = urlparse.urljoin(response.url, br_link)
+            reqs.append(
+                Request(br_link, callback=self.parse_buyer_reviews,
+                        meta=response.meta)
+            )
+
+        if reqs:
+            return self.send_next_request(reqs, response)
 
         return product
 
-    def _parse_related(self, response, link_selectors):
-        related_products = []
-        for related_link in link_selectors:
-            title = related_link.xpath('@title').extract()
-            url = related_link.xpath('@href').extract()
-
-            if not url or not title or url[0] in response.url:
+    def parse_buyer_reviews(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+        reqs = meta.get('reqs')
+        buyer_reviews = dict(num_of_reviews=0, average_rating=0.0,
+                             rating_by_star={1: 0, 2: 0, 3: 0, 4: 0, 5: 0})
+        for comment_block in response.xpath('//div[contains(@id, "comment_")]'):
+            star = comment_block.xpath(
+                './/div[contains(@class, "stars")]/@class').extract()
+            if not star:
                 continue
+            star = star[0]
+            if 'stars1' in star:
+                buyer_reviews['rating_by_star'][1] += 1
+                buyer_reviews['num_of_reviews'] += 1
+            if 'stars2' in star:
+                buyer_reviews['rating_by_star'][2] += 1
+                buyer_reviews['num_of_reviews'] += 1
+            if 'stars3' in star:
+                buyer_reviews['rating_by_star'][3] += 1
+                buyer_reviews['num_of_reviews'] += 1
+            if 'stars4' in star:
+                buyer_reviews['rating_by_star'][4] += 1
+                buyer_reviews['num_of_reviews'] += 1
+            if 'stars5' in star:
+                buyer_reviews['rating_by_star'][5] += 1
+                buyer_reviews['num_of_reviews'] += 1
+        _avg_list = []
+        for key, value in buyer_reviews['rating_by_star'].items():
+            for _i in xrange(value):
+                _avg_list.append(key)
+        if _avg_list:
+            buyer_reviews['average_rating'] = round(
+                float(sum(_avg_list)) / len(_avg_list),
+                1
+            )
+        product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
 
-            related_products.append(RelatedProduct(
-                title[0],
-                urlparse.urljoin(response.url, url[0])
-            ))
-        return related_products
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
+    def send_next_request(self, reqs, response):
+        """
+        Helps to handle several requests
+        """
+
+        req = reqs.pop(0)
+        new_meta = response.meta.copy()
+
+        if reqs:
+            new_meta["reqs"] = reqs
+
+        return req.replace(meta=new_meta)
+
+    def parse_recommended_prods(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+        related_products = product.get('related_products', {})
+        reqs = meta.get('reqs')
+        data = self._handle_related_product(response, 'recommended')
+        if data:
+            related_products['recommended'] = data
+            product['related_products'] = related_products
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def parse_also_bought_prods(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+        related_products = product.get('related_products', {})
+        reqs = meta.get('reqs')
+        data = self._handle_related_product(response, 'also_bought')
+
+        if data:
+            related_products['also_bought'] = data
+            product['related_products'] = related_products
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _handle_related_product(self, response, rel_product_type):
+        related_products = []
+
+        try:
+            data = json.loads(response.body_as_unicode())
+            items = data['d']['Items']
+
+            if items:
+                for item in items:
+                    title = item['Name']
+                    href = '{www}{domain}{url}'.format(
+                        www='http://www.',
+                        domain=self.allowed_domains[0],
+                        url=item['Href']
+                    )
+
+                    related_products.append(RelatedProduct(
+                        title=title,
+                        url=href
+                    ))
+
+                return related_products
+        except (KeyError, ValueError):
+            self.log("Impossible to get {0} products info in {1}".format(
+                rel_product_type, response.url
+            ), WARNING)
+            return None
 
     def _scrape_total_matches(self, response):
         total = None
@@ -177,7 +417,6 @@ class OzonProductsSpider(BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
-
         next = response.css('.SearchPager .Active') \
                        .xpath('following-sibling::a[1]/@href') \
                        .extract()
@@ -187,4 +426,3 @@ class OzonProductsSpider(BaseProductsSpider):
         else:
             link = urlparse.urljoin(response.url, next[0])
         return link
-
