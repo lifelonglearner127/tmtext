@@ -215,7 +215,6 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     average_rating=0,
                     rating_by_star={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
                 )
-                # rating_by_star = rating_by_star
 
                 try:
                     buyer_reviews_data = results['ReviewStatistics']
