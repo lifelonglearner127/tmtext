@@ -2,6 +2,7 @@
 from urlparse import urljoin
 import json
 import re
+import hjson
 
 from scrapy import Selector
 from scrapy.http import FormRequest, Request
@@ -15,8 +16,12 @@ from product_ranking.guess_brand import guess_brand_from_first_words
 
 is_empty = lambda x, y=None: x[0] if x else y
 
-def string_insert_char(string, index, char):
-    return string[:index] + str(char) + string[index:]
+def product_id_format(product_id):
+    """
+    Formats product id 123456
+    to 123-456-X56
+    """
+    return '{0}-{1}-X56'.format(product_id[:3], product_id[3:])
 
 class NextCoUkProductSpider(BaseProductsSpider):
 
@@ -63,9 +68,27 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
         product['locale'] = 'en_GB'
 
+        # Get StyleID to choose current item
+        style_id_data = re.findall(
+            r'\s*(StyleID|ItemNumber)\s*:\s*"?([^\n",]+)"?',
+            response.body_as_unicode()
+        )
+
+        tree = {}
+        last_id = None
+        for (key, val) in style_id_data:
+            if key == 'StyleID':
+                last_id = val
+            elif key == 'ItemNumber':
+                tree[val] = last_id
+
+        style_id = tree[product_id_format(product_id)]
+
         # Format product id to get proper section from html body
-        item = response.css(
-            '.itemsContainer .ProductDetail article.Selected'
+        item = response.xpath(
+            '//article[@id="Style{id}"]'.format(
+                id=style_id
+            )
         )
 
         if item:
@@ -131,6 +154,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
             if image_sel:
                 image = is_empty(image_sel.extract())
                 product['image_url'] = image.replace('Thumb', 'Shot')
+
         else:
             self.log(
                 "Failed to extract product info from %r." % response.url, ERROR
@@ -138,7 +162,9 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
         # Get related products
         related_items = response.xpath(
-            '//section[@class="ProductDetail"]/article[not(contains(@class,"Selected"))]'
+            '//section[@class="ProductDetail"]/article[not(@id="Style{id}")]'.format(
+                id=style_id
+            )
         )
 
         if related_items:
