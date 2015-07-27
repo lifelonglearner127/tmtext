@@ -285,10 +285,11 @@ class OzonScraper(Scraper):
         iframes = self.tree_html.xpath("//iframe")
         video_url = []
         for iframe in iframes:
-            src = str(iframe.xpath('.//@src'))
-            find = re.findall(r'www\.youtube\.com/embed/.*$', src)
-            if find:
-                video_url.append("https://"+find[0])
+            src = iframe.xpath('.//@src')
+            if len(src)>0:
+                find = re.findall(r'www\.youtube\.com/embed/.*$', src[0])
+                if find:
+                    video_url.append("https://"+find[0])
         try:
             text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
             text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
