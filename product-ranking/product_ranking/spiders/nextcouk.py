@@ -261,7 +261,10 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     buyer_review['num_of_reviews'] = buyer_reviews_data['TotalReviewCount']
 
                     if buyer_review['num_of_reviews']:
-                        buyer_review['average_rating'] = buyer_reviews_data['AverageOverallRating']
+                        buyer_review['average_rating'] = round(
+                            buyer_reviews_data['AverageOverallRating'],
+                            1
+                        )
 
                         ratings = buyer_reviews_data['RatingDistribution']
                         for rate in ratings:
