@@ -23,6 +23,8 @@ class OzonScraper(Scraper):
     is_long_desc_is_none = False
 
     def check_url_format(self):
+        self.image_urls = None
+        self.video_urls = None
         m = re.match("^http://www\.ozon\.ru/.*$", self.product_page_url)
         return (not not m)
 
@@ -229,8 +231,7 @@ class OzonScraper(Scraper):
             text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
             urls =re.findall(r'Preview".*?jpg', str(text))
             if len(urls)>0:
-                return ['http:'+u[10:] for u in urls]
-
+                image_url = ['http:'+u[10:] for u in urls]
             text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
             jsn = json.loads(text)
         except IndexError:
@@ -287,7 +288,18 @@ class OzonScraper(Scraper):
             src = str(iframe.xpath('.//@src'))
             find = re.findall(r'www\.youtube\.com/embed/.*$', src)
             if find:
-                video_url.append(find[0])
+                video_url.append("https://"+find[0])
+        try:
+            text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
+            text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
+            jsn = json.loads(text)
+            for e in jsn:
+                if 'Elements' in e and len(e['Elements'])>0 and \
+                   'Type' in e['Elements'][0]  and e['Elements'][0]['Type']=='video':
+                    if e['Elements'][0].get('ElementId',"") != "":
+                        video_url.append("https://www.youtube.com/embed/"+e['Elements'][0]['ElementId'])
+        except:
+            pass
         if len(video_url) < 1:
             return None
         return video_url
@@ -392,6 +404,23 @@ class OzonScraper(Scraper):
     def _owned(self):
         return 1
 
+    def _site_online(self):
+        # site_online: the item is sold by the site and delivered directly, without a physical store.
+        return 1
+
+    def _site_online_out_of_stock(self):
+        #  site_online_out_of_stock - currently unavailable from the site - binary
+        if self._site_online() == 0:
+            return None
+        if self._in_stock() == 0:
+            return 1
+        return 0
+
+    def _in_stock(self):
+        if self._owned_out_of_stock()==1:
+            return 0
+        return 1
+
     def _owned_out_of_stock(self):
         try:
             text = self.tree_html.xpath("//div[starts-with(@class,'bSaleBlock')]/h3/text()")[0]
@@ -422,7 +451,7 @@ class OzonScraper(Scraper):
     def _categories(self):
         all = self.tree_html.xpath("//a[@class='eBreadCrumbs_link ']//text()")
         #the last value is the product itself
-        return all[0:-1]
+        return all
 
     def _category_name(self):
         # dept = " ".join(self.tree_html.xpath("//ul[@class='navLine']/li[1]//text()")).strip()
@@ -540,6 +569,9 @@ class OzonScraper(Scraper):
         "price_currency" : _price_currency, \
         "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
+        "in_stock" : _in_stock, \
+        "site_online" : _site_online, \
+        "site_online_out_of_stock" : _site_online_out_of_stock, \
         "owned" : _owned, \
         "owned_out_of_stock" : _owned_out_of_stock, \
         "marketplace" : _marketplace, \
