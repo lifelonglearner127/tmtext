@@ -246,13 +246,12 @@ class OzonProductsSpider(BaseProductsSpider):
                 marketplace_sel.extract()
             ).strip()
             marketplace['name'] = marketplace_name
-            marketplace['price'] = product['price']
             marketplace['seller_type'] = 'seller'
         else:
             marketplace['name'] = self.allowed_domains[0]
-            marketplace['price'] = product.get('price', None)
             marketplace['seller_type'] = 'site'
 
+        marketplace['price'] = product.get('price', None)
         mktplaces.append(marketplace)
         product['marketplace'] = mktplaces
 
@@ -262,8 +261,13 @@ class OzonProductsSpider(BaseProductsSpider):
             br_link = response.xpath(
                 '//a[contains(@href, "/reviews/")]/@href').extract()[0]
         except IndexError:
+            product['buyer_reviews'] = BuyerReviews(
+                num_of_reviews=0,
+                average_rating=0.0,
+                rating_by_star={1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+            )
             self.log("No buyer reviews found for URL %s" % response.url, WARNING)
-        if br_link is not None and isinstance(br_link, (str, unicode)):
+        if br_link is not None and isinstance(br_link, basestring):
             if br_link.startswith('/'):
                 br_link = urlparse.urljoin(response.url, br_link)
             return Request(br_link, callback=self.parse_buyer_reviews,
@@ -304,8 +308,10 @@ class OzonProductsSpider(BaseProductsSpider):
             for _i in xrange(value):
                 _avg_list.append(key)
         if _avg_list:
-            buyer_reviews['average_rating'] = \
-                float(sum(_avg_list)) / len(_avg_list)
+            buyer_reviews['average_rating'] = round(
+                float(sum(_avg_list)) / len(_avg_list),
+                1
+            )
         product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
         return product
 
