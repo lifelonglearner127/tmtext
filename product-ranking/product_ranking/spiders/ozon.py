@@ -124,20 +124,10 @@ class OzonProductsSpider(BaseProductsSpider):
             product['is_out_of_stock'] = False
 
         # Set description and brand
-        # TODO: refactor this odd piece of code
-        desc = response.xpath('//div[@class="bDetailLogoBlock"]/node() |'
-                              '//div[@id="js_additional_properties"]'
-                              '/div[@class="bTechDescription"]/node() |'
-                              '//div[@itemprop="description"] |'
+        desc = response.xpath('//div[@itemprop="description"] |'
                               '//div[@id="detail_description"]')
 
         if desc:
-            # m = re.search(r'{model}:([^,<\n]+)'.format(
-            #     model=u'\u041c\u043e\u0434\u0435\u043b\u044c'
-            # ), desc)
-            # if m:
-            #     cond_set_value(product, 'model', m.group(1).strip())
-
             product['description'] = is_empty(
                 desc.extract()
             ).strip()
