@@ -451,7 +451,7 @@ class OzonScraper(Scraper):
     def _categories(self):
         all = self.tree_html.xpath("//a[@class='eBreadCrumbs_link ']//text()")
         #the last value is the product itself
-        return all[0:-1]
+        return all
 
     def _category_name(self):
         # dept = " ".join(self.tree_html.xpath("//ul[@class='navLine']/li[1]//text()")).strip()
