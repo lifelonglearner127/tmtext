@@ -173,9 +173,9 @@ class OzonProductsSpider(BaseProductsSpider):
             product['category'] = category.strip()
 
         # Set recommended products
-        rel_prod_sel = response.xpath('//*[@class="bUniversalShelf"]/'
-                                      './/ul[@class="eUniversalShelf_Tabs"]/'
-                                      'li[contains(@class, "eUniversalShelf_Tab")]/@onclick')
+        rel_prod_sel = response.xpath('//ul[@class="eUniversalShelf_Tabs"]'
+                                      '/li[contains(@class, "eUniversalShelf_Tab")]'
+                                      '/@onclick')
 
         if rel_prod_sel:
             rel_prod_ids = is_empty(rel_prod_sel.extract())
@@ -270,8 +270,10 @@ class OzonProductsSpider(BaseProductsSpider):
         if br_link is not None and isinstance(br_link, basestring):
             if br_link.startswith('/'):
                 br_link = urlparse.urljoin(response.url, br_link)
-            return Request(br_link, callback=self.parse_buyer_reviews,
-                           meta=response.meta)
+            reqs.append(
+                Request(br_link, callback=self.parse_buyer_reviews,
+                        meta=response.meta)
+            )
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -279,7 +281,9 @@ class OzonProductsSpider(BaseProductsSpider):
         return product
 
     def parse_buyer_reviews(self, response):
-        product = response.meta['product']
+        meta = response.meta.copy()
+        product = meta['product']
+        reqs = meta.get('reqs')
         buyer_reviews = dict(num_of_reviews=0, average_rating=0.0,
                              rating_by_star={1: 0, 2: 0, 3: 0, 4: 0, 5: 0})
         for comment_block in response.xpath('//div[contains(@id, "comment_")]'):
@@ -313,6 +317,10 @@ class OzonProductsSpider(BaseProductsSpider):
                 1
             )
         product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
         return product
 
     def _parse_single_product(self, response):
@@ -337,7 +345,6 @@ class OzonProductsSpider(BaseProductsSpider):
         related_products = product.get('related_products', {})
         reqs = meta.get('reqs')
         data = self._handle_related_product(response, 'recommended')
-
         if data:
             related_products['recommended'] = data
             product['related_products'] = related_products
