@@ -230,15 +230,19 @@ class OzonScraper(Scraper):
         try:
             text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
             urls =re.findall(r'Preview".*?jpg', str(text))
+            if len(urls)==0:
+                urls =re.findall(r'Preview".*?JPG', str(text))
             if len(urls)>0:
-                image_url = ['http:'+u[10:] for u in urls]
+                return ['http:'+u[10:] for u in urls]
+            text = self.tree_html.xpath('//div[@class="bCombiningColumn"]//div[@class="bContentColumn"]//script//text()')
+            urls =re.findall(r'Preview".*?jpg', str(text))
+            if len(urls)==0:
+                urls =re.findall(r'Preview".*?JPG', str(text))
+            if len(urls)>0:
+                return ['http:'+u[10:] for u in urls]
             text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
             jsn = json.loads(text)
         except IndexError:
-            text = self.tree_html.xpath('//div[@class="bCombiningColumn"]//div[@class="bContentColumn"]//script//text()')
-            urls =re.findall(r'Preview".*?jpg', str(text))
-            if len(urls)>0:
-                return ['http:'+u[10:] for u in urls]
             text = re.findall(r'\.model_data = (\{.*\});', str(text))[0]
             text = ''.join(text)
             jsn = json.loads(text.decode("unicode_escape"))
