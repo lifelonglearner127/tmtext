@@ -11,7 +11,8 @@ from scrapy.log import ERROR, INFO, WARNING
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
+    cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -67,6 +68,19 @@ class NextCoUkProductSpider(BaseProductsSpider):
         response.meta['product_id'] = product_id
 
         product['locale'] = 'en_GB'
+
+        # Set category
+        try:
+            category = response.xpath(
+                '//div[@class="BreadcrumbsHolder"]/./'
+                '/li[@class="Breadcrumb"][not(contains(@class, "bcHome"))]'
+                '/a/text()'
+            ).extract()[:-1]
+            cond_set_value(product, 'category', category, conv=list)
+        except ValueError:
+            self.log(
+                "Failed to get category from %r." % response.url, WARNING
+            )
 
         # Get StyleID to choose current item
         style_id_data = re.findall(
