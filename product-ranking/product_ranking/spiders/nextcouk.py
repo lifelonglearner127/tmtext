@@ -210,40 +210,30 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
             if results:
                 # Buyer reviews
-                num_of_reviews = 0
-                average_rating = 0
-                rating_by_star = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
-                zero_buyer_review = BuyerReviews(
-                    num_of_reviews=num_of_reviews,
-                    average_rating=average_rating,
-                    rating_by_star=rating_by_star
-                )  # If no buyer reviews
+                buyer_review = dict(
+                    num_of_reviews=0,
+                    average_rating=0,
+                    rating_by_star={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+                )
+                # rating_by_star = rating_by_star
 
                 try:
-                    buyer_reviews = results['ReviewStatistics']
+                    buyer_reviews_data = results['ReviewStatistics']
+                    buyer_review['num_of_reviews'] = buyer_reviews_data['TotalReviewCount']
 
-                    num_of_reviews = buyer_reviews['TotalReviewCount']
+                    if buyer_review['num_of_reviews']:
+                        buyer_review['average_rating'] = buyer_reviews_data['AverageOverallRating']
 
-                    if num_of_reviews:
-                        average_rating = buyer_reviews['AverageOverallRating']
-
-                        rating_by_star = rating_by_star
-                        ratings = buyer_reviews['RatingDistribution']
+                        ratings = buyer_reviews_data['RatingDistribution']
                         for rate in ratings:
                             star = str(rate['RatingValue'])
-                            rating_by_star[star] = rate['Count']
-
-                        buyer_reviews = BuyerReviews(
-                            num_of_reviews=num_of_reviews,
-                            average_rating=average_rating,
-                            rating_by_star=rating_by_star
-                        )
-                    else:
-                        buyer_reviews = zero_buyer_review
-
+                            buyer_review['rating_by_star'][star] = rate['Count']
                 except (KeyError, ValueError):
-                    buyer_reviews = zero_buyer_review
+                    self.log(
+                        "Failed to get buyer reviews from %r." % response.url, WARNING
+                    )
 
+                buyer_reviews = BuyerReviews(**buyer_review)
                 product['buyer_reviews'] = buyer_reviews
 
                 # Get brand
