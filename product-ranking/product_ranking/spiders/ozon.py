@@ -152,6 +152,14 @@ class OzonProductsSpider(BaseProductsSpider):
             ).strip()
             product['brand'] = brand
 
+        if not product.get('brand', None):
+            # <a class="eBreadCrumbs_link " href="/catalog/1168060/?brand=26303248">Lenovo</a>
+            _brand = response.xpath(
+                '//a[contains(@class, "eBreadCrumbs")][contains(@href, "brand")]/text()'
+            ).extract()
+            if _brand:
+                product['brand'] = _brand[0]
+
         # Set locale
         product['locale'] = 'ru-RU'
 
