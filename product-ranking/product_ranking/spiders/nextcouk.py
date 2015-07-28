@@ -269,11 +269,31 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     sizes_var['colour'] = colour
 
                 if '- Sold Out' in size:
-                    sizes_var['size'] = size.replace('- Sold Out', '').strip()
+                    size = size.replace('- Sold Out', '')
                     sizes_var['out_of_stock'] = True
                 else:
-                    sizes_var['size'] = size.strip()
                     sizes_var['out_of_stock'] = False
+
+                if '\\xa' in repr(size):
+                    price = is_empty(
+                        re.findall(
+                            r'\\xa(\d+.\d{2})',
+                            repr(size)
+                        ), '0.00'
+                    )
+                    sizes_var['price'] = Price(
+                        priceCurrency="GBP",
+                        price=price
+                    )
+                    size = is_empty(
+                        re.findall(
+                            r'([^-]+)',
+                            size
+                        ), ''
+                    )
+                else:
+                    sizes_var['price'] = product['price']
+                sizes_var['size'] = size.strip()
 
                 final_variants.append(sizes_var)
 
