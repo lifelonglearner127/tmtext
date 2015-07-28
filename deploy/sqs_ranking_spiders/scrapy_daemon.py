@@ -734,14 +734,8 @@ class ScrapyTask(object):
                 output_path+'_bs.jl')
         return cmd
 
-    def _check_if_scrapy_process_is_running(self):
-        # TODO: refactor for bestsellers?
-        return os.path.exists(self.get_output_path()+'.log')
-
     def _start_scrapy_process(self):
         cmd = self._parse_task_and_get_cmd()
-        if self._check_if_scrapy_process_is_running():
-            return  # scrapy is already running
         self.process = Popen(cmd, shell=True, stdout=PIPE,
                              stderr=PIPE, preexec_fn=os.setsid)
         if self.task_data.get('with_best_seller_ranking', False):
