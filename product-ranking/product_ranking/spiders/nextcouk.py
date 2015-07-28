@@ -213,13 +213,13 @@ class NextCoUkProductSpider(BaseProductsSpider):
         )
 
         if related_items:
-            product['related_products'] = self.parse_related_products(related_items)
+            product['related_products'] = self.parse_related_products(related_items, response.url)
 
         # Get buyer reviews
-        buyer_reviews_url = self.REVIEWS_URL.format(product_id=product_id)
+        prod_info_js = self.REVIEWS_URL.format(product_id=product_id)
         reviews_request = Request(
-            url=buyer_reviews_url,
-            callback=self.parse_buyer_reviews,
+            url=prod_info_js,
+            callback=self.parse_prod_info_js,
             dont_filter=True,
         )
         reqs.append(reviews_request)
@@ -235,10 +235,11 @@ class NextCoUkProductSpider(BaseProductsSpider):
         """
 
         meta = response.meta.copy()
+        reqs = meta.get('reqs')
         product = meta['product']
         product_variants = product.get('variants', [])
-        reqs = meta.get('reqs')
         variants = meta['variants']
+
         final_variants = []
 
         item_number = is_empty(
@@ -287,7 +288,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
-    def parse_related_products(self, items):
+    def parse_related_products(self, items, base_product_url):
         related_prods = []
 
         for item in items:
@@ -300,10 +301,15 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 ).strip()
 
             # Get url
-            url = item.xpath('.//div[@class="StyleThumb"]/a/img/@src')
-            if url:
-                url = is_empty(
-                    url.extract()
+            targetitem = item.xpath('.//@data-targetitem')
+            url = item.xpath('.//div[@class="StyleThumb"]/a/@href')
+            if targetitem and url:
+                targetitem = is_empty(
+                    targetitem.extract()
+                )
+                url = '{url}#{id}'.format(
+                    url=base_product_url,
+                    id=targetitem.replace('-', '')
                 )
 
             if url and title:
@@ -316,7 +322,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
         return related_prods
 
-    def parse_buyer_reviews(self, response):
+    def parse_prod_info_js(self, response):
         meta = response.meta.copy()
         reqs = meta.get("reqs")
         product = meta['product']
