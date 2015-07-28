@@ -1,6 +1,13 @@
 # coding=utf-8
 
 import urllib
+import re
+import requests
+import json
+import urllib2
+import cookielib
+
+is_empty = lambda x, y="": x[0] if x else y
 
 def _is_none(arg):
     if arg is None:
@@ -30,6 +37,31 @@ def init_params(self):
     for attr in attributes:
         setattr(self, attr, default_value)
 
+class WalmartUtilCookie(object):
+
+    def __init__(self, RR_entity):
+        self.cj = cookielib.CookieJar()
+        self.opener = urllib2.build_opener(
+            urllib2.HTTPCookieProcessor(self.cj)
+        )
+        self.r = self.opener.open(RR_entity.href)
+        self.cookies = requests.utils.dict_from_cookiejar(self.cj)
+
+    # Gets a cookie's value
+    def get(self, name):
+        return self.cookies.get(name)
+
+    # Gets a cookie's value parsed as JSON
+    def get_json(self, name):
+        value = self.get(name)
+
+        if not value:
+            return None
+        elif value.startswith("\""):
+            return json.dumps(json.dumps(value))
+
+        return json.dumps(value)
+
 class R3Common(object):
 
     def __init__(self, rr_entity):
@@ -52,6 +84,12 @@ class R3Common(object):
     def rr_set_brand(self, brand):
         self.brand = self.rr_entity.fixName(brand)
 
+    def set_session_id(self, a):
+        self.session_id = a
+
+    def set_user_id(self, a):
+        self.user_id = a
+
     def add_item_id(self, idd, sku, place_to_add):
         place_to_add = _is_none(place_to_add)
 
@@ -59,6 +97,12 @@ class R3Common(object):
             idd = idd + "~" + sku
 
         place_to_add += '|' + self.rr_entity.fix_id(idd)
+
+    def add_category_hint_id(self, a):
+        if not self.category_hint_ids:
+            self.category_hint_ids = ''
+
+        self.category_hint_ids += '|' + self.rr_entity.fix_cat_id(a)
 
     def add_placement_type(self, placement_type):
         self.placement_types = _is_none(self.placement_types)
@@ -157,7 +201,6 @@ class R3Common(object):
             self.landing_page_id = self.rr_entity.pq('rr_lpid')
 
     def add_core_params(self, script_src, path):
-        self.set_api_key('45c4b1787d30a004')
         script_src = self.base_url + path + '?' + urllib.urlencode({'a': self.api_key}) + script_src
 
         if self.placement_types:
@@ -165,7 +208,7 @@ class R3Common(object):
             
         if self.user_id:
             script_src += '&' + urllib.urlencode({'u': self.user_id})
-            
+
         if self.session_id:
             script_src += '&' + urllib.urlencode({'s': self.session_id})
         
@@ -454,11 +497,11 @@ class R3Item(object):
 
 class RR(object):
 
-    def __init__(self, href, idd, rs_objs):
+    def __init__(self, href, idd, response):
         self.r3_entity = R3Common(self)
-        self.href = href
-        self.id = idd
-        self.rs_objs = rs_objs
+        self.response = response
+        self.href = href  # Product url
+        self.id = idd  # Product ID
         self.charset = 'UTF-8'
         self.D = 'a5d5af7012d61fd1'
         self.T = '632d581ca7b9feb3'
@@ -466,21 +509,45 @@ class RR(object):
         self.TM = '|61e8c5b5ec8a3a00|421363196daa3779|73de560159c8c3b9|' \
                   'f0f1949cb6ae84eb|752e69416232e918|cc53d80ef0c355a7|5120f20de7f2261b|'
 
+    def rrSetup(self):
+        self.r3_entity.set_api_key("45c4b1787d30a004")
+
+        walmart_util_cookie = WalmartUtilCookie(self)
+        context = walmart_util_cookie.get_json("context")
+
+        if context:
+            context.isUserAuthenticated = True
+        else:
+            context = {"isUserAuthenticated": False}
+
+        # "S" parameter
+        self.r3_entity.set_session_id('6b94d8fb-5f0f-42b2-a4ea-6d0d497c6427')
+
+        # "U" parameter
+        self.r3_entity.set_user_id('6b94d8fb-5f0f-42b2-a4ea-6d0d497c6427')
+
+        chi = is_empty(
+            re.findall(
+                r'"primary_parent_id":\["(\d+)"\]',
+                self.response.body_as_unicode()
+            ), ''
+        )
+        if chi:
+            self.r3_entity.add_category_hint_id(chi)
+
     def set_charset(self, c):
         self.charset = c
 
     def fix_name(self, name):
         result = name
-        if result.indexOf('&amp;') > -1:
-            result = result.replace('&amp;', "&")
-        if result.indexOf('&#039;') > -1:
-            result = result.replace('&#039;', "'")
+        if r'&amp;' in name:
+            result = name.replace('&amp;', "&")
+        if r'&#039;' in name:
+            result = name.replace('&#039;', "'")
         return result
 
     def fix_id(self, idd):
-        result = idd
-        if self.r3_entity.apiKey == self.D:
-            result = result.toUpperCase()
+        result = idd.upper()
         return result
 
     def fix_cat_id(self, idd):
@@ -521,15 +588,19 @@ class RR(object):
         placements_empty = False
         empty_placement_name = 'item_page'
 
-        for i in range(self.rs_objs):
-            self.r3_entity.add_placement_type("item_page.rr" + str(i+1))
+        self.rrSetup()
+
+        RSobjs = self.response.css('section.recordSpotlight.richRelevance:not(.RRdone)')
+
+        for key, obj in enumerate(RSobjs):
+            self.r3_entity.add_placement_type("item_page.rr" + str(key+1))
 
             if not self.r3_entity.placement_types:
                 placements_empty = True
 
-            if R3Item:
-                r3_pt = R3Item(self)
-                script_src = r3_pt.create_script(script_src)
+        if R3Item:
+            r3_pt = R3Item(self)
+            script_src = r3_pt.create_script(script_src)
 
-            script_src = self.r3_entity.create_script(script_src, placements_empty, empty_placement_name)
-            return script_src
+        script_src = self.r3_entity.create_script(script_src, placements_empty, empty_placement_name)
+        return script_src
