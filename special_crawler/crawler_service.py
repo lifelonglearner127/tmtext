@@ -52,6 +52,7 @@ from extract_amazoncn_data import AmazonCNScraper
 from extract_wiggle_data import WiggleScraper
 from extract_snapdeal_data import SnapdealScraper
 from extract_walmartca_data import WalmartCAScraper
+from extract_marksandspencer_data import MarksAndSpencerScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -111,7 +112,8 @@ SUPPORTED_SITES = {
                     "amazoncn": AmazonCNScraper,
                     "wiggle": WiggleScraper,
                     "snapdeal": SnapdealScraper,
-                    "walmartca": WalmartCAScraper
+                    "walmartca": WalmartCAScraper,
+                    "marksandspencer": MarksAndSpencerScraper
                     }
 
 # add logger
