@@ -338,7 +338,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 # Buyer reviews
                 buyer_review = dict(
                     num_of_reviews=0,
-                    average_rating=0,
+                    average_rating=0.0,
                     rating_by_star={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
                 )
 
@@ -347,9 +347,8 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     buyer_review['num_of_reviews'] = buyer_reviews_data['TotalReviewCount']
 
                     if buyer_review['num_of_reviews']:
-                        buyer_review['average_rating'] = round(
-                            buyer_reviews_data['AverageOverallRating'],
-                            1
+                        buyer_review['average_rating'] = float(
+                            round(buyer_reviews_data['AverageOverallRating'], 1)
                         )
 
                         ratings = buyer_reviews_data['RatingDistribution']
