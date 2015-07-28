@@ -26,7 +26,7 @@ def extract_text(filename, is_url=False, debug=False):
     # resize image
     orig_size = src.shape[:2]
     # such that smaller dimension is 500 pixels at least
-    normalized_size = max(1000, max(orig_size))
+    normalized_size = max(1500, max(orig_size))
     max_dim_idx = max(enumerate(orig_size), key=lambda l: l[1])[0]
     min_dim_idx = [idx for idx in [0,1] if idx!=max_dim_idx][0]
     new_size = [0,0]
@@ -54,13 +54,13 @@ def extract_text(filename, is_url=False, debug=False):
         cv2.imwrite("/tmp/4dilated.png", temp)
     # temp = cv2.subtract(src,temp)
     # skel = cv2.bitwise_or(skel,temp)
-    src = temp.copy()
+    src = temp
 
     # black and white
     # src = cv2.adaptiveThreshold(src, 255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C, thresholdType=cv2.THRESH_BINARY, blockSize=15, C=2)
-    # _, src = cv2.threshold(src, 150, 255, cv2.THRESH_BINARY)
+    _, src = cv2.threshold(src, 170, 255, cv2.THRESH_BINARY)
     # For large text I think we need the first parameter to be higher
-    src = cv2.adaptiveThreshold(src,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,23,3)
+    # src = cv2.adaptiveThreshold(src,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,23,3)
     # _,src = cv2.threshold(src,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     if debug:
         cv2.imwrite("/tmp/5thresh.png", src)

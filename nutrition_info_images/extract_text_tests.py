@@ -7,10 +7,12 @@ import cStringIO # *much* faster than StringIO
 import numpy as np
 from nltk.corpus import wordnet
 import itertools
+from memory_profiler import profile
 
+@profile
 def preprocessing1(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
     dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
-    image_size=3000):
+    image_size=1500):
     '''Preprocess input image, using some order of the preprocessing operations
     (version 1)
     '''
@@ -54,10 +56,10 @@ def preprocessing1(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     return src
             
 
-
+@profile
 def preprocessing2(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
     dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
-    image_size=3000):
+    image_size=1500):
     '''Preprocess input image, using some order of the preprocessing operations
     '''
     
@@ -92,10 +94,10 @@ def preprocessing2(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     return src
 
 
-
+@profile
 def preprocessing3(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
     dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
-    image_size=3000):
+    image_size=1500):
     '''Preprocess input image, using some order of the preprocessing operations
     '''
 
@@ -134,10 +136,10 @@ def preprocessing3(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
         
     return src
 
-
+@profile
 def preprocessing4(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
     dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
-    image_size=3000):
+    image_size=1500):
     '''Preprocess input image, using some order of the preprocessing operations
     '''
 
@@ -176,10 +178,10 @@ def preprocessing4(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
         
     return src
 
-
+@profile
 def preprocessing5(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
     dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
-    image_size=3000):
+    image_size=1500):
     '''Preprocess input image, using some order of the preprocessing operations
     (like first but no thresholding)
     '''
@@ -217,7 +219,7 @@ def is_dictionary_word(word):
         return True
     return False
 
-
+@profile
 def image_score(cv2_im):
     '''Computes a score for the quality of the extracted text
     '''
@@ -238,11 +240,11 @@ def image_score(cv2_im):
 
     if not total:
         return 0
-    return float(words)/total*100
-    # if (("nutrition" in final_text) or ("supplement" in final_text) or ("drug" in final_text)):
-    #     return 1
-    # else:
-    #     return 0
+    # return float(words)/total*100
+    if (("nutrition" in final_text) or ("supplement" in final_text) or ("drug" in final_text)):
+        return 1
+    else:
+        return 0
 
 def read_image(filename, is_url=True):
     if is_url:
@@ -312,7 +314,7 @@ def test_extract_text(filenames, is_url=False, debug=False):
 
     # just do it for default values of parameters and skip the rest
     for idimg, src in enumerate(loaded_images):
-        for idx, preprocessing in enumerate(preprocessings):
+        for idx, preprocessing in enumerate([preprocessings[3]]):
             try:
                 src = preprocessing(src)
                 score = image_score(src)
@@ -400,5 +402,5 @@ if __name__=='__main__':
         test_images = map(lambda l: l.strip(), fin.readlines())
 
     # test_extract_text(['/tmp/text_image.jpg', '/tmp/text_image2.jpg'])       
-    test_extract_text(test_images)       
+    test_extract_text(test_images[25:])       
 
