@@ -293,7 +293,10 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     )
                 else:
                     sizes_var['price'] = product['price']
-                sizes_var['size'] = size.strip()
+
+                size = size.strip()
+                if size != "ONE":
+                    sizes_var['size'] = size
 
                 final_variants.append(sizes_var)
 
