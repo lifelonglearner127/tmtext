@@ -21,7 +21,7 @@ from product_ranking.spiders import cond_set, cond_set_value, dump_url_to_file
 is_empty = lambda x, y=None: x[0] if x else y
 
 
-class PcworldcoukProductsSpider(BaseProductsSpider):
+class MarksandspencerProductsSpider(BaseProductsSpider):
     name = 'marksandspencer_products'
     allowed_domains = ["marksandspencer.com", "recs.richrelevance.com",]
 
@@ -74,7 +74,7 @@ class PcworldcoukProductsSpider(BaseProductsSpider):
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         self.sort_mode = sort_mode or "relevance"
-        super(PcworldcoukProductsSpider, self).__init__(
+        super(MarksandspencerProductsSpider, self).__init__(
                 site_name=self.allowed_domains[0],
                 *args,
                 **kwargs)
@@ -216,7 +216,7 @@ class PcworldcoukProductsSpider(BaseProductsSpider):
                 variant["price"] = Price(
                     priceCurrency=self.CURRENCY_SIGNS.get(pCurrency, "GBP"),
                     price=price,
-                )
+                ).__str__()
             del variant["id"]
 
         if variants:
