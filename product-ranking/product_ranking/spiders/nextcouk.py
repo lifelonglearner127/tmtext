@@ -137,45 +137,44 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     object_pairs_hook=dict
                 )
 
-                # try:
-                # Get variants data for current product
-                for var in variants_data:
-                    if str(var['StyleID']) == style_id:
-                        data = var['Fits']
-                        break
+                try:
+                    # Get variants data for current product
+                    for var in variants_data:
+                        if str(var['StyleID']) == style_id:
+                            data = var['Fits']
+                            break
 
-                for variant_data in data:
-                    name = variant_data['Name'].strip()
-                    vars_items = variant_data['Items']
-                    items_number = []
+                    for variant_data in data:
+                        name = variant_data['Name'].strip()
+                        vars_items = variant_data['Items']
 
-                    if vars_items:
-                        for variant_item in vars_items:
-                            variant = dict()
-                            item_number = variant_item['ItemNumber'].replace('-', '')
-                            variant['item_number'] = item_number
+                        if vars_items:
+                            for variant_item in vars_items:
+                                variant = dict()
+                                item_number = variant_item['ItemNumber'].replace('-', '')
+                                variant['item_number'] = item_number
 
-                            if name:
-                                variant['fit'] = name
+                                if name:
+                                    variant['fit'] = name
 
-                            colour_name = variant_item['Colour'].strip()
-                            if colour_name:
-                                variant['colour'] = colour_name
+                                colour_name = variant_item['Colour'].strip()
+                                if colour_name:
+                                    variant['colour'] = colour_name
 
-                            variants.append(variant)
+                                variants.append(variant)
 
-                            reqs.append(
-                                Request(
-                                    url='http://www.next.co.uk/item/{0}?CTRL=select'.format(item_number),
-                                    callback=self._get_in_stock_variants
+                                reqs.append(
+                                    Request(
+                                        url='http://www.next.co.uk/item/{0}?CTRL=select'.format(item_number),
+                                        callback=self._get_in_stock_variants
+                                    )
                                 )
-                            )
 
-                response.meta['variants'] = variants
-                # except (KeyError, ValueError):
-                #     self.log(
-                #         "Failed to extract variants from %r." % response.url, ERROR
-                #     )
+                    response.meta['variants'] = variants
+                except (KeyError, ValueError):
+                    self.log(
+                        "Failed to extract variants from %r." % response.url, ERROR
+                    )
 
             # Get price
             price_sel = item.css('.Price')
@@ -252,16 +251,21 @@ class NextCoUkProductSpider(BaseProductsSpider):
         # Get data of current variant from meta
         for var in variants:
             if var['item_number'] == str(item_number):
-                data = var
                 break
 
         size_values = response.xpath('.//select/option[@value != ""]/text()').extract()
 
         if size_values:
             for size in size_values:
-                sizes_var = {}
-                sizes_var['fit'] = data['fit']
-                sizes_var['colour'] = data['colour']
+                sizes_var = dict()
+                fit = var.get('fit', '')
+                colour = var.get('colour', '')
+
+                if fit:
+                    sizes_var['fit'] = fit
+
+                if colour:
+                    sizes_var['colour'] = colour
 
                 if '- Sold Out' in size:
                     sizes_var['size'] = size.replace('- Sold Out', '').strip()
@@ -271,7 +275,6 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     sizes_var['out_of_stock'] = False
 
                 final_variants.append(sizes_var)
-                print final_variants
 
         product_variants += final_variants
         product['variants'] = product_variants
