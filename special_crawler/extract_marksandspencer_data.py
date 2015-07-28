@@ -19,12 +19,11 @@ class MarksAndSpencerScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.marksandspencer.com/<product-name>/p/.*$"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.marksandspencer.com/<product-name>/p/p[0-9]+$"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
-        # whether product has any webcollage media
         self.review_list = None
         self.average_review = None
         self.max_review = None
@@ -38,7 +37,7 @@ class MarksAndSpencerScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.marksandspencer.com/.*/p/.*$", self.product_page_url)
+        m = re.match(r"^http://www.marksandspencer.com/.*/p/p[0-9]+$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -81,7 +80,7 @@ class MarksAndSpencerScraper(Scraper):
         return product_id
 
     def _site_id(self):
-        return None
+        return self.tree_html.xpath("//p[@class='code']/text()")[0].strip()
 
     def _status(self):
         return "success"
