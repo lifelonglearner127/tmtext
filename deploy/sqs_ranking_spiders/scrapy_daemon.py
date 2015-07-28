@@ -742,7 +742,7 @@ class ScrapyTask(object):
         for line in out.splitlines():
             if 'scrapy' in line:
                 return True
-        return True
+        return False
 
     def _start_scrapy_process(self):
         cmd = self._parse_task_and_get_cmd()
