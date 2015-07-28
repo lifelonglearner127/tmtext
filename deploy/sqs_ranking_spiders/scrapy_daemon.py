@@ -736,13 +736,7 @@ class ScrapyTask(object):
 
     def _check_if_scrapy_process_is_running(self):
         # TODO: refactor for bestsellers?
-        p = Popen('ps aux | grep "%s"' % self.get_unique_name(),
-                  shell=True, stdout=PIPE)
-        out, err = p.communicate()
-        for line in out.splitlines():
-            if 'scrapy ' in line and '.jl' in line:
-                return True
-        return False
+        return os.path.exists(self.get_output_path()+'.log')
 
     def _start_scrapy_process(self):
         cmd = self._parse_task_and_get_cmd()
