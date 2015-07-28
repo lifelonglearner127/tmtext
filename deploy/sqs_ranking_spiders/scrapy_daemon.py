@@ -740,7 +740,7 @@ class ScrapyTask(object):
                   shell=True, stdout=PIPE)
         out, err = p.communicate()
         for line in out.splitlines():
-            if 'scrapy' in line:
+            if 'scrapy ' in line and '.jl' in line:
                 return True
         return False
 
