@@ -123,27 +123,59 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 product['description'] = description.strip().replace('\r', '').replace('\n', '').replace('\t', '')
 
             # Get variants
-            variants = dict()
-            variants_selector = item.css('.StyleForm .DropDown')
+            variants_data = is_empty(
+                re.findall(
+                    r'var\s*itemData\s*=\s*(\[[^;]+)',
+                    response.body_as_unicode()
+                ), ''
+            )
+            variants = []
 
-            if variants_selector:
-                for var in variants_selector:
-                    var_title = var.xpath('.//label/text()')
-                    var_value = var.xpath('.//select/option[@value != ""]/text()')
+            if variants_data:
+                variants_data = hjson.loads(
+                    variants_data.replace(': ', ':'),
+                    object_pairs_hook=dict
+                )
 
-                    if var_title and var_value:
-                        var_title = is_empty(
-                            var_title.extract(), ''
-                        ).strip().lower()
-                        var_list = []
-                        for value in var_value:
-                            var_list.append(
-                                value.extract()
+                # try:
+                # Get variants data for current product
+                for var in variants_data:
+                    if str(var['StyleID']) == style_id:
+                        data = var['Fits']
+                        break
+
+                for variant_data in data:
+                    name = variant_data['Name'].strip()
+                    vars_items = variant_data['Items']
+                    items_number = []
+
+                    if vars_items:
+                        for variant_item in vars_items:
+                            variant = dict()
+                            item_number = variant_item['ItemNumber'].replace('-', '')
+                            variant['item_number'] = item_number
+
+                            if name:
+                                variant['fit'] = name
+
+                            colour_name = variant_item['Colour'].strip()
+                            if colour_name:
+                                variant['colour'] = colour_name
+
+                            variants.append(variant)
+
+                            reqs.append(
+                                Request(
+                                    url='http://www.next.co.uk/item/{0}?CTRL=select'.format(item_number),
+                                    callback=self._get_in_stock_variants
+                                )
                             )
-                        variants[var_title] = var_list
-                    else:
-                        continue
-                product['variants'] = variants
+
+                response.meta['variants'] = variants
+                # except (KeyError, ValueError):
+                #     self.log(
+                #         "Failed to extract variants from %r." % response.url, ERROR
+                #     )
 
             # Get price
             price_sel = item.css('.Price')
@@ -192,6 +224,57 @@ class NextCoUkProductSpider(BaseProductsSpider):
             dont_filter=True,
         )
         reqs.append(reviews_request)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _get_in_stock_variants(self, response):
+        """
+        Callback - gets sizes for every single variant
+        """
+
+        meta = response.meta.copy()
+        product = meta['product']
+        product_variants = product.get('variants', [])
+        reqs = meta.get('reqs')
+        variants = meta['variants']
+        final_variants = []
+
+        item_number = is_empty(
+            re.findall(
+                r'item/(.+)\?CTRL',
+                response.url
+            ), ''
+        )
+
+        # Get data of current variant from meta
+        for var in variants:
+            if var['item_number'] == str(item_number):
+                data = var
+                break
+
+        size_values = response.xpath('.//select/option[@value != ""]/text()').extract()
+
+        if size_values:
+            for size in size_values:
+                sizes_var = {}
+                sizes_var['fit'] = data['fit']
+                sizes_var['colour'] = data['colour']
+
+                if '- Sold Out' in size:
+                    sizes_var['size'] = size.replace('- Sold Out', '').strip()
+                    sizes_var['out_of_stock'] = True
+                else:
+                    sizes_var['size'] = size.strip()
+                    sizes_var['out_of_stock'] = False
+
+                final_variants.append(sizes_var)
+                print final_variants
+
+        product_variants += final_variants
+        product['variants'] = product_variants
 
         if reqs:
             return self.send_next_request(reqs, response)
