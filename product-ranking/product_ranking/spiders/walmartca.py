@@ -244,7 +244,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             num_of_reviews = data['TotalReviewCount']  # Buyer reviews count
 
             if num_of_reviews:
-                average_rating = data['AverageOverallRating']  # Average rating
+                average_rating = round(data['AverageOverallRating'], 1)  # Average rating
 
                 for rate in data['RatingDistribution']:  # Rating by stars
                     star = rate['RatingValue']
