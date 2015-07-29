@@ -3,15 +3,11 @@
 from __future__ import division, absolute_import, unicode_literals
 
 import json
-import pprint
 import re
 import urlparse
 import hjson
-import hashlib
-import string
+from itertools import izip
 from datetime import datetime
-import lxml.html
-import urllib
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -29,34 +25,6 @@ from product_ranking.validation import BaseValidator
 from product_ranking.walmartca_url_feat_prod_gen import RR
 
 is_empty = lambda x, y="": x[0] if x else y
-
-
-def get_string_from_html(xp, link):
-    loc = is_empty(link.xpath(xp).extract())
-    return Selector(text=loc).xpath('string()').extract()
-
-
-class WalmartCaValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['model', 'brand', 'description', 'recent_questions',
-                       'related_products', 'upc', 'buyer_reviews', 'price']
-    ignore_fields = ['google_source_site', 'is_in_store_only', 'bestseller_rank',
-                     'is_out_of_stock']
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = False  # ... duplicated requests?
-    ignore_log_filtered = False  # ... filtered requests?
-    test_requests = {
-        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
-        'nothing_found_123': 0,
-        'chrysler 300c': [10, 150],
-        'swiming dress': [50, 250],
-        'macbook air thunderbolt': [10, 150],
-        'hexacore': [50, 250],
-        '300c': [50, 250],
-        'muay': [50, 200],
-        '14-pack': [1, 100],
-        'voltmeter': [50, 250]
-    }
-
 
 class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     """
@@ -136,10 +104,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         'desc': 'DESC'
     }
 
-    settings = WalmartCaValidatorSettings
-
-    sponsored_links = []
-
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
@@ -181,23 +145,17 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'locale', 'en_CA')  # Default locale.
 
         # Get featured products from generated JS script, evaluating parent script
-        getUninitializedRecordSpotlights = len(
-            response.css(
-                "section.recordSpotlight.richRelevance:not(.RRdone)"
-            )
-        )
-
         RR_entity = RR(
             response.url,
             product_id,
-            getUninitializedRecordSpotlights
+            response
         )
         featured_products_url = RR_entity.js()
 
         reqs.append(Request(
             url=featured_products_url,
             meta=meta,
-            callback=self._get_featured_products
+            callback=self.parse_related_products
         ))
 
         # Get product base info, QA and reviews straight from JS script
@@ -375,11 +333,67 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return ''
 
-    def _get_featured_products(self, response):
-        data = response.body_as_unicode()
-        print('-'*50)
-        print data
-        print('-'*50)
+    def parse_related_products(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+        reqs = meta.get('reqs')
+        body = response.body_as_unicode()
+
+        data = re.findall(
+            r'"(message)":\s*"(.*?)\^.*?"|"(name)":\s*"(.*?)"|"(linkurl)":\s*"(.*?)"',
+            body
+        )
+
+        if data:
+            feat_prod_list = []
+            prod_dict = dict()
+            featured_prods = dict()
+            url_ready = name_ready = False
+            last_message = False
+
+            for item in data:
+                # Make a dir of two tuples
+                item_list = filter(None, list(item))
+                i = iter(item_list)
+                values_dict = dict(izip(i, i))
+                keys = values_dict.keys()
+
+                if 'message' in keys:
+                    if feat_prod_list:
+                        featured_prods[last_message] = feat_prod_list
+                        feat_prod_list = []
+
+                    # Convert featured products title for dir
+                    # "People who viewed this also viewed" --> "also_viewed"
+                    featured_variants = ['also bought', 'ultimately bought',
+                                         'Top sellers', 'Featured products',
+                                         'also viewed']
+                    for var in featured_variants:
+                        if var in values_dict['message']:
+                            last_message = var.replace(' ', '_').lower()
+                else:
+                    if 'name' in keys:
+                        prod_dict['title'] = values_dict['name']
+                        name_ready = True
+                    elif 'linkurl' in keys:
+                        prod_dict['url'] = values_dict['linkurl']
+                        url_ready = True
+
+                    if url_ready and name_ready:
+                        feat_prod_list.append(
+                            RelatedProduct(**prod_dict)
+                        )
+                        prod_dict = {}
+                        url_ready = name_ready = False
+
+            featured_prods[last_message] = feat_prod_list
+
+            product['related_products'] = featured_prods
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
 
     def _populate_from_html(self, response, product):
         """
@@ -420,25 +434,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             description = desc.extract()
             product["description"] = is_empty(description, "").strip()
 
-        # Get related products
-        related_prod_sections = response.css(".spotlightType-products"
-                                             "[aria-label='Featured Products: Featured Products']")
-
-        if related_prod_sections:
-            related_prod_sections = related_prod_sections.extract()
-            related_prod_title = ['ultimately_bought', 'also_bought', 'top_sellers']
-            related_products = dict()
-
-            for k, value in enumerate(related_prod_sections):
-                sel = Selector(text=value)
-                builded_products = self._build_related_products(sel)
-                if builded_products:
-                    related_products[related_prod_title[k]] = builded_products
-
-            product['related_products'] = related_products
-        else:
-            product['related_products'] = None
-
         # Get department
         department_list = response.css('#breadcrumb li[itemscope] span[itemprop="title"]::text')
 
@@ -450,34 +445,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
-
-    def _build_related_products(self, selector):
-        related_products = []
-
-        rel_prod = selector.css('.product')
-        if rel_prod:
-            rel_prod = rel_prod.extract()
-
-            # TODO: rewrite selectors
-            for product in rel_prod:
-                selector = Selector(text=product)
-
-                title = is_empty(
-                    selector.css('.title a::text').extract()
-                )
-                title = title.strip()
-
-                url = is_empty(
-                    selector.css('.title a::attr(href)').extract()
-                )
-                url = url.strip()
-
-                if title and url:
-                    related_products.append([title, url])
-
-            return related_products
-
-        return None
 
     def _populate_from_js(self, response, product):
         """
