@@ -281,10 +281,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                             repr(size)
                         ), '0.00'
                     )
-                    sizes_var['price'] = Price(
-                        priceCurrency="GBP",
-                        price=price
-                    )
+                    sizes_var['price'] = price
                     size = is_empty(
                         re.findall(
                             r'([^-]+)',
@@ -292,8 +289,10 @@ class NextCoUkProductSpider(BaseProductsSpider):
                         ), ''
                     )
                 else:
-                    sizes_var['price'] = product['price']
-
+                    sizes_var['price'] = format(
+                        product['price'].price.__float__(),
+                        '.2f'
+                    )
                 size = size.strip()
                 if size != "ONE":
                     sizes_var['size'] = size
