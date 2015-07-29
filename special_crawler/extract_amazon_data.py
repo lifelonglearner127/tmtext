@@ -460,7 +460,7 @@ class AmazonScraper(Scraper):
 
         if len(allimg) > 0 and self.no_image(allimg) == 0:
             if len(allimg) > 7:
-                allimg = allimg[:6]
+                allimg = allimg[:7]
 
                 if vurls:
                     allimg = allimg[:-1]
