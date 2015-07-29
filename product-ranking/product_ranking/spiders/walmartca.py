@@ -153,7 +153,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         reqs.append(FormRequest(
             url="http://www.walmart.ca/ws/online/products",
             formdata={"products": request_data},
-            callback=self.parse_limited_stock,
+            callback=self.parse_online_status,
             headers={
                 'X-Requested-With': 'XMLHttpRequest'
             }
@@ -555,7 +555,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             #     variants = None
 
         else:
-            skus = skus.append(meta['sku_id'])
+            skus = [sku_id]
             variants = []
 
         product['variants'] = variants
@@ -585,9 +585,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return product
 
-    def parse_limited_stock(self, response):
+    def parse_online_status(self, response):
         """
-        Gets limited_stock field for product and its variants
+        Gets limited_stock and is_out_of_stock fields for product and its variants
         """
         meta = response.meta.copy()
         reqs = meta.get('reqs')
@@ -604,31 +604,21 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             final_variants = []
 
             # Set limited status for main product
+            availability = product_info['availability']
+            product['is_out_of_stock'] = availability in ['70', '80']
+
             if product_info['isLimitedStock']:
                 product['limited_stock'] = True
             else:
                 product['limited_stock'] = False
-                # If not 'is limited', it can be 'out of stock'
-                url_formatted_skus = ",".join(meta['skus'])
-                in_stock_url = "https://om.ordergroove.com/offer/af0a84f8847311e3b233bc764e1107f2/pdp?" \
-                               "session_id=af0a84f8847311e3b233bc764e1107f2.918921.1436766243&page_type=1&" \
-                               "p=%5B{skus}%5D".format(skus=url_formatted_skus)
-
-                reqs.append(
-                    Request(
-                        url=in_stock_url,
-                        callback=self.parse_out_of_stock
-                    )
-                )
 
             # Set limited status for product variants
             if variants:
                 for var in variants_info:
                     sku_id = var['skuId']
-                    if var['isLimitedStock']:
-                        variants[sku_id]['limited_stock'] = True
-                    else:
-                        variants[sku_id]['limited_stock'] = False
+
+                    availability = var['availability']
+                    variants[sku_id]['is_out_of_stock'] = availability in ['70', '80']
 
                     final_variants.append(variants[sku_id])
 
