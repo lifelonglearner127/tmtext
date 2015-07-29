@@ -415,7 +415,7 @@ class AmazonScraper(Scraper):
             return img_list[0] == img_list[1]
         return None
 
-    def _image_urls(self, tree = None):
+    def     _image_urls(self, tree = None):
         allimg = self._image_helper()
         n = len(allimg)
         vurls = self._video_urls()
@@ -458,7 +458,13 @@ class AmazonScraper(Scraper):
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return ["inline image"]
 
-        if len(allimg) > 0 and self.no_image(allimg)==0:
+        if len(allimg) > 0 and self.no_image(allimg) == 0:
+            if len(allimg) > 7:
+                allimg = allimg[:7]
+
+                if vurls:
+                    allimg = allimg[:-1]
+
             return allimg
         return None
 
