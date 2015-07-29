@@ -2,7 +2,7 @@
 from urlparse import urljoin
 import json
 import re
-#import hjson
+import hjson
 
 from scrapy import Selector
 from scrapy.http import FormRequest, Request
