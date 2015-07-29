@@ -415,7 +415,7 @@ class AmazonScraper(Scraper):
             return img_list[0] == img_list[1]
         return None
 
-    def     _image_urls(self, tree = None):
+    def _image_urls(self, tree = None):
         allimg = self._image_helper()
         n = len(allimg)
         vurls = self._video_urls()
