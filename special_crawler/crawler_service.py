@@ -53,6 +53,7 @@ from extract_wiggle_data import WiggleScraper
 from extract_snapdeal_data import SnapdealScraper
 from extract_walmartca_data import WalmartCAScraper
 from extract_marksandspencer_data import MarksAndSpencerScraper
+from extract_nextcouk_data import NextCoUKScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -113,7 +114,8 @@ SUPPORTED_SITES = {
                     "wiggle": WiggleScraper,
                     "snapdeal": SnapdealScraper,
                     "walmartca": WalmartCAScraper,
-                    "marksandspencer": MarksAndSpencerScraper
+                    "marksandspencer": MarksAndSpencerScraper,
+                    "nextcouk": NextCoUKScraper,
                     }
 
 # add logger
@@ -191,6 +193,8 @@ def extract_domain(url):
         return 'groceries'
     if 'walmart.ca' in url:
         return 'walmartca'
+    if 'next.co.uk' in url:
+        return 'nextcouk'
 
 
     m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
