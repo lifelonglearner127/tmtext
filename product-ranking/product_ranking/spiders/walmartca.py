@@ -4,7 +4,7 @@ from __future__ import division, absolute_import, unicode_literals
 
 import json
 import re
-import urlparse
+import urlparse, urllib
 import hjson
 from itertools import izip
 from datetime import datetime
@@ -132,7 +132,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         id = re.findall('\/(\d+)', response.url)
         product_id = id[-1] if id else None
-        meta['product_id'] = product_id
+        response.meta['product_id'] = product_id
 
         if response.status in self.default_hhl:
             product = response.meta.get("product")
@@ -140,6 +140,25 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             return product
 
         self._populate_from_js(response, product)
+
+        # Send request to get if limited online status
+        skus = [{"skuid": sku} for sku in response.meta['skus']]
+        request_data = [{
+            "productid": product_id,
+            "skus": [skus]
+        }]
+
+        request_data = json.dumps(request_data).replace(' ', '')
+
+        reqs.append(FormRequest(
+            url="http://www.walmart.ca/ws/online/products",
+            formdata={"products": request_data},
+            callback=self.parse_limited_stock,
+            headers={
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        ))
+
         self._populate_from_html(response, product)
 
         cond_set_value(product, 'locale', 'en_CA')  # Default locale.
@@ -154,15 +173,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         reqs.append(Request(
             url=featured_products_url,
-            meta=meta,
             callback=self.parse_related_products
         ))
 
         # Get product base info, QA and reviews straight from JS script
-        product_info_url = self.PRODUCT_INFO_URL.format(product_id=meta['product_id'])
+        product_info_url = self.PRODUCT_INFO_URL.format(product_id=product_id)
         reqs.append(Request(
             url=product_info_url,
-            meta=meta,
             callback=self._parse_product_info
         ))
 
@@ -200,14 +217,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         # Get base info
         try:
             main_info = data['BatchedResults']['q0']['Results'][0]
-
-            # Set description
-            # try:
-            #     description = main_info['Description']
-            #     cond_set_value(product, 'description', description)
-            # except (ValueError, KeyError):
-            #     cond_set_value(product, 'description', None)
-            #     self.log("Impossible to get description - %r" % response.url, WARNING)
 
             # Set buyer reviews info
             self._build_buyer_reviews(main_info['ReviewStatistics'], response)
@@ -473,6 +482,14 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         product_data['baseProdInfo'] = product_data['variantDataRaw'][0]
 
+        # Set product sku
+        try:
+            sku_id = is_empty(product_data['baseProdInfo']['sku_id'])
+            response.meta['sku_id'] = sku_id
+
+        except (ValueError, KeyError):
+            self.log("Impossible to get sku id - %r." % response.url, WARNING)
+
         # Set product UPC
         try:
             upc = is_empty(product_data['baseProdInfo']['upc_nbr'])
@@ -505,14 +522,22 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         # Set variants
         number_of_variants = product_data.get('numberOfVariants', 0)
+        data_variants = product_data['variantDataRaw']
+        skus = []
+
         if number_of_variants:
             # try:
-            data_variants = product_data['variantDataRaw']
-            variants = []
+            variants = {}
 
             for var in data_variants:
                 variant = dict()
                 properties = dict()
+
+                sku_id = is_empty(
+                    var.get('sku_id', ''),
+                    ''
+                )
+                skus.append(sku_id)
 
                 price = var.get('price_store_price')
                 if price:
@@ -524,16 +549,17 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 properties['color'] = is_empty(var.get('variantKey_en_Colour', []))
                 properties['size'] = is_empty(var.get('variantKey_en_Size', []))
                 variant['properties'] = properties
-                # variant['in_stock'] = self._parse_stock_shipping_info()
 
-                variants.append(variant)
-
+                variants[sku_id] = variant
             # except (KeyError, ValueError):
             #     variants = None
 
         else:
-            variants = None
+            skus = skus.append(meta['sku_id'])
+            variants = []
+
         product['variants'] = variants
+        response.meta['skus'] = skus
 
         # Set product images urls
         image = re.findall(self._JS_PROD_IMG_RE, response.body_as_unicode())
@@ -553,6 +579,64 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         else:
             self.log("No JS for product image matched in %r." % response.url, WARNING)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def parse_limited_stock(self, response):
+        """
+        Gets limited_stock field for product and its variants
+        """
+        meta = response.meta.copy()
+        reqs = meta.get('reqs')
+        product = meta['product']
+
+        data = json.loads(
+            response.body_as_unicode()
+        )
+
+        try:
+            product_info = data['products'][0]
+            variants_info = product_info['skus']
+            variants = product['variants']
+            final_variants = []
+
+            # Set limited status for main product
+            if product_info['isLimitedStock']:
+                product['limited_stock'] = True
+            else:
+                product['limited_stock'] = False
+                # If not 'is limited', it can be 'out of stock'
+                url_formatted_skus = ",".join(meta['skus'])
+                in_stock_url = "https://om.ordergroove.com/offer/af0a84f8847311e3b233bc764e1107f2/pdp?" \
+                               "session_id=af0a84f8847311e3b233bc764e1107f2.918921.1436766243&page_type=1&" \
+                               "p=%5B{skus}%5D".format(skus=url_formatted_skus)
+
+                reqs.append(
+                    Request(
+                        url=in_stock_url,
+                        callback=self.parse_out_of_stock
+                    )
+                )
+
+            # Set limited status for product variants
+            if variants:
+                for var in variants_info:
+                    sku_id = var['skuId']
+                    if var['isLimitedStock']:
+                        variants[sku_id]['limited_stock'] = True
+                    else:
+                        variants[sku_id]['limited_stock'] = False
+
+                    final_variants.append(variants[sku_id])
+
+                product['variants'] = final_variants
+        except (KeyError, ValueError):
+            self.log(
+                "Failed to extract limited stock info from %r." % response.url, WARNING
+            )
 
         if reqs:
             return self.send_next_request(reqs, response)
