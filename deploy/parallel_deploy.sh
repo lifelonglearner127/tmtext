@@ -46,6 +46,7 @@ deploy () {
     fab -H keywords25.contentanalyticsinc.com set_production deploy:branch=master,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
     fab -H keywords26-maplin.contentanalyticsinc.com set_production deploy:branch=master,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
     fab -H keywords27-maplin.contentanalyticsinc.com set_production deploy:branch=master,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
+    fab -H keywords28-maplin.contentanalyticsinc.com set_production deploy:branch=master,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
 }
 
 if promptyn "Do you really want to deploy the code to all the servers?"; then
