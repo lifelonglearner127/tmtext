@@ -208,15 +208,9 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
 
         for variant in variants:
             price = vp.get(variant["id"], {}).get("price", "")
-            pCurrency = ''.join(
-                re.findall("[^\d]*", price)).strip().replace(
-                    ".", "").replace(",", "")
             price = is_empty(re.findall(FLOATING_POINT_RGEX, price))
             if price:
-                variant["price"] = Price(
-                    priceCurrency=self.CURRENCY_SIGNS.get(pCurrency, "GBP"),
-                    price=price,
-                ).__str__()
+                variant["price"] = price
             del variant["id"]
 
         if variants:
