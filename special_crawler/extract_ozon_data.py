@@ -233,7 +233,7 @@ class OzonScraper(Scraper):
             if len(urls)==0:
                 urls =re.findall(r'PreviewBig".*?JPG', str(text))
             if len(urls)>0:
-                return ['http:'+u[10:] for u in urls]
+                return ['http:'+u[13:] for u in urls]
             text = self.tree_html.xpath('//div[@class="bCombiningColumn"]//div[@class="bContentColumn"]//script//text()')
             urls =re.findall(r'PreviewBig".*?jpg', str(text))
             if len(urls)==0:
