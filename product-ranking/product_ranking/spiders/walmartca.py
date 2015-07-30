@@ -153,7 +153,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         reqs.append(FormRequest(
             url="http://www.walmart.ca/ws/online/products",
             formdata={"products": request_data},
-            callback=self.parse_online_status,
+            callback=self._parse_online_status,
             headers={
                 'X-Requested-With': 'XMLHttpRequest'
             }
@@ -173,7 +173,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         reqs.append(Request(
             url=featured_products_url,
-            callback=self.parse_related_products
+            callback=self._parse_related_products
         ))
 
         # Get product base info, QA and reviews straight from JS script
@@ -342,7 +342,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return ''
 
-    def parse_related_products(self, response):
+    def _parse_related_products(self, response):
         meta = response.meta.copy()
         product = meta['product']
         reqs = meta.get('reqs')
@@ -585,7 +585,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         return product
 
-    def parse_online_status(self, response):
+    def _parse_online_status(self, response):
         """
         Gets limited_stock and is_out_of_stock fields for product and its variants
         """
