@@ -111,6 +111,39 @@ class KohlsProductsSpider(BaseProductsSpider):
         prod = response.meta['product']
         prod['url'] = response.url
 
+        variants_text = is_empty(re.findall(
+            "\"variants\"\s+\:\s+([^\]]*)", response.body), "").strip("\n").strip("\t")
+        variants_text = variants_text.strip().rstrip(",") + "]"
+
+        try:
+            variants_json = json.loads(variants_text)
+        except TypeError:
+            variants_json = []
+
+        variants = []
+
+        for item in variants_json:
+            color = item.get("color", "").split("_")
+            size = item.get("size2", "").split("_")
+            skuId = item.get("skuId")
+            upc = item.get("skuUpcCode")
+            price = item.get("SkuSalePrice", item.get("SkuRegularPrice"))
+            if price:
+                price = price.replace("$", "")
+            inStock = item.get("inventoryStatus")
+            obj = {
+                "color": color[len(color)-1],
+                "size": size[1],
+                "skuId": skuId,
+                "upc": upc,
+                "price": price,
+                "inStock": inStock,
+            }
+            variants.append(obj)
+
+        if variants:
+            prod["variants"] = variants
+
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
 
@@ -246,10 +279,10 @@ class KohlsProductsSpider(BaseProductsSpider):
             for sel in html.xpath('//div[@id="rr1"]/div/div/a'):
                 url = is_empty(sel.xpath('@href').extract())
                 if url:
+                    title = is_empty(sel.xpath('./div/p/text()').extract())
                     related.append(
                         RelatedProduct(
-                            title=unicode.decode(is_empty(sel.xpath(
-                                './div/p/text()').extract())),
+                            title=unicode.decode(title.replace("\xe9", "é")),
                             url=urllib.unquote('http'+url.split('http')[-1])
                         ))
             if key and key not in product['related_products'].keys():
@@ -320,7 +353,7 @@ class KohlsProductsSpider(BaseProductsSpider):
                     reviews = BuyerReviews(total, avrg, distribution)
                     cond_set_value(product, 'buyer_reviews', reviews)
         if 'buyer_reviews' not in product:
-            cond_set_value(product, 'buyer_reviews', 0)
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         new_meta = response.meta.copy()
         new_meta['product'] = product
         return Request(self.RELATED_URL.format(product_id=product_id),
