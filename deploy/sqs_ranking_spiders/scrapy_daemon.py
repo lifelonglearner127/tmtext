@@ -346,6 +346,19 @@ def put_msg_to_sqs(queue_name_or_instance, msg):
         write_msg_to_sqs(queue_name_or_instance, msg)
 
 
+def compress_multiple_files(output_fname, *filenames):
+    """ Creates a single ZIP archive with the given files in it """
+    try:
+        import zlib
+        mode = zipfile.ZIP_DEFLATED
+    except ImportError:
+        mode = zipfile.ZIP_STORED
+    zf = zipfile.ZipFile(output_fname, 'a', mode)
+    for filename in filenames:
+        zf.write(filename=filename, arcname=os.path.basename(filename))
+    zf.close()
+
+
 def put_file_into_s3(bucket_name, fname,
                      amazon_public_key=AMAZON_ACCESS_KEY,
                      amazon_secret_key=AMAZON_SECRET_KEY,
@@ -637,11 +650,26 @@ class ScrapyTask(object):
         if not is_ext:
             self.required_signals_done[signal[0]] = signal[1]
 
+    def _get_daemon_logs_files(self):
+        """ Returns logs from the /tmp/ dir """
+        for fname in os.listdir('/tmp/'):
+            fname = os.path.join('/tmp/', fname)
+            if fname.lower().endswith('.log'):
+                yield fname
+
+    def _zip_daemon_logs(self, output_fname='/tmp/daemon_logs.zip'):
+        log_files = list(self._get_daemon_logs_files())
+        if os.path.exists(output_fname):
+            os.unlink(output_fname)
+        compress_multiple_files(output_fname, *log_files)
+        return output_fname
+
     def _finish(self):
         # runs for both successfully or failed finish
         # upload logs/data to s3, etc
         self._stop_signal = True
         self._dispose()
+
         output_path = self.get_output_path()
         if self.process_bsr:
             temp_file = output_path + 'temp_file.jl'
@@ -684,6 +712,24 @@ class ScrapyTask(object):
                     self.process.stderr.read(),
                     self.process.stdout.read().strip())
         logger.info('Finish task #%s.', self.task_data.get('task_id', 0))
+
+        # upload scrapy_daemon logs
+        daemon_logs_zipfile = None
+        try:
+            daemon_logs_zipfile = self._zip_daemon_logs()
+        except Exception as e:
+            logger.warning('Could not create daemon ZIP: %s' % str(e))
+        if daemon_logs_zipfile and os.path.exists(daemon_logs_zipfile):
+            # now move the file into output path folder
+            if os.path.exists(output_path+'.daemon.zip'):
+                os.unlink(output_path+'.daemon.zip')
+            os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
+            try:
+                put_file_into_s3(AMAZON_BUCKET_NAME, daemon_logs_zipfile,
+                                 compress=False)
+            except Exception as e:
+                logger.warning('Could not upload daemon logs: %s' % str(e))
+
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
 
