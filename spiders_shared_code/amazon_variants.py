@@ -42,6 +42,27 @@ class AmazonVariants(object):
 
             selected_variation_combination = [selected_variation_combination[key] for key in selected_variation_combination]
 
+            asin_variation_values = json.loads(re.search('"asin_variation_values":(.+?),"contextMetaData":', page_raw_text).group(1))
+
+            variation_asin_values = {}
+
+            for asin_variation in asin_variation_values:
+                del asin_variation_values[asin_variation]['ASIN']
+
+                property_index = 0
+                variation_combination_key = ""
+
+                for property in asin_variation_values[asin_variation]:
+                    variation_combination_key += variation_key_values[variation_key_list[property_index] + "_name"][int(asin_variation_values[asin_variation][property])]
+                    property_index = property_index + 1
+
+                variation_asin_values[variation_combination_key] = asin_variation
+
+            original_product_canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+            if not original_product_canonical_link.startswith("http://www.amazon.com"):
+                original_product_canonical_link = "http://www.amazon.com" + original_product_canonical_link
+
             stockstatus_for_variants_list = []
 
             for variation_combination in outofstock_variation_combinations_values:
@@ -59,17 +80,18 @@ class AmazonVariants(object):
                 stockstatus_for_variants["in_stock"] = False
                 stockstatus_for_variants["selected"] = isSelected
                 stockstatus_for_variants["price"] = None
-
+                stockstatus_for_variants["url"] = None
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
 
             for variation_combination in instock_variation_combinations_values:
                 stockstatus_for_variants = {}
                 properties = {}
                 isSelected = True
+                variation_combination_key = ""
 
                 for index, variation_key in enumerate(variation_key_list):
                     properties[variation_key] = variation_combination[index]
-
+                    variation_combination_key += variation_combination[index]
                     if variation_combination[index] != selected_variation_combination[index]:
                         isSelected = False
 
@@ -77,6 +99,7 @@ class AmazonVariants(object):
                 stockstatus_for_variants["in_stock"] = True
                 stockstatus_for_variants["selected"] = isSelected
                 stockstatus_for_variants["price"] = None
+                stockstatus_for_variants["url"] = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + variation_asin_values[variation_combination_key]
 
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
 
