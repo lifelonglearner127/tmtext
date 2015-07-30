@@ -443,12 +443,16 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             description = desc.extract()
             product["description"] = is_empty(description, "").strip()
 
-        # Get department
-        department_list = response.css('#breadcrumb li[itemscope] span[itemprop="title"]::text')
+        # Get department and category
+        category_list = response.xpath('//nav[@id="breadcrumb"]/./'
+                                       '/a[@data-analytics-type="cat"]'
+                                       '/span[@itemprop="title"]/text()').extract()
 
-        if department_list:
-            department = department_list[-1].extract()
+        if category_list:
+            department = category_list[-1]
             product['department'] = department
+
+            product['category'] = category_list
 
         if reqs:
             return self.send_next_request(reqs, response)
