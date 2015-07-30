@@ -17,6 +17,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
+from spiders_shared_code.kohls_variants import KohlsVariants
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -111,38 +112,9 @@ class KohlsProductsSpider(BaseProductsSpider):
         prod = response.meta['product']
         prod['url'] = response.url
 
-        variants_text = is_empty(re.findall(
-            "\"variants\"\s+\:\s+([^\]]*)", response.body), "").strip("\n").strip("\t")
-        variants_text = variants_text.strip().rstrip(",") + "]"
-
-        try:
-            variants_json = json.loads(variants_text)
-        except TypeError:
-            variants_json = []
-
-        variants = []
-
-        for item in variants_json:
-            color = item.get("color", "").split("_")
-            size = item.get("size2", "").split("_")
-            skuId = item.get("skuId")
-            upc = item.get("skuUpcCode")
-            price = item.get("SkuSalePrice", item.get("SkuRegularPrice"))
-            if price:
-                price = price.replace("$", "")
-            inStock = item.get("inventoryStatus")
-            obj = {
-                "color": color[len(color)-1],
-                "size": size[1],
-                "skuId": skuId,
-                "upc": upc,
-                "price": price,
-                "inStock": inStock,
-            }
-            variants.append(obj)
-
-        if variants:
-            prod["variants"] = variants
+        kv = KohlsVariants()
+        kv.setupSC(response)
+        prod['variants'] = kv._variants()
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
