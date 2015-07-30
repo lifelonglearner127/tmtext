@@ -221,6 +221,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             # Set buyer reviews info
             self._build_buyer_reviews(main_info['ReviewStatistics'], response)
 
+            # Get date of last question
+            last_data_question = main_info['QAStatistics']['LastQuestionTime']
+
+            if last_data_question:
+                last_data_question = self._handle_date_from_json(last_data_question)
+                product['date_of_last_question'] = last_data_question
+
         except:
             product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             self.log("Impossible to get product info - %r" % response.url, WARNING)
@@ -245,7 +252,11 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         Gets buyer reviews from JS script
         """
 
-        buyer_reviews = ZERO_REVIEWS_VALUE
+        buyer_reviews = {
+            'num_of_reviews': 0,
+            'average_rating': 0,
+            'rating_by_star': {'5': 0, '4': 0, '3': 0, '2': 0, '1': 0}
+        }
         meta = response.meta.copy()
         product = meta['product']
 
@@ -258,10 +269,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 for rate in data['RatingDistribution']:  # Rating by stars
                     star = rate['RatingValue']
                     star_count = rate['Count']
-                    buyer_reviews[2][str(star)] = star_count
+                    buyer_reviews['rating_by_star'][str(star)] = star_count
 
-                buyer_reviews[0] = num_of_reviews
-                buyer_reviews[1] = average_rating
+                buyer_reviews['num_of_reviews'] = num_of_reviews
+                buyer_reviews['average_rating'] = average_rating
 
                 # Get date of last review
                 last_data_buyer_review = data['LastSubmissionTime']
@@ -272,7 +283,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         except (KeyError, ValueError):
             pass
 
-        product['buyer_reviews'] = buyer_reviews
+        product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
 
     def _build_qa_info(self, data, response):
         """
@@ -345,6 +356,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_related_products(self, response):
         meta = response.meta.copy()
         product = meta['product']
+        related_products = product.get('related_products', {})
         reqs = meta.get('reqs')
         body = response.body_as_unicode()
 
@@ -374,9 +386,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
                     # Convert featured products title for dir
                     # "People who viewed this also viewed" --> "also_viewed"
-                    featured_variants = ['also bought', 'ultimately bought',
-                                         'Top sellers', 'Featured products',
-                                         'also viewed']
+                    featured_variants = ['also bought', 'ultimately bought', 'Featured products']
                     for var in featured_variants:
                         if var in values_dict['message']:
                             last_message = var.replace(' ', '_').lower()
@@ -396,8 +406,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                         url_ready = name_ready = False
 
             featured_prods[last_message] = feat_prod_list
+            related_products.update(featured_prods)
 
-            product['related_products'] = featured_prods
+            product['related_products'] = related_products
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -453,6 +464,46 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             product['department'] = department
 
             product['category'] = category_list
+
+        # Get model
+        model_sel = response.xpath(
+            '//div[@id="specGroup"]/./'
+            '/span[@itemprop="model"]/text()'
+        ).extract()
+        model = is_empty(
+            model_sel, ''
+        )
+
+        # Get related products
+        related_sel = response.xpath('//section[@aria-label="Featured Products: Related Products"]/./'
+                                     '/article[contains(@class, "product")]')
+        if related_sel:
+            related_products = product.get('related_products', {})
+            final_rel_prods = []
+            for rel in related_sel:
+                title = is_empty(
+                    rel.xpath('.//div[@class="title"]/./'
+                              '/a/text()').extract(),
+                    ''
+                )
+                url = is_empty(
+                    rel.xpath('.//div[@class="title"]/./'
+                              '/a/@href').extract(),
+                    ''
+                )
+                if title and url:
+                    url_base = 'http://www.' + self.allowed_domains[0]
+                    url = urlparse.urljoin(url_base, url)
+                    final_rel_prods.append({
+                        'title': title.strip(),
+                        'url': url
+                    })
+            related_products['related'] = final_rel_prods
+
+            product['related_products'] = related_products
+
+        if model:
+            product['model'] = model.strip()
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -530,33 +581,38 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         skus = []
 
         if number_of_variants:
-            # try:
-            variants = {}
+            try:
+                variants = {}
 
-            for var in data_variants:
-                variant = dict()
-                properties = dict()
+                for var in data_variants:
+                    variant = dict()
+                    properties = dict()
 
-                sku_id = is_empty(
-                    var.get('sku_id', ''),
-                    ''
-                )
-                skus.append(sku_id)
+                    sku_id = is_empty(
+                        var.get('sku_id', ''),
+                        ''
+                    )
+                    skus.append(sku_id)
 
-                price = var.get('price_store_price')
-                if price:
-                    price = is_empty(price, None)
-                    price = price.replace(',', '')
-                    price = format(float(price), '.2f')
-                variant['price'] = price
+                    price = var.get('price_store_price')
+                    if price:
+                        price = is_empty(price, None)
+                        price = price.replace(',', '')
+                        price = format(float(price), '.2f')
+                    variant['price'] = price
 
-                properties['color'] = is_empty(var.get('variantKey_en_Colour', []))
-                properties['size'] = is_empty(var.get('variantKey_en_Size', []))
-                variant['properties'] = properties
+                    color = is_empty(var.get('variantKey_en_Colour', []))
+                    size = is_empty(var.get('variantKey_en_Size', []))
 
-                variants[sku_id] = variant
-            # except (KeyError, ValueError):
-            #     variants = None
+                    if size:
+                        properties['size'] = size
+                    if color:
+                        properties['color'] = color
+                    variant['properties'] = properties
+
+                    variants[sku_id] = variant
+            except (KeyError, ValueError):
+                variants = []
 
         else:
             skus = [sku_id]
