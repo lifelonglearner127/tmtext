@@ -2,10 +2,6 @@
 
 import urllib
 import re
-import requests
-import json
-import urllib2
-import cookielib
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -36,31 +32,6 @@ def init_params(self):
                   'recommendable', 'attributes', 'in_stock']
     for attr in attributes:
         setattr(self, attr, default_value)
-
-class WalmartUtilCookie(object):
-
-    def __init__(self, RR_entity):
-        self.cj = cookielib.CookieJar()
-        self.opener = urllib2.build_opener(
-            urllib2.HTTPCookieProcessor(self.cj)
-        )
-        self.r = self.opener.open(RR_entity.href)
-        self.cookies = requests.utils.dict_from_cookiejar(self.cj)
-
-    # Gets a cookie's value
-    def get(self, name):
-        return self.cookies.get(name)
-
-    # Gets a cookie's value parsed as JSON
-    def get_json(self, name):
-        value = self.get(name)
-
-        if not value:
-            return None
-        elif value.startswith("\""):
-            return json.dumps(json.dumps(value))
-
-        return json.dumps(value)
 
 class R3Common(object):
 
@@ -511,14 +482,6 @@ class RR(object):
 
     def rrSetup(self):
         self.r3_entity.set_api_key("45c4b1787d30a004")
-
-        walmart_util_cookie = WalmartUtilCookie(self)
-        context = walmart_util_cookie.get_json("context")
-
-        if context:
-            context.isUserAuthenticated = True
-        else:
-            context = {"isUserAuthenticated": False}
 
         # "S" parameter
         self.r3_entity.set_session_id('6b94d8fb-5f0f-42b2-a4ea-6d0d497c6427')
