@@ -61,6 +61,11 @@ class WalmartVariants(object):
             color_size_stockstatus_json_body = json.loads(json_text)
             stockstatus_for_variants_list = []
 
+            original_product_canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+            if not original_product_canonical_link.startswith("http://www.walmart.com"):
+                original_product_canonical_link = "http://www.walmart.com" + original_product_canonical_link
+
             for item in color_size_stockstatus_json_body:
                 variants = item["variants"]
                 stockstatus_for_variants = {}
@@ -77,8 +82,11 @@ class WalmartVariants(object):
                         if selected_variants[key] != variation_key_values_by_attributes[key][variants[key]["id"]]:
                             isSelected = False
 
+                variant_product_id = item['buyingOptions']['usItemId']
+                variant_product_url = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + str(variant_product_id)
                 stockstatus_for_variants["properties"] = properties
                 stockstatus_for_variants["in_stock"] = item['buyingOptions']['available']
+                stockstatus_for_variants["url"] = variant_product_url
                 stockstatus_for_variants["price"] = None
                 stockstatus_for_variants["selected"] = isSelected
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
