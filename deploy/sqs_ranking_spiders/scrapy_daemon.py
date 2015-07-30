@@ -727,6 +727,7 @@ class ScrapyTask(object):
             try:
                 put_file_into_s3(AMAZON_BUCKET_NAME, daemon_logs_zipfile,
                                  compress=False)
+                logger.warning('Daemon logs uploaded')
             except Exception as e:
                 logger.warning('Could not upload daemon logs: %s' % str(e))
 
