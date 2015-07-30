@@ -668,10 +668,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             variants_info = product_info['skus']
             variants = product['variants']
             final_variants = []
+            list_out_of_stock = ['70', '80', '85', '87', '90']
+            list_not_sold_online = ['85', '87', '90']
 
             # Set limited status for main product
             availability = product_info['availability']
-            product['is_out_of_stock'] = availability in ['70', '80']
+            product['is_out_of_stock'] = availability in list_out_of_stock
+            product['is_in_store_only'] = availability in list_not_sold_online
 
             if product_info['isLimitedStock']:
                 product['limited_stock'] = True
@@ -684,7 +687,8 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                     sku_id = var['skuId']
 
                     availability = var['availability']
-                    variants[sku_id]['is_out_of_stock'] = availability in ['70', '80']
+                    variants[sku_id]['is_out_of_stock'] = availability in list_out_of_stock
+                    variants[sku_id]['is_in_store_only'] = availability in list_not_sold_online
 
                     final_variants.append(variants[sku_id])
 
