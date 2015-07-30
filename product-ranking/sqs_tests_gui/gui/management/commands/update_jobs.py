@@ -121,11 +121,14 @@ class Command(BaseCommand):
             if not isinstance(amazon_fnames, (list, tuple)):  # generator?
                 amazon_fnames = list(amazon_fnames)
             amazon_data_file = [f for f in amazon_fnames if '.csv' in f]
+            amazon_json_data_file = [f for f in amazon_fnames if '.jl' in f]
             amazon_log_file = [f for f in amazon_fnames if '.log' in f]
             amazon_progress_file = [f for f in amazon_fnames
                                     if '.progress' in f]
 
             amazon_data_file = amazon_data_file[0] if amazon_data_file else []
+            amazon_json_data_file = amazon_json_data_file[0]\
+                if amazon_json_data_file else []
             amazon_log_file = amazon_log_file[0] if amazon_log_file else []
             amazon_progress_file = amazon_progress_file[0]\
                 if amazon_progress_file else []
@@ -182,6 +185,27 @@ class Command(BaseCommand):
                         'data_file.csv',
                         '.csv'
                     )
+
+            if not amazon_data_file and amazon_json_data_file:  # CSV conversion failed?
+                print 'For job with task ID %s we found amazon fname [%s]' % (
+                    job.task_id, amazon_json_data_file)
+                full_local_data_path = MEDIA_ROOT + get_data_filename(job)
+                if not os.path.exists(os.path.dirname(full_local_data_path)):
+                    os.makedirs(os.path.dirname(full_local_data_path))
+                download_s3_file(AMAZON_BUCKET_NAME, amazon_json_data_file,
+                                 full_local_data_path)
+                _unzip_local_file(full_local_data_path, 'data_file.csv', '.csv')
+                if zipfile.is_zipfile(full_local_data_path):
+                    unzip_file(full_local_data_path,
+                               unzip_path=full_local_data_path)
+                    os.remove(full_local_data_path)
+                    rename_first_file_with_extension(
+                        os.path.dirname(full_local_data_path),
+                        'data_file.csv',
+                        '.csv'
+                    )
+
+            if amazon_data_file or amazon_json_data_file:
                 if amazon_log_file:  # log file should exist for successful jobs
                     job.status = 'finished'
                     job.finished = now()
