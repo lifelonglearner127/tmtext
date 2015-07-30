@@ -140,7 +140,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             return product
 
         self._populate_from_js(response, product)
-
         # Send request to get if limited online status
         skus = [{"skuid": sku} for sku in response.meta['skus']]
         request_data = [{
@@ -372,6 +371,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             prod_dict = dict()
             featured_prods = dict()
             url_ready = name_ready = False
+            last_message = False
 
             for item in data:
                 # Make a dir of two tuples
@@ -516,16 +516,21 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         Gets data out of JS script straight from html body
         """
 
-        self._JS_PROD_INFO_RE = re.compile(r'productPurchaseCartridgeData\[\"\w+\"\]\s+=\s+([^;]*\})', re.DOTALL)
+        # self._JS_PROD_INFO_RE = re.compile(r'productPurchaseCartridgeData\[\"\d+\"\]\s+=\s+(([^};]+[};]*)*});', re.DOTALL)
         self._JS_PROD_IMG_RE = re.compile(r'walmartData\.graphicsEnlargedURLS\s+=\s+([^;]*\])', re.DOTALL)
         meta = response.meta.copy()
         reqs = meta.get('reqs', [])
 
         # Extract base product info from JS
         data = is_empty(
-            re.findall(self._JS_PROD_INFO_RE, response.body_as_unicode().encode('utf-8'))
-        ).strip()
+            re.findall(
+                r'productPurchaseCartridgeData\["\d+"\]\s*=\s*(\{(.|\n)*?\});',
+                response.body_as_unicode().encode('utf-8')
+            )
+        )
+
         if data:
+            data = list(data)[0]
             data = data.decode('utf-8').replace(' :', ':')
             try:
                 product_data = hjson.loads(data, object_pairs_hook=dict)
