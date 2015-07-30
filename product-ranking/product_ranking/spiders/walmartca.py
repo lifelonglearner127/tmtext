@@ -220,14 +220,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
             # Set buyer reviews info
             self._build_buyer_reviews(main_info['ReviewStatistics'], response)
-
-            # Get date of last question
-            last_data_question = main_info['QAStatistics']['LastQuestionTime']
-
-            if last_data_question:
-                last_data_question = self._handle_date_from_json(last_data_question)
-                product['date_of_last_question'] = last_data_question
-
         except:
             product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             self.log("Impossible to get product info - %r" % response.url, WARNING)
@@ -236,8 +228,18 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         try:
             qa_info = data['BatchedResults']['q1']
 
-            # Set QA info
-            self._build_qa_info(qa_info, response)
+            if qa_info['Results']:
+                # Set QA info
+                self._build_qa_info(qa_info, response)
+
+                # Get date of last question
+                last_data_question = main_info['QAStatistics']['LastQuestionTime']
+
+                if last_data_question:
+                    last_data_question = self._handle_date_from_json(last_data_question)
+                    product['date_of_last_question'] = last_data_question
+            else:
+                product['recent_questions'] = []
 
         except (ValueError, KeyError):
             self.log("Impossible to get QA info - %r" % response.url, WARNING)
@@ -370,7 +372,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             prod_dict = dict()
             featured_prods = dict()
             url_ready = name_ready = False
-            last_message = False
 
             for item in data:
                 # Make a dir of two tuples
