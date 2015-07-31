@@ -432,6 +432,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             else:
                 product = response.meta['product']
             product['response_code'] = 404
+            if not 'url' in product:
+                product['url'] = getattr(self, 'product_url', '')
             yield product
             return
 
