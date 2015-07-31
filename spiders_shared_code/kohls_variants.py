@@ -29,12 +29,20 @@ class KohlsVariants(object):
 
         variants = []
 
+        active_c = is_empty(self.tree_html.xpath(
+            "//div[contains(@class, 'swatch active')]/@id"), "").split("_")
+        if active_c:
+            active_c = active_c[len(active_c)-1]
+
         for item in variants_json:
             color = item.get("color", "").split("_")
+            selected = False
+            if color[len(color)-1].strip() == active_c.strip():
+                selected = True
             size = item.get("size2", "").split("_")
             skuId = item.get("skuId")
             upc = item.get("skuUpcCode")
-            price = item.get("SkuSalePrice") or item.get("SkuRegularPrice")
+            price = item.get("SkuSalePrice") or item.get("SkuRegularPrice") or 0
             if price:
                 price = price.replace("$", "")
             inStock = item.get("inventoryStatus")
@@ -43,12 +51,15 @@ class KohlsVariants(object):
             else:
                 inStock = False
             obj = {
-                "color": color[len(color)-1],
-                "size": size[1],
                 "skuId": skuId,
                 "upc": upc,
-                "price": price,
-                "inStock": inStock,
+                "price": float(price),
+                "in_stock": inStock,
+                "properties": {
+                    "color": color[len(color)-1],
+                    "size": size[1],
+                },
+                "selected": selected,
             }
             variants.append(obj)
         if variants:
