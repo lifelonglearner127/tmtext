@@ -26,6 +26,22 @@ from product_ranking.walmartca_related_product import RR
 
 is_empty = lambda x, y="": x[0] if x else y
 
+def handle_date_from_json(date):
+    """
+    Handles date in format "2013-09-12T06:45:34.000+00:00"
+    Returns date in format "2013-09-12"
+    """
+
+    dateconv = lambda date: datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f').date()
+
+    if date and isinstance(date, basestring):
+        timezone_id = date.index('+')
+        date = date.replace(date[timezone_id:-1], '')
+        conv_date = dateconv(date)
+        return str(conv_date)
+
+    return ''
+
 class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
     """
     Implements a spider for walmart.ca/en/.
@@ -127,9 +143,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         """
 
         reqs = []
-        meta = response.meta.copy()
         product = response.meta['product']
 
+        # Product ID
         id = re.findall('\/(\d+)', response.url)
         product_id = id[-1] if id else None
         response.meta['product_id'] = product_id
@@ -140,6 +156,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             return product
 
         self._populate_from_js(response, product)
+
         # Send request to get if limited online status
         skus = [{"skuid": sku} for sku in response.meta['skus']]
         request_data = [{
@@ -188,6 +205,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         return product
 
     def _parse_single_product(self, response):
+        """
+        For a single product_url mode
+        """
         return self.parse_product(response)
 
     def send_next_request(self, reqs, response):
@@ -235,7 +255,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 last_data_question = main_info['QAStatistics']['LastQuestionTime']
 
                 if last_data_question:
-                    last_data_question = self._handle_date_from_json(last_data_question)
+                    last_data_question = handle_date_from_json(last_data_question)
                     product['date_of_last_question'] = last_data_question
             else:
                 product['recent_questions'] = []
@@ -277,7 +297,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
                 # Get date of last review
                 last_data_buyer_review = data['LastSubmissionTime']
-                last_data_buyer_review = self._handle_date_from_json(last_data_buyer_review)
+                last_data_buyer_review = handle_date_from_json(last_data_buyer_review)
 
                 product['last_buyer_review_date'] = last_data_buyer_review
 
@@ -320,39 +340,23 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                         answer['positiveVoteCount'] = answ.get('TotalPositiveFeedbackCount')
                         answer['answerId'] = answ.get('Id')
                         answer['userNickname'] = answ.get('UserNickname')
-                        answer['submissionTime'] = self._handle_date_from_json(
+                        answer['submissionTime'] = handle_date_from_json(
                             answ.get('SubmissionTime')
                         )
-                        answer['lastModifiedTime'] = self._handle_date_from_json(
+                        answer['lastModifiedTime'] = handle_date_from_json(
                             answ.get('LastModificationTime')
                         )
                         answers.append(answer)
                 question_info['answers'] = answers
 
             question_info['totalAnswersCount'] = question.get('TotalAnswerCount')
-            question_info['submissionDate'] = self._handle_date_from_json(
+            question_info['submissionDate'] = handle_date_from_json(
                 question.get('SubmissionTime')
             )
 
             questions.append(question_info)
 
         product['recent_questions'] = questions
-
-    def _handle_date_from_json(self, date):
-        """
-        Handles date in format "2013-09-12T06:45:34.000+00:00"
-        Returns date in format "2013-09-12"
-        """
-
-        dateconv = lambda date: datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f').date()
-
-        if date and isinstance(date, basestring):
-            timezone_id = date.index('+')
-            date = date.replace(date[timezone_id:-1], '')
-            conv_date = dateconv(date)
-            return str(conv_date)
-
-        return ''
 
     def _parse_related_products(self, response):
         meta = response.meta.copy()
@@ -434,15 +438,18 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             product["title"] = is_empty(title, "").strip()
 
         # Get price
-        price = response.css('.pricing-shipping .microdata-price [itemprop="price"]::text')
-        currency = response.css('.pricing-shipping .microdata-price [itemprop="priceCurrency"]::attr(content)')
+        price = response.xpath('//div[contains(@class, "microdata-price")]/'
+                               '*[@itemprop="price"]/text() |'
+                               '//div[contains(@class, "microdata-price")]/'
+                               '*[@itemprop="lowPrice"]/text()')
+        currency = response.xpath('//div[contains(@class, "microdata-price")]/'
+                                '*[@itemprop="priceCurrency"]/@content')
 
         if price and currency:
             currency = is_empty(currency.extract())
             price = is_empty(price.extract())
             price = price.replace('$', '')
-            cond_set_value(product, 'price',
-                           Price(priceCurrency=currency, price=price))
+            product['price'] = Price(priceCurrency=currency, price=price)
         else:
             product['price'] = None
 
