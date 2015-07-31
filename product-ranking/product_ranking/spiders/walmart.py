@@ -174,7 +174,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod},
+                          meta={'product': prod, 'handle_httpstatus_list': [404]},
                           dont_filter=True)
 
     def get_sponsored_links(self, response):
@@ -426,6 +426,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         )
 
     def _parse_single_product(self, response):
+        if response.status == 404:
+            if 'product' not in response.meta:
+                product = SiteProductItem()
+            else:
+                product = response.meta['product']
+            product['response_code'] = 404
+            yield product
+            return
+
         original_parent_id = _get_walmart_original_redirect_item_id(response)
         current_id = get_walmart_id_from_url(response.url)
         # store current ID to identify it later to match the products
