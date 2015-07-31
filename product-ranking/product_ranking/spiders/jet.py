@@ -20,7 +20,6 @@ is_empty = lambda x, y=None: x[0] if x else y
 class JetProductsSpider(BaseProductsSpider):
     name = 'jet_products'
     allowed_domains = ["jet.com"]
-    #SEARCH_URL = "https://jet.com/search/results?term={search_term}%20"
 
     SEARCH_URL = "https://jet.com/search/results"
 
@@ -43,17 +42,20 @@ class JetProductsSpider(BaseProductsSpider):
     }
 
     SORT_MODES = {
-        "relevance": "relevance|1",
-        "best_selling": "product.best_selling|1",
-        "new_arrivals": "product.is_new|1",
-        "pricelh": "product.price_from|0",
-        "pricehl": "product.price_to|1",
-        "rating":  "product.rating|1"
+        "relevance": "relevance",
+        "pricelh": "price_low_to_high",
+        "pricehl": "price_high_to_low",
+        "member_savings":  "smart_cart_bonus"
     }
 
     product_links = []
 
     DEFAULT_MARKETPLACE = "Jet"
+
+    def __init__(self, sort_mode=None, *args, **kwargs):
+        super(JetProductsSpider, self).__init__(*args, **kwargs)
+        self.sort = self.SORT_MODES.get(
+            sort_mode) or self.SORT_MODES.get("relevance")
 
     def start_requests(self):
         if not self.product_url:
@@ -70,7 +72,7 @@ class JetProductsSpider(BaseProductsSpider):
 
 
     def start_requests_with_csrf(self, response):
-        csrf = is_empty(re.findall("__csrf\"\:\"([^\"]*)", response.body))
+        csrf = self.get_csrf(response)
         if not self.product_url:
             for st in self.searchterms:
                 yield Request(
@@ -78,7 +80,11 @@ class JetProductsSpider(BaseProductsSpider):
                     callback=self.after_start,
                     method="POST",
                     body=json.dumps({"term": self.searchterms[0]}),
-                    meta={'search_term': st, 'remaining': self.quantity},
+                    meta={
+                        'search_term': st, 
+                        'remaining': self.quantity, 
+                        'csrf': csrf
+                    },
                     dont_filter=True,
                     headers={
                         "content-type": "application/json",
@@ -87,6 +93,7 @@ class JetProductsSpider(BaseProductsSpider):
                 )
 
     def after_start(self, response):
+        csrf = response.meta.get("csrf")
         if "24 of 10,000+ results" in response.body_as_unicode():
             a = response.xpath("//div[contains(@class, 'pagination')]"
                 "/a[contains(@class, 'history') and "
@@ -96,29 +103,76 @@ class JetProductsSpider(BaseProductsSpider):
             max_num = int(is_empty(a.xpath("span/text()").extract(), 0))
             url = urlparse.urljoin("http://"+self.allowed_domains[0], link)
 
-            print('+'*50)
-            print(link)
-            print('+'*50)
-
             yield Request(
-                url=url,
-                meta={"max_num": max_num-1},
+                url=self.SEARCH_URL,
+                method="POST",
+                meta={"max_num": max_num-1, "csrf": csrf},
                 callback=self.calculate_total,
+                body=json.dumps({
+                    "page": str(max_num),
+                    "sort": self.sort,
+                    "term": self.searchterms[0],
+                }),
+                headers={
+                    "content-type": "application/json",
+                    "x-csrf-token": csrf,
+                },
+                dont_filter=True
             )
+        else:
+            yield Request(
+                    url=self.SEARCH_URL,
+                    method="POST",
+                    body=json.dumps({
+                        "term": self.searchterms[0],
+                        "sort": self.sort,
+                    }),
+                    meta={
+                        'search_term': self.searchterms[0], 
+                        'remaining': self.quantity, 
+                        'csrf': csrf
+                    },
+                    dont_filter=True,
+                    headers={
+                        "content-type": "application/json",
+                        "x-csrf-token": csrf,
+                    },
+                )
 
     def calculate_total(self, response):
         max_num = response.meta.get("max_num", 0)
 
-        fl=open('file.html', 'w')
-        fl.write(response.body)
-        fl.close()
+        links = response.xpath("//div[contains(@class, 'product')]"
+            "/a/@href").extract()
 
-        links = is_empty(response.xpath("//div[contains(@class, 'pagination')]"
-            "/a[contains(@class, 'next')]/@href").extract())
+        last_page_num = len(set(links))
+        self.tm = 24*int(max_num)+last_page_num
 
-        last_page_num = len(links)
-        self.tm = 24*max_num+links
-        return super(JetProductsSpider, self).start_requests()
+        csrf = response.meta.get("csrf")
+        if not self.product_url:
+            for st in self.searchterms:
+                yield Request(
+                    url=self.SEARCH_URL,
+                    method="POST",
+                    body=json.dumps({
+                        "term": self.searchterms[0], 
+                        "sort": self.sort,
+                    }),
+                    meta={
+                        'search_term': st, 
+                        'remaining': self.quantity, 
+                        'csrf': csrf
+                    },
+                    dont_filter=True,
+                    headers={
+                        "content-type": "application/json",
+                        "x-csrf-token": csrf,
+                    },
+                )
+        else:
+            for req in super(JetProductsSpider, self).start_requests():
+                yield req
+
 
     def parse_product(self, response):
         product = response.meta['product']
@@ -129,6 +183,11 @@ class JetProductsSpider(BaseProductsSpider):
                 "/div[contains(@class, 'title')]"
             ).extract()
         )
+
+        cond_set(product, "model", response.xpath(
+            "//div[contains(@class, 'products')]/div/@rel").extract()
+        )
+
         brand = is_empty(response.xpath("//div[contains(@class, 'content')]"
             "/div[contains(@class, 'brand')]/text()").extract())
         if brand:
@@ -138,9 +197,18 @@ class JetProductsSpider(BaseProductsSpider):
         image_url = is_empty(response.xpath(
             "//div[contains(@class, 'images')]/div/@style"
         ).extract())
+        if not image_url:
+            image_url_list = response.xpath(
+                "//div[contains(@class, 'images')]/.//a[@href='#']/@rel"
+            ).extract()
+            for img in image_url_list:
+                if "-0.500" in img or (".500" in img and "extimages" in img):
+                    image_url = img
+                    break
         if image_url:
-            image_url = is_empty(re.findall(
-                "background\:url\(([^\)]*)", image_url))
+            if "background:url" in image_url:
+                image_url = is_empty(re.findall(
+                    "background\:url\(([^\)]*)", image_url))
             product["image_url"] = image_url
 
         cond_set(product, "description", response.xpath(
@@ -149,13 +217,9 @@ class JetProductsSpider(BaseProductsSpider):
             ).extract()
         )
 
-        cond_set(product, "model", response.xpath(
-            "//div[contains(@class, 'products')]/div/@rel").extract()
-        )
-
         product["locale"] = "en_US"
 
-        csrf = is_empty(re.findall("__csrf\"\:\"([^\"]*)", response.body))
+        csrf = self.get_csrf(response)
         if product.get("model") and csrf:
             reqs.append(
                 Request(
@@ -167,7 +231,8 @@ class JetProductsSpider(BaseProductsSpider):
                     headers={
                         "content-type": "application/json",
                         "x-csrf-token": csrf,
-                    }
+                    },
+                    dont_filter=True,
                 )
             )
 
@@ -181,6 +246,12 @@ class JetProductsSpider(BaseProductsSpider):
         reqs = response.meta.get("reqs")
 
         data = json.loads(response.body)
+        
+        if data["unavailable"]:
+            cond_set_value(product, "is_out_of_stock", True)
+        else:
+            cond_set_value(product, "is_out_of_stock", False)
+
         if not product.get("price"):
             for price in data.get("quantities", []):
                 if price.get("quantity") == 1:
@@ -250,9 +321,35 @@ class JetProductsSpider(BaseProductsSpider):
             continue
 
     def _scrape_next_results_page_link(self, response):
+        csrf = self.get_csrf(response) or response.meta.get("csrf")
         link = is_empty(response.xpath("//div[contains(@class, 'pagination')]"
-            "/a[contains(@class, 'next')]/@href").extract())
-        return link
+            "/a[contains(@class, 'next')]/@href").extract(), "")
+        page = is_empty(re.findall("page=(\d+)", link))
+
+        if not page or int(page)*24 > self.quantity+24:
+            return None
+        return Request(
+                    url=self.SEARCH_URL,
+                    method="POST",
+                    dont_filter=True,
+                    body=json.dumps({
+                        "page": str(page),
+                        "sort": self.sort,
+                        "term": self.searchterms[0],
+                    }),
+                    meta={
+                        'search_term': self.searchterms[0],
+                        'remaining': self.quantity, 
+                        'csrf': csrf
+                    },
+                    headers={
+                        "content-type": "application/json",
+                        "x-csrf-token": csrf,
+                    },
+                )
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
+
+    def get_csrf(self, response):
+        return is_empty(re.findall("__csrf\"\:\"([^\"]*)", response.body))
