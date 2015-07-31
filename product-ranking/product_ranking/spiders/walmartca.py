@@ -22,7 +22,7 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
-from product_ranking.walmartca_url_feat_prod_gen import RR
+from product_ranking.walmartca_related_product import RR
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -368,10 +368,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         if data:
             feat_prod_list = []
-            prod_dict = dict()
             featured_prods = dict()
             url_ready = name_ready = False
             last_message = False
+            forbidden_featured_names = ['also_viewed', 'top_sellers']
 
             for item in data:
                 # Make a dir of two tuples
@@ -382,31 +382,30 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
                 if 'message' in keys:
                     if feat_prod_list:
-                        featured_prods[last_message] = feat_prod_list
+                        if last_message not in forbidden_featured_names:
+                            featured_prods[last_message] = feat_prod_list
                         feat_prod_list = []
 
-                    # Convert featured products title for dir
-                    # "People who viewed this also viewed" --> "also_viewed"
-                    featured_variants = ['also bought', 'ultimately bought', 'Featured products']
-                    for var in featured_variants:
-                        if var in values_dict['message']:
-                            last_message = var.replace(' ', '_').lower()
-                else:
-                    if 'name' in keys:
-                        prod_dict['title'] = values_dict['name']
-                        name_ready = True
-                    elif 'linkurl' in keys:
-                        prod_dict['url'] = values_dict['linkurl']
-                        url_ready = True
+                    last_message = values_dict['message'].lower()
+                    last_message = '_'.join(
+                        last_message.split(' ')[-2:]
+                    )
+                elif 'name' in keys:
+                    title = values_dict['name']
+                    name_ready = True
+                elif 'linkurl' in keys:
+                    url = values_dict['linkurl']
+                    url_ready = True
 
-                    if url_ready and name_ready:
-                        feat_prod_list.append(
-                            RelatedProduct(**prod_dict)
-                        )
-                        prod_dict = {}
-                        url_ready = name_ready = False
+                if url_ready and name_ready:
+                    feat_prod_list.append(
+                        RelatedProduct(**{'url': url, 'title': title})
+                    )
+                    url_ready = name_ready = False
 
-            featured_prods[last_message] = feat_prod_list
+            if last_message not in forbidden_featured_names:
+                featured_prods[last_message] = feat_prod_list
+
             related_products.update(featured_prods)
 
             product['related_products'] = related_products
@@ -516,7 +515,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         Gets data out of JS script straight from html body
         """
 
-        # self._JS_PROD_INFO_RE = re.compile(r'productPurchaseCartridgeData\[\"\d+\"\]\s+=\s+(([^};]+[};]*)*});', re.DOTALL)
         self._JS_PROD_IMG_RE = re.compile(r'walmartData\.graphicsEnlargedURLS\s+=\s+([^;]*\])', re.DOTALL)
         meta = response.meta.copy()
         reqs = meta.get('reqs', [])
