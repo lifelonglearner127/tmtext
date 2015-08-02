@@ -459,7 +459,7 @@ class AmazonScraper(Scraper):
             return ["inline image"]
 
         if len(allimg) > 0 and self.no_image(allimg) == 0:
-            if len(allimg) > 7:
+            if len(allimg) >= 7:
                 allimg = allimg[:7]
 
                 if vurls:
