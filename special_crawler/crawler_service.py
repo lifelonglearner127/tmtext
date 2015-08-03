@@ -54,6 +54,7 @@ from extract_snapdeal_data import SnapdealScraper
 from extract_walmartca_data import WalmartCAScraper
 from extract_marksandspencer_data import MarksAndSpencerScraper
 from extract_nextcouk_data import NextCoUKScraper
+from extract_amazonin_data import AmazonINScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -116,6 +117,7 @@ SUPPORTED_SITES = {
                     "walmartca": WalmartCAScraper,
                     "marksandspencer": MarksAndSpencerScraper,
                     "nextcouk": NextCoUKScraper,
+                    "amazonin": AmazonINScraper,
                     }
 
 # add logger
@@ -189,6 +191,8 @@ def extract_domain(url):
         return 'amazonde'
     if 'amazon.cn' in url:
         return 'amazoncn'
+    if 'amazon.in' in url:
+        return 'amazonin'
     if 'groceries.asda.com' in url:
         return 'groceries'
     if 'walmart.ca' in url:
