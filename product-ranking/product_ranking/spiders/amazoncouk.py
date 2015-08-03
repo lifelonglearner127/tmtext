@@ -304,7 +304,7 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
-        prod_id = is_empty(re.findall('dp/([a-zA-Z0-9]+)/', response.url))
+        prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
         new_meta['product_id'] = prod_id
 
         if mkt_place_link and "condition=" in mkt_place_link:

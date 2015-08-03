@@ -162,7 +162,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
             else:
                 result = prod
 
-            prod_id = is_empty(re.findall('dp/([a-zA-Z0-9]+)/', response.url))
+            prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
             meta = response.meta.copy()
             meta = {"product": prod, 'product_id': prod_id}
             if mkt_place_link:
