@@ -129,7 +129,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     response.body_as_unicode()
                 ), ''
             )
-            variants = []
+            variants = {}
 
             if variants_data:
                 variants_data = hjson.loads(
@@ -152,7 +152,6 @@ class NextCoUkProductSpider(BaseProductsSpider):
                             for variant_item in vars_items:
                                 variant = dict()
                                 item_number = variant_item['ItemNumber'].replace('-', '')
-                                variant['item_number'] = item_number
 
                                 if name:
                                     variant['fit'] = name
@@ -161,19 +160,26 @@ class NextCoUkProductSpider(BaseProductsSpider):
                                 if colour_name:
                                     variant['colour'] = colour_name
 
-                                variants.append(variant)
+                                variants[item_number] = variant
+
+                                reqs.append(
+                                    Request(
+                                        url=self.REVIEWS_URL.format(product_id=item_number.replace('X56', '')),
+                                        callback=self.parse_variants_BR
+                                    )
+                                )
 
                                 reqs.append(
                                     Request(
                                         url='http://www.next.co.uk/item/{0}?CTRL=select'.format(item_number),
-                                        callback=self._get_in_stock_variants
+                                        callback=self._parse_in_stock_variants
                                     )
                                 )
 
                     response.meta['variants'] = variants
-                except (KeyError, ValueError):
+                except (KeyError, ValueError) as e:
                     self.log(
-                        "Failed to extract variants from %r." % response.url, ERROR
+                        "Failed to extract variants from {0}: {1}".format(response.url, e), ERROR
                     )
 
             # Get price
@@ -229,7 +235,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
         return product
 
-    def _get_in_stock_variants(self, response):
+    def _parse_in_stock_variants(self, response):
         """
         Callback - gets sizes for every single variant
         """
@@ -237,10 +243,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
         meta = response.meta.copy()
         reqs = meta.get('reqs')
         product = meta['product']
-        product_variants = product.get('variants', [])
         variants = meta['variants']
-
-        final_variants = []
 
         item_number = is_empty(
             re.findall(
@@ -250,9 +253,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
         )
 
         # Get data of current variant from meta
-        for var in variants:
-            if var['item_number'] == str(item_number):
-                break
+        var = variants[item_number]
 
         size_values = response.xpath('.//select/option[@value != ""]/text()').extract()
 
@@ -297,10 +298,9 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 if size != "ONE":
                     sizes_var['size'] = size
 
-                final_variants.append(sizes_var)
+                var.update(sizes_var)
 
-        product_variants += final_variants
-        product['variants'] = product_variants
+        product['variants'] = variants.values()
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -344,6 +344,46 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
         return related_prods
 
+    def parse_variants_BR(self, response):
+        """
+        Parses buyer reviews for every variant
+        """
+        meta = response.meta.copy()
+        reqs = meta.get("reqs")
+        product = meta['product']
+        variants = meta['variants']
+        data = response.body_as_unicode()
+        data = is_empty(
+            re.findall(
+                r'bvGetReviewSummaries\((.+)\)',
+                data
+            )
+        )
+
+        if data:
+            data = json.loads(data)
+            results = is_empty(
+                data.get('Results', [])
+            )
+            print('-'*50)
+            print data
+
+            if results:
+                item_number = is_empty(
+                    re.findall(
+                        r'Filter=Id:(\d+)',
+                            response.url
+                        ), ''
+                    )
+                item_number = item_number + 'X56'
+                buyer_reviews = self._set_buyer_reviews(results, response)
+                variants[item_number]['buyer_reviews'] = buyer_reviews.values()
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
     def parse_prod_info_js(self, response):
         meta = response.meta.copy()
         reqs = meta.get("reqs")
@@ -364,32 +404,8 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
             if results:
                 # Buyer reviews
-                buyer_review = dict(
-                    num_of_reviews=0,
-                    average_rating=0.0,
-                    rating_by_star={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
-                )
-
-                try:
-                    buyer_reviews_data = results['ReviewStatistics']
-                    buyer_review['num_of_reviews'] = buyer_reviews_data['TotalReviewCount']
-
-                    if buyer_review['num_of_reviews']:
-                        buyer_review['average_rating'] = float(
-                            round(buyer_reviews_data['AverageOverallRating'], 1)
-                        )
-
-                        ratings = buyer_reviews_data['RatingDistribution']
-                        for rate in ratings:
-                            star = str(rate['RatingValue'])
-                            buyer_review['rating_by_star'][star] = rate['Count']
-                except (KeyError, ValueError):
-                    self.log(
-                        "Failed to get buyer reviews from %r." % response.url, WARNING
-                    )
-
-                buyer_reviews = BuyerReviews(**buyer_review)
-                product['buyer_reviews'] = buyer_reviews
+                buyer_reviews = self._set_buyer_reviews(results, response)
+                product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
 
                 # Get brand
                 try:
@@ -412,6 +428,33 @@ class NextCoUkProductSpider(BaseProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _set_buyer_reviews(self, data, response):
+        buyer_review = dict(
+            num_of_reviews=0,
+            average_rating=0.0,
+            rating_by_star={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+        )
+
+        try:
+            buyer_reviews_data = data['ReviewStatistics']
+            buyer_review['num_of_reviews'] = buyer_reviews_data['TotalReviewCount']
+
+            if buyer_review['num_of_reviews']:
+                buyer_review['average_rating'] = float(
+                    round(buyer_reviews_data['AverageOverallRating'], 1)
+                )
+
+                ratings = buyer_reviews_data['RatingDistribution']
+                for rate in ratings:
+                    star = str(rate['RatingValue'])
+                    buyer_review['rating_by_star'][star] = rate['Count']
+        except (KeyError, ValueError):
+            self.log(
+                "Failed to get buyer reviews from %r." % response.url, WARNING
+            )
+
+        return buyer_review
 
     def send_next_request(self, reqs, response):
         """
