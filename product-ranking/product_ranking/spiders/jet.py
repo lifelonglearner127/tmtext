@@ -265,12 +265,15 @@ class JetProductsSpider(BaseProductsSpider):
             for markp in data.get("comparisons", []):
                 marketplace.append({
                     "name": markp.get("source"),
-                    "price": markp.get("price")
+                    "price": Price(
+                        priceCurrency="USD",
+                        price=markp.get("price")
+                    )
                 })
             if marketplace:
                 marketplace.append({
                     "name": self.DEFAULT_MARKETPLACE,
-                    "price": product["price"].price.__float__()
+                    "price": product["price"]
                 })
                 product["marketplace"] = marketplace
 
