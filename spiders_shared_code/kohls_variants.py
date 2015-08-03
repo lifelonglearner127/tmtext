@@ -17,6 +17,8 @@ class KohlsVariants(object):
         self.tree_html = tree_html
 
     def _variants(self):
+
+        # scrape JSON variants
         variants_text = is_empty(re.findall(
             "\"variants\"\s+\:\s+([^\]]*)", self.response.body), ""
         ).strip("\n").strip("\t")
@@ -62,6 +64,24 @@ class KohlsVariants(object):
                 "selected": selected,
             }
             variants.append(obj)
+
+        # scrape HTML variants (to get images)
+        for var in self.tree_html.xpath(
+                '//div[contains(@itemtype, "roduct")]'):
+            sku = var.xpath('.//meta[contains(@itemprop, "sku")]/@content')
+            if not sku:
+                continue
+            sku = sku[0].strip()
+            img = var.xpath('.//meta[contains(@itemprop, "imageUrl")]/@content')
+            if not img:
+                continue
+            img = img[0].strip()
+            # find the appropriate JSON variant by matching SKUs
+            for json_var in variants:
+                if sku == json_var.get('skuId', ''):
+                    json_var['image_url'] = img
+
         if variants:
             return variants
+
         return None
