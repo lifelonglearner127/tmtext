@@ -17,6 +17,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
+from spiders_shared_code.kohls_variants import KohlsVariants
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -110,6 +111,10 @@ class KohlsProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
+
+        kv = KohlsVariants()
+        kv.setupSC(response)
+        prod['variants'] = kv._variants()
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
@@ -246,10 +251,10 @@ class KohlsProductsSpider(BaseProductsSpider):
             for sel in html.xpath('//div[@id="rr1"]/div/div/a'):
                 url = is_empty(sel.xpath('@href').extract())
                 if url:
+                    title = is_empty(sel.xpath('./div/p/text()').extract())
                     related.append(
                         RelatedProduct(
-                            title=unicode.decode(is_empty(sel.xpath(
-                                './div/p/text()').extract())),
+                            title=unicode.decode(title.replace("\xe9", "é")),
                             url=urllib.unquote('http'+url.split('http')[-1])
                         ))
             if key and key not in product['related_products'].keys():
@@ -320,7 +325,7 @@ class KohlsProductsSpider(BaseProductsSpider):
                     reviews = BuyerReviews(total, avrg, distribution)
                     cond_set_value(product, 'buyer_reviews', reviews)
         if 'buyer_reviews' not in product:
-            cond_set_value(product, 'buyer_reviews', 0)
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         new_meta = response.meta.copy()
         new_meta['product'] = product
         return Request(self.RELATED_URL.format(product_id=product_id),
