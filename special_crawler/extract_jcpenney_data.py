@@ -19,11 +19,14 @@ class JcpenneyScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www\.jcpenney\.com/.*/prod\.jump\?ppId=.+$"
+    REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
+        self.review_list = None
+        self.is_review_checked = False
         self.review_json = None
         self.price_json = None
         self.jv = JcpenneyVariants()
@@ -83,6 +86,9 @@ class JcpenneyScraper(Scraper):
 
     def _product_id(self):
         return re.search('prod\.jump\?ppId=(.+?)$', self.product_page_url).group(1)
+
+    def _site_id(self):
+        return re.findall(r"\d+", self.tree_html.xpath("//div[@id='productWebId']/text()")[0])[0]
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -149,7 +155,7 @@ class JcpenneyScraper(Scraper):
         image_ids = re.search('var imageName = "(.+?)";', html.tostring(self.tree_html)).group(1)
         image_ids = image_ids.split(",")
 
-        image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?wid=35&hei=35&fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
+        image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
 
         if not image_urls:
             return None
@@ -312,7 +318,7 @@ class JcpenneyScraper(Scraper):
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
-
+    '''
     def _extract_review_json(self):
         try:
             review_id = re.search('reviewId:"(.+?)",', html.tostring(self.tree_html)).group(1)
@@ -324,14 +330,14 @@ class JcpenneyScraper(Scraper):
             self.review_json = json.loads(review_json)
         except:
             self.review_json = None
-
+    '''
     def _extract_price_json(self):
         try:
             price_json= re.search('var jcpPPJSON = (.+?);\njcpDLjcp\.productPresentation = jcpPPJSON;', html.tostring(self.tree_html)).group(1)
             self.price_json = json.loads(price_json)
         except:
             self.price_json = None
-
+    '''
     def _average_review(self):
         if self._review_count() == 0:
             return None
@@ -357,6 +363,77 @@ class JcpenneyScraper(Scraper):
 
     def _reviews(self):
         return None
+    '''
+
+    def _average_review(self):
+        if self._review_count() == 0:
+            return None
+
+        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
+
+        if str(average_review).split('.')[1] == '0':
+            return int(average_review)
+        else:
+            return float(average_review)
+
+    def _review_count(self):
+        self._reviews()
+
+        if not self.review_json:
+            return 0
+
+        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
+
+    def _max_review(self):
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(self.review_list):
+            if review[1] > 0:
+                return 5 - i
+
+    def _min_review(self):
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(reversed(self.review_list)):
+            if review[1] > 0:
+                return i + 1
+
+    def _reviews(self):
+        if self.is_review_checked:
+            return self.review_list
+
+        self.is_review_checked = True
+
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
+
+        try:
+            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+            end_index = contents.find("}},", start_index) + 2
+
+            self.review_json = contents[start_index:end_index]
+            self.review_json = json.loads(self.review_json)
+        except:
+            self.review_json = None
+
+        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
+        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
+        reviews_by_mark = reviews_by_mark[:5]
+        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
+
+        if not review_list:
+            review_list = None
+
+        self.review_list = review_list
+
+        return self.review_list
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -449,7 +526,7 @@ class JcpenneyScraper(Scraper):
         # CONTAINER : NONE
         "url" : _url, \
         "product_id" : _product_id, \
-
+        "site_id" : _site_id, \
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
         "product_title" : _product_title, \
