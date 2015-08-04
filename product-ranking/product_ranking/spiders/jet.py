@@ -70,7 +70,6 @@ class JetProductsSpider(BaseProductsSpider):
             for req in super(JetProductsSpider, self).start_requests():
                 yield req
 
-
     def start_requests_with_csrf(self, response):
         csrf = self.get_csrf(response)
         if not self.product_url:
@@ -143,7 +142,7 @@ class JetProductsSpider(BaseProductsSpider):
         max_num = response.meta.get("max_num", 0)
 
         links = response.xpath("//div[contains(@class, 'product')]"
-            "/a/@href").extract()
+                               "/a/@href").extract()
 
         last_page_num = len(set(links))
         self.tm = 24*int(max_num)+last_page_num
@@ -173,36 +172,39 @@ class JetProductsSpider(BaseProductsSpider):
             for req in super(JetProductsSpider, self).start_requests():
                 yield req
 
-
     def parse_product(self, response):
-        product = response.meta['product']
+        meta = response.meta.copy()
+        product = meta['product']
         reqs = []
 
-        cond_set(product, "title", response.xpath(
+        cond_set(
+            product, "title", response.xpath(
                 "//div[contains(@class, 'content')]"
                 "/div[contains(@class, 'title')]"
             ).extract()
         )
 
-        cond_set(product, "model", response.xpath(
-            "//div[contains(@class, 'products')]/div/@rel").extract()
+        response.meta['model'] = is_empty(
+            response.xpath("//div[contains(@class, 'products')]"
+                           "/div/@rel").extract()
         )
 
         brand = is_empty(response.xpath("//div[contains(@class, 'content')]"
-            "/div[contains(@class, 'brand')]/text()").extract())
+                                        "/div[contains(@class, 'brand')]/text()").extract())
         if brand:
             brand = brand.replace("by ", "")
             product["brand"] = brand
         
         image_url = is_empty(response.xpath(
-            "//div[contains(@class, 'images')]/div/@style"
+            "//div[contains(@class,'images')]/div/@style"
         ).extract())
+
         if not image_url:
             image_url_list = response.xpath(
-                "//div[contains(@class, 'images')]/.//a[@href='#']/@rel"
+                "//div[contains(@class, 'images')]/.//a[@href='#']/@rel "
             ).extract()
             for img in image_url_list:
-                if "-0.500" in img or (".500" in img and "extimages" in img):
+                if ("-0.500" in img) or (".500" in img):
                     image_url = img
                     break
         if image_url:
@@ -211,7 +213,8 @@ class JetProductsSpider(BaseProductsSpider):
                     "background\:url\(([^\)]*)", image_url))
             product["image_url"] = image_url
 
-        cond_set(product, "description", response.xpath(
+        cond_set(
+            product, "description", response.xpath(
                 "//div[contains(@class, 'container')]"
                 "/div[contains(@class, 'half')]"
             ).extract()
@@ -220,14 +223,14 @@ class JetProductsSpider(BaseProductsSpider):
         product["locale"] = "en_US"
 
         csrf = self.get_csrf(response)
-        if product.get("model") and csrf:
+        if response.meta.get("model") and csrf:
             reqs.append(
                 Request(
                     url=self.PRICE_URL,
                     method="POST",
                     callback=self.parse_price_and_marketplace,
                     meta={"product": product},
-                    body=json.dumps({"sku": product.get("model")}),
+                    body=json.dumps({"sku": response.meta.get("model")}),
                     headers={
                         "content-type": "application/json",
                         "x-csrf-token": csrf,
@@ -265,12 +268,15 @@ class JetProductsSpider(BaseProductsSpider):
             for markp in data.get("comparisons", []):
                 marketplace.append({
                     "name": markp.get("source"),
-                    "price": markp.get("price")
+                    "price": Price(
+                        priceCurrency="USD",
+                        price=markp.get("price")
+                    )
                 })
             if marketplace:
                 marketplace.append({
                     "name": self.DEFAULT_MARKETPLACE,
-                    "price": product["price"].price.__float__()
+                    "price": product["price"]
                 })
                 product["marketplace"] = marketplace
 
@@ -323,7 +329,7 @@ class JetProductsSpider(BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         csrf = self.get_csrf(response) or response.meta.get("csrf")
         link = is_empty(response.xpath("//div[contains(@class, 'pagination')]"
-            "/a[contains(@class, 'next')]/@href").extract(), "")
+                                       "/a[contains(@class, 'next')]/@href").extract(), "")
         page = is_empty(re.findall("page=(\d+)", link))
 
         if not page or int(page)*24 > self.quantity+24:

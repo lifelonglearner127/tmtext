@@ -708,12 +708,11 @@ class AmazonINScraper(Scraper):
 
     def _price_currency(self):
         price = self._price()
-        price = price.replace(",", "")
-        price_amount = re.findall(r"[\d\.]+", price)[0]
-        price_currency = price.replace(price_amount, "")
-        if price_currency == u'\u20b9':
+
+        if price[0] == u'\u20b9':
             return "INR"
-        return price_currency
+
+        return price[0]
 
     # extract product price from its product product page tree
     def _price(self):
@@ -721,8 +720,14 @@ class AmazonINScraper(Scraper):
             price = self._clean_text(self.tree_html.xpath("//b[@class='priceLarge']")[0].text_content())
             price = price.replace("Rs.", "").strip()
 
-            if u'\u20b9' not in price:
-                price = u'\u20b9' + price
+            if "-" in price:
+                if u'\u20b9' not in price:
+                    price = u'\u20b9' + price.split("-")[0].strip() + u"-" + u'\u20b9' + price.split("-")[1].strip()
+                else:
+                    price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
+            else:
+                if u'\u20b9' not in price:
+                    price = u'\u20b9' + price
 
             return price
         except:
@@ -732,8 +737,48 @@ class AmazonINScraper(Scraper):
             price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_ourprice']")[0].text_content())
             price = price.replace("Rs.", "").strip()
 
-            if u'\u20b9' not in price:
-                price = u'\u20b9' + price
+            if "-" in price:
+                if u'\u20b9' not in price:
+                    price = u'\u20b9' + price.split("-")[0].strip() + u"-" + u'\u20b9' + price.split("-")[1].strip()
+                else:
+                    price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
+            else:
+                if u'\u20b9' not in price:
+                    price = u'\u20b9' + price
+
+            return price
+        except:
+            pass
+
+        try:
+            price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_dealprice']")[0].text_content())
+            price = price.replace("Rs.", "").strip()
+
+            if "-" in price:
+                if u'\u20b9' not in price:
+                    price = u'\u20b9' + price.split("-")[0].strip() + u"-" + u'\u20b9' + price.split("-")[1].strip()
+                else:
+                    price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
+            else:
+                if u'\u20b9' not in price:
+                    price = u'\u20b9' + price
+
+            return price
+        except:
+            pass
+
+        try:
+            price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_saleprice']")[0].text_content())
+            price = price.replace("Rs.", "").strip()
+
+            if "-" in price:
+                if u'\u20b9' not in price:
+                    price = u'\u20b9' + price.split("-")[0].strip() + u"-" + u'\u20b9' + price.split("-")[1].strip()
+                else:
+                    price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
+            else:
+                if u'\u20b9' not in price:
+                    price = u'\u20b9' + price
 
             return price
         except:
