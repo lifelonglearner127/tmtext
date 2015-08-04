@@ -85,7 +85,7 @@ class SetMarketplaceSellerType(object):
             if name:
                 name_domain = tldextract.extract(name).domain
                 if spider_main_domain and name_domain:
-                    if spider_main_domain.lower() in name_domain.lower():
+                    if spider_main_domain.lower() == name_domain.lower():
                         marketplace['seller_type'] = 'site'
                     else:
                         marketplace['seller_type'] = 'marketplace'
