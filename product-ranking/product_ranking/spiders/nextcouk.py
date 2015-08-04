@@ -228,15 +228,6 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
                             reqs.append(
                                 Request(
-                                    url=self.REVIEWS_URL.format(
-                                        product_id=item_number.replace(product_target, '')
-                                    ),
-                                    callback=self._parse_variants_BR
-                                )
-                            )
-
-                            reqs.append(
-                                Request(
                                     url='http://www.next.co.uk/item/{0}?CTRL=select'.format(item_number),
                                     callback=self._parse_size_variants
                                 )
@@ -398,43 +389,6 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     )
 
             product['related_products'] = related_prods
-
-    def _parse_variants_BR(self, response):
-        """
-        Parses buyer reviews for every variant
-        """
-        meta = response.meta.copy()
-        reqs = meta.get("reqs")
-        product = meta['product']
-        variants = meta['variants']
-        data = is_empty(
-            re.findall(
-                r'bvGetReviewSummaries\((.+)\)',
-                response.body_as_unicode()
-            )
-        )
-
-        if data:
-            data = json.loads(data)
-            results = is_empty(
-                data.get('Results', [])
-            )
-
-            if results:
-                item_number = is_empty(
-                    re.findall(
-                        r'Filter=Id:(\d+)',
-                        response.url
-                    ), ''
-                )
-                item_number = item_number + meta['product_target']
-                buyer_reviews = self._parse_buyer_reviews(results, response)
-                variants[item_number]['buyer_reviews'] = buyer_reviews.values()
-
-        if reqs:
-            return self.send_next_request(reqs, response)
-
-        return product
 
     def _parse_prod_info_js(self, response):
         meta = response.meta.copy()
