@@ -175,7 +175,8 @@ class JetProductsSpider(BaseProductsSpider):
 
 
     def parse_product(self, response):
-        product = response.meta['product']
+        meta = response.meta.copy()
+        product = meta['product']
         reqs = []
 
         cond_set(product, "title", response.xpath(
@@ -184,8 +185,9 @@ class JetProductsSpider(BaseProductsSpider):
             ).extract()
         )
 
-        cond_set(product, "model", response.xpath(
-            "//div[contains(@class, 'products')]/div/@rel").extract()
+        response.meta['model'] = is_empty(
+            response.xpath("//div[contains(@class, 'products')]"
+                           "/div/@rel").extract()
         )
 
         brand = is_empty(response.xpath("//div[contains(@class, 'content')]"
@@ -221,14 +223,14 @@ class JetProductsSpider(BaseProductsSpider):
         product["locale"] = "en_US"
 
         csrf = self.get_csrf(response)
-        if product.get("model") and csrf:
+        if response.meta.get("model") and csrf:
             reqs.append(
                 Request(
                     url=self.PRICE_URL,
                     method="POST",
                     callback=self.parse_price_and_marketplace,
                     meta={"product": product},
-                    body=json.dumps({"sku": product.get("model")}),
+                    body=json.dumps({"sku": response.meta.get("model")}),
                     headers={
                         "content-type": "application/json",
                         "x-csrf-token": csrf,
