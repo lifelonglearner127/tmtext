@@ -195,14 +195,15 @@ class JetProductsSpider(BaseProductsSpider):
             product["brand"] = brand
         
         image_url = is_empty(response.xpath(
-            "//div[contains(@class, 'images')]/div/@style"
+            "//div[contains(@class,'images')]/div/@style"
         ).extract())
+
         if not image_url:
             image_url_list = response.xpath(
-                "//div[contains(@class, 'images')]/.//a[@href='#']/@rel"
+                "//div[contains(@class, 'images')]/.//a[@href='#']/@rel "
             ).extract()
             for img in image_url_list:
-                if "-0.500" in img or (".500" in img and "extimages" in img):
+                if ("-0.500" in img) or (".500" in img):
                     image_url = img
                     break
         if image_url:
