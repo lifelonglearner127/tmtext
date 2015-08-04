@@ -31,6 +31,7 @@
     <field name="in_stores_only" version="1.1"></field>
     <field name="marketplace" version="2.1"></field>
     <field name="marketplace_sellers" version="2.1"></field>
+    <field name="marketplace_prices" version="1.1"></field>
     <field name="in_stock" version="1.1"></field>
     <field name="site_online" version="1.2"></field>
     <field name="site_online_out_of_stock" version="1.1"></field>
