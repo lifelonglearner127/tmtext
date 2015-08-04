@@ -70,7 +70,6 @@ class JetProductsSpider(BaseProductsSpider):
             for req in super(JetProductsSpider, self).start_requests():
                 yield req
 
-
     def start_requests_with_csrf(self, response):
         csrf = self.get_csrf(response)
         if not self.product_url:
@@ -143,7 +142,7 @@ class JetProductsSpider(BaseProductsSpider):
         max_num = response.meta.get("max_num", 0)
 
         links = response.xpath("//div[contains(@class, 'product')]"
-            "/a/@href").extract()
+                               "/a/@href").extract()
 
         last_page_num = len(set(links))
         self.tm = 24*int(max_num)+last_page_num
@@ -173,13 +172,13 @@ class JetProductsSpider(BaseProductsSpider):
             for req in super(JetProductsSpider, self).start_requests():
                 yield req
 
-
     def parse_product(self, response):
         meta = response.meta.copy()
         product = meta['product']
         reqs = []
 
-        cond_set(product, "title", response.xpath(
+        cond_set(
+            product, "title", response.xpath(
                 "//div[contains(@class, 'content')]"
                 "/div[contains(@class, 'title')]"
             ).extract()
@@ -191,7 +190,7 @@ class JetProductsSpider(BaseProductsSpider):
         )
 
         brand = is_empty(response.xpath("//div[contains(@class, 'content')]"
-            "/div[contains(@class, 'brand')]/text()").extract())
+                                        "/div[contains(@class, 'brand')]/text()").extract())
         if brand:
             brand = brand.replace("by ", "")
             product["brand"] = brand
@@ -214,7 +213,8 @@ class JetProductsSpider(BaseProductsSpider):
                     "background\:url\(([^\)]*)", image_url))
             product["image_url"] = image_url
 
-        cond_set(product, "description", response.xpath(
+        cond_set(
+            product, "description", response.xpath(
                 "//div[contains(@class, 'container')]"
                 "/div[contains(@class, 'half')]"
             ).extract()
@@ -329,7 +329,7 @@ class JetProductsSpider(BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         csrf = self.get_csrf(response) or response.meta.get("csrf")
         link = is_empty(response.xpath("//div[contains(@class, 'pagination')]"
-            "/a[contains(@class, 'next')]/@href").extract(), "")
+                                       "/a[contains(@class, 'next')]/@href").extract(), "")
         page = is_empty(re.findall("page=(\d+)", link))
 
         if not page or int(page)*24 > self.quantity+24:
