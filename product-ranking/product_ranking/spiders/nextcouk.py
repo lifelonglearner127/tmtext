@@ -252,12 +252,6 @@ class NextCoUkProductSpider(BaseProductsSpider):
                                 id=item_number_id
                             )
 
-                            # Set selected property
-                            if item_number_id == product_id:
-                                variant['selected'] = True
-                            else:
-                                variant['selected'] = False
-
                             variants[item_number] = variant
 
                             reqs.append(
@@ -313,7 +307,10 @@ class NextCoUkProductSpider(BaseProductsSpider):
         reqs = meta.get('reqs')
         product = meta['product']
         product_variants = product.get('variants', [])
+        product_target = meta['product_target']
+        product_id = meta['product_id']
         variants = meta['variants']
+
         final_vars = []
 
         item_number = is_empty(
@@ -322,6 +319,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 response.url
             ), ''
         )
+        item_number_id = item_number.replace(product_target.upper(), '')
 
         # Get data of current variant from meta
         var = variants[item_number]
@@ -371,6 +369,12 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 size = size.strip()
                 if size != "ONE":
                     sizes_var['properties']['size'] = size
+
+                # Set selected property
+                if (fit or colour) and item_number_id == product_id and len(size_values) == 1:
+                    sizes_var['selected'] = True
+                else:
+                    sizes_var['selected'] = False
 
                 if sizes_var['properties']:
                     final_var.update(sizes_var)
