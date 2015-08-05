@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/python
 
 
@@ -729,46 +730,63 @@ class AmazonScraper(Scraper):
 
     def _price_currency(self):
         price = self._price()
-        price = price.replace(",", "")
-        price_amount = re.findall(r"[\d\.]+", price)[0]
-        price_currency = price.replace(price_amount, "")
-        if price_currency == "$":
+
+        if price[0] == u'£':
+            return "GDP"
+
+        if price[0] == u'$':
             return "USD"
-        return price_currency
+
+        return price[0]
 
     # extract product price from its product product page tree
     def _price(self):
-        price = self.tree_html.xpath("//span[@id='actualPriceValue']/b/text()")
-        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0].strip()
-        price = self.tree_html.xpath("//*[@id='priceblock_ourprice']//text()")#
-        if len(price)>0 and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0].strip()
-        price = self.tree_html.xpath("//*[contains(@id, 'priceblock_')]//text()")#priceblock_ can usually have a few things after it
-        if len(price)>0 and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0].strip()
-        price = self.tree_html.xpath("//*[contains(@class, 'offer-price')]//text()")
-        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0].strip()
+        currency = u"$"
+        price = None
 
-        pid=self._product_id()
-        price = self.tree_html.xpath("//button[@value='"+pid+"']//text()")
- #       price = self.tree_html.xpath("//span[@id='actualPriceValue']//text()")
-        if len(price)>0  and price[0].strip()!="":
-            p=price[0].split()
-            return p[-1]
-        price = self.tree_html.xpath("//div[@id='"+pid+"']//a[@class='a-button-text']/span//text()")
-        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0]
+        if self.scraper_version == "uk":
+            currency = u"£"
 
-        price = self.tree_html.xpath("//div[@id='unqualifiedBuyBox']//span[@class='a-color-price']//text()")
-        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0]
+        try:
+            price = self._clean_text(self.tree_html.xpath("//b[@class='priceLarge']")[0].text_content())
+            price = price.replace(currency, u"").strip()
+        except:
+            price = None
 
-        price = self.tree_html.xpath("//*[contains(@class, 'price')]//text()")
-        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0].strip()
-        return None
+        if not price:
+            try:
+                price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_ourprice']")[0].text_content())
+                price = price.replace(currency, u"").strip()
+            except:
+                price = None
+
+        if not price:
+            try:
+                price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_dealprice']")[0].text_content())
+                price = price.replace(currency, u"").strip()
+            except:
+                price = None
+
+        if not price:
+            try:
+                price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_saleprice']")[0].text_content())
+                price = price.replace(currency, u"").strip()
+            except:
+                price = None
+
+        if "-" in price:
+            if currency not in price:
+                price = currency + price.split("-")[0].strip() + u"-" + currency + price.split("-")[1].strip()
+            else:
+                price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
+        else:
+            if currency not in price:
+                price = currency + price
+
+        if not price:
+            return None
+
+        return price
 
     def _in_stock(self):
         in_stock = self.tree_html.xpath('//div[contains(@id, "availability")]//text()')

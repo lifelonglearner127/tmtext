@@ -18,17 +18,22 @@ class AmazonVariants(object):
 
     def _variants(self):
         try:
+            original_product_canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
             page_raw_text = lxml.html.tostring(self.tree_html)
             variation_key_values = json.loads(re.search('"variation_values":(.+?),"deviceType', page_raw_text).group(1))
             variation_key_list = list(variation_key_values)
+
+            # reversing variant key list if the site is amazon.in
+            if "amazon.in" in original_product_canonical_link:
+                variation_key_list = list(reversed(variation_key_list))
 
             for index, variation_key in enumerate(variation_key_list):
                 variation_key_list[index] = variation_key[:variation_key.find("_")]
 
             variation_values_list = []
 
-            for variation_key in variation_key_values:
-                variation_values_list.append(variation_key_values[variation_key])
+            for variation_key in variation_key_list:
+                variation_values_list.append(variation_key_values[variation_key + "_name"])
 
             variation_combinations_values = list(itertools.product(*variation_values_list))
 
@@ -42,6 +47,10 @@ class AmazonVariants(object):
 
             selected_variation_combination = [selected_variation_combination[key] for key in selected_variation_combination]
 
+            # reversing selected variant key list if the site is amazon.in
+            if "amazon.in" in original_product_canonical_link:
+                selected_variation_combination = list(reversed(selected_variation_combination))
+
             asin_variation_values = json.loads(re.search('"asin_variation_values":(.+?),"contextMetaData":', page_raw_text).group(1))
 
             variation_asin_values = {}
@@ -52,16 +61,11 @@ class AmazonVariants(object):
                 property_index = 0
                 variation_combination_key = ""
 
-                for property in asin_variation_values[asin_variation]:
-                    variation_combination_key += variation_key_values[variation_key_list[property_index] + "_name"][int(asin_variation_values[asin_variation][property])]
+                for key in variation_key_list:
+                    variation_combination_key += variation_key_values[key + "_name"][int(asin_variation_values[asin_variation][key+"_name"])]
                     property_index = property_index + 1
 
                 variation_asin_values[variation_combination_key] = asin_variation
-
-            original_product_canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
-
-            if not original_product_canonical_link.startswith("http://www.amazon.com"):
-                original_product_canonical_link = "http://www.amazon.com" + original_product_canonical_link
 
             stockstatus_for_variants_list = []
 
