@@ -60,9 +60,6 @@ class AmazonVariants(object):
 
             original_product_canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
-            if not original_product_canonical_link.startswith("http://www.amazon.com"):
-                original_product_canonical_link = "http://www.amazon.com" + original_product_canonical_link
-
             stockstatus_for_variants_list = []
 
             for variation_combination in outofstock_variation_combinations_values:
