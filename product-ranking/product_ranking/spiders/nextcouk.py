@@ -200,6 +200,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
         meta = response.meta.copy()
         product_target = meta['product_target']
+        product_id = meta['product_id']
         reqs = meta.get('reqs', [])
 
         variants_data = is_empty(
@@ -231,6 +232,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                         for variant_item in vars_items:
                             variant = dict()
                             item_number = variant_item['ItemNumber'].replace('-', '')
+                            item_number_id = item_number.replace(product_target.upper(), '')
                             variant['properties'] = {}
 
                             if name:
@@ -242,7 +244,14 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
                             variant['image_url'] = 'http://cdn2.next.co.uk/Common/Items/Default/' \
                                                    'Default/ItemImages/AltItemShot/{id}.jpg'.format(
-                                id=item_number.replace(product_target,''))
+                                id=item_number_id
+                            )
+
+                            # Set selected property
+                            if item_number_id == product_id:
+                                variant['selected'] = True
+                            else:
+                                variant['selected'] = False
 
                             variants[item_number] = variant
 
