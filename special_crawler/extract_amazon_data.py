@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/python
 
 
@@ -732,8 +733,13 @@ class AmazonScraper(Scraper):
         price = price.replace(",", "")
         price_amount = re.findall(r"[\d\.]+", price)[0]
         price_currency = price.replace(price_amount, "")
+
         if price_currency == "$":
             return "USD"
+
+        if price_currency == "£":
+            return "GBP"
+
         return price_currency
 
     # extract product price from its product product page tree
