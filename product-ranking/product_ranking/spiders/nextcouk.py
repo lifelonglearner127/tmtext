@@ -18,11 +18,16 @@ def product_id_format(product_id, product_target):
     """
     Formats product id 123456 to 123-456-X56
     """
-    return '{0}-{1}-{2}'.format(
+    result = '{0}-{1}'.format(
         product_id[:3],
-        product_id[3:],
-        product_target
+        product_id[3:]
     )
+    if product_target:
+        result = '{0}-{1}'.format(
+            result,
+            product_target
+        )
+    return result
 
 class NextCoUkProductSpider(BaseProductsSpider):
 
@@ -62,7 +67,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
         product = meta['product']
 
         product_ids = is_empty(
-            re.findall(r'#(\d+)(\w+)', product['url']),
+            re.findall(r'#(\w+)(\D+\w+)', product['url']),
             None
         )
 
@@ -73,7 +78,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
             product_id = product_ids[0]
             product_target = is_empty(
                 re.findall(r'#(\w+)', product['url']),
-                None
+                ''
             )
             product_target = product_target.replace(
                 product_id.lower(), ''
@@ -243,7 +248,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                                 variant['properties']['colour'] = colour_name
 
                             variant['image_url'] = 'http://cdn2.next.co.uk/Common/Items/Default/' \
-                                                   'Default/ItemImages/AltItemShot/{id}.jpg'.format(
+                                                   'Default/ItemImages/AltItemShot/315x472/{id}.jpg'.format(
                                 id=item_number_id
                             )
 
