@@ -216,13 +216,14 @@ class NextCoUkProductSpider(BaseProductsSpider):
                         for variant_item in vars_items:
                             variant = dict()
                             item_number = variant_item['ItemNumber'].replace('-', '')
+                            variant['properties'] = {}
 
                             if name:
-                                variant['fit'] = name
+                                variant['properties']['fit'] = name
 
                             colour_name = variant_item['Colour'].strip()
                             if colour_name:
-                                variant['colour'] = colour_name
+                                variant['properties']['colour'] = colour_name
 
                             variants[item_number] = variant
 
@@ -298,20 +299,22 @@ class NextCoUkProductSpider(BaseProductsSpider):
             for size in size_values:
                 final_var = var.copy()
                 sizes_var = dict()
-                fit = var.get('fit', '')
-                colour = var.get('colour', '')
+                properties = var['properties']
+                fit = properties.get('fit', '')
+                colour = properties.get('colour', '')
 
+                sizes_var['properties'] = {}
                 if fit:
-                    sizes_var['fit'] = fit
+                    sizes_var['properties']['fit'] = fit
 
                 if colour:
-                    sizes_var['colour'] = colour
+                    sizes_var['properties']['colour'] = colour
 
                 if '- Sold Out' in size:
                     size = size.replace('- Sold Out', '')
-                    sizes_var['out_of_stock'] = True
+                    sizes_var['in_stock'] = False
                 else:
-                    sizes_var['out_of_stock'] = False
+                    sizes_var['in_stock'] = True
 
                 if '\\xa' in repr(size):
                     price = is_empty(
@@ -334,7 +337,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     )
                 size = size.strip()
                 if size != "ONE":
-                    sizes_var['size'] = size
+                    sizes_var['properties']['size'] = size
 
                 final_var.update(sizes_var)
                 final_vars.append(final_var)
