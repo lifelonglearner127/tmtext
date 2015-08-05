@@ -167,7 +167,8 @@ class KohlsProductsSpider(BaseProductsSpider):
             '//div[@class="multiple-price"]/div[2]/text()[normalize-space()] |'
             '//div[@class="original original-reg"]/text()[normalize-space()] |'
             '//span[@class="price_ammount"]/text()[normalize-space()] |'
-            '//div[@class="sale"]/text()[normalize-space()]'
+            '//div[@class="sale"]/text()[normalize-space()] |'
+            '//div[contains(@class, "main_price")]/text()'
         ).re("\d+.?\d{0,2}")
 
         if price:
