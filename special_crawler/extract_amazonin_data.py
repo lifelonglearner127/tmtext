@@ -716,75 +716,52 @@ class AmazonINScraper(Scraper):
 
     # extract product price from its product product page tree
     def _price(self):
+        currency = u"$"
+        price = None
+
+        if self.scraper_version == "in":
+            currency = u"\u20b9"
+
         try:
             price = self._clean_text(self.tree_html.xpath("//b[@class='priceLarge']")[0].text_content())
             price = price.replace("Rs.", "").strip()
-
-            if "-" in price:
-                if u'\u20b9' not in price:
-                    price = u'\u20b9' + price.split("-")[0].strip() + u"-" + u'\u20b9' + price.split("-")[1].strip()
-                else:
-                    price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
-            else:
-                if u'\u20b9' not in price:
-                    price = u'\u20b9' + price
-
-            return price
         except:
-            pass
+            price = None
 
-        try:
-            price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_ourprice']")[0].text_content())
-            price = price.replace("Rs.", "").strip()
+        if not price:
+            try:
+                price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_ourprice']")[0].text_content())
+                price = price.replace("Rs.", "").strip()
+            except:
+                price = None
 
-            if "-" in price:
-                if u'\u20b9' not in price:
-                    price = u'\u20b9' + price.split("-")[0].strip() + u"-" + u'\u20b9' + price.split("-")[1].strip()
-                else:
-                    price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
+        if not price:
+            try:
+                price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_dealprice']")[0].text_content())
+                price = price.replace("Rs.", "").strip()
+            except:
+                price = None
+
+        if not price:
+            try:
+                price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_saleprice']")[0].text_content())
+                price = price.replace("Rs.", "").strip()
+            except:
+                price = None
+
+        if "-" in price:
+            if u'\u20b9' not in price:
+                price = u'\u20b9' + price.split("-")[0].strip() + u"-" + u'\u20b9' + price.split("-")[1].strip()
             else:
-                if u'\u20b9' not in price:
-                    price = u'\u20b9' + price
+                price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
+        else:
+            if u'\u20b9' not in price:
+                price = u'\u20b9' + price
 
-            return price
-        except:
-            pass
+        if not price:
+            return None
 
-        try:
-            price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_dealprice']")[0].text_content())
-            price = price.replace("Rs.", "").strip()
-
-            if "-" in price:
-                if u'\u20b9' not in price:
-                    price = u'\u20b9' + price.split("-")[0].strip() + u"-" + u'\u20b9' + price.split("-")[1].strip()
-                else:
-                    price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
-            else:
-                if u'\u20b9' not in price:
-                    price = u'\u20b9' + price
-
-            return price
-        except:
-            pass
-
-        try:
-            price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_saleprice']")[0].text_content())
-            price = price.replace("Rs.", "").strip()
-
-            if "-" in price:
-                if u'\u20b9' not in price:
-                    price = u'\u20b9' + price.split("-")[0].strip() + u"-" + u'\u20b9' + price.split("-")[1].strip()
-                else:
-                    price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
-            else:
-                if u'\u20b9' not in price:
-                    price = u'\u20b9' + price
-
-            return price
-        except:
-            pass
-
-        return None
+        return price
 
     def _in_stock(self):
         in_stock = self.tree_html.xpath('//div[contains(@id, "availability")]//text()')

@@ -762,13 +762,6 @@ class AmazonScraper(Scraper):
 
         if not price:
             try:
-                price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_ourprice']")[0].text_content())
-                price = price.replace(currency, u"").strip()
-            except:
-                price = None
-
-        if not price:
-            try:
                 price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_dealprice']")[0].text_content())
                 price = price.replace(currency, u"").strip()
             except:
