@@ -84,11 +84,16 @@ class AmazonVariants(object):
                 stockstatus_for_variants = {}
                 properties = {}
                 isSelected = True
-                variation_combination_key = ""
+                variation_combination_key = variation_combination_reversed_key = ""
 
                 for index, variation_key in enumerate(variation_key_list):
-                    properties[variation_key] = variation_combination[index]
+                    if variation_combination_key in variation_asin_values:
+                        properties[variation_key] = variation_combination[index]
+                    else:
+                        properties[variation_key] = variation_combination[len(variation_key_list) - 1 - index]
+
                     variation_combination_key += variation_combination[index]
+                    variation_combination_reversed_key = variation_combination[index] + variation_combination_reversed_key
                     if variation_combination[index] != selected_variation_combination[index]:
                         isSelected = False
 
@@ -96,7 +101,11 @@ class AmazonVariants(object):
                 stockstatus_for_variants["in_stock"] = True
                 stockstatus_for_variants["selected"] = isSelected
                 stockstatus_for_variants["price"] = None
-                stockstatus_for_variants["url"] = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + variation_asin_values[variation_combination_key]
+
+                if variation_combination_key in variation_asin_values:
+                    stockstatus_for_variants["url"] = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + variation_asin_values[variation_combination_key]
+                else:
+                    stockstatus_for_variants["url"] = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + variation_asin_values[variation_combination_reversed_key]
 
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
 
