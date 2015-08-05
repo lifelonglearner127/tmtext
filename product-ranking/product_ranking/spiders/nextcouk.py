@@ -65,8 +65,29 @@ class NextCoUkProductSpider(BaseProductsSpider):
             re.findall(r'#(\d+)(\w+)', product['url']),
             None
         )
-        product_id = product_ids[0]
-        product_target = product_ids[1].upper()
+
+        if not product_ids:
+            product_ids = response.xpath('//input[@id="idList"]/'
+                                         '@value').extract()[0]
+            product_ids = product_ids.split(',')
+            product_id = product_ids[0]
+            product_target = is_empty(
+                re.findall(r'#(\w+)', product['url']),
+                None
+            )
+            product_target = product_target.replace(
+                product_id.lower(), ''
+            ).upper()
+        else:
+            product_id = product_ids[0]
+            product_target = product_ids[1].upper()
+
+        print('-'*50)
+        print product_id
+        print('-'*50)
+        print product_target
+        print('-'*50)
+
         response.meta['product_id'] = product_id
         response.meta['product_target'] = product_target
 
