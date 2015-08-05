@@ -82,12 +82,6 @@ class NextCoUkProductSpider(BaseProductsSpider):
             product_id = product_ids[0]
             product_target = product_ids[1].upper()
 
-        print('-'*50)
-        print product_id
-        print('-'*50)
-        print product_target
-        print('-'*50)
-
         response.meta['product_id'] = product_id
         response.meta['product_target'] = product_target
 
@@ -246,6 +240,10 @@ class NextCoUkProductSpider(BaseProductsSpider):
                             if colour_name:
                                 variant['properties']['colour'] = colour_name
 
+                            variant['image_url'] = 'http://cdn2.next.co.uk/Common/Items/Default/' \
+                                                   'Default/ItemImages/AltItemShot/{id}.jpg'.format(
+                                id=item_number.replace(product_target,''))
+
                             variants[item_number] = variant
 
                             reqs.append(
@@ -258,7 +256,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
             except (KeyError, ValueError) as exc:
                 self.log(
                     "Failed to extract variants from {url}: {exc}".format(
-                        response.url, exc
+                        url=response.url, exc=exc
                     ), ERROR
                 )
 
@@ -360,8 +358,9 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 if size != "ONE":
                     sizes_var['properties']['size'] = size
 
-                final_var.update(sizes_var)
-                final_vars.append(final_var)
+                if sizes_var['properties']:
+                    final_var.update(sizes_var)
+                    final_vars.append(final_var)
 
         product_variants += final_vars
         product['variants'] = product_variants
