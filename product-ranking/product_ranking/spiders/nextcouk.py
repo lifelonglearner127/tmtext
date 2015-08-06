@@ -1,28 +1,33 @@
 # -*- coding: utf-8 -*-#
-from urlparse import urljoin
+
 import json
 import re
 import hjson
 
-from scrapy import Selector
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set_value
-from product_ranking.guess_brand import guess_brand_from_first_words
 
 is_empty = lambda x, y=None: x[0] if x else y
 
-def product_id_format(product_id):
+def product_id_format(product_id, product_target):
     """
-    Formats product id 123456
-    to 123-456-X56
+    Formats product id 123456 to 123-456-X56
     """
-    return '{0}-{1}-X56'.format(product_id[:3], product_id[3:])
+    result = '{0}-{1}'.format(
+        product_id[:3],
+        product_id[3:]
+    )
+    if product_target:
+        result = '{0}-{1}'.format(
+            result,
+            product_target
+        )
+    return result
 
 class NextCoUkProductSpider(BaseProductsSpider):
 
@@ -61,26 +66,34 @@ class NextCoUkProductSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = meta['product']
 
-        product_id = is_empty(
-            re.findall(r'#(\d+)', product['url']),
+        product_ids = is_empty(
+            re.findall(r'#(\w+)(\D+\w+)', product['url']),
             None
         )
+
+        if not product_ids:
+            product_ids = response.xpath('//input[@id="idList"]/'
+                                         '@value').extract()[0]
+            product_ids = product_ids.split(',')
+            product_id = product_ids[0]
+            product_target = is_empty(
+                re.findall(r'#(\w+)', product['url']),
+                ''
+            )
+            product_target = product_target.replace(
+                product_id.lower(), ''
+            ).upper()
+        else:
+            product_id = product_ids[0]
+            product_target = product_ids[1].upper()
+
         response.meta['product_id'] = product_id
+        response.meta['product_target'] = product_target
 
         product['locale'] = 'en_GB'
 
         # Set category
-        try:
-            category = response.xpath(
-                '//div[@class="BreadcrumbsHolder"]/./'
-                '/li[@class="Breadcrumb"][not(contains(@class, "bcHome"))]'
-                '/a/text()'
-            ).extract()[:-1]
-            cond_set_value(product, 'category', category, conv=list)
-        except ValueError:
-            self.log(
-                "Failed to get category from %r." % response.url, WARNING
-            )
+        self._parse_category(response)
 
         # Get StyleID to choose current item
         style_id_data = re.findall(
@@ -96,7 +109,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
             elif key == 'ItemNumber':
                 tree[val] = last_id
 
-        style_id = tree[product_id_format(product_id)]
+        style_id = tree[product_id_format(product_id, product_target)]
 
         # Format product id to get proper section from html body
         item = response.xpath(
@@ -106,120 +119,34 @@ class NextCoUkProductSpider(BaseProductsSpider):
         )
 
         if item:
-            #  Getting title
-            title = item.xpath('.//div[@class="Title"]//h1/text() |'
-                               './/div[@class="Title"]//h2/text()')
-            title = is_empty(
-                title.extract(), ''
-            )
-            if title:
-                product['title'] = title.strip()
+            #  Set title
+            self._parse_title(response, item)
 
-            # Get description
-            description = is_empty(
-                item.css('.StyleContent').extract(), ''
-            )
-            if description:
-                product['description'] = description.strip().replace('\r', '').replace('\n', '').replace('\t', '')
+            # Set description
+            self._parse_description(response, item)
 
-            # Get variants
-            variants_data = is_empty(
-                re.findall(
-                    r'var\s*itemData\s*=\s*(\[[^;]+)',
-                    response.body_as_unicode()
-                ), ''
-            )
-            variants = []
-
-            if variants_data:
-                variants_data = hjson.loads(
-                    variants_data.replace(': ', ':'),
-                    object_pairs_hook=dict
-                )
-
-                try:
-                    # Get variants data for current product
-                    for var in variants_data:
-                        if str(var['StyleID']) == style_id:
-                            data = var['Fits']
-                            break
-
-                    for variant_data in data:
-                        name = variant_data['Name'].strip()
-                        vars_items = variant_data['Items']
-
-                        if vars_items:
-                            for variant_item in vars_items:
-                                variant = dict()
-                                item_number = variant_item['ItemNumber'].replace('-', '')
-                                variant['item_number'] = item_number
-
-                                if name:
-                                    variant['fit'] = name
-
-                                colour_name = variant_item['Colour'].strip()
-                                if colour_name:
-                                    variant['colour'] = colour_name
-
-                                variants.append(variant)
-
-                                reqs.append(
-                                    Request(
-                                        url='http://www.next.co.uk/item/{0}?CTRL=select'.format(item_number),
-                                        callback=self._get_in_stock_variants
-                                    )
-                                )
-
-                    response.meta['variants'] = variants
-                except (KeyError, ValueError):
-                    self.log(
-                        "Failed to extract variants from %r." % response.url, ERROR
-                    )
+            # Get variants. Method returns list of requests
+            reqs = self._parse_variants(response, style_id)
 
             # Get price
-            price_sel = item.css('.Price')
-
-            if price_sel:
-                price = is_empty(
-                    price_sel.extract()
-                ).strip()
-                price = is_empty(
-                    re.findall(r'(\d+)', price)
-                )
-                product['price'] = Price(
-                    priceCurrency="GBP",
-                    price=price
-                )
-            else:
-                product['price'] = None
+            self._parse_price(response, item)
 
             # Get image url
-            image_sel = item.xpath('.//div[@class="StyleThumb"]//img/@src')
-
-            if image_sel:
-                image = is_empty(image_sel.extract())
-                product['image_url'] = image.replace('Thumb', 'Shot')
+            self._parse_image(response, item)
 
         else:
             self.log(
-                "Failed to extract product info from %r." % response.url, ERROR
+                "Failed to extract product info from {url}".format(response.url), ERROR
             )
 
         # Get related products
-        related_items = response.xpath(
-            '//section[@class="ProductDetail"]/article[not(@id="Style{id}")]'.format(
-                id=style_id
-            )
-        )
-
-        if related_items:
-            product['related_products'] = self.parse_related_products(related_items, response.url)
+        self._parse_related_products(response, style_id)
 
         # Get buyer reviews
         prod_info_js = self.REVIEWS_URL.format(product_id=product_id)
         reviews_request = Request(
             url=prod_info_js,
-            callback=self.parse_prod_info_js,
+            callback=self._parse_prod_info_js,
             dont_filter=True,
         )
         reqs.append(reviews_request)
@@ -229,7 +156,149 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
         return product
 
-    def _get_in_stock_variants(self, response):
+    def _parse_category(self, response):
+        """
+        Parses list of categories for product
+        """
+        product = response.meta['product']
+
+        try:
+            category = response.xpath(
+                '//div[@class="BreadcrumbsHolder"]/./'
+                '/li[@class="Breadcrumb"][not(contains(@class, "bcHome"))]'
+                '/a/text()'
+            ).extract()[:-1]
+            cond_set_value(product, 'category', category, conv=list)
+        except ValueError as exc:
+            self.log(
+                "Failed to get category from {url}: {exc}".format(
+                    response.url, exc
+                ), WARNING
+            )
+
+    def _parse_title(self, response, item):
+        product = response.meta['product']
+
+        title = item.xpath('.//div[@class="Title"]//h1/text() |'
+                           './/div[@class="Title"]//h2/text()')
+        title = is_empty(
+            title.extract(), ''
+        )
+
+        if title:
+            product['title'] = title.strip()
+
+    def _parse_description(self, response, item):
+        product = response.meta['product']
+
+        description = is_empty(
+            item.css('.StyleContent').extract(), ''
+        )
+
+        if description:
+            product['description'] = description.strip().replace('\r', '').replace('\n', '').replace('\t', '')
+
+    def _parse_variants(self, response, style_id):
+        """
+        Returns remaining requests to send
+        """
+
+        meta = response.meta.copy()
+        product_target = meta['product_target']
+        product_id = meta['product_id']
+        reqs = meta.get('reqs', [])
+
+        variants_data = is_empty(
+            re.findall(
+                r'var\s*itemData\s*=\s*(\[[^;]+)',
+                response.body_as_unicode()
+            ), ''
+        )
+        variants = {}
+
+        if variants_data:
+            variants_data = hjson.loads(
+                variants_data.replace(': ', ':'),
+                object_pairs_hook=dict
+            )
+
+            try:
+                # Get variants data for current product
+                for var in variants_data:
+                    if str(var['StyleID']) == style_id:
+                        data = var['Fits']
+                        break
+
+                for variant_data in data:
+                    name = variant_data['Name'].strip()
+                    vars_items = variant_data['Items']
+
+                    if vars_items:
+                        for variant_item in vars_items:
+                            variant = dict()
+                            item_number = variant_item['ItemNumber'].replace('-', '')
+                            item_number_id = item_number.replace(product_target.upper(), '')
+                            variant['properties'] = {}
+
+                            if name:
+                                variant['properties']['fit'] = name
+
+                            colour_name = variant_item['Colour'].strip()
+                            if colour_name:
+                                variant['properties']['colour'] = colour_name
+
+                            variant['image_url'] = 'http://cdn2.next.co.uk/Common/Items/Default/' \
+                                                   'Default/ItemImages/AltItemShot/315x472/{id}.jpg'.format(
+                                id=item_number_id
+                            )
+
+                            variants[item_number] = variant
+
+                            reqs.append(
+                                Request(
+                                    url='http://www.next.co.uk/item/{0}?CTRL=select'.format(item_number),
+                                    callback=self._parse_size_variants
+                                )
+                            )
+                response.meta['variants'] = variants
+            except (KeyError, ValueError) as exc:
+                self.log(
+                    "Failed to extract variants from {url}: {exc}".format(
+                        url=response.url, exc=exc
+                    ), ERROR
+                )
+
+        return reqs
+
+    def _parse_price(self, response, item):
+        product = response.meta['product']
+
+        price_sel = item.css('.Price')
+
+        if price_sel:
+            price = is_empty(
+                price_sel.extract()
+            ).strip()
+            price = is_empty(
+                re.findall(r'(\d+)', price)
+            )
+            product['price'] = Price(
+                priceCurrency="GBP",
+                price=price
+            )
+        else:
+            product['price'] = None
+
+    def _parse_image(self, response, item):
+        product = response.meta['product']
+
+        image_sel = item.xpath('.//div[@class="StyleThumb"]//img/@src')
+
+        if image_sel:
+            image = is_empty(image_sel.extract())
+            product['image_url'] = image.replace('Thumb', 'Shot')
+
+    def _parse_size_variants(self, response):
         """
         Callback - gets sizes for every single variant
         """
@@ -238,9 +307,11 @@ class NextCoUkProductSpider(BaseProductsSpider):
         reqs = meta.get('reqs')
         product = meta['product']
         product_variants = product.get('variants', [])
+        product_target = meta['product_target']
+        product_id = meta['product_id']
         variants = meta['variants']
 
-        final_variants = []
+        final_vars = []
 
         item_number = is_empty(
             re.findall(
@@ -248,31 +319,33 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 response.url
             ), ''
         )
+        item_number_id = item_number.replace(product_target.upper(), '')
 
         # Get data of current variant from meta
-        for var in variants:
-            if var['item_number'] == str(item_number):
-                break
+        var = variants[item_number]
 
         size_values = response.xpath('.//select/option[@value != ""]/text()').extract()
 
         if size_values:
             for size in size_values:
+                final_var = var.copy()
                 sizes_var = dict()
-                fit = var.get('fit', '')
-                colour = var.get('colour', '')
+                properties = var['properties']
+                fit = properties.get('fit', '')
+                colour = properties.get('colour', '')
 
+                sizes_var['properties'] = {}
                 if fit:
-                    sizes_var['fit'] = fit
+                    sizes_var['properties']['fit'] = fit
 
                 if colour:
-                    sizes_var['colour'] = colour
+                    sizes_var['properties']['colour'] = colour
 
                 if '- Sold Out' in size:
                     size = size.replace('- Sold Out', '')
-                    sizes_var['out_of_stock'] = True
+                    sizes_var['in_stock'] = False
                 else:
-                    sizes_var['out_of_stock'] = False
+                    sizes_var['in_stock'] = True
 
                 if '\\xa' in repr(size):
                     price = is_empty(
@@ -295,11 +368,19 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     )
                 size = size.strip()
                 if size != "ONE":
-                    sizes_var['size'] = size
+                    sizes_var['properties']['size'] = size
 
-                final_variants.append(sizes_var)
+                # Set selected property
+                if (fit or colour) and item_number_id == product_id and len(size_values) == 1:
+                    sizes_var['selected'] = True
+                else:
+                    sizes_var['selected'] = False
 
-        product_variants += final_variants
+                if sizes_var['properties']:
+                    final_var.update(sizes_var)
+                    final_vars.append(final_var)
+
+        product_variants += final_vars
         product['variants'] = product_variants
 
         if reqs:
@@ -307,44 +388,50 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
         return product
 
-    def _parse_single_product(self, response):
-        return self.parse_product(response)
+    def _parse_related_products(self, response, style_id):
+        product = response.meta['product']
 
-    def parse_related_products(self, items, base_product_url):
-        related_prods = []
+        items = response.xpath(
+            '//section[@class="ProductDetail"]/article[not(@id="Style{id}")]'.format(
+                id=style_id
+            )
+        )
 
-        for item in items:
-            # Get title
-            title = item.xpath('.//div[@class="Title"]//h1/text() |'
-                               './/div[@class="Title"]//h2/text()')
-            if title:
-                title = is_empty(
-                    title.extract()
-                ).strip()
+        if items:
+            related_prods = []
 
-            # Get url
-            targetitem = item.xpath('.//@data-targetitem')
-            url = item.xpath('.//div[@class="StyleThumb"]/a/@href')
-            if targetitem and url:
-                targetitem = is_empty(
-                    targetitem.extract()
-                )
-                url = '{url}#{id}'.format(
-                    url=base_product_url,
-                    id=targetitem.replace('-', '')
-                )
+            for item in items:
+                # Get title
+                title = item.xpath('.//div[@class="Title"]//h1/text() |'
+                                   './/div[@class="Title"]//h2/text()')
+                if title:
+                    title = is_empty(
+                        title.extract()
+                    ).strip()
 
-            if url and title:
-                related_prods.append(
-                    RelatedProduct(
-                        title=title,
-                        url=url
+                # Get url
+                targetitem = item.xpath('.//@data-targetitem')
+                url = item.xpath('.//div[@class="StyleThumb"]/a/@href')
+                if targetitem and url:
+                    targetitem = is_empty(
+                        targetitem.extract()
                     )
-                )
+                    url = '{url}#{id}'.format(
+                        url=response.url,
+                        id=targetitem.replace('-', '')
+                    )
 
-        return related_prods
+                if url and title:
+                    related_prods.append(
+                        RelatedProduct(
+                            title=title,
+                            url=url
+                        )
+                    )
 
-    def parse_prod_info_js(self, response):
+            product['related_products'] = related_prods
+
+    def _parse_prod_info_js(self, response):
         meta = response.meta.copy()
         reqs = meta.get("reqs")
         product = meta['product']
@@ -364,54 +451,77 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
             if results:
                 # Buyer reviews
-                buyer_review = dict(
-                    num_of_reviews=0,
-                    average_rating=0.0,
-                    rating_by_star={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
-                )
-
-                try:
-                    buyer_reviews_data = results['ReviewStatistics']
-                    buyer_review['num_of_reviews'] = buyer_reviews_data['TotalReviewCount']
-
-                    if buyer_review['num_of_reviews']:
-                        buyer_review['average_rating'] = float(
-                            round(buyer_reviews_data['AverageOverallRating'], 1)
-                        )
-
-                        ratings = buyer_reviews_data['RatingDistribution']
-                        for rate in ratings:
-                            star = str(rate['RatingValue'])
-                            buyer_review['rating_by_star'][star] = rate['Count']
-                except (KeyError, ValueError):
-                    self.log(
-                        "Failed to get buyer reviews from %r." % response.url, WARNING
-                    )
-
-                buyer_reviews = BuyerReviews(**buyer_review)
-                product['buyer_reviews'] = buyer_reviews
+                buyer_reviews = self._parse_buyer_reviews(results, response)
+                product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
 
                 # Get brand
-                try:
-                    brand = results['Brand']['Name']
-                    product['brand'] = brand
-                except (KeyError, ValueError):
-                    product['brand'] = None
+                self._parse_brand(response, results)
 
                 # Get department
-                try:
-                    departments = is_empty(
-                        results['Attributes']['department']['Values']
-                    )
-                    department = departments['Value']
-                    product['department'] = department
-                except (KeyError, ValueError):
-                    product['department'] = None
+                self._parse_department(response, results)
 
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _parse_brand(self, response, data):
+        product = response.meta['product']
+
+        try:
+            brand = data['Brand']['Name']
+            product['brand'] = brand
+        except (KeyError, ValueError) as exc:
+            self.log(
+                "Failed to get brand from {url}: {exc}".format(
+                    response.url, exc
+                ), WARNING
+            )
+
+    def _parse_department(self, response, data):
+        product = response.meta['product']
+
+        try:
+            departments = is_empty(
+                data['Attributes']['department']['Values']
+            )
+            department = departments['Value']
+            product['department'] = department
+        except (KeyError, ValueError) as exc:
+            self.log(
+                "Failed to get department from {url}: {exc}".format(
+                    response.url, exc
+                ), WARNING
+            )
+
+    def _parse_buyer_reviews(self, data, response):
+        buyer_review = dict(
+            num_of_reviews=0,
+            average_rating=0.0,
+            rating_by_star={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+        )
+
+        try:
+            buyer_reviews_data = data['ReviewStatistics']
+            buyer_review['num_of_reviews'] = buyer_reviews_data['TotalReviewCount']
+
+            if buyer_review['num_of_reviews']:
+                buyer_review['average_rating'] = float(
+                    round(buyer_reviews_data['AverageOverallRating'], 1)
+                )
+
+                ratings = buyer_reviews_data['RatingDistribution']
+                for rate in ratings:
+                    star = str(rate['RatingValue'])
+                    buyer_review['rating_by_star'][star] = rate['Count']
+        except (KeyError, ValueError) as exc:
+            self.log(
+                "Failed to get buyer reviews from {url}: {exc}".format(
+                    response.url, exc
+                ), WARNING
+            )
+
+        return buyer_review
 
     def send_next_request(self, reqs, response):
         """
@@ -423,6 +533,9 @@ class NextCoUkProductSpider(BaseProductsSpider):
         if reqs:
             new_meta["reqs"] = reqs
         return req.replace(meta=new_meta)
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
 
     def _scrape_total_matches(self, response):
         """
@@ -441,10 +554,12 @@ class NextCoUkProductSpider(BaseProductsSpider):
             return int(
                 is_empty(total_matches, '0')
             )
-        except:
+        except (KeyError, ValueError) as exc:
             total_matches = None
             self.log(
-                "Failed to extract total matches from %r." % response.url, ERROR
+                "Failed to extract total matches from {url}: {exc}".format(
+                    response.url, exc
+                ), ERROR
             )
 
         return total_matches
@@ -463,7 +578,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
             num = None
             self.items_per_page = 0
             self.log(
-                "Failed to extract results per page from %r." % response.url, ERROR
+                "Failed to extract results per page from {url}".format(response.url), ERROR
             )
 
         return num
@@ -485,7 +600,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 res_item = SiteProductItem()
                 yield link, res_item
         else:
-            self.log("Found no product links in %r." % response.url, INFO)
+            self.log("Found no product links in {url}".format(response.url), INFO)
 
     def _scrape_next_results_page_link(self, response):
         url = self.NEXT_PAGE_URL.format(start_pos=self.start_pos)
