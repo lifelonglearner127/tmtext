@@ -24,6 +24,21 @@ class KohlsVariants(object):
         ).strip("\n").strip("\t")
         variants_text = variants_text.strip().rstrip(",") + "]"
 
+        variants_count = is_empty(
+            re.findall(
+                r'availablevariantsCount_product\s*=\s*\'(\d+)\'',
+                self.response.body
+            ), 0
+        )
+
+        try:
+            variants_count = int(variants_count)
+        except ValueError:
+            variants_count = 0
+
+        if variants_count == 0:
+            return []
+
         try:
             variants_json = json.loads(variants_text)
         except TypeError:
