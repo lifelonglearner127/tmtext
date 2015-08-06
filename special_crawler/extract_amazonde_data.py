@@ -624,7 +624,7 @@ class AmazonDEScraper(Scraper):
         nr_reviews = self.tree_html.xpath("//a[@class='a-link-normal a-text-normal product-reviews-link']//text()")
         if len(nr_reviews) > 1:
             return self._toint(nr_reviews[0].replace('(','').replace(')','').replace(',',''))
-        if self.scraper_version == "in":
+        if self.scraper_version == "de":
             nr_reviews = self.tree_html.xpath("//span[@class='crAvgStars']/a//text()")
             if len(nr_reviews) > 0:
                 res = nr_reviews[0].split()
