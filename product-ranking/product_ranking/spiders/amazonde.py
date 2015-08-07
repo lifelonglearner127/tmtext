@@ -256,6 +256,10 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
+        if not product.get('brand', '').strip():
+            cond_set(product, 'brand',
+                     [''.join(response.css('#byline ::text').extract()).strip()]
+            )
         cond_set(
             product,
             'price',
@@ -358,6 +362,21 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 image
             )
 
+        if not product.get('image_url', ''):
+            # try properties first
+            cond_set(product, 'image_url', response.xpath(
+                '//img[contains(@id, "main-image")]/@data-a-dynamic-image').extract())
+            if product.get('image_url', '').strip():
+                _url = None
+                try:
+                    _url = json.loads(product['image_url'])
+                except Exception as e:
+                    cond_set(product, 'image_url', response.xpath(
+                        '//img[contains(@id, "main-image")]/@src').extract())
+                if _url:
+                    _url = _url.keys()[0]
+                    product['image_url'] = _url
+
         title = response.xpath(
             '//span[@id="productTitle"]/text()[normalize-space()] |'
             '//div[@class="buying"]/h1/span[@id="btAsinTitle"]'
@@ -369,6 +388,11 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             '//h1[@class="parseasinTitle"]/span[@id="btAsinTitle"]'
             '/span/text()[normalize-space()]'
         ).extract()
+
+        if not title:
+            title = response.xpath('//span[@id="title"]/text()').extract()
+            title = [title[0].strip()] if title else title
+
         cond_set(
             product, 'title', title)
 
@@ -637,9 +661,6 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         return buyer_reviews
 
     def get_buyer_reviews_from_2nd_page(self, response):
-
-        import pdb
-        pdb.set_trace()
 
         if self._has_captcha(response):
             return self._handle_captcha(
