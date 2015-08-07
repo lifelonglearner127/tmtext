@@ -158,6 +158,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             meta = response.meta.copy()
             meta['product'] = prod
             prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
+            if not prod_id:
+                prod_id = is_empty(re.findall('/d/([a-zA-Z0-9]+)', response.url))
             meta['product_id'] = prod_id
             if mkt_place_link:
                 meta["mkt_place_link"] = mkt_place_link
@@ -442,6 +444,20 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                         count_matches[0].strip().replace('.', ''))
                 else:
                     total_matches = None
+        if not total_matches:
+            total_matches = is_empty(
+                response.xpath(
+                    '//*[contains(@id, "results")]'
+                    '//span[contains(text(), "Ergebnisse")]').extract()
+            )
+            if total_matches:
+                total_matches = re.search(r'[\d\.]+', total_matches)
+                if total_matches:
+                    total_matches = total_matches.group(0).replace('.', '').strip()
+                    if total_matches.isdigit():
+                        total_matches = int(total_matches)
+                    else:
+                        total_matches = None
         return total_matches
 
     def _scrape_product_links(self, response):
@@ -460,6 +476,11 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                     "*/descendant::i[contains(concat(' ',@class,' '),"
                     "' a-icon-premium-pantry ')]").extract()
                 links.append((href, is_prime, is_prime_pantry))
+        if not links:
+            lis = response.xpath('//*[contains(@id, "results")]'
+                                 '//*[contains(@class, "sx-table-item")]')
+            for no, li in enumerate(lis):
+                links.append([is_empty(li.xpath('.//a/@href').extract()), None, None])
         if not links:
             self.log("Found no product links.", WARNING)
         for link, is_prime, is_prime_pantry in links:
@@ -616,6 +637,9 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         return buyer_reviews
 
     def get_buyer_reviews_from_2nd_page(self, response):
+
+        import pdb
+        pdb.set_trace()
 
         if self._has_captcha(response):
             return self._handle_captcha(
