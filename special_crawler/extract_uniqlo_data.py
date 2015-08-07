@@ -171,10 +171,13 @@ class UniqloScraper(Scraper):
         pass
         
     def _image_urls(self):
-        return None
+        return ["http:" + self.tree_html.xpath("//meta[@itemprop='image']/@content")[0]]
 
     def _image_count(self):
-        return 0
+        if not self._image_urls():
+            return 0
+
+        return len(self._image_urls())
 
     def _video_urls(self):
         return None
