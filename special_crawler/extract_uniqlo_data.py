@@ -34,6 +34,8 @@ class UniqloScraper(Scraper):
         self.is_review_checked = False
         self.product_json = None
         self.uv = UniqloVariants()
+        self.image_list = None
+        self.is_image_crawled = False
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -171,13 +173,44 @@ class UniqloScraper(Scraper):
         pass
         
     def _image_urls(self):
-        return ["http:" + self.tree_html.xpath("//meta[@itemprop='image']/@content")[0]]
+        if self.is_image_crawled:
+            return self.image_list
+
+        self.is_image_crawled = True
+
+        primary_image = ("http:" + self.tree_html.xpath("//meta[@itemprop='image']/@content")[0]).replace("?$social-share$", "")
+        sub_images = primary_image[:primary_image.find("/goods_") + 7] + self._product_id() + "_sub{}"
+        image_list = [primary_image]
+
+        for index in range(2, 20):
+            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+            s = requests.Session()
+            a = requests.adapters.HTTPAdapter(max_retries=3)
+            b = requests.adapters.HTTPAdapter(max_retries=3)
+            s.mount('http://', a)
+            s.mount('https://', b)
+            try:
+                contents = s.get(sub_images.format(index), headers=h, timeout=5).text
+
+                if contents.startswith("Unable to find"):
+                    break
+
+                image_list.append(sub_images.format(index))
+            except:
+                break
+
+        if not image_list:
+            self.image_list = None
+        else:
+            self.image_list = image_list
+
+        return self.image_list
 
     def _image_count(self):
         if not self._image_urls():
             return 0
 
-        return len(self._image_urls())
+        return len(self.image_list)
 
     def _video_urls(self):
         return None
