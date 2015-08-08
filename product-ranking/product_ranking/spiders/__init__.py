@@ -203,7 +203,6 @@ class BaseProductsSpider(Spider):
             self.log("Not available user agent type or it wasn't set."
                      " Default user agent will be used.", INFO)
             user_agent = 'default'
-            assert False, 'invalid user agent'
 
         if user_agent:
             self.user_agent = self.USER_AGENTS[user_agent]
