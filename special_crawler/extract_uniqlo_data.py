@@ -186,8 +186,8 @@ class UniqloScraper(Scraper):
         for index in range(1, 20):
             h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
             s = requests.Session()
-            a = requests.adapters.HTTPAdapter(max_retries=3)
-            b = requests.adapters.HTTPAdapter(max_retries=3)
+            a = requests.adapters.HTTPAdapter(max_retries=1)
+            b = requests.adapters.HTTPAdapter(max_retries=1)
             s.mount('http://', a)
             s.mount('https://', b)
             try:
