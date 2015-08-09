@@ -180,6 +180,7 @@ class UniqloScraper(Scraper):
 
         primary_image = ("http:" + self.tree_html.xpath("//meta[@itemprop='image']/@content")[0]).replace("?$social-share$", "")
         sub_images = primary_image[:primary_image.find("/goods_") + 7] + self._product_id() + "_sub{}"
+        thumb_images = primary_image[:primary_image.find("/goods_") + 7] + self._product_id() + "_sub{}?$pdp-thumb$"
         image_list = [primary_image]
         failed_count = 0
 
@@ -191,7 +192,7 @@ class UniqloScraper(Scraper):
             s.mount('http://', a)
             s.mount('https://', b)
             try:
-                contents = s.get(sub_images.format(index), headers=h, timeout=5).text
+                contents = s.get(thumb_images.format(index), headers=h, timeout=5).text
 
                 if contents.startswith("Unable to find"):
                     failed_count = failed_count + 1
