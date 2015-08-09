@@ -194,7 +194,7 @@ class UniqloScraper(Scraper):
             try:
                 contents = s.get(thumb_images.format(index), headers=h, timeout=5).text
 
-                if contents.startswith("Unable to find"):
+                if "AQSTa" in contents:
                     failed_count = failed_count + 1
 
                     if failed_count > 2:
