@@ -164,6 +164,11 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             if mkt_place_link:
                 meta["mkt_place_link"] = mkt_place_link
 
+            _avail = response.css('#availability ::text').extract()
+            _avail = ''.join(_avail)
+            if "nichtauflager" in _avail.lower().replace(' ', ''):
+                prod['is_out_of_stock'] = True
+
             if isinstance(prod['buyer_reviews'], Request):
                 result = prod['buyer_reviews'].replace(meta=meta)
             else:
@@ -293,6 +298,29 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                     '//span[@class="price"]/text()'
                 ).extract()
             )
+        if not product.get('price', None):
+            _price = re.search(
+                r'a-color-price aw-nowrap&quot;&gt;EUR ([\d\.\,]+)&lt;/span&gt',
+                response.body
+            )
+            if _price:
+                _price = _price.group(1).strip().replace(' ', '')\
+                    .replace('.', '').replace(',', '.')
+                cond_set(product, 'price', ['EUR ' + _price])
+
+        if not product.get('price', None):
+            _price = response.xpath('//*[@id="product-price"]/text()').extract()
+            cond_set(product, 'price', [_price])
+        if not product.get('price', None):
+            _price = response.xpath(
+                '//*[contains(@class, "a-color-price")]/text()').extract()
+            if _price:
+                product['price'] = _price[0].strip()
+
+        if isinstance(product.get('price', None), (list, tuple)):
+            if product.get('price', None):
+                product['price'] = product['price'][0]
+
         if product.get('price', None):
             if not u'EUR' in product.get('price', ''):
                 self.log('Invalid price at: %s' % response.url, level=ERROR)
@@ -304,6 +332,15 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                     price=price,
                     priceCurrency='EUR'
                 )
+        else:
+            product.pop('price', '')  # remove the key completely
+
+        if 'usverkauft' in response.body_as_unicode().lower().replace(' ', '') \
+            or 'ergriffen' in response.body_as_unicode().lower().replace(' ', '') \
+            or 'ichtauflager' in response.body_as_unicode().lower().replace(' ', '') \
+            or 'ichtamlager' in response.body_as_unicode().lower().replace(' ', ''):
+                with open('/tmp/_am_urls', 'a') as fh:
+                    fh.write(str(response.url) + '\n')
 
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
@@ -391,6 +428,10 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         if not title:
             title = response.xpath('//span[@id="title"]/text()').extract()
+            if not title:
+                title = response.xpath('//*[@id="product-title"]/text()').extract()
+            if not title:
+                title = response.xpath('//h1[@id="title"]/text()').extract()
             title = [title[0].strip()] if title else title
 
         cond_set(
@@ -430,12 +471,13 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         cond_set(product, 'model', model, conv=string.strip)
         self._populate_bestseller_rank(product, response)
-        revs = self._buyer_reviews_from_html(response)
-        if isinstance(revs, Request):
-            meta = {"product": product}
-            product['buyer_reviews'] = revs.replace(meta=meta)
-        else:
-            product['buyer_reviews'] = revs
+        #revs = self._buyer_reviews_from_html(response)
+        #if isinstance(revs, Request):
+        #    meta = {"product": product}
+        #    product['buyer_reviews'] = revs.replace(meta=meta)
+        #else:
+        #    product['buyer_reviews'] = revs
+        product['buyer_reviews'] = ''
 
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...
@@ -504,7 +546,13 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             lis = response.xpath('//*[contains(@id, "results")]'
                                  '//*[contains(@class, "sx-table-item")]')
             for no, li in enumerate(lis):
-                links.append([is_empty(li.xpath('.//a/@href').extract()), None, None])
+                is_prime = li.css('i.a-icon-prime').extract()
+                is_prime_pantry = (li.css('i.a-icon-prime-pantry').extract()
+                                   or li.css('i.a-icon-primepantry').extract())
+                links.append([
+                    is_empty(li.xpath('.//a/@href').extract()),
+                    is_prime, is_prime_pantry
+                ])
         if not links:
             self.log("Found no product links.", WARNING)
         for link, is_prime, is_prime_pantry in links:
@@ -523,6 +571,12 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             next_page_url = next_pages[0]
         elif len(next_pages) > 1:
             self.log("Found more than one 'next page' link.", ERROR)
+        if not next_pages:
+            next_pages = response.xpath(
+                '//ul[contains(@class, "a-pagination")]'
+                '//a[contains(text(), "eiter")]/@href').extract()
+            if len(next_pages) == 1:
+                next_page_url = next_pages[0]
         return next_page_url
 
     ## Captcha handling functions.
