@@ -598,6 +598,13 @@ class BaseValidator(object):
         if re.match(r'^[\d\.]+$', str(val)):
             return True
 
+    def _validate_response_code(self, val):
+        if not val:
+            return True
+        if val.isdigit():
+            if 0 < val < 999:
+                return True
+
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
         :param data: 2-dimensions list or str
