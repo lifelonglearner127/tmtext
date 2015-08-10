@@ -18,7 +18,6 @@ from product_ranking.spiders import BaseProductsSpider, cond_set,\
     cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
 from product_ranking.amazon_bestsellers import amazon_parse_department
-from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
 
 
@@ -78,6 +77,12 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                       "{product_id}/ref=cm_cr_dp_see_all_btm?ie=UTF8&" \
                       "showViewpoints=1&sortBy=bySubmissionDateDescending"
 
+    ZERO_BUYER_REVIEWS = dict(
+        num_of_reviews=0,
+        average_rating=0.0,
+        rating_by_star={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+    )
+
     settings = AmazonDeValidatorSettings
 
     use_proxies = True
@@ -122,6 +127,13 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         if not self._has_captcha(response):
+            meta = response.meta.copy()
+            response.meta['product'] = prod
+            prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
+            if not prod_id:
+                prod_id = is_empty(re.findall('/d/([a-zA-Z0-9]+)', response.url))
+            response.meta['product_id'] = prod_id
+
             self._populate_from_js(response, prod)
 
             self._populate_from_html(response, prod)
@@ -155,12 +167,6 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 else:
                     mkt_place_link = None
 
-            meta = response.meta.copy()
-            meta['product'] = prod
-            prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
-            if not prod_id:
-                prod_id = is_empty(re.findall('/d/([a-zA-Z0-9]+)', response.url))
-            meta['product_id'] = prod_id
             if mkt_place_link:
                 meta["mkt_place_link"] = mkt_place_link
 
@@ -170,7 +176,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 prod['is_out_of_stock'] = True
 
             if isinstance(prod['buyer_reviews'], Request):
-                result = prod['buyer_reviews'].replace(meta=meta)
+                return prod['buyer_reviews']
             else:
                 if prod['buyer_reviews'] != 0:
                     return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
@@ -471,13 +477,14 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         cond_set(product, 'model', model, conv=string.strip)
         self._populate_bestseller_rank(product, response)
-        #revs = self._buyer_reviews_from_html(response)
-        #if isinstance(revs, Request):
-        #    meta = {"product": product}
-        #    product['buyer_reviews'] = revs.replace(meta=meta)
-        #else:
-        #    product['buyer_reviews'] = revs
-        product['buyer_reviews'] = ''
+        revs = self._buyer_reviews_from_html(response)
+        if isinstance(revs, Request):
+           meta = revs.meta.copy()
+           meta['product'] = product
+           product['buyer_reviews'] = revs.replace(meta=meta)
+        else:
+           product['buyer_reviews'] = revs
+        # product['buyer_reviews'] = ''
 
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...
@@ -632,6 +639,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         return result
 
     def _buyer_reviews_from_html(self, response):
+        prod_id = response.meta['product_id']
+
         stars_regexp = r'% .+ (\d[\d, ]*) '
         total = ''.join(response.css('#summaryStars a::text').extract())
         total = re.search('\d[\d, ]*', total)
@@ -688,19 +697,18 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 average = float("%.2f" % round(average, 2))
 
         if not ratings:
-            buyer_rev_link = response.xpath(
-                '//div[@id="summaryContainer"]//table[@id="histogramTable"]'
-                '/../a/@href'
-            ).extract()
+            buyer_rev_link = 'http://www.amazon.de/gp/aw/cr/{prod_id}/'.format(prod_id=prod_id)
+
             if buyer_rev_link:
                 buyer_rev_req = Request(
-                    url=buyer_rev_link[0],
+                    url=buyer_rev_link,
                     callback=self.get_buyer_reviews_from_2nd_page,
                     meta=response.meta.copy()
                 )
                 return buyer_rev_req
             else:
-                return ZERO_REVIEWS_VALUE
+                buyer_reviews = self.ZERO_BUYER_REVIEWS
+                return BuyerReviews(**buyer_reviews)
 
         # add missing marks
         for mark in range(1, 6):
@@ -715,30 +723,48 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         return buyer_reviews
 
     def get_buyer_reviews_from_2nd_page(self, response):
-
         if self._has_captcha(response):
             return self._handle_captcha(
                 response,
                 self.get_buyer_reviews_from_2nd_page
             )
-
         product = response.meta["product"]
         prod_id = response.meta["product_id"]
         buyer_reviews = {}
-        product["buyer_reviews"] = {}
-        total_revs = is_empty(response.xpath(
-            '//table[@id="productSummary"]'
-            '//span[@class="crAvgStars"]/a/text()').extract(), ''
-        ).replace(",", "")
-        buyer_reviews["num_of_reviews"] = is_empty(
-                re.findall(FLOATING_POINT_RGEX, total_revs), 0
-            )
-        if int(buyer_reviews["num_of_reviews"]) == 0:
-            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
-            return product
+        data_revs = is_empty(
+            response.xpath("//*[@id='aw-cr-reviews-counts']"), ''
+        )
 
-        buyer_reviews["rating_by_star"] = {}
-        buyer_reviews = self.get_rating_by_star(response, buyer_reviews)
+        if data_revs:
+            try:
+                num_of_reviews = int(is_empty(
+                    data_revs.xpath("//@data-count").extract(), '0'
+                ))
+
+                average_rating = 0
+                rating_by_star = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+                for key in rating_by_star.iterkeys():
+                    value = int(is_empty(
+                        data_revs.xpath(
+                            "//@data-count{0}".format(key)
+                        ).extract(), 0
+                    ))
+
+                    average_rating += int(key) * value
+                    rating_by_star[key] = value
+
+                average_rating /= num_of_reviews
+
+                buyer_reviews['num_of_reviews'] = num_of_reviews
+                buyer_reviews['average_rating'] = round(average_rating, 1)
+                buyer_reviews['rating_by_star'] = rating_by_star
+            except Exception as exc:
+                self.log('Unable to parse buyer reviews from {url}: {exc}'.format(
+                    url=response.url,
+                    exc=exc
+                ), WARNING)
+        else:
+            buyer_reviews = self.ZERO_BUYER_REVIEWS
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
@@ -751,31 +777,6 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                            callback=self.get_last_buyer_review_date)
 
         return product
-
-    def get_rating_by_star(self, response, buyer_reviews):
-        table = response.xpath(
-                '//table[@id="productSummary"]//'
-                'table[@cellspacing="1"]//tr'
-            )
-        total = 0
-        if table:
-            for tr in table[:5]:
-                rating = is_empty(tr.xpath(
-                    'string(.//td[1])').re(FLOATING_POINT_RGEX), '')
-                number = is_empty(tr.xpath(
-                    'string(.//td[last()])').re(FLOATING_POINT_RGEX), 0)
-                is_perc = is_empty(tr.xpath(
-                    'string(.//td[last()])').extract(), '')
-                if "%" in is_perc:
-                    break
-                if number:
-                    number = int(number.replace(',', ''))
-                    buyer_reviews['rating_by_star'][rating] = number
-                    total += number*int(rating)
-        if total > 0:
-            average = float(total)/ float(buyer_reviews['num_of_reviews'])
-            buyer_reviews['average_rating'] = round(average, 1)
-        return buyer_reviews
 
     def parse_marketplace(self, response):
         response.meta["called_class"] = self
