@@ -181,6 +181,14 @@ class BaseProductsSpider(Spider):
             'Gecko/35.0 Firefox/35.0',
         'android': 'Mozilla/5.0 (Android; Tablet; rv:35.0) '\
             'Gecko/35.0 Firefox/35.0',
+        'iphone6': 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X)'\
+            ' AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25',
+        'ipad6': 'Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26'\
+                ' (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25',
+        'iphone4': 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us)'\
+            ' AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7',
+        'ipad4': 'Mozilla/5.0 (iPad; U; CPU iPhone OS 4_0 like Mac OS X; en-us)'\
+            ' AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7'
     }
 
     def __init__(self,
