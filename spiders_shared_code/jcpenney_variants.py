@@ -5,6 +5,7 @@ import itertools
 import re
 from lxml import html, etree
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 class JcpenneyVariants(object):
 
@@ -17,8 +18,16 @@ class JcpenneyVariants(object):
         """ Call it from CH spiders """
         self.tree_html = tree_html
 
+    def generate_image_url(self, image_id):
+        main_part = "http://s7d2.scene7.com/is/image/JCPenney/{id}?wid={wid}&"\
+            "hei={hei}&fmt={fmt}"
+        wid = 350
+        hei = 350
+        fmt = "jpg"
+        return main_part.format(id=image_id, wid=wid, hei=hei, fmt=fmt)
+
     def _variants(self):
-        try:
+        #try:
             canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
             product_id = re.search('prod\.jump\?ppId=(.+?)$', canonical_link).group(1)
             variation_key_list = []
@@ -26,6 +35,36 @@ class JcpenneyVariants(object):
             stockstatus_list_by_variation = []
             stockstatus_for_variants_list = []
 
+            images_list = []
+            for img in self.tree_html.xpath(
+                    "//ul[contains(@class, 'small_swatches')]/li"):
+                prev_list = {}
+                prev_list["img"] = is_empty(img.xpath(
+                    "a/@onclick"), "")
+                # print('+'*50)
+                # print(prev_list["img"])
+                prev_list["img"] = is_empty(re.findall(
+                    "\'([^\']*)\'\)", prev_list["img"]))
+                if len(prev_list["img"]) < 10 or \
+                        re.search("pp\d+", prev_list["img"]):
+                    prev_list["img"] = is_empty(
+                        re.findall(
+                            "imageName\s+\=\s+\"([^\"]*)", 
+                            html.tostring(self.tree_html)
+                        ),
+                        ""
+                    )
+                    prev_list["img"] = is_empty(prev_list["img"].split(","))
+                # print(prev_list["img"])
+                # print('+'*50)
+                prev_list["img"] = self.generate_image_url(prev_list["img"])
+                prev_list["color"] = is_empty(img.xpath(
+                    "div[1]/p/text() |"
+                    "a/img/@alt"
+                ))
+                if prev_list:
+                    images_list.append(prev_list)
+            
             #lot attribute
             lot_list = self.tree_html.xpath("//ul[@id='" + product_id + "Lot']//li[not(@class='displayNone')]/a/@title")
             lot_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "Lot']//li[not(@class='displayNone')]")
@@ -164,6 +203,7 @@ class JcpenneyVariants(object):
                 for index, variation_key in enumerate(variation_key_list):
                     properties[variation_key] = variation_combination[index]
 
+
                     if stockstatus is True and stockstatus_list_by_variation[index][variation_combination[index]] in ["sku_not_available", "sku_illegal"]:
                         stockstatus = False
 
@@ -177,11 +217,17 @@ class JcpenneyVariants(object):
 
                 stockstatus_for_variants["price"] = price
 
+                color = stockstatus_for_variants.get(
+                    "properties", {}).get("color")
+                for img in images_list:
+                    if color == img.get("color"):
+                        stockstatus_for_variants["image_url"] = img.get("img")
+
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
 
             if not stockstatus_for_variants_list:
                 return None
             else:
                 return stockstatus_for_variants_list
-        except:
-            return None
+        # except:
+        #     return None
