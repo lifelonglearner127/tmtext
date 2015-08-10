@@ -27,7 +27,7 @@ class JcpenneyVariants(object):
         return main_part.format(id=image_id, wid=wid, hei=hei, fmt=fmt)
 
     def _variants(self):
-        #try:
+        try:
             canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
             product_id = re.search('prod\.jump\?ppId=(.+?)$', canonical_link).group(1)
             variation_key_list = []
@@ -41,8 +41,6 @@ class JcpenneyVariants(object):
                 prev_list = {}
                 prev_list["img"] = is_empty(img.xpath(
                     "a/@onclick"), "")
-                # print('+'*50)
-                # print(prev_list["img"])
                 prev_list["img"] = is_empty(re.findall(
                     "\'([^\']*)\'\)", prev_list["img"]))
                 if len(prev_list["img"]) < 10 or \
@@ -55,8 +53,6 @@ class JcpenneyVariants(object):
                         ""
                     )
                     prev_list["img"] = is_empty(prev_list["img"].split(","))
-                # print(prev_list["img"])
-                # print('+'*50)
                 prev_list["img"] = self.generate_image_url(prev_list["img"])
                 prev_list["color"] = is_empty(img.xpath(
                     "div[1]/p/text() |"
@@ -229,5 +225,5 @@ class JcpenneyVariants(object):
                 return None
             else:
                 return stockstatus_for_variants_list
-        # except:
-        #     return None
+        except:
+            return None
