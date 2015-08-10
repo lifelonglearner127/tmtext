@@ -34,9 +34,10 @@
     <field name="category_name" version="1.1"></field>
     <field name="brand" version="1.1"></field>
     <field name="review_count" version="1.1"></field>
-    <field name="average_review" version="1.1"></field>
+    <field name="average_review" version="1.2"></field>
     <field name="max_review" version="1.1"></field>
     <field name="min_review" version="1.1"></field>
     <field name="reviews" version="1.1"></field>
-    <field name="variants" version="1.1"></field>
+    <field name="variants" version="1.2"></field>
+    <field name="upc" version="1.1"></field>
 </fields>
