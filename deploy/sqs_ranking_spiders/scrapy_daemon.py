@@ -367,6 +367,9 @@ def put_file_into_s3(bucket_name, fname,
         print 'Simulate put file to s3, %s' % fname
         return True
 
+    if not os.path.exists(fname):
+        logger.warning('File to upload doesnt exits: %r, aborting.', fname)
+        return
     global S3_CONN, S3_BUCKET
     # Cut out file name
     filename = os.path.basename(fname)
@@ -671,7 +674,7 @@ class ScrapyTask(object):
         self._dispose()
 
         output_path = self.get_output_path()
-        if self.process_bsr:
+        if self.process_bsr and self.finished_ok:
             temp_file = output_path + 'temp_file.jl'
             os.system('%s/product-ranking/add-best-seller.py %s %s > %s' % (
                 REPO_BASE_PATH, output_path+'.jl',
@@ -996,6 +999,18 @@ class ScrapyTask(object):
         put_file_into_s3(AMAZON_BUCKET_NAME, progress_fname)
 
 
+def del_duplicate_tasks(tasks):
+    """Checks all tasks (its ids) and removes ones, which ids are repeating"""
+    task_ids = []
+    for i in xrange(len(tasks) - 1, -1, -1):  # iterate from the end
+        if tasks[i]['task_id'] in task_ids:
+            logger.warning('Found duplicate task for id %s, removing it.',
+                           tasks[i]['task_id'])
+            del tasks[i]['task_id']
+            continue
+        task_ids.append(tasks[i]['task_id'])
+
+
 def main():
     if not TEST_MODE:
         instance_meta = get_instance_metadata()
@@ -1047,11 +1062,14 @@ def main():
         logger.info("Task message was successfully received and "
                     "removed form queue.")
         logger.info("Whole tasks msg: %s", str(task_data))
-        increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
-        update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
         task = ScrapyTask(queue, task_data, listener)
         tasks_taken.append(task)
 
+    if not tasks_taken:
+        logger.warning('No tasks were taken.')
+        logger.info('Scrapy daemon finished.')
+        return
+    del_duplicate_tasks(tasks_taken)
     # prepare to execute tasks
     switch_branch_if_required(tasks_taken[0].task_data)
     if not os.path.exists(os.path.expanduser(JOB_OUTPUT_PATH)):
@@ -1067,6 +1085,8 @@ def main():
             task.run()
             task.send_current_status_to_sqs()  # report 0% progress immediately
             task.queue.task_done()  # remove the message from the input queue
+            increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
+            update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
             logger.info('Task #%s (%r) started successfully.',
                         task.task_data.get('task_id', 0),
                         task.get_output_path())
@@ -1146,6 +1166,8 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         logger.error(e)
         logger.error('Finished with error.')  # write fail finish marker
         try:
