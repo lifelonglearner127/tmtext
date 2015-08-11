@@ -594,7 +594,7 @@ class BaseValidator(object):
 
     def _validate_price_subscribe_save(self, val):
         if not val:
-            return
+            return True
         if re.match(r'^[\d\.]+$', str(val)):
             return True
 
