@@ -129,9 +129,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         if not self._has_captcha(response):
             meta = response.meta.copy()
             response.meta['product'] = prod
-            prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
-            if not prod_id:
-                prod_id = is_empty(re.findall('/d/([a-zA-Z0-9]+)', response.url))
+            prod_id = is_empty(re.findall(r'/dp?/(\w+)|product/(\w+)/', response.url))
             response.meta['product_id'] = prod_id
 
             self._populate_from_js(response, prod)
@@ -140,7 +138,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
-            #Get url for marketplace
+            # Get url for marketplace
             url = is_empty(response.xpath(
                     "//div[contains(@class, 'a-box-inner')]/span" \
                     "/a/@href |" \
@@ -665,7 +663,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             average = sum(k * v for k, v in
                           ratings.iteritems()) / total if ratings else 0
 
-        #For another HTML makeup
+        # For another HTML makeup
         if not total:
             ratings = {}
             average = 0
