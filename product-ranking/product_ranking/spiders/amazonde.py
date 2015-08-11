@@ -130,7 +130,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             meta = response.meta.copy()
             response.meta['product'] = prod
             prod_id = is_empty(re.findall(r'/dp?/(\w+)|product/(\w+)/', response.url))
-            response.meta['product_id'] = prod_id
+            response.meta['product_id'] = list(prod_id)[0]
 
             self._populate_from_js(response, prod)
 
