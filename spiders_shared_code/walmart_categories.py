@@ -28,7 +28,7 @@ class WalmartCategoryParser:
         """
 
         # assume new page design
-        categories_list = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")
+        categories_list = self.tree_html.xpath("//li[@class='breadcrumb']/.//a/span/text()")
         if categories_list:
             return categories_list
         else:
