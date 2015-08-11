@@ -1003,12 +1003,14 @@ def del_duplicate_tasks(tasks):
     """Checks all tasks (its ids) and removes ones, which ids are repeating"""
     task_ids = []
     for i in xrange(len(tasks) - 1, -1, -1):  # iterate from the end
-        if tasks[i]['task_id'] in task_ids:
-            logger.warning('Found duplicate task for id %s, removing it.',
-                           tasks[i]['task_id'])
-            del tasks[i]['task_id']
+        t = tasks[i].task_data.get('task_id')
+        if t is None:
             continue
-        task_ids.append(tasks[i]['task_id'])
+        if t in task_ids:
+            logger.warning('Found duplicate task for id %s, removing it.',t)
+            del tasks[i]
+            continue
+        task_ids.append(t)
 
 
 def main():
