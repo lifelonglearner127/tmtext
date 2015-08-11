@@ -1007,7 +1007,7 @@ def del_duplicate_tasks(tasks):
         if t is None:
             continue
         if t in task_ids:
-            logger.warning('Found duplicate task for id %s, removing it.',t)
+            logger.warning('Found duplicate task for id %s, removing it.', t)
             del tasks[i]
             continue
         task_ids.append(t)
@@ -1045,7 +1045,7 @@ def main():
         else:
             # set short wait time, so if task has different branch,
             # this task must appear on another instance asap
-            msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries)
+            msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries*3)
         logger.info('Trying to get task from %s, try #%s',
                     TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
         max_tries -= 1
