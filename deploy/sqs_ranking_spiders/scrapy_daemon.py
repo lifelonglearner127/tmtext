@@ -719,14 +719,15 @@ class ScrapyTask(object):
         # upload scrapy_daemon logs
         daemon_logs_zipfile = None
         try:
-            daemon_logs_zipfile = self._zip_daemon_logs()
+            daemon_logs_zipfile = self._zip_daemon_logs(
+                output_path+'.daemon.zip')
         except Exception as e:
             logger.warning('Could not create daemon ZIP: %s' % str(e))
         if daemon_logs_zipfile and os.path.exists(daemon_logs_zipfile):
             # now move the file into output path folder
-            if os.path.exists(output_path+'.daemon.zip'):
-                os.unlink(output_path+'.daemon.zip')
-            os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
+            # if os.path.exists(output_path+'.daemon.zip'):
+            #     os.unlink(output_path+'.daemon.zip')
+            # os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
             try:
                 put_file_into_s3(AMAZON_BUCKET_NAME, daemon_logs_zipfile,
                                  compress=False)
@@ -1045,7 +1046,7 @@ def main():
         else:
             # set short wait time, so if task has different branch,
             # this task must appear on another instance asap
-            msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries*3)
+            msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries)
         logger.info('Trying to get task from %s, try #%s',
                     TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
         max_tries -= 1
@@ -1168,9 +1169,7 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        logger.error(e)
+        logger.exception(e)
         logger.error('Finished with error.')  # write fail finish marker
         try:
             os.killpg(os.getpgid(os.getpid()), 9)
