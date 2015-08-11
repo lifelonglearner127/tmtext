@@ -719,15 +719,14 @@ class ScrapyTask(object):
         # upload scrapy_daemon logs
         daemon_logs_zipfile = None
         try:
-            daemon_logs_zipfile = self._zip_daemon_logs(
-                output_path+'.daemon.zip')
+            daemon_logs_zipfile = self._zip_daemon_logs()
         except Exception as e:
             logger.warning('Could not create daemon ZIP: %s' % str(e))
         if daemon_logs_zipfile and os.path.exists(daemon_logs_zipfile):
             # now move the file into output path folder
-            # if os.path.exists(output_path+'.daemon.zip'):
-            #     os.unlink(output_path+'.daemon.zip')
-            # os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
+            if os.path.exists(output_path+'.daemon.zip'):
+                os.unlink(output_path+'.daemon.zip')
+            os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
             try:
                 put_file_into_s3(AMAZON_BUCKET_NAME, daemon_logs_zipfile,
                                  compress=False)
