@@ -13,7 +13,7 @@ from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price, BuyerReviews, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set,\
     cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
@@ -265,6 +265,10 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 = department.items()[0]
 
     def _populate_from_html(self, response, product):
+
+        related_products = self._parse_related(response)
+        cond_set(product, 'related_products', related_products)
+
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         if not product.get('brand', '').strip():
             cond_set(product, 'brand',
@@ -496,6 +500,32 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 'image_url',
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
+
+    def _parse_related(self, response):
+        """
+        Parses related products
+        """
+        related_products = []
+
+        # Parse often bought products
+        often_bought = response.xpath('//*[@id="fbt-expander-content"]/.//li[position()>1]/./'
+                                      '/div[@class="sims-fbt-row-outer"]')
+
+        if often_bought:
+            for item in often_bought:
+                title = is_empty(item.xpath('.//div[contains(@class,"sims-fbt-title")]/./'
+                                            '/div/text()').extract(), '')
+                url = is_empty(item.xpath('.//a/@href').extract(), '')
+
+                if url:
+                    url = 'http://www.' + self.allowed_domains[0] + url
+                    if title:
+                        related_products.append(RelatedProduct(
+                            title=title.strip(),
+                            url=url
+                        ))
+
+        return related_products
 
     def _scrape_total_matches(self, response):
         if u'ne correspond à aucun article' in response.body_as_unicode():
