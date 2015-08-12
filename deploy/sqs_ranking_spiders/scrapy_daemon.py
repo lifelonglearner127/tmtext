@@ -726,7 +726,11 @@ class ScrapyTask(object):
             # now move the file into output path folder
             if os.path.exists(output_path+'.daemon.zip'):
                 os.unlink(output_path+'.daemon.zip')
-            os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
+            try:
+                os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
+            except OSError as e:
+                logger.error('File %r to %r rename error: %s.',
+                             daemon_logs_zipfile, output_path+'.daemon.zip', e)
             try:
                 put_file_into_s3(AMAZON_BUCKET_NAME, daemon_logs_zipfile,
                                  compress=False)
@@ -1113,7 +1117,7 @@ def main():
         return
     del_duplicate_tasks(tasks_taken)
     logger.info('Total tasks received: %s', len(tasks_taken))
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken])
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 60
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     try:
