@@ -109,7 +109,11 @@ class NextCoUkProductSpider(BaseProductsSpider):
             elif key == 'ItemNumber':
                 tree[val] = last_id
 
-        style_id = tree[product_id_format(product_id, product_target)]
+        try:
+            style_id = tree[product_id_format(product_id, product_target)]
+        except Exception, e:
+            self.log('Error parsing style_id! ' + str(e))
+            return product
 
         # Format product id to get proper section from html body
         item = response.xpath(
@@ -245,7 +249,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
                             colour_name = variant_item['Colour'].strip()
                             if colour_name:
-                                variant['properties']['colour'] = colour_name
+                                variant['properties']['color'] = colour_name
 
                             variant['image_url'] = 'http://cdn2.next.co.uk/Common/Items/Default/' \
                                                    'Default/ItemImages/AltItemShot/315x472/{id}.jpg'.format(
@@ -332,14 +336,14 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 sizes_var = dict()
                 properties = var['properties']
                 fit = properties.get('fit', '')
-                colour = properties.get('colour', '')
+                colour = properties.get('color', '')
 
                 sizes_var['properties'] = {}
                 if fit:
                     sizes_var['properties']['fit'] = fit
 
                 if colour:
-                    sizes_var['properties']['colour'] = colour
+                    sizes_var['properties']['color'] = colour
 
                 if '- Sold Out' in size:
                     size = size.replace('- Sold Out', '')
