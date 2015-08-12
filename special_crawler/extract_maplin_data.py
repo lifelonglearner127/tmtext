@@ -124,8 +124,16 @@ class MaplinScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_url = self.tree_html.xpath("//ul[@id='carousel_alternate']//img/@src")
-        return image_url
+        image_urls = []
+        rows = self.tree_html.xpath("//ul[@id='carousel_alternate']//li/a/@data-cloudzoom")
+        for row in rows:
+            jsn = json.loads(row)
+            try:
+                image_urls.append(jsn["zoomImage"])
+            except:
+                pass
+        # image_url = self.tree_html.xpath("//ul[@id='carousel_alternate']//img/@src")
+        return image_urls
 
     def _image_count(self):
         image_urls = self._image_urls()
