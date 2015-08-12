@@ -643,9 +643,7 @@ class ScrapyTask(object):
                      self.task_data.get('task_id', 0), signal)
 
         self.require_signal_failed = signal
-
-        _msg = generate_msg(self.task_data, 'failed')
-        put_msg_to_sqs(self.task_data['server_name']+PROGRESS_QUEUE_NAME, _msg)
+        self.send_current_status_to_sqs('failed')
 
     def _signal_succeeded(self, signal, date_time, is_ext):
         """set finish time for signal and save in finished signals if needed"""
@@ -710,7 +708,8 @@ class ScrapyTask(object):
                 self.task_data['server_name']+OUTPUT_QUEUE_NAME, self.task_data)
         else:
             logger.error("Failed to load info to results sqs. Amazon keys "
-                         "wasn't received")
+                         "wasn't received. data_key=%r, logs_key=%r.",
+                         data_key, logs_key)
 
         logger.info("Spider default output:\n%s%s",
                     self.process.stderr.read(),
@@ -868,9 +867,7 @@ class ScrapyTask(object):
                 raise ConnectError
             self._signal_succeeded(next_signal,
                                    datetime.datetime.utcnow(), False)
-            msg = generate_msg(self.task_data, 0)
-            put_msg_to_sqs(
-                self.task_data['server_name']+PROGRESS_QUEUE_NAME, msg)
+            self.send_current_status_to_sqs(0)
             return True
         elif next_signal[0] == SIGNAL_SCRIPT_CLOSED:  # last signal
             res = self._try_finish(max_step_time)
@@ -878,9 +875,7 @@ class ScrapyTask(object):
                 raise FinishError
             self._signal_succeeded(next_signal,
                                    datetime.datetime.utcnow(), False)
-            msg = generate_msg(self.task_data, 'finished')
-            put_msg_to_sqs(
-                self.task_data['server_name']+PROGRESS_QUEUE_NAME, msg)
+            self.send_current_status_to_sqs('finished')
             return True
         step_time_passed = 0
         while not self._stop_signal and step_time_passed < max_step_time:
@@ -989,8 +984,9 @@ class ScrapyTask(object):
             s += 'None of the signals are finished.\n'
         return s
 
-    def send_current_status_to_sqs(self):
-        msg = generate_msg(self.task_data, self.items_scraped)
+    def send_current_status_to_sqs(self, status=None):
+        msg = generate_msg(
+            self.task_data, status if status else self.items_scraped)
         put_msg_to_sqs(
             self.task_data['server_name']+PROGRESS_QUEUE_NAME, msg)
         # put current progress to S3 as well, for easier debugging & tracking
