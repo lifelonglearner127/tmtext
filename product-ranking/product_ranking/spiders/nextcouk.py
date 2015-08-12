@@ -14,7 +14,7 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
 
 is_empty = lambda x, y=None: x[0] if x else y
 
-def product_id_format(product_id, product_target):
+def product_id_format(product_id, product_target=None):
     """
     Formats product id 123456 to 123-456-X56
     """
@@ -67,7 +67,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
         product = meta['product']
 
         product_ids = is_empty(
-            re.findall(r'#(\w+)(\D+\w+)', product['url']),
+            re.findall(r'#(\d+)(\D\w+)', product['url']),
             None
         )
 
@@ -107,13 +107,12 @@ class NextCoUkProductSpider(BaseProductsSpider):
             if key == 'StyleID':
                 last_id = val
             elif key == 'ItemNumber':
+                val = is_empty(
+                    re.findall(r'(\d+-\d+)', val)
+                )
                 tree[val] = last_id
 
-        try:
-            style_id = tree[product_id_format(product_id, product_target)]
-        except Exception, e:
-            self.log('Error parsing style_id! ' + str(e))
-            return product
+        style_id = tree[product_id_format(product_id)]
 
         # Format product id to get proper section from html body
         item = response.xpath(
