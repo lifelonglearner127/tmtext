@@ -697,6 +697,7 @@ class ScrapyTask(object):
         if CONVERT_TO_CSV:
             try:
                 csv_filepath = convert_json_to_csv(output_path)
+                logger.info('Zip created at: %r.', csv_filepath)
                 csv_data_key = put_file_into_s3(
                     AMAZON_BUCKET_NAME, csv_filepath)
             except Exception as e:
