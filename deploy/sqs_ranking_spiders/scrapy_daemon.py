@@ -346,6 +346,19 @@ def put_msg_to_sqs(queue_name_or_instance, msg):
         write_msg_to_sqs(queue_name_or_instance, msg)
 
 
+def compress_multiple_files(output_fname, *filenames):
+    """ Creates a single ZIP archive with the given files in it """
+    try:
+        import zlib
+        mode = zipfile.ZIP_DEFLATED
+    except ImportError:
+        mode = zipfile.ZIP_STORED
+    zf = zipfile.ZipFile(output_fname, 'a', mode)
+    for filename in filenames:
+        zf.write(filename=filename, arcname=os.path.basename(filename))
+    zf.close()
+
+
 def put_file_into_s3(bucket_name, fname,
                      amazon_public_key=AMAZON_ACCESS_KEY,
                      amazon_secret_key=AMAZON_SECRET_KEY,
@@ -637,11 +650,26 @@ class ScrapyTask(object):
         if not is_ext:
             self.required_signals_done[signal[0]] = signal[1]
 
+    def _get_daemon_logs_files(self):
+        """ Returns logs from the /tmp/ dir """
+        for fname in os.listdir('/tmp/'):
+            fname = os.path.join('/tmp/', fname)
+            if fname.lower().endswith('.log'):
+                yield fname
+
+    def _zip_daemon_logs(self, output_fname='/tmp/daemon_logs.zip'):
+        log_files = list(self._get_daemon_logs_files())
+        if os.path.exists(output_fname):
+            os.unlink(output_fname)
+        compress_multiple_files(output_fname, *log_files)
+        return output_fname
+
     def _finish(self):
         # runs for both successfully or failed finish
         # upload logs/data to s3, etc
         self._stop_signal = True
         self._dispose()
+
         output_path = self.get_output_path()
         if self.process_bsr:
             temp_file = output_path + 'temp_file.jl'
@@ -684,6 +712,25 @@ class ScrapyTask(object):
                     self.process.stderr.read(),
                     self.process.stdout.read().strip())
         logger.info('Finish task #%s.', self.task_data.get('task_id', 0))
+
+        # upload scrapy_daemon logs
+        daemon_logs_zipfile = None
+        try:
+            daemon_logs_zipfile = self._zip_daemon_logs()
+        except Exception as e:
+            logger.warning('Could not create daemon ZIP: %s' % str(e))
+        if daemon_logs_zipfile and os.path.exists(daemon_logs_zipfile):
+            # now move the file into output path folder
+            if os.path.exists(output_path+'.daemon.zip'):
+                os.unlink(output_path+'.daemon.zip')
+            os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
+            try:
+                put_file_into_s3(AMAZON_BUCKET_NAME, daemon_logs_zipfile,
+                                 compress=False)
+                logger.warning('Daemon logs uploaded')
+            except Exception as e:
+                logger.warning('Could not upload daemon logs: %s' % str(e))
+
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
 
@@ -942,6 +989,11 @@ class ScrapyTask(object):
         msg = generate_msg(self.task_data, self.items_scraped)
         put_msg_to_sqs(
             self.task_data['server_name']+PROGRESS_QUEUE_NAME, msg)
+        # put current progress to S3 as well, for easier debugging & tracking
+        progress_fname = self.get_output_path() + '.progress'
+        with open(progress_fname, 'w') as fh:
+            fh.write(json.dumps(msg, default=json_serializer))
+        put_file_into_s3(AMAZON_BUCKET_NAME, progress_fname)
 
 
 def main():
@@ -950,12 +1002,11 @@ def main():
         inst_ip = instance_meta.get('public-ipv4')
         inst_id = instance_meta.get('instance-id')
         logger.info("IMPORTANT: ip: %s, instance id: %s", inst_ip, inst_id)
-    # increment quantity of instances spinned up during the day.
+    set_global_variables_from_data_file()
     redis_db = connect_to_redis_database(redis_host=REDIS_HOST,
                                          redis_port=REDIS_PORT)
+    # increment quantity of instances spinned up during the day.
     increment_metric_counter(INSTANCES_COUNTER_REDIS_KEY, redis_db)
-    set_global_variables_from_data_file()
-
     max_tries = MAX_TRIES_TO_GET_TASK
     tasks_taken = []
     branch = None
@@ -967,7 +1018,7 @@ def main():
 
     if not listener:
         logger.error('Socket auth failed!')
-        return
+        raise Exception  # to catch exception and write end marker
 
     # get tasks
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
@@ -978,12 +1029,12 @@ def main():
             # set short wait time, so if task has different branch,
             # this task must appear on another instance asap
             msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries)
-        if msg is None:
-            time.sleep(3)
-            continue
         logger.info('Trying to get task from %s, try #%s',
                     TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
         max_tries -= 1
+        if msg is None:
+            time.sleep(3)
+            continue
         task_data, queue = msg
         # get branch from first task
         if not tasks_taken:
@@ -1043,6 +1094,7 @@ def main():
             time.sleep(step_time)
         else:
             logger.error('Some of the tasks not finished in allowed time.')
+            [t.stop() for t in tasks_taken if not t.is_finished()]
     except KeyboardInterrupt:
         [t.stop() for t in tasks_taken]
         raise Exception
@@ -1095,7 +1147,7 @@ if __name__ == '__main__':
         main()
     except Exception as e:
         logger.error(e)
-        logger.error('Finished with error.')
+        logger.error('Finished with error.')  # write fail finish marker
         try:
             os.killpg(os.getpgid(os.getpid()), 9)
         except:

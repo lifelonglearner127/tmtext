@@ -7,92 +7,19 @@ import cStringIO # *much* faster than StringIO
 import numpy as np
 from nltk.corpus import wordnet
 import itertools
+from memory_profiler import profile
 
-def extract_text(filename, is_url=False, debug=False):
-    if is_url:
-        req = urllib.urlopen(filename)
-        arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
-        # src = cv2.imdecode(arr,-1) # 'load it as it is'    else:
-        src = cv2.imdecode(arr,cv2.CV_LOAD_IMAGE_GRAYSCALE) # 'load it as grayscale
-    else:
-        src = cv2.imread(filename, cv2.CV_LOAD_IMAGE_GRAYSCALE)
-
-    # smooth
-    # src = cv2.GaussianBlur(src,(3,3),0)
-    src = cv2.adaptiveBilateralFilter(src,(9,9),75,55)
-    if debug:
-        cv2.imwrite("/tmp/1blurred.png", src)
-
-
-    # resize image
-    orig_size = src.shape[:2]
-    # such that smaller dimension is 500 pixels at least
-    normalized_size = max(1000, max(orig_size))
-    max_dim_idx = max(enumerate(orig_size), key=lambda l: l[1])[0]
-    min_dim_idx = [idx for idx in [0,1] if idx!=max_dim_idx][0]
-    new_size = [0,0]
-    new_size[min_dim_idx] = normalized_size
-    new_size[max_dim_idx] = int(float(orig_size[max_dim_idx]) / orig_size[min_dim_idx] * normalized_size)
-
-    # src = cv2.resize(src=src, dsize=(0,0), dst=src, fx=4, fy=4)
-    src = cv2.resize(src=src, dsize=tuple(new_size), dst=src, fx=0, fy=0)
-
-    # # smooth
-    # # src = cv2.GaussianBlur(src,(5,5),0)
-    # src = cv2.adaptiveBilateralFilter(src,(1,1),75,75)
-    # cv2.imwrite("/tmp/2blurred2.png", src)
-    
-    # erode + dilate
-    element = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
-    element2 = cv2.getStructuringElement(cv2.MORPH_CROSS,(5,5))
-    skel = np.zeros(src.shape,np.uint8)
-
-    eroded = cv2.erode(src,element)
-    if debug:
-        cv2.imwrite("/tmp/3eroded.png", eroded)
-    temp = cv2.dilate(eroded,element2)
-    if debug:
-        cv2.imwrite("/tmp/4dilated.png", temp)
-    # temp = cv2.subtract(src,temp)
-    # skel = cv2.bitwise_or(skel,temp)
-    src = temp.copy()
-
-    # black and white
-    # src = cv2.adaptiveThreshold(src, 255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C, thresholdType=cv2.THRESH_BINARY, blockSize=15, C=2)
-    # _, src = cv2.threshold(src, 150, 255, cv2.THRESH_BINARY)
-    # For large text I think we need the first parameter to be higher
-    src = cv2.adaptiveThreshold(src,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,23,3)
-    # _,src = cv2.threshold(src,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    if debug:
-        cv2.imwrite("/tmp/5thresh.png", src)
-    
-    # TODO: optimize by not writing image to disk    
-    cv2.imwrite("/tmp/dst.png", src)
-
-    if debug:
-        file = urllib.urlopen(filename)
-        im = cStringIO.StringIO(file.read()) # constructs a StringIO holding the image
-        img = Image.open(im)
-        original_text = pytesseract.image_to_string(img)
-        print "ORIGINAL", filter(None, original_text.split('\n'))[:3]
-
-        print "-----------------------------------"
-
-    img = Image.open("/tmp/dst.png")
-    final_text = pytesseract.image_to_string(img)
-    if debug:
-        print "FINAL", filter(None, final_text.split('\n'))[:30]
-    return final_text
-
+@profile
 def preprocessing1(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
-    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=150):
+    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
+    image_size=1500):
     '''Preprocess input image, using some order of the preprocessing operations
     (version 1)
     '''
     # resize image
     orig_size = src.shape[:2]
     # such that smaller dimension is 1000 pixels at least
-    normalized_size = max(1000, max(orig_size))
+    normalized_size = max(image_size, max(orig_size))
     max_dim_idx = max(enumerate(orig_size), key=lambda l: l[1])[0]
     min_dim_idx = [idx for idx in [0,1] if idx!=max_dim_idx][0]
     new_size = [0,0]
@@ -114,7 +41,7 @@ def preprocessing1(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     if debug:
         cv2.imwrite("/tmp/4dilated.png", temp)
 
-    src = temp.copy()
+    src = temp
 
     # # black and white
     src = cv2.adaptiveThreshold(src, 255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C, thresholdType=cv2.THRESH_BINARY, \
@@ -126,12 +53,13 @@ def preprocessing1(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     # if debug:
     #     cv2.imwrite("/tmp/5thresh.png", src)
     
-    cv2.imwrite("/tmp/dst.png", src)
+    return src
             
 
-
+@profile
 def preprocessing2(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
-    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=150):
+    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
+    image_size=1500):
     '''Preprocess input image, using some order of the preprocessing operations
     '''
     
@@ -157,25 +85,26 @@ def preprocessing2(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
         cv2.imwrite("/tmp/4dilated.png", temp)
     # temp = cv2.subtract(src,temp)
     # skel = cv2.bitwise_or(skel,temp)
-    src = temp.copy()
+    src = temp
 
     # # black and white
     src = cv2.adaptiveThreshold(src, 255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C, thresholdType=cv2.THRESH_BINARY, \
     blockSize=thresh_param1*2+1, C=thresh_param2)
  
-    cv2.imwrite("/tmp/dst.png", src)
+    return src
 
 
-
+@profile
 def preprocessing3(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
-    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=150):
+    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
+    image_size=1500):
     '''Preprocess input image, using some order of the preprocessing operations
     '''
 
     # resize image
     orig_size = src.shape[:2]
     # such that smaller dimension is 1000 pixels at least
-    normalized_size = max(1000, max(orig_size))
+    normalized_size = max(image_size, max(orig_size))
     max_dim_idx = max(enumerate(orig_size), key=lambda l: l[1])[0]
     min_dim_idx = [idx for idx in [0,1] if idx!=max_dim_idx][0]
     new_size = [0,0]
@@ -197,26 +126,27 @@ def preprocessing3(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     if debug:
         cv2.imwrite("/tmp/4dilated.png", temp)
 
-    src = temp.copy()
+    src = temp
 
     # black and white
     _,src = cv2.threshold(src,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     if debug:
         cv2.imwrite("/tmp/5thresh.png", src)
     
-    # TODO: optimize by not writing image to disk    
-    cv2.imwrite("/tmp/dst.png", src)
+        
+    return src
 
-
+@profile
 def preprocessing4(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
-    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=150):
+    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
+    image_size=1500):
     '''Preprocess input image, using some order of the preprocessing operations
     '''
 
     # resize image
     orig_size = src.shape[:2]
     # such that smaller dimension is 1000 pixels at least
-    normalized_size = max(1000, max(orig_size))
+    normalized_size = max(image_size, max(orig_size))
     max_dim_idx = max(enumerate(orig_size), key=lambda l: l[1])[0]
     min_dim_idx = [idx for idx in [0,1] if idx!=max_dim_idx][0]
     new_size = [0,0]
@@ -238,26 +168,27 @@ def preprocessing4(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     if debug:
         cv2.imwrite("/tmp/4dilated.png", temp)
 
-    src = temp.copy()
+    src = temp
 
     # black and white
     _, src = cv2.threshold(src, thresh_param3, 255, cv2.THRESH_BINARY)
     if debug:
         cv2.imwrite("/tmp/5thresh.png", src)
     
-    # TODO: optimize by not writing image to disk    
-    cv2.imwrite("/tmp/dst.png", src)
+        
+    return src
 
-
+@profile
 def preprocessing5(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_param2=75,\
-    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=150):
+    dilate_param=1, erode_param=2, morph_el=1, thresh_param1=15, thresh_param2=2, thresh_param3=170,\
+    image_size=1500):
     '''Preprocess input image, using some order of the preprocessing operations
     (like first but no thresholding)
     '''
     # resize image
     orig_size = src.shape[:2]
     # such that smaller dimension is 1000 pixels at least
-    normalized_size = max(1000, max(orig_size))
+    normalized_size = max(image_size, max(orig_size))
     max_dim_idx = max(enumerate(orig_size), key=lambda l: l[1])[0]
     min_dim_idx = [idx for idx in [0,1] if idx!=max_dim_idx][0]
     new_size = [0,0]
@@ -279,31 +210,41 @@ def preprocessing5(src, debug=False, gblur1_param1=5, ablur_param1=1, ablur_para
     if debug:
         cv2.imwrite("/tmp/4dilated.png", temp)
 
-    src = temp.copy()
+    src = temp
 
-    cv2.imwrite("/tmp/dst.png", src)
+    return src
 
 def is_dictionary_word(word):
     if wordnet.synsets(word):
         return True
     return False
 
-
-def image_score(image_path='/tmp/dst.png'):
+@profile
+def image_score(cv2_im):
     '''Computes a score for the quality of the extracted text
     '''
-    img = Image.open(image_path)
+    print "Reading image..."
+    img = Image.fromarray(cv2_im)
+
+    print "Extracting text..."
     final_text = pytesseract.image_to_string(img)
 
     total = 0
     words = 0
-    for word in final_text.lower().decode("utf-8").split():
+    print "Computing score..."
+    final_text = final_text.lower().decode("utf-8").split()
+    for word in final_text:
         if is_dictionary_word(word):
             words += 1
         total += 1
+
     if not total:
         return 0
-    return float(words)/total*100
+    # return float(words)/total*100
+    if (("nutrition" in final_text) or ("supplement" in final_text) or ("drug" in final_text)):
+        return 1
+    else:
+        return 0
 
 def read_image(filename, is_url=True):
     if is_url:
@@ -336,70 +277,102 @@ def test_extract_text(filenames, is_url=False, debug=False):
                 'morph_el': range(1,4),
                 'thresh_param1': range(1,25,3),
                 'thresh_param2': range(0,50,5),
-                'thresh_param3': range(50,250,10)
+                'thresh_param3': range(50,200,15),
+                'image_size': range(500,4000,800)
             }
 
     optimal_params = [{} for preprocessing in preprocessings]
+    successful_images = [None for preprocessing in preprocessings]
 
+
+    current_params = {
+    'debug': False,
+    'gblur1_param1': 5,
+    'ablur_param1': 1,
+    'ablur_param2': 75,
+    'dilate_param': 1,
+    'erode_param': 2,
+    'morph_el': 1,
+    'thresh_param1': 15,
+    'thresh_param2': 2,
+    'thresh_param3': 170,
+    'image_size': 3000
+    }
+    # param_keys = sorted(params.keys())
+    # params to vary
+    param_keys = ['thresh_param3', 'image_size']
+    param_ranges = map(lambda k: params[k], param_keys)
+
+
+    # preload the images in memory
+    loaded_images = []
+    print "Loading images..."
     for filename in filenames:
         src = read_image(filename)
-        current_params = {
-        'debug': False,
-        'gblur1_param1': 5,
-        'ablur_param1': 1,
-        'ablur_param2': 75,
-        'dilate_param': 1,
-        'erode_param': 2,
-        'morph_el': 1,
-        'thresh_param1': 15,
-        'thresh_param2': 2,
-        'thresh_param3': 150
-        }
-        param_keys = sorted(params.keys())
-        param_ranges = map(lambda k: params[k], param_keys)
+        loaded_images.append(src)
 
 
-        # just do it for default values of parameters and skip the rest
-        for idx, preprocessing in enumerate(preprocessings):
+    # just do it for default values of parameters and skip the rest
+    for idimg, src in enumerate(loaded_images):
+        for idx, preprocessing in enumerate([preprocessings[3]]):
+            try:
+                src = preprocessing(src)
+                score = image_score(src)
+                scores[idx] += score
+                if score > max_scores[idx]:
+                    max_scores[idx] = score
+                    successful_images[idx] = filenames[idimg]
+                print filenames[idimg]
+            except Exception, e:
+                print "Exception", e
+                pass
+                
+            print "round", rounds, scores
+            rounds += 1
+    return
+
+    # do it for all combinations of values of parameters
+    # (comment the above block)
+    for current_values in itertools.product(*param_ranges):
+        print current_values
+        for idx, key in enumerate(param_keys):
+            current_params[key] = current_values[idx]
+        print current_params
+
+    # # skipping the above ^^ ; just with the default parameters:
+    # for x in [1]:
+        # skip if all are 0
+        if not all([False if v is None else True for v in current_params.values()]):
+            print "continuing........."
+            continue
+        for idx, preprocessing in enumerate([preprocessings[3]]):
+            score = 0
+            for idimg, src in enumerate(loaded_images):
                 try:
-                    preprocessing(src)
-                    score = image_score()
-                    scores[idx] += score
+                    print "Preprocessing image..."
+                    img = preprocessing(src, **current_params)
+                    print "Computing image score..."
+                    curr_score = image_score(img)
+                    score += curr_score
+                    print curr_score
                     if score > max_scores[idx]:
-                        max_scores[idx] = score
+                        successful_images[idx] = filenames[idimg]
+                    
                 except Exception, e:
                     print "Exception", e
                     pass
-                    
-                print "round", rounds, scores
-                rounds += 1
-        continue
 
-        # do it for all combinations of values of parameters
-        # (comment the above block)
-        for current_values in itertools.product(*param_ranges):
-            print current_values
-            for idx, key in enumerate(param_keys):
-                current_params[key] = current_values[idx]
-            print current_params
-            # skip if all are 0
-            if not all([False if v is None else True for v in current_params.values()]):
-                print "continuing........."
-                continue
-            for idx, preprocessing in enumerate(preprocessings):
-                try:
-                    preprocessing(src, **current_params)
-                    score = image_score()
-                    scores[idx] += score
-                    if score > max_scores[idx]:
-                        max_scores[idx] = score
-                        optimal_params[idx] = dict(current_params)
-                except Exception, e:
-                    print "Exception", e
-                    pass
-                    
-                print "round", rounds, current_params, scores
-                rounds += 1
+            avg_score = float(score)/len(filenames)
+            print "avg score for %d" % idx, avg_score
+            scores[idx] += avg_score
+            if avg_score > max_scores[idx]:
+                max_scores[idx] = avg_score
+                optimal_params[idx] = dict(current_params)
+                
+            print "round", rounds, current_params, scores
+            rounds += 1
+            print "-----------------------"
+            print
 
 
     for idx, score in enumerate(scores):
@@ -407,6 +380,7 @@ def test_extract_text(filenames, is_url=False, debug=False):
         print "Average score", float(score)/rounds
         print "Max score", max_scores[idx]
         print "Optimal params", optimal_params[idx]
+        print "Most successful image", successful_images[idx]
 
 if __name__=='__main__':
     # test_images = [
@@ -428,5 +402,5 @@ if __name__=='__main__':
         test_images = map(lambda l: l.strip(), fin.readlines())
 
     # test_extract_text(['/tmp/text_image.jpg', '/tmp/text_image2.jpg'])       
-    test_extract_text(test_images)       
+    test_extract_text(test_images[25:])       
 

@@ -74,15 +74,19 @@ class MacysScraper(Scraper):
     ############### CONTAINER : NONE
     ##########################################
 
+    def _canonical_link(self):
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+        return canonical_link
+
     def _url(self):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
-        return product_id
+        return None
 
     def _site_id(self):
-        site_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
+        site_id = self.tree_html.xpath("//input[@id='productId']/@value")[0].strip()
         return site_id
 
     ##########################################
@@ -239,6 +243,10 @@ class MacysScraper(Scraper):
                 image_url_tmp = r
             image_url2.append(image_url_tmp)
         image_url2 = list(set(image_url2))
+
+        if self._site_id() == '1776509':
+            return image_url2[1:]
+
         return image_url2
 
     def _image_count(self):
@@ -475,6 +483,7 @@ class MacysScraper(Scraper):
         "image_count" : _image_count, \
         "htags" : _htags, \
         "keywords" : _keywords, \
+        "canonical_link": _canonical_link,
         "mobile_image_same" : _mobile_image_same, \
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \

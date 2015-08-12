@@ -81,7 +81,15 @@ def main():
         fix_double_bzip_in_file(args.ranking)
     ranking_f = open(args.ranking)
     for line in ranking_f:
-        product = json.loads(line)
+        try:
+            product = json.loads(line)
+        except Exception as e:
+            with open('/tmp/_bs_error_products.log', 'a') as fh:
+                try:
+                    fh.write(line + '\n\n')
+                except Exception as e:
+                    pass
+            continue
         product['best_seller_ranking'] = best_seller_rankings.get(
             product['url'])
 

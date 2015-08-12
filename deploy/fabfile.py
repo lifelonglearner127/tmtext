@@ -293,6 +293,7 @@ def _setup_virtual_env_scrapyd():
         run('pip install s3peat')
         run('pip install sqlalchemy')
         run('pip install psycopg2')
+        run('pip install hjson')
 
     _setup_simmetrica_monitoring()
 

@@ -35,6 +35,17 @@ def get_log_filename(job):
     return '/%s/log.log' % job
 
 
+def get_progress_filename(job):
+    """ Returns local progress logs relative to MEDIA """
+    try:
+        job = int(job)
+    except TypeError:
+        pass
+    if not isinstance(job, int):
+        job = job.pk
+    return '/%s/progress.progress' % job
+
+
 class Job(models.Model):
     cache_choices = (
         ('no cache', 'no cache'), ('cache', 'cache')

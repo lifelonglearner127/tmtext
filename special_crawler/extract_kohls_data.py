@@ -18,6 +18,7 @@ class KohlsScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.kohls.com/product/prd-<product-id>/<optional-part-of-product-name>.jsp"
+    REVIEW_URL = "http://kohls.ugc.bazaarvoice.com/9025/{}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -26,6 +27,8 @@ class KohlsScraper(Scraper):
         self.review_json = None
         self.price_json = None
         self.failure_type = None
+        self.review_list = None
+        self.is_review_checked = False
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -284,19 +287,6 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
 
-    def _extract_review_json(self):
-        try:
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-
-            contents = requests.get("http://kohls.ugc.bazaarvoice.com/9025/%s/reviews.djs?format=embeddedhtml" % self._product_id(), headers=h).text
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find("}},", start_index) + 2
-
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
-        except:
-            self.review_json = None
-
     def _extract_price_json(self):
         if self.price_json:
             return
@@ -328,19 +318,63 @@ class KohlsScraper(Scraper):
             return float(average_review)
 
     def _review_count(self):
+        self._reviews()
+
         if not self.review_json:
-            self._extract_review_json()
+            return 0
 
         return int(self.review_json["jsonData"]["attributes"]["numReviews"])
 
     def _max_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(self.review_list):
+            if review[1] > 0:
+                return 5 - i
 
     def _min_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(reversed(self.review_list)):
+            if review[1] > 0:
+                return i + 1
 
     def _reviews(self):
-        return None
+        if self.is_review_checked:
+            return self.review_list
+
+        self.is_review_checked = True
+
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
+
+        try:
+            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+            end_index = contents.find("}},", start_index) + 2
+
+            self.review_json = contents[start_index:end_index]
+            self.review_json = json.loads(self.review_json)
+        except:
+            self.review_json = None
+
+        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
+        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
+        reviews_by_mark = reviews_by_mark[:5]
+        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
+
+        if not review_list:
+            review_list = None
+
+        self.review_list = review_list
+
+        return self.review_list
 
     ##########################################
     ############### CONTAINER : SELLERS

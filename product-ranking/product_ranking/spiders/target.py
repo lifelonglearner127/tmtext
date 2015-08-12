@@ -130,6 +130,11 @@ class TargetProductSpider(BaseProductsSpider):
 
         price = is_empty(response.xpath(
             '//p[contains(@class, "price")]/span/text()').extract())
+        if not price:
+            price = is_empty(response.xpath(
+                '//*[contains(@class, "price")]'
+                '/*[contains(@itemprop, "price")]/text()'
+            ).extract())
         if price:
             price = is_empty(re.findall("\d+\.{0,1}\d+", price))
             if price:

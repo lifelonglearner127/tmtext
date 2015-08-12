@@ -23,13 +23,13 @@ import compare_images
 
 from spiders_shared_code.amazon_variants import AmazonVariants
 
-class AmazonDEScraper(Scraper):
+class AmazonINScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.de/[product-name]/dp/<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.in/[product-name]/dp/<product-id>"
 
     CB = captcha_solver.CaptchaBreakerWrapper()
     # special dir path to store the captchas, so that the service has permissions to create it on the scraper instances
@@ -138,8 +138,8 @@ class AmazonDEScraper(Scraper):
             self.tree_html = html.fromstring(contents)
 
     def check_url_format(self):
-        m = re.match(r"^http://www.amazon.de/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        self.scraper_version = "de"
+        m = re.match(r"^http://www.amazon.in/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        self.scraper_version = "in"
 
         return not not m
 
@@ -168,7 +168,7 @@ class AmazonDEScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = re.match("^http://www.amazon.de/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+        product_id = re.match("^http://www.amazon.in/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         return product_id
 
     def _site_id(self):
@@ -383,10 +383,10 @@ class AmazonDEScraper(Scraper):
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
-        if canonical_link.startswith("http://www.amazon.de"):
+        if canonical_link.startswith("http://www.amazon.in"):
             return canonical_link
         else:
-            return "http://www.amazon.de" + canonical_link
+            return "http://www.amazon.in" + canonical_link
 
     #returns 1 if the mobile version is the same, 0 otherwise
     def _mobile_image_same(self):
@@ -613,9 +613,9 @@ class AmazonDEScraper(Scraper):
     def _review_count(self):
         nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")
         if len(nr_reviews) > 0:
-            nr_review = re.findall("([0-9,]+) Kundenrezension", nr_reviews[0])
+            nr_review = re.findall("([0-9,]+) customer reviews", nr_reviews[0])
             if len(nr_review) == 0:
-                nr_review = re.findall("([0-9]+) Kundenrezension", nr_reviews[0])
+                nr_review = re.findall("([0-9]+) customer review", nr_reviews[0])
             if len(nr_review) > 0:
                 return self._toint(nr_review[0])
         nr_reviews = self.tree_html.xpath("//div[@class='fl gl5 mt3 txtnormal acrCount']//text()")
@@ -624,7 +624,7 @@ class AmazonDEScraper(Scraper):
         nr_reviews = self.tree_html.xpath("//a[@class='a-link-normal a-text-normal product-reviews-link']//text()")
         if len(nr_reviews) > 1:
             return self._toint(nr_reviews[0].replace('(','').replace(')','').replace(',',''))
-        if self.scraper_version == "de":
+        if self.scraper_version == "in":
             nr_reviews = self.tree_html.xpath("//span[@class='crAvgStars']/a//text()")
             if len(nr_reviews) > 0:
                 res = nr_reviews[0].split()
@@ -707,37 +707,56 @@ class AmazonDEScraper(Scraper):
         return float(price_amount)
 
     def _price_currency(self):
-        return "EUR"
+        price = self._price()
+
+        if price[0] == u'\u20b9':
+            return "INR"
+
+        return price[0]
 
     # extract product price from its product product page tree
     def _price(self):
+        currency = u"$"
         price = None
 
-        if self.scraper_version == "de":
-            currency = u"EUR"
+        if self.scraper_version == "in":
+            currency = u"\u20b9"
 
         try:
             price = self._clean_text(self.tree_html.xpath("//b[@class='priceLarge']")[0].text_content())
+            price = price.replace("Rs.", "").strip()
         except:
             price = None
 
         if not price:
             try:
                 price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_ourprice']")[0].text_content())
+                price = price.replace("Rs.", "").strip()
             except:
                 price = None
 
         if not price:
             try:
                 price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_dealprice']")[0].text_content())
+                price = price.replace("Rs.", "").strip()
             except:
                 price = None
 
         if not price:
             try:
                 price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_saleprice']")[0].text_content())
+                price = price.replace("Rs.", "").strip()
             except:
                 price = None
+
+        if "-" in price:
+            if u'\u20b9' not in price:
+                price = u'\u20b9' + price.split("-")[0].strip() + u"-" + u'\u20b9' + price.split("-")[1].strip()
+            else:
+                price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
+        else:
+            if u'\u20b9' not in price:
+                price = u'\u20b9' + price
 
         if not price:
             return None
@@ -854,7 +873,7 @@ class AmazonDEScraper(Scraper):
                                 if seller_link[0].startswith("http://www.amazon."):
                                     seller_content = requests.get(seller_link[0], headers=h).text
                                 else:
-                                    seller_content = requests.get("http://www.amazon.de" + seller_link[0], headers=h).text
+                                    seller_content = requests.get("http://www.amazon.in" + seller_link[0], headers=h).text
 
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")
@@ -1021,7 +1040,7 @@ class AmazonDEScraper(Scraper):
             "com" for Amazon.com
         """
          # using url to distinguish between page versions.
-        return "de"
+        return "in"
 
     ##########################################
     ################ HELPER FUNCTIONS

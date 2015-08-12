@@ -1929,6 +1929,29 @@ class WalmartScraper(Scraper):
         return sellers
 
     # ! may throw exception if not found
+    def _marketplace_prices_from_script(self):
+        """Extracts list of marketplace sellers for this product.
+        Works on new page version.
+        Returns:
+            list of strings representing marketplace sellers,
+            or None if none found / not relevant
+        """
+
+        if not self.product_info_json:
+            pinfo_dict = self._extract_product_info_json()
+        else:
+            pinfo_dict = self.product_info_json
+
+        prices = []
+        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
+
+        for seller in sellers_dict:
+            if seller["sellerName"] != "Walmart.com":
+                prices.append(seller["price"])
+
+        return prices
+
+    # ! may throw exception if not found
     def _in_stock_from_script(self):
         """Extracts info on whether product is available to be
         bought on the site, from any seller (marketplace or owned).
@@ -1967,31 +1990,6 @@ class WalmartScraper(Scraper):
         available = any(sellers.values())
 
         return 1 if available else 0
-
-    def _owned(self):
-        """Extracts info on whether product is ownedby Walmart.com.
-        Uses functions that work on both old page design and new design.
-        Will choose whichever gives results.
-        Returns:
-            1/0 (owned/not owned)
-        """
-
-        if not self._marketplace() or self._marketplace() == 0:
-            return 1
-
-        # assume new design
-        # _owned_from_script() may throw exception if extraction fails
-        # (causing the service to return None for "owned")
-        try:
-            owned_new = self._owned_from_script()
-        except Exception:
-            owned_new = None
-
-        if owned_new is None:
-            # try to extract assuming old page structure
-            return self._owned_meta_from_tree()
-
-        return owned_new
 
     def _marketplace(self):
         """Extracts info on whether product is found on marketplace
@@ -2039,6 +2037,50 @@ class WalmartScraper(Scraper):
             sellers = filter(lambda s: s!="Walmart.com", sellers)
             return sellers if sellers else None
 
+    def _marketplace_prices(self):
+        """Extracts list of marketplace sellers for this product
+        Works for both old and new page version
+        Returns:
+            list of strings representing marketplace sellers,
+            or None if none found / not relevant
+        """
+
+        # assume new page version
+        try:
+            prices = self._marketplace_prices_from_script()
+            return prices if prices else None
+        except:
+            prices = None
+
+        if not prices:
+            # assume old page version
+            sellers = self._marketplace_sellers()
+            product_info_json_text = self._find_between(html.tostring(self.tree_html), "var DefaultItemWidget =", "addMethodsToDefaultItem(DefaultItemWidget);").strip()
+
+            if not product_info_json_text:
+                product_info_json_text = self._find_between(html.tostring(self.tree_html), "var DefaultItem =", "addMethodsToDefaultItem(DefaultItem);")
+
+            if not sellers:
+                return None
+
+            if not "sellerName: '" + sellers[0] + "'," in product_info_json_text:
+                return None
+
+            price_html = html.fromstring(self._find_between(product_info_json_text, ",\nprice: '", "',\nprice4SAC:"))
+
+            prices = [price_html.text_content()]
+
+            return prices
+
+    def _find_between(self, s, first, last):
+        try:
+            start = s.index(first) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
+
+
     def _marketplace_out_of_stock(self):
         """Extracts info on whether currently unavailable from any marketplace seller - binary
         Uses functions that work on both old page design and new design.
@@ -2074,20 +2116,6 @@ class WalmartScraper(Scraper):
             in_stock_old = self._in_stock_old()
 
         return in_stock_old
-
-    def _owned_out_of_stock(self):
-        """Extracts whether product is owned and out of stock.
-        Works on both old and new page version.
-        Returns 1/0
-        """
-
-        owned = self._owned()
-        in_stock = self._in_stock()
-
-        if owned==1 and in_stock==0:
-            return 1
-        else:
-            return 0
 
     def _site_online(self):
         """Extracts whether the item is sold by the site and delivered directly
@@ -2652,11 +2680,10 @@ class WalmartScraper(Scraper):
         "rollback": _rollback, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title": _product_name_from_tree, \
-        "owned": _owned, \
-        "owned_out_of_stock": _owned_out_of_stock, \
         "in_stores": _in_stores, \
         "in_stores_only": _in_stores_only, \
         "marketplace": _marketplace, \
+        "marketplace_prices" : _marketplace_prices, \
         "marketplace_sellers": _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
         "in_stock": _in_stock, \

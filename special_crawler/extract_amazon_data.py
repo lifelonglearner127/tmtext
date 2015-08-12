@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/python
 
 
@@ -44,6 +45,10 @@ class AmazonScraper(Scraper):
         Scraper.__init__(self, **kwargs)
 
         self.av = AmazonVariants()
+        self.is_review_checked = False
+        self.review_list = None
+        self.max_review = None
+        self.min_review = None
 
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
@@ -454,7 +459,13 @@ class AmazonScraper(Scraper):
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return ["inline image"]
 
-        if len(allimg) > 0 and self.no_image(allimg)==0:
+        if len(allimg) > 0 and self.no_image(allimg) == 0:
+            if len(allimg) >= 7:
+                allimg = allimg[:7]
+
+                if vurls:
+                    allimg = allimg[:-1]
+
             return allimg
         return None
 
@@ -633,26 +644,53 @@ class AmazonScraper(Scraper):
                 return self._toint(res[0])
         return 0
 
-
     def _reviews(self):
-        stars=self.tree_html.xpath("//tr[@class='a-histogram-row']//a//text()")
-        rev=[]
-        for i in range(len(stars)-1,0,-2):
-            a=self._toint(stars[i-1].split()[0])
-            b= self._toint(stars[i])
-            rev.append([a,b])
-        if len(rev) > 0 :  return rev
-        stars=self.tree_html.xpath("//div[contains(@class,'histoRow')]")
-        for a in stars:
-            b=a.text_content().strip().split()
-            if len(b)>2:
-                b1 = self._toint(b[0])
-                b2 =self._toint(b[2])
-                rev.append([b1,b2])
-        if len(rev) > 0 :
-            rev.reverse()
-            return rev
-        return None
+        if self.is_review_checked:
+            return self.review_list
+
+        self.is_review_checked = True
+
+        if not self._review_count() or self._review_count() == 0:
+            self.review_list = None
+            return self.review_list
+
+        review_list = []
+        review_link = self.tree_html.xpath("//a[contains(@class, 'a-link-normal a-text-normal product-reviews-link')]/@href")[0]
+        review_link = review_link[:review_link.rfind("sortBy=")]
+
+        mark_list = ["one", "two", "three", "four", "five"]
+
+        for index, mark in enumerate(mark_list):
+            review_link_mark_star = review_link.replace("cm_cr_dp_qt_see_all_top", "cm_cr_pr_viewopt_sr") + "sortBy=helpful&reviewerType=all_reviews&formatType=all_formats&filterByStar=" + mark + "_star&pageNumber=1"
+            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+            s = requests.Session()
+            a = requests.adapters.HTTPAdapter(max_retries=3)
+            b = requests.adapters.HTTPAdapter(max_retries=3)
+            s.mount('http://', a)
+            s.mount('https://', b)
+            contents = s.get(review_link_mark_star, headers=h, timeout=5).text
+
+            if "Sorry, no reviews match your current selections." in contents:
+                review_list.append([index + 1, 0])
+            else:
+                if not self.max_review or self.max_review < index + 1:
+                    self.max_review = index + 1
+
+                if not self.min_review or self.min_review > index + 1:
+                    self.min_review = index + 1
+
+                review_html = html.fromstring(contents)
+                review_count = review_html.xpath("//div[@id='cm_cr-review_list']//div[contains(@class, 'a-section a-spacing-medium')]//span[@class='a-size-base']/text()")[0]
+                review_count = int(re.search('of (.*) reviews', review_count).group(1))
+                review_list.append([index + 1, review_count])
+
+        if not review_list:
+            self.review_list = None
+            return self.review_list
+
+        self.review_list = review_list
+
+        return self.review_list
 
     def _tofloat(self,s):
         try:
@@ -672,17 +710,14 @@ class AmazonScraper(Scraper):
             return 0
 
     def _max_review(self):
-        rv = self._reviews()
-        if rv !=None and len(rv)>0:
-            return rv[-1][0]
-        return None
+        self._reviews()
+
+        return self.max_review
 
     def _min_review(self):
-        rv = self._reviews()
-        if rv !=None and len(rv)>0:
-            return rv[0][0]
-        return None
+        self._reviews()
 
+        return self.min_review
 
     ##########################################
     ################ CONTAINER : SELLERS
@@ -695,46 +730,63 @@ class AmazonScraper(Scraper):
 
     def _price_currency(self):
         price = self._price()
-        price = price.replace(",", "")
-        price_amount = re.findall(r"[\d\.]+", price)[0]
-        price_currency = price.replace(price_amount, "")
-        if price_currency == "$":
+
+        if price[0] == u'£':
+            return "GDP"
+
+        if price[0] == u'$':
             return "USD"
-        return price_currency
+
+        return price[0]
 
     # extract product price from its product product page tree
     def _price(self):
-        price = self.tree_html.xpath("//span[@id='actualPriceValue']/b/text()")
-        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0].strip()
-        price = self.tree_html.xpath("//*[@id='priceblock_ourprice']//text()")#
-        if len(price)>0 and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0].strip()
-        price = self.tree_html.xpath("//*[contains(@id, 'priceblock_')]//text()")#priceblock_ can usually have a few things after it
-        if len(price)>0 and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0].strip()
-        price = self.tree_html.xpath("//*[contains(@class, 'offer-price')]//text()")
-        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0].strip()
+        currency = u"$"
+        price = None
 
-        pid=self._product_id()
-        price = self.tree_html.xpath("//button[@value='"+pid+"']//text()")
- #       price = self.tree_html.xpath("//span[@id='actualPriceValue']//text()")
-        if len(price)>0  and price[0].strip()!="":
-            p=price[0].split()
-            return p[-1]
-        price = self.tree_html.xpath("//div[@id='"+pid+"']//a[@class='a-button-text']/span//text()")
-        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0]
+        if self.scraper_version == "uk":
+            currency = u"£"
 
-        price = self.tree_html.xpath("//div[@id='unqualifiedBuyBox']//span[@class='a-color-price']//text()")
-        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0]
+        try:
+            price = self._clean_text(self.tree_html.xpath("//b[@class='priceLarge']")[0].text_content())
+            price = price.replace(currency, u"").strip()
+        except:
+            price = None
 
-        price = self.tree_html.xpath("//*[contains(@class, 'price')]//text()")
-        if len(price)>0  and len(price[0].strip())<12  and price[0].strip()!="":
-            return price[0].strip()
-        return None
+        if not price:
+            try:
+                price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_ourprice']")[0].text_content())
+                price = price.replace(currency, u"").strip()
+            except:
+                price = None
+
+        if not price:
+            try:
+                price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_dealprice']")[0].text_content())
+                price = price.replace(currency, u"").strip()
+            except:
+                price = None
+
+        if not price:
+            try:
+                price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_saleprice']")[0].text_content())
+                price = price.replace(currency, u"").strip()
+            except:
+                price = None
+
+        if "-" in price:
+            if currency not in price:
+                price = currency + price.split("-")[0].strip() + u"-" + currency + price.split("-")[1].strip()
+            else:
+                price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
+        else:
+            if currency not in price:
+                price = currency + price
+
+        if not price:
+            return None
+
+        return price
 
     def _in_stock(self):
         in_stock = self.tree_html.xpath('//div[contains(@id, "availability")]//text()')
